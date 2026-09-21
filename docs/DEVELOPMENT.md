@@ -71,6 +71,19 @@ for C-adapter ASan/UBSan with source-session integration tests. These harnesses
 complement [native visual and keyboard evidence](qualification/source-preview-2026-09-21.md);
 they do not establish playback, physical display calibration or preview/export equivalence.
 
+## Original storage checks
+
+The [headless original commands](HEADLESS.md#original-media-ownership) retain
+complete files, verify managed or linked snapshots, and relink identical bytes.
+They do not register an authored asset or select project presentation timing.
+Use `cargo test --locked -p deadpan-store --test original_media` and
+`cargo test --locked -p deadpan-cli --test original_commands` for real-file
+ownership, relocation, stale/wrong relinking and failure boundaries. Shared
+object-storage unit tests force the positional-copy fallback; the native
+fileclone tests exercise actual macOS clone independence. These checks do not
+require opening the app. Native dialogs, audio indexing and the authored import
+workflow still need implementation and their own focused verification.
+
 ## Implementation sequence
 
 1. Read [the specification](spec/DEADPAN_SPEC.md), [handoff](spec/AGENT_HANDOFF.md), and [AGENTS.md](../AGENTS.md). Sections 1–8 define semantics, 12–14 define AI/runtime contracts, 17–24 define architecture, and 26–31 define verification and command details.

@@ -40,10 +40,18 @@ FFmpeg codec operation is not preempted. This adapter does not establish an OS
 process memory/CPU limit and must stay off UI/audio callback threads.
 
 The initial admitted containers are MP4/MOV and Matroska/WebM, with one H.264 or
-FFV1 video stream and optional ignored audio. The measured fixtures are H.264 in
-MP4 and FFV1 in Matroska; this is not qualification of every profile/container
-combination. Other codecs require further fixtures and explicit admission. No
-audio decode or VideoToolbox acceleration is implemented here.
+FFV1 video stream and up to 32 ignored audio streams. The bounded audio inventory
+retains each stream's index, codec, original time base and available probe-level
+start, duration, sample-rate and channel-count observations. It does not decode
+audio, establish exact sample bounds or claim an audio stream is ready for use.
+`AVDISCARD_ALL` alone is not a decode barrier during FFmpeg probing. The format
+codec allowlist contains only `h264,ffv1`; pinned FFmpeg propagates that allowlist
+to probe decoder initialization and rejects AAC before opening its decoder.
+Audio-bearing fixtures therefore emit expected AAC-not-on-whitelist diagnostics.
+The measured fixtures are H.264 in MP4 and FFV1 in Matroska; this is not
+qualification of every profile/container combination. Other video codecs require
+further fixtures and explicit admission. No audio decode or VideoToolbox
+acceleration is implemented here.
 
 The boundary admits progressive eight-bit three-component SDR input with explicit
 range, matrix, transfer and primaries. RGB must be full-range GBR; YUV supports

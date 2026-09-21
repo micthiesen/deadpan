@@ -65,6 +65,9 @@ pub enum StoreError {
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     #[error(transparent)]
     GeneratedMedia(#[from] crate::generated_media::GeneratedMediaError),
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    #[error(transparent)]
+    OriginalMedia(#[from] crate::original_media::OriginalMediaError),
     #[error("Project history is inconsistent: {0}")]
     History(String),
     #[error("Project integrity check failed: {0}")]
@@ -113,6 +116,8 @@ impl StoreError {
             Self::GenerationAcceptance(_) => "GenerationAcceptanceInvalid",
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             Self::GeneratedMedia(error) => error.code(),
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            Self::OriginalMedia(error) => error.code(),
             Self::Edit(error) => error.code.as_str(),
             Self::Database(rusqlite::Error::SqliteFailure(error, _)) => match error.code {
                 rusqlite::ErrorCode::DiskFull => "DiskFull",

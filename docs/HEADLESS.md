@@ -346,6 +346,39 @@ Each named target may supply `occurrence` when its stored Local/Source coordinat
 needs explicit scope. Missing and unresolved marks return `MarkMissing` and
 `MarkUnresolved`; the retained coordinate is not used as a fallback.
 
+## Original media ownership
+
+```sh
+cargo run --locked -p deadpan-cli -- project retain-original /tmp/example.deadpan /absolute/source.mp4
+cargo run --locked -p deadpan-cli -- project retain-original /tmp/example.deadpan /absolute/source.mp4 --linked
+cargo run --locked -p deadpan-cli -- project originals /tmp/example.deadpan
+cargo run --locked -p deadpan-cli -- project originals /tmp/example.deadpan --after BLAKE3_DIGEST
+cargo run --locked -p deadpan-cli -- project verify-original /tmp/example.deadpan BLAKE3_DIGEST
+cargo run --locked -p deadpan-cli -- project relink-original /tmp/example.deadpan BLAKE3_DIGEST /absolute/moved.mp4 --expected-version 1
+```
+
+Retention defaults to a managed complete original, using APFS cloning or verified
+copying. `--linked` records its external location. The response reports the
+actual retention method and `authored_asset_registered: false`: stream
+qualification and insertion into the edited document remain outstanding.
+Neither operation changes the authored revision or undo history.
+
+`originals` returns at most 100 records and a `next_after` content digest. Continue
+until an empty page. Digests are 64 lowercase hexadecimal BLAKE3 characters,
+without the storage filename prefix. `verify-original` creates a private snapshot
+and checks every byte against both recorded checksums. It does not qualify the
+container's streams or renderability. Managed records use the package copy;
+linked records read the recorded path. Inventory and verification are read-only.
+
+Relinking verifies identical complete content and requires the current location
+version, independent of the document revision. Wrong content returns
+`OriginalContentMismatch`; stale versions return `OriginalLocationConflict`.
+Missing owned or linked bytes return `OriginalOffline`. Paths must be absolute
+UTF-8 local regular files; final symlinks and parent traversal are rejected.
+The CLI uses the host defaults of 64 GiB and 300 cooperative seconds. The Rust
+host API also accepts cancellation, tighter limits and opaque bookmark data.
+See [original media](ORIGINAL_MEDIA.md) for durability and remaining import work.
+
 ## History and checkpoints
 
 ```sh
@@ -381,24 +414,24 @@ CLI request to an already-open GUI through a host socket is still outstanding.
 
 A checkpoint is a consistent SQLite backup including committed WAL data, stored
 under `Snapshots/`. It is not a portable project copy: the media directories are
-not duplicated. Full recovery UI and portable media ownership remain open.
+not duplicated. Full recovery UI and portable project-copy workflow remain open.
 Unsupported database schema versions are refused without rewriting them;
 future-schema read-only inspection still needs a compatibility implementation.
 
 ## Schema migration
 
-Database schemas 1 through 8 return `MigrationRequired` when opened. Upgrade explicitly:
+Database schemas 1 through 9 return `MigrationRequired` when opened. Upgrade explicitly:
 
 ```sh
 cargo run --locked -p deadpan-cli -- project migrate /tmp/example.deadpan
 ```
 
 Migration holds the project writer lock, keeps a consistent SQLite backup under
-`Snapshots/before-schema-9-*.sqlite`, and upgrades a separate candidate. It
+`Snapshots/before-schema-10-*.sqlite`, and upgrades a separate candidate. It
 replays all commands, undo/redo revisions, and abandoned branches with their
 original revision IDs. Every snapshot and forward/inverse transaction is checked
 against its strict original schema meaning. Migration goes directly to database
-schema 9 and core document schema 5. Schema-7/8 histories already use core schema 5
+schema 10 and core document schema 5. Schema-7/8/9 histories already use core schema 5
 and are validated without rewriting. Schemas 1 through 3 gain
 empty override maps. Schema-1/2 histories also gain empty mark
 maps; schema-3 mark histories retain their exact ownership, bias, and loss states.
@@ -409,7 +442,9 @@ attempt, candidate-receipt, and selection rows remain unchanged; older databases
 gain empty tables. Pre-schema-8 requests have no bridge plan and remain legacy;
 their bundle receipt table starts empty. Existing schema-8 plans and receipt JSON
 remain unchanged; receipts gain no admission evidence. New admission vocabulary
-is rejected in old receipts, even when null. Fields or
+is rejected in pre-schema-9 receipts, even when null. Schema-9 admission receipts
+remain unchanged. Every legacy schema gains an empty original-media table;
+an unexpected preexisting modern table is rejected. Fields or
 commands that did not exist in the old schema are rejected. SQLite atomically promotes the validated
 candidate through its backup API; the main file is never renamed around a live
 WAL. Existing read transactions keep their old snapshot. Failure before promotion

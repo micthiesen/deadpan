@@ -5,6 +5,7 @@
 
 typedef struct DeadpanSource DeadpanSource;
 typedef int (*DeadpanCancelled)(const void *);
+#define DEADPAN_SOURCE_MAX_AUDIO_STREAMS 32
 typedef struct {
     uint64_t max_input_bytes;
     uint64_t max_frames;
@@ -15,6 +16,13 @@ typedef struct {
     uint32_t max_packets_per_frame;
 } DeadpanSourceLimits;
 typedef struct {
+    int32_t stream_index;
+    int32_t time_base_num, time_base_den;
+    int64_t stream_start, stream_duration;
+    int32_t sample_rate, channel_count;
+    char codec[32];
+} DeadpanSourceAudioInfo;
+typedef struct {
     int32_t width, height;
     int32_t stream_index;
     int32_t time_base_num, time_base_den;
@@ -24,6 +32,8 @@ typedef struct {
     int64_t stream_start, stream_duration, container_start, container_duration;
     char codec[32];
     char pixel_format[32];
+    uint32_t audio_stream_count;
+    DeadpanSourceAudioInfo audio_streams[DEADPAN_SOURCE_MAX_AUDIO_STREAMS];
 } DeadpanSourceInfo;
 typedef struct {
     int64_t pts, duration, dts;

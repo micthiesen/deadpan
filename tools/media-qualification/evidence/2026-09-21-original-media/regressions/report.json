@@ -1,0 +1,15 @@
+{
+  "scope": "Isolated source copy with only cleanup-guard fix reversed; shared checkout never changed",
+  "command": [
+    "cargo",
+    "test",
+    "-p",
+    "deadpan-store",
+    "--lib",
+    "clone_validation_failure",
+    "--locked"
+  ],
+  "before_fix_exit": 101,
+  "failure": "assertion failed: originals_pending_entries(package.path()).is_empty()",
+  "regression": "Actual APFS clone gains a second link before validation; rejected pending name must be removed while other name is preserved"
+}

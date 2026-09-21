@@ -1,0 +1,20 @@
+{
+  "rust_tests": 396,
+  "python_tests": {
+    "audio": 20,
+    "model": 54,
+    "ffv1_report": 5,
+    "native_harness": 4
+  },
+  "source_media_sanitizer_tests": 33,
+  "native_gui": "Not repeated: no app layout, keyboard routing or lifecycle change. Prior source-preview qualification retains native aesthetics/focus/navigation evidence.",
+  "log_encoding": "Each log.gz decompresses to exact original bytes; deterministic gzip mtime0.",
+  "initial_development_failures": [
+    "SQLite u64 FromSql/ToSql rejected at compile time; changed to checked i64 conversions.",
+    "rustix mknodat unavailable under current features; FIFO test uses developer mkfifo.",
+    "First gate stopped on formatting from wrong standalone rustfmt edition; reformatted with edition2024.",
+    "Two migration tests initially expected old backup prefix; prefix and assertions now derive from destination schema.",
+    "Clone cleanup regression fails on isolated pre-fix copy because pending name remains.",
+    "Linked final-check regression fails on isolated old inode-only predicate after same-inode/same-length modification."
+  ]
+}

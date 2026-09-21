@@ -364,25 +364,22 @@ fn cancellation_and_hard_deadline_stop_the_process_group() {
 fn successful_leader_exit_cleans_up_descendants_with_inherited_pipes() {
     let directory = tempfile::tempdir().unwrap();
     let marker = directory.path().join("survived");
+    let descendants = (0..32)
+        .map(|_| format!("(sleep 1; printf alive > '{}') &\n", marker.display()))
+        .collect::<String>();
     let executable = helper(
         directory.path(),
-        &format!(
-            "(sleep 1; printf alive > '{}') &\n{}\nexit 0",
-            marker.display(),
-            script_reply(success())
-        ),
+        &format!("{descendants}{}\nexit 0", script_reply(success())),
     );
     let start = Instant::now();
-    assert!(
-        canonicalize(
-            &executable,
-            &mut Cursor::new(b"input"),
-            identity(),
-            &request(),
-            &AtomicBool::new(false)
-        )
-        .is_ok()
-    );
+    canonicalize(
+        &executable,
+        &mut Cursor::new(b"input"),
+        identity(),
+        &request(),
+        &AtomicBool::new(false),
+    )
+    .unwrap_or_else(|error| panic!("successful worker cleanup failed: {error:?}: {error}"));
     assert!(start.elapsed() < Duration::from_secs(2));
     std::thread::sleep(Duration::from_millis(1100));
     assert!(!marker.exists());

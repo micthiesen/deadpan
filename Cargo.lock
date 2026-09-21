@@ -782,6 +782,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "deadpan-fileclone"
+version = "0.1.0"
+dependencies = [
+ "libc",
+ "tempfile",
+]
+
+[[package]]
 name = "deadpan-jobs"
 version = "0.1.0"
 dependencies = [
@@ -889,11 +897,13 @@ version = "0.1.0"
 dependencies = [
  "blake3",
  "deadpan-core",
+ "deadpan-fileclone",
  "deadpan-jobs",
  "rusqlite",
  "rustix 1.1.5",
  "serde",
  "serde_json",
+ "sha2",
  "tempfile",
  "thiserror 2.0.20",
  "uuid",

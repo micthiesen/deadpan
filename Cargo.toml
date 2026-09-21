@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/deadpan-core", "crates/deadpan-store", "crates/deadpan-plan", "crates/deadpan-jobs", "crates/deadpan-media", "crates/deadpan-models", "crates/deadpan-render", "crates/deadpan-app", "crates/deadpan-cli", "native/deadpan-process", "native/deadpan-media-worker", "native/deadpan-source"]
+members = ["crates/deadpan-core", "crates/deadpan-store", "crates/deadpan-plan", "crates/deadpan-jobs", "crates/deadpan-media", "crates/deadpan-models", "crates/deadpan-render", "crates/deadpan-app", "crates/deadpan-cli", "native/deadpan-process", "native/deadpan-media-worker", "native/deadpan-source", "native/deadpan-fileclone"]
 default-members = ["crates/deadpan-app"]
 
 [workspace.package]
@@ -20,6 +20,7 @@ deadpan-media = { path = "crates/deadpan-media" }
 deadpan-models = { path = "crates/deadpan-models" }
 deadpan-render = { path = "crates/deadpan-render" }
 deadpan-source = { path = "native/deadpan-source" }
+deadpan-fileclone = { path = "native/deadpan-fileclone" }
 deadpan-native-process = { path = "native/deadpan-process" }
 cc = "=1.4.7"
 libc = "=0.2.189"

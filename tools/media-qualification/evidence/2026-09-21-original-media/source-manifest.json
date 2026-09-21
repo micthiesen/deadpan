@@ -1,0 +1,114 @@
+{
+  "base_revision": "c224c2c3d2dfd3decad86d279c72684c66962b82",
+  "scope": "Changed source/configuration and source fixtures on top of base revision",
+  "files": {
+    "Cargo.lock": {
+      "bytes": 107034,
+      "sha256": "b72534e6b90cd9c5278c70d9a5fbb96ef278b9128188e0caaaf606d8d75adc2f"
+    },
+    "Cargo.toml": {
+      "bytes": 1973,
+      "sha256": "5faed8ff3db4c1ca459ce091e2bc49f2cf492220a3b191a98eb299ecb1d51866"
+    },
+    "crates/deadpan-cli/src/doctor.rs": {
+      "bytes": 1688,
+      "sha256": "7e2ce8ac1bab263cbd2f5785434a90810911fef411777788d3ffa479e51e75d4"
+    },
+    "crates/deadpan-cli/src/lib.rs": {
+      "bytes": 12629,
+      "sha256": "c81ddd59643246b56cea3857a27bba142cbb6fe4b5fe3437ec799617649f5eb2"
+    },
+    "crates/deadpan-cli/src/originals.rs": {
+      "bytes": 3446,
+      "sha256": "d7ea87822cc9ab4a53c218159829835ba17b90be9629c4c91f061b3486b1e365"
+    },
+    "crates/deadpan-cli/tests/original_commands.rs": {
+      "bytes": 4584,
+      "sha256": "b7cf581a1a5fbf88ad5d276865019e7cdc9f0676c76ab3ca29eba3c4aa41dcb4"
+    },
+    "crates/deadpan-cli/tests/project_commands.rs": {
+      "bytes": 31341,
+      "sha256": "bfb97a98840fd7bb3cdc391e85b7dba95f7205ff0aee1d9285a08143ff9f80b9"
+    },
+    "crates/deadpan-media/src/conversion.rs": {
+      "bytes": 17095,
+      "sha256": "f0128e33f366ab7386c77c07853a340cfdf633a2739991b74b3ac52578e93109"
+    },
+    "crates/deadpan-media/tests/host_boundary.rs": {
+      "bytes": 13019,
+      "sha256": "b693d87928897a717bbc0110c89508ff9d8d47c47808d86b03d02ed98e58d915"
+    },
+    "crates/deadpan-store/Cargo.toml": {
+      "bytes": 758,
+      "sha256": "cf9266706a12454ec74e9aaf3c41ee30bc210de79d856860134fe4084ddedff6"
+    },
+    "crates/deadpan-store/src/error.rs": {
+      "bytes": 6724,
+      "sha256": "11769a596e0d6ace9ccd5d4cb550257058cf1e6fb17b0d3509eae907105e064c"
+    },
+    "crates/deadpan-store/src/generated_media.rs": {
+      "bytes": 582,
+      "sha256": "60ff0eb26f4d551113a5f30a620af826eb1119d3a51213c5ffd4a8e1f86c45a7"
+    },
+    "crates/deadpan-store/src/lib.rs": {
+      "bytes": 22620,
+      "sha256": "17c4ac02a8f667d88cf3837b5d5adb6473e2fcbf1583df035776a34204673e6b"
+    },
+    "crates/deadpan-store/src/migration.rs": {
+      "bytes": 11399,
+      "sha256": "ff2c6460c468d9180524d5fbe984c51bedac7ec8215ee36b866a4d54148a3561"
+    },
+    "crates/deadpan-store/src/object_storage.rs": {
+      "bytes": 75461,
+      "sha256": "60fd1101f6546526be4aeb079dc2944931b49b3997043a66f45acfa46cfa8c96"
+    },
+    "crates/deadpan-store/src/original_media.rs": {
+      "bytes": 27673,
+      "sha256": "bbb0bedc482b34cdd7f54621bc28c46009eb1edc125b8ef7a6d7a65910e9eb9b"
+    },
+    "crates/deadpan-store/src/schema.rs": {
+      "bytes": 3174,
+      "sha256": "a65a99a6a40608062225eec989b3c81fe5536520004fb0640f9812c0d9ace8df"
+    },
+    "crates/deadpan-store/tests/fixtures/v9-history.sql": {
+      "bytes": 30723,
+      "sha256": "a0c7e25e5b657d65c307967e787580acba1c219c72b972f6f23bff78baa1b68e"
+    },
+    "crates/deadpan-store/tests/migration.rs": {
+      "bytes": 58944,
+      "sha256": "9d32976a4c3855daeb8d264acc1700aa479d9f9905a0d92f52821dd47ce936a3"
+    },
+    "crates/deadpan-store/tests/original_media.rs": {
+      "bytes": 12603,
+      "sha256": "bf42087f462aabef149962c43b0e20897d6f9a68c4c952304324837c2a3a4a90"
+    },
+    "native/deadpan-fileclone/Cargo.toml": {
+      "bytes": 466,
+      "sha256": "d56cbb6cb2bb79966ea29e561bd204b015d5eab218bcaeeda544f1ba711946d8"
+    },
+    "native/deadpan-fileclone/src/lib.rs": {
+      "bytes": 8120,
+      "sha256": "55bd0cceb9a585cccef12069563dd72a2c8142ccb80f4117db94b75d8802bdad"
+    },
+    "native/deadpan-source/README.md": {
+      "bytes": 6257,
+      "sha256": "b7c87e9bce28000e7dc43da5c4e1e78ab3f929b0bcb0b44e6f88d1310d519286"
+    },
+    "native/deadpan-source/src/decoder.c": {
+      "bytes": 35772,
+      "sha256": "bc228009f62ad3f64d3eb0dcc74e4735ddd65952a385215f01c1d5937cde5ce6"
+    },
+    "native/deadpan-source/src/decoder.h": {
+      "bytes": 2225,
+      "sha256": "7bf4a2442f0589bfa2d4fc306570737bb2a4e34c2f2d2bf1e292615e1ee28a9f"
+    },
+    "native/deadpan-source/src/lib.rs": {
+      "bytes": 24976,
+      "sha256": "e565b47f7a092ad2d5505964ddb9ab54b93625cbb89a28c08b2402b3bc33b100"
+    },
+    "native/deadpan-source/tests/persistent_decode.rs": {
+      "bytes": 15608,
+      "sha256": "6bc9d3cb76b3e47ee459a63b5eaad17e303c23c496fedc45ac8707a3a280601f"
+    }
+  }
+}

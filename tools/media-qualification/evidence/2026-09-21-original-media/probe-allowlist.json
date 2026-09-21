@@ -1,0 +1,26 @@
+{
+  "ffmpeg_revision": "8ae0b34901ba60a802f183ee75a250a9fc3e09a5",
+  "adapter_allowlist": "h264,ffv1",
+  "observed_log": "Codec (aac) not on whitelist 'h264,ffv1'",
+  "observed_in_gate_log": true,
+  "primary_source": {
+    "libavformat/demux.c": {
+      "sha256": "ef781b57ef67f34d809247653be6bc53488ccb15554a80f3b915af9c0033d74f",
+      "lines": [
+        2159,
+        2629,
+        2898
+      ],
+      "meaning": "All probe decoder initialization paths propagate the format codec allowlist"
+    },
+    "libavcodec/avcodec.c": {
+      "sha256": "20bb966e9b24e6b5718ad7c0d547e102224709113d9ed624611503bb548431e8",
+      "lines": [
+        180,
+        189,
+        194
+      ],
+      "meaning": "Allowlist rejection precedes decoder internal allocation and initialization"
+    }
+  }
+}

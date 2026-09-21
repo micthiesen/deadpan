@@ -27,7 +27,7 @@
 #endif
 #define IO_BUFFER_BYTES 32768
 #define MAX_PROBE_BYTES (1024 * 1024)
-#define MAX_STREAMS 8
+#define MAX_STREAMS (DEADPAN_SOURCE_MAX_AUDIO_STREAMS + 1)
 #define DEMUXERS "mov,matroska,webm"
 #define CODECS "h264,ffv1"
 
@@ -42,7 +42,7 @@ struct DeadpanSource {
     AVPacket *packet;
     AVFrame *frame;
     struct SwsContext *scaler;
-    int stream, pixel_format, chroma_location, draining, ended, poisoned;
+    int stream, pixel_format, chroma_location, draining, ended, poisoned, inventory_ready;
     unsigned int stream_count;
     uint64_t frames, packets, io_bytes, deadline;
     DeadpanCancelled cancelled;
@@ -248,6 +248,50 @@ static int table(DeadpanSource *s, int initial) {
     if (selected < 0) return fail(s, "unsupported_streams", "source has no video stream");
     if (initial) { s->stream = selected; s->stream_count = s->format->nb_streams; }
     else if (selected != s->stream) return fail(s, "stream_changed", "source video stream changed");
+    if (s->inventory_ready) {
+        AVStream *video = s->format->streams[s->stream];
+        if (video->index != s->info.stream_index) return fail(s, "stream_changed", "source video stream identity changed");
+        uint32_t audio = 0;
+        for (unsigned int i = 0; i < s->format->nb_streams; i++) {
+            AVStream *stream = s->format->streams[i];
+            AVCodecParameters *p = stream->codecpar;
+            if (p->codec_type != AVMEDIA_TYPE_AUDIO) continue;
+            if (audio >= s->info.audio_stream_count) return fail(s, "stream_changed", "source audio stream table changed");
+            DeadpanSourceAudioInfo *expected = &s->info.audio_streams[audio++];
+            if (stream->index != expected->stream_index ||
+                stream->time_base.num != expected->time_base_num || stream->time_base.den != expected->time_base_den ||
+                p->sample_rate != expected->sample_rate || p->ch_layout.nb_channels != expected->channel_count ||
+                strcmp(avcodec_get_name(p->codec_id), expected->codec))
+                return fail(s, "stream_changed", "source audio stream identity changed");
+        }
+        if (audio != s->info.audio_stream_count) return fail(s, "stream_changed", "source audio stream table changed");
+    }
+    return 1;
+}
+static int capture_audio_inventory(DeadpanSource *s) {
+    uint32_t count = 0;
+    for (unsigned int i = 0; i < s->format->nb_streams; i++) {
+        AVStream *stream = s->format->streams[i];
+        AVCodecParameters *p = stream->codecpar;
+        if (p->codec_type != AVMEDIA_TYPE_AUDIO) continue;
+        if (count >= DEADPAN_SOURCE_MAX_AUDIO_STREAMS || stream->index < 0 ||
+            stream->time_base.num <= 0 || stream->time_base.den <= 0 ||
+            p->sample_rate < 0 || p->ch_layout.nb_channels < 0)
+            return fail(s, "invalid_stream", "source audio stream metadata is invalid or exceeds its bound");
+        DeadpanSourceAudioInfo *audio = &s->info.audio_streams[count++];
+        audio->stream_index = stream->index;
+        audio->time_base_num = stream->time_base.num;
+        audio->time_base_den = stream->time_base.den;
+        audio->stream_start = stream->start_time;
+        audio->stream_duration = stream->duration;
+        audio->sample_rate = p->sample_rate;
+        audio->channel_count = p->ch_layout.nb_channels;
+        int codec_length = snprintf(audio->codec, sizeof(audio->codec), "%s", avcodec_get_name(p->codec_id));
+        if (codec_length < 0 || (size_t)codec_length >= sizeof(audio->codec))
+            return fail(s, "invalid_stream", "source audio codec name exceeds its bound");
+    }
+    s->info.audio_stream_count = count;
+    s->inventory_ready = 1;
     return 1;
 }
 static int open_impl(DeadpanSource *s) {
@@ -324,7 +368,8 @@ static int open_impl(DeadpanSource *s) {
     s->chroma_location = p->chroma_location;
     AVRational aspect = sar(stream->sample_aspect_ratio.num ? stream->sample_aspect_ratio : p->sample_aspect_ratio);
     if (aspect.num <= 0 || aspect.den <= 0 || aspect.num > 1000000 || aspect.den > 1000000) return fail(s, "unsupported_aspect", "invalid or excessive sample aspect ratio");
-    s->info = (DeadpanSourceInfo){.width=p->width,.height=p->height,.stream_index=s->stream,.time_base_num=stream->time_base.num,.time_base_den=stream->time_base.den,.sar_num=aspect.num,.sar_den=aspect.den,.range=p->color_range,.matrix=p->color_space,.transfer=p->color_trc,.primaries=p->color_primaries,.stream_start=stream->start_time,.stream_duration=stream->duration,.container_start=s->format->start_time,.container_duration=s->format->duration};
+    s->info = (DeadpanSourceInfo){.width=p->width,.height=p->height,.stream_index=stream->index,.time_base_num=stream->time_base.num,.time_base_den=stream->time_base.den,.sar_num=aspect.num,.sar_den=aspect.den,.range=p->color_range,.matrix=p->color_space,.transfer=p->color_trc,.primaries=p->color_primaries,.stream_start=stream->start_time,.stream_duration=stream->duration,.container_start=s->format->start_time,.container_duration=s->format->duration};
+    if (capture_audio_inventory(s) < 0) return -1;
     if (rotation(s, p->coded_side_data, p->nb_coded_side_data, &s->info.rotation) < 0) return -1;
     s->pixel_format = p->format;
     const AVCodec *codec = avcodec_find_decoder(p->codec_id);

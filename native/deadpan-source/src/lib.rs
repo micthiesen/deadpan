@@ -97,6 +97,24 @@ pub struct ColorMetadata {
     pub primaries: ColorPrimaries,
 }
 
+pub const MAX_SOURCE_AUDIO_STREAMS: usize = 32;
+
+/// Bounded container/probe observations for one audio stream. This does not
+/// establish decoded sample bounds, media validity, or editorial readiness.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SourceAudioStreamInfo {
+    pub stream_index: u32,
+    pub codec: String,
+    pub time_base_num: u32,
+    pub time_base_den: u32,
+    /// Container/probe observation only, not a decoded sample boundary.
+    pub stream_start: Option<i64>,
+    /// Container/probe observation only, not a measured audio span.
+    pub stream_duration: Option<i64>,
+    pub sample_rate: Option<u32>,
+    pub channel_count: Option<u32>,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SourceStreamInfo {
     pub width: u32,
@@ -118,6 +136,9 @@ pub struct SourceStreamInfo {
     /// Original container microseconds. May include audio or other stream extents.
     pub container_start: Option<i64>,
     pub container_duration: Option<i64>,
+    /// Complete bounded inventory of admitted audio streams. These are probe
+    /// observations only; no audio stream was decoded or qualified as ready.
+    pub audio_streams: Vec<SourceAudioStreamInfo>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -268,6 +289,20 @@ mod ffi {
         max_dimension: u32,
         max_packets_per_frame: u32,
     }
+    const MAX_AUDIO_STREAMS: usize = MAX_SOURCE_AUDIO_STREAMS;
+
+    #[repr(C)]
+    #[derive(Clone, Copy, Default)]
+    struct AudioInfo {
+        stream_index: i32,
+        time_base_num: i32,
+        time_base_den: i32,
+        stream_start: i64,
+        stream_duration: i64,
+        sample_rate: i32,
+        channel_count: i32,
+        codec: [c_char; 32],
+    }
     #[repr(C)]
     #[derive(Default)]
     struct Info {
@@ -289,6 +324,8 @@ mod ffi {
         container_duration: i64,
         codec: [c_char; 32],
         pixel_format: [c_char; 32],
+        audio_stream_count: u32,
+        audio_streams: [AudioInfo; MAX_AUDIO_STREAMS],
     }
     #[repr(C)]
     #[derive(Default)]
@@ -500,10 +537,46 @@ mod ffi {
                     .filter(|&v| v > 0)
                     .ok_or_else(invalid_native)
             };
+            let audio_count = usize::try_from(info.audio_stream_count)
+                .ok()
+                .filter(|count| *count <= MAX_AUDIO_STREAMS)
+                .ok_or_else(invalid_native)?;
+            let mut stream_indices = std::collections::BTreeSet::new();
+            let video_stream_index =
+                u32::try_from(info.stream_index).map_err(|_| invalid_native())?;
+            stream_indices.insert(video_stream_index);
+            let mut audio_streams = Vec::new();
+            audio_streams
+                .try_reserve_exact(audio_count)
+                .map_err(|_| invalid_native())?;
+            for audio in &info.audio_streams[..audio_count] {
+                let stream_index =
+                    u32::try_from(audio.stream_index).map_err(|_| invalid_native())?;
+                if !stream_indices.insert(stream_index) {
+                    return Err(invalid_native());
+                }
+                let optional_positive = |value: i32| {
+                    if value == 0 {
+                        Ok(None)
+                    } else {
+                        positive(value).map(Some)
+                    }
+                };
+                audio_streams.push(SourceAudioStreamInfo {
+                    stream_index,
+                    codec: nonempty_string(&audio.codec)?,
+                    time_base_num: positive(audio.time_base_num)?,
+                    time_base_den: positive(audio.time_base_den)?,
+                    stream_start: timestamp(audio.stream_start),
+                    stream_duration: duration(audio.stream_duration),
+                    sample_rate: optional_positive(audio.sample_rate)?,
+                    channel_count: optional_positive(audio.channel_count)?,
+                });
+            }
             let value = SourceStreamInfo {
                 width: positive(info.width)?,
                 height: positive(info.height)?,
-                stream_index: u32::try_from(info.stream_index).map_err(|_| invalid_native())?,
+                stream_index: video_stream_index,
                 time_base_num: positive(info.time_base_num)?,
                 time_base_den: positive(info.time_base_den)?,
                 sample_aspect_num: positive(info.sar_num)?,
@@ -519,6 +592,7 @@ mod ffi {
                 stream_duration: duration(info.stream_duration),
                 container_start: timestamp(info.container_start),
                 container_duration: duration(info.container_duration),
+                audio_streams,
             };
             Ok((inner, value))
         }
@@ -606,6 +680,14 @@ mod ffi {
     }
     fn duration(value: i64) -> Option<i64> {
         (value > 0).then_some(value)
+    }
+    fn nonempty_string(bytes: &[c_char]) -> Result<String, SourceDecodeError> {
+        let value = string(bytes);
+        if value.is_empty() {
+            Err(invalid_native())
+        } else {
+            Ok(value)
+        }
     }
     fn invalid_native() -> SourceDecodeError {
         SourceDecodeError::Native {

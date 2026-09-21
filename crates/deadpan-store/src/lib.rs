@@ -12,6 +12,10 @@ pub mod generation_acceptance;
 pub mod generation_attempts;
 mod history;
 mod migration;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+mod object_storage;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+pub mod original_media;
 mod schema;
 mod validation;
 
@@ -45,6 +49,8 @@ pub struct ProjectStore {
     mode: AccessMode,
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     generated_storage: generated_media::GeneratedStorage,
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    original_storage: object_storage::ObjectStorage,
     // Explicitly unlocked on drop so a briefly inherited descriptor in a spawned
     // child cannot extend this writer's ownership beyond the store lifetime.
     _writer_lock: Option<File>,
@@ -119,12 +125,20 @@ impl ProjectStore {
         File::open(&package)?.sync_all()?;
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         let generated_storage = generated_media::GeneratedStorage::open(&package)?;
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        let original_storage = object_storage::ObjectStorage::open(
+            &package,
+            object_storage::StorageNamespace::Originals,
+        )
+        .map_err(original_media::OriginalMediaError::from)?;
         Ok(Self {
             connection,
             package,
             mode: AccessMode::ReadWrite,
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             generated_storage,
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            original_storage,
             _writer_lock: Some(lock),
         })
     }
@@ -162,12 +176,20 @@ impl ProjectStore {
         }
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         let generated_storage = generated_media::GeneratedStorage::open(&package)?;
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        let original_storage = object_storage::ObjectStorage::open(
+            &package,
+            object_storage::StorageNamespace::Originals,
+        )
+        .map_err(original_media::OriginalMediaError::from)?;
         let mut store = Self {
             connection,
             package,
             mode,
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             generated_storage,
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            original_storage,
             _writer_lock: lock,
         };
         store.validate()?;
@@ -186,6 +208,8 @@ impl ProjectStore {
         validation::check_stored_sizes(&transaction, schema::MAX_DOCUMENT_BYTES)?;
         generation::check_stored_sizes(&transaction)?;
         generation_attempts::check_stored_sizes(&transaction)?;
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        original_media::check_stored_sizes(&transaction)?;
         let integrity: String =
             transaction.query_row("PRAGMA quick_check", [], |row| row.get(0))?;
         if integrity != "ok" {
@@ -200,7 +224,10 @@ impl ProjectStore {
         }
         validation::validate_history(&transaction)?;
         generation::validate_store(&transaction)?;
-        generation_attempts::validate_store(&transaction)
+        generation_attempts::validate_store(&transaction)?;
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        original_media::validate_store(&transaction)?;
+        Ok(())
     }
 
     pub fn preview(&self, request: &CommandRequest) -> Result<EditTransaction, StoreError> {

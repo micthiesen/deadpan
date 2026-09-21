@@ -17,6 +17,8 @@ use crate::protocol::{
     MAX_REQUEST_BYTES, PROTOCOL_VERSION, WorkerReply, WorkerRequest,
 };
 
+const GROUP_CLEANUP_GRACE: Duration = Duration::from_millis(250);
+
 /// SHA-256 of the closed worker artifact supplied by its declared manifest.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct InputIdentity {
@@ -383,14 +385,35 @@ impl OwnedProcess {
             Ok(()) | Err(rustix::io::Errno::SRCH) => {}
             #[cfg(target_os = "macos")]
             Err(rustix::io::Errno::PERM) => {
-                if !deadpan_native_process::exited_leader_has_no_other_members(&self.child)? {
-                    return Err(rustix::io::Errno::PERM.into());
-                }
+                self.finish_darwin_group_cleanup()?;
             }
             Err(error) => return Err(error.into()),
         }
         self.stopped = true;
         Ok(())
+    }
+
+    #[cfg(target_os = "macos")]
+    fn finish_darwin_group_cleanup(&self) -> io::Result<()> {
+        // Darwin reports EPERM for a group if any member cannot be signalled,
+        // including its already-exited leader. The same kill can still have
+        // delivered SIGKILL to live descendants. Give those members a bounded
+        // chance to disappear before deciding an inaccessible process survived.
+        let end = Instant::now() + GROUP_CLEANUP_GRACE;
+        loop {
+            if deadpan_native_process::exited_leader_has_no_other_members(&self.child)? {
+                return Ok(());
+            }
+            if Instant::now() >= end {
+                return Err(rustix::io::Errno::PERM.into());
+            }
+            std::thread::park_timeout(Duration::from_millis(2));
+            match kill_process_group(self.pid, Signal::KILL) {
+                Ok(()) | Err(rustix::io::Errno::SRCH) => return Ok(()),
+                Err(rustix::io::Errno::PERM) => {}
+                Err(error) => return Err(error.into()),
+            }
+        }
     }
 
     fn collect(
@@ -447,7 +470,9 @@ impl OwnedProcess {
             {
                 // Retain the unreaped leader until group cleanup to prevent PID
                 // reuse from signalling an unrelated group. See jobs supervisor.
-                self.stop_group()?;
+                let cleanup = self.stop_group();
+                deadline.check()?;
+                cleanup?;
                 exit = Some(self.child.wait()?);
                 self.reaped = true;
                 exited_at = Some(Instant::now());

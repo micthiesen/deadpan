@@ -1,0 +1,41 @@
+{
+  "scope": "selected native C adapters and target C dependencies ASan/UBSan; Rust and FFmpeg libraries not instrumented",
+  "packages": [
+    "deadpan-source",
+    "deadpan-media"
+  ],
+  "test_binary_sha256": {
+    "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-original-source-sanitized-final-6fw9gl6j/target/aarch64-apple-darwin/debug/deps/deadpan_media-745b14b4ba9b4725": "3fb064f83c54a8ea361d1eb759e0ba73fd619e370a24ce933e7ca281d0235dc0",
+    "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-original-source-sanitized-final-6fw9gl6j/target/aarch64-apple-darwin/debug/deps/host_boundary-c021872932f959d9": "1d54aed79c3f5f812c558f3d2691188291c0d1e9f615104caa42ba98f35eb0ff",
+    "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-original-source-sanitized-final-6fw9gl6j/target/aarch64-apple-darwin/debug/deps/source_session-6079fae08ad7a332": "660f647fa429948928fec586eacb67fa70a674134c83915915ffbc2fa2b98003",
+    "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-original-source-sanitized-final-6fw9gl6j/target/aarch64-apple-darwin/debug/deps/deadpan_source-5cc71faf02abbfd1": "4d660b57f0d56682f40204bd4b791fe0550e041bb156bc7d2d102af9ab430c18",
+    "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-original-source-sanitized-final-6fw9gl6j/target/aarch64-apple-darwin/debug/deps/persistent_decode-bb71d4f563a12f53": "9850ac0c668c3233ec1757c0918cf4c2158e9dfdba6cac55e2941ddf7194465a"
+  },
+  "command": [
+    "cargo",
+    "test",
+    "-p",
+    "deadpan-source",
+    "-p",
+    "deadpan-media",
+    "--locked",
+    "--target",
+    "aarch64-apple-darwin",
+    "--target-dir",
+    "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-original-source-sanitized-final-6fw9gl6j/target"
+  ],
+  "cflags": "-fsanitize=address,undefined -fno-omit-frame-pointer -fno-sanitize-recover=all",
+  "rust_flags": [
+    "-C",
+    "link-arg=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/21/lib/darwin/libclang_rt.asan_osx_dynamic.dylib",
+    "-C",
+    "link-arg=-Wl,-rpath,/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/21/lib/darwin"
+  ],
+  "runtime": "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/21/lib/darwin/libclang_rt.asan_osx_dynamic.dylib",
+  "runtime_sha256": "fe1e17021123184ac0380808606a7cce00ad657158d2d4f62916970df1e8eaef",
+  "ffmpeg_prefix": "/tmp/deadpan-media-compatible-xyhilms4/prefix",
+  "elapsed_seconds": 85.33433341700584,
+  "exit_code": 0,
+  "failure": null,
+  "test_log_sha256": "8853731cdb24078285c048ea25a853b0ff0dc9eddbae2806e75d818c6603e7b1"
+}

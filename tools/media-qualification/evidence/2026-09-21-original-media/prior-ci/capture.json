@@ -1,0 +1,17 @@
+{
+  "command": [
+    "gh",
+    "run",
+    "view",
+    "35614496932",
+    "--repo",
+    "micthiesen/deadpan",
+    "--log-failed"
+  ],
+  "exit_code": 0,
+  "stderr": "",
+  "run": "https://github.com/micthiesen/deadpan/actions/runs/35614496932",
+  "head": "c224c2c3d2dfd3decad86d279c72684c66962b82",
+  "observed": "successful_leader_exit_cleans_up_descendants_with_inherited_pipes failed at a boolean is_ok assertion; precise error was not retained",
+  "cause": "unproven; bounded Darwin EPERM cleanup handles a plausible independently identified process-group race"
+}

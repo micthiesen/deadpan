@@ -23,9 +23,9 @@ requires an explicit pinned FFmpeg developer prefix; see [Development](DEVELOPME
 | thiserror | 2.0.20 | MIT OR Apache-2.0 | Typed storage and CLI errors. |
 | uuid | 1.26.1 | MIT OR Apache-2.0 | Host-generated v4 project/node/revision identities; no randomness in core. |
 | rustix | 1.1.5 | Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT | Safe process-group signalling, unreaped exit observation, and nonblocking worker pipes on macOS/Linux. Already locked transitively; now pinned directly with `process` and `fs`. |
-| libc | 0.2.189 | MIT OR Apache-2.0 | Already locked transitively; direct macOS-only binding inside `native/deadpan-process` for a bounded process-group membership query. Uses OS libproc, with no bundled native library. |
-| sha2 | 0.11.0 | MIT OR Apache-2.0 | Streaming SHA-256 for worker artifact snapshots; default `alloc`/`oid` features disabled. |
-| blake3 | 1.8.7 | CC0-1.0 OR Apache-2.0 OR Apache-2.0 WITH LLVM-exception | Streaming internal content addresses for project-managed generated objects. |
+| libc | 0.2.189 | MIT OR Apache-2.0 | Existing macOS bindings inside `native/deadpan-process` and `native/deadpan-fileclone` for process-group membership and descriptor cloning. Uses system APIs, with no bundled native library. |
+| sha2 | 0.11.0 | MIT OR Apache-2.0 | Streaming SHA-256 for worker snapshots and complete original identity; default `alloc`/`oid` features disabled. |
+| blake3 | 1.8.7 | CC0-1.0 OR Apache-2.0 OR Apache-2.0 WITH LLVM-exception | Streaming internal content addresses for project-managed generated and original objects. |
 | cc | 1.4.7 | MIT OR Apache-2.0 | Already locked transitively; direct build dependency for the isolated C codec adapter. |
 | FFmpeg | 8.0.3, commit `8ae0b34901ba60a802f183ee75a250a9fc3e09a5` | LGPL 2.1 or later for the selected build | Generated-video helper and persistent source adapter, dynamically linked against the explicit prefix. GPL, nonfree, version-3, autodetected external libraries and networking are disabled. App bundling remains open. |
 | proptest | 1.11.0 | MIT OR Apache-2.0 | Development-only exact-time, document, and transaction property tests. |
@@ -83,10 +83,13 @@ filesystem bindings for descriptor-relative paths, exclusive rename, and macOS
 
 The storage foundation tests writer ownership, read-only coexistence, durable
 undo/redo, retained branches, actual SQLite disk-full rollback, interrupted
-transactions, and live backup consistency. This is partial storage
-qualification. Schema-1/2/3-to-4 migration now replays a backed-up copy and atomically
-promotes it through SQLite. Restore/recovery policy and portable managed-media
-ownership remain open.
+transactions, and live backup consistency. Schemas 1 through 9 migrate through a
+validated consistent copy into schema 10. [Original ownership](ORIGINAL_MEDIA.md)
+shares the generated-object engine and uses `deadpan-fileclone` with the existing
+libc pin. Real APFS clone independence and forced verified-copy fallback are
+tested. No registry package or end-user runtime was added. This is partial
+storage qualification; authored import, reference collection, portable-copy
+workflow and restore/recovery UI remain open.
 
 ## Measured media candidates
 

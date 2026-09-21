@@ -7,10 +7,11 @@ Deadpan is a Rust-native macOS video editor designed around editable beats: paus
 This repository currently contains an **editing foundation**, not a working video editor:
 
 - `deadpan-core`: exact time, validated beat documents, structural commands, nested occurrence edits, reversible transactions, and [generated Hold intent and retained sampling](docs/GENERATED_HOLDS.md).
-- `deadpan-store`: SQLite project packages, persistent marks and undo/redo, monotonic generation requests, durable attempts and interrupted-job recovery, schema-1-through-8 migration, checkpoints, verified generated-object storage, and [explicit durable bundle acceptance](docs/GENERATION_ACCEPTANCE.md). Generic new generated-provider ingress remains guarded.
+- `deadpan-store`: SQLite project packages, persistent marks and undo/redo, monotonic generation requests, durable attempts and interrupted-job recovery, schema-1-through-9 migration to schema 10, checkpoints, verified media storage, and [explicit durable bundle acceptance](docs/GENERATION_ACCEPTANCE.md). Generic new generated-provider ingress remains guarded.
 - `deadpan-plan`: immutable indexed picture mappings with exact retiming, stable repeated-play identities, and sparse play overrides.
 - `deadpan-jobs`: bounded worker messages, job lifecycle, subprocess supervision, contained artifact snapshots, and exact bridge-generation planning. A real MLX development adapter exercises this boundary; it is not connected to the app yet.
 - `deadpan-media`: hash-verified source snapshots, measured frame indexes and persistent exact seeks through `native/deadpan-source`, plus isolated FFV1 conversion and exact interior bridge sampling.
+- [Original media ownership](docs/ORIGINAL_MEDIA.md): durable managed originals, APFS clone/copy, linked locations, identity-checked relinking and private snapshots. Stream qualification and authored import remain separate.
 - `deadpan-render`: shared SDR GPU picture baseline, linear Rec.2020 composition, source aspect/rotation and explicit sRGB display conversion.
 - `deadpan-models`: [native bridge bundles](docs/GENERATION_BUNDLES.md), retained conditioning inputs, provenance binding, and measured media identities/spans. Admission-bearing schema-9 receipts require all six objects before Ready and explicit acceptance.
 - `deadpan-app`: an `egui`/`eframe` native source preview using `wgpu` on Metal, with background decoding and keyboard frame navigation.

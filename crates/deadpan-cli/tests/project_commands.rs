@@ -78,7 +78,10 @@ fn headless_migration_and_plan_inspection_are_explicit_and_read_only() -> Result
     );
     let outcome = success(&["project", "migrate", path])?;
     assert_eq!(outcome["migration"]["from_schema"], 1);
-    assert_eq!(outcome["migration"]["to_schema"], 9);
+    assert_eq!(
+        outcome["migration"]["to_schema"],
+        deadpan_store::DATABASE_SCHEMA_VERSION
+    );
     assert!(Path::new(outcome["migration"]["backup"].as_str().unwrap()).is_file());
     let writer = ProjectStore::open(&package, AccessMode::ReadWrite)?;
     let before = writer.snapshot()?;

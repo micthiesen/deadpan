@@ -43,6 +43,26 @@ fn assert_code(error: SourceDecodeError, expected: &str) {
     }
 }
 
+#[test]
+fn audio_inventory_reports_probe_observations_without_claiming_decoded_readiness() {
+    let with_audio = open("cfr-bframes.mp4");
+    assert_eq!(with_audio.info().stream_index, 0);
+    assert_eq!(with_audio.info().audio_streams.len(), 1);
+    let audio = &with_audio.info().audio_streams[0];
+    assert_eq!(audio.stream_index, 1);
+    assert_eq!(audio.codec, "aac");
+    assert_eq!((audio.time_base_num, audio.time_base_den), (1, 48_000));
+    assert_eq!(audio.stream_start, Some(0));
+    assert_eq!(audio.stream_duration, Some(192_192));
+    assert_eq!(audio.sample_rate, Some(48_000));
+    assert_eq!(audio.channel_count, Some(2));
+    let reopened = open("cfr-bframes.mp4");
+    assert_eq!(reopened.info(), with_audio.info());
+
+    let video_only = open("full709.mkv");
+    assert!(video_only.info().audio_streams.is_empty());
+}
+
 // Read authored digits from visible pixels independently of timestamps/hashes.
 fn authored_identity(rgba: &[u8]) -> usize {
     const DIGITS: [[u8; 7]; 10] = [

@@ -1,0 +1,15 @@
+{
+  "validation_revision": "c224c2c3d2dfd3decad86d279c72684c66962b82",
+  "binary_sha256": "32247eeafbc13fc56610165fd831fbd842236d73b5c37962c9afc101ce2c8ce7",
+  "source_qualification": "docs/qualification/acceptance-2026-09-21.md",
+  "command": [
+    "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-original-baseline-ljt816go/deadpan-cli-schema9",
+    "project",
+    "validate",
+    "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-durable-acceptance-q1rh36r4/accepted/relocated-accepted.deadpan"
+  ],
+  "stdout": "{\n  \"duration_frames\": 30,\n  \"mark_count\": 0,\n  \"node_count\": 2,\n  \"presentation_basis\": {\n    \"color_policy\": \"sdr_rec709\",\n    \"frame_rate\": {\n      \"denominator\": 1001,\n      \"numerator\": 30000\n    },\n    \"height\": 320,\n    \"width\": 768\n  },\n  \"project_id\": \"probe-ad82362664564e1a97c381111aaad5aa\",\n  \"protocol\": 1,\n  \"revision_id\": \"revert-to-fallback\",\n  \"root\": \"acceptance-probe-root\",\n  \"valid\": true\n}\n",
+  "stderr": "",
+  "snapshot_method": "SQLite backup API into a consistent in-memory database; iterdump of that copy",
+  "fixture_sha256": "a0c7e25e5b657d65c307967e787580acba1c219c72b972f6f23bff78baa1b68e"
+}

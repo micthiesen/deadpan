@@ -33,6 +33,7 @@ Current crates:
 - `crates/deadpan-models`: native bridge bundle qualification, retained inputs, measured source spans, and immutable host provenance. Model installation, app scheduling, audition, and application integration remain open.
 - `crates/deadpan-media`: verified source snapshots, measured indexes and persistent exact seeks, plus isolated conversion, strict helper reports and private BLAKE3 output. No database or authored-state mutation.
 - `native/deadpan-source`: persistent descriptor-only FFmpeg decoding, metadata scanning and owned RGBA extraction. Unsafe code stays in this narrow adapter; unsupported interpretations fail explicitly.
+- `native/deadpan-fileclone`: bounded safe descriptor-clone interface around the macOS system call. The store owns copying, checksums, publication and durability.
 - `crates/deadpan-render`: bounded shared SDR picture pipeline, linear Rec.2020 working textures, explicit sRGB display transform, aspect and rotation. No decoding, document mutation or encoding.
 - `native/deadpan-media-worker`: process-isolated FFmpeg conversion and independent decode verification through bounded descriptor-only AVIO. Only the documented FFI call permits unsafe Rust. Requires the explicitly selected pinned LGPL FFmpeg development prefix.
 - `native/deadpan-process`: narrow Darwin group-membership adapter; unsafe is denied except for its documented bounded libproc call. Higher layers continue to forbid unsafe.
@@ -66,7 +67,7 @@ Every persisted edit, undo, and redo gets a never-reused revision ID. Core inver
 
 Repeat play IDs are scoped by Repeat node and allocation revision, with an ordinal inside that allocation. Preserve surviving IDs through resizing and reorder; allocate fresh IDs for growth and inserted subtrees. Imported initial snapshots reserve their allocation names even after plays are removed. Keep compact runs bounded and never expand a repeat merely to seek. Core schema 5 retains these runs, marks, and sparse overrides, and adds generated Hold metadata. Database schemas 1 through 6 replay the complete chronology directly into the current schema on a consistent copy, compare every legacy snapshot/transaction, and promote through SQLite's backup transaction only after validation. Strict legacy adapters freeze nested provider vocabulary and reject new fields, commands, and unexpected mark or override changes. Preserve the pre-migration backup.
 
-Database schema 9 stores core schema 5 and retains operational generation requests,
+Database schema 10 stores core schema 5 and retains operational generation requests,
 attempts, validation receipts, and candidate selection. Modern bundle receipts add
 optional measured spans and retained-input admission evidence; legacy receipts
 gain none. Legacy requests retain no plan and remain protocol 1. Schema-7/8
@@ -139,6 +140,22 @@ isolate repeated occurrences first. Retime ancestors remain conservatively rejec
 Do not retroactively reject valid legacy operational bindings during migration.
 Ready bundles alone do not authorize an edit. See [acceptance](docs/GENERATION_ACCEPTANCE.md).
 See [generated Hold semantics](docs/GENERATED_HOLDS.md).
+
+Original byte ownership is operational and separate from stream readiness.
+Schema 10 adds content-keyed original records with monotonic location versions;
+schemas 1 through 9 migrate without rewriting modern authored history. Use the
+shared descriptor-relative object engine for `Media/Originals` and
+`Media/Generated`. Managed originals try APFS clone, then verified copy; retain
+the entire container with BLAKE3 addressing and SHA-256 source-index identity.
+Relinking requires identical content and the expected location version. Never
+delete a published object after a later database failure. Snapshots verify both
+original checksums and retain private bytes. No original eviction exists yet.
+
+The decoder's audio inventory is a probe observation, not an audio index or
+measured endpoint. Do not turn unqualified audio into `AssetRecord.audio: None`:
+asset metadata is immutable. Retain original bytes first, then qualify every
+selected stream before authored registration. `SourceNode.link` means editorial
+A/V linkage, not filesystem ownership. See [original media](docs/ORIGINAL_MEDIA.md).
 
 The setup workflow's TypeScript/Bun/mitools/Biome defaults do not apply to this Rust-native product. The maintained Rust sibling `beastie` supplies the initial workspace conventions; consult maintained siblings for evolving personal tooling patterns. [Dependency decisions](docs/DEPENDENCIES.md) records the pins and qualification boundaries. Do not introduce Bun, Node, Python, or shell setup as an end-user requirement. Future model workers use an app-managed private runtime selected through measurement.
 

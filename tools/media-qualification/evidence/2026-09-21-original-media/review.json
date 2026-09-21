@@ -1,0 +1,40 @@
+{
+  "reviewers": [
+    "independent general review",
+    "independent storage/durability review",
+    "independent native/process review"
+  ],
+  "scope": "All current source changes and untracked files against c224c2c; root triaged findings and verified final changes",
+  "findings": [
+    {
+      "finding": "Early clone validation could leave a pending entry",
+      "disposition": "Fixed",
+      "evidence": "Guard captures identity before opening and validation; actual clone+hardlink regression passes and fails on isolated earlier implementation."
+    },
+    {
+      "finding": "Managed original errors used generated protocol codes",
+      "disposition": "Fixed before final review",
+      "evidence": "OriginalMediaError maps missing/corrupt/cancelled/deadline cases; real missing/corrupt managed tests assert OriginalOffline/OriginalContentMismatch."
+    },
+    {
+      "finding": "Same-user process can replace a clone before first identity observation",
+      "disposition": "Outside stated trust boundary",
+      "evidence": "fclonefileat does not atomically return a destination descriptor or inode. Cleanup only addresses its private pending name; same-user sandboxing is explicitly not claimed. Unidentifiable entries are retained."
+    },
+    {
+      "finding": "Linked source could change on the same inode after hashing",
+      "disposition": "Fixed",
+      "evidence": "Final named/held metadata must equal the post-hash state; same-inode/same-length mutation regression passes and fails on the isolated old predicate."
+    },
+    {
+      "finding": "FFmpeg probe can decode AAC despite discard",
+      "disposition": "Refuted for the implemented allowlist",
+      "evidence": "All pinned FFmpeg probe decoder initialization paths propagate format codec_whitelist; avcodec_open2 rejects AAC before initialization. Actual fixture logs retain that rejection. AVDISCARD_ALL alone would not suffice."
+    },
+    {
+      "finding": "Cleanup at the request deadline could surface EPERM instead of Deadline",
+      "disposition": "Fixed",
+      "evidence": "Bounded cleanup grace is separate from the request budget; deadline/cancellation is checked after cleanup before returning an IO failure."
+    }
+  ]
+}

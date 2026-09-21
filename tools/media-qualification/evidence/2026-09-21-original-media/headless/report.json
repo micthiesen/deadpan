@@ -1,0 +1,29 @@
+{
+  "base_revision": "c224c2c3d2dfd3decad86d279c72684c66962b82",
+  "scope": "Complete original ownership and shared headless API; no authored import or audio readiness",
+  "hardware": "Apple M5 Max",
+  "os": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84\n",
+  "fixture": "native/deadpan-source/tests/fixtures/cfr-bframes.mp4",
+  "fixture_bytes": 39157,
+  "fixture_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+  "cli_sha256": "cc6f74d5a589a54471111bc45bc22a6f344a55eb44fd763e98b3c23a7fd2c741",
+  "app_sha256": "f1545ef77acad126f84f730841e0df7b644c280abe696744a8ba3f1dc3f89b62",
+  "retention_method": "cloned",
+  "checks": [
+    "wrong-content rejection",
+    "offline linked source",
+    "version-checked relink",
+    "stale relink rejection",
+    "actual APFS clone",
+    "verified deduplication",
+    "source deletion",
+    "package relocation",
+    "app --headless readback",
+    "full-file byte equality including AAC packets",
+    "read-only object",
+    "unchanged authored snapshot",
+    "SQLite/history validation"
+  ],
+  "command_count": 13,
+  "power_cache_state": "Not controlled; these command durations are smoke observations, not product benchmarks"
+}

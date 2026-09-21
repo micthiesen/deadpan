@@ -45,7 +45,7 @@ impl ProjectStore {
                 backup: None,
             });
         }
-        if !matches!(version, 1..=8) {
+        if !matches!(version, 1..=9) {
             return Err(StoreError::UnsupportedSchema(version));
         }
         let lock = acquire_lock(&package)?;
@@ -73,7 +73,7 @@ impl ProjectStore {
             return Err(StoreError::UnsafePath(directory));
         }
         let backup = tempfile::Builder::new()
-            .prefix("before-schema-9-")
+            .prefix(&format!("before-schema-{}-", schema::VERSION))
             .suffix(".sqlite")
             .tempfile_in(&directory)?;
         original.backup(rusqlite::MAIN_DB, backup.path(), None)?;
@@ -143,6 +143,8 @@ fn migrate_candidate(
     if source_version < 6 {
         crate::generation_attempts::create_tables(&transaction)?;
     }
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    crate::original_media::create_tables(&transaction)?;
     validation::check_stored_sizes(&transaction, schema::MAX_DOCUMENT_BYTES)?;
     if source_version >= 5 {
         crate::generation::check_stored_sizes(&transaction)?;
@@ -176,6 +178,8 @@ fn migrate_candidate(
     validation::validate_history(&transaction)?;
     crate::generation::validate_store(&transaction)?;
     crate::generation_attempts::validate_store(&transaction)?;
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    crate::original_media::validate_store(&transaction)?;
     transaction.commit()?;
     candidate_file.as_file().sync_all()?;
     // One step copies all pages in one destination transaction. SQLITE_BUSY

@@ -1,6 +1,8 @@
 //! Headless application boundary, shared with the native host.
 
 mod doctor;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+mod originals;
 
 use std::fs::File;
 use std::io::{self, Read, Write};
@@ -23,12 +25,17 @@ const HELP: &str = "Deadpan headless commands:
   project redo <project.deadpan> --expected <revision> [--dry-run]
   project checkpoint <project.deadpan>
   project migrate <project.deadpan>
+  project retain-original <project.deadpan> <absolute-source> [--linked]
+  project originals <project.deadpan> [--after <blake3-digest>]
+  project verify-original <project.deadpan> <blake3-digest>
+  project relink-original <project.deadpan> <blake3-digest> <absolute-source> --expected-version <N>
   inspect-plan <project.deadpan> [--frame <N>]
   resolve-selection <project.deadpan> --json <selection.json>
   command <project.deadpan> --json <request.json> [--dry-run]
 
 Creation currently requires an explicit presentation basis.
-Document dumps are inspection output; SQLite remains authoritative.";
+Document dumps are inspection output; SQLite remains authoritative.
+Original retention preserves complete bytes; stream qualification and authored import remain separate.";
 
 #[derive(Debug, thiserror::Error)]
 pub enum CliError {
@@ -127,6 +134,12 @@ fn run(arguments: &[String]) -> Result<(), CliError> {
             Ok(())
         }
         ["doctor"] => write_json(&doctor::report()?),
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        [
+            "project",
+            action @ ("retain-original" | "originals" | "verify-original" | "relink-original"),
+            rest @ ..,
+        ] => originals::run(action, rest),
         ["project", "create", path, "--fps", fps, "--size", size] => {
             let (numerator, denominator) = pair(fps, '/')?;
             let (width, height) = pair(size, 'x')?;
