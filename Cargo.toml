@@ -1,0 +1,31 @@
+[workspace]
+resolver = "3"
+members = ["crates/deadpan-core", "crates/deadpan-app", "crates/deadpan-cli"]
+default-members = ["crates/deadpan-app"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.97"
+license = "MIT"
+repository = "https://github.com/micthiesen/deadpan"
+publish = false
+
+[workspace.dependencies]
+deadpan-core = { path = "crates/deadpan-core" }
+eframe = { version = "=0.36.2", default-features = false, features = ["accesskit", "default_fonts", "wgpu"] }
+proptest = "=1.11.0"
+serde = { version = "=1.0.229", features = ["derive"] }
+serde_json = "=1.0.151"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
+
+[profile.release]
+codegen-units = 1
+lto = "thin"
+strip = "debuginfo"
+overflow-checks = true
