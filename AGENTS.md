@@ -6,7 +6,7 @@ Deadpan is a native macOS structural video editor for timing and attention, buil
 
 Read [the full specification](docs/spec/DEADPAN_SPEC.md) and [agent handoff](docs/spec/AGENT_HANDOFF.md) before feature work. The Markdown specification is normative; summaries here do not reduce its scope. [Requirements](docs/REQUIREMENTS.md) tracks DP-01 through DP-24 and Gates A through G. Keep code, tests, evidence, and remaining work current there.
 
-The current foundation includes validated beat documents, reversible structural commands, stable repeat identities, exact indexed picture plans, SQLite project/history storage with schema migration, and a shared headless command entrypoint. The native UI remains a welcome shell. It is not yet a usable video editor or release candidate. All product requirements remain open or partial. A button, mock worker, downloaded model, ignored test, or proposed target does not prove implementation.
+The current foundation includes validated beat documents, reversible structural commands, stable repeat identities, exact indexed picture plans and boundary queries, SQLite project/history storage with schema migration, and a shared headless command entrypoint. The native UI remains a welcome shell. It is not yet a usable video editor or release candidate. All product requirements remain open or partial. A button, mock worker, downloaded model, ignored test, or proposed target does not prove implementation.
 
 ## Design philosophy
 
@@ -43,6 +43,12 @@ Repeat play IDs are scoped by Repeat node and allocation revision, with an ordin
 The setup workflow's TypeScript/Bun/mitools/Biome defaults do not apply to this Rust-native product. The maintained Rust sibling `beastie` supplies the initial workspace conventions; consult maintained siblings for evolving personal tooling patterns. [Dependency decisions](docs/DEPENDENCIES.md) records the pins and qualification boundaries. Do not introduce Bun, Node, Python, or shell setup as an end-user requirement. Future model workers use an app-managed private runtime selected through measurement.
 
 ## Validation and delivery
+
+Boundary queries use `AnchorIndex` against one immutable revision. Keep source
+clocks, local fractions, and complete occurrence paths explicit; never infer a
+repeated play or clamp a missing source interval. Round once at the final project
+boundary and return the exact coordinate too. The current query API does not
+persist marks or implement anchor edit transforms.
 
 Run the exact repository gate after implementation:
 

@@ -10,7 +10,7 @@ This repository currently contains an **editing foundation**, not a working vide
 - `deadpan-store`: SQLite project packages, persistent undo/redo, schema migration, and recovery checkpoints.
 - `deadpan-plan`: immutable indexed picture mappings with exact retiming and stable repeated-play identities.
 - `deadpan-app`: an `egui`/`eframe` native development welcome shell using `wgpu` on Metal.
-- `deadpan-cli`: headless project/command/history operations, migration, and picture-plan inspection, also available through `deadpan-app --headless`.
+- `deadpan-cli`: headless project/command/history operations, migration, picture-plan inspection, and exact boundary selection, also available through `deadpan-app --headless`.
 
 Media import, interactive keyboard editing, playback, AI generation, and export are not implemented. All 24 full-product requirements remain open or partial in the [requirement tracker](docs/REQUIREMENTS.md). [Compatible native media qualification](docs/qualification/media-compatible-2026-09-20.md) records actual FFmpeg/Rust codec tests and failed configurations separately from the application.
 

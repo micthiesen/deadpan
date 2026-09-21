@@ -355,3 +355,79 @@ fn dry_run_and_commit_preserve_actionable_domain_errors() -> Result {
     }
     Ok(())
 }
+
+#[test]
+fn selection_resolution_is_revision_checked_exact_and_read_only() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let package = create(scratch.path())?;
+    let path = package.to_str().unwrap();
+    let document = ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?;
+    let insert_path = scratch.path().join("insert.json");
+    fs::write(&insert_path, request(&document)?.to_string())?;
+    success(&["command", path, "--json", insert_path.to_str().unwrap()])?;
+    let writer = ProjectStore::open(&package, AccessMode::ReadWrite)?;
+    let before = writer.snapshot()?;
+    let selection_path = scratch.path().join("selection.json");
+    let point = |numerator: &str| {
+        json!({
+            "boundary": { "coordinate": { "space": "local", "node": "hold", "position": { "numerator": numerator, "denominator": "2" } }, "bias": "right" }
+        })
+    };
+    let mut envelope = json!({
+        "protocol": 1,
+        "request": {
+            "project_id": before.project_id(), "expected_revision": before.revision_id(), "role": "audio",
+            "selector": { "type": "range", "start": point("5"), "end": point("7") }
+        }
+    });
+    fs::write(&selection_path, envelope.to_string())?;
+    let args = [
+        "resolve-selection",
+        path,
+        "--json",
+        selection_path.to_str().unwrap(),
+    ];
+    let output = success(&args)?;
+    assert_eq!(
+        output["resolved"]["revision_id"],
+        before.revision_id().as_str()
+    );
+    assert_eq!(output["resolved"]["role"], "audio");
+    assert_eq!(
+        output["resolved"]["selection"]["start"]["exact_frame"]["numerator"],
+        "5"
+    );
+    assert_eq!(
+        output["resolved"]["selection"]["frames"],
+        json!({ "start": 2, "end": 4 })
+    );
+    envelope["request"]["expected_revision"] = json!("stale");
+    fs::write(&selection_path, envelope.to_string())?;
+    let output = cli(&args)?;
+    assert!(!output.status.success());
+    let error: Value = serde_json::from_slice(&output.stderr)?;
+    assert_eq!(error["error"]["code"], "RevisionConflict");
+    assert_eq!(
+        error["error"]["current_revision"],
+        before.revision_id().as_str()
+    );
+    envelope["request"]["expected_revision"] = json!(before.revision_id());
+    envelope["request"]["selector"]["end"] = point("4");
+    fs::write(&selection_path, envelope.to_string())?;
+    let output = cli(&args)?;
+    assert!(!output.status.success());
+    assert_eq!(
+        serde_json::from_slice::<Value>(&output.stderr)?["error"]["code"],
+        "InvalidRange"
+    );
+    envelope["protocol"] = json!(2);
+    fs::write(&selection_path, envelope.to_string())?;
+    let output = cli(&args)?;
+    assert!(!output.status.success());
+    assert_eq!(
+        serde_json::from_slice::<Value>(&output.stderr)?["error"]["code"],
+        "ProtocolUnsupported"
+    );
+    assert_eq!(writer.snapshot()?, before);
+    Ok(())
+}

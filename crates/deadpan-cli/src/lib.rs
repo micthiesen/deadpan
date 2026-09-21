@@ -24,6 +24,7 @@ const HELP: &str = "Deadpan headless commands:
   project checkpoint <project.deadpan>
   project migrate <project.deadpan>
   inspect-plan <project.deadpan> [--frame <N>]
+  resolve-selection <project.deadpan> --json <selection.json>
   command <project.deadpan> --json <request.json> [--dry-run]
 
 Creation currently requires an explicit presentation basis.
@@ -44,6 +45,8 @@ pub enum CliError {
     #[error(transparent)]
     Plan(#[from] deadpan_plan::PlanError),
     #[error(transparent)]
+    Anchor(#[from] deadpan_core::AnchorError),
+    #[error(transparent)]
     Json(#[from] serde_json::Error),
     #[error(transparent)]
     Io(#[from] std::io::Error),
@@ -58,6 +61,7 @@ impl CliError {
             Self::Plan(deadpan_plan::PlanError::FrameOutOfRange { .. }) => "FrameOutOfRange",
             Self::Plan(deadpan_plan::PlanError::Time(_)) => "TimingOverflow",
             Self::Plan(_) => "PlanInvalid",
+            Self::Anchor(error) => error.code(),
             Self::Io(_) => "IoFailure",
             Self::Store(error) => error.code(),
         }
@@ -68,6 +72,7 @@ impl CliError {
             Self::Store(StoreError::Edit(error)) => {
                 error.current_revision.as_ref().map(RevisionId::as_str)
             }
+            Self::Anchor(error) => error.current_revision.as_ref().map(RevisionId::as_str),
             _ => None,
         }
     }
@@ -90,6 +95,13 @@ struct CommandEnvelope {
     command: Command,
     #[serde(default)]
     dry_run: bool,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct SelectionEnvelope {
+    protocol: u32,
+    request: deadpan_core::SelectionRequest,
 }
 
 /// Shared process entrypoint for the CLI and `deadpan-app --headless`.
@@ -183,6 +195,18 @@ fn run(arguments: &[String]) -> Result<(), CliError> {
                 &serde_json::json!({ "protocol": 1, "sample": plan.picture(deadpan_core::ProjectFrame(frame))? }),
             )
         }
+        ["resolve-selection", path, "--json", request] => {
+            let envelope: SelectionEnvelope =
+                serde_json::from_str(&read_request(Path::new(request))?)?;
+            if envelope.protocol != 1 {
+                return Err(CliError::Protocol(envelope.protocol));
+            }
+            let document = ProjectStore::open(Path::new(path), AccessMode::ReadOnly)?.snapshot()?;
+            let index = deadpan_core::AnchorIndex::new(&document)?;
+            write_json(
+                &serde_json::json!({ "protocol": 1, "resolved": index.resolve(&envelope.request)? }),
+            )
+        }
         ["command", path, "--json", request] => command(Path::new(path), Path::new(request), false),
         ["command", path, "--json", request, "--dry-run"] => {
             command(Path::new(path), Path::new(request), true)
@@ -232,17 +256,21 @@ fn pair(value: &str, separator: char) -> Result<(u32, u32), CliError> {
     Ok((first, second))
 }
 
-fn command(package: &Path, request: &Path, dry_run: bool) -> Result<(), CliError> {
+fn read_request(request: &Path) -> Result<String, CliError> {
     let mut json = String::new();
     File::open(request)?
         .take(deadpan_core::MAX_DOCUMENT_JSON_BYTES as u64 + 1)
         .read_to_string(&mut json)?;
     if json.len() > deadpan_core::MAX_DOCUMENT_JSON_BYTES {
         return Err(CliError::Usage(
-            "Command request exceeds the 64 MiB limit".into(),
+            "JSON request exceeds the 64 MiB limit".into(),
         ));
     }
-    let envelope: CommandEnvelope = serde_json::from_str(&json)?;
+    Ok(json)
+}
+
+fn command(package: &Path, request: &Path, dry_run: bool) -> Result<(), CliError> {
+    let envelope: CommandEnvelope = serde_json::from_str(&read_request(request)?)?;
     if envelope.protocol != 1 {
         return Err(CliError::Protocol(envelope.protocol));
     }

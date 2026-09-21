@@ -7,6 +7,7 @@
 //! Authored documents and semantic editing transactions are pure data. Hosts own
 //! persistence, identity generation, media decoding, and external jobs.
 
+mod anchor;
 mod command;
 mod document;
 mod exact;
@@ -15,6 +16,7 @@ mod occurrence;
 mod source_index;
 mod time;
 
+pub use anchor::*;
 pub use command::*;
 pub use document::*;
 pub use exact::ExactRatio;

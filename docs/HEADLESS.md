@@ -70,7 +70,7 @@ Supported node-targeted commands are `insert`, `delete`, `move`, `group`,
 [`Command`](../crates/deadpan-core/src/command.rs). `set_repeat` changes an existing
 Repeat; `wrap_repeat` deliberately adds nesting. A three-play repeat includes
 three total plays and only two gaps. These are structural edits, not rendered
-media. Text/range selectors, registers, macros, per-play overrides, and effects
+media. Editing through range/text selectors, registers, macros, per-play overrides, and effects
 remain required future work.
 
 Repeat documents use schema 2 and store compact `iterations.runs` with
@@ -100,6 +100,69 @@ lookup work counters. Fractions use decimal numerator/denominator strings so
 wide exact values survive JSON clients. Out-of-range frames fail explicitly.
 These commands work read-only alongside a writer and do not decode media,
 evaluate effects, mix audio, or render a file.
+
+## Exact boundary selection
+
+`resolve-selection <project.deadpan> --json <selection.json>` resolves a point or
+nonempty range against one immutable revision without changing the project.
+It works while a writer holds the package. For the 45-frame `pause-1` above:
+
+```json
+{
+  "protocol": 1,
+  "request": {
+    "project_id": "PROJECT_ID_FROM_DUMP",
+    "expected_revision": "REVISION_ID_FROM_DUMP",
+    "role": "linked",
+    "selector": {
+      "type": "point",
+      "target": {
+        "boundary": {
+          "coordinate": {
+            "space": "local",
+            "node": "pause-1",
+            "position": {"numerator": "21", "denominator": "2"}
+          },
+          "bias": "right"
+        }
+      }
+    }
+  }
+}
+```
+
+This returns the exact project boundary and its one ties-to-even quantization
+(10.5 becomes frame 10 if this Hold starts at zero). A `range` selector replaces
+`target` with `start` and `end` targets. Reversed, empty, or quantization-collapsed
+ranges fail with `InvalidRange`; endpoints are never silently reordered.
+`role` is the requested editing role (`linked`, `video`, or `audio`), independent
+of which source coordinate identified the boundary. This query does not apply
+a role edit or create an attachment.
+
+The strict types are in [`anchor.rs`](../crates/deadpan-core/src/anchor.rs):
+
+- `local` uses a host node and exact frame position. A repeated host requires
+  an explicit `occurrence` with that node and its complete ordered Repeat path.
+- `occurrence` stores that `instance` directly alongside `position` and accepts
+  no additional scope.
+- `sequence` uses a pinned integer `frame` and accepts no occurrence scope.
+- `source` uses an asset plus an original video/audio timestamp or audio sample
+  index with its explicit original sample rate. It requires a Source occurrence.
+  Equivalent clocks convert exactly, signed origins remain intact, and positive
+  mix-clock audio offsets delay the mapped audio boundary. A held picture has no
+  unique reverse source boundary and is rejected here.
+
+All positions must fit their host and every intervening Retime mapping. End
+boundaries are legal, including zero in an empty project. Local anchors never
+guess a play, even for a one-play Repeat. Missing or retired iterations fail.
+The index stores authored parents and sequence prefixes; seeking billions of
+plays does not expand them. Repeat identity lookup scans compact runs.
+
+These are query coordinates, not persisted marks. Bias is carried in the result;
+insertion/deletion transforms, ownership/loss policy, named marks, attachments,
+and editing commands that consume these selectors remain to be implemented.
+Document/database schema stays at 2. [Verification](ANCHOR_VERIFICATION.md)
+records the exact test coverage and limits.
 
 ## History and checkpoints
 
