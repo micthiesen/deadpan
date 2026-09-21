@@ -10,6 +10,8 @@
 | `deadpan-store` | SQLite packages, immutable revision snapshots, atomic edit/history writes, generation requests/attempts, undo/redo, writer ownership, checkpoints, and generated-object byte storage. | SQLite is authoritative. Request relevance changes with authored revisions; attempts remain operational. Publishing bytes is separate from acceptance. |
 | `deadpan-plan` | Exact picture mappings, sequence duration indexes, compact repeat-run indexes, source-index selection, and deterministic inspection. | Immutable authored revision; no decoder, GPU handle, audio processing, or database connection. |
 | `deadpan-jobs` | Typed length-framed worker protocol, pure attempt lifecycle and validated checkpoints, bounded subprocess supervision, contained hash-verified artifact snapshots, and exact bridge-generation planning. | Real MLX qualification uses this boundary in a developer harness. The store persists attempts; app inference and artifact promotion remain open. |
+| `deadpan-media` | Private snapshot conversion through a bounded native helper, exact generated-video contracts, and final content identity. | Safe host code does not link codecs or mutate projects. The helper independently verifies its encoded FFV1 output. |
+| `deadpan-media-worker` | Descriptor-only FFmpeg decode, FFV1 v3 encoding, and independent decoded-pixel/timing comparison. | One isolated process per conversion, pinned LGPL libraries, no worker paths or publication authority. |
 | `deadpan-app` | Native development welcome shell with `egui`/`eframe` and `wgpu` on Metal. | Application entry point only; no authored document or media workflow yet. |
 | `deadpan-cli` | Versioned headless project and command operations, dry runs, history, and diagnostics. | Shared with the native host's `--headless` path; no media rendering yet. |
 
@@ -24,7 +26,7 @@ Section 24 defines boundaries, not an obligation to create empty crates. Introdu
 | `deadpan-core` | Document/time types, nodes, anchors, occurrences, selectors, commands, reduction, validation, and serialization contracts. | Documents, timing, node/occurrence-targeted commands, inverse patches, persistent marks/edit transforms, sparse play overrides, and exact boundary queries implemented; temporal attachments and remaining domains open. |
 | `deadpan-store` | Authoritative SQLite document/history, one writer, migrations, recovery, and asset ownership. | SQLite schema 7, complete schema-1/2/3/4/5/6 migration, writer lock, durable transactions, generation request relevance, attempts/receipts/selection, interrupted-attempt recovery, checkpoints, and BLAKE3 generated-object publication/readback implemented; generated Hold intent is authored in core, while qualified acceptance and full asset lifecycle remain open. |
 | `deadpan-plan` | Compile immutable revisions into indexed render plans and incremental fragments. | Picture mapping and indexed seeking implemented; fragment reuse, effects, audio, and actual preview/export integration open. |
-| `deadpan-media` | Qualified FFmpeg/native probing, PTS indexing, bounded decoding, surfaces, encoding/mux interfaces. | Planned. |
+| `deadpan-media` | Qualified FFmpeg/native probing, PTS indexing, bounded decoding, surfaces, encoding/mux interfaces. | Generated RGB-to-FFV1 conversion boundary implemented. General import, indexing, surfaces, playback, and export remain open. |
 | `deadpan-render` | Shared GPU composition, framing, color, visual effects, and output transformations. | Planned. |
 | `deadpan-audio` | Audio master clock, sample-exact mixing/DSP, tails, and native device output. | Planned. |
 | `deadpan-jobs` | Bounded scheduling, process supervision, cancellation, and versioned worker protocol. | Protocol/lifecycle, store checkpoints, and one-attempt subprocess supervision implemented; scheduler and app provider integration remain open. |
@@ -33,7 +35,7 @@ Section 24 defines boundaries, not an obligation to create empty crates. Introdu
 | `deadpan-ui` | Panes, keyboard routing, focus, inspectors, audition, and accessibility. | Planned; welcome UI currently belongs to the app. |
 | `deadpan-app` | Lifecycle, platform integration, document host, and command dispatch. | Development shell only. |
 | `deadpan-cli` | Headless validation/dump, revision-aware commands, render/plan inspection, benchmarks, diagnostics. | Project/command/history/migration, picture-plan inspection, and boundary resolution implemented; rendering and benchmarks open. |
-| `native/` | Narrow platform and DSP bridges with isolated unsafe lifetime handling. | `deadpan-process` qualifies Darwin zombie-only worker groups with a bounded libproc adapter. Media/DSP application bridges remain planned. |
+| `native/` | Narrow platform and DSP bridges with isolated unsafe lifetime handling. | `deadpan-process` qualifies Darwin zombie-only groups; `deadpan-media-worker` isolates generated-video conversion. General media/DSP application bridges remain open. |
 | `workers/` | Qualified private model runtime and provider adapters. | Planned. |
 | `recipes/` | Versioned declarative starter gags built from ordinary primitives. | Planned. |
 | `fixtures/` | Generated deterministic and rights-cleared real-media fixtures. | Planned. |

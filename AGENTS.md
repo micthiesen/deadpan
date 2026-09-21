@@ -30,6 +30,8 @@ Current crates:
 - `crates/deadpan-store`: authoritative SQLite packages, immutable revisions, atomic writes, durable undo/redo, generation request relevance, persistent attempts and restart recovery, and database checkpoints.
 - `crates/deadpan-plan`: immutable indexed picture mappings through structural beats, using exact frame centers and original source identities; no decoding or DSP.
 - `crates/deadpan-jobs`: bounded worker protocol, pure attempt lifecycle, process supervision, contained artifact snapshots, and exact bridge-generation planning. The real MLX adapter in `tools/model-qualification` is a development harness; app inference and durable media promotion remain open.
+- `crates/deadpan-media`: safe host conversion boundary, immutable input snapshots, cancellation/deadlines, strict helper reports, and private BLAKE3 output. No database or authored-state mutation.
+- `native/deadpan-media-worker`: process-isolated FFmpeg conversion and independent decode verification through bounded descriptor-only AVIO. Only the documented FFI call permits unsafe Rust. Requires the explicitly selected pinned LGPL FFmpeg development prefix.
 - `native/deadpan-process`: narrow Darwin group-membership adapter; unsafe is denied except for its documented bounded libproc call. Higher layers continue to forbid unsafe.
 - `crates/deadpan-app`: native `egui`/`eframe` application using `wgpu` on Metal; development welcome shell.
 - `crates/deadpan-cli`: versioned headless project/command API, reused by `deadpan-app --headless`.
@@ -119,7 +121,9 @@ an unresolved mark. Original source coordinates and sequence-pinned coordinates
 stay fixed in their respective clocks. Named-mark queries still require explicit
 occurrence scope when the stored coordinate is ambiguous.
 
-Run the exact repository gate after implementation:
+Build the pinned FFmpeg developer prefix and export `DEADPAN_FFMPEG_PREFIX` as
+described in [Development](docs/DEVELOPMENT.md). Run the exact repository gate
+after implementation:
 
 ```sh
 cargo fmt --all -- --check
@@ -164,6 +168,12 @@ FFV1/Matroska container timestamps are not an exact authored clock. The qualifie
 FFmpeg muxer uses millisecond timestamps; retain the native rational frame rate,
 frame ordinals, and sampling map separately. A complete pixel decode can succeed
 after trailer truncation, so also verify immutable artifact length and hash.
+The generated-video converter uses a separate private helper protocol: seekable
+input/output descriptors carry media, one bounded JSON argument carries the
+contract, and stderr carries one bounded JSON result. Do not route codec work
+through the model worker's framed-message protocol. Native conversion stays on
+the job service, outside UI/audio callbacks and database transactions. A returned
+private FFV1 file is neither a Ready candidate bundle nor authored acceptance.
 
 For native startup or lifecycle changes, also run `cargo run -p deadpan-app -- --smoke-test` on supported Apple Silicon macOS. This checks startup and the shutdown callback, not media or accessibility qualification. Choose interactive checks for affected behavior when they add evidence; do not repeat them mechanically for unrelated changes. Add relevant media, persistence, worker, accessibility, or packaging checks as those systems are implemented. Record skipped checks and exact failures in the delivery report. [Development](docs/DEVELOPMENT.md) describes the workflow.
 

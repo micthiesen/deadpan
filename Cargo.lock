@@ -790,6 +790,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "deadpan-media"
+version = "0.1.0"
+dependencies = [
+ "blake3",
+ "deadpan-core",
+ "deadpan-native-process",
+ "rustix 1.1.5",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tempfile",
+ "thiserror 2.0.20",
+]
+
+[[package]]
+name = "deadpan-media-worker"
+version = "0.1.0"
+dependencies = [
+ "blake3",
+ "cc",
+ "deadpan-media",
+ "serde_json",
+ "tempfile",
+]
+
+[[package]]
 name = "deadpan-native-process"
 version = "0.1.0"
 dependencies = [

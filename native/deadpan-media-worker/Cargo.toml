@@ -1,0 +1,30 @@
+[package]
+name = "deadpan-media-worker"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+description = "Isolated descriptor-only FFV1 conversion worker"
+
+[[bin]]
+name = "deadpan-media-worker"
+path = "src/main.rs"
+
+[dependencies]
+deadpan-media.workspace = true
+serde_json.workspace = true
+tempfile.workspace = true
+
+[build-dependencies]
+cc.workspace = true
+
+[dev-dependencies]
+blake3.workspace = true
+
+[lints.rust]
+unsafe_code = "deny"
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }

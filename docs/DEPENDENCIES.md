@@ -4,8 +4,8 @@ The specification selects native Rust, egui/eframe/wgpu on Metal, and a pure
 editing core. These override the generic Bun/TypeScript setup defaults. The
 workspace follows the maintained Rust conventions in sibling `beastie`:
 edition 2024, resolver 3, Rust 1.97.1, shared dependencies, rustfmt, and Clippy.
-There is no JavaScript runtime, environment configuration, or credential
-requirement in this scaffold.
+There is no JavaScript runtime or credential requirement. The complete workspace
+requires an explicit pinned FFmpeg developer prefix; see [Development](DEVELOPMENT.md).
 
 ## Adopted for the foundation
 
@@ -24,6 +24,8 @@ requirement in this scaffold.
 | libc | 0.2.189 | MIT OR Apache-2.0 | Already locked transitively; direct macOS-only binding inside `native/deadpan-process` for a bounded process-group membership query. Uses OS libproc, with no bundled native library. |
 | sha2 | 0.11.0 | MIT OR Apache-2.0 | Streaming SHA-256 for worker artifact snapshots; default `alloc`/`oid` features disabled. |
 | blake3 | 1.8.7 | CC0-1.0 OR Apache-2.0 OR Apache-2.0 WITH LLVM-exception | Streaming internal content addresses for project-managed generated objects. |
+| cc | 1.4.7 | MIT OR Apache-2.0 | Already locked transitively; direct build dependency for the isolated C codec adapter. |
+| FFmpeg | 8.0.3, commit `8ae0b34901ba60a802f183ee75a250a9fc3e09a5` | LGPL 2.1 or later for the selected build | Generated-video helper only, linked dynamically against the explicitly built prefix. GPL, nonfree, version-3, autodetected external libraries, and networking are disabled. App bundling remains open. |
 | proptest | 1.11.0 | MIT OR Apache-2.0 | Development-only exact-time, document, and transaction property tests. |
 
 `Cargo.toml` pins direct versions. `Cargo.lock` records every resolved transitive
@@ -146,8 +148,14 @@ libraries. Normal and instrumented adapters preserve every RGB8 pixel, frame
 ordinal, and color tag in FFV1 v3/Matroska, with slice CRC enabled. The container
 clock rounds to milliseconds, so native rational timing and sampling remain
 separate metadata. Tail truncation can preserve all decodable pictures; artifact
-hash and length checks remain required. This does not integrate a media adapter
-or replace the model worker's development serialization dependency.
+hash and length checks remain required. The subsequent
+[host converter](MEDIA_CONVERSION.md) integrates this route through a narrow C
+adapter in an isolated helper, with safe Rust supervision and descriptor-only I/O.
+The native build checks exact headers, and the worker checks loaded library
+versions, configurations, and LGPL licenses. This choice reuses the qualified C
+conversion loop; it does not select a general Rust media binding for import or
+playback. It does not replace the model worker's development serialization
+dependency or qualify app bundling, signing, or redistribution of model runtimes.
 
 ## Qualification still required
 

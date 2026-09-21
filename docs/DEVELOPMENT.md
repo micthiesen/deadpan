@@ -2,7 +2,26 @@
 
 Deadpan uses a Rust workspace, pinned to Rust 1.97.1. Its native application targets Apple Silicon macOS; the specification proposes macOS 15 as the initial deployment baseline, pending qualification. Cargo installs/builds the locked Rust dependencies. Native development requires the macOS build tools.
 
-The foundation needs no credentials, media tools, model weights, Python environment, or external services. Later media and model dependencies must pass Gate A and be bundled for end users. Development instructions must never become a requirement for using the distributed application.
+The CLI and welcome shell need no credentials or model weights. The complete
+workspace now builds an isolated FFV1 helper against pinned LGPL FFmpeg 8.0.3.
+Build that developer dependency once on Apple Silicon macOS with Python 3, GnuPG,
+Clang, and Make available:
+
+```sh
+python3 tools/media-qualification/compatible/build.py \
+  --work /tmp/deadpan-ffmpeg-dev \
+  --output /tmp/deadpan-ffmpeg-dev-build.json
+export DEADPAN_FFMPEG_PREFIX=/tmp/deadpan-ffmpeg-dev/prefix
+```
+
+The work directory must be empty. The builder verifies the pinned archive hash
+and release signature, disables GPL/nonfree/version-3 components and networking,
+and records build/license/library evidence. The Cargo build refuses an absent or
+incompatible prefix. It never falls back to a system FFmpeg installation.
+Keep the prefix available when running the development helper; its dynamic
+libraries have not yet been assembled into a portable signed app bundle.
+CI builds the same pinned dependency before running the complete gate.
+These developer tools must never become end-user requirements.
 
 ## Validation gate
 

@@ -1,0 +1,171 @@
+{
+  "scope": "host converter qualification, not Ready bundle or authored acceptance",
+  "label": "final-asan",
+  "directory": "/tmp/deadpan-host-conversion-final-asan-9t35l5zd",
+  "source_sha256": {
+    "crates/deadpan-media/src/conversion.rs": "890bb9241fcf0ac99c48708637074b9c1e9822d25e50cb2e31e67ea85d7ce9a4",
+    "crates/deadpan-media/src/lib.rs": "a6891f9a54e9edbcb5bbfc33caef6ed4016edb272129bc7aaa9a9ff24a2b0d81",
+    "crates/deadpan-media/src/protocol.rs": "65899810914e5eab1f31e7920b932edba850905c693c363e9109c1b8a7ba6827",
+    "native/deadpan-media-worker/src/converter.c": "c9f4521b04fd8a76f9f7930bd2e3d0ad3860b203e630df62a8b12672e43437f0",
+    "native/deadpan-media-worker/src/converter.h": "b66a50510314aaee2e2df59a63dce17c0b77a17affa2b2d188d232ca799179eb",
+    "native/deadpan-media-worker/src/main.rs": "ff2319f1ea2c42983bc760886b73e2c43fbdd26bf2285e2418e98638d97248dd",
+    "native/deadpan-media-worker/build.rs": "8841192b8b1b75bc57e95a05e9f407a48394618b48185865cf1b396aac16f5c1",
+    "Cargo.lock": "41c58a3c47fc3a081fbcdb277cf48e91bb9cf575f1f1f2b30fcdf716fcc19d14"
+  },
+  "runner_sha256": "6b0e41917dbd66dd895b54cf185c61e9466e7833b6fb84bfb391ad93ee4d97d8",
+  "binaries": {
+    "/tmp/deadpan-host-conversion-final-asan-9t35l5zd/bin/convert_generated": "4875185569646f16746ebc6e50e4c35bd7d98b2d34167721d1441626869c9140",
+    "/tmp/deadpan-host-conversion-final-asan-9t35l5zd/bin/deadpan-media-worker": "f649be7482ed4148702a08d2ea7a3543103ee105f0972a47f08a7798912bfdfa"
+  },
+  "host": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84\n",
+  "machine": "Mac17,7",
+  "processor": "Apple M5 Max",
+  "memory_bytes": 137438953472,
+  "compiler": "Apple clang version 21.0.0 (clang-2100.1.1.101)\nTarget: arm64-apple-darwin25.5.0\nThread model: posix\nInstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin\n",
+  "libraries": {
+    "/tmp/deadpan-media-compatible-xyhilms4/prefix/lib/libavcodec.62.11.103.dylib": "e2abb19ad59f0097cf0780af2fbca14f5851d6d4c0e8ed21f9b59707a4500fab",
+    "/tmp/deadpan-media-compatible-xyhilms4/prefix/lib/libavdevice.62.1.103.dylib": "238a704b9464dbda88b79121aee84ffd12300209149a34d87c072f3a11a97a5f",
+    "/tmp/deadpan-media-compatible-xyhilms4/prefix/lib/libavutil.60.8.103.dylib": "0080fa764061a46d27f421c448eaf9e1af0c703ac743844bb8e8600baad0dd20",
+    "/tmp/deadpan-media-compatible-xyhilms4/prefix/lib/libswscale.9.1.103.dylib": "8c1055d2ee90df810289ce45a2e332afef24377dc9ea0e1118d3f0d6de1f657f",
+    "/tmp/deadpan-media-compatible-xyhilms4/prefix/lib/libavfilter.11.4.103.dylib": "dab104715cabd9f283cfd2d1a0fde41c031cf9d9db1f3fece60ce1f12e189a1a",
+    "/tmp/deadpan-media-compatible-xyhilms4/prefix/lib/libswresample.6.1.103.dylib": "d163bdbbc72234b9289dcca66a2cd6ddc989050f9b16c9307e02c3399068def9",
+    "/tmp/deadpan-media-compatible-xyhilms4/prefix/lib/libavformat.62.3.103.dylib": "414b5d7b6bc6a4983535a6c61f8107a8563fa1a996bd1665c400a799d98eee6f"
+  },
+  "worker_linkage": "/tmp/deadpan-host-conversion-final-asan-9t35l5zd/bin/deadpan-media-worker:\n\t/tmp/deadpan-media-compatible-xyhilms4/prefix/lib/libavformat.62.dylib (compatibility version 62.0.0, current version 62.3.103)\n\t/tmp/deadpan-media-compatible-xyhilms4/prefix/lib/libavcodec.62.dylib (compatibility version 62.0.0, current version 62.11.103)\n\t/tmp/deadpan-media-compatible-xyhilms4/prefix/lib/libavutil.60.dylib (compatibility version 60.0.0, current version 60.8.103)\n\t/tmp/deadpan-media-compatible-xyhilms4/prefix/lib/libswscale.9.dylib (compatibility version 9.0.0, current version 9.1.103)\n\t/usr/lib/libiconv.2.dylib (compatibility version 7.0.0, current version 7.0.0)\n\t/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1356.0.0)\n\t@rpath/libclang_rt.asan_osx_dynamic.dylib (compatibility version 0.0.0, current version 0.0.0)\n",
+  "cases": [
+    {
+      "command": [
+        "convert_generated",
+        "/tmp/deadpan-host-conversion-final-asan-9t35l5zd/bin/deadpan-media-worker",
+        "/tmp/deadpan-supervised-mlx-20260921-attributed/host/candidate.snapshot.mp4",
+        "/tmp/deadpan-host-conversion-final-asan-9t35l5zd/sampled-request.json",
+        "d7fcf04e2bbe213d0352153443eb77c4a1534855ab8c19c0ff5dde4f2ddf85d9",
+        "/tmp/deadpan-host-conversion-final-asan-9t35l5zd/sampled.mkv"
+      ],
+      "exit_code": 0,
+      "seconds": 2.703883250011131,
+      "input_sha256": "d7fcf04e2bbe213d0352153443eb77c4a1534855ab8c19c0ff5dde4f2ddf85d9",
+      "independent_raw_fixture_sha256": "31145e3422613c73d434e8448453ef6a1bc67fa7c3bd431e11081da4a8287cf0",
+      "independent_rgb_sha256": "eda362044e57353435b56756be4143419a3bb6ed52bb2f849102b3eff962c71a",
+      "conversion": {
+        "elapsed_seconds": 2.693104583,
+        "input_sha256": "d7fcf04e2bbe213d0352153443eb77c4a1534855ab8c19c0ff5dde4f2ddf85d9",
+        "object": {
+          "byte_length": 5450240,
+          "content": {
+            "algorithm": "blake3",
+            "digest": "6b1831f368aae9688f91cb7f1890f6e86e80c6140db04158c561ff6f69d9615e"
+          }
+        },
+        "report": {
+          "discarded_audio_streams": 0,
+          "ffv1_version": 3,
+          "first_output_pts": 0,
+          "input_rgb_sha256": "eda362044e57353435b56756be4143419a3bb6ed52bb2f849102b3eff962c71a",
+          "input_time_base_den": 30000,
+          "input_time_base_num": 1,
+          "last_output_pts": 968,
+          "output_bytes": 5450240,
+          "output_rgb_sha256": "eda362044e57353435b56756be4143419a3bb6ed52bb2f849102b3eff962c71a",
+          "output_time_base_den": 1000,
+          "output_time_base_num": 1,
+          "protocol": 1,
+          "slice_crc": true,
+          "video": {
+            "frames": 30,
+            "height": 320,
+            "rate_den": 1001,
+            "rate_num": 30000,
+            "width": 768
+          }
+        },
+        "request": {
+          "input_byte_length": 5023208,
+          "limits": {
+            "max_input_bytes": 67108864,
+            "max_output_bytes": 67108864,
+            "max_scratch_bytes": 67108864,
+            "timeout_ms": 120000
+          },
+          "protocol": 1,
+          "video": {
+            "frames": 30,
+            "height": 320,
+            "rate_den": 1001,
+            "rate_num": 30000,
+            "width": 768
+          }
+        },
+        "scope": "developer conversion qualification; not candidate acceptance"
+      },
+      "output_sha256": "f5a221826467e24dc7340fde2362924bf504d51e6e81f4d5bd842b82d8a61e9e"
+    },
+    {
+      "command": [
+        "convert_generated",
+        "/tmp/deadpan-host-conversion-final-asan-9t35l5zd/bin/deadpan-media-worker",
+        "/tmp/deadpan-supervised-mlx-20260921-attributed/worker/outputs/native.mp4",
+        "/tmp/deadpan-host-conversion-final-asan-9t35l5zd/native-request.json",
+        "c9d34268df14d105bb4f3799e9bfc9b946ad153de43e6ee4a73a44bb7833be33",
+        "/tmp/deadpan-host-conversion-final-asan-9t35l5zd/native.mkv"
+      ],
+      "exit_code": 0,
+      "seconds": 2.309009915916249,
+      "input_sha256": "c9d34268df14d105bb4f3799e9bfc9b946ad153de43e6ee4a73a44bb7833be33",
+      "independent_raw_fixture_sha256": "8e424f9effebea4f9c8a989788161c4bddc802fc0202694ab22bbbba1760a68d",
+      "independent_rgb_sha256": "be4ffce12b048457bcab1779eefe8683f41c242d013be7f488c25416491efe1a",
+      "conversion": {
+        "elapsed_seconds": 2.297702209,
+        "input_sha256": "c9d34268df14d105bb4f3799e9bfc9b946ad153de43e6ee4a73a44bb7833be33",
+        "object": {
+          "byte_length": 4544157,
+          "content": {
+            "algorithm": "blake3",
+            "digest": "e230587364d97c577fcfd30e74d3559781d7f37fb2a825a2cb5018a392115622"
+          }
+        },
+        "report": {
+          "discarded_audio_streams": 0,
+          "ffv1_version": 3,
+          "first_output_pts": 0,
+          "input_rgb_sha256": "be4ffce12b048457bcab1779eefe8683f41c242d013be7f488c25416491efe1a",
+          "input_time_base_den": 24,
+          "input_time_base_num": 1,
+          "last_output_pts": 1000,
+          "output_bytes": 4544157,
+          "output_rgb_sha256": "be4ffce12b048457bcab1779eefe8683f41c242d013be7f488c25416491efe1a",
+          "output_time_base_den": 1000,
+          "output_time_base_num": 1,
+          "protocol": 1,
+          "slice_crc": true,
+          "video": {
+            "frames": 25,
+            "height": 320,
+            "rate_den": 1,
+            "rate_num": 24,
+            "width": 768
+          }
+        },
+        "request": {
+          "input_byte_length": 4911319,
+          "limits": {
+            "max_input_bytes": 67108864,
+            "max_output_bytes": 67108864,
+            "max_scratch_bytes": 67108864,
+            "timeout_ms": 120000
+          },
+          "protocol": 1,
+          "video": {
+            "frames": 25,
+            "height": 320,
+            "rate_den": 1,
+            "rate_num": 24,
+            "width": 768
+          }
+        },
+        "scope": "developer conversion qualification; not candidate acceptance"
+      },
+      "output_sha256": "75b3ba6fb72c0c267171dc47bf8d54bfcee98bd8c20538ba19a863de1ffd78d3"
+    }
+  ]
+}

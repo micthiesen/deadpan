@@ -10,6 +10,7 @@ This repository currently contains an **editing foundation**, not a working vide
 - `deadpan-store`: SQLite project packages, persistent marks and undo/redo, monotonic generation requests, durable attempts and interrupted-job recovery, schema-1/2/3/4/5/6 migration, recovery checkpoints, and verified generated-object storage. Qualified media acceptance remains open and new generated-provider ingress is rejected.
 - `deadpan-plan`: immutable indexed picture mappings with exact retiming, stable repeated-play identities, and sparse play overrides.
 - `deadpan-jobs`: bounded worker messages, job lifecycle, subprocess supervision, contained artifact snapshots, and exact bridge-generation planning. A real MLX development adapter exercises this boundary; it is not connected to the app yet.
+- `deadpan-media`: bounded host supervision of the native FFV1 converter, with input hash verification and private content-addressed output. The helper compares decoded RGB pixels and timing before returning; candidate bundle admission remains open.
 - `deadpan-app`: an `egui`/`eframe` native development welcome shell using `wgpu` on Metal.
 - `deadpan-cli`: headless project/command/history operations, migration, picture-plan inspection, and exact boundary selection, also available through `deadpan-app --headless`.
 
@@ -26,7 +27,10 @@ cargo run -p deadpan-app
 
 The application command opens the development shell on macOS. See [Headless commands](docs/HEADLESS.md) for a project workflow without a GUI. `doctor` reports the current foundation; it does not qualify media, models, or packaged runtimes. No secrets or model downloads are required for this foundation. These developer prerequisites are separate from the finished product's zero-manual-setup installation requirement.
 
-For checks and native smoke testing, see [Development](docs/DEVELOPMENT.md) and [nested occurrence verification](docs/OCCURRENCE_VERIFICATION.md). The [sparse override](docs/OVERRIDE_VERIFICATION.md), [picture plan and migration](docs/PLAN_MIGRATION_VERIFICATION.md), [editing foundation](docs/FOUNDATION_VERIFICATION.md), and [setup report](docs/SETUP_VERIFICATION.md) preserve earlier evidence. The initial product deployment target is Apple Silicon macOS 15, subject to dependency qualification; that target is not a tested release support claim.
+For the complete workspace gate, first build the pinned FFmpeg developer dependency
+as described in [Development](docs/DEVELOPMENT.md). That document also covers native
+smoke testing. The [nested occurrence](docs/OCCURRENCE_VERIFICATION.md),
+[sparse override](docs/OVERRIDE_VERIFICATION.md), [picture plan and migration](docs/PLAN_MIGRATION_VERIFICATION.md), [editing foundation](docs/FOUNDATION_VERIFICATION.md), and [setup report](docs/SETUP_VERIFICATION.md) preserve earlier evidence. The initial product deployment target is Apple Silicon macOS 15, subject to dependency qualification; that target is not a tested release support claim.
 
 ## Specification and project map
 

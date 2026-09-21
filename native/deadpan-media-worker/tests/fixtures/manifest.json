@@ -1,0 +1,101 @@
+{
+  "generator": "tests/generate_fixtures.py",
+  "producer": {
+    "ffmpeg": "ffmpeg version 9.0.1 Copyright (c) 2000-2026 the FFmpeg developers",
+    "video_command": "rawvideo rgb24 -> libx264rgb -crf 0 -preset ultrafast -pix_fmt rgb24, full-range GBR/sRGB/BT.709 tags, MP4 track timescale=rate numerator",
+    "audio_command": "sine 880Hz/8000Hz -> AAC 16kbit/s, duration=0.125s"
+  },
+  "pattern": "r=(17f+31x+7y+3)%256; g=(29f+5x+47y+11)%256; b=(43f+13x+19y+23)%256",
+  "fixtures": [
+    {
+      "name": "rgb30_30000_1001",
+      "file": "rgb30_30000_1001.mp4",
+      "width": 4,
+      "height": 2,
+      "frames": 30,
+      "rate_num": 30000,
+      "rate_den": 1001,
+      "rgb_sha256": "41d40c1c2353b8b7d0e4d46fb8cc04c9aa0afbdde58e8c685c9f33537dc8bafa",
+      "file_sha256": "450d5e4d878f26d47442f2165265b514346945646074c2bf69b0fdcbfadee7e6",
+      "file_bytes": 32713,
+      "has_audio": false,
+      "tags": true,
+      "raw_bytes": 720
+    },
+    {
+      "name": "rgb25_24",
+      "file": "rgb25_24.mp4",
+      "width": 4,
+      "height": 2,
+      "frames": 25,
+      "rate_num": 24,
+      "rate_den": 1,
+      "rgb_sha256": "324eb76430a9f2cf8303120656a8c167edd986418b763926d9250b1a3dd2adc9",
+      "file_sha256": "b16a7ab4aa925c1f432075b7cb6b28e7b38fc1e5187ef7cbec07d400dd756492",
+      "file_bytes": 27226,
+      "has_audio": false,
+      "tags": true,
+      "raw_bytes": 600
+    },
+    {
+      "name": "rgb1_24",
+      "file": "rgb1_24.mp4",
+      "width": 4,
+      "height": 2,
+      "frames": 1,
+      "rate_num": 24,
+      "rate_den": 1,
+      "rgb_sha256": "a4ae96d2f5297de261f9064940f32de0c6cc3028da600585dc56031e9d39c287",
+      "file_sha256": "3af1963494a60355655f85fe8a9c5d522e576b61e301fa932ce1d9d1f704078d",
+      "file_bytes": 2476,
+      "has_audio": false,
+      "tags": true,
+      "raw_bytes": 24
+    },
+    {
+      "name": "rgb2_24_audio",
+      "file": "rgb2_24_audio.mp4",
+      "width": 4,
+      "height": 2,
+      "frames": 2,
+      "rate_num": 24,
+      "rate_den": 1,
+      "rgb_sha256": "ee00275d57add8bb081e9f75b08478d02d5156f67a78e627fd72e869722e69c0",
+      "file_sha256": "dbd5f4adc691d0f0ae312491a5436f4e93af2a7d7dd8b4ad071af50ce420288f",
+      "file_bytes": 4752,
+      "has_audio": true,
+      "tags": true,
+      "raw_bytes": 48
+    },
+    {
+      "name": "rgb1_24_no_tags",
+      "file": "rgb1_24_no_tags.mp4",
+      "width": 4,
+      "height": 2,
+      "frames": 1,
+      "rate_num": 24,
+      "rate_den": 1,
+      "rgb_sha256": "a4ae96d2f5297de261f9064940f32de0c6cc3028da600585dc56031e9d39c287",
+      "file_sha256": "583d0fcb6465030b5c29c23b9649d9c4e74f55ebf8541b5b9909aec0c21d0f6b",
+      "file_bytes": 2476,
+      "has_audio": false,
+      "tags": false,
+      "raw_bytes": 24
+    },
+    {
+      "name": "rgb1_24_corrupt",
+      "file": "rgb1_24_corrupt.mp4",
+      "width": 4,
+      "height": 2,
+      "frames": 1,
+      "rate_num": 24,
+      "rate_den": 1,
+      "rgb_sha256": "a4ae96d2f5297de261f9064940f32de0c6cc3028da600585dc56031e9d39c287",
+      "file_sha256": "38501ea2216bb26c30f0d9ede88b1041ecea1ac379b072fdc807f70014e00186",
+      "file_bytes": 2476,
+      "has_audio": false,
+      "tags": true,
+      "raw_bytes": 24
+    }
+  ]
+}

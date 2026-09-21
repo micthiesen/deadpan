@@ -1,0 +1,27 @@
+[package]
+name = "deadpan-media"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+description = "Bounded host boundary for verified generated media conversion"
+
+[dependencies]
+deadpan-core.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+
+[target.'cfg(any(target_os = "macos", target_os = "linux"))'.dependencies]
+rustix.workspace = true
+sha2.workspace = true
+blake3.workspace = true
+tempfile.workspace = true
+
+[target.'cfg(target_os = "macos")'.dependencies]
+deadpan-native-process.workspace = true
+
+[lints]
+workspace = true
