@@ -52,11 +52,24 @@ cargo run -p deadpan-app
 
 `--smoke-test` opens the native window, closes it after frames have rendered, and checks the shutdown callback. Run it for native startup or lifecycle changes. Where an interactive check adds evidence, confirm the affected layout, focus, keyboard navigation, and close behavior. Do not repeat GUI testing for unrelated pure-core changes. Confirm no media/import/render controls imply unavailable functionality. For lifecycle changes, verify the intended quit/SIGTERM behavior and exit status. Record the actual OS/hardware and what was observed; a successful compile is not a UI smoke test.
 
-The source preview opens explicitly tagged progressive 8-bit SDR H.264/FFV1 in
-the [admitted MP4/Matroska grammar](SOURCE_ADMISSION.md). Use `cargo run -p deadpan-app -- --preview-source /absolute/video.mp4`,
-or focus the path with `⌘O` and press Enter. Left/Right step original frames;
-Home/End select the first/last frame. Text editing and IME events suppress frame
-commands. The app does not yet import into projects, edit, play audio or export.
+The [native workspace](NATIVE_WORKSPACE.md) uses `⌘N`, `⌘O` and `⌘I` for
+project creation, project opening and media import through macOS panels. Import
+registers a source; `⌘Return` explicitly inserts the entire source after the
+selected beat, or at sequence end. `⌘Z` / `⌘Shift Z` navigate saved history.
+Use `--project /absolute/project.deadpan` to reopen directly, or
+`--preview-source /absolute/video.mp4` for standalone source inspection.
+The source decoder retains the [admitted MP4/Matroska grammar](SOURCE_ADMISSION.md).
+Playback, range editing, generated-provider preview and export remain open.
+
+`h/l` or Left/Right move the boundary cursor, accepting counts such as `12l`.
+`j/k` choose sources or sequence beats according to pane focus. `gg/G` and
+Home/End choose start/end, with the final preceding frame shown at the end.
+Tab/Shift Tab cycle panes. `/` enters source search; `:` enters a command.
+Native text editing and IME events suppress editing bindings. Escape/Return leave
+text entry after its final input is applied. `:help` lists the implemented keys.
+Run `cargo test -p deadpan-app --locked` for actual-media service/preview tests,
+deterministic worker interleavings, binding transitions, dialog polling, headless
+egui focus and final-text routing, and canvas geometry.
 
 Headless source evidence uses `cargo run -p deadpan-media --example inspect_source -- /absolute/video.mp4 /tmp/new-source-report.json`.
 The report preserves original clocks, observed terminal duration, content identity,
@@ -81,8 +94,8 @@ Use `cargo test --locked -p deadpan-store --test original_media` and
 ownership, relocation, stale/wrong relinking and failure boundaries. Shared
 object-storage unit tests force the positional-copy fallback; the native
 fileclone tests exercise actual macOS clone independence. These checks do not
-require opening the app. Native dialogs and the complete import workflow still
-need implementation and their own focused verification.
+require opening the app. Native dialogs and the initial register/insert workflow are connected;
+relink UI, bookmarks, complete formats and full-size latency remain open.
 
 For measured registration, run `cargo test --locked -p deadpan-media --test source_qualification`,
 `cargo test --locked -p deadpan-store --test source_registration` and

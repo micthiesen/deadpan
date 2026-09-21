@@ -1,0 +1,38 @@
+{
+  "base_commit": "4f7adf54af0361bb80c1d493f8a3f84a120df97e",
+  "reviewers": [
+    "general workspace/keyboard",
+    "service concurrency/persistence",
+    "preview identity/cancellation"
+  ],
+  "applied": [
+    {
+      "finding": "An admitted command could be lost when shutdown began.",
+      "fix": "Post-CAS stopping check; drain admitted busy command; stop import replies; UI CancelClose gate.",
+      "evidence": "shutdown_finishes_an_admitted_command_before_releasing_the_store and focused reviewer recheck"
+    },
+    {
+      "finding": "Full source-index comparisons did not poll cancellation.",
+      "fix": "Cancellation between 1024-frame chunks at catalog and reopened-source comparisons.",
+      "evidence": "index_validation_observes_cancellation_between_bounded_chunks; preview reviewer recheck"
+    },
+    {
+      "finding": "Save panel allowed suffixes rejected by ProjectStore.",
+      "fix": "Append .deadpan while preserving the authored filename.",
+      "evidence": "project_names_preserve_authored_suffixes_and_end_in_deadpan; general reviewer recheck"
+    },
+    {
+      "finding": "Another import chooser could open during active preparation.",
+      "fix": "Disable import controls and guard keyboard/command dialog entry during active stages.",
+      "evidence": "general reviewer recheck"
+    }
+  ],
+  "dismissed": [
+    {
+      "finding": "Retained decoder continues using its private snapshot after a linked original changes.",
+      "reason": "Immutable preview intentionally renders verified committed media. Reuse cannot admit modified bytes; insertion independently checks current original freshness. Reviewer withdrew the finding after contract review."
+    }
+  ],
+  "deferred": [],
+  "focused_rechecks": "All three reviewers reported no remaining concrete findings in their assigned scope."
+}

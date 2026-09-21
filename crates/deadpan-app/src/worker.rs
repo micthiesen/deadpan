@@ -7,18 +7,27 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Condvar, Mutex};
 use std::time::{Duration, Instant};
 
-use deadpan_core::{AssetId, SourceFrameId, SourceTimeBase, SourceTimestamp};
+use deadpan_core::{
+    AssetId, ProjectFrame, SourceFrameId, SourceFrameIndex, SourceQualificationId, SourceTimeBase,
+    SourceTimestamp,
+};
 use deadpan_media::source_index::SourceContentIdentity;
 use deadpan_media::source_session::{SourceSession, SourceSessionLimits};
 use deadpan_render::{
     FrameMetadata, Primaries, Rgba8Frame, Rotation, SampleAspectRatio, SourceColor, Transfer,
 };
 use deadpan_source::{ColorPrimaries, ColorTransfer, DecodedRgbaFrame, SourceStreamInfo};
+use deadpan_store::original_media::OriginalMediaLimits;
 use eframe::egui;
 use sha2::{Digest, Sha256};
 
+use crate::project::{RegisteredSource, Workspace};
+
 const HASH_TIMEOUT: Duration = Duration::from_secs(300);
 const FRAME_TIMEOUT: Duration = Duration::from_secs(15);
+
+#[cfg(test)]
+mod project_tests;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Ticket {
@@ -29,6 +38,21 @@ pub struct Ticket {
 pub enum Work {
     Open(PathBuf),
     Frame(SourceFrameId),
+    Project {
+        workspace: Arc<Workspace>,
+        view: ProjectView,
+    },
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum ProjectView {
+    Source {
+        asset: AssetId,
+        frame: SourceFrameId,
+    },
+    Sequence {
+        frame: ProjectFrame,
+    },
 }
 
 struct Request {
@@ -47,7 +71,8 @@ pub struct SourceSummary {
 pub struct Picture {
     pub summary: Option<SourceSummary>,
     pub id: SourceFrameId,
-    pub frame: Rgba8Frame,
+    pub frame: Option<Rgba8Frame>,
+    pub canvas: Option<(u32, u32)>,
 }
 
 pub struct Reply {
@@ -61,6 +86,7 @@ struct Mailbox {
     pending: Option<Request>,
     active: Option<Arc<AtomicBool>>,
     reply: Option<Reply>,
+    clear_requested: bool,
     shutdown: bool,
 }
 
@@ -113,6 +139,14 @@ impl Mailbox {
         self.pending = None;
         self.reply = None;
     }
+
+    fn clear(&mut self) {
+        self.cancel_active();
+        self.latest = None;
+        self.pending = None;
+        self.reply = None;
+        self.clear_requested = true;
+    }
 }
 
 #[derive(Default)]
@@ -162,6 +196,13 @@ impl PreviewWorker {
         self.shared.mailbox.lock().expect("preview mailbox").stop();
         self.shared.changed.notify_one();
     }
+
+    /// Releases preview resources on the service thread without stopping it or
+    /// joining from the UI. Subsequent requests remain self-contained.
+    pub fn clear(&self) {
+        self.shared.mailbox.lock().expect("preview mailbox").clear();
+        self.shared.changed.notify_one();
+    }
 }
 
 impl Drop for PreviewWorker {
@@ -171,7 +212,7 @@ impl Drop for PreviewWorker {
 }
 
 fn run(shared: Arc<Shared>, context: egui::Context) {
-    let mut session: Option<(u64, SourceSession)> = None;
+    let mut session = None;
     loop {
         let request = {
             let mut mailbox = shared.mailbox.lock().expect("preview mailbox");
@@ -179,11 +220,20 @@ fn run(shared: Arc<Shared>, context: egui::Context) {
                 if mailbox.shutdown {
                     return;
                 }
+                if std::mem::take(&mut mailbox.clear_requested) {
+                    break None;
+                }
                 if let Some(request) = mailbox.start_next() {
-                    break request;
+                    break Some(request);
                 }
                 mailbox = shared.changed.wait(mailbox).expect("preview mailbox");
             }
+        };
+        let Some(request) = request else {
+            // Native teardown and private snapshot deletion stay off the UI and
+            // outside the mailbox lock used for submitting the next request.
+            session = None;
+            continue;
         };
         let picture = perform(&request, &mut session);
         let publish = shared
@@ -200,43 +250,287 @@ fn run(shared: Arc<Shared>, context: egui::Context) {
     }
 }
 
-fn perform(
-    request: &Request,
-    retained: &mut Option<(u64, SourceSession)>,
-) -> Result<Picture, String> {
+#[derive(PartialEq, Eq)]
+enum SessionKey {
+    Raw(u64),
+    Project {
+        session: u64,
+        asset: AssetId,
+        receipt: SourceQualificationId,
+    },
+}
+
+struct RetainedSession {
+    key: SessionKey,
+    source: SourceSession,
+    catalog: Option<Arc<RegisteredSource>>,
+}
+
+fn perform(request: &Request, retained: &mut Option<RetainedSession>) -> Result<Picture, String> {
+    if let Work::Project { workspace, view } = &request.work {
+        return project_picture(workspace, view, &request.cancelled, retained);
+    }
     let (summary, id) = match &request.work {
         Work::Open(path) => {
             *retained = None;
             let source = open_source(path, &request.cancelled)?;
-            if u64::from(source.info().width) * u64::from(source.info().height)
-                > deadpan_render::MAX_PIXELS
-            {
-                return Err("Source picture exceeds the 16-megapixel preview limit.".into());
-            }
-            let index = source.index().index();
-            let summary = SourceSummary {
-                info: source.info().clone(),
-                frame_count: index.frames().len() as u64,
-                first_pts: index.frames()[0].pts,
-                terminal_pts: index.terminal_end(),
-            };
-            *retained = Some((request.ticket.source, source));
+            check_picture_limits(&source)?;
+            let summary = source_summary(&source);
+            *retained = Some(RetainedSession {
+                key: SessionKey::Raw(request.ticket.source),
+                source,
+                catalog: None,
+            });
             (Some(summary), SourceFrameId(0))
         }
         Work::Frame(id) => (None, *id),
+        Work::Project { .. } => unreachable!("project requests handled above"),
     };
-    let (_, source) = retained
+    let session = retained
         .as_mut()
-        .filter(|(identity, _)| *identity == request.ticket.source)
+        .filter(|session| session.key == SessionKey::Raw(request.ticket.source))
         .ok_or("The requested source session is no longer open.")?;
-    let decoded = source
+    let decoded = session
+        .source
         .frame(id, FRAME_TIMEOUT, &request.cancelled)
         .map_err(|error| error.to_string())?;
     Ok(Picture {
         summary,
         id,
-        frame: render_frame(decoded, source.info())?,
+        frame: Some(render_frame(decoded, session.source.info())?),
+        canvas: None,
     })
+}
+
+fn project_picture(
+    workspace: &Workspace,
+    view: &ProjectView,
+    cancelled: &AtomicBool,
+    retained: &mut Option<RetainedSession>,
+) -> Result<Picture, String> {
+    if cancelled.load(Ordering::Acquire) {
+        return Err("Project preview was cancelled.".into());
+    }
+    if workspace.plan.metadata().project_id != *workspace.document.project_id()
+        || workspace.plan.metadata().revision_id != *workspace.document.revision_id()
+    {
+        return Err("The picture plan belongs to another project revision.".into());
+    }
+    let (asset, frame, canvas) = match view {
+        ProjectView::Source { asset, frame } => (asset, *frame, None),
+        ProjectView::Sequence { frame } => {
+            let basis = workspace.document.presentation_basis();
+            let canvas = Some((basis.width, basis.height));
+            if workspace.plan.duration().frames() == 0 && frame.0 == 0 {
+                return Ok(background_picture(canvas));
+            }
+            let sample = workspace
+                .plan
+                .picture(*frame)
+                .map_err(|error| error.to_string())?;
+            let asset = match &sample.picture {
+                deadpan_plan::Picture::Source { asset, .. }
+                | deadpan_plan::Picture::Freeze { asset, .. } => asset,
+                deadpan_plan::Picture::Blank | deadpan_plan::Picture::Background => {
+                    return Ok(background_picture(canvas));
+                }
+                deadpan_plan::Picture::Still { .. } => {
+                    return Err("Still-image preview is not yet qualified.".into());
+                }
+                deadpan_plan::Picture::Accepted { .. } => {
+                    return Err("Accepted generated-media preview is not yet qualified.".into());
+                }
+            };
+            let registered = registered_source(workspace, asset)?;
+            let index = registered
+                .video_index
+                .as_ref()
+                .ok_or("This source has no qualified picture index.")?;
+            let frame = sample
+                .picture
+                .select_source_frame(index)
+                .map_err(|error| error.to_string())?
+                .identity;
+            return registered_picture(workspace, registered, frame, canvas, cancelled, retained);
+        }
+    };
+    let registered = registered_source(workspace, asset)?;
+    registered_picture(workspace, registered, frame, canvas, cancelled, retained)
+}
+
+fn background_picture(canvas: Option<(u32, u32)>) -> Picture {
+    Picture {
+        summary: None,
+        id: SourceFrameId(0),
+        frame: None,
+        canvas,
+    }
+}
+
+fn registered_source<'a>(
+    workspace: &'a Workspace,
+    asset: &AssetId,
+) -> Result<&'a Arc<RegisteredSource>, String> {
+    let registered = workspace
+        .sources
+        .get(asset)
+        .ok_or("This source has no registered media evidence.")?;
+    let authored = workspace
+        .document
+        .assets()
+        .get(asset)
+        .ok_or("This source is absent from the selected project revision.")?;
+    if registered.asset != *asset
+        || authored.source_qualification.as_ref() != Some(registered.receipt.id())
+        || authored.content_hash != registered.receipt.original().content().to_string()
+        || registered.original.object() != registered.receipt.original()
+        || registered.original.sha256() != registered.receipt.snapshot().content().sha256()
+    {
+        return Err("Source media evidence disagrees with the selected project revision.".into());
+    }
+    Ok(registered)
+}
+
+fn registered_picture(
+    workspace: &Workspace,
+    registered: &Arc<RegisteredSource>,
+    id: SourceFrameId,
+    canvas: Option<(u32, u32)>,
+    cancelled: &AtomicBool,
+    retained: &mut Option<RetainedSession>,
+) -> Result<Picture, String> {
+    let video = registered
+        .receipt
+        .snapshot()
+        .video()
+        .ok_or("This source has no qualified picture stream.")?;
+    let expected = registered
+        .video_index
+        .as_ref()
+        .ok_or("This source has no qualified picture index.")?;
+    // An immutable catalog entry is checked once when it changes, not once per
+    // cursor movement through a potentially multi-million-frame source index.
+    if retained.as_ref().is_none_or(|session| {
+        session
+            .catalog
+            .as_ref()
+            .is_none_or(|previous| !Arc::ptr_eq(previous, registered))
+    }) && (expected.asset() != &registered.asset
+        || !same_index_mapping(expected, video.index().index(), || {
+            cancelled.load(Ordering::Acquire)
+        })?)
+    {
+        return Err("The source picture index disagrees with its immutable receipt.".into());
+    }
+    let key = SessionKey::Project {
+        session: workspace.session,
+        asset: registered.asset.clone(),
+        receipt: registered.receipt.id().clone(),
+    };
+    if retained.as_ref().is_none_or(|session| session.key != key) {
+        *retained = None;
+        let limits = SourceSessionLimits::default();
+        limits
+            .decode
+            .validate()
+            .map_err(|error| error.to_string())?;
+        if registered.receipt.snapshot().content().byte_length() > limits.decode.max_input_bytes {
+            return Err("Source original exceeds the native preview byte limit.".into());
+        }
+        let mut snapshot = workspace
+            .originals
+            .snapshot_original(
+                &registered.original,
+                OriginalMediaLimits::default(),
+                cancelled,
+            )
+            .map_err(|error| error.to_string())?;
+        let source = SourceSession::open_verified(
+            &mut snapshot,
+            registered.receipt.snapshot().content(),
+            registered.asset.clone(),
+            limits,
+            cancelled,
+        )
+        .map_err(|error| error.to_string())?;
+        check_picture_limits(&source)?;
+        if source.index().content() != video.index().content()
+            || source.index().stream_index() != video.index().stream_index()
+            || source.info() != video.interpretation()
+            || source.index().index().asset() != expected.asset()
+            || !same_index_mapping(source.index().index(), expected, || {
+                cancelled.load(Ordering::Acquire)
+            })?
+        {
+            return Err(
+                "Decoded source disagrees with its immutable qualification receipt.".into(),
+            );
+        }
+        *retained = Some(RetainedSession {
+            key,
+            source,
+            catalog: Some(Arc::clone(registered)),
+        });
+    }
+    let session = retained
+        .as_mut()
+        .ok_or("The source session could not be retained.")?;
+    session.catalog = Some(Arc::clone(registered));
+    let summary = Some(source_summary(&session.source));
+    let decoded = session
+        .source
+        .frame(id, FRAME_TIMEOUT, cancelled)
+        .map_err(|error| error.to_string())?;
+    Ok(Picture {
+        summary,
+        id,
+        frame: Some(render_frame(decoded, session.source.info())?),
+        canvas,
+    })
+}
+
+fn same_index_mapping(
+    left: &SourceFrameIndex,
+    right: &SourceFrameIndex,
+    mut cancelled: impl FnMut() -> bool,
+) -> Result<bool, String> {
+    if cancelled() {
+        return Err("Project preview was cancelled.".into());
+    }
+    if left.time_base() != right.time_base()
+        || left.frames().len() != right.frames().len()
+        || left.terminal_end() != right.terminal_end()
+        || left.terminal_provenance() != right.terminal_provenance()
+    {
+        return Ok(false);
+    }
+    for (left, right) in left.frames().chunks(1024).zip(right.frames().chunks(1024)) {
+        if cancelled() {
+            return Err("Project preview was cancelled.".into());
+        }
+        if left != right {
+            return Ok(false);
+        }
+    }
+    Ok(true)
+}
+
+fn source_summary(source: &SourceSession) -> SourceSummary {
+    let index = source.index().index();
+    SourceSummary {
+        info: source.info().clone(),
+        frame_count: index.frames().len() as u64,
+        first_pts: index.frames()[0].pts,
+        terminal_pts: index.terminal_end(),
+    }
+}
+
+fn check_picture_limits(source: &SourceSession) -> Result<(), String> {
+    if u64::from(source.info().width) * u64::from(source.info().height) > deadpan_render::MAX_PIXELS
+    {
+        return Err("Source picture exceeds the 16-megapixel preview limit.".into());
+    }
+    Ok(())
 }
 
 fn open_source(path: &PathBuf, cancelled: &AtomicBool) -> Result<SourceSession, String> {
@@ -373,9 +667,10 @@ mod tests {
         let first = await_reply(&worker).picture.unwrap();
         assert_eq!(first.summary.as_ref().unwrap().frame_count, 120);
         assert_eq!(first.id, SourceFrameId(0));
-        assert_eq!(first.frame.metadata().pts.ticks, 0);
-        assert_eq!(first.frame.metadata().color.transfer, Transfer::Rec709);
-        assert_eq!(first.frame.metadata().color.primaries, Primaries::Rec709);
+        let first_frame = first.frame.as_ref().unwrap();
+        assert_eq!(first_frame.metadata().pts.ticks, 0);
+        assert_eq!(first_frame.metadata().color.transfer, Transfer::Rec709);
+        assert_eq!(first_frame.metadata().color.primaries, Primaries::Rec709);
         for request in 2..=20 {
             worker.submit(ticket(1, request), Work::Frame(SourceFrameId(request)));
         }
@@ -384,8 +679,12 @@ mod tests {
         let last = last.picture.unwrap();
         assert!(last.summary.is_none());
         assert_eq!(last.id, SourceFrameId(20));
-        assert_eq!(last.frame.metadata().pts.ticks, 20 * 1001);
-        assert_ne!(first.frame.bytes(), last.frame.bytes());
+        let last_frame = last.frame.as_ref().unwrap();
+        assert_eq!(last_frame.metadata().pts.ticks, 20 * 1001);
+        assert_ne!(first_frame.bytes(), last_frame.bytes());
+        worker.clear();
+        worker.submit(ticket(1, 21), Work::Frame(SourceFrameId(21)));
+        assert!(await_reply(&worker).picture.is_err());
         worker.shutdown();
     }
 

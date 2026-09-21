@@ -15,6 +15,15 @@ pub(crate) struct NavigationPlan {
 }
 
 impl ProjectStore {
+    /// Availability at the current durable cursor without building inverse edits.
+    pub fn history_availability(&self) -> Result<(bool, bool), StoreError> {
+        Ok(self.connection.query_row(
+            "SELECT cursor IS NOT NULL, EXISTS(SELECT 1 FROM redo) FROM state WHERE singleton=1",
+            [],
+            |row| Ok((row.get(0)?, row.get(1)?)),
+        )?)
+    }
+
     pub fn undo(
         &mut self,
         expected_revision: &RevisionId,

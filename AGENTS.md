@@ -6,7 +6,7 @@ Deadpan is a native macOS structural video editor for timing and attention, buil
 
 Read [the full specification](docs/spec/DEADPAN_SPEC.md) and [agent handoff](docs/spec/AGENT_HANDOFF.md) before feature work. The Markdown specification is normative; summaries here do not reduce its scope. [Requirements](docs/REQUIREMENTS.md) tracks DP-01 through DP-24 and Gates A through G. Keep code, tests, evidence, and remaining work current there.
 
-The current foundation includes validated beat documents, reversible structural commands, persistent marks with edit transforms, sparse per-play overrides and automatic nested occurrence isolation, stable repeat identities, exact indexed picture plans and boundary queries, SQLite project/history storage with schema migration, and a shared headless command entrypoint. The native UI previews original source frames through a persistent decoder and shared SDR GPU pipeline. It is not yet a usable video editor or release candidate. All product requirements remain open or partial. A button, mock worker, downloaded model, ignored test, or proposed target does not prove implementation.
+The current foundation includes validated beat documents, reversible structural commands, persistent marks with edit transforms, sparse per-play overrides and automatic nested occurrence isolation, stable repeat identities, exact indexed picture plans and boundary queries, SQLite project/history storage with schema migration, and a shared headless command entrypoint. The native UI creates/opens projects, registers local managed/linked media, explicitly inserts whole sources, navigates durable undo/redo, and inspects exact Source/Sequence frames through a persistent decoder and shared SDR GPU pipeline. It is not yet a usable video editor or release candidate. All product requirements remain open or partial. A button, mock worker, downloaded model, ignored test, or proposed target does not prove implementation.
 
 ## Design philosophy
 
@@ -37,7 +37,7 @@ Current crates:
 - `crates/deadpan-render`: bounded shared SDR picture pipeline, linear Rec.2020 working textures, explicit sRGB display transform, aspect and rotation. No decoding, document mutation or encoding.
 - `native/deadpan-media-worker`: process-isolated FFmpeg conversion and independent decode verification through bounded descriptor-only AVIO. Only the documented FFI call permits unsafe Rust. Requires the explicitly selected pinned LGPL FFmpeg development prefix.
 - `native/deadpan-process`: narrow Darwin group-membership adapter; unsafe is denied except for its documented bounded libproc call. Higher layers continue to forbid unsafe.
-- `crates/deadpan-app`: native `egui`/`eframe` source preview using `wgpu` on Metal; one background source worker and keyboard frame navigation. Project editing, playback and export remain open.
+- `crates/deadpan-app`: native `egui`/`eframe` project workspace using Metal. One service owns the writable store, one import worker prepares media, and a separate bounded preview worker consumes immutable workspaces. Native dialogs, source registration, explicit insertion and history are implemented; full editing, playback and export remain open.
 - `crates/deadpan-cli`: versioned headless project/command API, reused by `deadpan-app --headless`.
 
 [Architecture](docs/ARCHITECTURE.md) records Section 24's full boundary map. Add crates only when an implemented responsibility needs isolation. Do not create empty crates or feature controls that pretend to work.
@@ -242,6 +242,8 @@ allocation boundaries; preserve both. See [source admission](docs/SOURCE_ADMISSI
 for qualified limits and rejected grammars.
 
 The setup workflow's TypeScript/Bun/mitools/Biome defaults do not apply to this Rust-native product. The maintained Rust sibling `beastie` supplies the initial workspace conventions; consult maintained siblings for evolving personal tooling patterns. [Dependency decisions](docs/DEPENDENCIES.md) records the pins and qualification boundaries. Do not introduce Bun, Node, Python, or shell setup as an end-user requirement. Future model workers use an app-managed private runtime selected through measurement.
+
+The native UI submits typed project requests through one bounded service mailbox. Import preparation never owns SQLite. Cached insertion and history may proceed while a new import prepares; an uncached insertion preserves its captured revision/target and fails if stale. Consume explicit committed insertion IDs, never infer completion from progress text. Preview requests carry their immutable workspace, so cancellation of an earlier open cannot strand a later frame. Construct native dialogs on the main application thread, poll without blocking, and retain text focus until same-frame text and IME events are processed.
 
 ## Validation and delivery
 

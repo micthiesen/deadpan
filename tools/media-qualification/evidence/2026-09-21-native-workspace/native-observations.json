@@ -1,0 +1,36 @@
+{
+  "method": "CUA native macOS app interaction; temporary development .app wrapper around debug executable",
+  "hardware": "Apple M5 Max, 128 GiB",
+  "os": "macOS 26.5.2",
+  "scope": "create/import/register/insert/history/reopen, dark full-window appearance, keyboard focus, accent input, structural AX inspection",
+  "observations": [
+    "CmdN native save sheet created disposable Keyboard review.deadpan.",
+    "CmdI imported real cfr-bframes.mp4; sequence stayed empty until CmdReturn.",
+    "Insertion produced one 120-frame beat, 320x180 at 30000/1001 fps.",
+    "12l moved to boundary12; G selected boundary120 showing authored frame119.",
+    "Tab/ShiftTab cycled actual Sources/Viewer/Sequence focus targets.",
+    "Search text Left did not move the picture; OptionE then E produced é.",
+    "CmdZ/CmdShiftZ restored empty/120-frame sequence and automatic basis.",
+    "Command source/sequence/help entry submitted with Return.",
+    "CmdO selected already-open package and preserved current session/cursor.",
+    "Rebuilt app reopened saved package; Escape restored Sources pane focus after text entry.",
+    "Sequence end and readable help observed after focus fix.",
+    "CmdQ left no deadpan-app process; headless validation confirms saved UI project."
+  ],
+  "automation_failures": [
+    "Typing before Go To sheet observation entered a path suffix; entering after observing sheet succeeded.",
+    "Clipboard retry timed out; native typeText completed path entry.",
+    "Corner drag and native zoom did not change dimensions; no new small-window claim."
+  ],
+  "unrun": [
+    "VoiceOver",
+    "CJK IME",
+    "non-US physical keyboard",
+    "light appearance",
+    "full editorial keyboard acceptance",
+    "full-size media performance"
+  ],
+  "live_wrapper_sha256": "cb2d9baf999585a5f93fb4b2d0b1a5108cc05a64df9426529563fd7aa0604eac",
+  "final_binary_sha256": "c221b597aca8ee934044f4b498048da6ab0b2bfaa23a5a3af5df72509618f0f0",
+  "revision_note": "Live follow-up includes focus/shutdown/decoder retention fixes. Subsequent extension normalization and active-import gating were headless-tested/reviewed; final binary passed full gate and native startup/shutdown smoke."
+}

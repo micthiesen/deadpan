@@ -12,7 +12,8 @@ requires an explicit pinned FFmpeg developer prefix; see [Development](DEVELOPME
 | Component | Direct pin | Upstream license | Scope |
 | --- | --- | --- | --- |
 | Rust | 1.97.1 | MIT OR Apache-2.0 | Compiler, rustfmt, Clippy. |
-| eframe | 0.36.2 | MIT OR Apache-2.0 | Native source preview, egui, wgpu and AccessKit. |
+| eframe | 0.36.2 | MIT OR Apache-2.0 | Native project workspace, egui, wgpu and AccessKit. |
+| rfd | 0.17.2 | MIT | macOS-only asynchronous native file/save/folder panels. Default features disabled; no shell or external dialog executable. |
 | wgpu | 30.0.1 | MIT OR Apache-2.0 | Already locked through eframe; direct Metal/WGSL dependency for the shared picture baseline. |
 | pollster | 1.0.1 | Apache-2.0 OR MIT | Already locked; development-only offscreen GPU qualification. |
 | serde | 1.0.229 | MIT OR Apache-2.0 | Validated domain, transaction, and protocol serialization. |
@@ -29,6 +30,12 @@ requires an explicit pinned FFmpeg developer prefix; see [Development](DEVELOPME
 | cc | 1.4.7 | MIT OR Apache-2.0 | Already locked transitively; direct build dependency for the isolated C codec adapter. |
 | FFmpeg | 8.0.3, commit `8ae0b34901ba60a802f183ee75a250a9fc3e09a5` | LGPL 2.1 or later for the selected build | Generated-video helper and persistent source adapter, dynamically linked against the explicit prefix. GPL, nonfree, version-3, autodetected external libraries and networking are disabled. App bundling remains open. |
 | proptest | 1.11.0 | MIT OR Apache-2.0 | Development-only exact-time, document, and transaction property tests. |
+
+The native workspace uses [rfd 0.17.2](https://docs.rs/rfd/0.17.2/rfd/) with
+main-thread panel construction and nonblocking future polling. Cargo reuses the
+locked Objective-C dependencies. Native create/import/open panels and cancellation
+need app interaction evidence; headless dialog tests cover polling and result
+ownership. This does not establish bookmark access or signed bundle behavior.
 
 `Cargo.toml` pins direct versions. `Cargo.lock` records every resolved transitive
 version and registry checksum. The UI enables `accesskit`, `default_fonts`, and

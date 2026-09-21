@@ -1,7 +1,9 @@
 //! Native source preview and the shared headless command entrypoint.
 
+mod dialogs;
 mod navigation;
 mod preview;
+mod project;
 mod worker;
 
 use std::cell::Cell;
@@ -22,19 +24,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         std::process::exit(1);
     }
-    let (smoke_test, preview_source) = match arguments.as_slice() {
-        [] => (false, None),
-        [argument] if argument == "--smoke-test" => (true, None),
-        [argument, path] if argument == "--preview-source" => (false, Some(path.clone())),
+    let (smoke_test, preview_source, project) = match arguments.as_slice() {
+        [] => (false, None, None),
+        [argument] if argument == "--smoke-test" => (true, None, None),
+        [argument, path] if argument == "--preview-source" => (false, Some(path.clone()), None),
+        [argument, path] if argument == "--project" => (false, None, Some(path.clone())),
         [argument] if argument == "--help" || argument == "-h" => {
             println!(
-                "Usage: deadpan-app [--smoke-test | --preview-source PATH | --headless <command>]\n\nOpen the non-destructive Source preview workspace or run headless project commands."
+                "Usage: deadpan-app [--smoke-test | --project PATH | --preview-source PATH | --headless <command>]\n\nOpen a project workspace, preview a source, or run headless project commands."
             );
             return Ok(());
         }
         _ => {
             return Err(
-                "Usage: deadpan-app [--smoke-test | --preview-source PATH | --headless <command>]"
+                "Usage: deadpan-app [--smoke-test | --project PATH | --preview-source PATH | --headless <command>]"
                     .into(),
             );
         }
@@ -76,6 +79,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 smoke_test,
                 exit_observer,
                 preview_source,
+                project,
             )?))
         }),
     )?;
