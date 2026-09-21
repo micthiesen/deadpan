@@ -1,0 +1,66 @@
+{
+  "scope": "origin/main at ed5c8ec plus staged, unstaged and untracked source registration changes",
+  "reviews": [
+    {
+      "agent": "registration_general_review",
+      "lens": "general",
+      "findings": [
+        {
+          "severity": "minor",
+          "file": "crates/deadpan-cli/src/source_registration.rs",
+          "finding": "New JSON request envelope lacked an explicit protocol version.",
+          "disposition": "Applied: require protocol1, reject unsupported versions before ProjectStore::open, document envelope, add subprocess rejection coverage.",
+          "followup": "Reviewer re-read the fix and found no remaining defect."
+        }
+      ]
+    },
+    {
+      "agent": "registration_invariants_review",
+      "lens": "source qualification, admission, receipt and historical lookup invariants",
+      "findings": [],
+      "verification_limit": "Separate targeted test invocation lacked DEADPAN_FFMPEG_PREFIX and could not start; root full gate uses qualified prefix."
+    },
+    {
+      "agent": "registration_migration_review",
+      "lens": "migration safety and frozen wire compatibility",
+      "findings": [
+        {
+          "severity": "minor",
+          "files": [
+            "docs/SOURCE_IMPORT_TIMING.md",
+            "docs/SOURCE_AUDIO_MAPPING.md"
+          ],
+          "finding": "Current migration descriptions still named schema13.",
+          "disposition": "Applied: update to schema14/core9; related video-mapping and source-audio descriptions updated."
+        }
+      ],
+      "code_findings": [],
+      "verification": "Reviewer ran core legacy tests; separate store invocation lacked DEADPAN_FFMPEG_PREFIX. Root full gate includes all migration tests."
+    }
+  ],
+  "unresolved_findings": [],
+  "intermediate_failures": [
+    {
+      "failure": "Six source registration store tests rejected fixture paths containing parent traversal.",
+      "fix": "Canonicalize fixture helper paths; corrected managed object deletion path to actual blake3- prefix.",
+      "evidence": "intermediate/deadpan-source-registration-store-tests.log.gz and corrected store-tests2 log"
+    },
+    {
+      "failure": "Worker-reported CLI test accessor compile error and legacy fixture setup failure.",
+      "fix": "Use audio stream accessor; disable foreign keys only while loading historical SQL fixture, create Media/Originals and Media/Generated in test package.",
+      "evidence": "Worker report retained in qualification narrative; no separate full intermediate CLI log retained."
+    }
+  ],
+  "skipped_checks": [
+    "Native ASan/UBSan: adapters unchanged",
+    "GUI aesthetics, native focus/IME/accessibility/keyboard and lifecycle: no affected native UI",
+    "Python qualification suites: unchanged and not rerun locally"
+  ],
+  "remaining_product_scope": [
+    "Automatic presentation basis state/adoption",
+    "Native import workflow",
+    "Legacy asset requalification",
+    "Full format/color matrix",
+    "Playback, audio output and export"
+  ]
+}

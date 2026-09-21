@@ -193,6 +193,7 @@ fn measured_av_candidates_drive_picture_plans_through_leading_and_trailing_holds
                 Command::AddAsset {
                     id: asset.clone(),
                     asset: AssetRecord {
+                        source_qualification: None,
                         label: name.into(),
                         content_hash: blake3::hash(&bytes).to_hex().to_string(),
                         video: timing.video.map(|placement| placement.span),

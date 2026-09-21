@@ -417,6 +417,7 @@ fn source_document() -> ProjectDocument {
         Command::AddAsset {
             id: asset.clone(),
             asset: AssetRecord {
+                source_qualification: None,
                 label: "Original".into(),
                 content_hash: "a".repeat(64),
                 video: Some(video),

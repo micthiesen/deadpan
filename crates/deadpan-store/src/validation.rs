@@ -3,7 +3,7 @@
 
 use deadpan_core::{
     CommandRequest, EditTransaction, MAX_IDENTITY_BYTES, ProjectDocument, RevisionId, legacy_v1,
-    legacy_v2, legacy_v3, legacy_v4, legacy_v5, legacy_v6, legacy_v7,
+    legacy_v2, legacy_v3, legacy_v4, legacy_v5, legacy_v6, legacy_v7, legacy_v8,
 };
 use rusqlite::{Connection, params};
 
@@ -167,6 +167,7 @@ pub(crate) fn migrate_history(connection: &Connection, version: u32) -> Result<(
         7..=10 => ReplaySchema::V5,
         11 => ReplaySchema::V6,
         12 => ReplaySchema::V7,
+        13 => ReplaySchema::V8,
         _ => return Err(StoreError::UnsupportedSchema(version)),
     };
     replay(connection, schema)
@@ -182,6 +183,7 @@ enum ReplaySchema {
     V5,
     V6,
     V7,
+    V8,
 }
 
 enum StoredDocument {
@@ -193,6 +195,7 @@ enum StoredDocument {
     V5(legacy_v5::Document),
     V6(legacy_v6::Document),
     V7(legacy_v7::Document),
+    V8(legacy_v8::Document),
 }
 impl StoredDocument {
     fn revision_id(&self) -> &RevisionId {
@@ -205,6 +208,7 @@ impl StoredDocument {
             Self::V5(doc) => doc.revision_id(),
             Self::V6(doc) => doc.revision_id(),
             Self::V7(doc) => doc.revision_id(),
+            Self::V8(doc) => doc.revision_id(),
         }
     }
     fn initial(self) -> Result<ProjectDocument, StoreError> {
@@ -217,6 +221,7 @@ impl StoredDocument {
             Self::V5(doc) => Ok(doc.upgrade()?),
             Self::V6(doc) => Ok(doc.upgrade()?),
             Self::V7(doc) => Ok(doc.upgrade()?),
+            Self::V8(doc) => Ok(doc.upgrade()?),
         }
     }
     fn matches(&self, doc: &ProjectDocument) -> bool {
@@ -229,6 +234,7 @@ impl StoredDocument {
             Self::V5(stored) => stored.matches(doc),
             Self::V6(stored) => stored.matches(doc),
             Self::V7(stored) => stored.matches(doc),
+            Self::V8(stored) => stored.matches(doc),
         }
     }
 }
@@ -248,6 +254,7 @@ fn read_replay_revision(
         ReplaySchema::V5 => StoredDocument::V5(legacy_v5::Document::from_json(&json)?),
         ReplaySchema::V6 => StoredDocument::V6(legacy_v6::Document::from_json(&json)?),
         ReplaySchema::V7 => StoredDocument::V7(legacy_v7::Document::from_json(&json)?),
+        ReplaySchema::V8 => StoredDocument::V8(legacy_v8::Document::from_json(&json)?),
     };
     if document.revision_id().as_str() != id {
         return Err(history_error("revision identity disagrees with document"));
@@ -357,6 +364,7 @@ fn replay(connection: &Connection, schema: ReplaySchema) -> Result<(), StoreErro
                     ReplaySchema::V5 => legacy_v5::upgrade_request(&request_json)?,
                     ReplaySchema::V6 => legacy_v6::upgrade_request(&request_json)?,
                     ReplaySchema::V7 => legacy_v7::upgrade_request(&request_json)?,
+                    ReplaySchema::V8 => legacy_v8::upgrade_request(&request_json)?,
                 };
                 let calculated = deadpan_core::apply(&current, &request)?;
                 let matches_edit = match schema {
@@ -370,6 +378,7 @@ fn replay(connection: &Connection, schema: ReplaySchema) -> Result<(), StoreErro
                     ReplaySchema::V5 => legacy_v5::matches_edit(&edit_json, &calculated)?,
                     ReplaySchema::V6 => legacy_v6::matches_edit(&edit_json, &calculated)?,
                     ReplaySchema::V7 => legacy_v7::matches_edit(&edit_json, &calculated)?,
+                    ReplaySchema::V8 => legacy_v8::matches_edit(&edit_json, &calculated)?,
                 };
                 let next_document = calculated.forward.apply(&current)?;
                 if !matches_edit || !next.matches(&next_document) {

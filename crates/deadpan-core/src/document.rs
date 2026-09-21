@@ -8,7 +8,7 @@ use crate::{
     RepeatLayout, SourceAudioMapping, SourceTimestamp, SourceVideoMapping, TimeError,
 };
 
-pub const DOCUMENT_SCHEMA_VERSION: u32 = 8;
+pub const DOCUMENT_SCHEMA_VERSION: u32 = 9;
 /// Bounds apply before traversal. Structure is walked iteratively, never recursively.
 pub const MAX_DOCUMENT_NODES: usize = 100_000;
 pub const MAX_DOCUMENT_ASSETS: usize = 100_000;
@@ -69,6 +69,51 @@ identifier!(RevisionId);
 identifier!(NodeId);
 identifier!(AssetId);
 identifier!(MarkId);
+
+/// BLAKE3 identity of a canonical host qualification receipt. The core retains
+/// the binding; only the host can establish receipt ownership and validity.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[serde(try_from = "String", into = "String")]
+pub struct SourceQualificationId(String);
+
+impl SourceQualificationId {
+    pub fn new(value: String) -> Result<Self, DocumentError> {
+        if value.len() != 64
+            || !value
+                .bytes()
+                .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
+        {
+            return Err(DocumentError::new(
+                DocumentErrorCode::InvalidIdentity,
+                "source qualification identity must contain exactly 64 lowercase hexadecimal digits",
+            ));
+        }
+        Ok(Self(value))
+    }
+
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+impl TryFrom<String> for SourceQualificationId {
+    type Error = DocumentError;
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        Self::new(value)
+    }
+}
+
+impl From<SourceQualificationId> for String {
+    fn from(value: SourceQualificationId) -> Self {
+        value.0
+    }
+}
+
+impl fmt::Display for SourceQualificationId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(&self.0)
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -151,6 +196,9 @@ pub struct AssetRecord {
     pub still_image: bool,
     /// Original presentation-frame count, required for accepted generated intervals.
     pub frame_count: Option<FrameDuration>,
+    /// Canonical host receipt retained with an imported original asset.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source_qualification: Option<SourceQualificationId>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

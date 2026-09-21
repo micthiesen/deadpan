@@ -762,6 +762,7 @@ name = "deadpan-cli"
 version = "0.1.0"
 dependencies = [
  "deadpan-core",
+ "deadpan-media",
  "deadpan-plan",
  "deadpan-store",
  "rusqlite",
@@ -900,6 +901,7 @@ dependencies = [
  "deadpan-core",
  "deadpan-fileclone",
  "deadpan-jobs",
+ "deadpan-media",
  "rusqlite",
  "rustix 1.1.5",
  "serde",

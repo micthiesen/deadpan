@@ -1,8 +1,9 @@
 # Headless editing foundation
 
 The standalone CLI and `deadpan-app --headless` use the same implementation.
-Neither headless entrypoint initializes a window or media worker. This is the
-engineering API, not the finished editor's user interface.
+Neither headless entrypoint initializes a window. Source registration opens
+bounded media sessions to qualify the selected streams. This is the engineering
+API, not the finished editor's user interface.
 
 ```sh
 cargo run --locked -p deadpan-cli -- project create /tmp/example.deadpan --fps 30000/1001 --size 1920x1080
@@ -11,8 +12,8 @@ cargo run --locked -p deadpan-app -- --headless project dump /tmp/example.deadpa
 ```
 
 Creation requires a new `.deadpan` directory path and an explicit presentation
-basis. Automatic first-source adoption still belongs to the unimplemented import
-workflow. Sources, analysis, and renderers cannot be inferred from this blank
+basis. Automatic first-source adoption remains open. Headless source registration
+uses this explicit basis. Sources, analysis, and renderers cannot be inferred from this blank
 project. The source package's `project.sqlite` is authoritative; `manifest.json`
 contains discovery identity only. No loose JSON document is read as current state.
 
@@ -73,7 +74,7 @@ three total plays and only two gaps. These are structural edits, not rendered
 media. Editing through range/text selectors, registers, macros, and effects
 remain required future work.
 
-Documents use schema 8. [Source audio mappings](SOURCE_AUDIO_MAPPING.md) and
+Documents use schema 9. [Source audio mappings](SOURCE_AUDIO_MAPPING.md) and
 [picture mappings](SOURCE_VIDEO_MAPPING.md) independently choose the beat duration
 or an exact stream duration and start with `placement`.
 [Measured import timing](SOURCE_IMPORT_TIMING.md) describes the candidate policy.
@@ -384,6 +385,55 @@ The CLI uses the host defaults of 64 GiB and 300 cooperative seconds. The Rust
 host API also accepts cancellation, tighter limits and opaque bookmark data.
 See [original media](ORIGINAL_MEDIA.md) for durability and remaining import work.
 
+## Measured source registration
+
+After retention, explicitly qualify the selected streams and optionally insert
+them with one authored edit:
+
+```sh
+cargo run --locked -p deadpan-cli -- project register-source /tmp/example.deadpan --request-json /tmp/register.json --dry-run
+cargo run --locked -p deadpan-cli -- project register-source /tmp/example.deadpan --request-json /tmp/register.json
+```
+
+Use the actual current revision and root from `project dump`, and the original's
+content identity from `retain-original`. Registration requires a fresh explicit
+`new_revision`; unlike the generic command envelope, it does not generate one.
+
+```json
+{
+  "protocol": 1,
+  "registration": {
+    "expected_revision": "CURRENT_REVISION",
+    "new_revision": "source-import-1",
+    "original": {"algorithm": "blake3", "digest": "64_LOWERCASE_HEX_DIGITS_FROM_RETENTION"},
+    "new_asset_id": "camera-1",
+    "label": "Camera original",
+    "insertion": {"parent": "ROOT_NODE_ID", "index": 0, "node": "clip-1", "label": "Opening"}
+  },
+  "streams": {"type": "video_and_audio", "audio_stream": 1}
+}
+```
+
+The required request protocol is `1`; unsupported or malformed protocols fail
+before opening the project or source. Select the actual audio stream index. Other explicit choices are
+`{"type":"video_only"}` and `{"type":"audio_only","stream":0}`.
+Omitting or failing a selected stream is an error. Set `insertion` to `null` to
+register without inserting. The host derives exact full-source placements from
+measured indexes using the existing project basis; it does not adopt a new basis.
+
+The response has `protocol: 1`, `committed`, and `preview` or `outcome` containing
+the resolved asset and qualification IDs plus the proposed edit or commit.
+An identical current registration reuses its asset even if a different
+`new_asset_id` was proposed. Without insertion, this is a no-op with
+`committed: false` and `outcome.commit: null`. Dry-run performs actual verification
+and decoding but writes no receipt or history, and can coexist with a writer.
+
+Stale revisions fail before opening source bytes. Commits with current generation
+requests require host relevance context and return `GenerationRelevanceRequired`
+through this CLI; preview remains available to a host resolver. The CLI does not
+invent unchanged context. [Source registration](SOURCE_REGISTRATION.md) documents
+durability, historical lookup, bounded evidence and remaining native workflow work.
+
 ## History and checkpoints
 
 ```sh
@@ -425,18 +475,21 @@ future-schema read-only inspection still needs a compatibility implementation.
 
 ## Schema migration
 
-Database schemas 1 through 12 return `MigrationRequired` when opened. Upgrade explicitly:
+Database schemas 1 through 13 return `MigrationRequired` when opened. Upgrade explicitly:
 
 ```sh
 cargo run --locked -p deadpan-cli -- project migrate /tmp/example.deadpan
 ```
 
 Migration holds the project writer lock, keeps a consistent SQLite backup under
-`Snapshots/before-schema-13-*.sqlite`, and upgrades a separate candidate. It
+`Snapshots/before-schema-14-*.sqlite`, and upgrades a separate candidate. It
 replays all commands, undo/redo revisions, and abandoned branches with their
 original revision IDs. Every snapshot and forward/inverse transaction is checked
 against its strict original schema meaning. Migration goes directly to database
-schema 13 and core document schema 8. Database-12 histories use the frozen core-7
+schema 14 and core document schema 9. Database-13 histories use the frozen core-8
+adapter, retaining independent placements. Old assets gain no qualification IDs,
+and the new source qualification table starts empty. A preexisting modern table
+is rejected. Database-12 histories use the frozen core-7
 adapter, retaining independent picture/audio mappings. Database-11 histories use the frozen core-6
 adapter, retaining explicit audio mappings. Database-7/8/9/10 histories use the
 frozen core-5 adapter and retain prior audio duration mapping as `fit_beat`.

@@ -62,6 +62,13 @@ pub enum StoreError {
     GeneratedAcceptanceUnavailable,
     #[error("Generated bundle acceptance is invalid: {0}")]
     GenerationAcceptance(String),
+    #[error("New source qualifications require decoded-source registration")]
+    SourceAdmissionUnavailable,
+    #[error("Source registration is invalid: {0}")]
+    SourceRegistration(String),
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    #[error(transparent)]
+    SourceQualification(#[from] deadpan_media::source_qualification::SourceQualificationError),
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     #[error(transparent)]
     GeneratedMedia(#[from] crate::generated_media::GeneratedMediaError),
@@ -114,6 +121,10 @@ impl StoreError {
             Self::GenerationAttempt(_) => "GenerationAttemptInvalid",
             Self::GeneratedAcceptanceUnavailable => "GeneratedAcceptanceUnavailable",
             Self::GenerationAcceptance(_) => "GenerationAcceptanceInvalid",
+            Self::SourceAdmissionUnavailable => "SourceAdmissionUnavailable",
+            Self::SourceRegistration(_) => "SourceRegistrationInvalid",
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            Self::SourceQualification(_) => "SourceQualificationInvalid",
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             Self::GeneratedMedia(error) => error.code(),
             #[cfg(any(target_os = "macos", target_os = "linux"))]

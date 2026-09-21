@@ -685,6 +685,7 @@ fn source_owned_marks_copy_without_changing_source_time_and_concrete_ancestor_ma
         Command::AddAsset {
             id: asset.clone(),
             asset: AssetRecord {
+                source_qualification: None,
                 label: "original".into(),
                 content_hash: "a".repeat(64),
                 video: Some(

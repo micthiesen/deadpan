@@ -162,6 +162,7 @@ fn natural_picture_plan_selects_and_decodes_original_pixels_after_trim_rounding(
             Command::AddAsset {
                 id: asset.clone(),
                 asset: AssetRecord {
+                    source_qualification: None,
                     label: "Measured RGB fixture".into(),
                     content_hash: blake3::hash(&bytes).to_hex().to_string(),
                     video: Some(full),

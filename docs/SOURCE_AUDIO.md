@@ -63,13 +63,14 @@ blocking readers and individual native calls are not preemptible. All copying,
 decoding, indexing, cache I/O and allocation belong on media service threads,
 never UI or real-time audio callbacks.
 
-The cache is disposable and private, with no original-media eviction or durable
-index reuse policy implied. The original remains separately owned by the store.
-Authored registration, resampling, DSP, device output, listening, scheduling and
-preview/export equivalence remain open. [Independent destination mapping](SOURCE_AUDIO_MAPPING.md)
-now represents shorter or delayed audio without changing its natural rate.
-Qualified import still needs to bind that mapping to measured streams and a
-common A/V origin; a source index alone cannot establish that decision.
+The PCM cache is disposable and private. The original remains separately owned
+by the store. [Source registration](SOURCE_REGISTRATION.md) retains measured
+indexes and binds exact independent mappings to qualified selected streams and
+their common A/V origin. A source index alone cannot establish that decision.
+[Independent destination mapping](SOURCE_AUDIO_MAPPING.md) represents shorter
+or delayed audio without changing its natural rate. Automatic basis adoption,
+resampling, DSP, device output, listening, scheduling and preview/export
+equivalence remain open.
 
 Run `cargo test -p deadpan-source -p deadpan-media --locked` with the qualified
 FFmpeg prefix. Verify generated PCM fixtures with

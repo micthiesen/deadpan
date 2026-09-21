@@ -206,6 +206,7 @@ fn independent_stream_mappings_use_headless_commands_and_durable_undo() -> Resul
         Command::AddAsset {
             id: asset.clone(),
             asset: AssetRecord {
+                source_qualification: None,
                 label: "Timing fixture".into(),
                 content_hash: "a".repeat(64),
                 video: Some(video),

@@ -89,6 +89,7 @@ fn fixture() -> Result<(
     };
     let clock = SourceTimeBase::new(1, 1000)?;
     let record = |object: &GeneratedObjectRef, frames| AssetRecord {
+        source_qualification: None,
         label: "Fixture master".into(),
         content_hash: object.content().to_string(),
         video: Some(

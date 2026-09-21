@@ -81,8 +81,15 @@ Use `cargo test --locked -p deadpan-store --test original_media` and
 ownership, relocation, stale/wrong relinking and failure boundaries. Shared
 object-storage unit tests force the positional-copy fallback; the native
 fileclone tests exercise actual macOS clone independence. These checks do not
-require opening the app. Native dialogs and the authored import workflow still
+require opening the app. Native dialogs and the complete import workflow still
 need implementation and their own focused verification.
+
+For measured registration, run `cargo test --locked -p deadpan-media --test source_qualification`,
+`cargo test --locked -p deadpan-store --test source_registration` and
+`cargo test --locked -p deadpan-cli --test source_registration`. These open real
+video/audio fixtures and cover persisted evidence, transactional insertion,
+historical lookup, rollback and explicit stream selection. Run the migration
+suite for schema changes. See [source registration](SOURCE_REGISTRATION.md).
 
 ## Source audio checks
 

@@ -65,13 +65,13 @@ display color, editorial effects, playback or an encoded export path.
 
 Every persisted edit, undo, and redo gets a never-reused revision ID. Core inverse patches can restore exact fixture identity; the store rebases them onto fresh revisions to prevent stale commands becoming valid after undo. Store writes use one transaction for the revision, history, and cursor. Keep `.writer.lock` held for the writable store lifetime; read-only inspection and dry runs may coexist. Take live database snapshots through SQLite's backup API, never copy only an open main database file.
 
-Repeat play IDs are scoped by Repeat node and allocation revision, with an ordinal inside that allocation. Preserve surviving IDs through resizing and reorder; allocate fresh IDs for growth and inserted subtrees. Imported initial snapshots reserve their allocation names even after plays are removed. Keep compact runs bounded and never expand a repeat merely to seek. Core schema 8 retains these runs, marks, sparse overrides and generated Hold metadata, and includes independent source audio and picture mappings. Database schemas 1 through 12 replay the complete chronology directly into the current schema on a consistent copy, compare every legacy snapshot/transaction, and promote through SQLite's backup transaction only after validation. Strict legacy adapters freeze nested provider vocabulary and reject new fields, commands, and unexpected mark or override changes. Preserve the pre-migration backup.
+Repeat play IDs are scoped by Repeat node and allocation revision, with an ordinal inside that allocation. Preserve surviving IDs through resizing and reorder; allocate fresh IDs for growth and inserted subtrees. Imported initial snapshots reserve their allocation names even after plays are removed. Keep compact runs bounded and never expand a repeat merely to seek. Core schema 9 retains these runs, marks, sparse overrides, generated Hold metadata and independent source mappings, and binds qualified assets to immutable source receipts. Database schemas 1 through 13 replay the complete chronology directly into the current schema on a consistent copy, compare every legacy snapshot/transaction, and promote through SQLite's backup transaction only after validation. Strict legacy adapters freeze nested provider vocabulary and reject new fields, commands, and unexpected mark or override changes. Preserve the pre-migration backup.
 
-Database schema 13 stores core schema 8 and retains operational generation requests,
+Database schema 14 stores core schema 9 and retains operational generation requests,
 attempts, validation receipts, and candidate selection. Modern bundle receipts add
 optional measured spans and retained-input admission evidence; legacy receipts
 gain none. Legacy requests retain no plan and remain protocol 1. Schema-7/8/9/10
-history uses the frozen core schema-5 adapter; schema-11 history uses core schema 6; schema-12 uses frozen core schema 7.
+history uses the frozen core schema-5 adapter; schema-11 history uses core schema 6; schema-12 uses frozen core schema 7; schema-13 uses frozen core schema 8.
 Migration upgrades authored
 JSON through strict replay, preserves existing operational rows and clocks, and
 adds only missing operational tables. Request versions belong
@@ -143,7 +143,7 @@ Ready bundles alone do not authorize an edit. See [acceptance](docs/GENERATION_A
 See [generated Hold semantics](docs/GENERATED_HOLDS.md).
 
 Original byte ownership is operational and separate from stream readiness.
-Database schema 13 retains content-keyed original records with monotonic location
+Database schema 14 retains content-keyed original records with monotonic location
 versions introduced in schema 10; earlier schemas gain an empty inventory. Use the
 shared descriptor-relative object engine for `Media/Originals` and
 `Media/Generated`. Managed originals try APFS clone, then verified copy; retain
@@ -157,6 +157,17 @@ measured endpoint. Do not turn unqualified audio into `AssetRecord.audio: None`:
 asset metadata is immutable. Retain original bytes first, then qualify every
 selected stream before authored registration. `SourceNode.link` means editorial
 A/V linkage, not filesystem ownership. See [original media](docs/ORIGINAL_MEDIA.md).
+
+Qualify selected streams from live decoded sessions sharing verified original
+bytes. Serialized source qualification is stored evidence, never a fresh admission
+token. Registration rechecks original bytes and binds canonical measured indexes,
+source metadata and exact common origin to an immutable receipt. Commit the
+receipt, asset, optional full-source insertion and relevance together through
+`ImportSource`. Resolve source evidence by `(revision, asset)`, never the current
+meaning of a reused alias. Validate receipt bindings across all historical
+revisions, including abandoned branches. Legacy assets gain no invented evidence.
+Registration uses the existing explicit project basis; automatic adoption remains
+open. See [source registration](docs/SOURCE_REGISTRATION.md).
 
 `SourceNode.audio_mapping` explicitly chooses `FitBeat` or an independent exact
 project-frame duration. Use `SourceAudioMapping::natural_rate` for original-rate

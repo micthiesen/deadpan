@@ -110,6 +110,7 @@ fn document(
     wire["assets"] = serde_json::to_value(BTreeMap::from([(
         AssetId::new("video").unwrap(),
         AssetRecord {
+            source_qualification: None,
             label: "Original source".into(),
             content_hash: "a".repeat(64),
             video: Some(span(-1000, 10_000)),

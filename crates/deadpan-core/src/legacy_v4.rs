@@ -66,11 +66,13 @@ impl LegacyAssetRecord {
             audio: self.audio,
             still_image: self.still_image,
             frame_count: self.frame_count,
+            source_qualification: None,
         }
     }
 
     pub(crate) fn project(value: &AssetRecord) -> Option<Self> {
-        if value.content_hash.len() != 64
+        if value.source_qualification.is_some()
+            || value.content_hash.len() != 64
             || !value
                 .content_hash
                 .bytes()

@@ -17,6 +17,9 @@ serde_json.workspace = true
 thiserror.workspace = true
 uuid.workspace = true
 
+[target.'cfg(any(target_os = "macos", target_os = "linux"))'.dependencies]
+deadpan-media.workspace = true
+
 [dev-dependencies]
 tempfile.workspace = true
 rusqlite.workspace = true

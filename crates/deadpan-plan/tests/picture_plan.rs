@@ -116,6 +116,7 @@ fn document(roots: &[&str], nodes: Vec<(&str, BeatNode)>) -> ProjectDocument {
     );
     value["nodes"] = serde_json::to_value(nodes).unwrap();
     let video = AssetRecord {
+        source_qualification: None,
         label: "Video".into(),
         content_hash: "a".repeat(64),
         video: Some(span(-10000, 100000)),
@@ -124,6 +125,7 @@ fn document(roots: &[&str], nodes: Vec<(&str, BeatNode)>) -> ProjectDocument {
         frame_count: Some(duration(10000)),
     };
     let still = AssetRecord {
+        source_qualification: None,
         label: "Still".into(),
         content_hash: "b".repeat(64),
         video: None,
@@ -367,6 +369,7 @@ fn generated_hold_resize_reuses_materialized_frames_and_preserves_following_sour
         .unwrap(),
     };
     let record = |object: &GeneratedObjectRef, frames: i64| AssetRecord {
+        source_qualification: None,
         label: "Generated".into(),
         content_hash: object.content().to_string(),
         video: Some(span(0, frames * 1001)),

@@ -6,7 +6,7 @@ use std::{
 
 use deadpan_core::{
     IterationOrder, NodeId, NodeKind, ProjectDocument, RevisionId, legacy_v1, legacy_v2, legacy_v3,
-    legacy_v4, legacy_v5, legacy_v6, legacy_v7,
+    legacy_v4, legacy_v5, legacy_v6, legacy_v7, legacy_v8,
 };
 use deadpan_jobs::{Relevance, RequestId};
 use deadpan_store::generation::{
@@ -16,6 +16,223 @@ use deadpan_store::{AccessMode, DATABASE_SCHEMA_VERSION, ProjectStore, StoreErro
 use rusqlite::Connection;
 
 type Result<T = ()> = std::result::Result<T, Box<dyn Error>>;
+
+#[test]
+fn schema_thirteen_preserves_exact_placements_without_inventing_qualification() -> Result {
+    use deadpan_core::{CommandRequest, ExactRatio, SourceAudioMapping, SourceVideoMapping};
+    let scratch = tempfile::tempdir()?;
+    let path = fixture_version(scratch.path(), 13)?;
+    let database = Connection::open(path.join("project.sqlite"))?;
+    let before = contents(&database)?;
+    let old_docs = docs(&database)?;
+    let old_history = history_json(&database)?;
+    let old_metadata = metadata(&database)?;
+    let old_operational = operational_metadata(&database)?;
+    assert_eq!(old_docs.len(), 46);
+    assert_eq!(old_history.len(), 25);
+    assert!(matches!(
+        ProjectStore::open(&path, AccessMode::ReadOnly),
+        Err(StoreError::MigrationRequired(13))
+    ));
+    let migration = ProjectStore::migrate(&path)?;
+    assert_eq!(
+        (migration.from_schema, migration.to_schema),
+        (13, DATABASE_SCHEMA_VERSION)
+    );
+    let backup = Connection::open(migration.backup.unwrap())?;
+    assert_eq!(contents(&backup)?, before);
+    assert_eq!(operational_metadata(&backup)?, old_operational);
+    let new_docs = docs(&database)?;
+    assert_eq!(new_docs.len(), old_docs.len());
+    for ((old_id, old_json), (new_id, new_json)) in old_docs.iter().zip(&new_docs) {
+        assert_eq!(old_id, new_id);
+        let current = ProjectDocument::from_json(new_json)?;
+        assert!(legacy_v8::Document::from_json(old_json)?.matches(&current));
+        assert!(
+            current
+                .assets()
+                .values()
+                .all(|asset| asset.source_qualification.is_none())
+        );
+    }
+    let new_history = history_json(&database)?;
+    assert_eq!(new_history.len(), old_history.len());
+    for ((old_request, old_edit), (new_request, new_edit)) in old_history.iter().zip(new_history) {
+        assert_eq!(
+            legacy_v8::upgrade_request(old_request)?,
+            serde_json::from_str::<CommandRequest>(&new_request)?
+        );
+        assert!(legacy_v8::matches_edit(
+            old_edit,
+            &serde_json::from_str(&new_edit)?
+        )?);
+    }
+    assert_eq!(metadata(&database)?, old_metadata);
+    assert_eq!(operational_metadata(&database)?, old_operational);
+    let qualification_count: u32 =
+        database.query_row("SELECT COUNT(*) FROM source_qualifications", [], |row| {
+            row.get(0)
+        })?;
+    assert_eq!(qualification_count, 0);
+    let mut store = ProjectStore::open(&path, AccessMode::ReadWrite)?;
+    let baseline = store.snapshot()?;
+    assert_eq!(baseline.revision_id().as_str(), "schema13-pending-redo");
+    for (id, video_start, audio_start, video_frames, audio_frames, offset) in [
+        (
+            "source-negative",
+            ExactRatio::new(2, 3)?,
+            ExactRatio::new(-1, 147)?,
+            ExactRatio::new(28750, 1001)?,
+            ExactRatio::new(60000, 1001)?,
+            -137,
+        ),
+        (
+            "source-positive",
+            ExactRatio::new(-3, 7)?,
+            ExactRatio::new(3, 7)?,
+            ExactRatio::new(120000, 1001)?,
+            ExactRatio::new(120000, 1001)?,
+            2401,
+        ),
+    ] {
+        let NodeKind::Source { source } = &baseline.nodes()[&NodeId::new(id)?].kind else {
+            panic!()
+        };
+        let SourceVideoMapping::Placement { start, frames, .. } = source.video_mapping else {
+            panic!()
+        };
+        assert_eq!((start, frames), (video_start, video_frames));
+        assert_eq!(
+            source.audio_mapping,
+            SourceAudioMapping::Placement {
+                start: audio_start,
+                frames: audio_frames
+            }
+        );
+        assert_eq!(source.audio_offset.0, offset);
+    }
+    assert!(
+        baseline
+            .marks()
+            .contains_key(&deadpan_core::MarkId::new("placement-local-mark")?)
+    );
+    let relevance = |store: &ProjectStore, next: &RevisionId| -> Result<RelevancePlan> {
+        Ok(RelevancePlan {
+            from_revision: store.snapshot()?.revision_id().clone(),
+            to_revision: next.clone(),
+            observations: store
+                .current_generation_requests()?
+                .into_iter()
+                .map(|request| RelevanceObservation {
+                    request_id: request.request_id,
+                    after_context: ContextObservation::Resolved(
+                        request.binding.context_sha256.clone(),
+                    ),
+                    binding: request.binding,
+                })
+                .collect(),
+        })
+    };
+    let next = RevisionId::new("schema14-redo-inherited")?;
+    store.redo_reconciled(
+        baseline.revision_id(),
+        next.clone(),
+        &relevance(&store, &next)?,
+    )?;
+    let redone = store.snapshot()?;
+    assert_eq!(
+        redone.nodes()[&NodeId::new("source-negative")?].label,
+        "Schema 13 signed stream placements"
+    );
+    assert_eq!(redone.assets(), baseline.assets());
+    assert_eq!(redone.marks(), baseline.marks());
+    let next = RevisionId::new("schema14-undo-inherited")?;
+    store.undo_reconciled(
+        redone.revision_id(),
+        next.clone(),
+        &relevance(&store, &next)?,
+    )?;
+    assert_eq!(store.snapshot()?.nodes(), baseline.nodes());
+    store.validate()?;
+    drop(store);
+    let reopened = ProjectStore::open(&path, AccessMode::ReadOnly)?;
+    assert_eq!(reopened.snapshot()?.nodes(), baseline.nodes());
+    assert_eq!(reopened.snapshot()?.assets(), baseline.assets());
+    assert_eq!(operational_metadata(&database)?, old_operational);
+    Ok(())
+}
+
+#[test]
+fn schema_thirteen_rejects_registration_vocabulary_and_corrupt_placement_history() -> Result {
+    for corruption in [
+        "UPDATE revisions SET document=json_set(document,'$.assets.\"original-av\".source_qualification',NULL) WHERE id='schema13-pending-redo'",
+        "UPDATE revisions SET document=json_set(document,'$.assets.\"original-av\".source_qualification','aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa') WHERE id='schema10-add-av-asset'",
+        "UPDATE history SET request=json_set(request,'$.command.asset.source_qualification',NULL) WHERE revision_id='schema10-add-av-asset'",
+        "UPDATE history SET request=json_set(request,'$.command.assets.\"accepted-native\".source_qualification',NULL) WHERE revision_id='accepted'",
+        "UPDATE history SET request=json_set(request,'$.command.command','import_source','$.command.asset.source_qualification','aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa','$.command.insertion',NULL) WHERE revision_id='schema10-add-av-asset'",
+        "UPDATE history SET edit=json_set(edit,'$.forward.assets.\"original-av\".after.source_qualification',NULL) WHERE revision_id='schema10-add-av-asset'",
+        "UPDATE history SET edit=json_set(edit,'$.inverse.assets.\"original-av\".before.source_qualification',NULL) WHERE revision_id='schema10-add-av-asset'",
+        "UPDATE history SET edit=json_set(edit,'$.forward.assets.\"accepted-native\".after.source_qualification',NULL) WHERE revision_id='accepted'",
+        "UPDATE history SET edit=json_set(edit,'$.inverse.assets.\"accepted-native\".before.source_qualification',NULL) WHERE revision_id='accepted'",
+        "UPDATE revisions SET document=json_set(document,'$.nodes.\"source-negative\".kind.source.video_mapping.start.numerator','3') WHERE id='schema13-place-video-negative'",
+        "UPDATE history SET request=json_set(request,'$.command.edit.mapping.start.numerator','-2') WHERE revision_id='schema13-place-audio-negative'",
+        "UPDATE history SET edit=json_set(edit,'$.forward.nodes.\"source-negative\".after.kind.source.video_mapping.start.numerator','3') WHERE revision_id='schema13-place-video-negative'",
+        "UPDATE history SET edit=json_set(edit,'$.inverse.nodes.\"source-negative\".before.kind.source.audio_mapping.start.numerator','-2') WHERE revision_id='schema13-place-audio-negative'",
+        "UPDATE revisions SET document=json_set(document,'$.schema_version',9) WHERE id='schema13-pending-redo'",
+    ] {
+        let scratch = tempfile::tempdir()?;
+        let path = fixture_version(scratch.path(), 13)?;
+        let database = Connection::open(path.join("project.sqlite"))?;
+        database.execute_batch(corruption)?;
+        assert!(
+            database.changes() > 0,
+            "fixture mutation did not run: {corruption}"
+        );
+        let before = contents(&database)?;
+        let operational = operational_metadata(&database)?;
+        let backup = match ProjectStore::migrate(&path) {
+            Err(StoreError::MigrationFailed { backup, .. }) => backup,
+            result => panic!("{corruption}: {result:?}"),
+        };
+        assert_eq!(contents(&database)?, before, "{corruption}");
+        assert_eq!(operational_metadata(&database)?, operational);
+        let backup = Connection::open(backup)?;
+        assert_eq!(contents(&backup)?, before);
+        assert_eq!(operational_metadata(&backup)?, operational);
+    }
+    Ok(())
+}
+
+#[test]
+fn legacy_database_rejects_preexisting_qualification_inventory_without_losing_it() -> Result {
+    for version in [1, 13] {
+        let scratch = tempfile::tempdir()?;
+        let path = fixture_version(scratch.path(), version)?;
+        let database = Connection::open(path.join("project.sqlite"))?;
+        database.execute_batch(
+            "CREATE TABLE source_qualifications (unexpected TEXT NOT NULL);
+             INSERT INTO source_qualifications VALUES ('retain this unexpected inventory');",
+        )?;
+        let before = contents(&database)?;
+        let operational = operational_metadata(&database)?;
+        let backup = match ProjectStore::migrate(&path) {
+            Err(StoreError::MigrationFailed { backup, .. }) => backup,
+            result => panic!("schema {version}: {result:?}"),
+        };
+        let backup = Connection::open(backup)?;
+        for connection in [&database, &backup] {
+            assert_eq!(contents(connection)?, before);
+            assert_eq!(operational_metadata(connection)?, operational);
+            let row: String = connection.query_row(
+                "SELECT unexpected FROM source_qualifications",
+                [],
+                |row| row.get(0),
+            )?;
+            assert_eq!(row, "retain this unexpected inventory");
+        }
+    }
+    Ok(())
+}
 
 #[test]
 fn schema_twelve_preserves_stream_mappings_and_accepts_reversible_exact_placement() -> Result {
@@ -793,6 +1010,7 @@ fn fixture_version(scratch: &Path, version: u32) -> Result<PathBuf> {
         10 => include_str!("fixtures/v10-history.sql"),
         11 => include_str!("fixtures/v11-history.sql"),
         12 => include_str!("fixtures/v12-history.sql"),
+        13 => include_str!("fixtures/v13-history.sql"),
         _ => panic!("unsupported fixture"),
     })?;
     Ok(package)

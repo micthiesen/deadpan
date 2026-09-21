@@ -190,6 +190,7 @@ fn prepare_acceptance(
 
 fn asset_record(object: &GeneratedObjectRef, video: &VideoSpec, span: SourceSpan) -> AssetRecord {
     AssetRecord {
+        source_qualification: None,
         label: format!("Generated {}", object.content().digest()),
         content_hash: object.content().to_string(),
         video: Some(span),

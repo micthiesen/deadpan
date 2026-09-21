@@ -17,6 +17,8 @@ mod object_storage;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod original_media;
 mod schema;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+pub mod source_registration;
 mod validation;
 
 use std::fs::{self, File, OpenOptions};
@@ -80,6 +82,7 @@ impl ProjectStore {
         let json = document.to_json()?;
         check_document_size(&json)?;
         ensure_generated_admission(None, document)?;
+        ensure_source_admission(None, document, None)?;
         fs::create_dir(path)?;
         let package = fs::canonicalize(path)?;
         let lock = acquire_lock(&package)?;
@@ -210,6 +213,8 @@ impl ProjectStore {
         generation_attempts::check_stored_sizes(&transaction)?;
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         original_media::check_stored_sizes(&transaction)?;
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        source_registration::check_stored_sizes(&transaction)?;
         let integrity: String =
             transaction.query_row("PRAGMA quick_check", [], |row| row.get(0))?;
         if integrity != "ok" {
@@ -227,6 +232,8 @@ impl ProjectStore {
         generation_attempts::validate_store(&transaction)?;
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         original_media::validate_store(&transaction)?;
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        source_registration::validate_store(&transaction)?;
         Ok(())
     }
 
@@ -389,12 +396,22 @@ fn prepare_admitted_command(
     request: &CommandRequest,
     admitted: Option<&deadpan_core::GeneratedArtifact>,
 ) -> Result<CommandPlan, StoreError> {
+    prepare_command_with_admission(connection, request, admitted, None)
+}
+
+fn prepare_command_with_admission(
+    connection: &Connection,
+    request: &CommandRequest,
+    generated: Option<&deadpan_core::GeneratedArtifact>,
+    source: Option<(&deadpan_core::AssetId, &deadpan_core::AssetRecord)>,
+) -> Result<CommandPlan, StoreError> {
     let current = read_snapshot(connection)?;
     let edit = deadpan_core::apply(&current, request)?;
     ensure_unused_revision(connection, &request.new_revision)?;
     let next = edit.forward.apply(&current)?;
     check_document_size(&next.to_json()?)?;
-    ensure_generated_admission_with(Some(&current), &next, admitted)?;
+    ensure_generated_admission_with(Some(&current), &next, generated)?;
+    ensure_source_admission(Some(&current), &next, source)?;
     let request_json = serde_json::to_string(request)?;
     let edit_json = serde_json::to_string(&edit)?;
     check_document_size(&request_json)?;
@@ -406,6 +423,26 @@ fn prepare_admitted_command(
         request_json,
         edit_json,
     })
+}
+
+/// A qualified source binding may enter history only through the host's
+/// decoded-source registration. Retaining existing immutable records is safe;
+/// undo/redo restores already-admitted records from durable history.
+fn ensure_source_admission(
+    current: Option<&ProjectDocument>,
+    next: &ProjectDocument,
+    admitted: Option<(&deadpan_core::AssetId, &deadpan_core::AssetRecord)>,
+) -> Result<(), StoreError> {
+    for (id, asset) in next.assets() {
+        if asset.source_qualification.is_none()
+            || current.is_some_and(|document| document.assets().get(id) == Some(asset))
+            || admitted.is_some_and(|(allowed_id, allowed)| allowed_id == id && allowed == asset)
+        {
+            continue;
+        }
+        return Err(StoreError::SourceAdmissionUnavailable);
+    }
+    Ok(())
 }
 
 fn write_command_plan(

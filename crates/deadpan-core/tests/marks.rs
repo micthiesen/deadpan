@@ -723,6 +723,7 @@ fn source_marks_use_original_clock_independent_of_owner_and_timeline_usage() {
         Command::AddAsset {
             id: asset.clone(),
             asset: AssetRecord {
+                source_qualification: None,
                 label: "Audio".into(),
                 content_hash: "a".repeat(64),
                 video: None,
@@ -922,6 +923,7 @@ fn named_source_and_authored_local_marks_require_explicit_repeat_scope() {
         Command::AddAsset {
             id: asset.clone(),
             asset: AssetRecord {
+                source_qualification: None,
                 label: "Video".into(),
                 content_hash: "b".repeat(64),
                 video: Some(span(0, 90)),

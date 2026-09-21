@@ -10,7 +10,7 @@ use crate::{
     HoldFallback, HoldRecipe, HoldVideo, InstancePath, IterationId, IterationOrder,
     MAX_DOCUMENT_MARKS, MAX_DOCUMENT_NODES, Mark, MarkId, MarkState, NodeId, NodeKind,
     OccurrenceEdit, OccurrenceIdentities, PlayOverrides, ProjectDocument, ProjectId, RevisionId,
-    SourceAudioMapping, SourceVideo, SourceVideoMapping, WrapAnchorPolicy,
+    SourceAudioMapping, SourceNode, SourceVideo, SourceVideoMapping, WrapAnchorPolicy,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -21,6 +21,17 @@ pub struct Subtree {
     pub nodes: BTreeMap<NodeId, BeatNode>,
     #[serde(default, deserialize_with = "unique_map")]
     pub overrides: BTreeMap<NodeId, PlayOverrides>,
+}
+
+/// One source beat inserted atomically with its immutable asset registration.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SourceInsertion {
+    pub parent: NodeId,
+    pub index: usize,
+    pub node: NodeId,
+    pub label: String,
+    pub source: SourceNode,
 }
 
 /// Structural node selectors are explicit. Range/text/occurrence resolution is
@@ -113,6 +124,12 @@ pub enum Command {
     AddAsset {
         id: AssetId,
         asset: AssetRecord,
+    },
+    /// Host-qualified source registration with optional one-beat insertion.
+    ImportSource {
+        id: AssetId,
+        asset: AssetRecord,
+        insertion: Option<Box<SourceInsertion>>,
     },
     SetMark {
         id: MarkId,
@@ -563,6 +580,62 @@ pub(crate) fn reduce(
                 ));
             }
             document.assets.insert(id.clone(), asset.clone());
+        }
+        Command::ImportSource {
+            id,
+            asset,
+            insertion,
+        } => {
+            if asset.source_qualification.is_none() {
+                return Err(EditError::new(
+                    EditErrorCode::InvalidCommand,
+                    "source import requires a qualification receipt binding",
+                ));
+            }
+            if let Some(existing) = document.assets.get(id) {
+                if existing != asset {
+                    return Err(EditError::new(
+                        EditErrorCode::ImmutableAsset,
+                        format!("asset {id} already has different immutable metadata"),
+                    ));
+                }
+            } else {
+                document.assets.insert(id.clone(), asset.clone());
+            }
+            if let Some(insertion) = insertion {
+                let video_matches = match &insertion.source.video {
+                    SourceVideo::Stream { asset, .. } | SourceVideo::Still { asset } => asset == id,
+                    SourceVideo::Blank => true,
+                };
+                if !video_matches
+                    || insertion
+                        .source
+                        .audio
+                        .as_ref()
+                        .is_some_and(|audio| &audio.asset != id)
+                {
+                    return Err(EditError::new(
+                        EditErrorCode::SourceRangeInvalid,
+                        "imported source selections must reference the supplied asset",
+                    ));
+                }
+                unused(document, &insertion.node)?;
+                insert_child(
+                    document,
+                    &insertion.parent,
+                    insertion.index,
+                    insertion.node.clone(),
+                )?;
+                document.nodes.insert(
+                    insertion.node.clone(),
+                    BeatNode {
+                        label: insertion.label.clone(),
+                        kind: NodeKind::Source {
+                            source: insertion.source.clone(),
+                        },
+                    },
+                );
+            }
         }
         Command::SetPlayOverride {
             node,
@@ -1034,6 +1107,7 @@ fn description(command: &Command) -> &'static str {
         Command::RevertGeneratedHold { .. } => "Revert generated hold",
         Command::Rename { .. } => "Rename beat",
         Command::AddAsset { .. } => "Register media asset",
+        Command::ImportSource { .. } => "Import source media",
         Command::SetMark { .. } => "Set mark",
         Command::DeleteMark { .. } => "Delete mark",
         Command::SetPlayOverride { .. } => "Set play override",

@@ -650,7 +650,7 @@ pub(crate) fn validate_store(connection: &Connection) -> Result<(), StoreError> 
     Ok(())
 }
 
-fn read_record(
+pub(crate) fn read_record(
     connection: &Connection,
     content: &OriginalContentId,
 ) -> Result<Option<OriginalMediaRecord>, StoreError> {

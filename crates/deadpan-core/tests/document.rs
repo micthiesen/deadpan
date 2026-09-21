@@ -629,6 +629,7 @@ fn span(start: i64, end: i64) -> SourceSpan {
 fn with_asset() -> (ProjectDocument, AssetId) {
     let asset = AssetId::new("asset").unwrap();
     let record = AssetRecord {
+        source_qualification: None,
         label: "Fixture".into(),
         content_hash: "a".repeat(64),
         video: Some(span(-100, 1000)),

@@ -1,0 +1,27 @@
+{
+  "source_revision": "ed5c8eccebb8bb77451284f95b99b4ed33c49c93",
+  "scratch": "/tmp/deadpan-schema13-reproduce-mhld4lqk",
+  "archive_sha256": "314cf7025b697ed7217f6f5022d694f2a7230f8ce3a147f209c8ccfc9ebcb50e",
+  "cli": "/tmp/deadpan-source-registration-migration/old-target/debug/deadpan-cli",
+  "cli_sha256": "4c4548dcc4343fbd34076c97fc71edb26a843556b099c46c052cacf32f4158dc",
+  "generator_sha256": "00e0246f6cfdf7dd43c8c1938910dbc71d1f0089b10dcb308753f323f30709d8",
+  "harness_sha256": "189e15fc05e9bf362b17ba1767665dc6cc57aeae41014534258ad58878d4f8df",
+  "seed_fixture": "crates/deadpan-store/tests/fixtures/v12-history.sql",
+  "seed_sha256": "e88552f2f42fcba1071d4b09f268e10877aff2e326f4929e6c8bfea7eeb56d7c",
+  "sql_fixture": "crates/deadpan-store/tests/fixtures/v13-history.sql",
+  "sql_sha256": "e37a4072a03e62b845d4f34b0cb34ae3bc9c0b00e7a34b034b7a8a38f1f60ad4",
+  "sql_byte_reproduction": true,
+  "reproduced_sql_sha256": [
+    "e37a4072a03e62b845d4f34b0cb34ae3bc9c0b00e7a34b034b7a8a38f1f60ad4",
+    "e37a4072a03e62b845d4f34b0cb34ae3bc9c0b00e7a34b034b7a8a38f1f60ad4"
+  ],
+  "counts": {
+    "revisions": 46,
+    "history": 25,
+    "original_media": 1,
+    "redo": 1,
+    "generation_requests": 1,
+    "generation_attempts": 1,
+    "generation_bundle_receipts": 1
+  }
+}

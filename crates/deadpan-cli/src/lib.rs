@@ -3,6 +3,8 @@
 mod doctor;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 mod originals;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+mod source_registration;
 
 use std::fs::File;
 use std::io::{self, Read, Write};
@@ -26,6 +28,7 @@ const HELP: &str = "Deadpan headless commands:
   project checkpoint <project.deadpan>
   project migrate <project.deadpan>
   project retain-original <project.deadpan> <absolute-source> [--linked]
+  project register-source <project.deadpan> --request-json <request.json> [--dry-run]
   project originals <project.deadpan> [--after <blake3-digest>]
   project verify-original <project.deadpan> <blake3-digest>
   project relink-original <project.deadpan> <blake3-digest> <absolute-source> --expected-version <N>
@@ -57,6 +60,15 @@ pub enum CliError {
     Json(#[from] serde_json::Error),
     #[error(transparent)]
     Io(#[from] std::io::Error),
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    #[error(transparent)]
+    SourceInput(#[from] deadpan_media::source_input::SourceInputError),
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    #[error(transparent)]
+    SourceVideo(#[from] deadpan_media::source_session::SourceSessionError),
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    #[error(transparent)]
+    SourceAudio(#[from] deadpan_media::audio_session::AudioSessionError),
 }
 
 impl CliError {
@@ -71,6 +83,12 @@ impl CliError {
             Self::Anchor(error) => error.code(),
             Self::Io(_) => "IoFailure",
             Self::Store(error) => error.code(),
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            Self::SourceInput(_) => "SourceSnapshotFailed",
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            Self::SourceVideo(_) => "SourceVideoDecodeFailed",
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            Self::SourceAudio(_) => "SourceAudioDecodeFailed",
         }
     }
     fn current_revision(&self) -> Option<&str> {
@@ -140,6 +158,23 @@ fn run(arguments: &[String]) -> Result<(), CliError> {
             action @ ("retain-original" | "originals" | "verify-original" | "relink-original"),
             rest @ ..,
         ] => originals::run(action, rest),
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        [
+            "project",
+            "register-source",
+            path,
+            "--request-json",
+            request,
+        ] => source_registration::run(Path::new(path), Path::new(request), false),
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        [
+            "project",
+            "register-source",
+            path,
+            "--request-json",
+            request,
+            "--dry-run",
+        ] => source_registration::run(Path::new(path), Path::new(request), true),
         ["project", "create", path, "--fps", fps, "--size", size] => {
             let (numerator, denominator) = pair(fps, '/')?;
             let (width, height) = pair(size, 'x')?;

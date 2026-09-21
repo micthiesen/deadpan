@@ -24,6 +24,9 @@ pub mod source_session;
 pub mod source_import_timing;
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+pub mod source_qualification;
+
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 mod conversion;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub use conversion::{

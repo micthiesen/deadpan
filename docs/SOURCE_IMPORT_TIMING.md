@@ -2,9 +2,9 @@
 
 `deadpan-media::source_import_timing` derives a candidate Source and presentation
 basis from measured video/audio indexes. It does not register an asset, retain
-media, establish import readiness or change a project. Authored import still
-requires immutable qualification receipts, durable indexes and an atomic host
-transaction.
+media, establish import readiness or change a project. The separate
+[source registration host](SOURCE_REGISTRATION.md) persists qualification
+receipts and indexes and applies an atomic authored edit.
 
 ## Common origin and independent streams
 
@@ -76,8 +76,8 @@ this helper does not qualify HDR or clean-aperture interpretation.
 primaries or transfer. BT.2020 and Display P3 SDR sources retain their native
 metadata, as do linear-transfer sources. The shared renderer interprets that
 source metadata into linear Rec.2020 before its explicit SDR display transform.
-The helper borrows the source metadata unchanged; future qualification receipts
-must retain it separately from the presentation basis.
+The helper borrows the source metadata unchanged; qualification receipts
+retain it separately from the presentation basis.
 
 The provisional audio-only basis is 1920×1080 at 30 fps. These are candidates,
 not basis-adoption state. The first primary video insertion, provisional-rate
@@ -86,11 +86,13 @@ work under specification Section 4.
 
 ## Persistence and evidence
 
-Database schema 13 migrates schemas 1 through 12 by replaying their complete
-history against frozen core wires. Schema-12 picture and audio durations remain
+Database schema 14 migrates schemas 1 through 13 into core schema 9 by replaying
+their complete history against frozen core wires. Schema-12 picture and audio durations remain
 unchanged. Older history rejects placement variants and fields, including null
 fields in snapshots, commands and patches. Migration preserves all operational
 rows, revisions, branches, marks and pending redo with a pre-migration backup.
+Schema-13 placements remain unchanged, and old assets gain no inferred source
+qualification. See [source registration](SOURCE_REGISTRATION.md).
 
 [Qualification](qualification/import-timing-2026-09-21.md) records actual media
 fixtures, exact timing cases and the old-binary migration fixture. No playback,

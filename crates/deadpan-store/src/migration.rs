@@ -45,7 +45,7 @@ impl ProjectStore {
                 backup: None,
             });
         }
-        if !matches!(version, 1..=12) {
+        if !matches!(version, 1..=13) {
             return Err(StoreError::UnsupportedSchema(version));
         }
         let lock = acquire_lock(&package)?;
@@ -147,6 +147,10 @@ fn migrate_candidate(
     if source_version < 10 {
         crate::original_media::create_tables(&transaction)?;
     }
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    crate::source_registration::create_tables(&transaction)?;
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    crate::source_registration::check_stored_sizes(&transaction)?;
     validation::check_stored_sizes(&transaction, schema::MAX_DOCUMENT_BYTES)?;
     if source_version >= 5 {
         crate::generation::check_stored_sizes(&transaction)?;
@@ -172,7 +176,8 @@ fn migrate_candidate(
     }
     // Database versions 4 through 6 share core schema 4, 7 through 10 share
     // core schema 5, 11 uses core schema 6 with explicit audio mappings, and
-    // 12 uses core schema 7 with independent picture durations.
+    // 12 uses core schema 7 with independent picture durations, and 13 uses
+    // core schema 8 with signed stream placements and no source qualification.
     // Replay all authored history, preserving operational rows and identities
     // while assigning FitBeat only to mappings absent in that legacy schema.
     validation::migrate_history(&transaction, source_version)?;
@@ -183,6 +188,8 @@ fn migrate_candidate(
     crate::generation_attempts::validate_store(&transaction)?;
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     crate::original_media::validate_store(&transaction)?;
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    crate::source_registration::validate_store(&transaction)?;
     transaction.commit()?;
     candidate_file.as_file().sync_all()?;
     // One step copies all pages in one destination transaction. SQLITE_BUSY

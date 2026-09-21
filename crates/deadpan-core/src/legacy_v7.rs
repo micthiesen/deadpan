@@ -6,6 +6,7 @@ use std::collections::BTreeMap;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
 use crate::document::unique_map;
+use crate::legacy_asset::{Asset, project_assets, project_changes, upgrade_assets};
 use crate::legacy_source_mapping::{AudioMapping, VideoMapping};
 use crate::*;
 
@@ -177,7 +178,7 @@ pub struct Document {
     #[serde(deserialize_with = "unique_map")]
     nodes: BTreeMap<NodeId, LegacyBeatNode>,
     #[serde(deserialize_with = "unique_map")]
-    assets: BTreeMap<AssetId, AssetRecord>,
+    assets: BTreeMap<AssetId, Asset>,
     #[serde(deserialize_with = "unique_map")]
     marks: BTreeMap<MarkId, Mark>,
     #[serde(deserialize_with = "unique_map")]
@@ -210,7 +211,7 @@ impl Document {
                 .into_iter()
                 .map(|(id, node)| (id, node.upgrade()))
                 .collect(),
-            assets: self.assets,
+            assets: upgrade_assets(self.assets),
             marks: self.marks,
             overrides: self.overrides,
         };
@@ -227,6 +228,9 @@ impl Document {
         else {
             return false;
         };
+        let Some(assets) = project_assets(&document.assets) else {
+            return false;
+        };
         self == &Self {
             schema_version: 7,
             project_id: document.project_id.clone(),
@@ -234,7 +238,7 @@ impl Document {
             presentation_basis: document.presentation_basis.clone(),
             root: document.root.clone(),
             nodes,
-            assets: document.assets.clone(),
+            assets,
             marks: document.marks.clone(),
             overrides: document.overrides.clone(),
         }
@@ -316,7 +320,7 @@ enum OldOccurrenceEdit {
     AcceptGeneratedHold {
         artifact: GeneratedArtifact,
         #[serde(deserialize_with = "unique_map")]
-        assets: BTreeMap<AssetId, AssetRecord>,
+        assets: BTreeMap<AssetId, Asset>,
     },
     RevertGeneratedHold,
     Rename {
@@ -384,9 +388,10 @@ impl OldOccurrenceEdit {
             }
             Self::SetHoldDuration { duration } => OccurrenceEdit::SetHoldDuration { duration },
             Self::SetHoldProvider { video } => OccurrenceEdit::SetHoldProvider { video },
-            Self::AcceptGeneratedHold { artifact, assets } => {
-                OccurrenceEdit::AcceptGeneratedHold { artifact, assets }
-            }
+            Self::AcceptGeneratedHold { artifact, assets } => OccurrenceEdit::AcceptGeneratedHold {
+                artifact,
+                assets: upgrade_assets(assets),
+            },
             Self::RevertGeneratedHold => OccurrenceEdit::RevertGeneratedHold,
             Self::Rename { label } => OccurrenceEdit::Rename { label },
             Self::SetPlayOverride { iteration, subtree } => OccurrenceEdit::SetPlayOverride {
@@ -471,7 +476,7 @@ enum OldCommand {
         node: NodeId,
         artifact: GeneratedArtifact,
         #[serde(deserialize_with = "unique_map")]
-        assets: BTreeMap<AssetId, AssetRecord>,
+        assets: BTreeMap<AssetId, Asset>,
     },
     RevertGeneratedHold {
         node: NodeId,
@@ -482,7 +487,7 @@ enum OldCommand {
     },
     AddAsset {
         id: AssetId,
-        asset: AssetRecord,
+        asset: Asset,
     },
     SetMark {
         id: MarkId,
@@ -607,11 +612,14 @@ pub fn upgrade_request(json: &str) -> Result<CommandRequest, DocumentError> {
         } => Command::AcceptGeneratedHold {
             node,
             artifact,
-            assets,
+            assets: upgrade_assets(assets),
         },
         OldCommand::RevertGeneratedHold { node } => Command::RevertGeneratedHold { node },
         OldCommand::Rename { node, label } => Command::Rename { node, label },
-        OldCommand::AddAsset { id, asset } => Command::AddAsset { id, asset },
+        OldCommand::AddAsset { id, asset } => Command::AddAsset {
+            id,
+            asset: asset.upgrade(),
+        },
         OldCommand::SetMark {
             id,
             owner,
@@ -665,7 +673,7 @@ struct Patch {
     #[serde(deserialize_with = "unique_map")]
     nodes: BTreeMap<NodeId, ValueChange<LegacyBeatNode>>,
     #[serde(deserialize_with = "unique_map")]
-    assets: BTreeMap<AssetId, ValueChange<AssetRecord>>,
+    assets: BTreeMap<AssetId, ValueChange<Asset>>,
     #[serde(deserialize_with = "unique_map")]
     marks: BTreeMap<MarkId, ValueChange<Mark>>,
     #[serde(deserialize_with = "unique_map")]
@@ -699,7 +707,7 @@ impl Patch {
                     ))
                 })
                 .collect::<Option<_>>()?,
-            assets: patch.assets.clone(),
+            assets: project_changes(&patch.assets)?,
             marks: patch.marks.clone(),
             overrides: patch.overrides.clone(),
         })
@@ -854,7 +862,7 @@ mod tests {
         for version in 1..=7 {
             let old = document(version);
             let current = upgrade(version, &old.to_string()).unwrap();
-            assert_eq!(current.schema_version(), 8);
+            assert_eq!(current.schema_version(), DOCUMENT_SCHEMA_VERSION);
             assert!(matches_document(version, &old.to_string(), &current));
             let adapter = REQUEST_ADAPTERS[(version - 1) as usize];
             for video in [false, true] {
