@@ -146,6 +146,21 @@ impl CompiledHold {
                     .time_base,
                 frames: *frames,
             },
+            HoldVideo::Generated { accepted } => Self::Accepted {
+                asset: accepted.artifact.sampled_asset.clone(),
+                time_base: document
+                    .assets()
+                    .get(&accepted.artifact.sampled_asset)
+                    .and_then(|record| record.video)
+                    .ok_or(PlanError::InvalidPlan(
+                        "generated artifact has no video clock",
+                    ))?
+                    .start()
+                    .time_base,
+                // The master already materializes the retained bridge map.
+                // Resizing selects its prefix, without resampling that map.
+                frames: FrameRange::new(ProjectFrame(0), ProjectFrame(recipe.duration.frames()))?,
+            },
         })
     }
 

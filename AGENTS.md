@@ -40,13 +40,12 @@ Use Rust 1.97.1 as pinned in `rust-toolchain.toml`, Cargo, rustfmt, Clippy, stro
 
 Every persisted edit, undo, and redo gets a never-reused revision ID. Core inverse patches can restore exact fixture identity; the store rebases them onto fresh revisions to prevent stale commands becoming valid after undo. Store writes use one transaction for the revision, history, and cursor. Keep `.writer.lock` held for the writable store lifetime; read-only inspection and dry runs may coexist. Take live database snapshots through SQLite's backup API, never copy only an open main database file.
 
-Repeat play IDs are scoped by Repeat node and allocation revision, with an ordinal inside that allocation. Preserve surviving IDs through resizing and reorder; allocate fresh IDs for growth and inserted subtrees. Imported initial snapshots reserve their allocation names even after plays are removed. Keep compact runs bounded and never expand a repeat merely to seek. Core schema 4 retains these runs and marks, and adds sparse override subtrees. Schema-1, schema-2, and schema-3 migrations replay the complete chronology directly into the current schema on a consistent copy, compare every legacy snapshot/transaction, and promote through SQLite's backup transaction only after validation. Strict legacy adapters reject new fields and unexpected mark or override changes. Preserve the pre-migration backup.
+Repeat play IDs are scoped by Repeat node and allocation revision, with an ordinal inside that allocation. Preserve surviving IDs through resizing and reorder; allocate fresh IDs for growth and inserted subtrees. Imported initial snapshots reserve their allocation names even after plays are removed. Keep compact runs bounded and never expand a repeat merely to seek. Core schema 5 retains these runs, marks, and sparse overrides, and adds generated Hold metadata. Database schemas 1 through 6 replay the complete chronology directly into the current schema on a consistent copy, compare every legacy snapshot/transaction, and promote through SQLite's backup transaction only after validation. Strict legacy adapters freeze nested provider vocabulary and reject new fields, commands, and unexpected mark or override changes. Preserve the pre-migration backup.
 
-Database schema 6 retains operational generation requests and adds attempts,
-validation receipts, and candidate selection; core documents remain schema 4.
-Migrating a schema-4 or schema-5 database validates its complete history without
-rewriting authored JSON, preserves existing requests and clocks, and adds only
-the missing operational tables. Request versions belong
+Database schema 7 stores core schema 5 and retains operational generation requests,
+attempts, validation receipts, and candidate selection. Migration upgrades authored
+JSON through strict replay, preserves existing operational rows and clocks, and
+adds only missing operational tables. Request versions belong
 to retained per-Hold clocks outside document history. Undo/redo must never restore
 request relevance or decrement a clock. Every document mutation with a current
 request requires complete revision-bound context observations and reconciles
@@ -74,6 +73,16 @@ unreferenced object if a later database commit fails. A verified byte object is
 not proof of canonical media or user acceptance. Read through verified snapshots;
 do not reopen a worker path or treat generated objects as evictable cache entries.
 See [generated-object storage](docs/GENERATED_MEDIA.md).
+
+Generated Hold intent retains sampled/native master references, an immutable
+provenance object, the original compact exact bridge sampling map, and a captured
+Background/Freeze fallback. Shortening or re-extending within the original sampled
+range reuses its prefix without resampling. Extending beyond that range restores
+the fallback; the host must separately allocate a replacement request. Acceptance
+and reversion are atomic core commands, including occurrence isolation. Generic
+store creation/commands reject new generated artifacts until qualified candidate
+admission exists. Metadata and core tests do not prove actual media acceptance.
+See [generated Hold semantics](docs/GENERATED_HOLDS.md).
 
 The setup workflow's TypeScript/Bun/mitools/Biome defaults do not apply to this Rust-native product. The maintained Rust sibling `beastie` supplies the initial workspace conventions; consult maintained siblings for evolving personal tooling patterns. [Dependency decisions](docs/DEPENDENCIES.md) records the pins and qualification boundaries. Do not introduce Bun, Node, Python, or shell setup as an end-user requirement. Future model workers use an app-managed private runtime selected through measurement.
 

@@ -8,7 +8,7 @@ use crate::{
     RepeatLayout, SourceTimestamp, TimeError,
 };
 
-pub const DOCUMENT_SCHEMA_VERSION: u32 = 4;
+pub const DOCUMENT_SCHEMA_VERSION: u32 = 5;
 /// Bounds apply before traversal. Structure is walked iteratively, never recursively.
 pub const MAX_DOCUMENT_NODES: usize = 100_000;
 pub const MAX_DOCUMENT_ASSETS: usize = 100_000;
@@ -199,6 +199,27 @@ pub enum HoldVideo {
         asset: AssetId,
         frames: FrameRange,
     },
+    /// Explicitly accepted generated media with its original deterministic fallback.
+    Generated {
+        accepted: Box<AcceptedGeneration>,
+    },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
+pub enum HoldFallback {
+    Background,
+    Freeze {
+        asset: AssetId,
+        timestamp: SourceTimestamp,
+    },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct AcceptedGeneration {
+    pub artifact: crate::GeneratedArtifact,
+    pub fallback: HoldFallback,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -676,15 +697,19 @@ impl ProjectDocument {
 
     fn validate_asset(&self, id: &AssetId, asset: &AssetRecord) -> Result<(), DocumentError> {
         validate_label(&asset.label)?;
-        if asset.content_hash.len() != 64
-            || !asset
+        let sha256 = asset.content_hash.len() == 64
+            && asset
                 .content_hash
                 .bytes()
-                .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
-        {
+                .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b));
+        let generated = asset
+            .content_hash
+            .strip_prefix("blake3:")
+            .is_some_and(|digest| crate::GeneratedContentId::new(digest.to_owned()).is_ok());
+        if !sha256 && !generated {
             return Err(DocumentError::new(
                 DocumentErrorCode::InvalidAsset,
-                format!("asset {id} requires a lowercase SHA-256 content hash"),
+                format!("asset {id} requires a lowercase SHA-256 or typed BLAKE3 content hash"),
             ));
         }
         if asset.video.is_none() && asset.audio.is_none() && !asset.still_image {
@@ -775,6 +800,9 @@ impl ProjectDocument {
                     ));
                 }
             }
+            HoldVideo::Generated { accepted } => {
+                self.validate_generated(recipe.duration, accepted)?;
+            }
         }
         match &recipe.audio {
             HoldAudio::Silence => {}
@@ -791,6 +819,76 @@ impl ProjectDocument {
             }
         }
         Ok(())
+    }
+
+    fn validate_generated(
+        &self,
+        duration: FrameDuration,
+        accepted: &AcceptedGeneration,
+    ) -> Result<(), DocumentError> {
+        let artifact = &accepted.artifact;
+        if artifact.sampling.project_rate() != self.presentation_basis.frame_rate
+            || duration > artifact.sampling.output_frame_count()
+        {
+            return Err(DocumentError::new(
+                DocumentErrorCode::SourceRangeInvalid,
+                "generated Hold sampling must use the project rate and cover its authored duration",
+            ));
+        }
+        self.validate_generated_asset(
+            &artifact.sampled_asset,
+            &artifact.sampled_object,
+            artifact.sampling.output_frame_count(),
+        )?;
+        self.validate_generated_asset(
+            &artifact.native_asset,
+            &artifact.native_object,
+            artifact.sampling.native_frame_count(),
+        )?;
+        self.validate_hold_fallback(&accepted.fallback)
+    }
+
+    fn validate_generated_asset(
+        &self,
+        id: &AssetId,
+        object: &crate::GeneratedObjectRef,
+        frames: FrameDuration,
+    ) -> Result<(), DocumentError> {
+        let record = self.asset(id)?;
+        if record.video.is_none()
+            || record.audio.is_some()
+            || record.still_image
+            || record.frame_count != Some(frames)
+            || record.content_hash != object.content().to_string()
+        {
+            return Err(DocumentError::new(
+                DocumentErrorCode::InvalidAsset,
+                format!(
+                    "generated asset {id} must be video-only and exactly match its object and frame count"
+                ),
+            ));
+        }
+        Ok(())
+    }
+
+    fn validate_hold_fallback(&self, fallback: &HoldFallback) -> Result<(), DocumentError> {
+        match fallback {
+            HoldFallback::Background => Ok(()),
+            HoldFallback::Freeze { asset, timestamp } => {
+                if self
+                    .asset(asset)?
+                    .video
+                    .is_some_and(|bounds| bounds.contains(*timestamp))
+                {
+                    Ok(())
+                } else {
+                    Err(DocumentError::new(
+                        DocumentErrorCode::SourceRangeInvalid,
+                        format!("freeze timestamp is outside asset {asset} video"),
+                    ))
+                }
+            }
+        }
     }
 }
 

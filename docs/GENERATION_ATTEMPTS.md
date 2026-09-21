@@ -9,8 +9,9 @@ application scheduling remain required work.
 
 ## Identity and transitions
 
-Database schema 6 adds `generation_attempts`, `generation_attempt_heads`, and
-`generation_candidate_receipts`. Core documents remain schema 4. Attempts use the
+Database schema 6 introduced `generation_attempts`, `generation_attempt_heads`, and
+`generation_candidate_receipts`; schema 7 preserves them while upgrading authored
+documents to core schema 5. Attempts use the
 full request/attempt identity, a cancellation token, a monotonically increasing
 ordinal within the request, and a transition sequence. A retry allocates a new
 attempt while retaining the request's exact constraints, provider, seed, and
@@ -71,10 +72,12 @@ an eviction API for candidate metadata must never govern those masters.
 The [schema-5 fixture](../crates/deadpan-store/tests/fixtures/v5-generation.sql)
 was generated from commit `2cb80633b9ed9458ccd0f36ffbf355187dc9bb49` in an isolated
 checkout. It contains current, stale, and detached requests, retained request
-clocks, and pending redo. Migration validates and preserves its authored JSON,
-history, requests, and clocks, then adds empty attempt tables. Schema-1 through
-schema-4 fixtures still exercise the complete historical migration paths.
-Every migration retains a `Snapshots/before-schema-6-*.sqlite` backup and promotes
+clocks, and pending redo. Current migration replays its authored history into core
+schema 5, preserves requests and clocks, and adds empty attempt tables. The
+[schema-6 fixture](../crates/deadpan-store/tests/fixtures/v6-attempts.sql) verifies
+unchanged attempts, receipts and selection across migration to database schema 7.
+Schema-1 through schema-4 fixtures still exercise the complete historical paths.
+Every migration retains a `Snapshots/before-schema-7-*.sqlite` backup and promotes
 through SQLite's backup transaction only after validation. Corrupt request rows
 and colliding new tables leave the source untouched.
 
@@ -84,7 +87,8 @@ On 2026-09-21, the repository gate passed on Apple M5 Max, arm64, 128 GiB RAM,
 macOS 26.5.2 (25F84), Rust 1.97.1: formatting, workspace Clippy with warnings
 denied, 236 Rust tests with none failed or ignored, workspace build, and headless
 diagnostics. The audio and model qualification suites passed 20 and 47 Python
-tests. Diagnostics reports database schema 6 and core schema 4, and continues to
+tests. At that checkpoint, diagnostics reported database schema 6 and core schema 4,
+and continued to
 mark application inference, media playback, and export unimplemented.
 
 The [attempt tests](../crates/deadpan-store/tests/generation_attempts.rs) cover

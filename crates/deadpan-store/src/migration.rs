@@ -45,7 +45,7 @@ impl ProjectStore {
                 backup: None,
             });
         }
-        if !matches!(version, 1..=5) {
+        if !matches!(version, 1..=6) {
             return Err(StoreError::UnsupportedSchema(version));
         }
         let lock = acquire_lock(&package)?;
@@ -73,7 +73,7 @@ impl ProjectStore {
             return Err(StoreError::UnsafePath(directory));
         }
         let backup = tempfile::Builder::new()
-            .prefix("before-schema-6-")
+            .prefix("before-schema-7-")
             .suffix(".sqlite")
             .tempfile_in(&directory)?;
         original.backup(rusqlite::MAIN_DB, backup.path(), None)?;
@@ -116,8 +116,11 @@ fn migrate_candidate(
     candidate.pragma_update(None, "synchronous", "FULL")?;
     let transaction = candidate.transaction()?;
     validation::check_stored_sizes(&transaction, schema::MAX_DOCUMENT_BYTES)?;
-    if source_version == 5 {
+    if source_version >= 5 {
         crate::generation::check_stored_sizes(&transaction)?;
+    }
+    if source_version >= 6 {
+        crate::generation_attempts::check_stored_sizes(&transaction)?;
     }
     let integrity: String =
         transaction.query_row("PRAGMA integrity_check", [], |row| row.get(0))?;
@@ -131,18 +134,16 @@ fn migrate_candidate(
     if violations != 0 {
         return Err(StoreError::Integrity("foreign-key violation".into()));
     }
-    if matches!(source_version, 4 | 5) {
-        // These versions use the current core schema. Adding operational
-        // tables must preserve their authored JSON and complete chronology.
-        validation::validate_history(&transaction)?;
-    } else {
-        validation::migrate_history(&transaction, source_version)?;
-    }
+    // Database versions 4 through 6 share core schema 4. Replay their full
+    // authored chronology while preserving operational rows and identities.
+    validation::migrate_history(&transaction, source_version)?;
     if source_version < 5 {
         crate::generation::create_tables(&transaction)?;
     }
     crate::generation::validate_store(&transaction)?;
-    crate::generation_attempts::create_tables(&transaction)?;
+    if source_version < 6 {
+        crate::generation_attempts::create_tables(&transaction)?;
+    }
     transaction.pragma_update(None, "user_version", schema::VERSION)?;
     validation::validate_history(&transaction)?;
     crate::generation::validate_store(&transaction)?;

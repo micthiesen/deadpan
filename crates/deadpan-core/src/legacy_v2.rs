@@ -4,6 +4,7 @@
 //! vocabulary here deliberately excludes marks, policies, and play overrides.
 
 use crate::document::unique_map;
+use crate::legacy_v4::{LegacyAssetRecord, LegacyBeatNode, LegacyHoldRecipe, LegacyHoldVideo};
 use crate::*;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use std::collections::BTreeMap;
@@ -17,9 +18,9 @@ pub struct Document {
     presentation_basis: PresentationBasis,
     root: NodeId,
     #[serde(deserialize_with = "unique_map")]
-    nodes: BTreeMap<NodeId, BeatNode>,
+    nodes: BTreeMap<NodeId, LegacyBeatNode>,
     #[serde(deserialize_with = "unique_map")]
-    assets: BTreeMap<AssetId, AssetRecord>,
+    assets: BTreeMap<AssetId, LegacyAssetRecord>,
 }
 impl Document {
     pub fn from_json(json: &str) -> Result<Self, DocumentError> {
@@ -40,8 +41,16 @@ impl Document {
             revision_id: self.revision_id,
             presentation_basis: self.presentation_basis,
             root: self.root,
-            nodes: self.nodes,
-            assets: self.assets,
+            nodes: self
+                .nodes
+                .into_iter()
+                .map(|(id, node)| (id, node.upgrade()))
+                .collect(),
+            assets: self
+                .assets
+                .into_iter()
+                .map(|(id, asset)| (id, asset.upgrade()))
+                .collect(),
             marks: BTreeMap::new(),
             overrides: BTreeMap::new(),
         };
@@ -49,18 +58,31 @@ impl Document {
         Ok(document)
     }
     pub fn matches(&self, document: &ProjectDocument) -> bool {
+        let projected = document
+            .nodes
+            .iter()
+            .map(|(id, node)| Some((id.clone(), LegacyBeatNode::project(node)?)))
+            .collect::<Option<BTreeMap<_, _>>>()
+            .zip(
+                document
+                    .assets
+                    .iter()
+                    .map(|(id, asset)| Some((id.clone(), LegacyAssetRecord::project(asset)?)))
+                    .collect::<Option<BTreeMap<_, _>>>(),
+            );
         document.marks.is_empty()
             && document.overrides.is_empty()
-            && self
-                == &Self {
+            && projected.is_some_and(|(nodes, assets)| {
+                self == &Self {
                     schema_version: 2,
                     project_id: document.project_id.clone(),
                     revision_id: document.revision_id.clone(),
                     presentation_basis: document.presentation_basis.clone(),
                     root: document.root.clone(),
-                    nodes: document.nodes.clone(),
-                    assets: document.assets.clone(),
+                    nodes,
+                    assets,
                 }
+            })
     }
 }
 
@@ -69,7 +91,7 @@ impl Document {
 struct OldSubtree {
     root: NodeId,
     #[serde(deserialize_with = "unique_map")]
-    nodes: BTreeMap<NodeId, BeatNode>,
+    nodes: BTreeMap<NodeId, LegacyBeatNode>,
 }
 
 #[derive(Deserialize)]
@@ -102,12 +124,12 @@ enum OldCommand {
         node: NodeId,
         id: NodeId,
         plays: u32,
-        gap: Option<HoldRecipe>,
+        gap: Option<LegacyHoldRecipe>,
     },
     SetRepeat {
         node: NodeId,
         plays: u32,
-        gap: Option<HoldRecipe>,
+        gap: Option<LegacyHoldRecipe>,
     },
     InsertPlays {
         node: NodeId,
@@ -126,7 +148,7 @@ enum OldCommand {
     },
     SetHoldProvider {
         node: NodeId,
-        video: HoldVideo,
+        video: LegacyHoldVideo,
     },
     Rename {
         node: NodeId,
@@ -134,7 +156,7 @@ enum OldCommand {
     },
     AddAsset {
         id: AssetId,
-        asset: AssetRecord,
+        asset: LegacyAssetRecord,
     },
 }
 #[derive(Deserialize)]
@@ -157,7 +179,11 @@ pub fn upgrade_request(json: &str) -> Result<CommandRequest, DocumentError> {
             index,
             subtree: Subtree {
                 root: subtree.root,
-                nodes: subtree.nodes,
+                nodes: subtree
+                    .nodes
+                    .into_iter()
+                    .map(|(id, node)| (id, node.upgrade()))
+                    .collect(),
                 overrides: BTreeMap::new(),
             },
         },
@@ -194,10 +220,14 @@ pub fn upgrade_request(json: &str) -> Result<CommandRequest, DocumentError> {
             node,
             id,
             plays,
-            gap,
+            gap: gap.map(LegacyHoldRecipe::upgrade),
             anchor_policy: WrapAnchorPolicy::First,
         },
-        OldCommand::SetRepeat { node, plays, gap } => Command::SetRepeat { node, plays, gap },
+        OldCommand::SetRepeat { node, plays, gap } => Command::SetRepeat {
+            node,
+            plays,
+            gap: gap.map(LegacyHoldRecipe::upgrade),
+        },
         OldCommand::InsertPlays { node, index, count } => {
             Command::InsertPlays { node, index, count }
         }
@@ -215,9 +245,15 @@ pub fn upgrade_request(json: &str) -> Result<CommandRequest, DocumentError> {
         OldCommand::SetHoldDuration { node, duration } => {
             Command::SetHoldDuration { node, duration }
         }
-        OldCommand::SetHoldProvider { node, video } => Command::SetHoldProvider { node, video },
+        OldCommand::SetHoldProvider { node, video } => Command::SetHoldProvider {
+            node,
+            video: video.upgrade(),
+        },
         OldCommand::Rename { node, label } => Command::Rename { node, label },
-        OldCommand::AddAsset { id, asset } => Command::AddAsset { id, asset },
+        OldCommand::AddAsset { id, asset } => Command::AddAsset {
+            id,
+            asset: asset.upgrade(),
+        },
     };
     Ok(CommandRequest {
         project_id: old.project_id,
@@ -234,20 +270,57 @@ struct Patch {
     from_revision: RevisionId,
     to_revision: RevisionId,
     #[serde(deserialize_with = "unique_map")]
-    nodes: BTreeMap<NodeId, ValueChange<BeatNode>>,
+    nodes: BTreeMap<NodeId, ValueChange<LegacyBeatNode>>,
     #[serde(deserialize_with = "unique_map")]
-    assets: BTreeMap<AssetId, ValueChange<AssetRecord>>,
+    assets: BTreeMap<AssetId, ValueChange<LegacyAssetRecord>>,
 }
 impl Patch {
-    fn project(patch: &DocumentPatch) -> Self {
-        Self {
+    fn project(patch: &DocumentPatch) -> Option<Self> {
+        Some(Self {
             project_id: patch.project_id.clone(),
             from_revision: patch.from_revision.clone(),
             to_revision: patch.to_revision.clone(),
-            nodes: patch.nodes.clone(),
-            assets: patch.assets.clone(),
-        }
+            nodes: patch
+                .nodes
+                .iter()
+                .map(|(id, change)| {
+                    Some((
+                        id.clone(),
+                        ValueChange {
+                            before: match &change.before {
+                                Some(node) => Some(LegacyBeatNode::project(node)?),
+                                None => None,
+                            },
+                            after: match &change.after {
+                                Some(node) => Some(LegacyBeatNode::project(node)?),
+                                None => None,
+                            },
+                        },
+                    ))
+                })
+                .collect::<Option<_>>()?,
+            assets: patch
+                .assets
+                .iter()
+                .map(|(id, change)| Some((id.clone(), project_asset_change(change)?)))
+                .collect::<Option<_>>()?,
+        })
     }
+}
+
+fn project_asset_change(
+    change: &ValueChange<AssetRecord>,
+) -> Option<ValueChange<LegacyAssetRecord>> {
+    Some(ValueChange {
+        before: match &change.before {
+            Some(asset) => Some(LegacyAssetRecord::project(asset)?),
+            None => None,
+        },
+        after: match &change.after {
+            Some(asset) => Some(LegacyAssetRecord::project(asset)?),
+            None => None,
+        },
+    })
 }
 #[derive(Debug, PartialEq, Eq, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -260,14 +333,19 @@ struct Edit {
 }
 pub fn matches_edit(json: &str, edit: &EditTransaction) -> Result<bool, DocumentError> {
     let old: Edit = parse(json)?;
+    let (Some(forward), Some(inverse)) =
+        (Patch::project(&edit.forward), Patch::project(&edit.inverse))
+    else {
+        return Ok(false);
+    };
     Ok(edit.forward.marks.is_empty()
         && edit.inverse.marks.is_empty()
         && edit.forward.overrides.is_empty()
         && edit.inverse.overrides.is_empty()
         && old
             == Edit {
-                forward: Patch::project(&edit.forward),
-                inverse: Patch::project(&edit.inverse),
+                forward,
+                inverse,
                 changed_ids: edit.changed_ids.clone(),
                 duration_delta: edit.duration_delta,
                 description: edit.description.clone(),

@@ -5,11 +5,11 @@ use serde::{Deserialize, Serialize};
 
 use crate::document::unique_map;
 use crate::{
-    AnchorLossPolicy, AssetId, AssetRecord, BeatNode, BoundaryAnchor, DocumentError,
-    DocumentErrorCode, FrameDuration, HoldRecipe, HoldVideo, InstancePath, IterationId,
-    IterationOrder, MAX_DOCUMENT_MARKS, MAX_DOCUMENT_NODES, Mark, MarkId, MarkState, NodeId,
-    NodeKind, OccurrenceEdit, OccurrenceIdentities, PlayOverrides, ProjectDocument, ProjectId,
-    RevisionId, WrapAnchorPolicy,
+    AcceptedGeneration, AnchorLossPolicy, AssetId, AssetRecord, BeatNode, BoundaryAnchor,
+    DocumentError, DocumentErrorCode, FrameDuration, GeneratedArtifact, HoldFallback, HoldRecipe,
+    HoldVideo, InstancePath, IterationId, IterationOrder, MAX_DOCUMENT_MARKS, MAX_DOCUMENT_NODES,
+    Mark, MarkId, MarkState, NodeId, NodeKind, OccurrenceEdit, OccurrenceIdentities, PlayOverrides,
+    ProjectDocument, ProjectId, RevisionId, WrapAnchorPolicy,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -84,6 +84,15 @@ pub enum Command {
     SetHoldProvider {
         node: NodeId,
         video: HoldVideo,
+    },
+    AcceptGeneratedHold {
+        node: NodeId,
+        artifact: GeneratedArtifact,
+        #[serde(deserialize_with = "unique_map")]
+        assets: BTreeMap<AssetId, AssetRecord>,
+    },
+    RevertGeneratedHold {
+        node: NodeId,
     },
     Rename {
         node: NodeId,
@@ -464,10 +473,37 @@ pub(crate) fn reduce(
             *iterations = iterations.moved(*start, *end, *destination)?;
         }
         Command::SetHoldDuration { node, duration } => {
-            hold_mut(document, node)?.duration = *duration;
+            let recipe = hold_mut(document, node)?;
+            if let HoldVideo::Generated { accepted } = &recipe.video
+                && *duration > accepted.artifact.sampling.output_frame_count()
+            {
+                recipe.video = fallback_video(&accepted.fallback);
+            }
+            recipe.duration = *duration;
         }
         Command::SetHoldProvider { node, video } => {
+            if matches!(video, HoldVideo::Generated { .. }) {
+                return Err(EditError::new(
+                    EditErrorCode::InvalidCommand,
+                    "generated media must be accepted with AcceptGeneratedHold",
+                ));
+            }
             hold_mut(document, node)?.video = video.clone();
+        }
+        Command::AcceptGeneratedHold {
+            node,
+            artifact,
+            assets,
+        } => accept_generated_hold(document, node, artifact, assets)?,
+        Command::RevertGeneratedHold { node } => {
+            let recipe = hold_mut(document, node)?;
+            let HoldVideo::Generated { accepted } = &recipe.video else {
+                return Err(EditError::new(
+                    EditErrorCode::InvalidCommand,
+                    "revert-generated requires a generated Hold provider",
+                ));
+            };
+            recipe.video = fallback_video(&accepted.fallback);
         }
         Command::Rename { node, label } => {
             node_mut(document, node)?.label.clone_from(label);
@@ -711,6 +747,78 @@ fn hold_mut<'a>(
     Ok(recipe)
 }
 
+fn fallback_video(fallback: &HoldFallback) -> HoldVideo {
+    match fallback {
+        HoldFallback::Background => HoldVideo::Background,
+        HoldFallback::Freeze { asset, timestamp } => HoldVideo::Freeze {
+            asset: asset.clone(),
+            timestamp: *timestamp,
+        },
+    }
+}
+
+fn accept_generated_hold(
+    document: &mut ProjectDocument,
+    node: &NodeId,
+    artifact: &GeneratedArtifact,
+    assets: &BTreeMap<AssetId, AssetRecord>,
+) -> Result<(), EditError> {
+    let fallback = match &hold_mut(document, node)?.video {
+        HoldVideo::Background => HoldFallback::Background,
+        HoldVideo::Freeze { asset, timestamp } => HoldFallback::Freeze {
+            asset: asset.clone(),
+            timestamp: *timestamp,
+        },
+        HoldVideo::Generated { accepted } => accepted.fallback.clone(),
+        HoldVideo::Accepted { .. } => {
+            return Err(EditError::new(
+                EditErrorCode::InvalidCommand,
+                "legacy accepted Holds have no explicit fallback and cannot accept generated media",
+            ));
+        }
+    };
+    let referenced = BTreeSet::from([
+        artifact.sampled_asset.clone(),
+        artifact.native_asset.clone(),
+    ]);
+    if assets.keys().any(|id| !referenced.contains(id)) {
+        return Err(EditError::new(
+            EditErrorCode::InvalidCommand,
+            "generated acceptance may register only artifact-referenced assets",
+        ));
+    }
+    for id in &referenced {
+        match (document.assets.get(id), assets.get(id)) {
+            (Some(existing), Some(supplied)) if existing != supplied => {
+                return Err(EditError::new(
+                    EditErrorCode::ImmutableAsset,
+                    format!("asset {id} already exists with different immutable metadata"),
+                ));
+            }
+            (None, None) => {
+                return Err(EditError::new(
+                    EditErrorCode::InvalidCommand,
+                    format!("generated artifact asset {id} is not registered or supplied"),
+                ));
+            }
+            _ => {}
+        }
+    }
+    for (id, asset) in assets {
+        document
+            .assets
+            .entry(id.clone())
+            .or_insert_with(|| asset.clone());
+    }
+    hold_mut(document, node)?.video = HoldVideo::Generated {
+        accepted: Box::new(AcceptedGeneration {
+            artifact: artifact.clone(),
+            fallback,
+        }),
+    };
+    Ok(())
+}
+
 fn sequence_parent(document: &ProjectDocument, id: &NodeId) -> Result<NodeId, EditError> {
     let parent = document.parent_of(id).ok_or_else(|| {
         EditError::new(
@@ -873,6 +981,8 @@ fn description(command: &Command) -> &'static str {
         Command::MovePlays { .. } => "Move repeat plays",
         Command::SetHoldDuration { .. } => "Change hold duration",
         Command::SetHoldProvider { .. } => "Change hold provider",
+        Command::AcceptGeneratedHold { .. } => "Accept generated hold",
+        Command::RevertGeneratedHold { .. } => "Revert generated hold",
         Command::Rename { .. } => "Rename beat",
         Command::AddAsset { .. } => "Register media asset",
         Command::SetMark { .. } => "Set mark",

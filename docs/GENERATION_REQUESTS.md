@@ -10,7 +10,7 @@ the native application.
 
 ## Authored history and operational state
 
-Core documents remain schema 4. Database schema 5 introduced `hold_request_clocks` and
+Core documents now use schema 5. Database schema 5 introduced `hold_request_clocks` and
 `generation_requests`. Requests retain their origin revision, project and Hold
 identities, context SHA-256, typed video/conditioning/motion constraints, provider
 pins, seed, and request version. The origin revision is provenance; an unrelated
@@ -67,11 +67,11 @@ waiting for a GPU kernel is not part of the document transaction.
 
 ## Migration and verification
 
-Schemas 1 through 3 replay and compare their complete chronology through the
-existing strict legacy adapters before adding empty operational tables. Schema 4
-validates the complete authored chronology without rewriting its JSON. Schema 5
-also validates and retains all request rows and clocks before adding the schema-6
-attempt tables. All paths retain a `Snapshots/before-schema-6-*.sqlite` backup and promote only the validated
+Database schemas 1 through 6 replay and compare their complete chronology through
+strict legacy adapters into database schema 7 and core schema 5. Existing request
+rows and clocks are validated and retained. Schema-6 attempts, receipts and
+selection also remain unchanged; older databases gain missing operational tables.
+All paths retain a `Snapshots/before-schema-7-*.sqlite` backup and promote only the validated
 candidate through SQLite's backup transaction.
 
 The [schema-4 fixture](../crates/deadpan-store/tests/fixtures/v4-history.sql) was
@@ -98,5 +98,5 @@ in this slice, so native startup and interactive checks were not repeated.
 The schema-5 request implementation passed formatting, workspace Clippy with warnings denied,
 224 Rust tests (zero failed or ignored), workspace build, and `deadpan-cli doctor`.
 The audio and model qualification suites also pass 20 and 47 Python tests.
-The current diagnostics distinguish database schema 6 from core document schema 4
+The current diagnostics distinguish database schema 7 from core document schema 5
 and continue to report application AI generation as unimplemented.

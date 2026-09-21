@@ -7,6 +7,7 @@ use std::collections::BTreeMap;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
 use crate::document::unique_map;
+use crate::legacy_v4::{LegacyAssetRecord, LegacyHoldRecipe, LegacyHoldVideo};
 use crate::*;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -19,12 +20,12 @@ enum Kind {
         children: Vec<NodeId>,
     },
     Hold {
-        recipe: HoldRecipe,
+        recipe: LegacyHoldRecipe,
     },
     Repeat {
         child: NodeId,
         plays: u32,
-        gap: Option<HoldRecipe>,
+        gap: Option<LegacyHoldRecipe>,
     },
     Retime {
         child: NodeId,
@@ -48,11 +49,13 @@ impl Beat {
             kind: match self.kind {
                 Kind::Source { source } => NodeKind::Source { source },
                 Kind::Sequence { children } => NodeKind::Sequence { children },
-                Kind::Hold { recipe } => NodeKind::Hold { recipe },
+                Kind::Hold { recipe } => NodeKind::Hold {
+                    recipe: recipe.upgrade(),
+                },
                 Kind::Repeat { child, plays, gap } => NodeKind::Repeat {
                     child,
                     iterations: IterationOrder::new(allocation.clone(), plays)?,
-                    gap,
+                    gap: gap.map(LegacyHoldRecipe::upgrade),
                 },
                 Kind::Retime {
                     child,
@@ -68,8 +71,8 @@ impl Beat {
             },
         })
     }
-    fn project(node: &BeatNode) -> Self {
-        Self {
+    fn project(node: &BeatNode) -> Option<Self> {
+        Some(Self {
             label: node.label.clone(),
             kind: match &node.kind {
                 NodeKind::Source { source } => Kind::Source {
@@ -79,7 +82,7 @@ impl Beat {
                     children: children.clone(),
                 },
                 NodeKind::Hold { recipe } => Kind::Hold {
-                    recipe: recipe.clone(),
+                    recipe: LegacyHoldRecipe::project(recipe)?,
                 },
                 NodeKind::Repeat {
                     child,
@@ -88,7 +91,10 @@ impl Beat {
                 } => Kind::Repeat {
                     child: child.clone(),
                     plays: iterations.len(),
-                    gap: gap.clone(),
+                    gap: match gap {
+                        Some(recipe) => Some(LegacyHoldRecipe::project(recipe)?),
+                        None => None,
+                    },
                 },
                 NodeKind::Retime {
                     child,
@@ -102,7 +108,7 @@ impl Beat {
                     pitch: *pitch,
                 },
             },
-        }
+        })
     }
 }
 
@@ -117,7 +123,7 @@ pub struct Document {
     #[serde(deserialize_with = "unique_map")]
     nodes: BTreeMap<NodeId, Beat>,
     #[serde(deserialize_with = "unique_map")]
-    assets: BTreeMap<AssetId, AssetRecord>,
+    assets: BTreeMap<AssetId, LegacyAssetRecord>,
 }
 
 impl Document {
@@ -147,7 +153,11 @@ impl Document {
             presentation_basis: self.presentation_basis,
             root: self.root,
             nodes,
-            assets: self.assets,
+            assets: self
+                .assets
+                .into_iter()
+                .map(|(id, asset)| (id, asset.upgrade()))
+                .collect(),
             marks: BTreeMap::new(),
             overrides: BTreeMap::new(),
         };
@@ -156,22 +166,31 @@ impl Document {
     }
     /// Compare every schema-1 field. Only new iteration metadata is projected out.
     pub fn matches(&self, document: &ProjectDocument) -> bool {
+        let projected = document
+            .nodes
+            .iter()
+            .map(|(id, node)| Some((id.clone(), Beat::project(node)?)))
+            .collect::<Option<BTreeMap<_, _>>>()
+            .zip(
+                document
+                    .assets
+                    .iter()
+                    .map(|(id, asset)| Some((id.clone(), LegacyAssetRecord::project(asset)?)))
+                    .collect::<Option<BTreeMap<_, _>>>(),
+            );
         document.marks.is_empty()
             && document.overrides.is_empty()
-            && self
-                == &Self {
+            && projected.is_some_and(|(nodes, assets)| {
+                self == &Self {
                     schema_version: 1,
                     project_id: document.project_id.clone(),
                     revision_id: document.revision_id.clone(),
                     presentation_basis: document.presentation_basis.clone(),
                     root: document.root.clone(),
-                    nodes: document
-                        .nodes
-                        .iter()
-                        .map(|(id, node)| (id.clone(), Beat::project(node)))
-                        .collect(),
-                    assets: document.assets.clone(),
+                    nodes,
+                    assets,
                 }
+            })
     }
 }
 
@@ -215,12 +234,12 @@ enum OldCommand {
         node: NodeId,
         id: NodeId,
         plays: u32,
-        gap: Option<HoldRecipe>,
+        gap: Option<LegacyHoldRecipe>,
     },
     SetRepeat {
         node: NodeId,
         plays: u32,
-        gap: Option<HoldRecipe>,
+        gap: Option<LegacyHoldRecipe>,
     },
     SetHoldDuration {
         node: NodeId,
@@ -228,7 +247,7 @@ enum OldCommand {
     },
     SetHoldProvider {
         node: NodeId,
-        video: HoldVideo,
+        video: LegacyHoldVideo,
     },
     Rename {
         node: NodeId,
@@ -236,7 +255,7 @@ enum OldCommand {
     },
     AddAsset {
         id: AssetId,
-        asset: AssetRecord,
+        asset: LegacyAssetRecord,
     },
 }
 
@@ -302,16 +321,26 @@ pub fn upgrade_request(json: &str) -> Result<CommandRequest, DocumentError> {
             node,
             id,
             plays,
-            gap,
+            gap: gap.map(LegacyHoldRecipe::upgrade),
             anchor_policy: WrapAnchorPolicy::First,
         },
-        OldCommand::SetRepeat { node, plays, gap } => Command::SetRepeat { node, plays, gap },
+        OldCommand::SetRepeat { node, plays, gap } => Command::SetRepeat {
+            node,
+            plays,
+            gap: gap.map(LegacyHoldRecipe::upgrade),
+        },
         OldCommand::SetHoldDuration { node, duration } => {
             Command::SetHoldDuration { node, duration }
         }
-        OldCommand::SetHoldProvider { node, video } => Command::SetHoldProvider { node, video },
+        OldCommand::SetHoldProvider { node, video } => Command::SetHoldProvider {
+            node,
+            video: video.upgrade(),
+        },
         OldCommand::Rename { node, label } => Command::Rename { node, label },
-        OldCommand::AddAsset { id, asset } => Command::AddAsset { id, asset },
+        OldCommand::AddAsset { id, asset } => Command::AddAsset {
+            id,
+            asset: asset.upgrade(),
+        },
     };
     Ok(CommandRequest {
         project_id: old.project_id,
@@ -330,12 +359,12 @@ struct Patch {
     #[serde(deserialize_with = "unique_map")]
     nodes: BTreeMap<NodeId, ValueChange<Beat>>,
     #[serde(deserialize_with = "unique_map")]
-    assets: BTreeMap<AssetId, ValueChange<AssetRecord>>,
+    assets: BTreeMap<AssetId, ValueChange<LegacyAssetRecord>>,
 }
 
 impl Patch {
-    fn project(patch: &DocumentPatch) -> Self {
-        Self {
+    fn project(patch: &DocumentPatch) -> Option<Self> {
+        Some(Self {
             project_id: patch.project_id.clone(),
             from_revision: patch.from_revision.clone(),
             to_revision: patch.to_revision.clone(),
@@ -343,18 +372,43 @@ impl Patch {
                 .nodes
                 .iter()
                 .map(|(id, change)| {
-                    (
+                    Some((
                         id.clone(),
                         ValueChange {
-                            before: change.before.as_ref().map(Beat::project),
-                            after: change.after.as_ref().map(Beat::project),
+                            before: match &change.before {
+                                Some(node) => Some(Beat::project(node)?),
+                                None => None,
+                            },
+                            after: match &change.after {
+                                Some(node) => Some(Beat::project(node)?),
+                                None => None,
+                            },
                         },
-                    )
+                    ))
                 })
-                .collect(),
-            assets: patch.assets.clone(),
-        }
+                .collect::<Option<_>>()?,
+            assets: patch
+                .assets
+                .iter()
+                .map(|(id, change)| Some((id.clone(), project_asset_change(change)?)))
+                .collect::<Option<_>>()?,
+        })
     }
+}
+
+fn project_asset_change(
+    change: &ValueChange<AssetRecord>,
+) -> Option<ValueChange<LegacyAssetRecord>> {
+    Some(ValueChange {
+        before: match &change.before {
+            Some(asset) => Some(LegacyAssetRecord::project(asset)?),
+            None => None,
+        },
+        after: match &change.after {
+            Some(asset) => Some(LegacyAssetRecord::project(asset)?),
+            None => None,
+        },
+    })
 }
 
 #[derive(Debug, PartialEq, Eq, Deserialize)]
@@ -369,14 +423,19 @@ struct Edit {
 
 pub fn matches_edit(json: &str, edit: &EditTransaction) -> Result<bool, DocumentError> {
     let old: Edit = parse(json)?;
+    let (Some(forward), Some(inverse)) =
+        (Patch::project(&edit.forward), Patch::project(&edit.inverse))
+    else {
+        return Ok(false);
+    };
     Ok(edit.forward.marks.is_empty()
         && edit.inverse.marks.is_empty()
         && edit.forward.overrides.is_empty()
         && edit.inverse.overrides.is_empty()
         && old
             == Edit {
-                forward: Patch::project(&edit.forward),
-                inverse: Patch::project(&edit.inverse),
+                forward,
+                inverse,
                 changed_ids: edit.changed_ids.clone(),
                 duration_delta: edit.duration_delta,
                 description: edit.description.clone(),

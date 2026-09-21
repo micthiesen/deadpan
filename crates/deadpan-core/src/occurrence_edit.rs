@@ -6,9 +6,10 @@ use std::collections::{BTreeMap, BTreeSet};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    Command, DocumentError, DocumentErrorCode, EditError, EditErrorCode, FrameDuration, HoldRecipe,
-    HoldVideo, InstancePath, IterationId, MAX_DOCUMENT_MARKS, MAX_DOCUMENT_NODES, MarkId, NodeId,
-    NodeKind, PlayOverride, PlayOverrides, ProjectDocument, RevisionId, Subtree, WrapAnchorPolicy,
+    AssetId, AssetRecord, Command, DocumentError, DocumentErrorCode, EditError, EditErrorCode,
+    FrameDuration, GeneratedArtifact, HoldRecipe, HoldVideo, InstancePath, IterationId,
+    MAX_DOCUMENT_MARKS, MAX_DOCUMENT_NODES, MarkId, NodeId, NodeKind, PlayOverride, PlayOverrides,
+    ProjectDocument, RevisionId, Subtree, WrapAnchorPolicy,
 };
 
 /// A bounded pool supplied by the host. Unused identities do not enter the document.
@@ -63,6 +64,12 @@ pub enum OccurrenceEdit {
     SetHoldProvider {
         video: HoldVideo,
     },
+    AcceptGeneratedHold {
+        artifact: GeneratedArtifact,
+        #[serde(deserialize_with = "crate::document::unique_map")]
+        assets: BTreeMap<AssetId, AssetRecord>,
+    },
+    RevertGeneratedHold,
     Rename {
         label: String,
     },
@@ -137,6 +144,12 @@ impl OccurrenceEdit {
                 node,
                 video: video.clone(),
             },
+            Self::AcceptGeneratedHold { artifact, assets } => Command::AcceptGeneratedHold {
+                node,
+                artifact: artifact.clone(),
+                assets: assets.clone(),
+            },
+            Self::RevertGeneratedHold => Command::RevertGeneratedHold { node },
             Self::Rename { label } => Command::Rename {
                 node,
                 label: label.clone(),

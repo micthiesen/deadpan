@@ -16,158 +16,13 @@ use rustix::fs::{
     AtFlags, CWD, FileType, Mode, OFlags, RenameFlags, Stat, fchmod, fstat, fsync, openat,
     renameat_with, statat, unlinkat,
 };
-use serde::{Deserialize, Deserializer, Serialize, Serializer, de};
 use thiserror::Error;
 
-const ALGORITHM: &str = "blake3";
-const DIGEST_BYTES: usize = 32;
-const DIGEST_HEX_BYTES: usize = DIGEST_BYTES * 2;
+pub use deadpan_core::{GeneratedContentId, GeneratedObjectRef};
+
 const COPY_BUFFER_BYTES: usize = 64 * 1024;
 const TEMPORARY_ATTEMPTS: usize = 8;
 const FINAL_MODE: Mode = Mode::RUSR.union(Mode::RGRP).union(Mode::ROTH);
-
-/// A validated BLAKE3 content identity.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct GeneratedContentId {
-    digest: String,
-}
-
-impl GeneratedContentId {
-    pub fn new(digest: String) -> Result<Self, GeneratedMediaError> {
-        if digest.len() != DIGEST_HEX_BYTES
-            || !digest
-                .bytes()
-                .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
-        {
-            return Err(GeneratedMediaError::InvalidContentId);
-        }
-        Ok(Self { digest })
-    }
-
-    pub const fn algorithm(&self) -> &'static str {
-        ALGORITHM
-    }
-
-    pub fn digest(&self) -> &str {
-        &self.digest
-    }
-
-    fn object_name(&self) -> String {
-        format!("{ALGORITHM}-{}", self.digest)
-    }
-}
-
-impl std::fmt::Display for GeneratedContentId {
-    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(formatter, "{ALGORITHM}:{}", self.digest)
-    }
-}
-
-#[derive(Serialize)]
-#[serde(deny_unknown_fields)]
-struct ContentIdSerialize<'a> {
-    algorithm: &'static str,
-    digest: &'a str,
-}
-
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct ContentIdDeserialize {
-    algorithm: String,
-    digest: String,
-}
-
-impl Serialize for GeneratedContentId {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        ContentIdSerialize {
-            algorithm: ALGORITHM,
-            digest: &self.digest,
-        }
-        .serialize(serializer)
-    }
-}
-
-impl<'de> Deserialize<'de> for GeneratedContentId {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let wire = ContentIdDeserialize::deserialize(deserializer)?;
-        if wire.algorithm != ALGORITHM {
-            return Err(de::Error::custom(
-                "generated content algorithm must be blake3",
-            ));
-        }
-        Self::new(wire.digest).map_err(de::Error::custom)
-    }
-}
-
-/// Immutable identity and exact byte length of a generated object.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct GeneratedObjectRef {
-    content: GeneratedContentId,
-    byte_length: u64,
-}
-
-impl GeneratedObjectRef {
-    pub fn new(content: GeneratedContentId, byte_length: u64) -> Result<Self, GeneratedMediaError> {
-        if byte_length == 0 {
-            return Err(GeneratedMediaError::InvalidObjectLength);
-        }
-        Ok(Self {
-            content,
-            byte_length,
-        })
-    }
-
-    pub fn content(&self) -> &GeneratedContentId {
-        &self.content
-    }
-
-    pub const fn byte_length(&self) -> u64 {
-        self.byte_length
-    }
-}
-
-#[derive(Serialize)]
-#[serde(deny_unknown_fields)]
-struct ObjectRefSerialize<'a> {
-    content: &'a GeneratedContentId,
-    byte_length: u64,
-}
-
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct ObjectRefDeserialize {
-    content: GeneratedContentId,
-    byte_length: u64,
-}
-
-impl Serialize for GeneratedObjectRef {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        ObjectRefSerialize {
-            content: &self.content,
-            byte_length: self.byte_length,
-        }
-        .serialize(serializer)
-    }
-}
-
-impl<'de> Deserialize<'de> for GeneratedObjectRef {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let wire = ObjectRefDeserialize::deserialize(deserializer)?;
-        Self::new(wire.content, wire.byte_length).map_err(de::Error::custom)
-    }
-}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct GeneratedMediaLimits {
@@ -283,7 +138,7 @@ impl GeneratedStorage {
         validate_budget(expected, limits)?;
         let directories = self.open_directories()?;
         after_directories();
-        let target = expected.content.object_name();
+        let target = object_name(expected.content());
         if let Some(existing) =
             self.open_object_optional(&directories.generated, &target, expected)?
         {
@@ -310,9 +165,9 @@ impl GeneratedStorage {
             let next = copied
                 .checked_add(u64::try_from(read).expect("copy buffer length fits u64"))
                 .ok_or(GeneratedMediaError::SourceChanged)?;
-            if next > expected.byte_length {
+            if next > expected.byte_length() {
                 return Err(GeneratedMediaError::LengthMismatch {
-                    expected: expected.byte_length,
+                    expected: expected.byte_length(),
                     actual: next,
                 });
             }
@@ -331,16 +186,16 @@ impl GeneratedStorage {
                 })?;
             copied = next;
         }
-        if copied != expected.byte_length {
+        if copied != expected.byte_length() {
             return Err(GeneratedMediaError::LengthMismatch {
-                expected: expected.byte_length,
+                expected: expected.byte_length(),
                 actual: copied,
             });
         }
         let observed = hasher.finalize().to_hex().to_string();
-        if observed != expected.content.digest {
+        if observed != expected.content().digest() {
             return Err(GeneratedMediaError::HashMismatch {
-                expected: expected.content.clone(),
+                expected: expected.content().clone(),
                 observed,
             });
         }
@@ -368,7 +223,9 @@ impl GeneratedStorage {
             Err(rustix::io::Errno::EXIST) => {
                 let existing = self
                     .open_object_optional(&directories.generated, &target, expected)?
-                    .ok_or_else(|| GeneratedMediaError::MissingObject(expected.content.clone()))?;
+                    .ok_or_else(|| {
+                        GeneratedMediaError::MissingObject(expected.content().clone())
+                    })?;
                 let existing =
                     self.verify_open_object(existing, expected, limits, io::sink(), || {})?;
                 durability(&directories, &existing)?;
@@ -385,7 +242,7 @@ impl GeneratedStorage {
 
         let published = self
             .open_object_optional(&directories.generated, &target, expected)?
-            .ok_or_else(|| GeneratedMediaError::MissingObject(expected.content.clone()))?;
+            .ok_or_else(|| GeneratedMediaError::MissingObject(expected.content().clone()))?;
         let published = self.verify_open_object(published, expected, limits, io::sink(), || {})?;
         durability(&directories, &published)?;
         confirm_named_file(&directories.generated, &target, &published)?;
@@ -410,10 +267,10 @@ impl GeneratedStorage {
     ) -> Result<VerifiedGeneratedObject, GeneratedMediaError> {
         validate_budget(expected, limits)?;
         let directories = self.open_directories()?;
-        let target = expected.content.object_name();
+        let target = object_name(expected.content());
         let source = self
             .open_object_optional(&directories.generated, &target, expected)?
-            .ok_or_else(|| GeneratedMediaError::MissingObject(expected.content.clone()))?;
+            .ok_or_else(|| GeneratedMediaError::MissingObject(expected.content().clone()))?;
         let mut snapshot = tempfile::tempfile().map_err(|source| GeneratedMediaError::Io {
             operation: "create generated-object snapshot",
             source,
@@ -539,7 +396,7 @@ impl GeneratedStorage {
                         Err(GeneratedMediaError::UnsafeObject(name.into()))
                     } else if !file_type.is_file() {
                         Err(GeneratedMediaError::NotRegularFile(
-                            expected.content.clone(),
+                            expected.content().clone(),
                         ))
                     } else {
                         Err(GeneratedMediaError::System {
@@ -588,7 +445,7 @@ impl GeneratedStorage {
             let next = copied
                 .checked_add(u64::try_from(read).expect("copy buffer length fits u64"))
                 .ok_or(GeneratedMediaError::SourceChanged)?;
-            if next > expected.byte_length {
+            if next > expected.byte_length() {
                 return Err(GeneratedMediaError::SourceChanged);
             }
             if next > limits.maximum_bytes {
@@ -614,16 +471,16 @@ impl GeneratedStorage {
         if !same_file_state(&before, &after) {
             return Err(GeneratedMediaError::SourceChanged);
         }
-        if copied != expected.byte_length {
+        if copied != expected.byte_length() {
             return Err(GeneratedMediaError::LengthMismatch {
-                expected: expected.byte_length,
+                expected: expected.byte_length(),
                 actual: copied,
             });
         }
         let observed = hasher.finalize().to_hex().to_string();
-        if observed != expected.content.digest {
+        if observed != expected.content().digest() {
             return Err(GeneratedMediaError::HashMismatch {
-                expected: expected.content.clone(),
+                expected: expected.content().clone(),
                 observed,
             });
         }
@@ -664,17 +521,19 @@ impl GeneratedStorage {
     ) -> Result<(), GeneratedMediaError> {
         if !FileType::from_raw_mode(metadata.st_mode).is_file() {
             return Err(GeneratedMediaError::NotRegularFile(
-                expected.content.clone(),
+                expected.content().clone(),
             ));
         }
-        self.validate_contained(metadata, expected.content.digest())?;
+        self.validate_contained(metadata, expected.content().digest())?;
         if metadata.st_nlink != 1 {
-            return Err(GeneratedMediaError::MultipleLinks(expected.content.clone()));
+            return Err(GeneratedMediaError::MultipleLinks(
+                expected.content().clone(),
+            ));
         }
         let write_bits = (Mode::WUSR | Mode::WGRP | Mode::WOTH).bits();
         if metadata.st_mode & write_bits != 0 {
             return Err(GeneratedMediaError::WritableObject(
-                expected.content.clone(),
+                expected.content().clone(),
             ));
         }
         let actual =
@@ -685,9 +544,9 @@ impl GeneratedStorage {
                 maximum: limits.maximum_bytes,
             });
         }
-        if actual != expected.byte_length {
+        if actual != expected.byte_length() {
             return Err(GeneratedMediaError::LengthMismatch {
-                expected: expected.byte_length,
+                expected: expected.byte_length(),
                 actual,
             });
         }
@@ -747,13 +606,17 @@ fn validate_budget(
     expected: &GeneratedObjectRef,
     limits: GeneratedMediaLimits,
 ) -> Result<(), GeneratedMediaError> {
-    if expected.byte_length > limits.maximum_bytes {
+    if expected.byte_length() > limits.maximum_bytes {
         return Err(GeneratedMediaError::TooLarge {
-            size: expected.byte_length,
+            size: expected.byte_length(),
             maximum: limits.maximum_bytes,
         });
     }
     Ok(())
+}
+
+fn object_name(content: &GeneratedContentId) -> String {
+    format!("blake3-{}", content.digest())
 }
 
 fn storage_open_error(component: &str, source: rustix::io::Errno) -> GeneratedMediaError {
@@ -838,10 +701,6 @@ fn same_file_state(before: &Stat, after: &Stat) -> bool {
 
 #[derive(Debug, Error)]
 pub enum GeneratedMediaError {
-    #[error("generated content ID must be exactly 64 lowercase hexadecimal characters")]
-    InvalidContentId,
-    #[error("generated object byte length must be positive")]
-    InvalidObjectLength,
     #[error("generated-media byte budget must be positive")]
     InvalidBudget,
     #[error("generated-media storage component is missing: {0}")]
@@ -897,8 +756,6 @@ pub enum GeneratedMediaError {
 impl GeneratedMediaError {
     pub fn code(&self) -> &'static str {
         match self {
-            Self::InvalidContentId => "GeneratedContentIdInvalid",
-            Self::InvalidObjectLength => "GeneratedObjectInvalid",
             Self::InvalidBudget => "GeneratedMediaBudgetInvalid",
             Self::MissingStorageComponent(_) => "GeneratedMediaStorageMissing",
             Self::UnsafeStorageComponent(_) | Self::UnsafeObject(_) => "GeneratedMediaPathUnsafe",
@@ -967,7 +824,7 @@ mod tests {
     fn object_path(package: &Path, reference: &GeneratedObjectRef) -> std::path::PathBuf {
         package
             .join("Media/Generated")
-            .join(reference.content.object_name())
+            .join(object_name(reference.content()))
     }
 
     fn pending_entries(package: &Path) -> Vec<String> {
@@ -986,7 +843,7 @@ mod tests {
             json,
             format!(
                 "{{\"content\":{{\"algorithm\":\"blake3\",\"digest\":\"{}\"}},\"byte_length\":3}}",
-                reference.content.digest()
+                reference.content().digest()
             )
         );
         assert_eq!(

@@ -72,6 +72,7 @@ impl ProjectStore {
         document.validate()?;
         let json = document.to_json()?;
         check_document_size(&json)?;
+        ensure_generated_admission(None, document)?;
         fs::create_dir(path)?;
         let package = fs::canonicalize(path)?;
         let lock = acquire_lock(&package)?;
@@ -388,6 +389,7 @@ fn prepare_command(
     ensure_unused_revision(connection, &request.new_revision)?;
     let next = edit.forward.apply(&current)?;
     check_document_size(&next.to_json()?)?;
+    ensure_generated_admission(Some(&current), &next)?;
     let request_json = serde_json::to_string(request)?;
     let edit_json = serde_json::to_string(&edit)?;
     check_document_size(&request_json)?;
@@ -399,6 +401,46 @@ fn prepare_command(
         request_json,
         edit_json,
     })
+}
+
+/// Core edits describe authored intent. They cannot prove that a candidate was
+/// selected, revalidated, canonicalized and durably promoted. Until that host
+/// path exists, generic store commands may retain/copy an existing artifact,
+/// but cannot introduce a new one, including through subtrees or Repeat gaps.
+fn ensure_generated_admission(
+    current: Option<&ProjectDocument>,
+    next: &ProjectDocument,
+) -> Result<(), StoreError> {
+    use deadpan_core::{HoldVideo, NodeKind};
+    use std::collections::BTreeSet;
+
+    fn artifacts(document: &ProjectDocument) -> Result<BTreeSet<Vec<u8>>, StoreError> {
+        document
+            .nodes()
+            .values()
+            .filter_map(|node| match &node.kind {
+                NodeKind::Hold { recipe } => Some(&recipe.video),
+                NodeKind::Repeat {
+                    gap: Some(recipe), ..
+                } => Some(&recipe.video),
+                _ => None,
+            })
+            .filter_map(|video| match video {
+                HoldVideo::Generated { accepted } => Some(&accepted.artifact),
+                _ => None,
+            })
+            .map(|artifact| serde_json::to_vec(artifact).map_err(StoreError::from))
+            .collect()
+    }
+    let retained = match current {
+        Some(document) => artifacts(document)?,
+        None => BTreeSet::new(),
+    };
+    if artifacts(next)?.is_subset(&retained) {
+        Ok(())
+    } else {
+        Err(StoreError::GeneratedAcceptanceUnavailable)
+    }
 }
 
 fn ensure_unused_revision(

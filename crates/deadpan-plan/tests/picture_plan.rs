@@ -219,6 +219,143 @@ fn source_index_checks_asset_clock_and_explicit_endpoint_policy() {
 }
 
 #[test]
+fn generated_hold_resize_reuses_materialized_frames_and_preserves_following_source() {
+    let initial = document(
+        &["hold", "source"],
+        vec![("hold", hold(30)), ("source", source(10, 10_000, 20_010))],
+    );
+    let object = |digit: char| {
+        GeneratedObjectRef::new(
+            GeneratedContentId::new(digit.to_string().repeat(64)).unwrap(),
+            1024,
+        )
+        .unwrap()
+    };
+    let artifact = GeneratedArtifact {
+        sampled_asset: asset_id("sampled"),
+        sampled_object: object('c'),
+        native_asset: asset_id("native"),
+        native_object: object('d'),
+        provenance: object('e'),
+        sampling: BridgeSamplingMap::new(
+            FrameRate::new(30_000, 1001).unwrap(),
+            FrameRate::new(24, 1).unwrap(),
+            duration(25),
+            duration(30),
+            BridgeInterpolation::EncodedSrgbRgb8LinearHalfUp,
+        )
+        .unwrap(),
+    };
+    let record = |object: &GeneratedObjectRef, frames: i64| AssetRecord {
+        label: "Generated".into(),
+        content_hash: object.content().to_string(),
+        video: Some(span(0, frames * 1001)),
+        audio: None,
+        still_image: false,
+        frame_count: Some(duration(frames)),
+    };
+    let assets = BTreeMap::from([
+        (
+            artifact.sampled_asset.clone(),
+            record(&artifact.sampled_object, 30),
+        ),
+        (
+            artifact.native_asset.clone(),
+            record(&artifact.native_object, 25),
+        ),
+    ]);
+    let edit = |before: &ProjectDocument, next: &str, command| {
+        let transaction = deadpan_core::apply(
+            before,
+            &CommandRequest {
+                project_id: before.project_id().clone(),
+                expected_revision: before.revision_id().clone(),
+                new_revision: revision(next),
+                command,
+            },
+        )
+        .unwrap();
+        transaction.forward.apply(before).unwrap()
+    };
+    let accepted = edit(
+        &initial,
+        "accepted",
+        Command::AcceptGeneratedHold {
+            node: id("hold"),
+            artifact,
+            assets,
+        },
+    );
+    let full_plan = RenderPlan::compile(&accepted).unwrap();
+    let following = full_plan.picture(ProjectFrame(30)).unwrap().picture;
+    let shorter = edit(
+        &accepted,
+        "shorter",
+        Command::SetHoldDuration {
+            node: id("hold"),
+            duration: duration(12),
+        },
+    );
+    let shorter_plan = RenderPlan::compile(&shorter).unwrap();
+    for frame in 0..12 {
+        let picture = shorter_plan.picture(ProjectFrame(frame)).unwrap().picture;
+        assert_eq!(
+            picture,
+            full_plan.picture(ProjectFrame(frame)).unwrap().picture
+        );
+        assert!(
+            matches!(picture, Picture::Accepted { asset, frame: SourceFrameId(number), .. }
+            if asset == asset_id("sampled") && number == u64::try_from(frame).unwrap())
+        );
+    }
+    assert_eq!(
+        shorter_plan.picture(ProjectFrame(12)).unwrap().picture,
+        following
+    );
+    let reused = edit(
+        &shorter,
+        "reused",
+        Command::SetHoldDuration {
+            node: id("hold"),
+            duration: duration(30),
+        },
+    );
+    let reused_plan = RenderPlan::compile(&reused).unwrap();
+    for frame in 0..40 {
+        assert_eq!(
+            reused_plan.picture(ProjectFrame(frame)).unwrap().picture,
+            full_plan.picture(ProjectFrame(frame)).unwrap().picture
+        );
+    }
+    let extended = edit(
+        &reused,
+        "extended",
+        Command::SetHoldDuration {
+            node: id("hold"),
+            duration: duration(31),
+        },
+    );
+    let fallback = RenderPlan::compile(&extended).unwrap();
+    assert_eq!(
+        fallback.picture(ProjectFrame(30)).unwrap().picture,
+        Picture::Background
+    );
+    assert_eq!(
+        fallback.picture(ProjectFrame(31)).unwrap().picture,
+        following
+    );
+    assert_eq!(
+        full_plan.duration(),
+        duration(40),
+        "compiled revision stays immutable"
+    );
+    assert!(matches!(
+        full_plan.picture(ProjectFrame(29)).unwrap().picture,
+        Picture::Accepted { .. }
+    ));
+}
+
+#[test]
 fn exact_retime_boundary_selects_the_right_sequence_child() {
     let document = document(
         &["retime"],

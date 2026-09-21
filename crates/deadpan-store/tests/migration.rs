@@ -6,6 +6,7 @@ use std::{
 
 use deadpan_core::{
     IterationOrder, NodeId, NodeKind, ProjectDocument, RevisionId, legacy_v1, legacy_v2, legacy_v3,
+    legacy_v4,
 };
 use deadpan_jobs::{Relevance, RequestId};
 use deadpan_store::generation::{
@@ -31,6 +32,7 @@ fn fixture_version(scratch: &Path, version: u32) -> Result<PathBuf> {
         3 => include_str!("fixtures/v3-history.sql"),
         4 => include_str!("fixtures/v4-history.sql"),
         5 => include_str!("fixtures/v5-generation.sql"),
+        6 => include_str!("fixtures/v6-attempts.sql"),
         _ => panic!("unsupported fixture"),
     })?;
     Ok(package)
@@ -64,11 +66,36 @@ fn history_json(connection: &Connection) -> Result<Vec<(String, String)>> {
         .query_map([], |row| Ok((row.get(0)?, row.get(1)?)))?
         .collect::<std::result::Result<_, _>>()?)
 }
+fn assert_core_four_documents(originals: &[(String, String)], connection: &Connection) -> Result {
+    let current = docs(connection)?;
+    assert_eq!(originals.len(), current.len());
+    for ((old_id, old), (new_id, new)) in originals.iter().zip(current) {
+        assert_eq!(*old_id, new_id);
+        assert!(legacy_v4::Document::from_json(old)?.matches(&ProjectDocument::from_json(&new)?));
+    }
+    Ok(())
+}
 fn generation_metadata(connection: &Connection) -> Result<String> {
     let mut parts = Vec::new();
     for sql in [
         "SELECT json_array(hold_id,high_water) FROM hold_request_clocks ORDER BY hold_id",
         "SELECT json_array(request_id,project_id,hold_id,request_version,origin_revision,context_sha256,constraints,provider,relevance) FROM generation_requests ORDER BY request_id",
+    ] {
+        parts.extend(
+            connection
+                .prepare(sql)?
+                .query_map([], |row| row.get::<_, String>(0))?
+                .collect::<std::result::Result<Vec<_>, _>>()?,
+        );
+    }
+    Ok(parts.join("\n"))
+}
+fn attempt_metadata(connection: &Connection) -> Result<String> {
+    let mut parts = Vec::new();
+    for sql in [
+        "SELECT json_array(request_id,attempt_id,ordinal,cancellation_token,state,worker_stage,transition_sequence,cancel_response,worker_candidate,failure_origin,failure_code,failure_detail) FROM generation_attempts ORDER BY request_id,attempt_id",
+        "SELECT json_array(request_id,attempt_id,staged_ref,sha256,byte_length,video,provider,validator_id,validator_version,availability) FROM generation_candidate_receipts ORDER BY request_id,attempt_id",
+        "SELECT json_array(request_id,high_water,latest_attempt_id,selected_ready_attempt_id) FROM generation_attempt_heads ORDER BY request_id",
     ] {
         parts.extend(
             connection
@@ -116,7 +143,7 @@ fn order(document: &ProjectDocument) -> &IterationOrder {
 #[test]
 fn corrupt_old_tables_and_oversized_rows_retain_backup_before_validation() -> Result {
     let oversized_bytes = i64::try_from(deadpan_core::MAX_DOCUMENT_JSON_BYTES)? + 1;
-    for version in [1, 2, 3, 4, 5] {
+    for version in [1, 2, 3, 4, 5, 6] {
         for missing_table in [true, false] {
             let scratch = tempfile::tempdir()?;
             let path = fixture_version(scratch.path(), version)?;
@@ -189,7 +216,7 @@ fn old_binary_history_migrates_with_stable_ids_and_pending_redo() -> Result {
     let old_docs = docs(&database)?;
     drop(database);
     let migration = ProjectStore::migrate(&path)?;
-    assert_eq!((migration.from_schema, migration.to_schema), (1, 6));
+    assert_eq!((migration.from_schema, migration.to_schema), (1, 7));
     let backup = Connection::open(migration.backup.unwrap())?;
     assert_eq!(contents(&backup)?, before);
     let database = Connection::open(path.join("project.sqlite"))?;
@@ -268,13 +295,13 @@ fn migration_promotes_with_a_live_wal_reader_without_replacing_its_snapshot() ->
     reader.execute_batch("COMMIT")?;
     assert_eq!(
         reader.pragma_query_value(None, "user_version", |row| row.get::<_, u32>(0))?,
-        6
+        7
     );
     Ok(())
 }
 
 #[test]
-fn schema_four_adds_operational_tables_without_rewriting_authored_history() -> Result {
+fn schema_four_migrates_core_vocabulary_and_preserves_authored_history() -> Result {
     let scratch = tempfile::tempdir()?;
     let path = fixture_version(scratch.path(), 4)?;
     for mode in [AccessMode::ReadOnly, AccessMode::ReadWrite] {
@@ -291,12 +318,12 @@ fn schema_four_adds_operational_tables_without_rewriting_authored_history() -> R
     assert_eq!(original_docs.len(), 11);
     assert_eq!(original_history.len(), 6);
     let outcome = ProjectStore::migrate(&path)?;
-    assert_eq!((outcome.from_schema, outcome.to_schema), (4, 6));
+    assert_eq!((outcome.from_schema, outcome.to_schema), (4, 7));
     assert_eq!(
         contents(&Connection::open(outcome.backup.unwrap())?)?,
         before
     );
-    assert_eq!(docs(&database)?, original_docs);
+    assert_core_four_documents(&original_docs, &database)?;
     assert_eq!(history_json(&database)?, original_history);
     assert_eq!(metadata(&database)?, original_metadata);
     assert_eq!(
@@ -378,12 +405,12 @@ fn schema_five_preserves_requests_clocks_history_and_pending_redo() -> Result {
     let original_history = history_json(&database)?;
     let original_metadata = metadata(&database)?;
     let outcome = ProjectStore::migrate(&path)?;
-    assert_eq!((outcome.from_schema, outcome.to_schema), (5, 6));
+    assert_eq!((outcome.from_schema, outcome.to_schema), (5, 7));
     let backup = Connection::open(outcome.backup.unwrap())?;
     assert_eq!(contents(&backup)?, original);
     assert_eq!(generation_metadata(&backup)?, requests);
     assert_eq!(generation_metadata(&database)?, requests);
-    assert_eq!(docs(&database)?, original_docs);
+    assert_core_four_documents(&original_docs, &database)?;
     assert_eq!(history_json(&database)?, original_history);
     assert_eq!(metadata(&database)?, original_metadata);
     for table in [
@@ -490,6 +517,165 @@ fn schema_five_invalid_requests_and_table_collisions_never_promote() -> Result {
 }
 
 #[test]
+fn schema_six_preserves_attempts_and_defers_recovery_until_writer_open() -> Result {
+    use deadpan_jobs::{AttemptId, CancellationToken, JobState, MessageIdentity};
+    use deadpan_store::generation_attempts::BeginGenerationAttempt;
+
+    let scratch = tempfile::tempdir()?;
+    let path = fixture_version(scratch.path(), 6)?;
+    assert!(matches!(
+        ProjectStore::open(&path, AccessMode::ReadOnly),
+        Err(StoreError::MigrationRequired(6))
+    ));
+    let database = Connection::open(path.join("project.sqlite"))?;
+    let original = contents(&database)?;
+    let original_docs = docs(&database)?;
+    let original_history = history_json(&database)?;
+    let original_metadata = metadata(&database)?;
+    let requests = generation_metadata(&database)?;
+    let attempts = attempt_metadata(&database)?;
+    let outcome = ProjectStore::migrate(&path)?;
+    assert_eq!((outcome.from_schema, outcome.to_schema), (6, 7));
+    let backup = Connection::open(outcome.backup.unwrap())?;
+    assert_eq!(contents(&backup)?, original);
+    assert_eq!(generation_metadata(&backup)?, requests);
+    assert_eq!(attempt_metadata(&backup)?, attempts);
+    assert_core_four_documents(&original_docs, &database)?;
+    assert_eq!(history_json(&database)?, original_history);
+    assert_eq!(metadata(&database)?, original_metadata);
+    assert_eq!(generation_metadata(&database)?, requests);
+    assert_eq!(attempt_metadata(&database)?, attempts);
+
+    let running = MessageIdentity::new(RequestId::new("request-4")?, AttemptId::new("attempt-4")?);
+    let readonly = ProjectStore::open(&path, AccessMode::ReadOnly)?;
+    assert_eq!(
+        readonly
+            .generation_attempt(&running)?
+            .unwrap()
+            .checkpoint
+            .state,
+        JobState::Running
+    );
+    readonly.validate()?;
+    drop(readonly);
+    assert!(ProjectStore::migrate(&path)?.backup.is_none());
+    assert_eq!(attempt_metadata(&database)?, attempts);
+
+    let mut store = ProjectStore::open(&path, AccessMode::ReadWrite)?;
+    assert_eq!(
+        store
+            .generation_attempt(&running)?
+            .unwrap()
+            .checkpoint
+            .state,
+        JobState::Failed
+    );
+    assert_eq!(generation_metadata(&database)?, requests);
+    let selected = store
+        .selected_generation_candidate(&RequestId::new("request-0")?)?
+        .unwrap();
+    assert_eq!(selected.identity.attempt_id.as_str(), "selected");
+    let next = MessageIdentity::new(
+        RequestId::new("request-0")?,
+        AttemptId::new("post-migration")?,
+    );
+    store.begin_generation_attempt(BeginGenerationAttempt {
+        identity: next.clone(),
+        cancellation_token: CancellationToken::new("post-migration-cancel")?,
+    })?;
+    assert_eq!(store.generation_attempt(&next)?.unwrap().ordinal, 3);
+    let from = store.snapshot()?.revision_id().clone();
+    let to = RevisionId::new("v7-redo")?;
+    let mut observations = Vec::new();
+    for index in 0..9 {
+        let request = store
+            .generation_request(&RequestId::new(format!("request-{index}"))?)?
+            .unwrap();
+        observations.push(RelevanceObservation {
+            request_id: request.request_id,
+            after_context: ContextObservation::Resolved(request.binding.context_sha256.clone()),
+            binding: request.binding,
+        });
+    }
+    store.redo_reconciled(
+        &from,
+        to.clone(),
+        &RelevancePlan {
+            from_revision: from.clone(),
+            to_revision: to,
+            observations,
+        },
+    )?;
+    assert_eq!(
+        store.snapshot()?.nodes()[&NodeId::new("hold-0")?].label,
+        "Renamed"
+    );
+    store.validate()?;
+    Ok(())
+}
+
+#[test]
+fn schema_six_corruption_preserves_original_history_jobs_and_backup() -> Result {
+    for corruption in [
+        "UPDATE generation_attempts SET worker_candidate=json_set(worker_candidate,'$.unknown',1) WHERE attempt_id='selected'",
+        "UPDATE generation_candidate_receipts SET video=json_set(video,'$.unknown',1) WHERE attempt_id='selected'",
+        "UPDATE generation_attempt_heads SET selected_ready_attempt_id='attempt-0' WHERE request_id='request-0'",
+        "UPDATE generation_attempt_heads SET high_water=1 WHERE request_id='request-0'",
+        "UPDATE generation_attempts SET worker_candidate=printf('%020000d',0) WHERE attempt_id='selected'",
+        "UPDATE generation_candidate_receipts SET provider=printf('%020000d',0) WHERE attempt_id='selected'",
+        "UPDATE revisions SET document=json_set(document,'$.schema_version',5)",
+        "UPDATE history SET request=json_set(request,'$.command.command','revert_generated_hold')",
+    ] {
+        let scratch = tempfile::tempdir()?;
+        let path = fixture_version(scratch.path(), 6)?;
+        let database = Connection::open(path.join("project.sqlite"))?;
+        database.pragma_update(None, "ignore_check_constraints", true)?;
+        database.execute_batch(corruption)?;
+        let original = contents(&database)?;
+        let requests = generation_metadata(&database)?;
+        let attempts = attempt_metadata(&database)?;
+        let failure = ProjectStore::migrate(&path).unwrap_err();
+        let StoreError::MigrationFailed { backup, .. } = failure else {
+            panic!("migration must retain its backup: {corruption}")
+        };
+        let backup = Connection::open(backup)?;
+        for connection in [&database, &backup] {
+            assert_eq!(contents(connection)?, original, "{corruption}");
+            assert_eq!(generation_metadata(connection)?, requests, "{corruption}");
+            assert_eq!(attempt_metadata(connection)?, attempts, "{corruption}");
+        }
+    }
+    Ok(())
+}
+
+#[test]
+fn every_old_database_rejects_new_asset_hash_vocabulary_without_promotion() -> Result {
+    let asset = serde_json::json!({
+        "label": "Injected new identity", "content_hash": format!("blake3:{}", "a".repeat(64)),
+        "video": null, "audio": null, "still_image": true, "frame_count": null,
+    });
+    for version in 1..=6 {
+        let scratch = tempfile::tempdir()?;
+        let path = fixture_version(scratch.path(), version)?;
+        let database = Connection::open(path.join("project.sqlite"))?;
+        // Apply the same extra immutable asset to every snapshot. Chronology
+        // still agrees; only the old schema's SHA-256 contract makes it invalid.
+        database.execute(
+            "UPDATE revisions SET document=json_set(document,'$.assets.injected',json(?1))",
+            [asset.to_string()],
+        )?;
+        let original = contents(&database)?;
+        let failure = ProjectStore::migrate(&path).unwrap_err();
+        let StoreError::MigrationFailed { backup, .. } = failure else {
+            panic!("legacy identity rejection must retain backup for schema {version}")
+        };
+        assert_eq!(contents(&database)?, original);
+        assert_eq!(contents(&Connection::open(backup)?)?, original);
+    }
+    Ok(())
+}
+
+#[test]
 fn corruption_is_rejected_without_promoting_any_migrated_rows() -> Result {
     for corruption in [
         "UPDATE revisions SET document=json_set(document,'$.nodes.repeat.kind.plays',7) WHERE id='v1-grow'",
@@ -516,7 +702,7 @@ fn corruption_is_rejected_without_promoting_any_migrated_rows() -> Result {
                 .unwrap()
                 .file_name()
                 .to_string_lossy()
-                .starts_with("before-schema-6-")
+                .starts_with("before-schema-7-")
         }));
     }
     Ok(())
@@ -564,7 +750,7 @@ fn schema_two_history_preserves_compact_identities_and_pending_redo() -> Result 
     let original_metadata = metadata(&database)?;
     let old_docs = docs(&database)?;
     let migration = ProjectStore::migrate(&path)?;
-    assert_eq!((migration.from_schema, migration.to_schema), (2, 6));
+    assert_eq!((migration.from_schema, migration.to_schema), (2, 7));
     assert_eq!(
         contents(&Connection::open(migration.backup.unwrap())?)?,
         original
@@ -789,14 +975,14 @@ fn schema_three_history_preserves_every_mark_and_pending_redo() -> Result {
     assert_eq!(old_docs.len(), 23);
     assert_eq!(old_edits.len(), 17);
     let migration = ProjectStore::migrate(&path)?;
-    assert_eq!((migration.from_schema, migration.to_schema), (3, 6));
+    assert_eq!((migration.from_schema, migration.to_schema), (3, 7));
     let backup = migration.backup.unwrap();
     assert!(
         backup
             .file_name()
             .unwrap()
             .to_string_lossy()
-            .starts_with("before-schema-6-")
+            .starts_with("before-schema-7-")
     );
     assert_eq!(contents(&Connection::open(backup)?)?, original);
     assert_eq!(metadata(&database)?, original_metadata);

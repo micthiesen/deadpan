@@ -56,6 +56,10 @@ pub enum StoreError {
     GenerationProgressNotPersistent,
     #[error("Generation attempt transition is invalid: {0}")]
     GenerationAttempt(String),
+    #[error(
+        "New generated providers require qualified candidate acceptance, which is not yet available"
+    )]
+    GeneratedAcceptanceUnavailable,
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     #[error(transparent)]
     GeneratedMedia(#[from] crate::generated_media::GeneratedMediaError),
@@ -103,6 +107,7 @@ impl StoreError {
             Self::GenerationAttemptExhausted(_) => "GenerationAttemptExhausted",
             Self::GenerationProgressNotPersistent => "GenerationProgressNotPersistent",
             Self::GenerationAttempt(_) => "GenerationAttemptInvalid",
+            Self::GeneratedAcceptanceUnavailable => "GeneratedAcceptanceUnavailable",
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             Self::GeneratedMedia(error) => error.code(),
             Self::Edit(error) => error.code.as_str(),

@@ -73,7 +73,7 @@ three total plays and only two gaps. These are structural edits, not rendered
 media. Editing through range/text selectors, registers, macros, and effects
 remain required future work.
 
-Documents use schema 4 and store compact Repeat `iterations.runs` with
+Documents use schema 5 and store compact Repeat `iterations.runs` with
 `allocation`, `first`, and `count`. Commands `wrap_repeat` and `set_repeat` still
 take a total `plays` count. `insert_plays` takes `node`, `index`, and `count`;
 `move_plays` takes `node`, a half-open `start`/`end` play range, and `destination`
@@ -387,24 +387,25 @@ future-schema read-only inspection still needs a compatibility implementation.
 
 ## Schema migration
 
-Database schemas 1 through 5 return `MigrationRequired` when opened. Upgrade explicitly:
+Database schemas 1 through 6 return `MigrationRequired` when opened. Upgrade explicitly:
 
 ```sh
 cargo run --locked -p deadpan-cli -- project migrate /tmp/example.deadpan
 ```
 
 Migration holds the project writer lock, keeps a consistent SQLite backup under
-`Snapshots/before-schema-6-*.sqlite`, and upgrades a separate candidate. It
+`Snapshots/before-schema-7-*.sqlite`, and upgrades a separate candidate. It
 replays all commands, undo/redo revisions, and abandoned branches with their
 original revision IDs. Every snapshot and forward/inverse transaction is checked
 against its strict original schema meaning. Migration goes directly to database
-schema 6, with core documents remaining at schema 4. Schemas 1 through 3 gain
+schema 7 and core document schema 5. Schemas 1 through 3 gain
 empty override maps. Schema-1/2 histories also gain empty mark
 maps; schema-3 mark histories retain their exact ownership, bias, and loss states.
-Schema-4 and schema-5 authored snapshots, commands, and patches remain byte-for-byte
-unchanged. Schema-5 generation requests and clocks are validated and preserved;
-older databases gain empty request tables. All migrated databases gain empty
-attempt, candidate-receipt, and selection tables. Fields or
+Database schema-4/5/6 authored snapshots, commands, and patches are replayed through
+the frozen core schema-4 adapter. Schema-5/6 generation requests and clocks are
+validated and preserved; older databases gain empty request tables. Schema-6
+attempt, candidate-receipt, and selection rows remain unchanged; older databases
+gain empty tables. Fields or
 commands that did not exist in the old schema are rejected. SQLite atomically promotes the validated
 candidate through its backup API; the main file is never renamed around a live
 WAL. Existing read transactions keep their old snapshot. Failure before promotion
@@ -413,6 +414,11 @@ no new backup. The result reports source/destination schemas and backup path.
 Failures after backup creation include `error.recovery_backup`. Semantic migration
 failures use `MigrationFailed`; disk, permission, and lock failures keep their
 actionable storage error codes and still identify the retained backup.
+
+Generated Hold acceptance/reversion semantics exist in core schema 5, but generic
+project commands and initial import reject newly introduced generated artifacts
+with `GeneratedAcceptanceUnavailable`. Qualified candidate admission is still
+unimplemented; see [generated Hold semantics](GENERATED_HOLDS.md).
 
 This is a database migration, not portable media copying or a recovery UI. The
 immutable source specification and media references are unaffected.
