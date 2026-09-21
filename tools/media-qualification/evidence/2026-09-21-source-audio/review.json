@@ -1,0 +1,21 @@
+{
+  "base_revision": "4608da326284d9babf9c36146cd84d651a1f7e4a",
+  "scope": "Uncommitted source audio decoder, measured audio index/cache, shared source input, fixtures and integration tests",
+  "general_review": "No remaining correctness or storage/cache finding",
+  "timing_review": "Complete after range-scan and index-construction cancellation fixes",
+  "native_review": "Complete: no findings after frozen guard and FFI boundary re-review",
+  "applied": [
+    "Check deadlines/cancellation inside every sample-range index scan and preserve cancellation errors",
+    "Check deadlines/cancellation between measured index observations and before publication",
+    "Accept native-valid video stream index 32 and reject index 33",
+    "Remove unqualified S16BE decoder admission",
+    "Reject unsafe container packet/table declarations and nested descriptor lengths before FFmpeg allocation, with aggregate all-track semantic budgets",
+    "Bound WAV packet allocation before demux and include packet side data in the post-demux admission budget",
+    "Charge header guard reads and elapsed time to the same native opening allowance",
+    "Use eight fixed header cache pages to avoid repeated reads when traversing interleaved sample tables"
+  ],
+  "pending": [],
+  "dismissed": [
+    "Final snapshot-read deadline concern: VerifiedSourceInput checks after snapshot/rewind before publishing; blocking reads remain explicitly cooperative"
+  ]
+}

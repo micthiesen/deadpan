@@ -1,0 +1,155 @@
+{
+  "command": [
+    "gh",
+    "run",
+    "watch",
+    "35620581535",
+    "--repo",
+    "micthiesen/deadpan",
+    "--interval",
+    "20",
+    "--exit-status"
+  ],
+  "exit_code": 0,
+  "seconds": 379.72106937505305,
+  "run": {
+    "conclusion": "success",
+    "databaseId": 35620581535,
+    "headSha": "4608da326284d9babf9c36146cd84d651a1f7e4a",
+    "jobs": [
+      {
+        "completedAt": "2026-09-21T15:48:30Z",
+        "conclusion": "success",
+        "databaseId": 106402331695,
+        "name": "macOS workspace",
+        "startedAt": "2026-09-21T15:41:01Z",
+        "status": "completed",
+        "steps": [
+          {
+            "completedAt": "2026-09-21T15:41:02Z",
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "startedAt": "2026-09-21T15:41:01Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-21T15:41:04Z",
+            "conclusion": "success",
+            "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+            "number": 2,
+            "startedAt": "2026-09-21T15:41:02Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-21T15:41:13Z",
+            "conclusion": "success",
+            "name": "Install the pinned toolchain",
+            "number": 3,
+            "startedAt": "2026-09-21T15:41:04Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-21T15:41:13Z",
+            "conclusion": "success",
+            "name": "Format",
+            "number": 4,
+            "startedAt": "2026-09-21T15:41:13Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-21T15:44:42Z",
+            "conclusion": "success",
+            "name": "Build pinned LGPL FFmpeg",
+            "number": 5,
+            "startedAt": "2026-09-21T15:41:13Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-21T15:45:41Z",
+            "conclusion": "success",
+            "name": "Lint",
+            "number": 6,
+            "startedAt": "2026-09-21T15:44:42Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-21T15:48:03Z",
+            "conclusion": "success",
+            "name": "Test",
+            "number": 7,
+            "startedAt": "2026-09-21T15:45:41Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-21T15:48:05Z",
+            "conclusion": "success",
+            "name": "Audio measurement regression tests",
+            "number": 8,
+            "startedAt": "2026-09-21T15:48:03Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-21T15:48:05Z",
+            "conclusion": "success",
+            "name": "Model worker contract tests",
+            "number": 9,
+            "startedAt": "2026-09-21T15:48:05Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-21T15:48:05Z",
+            "conclusion": "success",
+            "name": "FFV1 qualification report tests",
+            "number": 10,
+            "startedAt": "2026-09-21T15:48:05Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-21T15:48:05Z",
+            "conclusion": "success",
+            "name": "Native media harness tests",
+            "number": 11,
+            "startedAt": "2026-09-21T15:48:05Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-21T15:48:06Z",
+            "conclusion": "success",
+            "name": "Build",
+            "number": 12,
+            "startedAt": "2026-09-21T15:48:05Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-21T15:48:24Z",
+            "conclusion": "success",
+            "name": "Headless diagnostics",
+            "number": 13,
+            "startedAt": "2026-09-21T15:48:06Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-21T15:48:25Z",
+            "conclusion": "success",
+            "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+            "number": 26,
+            "startedAt": "2026-09-21T15:48:24Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-21T15:48:26Z",
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 27,
+            "startedAt": "2026-09-21T15:48:25Z",
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/micthiesen/deadpan/actions/runs/35620581535/job/106402331695"
+      }
+    ],
+    "status": "completed",
+    "url": "https://github.com/micthiesen/deadpan/actions/runs/35620581535"
+  }
+}

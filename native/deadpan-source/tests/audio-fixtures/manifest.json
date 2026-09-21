@@ -1,0 +1,74 @@
+{
+  "producer": "native/deadpan-source/tests/generate_audio_fixtures.py; Python standard-library wave/struct; no encoder or resampling",
+  "license": "Synthetic repository-authored signals under the repository license",
+  "files": [
+    {
+      "name": "pcm-stereo-48000.wav",
+      "bytes": 32832,
+      "sha256": "e79aba90eab42dc057171be52be9ecb794c3e2790c5731783270ece73c24d2ee",
+      "sample_rate": 48000,
+      "channels": 2,
+      "sample_frames": 8197,
+      "sample_format": "signed little-endian 16-bit PCM",
+      "pcm_sha256": "a998c1afd0ab3e80785d2e361441ab6d6d831beccc35585371d820778b086d2d",
+      "expected_source_interval": {
+        "start": 0,
+        "end": 8197,
+        "time_base": [
+          1,
+          48000
+        ]
+      },
+      "first_four_sample_frames": [
+        [
+          24576,
+          -32768
+        ],
+        [
+          -24576,
+          32767
+        ],
+        [
+          0,
+          -138
+        ],
+        [
+          0,
+          -135
+        ]
+      ]
+    },
+    {
+      "name": "pcm-mono-44100.wav",
+      "bytes": 88278,
+      "sha256": "b95b3debd2c83cf2590fddfaa98276c23c3b383b720fd96ac52c2c00c668318b",
+      "sample_rate": 44100,
+      "channels": 1,
+      "sample_frames": 44117,
+      "sample_format": "signed little-endian 16-bit PCM",
+      "pcm_sha256": "d1d053e7b7233f5fc865bf5403ff7334d5b667a9f027df9f9d148fdd4f20d845",
+      "expected_source_interval": {
+        "start": 0,
+        "end": 44117,
+        "time_base": [
+          1,
+          44100
+        ]
+      },
+      "first_four_sample_frames": [
+        [
+          -32768
+        ],
+        [
+          -32695
+        ],
+        [
+          -32622
+        ],
+        [
+          -32549
+        ]
+      ]
+    }
+  ]
+}

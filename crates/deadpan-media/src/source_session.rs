@@ -1,8 +1,7 @@
 //! Persistent exact source-frame access from a private hash-verified snapshot.
 //! All calls belong on a media service thread, not a UI or audio callback.
 
-use std::fs::File;
-use std::io::{Read, Seek};
+use std::io::Read;
 use std::sync::atomic::AtomicBool;
 use std::time::{Duration, Instant};
 
@@ -14,9 +13,10 @@ use deadpan_source::{
     DecodeControl, DecodeLimits, DecodedRgbaFrame, SourceDecoder, SourceStreamInfo,
 };
 
-use crate::conversion::{Deadline, snapshot};
+use crate::ConversionError;
+use crate::conversion::Deadline;
 use crate::source_index::{SourceContentIdentity, SourceIndexError, SourceIndexSnapshot};
-use crate::{ConversionError, InputIdentity};
+use crate::source_input::VerifiedSourceInput;
 
 #[derive(Debug, Clone, Copy)]
 pub struct SourceSessionLimits {
@@ -70,7 +70,7 @@ pub enum SourceSessionError {
 
 pub struct SourceSession {
     decoder: SourceDecoder,
-    input: File,
+    input: VerifiedSourceInput,
     decode_limits: DecodeLimits,
     reopen_decoder: bool,
     index: SourceIndexSnapshot,
@@ -90,6 +90,36 @@ impl SourceSession {
         limits: SourceSessionLimits,
         cancelled: &AtomicBool,
     ) -> Result<Self, SourceSessionError> {
+        Self::validate_limits(identity, limits)?;
+        let deadline = Deadline {
+            end: Instant::now() + limits.opening_timeout,
+            cancelled,
+        };
+        let input = VerifiedSourceInput::copy_with_deadline(source, identity, &deadline)?;
+        Self::open_with_deadline(input, asset, limits, &deadline)
+    }
+
+    /// Opens an independent video decoder over an already verified snapshot.
+    /// The opening deadline covers probing and indexing; copying was performed
+    /// under the snapshot's own budget. Audio and video can share these bytes.
+    pub fn open_input(
+        input: VerifiedSourceInput,
+        asset: AssetId,
+        limits: SourceSessionLimits,
+        cancelled: &AtomicBool,
+    ) -> Result<Self, SourceSessionError> {
+        Self::validate_limits(input.identity(), limits)?;
+        let deadline = Deadline {
+            end: Instant::now() + limits.opening_timeout,
+            cancelled,
+        };
+        Self::open_with_deadline(input, asset, limits, &deadline)
+    }
+
+    fn validate_limits(
+        identity: SourceContentIdentity,
+        limits: SourceSessionLimits,
+    ) -> Result<(), SourceSessionError> {
         limits.decode.validate()?;
         if limits.maximum_index_frames == 0
             || limits.maximum_index_frames > MAX_SOURCE_INDEX_FRAMES
@@ -105,22 +135,19 @@ impl SourceSession {
                 "invalid time, byte or frame budget",
             ));
         }
-        let deadline = Deadline {
-            end: Instant::now() + limits.opening_timeout,
-            cancelled,
-        };
+        Ok(())
+    }
+
+    fn open_with_deadline(
+        input: VerifiedSourceInput,
+        asset: AssetId,
+        limits: SourceSessionLimits,
+        deadline: &Deadline<'_>,
+    ) -> Result<Self, SourceSessionError> {
         deadline.check()?;
-        let mut input = snapshot(
-            source,
-            InputIdentity {
-                sha256: identity.sha256(),
-            },
-            identity.byte_length(),
-            &deadline,
-        )?;
-        input.rewind()?;
-        let retained_input = input.try_clone()?;
-        let mut decoder = SourceDecoder::open(input, limits.decode, control(&deadline)?)?;
+        let identity = input.identity();
+        let mut decoder =
+            SourceDecoder::open(input.decoder_file()?, limits.decode, control(deadline)?)?;
         let info = decoder.info();
         let time_base = SourceTimeBase::new(info.time_base_num, info.time_base_den)?;
         let stream_index = info.stream_index;
@@ -129,7 +156,7 @@ impl SourceSession {
         let maximum_frames = limits
             .maximum_index_frames
             .min(limits.maximum_index_bytes / std::mem::size_of::<IndexedSourceFrame>());
-        while let Some(frame) = decoder.next_metadata(control(&deadline)?)? {
+        while let Some(frame) = decoder.next_metadata(control(deadline)?)? {
             if frames.len() >= maximum_frames {
                 return Err(SourceSessionError::Limits(
                     "presentation index exceeds budget",
@@ -183,7 +210,7 @@ impl SourceSession {
         )?;
         Ok(Self {
             decoder,
-            input: retained_input,
+            input,
             decode_limits: limits.decode,
             reopen_decoder: false,
             index,
@@ -236,7 +263,7 @@ impl SourceSession {
         deadline.check()?;
         if self.reopen_decoder {
             let decoder = SourceDecoder::open(
-                self.input.try_clone()?,
+                self.input.decoder_file()?,
                 self.decode_limits,
                 control(deadline)?,
             )?;

@@ -31,8 +31,8 @@ Current crates:
 - `crates/deadpan-plan`: immutable indexed picture mappings through structural beats, using exact frame centers and original source identities; no decoding or DSP.
 - `crates/deadpan-jobs`: bounded worker protocol, pure attempt lifecycle, process supervision, contained artifact snapshots, and exact bridge-generation planning. The real MLX adapter in `tools/model-qualification` is a development harness; app inference remains open.
 - `crates/deadpan-models`: native bridge bundle qualification, retained inputs, measured source spans, and immutable host provenance. Model installation, app scheduling, audition, and application integration remain open.
-- `crates/deadpan-media`: verified source snapshots, measured indexes and persistent exact seeks, plus isolated conversion, strict helper reports and private BLAKE3 output. No database or authored-state mutation.
-- `native/deadpan-source`: persistent descriptor-only FFmpeg decoding, metadata scanning and owned RGBA extraction. Unsafe code stays in this narrow adapter; unsupported interpretations fail explicitly.
+- `crates/deadpan-media`: shared verified source snapshots, measured video/audio indexes, exact video seeks and bounded private PCM caches, plus isolated conversion, strict helper reports and private BLAKE3 output. No database or authored-state mutation.
+- `native/deadpan-source`: separate persistent descriptor-only FFmpeg video/audio decoders, raw metadata, owned RGBA and original-rate interleaved f32. Unsafe code stays in this narrow adapter; unsupported interpretations fail explicitly.
 - `native/deadpan-fileclone`: bounded safe descriptor-clone interface around the macOS system call. The store owns copying, checksums, publication and durability.
 - `crates/deadpan-render`: bounded shared SDR picture pipeline, linear Rec.2020 working textures, explicit sRGB display transform, aspect and rotation. No decoding, document mutation or encoding.
 - `native/deadpan-media-worker`: process-isolated FFmpeg conversion and independent decode verification through bounded descriptor-only AVIO. Only the documented FFI call permits unsafe Rust. Requires the explicitly selected pinned LGPL FFmpeg development prefix.
@@ -156,6 +156,23 @@ measured endpoint. Do not turn unqualified audio into `AssetRecord.audio: None`:
 asset metadata is immutable. Retain original bytes first, then qualify every
 selected stream before authored registration. `SourceNode.link` means editorial
 A/V linkage, not filesystem ownership. See [original media](docs/ORIGINAL_MEDIA.md).
+
+`VerifiedSourceInput` shares one private byte snapshot between independent source
+decoders. `AudioSession` retains physical PCM in a bounded temporary cache and
+indexes original sample coordinates from raw PTS, measured frame duration and
+explicit skip/discard evidence. Keep those observations separate from container
+duration and codec-parameter padding. Unknown priming remains present until
+qualified origin evidence establishes an editorial selection. Never infer the
+offset fixture's leading trim from a codec-wide constant. Exact range reads fail
+on gaps, excluded samples and unsupported clocks; they do not insert silence.
+PCM cache access is media-thread work, not audio-callback work. See
+[source audio](docs/SOURCE_AUDIO.md) for limits and qualification boundaries.
+Audio container admission precedes FFmpeg parsing: bound declared packet sizes,
+all-track sample/table expansion and nested metadata lengths, not only bytes
+already read. Keep unqualified grammars rejected. Header validation and native
+opening share one deadline and input-byte allowance; later decoder operations
+receive their normal per-call budgets. Do not use process-global allocator
+changes to enforce one decoder's limit.
 
 The setup workflow's TypeScript/Bun/mitools/Biome defaults do not apply to this Rust-native product. The maintained Rust sibling `beastie` supplies the initial workspace conventions; consult maintained siblings for evolving personal tooling patterns. [Dependency decisions](docs/DEPENDENCIES.md) records the pins and qualification boundaries. Do not introduce Bun, Node, Python, or shell setup as an end-user requirement. Future model workers use an app-managed private runtime selected through measurement.
 

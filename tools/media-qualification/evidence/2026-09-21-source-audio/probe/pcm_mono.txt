@@ -1,0 +1,12 @@
+stream tb=1/44100 rate=44100 channels=1 initial=0 trailing=0 preroll=0 delay=0
+frame pts=0 dts=0 duration=4096 nb=4096 side=none sr=44100 ch=1
+frame pts=4096 dts=4096 duration=4096 nb=4096 side=none sr=44100 ch=1
+frame pts=8192 dts=8192 duration=4096 nb=4096 side=none sr=44100 ch=1
+frame pts=12288 dts=12288 duration=4096 nb=4096 side=none sr=44100 ch=1
+frame pts=16384 dts=16384 duration=4096 nb=4096 side=none sr=44100 ch=1
+frame pts=20480 dts=20480 duration=4096 nb=4096 side=none sr=44100 ch=1
+frame pts=24576 dts=24576 duration=4096 nb=4096 side=none sr=44100 ch=1
+frame pts=28672 dts=28672 duration=4096 nb=4096 side=none sr=44100 ch=1
+frame pts=32768 dts=32768 duration=4096 nb=4096 side=none sr=44100 ch=1
+frame pts=36864 dts=36864 duration=4096 nb=4096 side=none sr=44100 ch=1
+frame pts=40960 dts=40960 duration=3157 nb=3157 side=none sr=44100 ch=1

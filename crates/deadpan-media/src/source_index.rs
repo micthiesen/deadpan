@@ -127,7 +127,8 @@ impl SourceIndexSnapshot {
         stream_index: u32,
         index: SourceFrameIndex,
     ) -> Result<Self, SourceIndexError> {
-        if stream_index >= 32 {
+        // Native admits one video plus up to 32 audio streams, in any order.
+        if stream_index >= 33 {
             return Err(SourceIndexError::Schema);
         }
         Ok(Self {
@@ -172,7 +173,7 @@ impl SourceIndexSnapshot {
     }
 }
 
-struct IndexWriter(Vec<u8>);
+pub(crate) struct IndexWriter(pub(crate) Vec<u8>);
 
 impl std::io::Write for IndexWriter {
     fn write(&mut self, bytes: &[u8]) -> std::io::Result<usize> {
@@ -234,6 +235,22 @@ mod tests {
     }
 
     #[test]
+    fn final_native_stream_slot_is_representable() {
+        let original = snapshot();
+        let last =
+            SourceIndexSnapshot::new(original.content(), 32, original.index().clone()).unwrap();
+        assert_eq!(
+            SourceIndexSnapshot::from_json(&last.to_json().unwrap())
+                .unwrap()
+                .stream_index(),
+            32
+        );
+        assert!(
+            SourceIndexSnapshot::new(original.content(), 33, original.index().clone()).is_err()
+        );
+    }
+
+    #[test]
     fn cache_json_cannot_bypass_core_index_invariants_or_versioning() {
         for change in 0..7 {
             let mut value = serde_json::to_value(snapshot()).unwrap();
@@ -244,7 +261,7 @@ mod tests {
                 3 => value["index"]["terminal_end"] = 1001.into(),
                 4 => value["schema_version"] = 2.into(),
                 5 => value["content"]["byte_length"] = 0.into(),
-                _ => value["stream_index"] = 32.into(),
+                _ => value["stream_index"] = 33.into(),
             }
             assert!(SourceIndexSnapshot::from_json(&serde_json::to_vec(&value).unwrap()).is_err());
         }

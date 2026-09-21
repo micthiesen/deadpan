@@ -39,8 +39,16 @@ recorded separately. Project import, editorial playback and export remain open.
 [Original ownership qualification](qualification/original-media-2026-09-21.md)
 adds managed complete-file retention, APFS clone/copy, linked locations,
 identity-checked relinking, private snapshots and schema-10 migration. A bounded
-native audio inventory reports observed metadata. It does not provide decoded
-audio sample bounds or complete authored import.
+native audio inventory reports observed metadata; that earlier ownership change
+did not establish decoded audio bounds or complete authored import.
+
+[Source audio](SOURCE_AUDIO.md) now provides a separate persistent AAC/PCM
+decoder, identity-bound measured sample indexes and bounded private PCM range
+reads. Video/audio share one verified original snapshot. Explicit skip/discard
+and measured terminal-duration evidence remain distinct from unknown priming and
+container claims. [Qualification](qualification/source-audio-2026-09-21.md)
+records exact PCM and AAC fixtures. Authored import, natural-rate destination
+mapping, resampling, playback, device output and full format qualification remain open.
 
 ## Product requirements
 
@@ -60,7 +68,7 @@ audio sample bounds or complete authored import.
 | DP-12 | Local AI hold generation, exact seams/duration, variants, acceptance. | Open | A [real supervised MLX development adapter](qualification/model-worker-2026-09-21.md) uses exact bridge planning and interior sampling, with decoded-file timing/color/hash checks. [Generated Hold semantics](GENERATED_HOLDS.md) retain sampling and resize fallback. [Dedicated store acceptance](GENERATION_ACCEPTANCE.md) binds the selected Ready receipt, retained inputs and derived assets to one reversible edit. Generic ingress remains guarded; no app backend or qualified model pack. | Source joins, speech preservation, source/color context, audition/variants, app integration, and the full qualified model corpus. |
 | DP-13 | Model/runtime manager, safe downloads, offline pack installation. | Open | None. | Clean-machine and interrupted-install tests. |
 | DP-14 | YouTube URL import with bundled JavaScript support. | Open | None. | Clean-machine permitted-source import. |
-| DP-15 | Local media import, managed/linked assets, relinking. | Partial | [Original ownership](ORIGINAL_MEDIA.md) retains complete originals through APFS clone/verified copy, records linked locations, checks identity on relink, and returns private snapshots. [Tests](../crates/deadpan-store/tests/original_media.rs) cover relocation, deduplication, wrong/stale relink, changed content and failed publication/recording. | Qualified selected-stream receipts, audio sample indexing, authored asset registration/insertion, native import/retry/relink UI, bookmark resolution and full format/failure matrix. |
+| DP-15 | Local media import, managed/linked assets, relinking. | Partial | [Original ownership](ORIGINAL_MEDIA.md) retains complete originals through APFS clone/verified copy, records linked locations, checks identity on relink, and returns private snapshots. [Tests](../crates/deadpan-store/tests/original_media.rs) cover relocation, deduplication, wrong/stale relink, changed content and failed publication/recording. | Qualified selected-stream receipts, natural-rate audio destination mapping, durable indexes, authored asset registration/insertion, native import/retry/relink UI, bookmark resolution and full format/failure matrix. |
 | DP-16 | Shared realtime/offline renderer, bounded decode and proxy paths. | Partial | Structural picture plans plus persistent source decoding and [`deadpan-render`](../crates/deadpan-render/) shared SDR composition. [Metal qualification](qualification/source-preview-2026-09-21.md) compares 76 synthetic cases with a CPU reference; the app displays real decoded sources through this pipeline. | Full format/color matrix, plan-driven playback, audio/proxies, effects, preview/export comparison and stress benchmarks. |
 | DP-17 | One-action automatic SDR/HDR YouTube-oriented output. | Open | None. | Encoded-file metadata/pixel/sync verification. |
 | DP-18 | Nonblocking worker lifecycle, cancellation, stale result handling. | Partial | [`deadpan-jobs`](../crates/deadpan-jobs/) adds bounded typed framing, a revision-aware attempt lifecycle, native subprocess supervision, and [contained hash-verified snapshots](ARTIFACT_VERIFICATION.md). A [real MLX development worker](qualification/model-worker-2026-09-21.md) exercises this boundary. [Persistent requests](GENERATION_REQUESTS.md) atomically reconcile relevance; [attempts](GENERATION_ATTEMPTS.md) retain retries, validation receipts, candidate selection, and interrupted states across restart. | Bounded priority scheduling, app-connected inference/render workers and context resolution, production media validation/promotion, application lifecycle, and full concurrency/chaos coverage. |

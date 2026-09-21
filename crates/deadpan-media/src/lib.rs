@@ -7,8 +7,15 @@
 //! Source sessions use a separate persistent native decoder on media threads;
 //! generated conversion retains its isolated-helper contract.
 
+pub mod audio_index;
 pub mod protocol;
 pub mod source_index;
+
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+pub mod source_input;
+
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+pub mod audio_session;
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod source_session;

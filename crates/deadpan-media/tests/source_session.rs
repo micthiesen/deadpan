@@ -8,6 +8,7 @@ use std::time::Duration;
 use deadpan_core::{AssetId, SourceFrameId, TerminalProvenance};
 use deadpan_media::ConversionError;
 use deadpan_media::source_index::{SourceContentIdentity, SourceIndexSnapshot};
+use deadpan_media::source_input::{SourceInputError, VerifiedSourceInput};
 use deadpan_media::source_session::{SourceSession, SourceSessionError, SourceSessionLimits};
 use sha2::{Digest, Sha256};
 
@@ -148,6 +149,111 @@ fn invalid_native_limits_fail_before_any_snapshot_read() {
             ))
         ));
     }
+}
+
+#[test]
+fn shared_verified_bytes_survive_original_loss_and_independent_decoder_positions() {
+    let mut bytes = fixture("rgb25_24");
+    let cancelled = AtomicBool::new(false);
+    let input = VerifiedSourceInput::copy_verified(
+        &mut Cursor::new(&bytes),
+        identity(&bytes),
+        bytes.len() as u64,
+        Duration::from_secs(2),
+        &cancelled,
+    )
+    .unwrap();
+    let content = input.identity();
+    bytes.fill(0);
+    let mut first = SourceSession::open_input(
+        input.clone(),
+        AssetId::new("first").unwrap(),
+        SourceSessionLimits::default(),
+        &cancelled,
+    )
+    .unwrap();
+    let mut second = SourceSession::open_input(
+        input,
+        AssetId::new("second").unwrap(),
+        SourceSessionLimits::default(),
+        &cancelled,
+    )
+    .unwrap();
+    assert_eq!(first.index().content(), content);
+    assert_eq!(second.index().content(), content);
+    for (left, right) in [(0, 24), (1, 0), (23, 12), (0, 13)] {
+        assert_eq!(
+            first
+                .frame(SourceFrameId(left), Duration::from_secs(2), &cancelled)
+                .unwrap()
+                .rgba,
+            expected_rgba(left)
+        );
+        assert_eq!(
+            second
+                .frame(SourceFrameId(right), Duration::from_secs(2), &cancelled)
+                .unwrap()
+                .rgba,
+            expected_rgba(right)
+        );
+    }
+    drop(first);
+    assert_eq!(
+        second
+            .frame(SourceFrameId(14), Duration::from_secs(2), &cancelled)
+            .unwrap()
+            .rgba,
+        expected_rgba(14)
+    );
+}
+
+#[test]
+fn shared_input_checks_limits_before_reading_and_identity_before_publication() {
+    struct NoRead;
+    impl std::io::Read for NoRead {
+        fn read(&mut self, _: &mut [u8]) -> std::io::Result<usize> {
+            panic!("preflight must reject without reading");
+        }
+    }
+    let content = SourceContentIdentity::new([0; 32], 10).unwrap();
+    for (maximum, timeout) in [
+        (0, Duration::from_secs(1)),
+        (9, Duration::from_secs(1)),
+        (65 * 1024 * 1024 * 1024, Duration::from_secs(1)),
+        (10, Duration::ZERO),
+        (10, Duration::from_secs(86401)),
+    ] {
+        assert!(matches!(
+            VerifiedSourceInput::copy_verified(
+                &mut NoRead,
+                content,
+                maximum,
+                timeout,
+                &AtomicBool::new(false)
+            ),
+            Err(SourceInputError::Limits)
+        ));
+    }
+    assert!(matches!(
+        VerifiedSourceInput::copy_verified(
+            &mut NoRead,
+            content,
+            10,
+            Duration::from_secs(1),
+            &AtomicBool::new(true)
+        ),
+        Err(SourceInputError::Snapshot(ConversionError::Cancelled))
+    ));
+    assert!(matches!(
+        VerifiedSourceInput::copy_verified(
+            &mut Cursor::new([0; 10]),
+            content,
+            10,
+            Duration::from_secs(1),
+            &AtomicBool::new(false)
+        ),
+        Err(SourceInputError::Snapshot(ConversionError::InputIdentity))
+    ));
 }
 
 #[test]

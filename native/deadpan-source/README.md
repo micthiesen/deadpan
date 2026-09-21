@@ -1,5 +1,16 @@
 # Persistent source decoder
 
+The separate `audio` module decodes an explicitly selected AAC-LC or signed16
+little-endian PCM stream at its original rate and channel layout. It retains raw
+PTS/DTS, duration, sample count/format, discard and manual skip evidence, and
+returns owned interleaved f32 without resampling, mixing or gain. AAC/MP4 and
+PCM/WAV have actual fixture coverage. A strict header guard checks allocation
+sizes and table expansion before FFmpeg opens the audio container. Other audio
+container grammars, custom layouts and unsupported representations fail.
+See [source audio](../../docs/SOURCE_AUDIO.md) for host indexing, private PCM
+cache semantics and remaining work. `tests/audio_decode.rs` and the media
+crate's audio session tests run without the GUI.
+
 `SourceDecoder` owns one regular input descriptor and one persistent FFmpeg demux/
 software decoder session. It performs no subprocess launch, path reopening,
 networking, database write, or authored mutation. `next_metadata` decodes and

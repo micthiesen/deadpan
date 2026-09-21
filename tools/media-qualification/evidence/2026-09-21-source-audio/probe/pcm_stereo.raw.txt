@@ -1,0 +1,1 @@
+stream tb=1/48000 rate=48000 channels=2 initial=0 trailing=0 preroll=0 delay=0\nframe pts=0 dts=0 duration=4096 nb=4096 side=none sr=48000 ch=2\nframe pts=4096 dts=4096 duration=4096 nb=4096 side=none sr=48000 ch=2\nframe pts=8192 dts=8192 duration=5 nb=5 side=none sr=48000 ch=2\n

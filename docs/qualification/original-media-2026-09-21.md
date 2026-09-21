@@ -81,6 +81,11 @@ classification. The expanded inherited-pipe regression launches 32 descendants
 and checks that none writes its delayed marker. A green local run does not
 retroactively make that earlier CI run successful.
 
+[CI run 35620581535](https://github.com/micthiesen/deadpan/actions/runs/35620581535)
+passed every macOS workspace step for the pushed implementation
+`4608da326284d9babf9c36146cd84d651a1f7e4a`, including the expanded process cleanup
+test. Its exact head and job/step results are retained in `ci-result.json`.
+
 The required fmt, Clippy, workspace test/build and doctor commands, all four
 Python qualification suites, and native source/media sanitizer checks are
 recorded in the evidence directory with exact counts and logs. Sanitizers cover

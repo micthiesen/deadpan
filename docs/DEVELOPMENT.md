@@ -81,8 +81,18 @@ Use `cargo test --locked -p deadpan-store --test original_media` and
 ownership, relocation, stale/wrong relinking and failure boundaries. Shared
 object-storage unit tests force the positional-copy fallback; the native
 fileclone tests exercise actual macOS clone independence. These checks do not
-require opening the app. Native dialogs, audio indexing and the authored import
-workflow still need implementation and their own focused verification.
+require opening the app. Native dialogs and the authored import workflow still
+need implementation and their own focused verification.
+
+## Source audio checks
+
+Run `cargo test --locked -p deadpan-source -p deadpan-media` for native audio
+decode, measured indexes, exact PCM ranges, AAC padding, shared video/audio
+snapshots and failure boundaries. Verify fixture bytes with
+`python3 native/deadpan-source/tests/generate_audio_fixtures.py --verify`.
+The existing source/media sanitizer command above includes this path. These
+headless checks establish no listening, device output, resampling or complete
+import behavior. See [source audio](SOURCE_AUDIO.md).
 
 ## Implementation sequence
 

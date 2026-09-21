@@ -30,6 +30,8 @@ fn main() {
     println!("cargo:rerun-if-env-changed=DEADPAN_FFMPEG_PREFIX");
     println!("cargo:rerun-if-changed=src/decoder.c");
     println!("cargo:rerun-if-changed=src/decoder.h");
+    println!("cargo:rerun-if-changed=src/audio_decoder.c");
+    println!("cargo:rerun-if-changed=src/audio_decoder.h");
 
     let prefix = env::var_os("DEADPAN_FFMPEG_PREFIX")
         .map(PathBuf::from)
@@ -65,6 +67,7 @@ fn main() {
 
     cc::Build::new()
         .file("src/decoder.c")
+        .file("src/audio_decoder.c")
         .include(&include)
         .flag("-std=c11")
         .flag("-Wall")

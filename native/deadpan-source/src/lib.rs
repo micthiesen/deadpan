@@ -9,6 +9,8 @@
 
 use std::{fs::File, sync::atomic::AtomicBool, time::Duration};
 
+pub mod audio;
+
 #[derive(Clone, Copy, Debug)]
 pub struct DecodeLimits {
     pub max_input_bytes: u64,
