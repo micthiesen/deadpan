@@ -83,9 +83,17 @@ settings. Normal and ASan/UBSan runs each pass 523 of 605 declared targets;
 82 fail. Pitch, dynamics, channel levels, duration, reset, and latency alignment
 pass. Block partition and local-seek equivalence, short clips, and realtime
 deadlines are not qualified. All 130 PCM hashes match across the two builds.
-The reports retain failures and complete notices. No app binding, DSP adapter,
-or device output has been added. Preview/export must share a measured processing
-schedule and state strategy before integration can qualify.
+The reports retain failures and complete notices.
+
+The [canonical worker prototype](qualification/audio-canonical-2026-09-20.md)
+uses a fixed 256-sample schedule, exact rational input boundaries, padded/cropped
+context, replay, and prepared PCM. A 120 ms window with 15 ms analysis steps
+passes 3,447 checks in each normal/sanitized run, with 558 matching PCM hashes.
+The 120/30 and 60/15 alternatives retain their transient/pitch failures. The
+prototype's worst measured consumption call exceeds a device deadline; DSP and
+file reads must stay off the callback. App binding, plan integration, cache/job
+lifecycle, output devices, listening, and the remaining audio operations are
+still unqualified.
 
 ## Qualification still required
 

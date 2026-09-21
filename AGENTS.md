@@ -87,6 +87,14 @@ cargo run -p deadpan-cli -- doctor
 
 Prefer unit tests, integration tests, and deterministic headless harnesses for most verification. Keep command resolution, keyboard state transitions, geometry, job lifecycle, and persistence testable without opening the app. Reserve computer use and live GUI testing for valuable evidence that those tests cannot provide: visual quality, native focus/IME, accessibility, natural keyboard navigation, and end-to-end interaction. Review GUI aesthetics and keyboard ergonomics explicitly as the interface develops.
 
+Audio preparation owns the DSP call schedule; device/export consumer block sizes
+must not change it. Use origin-based input boundaries and explicit context/crops
+for short clips. A fresh suffix render is not a restored phase state. Seek from
+a matching checkpoint, exact canonical replay, or prepared PCM, and measure the
+work and cache lifecycle. DSP preparation and file reads stay off the device
+callback. The isolated canonical prototype is evidence for that boundary, not
+application playback or listening qualification.
+
 For native startup or lifecycle changes, also run `cargo run -p deadpan-app -- --smoke-test` on supported Apple Silicon macOS. This checks startup and the shutdown callback, not media or accessibility qualification. Choose interactive checks for affected behavior when they add evidence; do not repeat them mechanically for unrelated changes. Add relevant media, persistence, worker, accessibility, or packaging checks as those systems are implemented. Record skipped checks and exact failures in the delivery report. [Development](docs/DEVELOPMENT.md) describes the workflow.
 
 For authorized scoped work in this personal project, implement, review, verify, commit, and push to `main` using `git push`. Preserve concurrent changes and do not include unrelated files. Release publishing, signing, notarization, and external service actions need their applicable authorization; pushing source is not product release qualification.

@@ -85,3 +85,49 @@ to investigate its cause. They retain the same threshold, do not replace the
 silence-containing fixture, and do not turn its failures into passes. The report
 keeps all failed comparisons. See the [measured qualification report](../../docs/qualification/audio-2026-09-20.md)
 for results, primary sources, and integration constraints.
+
+## Canonical worker-side follow-up
+
+`canonical.hpp` implements a separate prototype with one fixed 256-output-sample
+DSP schedule. Caller request sizes only consume that output. Signed rational
+input boundaries, zero-extended context, and exact cropping also support tiny
+clips. Exact seeks either replay that schedule from the origin or read a
+completed PCM artifact. Neither DSP work nor file reads belong on a device
+callback. The prototype has no Rust/app binding, asynchronous queue, managed
+cache, or output-device integration.
+
+```sh
+python3 tools/audio-qualification/canonical_run.py --output /tmp/deadpan-canonical.json
+python3 tools/audio-qualification/canonical_run.py --sanitizers --output /tmp/deadpan-canonical-sanitized.json
+python3 tools/audio-qualification/canonical_run.py --window 120-30 --output /tmp/deadpan-canonical-default.json
+python3 tools/audio-qualification/canonical_run.py --window 60-15 --output /tmp/deadpan-canonical-short.json
+```
+
+The default analysis window/step is `120-15` milliseconds. It passes the recorded
+3,447 assertions in normal and sanitizer builds. The alternative `120-30`
+configuration fails one transient-position target; `60-15` fails two pitch
+targets. Those commands return 1 with complete failure reports. Exit 2 means
+build/execution/measurement failed. `--download-cache DIRECTORY` uses the same
+verified archive cache as the raw experiment.
+
+All three configurations cross the original 15 speed/pitch cases with three
+consumer request patterns, plus 35 short impulse cases. Each has four exact
+replay seeks and four prepared-file seeks. `canonical_analysis.py` reads all PCM
+independently, enforcing bit-exact consumer/seek equality and the original
+signal-quality targets. It first validates the complete case/consumer/seek
+manifest and requested configuration, so missing measurements cannot pass.
+The 20 discovered Python tests include fourteen new regressions for incorrect
+PCM, schedules, resource counts, unity impulses, manifests, and configurations.
+
+`canonical_probe.cpp` reuses `probe.cpp`'s frozen fixture, guards, and C++
+allocation counters by renaming its unused entrypoint. It does not run or alter
+the raw experiment. All relevant source files, including that dependency and
+the Python measurement helpers, are hashed in each report. Configure/preroll
+allocations are separate from consumption. The 256-frame workspace bound
+describes the adapter/cache-reader PCM buffers, not DSP state, fixture arrays,
+Python analysis memory, or an application's future queues.
+
+See [canonical qualification](../../docs/qualification/audio-canonical-2026-09-20.md)
+for measured output, retained failed alternatives, sanitizer comparisons, timing
+limits, reproduction commands, and remaining acceptance work. No sound was
+played, and numerical checks do not replace speech/music listening review.
