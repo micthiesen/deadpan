@@ -5,11 +5,12 @@ use serde::{Deserialize, Serialize};
 
 use crate::document::unique_map;
 use crate::{
-    AcceptedGeneration, AnchorLossPolicy, AssetId, AssetRecord, BeatNode, BoundaryAnchor,
-    DocumentError, DocumentErrorCode, FrameDuration, GeneratedArtifact, HoldFallback, HoldRecipe,
-    HoldVideo, InstancePath, IterationId, IterationOrder, MAX_DOCUMENT_MARKS, MAX_DOCUMENT_NODES,
-    Mark, MarkId, MarkState, NodeId, NodeKind, OccurrenceEdit, OccurrenceIdentities, PlayOverrides,
-    ProjectDocument, ProjectId, RevisionId, WrapAnchorPolicy,
+    AcceptedGeneration, AnchorLossPolicy, AssetId, AssetRecord, AudioSample, BeatNode,
+    BoundaryAnchor, DocumentError, DocumentErrorCode, FrameDuration, GeneratedArtifact,
+    HoldFallback, HoldRecipe, HoldVideo, InstancePath, IterationId, IterationOrder,
+    MAX_DOCUMENT_MARKS, MAX_DOCUMENT_NODES, Mark, MarkId, MarkState, NodeId, NodeKind,
+    OccurrenceEdit, OccurrenceIdentities, PlayOverrides, ProjectDocument, ProjectId, RevisionId,
+    SourceAudioMapping, WrapAnchorPolicy,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -80,6 +81,12 @@ pub enum Command {
     SetHoldDuration {
         node: NodeId,
         duration: FrameDuration,
+    },
+    /// Changes audio alignment and extent without changing picture or beat time.
+    SetSourceAudioMapping {
+        node: NodeId,
+        mapping: SourceAudioMapping,
+        offset: AudioSample,
     },
     SetHoldProvider {
         node: NodeId,
@@ -471,6 +478,26 @@ pub(crate) fn reduce(
         } => {
             let iterations = iterations_mut(document, node)?;
             *iterations = iterations.moved(*start, *end, *destination)?;
+        }
+        Command::SetSourceAudioMapping {
+            node,
+            mapping,
+            offset,
+        } => {
+            let NodeKind::Source { source } = &mut node_mut(document, node)?.kind else {
+                return Err(EditError::new(
+                    EditErrorCode::WrongNodeKind,
+                    "audio mapping requires a Source beat",
+                ));
+            };
+            if source.audio.is_none() {
+                return Err(EditError::new(
+                    EditErrorCode::SourceRangeInvalid,
+                    "audio mapping requires selected audio",
+                ));
+            }
+            source.audio_mapping = *mapping;
+            source.audio_offset = *offset;
         }
         Command::SetHoldDuration { node, duration } => {
             let recipe = hold_mut(document, node)?;
@@ -980,6 +1007,7 @@ fn description(command: &Command) -> &'static str {
         Command::InsertPlays { .. } => "Insert repeat plays",
         Command::MovePlays { .. } => "Move repeat plays",
         Command::SetHoldDuration { .. } => "Change hold duration",
+        Command::SetSourceAudioMapping { .. } => "Change source audio mapping",
         Command::SetHoldProvider { .. } => "Change hold provider",
         Command::AcceptGeneratedHold { .. } => "Accept generated hold",
         Command::RevertGeneratedHold { .. } => "Revert generated hold",

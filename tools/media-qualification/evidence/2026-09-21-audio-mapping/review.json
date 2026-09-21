@@ -1,0 +1,15 @@
+{
+  "base_revision": "82f76aaf86e24d4fb3aec822ada0a638d19ddf25",
+  "scope": "Independent source audio mapping, commands, strict legacy adapters and schema11 migration",
+  "general_review": "No command-ingress or atomicity finding; positive delayed-tail coverage applied",
+  "timing_review": "No blocking finding; exact natural-rate duration and composition verified; out-of-host coordinates remain unavailable as documented",
+  "migration_review": "No findings; four legacy adapter tests and all 27 migration tests passed in independent review",
+  "applied": [
+    "Add explicit positive-delay tail regression: start45 and midpoint60 valid, endpoint75 outside host60 rejected",
+    "Reject unknown tagged-unit mapping fields via strict empty-struct wire; regression caught serde default acceptance"
+  ],
+  "existing_coverage": [
+    "Duration beyond host is covered by the fractional-sample proptest; no new duplicated test needed"
+  ],
+  "pending": []
+}

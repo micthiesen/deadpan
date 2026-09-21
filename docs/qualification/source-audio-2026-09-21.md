@@ -56,6 +56,11 @@ The integrated native and host tests independently exercise the shipped adapter.
 - Video stream index 32 is now representable, matching the native allowance of
   one video plus 32 audio streams; index 33 remains rejected.
 
+[CI run 35628240809](https://github.com/micthiesen/deadpan/actions/runs/35628240809)
+passed all macOS workspace steps for the pushed implementation
+`82f76aaf86e24d4fb3aec822ada0a638d19ddf25`. Exact job and step results are retained
+in [ci-result.json](../../tools/media-qualification/evidence/2026-09-21-source-audio/ci-result.json).
+
 Native GUI, startup, aesthetics and keyboard tests were not repeated because this
 slice adds no controls or lifecycle behavior. The earlier
 [native preview observations](source-preview-2026-09-21.md) remain limited to their

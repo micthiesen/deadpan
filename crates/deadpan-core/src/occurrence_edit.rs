@@ -6,10 +6,10 @@ use std::collections::{BTreeMap, BTreeSet};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    AssetId, AssetRecord, Command, DocumentError, DocumentErrorCode, EditError, EditErrorCode,
-    FrameDuration, GeneratedArtifact, HoldRecipe, HoldVideo, InstancePath, IterationId,
-    MAX_DOCUMENT_MARKS, MAX_DOCUMENT_NODES, MarkId, NodeId, NodeKind, PlayOverride, PlayOverrides,
-    ProjectDocument, RevisionId, Subtree, WrapAnchorPolicy,
+    AssetId, AssetRecord, AudioSample, Command, DocumentError, DocumentErrorCode, EditError,
+    EditErrorCode, FrameDuration, GeneratedArtifact, HoldRecipe, HoldVideo, InstancePath,
+    IterationId, MAX_DOCUMENT_MARKS, MAX_DOCUMENT_NODES, MarkId, NodeId, NodeKind, PlayOverride,
+    PlayOverrides, ProjectDocument, RevisionId, SourceAudioMapping, Subtree, WrapAnchorPolicy,
 };
 
 /// A bounded pool supplied by the host. Unused identities do not enter the document.
@@ -60,6 +60,10 @@ pub enum OccurrenceEdit {
     },
     SetHoldDuration {
         duration: FrameDuration,
+    },
+    SetSourceAudioMapping {
+        mapping: SourceAudioMapping,
+        offset: AudioSample,
     },
     SetHoldProvider {
         video: HoldVideo,
@@ -139,6 +143,11 @@ impl OccurrenceEdit {
             Self::SetHoldDuration { duration } => Command::SetHoldDuration {
                 node,
                 duration: *duration,
+            },
+            Self::SetSourceAudioMapping { mapping, offset } => Command::SetSourceAudioMapping {
+                node,
+                mapping: *mapping,
+                offset: *offset,
             },
             Self::SetHoldProvider { video } => Command::SetHoldProvider {
                 node,

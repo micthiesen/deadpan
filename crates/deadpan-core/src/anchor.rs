@@ -562,12 +562,16 @@ impl<'a> AnchorIndex<'a> {
                 "source anchors require a Source beat; held pictures do not have a unique source-to-project boundary",
             ));
         };
-        let (selected, offset) = match stream {
+        let (selected, duration, offset) = match stream {
             SourceStream::Video => match &source.video {
                 SourceVideo::Stream {
                     asset: selected_asset,
                     span,
-                } if selected_asset == asset => (*span, ExactRatio::ZERO),
+                } if selected_asset == asset => (
+                    *span,
+                    ExactRatio::integer(source.duration.frames()),
+                    ExactRatio::ZERO,
+                ),
                 _ => {
                     return Err(AnchorError::new(
                         AnchorErrorCode::SourceUnavailable,
@@ -592,11 +596,15 @@ impl<'a> AnchorIndex<'a> {
                         i128::from(rate.numerator()),
                         i128::from(MIX_SAMPLE_RATE) * i128::from(rate.denominator()),
                     )?)?;
-                (audio.span, offset)
+                (
+                    audio.span,
+                    source.audio_mapping.duration_frames(source.duration)?,
+                    offset,
+                )
             }
         };
         source_fraction(timestamp, selected)?
-            .checked_mul(ExactRatio::integer(source.duration.frames()))?
+            .checked_mul(duration)?
             .checked_add(offset)
             .map_err(Into::into)
     }

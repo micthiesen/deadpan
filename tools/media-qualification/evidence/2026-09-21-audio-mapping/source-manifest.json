@@ -1,0 +1,31 @@
+{
+  "base_revision": "82f76aaf86e24d4fb3aec822ada0a638d19ddf25",
+  "scope": "Changed source and fixtures tested before commit; unchanged code is identified by base revision",
+  "files": {
+    "Cargo.lock": "b72534e6b90cd9c5278c70d9a5fbb96ef278b9128188e0caaaf606d8d75adc2f",
+    "Cargo.toml": "5faed8ff3db4c1ca459ce091e2bc49f2cf492220a3b191a98eb299ecb1d51866",
+    "crates/deadpan-cli/src/doctor.rs": "1135f5b897b9a1fbc46efed5f49c4b3c6031e9c580264f052045f582d5186b5b",
+    "crates/deadpan-cli/tests/project_commands.rs": "ddc449bc683f8c59befbfd0928c868acfe5550f5e7f9603f415b99185671bce3",
+    "crates/deadpan-core/src/anchor.rs": "0c7dcbbdf853561c87035940cad6331ed2822ec84a488d2bc799cb20fcbef52e",
+    "crates/deadpan-core/src/audio_mapping.rs": "2fcdd3364d6643bb11c4b30a2af2af869bc591fa76f608a46da4bc58d950f595",
+    "crates/deadpan-core/src/command.rs": "70282b152f7dd1ca7ffe9681fae57639f51a79ebc63c3da6800a14a32a438962",
+    "crates/deadpan-core/src/document.rs": "12acb2db45abde6021a5a23341c0e2bd8205abe6064ae1f8862f78521d035570",
+    "crates/deadpan-core/src/legacy_v1.rs": "32320e6f29adacf285df385e1be51bc8be530255d0e98389969a462476403f57",
+    "crates/deadpan-core/src/legacy_v4.rs": "a5d8199b369011e6ddf2c4d0b0f92a8bf014a255ffa1d8b614578df9e54fe677",
+    "crates/deadpan-core/src/legacy_v5.rs": "e8ba30ade05c04c3b9590e0c6bdb9c5150f6c3c77b4758378d5b153f44786ac2",
+    "crates/deadpan-core/src/lib.rs": "b8e079b255b4c060538863738bd0d1fe80c48d23a8f373bd7ad44ce3851b7cad",
+    "crates/deadpan-core/src/occurrence_edit.rs": "970aa2065de7e2385264a8c8d2c32d59bec7b01eabf483e11a8f9b4e19c423b7",
+    "crates/deadpan-core/tests/anchors.rs": "718e3ebcfabbfe6e05b8f443a403cfe455eda7b6d05cd287e08f7d7abedebcbe",
+    "crates/deadpan-core/tests/document.rs": "3dd9b92b665a067c808f3e5b5a015f7f814a8bf3c61dcd48708b299ea61ec16e",
+    "crates/deadpan-core/tests/marks.rs": "e6291b8beb4057cfe7674d3d3ce5b97cd985cb11194e72ad0d4d5456dff5c74e",
+    "crates/deadpan-plan/tests/occurrence_edits.rs": "4a5ad9b10666f3768cd83cd32a84fa8d44d1fbafdd9a0e04b93a5ba80ded80f7",
+    "crates/deadpan-plan/tests/picture_plan.rs": "1e04c77f077d46a8f79b8fc8ada19c8fd0a723ea4bb1b8de7b5117e02ad86d07",
+    "crates/deadpan-plan/tests/play_overrides.rs": "0ff8e0e781ffe3a8cb070a434b6aa8be12c0da402f73f9995dd4965fddfa6ef1",
+    "crates/deadpan-store/src/migration.rs": "6f9bc587c1bfa3be1bbb4b92b9268d69b42bb781b6249f5a97bd691427d9e1e9",
+    "crates/deadpan-store/src/schema.rs": "807ae2f40b5718f5e68e0ed575beb2297da66d54b820aae59048d4e19f05c009",
+    "crates/deadpan-store/src/validation.rs": "c5ebd85127a08ada89b5b35a18c66c6cbdffa8c130a4f4c81a7933a17d191e5c",
+    "crates/deadpan-store/tests/fixtures/v10-history.sql": "32ebf6e759518f227bf9019379338e0f7697668dab92902ce67e27eed49d8be0",
+    "crates/deadpan-store/tests/migration.rs": "5c58a22013c31b80d84107d45375dba4eb8721600f845c1a7bc6ec27633355a6",
+    "rust-toolchain.toml": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc"
+  }
+}

@@ -65,7 +65,7 @@ never-reused revision rule as commit. A stale expected
 revision fails with `RevisionConflict` and the current revision, without writing.
 
 Supported commands are `insert`, `delete`, `move`, `group`,
-`ungroup`, `wrap_repeat`, `set_repeat`, `insert_plays`, `move_plays`, `set_hold_duration`, `set_hold_provider`,
+`ungroup`, `wrap_repeat`, `set_repeat`, `insert_plays`, `move_plays`, `set_hold_duration`, `set_hold_provider`, `set_source_audio_mapping`,
 `rename`, `add_asset`, `set_mark`, `delete_mark`, `set_play_override`, `clear_play_override`, and `edit_occurrence`. Their exact typed parameters are defined in
 [`Command`](../crates/deadpan-core/src/command.rs). `set_repeat` changes an existing
 Repeat; `wrap_repeat` deliberately adds nesting. A three-play repeat includes
@@ -73,7 +73,8 @@ three total plays and only two gaps. These are structural edits, not rendered
 media. Editing through range/text selectors, registers, macros, and effects
 remain required future work.
 
-Documents use schema 5 and store compact Repeat `iterations.runs` with
+Documents use schema 6. [Source audio mappings](SOURCE_AUDIO_MAPPING.md) explicitly
+choose the beat duration or an independent exact audio duration. Repeat `iterations.runs` store
 `allocation`, `first`, and `count`. Commands `wrap_repeat` and `set_repeat` still
 take a total `plays` count. `insert_plays` takes `node`, `index`, and `count`;
 `move_plays` takes `node`, a half-open `start`/`end` play range, and `destination`
@@ -420,19 +421,21 @@ future-schema read-only inspection still needs a compatibility implementation.
 
 ## Schema migration
 
-Database schemas 1 through 9 return `MigrationRequired` when opened. Upgrade explicitly:
+Database schemas 1 through 10 return `MigrationRequired` when opened. Upgrade explicitly:
 
 ```sh
 cargo run --locked -p deadpan-cli -- project migrate /tmp/example.deadpan
 ```
 
 Migration holds the project writer lock, keeps a consistent SQLite backup under
-`Snapshots/before-schema-10-*.sqlite`, and upgrades a separate candidate. It
+`Snapshots/before-schema-11-*.sqlite`, and upgrades a separate candidate. It
 replays all commands, undo/redo revisions, and abandoned branches with their
 original revision IDs. Every snapshot and forward/inverse transaction is checked
 against its strict original schema meaning. Migration goes directly to database
-schema 10 and core document schema 5. Schema-7/8/9 histories already use core schema 5
-and are validated without rewriting. Schemas 1 through 3 gain
+schema 11 and core document schema 6. Schema-7/8/9/10 histories use the frozen core
+schema-5 adapter. Every old Source retains its prior duration mapping as explicit
+`fit_beat`; the new audio mapping field and commands are rejected in old history.
+Schemas 1 through 3 gain
 empty override maps. Schema-1/2 histories also gain empty mark
 maps; schema-3 mark histories retain their exact ownership, bias, and loss states.
 Database schema-4/5/6 authored snapshots, commands, and patches are replayed through
@@ -443,8 +446,9 @@ gain empty tables. Pre-schema-8 requests have no bridge plan and remain legacy;
 their bundle receipt table starts empty. Existing schema-8 plans and receipt JSON
 remain unchanged; receipts gain no admission evidence. New admission vocabulary
 is rejected in pre-schema-9 receipts, even when null. Schema-9 admission receipts
-remain unchanged. Every legacy schema gains an empty original-media table;
-an unexpected preexisting modern table is rejected. Fields or
+remain unchanged. Schemas 1 through 9 gain an empty original-media table;
+an unexpected preexisting modern table is rejected. Schema-10 original records
+are validated and retained. Fields or
 commands that did not exist in the old schema are rejected. SQLite atomically promotes the validated
 candidate through its backup API; the main file is never renamed around a live
 WAL. Existing read transactions keep their old snapshot. Failure before promotion
@@ -454,7 +458,7 @@ Failures after backup creation include `error.recovery_backup`. Semantic migrati
 failures use `MigrationFailed`; disk, permission, and lock failures keep their
 actionable storage error codes and still identify the retained backup.
 
-Generated Hold acceptance/reversion semantics exist in core schema 5, but generic
+Generated Hold acceptance/reversion semantics were introduced in core schema 5, but generic
 project commands and initial import reject newly introduced generated artifacts
 with `GeneratedAcceptanceUnavailable`. The dedicated [store acceptance API](GENERATION_ACCEPTANCE.md)
 requires a current selected Ready receipt and all retained objects. It is a Rust

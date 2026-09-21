@@ -5,10 +5,10 @@ use serde::{Deserialize, Deserializer, Serialize, de};
 
 use crate::{
     AudioSample, FrameDuration, FrameRange, FrameRate, IterationOrder, Mark, PlayOverrides,
-    RepeatLayout, SourceTimestamp, TimeError,
+    RepeatLayout, SourceAudioMapping, SourceTimestamp, TimeError,
 };
 
-pub const DOCUMENT_SCHEMA_VERSION: u32 = 5;
+pub const DOCUMENT_SCHEMA_VERSION: u32 = 6;
 /// Bounds apply before traversal. Structure is walked iteratively, never recursively.
 pub const MAX_DOCUMENT_NODES: usize = 100_000;
 pub const MAX_DOCUMENT_ASSETS: usize = 100_000;
@@ -181,6 +181,8 @@ pub struct SourceNode {
     pub duration: FrameDuration,
     pub video: SourceVideo,
     pub audio: Option<SourceAudio>,
+    /// Explicit audio destination extent, independent of picture duration.
+    pub audio_mapping: SourceAudioMapping,
     pub link: LinkRelation,
     /// Signed alignment in the project mix clock; never discard source PTS origins.
     pub audio_offset: AudioSample,
@@ -616,6 +618,12 @@ impl ProjectDocument {
                     }
                     if let Some(audio) = &source.audio {
                         self.validate_audio(audio)?;
+                        source.audio_mapping.duration_frames(source.duration)?;
+                    } else if source.audio_mapping != SourceAudioMapping::FitBeat {
+                        return Err(DocumentError::new(
+                            DocumentErrorCode::SourceRangeInvalid,
+                            "an explicit audio duration requires selected audio",
+                        ));
                     }
                     if matches!(source.video, SourceVideo::Blank) && source.audio.is_none() {
                         return Err(DocumentError::new(

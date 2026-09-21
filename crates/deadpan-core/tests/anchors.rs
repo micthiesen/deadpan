@@ -448,6 +448,7 @@ fn source_document() -> ProjectDocument {
                                 },
                                 audio: Some(SourceAudio { asset, span: audio }),
                                 link: LinkRelation::Linked,
+                                audio_mapping: SourceAudioMapping::FitBeat,
                                 audio_offset: AudioSample(0),
                             },
                         },
@@ -584,6 +585,352 @@ fn audio_offsets_use_mix_clock_and_are_not_silently_clamped() {
         .frame,
         ProjectFrame(20)
     );
+}
+
+fn short_audio_document(rate: FrameRate) -> (ProjectDocument, SourceSpan) {
+    let mut json = serde_json::to_value(source_document()).unwrap();
+    json["presentation_basis"]["frame_rate"] = serde_json::to_value(rate).unwrap();
+    // Keep the original two-second asset available, but select only one second
+    // of audio under the two-second picture. Preserve the negative source origin.
+    json["nodes"]["source"]["kind"]["source"]["audio"]["span"]["end"]["ticks"] =
+        serde_json::json!(0);
+    let document = ProjectDocument::from_json(&json.to_string()).unwrap();
+    let NodeKind::Source { source } = &document.nodes()[&node("source")].kind else {
+        panic!()
+    };
+    let span = source.audio.as_ref().unwrap().span;
+    (document, span)
+}
+
+#[test]
+fn natural_audio_duration_is_independent_of_picture_and_preserves_alignment() {
+    let rate = FrameRate::new(30, 1).unwrap();
+    let (original, span) = short_audio_document(rate);
+    // The old fit behavior remains explicit and unchanged.
+    assert_eq!(
+        point(
+            &original,
+            &source_target(SourceMoment::AudioSample {
+                sample: 0,
+                sample_rate: 48000
+            })
+        )
+        .frame,
+        ProjectFrame(60)
+    );
+    for (offset, expected) in [(0, [0, 15, 30]), (24000, [15, 30, 45])] {
+        let document = edit(
+            &original,
+            Command::SetSourceAudioMapping {
+                node: node("source"),
+                mapping: SourceAudioMapping::natural_rate(span, rate).unwrap(),
+                offset: AudioSample(offset),
+            },
+            "natural",
+        );
+        for (sample, frame) in [-44100, -22050, 0].into_iter().zip(expected) {
+            let resolved = point(
+                &document,
+                &source_target(SourceMoment::AudioSample {
+                    sample,
+                    sample_rate: 44100,
+                }),
+            );
+            assert_eq!(resolved.exact_frame, ExactRatio::integer(frame));
+        }
+        assert_eq!(document.duration().unwrap(), original.duration().unwrap());
+        for timestamp in [-90000, 0, 90000] {
+            let target = source_target(SourceMoment::Timestamp {
+                stream: SourceStream::Video,
+                timestamp: SourceTimestamp {
+                    ticks: timestamp,
+                    time_base: SourceTimeBase::new(1, 90000).unwrap(),
+                },
+            });
+            assert_eq!(
+                point(&document, &target).exact_frame,
+                point(&original, &target).exact_frame
+            );
+        }
+    }
+}
+
+#[test]
+fn exact_audio_duration_composes_through_repeat_and_retime_without_rounding() {
+    let rate = FrameRate::new(30000, 1001).unwrap();
+    let (original, span) = short_audio_document(rate);
+    let document = edit(
+        &original,
+        Command::SetSourceAudioMapping {
+            node: node("source"),
+            mapping: SourceAudioMapping::natural_rate(span, rate).unwrap(),
+            offset: AudioSample(16016),
+        },
+        "natural",
+    );
+    let repeated = edit(
+        &document,
+        Command::WrapRepeat {
+            node: node("source"),
+            id: node("repeat"),
+            plays: 2,
+            gap: None,
+            anchor_policy: WrapAnchorPolicy::default(),
+        },
+        "repeat",
+    );
+    let mut json = serde_json::to_value(&repeated).unwrap();
+    json["nodes"]["root"]["kind"]["children"] = serde_json::json!(["retime"]);
+    json["nodes"]["retime"] = serde_json::to_value(retime("repeat", 0, 120, 173)).unwrap();
+    let document = ProjectDocument::from_json(&json.to_string()).unwrap();
+    let mut target = source_target(SourceMoment::AudioSample {
+        sample: 0,
+        sample_rate: 48000,
+    });
+    target.occurrence.as_mut().unwrap().repeats = vec![play(&document, "repeat", 1)];
+    let expected = ExactRatio::integer(70)
+        .checked_add(ExactRatio::new(30000, 1001).unwrap())
+        .unwrap()
+        .checked_mul(ExactRatio::new(173, 120).unwrap())
+        .unwrap();
+    let resolved = point(&document, &target);
+    assert_eq!(resolved.exact_frame, expected);
+    assert_eq!(i128::from(resolved.frame.0), expected.round_even().unwrap());
+}
+
+#[test]
+fn audio_mapping_edits_keep_source_marks_fixed_and_isolate_one_repeat_play() {
+    let rate = FrameRate::new(30, 1).unwrap();
+    let (original, span) = short_audio_document(rate);
+    let mark_id = MarkId::new("audio-end").unwrap();
+    let marked = edit(
+        &original,
+        Command::SetMark {
+            id: mark_id.clone(),
+            owner: node("source"),
+            label: "Audio end".into(),
+            boundary: source_target(SourceMoment::AudioSample {
+                sample: 0,
+                sample_rate: 48000,
+            })
+            .boundary,
+            loss_policy: AnchorLossPolicy::KeepUnresolved,
+        },
+        "marked",
+    );
+    let mapping = SourceAudioMapping::natural_rate(span, rate).unwrap();
+    let mapped = edit(
+        &marked,
+        Command::SetSourceAudioMapping {
+            node: node("source"),
+            mapping,
+            offset: AudioSample(0),
+        },
+        "mapped",
+    );
+    assert_eq!(mapped.marks(), marked.marks());
+    let repeated = edit(
+        &original,
+        Command::WrapRepeat {
+            node: node("source"),
+            id: node("repeat"),
+            plays: 2,
+            gap: None,
+            anchor_policy: WrapAnchorPolicy::default(),
+        },
+        "repeat",
+    );
+    let first_play = play(&repeated, "repeat", 0);
+    let second_play = play(&repeated, "repeat", 1);
+    let isolated = edit(
+        &repeated,
+        Command::EditOccurrence {
+            instance: InstancePath {
+                node: node("source"),
+                repeats: vec![second_play.clone()],
+            },
+            edit: OccurrenceEdit::SetSourceAudioMapping {
+                mapping,
+                offset: AudioSample(24000),
+            },
+            identities: OccurrenceIdentities {
+                nodes: vec![node("isolated")],
+                marks: vec![],
+            },
+        },
+        "isolated-edit",
+    );
+    for (host, occurrence, expected) in [("source", first_play, 60), ("isolated", second_play, 105)]
+    {
+        let mut target = source_target(SourceMoment::AudioSample {
+            sample: 0,
+            sample_rate: 48000,
+        });
+        target.occurrence = Some(InstancePath {
+            node: node(host),
+            repeats: vec![occurrence],
+        });
+        assert_eq!(point(&isolated, &target).frame, ProjectFrame(expected));
+    }
+    assert_eq!(isolated.duration().unwrap(), repeated.duration().unwrap());
+}
+
+#[test]
+fn signed_audio_offsets_keep_excluded_boundaries_unavailable() {
+    let rate = FrameRate::new(30, 1).unwrap();
+    let (original, span) = short_audio_document(rate);
+    let document = edit(
+        &original,
+        Command::SetSourceAudioMapping {
+            node: node("source"),
+            mapping: SourceAudioMapping::natural_rate(span, rate).unwrap(),
+            offset: AudioSample(-24000),
+        },
+        "negative",
+    );
+    let index = AnchorIndex::new(&document).unwrap();
+    assert_eq!(
+        index
+            .resolve_target(&source_target(SourceMoment::AudioSample {
+                sample: -48000,
+                sample_rate: 48000,
+            }))
+            .unwrap_err()
+            .code,
+        AnchorErrorCode::OutOfRange
+    );
+    for (sample, expected) in [(-24000, 0), (0, 15)] {
+        assert_eq!(
+            point(
+                &document,
+                &source_target(SourceMoment::AudioSample {
+                    sample,
+                    sample_rate: 48000,
+                })
+            )
+            .frame,
+            ProjectFrame(expected)
+        );
+    }
+    let delayed = edit(
+        &original,
+        Command::SetSourceAudioMapping {
+            node: node("source"),
+            mapping: SourceAudioMapping::natural_rate(span, rate).unwrap(),
+            offset: AudioSample(72000),
+        },
+        "positive-tail",
+    );
+    for (sample, expected) in [(-48000, 45), (-24000, 60)] {
+        assert_eq!(
+            point(
+                &delayed,
+                &source_target(SourceMoment::AudioSample {
+                    sample,
+                    sample_rate: 48000,
+                })
+            )
+            .frame,
+            ProjectFrame(expected)
+        );
+    }
+    assert_eq!(
+        AnchorIndex::new(&delayed)
+            .unwrap()
+            .resolve_target(&source_target(SourceMoment::AudioSample {
+                sample: 0,
+                sample_rate: 48000
+            }))
+            .unwrap_err()
+            .code,
+        AnchorErrorCode::OutOfRange
+    );
+}
+
+#[test]
+fn invalid_audio_extents_and_missing_selections_reject_atomically() {
+    let (document, _) = short_audio_document(FrameRate::new(30, 1).unwrap());
+    for frames in [
+        ExactRatio::ZERO,
+        ExactRatio::integer(-1),
+        ExactRatio::new(i128::from(i64::MAX) + 1, 1).unwrap(),
+    ] {
+        let request = CommandRequest {
+            project_id: document.project_id().clone(),
+            expected_revision: document.revision_id().clone(),
+            new_revision: revision("invalid"),
+            command: Command::SetSourceAudioMapping {
+                node: node("source"),
+                mapping: SourceAudioMapping::Duration { frames },
+                offset: AudioSample(24000),
+            },
+        };
+        assert!(apply(&document, &request).is_err());
+        let mut json = serde_json::to_value(&document).unwrap();
+        json["nodes"]["source"]["kind"]["source"]["audio_mapping"] =
+            serde_json::to_value(SourceAudioMapping::Duration { frames }).unwrap();
+        assert!(ProjectDocument::from_json(&json.to_string()).is_err());
+    }
+    let encoded = serde_json::to_value(&document).unwrap();
+    for mapping in [
+        serde_json::Value::Null,
+        serde_json::json!({"type":"fit_beat","frames":{"numerator":"30","denominator":"1"}}),
+    ] {
+        let mut json = encoded.clone();
+        json["nodes"]["source"]["kind"]["source"]["audio_mapping"] = mapping;
+        assert!(ProjectDocument::from_json(&json.to_string()).is_err());
+    }
+    let mut missing = encoded.clone();
+    missing["nodes"]["source"]["kind"]["source"]
+        .as_object_mut()
+        .unwrap()
+        .remove("audio_mapping");
+    assert!(ProjectDocument::from_json(&missing.to_string()).is_err());
+    let mut no_audio = encoded;
+    no_audio["nodes"]["source"]["kind"]["source"]["audio"] = serde_json::Value::Null;
+    no_audio["nodes"]["source"]["kind"]["source"]["link"] = serde_json::json!("independent");
+    let no_audio = ProjectDocument::from_json(&no_audio.to_string()).unwrap();
+    let result = apply(
+        &no_audio,
+        &CommandRequest {
+            project_id: no_audio.project_id().clone(),
+            expected_revision: no_audio.revision_id().clone(),
+            new_revision: revision("missing-audio"),
+            command: Command::SetSourceAudioMapping {
+                node: node("source"),
+                mapping: SourceAudioMapping::FitBeat,
+                offset: AudioSample(0),
+            },
+        },
+    );
+    assert_eq!(result.unwrap_err().code, EditErrorCode::SourceRangeInvalid);
+}
+
+proptest! {
+    #[test]
+    fn natural_audio_mapping_preserves_fractional_sample_positions(
+        sample in -48000i64..=0,
+        rate_num in 1u32..=120000,
+        rate_den in 1u32..=1001,
+    ) {
+        let rate = FrameRate::new(rate_num, rate_den).unwrap();
+        let (original, span) = short_audio_document(rate);
+        let mapping = SourceAudioMapping::natural_rate(span, rate).unwrap();
+        let exact = ExactRatio::new(i128::from(sample + 48000) * i128::from(rate_num),
+            48000 * i128::from(rate_den)).unwrap();
+        let document = edit(&original, Command::SetSourceAudioMapping {
+            node: node("source"), mapping, offset: AudioSample(0),
+        }, "natural");
+        let target = source_target(SourceMoment::AudioSample { sample, sample_rate: 48000 });
+        let result = AnchorIndex::new(&document).unwrap().resolve_target(&target);
+        // Extents may exceed the host. The mapping is never stretched or
+        // clamped to make an unavailable boundary appear valid.
+        if exact.compare_integer(60) == std::cmp::Ordering::Greater {
+            prop_assert_eq!(result.unwrap_err().code, AnchorErrorCode::OutOfRange);
+        } else {
+            prop_assert_eq!(result.unwrap().exact_frame, exact);
+        }
+    }
 }
 
 #[test]

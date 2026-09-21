@@ -69,6 +69,7 @@ fn source(frames: i64, start: i64, end: i64) -> BeatNode {
                 },
                 audio: None,
                 link: LinkRelation::Independent,
+                audio_mapping: SourceAudioMapping::FitBeat,
                 audio_offset: AudioSample(0),
             },
         },

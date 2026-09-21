@@ -8,13 +8,14 @@ use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
 use crate::document::unique_map;
 use crate::legacy_v4::{LegacyAssetRecord, LegacyHoldRecipe, LegacyHoldVideo};
+use crate::legacy_v5::LegacySourceNode;
 use crate::*;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
 enum Kind {
     Source {
-        source: SourceNode,
+        source: LegacySourceNode,
     },
     Sequence {
         children: Vec<NodeId>,
@@ -47,7 +48,9 @@ impl Beat {
         Ok(BeatNode {
             label: self.label,
             kind: match self.kind {
-                Kind::Source { source } => NodeKind::Source { source },
+                Kind::Source { source } => NodeKind::Source {
+                    source: source.upgrade(),
+                },
                 Kind::Sequence { children } => NodeKind::Sequence { children },
                 Kind::Hold { recipe } => NodeKind::Hold {
                     recipe: recipe.upgrade(),
@@ -76,7 +79,7 @@ impl Beat {
             label: node.label.clone(),
             kind: match &node.kind {
                 NodeKind::Source { source } => Kind::Source {
-                    source: source.clone(),
+                    source: LegacySourceNode::project(source)?,
                 },
                 NodeKind::Sequence { children } => Kind::Sequence {
                     children: children.clone(),

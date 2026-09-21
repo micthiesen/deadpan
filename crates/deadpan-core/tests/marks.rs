@@ -953,6 +953,7 @@ fn named_source_and_authored_local_marks_require_explicit_repeat_scope() {
                                 },
                                 audio: None,
                                 link: LinkRelation::Independent,
+                                audio_mapping: SourceAudioMapping::FitBeat,
                                 audio_offset: AudioSample(0),
                             },
                         },

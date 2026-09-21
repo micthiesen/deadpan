@@ -63,6 +63,7 @@ fn source(frames: i64, start: i64, end: i64) -> BeatNode {
             },
             audio: None,
             link: LinkRelation::Independent,
+            audio_mapping: SourceAudioMapping::FitBeat,
             audio_offset: AudioSample(0),
         },
     })
@@ -516,6 +517,7 @@ fn still_blank_freeze_and_background_are_distinct_picture_requests() {
             },
             audio: None,
             link: LinkRelation::Independent,
+            audio_mapping: SourceAudioMapping::FitBeat,
             audio_offset: AudioSample(0),
         },
     });
@@ -528,6 +530,7 @@ fn still_blank_freeze_and_background_are_distinct_picture_requests() {
                 span: span(0, 1001),
             }),
             link: LinkRelation::Independent,
+            audio_mapping: SourceAudioMapping::FitBeat,
             audio_offset: AudioSample(0),
         },
     });

@@ -65,11 +65,11 @@ never UI or real-time audio callbacks.
 
 The cache is disposable and private, with no original-media eviction or durable
 index reuse policy implied. The original remains separately owned by the store.
-Authored registration, source-to-project audio mapping, resampling, DSP, device
-output, listening, scheduling and preview/export equivalence remain open. In
-particular, the current `SourceAudio.span` normalizes across `SourceNode.duration`;
-an explicit destination mapping is needed before importing shorter or delayed
-audio without changing its natural rate.
+Authored registration, resampling, DSP, device output, listening, scheduling and
+preview/export equivalence remain open. [Independent destination mapping](SOURCE_AUDIO_MAPPING.md)
+now represents shorter or delayed audio without changing its natural rate.
+Qualified import still needs to bind that mapping to measured streams and a
+common A/V origin; a source index alone cannot establish that decision.
 
 Run `cargo test -p deadpan-source -p deadpan-media --locked` with the qualified
 FFmpeg prefix. Verify generated PCM fixtures with

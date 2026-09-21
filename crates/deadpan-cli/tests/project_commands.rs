@@ -163,6 +163,162 @@ fn headless_edit_dry_run_conflict_and_durable_history() -> Result {
 }
 
 #[test]
+fn independent_audio_mapping_uses_headless_commands_and_durable_undo() -> Result {
+    use deadpan_core::{
+        AssetId, AssetRecord, AudioSample, LinkRelation, NodeKind, SourceAudio, SourceAudioMapping,
+        SourceNode, SourceSpan, SourceTimeBase, SourceTimestamp, SourceVideo,
+    };
+
+    let scratch = tempfile::tempdir()?;
+    let package = create(scratch.path())?;
+    let path = package.to_str().unwrap();
+    let span = |start, end, denominator| {
+        SourceSpan::new(
+            SourceTimestamp {
+                ticks: start,
+                time_base: SourceTimeBase::new(1, denominator).unwrap(),
+            },
+            SourceTimestamp {
+                ticks: end,
+                time_base: SourceTimeBase::new(1, denominator).unwrap(),
+            },
+        )
+        .unwrap()
+    };
+    let video = span(-90000, 90000, 90000);
+    let audio = span(-48000, 0, 48000);
+    let asset = AssetId::new("original")?;
+    let source = NodeId::new("source")?;
+    let input = scratch.path().join("audio-command.json");
+    let write_command = |command: Command, new_revision: &str| -> Result {
+        let document = ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?;
+        fs::write(
+            &input,
+            json!({"protocol":1,"project_id":document.project_id(),
+            "expected_revision":document.revision_id(),"new_revision":new_revision,
+            "command":command})
+            .to_string(),
+        )?;
+        Ok(())
+    };
+    write_command(
+        Command::AddAsset {
+            id: asset.clone(),
+            asset: AssetRecord {
+                label: "Timing fixture".into(),
+                content_hash: "a".repeat(64),
+                video: Some(video),
+                audio: Some(audio),
+                still_image: false,
+                frame_count: None,
+            },
+        },
+        "registered",
+    )?;
+    success(&["command", path, "--json", input.to_str().unwrap()])?;
+    let root = ProjectStore::open(&package, AccessMode::ReadOnly)?
+        .snapshot()?
+        .root()
+        .clone();
+    write_command(
+        Command::Insert {
+            parent: root,
+            index: 0,
+            subtree: Subtree {
+                root: source.clone(),
+                overrides: Default::default(),
+                nodes: BTreeMap::from([(
+                    source.clone(),
+                    BeatNode {
+                        label: "Two-second picture, one-second audio".into(),
+                        kind: NodeKind::Source {
+                            source: SourceNode {
+                                duration: FrameDuration::new(60)?,
+                                video: SourceVideo::Stream {
+                                    asset: asset.clone(),
+                                    span: video,
+                                },
+                                audio: Some(SourceAudio { asset, span: audio }),
+                                audio_mapping: SourceAudioMapping::FitBeat,
+                                link: LinkRelation::Linked,
+                                audio_offset: AudioSample(0),
+                            },
+                        },
+                    },
+                )]),
+            },
+        },
+        "inserted",
+    )?;
+    success(&["command", path, "--json", input.to_str().unwrap()])?;
+    let before = ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?;
+    write_command(
+        Command::SetSourceAudioMapping {
+            node: source,
+            mapping: SourceAudioMapping::natural_rate(
+                audio,
+                before.presentation_basis().frame_rate,
+            )?,
+            offset: AudioSample(16016),
+        },
+        "mapped",
+    )?;
+    let preview = success(&[
+        "command",
+        path,
+        "--json",
+        input.to_str().unwrap(),
+        "--dry-run",
+    ])?;
+    assert_eq!(preview["edit"]["duration_delta"], 0);
+    assert_eq!(
+        ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?,
+        before
+    );
+    success(&["command", path, "--json", input.to_str().unwrap()])?;
+    let query = scratch.path().join("audio-boundary.json");
+    let endpoint = || -> Result<Value> {
+        let document = ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?;
+        fs::write(&query, json!({"protocol":1,"request":{
+            "project_id":document.project_id(),"expected_revision":document.revision_id(),"role":"audio",
+            "selector":{"type":"point","target":{
+                "boundary":{"coordinate":{"space":"source","asset":"original",
+                    "moment":{"type":"audio_sample","sample":0,"sample_rate":48000}},"bias":"right"},
+                "occurrence":{"node":"source","repeats":[]}
+            }}
+        }}).to_string())?;
+        Ok(success(&["resolve-selection",path,"--json",query.to_str().unwrap()])?["resolved"]["selection"]["point"].clone())
+    };
+    assert_eq!(
+        endpoint()?["exact_frame"],
+        json!({"numerator":"40010","denominator":"1001"})
+    );
+    let stale = cli(&["command", path, "--json", input.to_str().unwrap()])?;
+    assert_eq!(
+        serde_json::from_slice::<Value>(&stale.stderr)?["error"]["code"],
+        "RevisionConflict"
+    );
+    let undo = success(&["project", "undo", path, "--expected", "mapped"])?;
+    assert_eq!(endpoint()?["frame"], 60);
+    success(&[
+        "project",
+        "redo",
+        path,
+        "--expected",
+        undo["outcome"]["revision_id"].as_str().unwrap(),
+    ])?;
+    assert_eq!(
+        endpoint()?["exact_frame"],
+        json!({"numerator":"40010","denominator":"1001"})
+    );
+    assert_eq!(
+        success(&["project", "validate", path])?["duration_frames"],
+        60
+    );
+    Ok(())
+}
+
+#[test]
 fn current_generation_requires_host_reconciliation_but_allows_cli_preview() -> Result {
     use deadpan_store::generation::GenerationRequestInput;
 

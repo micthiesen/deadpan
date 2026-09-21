@@ -6,7 +6,7 @@ use std::{
 
 use deadpan_core::{
     IterationOrder, NodeId, NodeKind, ProjectDocument, RevisionId, legacy_v1, legacy_v2, legacy_v3,
-    legacy_v4,
+    legacy_v4, legacy_v5,
 };
 use deadpan_jobs::{Relevance, RequestId};
 use deadpan_store::generation::{
@@ -19,6 +19,167 @@ type Result<T = ()> = std::result::Result<T, Box<dyn Error>>;
 
 fn fixture(scratch: &Path) -> Result<PathBuf> {
     fixture_version(scratch, 1)
+}
+
+fn original_metadata(connection: &Connection) -> Result<Vec<String>> {
+    Ok(connection.prepare("SELECT json_array(content_id, version, record) FROM original_media ORDER BY content_id")?
+        .query_map([], |row| row.get(0))?.collect::<std::result::Result<_, _>>()?)
+}
+
+#[test]
+fn schema_ten_preserves_source_audio_history_generated_receipts_and_originals() -> Result {
+    use deadpan_core::{AudioSample, Command, CommandRequest, ExactRatio, SourceAudioMapping};
+    let scratch = tempfile::tempdir()?;
+    let path = fixture_version(scratch.path(), 10)?;
+    let database = Connection::open(path.join("project.sqlite"))?;
+    let before = contents(&database)?;
+    let before_docs = docs(&database)?;
+    let before_history = history_json(&database)?;
+    let before_metadata = metadata(&database)?;
+    let before_requests = generation_metadata(&database)?;
+    let before_attempts = attempt_metadata(&database)?;
+    let before_originals = original_metadata(&database)?;
+    assert_eq!(before_docs.len(), 14);
+    assert_eq!(before_history.len(), 8);
+    assert_eq!(before_originals.len(), 1);
+    assert!(matches!(
+        ProjectStore::open(&path, AccessMode::ReadOnly),
+        Err(StoreError::MigrationRequired(10))
+    ));
+    let outcome = ProjectStore::migrate(&path)?;
+    assert_eq!(
+        (outcome.from_schema, outcome.to_schema),
+        (10, DATABASE_SCHEMA_VERSION)
+    );
+    let backup = Connection::open(outcome.backup.unwrap())?;
+    assert_eq!(contents(&backup)?, before);
+    assert_eq!(
+        backup.pragma_query_value(None, "user_version", |r| r.get::<_, u32>(0))?,
+        10
+    );
+    assert_core_five_documents(&before_docs, &database)?;
+    assert_core_five_history(&before_history, &database)?;
+    assert_eq!(metadata(&database)?, before_metadata);
+    assert_eq!(generation_metadata(&database)?, before_requests);
+    assert_eq!(attempt_metadata(&database)?, before_attempts);
+    assert_eq!(original_metadata(&database)?, before_originals);
+    let mut store = ProjectStore::open(&path, AccessMode::ReadWrite)?;
+    let initial = store.snapshot()?;
+    for (id, offset) in [("source-negative", -137), ("source-positive", 2401)] {
+        let NodeKind::Source { source } = &initial.nodes()[&NodeId::new(id)?].kind else {
+            panic!()
+        };
+        assert_eq!(source.audio_mapping, SourceAudioMapping::FitBeat);
+        assert_eq!(source.audio_offset, AudioSample(offset));
+    }
+    assert_eq!(initial.marks().len(), 2);
+    assert_eq!(store.original_records(None, 10)?.len(), 1);
+    let relevance = |store: &ProjectStore, next: &RevisionId| -> Result<RelevancePlan> {
+        Ok(RelevancePlan {
+            from_revision: store.snapshot()?.revision_id().clone(),
+            to_revision: next.clone(),
+            observations: store
+                .current_generation_requests()?
+                .into_iter()
+                .map(|request| RelevanceObservation {
+                    request_id: request.request_id,
+                    after_context: ContextObservation::Resolved(
+                        request.binding.context_sha256.clone(),
+                    ),
+                    binding: request.binding,
+                })
+                .collect(),
+        })
+    };
+    let next = RevisionId::new("schema11-redo")?;
+    store.redo_reconciled(
+        initial.revision_id(),
+        next.clone(),
+        &relevance(&store, &next)?,
+    )?;
+    let baseline = store.snapshot()?;
+    assert_eq!(
+        baseline.nodes()[&NodeId::new("source-negative")?].label,
+        "Renamed source with negative offset"
+    );
+    let next = RevisionId::new("schema11-audio-mapping")?;
+    store.commit_reconciled(
+        &CommandRequest {
+            project_id: baseline.project_id().clone(),
+            expected_revision: baseline.revision_id().clone(),
+            new_revision: next.clone(),
+            command: Command::SetSourceAudioMapping {
+                node: NodeId::new("source-negative")?,
+                mapping: SourceAudioMapping::Duration {
+                    frames: ExactRatio::new(60000, 1001)?,
+                },
+                offset: AudioSample(17),
+            },
+        },
+        &relevance(&store, &next)?,
+    )?;
+    let changed = store.snapshot()?;
+    assert_eq!(changed.duration()?, baseline.duration()?);
+    let next = RevisionId::new("schema11-undo-mapping")?;
+    store.undo_reconciled(
+        changed.revision_id(),
+        next.clone(),
+        &relevance(&store, &next)?,
+    )?;
+    assert_eq!(store.snapshot()?.nodes(), baseline.nodes());
+    assert_eq!(store.snapshot()?.marks(), baseline.marks());
+    let next = RevisionId::new("schema11-redo-mapping")?;
+    store.redo_reconciled(
+        store.snapshot()?.revision_id(),
+        next.clone(),
+        &relevance(&store, &next)?,
+    )?;
+    assert_eq!(store.snapshot()?.nodes(), changed.nodes());
+    store.validate()?;
+    drop(store);
+    let reopened = ProjectStore::open(&path, AccessMode::ReadOnly)?;
+    assert_eq!(reopened.snapshot()?.nodes(), changed.nodes());
+    assert_eq!(original_metadata(&database)?, before_originals);
+    reopened.validate()?;
+    Ok(())
+}
+
+#[test]
+fn schema_ten_rejects_new_audio_vocabulary_and_corruption_without_promotion() -> Result {
+    for corruption in [
+        "UPDATE revisions SET document=json_set(document,'$.nodes.\"source-negative\".kind.source.audio_mapping',NULL) WHERE json_type(document,'$.nodes.\"source-negative\"') IS NOT NULL",
+        "UPDATE revisions SET document=json_set(document,'$.nodes.\"source-negative\".kind.source.audio_mapping',json('{\"type\":\"fit_beat\"}')) WHERE json_type(document,'$.nodes.\"source-negative\"') IS NOT NULL",
+        "UPDATE history SET request=json_set(request,'$.command.subtree.nodes.\"source-negative\".kind.source.audio_mapping',NULL) WHERE revision_id='schema10-insert-negative'",
+        "UPDATE history SET edit=json_set(edit,'$.inverse.nodes.\"source-negative\".before.kind.source.audio_mapping',NULL) WHERE revision_id='schema10-insert-negative'",
+        "UPDATE history SET request=json_set(request,'$.command',json('{\"command\":\"set_source_audio_mapping\",\"node\":\"source-negative\",\"mapping\":{\"type\":\"fit_beat\"},\"offset\":0}')) WHERE revision_id='schema10-rename-source'",
+        "UPDATE revisions SET document=json_set(document,'$.nodes.\"source-negative\".kind.source.audio_offset',0) WHERE id='schema10-rename-source'",
+        "UPDATE history SET request=json_set(request,'$.command.subtree.nodes.\"source-negative\".kind.source.audio_offset',0) WHERE revision_id='schema10-insert-negative'",
+        "UPDATE history SET edit=json_set(edit,'$.forward.nodes.\"source-negative\".after.kind.source.audio_offset',0) WHERE revision_id='schema10-insert-negative'",
+        "UPDATE original_media SET version=2",
+        "UPDATE original_media SET record=json_set(record,'$.object.byte_length',0)",
+        "DROP TABLE original_media",
+    ] {
+        let scratch = tempfile::tempdir()?;
+        let path = fixture_version(scratch.path(), 10)?;
+        let database = Connection::open(path.join("project.sqlite"))?;
+        database.execute_batch(corruption)?;
+        let before = contents(&database)?;
+        let backup = match ProjectStore::migrate(&path) {
+            Err(StoreError::MigrationFailed { backup, .. }) => backup,
+            result => panic!("{corruption}: {result:?}"),
+        };
+        assert_eq!(contents(&database)?, before, "{corruption}");
+        assert_eq!(
+            contents(&Connection::open(backup)?)?,
+            before,
+            "{corruption}"
+        );
+        assert_eq!(
+            database.pragma_query_value(None, "user_version", |r| r.get::<_, u32>(0))?,
+            10
+        );
+    }
+    Ok(())
 }
 
 #[test]
@@ -51,9 +212,11 @@ fn schema_nine_adds_empty_original_inventory_and_preserves_full_history() -> Res
         backup.pragma_query_value(None, "user_version", |r| r.get::<_, u32>(0))?,
         9
     );
+    assert_core_five_documents(&before_docs, &database)?;
+    assert_core_five_history(&before_history, &database)?;
+    assert_eq!(docs(&backup)?, before_docs);
+    assert_eq!(history_json(&backup)?, before_history);
     for connection in [&database, &backup] {
-        assert_eq!(docs(connection)?, before_docs);
-        assert_eq!(history_json(connection)?, before_history);
         assert_eq!(generation_metadata(connection)?, before_requests);
         assert_eq!(attempt_metadata(connection)?, before_attempts);
     }
@@ -113,9 +276,11 @@ fn schema_eight_retains_unqualified_bundle_json_and_pending_redo() -> Result {
     );
     let backup = Connection::open(outcome.backup.unwrap())?;
     assert_eq!(contents(&backup)?, before);
+    assert_core_five_documents(&before_docs, &database)?;
+    assert_core_five_history(&before_history, &database)?;
+    assert_eq!(docs(&backup)?, before_docs);
+    assert_eq!(history_json(&backup)?, before_history);
     for connection in [&database, &backup] {
-        assert_eq!(docs(connection)?, before_docs);
-        assert_eq!(history_json(connection)?, before_history);
         assert_eq!(metadata(connection)?, before_metadata);
         assert_eq!(generation_metadata(connection)?, before_requests);
         assert_eq!(attempt_metadata(connection)?, before_attempts);
@@ -212,6 +377,7 @@ fn fixture_version(scratch: &Path, version: u32) -> Result<PathBuf> {
         7 => include_str!("fixtures/v7-selected.sql"),
         8 => include_str!("fixtures/v8-history.sql"),
         9 => include_str!("fixtures/v9-history.sql"),
+        10 => include_str!("fixtures/v10-history.sql"),
         _ => panic!("unsupported fixture"),
     })?;
     Ok(package)
@@ -222,6 +388,36 @@ fn docs(connection: &Connection) -> Result<Vec<(String, String)>> {
         .query_map([], |row| Ok((row.get(0)?, row.get(1)?)))?
         .collect::<std::result::Result<_, _>>()?)
 }
+fn assert_core_five_documents(originals: &[(String, String)], connection: &Connection) -> Result {
+    let migrated = docs(connection)?;
+    assert_eq!(originals.len(), migrated.len());
+    for ((old_id, old_json), (new_id, new_json)) in originals.iter().zip(migrated) {
+        assert_eq!(old_id, &new_id);
+        assert!(
+            legacy_v5::Document::from_json(old_json)?
+                .matches(&ProjectDocument::from_json(&new_json)?),
+            "{old_id}"
+        );
+    }
+    Ok(())
+}
+
+fn assert_core_five_history(originals: &[(String, String)], connection: &Connection) -> Result {
+    let migrated = history_json(connection)?;
+    assert_eq!(originals.len(), migrated.len());
+    for ((old_request, old_edit), (new_request, new_edit)) in originals.iter().zip(migrated) {
+        assert_eq!(
+            legacy_v5::upgrade_request(old_request)?,
+            serde_json::from_str::<deadpan_core::CommandRequest>(&new_request)?
+        );
+        assert!(legacy_v5::matches_edit(
+            old_edit,
+            &serde_json::from_str(&new_edit)?
+        )?);
+    }
+    Ok(())
+}
+
 fn metadata(connection: &Connection) -> Result<String> {
     let mut parts = Vec::new();
     for sql in [
@@ -840,7 +1036,7 @@ fn schema_six_corruption_preserves_original_history_jobs_and_backup() -> Result 
 }
 
 #[test]
-fn schema_seven_preserves_current_core_history_and_selected_legacy_attempt() -> Result {
+fn schema_seven_preserves_legacy_core_history_and_selected_legacy_attempt() -> Result {
     let scratch = tempfile::tempdir()?;
     let path = fixture_version(scratch.path(), 7)?;
     assert!(matches!(
@@ -865,8 +1061,8 @@ fn schema_seven_preserves_current_core_history_and_selected_legacy_attempt() -> 
     assert_eq!(generation_metadata(&backup)?, requests);
     assert_eq!(attempt_metadata(&backup)?, attempts);
 
-    assert_eq!(docs(&database)?, original_docs);
-    assert_eq!(history_json(&database)?, original_history);
+    assert_core_five_documents(&original_docs, &database)?;
+    assert_core_five_history(&original_history, &database)?;
     assert_eq!(metadata(&database)?, original_metadata);
     assert_eq!(generation_metadata(&database)?, requests);
     assert_eq!(attempt_metadata(&database)?, attempts);

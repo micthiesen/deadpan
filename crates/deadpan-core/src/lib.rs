@@ -8,6 +8,7 @@
 //! persistence, identity generation, media decoding, and external jobs.
 
 mod anchor;
+mod audio_mapping;
 mod command;
 mod document;
 mod exact;
@@ -16,6 +17,7 @@ pub mod legacy_v1;
 pub mod legacy_v2;
 pub mod legacy_v3;
 pub mod legacy_v4;
+pub mod legacy_v5;
 mod marks;
 mod occurrence;
 mod occurrence_edit;
@@ -24,6 +26,7 @@ mod source_index;
 mod time;
 
 pub use anchor::*;
+pub use audio_mapping::SourceAudioMapping;
 pub use command::*;
 pub use document::*;
 pub use exact::ExactRatio;

@@ -45,7 +45,7 @@ impl ProjectStore {
                 backup: None,
             });
         }
-        if !matches!(version, 1..=9) {
+        if !matches!(version, 1..=10) {
             return Err(StoreError::UnsupportedSchema(version));
         }
         let lock = acquire_lock(&package)?;
@@ -144,7 +144,9 @@ fn migrate_candidate(
         crate::generation_attempts::create_tables(&transaction)?;
     }
     #[cfg(any(target_os = "macos", target_os = "linux"))]
-    crate::original_media::create_tables(&transaction)?;
+    if source_version < 10 {
+        crate::original_media::create_tables(&transaction)?;
+    }
     validation::check_stored_sizes(&transaction, schema::MAX_DOCUMENT_BYTES)?;
     if source_version >= 5 {
         crate::generation::check_stored_sizes(&transaction)?;
@@ -168,11 +170,10 @@ fn migrate_candidate(
             ));
         }
     }
-    // Database versions 4 through 6 share core schema 4. Replay their full
-    // authored chronology while preserving operational rows and identities.
-    if source_version <= 6 {
-        validation::migrate_history(&transaction, source_version)?;
-    }
+    // Database versions 4 through 6 share core schema 4, and 7 through 10
+    // share core schema 5. Replay all authored history, preserving operational
+    // rows and identities while assigning the legacy FitBeat audio mapping.
+    validation::migrate_history(&transaction, source_version)?;
     crate::generation::validate_store(&transaction)?;
     transaction.pragma_update(None, "user_version", schema::VERSION)?;
     validation::validate_history(&transaction)?;
