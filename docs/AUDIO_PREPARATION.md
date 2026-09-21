@@ -98,8 +98,10 @@ plan spans to this sampler; its shared headless host binds assets through their
 historical store receipts and verified originals.
 
 The complete voice graph must also honor the plan's retained pitch stages.
-Feeding rounded input/output counts into
-`deadpan-dsp` does not establish exact fractional phase or mixed pitch semantics.
+Use the DSP's explicit-rate recipe rather than deriving its speed from rounded
+input/output counts. This still does not establish fractional phase or mixed
+pitch semantics; [whole-stage preparation](AUDIO_STAGE_PREPARATION.md) must bind
+the sampler and DSP while preserving continuous history.
 Edge fades, gain/effects, room tone/tails, master limiting, long-clip stretch,
 device scheduling and preview/export comparison remain open. See the
 [qualification record](qualification/audio-preparation-2026-09-21.md).

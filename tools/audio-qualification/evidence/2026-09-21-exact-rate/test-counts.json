@@ -1,0 +1,9 @@
+{
+  "passed": 692,
+  "failed": 0,
+  "ignored": 0,
+  "dsp_tests": 11,
+  "new_tests": 5,
+  "reference_hashes_per_mode": 50,
+  "independent_native_boundaries_checked": 234
+}

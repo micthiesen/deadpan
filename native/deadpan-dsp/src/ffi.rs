@@ -4,7 +4,7 @@
 use std::ffi::c_void;
 use std::ptr::NonNull;
 
-use crate::{CanonicalRecipe, DspError, StereoPcm};
+use crate::{CanonicalRecipe, DspError, Schedule, StereoPcm};
 
 unsafe extern "C" {
     fn dp_dsp_create(
@@ -12,6 +12,16 @@ unsafe extern "C" {
         right: *const f32,
         input_frames: u32,
         output_frames: u32,
+        pitch: i32,
+        output: *mut *mut c_void,
+    ) -> i32;
+    fn dp_dsp_create_exact_rate(
+        left: *const f32,
+        right: *const f32,
+        input_frames: u32,
+        output_frames: u32,
+        rate_numerator: u64,
+        rate_denominator: u64,
         pitch: i32,
         output: *mut *mut c_void,
     ) -> i32;
@@ -38,14 +48,26 @@ impl Engine {
         // handle, and publishes no partial allocation on failure. No Rust
         // callback or other borrowed pointer is retained by native code.
         let result = unsafe {
-            dp_dsp_create(
-                source.left.as_ptr(),
-                source.right.as_ptr(),
-                recipe.input_frames,
-                recipe.output_frames,
-                recipe.pitch_semitones,
-                &mut handle,
-            )
+            match recipe.schedule {
+                Schedule::CountRatio => dp_dsp_create(
+                    source.left.as_ptr(),
+                    source.right.as_ptr(),
+                    recipe.input_frames,
+                    recipe.output_frames,
+                    recipe.pitch_semitones,
+                    &mut handle,
+                ),
+                Schedule::ExactRate => dp_dsp_create_exact_rate(
+                    source.left.as_ptr(),
+                    source.right.as_ptr(),
+                    recipe.input_frames,
+                    recipe.output_frames,
+                    recipe.rate.numerator,
+                    recipe.rate.denominator,
+                    recipe.pitch_semitones,
+                    &mut handle,
+                ),
+            }
         };
         status(result)?;
         let handle = NonNull::new(handle).ok_or(DspError::NativeReport)?;

@@ -14,6 +14,15 @@ extern "C" {
 int32_t dp_dsp_create(const float *left, const float *right, uint32_t input_frames,
                       uint32_t output_frames, int32_t pitch, void **output) DP_DSP_NOEXCEPT;
 
+// Explicit-rate mode: the exact positive numerator/denominator in [1/8,8]
+// controls consumption independently of input/output buffer lengths. Input is
+// limited to 1048576 frames and output to 8388608 frames. The same lifetime and
+// failure contract applies. Unreduced positive ratios are accepted equivalently.
+int32_t dp_dsp_create_exact_rate(const float *left, const float *right,
+                      uint32_t input_frames, uint32_t output_frames,
+                      uint64_t rate_numerator, uint64_t rate_denominator,
+                      int32_t pitch, void **output) DP_DSP_NOEXCEPT;
+
 // Each output array has requested writable floats, with requested <= 256.
 // Success initializes only the first *written samples; the suffix is untouched.
 // Failure leaves output arrays unchanged and poisons a renderer if DSP ran.

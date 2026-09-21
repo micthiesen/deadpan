@@ -12,6 +12,10 @@ namespace deadpan_audio_probe {
 
 enum class AnalysisWindow { Default120_30, Dense120_15, Short60_15 };
 
+struct ExactRate {
+    std::uint64_t numerator, denominator;
+};
+
 // A source supplies planar 48 kHz stereo samples through source[channel][frame].
 // It must stay alive for this renderer's lifetime. Out-of-range context is zero.
 template<class Source> class CanonicalStretch {
@@ -27,22 +31,34 @@ public:
             || output_frames > maximum_frames || input_frames > output_frames*8
             || output_frames > input_frames*8 || pitch_semitones < -24 || pitch_semitones > 24)
             throw std::invalid_argument("unsupported stretch recipe");
-        switch (window) {
-            case AnalysisWindow::Default120_30: engine_.presetDefault(2, 48000); break;
-            case AnalysisWindow::Dense120_15: engine_.configure(2, 5760, 720); break;
-            case AnalysisWindow::Short60_15: engine_.configure(2, 2880, 720); break;
-            default: throw std::invalid_argument("unknown analysis window");
-        }
-        engine_.setTransposeSemitones(float(pitch_semitones));
+        // Preserve the original float division for legacy initialization.
         float rate = float(input_frames)/float(output_frames);
-        lookahead_ = engine_.outputSeekLength(rate);
-        // Pad on both sides by reading zero-extended source context. Align the
-        // authored origin to the fixed DSP grid; consumers never set this grid.
-        int context = int(std::ceil(2*lookahead_/double(rate)));
-        leading_output_ = ((context + quantum - 1)/quantum)*quantum;
-        cursor_ = -leading_output_;
-        View input{source_, input_frames_, boundary(cursor_)};
-        engine_.outputSeek(input, lookahead_);
+        initialize(pitch_semitones, window, rate);
+    }
+
+    CanonicalStretch(const Source &source, std::int64_t input_frames,
+                     std::int64_t output_frames, ExactRate rate, int pitch_semitones,
+                     AnalysisWindow window = AnalysisWindow::Dense120_15)
+        : source_(source), input_frames_(input_frames), output_frames_(output_frames),
+          rate_numerator_(rate.numerator), rate_denominator_(rate.denominator), engine_(1337) {
+        if (input_frames <= 0 || output_frames <= 0 || input_frames > maximum_frames
+            || output_frames > maximum_frames || !rate.numerator || !rate.denominator
+            || __int128(rate.numerator) > __int128(rate.denominator)*8
+            || __int128(rate.denominator) > __int128(rate.numerator)*8
+            || pitch_semitones < -24 || pitch_semitones > 24)
+            throw std::invalid_argument("unsupported exact-rate stretch recipe");
+        std::uint64_t a = rate_numerator_, b = rate_denominator_;
+        while (b) {
+            std::uint64_t remainder = a%b;
+            a = b;
+            b = remainder;
+        }
+        rate_numerator_ /= a;
+        rate_denominator_ /= a;
+        // Only upstream latency initialization uses a floating approximation.
+        // Every input boundary below uses the exact rational directly.
+        initialize(pitch_semitones, window,
+                   float(double(rate_numerator_)/double(rate_denominator_)));
     }
 
     // Fill a caller-owned planar buffer. End-of-stream may return fewer frames.
@@ -87,11 +103,33 @@ private:
 
     std::int64_t boundary(std::int64_t output) const {
         bool negative = output < 0;
-        __int128 numerator = __int128(negative ? -output : output)*input_frames_;
-        __int128 whole = numerator/output_frames_, remainder = numerator%output_frames_;
-        whole += remainder > output_frames_ - remainder
-            || (remainder == output_frames_ - remainder && whole%2);
+        __int128 rate_numerator = rate_denominator_ ? __int128(rate_numerator_) : input_frames_;
+        __int128 rate_denominator = rate_denominator_ ? __int128(rate_denominator_) : output_frames_;
+        // Output is bounded by 2^48 plus one quantum, and numerator by u64.
+        // Their product fits signed int128, including negative priming context.
+        __int128 numerator = __int128(negative ? -output : output)*rate_numerator;
+        __int128 whole = numerator/rate_denominator, remainder = numerator%rate_denominator;
+        whole += remainder > rate_denominator - remainder
+            || (remainder == rate_denominator - remainder && whole%2);
         return negative ? -std::int64_t(whole) : std::int64_t(whole);
+    }
+
+    void initialize(int pitch_semitones, AnalysisWindow window, float rate) {
+        switch (window) {
+            case AnalysisWindow::Default120_30: engine_.presetDefault(2, 48000); break;
+            case AnalysisWindow::Dense120_15: engine_.configure(2, 5760, 720); break;
+            case AnalysisWindow::Short60_15: engine_.configure(2, 2880, 720); break;
+            default: throw std::invalid_argument("unknown analysis window");
+        }
+        engine_.setTransposeSemitones(float(pitch_semitones));
+        lookahead_ = engine_.outputSeekLength(rate);
+        // Pad on both sides by reading zero-extended source context. Align the
+        // authored origin to the fixed DSP grid; consumers never set this grid.
+        int context = int(std::ceil(2*lookahead_/double(rate)));
+        leading_output_ = ((context + quantum - 1)/quantum)*quantum;
+        cursor_ = -leading_output_;
+        View input{source_, input_frames_, boundary(cursor_)};
+        engine_.outputSeek(input, lookahead_);
     }
 
     void prepare() {
@@ -123,6 +161,7 @@ private:
 
     const Source &source_;
     std::int64_t input_frames_, output_frames_, cursor_ = 0, position_ = 0;
+    std::uint64_t rate_numerator_ = 0, rate_denominator_ = 0;
     signalsmith::stretch::SignalsmithStretch<float> engine_;
     std::array<std::array<float, quantum>, 2> output_{};
     int leading_output_ = 0, lookahead_ = 0, buffered_ = 0, consumed_ = 0;

@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "started_utc": "2026-09-21T23:14:27.543264+00:00",
+  "base_revision": "3160844876c3a979b991576811b74be47ae93d66",
+  "checks": [
+    {
+      "name": "abi_probe-build",
+      "command": [
+        "clang++",
+        "-std=c++17",
+        "-O2",
+        "-g",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-arch",
+        "arm64",
+        "-mmacosx-version-min=15.0",
+        "-fsanitize=address,undefined",
+        "-fno-omit-frame-pointer",
+        "-fno-sanitize-recover=all",
+        "-Inative/deadpan-dsp/src",
+        "-isystem",
+        "native/deadpan-dsp/vendor/signalsmith-stretch/include",
+        "-isystem",
+        "native/deadpan-dsp/vendor/signalsmith-linear/include",
+        "native/deadpan-dsp/src/adapter.cpp",
+        "native/deadpan-dsp/tests/abi_probe.cpp",
+        "-o",
+        "/tmp/deadpan-exact-rate-20260921/sanitizers/abi_probe"
+      ],
+      "exit_code": 0
+    },
+    {
+      "name": "abi_probe",
+      "command": [
+        "abi_probe"
+      ],
+      "exit_code": -6
+    }
+  ],
+  "status": "failed",
+  "error": "RuntimeError('==69057==AddressSanitizer: detect_leaks is not supported on this platform.\\n')",
+  "completed_utc": "2026-09-21T23:14:35.063174+00:00"
+}

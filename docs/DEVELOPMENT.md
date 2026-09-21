@@ -134,6 +134,12 @@ documents the boundary; these tests establish no native canvas-preview quality.
 
 ## Source audio checks
 
+`cargo test --locked -p deadpan-dsp` checks both legacy count-derived and explicit
+rational-rate recipes against all 50 prior reference hashes, plus independent
+allocation, replay and large-rational boundary cases. The
+[native DSP README](../native/deadpan-dsp/README.md) describes the legacy and
+exact-rate C ABI sanitizer probes.
+
 Run `cargo test --locked -p deadpan-audio --test sequence` and
 `cargo test --locked -p deadpan-cli --test audio_inspection` for plan-driven
 source PCM, exact fractional phase, trimmed filter context, historical receipt

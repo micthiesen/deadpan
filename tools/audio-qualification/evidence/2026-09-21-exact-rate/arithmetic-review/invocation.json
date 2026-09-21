@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "purpose": "Independent exact-integer arithmetic review of native canonical boundary scheduling",
+  "working_directory": "/Users/michael/Code/deadpan",
+  "original_orchestrator_argv": ["python3", "-"],
+  "original_orchestrator_input": "Python script supplied on stdin by an exec_command heredoc; verify.py preserves the same execution logic, with formatting only expanded for readability.",
+  "reproduction_argv": ["python3", "/tmp/deadpan-exact-rate-arithmetic-review/verify.py"],
+  "compile_argv": [
+    "clang++",
+    "-std=c++17",
+    "-O1",
+    "-g",
+    "-fsanitize=address,undefined",
+    "-fno-sanitize-recover=all",
+    "-Wall",
+    "-Wextra",
+    "-Werror",
+    "/tmp/deadpan-exact-rate-arithmetic-review/boundary.cpp",
+    "-I/Users/michael/Code/deadpan/native/deadpan-dsp/src",
+    "-I/Users/michael/Code/deadpan/native/deadpan-dsp/vendor/signalsmith-stretch/include",
+    "-I/Users/michael/Code/deadpan/native/deadpan-dsp/vendor/signalsmith-linear/include",
+    "-o",
+    "/tmp/deadpan-exact-rate-arithmetic-review/boundary"
+  ],
+  "run_argv": ["/tmp/deadpan-exact-rate-arithmetic-review/boundary"],
+  "run_stdin": "234 newline-terminated decimal numerator denominator output-coordinate rows, generated in the rates-outer/outputs-inner order specified by verify.py",
+  "environment": "Inherited execution environment; no task-specific overrides, including no ASAN_OPTIONS or UBSAN_OPTIONS overrides, were set by the script.",
+  "oracle": "Python round(Fraction(output_coordinate * rate_numerator, rate_denominator)), using exact integers and nearest-even rational rounding",
+  "native_scope": "Production canonical.hpp compiled into an inspection-only standalone harness. Private access is exposed only after standard and upstream headers are included, permitting direct boundary inspection without repository changes.",
+  "observed": {
+    "orchestrator_exit_code": 0,
+    "compile_exit_code": 0,
+    "native_exit_code": 0,
+    "native_stderr_file": "stderr.txt",
+    "comparisons": 234,
+    "failures": 0,
+    "summary_file": "result.txt"
+  },
+  "provenance_limit": "Compiler version, exact execution timestamp and production source hashes were not captured by this original focused command. Metadata and verify.py were saved from retained command text afterward; the native probe was not rerun when saving them."
+}

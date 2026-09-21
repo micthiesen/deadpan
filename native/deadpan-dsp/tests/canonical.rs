@@ -1,8 +1,8 @@
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use deadpan_dsp::{
-    CanonicalRecipe, CanonicalStretch, DspError, ENGINE_ID, MAX_INPUT_FRAMES, MAX_INPUT_PEAK,
-    MAX_OUTPUT_FRAMES, QUANTUM, StereoPcm,
+    CanonicalRecipe, CanonicalStretch, DspError, ENGINE_ID, EXACT_RATE_ENGINE_ID, MAX_INPUT_FRAMES,
+    MAX_INPUT_PEAK, MAX_OUTPUT_FRAMES, QUANTUM, StereoPcm, StretchRate,
 };
 use sha2::{Digest, Sha256};
 
@@ -279,4 +279,170 @@ fn vendored_headers_and_notices_match_the_qualified_sources() {
         count += 1;
     }
     assert_eq!(count, 10);
+}
+
+#[test]
+fn explicit_rates_preserve_all_fifty_historical_canonical_hashes() {
+    for line in include_str!("canonical-sha256.txt").lines() {
+        let fields: Vec<_> = line.split_whitespace().collect();
+        let input = fields[0].parse::<u32>().unwrap();
+        let output = fields[1].parse::<u32>().unwrap();
+        let rate = StretchRate::new(u64::from(input), u64::from(output)).unwrap();
+        let recipe =
+            CanonicalRecipe::with_rate(input, output, rate, fields[2].parse().unwrap()).unwrap();
+        assert_eq!(recipe.engine_id(), EXACT_RATE_ENGINE_ID);
+        assert_eq!(recipe.rate(), rate);
+        let (left, right) = render(recipe, &[QUANTUM]);
+        assert_eq!(hash(&left, &right), fields[3], "{recipe:?}");
+    }
+}
+
+#[test]
+fn exact_rate_is_independent_of_output_allocation_and_zero_padded_input_storage() {
+    let rate = StretchRate::new(2, 3).unwrap();
+    let short = CanonicalRecipe::with_rate(10_003, 10_337, rate, 0).unwrap();
+    let long = CanonicalRecipe::with_rate(10_003, 13_337, rate, 0).unwrap();
+    let (short_left, short_right) = render(short, &[256]);
+    let (long_left, long_right) = render(long, &[17, 253, 1, 127]);
+    assert_eq!(short_left, long_left[..10_337]);
+    assert_eq!(short_right, long_right[..10_337]);
+    // A coupled count recipe changes speed when the allocated end is rounded
+    // differently. This reference must actually distinguish that old behavior.
+    let (coupled_left, _) = render(CanonicalRecipe::new(10_003, 13_337, 0).unwrap(), &[256]);
+    assert_ne!(long_left, coupled_left);
+
+    let (mut left, mut right) = fixture(10_003);
+    left.resize(10_111, 0.0);
+    right.resize(10_111, 0.0);
+    let padded = CanonicalRecipe::with_rate(10_111, 13_337, rate, 0).unwrap();
+    let mut renderer = CanonicalStretch::new(padded, StereoPcm::new(left, right).unwrap()).unwrap();
+    let cancelled = AtomicBool::new(false);
+    let mut actual_left = vec![0.0; 13_337];
+    let mut actual_right = actual_left.clone();
+    for (first, second) in actual_left
+        .chunks_mut(256)
+        .zip(actual_right.chunks_mut(256))
+    {
+        assert_eq!(
+            renderer.read(first, second, &cancelled).unwrap(),
+            first.len()
+        );
+    }
+    assert_eq!(actual_left, long_left);
+    assert_eq!(actual_right, long_right);
+}
+
+#[test]
+fn rational_boundary_schedule_distinguishes_rates_that_round_to_the_same_float() {
+    // At output boundary 256 these exact rates straddle input position 128.5.
+    // Both become the same f32 and f64 rate, so a float-based schedule cannot
+    // distinguish their nearest-even input boundary allocations.
+    let denominator = 1_u64 << 63;
+    let center = 257_u64 << 54;
+    assert_eq!(
+        (center - 1) as f64 / denominator as f64,
+        (center + 1) as f64 / denominator as f64,
+    );
+    let lower = CanonicalRecipe::with_rate(
+        1_003,
+        2_003,
+        StretchRate::new(center - 1, denominator).unwrap(),
+        0,
+    )
+    .unwrap();
+    let upper = CanonicalRecipe::with_rate(
+        1_003,
+        2_003,
+        StretchRate::new(center + 1, denominator).unwrap(),
+        0,
+    )
+    .unwrap();
+    let (lower_left, lower_right) = render(lower, &[256]);
+    let (upper_left, upper_right) = render(upper, &[1, 127, 17, 253]);
+    assert_ne!(
+        hash(&lower_left, &lower_right),
+        hash(&upper_left, &upper_right)
+    );
+}
+
+#[test]
+fn explicit_recipe_replay_matches_irregular_reads_and_keeps_completed_progress() {
+    let recipe =
+        CanonicalRecipe::with_rate(10_003, 14_441, StretchRate::new(1001, 1500).unwrap(), -7)
+            .unwrap();
+    let (left, right) = render(recipe, &[256]);
+    let irregular = render(recipe, &[1, 127, 17, 253]);
+    assert_eq!((&left, &right), (&irregular.0, &irregular.1));
+    for target in [17, 6_668, 10_669, 14_440] {
+        let mut engine = CanonicalStretch::new(recipe, pcm(10_003)).unwrap();
+        let cancelled = AtomicBool::new(false);
+        engine.replay_to(target, &cancelled).unwrap();
+        cancelled.store(true, Ordering::Relaxed);
+        assert_eq!(
+            engine.replay_to(target + 1, &cancelled),
+            Err(DspError::Cancelled)
+        );
+        assert_eq!(engine.position(), target);
+        cancelled.store(false, Ordering::Relaxed);
+        let mut actual_left = [123.0; QUANTUM];
+        let mut actual_right = [456.0; QUANTUM];
+        let count = engine
+            .read(&mut actual_left, &mut actual_right, &cancelled)
+            .unwrap();
+        let start = target as usize;
+        assert_eq!(actual_left[..count], left[start..start + count]);
+        assert_eq!(actual_right[..count], right[start..start + count]);
+        assert!(actual_left[count..].iter().all(|sample| *sample == 123.0));
+        assert!(actual_right[count..].iter().all(|sample| *sample == 456.0));
+    }
+}
+
+#[test]
+fn exact_rate_admission_reduces_identity_and_bounds_work_independently_of_counts() {
+    assert_eq!(StretchRate::new(2, 3), StretchRate::new(200, 300));
+    let rate = StretchRate::new(u64::MAX, u64::MAX).unwrap();
+    assert_eq!(rate.numerator(), 1);
+    assert_eq!(rate.denominator(), 1);
+    for (numerator, denominator) in [(0, 1), (1, 0), (1, 9), (9, 1), (u64::MAX, 1)] {
+        assert_eq!(
+            StretchRate::new(numerator, denominator),
+            Err(DspError::Rate)
+        );
+    }
+    for (numerator, denominator) in [(1, 8), (8, 1), (u64::MAX - 1, u64::MAX)] {
+        assert!(StretchRate::new(numerator, denominator).is_ok());
+    }
+    let independent = CanonicalRecipe::with_rate(1, MAX_OUTPUT_FRAMES, rate, 24).unwrap();
+    assert_eq!(independent.rate(), rate);
+    assert_eq!(independent.input_frames(), 1);
+    assert_eq!(independent.output_frames(), MAX_OUTPUT_FRAMES);
+    assert_eq!(independent.pitch_semitones(), 24);
+    assert_eq!(
+        CanonicalRecipe::with_rate(0, 1, rate, 0),
+        Err(DspError::InputLength)
+    );
+    assert_eq!(
+        CanonicalRecipe::with_rate(MAX_INPUT_FRAMES + 1, 1, rate, 0),
+        Err(DspError::InputLength),
+    );
+    assert_eq!(
+        CanonicalRecipe::with_rate(1, 0, rate, 0),
+        Err(DspError::Rate)
+    );
+    assert_eq!(
+        CanonicalRecipe::with_rate(1, MAX_OUTPUT_FRAMES + 1, rate, 0),
+        Err(DspError::Rate),
+    );
+    assert_eq!(
+        CanonicalRecipe::with_rate(1, 1, rate, 25),
+        Err(DspError::Pitch)
+    );
+    assert_eq!(
+        CanonicalRecipe::with_rate(1, 1, rate, -25),
+        Err(DspError::Pitch)
+    );
+    let legacy = CanonicalRecipe::new(200, 300, 0).unwrap();
+    assert_eq!(legacy.rate(), StretchRate::new(2, 3).unwrap());
+    assert_eq!(legacy.engine_id(), ENGINE_ID);
+    assert_ne!(legacy.engine_id(), independent.engine_id());
 }

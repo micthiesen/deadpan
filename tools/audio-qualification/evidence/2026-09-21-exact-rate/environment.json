@@ -1,0 +1,14 @@
+{
+  "hardware": "Apple M5 Max",
+  "memory_gib": 128,
+  "os": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84\n",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "clang": "Apple clang version 21.0.0 (clang-2100.1.1.101)\nTarget: arm64-apple-darwin25.5.0\nThread model: posix\nInstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin\n",
+  "ffmpeg": "8.0.3 LGPL pinned compatible-media build",
+  "ffmpeg_prefix": "/tmp/deadpan-media-compatible-xyhilms4/prefix",
+  "build": "workspace development/test profiles; native adapter and standalone sanitizer probes use -O2",
+  "limitations": [
+    "LeakSanitizer unsupported by the macOS runtime",
+    "no new listening, device, latency or memory qualification"
+  ]
+}

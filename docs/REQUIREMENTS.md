@@ -119,7 +119,9 @@ records real PCM/AAC tests, signal checks and measured worker cost.
 historical source receipts and original bytes, including silent Holds, repeats,
 fractional placements and FollowSpeed retimes. Its
 [qualification](qualification/sequence-audio-2026-09-21.md) records real CLI/app
-headless parity and cold-reader identity after undo and asset-alias reuse. Full
+headless parity and cold-reader identity after undo and asset-alias reuse. The
+[exact-rate DSP extension](qualification/audio-exact-rate-2026-09-21.md) now keeps
+consumption speed independent of rounded storage/output counts. Full continuous
 voice/stretch integration, native audio playback, effects and export remain open.
 
 ## Product requirements

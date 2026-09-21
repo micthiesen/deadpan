@@ -20,6 +20,8 @@ mod ffi;
 /// identity, selection, and source interpretation. This identifier alone is not
 /// a media identity or a promise of bit equality across unqualified compilers.
 pub const ENGINE_ID: &str = "deadpan-canonical-stretch-1";
+/// Explicit rational rate, independent of retained input and emitted lengths.
+pub const EXACT_RATE_ENGINE_ID: &str = "deadpan-canonical-stretch-exact-rate-1";
 pub const STRETCH_REVISION: &str = "57b93f4e9206a089a45387eaa39bdc9f310d3308";
 pub const LINEAR_REVISION: &str = "5668673560146a9cfe38c25315071e3fd68c8317";
 pub const SAMPLE_RATE: u32 = 48_000;
@@ -30,17 +32,63 @@ pub const MAX_OUTPUT_FRAMES: u32 = MAX_INPUT_FRAMES * 8;
 /// Admission ceiling, not a limiter or a normalization target.
 pub const MAX_INPUT_PEAK: f32 = 16.0;
 
+/// Reduced input frames consumed per output frame. Counts never change this
+/// exact clock; the native schedule rounds absolute rational boundaries once.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub struct StretchRate {
+    numerator: u64,
+    denominator: u64,
+}
+
+impl StretchRate {
+    pub fn new(numerator: u64, denominator: u64) -> Result<Self, DspError> {
+        if numerator == 0
+            || denominator == 0
+            || u128::from(numerator) > u128::from(denominator) * 8
+            || u128::from(denominator) > u128::from(numerator) * 8
+        {
+            return Err(DspError::Rate);
+        }
+        let (mut a, mut b) = (numerator, denominator);
+        while b != 0 {
+            (a, b) = (b, a % b);
+        }
+        Ok(Self {
+            numerator: numerator / a,
+            denominator: denominator / a,
+        })
+    }
+
+    pub fn numerator(self) -> u64 {
+        self.numerator
+    }
+
+    pub fn denominator(self) -> u64 {
+        self.denominator
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+enum Schedule {
+    CountRatio,
+    ExactRate,
+}
+
 /// A validated constant-rate, constant-pitch preparation recipe.
 ///
-/// The rate is exactly `input_frames / output_frames`. The dense 120/15 ms
-/// analysis window, seed 1337, portable FFT, and zero extension/cropping are
-/// fixed by [`ENGINE_ID`]. Positive lengths are required; empty timeline spans
-/// must be handled without constructing a stretcher.
+/// [`Self::new`] retains the legacy `input_frames / output_frames` rate;
+/// [`Self::with_rate`] separates the exact rate from those buffer lengths.
+/// The dense 120/15 ms analysis window, seed 1337, portable FFT, and zero
+/// extension/cropping are fixed by the selected [`Self::engine_id`]. Positive
+/// lengths are required; empty timeline spans must be handled without
+/// constructing a stretcher.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct CanonicalRecipe {
     input_frames: u32,
     output_frames: u32,
     pitch_semitones: i32,
+    rate: StretchRate,
+    schedule: Schedule,
 }
 
 impl CanonicalRecipe {
@@ -65,6 +113,36 @@ impl CanonicalRecipe {
             input_frames,
             output_frames,
             pitch_semitones,
+            rate: StretchRate::new(u64::from(input_frames), u64::from(output_frames))?,
+            schedule: Schedule::CountRatio,
+        })
+    }
+
+    /// Keep the authored rate independent of rounded allocation or buffer size.
+    /// The input remains zero-extended outside its retained frames and output
+    /// is cropped to `output_frames`. This does not implement fractional phase;
+    /// its coordinate grid starts at zero, like the legacy canonical schedule.
+    pub fn with_rate(
+        input_frames: u32,
+        output_frames: u32,
+        rate: StretchRate,
+        pitch_semitones: i32,
+    ) -> Result<Self, DspError> {
+        if input_frames == 0 || input_frames > MAX_INPUT_FRAMES {
+            return Err(DspError::InputLength);
+        }
+        if output_frames == 0 || output_frames > MAX_OUTPUT_FRAMES {
+            return Err(DspError::Rate);
+        }
+        if !(-24..=24).contains(&pitch_semitones) {
+            return Err(DspError::Pitch);
+        }
+        Ok(Self {
+            input_frames,
+            output_frames,
+            pitch_semitones,
+            rate,
+            schedule: Schedule::ExactRate,
         })
     }
 
@@ -80,8 +158,15 @@ impl CanonicalRecipe {
         self.pitch_semitones
     }
 
+    pub fn rate(self) -> StretchRate {
+        self.rate
+    }
+
     pub fn engine_id(self) -> &'static str {
-        ENGINE_ID
+        match self.schedule {
+            Schedule::CountRatio => ENGINE_ID,
+            Schedule::ExactRate => EXACT_RATE_ENGINE_ID,
+        }
     }
 }
 
@@ -216,7 +301,7 @@ pub enum DspError {
         "input must have matching nonempty channels of at most 1048576 frames and match the recipe"
     )]
     InputLength,
-    #[error("output length must be positive and input/output rate must be within 1/8 through 8")]
+    #[error("output length or rational stretch rate is outside the admitted bounds")]
     Rate,
     #[error("integer pitch must be within -24 through 24 semitones")]
     Pitch,

@@ -318,6 +318,15 @@ read and replay step, and rejects nonfinite/extreme input without normalization.
 Its 1,048,576-frame input bound is explicit; do not fake long-clip support by
 resetting the stretcher at arbitrary chunk boundaries. See [DSP](docs/AUDIO_DSP.md).
 
+Use `CanonicalRecipe::with_rate` when an authored speed must remain independent
+of rounded input/output allocation. Keep the legacy constructor and engine ID
+stable for count-derived recipes. Both Rust and native entrypoints normalize and
+bound the rational rate; absolute signed boundaries use integer arithmetic.
+This API does not provide fractional phase. Prepare that phase with the sampler,
+and process whole Retime occurrences continuously through their child cuts.
+Outer crops must not reset inner stage history. Preserve ordered mixed pitch
+policies. See [stage preparation](docs/AUDIO_STAGE_PREPARATION.md).
+
 Source resampling evaluates each original coordinate from its exact affine
 origin, splitting the integer floor before float conversion. Keep fixed filter
 order and versioned kernel/matrix/trim-context policies. Never reset phase at a

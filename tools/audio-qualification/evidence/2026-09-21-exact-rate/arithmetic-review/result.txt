@@ -1,0 +1,1 @@
+234 native boundaries equal independent Fraction nearest-even oracle; ASan/UBSan clean. Includes signed ties, u64-scale normalized ratios and 2^48+255 output coordinate.

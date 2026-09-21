@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "started_utc": "2026-09-21T23:15:25.659994+00:00",
+  "base_revision": "3160844876c3a979b991576811b74be47ae93d66",
+  "checks": [
+    {
+      "name": "format",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 1,
+      "seconds": 1.401,
+      "log": "format.log"
+    }
+  ],
+  "status": "failed",
+  "skipped": [
+    "Native GUI: no UI/startup/lifecycle changes in this milestone. Prior native workspace evidence remains separate.",
+    "Device output and listening: no native playback backend is implemented."
+  ]
+}

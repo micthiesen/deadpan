@@ -1,0 +1,60 @@
+{
+  "base_revision": "3160844876c3a979b991576811b74be47ae93d66",
+  "files": [
+    {
+      "path": "native/deadpan-dsp/README.md",
+      "sha256": "3b34dc87f1e54aa58962cd0d51bb250918768bbc5a0aea016ed51f1c8464c354",
+      "bytes": 5785
+    },
+    {
+      "path": "native/deadpan-dsp/src/adapter.cpp",
+      "sha256": "a9a0438d5ea07f85e856a5da8ff53321cd8f254272ab296576a5265ba6b99043",
+      "bytes": 5802
+    },
+    {
+      "path": "native/deadpan-dsp/src/adapter.h",
+      "sha256": "b1f6fbd8d426d069b7f3e00051586f9c586a3ee870275ed00cfda429a0c4a30b",
+      "bytes": 1604
+    },
+    {
+      "path": "native/deadpan-dsp/src/canonical.hpp",
+      "sha256": "2db72019dc8f3e217fbbae2bd0ac084c22b27cc406b179584ed70942ae1e6e92",
+      "bytes": 8043
+    },
+    {
+      "path": "native/deadpan-dsp/src/ffi.rs",
+      "sha256": "4b76a89bb792ea88b8d3a0096df72a6e8f9d4bf26e8aa305978c93461ba61b03",
+      "bytes": 4256
+    },
+    {
+      "path": "native/deadpan-dsp/src/lib.rs",
+      "sha256": "039ab9209a04c5f76c9fb37677a302a440a492ff37bcdc63b8e47b5dd263cf20",
+      "bytes": 11547
+    },
+    {
+      "path": "native/deadpan-dsp/tests/canonical-sha256.txt",
+      "sha256": "030927ffe7ec118c1c6a4dcd0caec165b2cce40c001984a3d7d65fb036a8dd73",
+      "bytes": 3844
+    },
+    {
+      "path": "native/deadpan-dsp/tests/canonical.rs",
+      "sha256": "2cd8f5c0a4a2d3a544ac7be61175c0d87d5445f6f4c9e134a0d39408c2135a49",
+      "bytes": 16922
+    },
+    {
+      "path": "native/deadpan-dsp/tests/exact_rate_probe.cpp",
+      "sha256": "f87a333ad133021cda41c21eb6e8325351b8f52e88adca68f7f581564773fdb6",
+      "bytes": 4764
+    },
+    {
+      "path": "native/deadpan-dsp/tests/fixtures/mixed.f32",
+      "sha256": "80838601094aef41de8d08c40081baa302bc24fff0ac3b96dc7cc5fb98c0a224",
+      "bytes": 1537536
+    },
+    {
+      "path": "native/deadpan-dsp/vendor/SHA256SUMS",
+      "sha256": "8877e72bc6cbe989dc3ea44c938b23541ed7a6ceef3cbd8433acd485b2919135",
+      "bytes": 1144
+    }
+  ]
+}

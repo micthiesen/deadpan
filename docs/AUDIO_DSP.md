@@ -12,10 +12,27 @@ or clips accepted samples. This bound currently limits a preparation to about
 21.85 seconds of input. It is not a transparent streaming solution for long
 clips, and arbitrary chunking must not reset the DSP phase.
 
-`CanonicalRecipe` retains positive input/output counts and integer pitch from
-−24 through +24 semitones. The input/output ratio is bounded to 1/8 through 8.
-`ENGINE_ID` identifies the fixed seed, 120/15 ms analysis configuration,
-256-frame production schedule, zero extension and exact origin-based cropping.
+`CanonicalRecipe::new` retains the legacy positive input/output counts and
+their ratio, bounded to 1/8 through 8. `CanonicalRecipe::with_rate` instead takes
+a reduced `StretchRate` with unsigned 64-bit numerator and denominator in the
+same range. This exact consumption rate is independent of retained input length
+and allocated output length. Output is bounded to 8,388,608 frames; the original
+input bound still applies. Both recipes retain integer pitch from −24 through
++24 semitones.
+
+The explicit-rate schedule evaluates `round_even(m * numerator / denominator)`
+at each absolute signed output boundary, including negative priming context,
+using checked admission and 128-bit integer intermediates. It does not accumulate
+rounded block durations. Only upstream latency initialization uses an approximate
+float rate. Equivalent ratios normalize before that conversion on both sides of
+the FFI boundary. Shortening the output or padding retained input with zeros
+cannot change the rate.
+
+`ENGINE_ID` continues to identify the legacy fixed seed, 120/15 ms analysis
+configuration, 256-frame production schedule, zero extension and origin-based
+cropping. Explicit-rate recipes use `EXACT_RATE_ENGINE_ID`,
+`deadpan-canonical-stretch-exact-rate-1`. Both modes match all 50 existing
+reference hashes when their exact rates equal the historical count ratios.
 Prepared-cache identity will also need original byte identity, selection,
 source interpretation and complete recipe; the engine ID alone is insufficient.
 
@@ -47,6 +64,11 @@ resample, implement room tone/tails/fades/gain/limiting, manage prepared caches,
 open output devices, or implement native playback/export. Binding exact source
 phase and fractional plan extents to the preparation recipe remains open;
 integration must not derive an unintended rate from rounded beat durations.
-Fractional pitch, mixed nested pitch-stage processing, reverse and variable-rate
-operations remain required. The admitted parameter range exceeds the original measured listening
-and quality corpus; full speech/music review and device qualification remain open.
+The new exact rate does not provide fractional phase: callers must prepare an
+explicit sampling grid through the qualified resampler. See
+[stage preparation](AUDIO_STAGE_PREPARATION.md) for the integration contract and
+[exact-rate qualification](qualification/audio-exact-rate-2026-09-21.md) for
+the current evidence. Fractional pitch, mixed nested pitch-stage processing,
+reverse and variable-rate operations remain required. The admitted parameter
+range exceeds the original measured listening and quality corpus; full
+speech/music review and device qualification remain open.

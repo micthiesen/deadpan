@@ -16,6 +16,7 @@
 
 namespace {
 constexpr std::uint32_t maximum_input_frames = 1U << 20;
+constexpr std::uint32_t maximum_output_frames = maximum_input_frames * 8;
 constexpr float maximum_input_peak = 16.0f;
 enum Status : std::int32_t {
     ok = 0, invalid_argument = 1, allocation_failed = 2, native_failed = 3,
@@ -34,6 +35,10 @@ struct Engine {
     Engine(const float *left, const float *right, std::uint32_t input_frames,
            std::uint32_t output_frames, std::int32_t pitch)
         : source{left, right}, renderer(source, input_frames, output_frames, pitch) {}
+    Engine(const float *left, const float *right, std::uint32_t input_frames,
+           std::uint32_t output_frames, deadpan_audio_probe::ExactRate rate,
+           std::int32_t pitch)
+        : source{left, right}, renderer(source, input_frames, output_frames, rate, pitch) {}
     Engine(const Engine &) = delete;
     Engine &operator=(const Engine &) = delete;
 };
@@ -55,6 +60,33 @@ extern "C" std::int32_t dp_dsp_create(const float *left, const float *right,
                 return invalid_argument;
         }
         *output = new Engine(left, right, input_frames, output_frames, pitch);
+        return ok;
+    } catch (const std::bad_alloc &) { return allocation_failed; }
+      catch (...) { return native_failed; }
+}
+
+extern "C" std::int32_t dp_dsp_create_exact_rate(const float *left, const float *right,
+    std::uint32_t input_frames, std::uint32_t output_frames,
+    std::uint64_t rate_numerator, std::uint64_t rate_denominator, std::int32_t pitch,
+    void **output) noexcept {
+    if (!output) return invalid_argument;
+    *output = nullptr;
+    // Reject all scalar bounds before touching either caller-owned array.
+    if (!left || !right || !input_frames || input_frames > maximum_input_frames
+        || !output_frames || output_frames > maximum_output_frames
+        || !rate_numerator || !rate_denominator
+        || __int128(rate_numerator) > __int128(rate_denominator)*8
+        || __int128(rate_denominator) > __int128(rate_numerator)*8
+        || pitch < -24 || pitch > 24)
+        return invalid_argument;
+    try {
+        for (std::uint32_t i = 0; i < input_frames; ++i) {
+            if (!std::isfinite(left[i]) || !std::isfinite(right[i])
+                || std::abs(left[i]) > maximum_input_peak || std::abs(right[i]) > maximum_input_peak)
+                return invalid_argument;
+        }
+        *output = new Engine(left, right, input_frames, output_frames,
+                            {rate_numerator, rate_denominator}, pitch);
         return ok;
     } catch (const std::bad_alloc &) { return allocation_failed; }
       catch (...) { return native_failed; }

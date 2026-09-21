@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "base_revision": "3160844876c3a979b991576811b74be47ae93d66",
+  "general": {
+    "reviewer": "source_audio_general_review",
+    "independent_of_implementation": true,
+    "scope": ["Rust API", "FFI dispatch and ownership", "C/C++ exact-rate constructor", "int128 boundary schedule", "bounds", "exception handling", "exact-rate ABI probe"],
+    "actionable_findings": [],
+    "own_checks": ["11 DSP tests passed", "standalone exact-rate ABI probe passed"]
+  },
+  "arithmetic": {
+    "reviewer": "audio_matrix",
+    "independent_of_implementation": true,
+    "scope": ["u64 admission", "ratio normalization", "signed nearest-even boundaries", "negative preroll", "integer conversions", "float latency initialization", "allocation independence"],
+    "actionable_findings": [],
+    "independent_oracle_cases": 234,
+    "own_sanitizers": ["AddressSanitizer", "UndefinedBehaviorSanitizer"]
+  },
+  "remaining_integration": ["fractional phase", "ordered whole-occurrence retime processing", "long-input DSP", "full voice graph", "devices and export"],
+  "gui": "Not repeated: no native UI, focus, keyboard, startup, lifecycle or device changes."
+}
