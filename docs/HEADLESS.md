@@ -211,12 +211,19 @@ Inheritance follows the owner: an externally owned Local mark referencing a
 copied host remains on its original authored host. It is not implicitly copied.
 See [nested occurrence verification](OCCURRENCE_VERIFICATION.md).
 
-## Picture plan inspection
+## Picture and audio plan inspection
 
 ```sh
 cargo run --locked -p deadpan-cli -- inspect-plan /tmp/example.deadpan
 cargo run --locked -p deadpan-cli -- inspect-plan /tmp/example.deadpan --frame 10
+cargo run --locked -p deadpan-cli -- inspect-plan /tmp/example.deadpan --audio-samples 0 48000
 ```
+
+The audio command resolves an explicit half-open range of 48 kHz mix samples.
+It reports exact source placement, structural silence/Hold policies, retained
+Retime pitch stages, stable occurrences, and bounded lookup work. It performs
+no audio rendering. See [audio planning](AUDIO_PLAN.md) for quantization, query
+budgets and the distinction between planned recipes and implemented DSP.
 
 The first command reports the immutable revision, authored node durations, and
 index storage. The second resolves one project-frame center through Sequences,

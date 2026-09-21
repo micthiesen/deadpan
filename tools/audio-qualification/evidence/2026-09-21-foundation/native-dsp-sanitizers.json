@@ -1,0 +1,141 @@
+{
+  "schema_version": 1,
+  "created_utc": "2026-09-21T21:58:23.121988+00:00",
+  "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
+  "cwd": "/Users/michael/Code/deadpan",
+  "work_directory": "/tmp/deadpan-dsp-bridge-evidence-grf0vb10",
+  "commands": [
+    {
+      "argv": [
+        "clang++",
+        "--version"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.10052179195918143,
+      "stdout": "Apple clang version 21.0.0 (clang-2100.1.1.101)\nTarget: arm64-apple-darwin25.5.0\nThread model: posix\nInstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "sw_vers"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.04941587499342859,
+      "stdout": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "sysctl",
+        "-n",
+        "machdep.cpu.brand_string"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.01644979207776487,
+      "stdout": "Apple M5 Max\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "sysctl",
+        "-n",
+        "hw.model"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.015096708200871944,
+      "stdout": "Mac17,7\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "sysctl",
+        "-n",
+        "hw.memsize"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.01746420911513269,
+      "stdout": "137438953472\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "clang++",
+        "-std=c++17",
+        "-O2",
+        "-g",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-arch",
+        "arm64",
+        "-mmacosx-version-min=15.0",
+        "-fsanitize=address,undefined",
+        "-fno-omit-frame-pointer",
+        "-fno-sanitize-recover=all",
+        "-Inative/deadpan-dsp/src",
+        "-isystem",
+        "native/deadpan-dsp/vendor/signalsmith-stretch/include",
+        "-isystem",
+        "native/deadpan-dsp/vendor/signalsmith-linear/include",
+        "native/deadpan-dsp/src/adapter.cpp",
+        "native/deadpan-dsp/tests/abi_probe.cpp",
+        "-o",
+        "/tmp/deadpan-dsp-bridge-evidence-grf0vb10/abi-probe"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 18.330226582940668,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/tmp/deadpan-dsp-bridge-evidence-grf0vb10/abi-probe"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 3.094642583047971,
+      "stdout": "bridge ownership, guards, admission, EOF and extreme recipes passed\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "otool",
+        "-L",
+        "/tmp/deadpan-dsp-bridge-evidence-grf0vb10/abi-probe"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.05972791719250381,
+      "stdout": "/tmp/deadpan-dsp-bridge-evidence-grf0vb10/abi-probe:\n\t/usr/lib/libc++.1.dylib (compatibility version 1.0.0, current version 2100.43.0)\n\t@rpath/libclang_rt.asan_osx_dynamic.dylib (compatibility version 0.0.0, current version 0.0.0)\n\t/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1356.0.0)\n",
+      "stderr": ""
+    }
+  ],
+  "source_sha256": {
+    "native/deadpan-dsp/Cargo.toml": "bdec9df31d1fe8d507b0c088d50f70c0a3790e0cf237cd37b5e04f23110f916f",
+    "native/deadpan-dsp/README.md": "258579148996bc1e80314ce84b7f93c3f5ad48efc4f3c47b3e8c25c98ce09332",
+    "native/deadpan-dsp/build.rs": "cbb9c417a437eb8561a6777365b143e7e6cd32ad6ec99d8bc8d6e36e859c2bac",
+    "native/deadpan-dsp/src/adapter.cpp": "c59375a68fda4e2de14e4ecc2868d8565d4a08a21243d008debbf8b244e2e2fb",
+    "native/deadpan-dsp/src/adapter.h": "085b825cb87dccd2dd92c346323826b7b01c34609aede9873b922c78fd476a85",
+    "native/deadpan-dsp/src/canonical.hpp": "d6b89de1938cc5c57bad68912012b0b4ca3f62ff2bc9556c93ab0f394a2cf405",
+    "native/deadpan-dsp/src/ffi.rs": "4b074da0c2fc174a82128a7643a6edc69cbee9ec47a63a874177f430f48cec02",
+    "native/deadpan-dsp/src/lib.rs": "432b3b8f65638b9eec55b0dd5cc96655a6194f1b9a1f75b9e8171422561c706d",
+    "native/deadpan-dsp/tests/abi_probe.cpp": "16ce4921438271bac4297f9eb45dd9dd55e27e89592f703bfec37cce5531329b",
+    "native/deadpan-dsp/tests/canonical-sha256.txt": "030927ffe7ec118c1c6a4dcd0caec165b2cce40c001984a3d7d65fb036a8dd73",
+    "native/deadpan-dsp/tests/canonical.rs": "b119bdca86513c514a954baab75085c627906f12cd4fc26703f1a87a95640bbe",
+    "native/deadpan-dsp/tests/fixtures/README.md": "c36bd91e32e938fcd31a371915d6e9e15ca6f70b8154f7ed6acc776d2465b1fd",
+    "native/deadpan-dsp/tests/fixtures/mixed.f32": "80838601094aef41de8d08c40081baa302bc24fff0ac3b96dc7cc5fb98c0a224",
+    "native/deadpan-dsp/vendor/README.md": "c92f87eaa45d0aa04d50584bd5f7804965fc1be805c6a00dece5c55239189c3f",
+    "native/deadpan-dsp/vendor/SHA256SUMS": "8877e72bc6cbe989dc3ea44c938b23541ed7a6ceef3cbd8433acd485b2919135",
+    "native/deadpan-dsp/vendor/pins.json": "906805a9f29a50e07361d5138f4d68713eeaafb2a00593bb52cd6c551f325593",
+    "native/deadpan-dsp/vendor/signalsmith-linear/LICENSE.txt": "072b5e9eb5b22880bdf6256324654cf3ce53dba828edb911921121e1be09d9c3",
+    "native/deadpan-dsp/vendor/signalsmith-linear/fft.h": "e7b3d4d98fd4bc4b09740b82a374d4c87ad1d1a6ca28fcfec71800292b939ca2",
+    "native/deadpan-dsp/vendor/signalsmith-linear/include/signalsmith-linear/fft.h": "98e7e64093b6fc8ccbba31f710370d5548243bad35beb489e8282de4dc25d76d",
+    "native/deadpan-dsp/vendor/signalsmith-linear/include/signalsmith-linear/linear.h": "5c5d55810af0b7f8c8fe27ef1a36a87a4529f95cbebbb5e49f39845f6a2a0d5e",
+    "native/deadpan-dsp/vendor/signalsmith-linear/include/signalsmith-linear/stft.h": "a323656e5ed80b271262106ea782d6150ef2f1c8b2f3c5896552b90b2ad6c17e",
+    "native/deadpan-dsp/vendor/signalsmith-linear/linear.h": "710aa61dbba376b256f22b1c28c20b5d56e068df408c9e5a77c778a226f8db1f",
+    "native/deadpan-dsp/vendor/signalsmith-linear/stft.h": "4e11e85e823aaf2ec9bd5bd6bd55e6665126de1de2604af84574009ed1f3b5f2",
+    "native/deadpan-dsp/vendor/signalsmith-stretch/LICENSE.txt": "ee2ef82481ffb445ecdd4b3a4c1f82c0cddb2da8fe39d8e8dc384fffb3e7f06f",
+    "native/deadpan-dsp/vendor/signalsmith-stretch/include/signalsmith-stretch/signalsmith-stretch.h": "869facc1853189bec91fb54960da2f59333284963d6b52a242d55a399d305e4d",
+    "native/deadpan-dsp/vendor/signalsmith-stretch/signalsmith-stretch.h": "1188667959ac19dd40c0a6abbce694e44705615ec4f0e8db8af0f1cfb4c5dea7"
+  },
+  "status": "passed",
+  "binary_sha256": "473ce937d97825e45b13902d57b95f5aec9909570a812eca151963e285664025"
+}

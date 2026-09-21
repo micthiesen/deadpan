@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "base": "origin/main at 151ad21ec1f1568fb0d3bf47cbab10e114ab8f42",
+  "scope": "Committed-base difference plus staged, unstaged and untracked audio plan, CLI, native DSP adapter, tests, dependencies and documentation",
+  "reviews": [
+    {"lens": "exact interval timing, clipping and bounds", "result": "one finding, fixed and confirmed by follow-up review"},
+    {"lens": "general integration and correctness", "result": "no further findings"},
+    {"lens": "FFI ownership, exception containment and bounded resources", "result": "no findings"}
+  ],
+  "applied": [
+    {
+      "finding": "Repeat lookup charged segment comparisons only after completing its indexed search",
+      "fix": "RepeatLayout::locate_bounded checks the allowance before each comparison; audio passes its remaining shared budget and maps exhaustion explicitly",
+      "verification": "core exact/one-short/zero allowance regression, tight audio shared-budget regression, full 648-test gate and reviewer follow-up"
+    }
+  ],
+  "dismissed": [],
+  "unresolved_findings": [],
+  "qualification_limits": [
+    "No production worker consumes the DSP crate yet, so actual worker lifecycle remains unexercised",
+    "No native device output, listening, complete effects, cache lifecycle or preview/export integration qualification"
+  ]
+}

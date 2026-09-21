@@ -112,6 +112,37 @@ fn headless_migration_and_plan_inspection_are_explicit_and_read_only() -> Result
             "FrameOutOfRange"
         );
     }
+    let mix_boundary = |frame| {
+        before
+            .presentation_basis()
+            .frame_rate
+            .audio_boundary(deadpan_core::ProjectFrame(frame))
+            .unwrap()
+            .0
+    };
+    let duration = mix_boundary(26).to_string();
+    let audio = success(&["inspect-plan", path, "--audio-samples", "0", &duration])?;
+    assert_eq!(audio["audio"]["revision_id"], before.revision_id().as_str());
+    let spans = audio["audio"]["spans"].as_array().unwrap();
+    assert_eq!(spans.len(), 3);
+    assert_eq!(spans[0]["samples"]["end"], mix_boundary(12));
+    assert_eq!(spans[1]["samples"]["start"], mix_boundary(12));
+    assert_eq!(spans[1]["samples"]["end"], mix_boundary(14));
+    assert_eq!(spans[1]["gap_after"]["allocation"], "v1-wrap");
+    assert_eq!(spans[2]["samples"]["end"], mix_boundary(26));
+    assert_eq!(spans[0]["content"]["reason"], "silent_hold");
+    for (start, end, code) in [
+        ("-1", "1", "AudioRangeOutOfRange"),
+        ("2", "1", "AudioRangeOutOfRange"),
+        ("0", "invalid", "InvalidInput"),
+    ] {
+        let error = cli(&["inspect-plan", path, "--audio-samples", start, end])?;
+        assert!(!error.status.success());
+        assert_eq!(
+            serde_json::from_slice::<Value>(&error.stderr)?["error"]["code"],
+            code
+        );
+    }
     assert_eq!(writer.snapshot()?, before);
     Ok(())
 }

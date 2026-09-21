@@ -1,14 +1,18 @@
 use std::collections::BTreeMap;
 
 use deadpan_core::{
-    AssetId, EndpointPolicy, ExactRatio, FrameDuration, FrameRange, HoldRecipe, HoldVideo,
-    InsertionBias, InstancePath, NodeId, NodeKind, PresentationBasis, ProjectDocument,
-    ProjectFrame, ProjectId, RepeatInstance, RepeatLayout, RevisionId, SourceFrameId, SourcePoint,
-    SourceTimeBase, SourceVideo, TimeError,
+    AssetId, EndpointPolicy, ExactRatio, FrameDuration, FrameRange, HoldAudio, HoldRecipe,
+    HoldVideo, InsertionBias, InstancePath, NodeId, NodeKind, PitchPolicy, PresentationBasis,
+    ProjectDocument, ProjectFrame, ProjectId, RepeatInstance, RepeatLayout, RevisionId,
+    SourceAudio, SourceFrameId, SourcePoint, SourceTimeBase, SourceVideo, TimeError,
 };
 use serde::Serialize;
 
 use crate::{Picture, PictureSample, PlanError};
+
+#[path = "audio.rs"]
+mod audio;
+pub use audio::*;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize)]
 pub struct StorageStats {
@@ -86,22 +90,33 @@ enum CompiledKind {
         start: ExactRatio,
         duration: ExactRatio,
         endpoints: EndpointPolicy,
+        audio: Option<CompiledSourceAudio>,
     },
     Sequence {
         entries: Vec<SequenceEntry>,
     },
     Hold {
         video: CompiledHold,
+        audio: HoldAudio,
     },
     Repeat {
         layout: RepeatLayout,
         gap: Option<CompiledHold>,
+        gap_audio: Option<HoldAudio>,
     },
     Retime {
         child: usize,
         start: ExactRatio,
         scale: ExactRatio,
+        pitch: PitchPolicy,
     },
+}
+
+#[derive(Debug, Clone)]
+struct CompiledSourceAudio {
+    source: SourceAudio,
+    start: ExactRatio,
+    duration: ExactRatio,
 }
 
 #[derive(Debug, Clone)]
@@ -224,6 +239,22 @@ impl RenderPlan {
                         start: source.video_mapping.start_frames(),
                         duration: source.video_mapping.duration_frames(source.duration)?,
                         endpoints: source.video_mapping.endpoints(),
+                        audio: source
+                            .audio
+                            .as_ref()
+                            .map(|audio| {
+                                Ok::<_, TimeError>(CompiledSourceAudio {
+                                    source: audio.clone(),
+                                    start: source.audio_mapping.start_frames_with_offset(
+                                        source.audio_offset,
+                                        document.presentation_basis().frame_rate,
+                                    )?,
+                                    duration: source
+                                        .audio_mapping
+                                        .duration_frames(source.duration)?,
+                                })
+                            })
+                            .transpose()?,
                     },
                     NodeType::Source,
                 ),
@@ -245,6 +276,7 @@ impl RenderPlan {
                 NodeKind::Hold { recipe } => (
                     CompiledKind::Hold {
                         video: CompiledHold::compile(recipe, document)?,
+                        audio: recipe.audio.clone(),
                     },
                     NodeType::Hold,
                 ),
@@ -269,6 +301,7 @@ impl RenderPlan {
                     (
                         CompiledKind::Repeat {
                             layout,
+                            gap_audio: gap.as_ref().map(|recipe| recipe.audio.clone()),
                             gap: gap
                                 .as_ref()
                                 .map(|recipe| CompiledHold::compile(recipe, document))
@@ -281,10 +314,11 @@ impl RenderPlan {
                     child,
                     duration,
                     mapping,
-                    ..
+                    pitch,
                 } => (
                     CompiledKind::Retime {
                         child: by_id[child],
+                        pitch: *pitch,
                         start: ExactRatio::integer(mapping.start().0),
                         scale: ExactRatio::new(
                             i128::from(mapping.duration().frames()),
@@ -377,6 +411,7 @@ impl RenderPlan {
                     start,
                     duration,
                     endpoints,
+                    ..
                 } => {
                     let picture = match video {
                         SourceVideo::Stream { asset, span } => {
@@ -401,7 +436,7 @@ impl RenderPlan {
                     };
                     break (picture, None);
                 }
-                CompiledKind::Hold { video } => break (video.picture(local)?, None),
+                CompiledKind::Hold { video, .. } => break (video.picture(local)?, None),
                 CompiledKind::Sequence { entries } => {
                     let index = upper_bound(
                         entries.len(),
@@ -418,11 +453,12 @@ impl RenderPlan {
                     child,
                     start,
                     scale,
+                    ..
                 } => {
                     local = start.checked_add(local.checked_mul(*scale)?)?;
                     current = *child;
                 }
-                CompiledKind::Repeat { layout, gap } => {
+                CompiledKind::Repeat { layout, gap, .. } => {
                     let location = layout.locate(local, InsertionBias::Right)?;
                     lookup.iteration_run_comparisons += location.comparisons;
                     local = location.position;

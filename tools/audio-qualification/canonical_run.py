@@ -48,6 +48,9 @@ def main() -> int:
         "commands": [],
         "status": "incomplete",
     }
+    report["harness_sha256"]["native/deadpan-dsp/src/canonical.hpp"] = sha256(
+        ROOT.parent.parent / "native/deadpan-dsp/src/canonical.hpp"
+    )
     code = 2
     try:
         commands = report["commands"]

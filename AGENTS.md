@@ -28,11 +28,12 @@ Current crates:
 
 - `crates/deadpan-core`: exact time, validated documents, structural commands, and reversible patches; no I/O or identity generation.
 - `crates/deadpan-store`: authoritative SQLite packages, immutable revisions, atomic writes, durable undo/redo, generation request relevance, persistent attempts and restart recovery, and database checkpoints.
-- `crates/deadpan-plan`: immutable indexed picture mappings through structural beats, using exact frame centers and original source identities; no decoding or DSP.
+- `crates/deadpan-plan`: immutable indexed picture mappings and bounded audio spans through structural beats, retaining original source identities, exact transforms and absolute sample boundaries; no decoding or DSP.
 - `crates/deadpan-jobs`: bounded worker protocol, pure attempt lifecycle, process supervision, contained artifact snapshots, and exact bridge-generation planning. The real MLX adapter in `tools/model-qualification` is a development harness; app inference remains open.
 - `crates/deadpan-models`: native bridge bundle qualification, retained inputs, measured source spans, and immutable host provenance. Model installation, app scheduling, audition, and application integration remain open.
 - `crates/deadpan-media`: shared verified source snapshots, measured video/audio indexes, exact video seeks and bounded private PCM caches, plus isolated conversion, strict helper reports and private BLAKE3 output. No database or authored-state mutation.
 - `native/deadpan-source`: separate persistent descriptor-only FFmpeg video/audio decoders, raw metadata, owned RGBA and original-rate interleaved f32. Unsafe code stays in this narrow adapter; unsupported interpretations fail explicitly.
+- `native/deadpan-dsp`: bounded owned planar PCM and the canonical pinned stretch schedule through a safe Rust/C++ boundary. Construct it on a preparation worker; no device output or media decoding.
 - `native/deadpan-fileclone`: bounded safe descriptor-clone interface around the macOS system call. The store owns copying, checksums, publication and durability.
 - `crates/deadpan-render`: bounded shared SDR picture pipeline, linear Rec.2020 working textures, explicit sRGB display transform, aspect and rotation. No decoding, document mutation or encoding.
 - `native/deadpan-media-worker`: process-isolated FFmpeg conversion and independent decode verification through bounded descriptor-only AVIO. Only the documented FFI call permits unsafe Rust. Requires the explicitly selected pinned LGPL FFmpeg development prefix.
@@ -299,6 +300,22 @@ a matching checkpoint, exact canonical replay, or prepared PCM, and measure the
 work and cache lifecycle. DSP preparation and file reads stay off the device
 callback. The isolated canonical prototype is evidence for that boundary, not
 application playback or listening qualification.
+
+`RenderPlan::audio` allocates structural intervals by rounding their absolute
+project-frame endpoints once to 48 kHz samples. Keep exact source transforms
+separate from that allocation. Search half-sample thresholds with the proper
+ties-to-even bias; ordinary picture-center or sample-boundary descent selects
+the wrong leaf near a rounded edit. Retain every Retime pitch stage and Hold
+audio policy, clip placement to structural hosts, and enforce both output-span
+and traversal budgets. Query partitioning must not change allocated boundaries
+or DSP origins. See [audio planning](docs/AUDIO_PLAN.md).
+
+Keep the qualification harness and `deadpan-dsp` on one canonical DSP header.
+Vendored upstream headers remain byte-identical to their pins with full notices.
+The Rust wrapper retains boxed input until after native destruction, bounds each
+read and replay step, and rejects nonfinite/extreme input without normalization.
+Its 1,048,576-frame input bound is explicit; do not fake long-clip support by
+resetting the stretcher at arbitrary chunk boundaries. See [DSP](docs/AUDIO_DSP.md).
 
 Worker stdout contains only versioned, bounded, length-framed control messages;
 stderr is drained into a bounded diagnostic tail. A completed manifest enters

@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "checks": [
+    {
+      "command": ["python3", "-m", "unittest", "discover", "-s", "tools/audio-qualification", "-p", "test_*.py"],
+      "exit_code": 0,
+      "tests_passed": 20
+    },
+    {
+      "command": ["clang++", "-std=c++17", "-O2", "-Wall", "-Wextra", "-Werror", "-arch", "arm64", "-mmacosx-version-min=15.0", "-isystem", "native/deadpan-dsp/vendor/signalsmith-stretch/include", "-isystem", "native/deadpan-dsp/vendor/signalsmith-linear/include", "tools/audio-qualification/canonical_probe.cpp", "-o", "/tmp/deadpan-dsp-forwarding-probe"],
+      "exit_code": 0,
+      "scope": "Compilation of the old qualification harness through the single production canonical header; performance corpus was not rerun"
+    }
+  ],
+  "retained_failures": [
+    "Initial Rust synthesis of mixed input had a different hash before DSP; retained original fixture now removes that input variable without changing any of the 50 expected output hashes",
+    "Ad hoc CLI check without DEADPAN_FFMPEG_PREFIX failed the existing build environment gate; corrected invocation and both full gates passed with the pinned prefix",
+    "Unrestricted git diff --cached --check reports upstream trailing whitespace and raw log endings; exact upstream/log bytes retained, authored-source check excluding those paths passed"
+  ]
+}

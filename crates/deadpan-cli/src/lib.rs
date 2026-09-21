@@ -34,6 +34,7 @@ const HELP: &str = "Deadpan headless commands:
   project verify-original <project.deadpan> <blake3-digest>
   project relink-original <project.deadpan> <blake3-digest> <absolute-source> --expected-version <N>
   inspect-plan <project.deadpan> [--frame <N>]
+  inspect-plan <project.deadpan> --audio-samples <START> <END>
   resolve-selection <project.deadpan> --json <selection.json>
   command <project.deadpan> --json <request.json> [--dry-run]
 
@@ -79,6 +80,8 @@ impl CliError {
             Self::Protocol(_) => "ProtocolUnsupported",
             Self::Document(_) => "ProjectInvalid",
             Self::Plan(deadpan_plan::PlanError::FrameOutOfRange { .. }) => "FrameOutOfRange",
+            Self::Plan(deadpan_plan::PlanError::AudioRangeOutOfRange) => "AudioRangeOutOfRange",
+            Self::Plan(deadpan_plan::PlanError::AudioQueryLimit(_)) => "AudioQueryLimit",
             Self::Plan(deadpan_plan::PlanError::Time(_)) => "TimingOverflow",
             Self::Plan(_) => "PlanInvalid",
             Self::Anchor(error) => error.code(),
@@ -259,6 +262,25 @@ fn run(arguments: &[String]) -> Result<(), CliError> {
             let document = ProjectStore::open(Path::new(path), AccessMode::ReadOnly)?.snapshot()?;
             let plan = deadpan_plan::RenderPlan::compile(&document)?;
             write_json(&serde_json::json!({ "protocol": 1, "plan": plan.inspect() }))
+        }
+        ["inspect-plan", path, "--audio-samples", start, end] => {
+            let parse = |value: &str| {
+                value
+                    .parse::<i64>()
+                    .map(deadpan_core::AudioSample)
+                    .map_err(|_| {
+                        CliError::Usage(
+                            "Audio boundaries must be signed 48 kHz sample integers".into(),
+                        )
+                    })
+            };
+            let samples = parse(start)?..parse(end)?;
+            let document = ProjectStore::open(Path::new(path), AccessMode::ReadOnly)?.snapshot()?;
+            let plan = deadpan_plan::RenderPlan::compile(&document)?;
+            write_json(&serde_json::json!({
+                "protocol": 1,
+                "audio": plan.audio(samples, deadpan_plan::AudioQueryLimits::default())?,
+            }))
         }
         ["inspect-plan", path, "--frame", frame] => {
             let frame = frame

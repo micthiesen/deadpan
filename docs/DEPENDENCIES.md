@@ -151,6 +151,15 @@ file reads must stay off the callback. App binding, plan integration, cache/job
 lifecycle, output devices, listening, and the remaining audio operations are
 still unqualified.
 
+The [production DSP boundary](AUDIO_DSP.md) now vendors those exact MIT headers
+under `native/deadpan-dsp/vendor`, including upstream forwarding headers, complete
+notices, pins and per-file SHA-256 sums. It uses the existing pinned `cc` build
+dependency. Rust owns bounded planar input for the lifetime of the C++ renderer;
+the adapter admits one constant-rate/integer-pitch recipe, bounded reads and
+cooperative replay. The qualification harness includes the same canonical
+header. This is a worker adapter, not a native output backend or a complete
+audio renderer. No new registry dependency or build-time download is introduced.
+
 ## First real local model probe
 
 The [LTX MLX smoke](qualification/model-smoke-2026-09-20.md) pins runtime commit

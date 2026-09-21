@@ -1,4 +1,4 @@
-//! Immutable structural picture plans shared by preview and export callers.
+//! Immutable structural picture and audio plans shared by preview and export callers.
 //!
 //! Compilation validates one authored revision and indexes sequence boundaries
 //! and compact repeat identity runs. Sampling maps project frame centers through
@@ -10,7 +10,9 @@ mod plan;
 
 pub use picture::{Picture, PictureSample};
 pub use plan::{
-    LookupStats, NodeInspection, NodeType, PlanInspection, PlanMetadata, RenderPlan, StorageStats,
+    AudioContent, AudioQuery, AudioQueryLimits, AudioRetimeStage, AudioSpan, AudioTransform,
+    LookupStats, NodeInspection, NodeType, PlanInspection, PlanMetadata, RenderPlan, SilenceReason,
+    StorageStats,
 };
 
 use deadpan_core::{
@@ -31,6 +33,14 @@ pub enum PlanError {
     },
     #[error("picture has no source video frame to select")]
     NoSourceFrame,
+    #[error("audio sample range is reversed or outside the plan's mix duration")]
+    AudioRangeOutOfRange,
+    #[error("audio query limits must be positive and within the supported bounds")]
+    InvalidAudioLimits,
+    #[error("audio query exceeded its {0} budget")]
+    AudioQueryLimit(&'static str),
+    #[error("audio span has no linearly mapped source audio")]
+    NoSourceAudio,
     #[error("source index belongs to {actual}, expected {expected}")]
     IndexAssetMismatch { expected: AssetId, actual: AssetId },
     #[error("source index clock {actual:?} differs from expected {expected:?}")]

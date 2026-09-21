@@ -788,6 +788,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "deadpan-dsp"
+version = "0.1.0"
+dependencies = [
+ "cc",
+ "sha2",
+ "thiserror 2.0.20",
+]
+
+[[package]]
 name = "deadpan-fileclone"
 version = "0.1.0"
 dependencies = [

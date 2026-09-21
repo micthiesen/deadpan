@@ -129,6 +129,16 @@ The existing source/media sanitizer command above includes this path. These
 headless checks establish no listening, device output, resampling or complete
 import behavior. See [source audio](SOURCE_AUDIO.md).
 
+## Audio preparation checks
+
+Structural audio queries are covered by `cargo test --locked -p deadpan-plan
+--test audio_plan`, including independently computed sample allocation and
+expanded small-repeat references. `cargo test --locked -p deadpan-dsp` exercises
+the actual pinned engine, prior PCM hashes, ownership, partitions, replay and
+failure bounds. The crate's native sanitizer harness separately checks the new
+C ABI. [Audio planning](AUDIO_PLAN.md) and [DSP](AUDIO_DSP.md) state the remaining
+integration work; these checks do not require GUI or device output.
+
 ## Implementation sequence
 
 1. Read [the specification](spec/DEADPAN_SPEC.md), [handoff](spec/AGENT_HANDOFF.md), and [AGENTS.md](../AGENTS.md). Sections 1–8 define semantics, 12–14 define AI/runtime contracts, 17–24 define architecture, and 26–31 define verification and command details.

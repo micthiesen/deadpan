@@ -268,19 +268,46 @@ impl RepeatLayout {
         position: ExactRatio,
         bias: InsertionBias,
     ) -> Result<RepeatLocation, DocumentError> {
+        self.locate_bounded(position, bias, usize::MAX)
+    }
+
+    /// Stop before exceeding the permitted number of segment comparisons.
+    /// `LimitExceeded` is returned before evaluating an additional comparison;
+    /// successful results report the actual count for a caller's shared budget.
+    pub fn locate_bounded(
+        &self,
+        position: ExactRatio,
+        bias: InsertionBias,
+        maximum_comparisons: usize,
+    ) -> Result<RepeatLocation, DocumentError> {
         if position.compare_integer(0).is_lt()
             || position.compare_integer(self.duration.frames()).is_gt()
         {
             return Err(invalid("position is outside Repeat duration"));
         }
         let mut comparisons = 0;
-        let index = self.segments.partition_point(|segment| {
-            comparisons += 1;
-            match bias {
-                InsertionBias::Left => position.compare_integer(segment.end).is_gt(),
-                InsertionBias::Right => !position.compare_integer(segment.end).is_lt(),
+        let mut index = 0;
+        let mut end = self.segments.len();
+        while index < end {
+            if comparisons == maximum_comparisons {
+                return Err(DocumentError::new(
+                    DocumentErrorCode::LimitExceeded,
+                    "Repeat lookup comparison budget exhausted",
+                ));
             }
-        });
+            let middle = index + (end - index) / 2;
+            comparisons += 1;
+            let comparison = position.compare_integer(self.segments[middle].end);
+            let preceding = match bias {
+                InsertionBias::Left => comparison.is_gt(),
+                InsertionBias::Right => !comparison.is_lt(),
+            };
+            if preceding {
+                index = middle + 1;
+            } else {
+                end = middle;
+            }
+        }
         let segment = self
             .segments
             .get(index)
@@ -328,4 +355,63 @@ fn duration(
 }
 fn invalid(message: &str) -> DocumentError {
     DocumentError::new(DocumentErrorCode::InvalidIdentity, message)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn bounded_lookup_enforces_exact_comparison_allowance_on_sparse_runs() {
+        let allocation = RevisionId::new("allocation").unwrap();
+        let base = NodeId::new("base").unwrap();
+        let alternate = NodeId::new("alternate").unwrap();
+        let order = IterationOrder::new(allocation.clone(), 1_000_000_000).unwrap();
+        let overrides = PlayOverrides::try_from(vec![PlayOverride {
+            iteration: IterationId {
+                allocation,
+                ordinal: 500_000_000,
+            },
+            root: alternate.clone(),
+        }])
+        .unwrap();
+        let durations = BTreeMap::from([
+            (base.clone(), FrameDuration::new(1).unwrap()),
+            (alternate, FrameDuration::new(3).unwrap()),
+        ]);
+        let layout = RepeatLayout::compile(
+            &order,
+            &base,
+            Some(&overrides),
+            FrameDuration::new(1).unwrap(),
+            &durations,
+        )
+        .unwrap();
+        assert_eq!(layout.segment_count(), 3);
+        for position in [0, 1, 1_000_000_000, 1_000_000_003, 2_000_000_000] {
+            let position = ExactRatio::integer(position);
+            let found = layout.locate(position, InsertionBias::Right).unwrap();
+            assert!(found.comparisons > 0);
+            assert_eq!(
+                layout
+                    .locate_bounded(position, InsertionBias::Right, found.comparisons)
+                    .unwrap(),
+                found
+            );
+            assert_eq!(
+                layout
+                    .locate_bounded(position, InsertionBias::Right, found.comparisons - 1)
+                    .unwrap_err()
+                    .code,
+                DocumentErrorCode::LimitExceeded
+            );
+            assert_eq!(
+                layout
+                    .locate_bounded(position, InsertionBias::Right, 0)
+                    .unwrap_err()
+                    .code,
+                DocumentErrorCode::LimitExceeded
+            );
+        }
+    }
 }
