@@ -4,7 +4,9 @@ use std::fs;
 use std::io::Read;
 use std::os::unix::net::UnixListener;
 
-use deadpan_jobs::artifact::{ArtifactError, ArtifactLimits, ArtifactWorkspace};
+use deadpan_jobs::artifact::{
+    ArtifactError, ArtifactLimits, ArtifactWorkspace, SnapshotInterruption,
+};
 use deadpan_jobs::{Sha256, WorkspaceArtifact, WorkspaceRef};
 use sha2::{Digest, Sha256 as Sha256Hasher};
 
@@ -103,6 +105,27 @@ fn output_scope_is_component_aware_and_strict() {
         assert!(matches!(
             workspace.snapshot(&scope, &declared, limits(8)),
             Err(ArtifactError::OutsideOutputScope { .. })
+        ));
+    }
+}
+
+#[test]
+fn controlled_snapshot_reports_typed_interruption_before_filesystem_access() {
+    let scratch = tempfile::tempdir().unwrap();
+    let workspace = ArtifactWorkspace::open(scratch.path()).unwrap();
+    let declared = declaration("output/missing.bin", b"never read");
+    for interruption in [
+        SnapshotInterruption::Cancelled,
+        SnapshotInterruption::Deadline,
+    ] {
+        assert!(matches!(
+            workspace.snapshot_with_control(
+                &reference("output"),
+                &declared,
+                limits(64),
+                || Err(interruption),
+            ),
+            Err(ArtifactError::Interrupted(reason)) if reason == interruption
         ));
     }
 }

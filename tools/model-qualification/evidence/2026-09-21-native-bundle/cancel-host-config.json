@@ -1,0 +1,87 @@
+{
+  "executable": "/private/tmp/deadpan-ltx2src-3392/ltx-2-mlx-3392d75934120b7e69eefbe55893f7ef82be92a4/.venv/bin/python3",
+  "worker_script": "/Users/michael/Code/deadpan/tools/model-qualification/worker.py",
+  "runtime_config": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-native-bundle-v2-cancel-h7pgt8s1/runtime.json",
+  "workspace": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-native-bundle-v2-cancel-h7pgt8s1/worker",
+  "report_directory": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-native-bundle-v2-cancel-h7pgt8s1/host",
+  "request": {
+    "operation": "generate_bridge",
+    "protocol": 2,
+    "identity": {
+      "request_id": "probe-de8c25a552d5488bbe142c6039947f66",
+      "attempt_id": "attempt-1"
+    },
+    "cancellation_token": "ff055389b04c4c9e801f0ff435d06c96",
+    "project_id": "probe-de8c25a552d5488bbe142c6039947f66",
+    "revision_id": "revision-1",
+    "target": {
+      "hold_id": "hold-1",
+      "request_version": 1
+    },
+    "input": {
+      "manifest": "inputs/context.json",
+      "sha256": "ab6a33115af9b34ab951dc9fa492584c4dad65155be46bdd32bedb8c5c08adde"
+    },
+    "output_workspace": "outputs",
+    "constraints": {
+      "conditioning": "bridge",
+      "motion": "still",
+      "video": {
+        "frames": 30,
+        "frame_rate": {
+          "numerator": 30000,
+          "denominator": 1001
+        },
+        "width": 768,
+        "height": 320
+      }
+    },
+    "provider": {
+      "pack_id": "ltx-2.3-q4-development",
+      "pack_version": "56a5866d",
+      "runtime_id": "ltx-mlx-development",
+      "runtime_version": "0.15.8+deadpan1",
+      "seed": 1
+    },
+    "plan": {
+      "schema_version": 1,
+      "operation": "bridge",
+      "interpolation": "linear",
+      "project": {
+        "interior_frames": 30,
+        "frame_rate": {
+          "numerator": 30000,
+          "denominator": 1001
+        }
+      },
+      "native": {
+        "frame_count": 25,
+        "frame_rate": {
+          "numerator": 24,
+          "denominator": 1
+        },
+        "width": 768,
+        "height": 320
+      },
+      "timing": {
+        "requested_boundary_duration": {
+          "numerator": "31031",
+          "denominator": "30000"
+        },
+        "actual_boundary_duration": {
+          "numerator": "1",
+          "denominator": "1"
+        },
+        "retime_deviation": {
+          "numerator": "-1031",
+          "denominator": "30000"
+        }
+      },
+      "sampling": {
+        "endpoint_policy": "interior_only"
+      }
+    }
+  },
+  "cancel_after_millis": null,
+  "cancel_at_stage": "inference"
+}

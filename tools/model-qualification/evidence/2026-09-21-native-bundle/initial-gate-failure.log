@@ -1,0 +1,74 @@
+   Compiling deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+   Compiling deadpan-media-worker v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-media-worker)
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 23.03s
+     Running unittests src/main.rs (target/debug/deps/deadpan_app-abe54b1f8e2caadb)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/headless.rs (target/debug/deps/headless-ecd05748190cda59)
+
+running 2 tests
+test headless_errors_keep_the_same_structured_protocol ... ok
+test native_binary_runs_headless_without_initializing_a_window ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running unittests src/lib.rs (target/debug/deps/deadpan_cli-076e67c9dedcc46d)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/deadpan_cli-51463e3bba19b810)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/doctor.rs (target/debug/deps/doctor-ea7cde46f4f3cd6f)
+
+running 2 tests
+test unsupported_command_fails_without_success_output ... ok
+test doctor_reports_real_timing_probe_and_missing_capabilities ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/project_commands.rs (target/debug/deps/project_commands-81bfb874c19fc24b)
+
+running 12 tests
+test failed_migration_returns_retained_backup_and_preserves_original ... ok
+test headless_migration_and_plan_inspection_are_explicit_and_read_only ... FAILED
+test malformed_or_future_protocol_is_rejected_before_mutation ... ok
+test writer_lock_is_enforced_between_processes_but_readers_and_dry_run_work ... ok
+test selection_resolution_is_revision_checked_exact_and_read_only ... ok
+test current_generation_requires_host_reconciliation_but_allows_cli_preview ... ok
+test history_dry_runs_work_with_a_writer_and_preserve_the_redo_path ... ok
+test headless_edit_dry_run_conflict_and_durable_history ... ok
+test dry_run_and_commit_preserve_actionable_domain_errors ... ok
+test sparse_override_commands_and_inspection_share_revision_and_dry_run_guards ... ok
+test nested_occurrence_command_is_atomic_and_uses_the_same_headless_plan ... ok
+test persistent_mark_queries_and_loss_states_share_the_headless_command_path ... ok
+
+failures:
+
+---- headless_migration_and_plan_inspection_are_explicit_and_read_only stdout ----
+
+thread 'headless_migration_and_plan_inspection_are_explicit_and_read_only' (36589738) panicked at crates/deadpan-cli/tests/project_commands.rs:81:5:
+assertion `left == right` failed
+  left: Number(8)
+ right: 7
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    headless_migration_and_plan_inspection_are_explicit_and_read_only
+
+test result: FAILED. 11 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.50s
+
+error: test failed, to rerun pass `-p deadpan-cli --test project_commands`

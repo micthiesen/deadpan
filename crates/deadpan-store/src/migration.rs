@@ -45,7 +45,7 @@ impl ProjectStore {
                 backup: None,
             });
         }
-        if !matches!(version, 1..=6) {
+        if !matches!(version, 1..=7) {
             return Err(StoreError::UnsupportedSchema(version));
         }
         let lock = acquire_lock(&package)?;
@@ -73,7 +73,7 @@ impl ProjectStore {
             return Err(StoreError::UnsafePath(directory));
         }
         let backup = tempfile::Builder::new()
-            .prefix("before-schema-7-")
+            .prefix("before-schema-8-")
             .suffix(".sqlite")
             .tempfile_in(&directory)?;
         original.backup(rusqlite::MAIN_DB, backup.path(), None)?;
@@ -115,13 +115,6 @@ fn migrate_candidate(
     candidate.pragma_update(None, "journal_mode", "DELETE")?;
     candidate.pragma_update(None, "synchronous", "FULL")?;
     let transaction = candidate.transaction()?;
-    validation::check_stored_sizes(&transaction, schema::MAX_DOCUMENT_BYTES)?;
-    if source_version >= 5 {
-        crate::generation::check_stored_sizes(&transaction)?;
-    }
-    if source_version >= 6 {
-        crate::generation_attempts::check_stored_sizes(&transaction)?;
-    }
     let integrity: String =
         transaction.query_row("PRAGMA integrity_check", [], |row| row.get(0))?;
     if integrity != "ok" {
@@ -134,16 +127,35 @@ fn migrate_candidate(
     if violations != 0 {
         return Err(StoreError::Integrity("foreign-key violation".into()));
     }
-    // Database versions 4 through 6 share core schema 4. Replay their full
-    // authored chronology while preserving operational rows and identities.
-    validation::migrate_history(&transaction, source_version)?;
+    // Install only the schema-8 operational additions before parsing old
+    // request/attempt rows. ALTER/CREATE intentionally has no IF NOT EXISTS:
+    // a legacy database that already contains modern operational vocabulary is
+    // rejected instead of being silently reinterpreted.
+    if source_version >= 5 {
+        crate::generation::add_schema8_columns(&transaction)?;
+    }
+    if source_version >= 6 {
+        crate::generation_attempts::add_schema8_tables(&transaction)?;
+    }
     if source_version < 5 {
         crate::generation::create_tables(&transaction)?;
     }
-    crate::generation::validate_store(&transaction)?;
     if source_version < 6 {
         crate::generation_attempts::create_tables(&transaction)?;
     }
+    validation::check_stored_sizes(&transaction, schema::MAX_DOCUMENT_BYTES)?;
+    if source_version >= 5 {
+        crate::generation::check_stored_sizes(&transaction)?;
+    }
+    if source_version >= 6 {
+        crate::generation_attempts::check_stored_sizes(&transaction)?;
+    }
+    // Database versions 4 through 6 share core schema 4. Replay their full
+    // authored chronology while preserving operational rows and identities.
+    if source_version <= 6 {
+        validation::migrate_history(&transaction, source_version)?;
+    }
+    crate::generation::validate_store(&transaction)?;
     transaction.pragma_update(None, "user_version", schema::VERSION)?;
     validation::validate_history(&transaction)?;
     crate::generation::validate_store(&transaction)?;

@@ -141,10 +141,10 @@ Any future promotion caller must recheck cancellation, selected candidate,
 request relevance, and retained object identities at its own commit boundary.
 Returning a private conversion result cannot make those later decisions atomic.
 
-The model protocol currently declares only its sampled candidate. Before durable
-acceptance, it must declare the native sequence and provenance as a complete
-hash-verified bundle; the host must derive the sampled master from the native
-sequence using the persisted request plan, retain immutable
-provenance, persist a qualified selected-Ready receipt, and revalidate relevance
-and all objects during explicit acceptance. This converter implements the actual
-media boundary needed by that flow. It does not yet implement the flow itself.
+[Model protocol 2 and bundle qualification](GENERATION_BUNDLES.md) now declare
+native footage and provenance, derive both masters from the original request
+plan, retain an immutable provenance envelope, and persist Ready only after all
+three generated objects are verified. Explicit authored acceptance still needs
+current relevance, source/conditioning qualification, object revalidation,
+history retention and an undoable command. Legacy protocol-1 sampled receipts
+remain separate and cannot satisfy the modern bundle path.

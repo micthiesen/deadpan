@@ -1,0 +1,36 @@
+{
+  "time_utc": "2026-09-21T12:01:13.870739+00:00",
+  "architecture": "arm64",
+  "os": {
+    "exit_code": 0,
+    "output": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84",
+    "stderr": ""
+  },
+  "cpu": {
+    "exit_code": 0,
+    "output": "Apple M5 Max",
+    "stderr": ""
+  },
+  "memory_bytes": {
+    "exit_code": 0,
+    "output": "137438953472",
+    "stderr": ""
+  },
+  "power": {
+    "exit_code": 0,
+    "output": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=22741091)\t80%; AC attached; not charging present: true",
+    "stderr": ""
+  },
+  "thermal": {
+    "exit_code": 0,
+    "output": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+    "stderr": ""
+  },
+  "rust": {
+    "exit_code": 0,
+    "output": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+    "stderr": ""
+  },
+  "load": "Concurrent source review and store fixture compilation; not a controlled performance benchmark.",
+  "cache": "Model files already present; no download; prior runs on this host. Cache state not controlled."
+}

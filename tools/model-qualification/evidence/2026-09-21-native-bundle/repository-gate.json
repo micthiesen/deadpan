@@ -1,0 +1,89 @@
+[
+  {
+    "command": [
+      "cargo",
+      "fmt",
+      "--all",
+      "--",
+      "--check"
+    ],
+    "exit_code": 0,
+    "seconds": 0.7028549159877002
+  },
+  {
+    "command": [
+      "cargo",
+      "clippy",
+      "--workspace",
+      "--all-targets",
+      "--locked",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "exit_code": 0,
+    "seconds": 1.2809925840701908
+  },
+  {
+    "command": [
+      "cargo",
+      "test",
+      "--workspace",
+      "--locked"
+    ],
+    "exit_code": 0,
+    "seconds": 43.756396332988515
+  },
+  {
+    "command": [
+      "cargo",
+      "build",
+      "--workspace",
+      "--locked"
+    ],
+    "exit_code": 0,
+    "seconds": 0.4589227919932455
+  },
+  {
+    "command": [
+      "cargo",
+      "run",
+      "-p",
+      "deadpan-cli",
+      "--",
+      "doctor"
+    ],
+    "exit_code": 0,
+    "seconds": 1.7562484999652952
+  },
+  {
+    "command": [
+      "python3",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "tools/audio-qualification",
+      "-p",
+      "test_*.py",
+      "-v"
+    ],
+    "exit_code": 0,
+    "seconds": 1.5081905419938266
+  },
+  {
+    "command": [
+      "python3",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "tools/model-qualification/tests",
+      "-p",
+      "test_*.py",
+      "-v"
+    ],
+    "exit_code": 0,
+    "seconds": 0.8217639171052724
+  }
+]

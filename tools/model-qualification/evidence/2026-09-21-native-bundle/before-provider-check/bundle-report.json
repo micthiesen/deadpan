@@ -1,0 +1,175 @@
+{
+  "binding": {
+    "constraints": {
+      "conditioning": "bridge",
+      "motion": "still",
+      "video": {
+        "frame_rate": {
+          "denominator": 1001,
+          "numerator": 30000
+        },
+        "frames": 30,
+        "height": 320,
+        "width": 768
+      }
+    },
+    "identity": {
+      "attempt_id": "attempt-1",
+      "request_id": "probe-322107e5e7804b3b8e642a0e0e5e278b"
+    },
+    "input": {
+      "manifest": "inputs/context.json",
+      "sha256": "0d3980bdf9f1b831def380de4321199731044e3090c822f519a1ea3e7e744cb8"
+    },
+    "plan": {
+      "interpolation": "linear",
+      "native": {
+        "frame_count": 25,
+        "frame_rate": {
+          "denominator": 1,
+          "numerator": 24
+        },
+        "height": 320,
+        "width": 768
+      },
+      "operation": "bridge",
+      "project": {
+        "frame_rate": {
+          "denominator": 1001,
+          "numerator": 30000
+        },
+        "interior_frames": 30
+      },
+      "sampling": {
+        "endpoint_policy": "interior_only"
+      },
+      "schema_version": 1,
+      "timing": {
+        "actual_boundary_duration": {
+          "denominator": "1",
+          "numerator": "1"
+        },
+        "requested_boundary_duration": {
+          "denominator": "30000",
+          "numerator": "31031"
+        },
+        "retime_deviation": {
+          "denominator": "30000",
+          "numerator": "-1031"
+        }
+      }
+    },
+    "project_id": "probe-322107e5e7804b3b8e642a0e0e5e278b",
+    "provider": {
+      "pack_id": "ltx-2.3-q4-development",
+      "pack_version": "56a5866d",
+      "runtime_id": "ltx-mlx-development",
+      "runtime_version": "0.15.8+deadpan1",
+      "seed": 1
+    },
+    "revision_id": "revision-1",
+    "target": {
+      "hold_id": "hold-1",
+      "request_version": 1
+    }
+  },
+  "declaration": {
+    "native": {
+      "byte_length": 4911319,
+      "reference": "outputs/native.mp4",
+      "sha256": "c9d34268df14d105bb4f3799e9bfc9b946ad153de43e6ee4a73a44bb7833be33"
+    },
+    "provenance": {
+      "byte_length": 37192,
+      "reference": "outputs/provenance.json",
+      "sha256": "e16a5fa19339ea57c9e9da9cfe63142d73ddb4691d41178d273c2c64b1d1006a"
+    },
+    "provider": {
+      "pack_id": "ltx-2.3-q4-development",
+      "pack_version": "56a5866d",
+      "runtime_id": "ltx-mlx-development",
+      "runtime_version": "0.15.8+deadpan1",
+      "seed": 1
+    },
+    "video": {
+      "frame_rate": {
+        "denominator": 1,
+        "numerator": 24
+      },
+      "frames": 25,
+      "height": 320,
+      "width": 768
+    }
+  },
+  "elapsed_seconds": 4.958437292,
+  "native": {
+    "object": {
+      "byte_length": 4544157,
+      "content": {
+        "algorithm": "blake3",
+        "digest": "2ff6ad67d007a37dd2c1af68abe6613496ebe3961ebb58e1cca7d0ad510d175f"
+      }
+    },
+    "report": {
+      "discarded_audio_streams": 0,
+      "ffv1_version": 3,
+      "first_output_pts": 0,
+      "input_rgb_sha256": "be4ffce12b048457bcab1779eefe8683f41c242d013be7f488c25416491efe1a",
+      "input_time_base_den": 24,
+      "input_time_base_num": 1,
+      "last_output_pts": 1000,
+      "output_bytes": 4544157,
+      "output_rgb_sha256": "be4ffce12b048457bcab1779eefe8683f41c242d013be7f488c25416491efe1a",
+      "output_time_base_den": 1000,
+      "output_time_base_num": 1,
+      "protocol": 1,
+      "slice_crc": true,
+      "video": {
+        "frames": 25,
+        "height": 320,
+        "rate_den": 1,
+        "rate_num": 24,
+        "width": 768
+      }
+    }
+  },
+  "provenance": {
+    "byte_length": 43275,
+    "content": {
+      "algorithm": "blake3",
+      "digest": "afffb49ae268b955f92cce54ed5012487f414e644195d940d9b688fc2126443f"
+    }
+  },
+  "sampled": {
+    "object": {
+      "byte_length": 5450240,
+      "content": {
+        "algorithm": "blake3",
+        "digest": "c215c05ba77e3a743caccb35d74ad836175763d1272b9c84fd46e2c075d8047a"
+      }
+    },
+    "report": {
+      "discarded_audio_streams": 0,
+      "ffv1_version": 3,
+      "first_output_pts": 0,
+      "input_rgb_sha256": "be4ffce12b048457bcab1779eefe8683f41c242d013be7f488c25416491efe1a",
+      "input_time_base_den": 24,
+      "input_time_base_num": 1,
+      "last_output_pts": 968,
+      "output_bytes": 5450240,
+      "output_rgb_sha256": "eda362044e57353435b56756be4143419a3bb6ed52bb2f849102b3eff962c71a",
+      "output_time_base_den": 1000,
+      "output_time_base_num": 1,
+      "protocol": 1,
+      "slice_crc": true,
+      "video": {
+        "frames": 30,
+        "height": 320,
+        "rate_den": 1001,
+        "rate_num": 30000,
+        "width": 768
+      }
+    }
+  },
+  "scope": "complete media/provenance qualification; no selected-Ready persistence or acceptance"
+}

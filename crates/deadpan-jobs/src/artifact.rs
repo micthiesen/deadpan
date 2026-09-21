@@ -69,16 +69,33 @@ impl ArtifactWorkspace {
         declared: &WorkspaceArtifact,
         limits: ArtifactLimits,
     ) -> Result<HashedArtifactSnapshot, ArtifactError> {
-        self.snapshot_after_open(output_scope, declared, limits, || {})
+        self.snapshot_with_hooks(output_scope, declared, limits, || Ok(()), || {}, |_| {})
     }
 
-    fn snapshot_after_open(
+    /// Freezes a worker output while allowing the host to stop bounded copying
+    /// for cancellation or a hard deadline. `check` must be cheap and
+    /// nonblocking. It runs before filesystem access and around every bounded
+    /// source-read, hash, and snapshot-write chunk.
+    pub fn snapshot_with_control(
         &self,
         output_scope: &WorkspaceRef,
         declared: &WorkspaceArtifact,
         limits: ArtifactLimits,
-        after_open: impl FnOnce(),
+        check: impl FnMut() -> Result<(), SnapshotInterruption>,
     ) -> Result<HashedArtifactSnapshot, ArtifactError> {
+        self.snapshot_with_hooks(output_scope, declared, limits, check, || {}, |_| {})
+    }
+
+    fn snapshot_with_hooks(
+        &self,
+        output_scope: &WorkspaceRef,
+        declared: &WorkspaceArtifact,
+        limits: ArtifactLimits,
+        mut check: impl FnMut() -> Result<(), SnapshotInterruption>,
+        after_open: impl FnOnce(),
+        mut after_chunk: impl FnMut(u64),
+    ) -> Result<HashedArtifactSnapshot, ArtifactError> {
+        check()?;
         require_below_scope(output_scope, declared.reference())?;
         if declared.byte_length() > limits.maximum_bytes {
             return Err(ArtifactError::TooLarge {
@@ -93,6 +110,7 @@ impl ArtifactWorkspace {
             .expect("WorkspaceRef always has at least one component");
         let mut opened_directory = None;
         for component in parents {
+            check()?;
             let parent = opened_directory.as_ref().unwrap_or(&self.root);
             let directory = openat(
                 parent,
@@ -101,22 +119,27 @@ impl ArtifactWorkspace {
                 Mode::empty(),
             )
             .map_err(|source| component_error(declared.reference(), component, source))?;
+            check()?;
             let metadata = fstat(&directory).map_err(|source| ArtifactError::System {
                 operation: "inspect output directory",
                 source,
             })?;
             self.validate_contained(&metadata, component)?;
+            check()?;
             opened_directory = Some(directory);
         }
 
+        check()?;
         let parent = opened_directory.as_ref().unwrap_or(&self.root);
         let source = self.open_artifact(parent, leaf, declared.reference())?;
+        check()?;
         let before = fstat(&source).map_err(|source| ArtifactError::System {
             operation: "inspect artifact",
             source,
         })?;
         self.validate_source(&before, declared, limits)?;
         after_open();
+        check()?;
 
         let mut source = File::from(source);
         let mut snapshot = tempfile::tempfile()?;
@@ -124,7 +147,9 @@ impl ArtifactWorkspace {
         let mut buffer = [0_u8; COPY_BUFFER_BYTES];
         let mut copied = 0_u64;
         loop {
+            check()?;
             let read = source.read(&mut buffer)?;
+            check()?;
             if read == 0 {
                 break;
             }
@@ -141,9 +166,13 @@ impl ArtifactWorkspace {
                 });
             }
             hasher.update(&buffer[..read]);
+            check()?;
             snapshot.write_all(&buffer[..read])?;
+            check()?;
+            after_chunk(copied);
         }
 
+        check()?;
         let after = rustix::fs::fstat(&source).map_err(|source| ArtifactError::System {
             operation: "reinspect artifact",
             source,
@@ -159,14 +188,18 @@ impl ArtifactWorkspace {
             });
         }
 
+        check()?;
         let observed = encode_hex(&hasher.finalize());
+        check()?;
         if observed != declared.sha256().as_str() {
             return Err(ArtifactError::HashMismatch {
                 declared: declared.sha256().to_string(),
                 observed,
             });
         }
+        check()?;
         snapshot.seek(SeekFrom::Start(0))?;
+        check()?;
         Ok(HashedArtifactSnapshot {
             file: snapshot,
             declaration: declared.clone(),
@@ -350,6 +383,16 @@ fn encode_hex(bytes: &[u8]) -> String {
     encoded
 }
 
+/// Host-owned reasons for interrupting an artifact snapshot between bounded
+/// local-file operations.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Error)]
+pub enum SnapshotInterruption {
+    #[error("cancelled")]
+    Cancelled,
+    #[error("deadline exceeded")]
+    Deadline,
+}
+
 #[derive(Debug, Error)]
 pub enum ArtifactError {
     #[error("artifact workspace is not a host-owned real directory")]
@@ -381,6 +424,8 @@ pub enum ArtifactError {
     SourceMutated,
     #[error("artifact byte budget must be positive")]
     InvalidBudget,
+    #[error("artifact snapshot interrupted: {0}")]
+    Interrupted(#[from] SnapshotInterruption),
     #[error("{operation} failed")]
     System {
         operation: &'static str,
@@ -393,6 +438,7 @@ pub enum ArtifactError {
 
 #[cfg(test)]
 mod tests {
+    use std::cell::Cell;
     use std::fs;
 
     use super::*;
@@ -412,11 +458,13 @@ mod tests {
         )
         .unwrap();
         let workspace = ArtifactWorkspace::open(scratch.path()).unwrap();
-        let result = workspace.snapshot_after_open(
+        let result = workspace.snapshot_with_hooks(
             &WorkspaceRef::new("output").unwrap(),
             &declaration,
             ArtifactLimits::new(64).unwrap(),
+            || Ok(()),
             || fs::write(&artifact_path, b"change").unwrap(),
+            |_| {},
         );
         assert!(matches!(
             result,
@@ -438,10 +486,11 @@ mod tests {
         )
         .unwrap();
         let workspace = ArtifactWorkspace::open(scratch.path()).unwrap();
-        let result = workspace.snapshot_after_open(
+        let result = workspace.snapshot_with_hooks(
             &WorkspaceRef::new("output").unwrap(),
             &declaration,
             ArtifactLimits::new(1024 * 1024).unwrap(),
+            || Ok(()),
             || {
                 let mut file = fs::OpenOptions::new()
                     .append(true)
@@ -449,8 +498,66 @@ mod tests {
                     .unwrap();
                 file.write_all(b" appended bytes").unwrap();
             },
+            |_| {},
         );
         assert!(matches!(result, Err(ArtifactError::SourceMutated)));
+    }
+
+    #[test]
+    fn cancellation_and_deadline_abort_between_copy_chunks() {
+        for interruption in [
+            SnapshotInterruption::Cancelled,
+            SnapshotInterruption::Deadline,
+        ] {
+            let scratch = tempfile::tempdir().unwrap();
+            let output = scratch.path().join("output");
+            fs::create_dir(&output).unwrap();
+            let bytes = vec![0x5a; COPY_BUFFER_BYTES * 3];
+            let artifact_path = output.join("candidate.bin");
+            fs::write(&artifact_path, &bytes).unwrap();
+            let declaration = WorkspaceArtifact::new(
+                WorkspaceRef::new("output/candidate.bin").unwrap(),
+                Sha256::new(encode_hex(&Sha256Hasher::digest(&bytes))).unwrap(),
+                bytes.len() as u64,
+            )
+            .unwrap();
+            let workspace = ArtifactWorkspace::open(scratch.path()).unwrap();
+            let interrupted = Cell::new(false);
+            let copied_chunks = Cell::new(0_u32);
+            let result = workspace.snapshot_with_hooks(
+                &WorkspaceRef::new("output").unwrap(),
+                &declaration,
+                ArtifactLimits::new(bytes.len() as u64).unwrap(),
+                || {
+                    if interrupted.get() {
+                        Err(interruption)
+                    } else {
+                        Ok(())
+                    }
+                },
+                || {},
+                |copied| {
+                    copied_chunks.set(copied_chunks.get() + 1);
+                    assert_eq!(copied, COPY_BUFFER_BYTES as u64);
+                    interrupted.set(true);
+                },
+            );
+            assert!(
+                matches!(result, Err(ArtifactError::Interrupted(reason)) if reason == interruption)
+            );
+            assert_eq!(copied_chunks.get(), 1);
+
+            let mut complete = workspace
+                .snapshot(
+                    &WorkspaceRef::new("output").unwrap(),
+                    &declaration,
+                    ArtifactLimits::new(bytes.len() as u64).unwrap(),
+                )
+                .unwrap();
+            let mut observed = Vec::new();
+            complete.read_to_end(&mut observed).unwrap();
+            assert_eq!(observed, bytes);
+        }
     }
 
     #[test]

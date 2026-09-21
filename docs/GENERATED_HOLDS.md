@@ -53,8 +53,9 @@ History-aware media reference accounting and cleanup remain unimplemented.
 
 ## Storage and migration
 
-Database schema 7 stores core schema 5 while retaining the operational generation
-tables introduced in database schemas 5 and 6. Schemas 1 through 6 migrate through
+Database schema 8 stores core schema 5 while retaining the operational generation
+tables introduced in database schemas 5 and 6 and adding separate
+[modern bundle receipts](GENERATION_BUNDLES.md). Schemas 1 through 6 migrate through
 complete chronological replay on a consistent backup. Frozen legacy adapters reject
 new generated providers and commands even when nested in old subtrees, gaps, or
 patches. Legacy asset records also retain their original SHA-256-only contract;
@@ -62,6 +63,8 @@ the newer BLAKE3 vocabulary cannot enter an old document, command, or patch.
 Every old snapshot and forward/inverse transaction is compared during
 replay. Existing requests, clocks, attempts, candidate receipts, and selection rows
 remain unchanged. Interrupted-job recovery occurs only on a subsequent writer open.
+Schema-7 history already uses core schema 5 and is validated without rewriting;
+its requests remain legacy and gain no inferred bridge plan.
 
 Generic store ingress examines the resulting authored providers, including Repeat
 gaps and override-owned nodes. It can retain or copy an already present artifact,

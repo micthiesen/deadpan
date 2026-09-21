@@ -1,0 +1,121 @@
+{
+  "codec": "/Users/michael/Code/deadpan/target/debug/deadpan-media-worker",
+  "workspace": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-native-bundle-v2-mi0kfnxo/worker",
+  "request": {
+    "operation": "generate_bridge",
+    "protocol": 2,
+    "identity": {
+      "request_id": "probe-322107e5e7804b3b8e642a0e0e5e278b",
+      "attempt_id": "attempt-1"
+    },
+    "cancellation_token": "63112f25b75146bf882a6249ad0805ad",
+    "project_id": "probe-322107e5e7804b3b8e642a0e0e5e278b",
+    "revision_id": "revision-1",
+    "target": {
+      "hold_id": "hold-1",
+      "request_version": 1
+    },
+    "input": {
+      "manifest": "inputs/context.json",
+      "sha256": "0d3980bdf9f1b831def380de4321199731044e3090c822f519a1ea3e7e744cb8"
+    },
+    "output_workspace": "outputs",
+    "constraints": {
+      "conditioning": "bridge",
+      "motion": "still",
+      "video": {
+        "frames": 30,
+        "frame_rate": {
+          "numerator": 30000,
+          "denominator": 1001
+        },
+        "width": 768,
+        "height": 320
+      }
+    },
+    "provider": {
+      "pack_id": "ltx-2.3-q4-development",
+      "pack_version": "56a5866d",
+      "runtime_id": "ltx-mlx-development",
+      "runtime_version": "0.15.8+deadpan1",
+      "seed": 1
+    },
+    "plan": {
+      "schema_version": 1,
+      "operation": "bridge",
+      "interpolation": "linear",
+      "project": {
+        "interior_frames": 30,
+        "frame_rate": {
+          "numerator": 30000,
+          "denominator": 1001
+        }
+      },
+      "native": {
+        "frame_count": 25,
+        "frame_rate": {
+          "numerator": 24,
+          "denominator": 1
+        },
+        "width": 768,
+        "height": 320
+      },
+      "timing": {
+        "requested_boundary_duration": {
+          "numerator": "31031",
+          "denominator": "30000"
+        },
+        "actual_boundary_duration": {
+          "numerator": "1",
+          "denominator": "1"
+        },
+        "retime_deviation": {
+          "numerator": "-1031",
+          "denominator": "30000"
+        }
+      },
+      "sampling": {
+        "endpoint_policy": "interior_only"
+      }
+    }
+  },
+  "candidate": {
+    "native": {
+      "byte_length": 4911319,
+      "reference": "outputs/native.mp4",
+      "sha256": "c9d34268df14d105bb4f3799e9bfc9b946ad153de43e6ee4a73a44bb7833be33"
+    },
+    "provenance": {
+      "byte_length": 37192,
+      "reference": "outputs/provenance.json",
+      "sha256": "e16a5fa19339ea57c9e9da9cfe63142d73ddb4691d41178d273c2c64b1d1006a"
+    },
+    "provider": {
+      "pack_id": "ltx-2.3-q4-development",
+      "pack_version": "56a5866d",
+      "runtime_id": "ltx-mlx-development",
+      "runtime_version": "0.15.8+deadpan1",
+      "seed": 1
+    },
+    "video": {
+      "frame_rate": {
+        "denominator": 1,
+        "numerator": 24
+      },
+      "frames": 25,
+      "height": 320,
+      "width": 768
+    }
+  },
+  "output_directory": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-native-bundle-v2-mi0kfnxo/qualified",
+  "limits": {
+    "media": {
+      "max_input_bytes": 134217728,
+      "max_output_bytes": 134217728,
+      "max_scratch_bytes": 67108864,
+      "timeout_ms": 120000
+    },
+    "maximum_worker_provenance_bytes": 4194304,
+    "maximum_host_provenance_bytes": 1048576
+  }
+}

@@ -14,7 +14,7 @@ pub fn report() -> Result<serde_json::Value, CliError> {
         },
         "document_schema": deadpan_core::DOCUMENT_SCHEMA_VERSION,
         "database_schema": deadpan_store::DATABASE_SCHEMA_VERSION,
-        "partial": ["structural-editing-commands", "sqlite-project-history", "schema-1-through-6-migration", "indexed-picture-plan", "exact-boundary-selectors", "persistent-marks", "sparse-play-overrides", "nested-occurrence-edits", "persistent-generation-requests", "persistent-generation-attempts", "authored-generated-hold-semantics", "generated-media-conversion"],
+        "partial": ["structural-editing-commands", "sqlite-project-history", "schema-1-through-7-migration", "indexed-picture-plan", "exact-boundary-selectors", "persistent-marks", "sparse-play-overrides", "nested-occurrence-edits", "persistent-generation-requests", "persistent-generation-attempts", "authored-generated-hold-semantics", "generated-media-conversion", "native-bridge-bundle-qualification"],
         "unimplemented": ["app-media-import-and-playback", "audio-output", "keyboard-editor", "media-preview", "analysis", "ai-generation", "youtube-import", "export", "distribution"],
     }))
 }

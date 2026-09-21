@@ -10,7 +10,8 @@ use deadpan_core::{
     MAX_DOCUMENT_NODES, MAX_IDENTITY_BYTES, NodeId, NodeKind, ProjectDocument, RevisionId,
 };
 use deadpan_jobs::{
-    HoldConstraints, ProviderSelection, Relevance, RequestId, RequestVersion, Sha256, TargetBinding,
+    BridgeGenerationPlan, ConditioningMode, HoldConstraints, ProviderSelection, Relevance,
+    RequestId, RequestVersion, Sha256, TargetBinding,
 };
 use rusqlite::{Connection, OptionalExtension, Row, params};
 
@@ -35,6 +36,7 @@ CREATE TABLE generation_requests (
     context_sha256 TEXT NOT NULL,
     constraints TEXT NOT NULL CHECK (json_valid(constraints)),
     provider TEXT NOT NULL CHECK (json_valid(provider)),
+    bridge_plan TEXT CHECK (bridge_plan IS NULL OR json_valid(bridge_plan)),
     relevance TEXT NOT NULL CHECK (relevance IN ('current','stale','detached')),
     UNIQUE (hold_id, request_version)
 ) STRICT;
@@ -58,6 +60,7 @@ pub struct StoredGenerationRequest {
     pub binding: TargetBinding,
     pub constraints: HoldConstraints,
     pub provider: ProviderSelection,
+    pub bridge_plan: Option<BridgeGenerationPlan>,
     pub relevance: Relevance,
 }
 
@@ -86,6 +89,15 @@ pub(crate) fn create_tables(connection: &Connection) -> Result<(), StoreError> {
     Ok(())
 }
 
+pub(crate) fn add_schema8_columns(connection: &Connection) -> Result<(), StoreError> {
+    connection.execute(
+        "ALTER TABLE generation_requests ADD COLUMN bridge_plan TEXT
+         CHECK (bridge_plan IS NULL OR json_valid(bridge_plan))",
+        [],
+    )?;
+    Ok(())
+}
+
 pub(crate) fn check_stored_sizes(connection: &Connection) -> Result<(), StoreError> {
     let invalid_requests: i64 = connection.query_row(
         "SELECT COUNT(*) FROM generation_requests WHERE
@@ -97,6 +109,8 @@ pub(crate) fn check_stored_sizes(connection: &Connection) -> Result<(), StoreErr
             typeof(context_sha256)!='text' OR length(CAST(context_sha256 AS BLOB))!=64 OR
             typeof(constraints)!='text' OR length(CAST(constraints AS BLOB))>?2 OR
             typeof(provider)!='text' OR length(CAST(provider AS BLOB))>?2 OR
+            (bridge_plan IS NOT NULL AND
+             (typeof(bridge_plan)!='text' OR length(CAST(bridge_plan AS BLOB))>?2)) OR
             typeof(relevance)!='text' OR length(CAST(relevance AS BLOB)) NOT BETWEEN 5 AND 8",
         params![MAX_IDENTITY_BYTES as i64, MAX_REQUEST_JSON_BYTES as i64],
         |row| row.get(0),
@@ -158,6 +172,9 @@ pub(crate) fn validate_store(connection: &Connection) -> Result<(), StoreError> 
                 return Err(integrity("multiple current requests target one Hold"));
             }
             prior_current_hold = Some(request.binding.hold_id.clone());
+        }
+        if let Some(plan) = request.bridge_plan.as_ref() {
+            validate_bridge_plan_binding(&request.constraints, plan)?;
         }
         let origin =
             validation::read_revision(connection, request.origin_revision.as_str())?.document;
@@ -237,6 +254,24 @@ impl ProjectStore {
         &mut self,
         input: GenerationRequestInput,
     ) -> Result<StoredGenerationRequest, StoreError> {
+        self.allocate_generation_request_with_plan(input, None)
+    }
+
+    /// Allocates a new request bound to an immutable bridge plan. Legacy
+    /// allocation intentionally remains V1/unqualified and stores no plan.
+    pub fn record_bridge_generation_request(
+        &mut self,
+        input: GenerationRequestInput,
+        plan: BridgeGenerationPlan,
+    ) -> Result<StoredGenerationRequest, StoreError> {
+        self.allocate_generation_request_with_plan(input, Some(plan))
+    }
+
+    fn allocate_generation_request_with_plan(
+        &mut self,
+        input: GenerationRequestInput,
+        bridge_plan: Option<BridgeGenerationPlan>,
+    ) -> Result<StoredGenerationRequest, StoreError> {
         self.require_writer()?;
         let transaction = self
             .connection
@@ -244,6 +279,9 @@ impl ProjectStore {
         let document = read_snapshot(&transaction)?;
         require_revision(&document, &input.expected_revision)?;
         validate_new_target(&document, &input.hold_id, &input.constraints)?;
+        if let Some(plan) = bridge_plan.as_ref() {
+            validate_bridge_plan_binding(&input.constraints, plan)?;
+        }
 
         let exists: Option<i64> = transaction
             .query_row(
@@ -288,11 +326,15 @@ impl ProjectStore {
 
         let constraints = bounded_json(&input.constraints, "generation constraints")?;
         let provider = bounded_json(&input.provider, "generation provider")?;
+        let bridge_plan_json = bridge_plan
+            .as_ref()
+            .map(|plan| bounded_json(plan, "bridge generation plan"))
+            .transpose()?;
         transaction.execute(
             "INSERT INTO generation_requests(
                 request_id,project_id,hold_id,request_version,origin_revision,
-                context_sha256,constraints,provider,relevance
-             ) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,'current')",
+                context_sha256,constraints,provider,bridge_plan,relevance
+             ) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,'current')",
             params![
                 input.request_id.as_str(),
                 document.project_id().as_str(),
@@ -302,6 +344,7 @@ impl ProjectStore {
                 input.context_sha256.as_str(),
                 constraints,
                 provider,
+                bridge_plan_json,
             ],
         )?;
         transaction.commit()?;
@@ -317,6 +360,7 @@ impl ProjectStore {
             },
             constraints: input.constraints,
             provider: input.provider,
+            bridge_plan,
             relevance: Relevance::Current,
         })
     }
@@ -515,6 +559,10 @@ const BOUNDED_REQUEST_SELECT: &str = "SELECT
          AND length(CAST(constraints AS BLOB))<=16384 THEN constraints END,
     CASE WHEN typeof(provider)='text'
          AND length(CAST(provider AS BLOB))<=16384 THEN provider END,
+    CASE WHEN bridge_plan IS NULL THEN NULL
+         WHEN typeof(bridge_plan)='text' AND length(CAST(bridge_plan AS BLOB))<=16384
+         THEN bridge_plan
+         ELSE '__invalid__' END,
     CASE WHEN relevance IN ('current','stale','detached') THEN relevance END
  FROM generation_requests";
 
@@ -527,7 +575,8 @@ fn parse_request_row(row: &Row<'_>) -> Result<StoredGenerationRequest, StoreErro
     let context_sha256: Option<String> = row.get(5)?;
     let constraints: Option<String> = row.get(6)?;
     let provider: Option<String> = row.get(7)?;
-    let relevance: Option<String> = row.get(8)?;
+    let bridge_plan: Option<String> = row.get(8)?;
+    let relevance: Option<String> = row.get(9)?;
     (|| {
         let request_id = RequestId::new(required(request_id, "request ID")?)
             .map_err(|_| integrity("invalid generation request ID"))?;
@@ -547,6 +596,9 @@ fn parse_request_row(row: &Row<'_>) -> Result<StoredGenerationRequest, StoreErro
             "generation constraints",
         )?;
         let provider = strict_json(&required(provider, "provider")?, "generation provider")?;
+        let bridge_plan = bridge_plan
+            .map(|value| strict_json(&value, "bridge generation plan"))
+            .transpose()?;
         let relevance = match required(relevance, "relevance")?.as_str() {
             "current" => Relevance::Current,
             "stale" => Relevance::Stale,
@@ -564,6 +616,7 @@ fn parse_request_row(row: &Row<'_>) -> Result<StoredGenerationRequest, StoreErro
             },
             constraints,
             provider,
+            bridge_plan,
             relevance,
         })
     })()
@@ -605,4 +658,31 @@ fn integrity(message: &str) -> StoreError {
 
 fn plan_error(message: &str) -> StoreError {
     StoreError::GenerationPlan(message.into())
+}
+
+fn validate_bridge_plan_binding(
+    constraints: &HoldConstraints,
+    plan: &BridgeGenerationPlan,
+) -> Result<(), StoreError> {
+    if constraints.conditioning != ConditioningMode::Bridge {
+        return Err(plan_error(
+            "a bridge generation plan requires bridge conditioning",
+        ));
+    }
+    if plan.project_frames() != constraints.video.frames()
+        || plan.project_frame_rate() != constraints.video.frame_rate()
+    {
+        return Err(plan_error(
+            "bridge generation plan does not match the requested project video",
+        ));
+    }
+    let dimensions = plan.native_dimensions();
+    if dimensions.width() != constraints.video.width()
+        || dimensions.height() != constraints.video.height()
+    {
+        return Err(plan_error(
+            "bridge generation plan dimensions do not match the requested video",
+        ));
+    }
+    Ok(())
 }

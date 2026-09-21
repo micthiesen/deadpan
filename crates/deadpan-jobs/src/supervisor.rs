@@ -22,7 +22,8 @@ use rustix::process::{Pid, Signal, WaitId, WaitIdOptions, kill_process_group, wa
 use thiserror::Error;
 
 use crate::protocol::{
-    HostMessage, MessageIdentity, WorkerMessage, read_worker_message, write_host_message,
+    HostMessage, MessageIdentity, ProtocolVersion, WorkerMessage, read_worker_message,
+    write_host_message,
 };
 
 const EVENT_CAPACITY: usize = 8;
@@ -179,6 +180,7 @@ pub struct WorkerProcess {
     child: Child,
     pid: Pid,
     identity: MessageIdentity,
+    protocol: ProtocolVersion,
     cancel_message: HostMessage,
     control: Option<mpsc::SyncSender<HostMessage>>,
     events: Option<mpsc::Receiver<PipeEvent>>,
@@ -205,6 +207,12 @@ impl WorkerProcess {
             .map_err(|error| SupervisorError::Request(error.to_string()))?;
         let (identity, cancel_message) = match &request {
             HostMessage::GenerateHold {
+                protocol,
+                identity,
+                cancellation_token,
+                ..
+            }
+            | HostMessage::GenerateBridge {
                 protocol,
                 identity,
                 cancellation_token,
@@ -254,6 +262,7 @@ impl WorkerProcess {
             child,
             pid,
             identity,
+            protocol: request.protocol(),
             cancel_message,
             control: Some(control_tx),
             events: Some(event_rx),
@@ -516,7 +525,12 @@ impl WorkerProcess {
     ) -> Result<(), SupervisorError> {
         match event {
             PipeEvent::Message(message) if !self.faulted => {
-                if message.identity() != &self.identity {
+                if message.protocol() != self.protocol {
+                    self.fail(
+                        "worker response protocol differs from this attempt".into(),
+                        output,
+                    )?;
+                } else if message.identity() != &self.identity {
                     self.fail(
                         "worker response identity differs from this attempt".into(),
                         output,
@@ -530,13 +544,17 @@ impl WorkerProcess {
                     if matches!(
                         *message,
                         WorkerMessage::Completed { .. }
+                            | WorkerMessage::CompletedBridge { .. }
                             | WorkerMessage::Failed { .. }
                             | WorkerMessage::Cancelled { .. }
                     ) {
                         self.terminal_received = Some(now);
                         self.control = None;
                     }
-                    if matches!(*message, WorkerMessage::Completed { .. }) {
+                    if matches!(
+                        *message,
+                        WorkerMessage::Completed { .. } | WorkerMessage::CompletedBridge { .. }
+                    ) {
                         if self.cancel_started.is_none() {
                             self.completed = Some(message);
                         }

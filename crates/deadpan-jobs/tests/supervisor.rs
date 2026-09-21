@@ -64,6 +64,47 @@ fn request() -> HostMessage {
     }
 }
 
+fn bridge_request() -> HostMessage {
+    let plan = BridgeGenerationPlan::new(
+        FrameDuration::new(25).unwrap(),
+        FrameRate::new(24, 1).unwrap(),
+        &BridgeCapability::new(
+            true,
+            FrameRate::new(24, 1).unwrap(),
+            FrameCountFormula::new(1, 0, 2, 97).unwrap(),
+            DimensionLimits::new(
+                AxisLimits::new(512, 512, 1).unwrap(),
+                AxisLimits::new(320, 320, 1).unwrap(),
+            ),
+        ),
+        NativeDimensions::new(512, 320).unwrap(),
+    )
+    .unwrap();
+    HostMessage::GenerateBridge {
+        protocol: ProtocolVersion::V2,
+        identity: identity(),
+        cancellation_token: CancellationToken::new("cancel").unwrap(),
+        project_id: ProjectId::new("project").unwrap(),
+        revision_id: RevisionId::new("revision").unwrap(),
+        target: HoldTarget {
+            hold_id: NodeId::new("hold").unwrap(),
+            request_version: RequestVersion::new(1).unwrap(),
+        },
+        input: ContextArtifact {
+            manifest: WorkspaceRef::new("inputs/context.json").unwrap(),
+            sha256: Sha256::new("a".repeat(64)).unwrap(),
+        },
+        output_workspace: WorkspaceRef::new("outputs").unwrap(),
+        constraints: HoldConstraints {
+            video: video(),
+            conditioning: ConditioningMode::Bridge,
+            motion: MotionAmount::Still,
+        },
+        provider: Box::new(provider()),
+        plan: Box::new(plan),
+    }
+}
+
 fn completed() -> WorkerMessage {
     WorkerMessage::Completed {
         protocol: ProtocolVersion::V1,
@@ -136,7 +177,7 @@ fn finish(process: &mut WorkerProcess) -> Vec<ProcessEvent> {
         let batch = process.poll(Instant::now()).unwrap();
         assert!(batch.len() <= 19, "poll must have a bounded event batch");
         if batch.iter().any(|event| matches!(event,
-            ProcessEvent::Message(message) if matches!(message.as_ref(), WorkerMessage::Completed { .. }))) {
+            ProcessEvent::Message(message) if matches!(message.as_ref(), WorkerMessage::Completed { .. } | WorkerMessage::CompletedBridge { .. }))) {
             assert!(matches!(batch.last(), Some(ProcessEvent::Exited { status, cancellation_escalated: false }) if status.success()),
                 "candidate escaped before clean process/pipe teardown");
         }
@@ -222,30 +263,35 @@ fn stderr_is_drained_but_retained_tail_is_bounded() {
 
 #[test]
 fn cooperative_cancel_preserves_identity_and_does_not_escalate() {
-    let workspace = tempfile::tempdir().unwrap();
-    responses(
-        workspace.path(),
-        &[WorkerMessage::Cancelled {
-            protocol: ProtocolVersion::V1,
-            identity: identity(),
-        }],
-    );
-    let mut specification = spec(workspace.path(), "cancel");
-    specification.limits.cancellation_grace = Duration::from_secs(2);
-    let mut process = WorkerProcess::spawn(specification, request()).unwrap();
-    assert!(process.request_cancel(Instant::now()).unwrap());
-    assert!(!process.request_cancel(Instant::now()).unwrap());
-    let events = finish(&mut process);
-    assert!(faults(&events).is_empty());
-    assert!(
-        matches!(events.last(), Some(ProcessEvent::Exited { status, cancellation_escalated: false }) if status.success())
-    );
-    let cancel: HostMessage =
-        serde_json::from_slice(&fs::read(workspace.path().join("cancellation.json")).unwrap())
-            .unwrap();
-    assert!(
-        matches!(cancel, HostMessage::Cancel { identity: actual, cancellation_token, .. } if actual == identity() && cancellation_token.as_str() == "cancel")
-    );
+    for (request, protocol) in [
+        (request(), ProtocolVersion::V1),
+        (bridge_request(), ProtocolVersion::V2),
+    ] {
+        let workspace = tempfile::tempdir().unwrap();
+        responses(
+            workspace.path(),
+            &[WorkerMessage::Cancelled {
+                protocol,
+                identity: identity(),
+            }],
+        );
+        let mut specification = spec(workspace.path(), "cancel");
+        specification.limits.cancellation_grace = Duration::from_secs(2);
+        let mut process = WorkerProcess::spawn(specification, request).unwrap();
+        assert!(process.request_cancel(Instant::now()).unwrap());
+        assert!(!process.request_cancel(Instant::now()).unwrap());
+        let events = finish(&mut process);
+        assert!(faults(&events).is_empty());
+        assert!(
+            matches!(events.last(), Some(ProcessEvent::Exited { status, cancellation_escalated: false }) if status.success())
+        );
+        let cancel: HostMessage =
+            serde_json::from_slice(&fs::read(workspace.path().join("cancellation.json")).unwrap())
+                .unwrap();
+        assert!(
+            matches!(cancel, HostMessage::Cancel { protocol: actual_protocol, identity: actual, cancellation_token } if actual_protocol == protocol && actual == identity() && cancellation_token.as_str() == "cancel")
+        );
+    }
 }
 
 #[test]
@@ -367,6 +413,33 @@ fn wrong_attempt_and_messages_after_completion_are_rejected() {
         assert!(!events.iter().any(|event| matches!(event,
             ProcessEvent::Message(message) if matches!(message.as_ref(), WorkerMessage::Completed { .. }))));
     }
+}
+
+#[test]
+fn response_protocol_must_match_initial_request() {
+    let workspace = tempfile::tempdir().unwrap();
+    responses(
+        workspace.path(),
+        &[WorkerMessage::Stage {
+            protocol: ProtocolVersion::V2,
+            identity: identity(),
+            stage: WorkerStage::Preflight,
+        }],
+    );
+    let mut process = WorkerProcess::spawn(spec(workspace.path(), "messages"), request()).unwrap();
+    let events = finish(&mut process);
+    assert!(
+        faults(&events)
+            .iter()
+            .any(|reason| reason.contains("protocol differs")),
+        "{:?}",
+        faults(&events)
+    );
+    assert!(
+        !events
+            .iter()
+            .any(|event| matches!(event, ProcessEvent::Message(_)))
+    );
 }
 
 #[test]

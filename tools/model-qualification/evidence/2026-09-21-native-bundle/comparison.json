@@ -1,0 +1,18 @@
+{
+  "scope": "One real V2 native generation plus independent host bridge sampling; no seam/quality/acceptance claim.",
+  "native_rgb_equal": true,
+  "sampled_rgb_equal": true,
+  "native_frames": 25,
+  "sampled_frames": 30,
+  "model_asset_receipts": 31,
+  "loaded_runtime_source_receipts": 102,
+  "file_sha256": {
+    "native.mkv": "2b6a673758b7c75bb7bfe4f0407cde5ac21fd461929e94ccd6d8a2462af275f7",
+    "sampled.mkv": "710ca5aac7b76d70af14648687480b175ac63425da24b07da7cb4152c55d0c8f",
+    "provenance.json": "86f7bae53fd3ff0b6938a79bf93d3200570af7f5c89c70cc1ce3a97444db9d62"
+  },
+  "helper_sha256": "a8565fc0d7f77a559b92baaf07d756054aaef1a08294086fd61e327e9159069c",
+  "measured_against_parent_revision": "63531f78799d5329f5c9fa7f246a9144f9dc156f",
+  "tested_source_revision": "containing commit; adapter hashes retained in worker provenance; remaining host source manifest recorded after review",
+  "host_selected_capability_verified": true
+}

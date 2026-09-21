@@ -29,7 +29,8 @@ Current crates:
 - `crates/deadpan-core`: exact time, validated documents, structural commands, and reversible patches; no I/O or identity generation.
 - `crates/deadpan-store`: authoritative SQLite packages, immutable revisions, atomic writes, durable undo/redo, generation request relevance, persistent attempts and restart recovery, and database checkpoints.
 - `crates/deadpan-plan`: immutable indexed picture mappings through structural beats, using exact frame centers and original source identities; no decoding or DSP.
-- `crates/deadpan-jobs`: bounded worker protocol, pure attempt lifecycle, process supervision, contained artifact snapshots, and exact bridge-generation planning. The real MLX adapter in `tools/model-qualification` is a development harness; app inference and durable media promotion remain open.
+- `crates/deadpan-jobs`: bounded worker protocol, pure attempt lifecycle, process supervision, contained artifact snapshots, and exact bridge-generation planning. The real MLX adapter in `tools/model-qualification` is a development harness; app inference remains open.
+- `crates/deadpan-models`: native bridge bundle qualification, required provenance/binding checks, and immutable host provenance. Model installation, app scheduling, audition, and authored acceptance remain open.
 - `crates/deadpan-media`: safe host conversion boundary, immutable input snapshots, cancellation/deadlines, strict helper reports, and private BLAKE3 output. No database or authored-state mutation.
 - `native/deadpan-media-worker`: process-isolated FFmpeg conversion and independent decode verification through bounded descriptor-only AVIO. Only the documented FFI call permits unsafe Rust. Requires the explicitly selected pinned LGPL FFmpeg development prefix.
 - `native/deadpan-process`: narrow Darwin group-membership adapter; unsafe is denied except for its documented bounded libproc call. Higher layers continue to forbid unsafe.
@@ -44,8 +45,10 @@ Every persisted edit, undo, and redo gets a never-reused revision ID. Core inver
 
 Repeat play IDs are scoped by Repeat node and allocation revision, with an ordinal inside that allocation. Preserve surviving IDs through resizing and reorder; allocate fresh IDs for growth and inserted subtrees. Imported initial snapshots reserve their allocation names even after plays are removed. Keep compact runs bounded and never expand a repeat merely to seek. Core schema 5 retains these runs, marks, and sparse overrides, and adds generated Hold metadata. Database schemas 1 through 6 replay the complete chronology directly into the current schema on a consistent copy, compare every legacy snapshot/transaction, and promote through SQLite's backup transaction only after validation. Strict legacy adapters freeze nested provider vocabulary and reject new fields, commands, and unexpected mark or override changes. Preserve the pre-migration backup.
 
-Database schema 7 stores core schema 5 and retains operational generation requests,
-attempts, validation receipts, and candidate selection. Migration upgrades authored
+Database schema 8 stores core schema 5 and retains operational generation requests,
+attempts, validation receipts, and candidate selection. It adds immutable bridge
+plans and separate modern bundle receipts; legacy requests retain no plan and
+remain protocol 1. Migration upgrades authored
 JSON through strict replay, preserves existing operational rows and clocks, and
 adds only missing operational tables. Request versions belong
 to retained per-Hold clocks outside document history. Undo/redo must never restore
@@ -67,6 +70,18 @@ Candidate receipts record a trusted host validator's declaration; metadata alone
 does not establish durable file ownership, media validity, or acceptability.
 See [attempt storage](docs/GENERATION_ATTEMPTS.md).
 
+Protocol-2 bridge workers declare native footage and provenance, never the final
+sampled master. Qualify the complete bundle against persisted intent with
+`deadpan-models`, after clean worker teardown. Use controlled artifact snapshots
+and a separately host-selected provider capability; recheck its exact plan with
+`BridgeGenerationPlan::validate_for` before media work. Retain that capability in
+host provenance. Native/sample objects may deduplicate only when video contracts agree.
+Use one shared deadline and bounded provenance serialization. Preserve exact worker
+provenance as claims alongside independent host decode reports. Publish all three
+objects before Ready; the store rechecks their hashes before its transaction.
+Ready and selection never authorize an authored provider change. Keep legacy
+sampled receipts separate. See [bundle validation](docs/GENERATION_BUNDLES.md).
+
 Generated-object publication is a filesystem operation before authored
 acceptance, never an edit by itself. Use the store's descriptor-relative
 `Media/Generated` API and algorithm-tagged BLAKE3 references. Verify bytes before
@@ -82,8 +97,8 @@ Background/Freeze fallback. Shortening or re-extending within the original sampl
 range reuses its prefix without resampling. Extending beyond that range restores
 the fallback; the host must separately allocate a replacement request. Acceptance
 and reversion are atomic core commands, including occurrence isolation. Generic
-store creation/commands reject new generated artifacts until qualified candidate
-admission exists. Metadata and core tests do not prove actual media acceptance.
+store creation/commands reject new generated artifacts until explicit qualified
+authored acceptance is integrated. Ready bundles alone do not authorize it.
 See [generated Hold semantics](docs/GENERATED_HOLDS.md).
 
 The setup workflow's TypeScript/Bun/mitools/Biome defaults do not apply to this Rust-native product. The maintained Rust sibling `beastie` supplies the initial workspace conventions; consult maintained siblings for evolving personal tooling patterns. [Dependency decisions](docs/DEPENDENCIES.md) records the pins and qualification boundaries. Do not introduce Bun, Node, Python, or shell setup as an end-user requirement. Future model workers use an app-managed private runtime selected through measurement.

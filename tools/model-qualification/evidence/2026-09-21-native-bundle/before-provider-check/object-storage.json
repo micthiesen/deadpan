@@ -1,0 +1,83 @@
+{
+  "native": {
+    "promote": {
+      "command": "promote",
+      "package": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-native-bundle-v2-mi0kfnxo/objects.deadpan",
+      "reference": {
+        "content": {
+          "algorithm": "blake3",
+          "digest": "2ff6ad67d007a37dd2c1af68abe6613496ebe3961ebb58e1cca7d0ad510d175f"
+        },
+        "byte_length": 4544157
+      }
+    },
+    "reopened": {
+      "command": "read",
+      "package": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-native-bundle-v2-mi0kfnxo/relocated-objects.deadpan",
+      "reference": {
+        "content": {
+          "algorithm": "blake3",
+          "digest": "2ff6ad67d007a37dd2c1af68abe6613496ebe3961ebb58e1cca7d0ad510d175f"
+        },
+        "byte_length": 4544157
+      },
+      "output": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-native-bundle-v2-mi0kfnxo/reopened-native.mkv",
+      "verified_blake3": "2ff6ad67d007a37dd2c1af68abe6613496ebe3961ebb58e1cca7d0ad510d175f",
+      "verified_byte_length": 4544157
+    }
+  },
+  "sampled": {
+    "promote": {
+      "command": "promote",
+      "package": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-native-bundle-v2-mi0kfnxo/objects.deadpan",
+      "reference": {
+        "content": {
+          "algorithm": "blake3",
+          "digest": "c215c05ba77e3a743caccb35d74ad836175763d1272b9c84fd46e2c075d8047a"
+        },
+        "byte_length": 5450240
+      }
+    },
+    "reopened": {
+      "command": "read",
+      "package": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-native-bundle-v2-mi0kfnxo/relocated-objects.deadpan",
+      "reference": {
+        "content": {
+          "algorithm": "blake3",
+          "digest": "c215c05ba77e3a743caccb35d74ad836175763d1272b9c84fd46e2c075d8047a"
+        },
+        "byte_length": 5450240
+      },
+      "output": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-native-bundle-v2-mi0kfnxo/reopened-sampled.mkv",
+      "verified_blake3": "c215c05ba77e3a743caccb35d74ad836175763d1272b9c84fd46e2c075d8047a",
+      "verified_byte_length": 5450240
+    }
+  },
+  "provenance": {
+    "promote": {
+      "command": "promote",
+      "package": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-native-bundle-v2-mi0kfnxo/objects.deadpan",
+      "reference": {
+        "content": {
+          "algorithm": "blake3",
+          "digest": "afffb49ae268b955f92cce54ed5012487f414e644195d940d9b688fc2126443f"
+        },
+        "byte_length": 43275
+      }
+    },
+    "reopened": {
+      "command": "read",
+      "package": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-native-bundle-v2-mi0kfnxo/relocated-objects.deadpan",
+      "reference": {
+        "content": {
+          "algorithm": "blake3",
+          "digest": "afffb49ae268b955f92cce54ed5012487f414e644195d940d9b688fc2126443f"
+        },
+        "byte_length": 43275
+      },
+      "output": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-native-bundle-v2-mi0kfnxo/reopened-provenance.json",
+      "verified_blake3": "afffb49ae268b955f92cce54ed5012487f414e644195d940d9b688fc2126443f",
+      "verified_byte_length": 43275
+    }
+  }
+}

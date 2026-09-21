@@ -22,6 +22,10 @@ cc.workspace = true
 
 [dev-dependencies]
 blake3.workspace = true
+deadpan-core.workspace = true
+deadpan-jobs.workspace = true
+deadpan-models.workspace = true
+deadpan-store.workspace = true
 sha2.workspace = true
 
 [lints.rust]

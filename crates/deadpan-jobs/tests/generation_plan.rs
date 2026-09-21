@@ -1,4 +1,4 @@
-use deadpan_core::{ExactRatio, FrameDuration, FrameRate};
+use deadpan_core::{BridgeInterpolation, ExactRatio, FrameDuration, FrameRate};
 use deadpan_jobs::{
     AxisLimits, BridgeCapability, BridgeGenerationPlan, ConditioningMode, DimensionLimits,
     FrameCountFormula, FrameInterpolation, GenerationPlanError, NativeDimensions,
@@ -337,4 +337,31 @@ fn huge_requests_fail_boundedly_without_sample_allocation() {
     .unwrap();
     let first = plan.samples().next().unwrap();
     assert_eq!(first.output_index(), 0);
+}
+
+#[test]
+fn sampling_map_preserves_exact_plan_contract() {
+    let plan = BridgeGenerationPlan::new(
+        duration(45),
+        rate(30_000, 1_001),
+        &capability(
+            true,
+            rate(24, 1),
+            FrameCountFormula::new(1, 0, 2, 97).unwrap(),
+        ),
+        dimensions(),
+    )
+    .unwrap();
+    let map = plan.sampling_map().unwrap();
+    assert_eq!(map.project_rate(), plan.project_frame_rate());
+    assert_eq!(map.native_rate(), plan.native_frame_rate());
+    assert_eq!(
+        map.native_frame_count().frames(),
+        i64::from(plan.native_frame_count())
+    );
+    assert_eq!(map.output_frame_count(), plan.project_frames());
+    assert_eq!(
+        map.interpolation(),
+        BridgeInterpolation::EncodedSrgbRgb8LinearHalfUp
+    );
 }

@@ -2,8 +2,9 @@ use deadpan_core::{NodeId, ProjectId};
 use thiserror::Error;
 
 use crate::protocol::{
-    CancellationToken, CandidateManifest, Diagnostic, MessageIdentity, RequestVersion, Sha256,
-    StageProgress, WorkerFailure, WorkerMessage, WorkerStage,
+    CancellationToken, CandidateManifest, Diagnostic, MessageIdentity, NativeCandidateManifest,
+    ProtocolVersion, RequestVersion, Sha256, StageProgress, WorkerFailure, WorkerMessage,
+    WorkerStage,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -81,13 +82,19 @@ pub enum WorkerEventOutcome {
     CancellationAcknowledged,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum CandidateDeclaration {
+    SampledV1(CandidateManifest),
+    NativeBridgeV2(NativeCandidateManifest),
+}
+
 /// A terminal worker response received after cancellation was requested.
 /// The host still owns stopping and reaping the process before the lifecycle
 /// may become [`JobState::Cancelled`].
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CancellationAcknowledgement {
     Cancelled,
-    CompletionDiscarded(CandidateManifest),
+    CompletionDiscarded(Box<CandidateDeclaration>),
 }
 
 /// Durable fields for one lifecycle attempt. Progress is intentionally absent:
@@ -97,10 +104,11 @@ pub struct LifecycleCheckpoint {
     pub identity: MessageIdentity,
     pub cancellation_token: CancellationToken,
     pub target: TargetBinding,
+    pub protocol: ProtocolVersion,
     pub state: JobState,
     pub worker_stage: Option<WorkerStage>,
     pub cancellation_acknowledgement: Option<CancellationAcknowledgement>,
-    pub candidate: Option<CandidateManifest>,
+    pub completion: Option<CandidateDeclaration>,
     pub failure: Option<JobFailure>,
 }
 
@@ -114,12 +122,13 @@ pub struct JobLifecycle {
     identity: MessageIdentity,
     cancellation_token: CancellationToken,
     target: TargetBinding,
+    protocol: ProtocolVersion,
     state: JobState,
     relevance: Relevance,
     worker_stage: Option<WorkerStage>,
     progress: Option<JobProgress>,
     cancellation_acknowledgement: Option<CancellationAcknowledgement>,
-    candidate: Option<CandidateManifest>,
+    completion: Option<CandidateDeclaration>,
     failure: Option<JobFailure>,
 }
 
@@ -129,16 +138,26 @@ impl JobLifecycle {
         cancellation_token: CancellationToken,
         target: TargetBinding,
     ) -> Self {
+        Self::new_with_protocol(identity, cancellation_token, target, ProtocolVersion::V1)
+    }
+
+    pub fn new_with_protocol(
+        identity: MessageIdentity,
+        cancellation_token: CancellationToken,
+        target: TargetBinding,
+        protocol: ProtocolVersion,
+    ) -> Self {
         Self {
             identity,
             cancellation_token,
             target,
+            protocol,
             state: JobState::Queued,
             relevance: Relevance::Current,
             worker_stage: None,
             progress: None,
             cancellation_acknowledgement: None,
-            candidate: None,
+            completion: None,
             failure: None,
         }
     }
@@ -153,6 +172,10 @@ impl JobLifecycle {
 
     pub fn target(&self) -> &TargetBinding {
         &self.target
+    }
+
+    pub const fn protocol(&self) -> ProtocolVersion {
+        self.protocol
     }
 
     pub const fn state(&self) -> JobState {
@@ -172,7 +195,21 @@ impl JobLifecycle {
     }
 
     pub fn candidate(&self) -> Option<&CandidateManifest> {
-        self.candidate.as_ref()
+        match self.completion.as_ref() {
+            Some(CandidateDeclaration::SampledV1(candidate)) => Some(candidate),
+            _ => None,
+        }
+    }
+
+    pub fn candidate_bundle(&self) -> Option<&NativeCandidateManifest> {
+        match self.completion.as_ref() {
+            Some(CandidateDeclaration::NativeBridgeV2(candidate)) => Some(candidate),
+            _ => None,
+        }
+    }
+
+    pub fn completion(&self) -> Option<&CandidateDeclaration> {
+        self.completion.as_ref()
     }
 
     pub fn failure(&self) -> Option<&JobFailure> {
@@ -188,10 +225,11 @@ impl JobLifecycle {
             identity: self.identity.clone(),
             cancellation_token: self.cancellation_token.clone(),
             target: self.target.clone(),
+            protocol: self.protocol,
             state: self.state,
             worker_stage: self.worker_stage,
             cancellation_acknowledgement: self.cancellation_acknowledgement.clone(),
-            candidate: self.candidate.clone(),
+            completion: self.completion.clone(),
             failure: self.failure.clone(),
         }
     }
@@ -207,12 +245,13 @@ impl JobLifecycle {
             identity: checkpoint.identity,
             cancellation_token: checkpoint.cancellation_token,
             target: checkpoint.target,
+            protocol: checkpoint.protocol,
             state: checkpoint.state,
             relevance,
             worker_stage: checkpoint.worker_stage,
             progress: None,
             cancellation_acknowledgement: checkpoint.cancellation_acknowledgement,
-            candidate: checkpoint.candidate,
+            completion: checkpoint.completion,
             failure: checkpoint.failure,
         })
     }
@@ -244,7 +283,7 @@ impl JobLifecycle {
             state if state.is_terminal() => Err(LifecycleError::MessageAfterTerminal(state)),
             _ => {
                 self.state = JobState::Cancelling;
-                self.candidate = None;
+                self.completion = None;
                 self.progress = None;
                 self.cancellation_acknowledgement = None;
                 Ok(WorkerEventOutcome::Applied)
@@ -256,7 +295,13 @@ impl JobLifecycle {
         &mut self,
         message: &WorkerMessage,
     ) -> Result<WorkerEventOutcome, LifecycleError> {
+        message
+            .validate()
+            .map_err(|_| LifecycleError::InvalidWorkerMessage)?;
         self.check_identity(message.identity())?;
+        if message.protocol() != self.protocol {
+            return Err(LifecycleError::WrongProtocol);
+        }
         if self.state.is_terminal() {
             return Err(LifecycleError::MessageAfterTerminal(self.state));
         }
@@ -278,32 +323,10 @@ impl JobLifecycle {
                 stage, progress, ..
             } => self.apply_progress(*stage, progress.clone()),
             WorkerMessage::Completed { candidate, .. } => {
-                if self.state == JobState::Cancelling {
-                    self.candidate = None;
-                    self.progress = None;
-                    let acknowledgement =
-                        CancellationAcknowledgement::CompletionDiscarded(candidate.clone());
-                    return match &self.cancellation_acknowledgement {
-                        None => {
-                            self.cancellation_acknowledgement = Some(acknowledgement);
-                            Ok(WorkerEventOutcome::CompletionDiscardedDuringCancellation)
-                        }
-                        Some(previous) if previous == &acknowledgement => {
-                            Ok(WorkerEventOutcome::Duplicate)
-                        }
-                        Some(_) => Err(LifecycleError::ConflictingCancellationAcknowledgement),
-                    };
-                }
-                if self.state != JobState::Running {
-                    return Err(LifecycleError::InvalidTransition {
-                        from: self.state,
-                        event: "worker completion",
-                    });
-                }
-                self.state = JobState::Validating;
-                self.candidate = Some(candidate.clone());
-                self.progress = None;
-                Ok(WorkerEventOutcome::Applied)
+                self.apply_completion(CandidateDeclaration::SampledV1(candidate.clone()))
+            }
+            WorkerMessage::CompletedBridge { candidate, .. } => {
+                self.apply_completion(CandidateDeclaration::NativeBridgeV2(candidate.clone()))
             }
             WorkerMessage::Failed { failure, .. } => {
                 if self.state == JobState::Cancelling && self.cancellation_acknowledgement.is_some()
@@ -354,7 +377,7 @@ impl JobLifecycle {
         self.state = JobState::Failed;
         self.failure = Some(JobFailure::Host(failure));
         self.progress = None;
-        self.candidate = None;
+        self.completion = None;
         self.cancellation_acknowledgement = None;
         Ok(())
     }
@@ -381,7 +404,7 @@ impl JobLifecycle {
         }
         self.state = JobState::Cancelled;
         self.progress = None;
-        self.candidate = None;
+        self.completion = None;
         Ok(())
     }
 
@@ -391,6 +414,30 @@ impl JobLifecycle {
         &mut self,
         identity: &MessageIdentity,
         candidate: &CandidateManifest,
+    ) -> Result<(), LifecycleError> {
+        self.host_completion_validation_succeeded(
+            identity,
+            &CandidateDeclaration::SampledV1(candidate.clone()),
+        )
+    }
+
+    /// Records independent host validation of a native bridge declaration.
+    /// Filesystem presence, hashes, and media remain host-owned prerequisites.
+    pub fn host_bundle_validation_succeeded(
+        &mut self,
+        identity: &MessageIdentity,
+        candidate: &NativeCandidateManifest,
+    ) -> Result<(), LifecycleError> {
+        self.host_completion_validation_succeeded(
+            identity,
+            &CandidateDeclaration::NativeBridgeV2(candidate.clone()),
+        )
+    }
+
+    fn host_completion_validation_succeeded(
+        &mut self,
+        identity: &MessageIdentity,
+        completion: &CandidateDeclaration,
     ) -> Result<(), LifecycleError> {
         self.check_identity(identity)?;
         if self.state.is_terminal() {
@@ -402,7 +449,7 @@ impl JobLifecycle {
                 event: "host validation",
             });
         }
-        if self.candidate.as_ref() != Some(candidate) {
+        if self.completion.as_ref() != Some(completion) {
             return Err(LifecycleError::CandidateMismatch);
         }
         self.state = JobState::Ready;
@@ -414,7 +461,37 @@ impl JobLifecycle {
     pub fn can_authorize_acceptance(&self) -> bool {
         self.state == JobState::Ready
             && self.relevance == Relevance::Current
-            && self.candidate.is_some()
+            && self.completion.is_some()
+    }
+
+    fn apply_completion(
+        &mut self,
+        completion: CandidateDeclaration,
+    ) -> Result<WorkerEventOutcome, LifecycleError> {
+        if self.state == JobState::Cancelling {
+            self.completion = None;
+            self.progress = None;
+            let acknowledgement =
+                CancellationAcknowledgement::CompletionDiscarded(Box::new(completion));
+            return match &self.cancellation_acknowledgement {
+                None => {
+                    self.cancellation_acknowledgement = Some(acknowledgement);
+                    Ok(WorkerEventOutcome::CompletionDiscardedDuringCancellation)
+                }
+                Some(previous) if previous == &acknowledgement => Ok(WorkerEventOutcome::Duplicate),
+                Some(_) => Err(LifecycleError::ConflictingCancellationAcknowledgement),
+            };
+        }
+        if self.state != JobState::Running {
+            return Err(LifecycleError::InvalidTransition {
+                from: self.state,
+                event: "worker completion",
+            });
+        }
+        self.state = JobState::Validating;
+        self.completion = Some(completion);
+        self.progress = None;
+        Ok(WorkerEventOutcome::Applied)
     }
 
     fn apply_stage(&mut self, stage: WorkerStage) -> Result<WorkerEventOutcome, LifecycleError> {
@@ -538,6 +615,10 @@ fn state_rank(state: JobState) -> u8 {
 
 #[derive(Debug, Error, PartialEq, Eq)]
 pub enum LifecycleError {
+    #[error("worker message uses a different protocol version than the attempt")]
+    WrongProtocol,
+    #[error("worker message violates its protocol contract")]
+    InvalidWorkerMessage,
     #[error("worker message has the wrong request ID")]
     WrongRequest,
     #[error("worker message has the wrong attempt ID")]
@@ -571,10 +652,60 @@ pub enum LifecycleError {
 }
 
 fn validate_checkpoint(checkpoint: &LifecycleCheckpoint) -> Result<(), LifecycleError> {
-    let candidate_required = matches!(checkpoint.state, JobState::Validating | JobState::Ready);
-    if checkpoint.candidate.is_some() != candidate_required {
+    let valid_completion = |completion: &CandidateDeclaration| match completion {
+        CandidateDeclaration::SampledV1(_) => true,
+        CandidateDeclaration::NativeBridgeV2(candidate) => candidate.validate().is_ok(),
+    };
+    if checkpoint
+        .completion
+        .as_ref()
+        .is_some_and(|completion| !valid_completion(completion))
+        || checkpoint
+            .cancellation_acknowledgement
+            .as_ref()
+            .is_some_and(|acknowledgement| {
+                matches!(
+                    acknowledgement,
+                    CancellationAcknowledgement::CompletionDiscarded(completion)
+                        if !valid_completion(completion.as_ref())
+                )
+            })
+    {
         return Err(LifecycleError::InvalidCheckpoint(
-            "candidate does not match lifecycle state",
+            "completion declaration is invalid",
+        ));
+    }
+    let completion_required = matches!(checkpoint.state, JobState::Validating | JobState::Ready);
+    if checkpoint.completion.is_some() != completion_required {
+        return Err(LifecycleError::InvalidCheckpoint(
+            "completion does not match lifecycle state",
+        ));
+    }
+    if checkpoint.completion.as_ref().is_some_and(|completion| {
+        !matches!(
+            (checkpoint.protocol, completion),
+            (ProtocolVersion::V1, CandidateDeclaration::SampledV1(_))
+                | (ProtocolVersion::V2, CandidateDeclaration::NativeBridgeV2(_))
+        )
+    }) {
+        return Err(LifecycleError::InvalidCheckpoint(
+            "completion does not match attempt protocol",
+        ));
+    }
+    if checkpoint
+        .cancellation_acknowledgement
+        .as_ref()
+        .is_some_and(|acknowledgement| match acknowledgement {
+            CancellationAcknowledgement::Cancelled => false,
+            CancellationAcknowledgement::CompletionDiscarded(completion) => !matches!(
+                (checkpoint.protocol, completion.as_ref()),
+                (ProtocolVersion::V1, CandidateDeclaration::SampledV1(_))
+                    | (ProtocolVersion::V2, CandidateDeclaration::NativeBridgeV2(_))
+            ),
+        })
+    {
+        return Err(LifecycleError::InvalidCheckpoint(
+            "discarded completion does not match attempt protocol",
         ));
     }
     if checkpoint.failure.is_some() != (checkpoint.state == JobState::Failed) {

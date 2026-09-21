@@ -42,6 +42,7 @@ def runtime_paths(config, check_cancel):
         "dgrauet/ltx-2.3-mlx-q4": paths["model_cache"] / "mlx_ltx_q4_pack" / PACK_REVISION,
         "mlx-community/gemma-3-12b-it-4bit": paths["model_cache"] / "mlx_gemma_default_text_encoder" / GEMMA_REVISION,
     }
+    verified_assets = []
     for asset in receipt["assets"]:
         check_cancel()
         path = roots[asset["repository"]] / asset["path"]
@@ -55,8 +56,15 @@ def runtime_paths(config, check_cancel):
                 digest.update(data)
         if length != asset["size"] or digest.hexdigest() != asset["sha256"]:
             raise ValueError(f"model data mismatch: {asset['path']}")
+        verified_assets.append({
+            "repository": asset["repository"],
+            "path": asset["path"],
+            "size": asset["size"],
+            "sha256": asset["sha256"],
+        })
     paths["model"] = roots["dgrauet/ltx-2.3-mlx-q4"]
     paths["gemma"] = roots["mlx-community/gemma-3-12b-it-4bit"]
+    paths["verified_assets"] = verified_assets
     return paths
 
 
@@ -109,10 +117,13 @@ def generate(paths, request, context, input_bytes, output, stage, check_cancel, 
     mx.set_memory_limit(64 * 1024**3)  # MLX guideline, not a hard memory limit.
     mx.set_cache_limit(8 * 1024**3)
     mx.reset_peak_memory()
-    report = {"runtime_commit": RUNTIME_COMMIT, "adapter_sources_sha256": adapter_sources,
+    report = {"schema_version": 2, "runtime_commit": RUNTIME_COMMIT,
+              "adapter_sources_sha256": adapter_sources,
               "pack_revision": PACK_REVISION,
               "request_binding": {key: request[key] for key in
-                                  ["identity", "project_id", "revision_id", "target", "input", "constraints", "provider"]},
+                                  ["identity", "project_id", "revision_id", "target", "input",
+                                   "constraints", "provider", "plan"]},
+              "verified_assets": paths["verified_assets"],
               "gemma_revision": GEMMA_REVISION, "prompt_version": PROMPT_VERSION,
               "prompt": PROMPT, "seed": request["provider"]["seed"], "context": context,
               "model_color_interpretation": "full-range SDR sRGB RGB, BT.709 primaries",
@@ -188,7 +199,7 @@ def generate(paths, request, context, input_bytes, output, stage, check_cancel, 
     pipe.generate_audio = False
     pipe.verbose = True
     check_cancel()
-    result = pipe.generate_and_save(
+    pipe.generate_and_save(
         prompt=PROMPT, output_path=str(output / "candidate.mp4"), keyframe_images=images,
         keyframe_indices=[0, native_count - 1], keyframe_strengths=[1.0, 1.0],
         height=height, width=width, num_frames=native_count, frame_rate=24, seed=request["provider"]["seed"],
@@ -205,7 +216,8 @@ def generate(paths, request, context, input_bytes, output, stage, check_cancel, 
                   process_peak_rss_bytes=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,
                   mlx_counter_at_end_bytes=mx.get_peak_memory(),
                   status="worker_validated_not_host_validated_or_accepted")
-    with (output / "provenance.json").open("x") as stream:
+    provenance_path = output / "provenance.json"
+    with provenance_path.open("x") as stream:
         json.dump(report, stream, indent=2)
         stream.write("\n")
-    return Path(result), report
+    return output / "native.mp4", provenance_path, report

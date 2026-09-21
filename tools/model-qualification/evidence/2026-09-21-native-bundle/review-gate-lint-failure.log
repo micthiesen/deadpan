@@ -1,0 +1,18 @@
+    Checking deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+    Checking deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+    Checking deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Checking deadpan-media-worker v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-media-worker)
+    Checking deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+error: creating a new box
+   --> native/deadpan-media-worker/tests/bundle_qualification.rs:426:5
+    |
+426 |     *plan = Box::new(non_nearest);
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: replace existing content with inner value instead: `**plan = non_nearest`
+    |
+    = note: this creates a needless allocation
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#replace_box
+    = note: `-D clippy::replace-box` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::replace_box)]`
+
+error: could not compile `deadpan-media-worker` (test "bundle_qualification") due to 1 previous error
+warning: build failed, waiting for other jobs to finish...

@@ -99,7 +99,7 @@ mod supported {
                 return Err("host paths must be absolute".into());
             }
         }
-        let HostMessage::GenerateHold {
+        let (HostMessage::GenerateHold {
             identity,
             cancellation_token,
             project_id,
@@ -109,11 +109,22 @@ mod supported {
             constraints,
             provider,
             ..
-        } = &config.request
+        }
+        | HostMessage::GenerateBridge {
+            identity,
+            cancellation_token,
+            project_id,
+            target,
+            input,
+            output_workspace,
+            constraints,
+            provider,
+            ..
+        }) = &config.request
         else {
             return Err("initial request must generate a Hold".into());
         };
-        let mut lifecycle = JobLifecycle::new(
+        let mut lifecycle = JobLifecycle::new_with_protocol(
             identity.clone(),
             cancellation_token.clone(),
             TargetBinding {
@@ -122,6 +133,7 @@ mod supported {
                 request_version: target.request_version,
                 context_sha256: input.sha256.clone(),
             },
+            config.request.protocol(),
         );
         let workspace = ArtifactWorkspace::open(&config.workspace)?;
         fs::create_dir(&config.report_directory)?;
@@ -196,6 +208,27 @@ mod supported {
                                 "candidate does not match the requested video/provider",
                             );
                         }
+                        if let WorkerMessage::CompletedBridge { candidate, .. } = message.as_ref() {
+                            let matches =
+                                if let HostMessage::GenerateBridge { plan, .. } = &config.request {
+                                    let dimensions = plan.native_dimensions();
+                                    candidate.video.frames().frames()
+                                        == i64::from(plan.native_frame_count())
+                                        && candidate.video.frame_rate() == plan.native_frame_rate()
+                                        && candidate.video.width() == dimensions.width()
+                                        && candidate.video.height() == dimensions.height()
+                                        && &candidate.provider == provider.as_ref()
+                                } else {
+                                    false
+                                };
+                            if !matches {
+                                fail(
+                                    &mut lifecycle,
+                                    HostFailureCode::OutputValidationFailed,
+                                    "native candidate differs from original request plan/provider",
+                                );
+                            }
+                        }
                         if !cancellation_sent
                             && !lifecycle.state().is_terminal()
                             && let WorkerMessage::Stage { stage, .. } = message.as_ref()
@@ -250,21 +283,46 @@ mod supported {
         });
         if clean_exit && faults.is_empty() && lifecycle.state() == JobState::Validating {
             let captured: Result<serde_json::Value, Box<dyn Error>> = (|| {
-                let candidate = lifecycle.candidate().ok_or("missing candidate")?;
-                let mut snapshot = workspace.snapshot(
-                    output_workspace,
-                    &candidate.media,
-                    ArtifactLimits::new(512 * 1024 * 1024)?,
-                )?;
-                let mut output = create(&config.report_directory.join("candidate.snapshot.mp4"))?;
-                std::io::copy(&mut snapshot, &mut output)?;
-                output.sync_all()?;
-                Ok(serde_json::to_value(candidate)?)
+                if let Some(candidate) = lifecycle.candidate() {
+                    let mut snapshot = workspace.snapshot(
+                        output_workspace,
+                        &candidate.media,
+                        ArtifactLimits::new(512 * 1024 * 1024)?,
+                    )?;
+                    let mut output =
+                        create(&config.report_directory.join("candidate.snapshot.mp4"))?;
+                    std::io::copy(&mut snapshot, &mut output)?;
+                    output.sync_all()?;
+                    Ok(json!({"candidate": candidate, "hash_verified_snapshot": true}))
+                } else if let Some(bundle) = lifecycle.candidate_bundle() {
+                    for (declared, name, budget) in [
+                        (&bundle.native, "native.snapshot.mp4", 512 * 1024 * 1024),
+                        (
+                            &bundle.provenance,
+                            "provenance.snapshot.json",
+                            4 * 1024 * 1024,
+                        ),
+                    ] {
+                        let mut snapshot = workspace.snapshot(
+                            output_workspace,
+                            declared,
+                            ArtifactLimits::new(budget)?,
+                        )?;
+                        let mut output = create(&config.report_directory.join(name))?;
+                        std::io::copy(&mut snapshot, &mut output)?;
+                        output.sync_all()?;
+                    }
+                    Ok(json!({"bundle": bundle, "hash_verified_bundle": true}))
+                } else {
+                    Err("missing candidate".into())
+                }
             })();
             match captured {
-                Ok(candidate) => {
-                    result["candidate"] = candidate;
-                    result["hash_verified_snapshot"] = json!(true);
+                Ok(captured) => {
+                    result
+                        .as_object_mut()
+                        .expect("report is an object")
+                        .extend(captured.as_object().expect("capture is an object").clone());
                 }
                 Err(error) => fail(
                     &mut lifecycle,
@@ -276,6 +334,7 @@ mod supported {
         result["state"] = json!(format!("{:?}", lifecycle.state()));
         result["failure"] = json!(lifecycle.failure().map(|value| format!("{value:?}")));
         let successful = result["hash_verified_snapshot"] == true
+            || result["hash_verified_bundle"] == true
             || (cancellation_sent
                 && clean_exit
                 && faults.is_empty()

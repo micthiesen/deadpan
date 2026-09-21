@@ -7,9 +7,13 @@ procedure or a selected shipping runtime.
 
 ## Supervised bridge probe
 
-`worker.py` accepts one `deadpan-jobs` framed request. `worker_protocol.py` checks
-the Rust wire contract without importing MLX. `mlx_backend.py` binds the pinned
-LTX-2.3 q4 pipeline, keeps its CRF-33 conditioning preprocessing, polls
+`worker.py` accepts one protocol-2 `generate_bridge` request. The legacy
+protocol-1 parser remains available for compatibility tests, but this
+development worker emits only a `completed_bridge` event. Its strict manifest
+declares the native media and provenance JSON; the sampled media remains a
+developer output and is never declared as an accepted candidate. `worker_protocol.py`
+checks the Rust wire contract without importing MLX. `mlx_backend.py` binds the
+pinned LTX-2.3 q4 pipeline, keeps its CRF-33 conditioning preprocessing, polls
 cancellation between denoising steps, and serializes native and sampled RGB
 sequences. `worker_media.py` verifies the legal model grid, exact interior sample
 positions, full decoded RGB, frame timestamps/durations, and explicit color tags.
@@ -43,10 +47,18 @@ python3 tools/model-qualification/verify_run.py /absolute/run
 
 The Rust example supplies a cleared environment, launches the selected private
 interpreter with `-I`, supervises the group, applies the lifecycle, and snapshots
-the candidate after clean exit. The independent verifier reads
+native footage and provenance after clean exit. For protocol 2, the independent
+verifier reads `host/native.snapshot.mp4` and the hash-verified provenance copy.
+It checks native media only. Legacy protocol-1 runs still use
 `host/candidate.snapshot.mp4`. The host stays in `Validating`; no project edit,
 candidate acceptance, promotion, or job persistence happens here. Provenance and
 the native sequence remain development outputs, not yet managed project assets.
+Then use the Rust `deadpan-models` example `qualify_bridge_bundle` with the
+original request and completed native declaration to derive and verify both
+masters. [Bundle qualification](../../docs/GENERATION_BUNDLES.md) documents the
+boundary, configuration fields are in the example, and measured runs retain
+their exact configurations. Its output is still separate from project Ready
+publication and authored acceptance.
 
 Use a fresh run with `--cancel-after-millis` or `--cancel-at-stage inference`
 to exercise actual cancellation.

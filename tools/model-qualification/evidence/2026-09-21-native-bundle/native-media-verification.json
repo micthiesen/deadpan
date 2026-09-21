@@ -1,0 +1,205 @@
+{
+  "accepted": false,
+  "scope": "generated-file timing/color/RGB/hash checks only",
+  "probe": {
+    "frames": [
+      {
+        "best_effort_timestamp": 0,
+        "duration": 1,
+        "side_data_list": [
+          {
+            "side_data_type": "H.26[45] User Data Unregistered SEI message"
+          }
+        ]
+      },
+      {
+        "best_effort_timestamp": 1,
+        "duration": 1
+      },
+      {
+        "best_effort_timestamp": 2,
+        "duration": 1
+      },
+      {
+        "best_effort_timestamp": 3,
+        "duration": 1
+      },
+      {
+        "best_effort_timestamp": 4,
+        "duration": 1
+      },
+      {
+        "best_effort_timestamp": 5,
+        "duration": 1
+      },
+      {
+        "best_effort_timestamp": 6,
+        "duration": 1
+      },
+      {
+        "best_effort_timestamp": 7,
+        "duration": 1
+      },
+      {
+        "best_effort_timestamp": 8,
+        "duration": 1
+      },
+      {
+        "best_effort_timestamp": 9,
+        "duration": 1
+      },
+      {
+        "best_effort_timestamp": 10,
+        "duration": 1
+      },
+      {
+        "best_effort_timestamp": 11,
+        "duration": 1
+      },
+      {
+        "best_effort_timestamp": 12,
+        "duration": 1
+      },
+      {
+        "best_effort_timestamp": 13,
+        "duration": 1
+      },
+      {
+        "best_effort_timestamp": 14,
+        "duration": 1
+      },
+      {
+        "best_effort_timestamp": 15,
+        "duration": 1
+      },
+      {
+        "best_effort_timestamp": 16,
+        "duration": 1
+      },
+      {
+        "best_effort_timestamp": 17,
+        "duration": 1
+      },
+      {
+        "best_effort_timestamp": 18,
+        "duration": 1
+      },
+      {
+        "best_effort_timestamp": 19,
+        "duration": 1
+      },
+      {
+        "best_effort_timestamp": 20,
+        "duration": 1
+      },
+      {
+        "best_effort_timestamp": 21,
+        "duration": 1
+      },
+      {
+        "best_effort_timestamp": 22,
+        "duration": 1
+      },
+      {
+        "best_effort_timestamp": 23,
+        "duration": 1
+      },
+      {
+        "best_effort_timestamp": 24,
+        "duration": 1
+      }
+    ],
+    "streams": [
+      {
+        "index": 0,
+        "codec_name": "h264",
+        "codec_long_name": "H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10",
+        "profile": "High 4:4:4 Predictive",
+        "codec_type": "video",
+        "codec_tag_string": "avc1",
+        "codec_tag": "0x31637661",
+        "mime_codec_string": "avc1.f4001e",
+        "width": 768,
+        "height": 320,
+        "coded_width": 768,
+        "coded_height": 320,
+        "has_b_frames": 0,
+        "pix_fmt": "gbrp",
+        "level": 30,
+        "color_range": "pc",
+        "color_space": "gbr",
+        "color_transfer": "iec61966-2-1",
+        "color_primaries": "bt709",
+        "chroma_location": "left",
+        "field_order": "progressive",
+        "refs": 1,
+        "is_avc": "true",
+        "nal_length_size": "4",
+        "id": "0x1",
+        "r_frame_rate": "24/1",
+        "avg_frame_rate": "24/1",
+        "time_base": "1/24",
+        "start_pts": 0,
+        "start_time": "0.000000",
+        "duration_ts": 25,
+        "duration": "1.041667",
+        "bit_rate": "37711050",
+        "bits_per_raw_sample": "8",
+        "nb_frames": "25",
+        "nb_read_frames": "25",
+        "extradata_size": 47,
+        "disposition": {
+          "default": 1,
+          "dub": 0,
+          "original": 0,
+          "comment": 0,
+          "lyrics": 0,
+          "karaoke": 0,
+          "forced": 0,
+          "hearing_impaired": 0,
+          "visual_impaired": 0,
+          "clean_effects": 0,
+          "attached_pic": 0,
+          "timed_thumbnails": 0,
+          "non_diegetic": 0,
+          "captions": 0,
+          "descriptions": 0,
+          "metadata": 0,
+          "dependent": 0,
+          "still_image": 0,
+          "multilayer": 0
+        },
+        "tags": {
+          "language": "und",
+          "handler_name": "VideoHandler",
+          "encoder": "Lavc63.1.101 libx264rgb"
+        }
+      }
+    ]
+  },
+  "passed": true,
+  "protocol": 2,
+  "sha256": "c9d34268df14d105bb4f3799e9bfc9b946ad153de43e6ee4a73a44bb7833be33",
+  "decoded_rgb_sha256": "be4ffce12b048457bcab1779eefe8683f41c242d013be7f488c25416491efe1a",
+  "frames": 25,
+  "video": {
+    "frames": 25,
+    "frame_rate": {
+      "numerator": 24,
+      "denominator": 1
+    },
+    "width": 768,
+    "height": 320
+  },
+  "host_report_sha256": "2fa39e596e9a1917c65a429095c53db440b090fde4f8b5f8768f9387890dfb9f",
+  "worker_provenance_sha256": "e16a5fa19339ea57c9e9da9cfe63142d73ddb4691d41178d273c2c64b1d1006a",
+  "adapter_sources_sha256": {
+    "worker.py": "332a50e974f08f7368ca75ed079e7ea235cc85a3955afbb21f2cdb85afaa98c1",
+    "worker_protocol.py": "21213156f2d100bc962a983ce3af6238ddf7cf95f5d751a554739c1c619c455d",
+    "worker_media.py": "c072cb78e13fadd3873715d90924c3993389cf5c8abc71d25d99df0c3307723e",
+    "mlx_backend.py": "b8bee4a418a4c8c82531a0eb2aa0046c333bc9ec2c6d64f8f552c7e342cf50ad",
+    "runtime_source.py": "83dddd9cd6e84d1c2d01d27e6d28098325624afc3572f17ba7037ecd4acbbbad",
+    "ltx-source-manifest.json": "abc7e873e28097d1f9307b030dd4b1f415f6b5091c841ac1babd421c8d74f092"
+  },
+  "verification_seconds": 0.5044505828991532
+}

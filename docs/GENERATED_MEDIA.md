@@ -72,12 +72,13 @@ this synchronous API does not establish interactive responsiveness.
 
 ## Integration status
 
-Database schema 7 and authored document schema 5 now retain
+Database schema 8 and authored document schema 5 retain
 [generated Hold intent](GENERATED_HOLDS.md). Publishing bytes
 does not create a revision, history entry, candidate receipt, or asset reference.
-The current API is implemented on macOS and Linux. Native media conversion,
-provenance bundles, history reference tracking, qualified application acceptance,
-cache cleanup, portable project copying, and application rendering remain open.
+The current API is implemented on macOS and Linux. [Native bundle qualification](GENERATION_BUNDLES.md)
+now composes media conversion, provenance and verified Ready publication.
+History reference tracking, qualified application acceptance, cache cleanup,
+portable project copying, and application rendering remain open.
 
 The integration tests cover writer ownership, read-only coexistence, retained
 worker snapshots, deduplication, relocation, immutable readback, corruption,

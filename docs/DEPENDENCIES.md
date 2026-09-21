@@ -34,6 +34,11 @@ version and registry checksum. The UI enables `accesskit`, `default_fonts`, and
 on macOS. Application UI support is not qualification of video texture interop,
 color management, accessibility, or the shared renderer.
 
+`deadpan-models` adds host bundle qualification using the existing core, jobs,
+media, serialization and BLAKE3 dependencies. It adds no registry dependency or
+in-process codec/model runtime. Its integration tests use the isolated native
+helper and SQLite store; no model download is required by the repository gate.
+
 The app's initial deployment target is macOS 15; the test host and actual
 verification are recorded in [SETUP_VERIFICATION.md](SETUP_VERIFICATION.md).
 The target setting does not prove compatibility with every supported OS.

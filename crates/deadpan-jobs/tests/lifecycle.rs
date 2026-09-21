@@ -1,11 +1,11 @@
 use deadpan_core::{FrameDuration, FrameRate, NodeId, ProjectId};
 use deadpan_jobs::{
-    AttemptId, CancellationAcknowledgement, CancellationToken, CandidateManifest, Diagnostic,
-    FailureCode, HostFailure, HostFailureCode, JobFailure, JobLifecycle, JobState, LifecycleError,
-    MessageIdentity, ProtocolVersion, ProviderPackId, ProviderPackVersion, ProviderSelection,
-    Relevance, RequestId, RequestVersion, RuntimeId, RuntimeVersion, Sha256, StageProgress,
-    TargetBinding, VideoSpec, WorkerEventOutcome, WorkerFailure, WorkerMessage, WorkerStage,
-    WorkspaceArtifact, WorkspaceRef,
+    AttemptId, CancellationAcknowledgement, CancellationToken, CandidateDeclaration,
+    CandidateManifest, Diagnostic, FailureCode, HostFailure, HostFailureCode, JobFailure,
+    JobLifecycle, JobState, LifecycleError, MessageIdentity, NativeCandidateManifest,
+    ProtocolVersion, ProviderPackId, ProviderPackVersion, ProviderSelection, Relevance, RequestId,
+    RequestVersion, RuntimeId, RuntimeVersion, Sha256, StageProgress, TargetBinding, VideoSpec,
+    WorkerEventOutcome, WorkerFailure, WorkerMessage, WorkerStage, WorkspaceArtifact, WorkspaceRef,
 };
 
 fn sha(character: char) -> Sha256 {
@@ -65,6 +65,31 @@ fn candidate() -> CandidateManifest {
     candidate_with_hash(sha('b'))
 }
 
+fn native_candidate() -> NativeCandidateManifest {
+    NativeCandidateManifest {
+        native: WorkspaceArtifact::new(
+            WorkspaceRef::new("outputs/native.mp4").unwrap(),
+            sha('c'),
+            8_000,
+        )
+        .unwrap(),
+        provenance: WorkspaceArtifact::new(
+            WorkspaceRef::new("outputs/provenance.json").unwrap(),
+            sha('d'),
+            800,
+        )
+        .unwrap(),
+        video: VideoSpec::new(
+            FrameDuration::new(49).unwrap(),
+            FrameRate::new(24, 1).unwrap(),
+            512,
+            320,
+        )
+        .unwrap(),
+        provider: provider(),
+    }
+}
+
 fn stage(identity: &MessageIdentity, stage: WorkerStage) -> WorkerMessage {
     WorkerMessage::Stage {
         protocol: ProtocolVersion::V1,
@@ -75,12 +100,18 @@ fn stage(identity: &MessageIdentity, stage: WorkerStage) -> WorkerMessage {
 
 fn running(job: &mut JobLifecycle) {
     let identity = job.identity().clone();
-    job.apply_worker_message(&stage(&identity, WorkerStage::Preflight))
+    for worker_stage in [
+        WorkerStage::Preflight,
+        WorkerStage::ModelLoading,
+        WorkerStage::Inference,
+    ] {
+        job.apply_worker_message(&WorkerMessage::Stage {
+            protocol: job.protocol(),
+            identity: identity.clone(),
+            stage: worker_stage,
+        })
         .unwrap();
-    job.apply_worker_message(&stage(&identity, WorkerStage::ModelLoading))
-        .unwrap();
-    job.apply_worker_message(&stage(&identity, WorkerStage::Inference))
-        .unwrap();
+    }
 }
 
 #[test]
@@ -456,7 +487,7 @@ fn durable_checkpoint_rejects_impossible_state_payload_combinations() {
     let base = JobLifecycle::new(identity.clone(), token(), binding());
 
     let mut candidate_while_queued = base.checkpoint();
-    candidate_while_queued.candidate = Some(candidate());
+    candidate_while_queued.completion = Some(CandidateDeclaration::SampledV1(candidate()));
     assert!(matches!(
         JobLifecycle::from_checkpoint(candidate_while_queued, Relevance::Current),
         Err(LifecycleError::InvalidCheckpoint(_))
@@ -483,7 +514,7 @@ fn durable_checkpoint_rejects_impossible_state_payload_combinations() {
     completed
         .apply_worker_message(&WorkerMessage::Completed {
             protocol: ProtocolVersion::V1,
-            identity,
+            identity: identity.clone(),
             candidate: completed_candidate,
         })
         .unwrap();
@@ -491,6 +522,100 @@ fn durable_checkpoint_rejects_impossible_state_payload_combinations() {
     impossible_stage.worker_stage = Some(WorkerStage::ModelLoading);
     assert!(matches!(
         JobLifecycle::from_checkpoint(impossible_stage, Relevance::Current),
+        Err(LifecycleError::InvalidCheckpoint(_))
+    ));
+}
+
+#[test]
+fn native_bridge_completion_requires_exact_bundle_validation() {
+    let identity = identity();
+    let candidate = native_candidate();
+    let mut job =
+        JobLifecycle::new_with_protocol(identity.clone(), token(), binding(), ProtocolVersion::V2);
+    running(&mut job);
+    job.apply_worker_message(&WorkerMessage::CompletedBridge {
+        protocol: ProtocolVersion::V2,
+        identity: identity.clone(),
+        candidate: candidate.clone(),
+    })
+    .unwrap();
+    assert_eq!(job.state(), JobState::Validating);
+    assert!(job.candidate().is_none());
+    assert_eq!(job.candidate_bundle(), Some(&candidate));
+    assert_eq!(
+        job.completion(),
+        Some(&CandidateDeclaration::NativeBridgeV2(candidate.clone()))
+    );
+    assert!(
+        job.host_validation_succeeded(&identity, &candidate_with_hash(sha('e')))
+            .is_err()
+    );
+    job.host_bundle_validation_succeeded(&identity, &candidate)
+        .unwrap();
+    assert_eq!(job.state(), JobState::Ready);
+    assert!(job.can_authorize_acceptance());
+
+    let restored = JobLifecycle::from_checkpoint(job.checkpoint(), Relevance::Current).unwrap();
+    assert_eq!(restored.protocol(), ProtocolVersion::V2);
+    assert_eq!(restored.candidate_bundle(), Some(&candidate));
+}
+
+#[test]
+fn v2_late_completion_during_cancellation_is_discarded_until_reap() {
+    let identity = identity();
+    let token = token();
+    let candidate = native_candidate();
+    let mut job = JobLifecycle::new_with_protocol(
+        identity.clone(),
+        token.clone(),
+        binding(),
+        ProtocolVersion::V2,
+    );
+    running(&mut job);
+    job.request_cancel(&identity, &token).unwrap();
+    assert_eq!(
+        job.apply_worker_message(&WorkerMessage::CompletedBridge {
+            protocol: ProtocolVersion::V2,
+            identity: identity.clone(),
+            candidate: candidate.clone(),
+        })
+        .unwrap(),
+        WorkerEventOutcome::CompletionDiscardedDuringCancellation
+    );
+    assert_eq!(job.state(), JobState::Cancelling);
+    assert!(job.completion().is_none());
+    assert_eq!(
+        job.cancellation_acknowledgement(),
+        Some(&CancellationAcknowledgement::CompletionDiscarded(Box::new(
+            CandidateDeclaration::NativeBridgeV2(candidate)
+        )))
+    );
+    assert!(!job.can_authorize_acceptance());
+    job.host_cancelled(&identity, &token).unwrap();
+    assert_eq!(job.state(), JobState::Cancelled);
+}
+
+#[test]
+fn lifecycle_rejects_message_and_checkpoint_protocol_crossovers() {
+    let identity = identity();
+    let mut job =
+        JobLifecycle::new_with_protocol(identity.clone(), token(), binding(), ProtocolVersion::V2);
+    assert!(matches!(
+        job.apply_worker_message(&WorkerMessage::Stage {
+            protocol: ProtocolVersion::V1,
+            identity: identity.clone(),
+            stage: WorkerStage::Preflight,
+        }),
+        Err(LifecycleError::WrongProtocol)
+    ));
+
+    let legacy = JobLifecycle::new(identity.clone(), token(), binding());
+    let mut checkpoint = legacy.checkpoint();
+    checkpoint.state = JobState::Validating;
+    checkpoint.worker_stage = Some(WorkerStage::Inference);
+    checkpoint.completion = Some(CandidateDeclaration::NativeBridgeV2(native_candidate()));
+    assert!(matches!(
+        JobLifecycle::from_checkpoint(checkpoint, Relevance::Current),
         Err(LifecycleError::InvalidCheckpoint(_))
     ));
 }

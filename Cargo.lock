@@ -810,10 +810,27 @@ version = "0.1.0"
 dependencies = [
  "blake3",
  "cc",
+ "deadpan-core",
+ "deadpan-jobs",
  "deadpan-media",
+ "deadpan-models",
+ "deadpan-store",
  "serde_json",
  "sha2",
  "tempfile",
+]
+
+[[package]]
+name = "deadpan-models"
+version = "0.1.0"
+dependencies = [
+ "blake3",
+ "deadpan-core",
+ "deadpan-jobs",
+ "deadpan-media",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.20",
 ]
 
 [[package]]

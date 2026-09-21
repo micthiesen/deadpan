@@ -10,6 +10,7 @@ candidate's media is usable; the Rust host validates the output independently.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from fractions import Fraction
 import json
 import math
 import os
@@ -19,6 +20,7 @@ from typing import Any, BinaryIO, Mapping
 
 
 PROTOCOL_VERSION = 1
+BRIDGE_PROTOCOL_VERSION = 2
 MAX_FRAME_BYTES = 256 * 1024
 MAX_PROTOCOL_ID_BYTES = 128
 MAX_WORKSPACE_REF_BYTES = 1_024
@@ -425,6 +427,37 @@ class CandidateManifest:
 
 
 @dataclass(frozen=True, slots=True)
+class NativeCandidateManifest:
+    native: WorkspaceArtifact
+    provenance: WorkspaceArtifact
+    video: VideoSpec
+    provider: ProviderSelection
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.native, WorkspaceArtifact):
+            raise ProtocolError("native candidate must be a WorkspaceArtifact")
+        if not isinstance(self.provenance, WorkspaceArtifact):
+            raise ProtocolError("candidate provenance must be a WorkspaceArtifact")
+        if self.native.reference == self.provenance.reference:
+            raise ProtocolError("native and provenance references must be distinct")
+        if not isinstance(self.video, VideoSpec):
+            raise ProtocolError("native candidate video must be a VideoSpec")
+        if not isinstance(self.provider, ProviderSelection):
+            raise ProtocolError("native candidate provider must be a ProviderSelection")
+
+    def _wire(self) -> dict[str, Any]:
+        return {
+            "native": self.native._wire(),
+            "provenance": self.provenance._wire(),
+            "video": self.video._wire(),
+            "provider": self.provider._wire(),
+        }
+
+    def to_wire(self) -> dict[str, Any]:
+        return self._wire()
+
+
+@dataclass(frozen=True, slots=True)
 class GenerateHoldRequest:
     protocol: int
     identity: MessageIdentity
@@ -476,13 +509,76 @@ class GenerateHoldRequest:
 
 
 @dataclass(frozen=True, slots=True)
+class GenerateBridgeRequest:
+    protocol: int
+    identity: MessageIdentity
+    cancellation_token: str
+    project_id: str
+    revision_id: str
+    target: HoldTarget
+    input: ContextArtifact
+    output_workspace: str
+    constraints: HoldConstraints
+    provider: ProviderSelection
+    plan: dict[str, Any]
+
+    def __post_init__(self) -> None:
+        _integer(
+            self.protocol,
+            "protocol",
+            minimum=BRIDGE_PROTOCOL_VERSION,
+            maximum=BRIDGE_PROTOCOL_VERSION,
+        )
+        if not isinstance(self.identity, MessageIdentity):
+            raise ProtocolError("identity must be a MessageIdentity")
+        _protocol_identifier(self.cancellation_token, "cancellation token")
+        _core_identifier(self.project_id, "project ID")
+        _core_identifier(self.revision_id, "revision ID")
+        if not isinstance(self.target, HoldTarget):
+            raise ProtocolError("target must be a HoldTarget")
+        if not isinstance(self.input, ContextArtifact):
+            raise ProtocolError("input must be a ContextArtifact")
+        _workspace_ref(self.output_workspace, "output workspace")
+        if not isinstance(self.constraints, HoldConstraints):
+            raise ProtocolError("constraints must be HoldConstraints")
+        if not isinstance(self.provider, ProviderSelection):
+            raise ProtocolError("provider must be a ProviderSelection")
+        if not isinstance(self.plan, dict):
+            raise ProtocolError("bridge plan must be an object")
+
+    def _wire(self) -> dict[str, Any]:
+        return {
+            "operation": "generate_bridge",
+            "protocol": self.protocol,
+            "identity": self.identity._wire(),
+            "cancellation_token": self.cancellation_token,
+            "project_id": self.project_id,
+            "revision_id": self.revision_id,
+            "target": self.target._wire(),
+            "input": self.input._wire(),
+            "output_workspace": self.output_workspace,
+            "constraints": self.constraints._wire(),
+            "provider": self.provider._wire(),
+            "plan": self.plan,
+        }
+
+    def to_wire(self) -> dict[str, Any]:
+        return self._wire()
+
+
+@dataclass(frozen=True, slots=True)
 class CancelRequest:
     protocol: int
     identity: MessageIdentity
     cancellation_token: str
 
     def __post_init__(self) -> None:
-        _integer(self.protocol, "protocol", minimum=PROTOCOL_VERSION, maximum=PROTOCOL_VERSION)
+        _integer(
+            self.protocol,
+            "protocol",
+            minimum=PROTOCOL_VERSION,
+            maximum=BRIDGE_PROTOCOL_VERSION,
+        )
         if not isinstance(self.identity, MessageIdentity):
             raise ProtocolError("identity must be a MessageIdentity")
         _protocol_identifier(self.cancellation_token, "cancellation token")
@@ -549,8 +645,10 @@ _STAGES = {
 }
 
 
-def _parse_protocol(value: Any) -> int:
-    return _integer(value, "protocol", minimum=PROTOCOL_VERSION, maximum=PROTOCOL_VERSION)
+def _parse_protocol(value: Any, *, expected: int | None = None) -> int:
+    if expected is not None:
+        return _integer(value, "protocol", minimum=expected, maximum=expected)
+    return _integer(value, "protocol", minimum=PROTOCOL_VERSION, maximum=BRIDGE_PROTOCOL_VERSION)
 
 
 def _parse_identity(value: Any) -> MessageIdentity:
@@ -612,7 +710,107 @@ def _parse_candidate(value: Any) -> CandidateManifest:
     )
 
 
-def parse_host_message(value: Mapping[str, Any]) -> GenerateHoldRequest | CancelRequest:
+def _parse_native_candidate(value: Any) -> NativeCandidateManifest:
+    value = _object(value, {"native", "provenance", "video", "provider"}, "native candidate")
+    return NativeCandidateManifest(
+        _parse_artifact(value["native"]),
+        _parse_artifact(value["provenance"]),
+        _parse_video(value["video"]),
+        _parse_provider(value["provider"]),
+    )
+
+
+def _parse_exact_ratio(value: Any, where: str) -> Fraction:
+    value = _object(value, {"numerator", "denominator"}, where)
+    numerator = _string(value["numerator"], f"{where}.numerator")
+    denominator = _string(value["denominator"], f"{where}.denominator")
+    if not numerator or not denominator:
+        raise ProtocolError(f"{where} must contain non-empty integer strings")
+    for name, text in (("numerator", numerator), ("denominator", denominator)):
+        digits = text[1:] if text.startswith("-") else text
+        if not digits or any(char not in "0123456789" for char in digits):
+            raise ProtocolError(f"{where}.{name} must be a base-10 integer string")
+    try:
+        numerator_value = int(numerator, 10)
+        denominator_value = int(denominator, 10)
+    except ValueError as error:
+        raise ProtocolError(f"{where} must contain base-10 integer strings") from error
+    if not (-(2**127) <= numerator_value < 2**127) or not (
+        0 < denominator_value < 2**127
+    ):
+        raise ProtocolError(f"{where} exceeds the exact-ratio bounds")
+    return Fraction(numerator_value, denominator_value)
+
+
+def _parse_plan(value: Any) -> dict[str, Any]:
+    value = _object(
+        value,
+        {"schema_version", "operation", "interpolation", "project", "native", "timing", "sampling"},
+        "bridge plan",
+    )
+    if _integer(value["schema_version"], "plan schema version", minimum=1, maximum=1) != 1:
+        raise ProtocolError("unsupported bridge plan schema")
+    if _string(value["operation"], "plan operation") != "bridge":
+        raise ProtocolError("bridge plan operation must be bridge")
+    if _string(value["interpolation"], "plan interpolation") != "linear":
+        raise ProtocolError("bridge plan interpolation must be linear")
+
+    project = _object(value["project"], {"interior_frames", "frame_rate"}, "plan project")
+    project_frames = _integer(
+        project["interior_frames"], "plan project interior frames", minimum=1, maximum=_MAX_I64
+    )
+    project_rate = _parse_frame_rate(project["frame_rate"])
+
+    native = _object(
+        value["native"], {"frame_count", "frame_rate", "width", "height"}, "plan native"
+    )
+    native_frames = _integer(
+        native["frame_count"], "plan native frame count", minimum=2, maximum=_MAX_U32
+    )
+    native_rate = _parse_frame_rate(native["frame_rate"])
+    width = _integer(native["width"], "plan native width", minimum=1, maximum=MAX_VIDEO_DIMENSION)
+    height = _integer(native["height"], "plan native height", minimum=1, maximum=MAX_VIDEO_DIMENSION)
+
+    timing = _object(
+        value["timing"],
+        {"requested_boundary_duration", "actual_boundary_duration", "retime_deviation"},
+        "plan timing",
+    )
+    requested = _parse_exact_ratio(
+        timing["requested_boundary_duration"], "requested boundary duration"
+    )
+    actual = _parse_exact_ratio(timing["actual_boundary_duration"], "actual boundary duration")
+    deviation = _parse_exact_ratio(timing["retime_deviation"], "retime deviation")
+    expected_requested = Fraction(project_frames + 1, 1) / Fraction(
+        project_rate.numerator, project_rate.denominator
+    )
+    expected_actual = Fraction(native_frames - 1, 1) / Fraction(
+        native_rate.numerator, native_rate.denominator
+    )
+    if (requested, actual, deviation) != (
+        expected_requested,
+        expected_actual,
+        expected_actual - expected_requested,
+    ):
+        raise ProtocolError("bridge plan timing does not match its counts and rates")
+
+    sampling = _object(value["sampling"], {"endpoint_policy"}, "plan sampling")
+    if _string(sampling["endpoint_policy"], "plan endpoint policy") != "interior_only":
+        raise ProtocolError("bridge plan endpoint policy must be interior_only")
+    first = Fraction(native_frames - 1, project_frames + 1)
+    last = Fraction(project_frames, project_frames + 1) * (native_frames - 1)
+    if not (first > 0 and last < native_frames - 1):
+        raise ProtocolError("bridge plan sampling must exclude both endpoints")
+    # Touch all parsed fields so malformed values are rejected before the plan
+    # reaches the worker; provider-specific legal counts and dimensions remain
+    # the responsibility of worker_media.validate_plan.
+    del width, height
+    return value
+
+
+def parse_host_message(
+    value: Mapping[str, Any],
+) -> GenerateHoldRequest | GenerateBridgeRequest | CancelRequest:
     """Validate one decoded host object and return its typed request."""
 
     if not isinstance(value, dict):
@@ -639,7 +837,7 @@ def parse_host_message(value: Mapping[str, Any]) -> GenerateHoldRequest | Cancel
             value["constraints"], {"video", "conditioning", "motion"}, "constraints"
         )
         return GenerateHoldRequest(
-            _parse_protocol(value["protocol"]),
+            _parse_protocol(value["protocol"], expected=PROTOCOL_VERSION),
             _parse_identity(value["identity"]),
             _protocol_identifier(value["cancellation_token"], "cancellation token"),
             _core_identifier(value["project_id"], "project ID"),
@@ -660,6 +858,50 @@ def parse_host_message(value: Mapping[str, Any]) -> GenerateHoldRequest | Cancel
             ),
             _parse_provider(value["provider"]),
         )
+    if operation == "generate_bridge":
+        expected = {
+            "operation",
+            "protocol",
+            "identity",
+            "cancellation_token",
+            "project_id",
+            "revision_id",
+            "target",
+            "input",
+            "output_workspace",
+            "constraints",
+            "provider",
+            "plan",
+        }
+        value = _object(value, expected, "generate_bridge")
+        target = _object(value["target"], {"hold_id", "request_version"}, "target")
+        input_value = _object(value["input"], {"manifest", "sha256"}, "input")
+        constraints = _object(
+            value["constraints"], {"video", "conditioning", "motion"}, "constraints"
+        )
+        return GenerateBridgeRequest(
+            _parse_protocol(value["protocol"], expected=BRIDGE_PROTOCOL_VERSION),
+            _parse_identity(value["identity"]),
+            _protocol_identifier(value["cancellation_token"], "cancellation token"),
+            _core_identifier(value["project_id"], "project ID"),
+            _core_identifier(value["revision_id"], "revision ID"),
+            HoldTarget(
+                _core_identifier(target["hold_id"], "hold ID"),
+                _integer(target["request_version"], "request version", minimum=1, maximum=_MAX_U64),
+            ),
+            ContextArtifact(
+                _workspace_ref(input_value["manifest"], "input manifest"),
+                _sha256(input_value["sha256"]),
+            ),
+            _workspace_ref(value["output_workspace"], "output workspace"),
+            HoldConstraints(
+                _parse_video(constraints["video"]),
+                _string(constraints["conditioning"], "conditioning"),
+                _string(constraints["motion"], "motion"),
+            ),
+            _parse_provider(value["provider"]),
+            _parse_plan(value["plan"]),
+        )
     if operation == "cancel":
         value = _object(
             value,
@@ -671,7 +913,7 @@ def parse_host_message(value: Mapping[str, Any]) -> GenerateHoldRequest | Cancel
             _parse_identity(value["identity"]),
             _protocol_identifier(value["cancellation_token"], "cancellation token"),
         )
-    raise ProtocolError("host message operation must be generate_hold or cancel")
+    raise ProtocolError("host message operation must be generate_hold, generate_bridge, or cancel")
 
 
 @dataclass(frozen=True, slots=True)
@@ -722,6 +964,21 @@ class CompletedEvent:
 
 
 @dataclass(frozen=True, slots=True)
+class CompletedBridgeEvent:
+    protocol: int
+    identity: MessageIdentity
+    candidate: NativeCandidateManifest
+
+    def _wire(self) -> dict[str, Any]:
+        return {
+            "event": "completed_bridge",
+            "protocol": self.protocol,
+            "identity": self.identity._wire(),
+            "candidate": self.candidate._wire(),
+        }
+
+
+@dataclass(frozen=True, slots=True)
 class FailedEvent:
     protocol: int
     identity: MessageIdentity
@@ -749,7 +1006,14 @@ class CancelledEvent:
         }
 
 
-WorkerEvent = StageEvent | ProgressEvent | CompletedEvent | FailedEvent | CancelledEvent
+WorkerEvent = (
+    StageEvent
+    | ProgressEvent
+    | CompletedEvent
+    | CompletedBridgeEvent
+    | FailedEvent
+    | CancelledEvent
+)
 
 
 def _parse_stage(value: Any) -> str:
@@ -784,8 +1048,15 @@ def parse_worker_message(value: Mapping[str, Any]) -> WorkerEvent:
             ),
         )
     if event == "completed":
+        if protocol != PROTOCOL_VERSION:
+            raise ProtocolError("completed is only valid for protocol 1")
         value = _object(value, common | {"candidate"}, "completed")
         return CompletedEvent(protocol, identity, _parse_candidate(value["candidate"]))
+    if event == "completed_bridge":
+        if protocol != BRIDGE_PROTOCOL_VERSION:
+            raise ProtocolError("completed_bridge requires protocol 2")
+        value = _object(value, common | {"candidate"}, "completed_bridge")
+        return CompletedBridgeEvent(protocol, identity, _parse_native_candidate(value["candidate"]))
     if event == "failed":
         value = _object(value, common | {"failure"}, "failed")
         failure = _object(value["failure"], {"code", "detail"}, "failure")
@@ -808,7 +1079,10 @@ def _wire_value(value: Any) -> Mapping[str, Any]:
     raise ProtocolError("protocol value is not a message or mapping")
 
 
-def write_host_message(stream: BinaryIO, message: GenerateHoldRequest | CancelRequest) -> None:
+def write_host_message(
+    stream: BinaryIO,
+    message: GenerateHoldRequest | GenerateBridgeRequest | CancelRequest,
+) -> None:
     write_frame(stream, _wire_value(message))
 
 
@@ -816,7 +1090,9 @@ def write_worker_message(stream: BinaryIO, message: WorkerEvent) -> None:
     write_frame(stream, _wire_value(message))
 
 
-def read_host_message(stream: BinaryIO) -> GenerateHoldRequest | CancelRequest | None:
+def read_host_message(
+    stream: BinaryIO,
+) -> GenerateHoldRequest | GenerateBridgeRequest | CancelRequest | None:
     value = read_frame(stream)
     return None if value is None else parse_host_message(value)
 
@@ -839,7 +1115,7 @@ class WorkerProtocol:
         self._reader = reader
         self._writer = writer
         self._lock = threading.Lock()
-        self._request: GenerateHoldRequest | None = None
+        self._request: GenerateHoldRequest | GenerateBridgeRequest | None = None
         self._cancel_read = False
         self._cancel_requested = threading.Event()
         self._terminal = False
@@ -853,7 +1129,7 @@ class WorkerProtocol:
         return cls(reader, writer)
 
     @property
-    def request(self) -> GenerateHoldRequest:
+    def request(self) -> GenerateHoldRequest | GenerateBridgeRequest:
         if self._request is None:
             raise ProtocolError("worker request has not been read")
         return self._request
@@ -865,14 +1141,14 @@ class WorkerProtocol:
     def wait_for_cancel(self, timeout: float | None = None) -> bool:
         return self._cancel_requested.wait(timeout)
 
-    def read_request(self) -> GenerateHoldRequest:
+    def read_request(self) -> GenerateHoldRequest | GenerateBridgeRequest:
         if self._request is not None:
-            raise ProtocolError("worker accepts only one generate_hold request")
+            raise ProtocolError("worker accepts only one generation request")
         message = read_host_message(self._reader)
         if message is None:
-            raise ProtocolError("worker input ended before generate_hold request")
-        if not isinstance(message, GenerateHoldRequest):
-            raise ProtocolError("first host message must be generate_hold")
+            raise ProtocolError("worker input ended before generation request")
+        if not isinstance(message, (GenerateHoldRequest, GenerateBridgeRequest)):
+            raise ProtocolError("first host message must be generate_hold or generate_bridge")
         self._request = message
         return message
 
@@ -887,7 +1163,9 @@ class WorkerProtocol:
             return False
         self._cancel_read = True
         if not isinstance(message, CancelRequest):
-            raise ProtocolError("only a matching cancel may follow generate_hold")
+            raise ProtocolError("only a matching cancel may follow a generation request")
+        if message.protocol != self.request.protocol:
+            raise ProtocolError("cancel protocol does not match generation request")
         if message.identity != self.request.identity:
             raise ProtocolError("cancel identity does not match generate_hold")
         if message.cancellation_token != self.request.cancellation_token:
@@ -898,7 +1176,7 @@ class WorkerProtocol:
     def _emit(self, value: WorkerEvent, *, terminal: bool = False) -> None:
         with self._lock:
             if self._request is None:
-                raise ProtocolError("cannot emit before generate_hold request")
+                raise ProtocolError("cannot emit before a generation request")
             if self._terminal:
                 raise ProtocolError("cannot emit after a terminal worker event")
             if value.identity != self._request.identity or value.protocol != self._request.protocol:
@@ -908,12 +1186,12 @@ class WorkerProtocol:
                 self._terminal = True
 
     def emit_stage(self, stage: str) -> None:
-        self._emit(StageEvent(PROTOCOL_VERSION, self.request.identity, _parse_stage(stage)))
+        self._emit(StageEvent(self.request.protocol, self.request.identity, _parse_stage(stage)))
 
     def emit_progress(self, stage: str, completed: int, total: int) -> None:
         self._emit(
             ProgressEvent(
-                PROTOCOL_VERSION,
+                self.request.protocol,
                 self.request.identity,
                 _parse_stage(stage),
                 StageProgress(completed, total),
@@ -921,14 +1199,26 @@ class WorkerProtocol:
         )
 
     def emit_completed(self, candidate: CandidateManifest) -> None:
+        if self.request.protocol != PROTOCOL_VERSION:
+            raise ProtocolError("emit_completed is only valid for protocol 1")
         if not isinstance(candidate, CandidateManifest):
             raise ProtocolError("completed candidate must be a CandidateManifest")
-        self._emit(CompletedEvent(PROTOCOL_VERSION, self.request.identity, candidate), terminal=True)
+        self._emit(CompletedEvent(self.request.protocol, self.request.identity, candidate), terminal=True)
+
+    def emit_completed_bridge(self, candidate: NativeCandidateManifest) -> None:
+        if self.request.protocol != BRIDGE_PROTOCOL_VERSION:
+            raise ProtocolError("emit_completed_bridge requires protocol 2")
+        if not isinstance(candidate, NativeCandidateManifest):
+            raise ProtocolError("completed_bridge candidate must be a NativeCandidateManifest")
+        self._emit(
+            CompletedBridgeEvent(self.request.protocol, self.request.identity, candidate),
+            terminal=True,
+        )
 
     def emit_failed(self, code: str, detail: str) -> None:
         self._emit(
             FailedEvent(
-                PROTOCOL_VERSION,
+                self.request.protocol,
                 self.request.identity,
                 WorkerFailure(code, detail),
             ),
@@ -938,11 +1228,12 @@ class WorkerProtocol:
     def emit_cancelled(self) -> None:
         if not self.cancel_requested:
             raise ProtocolError("cancelled requires a matching cancel request")
-        self._emit(CancelledEvent(PROTOCOL_VERSION, self.request.identity), terminal=True)
+        self._emit(CancelledEvent(self.request.protocol, self.request.identity), terminal=True)
 
 
 __all__ = [
     "PROTOCOL_VERSION",
+    "BRIDGE_PROTOCOL_VERSION",
     "MAX_FRAME_BYTES",
     "MAX_PROTOCOL_ID_BYTES",
     "MAX_WORKSPACE_REF_BYTES",
@@ -958,13 +1249,16 @@ __all__ = [
     "ProviderSelection",
     "WorkspaceArtifact",
     "CandidateManifest",
+    "NativeCandidateManifest",
     "GenerateHoldRequest",
+    "GenerateBridgeRequest",
     "CancelRequest",
     "StageProgress",
     "WorkerFailure",
     "StageEvent",
     "ProgressEvent",
     "CompletedEvent",
+    "CompletedBridgeEvent",
     "FailedEvent",
     "CancelledEvent",
     "WorkerEvent",

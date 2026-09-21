@@ -82,7 +82,7 @@ def main():
                                ["runtime_source", "model_cache", "ffmpeg", "ffprobe"]})
     identity = uuid.uuid4().hex
     request = {
-        "operation": "generate_hold", "protocol": 1,
+        "operation": "generate_bridge", "protocol": 2,
         "identity": {"request_id": f"probe-{identity}", "attempt_id": "attempt-1"},
         "cancellation_token": uuid.uuid4().hex, "project_id": f"probe-{identity}", "revision_id": "revision-1",
         "target": {"hold_id": "hold-1", "request_version": 1},
@@ -93,6 +93,7 @@ def main():
             "width": 768, "height": 320}},
         "provider": {"pack_id": "ltx-2.3-q4-development", "pack_version": "56a5866d",
                      "runtime_id": "ltx-mlx-development", "runtime_version": "0.15.8+deadpan1", "seed": args.seed},
+        "plan": plan,
     }
     save(run / "host-config.json", {
         "executable": sys.executable, "worker_script": str(root / "tools/model-qualification/worker.py"),

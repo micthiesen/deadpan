@@ -5,7 +5,9 @@
 
 use std::cmp::Ordering;
 
-use deadpan_core::{ExactRatio, FrameDuration, FrameRate, TimeError};
+use deadpan_core::{
+    BridgeInterpolation, BridgeSamplingMap, ExactRatio, FrameDuration, FrameRate, TimeError,
+};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -461,6 +463,20 @@ impl BridgeGenerationPlan {
     /// Signed seconds: actual native boundary duration minus requested duration.
     pub const fn retime_deviation(&self) -> ExactRatio {
         self.timing.retime_deviation
+    }
+
+    /// The exact authored sampling contract consumed by the media canonicalizer.
+    pub fn sampling_map(&self) -> Result<BridgeSamplingMap, GenerationPlanError> {
+        self.validate_intrinsic()?;
+        BridgeSamplingMap::new(
+            self.project.frame_rate,
+            self.native.frame_rate,
+            FrameDuration::new(i64::from(self.native.frame_count))
+                .map_err(|_| GenerationPlanError::ArithmeticOverflow)?,
+            self.project.interior_frames,
+            BridgeInterpolation::EncodedSrgbRgb8LinearHalfUp,
+        )
+        .map_err(|_| GenerationPlanError::InconsistentPlan)
     }
 
     pub fn validate_for(&self, capability: &BridgeCapability) -> Result<(), GenerationPlanError> {

@@ -68,10 +68,11 @@ waiting for a GPU kernel is not part of the document transaction.
 ## Migration and verification
 
 Database schemas 1 through 6 replay and compare their complete chronology through
-strict legacy adapters into database schema 7 and core schema 5. Existing request
+strict legacy adapters into database schema 8 and core schema 5. Schema 7 already
+uses core schema 5, so its full history is validated without rewriting it. Existing request
 rows and clocks are validated and retained. Schema-6 attempts, receipts and
 selection also remain unchanged; older databases gain missing operational tables.
-All paths retain a `Snapshots/before-schema-7-*.sqlite` backup and promote only the validated
+All paths retain a `Snapshots/before-schema-8-*.sqlite` backup and promote only the validated
 candidate through SQLite's backup transaction.
 
 The [schema-4 fixture](../crates/deadpan-store/tests/fixtures/v4-history.sql) was
@@ -98,5 +99,5 @@ in this slice, so native startup and interactive checks were not repeated.
 The schema-5 request implementation passed formatting, workspace Clippy with warnings denied,
 224 Rust tests (zero failed or ignored), workspace build, and `deadpan-cli doctor`.
 The audio and model qualification suites also pass 20 and 47 Python tests.
-The current diagnostics distinguish database schema 7 from core document schema 5
+The current diagnostics distinguish database schema 8 from core document schema 5
 and continue to report application AI generation as unimplemented.

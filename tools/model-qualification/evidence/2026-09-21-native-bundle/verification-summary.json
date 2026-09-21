@@ -1,0 +1,44 @@
+{
+  "rust": {
+    "passed": 319,
+    "failed": 0,
+    "ignored": 0
+  },
+  "python": {
+    "audio": 20,
+    "model": 54,
+    "ffv1_reports": 5,
+    "native_harness": 4,
+    "total": 83
+  },
+  "additional_checks": [
+    "actual V2 native generation + frozen native verification",
+    "actual V2 inference cancellation",
+    "actual host native+sampled+provenance qualification",
+    "All three real objects: publication, package relocation, and cross-process verified readback",
+    "legacy V1 verifier succeeds; changed V2 provenance rejected",
+    "Captured native model output requalified with the final host-selected provider capability and republished/read back after relocation"
+  ],
+  "gate_environment": {
+    "DEADPAN_FFMPEG_PREFIX": "/tmp/deadpan-media-compatible-xyhilms4/prefix"
+  },
+  "review_fixes": [
+    "required provenance fields/binding",
+    "cancellation/deadline during artifact copies",
+    "bounded provenance serialization",
+    "eviction JSON/column atomic agreement",
+    "receipt/validator checked deserialization",
+    "malformed nonnull plans rejected, not treated as legacy",
+    "CLI migration assertion updated to schema8",
+    "Host-selected provider capability and nearest legal count checked before artifact I/O",
+    "Shared native/sample object rejected when video contracts differ"
+  ],
+  "skipped": [
+    "GUI/native startup: no UI or lifecycle changes",
+    "new C sanitizer run: codec C unchanged; earlier evidence retained"
+  ],
+  "source_consistency": "All 41 recorded source hashes remained unchanged through the final gate",
+  "review_decisions": [
+    "Blanket native/sample dedup prohibition rejected: identical contracts can legitimately share identical media bytes. Contradictory contracts are rejected."
+  ]
+}

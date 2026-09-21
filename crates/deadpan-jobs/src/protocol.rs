@@ -5,7 +5,10 @@ use deadpan_core::{FrameDuration, FrameRate, NodeId, ProjectId, RevisionId};
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use thiserror::Error;
 
+use crate::generation_plan::BridgeGenerationPlan;
+
 pub const PROTOCOL_VERSION: u32 = 1;
+pub const BRIDGE_PROTOCOL_VERSION: u32 = 2;
 pub const MAX_FRAME_BYTES: usize = 256 * 1024;
 pub const MAX_PROTOCOL_ID_BYTES: usize = 128;
 pub const MAX_WORKSPACE_REF_BYTES: usize = 1_024;
@@ -16,6 +19,7 @@ pub const MAX_VIDEO_DIMENSION: u32 = 32_768;
 #[serde(try_from = "u32", into = "u32")]
 pub enum ProtocolVersion {
     V1,
+    V2,
 }
 
 impl TryFrom<u32> for ProtocolVersion {
@@ -24,14 +28,18 @@ impl TryFrom<u32> for ProtocolVersion {
     fn try_from(value: u32) -> Result<Self, Self::Error> {
         match value {
             PROTOCOL_VERSION => Ok(Self::V1),
+            BRIDGE_PROTOCOL_VERSION => Ok(Self::V2),
             value => Err(ValueError::UnsupportedProtocol(value)),
         }
     }
 }
 
 impl From<ProtocolVersion> for u32 {
-    fn from(_: ProtocolVersion) -> Self {
-        PROTOCOL_VERSION
+    fn from(value: ProtocolVersion) -> Self {
+        match value {
+            ProtocolVersion::V1 => PROTOCOL_VERSION,
+            ProtocolVersion::V2 => BRIDGE_PROTOCOL_VERSION,
+        }
     }
 }
 
@@ -440,6 +448,50 @@ pub struct CandidateManifest {
     pub provider: ProviderSelection,
 }
 
+/// Worker-declared native bridge sequence and provenance. Both artifacts remain
+/// untrusted until the host snapshots, hashes, decodes, and validates them.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(try_from = "NativeCandidateManifestWire")]
+pub struct NativeCandidateManifest {
+    pub native: WorkspaceArtifact,
+    pub provenance: WorkspaceArtifact,
+    pub video: VideoSpec,
+    pub provider: ProviderSelection,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct NativeCandidateManifestWire {
+    native: WorkspaceArtifact,
+    provenance: WorkspaceArtifact,
+    video: VideoSpec,
+    provider: ProviderSelection,
+}
+
+impl NativeCandidateManifest {
+    pub fn validate(&self) -> Result<(), ValueError> {
+        if self.native.reference() == self.provenance.reference() {
+            return Err(ValueError::DuplicateArtifactReference);
+        }
+        Ok(())
+    }
+}
+
+impl TryFrom<NativeCandidateManifestWire> for NativeCandidateManifest {
+    type Error = ValueError;
+
+    fn try_from(value: NativeCandidateManifestWire) -> Result<Self, Self::Error> {
+        let manifest = Self {
+            native: value.native,
+            provenance: value.provenance,
+            video: value.video,
+            provider: value.provider,
+        };
+        manifest.validate()?;
+        Ok(manifest)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "operation", rename_all = "snake_case", deny_unknown_fields)]
 pub enum HostMessage {
@@ -455,6 +507,19 @@ pub enum HostMessage {
         constraints: HoldConstraints,
         provider: Box<ProviderSelection>,
     },
+    GenerateBridge {
+        protocol: ProtocolVersion,
+        identity: MessageIdentity,
+        cancellation_token: CancellationToken,
+        project_id: ProjectId,
+        revision_id: RevisionId,
+        target: HoldTarget,
+        input: ContextArtifact,
+        output_workspace: WorkspaceRef,
+        constraints: HoldConstraints,
+        provider: Box<ProviderSelection>,
+        plan: Box<BridgeGenerationPlan>,
+    },
     Cancel {
         protocol: ProtocolVersion,
         identity: MessageIdentity,
@@ -465,7 +530,50 @@ pub enum HostMessage {
 impl HostMessage {
     pub fn identity(&self) -> &MessageIdentity {
         match self {
-            Self::GenerateHold { identity, .. } | Self::Cancel { identity, .. } => identity,
+            Self::GenerateHold { identity, .. }
+            | Self::GenerateBridge { identity, .. }
+            | Self::Cancel { identity, .. } => identity,
+        }
+    }
+
+    pub const fn protocol(&self) -> ProtocolVersion {
+        match self {
+            Self::GenerateHold { protocol, .. }
+            | Self::GenerateBridge { protocol, .. }
+            | Self::Cancel { protocol, .. } => *protocol,
+        }
+    }
+
+    pub fn validate(&self) -> Result<(), ValueError> {
+        match self {
+            Self::GenerateHold { protocol, .. } if *protocol != ProtocolVersion::V1 => {
+                Err(ValueError::ProtocolOperationMismatch)
+            }
+            Self::GenerateBridge {
+                protocol,
+                constraints,
+                plan,
+                ..
+            } => {
+                if *protocol != ProtocolVersion::V2 {
+                    return Err(ValueError::ProtocolOperationMismatch);
+                }
+                let sampling = plan
+                    .sampling_map()
+                    .map_err(|_| ValueError::InvalidBridgePlan)?;
+                let dimensions = plan.native_dimensions();
+                if constraints.conditioning != ConditioningMode::Bridge
+                    || constraints.video.frames() != plan.project_frames()
+                    || constraints.video.frame_rate() != plan.project_frame_rate()
+                    || constraints.video.width() != dimensions.width()
+                    || constraints.video.height() != dimensions.height()
+                    || sampling.output_frame_count() != plan.project_frames()
+                {
+                    return Err(ValueError::BridgePlanMismatch);
+                }
+                Ok(())
+            }
+            Self::Cancel { .. } | Self::GenerateHold { .. } => Ok(()),
         }
     }
 }
@@ -561,6 +669,11 @@ pub enum WorkerMessage {
         identity: MessageIdentity,
         candidate: CandidateManifest,
     },
+    CompletedBridge {
+        protocol: ProtocolVersion,
+        identity: MessageIdentity,
+        candidate: NativeCandidateManifest,
+    },
     Failed {
         protocol: ProtocolVersion,
         identity: MessageIdentity,
@@ -578,24 +691,64 @@ impl WorkerMessage {
             Self::Stage { identity, .. }
             | Self::Progress { identity, .. }
             | Self::Completed { identity, .. }
+            | Self::CompletedBridge { identity, .. }
             | Self::Failed { identity, .. }
             | Self::Cancelled { identity, .. } => identity,
+        }
+    }
+
+    pub const fn protocol(&self) -> ProtocolVersion {
+        match self {
+            Self::Stage { protocol, .. }
+            | Self::Progress { protocol, .. }
+            | Self::Completed { protocol, .. }
+            | Self::CompletedBridge { protocol, .. }
+            | Self::Failed { protocol, .. }
+            | Self::Cancelled { protocol, .. } => *protocol,
+        }
+    }
+
+    pub fn validate(&self) -> Result<(), ValueError> {
+        match self {
+            Self::Completed { protocol, .. } if *protocol != ProtocolVersion::V1 => {
+                Err(ValueError::ProtocolOperationMismatch)
+            }
+            Self::CompletedBridge {
+                protocol,
+                candidate,
+                ..
+            } => {
+                if *protocol != ProtocolVersion::V2 {
+                    return Err(ValueError::ProtocolOperationMismatch);
+                }
+                candidate.validate()
+            }
+            _ => Ok(()),
         }
     }
 }
 
 pub fn read_host_message(reader: &mut impl Read) -> Result<Option<HostMessage>, CodecError> {
-    read_frame(reader)
+    let message: Option<HostMessage> = read_frame(reader)?;
+    if let Some(message) = &message {
+        message.validate().map_err(CodecError::InvalidMessage)?;
+    }
+    Ok(message)
 }
 
 pub fn read_worker_message(reader: &mut impl Read) -> Result<Option<WorkerMessage>, CodecError> {
-    read_frame(reader)
+    let message: Option<WorkerMessage> = read_frame(reader)?;
+    if let Some(message) = &message {
+        message.validate().map_err(CodecError::InvalidMessage)?;
+    }
+    Ok(message)
 }
 
 pub fn write_host_message(
     writer: &mut impl Write,
     message: &HostMessage,
 ) -> Result<(), CodecError> {
+    message.validate().map_err(CodecError::InvalidMessage)?;
     write_frame(writer, message)
 }
 
@@ -603,6 +756,7 @@ pub fn write_worker_message(
     writer: &mut impl Write,
     message: &WorkerMessage,
 ) -> Result<(), CodecError> {
+    message.validate().map_err(CodecError::InvalidMessage)?;
     write_frame(writer, message)
 }
 
@@ -722,6 +876,14 @@ pub enum ValueError {
     InvalidDimensions { width: u32, height: u32, max: u32 },
     #[error("artifact byte length must be positive")]
     EmptyArtifact,
+    #[error("native media and provenance must use distinct workspace references")]
+    DuplicateArtifactReference,
+    #[error("message operation is incompatible with its protocol version")]
+    ProtocolOperationMismatch,
+    #[error("bridge generation plan is invalid")]
+    InvalidBridgePlan,
+    #[error("bridge generation plan does not match the requested Hold constraints")]
+    BridgePlanMismatch,
     #[error("progress {completed}/{total} requires a positive total and completed <= total")]
     InvalidProgress { completed: u64, total: u64 },
 }
@@ -740,6 +902,8 @@ pub enum CodecError {
     OversizedSerialization { max: usize },
     #[error("worker payload is malformed")]
     MalformedPayload(#[source] serde_json::Error),
+    #[error("worker message violates the protocol contract")]
+    InvalidMessage(#[source] ValueError),
     #[error("worker message could not be serialized")]
     Serialize(#[source] serde_json::Error),
 }
