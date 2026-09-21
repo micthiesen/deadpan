@@ -29,6 +29,14 @@ The receipt identity hashes a versioned domain, original BLAKE3 and byte length,
 and canonical qualification bytes. Asset labels, file locations, location
 versions and temporary decode aliases do not change that identity.
 
+For a native worker, [import preparation](IMPORT_PREPARATION.md) provides
+`PreparedSourceRegistration::from_decoded` over a private verified original
+snapshot. Canonicalization and receipt hashing run without the project writer.
+`preview_prepared_source_registration` and `register_prepared_source` resolve
+current revision/target/basis intent and recheck the retained original's namespace
+and inventory version. Tokens cannot cross open project sessions. Synchronous
+registration delegates to this path; independent read-only preview stays available.
+
 Database schema 15 stores immutable receipts in `source_qualifications`, separate
 from authored undo history. Core schema 10 assets bind `source_qualification` to
 the receipt ID. The store commits a new receipt, derived asset, optional Source,

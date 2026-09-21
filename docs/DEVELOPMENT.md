@@ -91,6 +91,13 @@ video/audio fixtures and cover persisted evidence, transactional insertion,
 historical lookup, rollback and explicit stream selection. Run the migration
 suite for schema changes. See [source registration](SOURCE_REGISTRATION.md).
 
+For background preparation, run the store `original_preparation` and
+`prepared_source_registration` integration suites. They exercise transferable
+preparation handles, writer edits during preparation, stale intent, closed or
+different sessions, changed originals and atomic rollback. These tests use actual
+files and decoders without opening the app. They establish the
+[import boundary](IMPORT_PREPARATION.md), not a full-size import latency budget.
+
 For presentation policy, core `presentation_basis` tests exercise origin and
 lock transitions, marks, occurrence edits and inverse patches. Store
 `presentation_basis` tests use real sources for first-primary selection,

@@ -1,0 +1,62 @@
+{
+  "base_revision": "077c6791dfd6feacf62e6a3951458a2f082ce76d",
+  "scope": "Uncommitted import preparation change, including untracked integration tests and documentation.",
+  "reviews": [
+    {
+      "agent": "import_general_review",
+      "lens": "general correctness",
+      "findings": [
+        "closure-error-classification"
+      ],
+      "followup": "Resolved by root and covered by freshness follow-up."
+    },
+    {
+      "agent": "import_freshness_review",
+      "lens": "freshness, session lifetime, cancellation and filesystem durability",
+      "findings": [
+        "delayed-linked-retention",
+        "publication-durability",
+        "closure-error-classification"
+      ],
+      "followup": "No remaining findings after inspecting fixes; original_preparation 9/9 and prepared_source_registration 12/12 passed."
+    },
+    {
+      "agent": "import_atomicity_review",
+      "lens": "atomic admission, current revision and relevance",
+      "findings": [
+        "delayed-linked-retention",
+        "generation-relevance-coverage"
+      ],
+      "followup": "Both findings addressed; focused suites 9/9 and 12/12 passed, no remaining concrete defects."
+    }
+  ],
+  "applied": [
+    {
+      "id": "delayed-linked-retention",
+      "change": "Retention rejects a different established linked location or bookmark; replacement requires explicit versioned relink. A delayed token cannot overwrite a newer locator.",
+      "regression": "New regression failed pre-fix; all nine original preparation tests pass."
+    },
+    {
+      "id": "publication-durability",
+      "change": "After successful copy publication, complete durability on the published descriptor before cancellable verification; confirm the namespace against both descriptors. Preserve durability failures.",
+      "regression": "Pre-fix durability interruption tests failed; post-fix object-storage tests pass, including namespace replacement."
+    },
+    {
+      "id": "closure-error-classification",
+      "change": "SessionClosed maps to OriginalImportClosed; closed sessions take precedence when cancellation is also signaled.",
+      "regression": "Pre-fix distinction test failed; actual publication errors and both-signal cases are checked."
+    },
+    {
+      "id": "generation-relevance-coverage",
+      "change": "Actual source sessions and typed RelevancePlan exercise missing-plan refusal, tentative relevance/receipt/revision/history rollback at cursor write, same-token retry, validation and reopen.",
+      "limitation": "Context hashes are supplied test values; this does not establish a host dependency resolver."
+    }
+  ],
+  "additional_root_test_improvements": [
+    "History failure now fires after receipt insertion and asserts exact document restoration.",
+    "Linked inventory version changes invalidate prepared source proof even when old bytes remain unchanged.",
+    "Cancelled source insertion commits no receipt or edit and allows retry."
+  ],
+  "dismissed": [],
+  "unresolved": []
+}

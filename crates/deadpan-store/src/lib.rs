@@ -24,6 +24,11 @@ mod validation;
 use std::fs::{self, File, OpenOptions};
 use std::io::Write;
 use std::path::{Path, PathBuf};
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+use std::sync::{
+    Arc,
+    atomic::{AtomicBool, Ordering},
+};
 
 use deadpan_core::{CommandRequest, EditTransaction, ProjectDocument, RevisionId};
 use rusqlite::{Connection, OpenFlags, OptionalExtension, params};
@@ -52,7 +57,9 @@ pub struct ProjectStore {
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     generated_storage: generated_media::GeneratedStorage,
     #[cfg(any(target_os = "macos", target_os = "linux"))]
-    original_storage: object_storage::ObjectStorage,
+    original_storage: Arc<object_storage::ObjectStorage>,
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    import_closed: Arc<AtomicBool>,
     // Explicitly unlocked on drop so a briefly inherited descriptor in a spawned
     // child cannot extend this writer's ownership beyond the store lifetime.
     _writer_lock: Option<File>,
@@ -60,6 +67,8 @@ pub struct ProjectStore {
 
 impl Drop for ProjectStore {
     fn drop(&mut self) {
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        self.import_closed.store(true, Ordering::Release);
         if let Some(lock) = &self._writer_lock {
             // File::drop still closes the handle if explicit unlock fails.
             let _ = lock.unlock();
@@ -141,7 +150,9 @@ impl ProjectStore {
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             generated_storage,
             #[cfg(any(target_os = "macos", target_os = "linux"))]
-            original_storage,
+            original_storage: Arc::new(original_storage),
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            import_closed: Arc::new(AtomicBool::new(false)),
             _writer_lock: Some(lock),
         })
     }
@@ -192,7 +203,9 @@ impl ProjectStore {
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             generated_storage,
             #[cfg(any(target_os = "macos", target_os = "linux"))]
-            original_storage,
+            original_storage: Arc::new(original_storage),
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            import_closed: Arc::new(AtomicBool::new(false)),
             _writer_lock: lock,
         };
         store.validate()?;

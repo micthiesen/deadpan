@@ -8,6 +8,7 @@ use std::fs::{File, Metadata};
 use std::io::{self, Read, Seek, SeekFrom, Write};
 use std::os::unix::fs::{FileExt, MetadataExt};
 use std::path::{Component, Path, PathBuf};
+use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
@@ -19,8 +20,8 @@ use sha2::{Digest, Sha256};
 use thiserror::Error;
 
 use crate::object_storage::{
-    ObjectControl, ObjectIdentity, ObjectLimits, ObjectStorageError, PromotionMethod,
-    VerifiedObject,
+    ObjectControl, ObjectFreshnessGuard, ObjectIdentity, ObjectLimits, ObjectStorage,
+    ObjectStorageError, PromotionMethod, VerifiedObject,
 };
 use crate::{AccessMode, ProjectStore, StoreError};
 
@@ -193,6 +194,7 @@ impl OriginalMediaLimits {
         let control = Control {
             deadline: Instant::now() + self.timeout,
             cancelled,
+            closed: None,
         };
         control.check()?;
         Ok(control)
@@ -247,7 +249,294 @@ impl Seek for VerifiedOriginalObject {
     }
 }
 
+/// Connection-free authority for one writable store session. Clones neither
+/// borrow SQLite nor retain the writer lock, and closing the store revokes them.
+#[derive(Clone)]
+pub struct OriginalImportHandle {
+    storage: Arc<ObjectStorage>,
+    closed: Arc<AtomicBool>,
+}
+
+enum OriginalFreshnessGuard {
+    Managed(ObjectFreshnessGuard),
+    Linked {
+        path: PathBuf,
+        file: File,
+        state: Metadata,
+    },
+}
+
+impl OriginalFreshnessGuard {
+    fn recheck(&self, storage: &ObjectStorage) -> Result<(), OriginalMediaError> {
+        match self {
+            Self::Managed(guard) => Ok(storage.recheck_guard(guard)?),
+            Self::Linked { path, file, state } => confirm_source_path(path, file, state),
+        }
+    }
+}
+
+/// Published or linked bytes awaiting the owning writer's inventory transaction.
+/// This cannot be minted from a serialized ownership record.
+pub struct PreparedOriginalRetention {
+    handle: OriginalImportHandle,
+    record: OriginalMediaRecord,
+    method: OriginalRetentionMethod,
+    guard: OriginalFreshnessGuard,
+}
+
+impl PreparedOriginalRetention {
+    pub fn object(&self) -> &OriginalObjectRef {
+        &self.record.object
+    }
+
+    fn recheck(&self, cancelled: &AtomicBool) -> Result<(), StoreError> {
+        self.handle.check_live(cancelled)?;
+        self.guard.recheck(&self.handle.storage)?;
+        self.handle.check_live(cancelled)
+    }
+}
+
+/// Private verified bytes plus retained-original availability evidence. Reading
+/// remains valid after store close; admission requires a live matching session.
+pub struct PreparedOriginalSnapshot {
+    handle: OriginalImportHandle,
+    original: VerifiedOriginalObject,
+    guard: OriginalFreshnessGuard,
+}
+
+impl PreparedOriginalSnapshot {
+    pub fn record(&self) -> &OriginalMediaRecord {
+        self.original.record()
+    }
+
+    pub(crate) fn validate_for(
+        &self,
+        store: &ProjectStore,
+        cancelled: &AtomicBool,
+    ) -> Result<(), StoreError> {
+        self.handle.validate_for(store, cancelled)?;
+        let current = read_record(&store.connection, self.record().object.content())?
+            .ok_or(OriginalMediaError::MissingRecord)?;
+        if current.version != self.record().version {
+            return Err(OriginalMediaError::VersionConflict {
+                current: current.version,
+            }
+            .into());
+        }
+        if current != *self.record() {
+            return Err(OriginalMediaError::IdentityMismatch.into());
+        }
+        self.recheck(cancelled)
+    }
+
+    pub(crate) fn recheck(&self, cancelled: &AtomicBool) -> Result<(), StoreError> {
+        self.handle.check_live(cancelled)?;
+        self.guard.recheck(&self.handle.storage)?;
+        self.handle.check_live(cancelled)
+    }
+}
+
+impl Read for PreparedOriginalSnapshot {
+    fn read(&mut self, buffer: &mut [u8]) -> io::Result<usize> {
+        self.original.read(buffer)
+    }
+}
+
+impl Seek for PreparedOriginalSnapshot {
+    fn seek(&mut self, position: SeekFrom) -> io::Result<u64> {
+        self.original.seek(position)
+    }
+}
+
+impl OriginalImportHandle {
+    fn check_live(&self, cancelled: &AtomicBool) -> Result<(), StoreError> {
+        if self.closed.load(Ordering::Acquire) {
+            return Err(OriginalMediaError::ImportSessionClosed.into());
+        }
+        if cancelled.load(Ordering::Acquire) {
+            return Err(OriginalMediaError::Cancelled.into());
+        }
+        Ok(())
+    }
+
+    fn validate_for(&self, store: &ProjectStore, cancelled: &AtomicBool) -> Result<(), StoreError> {
+        require_writer(store)?;
+        self.check_live(cancelled)?;
+        if !Arc::ptr_eq(&self.storage, &store.original_storage)
+            || !Arc::ptr_eq(&self.closed, &store.import_closed)
+        {
+            return Err(OriginalMediaError::ImportSessionMismatch.into());
+        }
+        Ok(())
+    }
+
+    /// Hashes, clones or copies, and publishes original bytes without SQLite.
+    /// Publication survives later cancellation or inventory transaction failure.
+    pub fn prepare_retention(
+        &self,
+        path: &Path,
+        ownership: OriginalOwnership,
+        limits: OriginalMediaLimits,
+        cancelled: &AtomicBool,
+    ) -> Result<PreparedOriginalRetention, StoreError> {
+        self.check_live(cancelled)?;
+        let control = limits.control(cancelled)?.with_closed(&self.closed);
+        validate_path(path)?;
+        let linked = match &ownership {
+            OriginalOwnership::Managed => None,
+            OriginalOwnership::Linked { bookmark } => {
+                Some(LinkedOriginal::new(path.to_owned(), bookmark.clone())?)
+            }
+        };
+        let label = path
+            .file_name()
+            .and_then(|n| n.to_str())
+            .ok_or(OriginalMediaError::InvalidRecord(
+                "source filename is not valid UTF-8",
+            ))?
+            .to_owned();
+        let file = open_source(path)?;
+        let InspectedOriginal {
+            object,
+            sha256,
+            state,
+        } = inspect_original(&file, limits, &control, io::sink())?;
+        let (method, guard) = match ownership {
+            OriginalOwnership::Managed => {
+                let object_limits =
+                    ObjectLimits::new(limits.maximum_bytes).map_err(OriginalMediaError::from)?;
+                let method = self
+                    .storage
+                    .promote_file_controlled(
+                        &file,
+                        object.identity()?,
+                        object_limits,
+                        control.object_control(),
+                    )
+                    .map_err(OriginalMediaError::from)?;
+                let (guard, published_sha256) = self
+                    .storage
+                    .guard_controlled(object.identity()?, object_limits, control.object_control())
+                    .map_err(OriginalMediaError::from)?;
+                if published_sha256 != sha256 {
+                    return Err(OriginalMediaError::IdentityMismatch.into());
+                }
+                let method = match method {
+                    PromotionMethod::Existing => OriginalRetentionMethod::Existing,
+                    PromotionMethod::Cloned => OriginalRetentionMethod::Cloned,
+                    PromotionMethod::Copied => OriginalRetentionMethod::Copied,
+                };
+                (method, OriginalFreshnessGuard::Managed(guard))
+            }
+            OriginalOwnership::Linked { .. } => {
+                confirm_source_path(path, &file, &state)?;
+                (
+                    OriginalRetentionMethod::Linked,
+                    OriginalFreshnessGuard::Linked {
+                        path: path.to_owned(),
+                        file,
+                        state,
+                    },
+                )
+            }
+        };
+        control.check()?;
+        self.check_live(cancelled)?;
+        let record = OriginalMediaRecord {
+            object,
+            sha256,
+            label,
+            version: 1,
+            managed: !matches!(method, OriginalRetentionMethod::Linked),
+            linked,
+        };
+        record.validate()?;
+        Ok(PreparedOriginalRetention {
+            handle: self.clone(),
+            record,
+            method,
+            guard,
+        })
+    }
+
+    /// Verifies retained bytes into an immutable snapshot on the worker. The
+    /// supplied record is checked against SQLite only when the writer admits it.
+    pub fn snapshot_original(
+        &self,
+        record: &OriginalMediaRecord,
+        limits: OriginalMediaLimits,
+        cancelled: &AtomicBool,
+    ) -> Result<PreparedOriginalSnapshot, StoreError> {
+        self.check_live(cancelled)?;
+        record.validate()?;
+        let control = limits.control(cancelled)?.with_closed(&self.closed);
+        if record.object.byte_length() > limits.maximum_bytes {
+            return Err(OriginalMediaError::ByteLimit.into());
+        }
+        let (bytes, guard) = if record.managed {
+            let (snapshot, guard) = self
+                .storage
+                .guarded_snapshot_controlled(
+                    record.object.identity()?,
+                    ObjectLimits::new(limits.maximum_bytes).map_err(OriginalMediaError::from)?,
+                    control.object_control(),
+                )
+                .map_err(OriginalMediaError::from)?;
+            if snapshot.sha256() != record.sha256 {
+                return Err(OriginalMediaError::IdentityMismatch.into());
+            }
+            (
+                SnapshotBytes::Managed(snapshot),
+                OriginalFreshnessGuard::Managed(guard),
+            )
+        } else {
+            let link = record
+                .linked
+                .as_ref()
+                .ok_or(OriginalMediaError::MissingRecord)?;
+            let file = open_source(link.path())?;
+            let mut copy = tempfile::tempfile()?;
+            let InspectedOriginal {
+                object,
+                sha256,
+                state,
+            } = inspect_original(&file, limits, &control, &mut copy)?;
+            if object != record.object || sha256 != record.sha256 {
+                return Err(OriginalMediaError::IdentityMismatch.into());
+            }
+            confirm_source_path(link.path(), &file, &state)?;
+            copy.seek(SeekFrom::Start(0))?;
+            (
+                SnapshotBytes::Linked(copy),
+                OriginalFreshnessGuard::Linked {
+                    path: link.path().to_owned(),
+                    file,
+                    state,
+                },
+            )
+        };
+        control.check()?;
+        self.check_live(cancelled)?;
+        Ok(PreparedOriginalSnapshot {
+            handle: self.clone(),
+            original: VerifiedOriginalObject {
+                bytes,
+                record: record.clone(),
+            },
+            guard,
+        })
+    }
+}
+
 impl ProjectStore {
+    pub fn original_import_handle(&self) -> Result<OriginalImportHandle, StoreError> {
+        require_writer(self)?;
+        Ok(OriginalImportHandle {
+            storage: Arc::clone(&self.original_storage),
+            closed: Arc::clone(&self.import_closed),
+        })
+    }
+
     /// Retain complete original bytes or an explicit linked location. This does
     /// not assert decodability, audio readiness, or change authored history.
     pub fn retain_original(
@@ -257,72 +546,61 @@ impl ProjectStore {
         limits: OriginalMediaLimits,
         cancelled: &AtomicBool,
     ) -> Result<OriginalRetentionOutcome, StoreError> {
-        require_writer(self)?;
+        let handle = self.original_import_handle()?;
         let control = limits.control(cancelled)?;
-        validate_path(path)?;
-        let linked = match &ownership {
-            OriginalOwnership::Managed => None,
-            OriginalOwnership::Linked { bookmark } => {
-                Some(LinkedOriginal::new(path.to_owned(), bookmark.clone())?)
-            }
-        };
-        let file = open_source(path)?;
-        let InspectedOriginal {
-            object,
-            sha256,
-            state,
-        } = inspect_original(&file, limits, &control, io::sink())?;
-        let method = match ownership {
-            OriginalOwnership::Managed => {
-                let method = self
-                    .original_storage
-                    .promote_file_controlled(
-                        &file,
-                        object.identity()?,
-                        ObjectLimits::new(limits.maximum_bytes)
-                            .map_err(OriginalMediaError::from)?,
-                        control.object_control(),
-                    )
-                    .map_err(OriginalMediaError::from)?;
-                match method {
-                    PromotionMethod::Existing => OriginalRetentionMethod::Existing,
-                    PromotionMethod::Cloned => OriginalRetentionMethod::Cloned,
-                    PromotionMethod::Copied => OriginalRetentionMethod::Copied,
-                }
-            }
-            OriginalOwnership::Linked { .. } => {
-                confirm_source_path(path, &file, &state)?;
-                OriginalRetentionMethod::Linked
-            }
-        };
-        control.check()?;
+        let prepared = handle.prepare_retention(path, ownership, limits, cancelled)?;
+        self.retain_prepared_original_controlled(&prepared, cancelled, Some(&control))
+    }
+
+    /// Performs only freshness checks and an atomic inventory merge. Complete
+    /// byte verification and publication already ran on the preparation worker.
+    pub fn retain_prepared_original(
+        &mut self,
+        prepared: &PreparedOriginalRetention,
+        cancelled: &AtomicBool,
+    ) -> Result<OriginalRetentionOutcome, StoreError> {
+        self.retain_prepared_original_controlled(prepared, cancelled, None)
+    }
+
+    fn retain_prepared_original_controlled(
+        &mut self,
+        prepared: &PreparedOriginalRetention,
+        cancelled: &AtomicBool,
+        control: Option<&Control<'_>>,
+    ) -> Result<OriginalRetentionOutcome, StoreError> {
+        prepared.handle.validate_for(self, cancelled)?;
+        prepared.recheck(cancelled)?;
+        if let Some(control) = control {
+            control.check()?;
+        }
+        let object = &prepared.record.object;
+        let sha256 = prepared.record.sha256;
+        let method = prepared.method;
         let transaction = self
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
         let old = read_record(&transaction, object.content())?;
         if let Some(old) = &old
-            && (old.object != object || old.sha256 != sha256)
+            && (old.object != *object || old.sha256 != sha256)
         {
             return Err(OriginalMediaError::IdentityMismatch.into());
         }
-        let label = path
-            .file_name()
-            .and_then(|n| n.to_str())
-            .ok_or(OriginalMediaError::InvalidRecord(
-                "source filename is not valid UTF-8",
-            ))?
-            .to_owned();
-        let mut record = old.clone().unwrap_or(OriginalMediaRecord {
-            object,
-            sha256,
-            label,
-            version: 1,
-            managed: false,
-            linked: None,
-        });
-        record.managed |= !matches!(method, OriginalRetentionMethod::Linked);
-        if linked.is_some() {
-            record.linked = linked;
+        // Preparation cannot know which location the writer will retain by the
+        // time it finishes. Merge new ownership, but never let a delayed import
+        // replace an established link. Location changes use versioned relinking.
+        if let Some(old) = &old
+            && let (Some(current), Some(incoming)) = (&old.linked, &prepared.record.linked)
+            && current != incoming
+        {
+            return Err(OriginalMediaError::VersionConflict {
+                current: old.version,
+            }
+            .into());
+        }
+        let mut record = old.clone().unwrap_or_else(|| prepared.record.clone());
+        record.managed |= prepared.record.managed;
+        if prepared.record.linked.is_some() {
+            record.linked = prepared.record.linked.clone();
         }
         if let Some(old) = &old {
             if record != *old {
@@ -336,7 +614,10 @@ impl ProjectStore {
             }
         }
         write_record(&transaction, &record)?;
-        control.check()?;
+        prepared.recheck(cancelled)?;
+        if let Some(control) = control {
+            control.check()?;
+        }
         transaction.commit()?;
         Ok(OriginalRetentionOutcome { record, method })
     }
@@ -538,9 +819,21 @@ fn same_source_state(before: &Metadata, after: &Metadata) -> bool {
 struct Control<'a> {
     deadline: Instant,
     cancelled: &'a AtomicBool,
+    closed: Option<&'a AtomicBool>,
 }
-impl Control<'_> {
+impl<'a> Control<'a> {
+    fn with_closed(mut self, closed: &'a AtomicBool) -> Self {
+        self.closed = Some(closed);
+        self
+    }
+
     fn check(&self) -> Result<(), OriginalMediaError> {
+        if self
+            .closed
+            .is_some_and(|closed| closed.load(Ordering::Acquire))
+        {
+            return Err(OriginalMediaError::ImportSessionClosed);
+        }
         if self.cancelled.load(Ordering::Acquire) {
             return Err(OriginalMediaError::Cancelled);
         }
@@ -550,7 +843,11 @@ impl Control<'_> {
         Ok(())
     }
     fn object_control(&self) -> ObjectControl<'_> {
-        ObjectControl::bounded(self.deadline, self.cancelled)
+        let control = ObjectControl::bounded(self.deadline, self.cancelled);
+        match self.closed {
+            Some(closed) => control.with_closed(closed),
+            None => control,
+        }
     }
 }
 
@@ -717,12 +1014,16 @@ pub enum OriginalMediaError {
     SourceChanged,
     #[error("source content does not match the registered original")]
     IdentityMismatch,
-    #[error("original location version changed; current version is {current}")]
+    #[error("original location conflicts with current inventory version {current}")]
     VersionConflict { current: u64 },
     #[error("original location versions are exhausted")]
     VersionExhausted,
     #[error("original-media operation cancelled")]
     Cancelled,
+    #[error("original import belongs to a closed store session")]
+    ImportSessionClosed,
+    #[error("original import belongs to a different store session")]
+    ImportSessionMismatch,
     #[error("original-media operation exceeded its deadline")]
     Deadline,
     #[error(transparent)]
@@ -740,6 +1041,8 @@ impl OriginalMediaError {
             Self::MissingRecord => "OriginalNotFound",
             Self::IdentityMismatch | Self::SourceChanged => "OriginalContentMismatch",
             Self::Cancelled => "OriginalCancelled",
+            Self::ImportSessionClosed => "OriginalImportClosed",
+            Self::ImportSessionMismatch => "OriginalImportSessionMismatch",
             Self::Deadline => "OriginalDeadline",
             Self::Io(e) if e.kind() == io::ErrorKind::NotFound => "OriginalOffline",
             Self::Io(e) if e.kind() == io::ErrorKind::PermissionDenied => "PermissionDenied",
@@ -747,6 +1050,7 @@ impl OriginalMediaError {
             Self::Io(_) => "IoFailure",
             Self::Storage(e) => match e {
                 ObjectStorageError::Cancelled => "OriginalCancelled",
+                ObjectStorageError::SessionClosed => "OriginalImportClosed",
                 ObjectStorageError::DeadlineExceeded => "OriginalDeadline",
                 ObjectStorageError::MissingObject(_)
                 | ObjectStorageError::MissingStorageComponent(_) => "OriginalOffline",

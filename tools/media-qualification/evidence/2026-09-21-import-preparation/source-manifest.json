@@ -1,0 +1,30 @@
+{
+  "base_revision": "077c6791dfd6feacf62e6a3951458a2f082ce76d",
+  "implementation_sha256": {
+    "Cargo.lock": "a16d4362ee309a9664638f748c25b0c07a203debf5f1f277f518e7283da6a301",
+    "crates/deadpan-cli/src/doctor.rs": "358326fdc4f6fa2b82a439316ac43fae0604644c9a9439f9f7c18bdaff138b00",
+    "crates/deadpan-store/src/lib.rs": "923aa95cf20ee6a0e031f6d2ee9fea023485e3e10d8abdbfa7cc12ed4ae8f64d",
+    "crates/deadpan-store/src/object_storage.rs": "b99bb3fbdb842f9ef1d08891e91e97cbf60c3a1b9bca0fca83cb7c544d194b88",
+    "crates/deadpan-store/src/original_media.rs": "5fe6206554d49810fa929bf1221d58b59dc116f0956cb52a4cf723aeebe33a0c",
+    "crates/deadpan-store/src/source_registration.rs": "8efafbb5df1313b3bcee4909df723dde741d8e01eab5eaca482fc48d0346ed63",
+    "crates/deadpan-store/tests/original_preparation.rs": "cadcc658853a67e2e4ba93ba7dd57aa13dbf2ce43f2ac8cd4cb4e479b2e94cb3",
+    "crates/deadpan-store/tests/prepared_source_registration.rs": "f2269f17739f991515509b3a95e536bada777254d97822fe29b93e6f226c33f8"
+  },
+  "fixture_sha256": {
+    "native/deadpan-source/tests/fixtures/cfr-bframes.mp4": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+    "native/deadpan-source/tests/fixtures/offset-bframes.mp4": "1504e8c41c2e8e33cf588bbe46e7c79f9fb507437533f5d6cd6f280b6bfdb120"
+  },
+  "environment": {
+    "hardware": "Apple M5 Max, 128 GiB",
+    "os": "macOS 26.5.2",
+    "rust": "1.97.1",
+    "ffmpeg": "8.0.3 LGPL",
+    "ffmpeg_prefix": "/tmp/deadpan-media-compatible-xyhilms4/prefix"
+  },
+  "prior_ci": {
+    "run": 35649258406,
+    "head": "077c6791dfd6feacf62e6a3951458a2f082ce76d",
+    "conclusion": "success"
+  },
+  "scope": "Session-bound original retention/snapshot preparation and measured source admission without complete-file work on the writer; no native UI or schema change."
+}

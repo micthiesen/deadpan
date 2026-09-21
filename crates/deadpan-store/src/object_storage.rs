@@ -11,7 +11,7 @@
 use std::ffi::CString;
 use std::fs::File;
 use std::io::{self, Read, Seek, SeekFrom, Write};
-use std::os::fd::OwnedFd;
+use std::os::fd::{AsFd, OwnedFd};
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Instant;
@@ -88,6 +88,7 @@ impl<'a> From<&'a GeneratedObjectRef> for ObjectIdentity<'a> {
 pub(crate) struct ObjectControl<'a> {
     deadline: Option<Instant>,
     cancelled: Option<&'a AtomicBool>,
+    closed: Option<&'a AtomicBool>,
 }
 
 impl<'a> ObjectControl<'a> {
@@ -95,6 +96,7 @@ impl<'a> ObjectControl<'a> {
         Self {
             deadline: None,
             cancelled: None,
+            closed: None,
         }
     }
 
@@ -102,10 +104,22 @@ impl<'a> ObjectControl<'a> {
         Self {
             deadline: Some(deadline),
             cancelled: Some(cancelled),
+            closed: None,
         }
     }
 
+    pub(crate) const fn with_closed(mut self, closed: &'a AtomicBool) -> Self {
+        self.closed = Some(closed);
+        self
+    }
+
     fn check(self) -> Result<(), ObjectStorageError> {
+        if self
+            .closed
+            .is_some_and(|closed| closed.load(Ordering::Acquire))
+        {
+            return Err(ObjectStorageError::SessionClosed);
+        }
         if self
             .cancelled
             .is_some_and(|cancelled| cancelled.load(Ordering::Acquire))
@@ -279,8 +293,14 @@ impl GeneratedStorage {
         if let Some(existing) =
             self.open_object_optional(&directories.generated, &target, expected)?
         {
-            let existing =
-                self.verify_open_object(existing, expected, limits, io::sink(), || {})?;
+            let existing = self.verify_open_object_controlled(
+                existing,
+                expected,
+                limits,
+                io::sink(),
+                control,
+                || {},
+            )?;
             durability(&directories, &existing)?;
             confirm_named_file(&directories.generated, &target, &existing)?;
             return Ok(expected.clone());
@@ -363,8 +383,14 @@ impl GeneratedStorage {
                 let existing = self
                     .open_object_optional(&directories.generated, &target, expected)?
                     .ok_or_else(|| ObjectStorageError::MissingObject(expected.content().clone()))?;
-                let existing =
-                    self.verify_open_object(existing, expected, limits, io::sink(), || {})?;
+                let existing = self.verify_open_object_controlled(
+                    existing,
+                    expected,
+                    limits,
+                    io::sink(),
+                    control,
+                    || {},
+                )?;
                 durability(&directories, &existing)?;
                 confirm_named_file(&directories.generated, &target, &existing)?;
                 return Ok(expected.clone());
@@ -377,12 +403,24 @@ impl GeneratedStorage {
             }
         }
 
+        // Publication makes these verified bytes durable even if the caller
+        // closes or cancels before the bounded post-publication verification.
+        // Retain the descriptor we published so namespace replacement cannot
+        // redirect durability onto a different object.
+        durability(&directories, &temporary)?;
         let published = self
             .open_object_optional(&directories.generated, &target, expected)?
             .ok_or_else(|| ObjectStorageError::MissingObject(expected.content().clone()))?;
-        let published = self.verify_open_object(published, expected, limits, io::sink(), || {})?;
-        durability(&directories, &published)?;
+        let published = self.verify_open_object_controlled(
+            published,
+            expected,
+            limits,
+            io::sink(),
+            control,
+            || {},
+        )?;
         confirm_named_file(&directories.generated, &target, &published)?;
+        confirm_named_file(&directories.generated, &target, &temporary)?;
         Ok(expected.clone())
     }
 
@@ -586,24 +624,6 @@ impl GeneratedStorage {
         }
     }
 
-    fn verify_open_object(
-        &self,
-        source: OwnedFd,
-        expected: &GeneratedObjectRef,
-        limits: ObjectLimits,
-        mut destination: impl Write,
-        after_open: impl FnOnce(),
-    ) -> Result<File, ObjectStorageError> {
-        self.verify_open_object_controlled(
-            source,
-            expected,
-            limits,
-            &mut destination,
-            ObjectControl::unbounded(),
-            after_open,
-        )
-    }
-
     fn verify_open_object_controlled(
         &self,
         source: OwnedFd,
@@ -756,6 +776,15 @@ pub(crate) struct ObjectStorage {
     inner: GeneratedStorage,
 }
 
+/// Verified retained object identity, tied to the still-open source descriptor.
+/// This is only a freshness guard; the private snapshot owns the readable bytes.
+pub(crate) struct ObjectFreshnessGuard {
+    source: File,
+    state: Stat,
+    reference: GeneratedObjectRef,
+    limits: ObjectLimits,
+}
+
 impl ObjectStorage {
     pub(crate) fn open(
         package: &Path,
@@ -900,6 +929,110 @@ impl ObjectStorage {
     ) -> Result<VerifiedObject, ObjectStorageError> {
         self.inner
             .snapshot_controlled(&object_reference(identity)?, limits, control)
+    }
+
+    /// Keeps the verified descriptor and its pre-read state for bounded final
+    /// admission checks. Generated snapshots retain their existing semantics.
+    pub(crate) fn guarded_snapshot_controlled(
+        &self,
+        identity: ObjectIdentity<'_>,
+        limits: ObjectLimits,
+        control: ObjectControl<'_>,
+    ) -> Result<(VerifiedObject, ObjectFreshnessGuard), ObjectStorageError> {
+        let mut snapshot = tempfile::tempfile().map_err(|source| ObjectStorageError::Io {
+            operation: "create original-object snapshot",
+            source,
+        })?;
+        let (guard, sha256) = self.verify_guarded(identity, limits, control, &mut snapshot)?;
+        snapshot
+            .seek(SeekFrom::Start(0))
+            .map_err(|source| ObjectStorageError::Io {
+                operation: "rewind original-object snapshot",
+                source,
+            })?;
+        let verified = VerifiedObject {
+            file: snapshot,
+            reference: guard.reference.clone(),
+            sha256,
+        };
+        Ok((verified, guard))
+    }
+
+    pub(crate) fn guard_controlled(
+        &self,
+        identity: ObjectIdentity<'_>,
+        limits: ObjectLimits,
+        control: ObjectControl<'_>,
+    ) -> Result<(ObjectFreshnessGuard, [u8; 32]), ObjectStorageError> {
+        self.verify_guarded(identity, limits, control, io::sink())
+    }
+
+    fn verify_guarded(
+        &self,
+        identity: ObjectIdentity<'_>,
+        limits: ObjectLimits,
+        control: ObjectControl<'_>,
+        destination: impl Write,
+    ) -> Result<(ObjectFreshnessGuard, [u8; 32]), ObjectStorageError> {
+        control.check()?;
+        let expected = object_reference(identity)?;
+        validate_budget(&expected, limits)?;
+        let directories = self.inner.open_directories()?;
+        let target = object_name(expected.content());
+        let source = self
+            .inner
+            .open_object_optional(&directories.generated, &target, &expected)?
+            .ok_or_else(|| ObjectStorageError::MissingObject(expected.content().clone()))?;
+        // Capture before hashing, not after: a change in the gap between the
+        // verification loop and creating this guard must invalidate admission.
+        let state = fstat(&source).map_err(|source| ObjectStorageError::System {
+            operation: "inspect guarded original object",
+            source,
+        })?;
+        let mut writer = Sha256Writer::new(destination);
+        let source = self.inner.verify_open_object_controlled(
+            source,
+            &expected,
+            limits,
+            &mut writer,
+            control,
+            || {},
+        )?;
+        let guard = ObjectFreshnessGuard {
+            source,
+            state,
+            reference: expected,
+            limits,
+        };
+        self.recheck_guard(&guard)?;
+        control.check()?;
+        Ok((guard, writer.finish()))
+    }
+
+    /// Reopens the current package namespace and compares exact source state.
+    /// No original bytes are copied or hashed here.
+    pub(crate) fn recheck_guard(
+        &self,
+        guard: &ObjectFreshnessGuard,
+    ) -> Result<(), ObjectStorageError> {
+        let directories = self.inner.open_directories()?;
+        let target = object_name(guard.reference.content());
+        let named = self
+            .inner
+            .open_object_optional(&directories.generated, &target, &guard.reference)?
+            .ok_or_else(|| ObjectStorageError::MissingObject(guard.reference.content().clone()))?;
+        for source in [named.as_fd(), guard.source.as_fd()] {
+            let current = fstat(source).map_err(|source| ObjectStorageError::System {
+                operation: "reinspect guarded original object",
+                source,
+            })?;
+            self.inner
+                .validate_object_metadata(&current, &guard.reference, guard.limits)?;
+            if !same_file_state(&guard.state, &current) {
+                return Err(ObjectStorageError::SourceChanged);
+            }
+        }
+        Ok(())
     }
 
     fn has_verified_object(
@@ -1102,13 +1235,13 @@ fn validate_source_file(
     Ok(())
 }
 
-struct Sha256Writer<'a> {
-    destination: &'a mut File,
+struct Sha256Writer<W> {
+    destination: W,
     hasher: Sha256,
 }
 
-impl<'a> Sha256Writer<'a> {
-    fn new(destination: &'a mut File) -> Self {
+impl<W> Sha256Writer<W> {
+    fn new(destination: W) -> Self {
         Self {
             destination,
             hasher: Sha256::new(),
@@ -1120,7 +1253,7 @@ impl<'a> Sha256Writer<'a> {
     }
 }
 
-impl Write for Sha256Writer<'_> {
+impl<W: Write> Write for Sha256Writer<W> {
     fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
         let written = self.destination.write(bytes)?;
         self.hasher.update(&bytes[..written]);
@@ -1302,6 +1435,8 @@ pub enum ObjectStorageError {
     InvalidBudget,
     #[error("object storage operation was cancelled")]
     Cancelled,
+    #[error("object storage session is closed")]
+    SessionClosed,
     #[error("object storage operation exceeded its deadline")]
     DeadlineExceeded,
     #[error("media storage component is missing: {0}")]
@@ -1360,6 +1495,7 @@ impl ObjectStorageError {
             Self::InvalidIdentity => "GeneratedMediaIdentityInvalid",
             Self::InvalidBudget => "GeneratedMediaBudgetInvalid",
             Self::Cancelled => "OperationCancelled",
+            Self::SessionClosed => "StorageSessionClosed",
             Self::DeadlineExceeded => "DeadlineExceeded",
             Self::MissingStorageComponent(_) => "GeneratedMediaStorageMissing",
             Self::UnsafeStorageComponent(_) | Self::UnsafeObject(_) => "GeneratedMediaPathUnsafe",
@@ -1439,14 +1575,12 @@ mod tests {
             .collect()
     }
 
-    #[cfg(target_os = "macos")]
     fn originals_object_path(package: &Path, reference: &GeneratedObjectRef) -> std::path::PathBuf {
         package
             .join("Media/Originals")
             .join(object_name(reference.content()))
     }
 
-    #[cfg(target_os = "macos")]
     fn originals_pending_entries(package: &Path) -> Vec<String> {
         fs::read_dir(package.join("Media/Originals"))
             .unwrap()
@@ -2067,5 +2201,157 @@ mod tests {
             ),
         );
         assert!(matches!(expired, Err(ObjectStorageError::DeadlineExceeded)));
+    }
+
+    #[test]
+    fn publication_finishes_durability_before_close_or_cancel_stops_verification() {
+        use std::cell::Cell;
+
+        for closing in [true, false] {
+            let package = package();
+            fs::create_dir(package.path().join("Media/Originals")).unwrap();
+            let storage = ObjectStorage::open(package.path(), StorageNamespace::Originals).unwrap();
+            let bytes = b"original survives interrupted publication";
+            let expected = object(bytes);
+            let closed = AtomicBool::new(false);
+            let cancelled = AtomicBool::new(false);
+            let durable = Cell::new(false);
+            let result = storage.inner.promote_with_control_hooks(
+                &mut Cursor::new(bytes),
+                &expected,
+                limits(),
+                ObjectControl::bounded(
+                    Instant::now() + std::time::Duration::from_secs(5),
+                    &cancelled,
+                )
+                .with_closed(&closed),
+                |_| {
+                    // Raise the stop signal after verification and immediately
+                    // before rename, so the next controlled read must stop.
+                    if closing { &closed } else { &cancelled }.store(true, Ordering::Release);
+                    Ok(())
+                },
+                |directories, file| {
+                    confirm_named_file(
+                        &directories.generated,
+                        &object_name(expected.content()),
+                        file,
+                    )?;
+                    storage.inner.complete_durability(directories, file)?;
+                    durable.set(true);
+                    Ok(())
+                },
+            );
+            assert!(
+                durable.get(),
+                "published bytes must be durable before stopping"
+            );
+            let error = result.unwrap_err();
+            assert_eq!(
+                error.code(),
+                if closing {
+                    "StorageSessionClosed"
+                } else {
+                    "OperationCancelled"
+                }
+            );
+            assert_eq!(
+                crate::original_media::OriginalMediaError::from(error).code(),
+                if closing {
+                    "OriginalImportClosed"
+                } else {
+                    "OriginalCancelled"
+                }
+            );
+            assert_eq!(
+                fs::read(originals_object_path(package.path(), &expected)).unwrap(),
+                bytes
+            );
+            assert!(originals_pending_entries(package.path()).is_empty());
+        }
+    }
+
+    #[test]
+    fn publication_durability_failure_is_not_hidden_by_close_or_cancel() {
+        for closing in [true, false] {
+            let package = package();
+            let storage = GeneratedStorage::open(package.path()).unwrap();
+            let bytes = b"durability failure remains an error";
+            let expected = object(bytes);
+            let closed = AtomicBool::new(false);
+            let cancelled = AtomicBool::new(false);
+            let result = storage.promote_with_control_hooks(
+                &mut Cursor::new(bytes),
+                &expected,
+                limits(),
+                ObjectControl::bounded(
+                    Instant::now() + std::time::Duration::from_secs(5),
+                    &cancelled,
+                )
+                .with_closed(&closed),
+                |_| {
+                    if closing { &closed } else { &cancelled }.store(true, Ordering::Release);
+                    Ok(())
+                },
+                |_, _| {
+                    Err(ObjectStorageError::Io {
+                        operation: "injected interrupted publication durability failure",
+                        source: io::Error::other("injected"),
+                    })
+                },
+            );
+            assert!(matches!(
+                result,
+                Err(ObjectStorageError::Io {
+                    operation: "injected interrupted publication durability failure",
+                    ..
+                })
+            ));
+            assert_eq!(
+                fs::read(object_path(package.path(), &expected)).unwrap(),
+                bytes
+            );
+            assert!(pending_entries(package.path()).is_empty());
+        }
+    }
+
+    #[test]
+    fn publication_rejects_namespace_replacement_during_durability() {
+        let package = package();
+        let storage = GeneratedStorage::open(package.path()).unwrap();
+        let bytes = b"same bytes in a different file";
+        let expected = object(bytes);
+        let target = object_path(package.path(), &expected);
+        let result = storage.promote_with_hooks(
+            &mut Cursor::new(bytes),
+            &expected,
+            limits(),
+            |_| {},
+            |_, _| {
+                fs::remove_file(&target).unwrap();
+                fs::write(&target, bytes).unwrap();
+                fs::set_permissions(&target, fs::Permissions::from_mode(0o444)).unwrap();
+                Ok(())
+            },
+        );
+        assert!(matches!(result, Err(ObjectStorageError::SourceChanged)));
+        assert_eq!(fs::read(target).unwrap(), bytes);
+        assert!(pending_entries(package.path()).is_empty());
+    }
+
+    #[test]
+    fn object_control_distinguishes_session_close_from_user_cancellation() {
+        let closed = AtomicBool::new(true);
+        let cancelled = AtomicBool::new(false);
+        let control = ObjectControl::bounded(
+            Instant::now() + std::time::Duration::from_secs(5),
+            &cancelled,
+        )
+        .with_closed(&closed);
+        assert_eq!(control.check().unwrap_err().code(), "StorageSessionClosed");
+        cancelled.store(true, Ordering::Release);
+        assert_eq!(control.check().unwrap_err().code(), "StorageSessionClosed");
+        closed.store(false, Ordering::Release);
+        assert_eq!(control.check().unwrap_err().code(), "OperationCancelled");
     }
 }

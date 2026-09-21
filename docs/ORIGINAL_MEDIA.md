@@ -43,6 +43,14 @@ both recorded checksums; linked snapshots copy and check the currently located
 file. Moving or changing that file cannot change an already returned snapshot.
 Missing or corrupt media returns an error. No placeholder is silently rendered.
 
+[Background import preparation](IMPORT_PREPARATION.md) separates this complete-file
+work from writer transactions. An `OriginalImportHandle` prepares published bytes
+or private snapshots without borrowing SQLite; session-bound opaque results need
+fresh namespace checks before the owning writer admits them. The synchronous
+retention entrypoint uses the same preparation and commit path. Retention can add
+a missing link, but a different established location or bookmark requires the
+explicit versioned relink operation, preserving newer locator decisions.
+
 ## Database and failure boundaries
 
 Database schema 15 retains the `original_media` table introduced in schema 10. Content identity is its key;

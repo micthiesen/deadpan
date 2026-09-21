@@ -177,6 +177,18 @@ remain explicit. Validate source-derived presentation against receipts across
 all history. See [presentation basis](docs/PRESENTATION_BASIS.md) and
 [source registration](docs/SOURCE_REGISTRATION.md).
 
+Keep complete-file import preparation off the project writer as well as the UI.
+Issue `OriginalImportHandle` from the writable store, prepare opaque retention or
+snapshot results on an import worker, and admit them only in that same live
+session. Prepared source qualification retains a private verified snapshot and
+namespace freshness proof; metadata rechecks at commit must reject missing,
+replaced or modified originals. Resolve authored targets, frame rate and relevance
+against the current revision after preparation. Close revokes handles before
+releasing the writer lock; handles never retain that lock. Retention may merge
+ownership but cannot replace an established linked location; use explicit
+versioned relinking. See
+[import preparation](docs/IMPORT_PREPARATION.md).
+
 `SourceNode.audio_mapping` explicitly chooses `FitBeat` or an independent exact
 project-frame duration. Use `SourceAudioMapping::natural_rate` for original-rate
 selections and preserve signed `audio_offset` separately. Do not fit shorter audio

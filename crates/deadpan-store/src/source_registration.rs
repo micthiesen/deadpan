@@ -22,6 +22,7 @@ use serde::{Deserialize, Serialize};
 use crate::generation::RelevancePlan;
 use crate::original_media::{
     OriginalContentId, OriginalMediaLimits, OriginalMediaRecord, OriginalObjectRef,
+    PreparedOriginalSnapshot,
 };
 use crate::{CommandPlan, CommitOutcome, ProjectStore, StoreError};
 
@@ -83,6 +84,56 @@ pub struct SourceRegistrationOutcome {
     pub asset_id: AssetId,
     pub qualification: SourceQualificationId,
     pub commit: Option<CommitOutcome>,
+}
+
+/// Worker-prepared admission from verified retained bytes and actual decoders.
+/// It is bound to the issuing project session and keeps its private byte snapshot
+/// alive. It contains no authored target or frozen project timing decisions.
+///
+/// ```compile_fail
+/// use deadpan_store::source_registration::PreparedSourceRegistration;
+/// let forged = serde_json::from_str::<PreparedSourceRegistration>("{}");
+/// ```
+pub struct PreparedSourceRegistration {
+    original: PreparedOriginalSnapshot,
+    receipt: SourceQualificationReceipt,
+    bytes: Vec<u8>,
+}
+
+impl PreparedSourceRegistration {
+    /// Canonicalize measured indexes and hash their receipt off the writer thread.
+    pub fn from_decoded(
+        original: PreparedOriginalSnapshot,
+        decoded: &DecodedSourceQualification,
+        cancelled: &AtomicBool,
+    ) -> Result<Self, StoreError> {
+        original.recheck(cancelled)?;
+        let (receipt, bytes) = prepare_receipt(original.record(), decoded)?;
+        original.recheck(cancelled)?;
+        Ok(Self {
+            original,
+            receipt,
+            bytes,
+        })
+    }
+
+    pub fn receipt(&self) -> &SourceQualificationReceipt {
+        &self.receipt
+    }
+
+    fn validate_for(
+        &self,
+        store: &ProjectStore,
+        input: &SourceRegistration,
+        cancelled: &AtomicBool,
+    ) -> Result<(), StoreError> {
+        if &input.original != self.receipt.original.content() {
+            return Err(invalid(
+                "prepared qualification belongs to another original",
+            ));
+        }
+        self.original.validate_for(store, cancelled)
+    }
 }
 
 /// Validated stored evidence, not a live decode/admission token. Availability
@@ -253,24 +304,66 @@ impl ProjectStore {
     ) -> Result<SourceRegistrationOutcome, StoreError> {
         self.require_writer()?;
         check_revision(&self.snapshot()?, input)?;
-        let original = self.snapshot_original(&input.original, limits, cancelled)?;
-        let (receipt, bytes) = prepare_receipt(original.record(), decoded)?;
-        check_cancelled(cancelled)?;
+        let record = self
+            .original_record(&input.original)?
+            .ok_or(crate::original_media::OriginalMediaError::MissingRecord)?;
+        let original = self
+            .original_import_handle()?
+            .snapshot_original(&record, limits, cancelled)?;
+        let prepared = PreparedSourceRegistration::from_decoded(original, decoded, cancelled)?;
+        self.register_prepared_source(input, &prepared, relevance, cancelled)
+    }
+
+    /// Preview current-revision intent without repeating file verification or
+    /// decoding. This session-bound path is intended for the native writer service;
+    /// the ordinary synchronous preview also supports independent read-only hosts.
+    pub fn preview_prepared_source_registration(
+        &self,
+        input: &SourceRegistration,
+        source: &PreparedSourceRegistration,
+        cancelled: &AtomicBool,
+    ) -> Result<SourceRegistrationPreview, StoreError> {
+        check_revision(&self.snapshot()?, input)?;
+        source.validate_for(self, input, cancelled)?;
+        let transaction = self.connection.unchecked_transaction()?;
+        check_original_binding(&transaction, &source.receipt)?;
+        let prepared = prepare_registration(&transaction, input, &source.receipt)?;
+        source.original.recheck(cancelled)?;
+        Ok(SourceRegistrationPreview {
+            asset_id: prepared.asset_id,
+            qualification: source.receipt.id.clone(),
+            edit: prepared.plan.map(|plan| plan.edit),
+        })
+    }
+
+    /// Commit an already prepared source using the current document clock and
+    /// explicit revision/target intent. Final availability checks perform metadata
+    /// inspection only; they reject changed or missing originals instead of rehashing.
+    pub fn register_prepared_source(
+        &mut self,
+        input: &SourceRegistration,
+        source: &PreparedSourceRegistration,
+        relevance: Option<&RelevancePlan>,
+        cancelled: &AtomicBool,
+    ) -> Result<SourceRegistrationOutcome, StoreError> {
+        self.require_writer()?;
+        check_revision(&self.snapshot()?, input)?;
+        source.validate_for(self, input, cancelled)?;
         let transaction = self
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
-        check_original_binding(&transaction, &receipt)?;
-        let prepared = prepare_registration(&transaction, input, &receipt)?;
-        write_receipt(&transaction, &receipt, &bytes)?;
+        check_original_binding(&transaction, &source.receipt)?;
+        let prepared = prepare_registration(&transaction, input, &source.receipt)?;
+        write_receipt(&transaction, &source.receipt, &source.bytes)?;
         let commit = prepared
             .plan
             .map(|plan| crate::write_command_plan(&transaction, plan, relevance))
             .transpose()?;
-        check_cancelled(cancelled)?;
+        source.original.recheck(cancelled)?;
         transaction.commit()?;
         Ok(SourceRegistrationOutcome {
             asset_id: prepared.asset_id,
-            qualification: receipt.id,
+            qualification: source.receipt.id.clone(),
             commit,
         })
     }
@@ -484,8 +577,23 @@ fn write_receipt(
     receipt: &SourceQualificationReceipt,
     bytes: &[u8],
 ) -> Result<(), StoreError> {
-    if let Some(existing) = read_receipt(connection, receipt.id())? {
-        if existing != *receipt {
+    // The incoming opaque token already owns canonical, hashed evidence. Compare
+    // existing bytes inside SQLite instead of deserializing and rehashing a large
+    // index on the writer thread. Exact equality retains collision/corruption checks.
+    let existing: Option<(String, String, bool)> = connection.query_row(
+        "SELECT CASE WHEN typeof(original_content_id)='text' AND length(CAST(original_content_id AS BLOB))=71 THEN original_content_id END,
+         CASE WHEN typeof(original_ref)='text' AND length(CAST(original_ref AS BLOB))<=?3 THEN original_ref END,
+         CASE WHEN typeof(snapshot)='blob' AND length(snapshot)<=?4 THEN snapshot=?2 ELSE 0 END
+         FROM source_qualifications WHERE id=?1",
+        params![receipt.id.as_str(), bytes, MAX_ORIGINAL_REF_BYTES as i64, MAX_SOURCE_QUALIFICATION_JSON_BYTES as i64],
+        |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+    ).optional()?;
+    if let Some((content, original, same_bytes)) = existing {
+        let original: OriginalObjectRef = serde_json::from_str(&original)?;
+        if !same_bytes
+            || original != receipt.original
+            || content != receipt.original.content().to_string()
+        {
             return Err(invalid("immutable qualification identity collision"));
         }
         return Ok(());
