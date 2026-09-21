@@ -7,14 +7,26 @@ use eframe::egui;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let arguments: Vec<_> = std::env::args().skip(1).collect();
+    if arguments
+        .first()
+        .is_some_and(|argument| argument == "--headless")
+    {
+        let result = deadpan_cli::entry(arguments.into_iter().skip(1));
+        if result == std::process::ExitCode::SUCCESS {
+            return Ok(());
+        }
+        std::process::exit(1);
+    }
     let smoke_test = match arguments.as_slice() {
         [] => false,
         [argument] if argument == "--smoke-test" => true,
         [argument] if argument == "--help" || argument == "-h" => {
-            println!("Usage: deadpan-app [--smoke-test]\n\nOpen the native development shell.");
+            println!(
+                "Usage: deadpan-app [--smoke-test | --headless <command>]\n\nOpen the native development shell or run headless project commands."
+            );
             return Ok(());
         }
-        _ => return Err("Usage: deadpan-app [--smoke-test]".into()),
+        _ => return Err("Usage: deadpan-app [--smoke-test | --headless <command>]".into()),
     };
 
     let exited = Rc::new(Cell::new(false));

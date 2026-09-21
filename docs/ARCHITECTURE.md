@@ -6,11 +6,12 @@
 
 | Crate | Present responsibility | Boundary |
 | --- | --- | --- |
-| `deadpan-core` | Typed exact frame, sample, rate, range, and repeat-duration arithmetic. | Pure Rust domain logic, independent of the application and external systems. |
+| `deadpan-core` | Exact time, validated flat beat tree, immutable asset metadata, structural commands, JSON, and reversible patches. | Pure Rust domain logic, independent of the application and external systems. |
+| `deadpan-store` | SQLite packages, immutable revision snapshots, atomic edit/history writes, undo/redo, writer ownership, and backup API checkpoints. | SQLite is authoritative; exported JSON is inspection only. |
 | `deadpan-app` | Native development welcome shell with `egui`/`eframe` and `wgpu` on Metal. | Application entry point only; no authored document or media workflow yet. |
-| `deadpan-cli` | Headless `doctor` diagnostics. | No project mutation, rendering, or command API yet. |
+| `deadpan-cli` | Versioned headless project and command operations, dry runs, history, and diagnostics. | Shared with the native host's `--headless` path; no media rendering yet. |
 
-The current repository contains no complete beat tree, transaction reducer, persistence engine, render plan, media engine, audio pipeline, or inference worker. A native window is not a qualified media viewport.
+The foundation has typed Source/Sequence/Hold/Repeat/Retime nodes and structural editing, but still lacks anchors, occurrence overrides, effects, semantic range selectors, a render plan, media engine, audio pipeline, and inference worker. The persistence implementation still needs migrations, recovery UI, managed-media import, and host socket routing. A native window is not a qualified media viewport.
 
 ## Full component map
 
@@ -18,8 +19,8 @@ Section 24 defines boundaries, not an obligation to create empty crates. Introdu
 
 | Component | Required responsibility | Status |
 | --- | --- | --- |
-| `deadpan-core` | Document/time types, nodes, anchors, occurrences, selectors, commands, reduction, validation, and serialization contracts. | Timing foundation only. |
-| `deadpan-store` | Authoritative SQLite document/history, one writer, migrations, recovery, and asset ownership. | Planned. |
+| `deadpan-core` | Document/time types, nodes, anchors, occurrences, selectors, commands, reduction, validation, and serialization contracts. | Documents, timing, node-targeted commands, and inverse patches implemented; remaining domains open. |
+| `deadpan-store` | Authoritative SQLite document/history, one writer, migrations, recovery, and asset ownership. | SQLite v1, revision/history transactions, writer lock, and checkpoints implemented; full lifecycle open. |
 | `deadpan-plan` | Compile immutable revisions into indexed render plans and incremental fragments. | Planned. |
 | `deadpan-media` | Qualified FFmpeg/native probing, PTS indexing, bounded decoding, surfaces, encoding/mux interfaces. | Planned. |
 | `deadpan-render` | Shared GPU composition, framing, color, visual effects, and output transformations. | Planned. |
@@ -29,7 +30,7 @@ Section 24 defines boundaries, not an obligation to create empty crates. Introdu
 | `deadpan-models` | Pack verification/install, capability planning, AI requests, and candidate validation. | Planned. |
 | `deadpan-ui` | Panes, keyboard routing, focus, inspectors, audition, and accessibility. | Planned; welcome UI currently belongs to the app. |
 | `deadpan-app` | Lifecycle, platform integration, document host, and command dispatch. | Development shell only. |
-| `deadpan-cli` | Headless validation/dump, revision-aware commands, render/plan inspection, benchmarks, diagnostics. | `doctor` foundation only. |
+| `deadpan-cli` | Headless validation/dump, revision-aware commands, render/plan inspection, benchmarks, diagnostics. | Project/command/history API implemented; render/plan/benchmark commands open. |
 | `native/` | Narrow platform and DSP bridges with isolated unsafe lifetime handling. | Planned. |
 | `workers/` | Qualified private model runtime and provider adapters. | Planned. |
 | `recipes/` | Versioned declarative starter gags built from ordinary primitives. | Planned. |

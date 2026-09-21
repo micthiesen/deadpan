@@ -4,10 +4,15 @@
 //! Convert timeline boundaries from their common origin instead of accumulating
 //! separately rounded durations. See specification §4 for the timing contract.
 //!
-//! This crate currently implements timing primitives, not the document model or
-//! editing operations.
+//! Authored documents and semantic editing transactions are pure data. Hosts own
+//! persistence, identity generation, media decoding, and external jobs.
 
+mod command;
+mod document;
 mod time;
+
+pub use command::*;
+pub use document::*;
 
 pub use time::{
     AudioSample, FrameDuration, FrameRange, FrameRate, MIX_SAMPLE_RATE, ProjectFrame,

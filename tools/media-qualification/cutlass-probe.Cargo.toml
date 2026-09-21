@@ -1,0 +1,10 @@
+[package]
+name = "deadpan-cutlass-qualification"
+version = "0.0.0"
+edition = "2024"
+
+[workspace]
+
+[dependencies]
+cutlass-core = { path = "../cutlass/crates/cutlass-core" }
+cutlass-decoder = { path = "../cutlass/crates/cutlass-decoder" }

@@ -1,6 +1,6 @@
 [package]
-name = "deadpan-app"
-description = "Native macOS host for the Deadpan structural video editor"
+name = "deadpan-store"
+description = "Authoritative SQLite project packages and durable editing history"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -9,11 +9,12 @@ repository.workspace = true
 publish.workspace = true
 
 [dependencies]
-eframe.workspace = true
-deadpan-cli = { path = "../deadpan-cli" }
-
-[dev-dependencies]
+deadpan-core.workspace = true
+rusqlite.workspace = true
+serde.workspace = true
 serde_json.workspace = true
+tempfile.workspace = true
+thiserror.workspace = true
 
 [lints]
 workspace = true

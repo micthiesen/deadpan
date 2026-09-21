@@ -1,0 +1,443 @@
+{
+  "source_pins": {
+    "cutlass": [
+      "https://github.com/1mrnewton/cutlass.git",
+      "22437e2837340c7c57d62e438117f9a0fb4096d2"
+    ],
+    "rsmpeg": [
+      "https://github.com/larksuite/rsmpeg.git",
+      "b21fcfde8bb1ffdc179504e370e330385baa9819"
+    ]
+  },
+  "work_directory": "/tmp/deadpan-media-upstream-agln_a6z",
+  "commands": [
+    {
+      "argv": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "cwd": "/tmp/deadpan-media-upstream-input/cutlass",
+      "exit_code": 0,
+      "elapsed_seconds": 0.016330332960933447,
+      "stdout": "22437e2837340c7c57d62e438117f9a0fb4096d2\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain=v1",
+        "--untracked-files=all"
+      ],
+      "cwd": "/tmp/deadpan-media-upstream-input/cutlass",
+      "exit_code": 0,
+      "elapsed_seconds": 0.13745241682045162,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "ls-files",
+        "--others",
+        "--ignored",
+        "--exclude-standard",
+        "--directory"
+      ],
+      "cwd": "/tmp/deadpan-media-upstream-input/cutlass",
+      "exit_code": 0,
+      "elapsed_seconds": 0.039043250028043985,
+      "stdout": "target/\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "archive",
+        "--format=tar",
+        "--output",
+        "/tmp/deadpan-media-upstream-agln_a6z/cutlass.tar",
+        "22437e2837340c7c57d62e438117f9a0fb4096d2"
+      ],
+      "cwd": "/tmp/deadpan-media-upstream-input/cutlass",
+      "exit_code": 0,
+      "elapsed_seconds": 0.08695316687226295,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "cwd": "/tmp/deadpan-media-upstream-input/rsmpeg",
+      "exit_code": 0,
+      "elapsed_seconds": 0.01780754211358726,
+      "stdout": "b21fcfde8bb1ffdc179504e370e330385baa9819\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain=v1",
+        "--untracked-files=all"
+      ],
+      "cwd": "/tmp/deadpan-media-upstream-input/rsmpeg",
+      "exit_code": 0,
+      "elapsed_seconds": 0.13177191698923707,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "ls-files",
+        "--others",
+        "--ignored",
+        "--exclude-standard",
+        "--directory"
+      ],
+      "cwd": "/tmp/deadpan-media-upstream-input/rsmpeg",
+      "exit_code": 0,
+      "elapsed_seconds": 0.031123625114560127,
+      "stdout": "Cargo.lock\ntarget/\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "archive",
+        "--format=tar",
+        "--output",
+        "/tmp/deadpan-media-upstream-agln_a6z/rsmpeg.tar",
+        "b21fcfde8bb1ffdc179504e370e330385baa9819"
+      ],
+      "cwd": "/tmp/deadpan-media-upstream-input/rsmpeg",
+      "exit_code": 0,
+      "elapsed_seconds": 0.20769449998624623,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "cutlass-decoder",
+        "-p",
+        "cutlass-encoder",
+        "--locked",
+        "--no-default-features"
+      ],
+      "cwd": "/tmp/deadpan-media-upstream-agln_a6z/cutlass",
+      "exit_code": 0,
+      "elapsed_seconds": 63.47268558293581,
+      "stdout": "\nrunning 76 tests\ntest apple::integration::bench_roll_forward_vs_seek_per_target ... ignored, manual benchmark\ntest animation::tests::oversized_animations_are_rejected ... ok\ntest animation::tests::unrecognized_bytes_error ... ok\ntest animation::tests::over_blend_composites_straight_alpha ... ok\ntest animation::tests::compositor_previous_disposal_restores_the_canvas ... ok\ntest animation::tests::compositor_applies_patch_blend_and_dispose ... ok\ntest apple::tests::cmtime_to_rational_is_exact_and_guards_invalid ... ok\ntest apple::tests::describe_ns_error_carries_domain_code_and_underlying ... ok\ntest apple::tests::detect_known_pixel_formats ... ok\ntest apple::tests::fourcc_roundtrips_to_text ... ok\ntest apple::tests::maps_color_tags_from_constants ... ok\ntest apple::tests::one_second_ticks_rounds_up_and_never_zero ... ok\ntest apple::tests::rational_to_cmtime_preserves_seconds ... ok\ntest apple::tests::rational_to_cmtime_survives_value_den_overflow ... ok\ntest apple::tests::resolve_frame_rate_prefers_exact_but_guards_vfr ... ok\ntest apple::tests::rotation_from_transform_maps_quadrants ... ok\ntest image::tests::short_or_unknown_headers_are_not_images ... ok\ntest image::tests::sniffs_heif_brands_but_not_video_ftyp ... ok\ntest image::tests::sniffs_png_jpeg_webp_magic ... ok\ntest lottie::tests::frame_indices_quantize_and_loop ... ok\ntest lottie::tests::garbage_and_non_lottie_json_error ... ok\ntest animation::tests::portable_apng_matches_the_contract ... ok\ntest lottie::tests::parses_and_renders_the_red_rect ... ok\ntest animation::tests::static_png_decodes_as_a_single_frame ... ok\ntest lottie::tests::unsupported_features_error_instead_of_panicking ... ok\ntest pcm::tests::accumulates_multiple_chunks_in_order ... ok\ntest pcm::tests::callback_panic_fails_closed_as_cancellation ... ok\ntest pcm::tests::cancellation_before_success_is_observed_after_eof ... ok\ntest pcm::tests::cancellation_between_reads_discards_accumulated_pcm ... ok\ntest pcm::tests::cancellation_during_read_is_observed_after_read ... ok\ntest pcm::tests::decode_error_is_preserved_as_source_variant ... ok\ntest pcm::tests::exact_limit_uses_one_frame_eof_probe ... ok\ntest animation::tests::portable_gif_matches_the_contract ... ok\ntest pcm::tests::impossible_over_report_is_rejected ... ok\ntest pcm::tests::one_frame_over_limit_discards_pcm ... ok\ntest pcm::tests::pre_read_cancellation_does_not_touch_reader ... ok\ntest pcm::tests::public_api_checks_cancellation_before_opening ... ok\ntest pcm::tests::public_api_validates_arguments_before_opening ... ok\ntest peaks::tests::reduce_to_buckets_handles_fewer_coarse_than_buckets ... ok\ntest peaks::tests::reduce_to_buckets_takes_max_per_range ... ok\ntest peaks::tests::zero_buckets_is_rejected ... ok\ntest seek::tests::backward_and_repeated_targets_never_roll ... ok\ntest seek::tests::backward_target_falls_back_to_seek ... ok\ntest seek::tests::default_stats_reproduce_the_old_one_second_window ... ok\ntest seek::tests::far_forward_target_falls_back_to_seek ... ok\ntest seek::tests::invalid_rates_never_roll ... ok\ntest seek::tests::nearest_far_past_eof_and_empty_streams_still_miss ... ok\ntest seek::tests::nearest_far_target_snaps_to_sync_frame_with_one_decode ... ok\ntest seek::tests::nearest_past_eof_target_steps_back_to_tail_frame ... ok\ntest seek::tests::nearest_roll_into_eof_recovers_tail_frame ... ok\ntest seek::tests::nearest_target_just_ahead_rolls_exactly ... ok\ntest seek::tests::no_last_pts_never_rolls ... ok\ntest seek::tests::rolling_past_end_of_stream_returns_none ... ok\ntest seek::tests::rolls_within_the_window ... ok\ntest seek::tests::sequential_targets_seek_once_and_land_exactly ... ok\ntest seek::tests::slack_never_absorbs_a_real_frame_on_coarse_tick_bases ... ok\ntest seek::tests::truncated_tick_pts_counts_as_its_own_frame ... ok\ntest seek::tests::window_comparison_is_exact_across_rates ... ok\ntest seek::tests::window_tracks_observed_costs ... ok\ntest animation::tests::decodes_the_bundled_gif_animation ... ok\ntest animation::tests::decodes_the_bundled_apng_animation ... ok\ntest lottie::tests::oversized_compositions_render_capped ... ok\ntest peaks::tests::per_second_peaks_match_duration ... ok\ntest peaks::tests::peaks_have_requested_bucket_count_and_range ... ok\ntest apple::integration::probes_color_metadata_from_format_description ... ok\ntest apple::integration::open_gop_seek_point_failure_recovers_exactly ... ok\ntest apple::integration::open_gop_frame_at_nearest_recovers ... ok\ntest apple::integration::sequential_decode_advances_pts ... ok\ntest apple::integration::hermetic_movie_reports_no_audio_track ... ok\ntest apple::integration::opens_probes_and_decodes_first_frame ... ok\ntest apple::integration::gpu_mode_hands_back_a_live_pixel_buffer ... ok\ntest apple::integration::frame_at_lands_at_or_after_target ... ok\ntest apple::integration::open_gop_random_access_reaches_every_gop ... ok\ntest apple::integration::frame_at_roll_forward_matches_seek_per_target ... ok\ntest apple::integration::frame_at_handles_backward_and_repeated_targets ... ok\ntest apple::integration::seek_churn_keeps_decoder_healthy ... ok\n\ntest result: ok. 75 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 2.64s\n\n\nrunning 9 tests\ntest portable_refuses_formats_it_cannot_parse ... ok\ntest portable_png_roundtrip ... ok\ntest probe_image_rejects_non_images ... ok\ntest sniffs_real_png_and_jpeg_files ... ok\ntest portable_jpeg_decodes_the_fixture ... ok\ntest media_probe_classifies_stills ... ok\ntest probes_and_decodes_the_jpeg_fixture ... ok\ntest decode_keeps_straight_alpha ... ok\ntest probes_and_decodes_a_png ... ok\n\ntest result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s\n\n\nrunning 8 tests\ntest yuv::tests::bt709_roundtrips_the_mobile_fixture_blue ... ok\ntest yuv::tests::matrices_produce_distinct_chroma_for_saturated_color ... ok\ntest yuv::tests::gray_is_chroma_neutral ... ok\ntest yuv::tests::honors_source_stride ... ok\ntest yuv::tests::matrix_for_maps_explicit_601_and_defaults_to_709 ... ok\ntest yuv::tests::nv12_matches_i420_samples_with_interleaved_chroma ... ok\ntest yuv::tests::plane_sizes_are_correct_for_420 ... ok\ntest yuv::tests::solid_black_and_white_map_to_expected_luma ... ok\n\ntest result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\n\nrunning 1 test\ntest interleaved_av_export_sustains_ten_seconds ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.20s\n\n\nrunning 3 tests\ntest encodes_an_mp4_with_an_aac_audio_track ... ok\ntest encodes_an_mp4_that_decodes_back ... ok\ntest encodes_a_short_gop_mp4_that_seeks ... ok\n\ntest result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.79s\n\n\nrunning 0 tests\n\ntest result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\n\nrunning 0 tests\n\ntest result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\n",
+      "stderr": "   Compiling proc-macro2 v1.0.106\n   Compiling unicode-ident v1.0.24\n   Compiling find-msvc-tools v0.1.9\n   Compiling shlex v2.0.1\n   Compiling quote v1.0.46\n   Compiling bitflags v2.13.0\n   Compiling libc v0.2.186\n   Compiling objc2 v0.6.4\n   Compiling objc2-encode v4.1.0\n   Compiling cfg-if v1.0.4\n   Compiling simd-adler32 v0.3.9\n   Compiling autocfg v1.5.1\n   Compiling crc32fast v1.5.0\n   Compiling thiserror v2.0.18\n   Compiling serde_core v1.0.228\n   Compiling arrayvec v0.7.7\n   Compiling adler2 v2.0.1\n   Compiling smallvec v1.15.2\n   Compiling serde v1.0.228\n   Compiling linebender_resource_handle v0.1.1\n   Compiling foldhash v0.2.0\n   Compiling zmij v1.0.21\n   Compiling log v0.4.33\n   Compiling miniz_oxide v0.8.9\n   Compiling fdeflate v0.3.7\n   Compiling cc v1.2.65\n   Compiling hashbrown v0.17.1\n   Compiling fearless_simd v0.4.1\n   Compiling serde_json v1.0.150\n   Compiling polycool v0.4.0\n   Compiling once_cell v1.21.4\n   Compiling memchr v2.8.2\n   Compiling itoa v1.0.18\n   Compiling weezl v0.1.12\n   Compiling zune-core v0.5.1\n   Compiling color_quant v1.1.0\n   Compiling bitflags v1.3.2\n   Compiling pin-project-lite v0.2.17\n   Compiling num-traits v0.2.19\n   Compiling rustix v1.1.4\n   Compiling kurbo v0.13.1\n   Compiling tracing-core v0.1.36\n   Compiling getrandom v0.4.3\n   Compiling zune-jpeg v0.5.15\n   Compiling fastrand v2.4.1\n   Compiling gif v0.14.2\n   Compiling flate2 v1.1.9\n   Compiling errno v0.3.14\n   Compiling syn v2.0.118\n   Compiling png v0.18.1\n   Compiling png v0.17.16\n   Compiling euclid v0.22.14\n   Compiling objc2-exception-helper v0.1.1\n   Compiling guillotiere v0.7.0\n   Compiling tempfile v3.27.0\n   Compiling block2 v0.6.2\n   Compiling objc2-core-audio-types v0.3.2\n   Compiling dispatch2 v0.3.1\n   Compiling objc2-core-foundation v0.3.2\n   Compiling bytemuck_derive v1.10.2\n   Compiling thiserror-impl v2.0.18\n   Compiling serde_derive v1.0.228\n   Compiling tracing-attributes v0.1.31\n   Compiling serde_repr v0.1.20\n   Compiling tracing v0.1.44\n   Compiling bytemuck v1.25.0\n   Compiling color v0.3.3\n   Compiling font-types v0.11.3\n   Compiling read-fonts v0.39.2\n   Compiling peniko v0.6.1\n   Compiling objc2-foundation v0.3.2\n   Compiling objc2-core-audio v0.3.2\n   Compiling objc2-media-toolbox v0.3.2\n   Compiling vello_common v0.0.9\n   Compiling cutlass-core v0.7.0-alpha.0 (/private/tmp/deadpan-media-upstream-agln_a6z/cutlass/crates/cutlass-core)\n   Compiling velato v0.10.0\n   Compiling skrifa v0.42.1\n   Compiling glifo v0.1.1\n   Compiling vello_cpu v0.0.9\n   Compiling objc2-metal v0.3.2\n   Compiling objc2-avf-audio v0.3.2\n   Compiling objc2-core-image v0.3.2\n   Compiling objc2-quartz-core v0.3.2\n   Compiling objc2-core-graphics v0.3.2\n   Compiling objc2-core-video v0.3.2\n   Compiling objc2-image-io v0.3.2\n   Compiling objc2-core-media v0.3.2\n   Compiling objc2-av-foundation v0.3.2\n   Compiling cutlass-decoder v0.7.0-alpha.0 (/private/tmp/deadpan-media-upstream-agln_a6z/cutlass/crates/cutlass-decoder)\n   Compiling cutlass-encoder v0.7.0-alpha.0 (/private/tmp/deadpan-media-upstream-agln_a6z/cutlass/crates/cutlass-encoder)\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 56.44s\n     Running unittests src/lib.rs (target/debug/deps/cutlass_decoder-c1e0da77152b05df)\n     Running tests/image.rs (target/debug/deps/image-a712fef5e794c6e5)\n     Running unittests src/lib.rs (target/debug/deps/cutlass_encoder-aa090b1c7acf0460)\n     Running tests/long_av.rs (target/debug/deps/long_av-e4f8625e95c8aa34)\n     Running tests/roundtrip.rs (target/debug/deps/roundtrip-eb0f676b93247b27)\n   Doc-tests cutlass_decoder\n   Doc-tests cutlass_encoder\n"
+    },
+    {
+      "argv": [
+        "cargo",
+        "check",
+        "--locked",
+        "--lib",
+        "--features",
+        "link_system_ffmpeg"
+      ],
+      "cwd": "/tmp/deadpan-media-upstream-agln_a6z/rsmpeg",
+      "exit_code": 101,
+      "elapsed_seconds": 21.139658499974757,
+      "stdout": "",
+      "stderr": "   Compiling proc-macro2 v1.0.107\n   Compiling quote v1.0.47\n   Compiling unicode-ident v1.0.26\n   Compiling glob v0.3.4\n   Compiling libc v0.2.189\n   Compiling prettyplease v0.2.37\n   Compiling memchr v2.8.3\n   Compiling minimal-lexical v0.2.1\n   Compiling cfg-if v1.0.5\n   Compiling regex-syntax v0.8.11\n   Compiling ident_case v1.0.1\n   Compiling either v1.18.0\n   Compiling strsim v0.11.1\n   Compiling camino v1.2.6\n   Compiling bindgen v0.71.1\n   Compiling log v0.4.34\n   Compiling rustc-hash v2.1.3\n   Compiling bitflags v2.13.2\n   Compiling libloading v0.8.9\n   Compiling shlex v1.3.0\n   Compiling prettyplease v0.3.0\n   Compiling pkg-config v0.3.34\n   Compiling once_cell v1.21.4\n   Compiling itertools v0.13.0\n   Compiling paste v1.0.15\n   Compiling thiserror v2.0.20\n   Compiling clang-sys v1.9.1\n   Compiling nom v7.1.3\n   Compiling syn v3.0.6\n   Compiling syn v2.0.119\n   Compiling regex-automata v0.4.18\n   Compiling cexpr v0.6.0\n   Compiling regex v1.13.1\n   Compiling darling_core v0.24.1\n   Compiling thiserror-impl v2.0.20\n   Compiling darling_macro v0.24.1\n   Compiling darling v0.24.1\n   Compiling bon-macros v3.10.1\n   Compiling rusty_ffmpeg v0.16.7+ffmpeg.8\n    Checking bon v3.10.1\n    Checking rsmpeg v0.18.0+ffmpeg.8.0 (/private/tmp/deadpan-media-upstream-agln_a6z/rsmpeg)\nerror[E0615]: attempted to take value of method `supported_framerates` on type `&'codec codec::AVCodec`\n  --> src/avcodec/codec.rs:93:35\n   |\n93 |         unsafe { build_array(self.supported_framerates, AVRational { den: 0, num: 0 }) }\n   |                                   ^^^^^^^^^^^^^^^^^^^^ method, not a field\n   |\nhelp: use parentheses to call the method\n   |\n93 |         unsafe { build_array(self.supported_framerates(), AVRational { den: 0, num: 0 }) }\n   |                                                       ++\n\nerror[E0615]: attempted to take value of method `pix_fmts` on type `&'codec codec::AVCodec`\n  --> src/avcodec/codec.rs:99:35\n   |\n99 |         unsafe { build_array(self.pix_fmts, -1) }\n   |                                   ^^^^^^^^ method, not a field\n   |\nhelp: use parentheses to call the method\n   |\n99 |         unsafe { build_array(self.pix_fmts(), -1) }\n   |                                           ++\n\nerror[E0615]: attempted to take value of method `supported_samplerates` on type `&'codec codec::AVCodec`\n   --> src/avcodec/codec.rs:105:35\n    |\n105 |         unsafe { build_array(self.supported_samplerates, 0) }\n    |                                   ^^^^^^^^^^^^^^^^^^^^^ method, not a field\n    |\nhelp: use parentheses to call the method\n    |\n105 |         unsafe { build_array(self.supported_samplerates(), 0) }\n    |                                                        ++\n\nerror[E0615]: attempted to take value of method `sample_fmts` on type `&'codec codec::AVCodec`\n   --> src/avcodec/codec.rs:111:35\n    |\n111 |         unsafe { build_array(self.sample_fmts, -1) }\n    |                                   ^^^^^^^^^^^ method, not a field\n    |\nhelp: use parentheses to call the method\n    |\n111 |         unsafe { build_array(self.sample_fmts(), -1) }\n    |                                              ++\n\nerror[E0308]: mismatched types\n     --> src/avcodec/parser.rs:17:38\n      |\n   17 |         unsafe { ffi::av_parser_init(codec_id) }\n      |                  ------------------- ^^^^^^^^ expected `u32`, found `i32`\n      |                  |\n      |                  arguments to this function are incorrect\n      |\nnote: function defined here\n     --> /private/tmp/deadpan-media-upstream-agln_a6z/rsmpeg/target/debug/build/rusty_ffmpeg-175c118d18d273d5/out/binding.rs:15178:12\n      |\n15178 |     pub fn av_parser_init(codec_id: AVCodecID) -> *mut AVCodecParserContext;\n      |            ^^^^^^^^^^^^^^\nhelp: you can convert an `i32` to a `u32` and panic if the converted value doesn't fit\n      |\n   17 |         unsafe { ffi::av_parser_init(codec_id.try_into().unwrap()) }\n      |                                              ++++++++++++++++++++\n\nSome errors have detailed explanations: E0308, E0615.\nFor more information about an error, try `rustc --explain E0308`.\nerror: could not compile `rsmpeg` (lib) due to 5 previous errors\n"
+    },
+    {
+      "argv": [
+        "cargo",
+        "build",
+        "--release",
+        "--locked"
+      ],
+      "cwd": "/tmp/deadpan-media-upstream-agln_a6z/comparison",
+      "exit_code": 0,
+      "elapsed_seconds": 77.09327725018375,
+      "stdout": "",
+      "stderr": "   Compiling proc-macro2 v1.0.107\n   Compiling unicode-ident v1.0.26\n   Compiling quote v1.0.47\n   Compiling bitflags v2.13.2\n   Compiling objc2 v0.6.4\n   Compiling objc2-encode v4.1.0\n   Compiling libc v0.2.189\n   Compiling simd-adler32 v0.3.10\n   Compiling crc32fast v1.5.2\n   Compiling autocfg v1.5.1\n   Compiling adler2 v2.0.1\n   Compiling cfg-if v1.0.5\n   Compiling arrayvec v0.7.8\n   Compiling smallvec v1.16.1\n   Compiling thiserror v2.0.20\n   Compiling serde_core v1.0.229\n   Compiling linebender_resource_handle v0.1.1\n   Compiling serde v1.0.229\n   Compiling foldhash v0.2.0\n   Compiling zmij v1.0.23\n   Compiling fearless_simd v0.4.1\n   Compiling miniz_oxide v0.9.1\n   Compiling fdeflate v0.3.7\n   Compiling miniz_oxide v0.8.9\n   Compiling hashbrown v0.17.1\n   Compiling polycool v0.4.0\n   Compiling log v0.4.34\n   Compiling serde_json v1.0.151\n   Compiling memchr v2.8.3\n   Compiling once_cell v1.21.4\n   Compiling num-traits v0.2.19\n   Compiling itoa v1.0.18\n   Compiling kurbo v0.13.1\n   Compiling tracing-core v0.1.36\n   Compiling zune-core v0.5.3\n   Compiling color_quant v1.1.0\n   Compiling flate2 v1.1.10\n   Compiling pin-project-lite v0.2.17\n   Compiling weezl v0.1.12\n   Compiling bitflags v1.3.2\n   Compiling zune-jpeg v0.5.15\n   Compiling syn v3.0.6\n   Compiling syn v2.0.119\n   Compiling gif v0.14.2\n   Compiling euclid v0.22.14\n   Compiling png v0.18.1\n   Compiling png v0.17.16\n   Compiling block2 v0.6.2\n   Compiling objc2-core-audio-types v0.3.2\n   Compiling guillotiere v0.7.0\n   Compiling dispatch2 v0.3.1\n   Compiling objc2-core-foundation v0.3.2\n   Compiling bytemuck_derive v1.12.1\n   Compiling thiserror-impl v2.0.20\n   Compiling serde_derive v1.0.229\n   Compiling serde_repr v0.1.21\n   Compiling bytemuck v1.25.2\n   Compiling color v0.3.3\n   Compiling font-types v0.11.3\n   Compiling read-fonts v0.39.2\n   Compiling peniko v0.6.1\n   Compiling tracing-attributes v0.1.31\n   Compiling vello_common v0.0.9\n   Compiling objc2-foundation v0.3.2\n   Compiling objc2-core-audio v0.3.2\n   Compiling objc2-media-toolbox v0.3.2\n   Compiling tracing v0.1.44\n   Compiling velato v0.10.0\n   Compiling cutlass-core v0.7.0-alpha.0 (/private/tmp/deadpan-media-upstream-agln_a6z/cutlass/crates/cutlass-core)\n   Compiling skrifa v0.42.1\n   Compiling glifo v0.1.1\n   Compiling vello_cpu v0.0.9\n   Compiling objc2-metal v0.3.2\n   Compiling objc2-avf-audio v0.3.2\n   Compiling objc2-core-image v0.3.2\n   Compiling objc2-quartz-core v0.3.2\n   Compiling objc2-core-graphics v0.3.2\n   Compiling objc2-core-video v0.3.2\n   Compiling objc2-image-io v0.3.2\n   Compiling objc2-core-media v0.3.2\n   Compiling objc2-av-foundation v0.3.2\n   Compiling cutlass-decoder v0.7.0-alpha.0 (/private/tmp/deadpan-media-upstream-agln_a6z/cutlass/crates/cutlass-decoder)\n   Compiling deadpan-cutlass-qualification v0.0.0 (/private/tmp/deadpan-media-upstream-agln_a6z/comparison)\n    Finished `release` profile [optimized] target(s) in 1m 17s\n"
+    },
+    {
+      "argv": [
+        "/tmp/deadpan-media-upstream-agln_a6z/comparison/target/release/deadpan-cutlass-qualification",
+        "/tmp/deadpan-media-w1chb9l4/x264-cfr.mp4",
+        "cfr"
+      ],
+      "cwd": "/tmp/deadpan-media-upstream-agln_a6z",
+      "exit_code": 0,
+      "elapsed_seconds": 0.46036929194815457,
+      "stdout": "{\"frames\":120,\"exact_seeks\":12,\"linear_decode_ms\":252.03575,\"seek_ms\":[10.040916000000001, 16.421083, 12.391167, 13.142416, 19.115667, 1.652625, 20.54675, 0.673458, 16.420958, 17.0645, 20.26025, 12.905292000000001]}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/tmp/deadpan-media-upstream-agln_a6z/comparison/target/release/deadpan-cutlass-qualification",
+        "/tmp/deadpan-media-w1chb9l4/x264-vfr.mp4",
+        "vfr"
+      ],
+      "cwd": "/tmp/deadpan-media-upstream-agln_a6z",
+      "exit_code": 0,
+      "elapsed_seconds": 0.45856970781460404,
+      "stdout": "{\"frames\":120,\"exact_seeks\":12,\"linear_decode_ms\":242.653166,\"seek_ms\":[9.3925, 16.1535, 16.872249999999998, 15.034708, 21.642667, 1.15825, 19.911749999999998, 0.6925, 16.270833, 17.698833, 23.196041, 13.431334]}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/tmp/deadpan-media-upstream-agln_a6z/comparison/target/release/deadpan-cutlass-qualification",
+        "/tmp/deadpan-media-w1chb9l4/x264-offset.mp4",
+        "offset"
+      ],
+      "cwd": "/tmp/deadpan-media-upstream-agln_a6z",
+      "exit_code": 101,
+      "elapsed_seconds": 0.256978833116591,
+      "stdout": "",
+      "stderr": "\nthread 'main' (35513914) panicked at src/main.rs:41:9:\nassertion `left == right` failed: exact PTS for frame 0\n  left: Less\n right: Equal\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n"
+    },
+    {
+      "argv": [
+        "/tmp/deadpan-media-upstream-agln_a6z/comparison/target/release/deadpan-cutlass-qualification",
+        "/tmp/deadpan-media-w1chb9l4/videotoolbox-software.mp4",
+        "cfr"
+      ],
+      "cwd": "/tmp/deadpan-media-upstream-agln_a6z",
+      "exit_code": 0,
+      "elapsed_seconds": 0.4482549577951431,
+      "stdout": "{\"frames\":120,\"exact_seeks\":12,\"linear_decode_ms\":241.973584,\"seek_ms\":[10.394458, 17.489958, 14.8155, 14.097042, 19.246624999999998, 1.073958, 20.002499999999998, 0.603125, 15.673584, 17.154916999999998, 19.721666999999997, 14.116416999999998]}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/tmp/deadpan-media-upstream-agln_a6z/comparison/target/release/deadpan-cutlass-qualification",
+        "/tmp/deadpan-media-w1chb9l4/videotoolbox-hardware-no-b.mp4",
+        "cfr"
+      ],
+      "cwd": "/tmp/deadpan-media-upstream-agln_a6z",
+      "exit_code": 0,
+      "elapsed_seconds": 0.4752577079925686,
+      "stdout": "{\"frames\":120,\"exact_seeks\":12,\"linear_decode_ms\":253.641375,\"seek_ms\":[10.997207999999999, 18.541375, 14.127333, 21.139208999999997, 21.784666, 1.040375, 20.494042, 0.463917, 20.226333999999998, 16.567709, 16.491166, 12.826334]}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/tmp/deadpan-media-upstream-agln_a6z/comparison/target/release/deadpan-cutlass-qualification",
+        "/tmp/deadpan-media-w1chb9l4/videotoolbox-software-no-b.mp4",
+        "cfr"
+      ],
+      "cwd": "/tmp/deadpan-media-upstream-agln_a6z",
+      "exit_code": 0,
+      "elapsed_seconds": 0.4525564170908183,
+      "stdout": "{\"frames\":120,\"exact_seeks\":12,\"linear_decode_ms\":250.10816699999998,\"seek_ms\":[11.55075, 15.837459, 13.419791, 13.377167, 19.665499999999998, 1.118208, 19.461292, 0.7308749999999999, 14.631416, 15.560041, 19.591166, 12.505917]}\n",
+      "stderr": ""
+    }
+  ],
+  "failures": [
+    {
+      "argv": [
+        "cargo",
+        "check",
+        "--locked",
+        "--lib",
+        "--features",
+        "link_system_ffmpeg"
+      ],
+      "exit_code": 101
+    },
+    {
+      "argv": [
+        "/tmp/deadpan-media-upstream-agln_a6z/comparison/target/release/deadpan-cutlass-qualification",
+        "/tmp/deadpan-media-w1chb9l4/x264-offset.mp4",
+        "offset"
+      ],
+      "exit_code": 101
+    }
+  ],
+  "licenses": {
+    "cutlass": {
+      "LICENSE-APACHE": {
+        "sha256": "89b970f7082f6c99ddc9c8cf54046be0869853cdcc386180d08c6c860fec5ec6",
+        "text": "                                 Apache License\n                           Version 2.0, January 2004\n                        http://www.apache.org/licenses/\n\n   TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION\n\n   1. Definitions.\n\n      \"License\" shall mean the terms and conditions for use, reproduction,\n      and distribution as defined by Sections 1 through 9 of this document.\n\n      \"Licensor\" shall mean the copyright owner or entity authorized by\n      the copyright owner that is granting the License.\n\n      \"Legal Entity\" shall mean the union of the acting entity and all\n      other entities that control, are controlled by, or are under common\n      control with that entity. For the purposes of this definition,\n      \"control\" means (i) the power, direct or indirect, to cause the\n      direction or management of such entity, whether by contract or\n      otherwise, or (ii) ownership of fifty percent (50%) or more of the\n      outstanding shares, or (iii) beneficial ownership of such entity.\n\n      \"You\" (or \"Your\") shall mean an individual or Legal Entity\n      exercising permissions granted by this License.\n\n      \"Source\" form shall mean the preferred form for making modifications,\n      including but not limited to software source code, documentation\n      source, and configuration files.\n\n      \"Object\" form shall mean any form resulting from mechanical\n      transformation or translation of a Source form, including but\n      not limited to compiled object code, generated documentation,\n      and conversions to other media types.\n\n      \"Work\" shall mean the work of authorship, whether in Source or\n      Object form, made available under the License, as indicated by a\n      copyright notice that is included in or attached to the work\n      (an example is provided in the Appendix below).\n\n      \"Derivative Works\" shall mean any work, whether in Source or Object\n      form, that is based on (or derived from) the Work and for which the\n      editorial revisions, annotations, elaborations, or other modifications\n      represent, as a whole, an original work of authorship. For the purposes\n      of this License, Derivative Works shall not include works that remain\n      separable from, or merely link (or bind by name) to the interfaces of,\n      the Work and Derivative Works thereof.\n\n      \"Contribution\" shall mean any work of authorship, including\n      the original version of the Work and any modifications or additions\n      to that Work or Derivative Works thereof, that is intentionally\n      submitted to Licensor for inclusion in the Work by the copyright owner\n      or by an individual or Legal Entity authorized to submit on behalf of\n      the copyright owner. For the purposes of this definition, \"submitted\"\n      means any form of electronic, verbal, or written communication sent\n      to the Licensor or its representatives, including but not limited to\n      communication on electronic mailing lists, source code control systems,\n      and issue tracking systems that are managed by, or on behalf of, the\n      Licensor for the purpose of discussing and improving the Work, but\n      excluding communication that is conspicuously marked or otherwise\n      designated in writing by the copyright owner as \"Not a Contribution.\"\n\n      \"Contributor\" shall mean Licensor and any individual or Legal Entity\n      on behalf of whom a Contribution has been received by Licensor and\n      subsequently incorporated within the Work.\n\n   2. Grant of Copyright License. Subject to the terms and conditions of\n      this License, each Contributor hereby grants to You a perpetual,\n      worldwide, non-exclusive, no-charge, royalty-free, irrevocable\n      copyright license to reproduce, prepare Derivative Works of,\n      publicly display, publicly perform, sublicense, and distribute the\n      Work and such Derivative Works in Source or Object form.\n\n   3. Grant of Patent License. Subject to the terms and conditions of\n      this License, each Contributor hereby grants to You a perpetual,\n      worldwide, non-exclusive, no-charge, royalty-free, irrevocable\n      (except as stated in this section) patent license to make, have made,\n      use, offer to sell, sell, import, and otherwise transfer the Work,\n      where such license applies only to those patent claims licensable\n      by such Contributor that are necessarily infringed by their\n      Contribution(s) alone or by combination of their Contribution(s)\n      with the Work to which such Contribution(s) was submitted. If You\n      institute patent litigation against any entity (including a\n      cross-claim or counterclaim in a lawsuit) alleging that the Work\n      or a Contribution incorporated within the Work constitutes direct\n      or contributory patent infringement, then any patent licenses\n      granted to You under this License for that Work shall terminate\n      as of the date such litigation is filed.\n\n   4. Redistribution. You may reproduce and distribute copies of the\n      Work or Derivative Works thereof in any medium, with or without\n      modifications, and in Source or Object form, provided that You\n      meet the following conditions:\n\n      (a) You must give any other recipients of the Work or Derivative\n          Works a copy of this License; and\n\n      (b) You must cause any modified files to carry prominent notices\n          stating that You changed the files; and\n\n      (c) You must retain, in the Source form of any Derivative Works\n          that You distribute, all copyright, patent, trademark, and\n          attribution notices from the Source form of the Work,\n          excluding those notices that do not pertain to any part of\n          the Derivative Works; and\n\n      (d) If the Work includes a \"NOTICE\" text file as part of its\n          distribution, then any Derivative Works that You distribute must\n          include a readable copy of the attribution notices contained\n          within such NOTICE file, excluding those notices that do not\n          pertain to any part of the Derivative Works, in at least one\n          of the following places: within a NOTICE text file distributed\n          as part of the Derivative Works; within the Source form or\n          documentation, if provided along with the Derivative Works; or,\n          within a display generated by the Derivative Works, if and\n          wherever such third-party notices normally appear. The contents\n          of the NOTICE file are for informational purposes only and\n          do not modify the License. You may add Your own attribution\n          notices within Derivative Works that You distribute, alongside\n          or as an addendum to the NOTICE text from the Work, provided\n          that such additional attribution notices cannot be construed\n          as modifying the License.\n\n      You may add Your own copyright statement to Your modifications and\n      may provide additional or different license terms and conditions\n      for use, reproduction, or distribution of Your modifications, or\n      for any such Derivative Works as a whole, provided Your use,\n      reproduction, and distribution of the Work otherwise complies with\n      the conditions stated in this License.\n\n   5. Submission of Contributions. Unless You explicitly state otherwise,\n      any Contribution intentionally submitted for inclusion in the Work\n      by You to the Licensor shall be under the terms and conditions of\n      this License, without any additional terms or conditions.\n      Notwithstanding the above, nothing herein shall supersede or modify\n      the terms of any separate license agreement you may have executed\n      with Licensor regarding such Contributions.\n\n   6. Trademarks. This License does not grant permission to use the trade\n      names, trademarks, service marks, or product names of the Licensor,\n      except as required for reasonable and customary use in describing the\n      origin of the Work and reproducing the content of the NOTICE file.\n\n   7. Disclaimer of Warranty. Unless required by applicable law or\n      agreed to in writing, Licensor provides the Work (and each\n      Contributor provides its Contributions) on an \"AS IS\" BASIS,\n      WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or\n      implied, including, without limitation, any warranties or conditions\n      of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A\n      PARTICULAR PURPOSE. You are solely responsible for determining the\n      appropriateness of using or redistributing the Work and assume any\n      risks associated with Your exercise of permissions under this License.\n\n   8. Limitation of Liability. In no event and under no legal theory,\n      whether in tort (including negligence), contract, or otherwise,\n      unless required by applicable law (such as deliberate and grossly\n      negligent acts) or agreed to in writing, shall any Contributor be\n      liable to You for damages, including any direct, indirect, special,\n      incidental, or consequential damages of any character arising as a\n      result of this License or out of the use or inability to use the\n      Work (including but not limited to damages for loss of goodwill,\n      work stoppage, computer failure or malfunction, or any and all\n      other commercial damages or losses), even if such Contributor\n      has been advised of the possibility of such damages.\n\n   9. Accepting Warranty or Additional Liability. While redistributing\n      the Work or Derivative Works thereof, You may choose to offer,\n      and charge a fee for, acceptance of support, warranty, indemnity,\n      or other liability obligations and/or rights consistent with this\n      License. However, in accepting such obligations, You may act only\n      on Your own behalf and on Your sole responsibility, not on behalf\n      of any other Contributor, and only if You agree to indemnify,\n      defend, and hold each Contributor harmless for any liability\n      incurred by, or claims asserted against, such Contributor by reason\n      of your accepting any such warranty or additional liability.\n\n   END OF TERMS AND CONDITIONS\n\n   APPENDIX: How to apply the Apache License to your work.\n\n      To apply the Apache License to your work, attach the following\n      boilerplate notice, with the fields enclosed by brackets \"[]\"\n      replaced with your own identifying information. (Don't include\n      the brackets!)  The text should be enclosed in the appropriate\n      comment syntax for the file format. We also recommend that a\n      file or class name and description of purpose be included on the\n      same \"printed page\" as the copyright notice for easier\n      identification within third-party archives.\n\n   Copyright 2026 Emmanuel Aidoo\n\n   Licensed under the Apache License, Version 2.0 (the \"License\");\n   you may not use this file except in compliance with the License.\n   You may obtain a copy of the License at\n\n       http://www.apache.org/licenses/LICENSE-2.0\n\n   Unless required by applicable law or agreed to in writing, software\n   distributed under the License is distributed on an \"AS IS\" BASIS,\n   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n   See the License for the specific language governing permissions and\n   limitations under the License.\n"
+      },
+      "LICENSE-MIT": {
+        "sha256": "9420856835f8186d3afcf2b78b7596f5bc4250d902913d2b5b8a631200cfd03d",
+        "text": "MIT License\n\nCopyright (c) 2026 Emmanuel Aidoo\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+      }
+    },
+    "rsmpeg": {
+      "LICENSE": {
+        "sha256": "bccaa8b6c09f94e81f06696e179dbe058464bbdfbc823b6d49cada1d71e84ac3",
+        "text": "Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE."
+      }
+    }
+  },
+  "inputs_sha256": {
+    "audit_upstream.py": "87c47f57e25ab58cb0157ed9219c26a60cba9fe8b84c71ce3920217dec797948",
+    "cutlass_probe.rs": "86f0b3c38bdbfdacdb280c7a75056276bd06ba074c3fd3d9e0235f0e3b2235ee",
+    "cutlass-probe.Cargo.toml": "d673da65db6baa0412fbff6c7170b29a2190477d5c7ec89b1476d54fa46ad77d",
+    "cutlass-probe.Cargo.lock": "c5e6637eaf3a06e7086adee0ec56622b32ed102718556e84c524e8e945019517",
+    "rsmpeg.Cargo.lock": "0d7faf9b524e72b2a1fca1c74ad170f048a3cd81690a788ec859857d6e0d81e2"
+  },
+  "media_report_sha256": "2437c54d2191e385a3fa0d0f72f7a35188a35ba792f88cb5e08dd539daba5912",
+  "source_checkout_checks": {
+    "cutlass": {
+      "head": "22437e2837340c7c57d62e438117f9a0fb4096d2",
+      "tracked_or_untracked_changes": "",
+      "ignored_paths_excluded": [
+        "target/"
+      ]
+    },
+    "rsmpeg": {
+      "head": "b21fcfde8bb1ffdc179504e370e330385baa9819",
+      "tracked_or_untracked_changes": "",
+      "ignored_paths_excluded": [
+        "Cargo.lock",
+        "target/"
+      ]
+    }
+  },
+  "rsmpeg_resolved_lock": "# This file is automatically @generated by Cargo.\n# It is not intended for manual editing.\nversion = 3\n\n[[package]]\nname = \"adler2\"\nversion = \"2.0.1\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"320119579fcad9c21884f5c4861d16174d0e06250625266f50fe6898340abefa\"\n\n[[package]]\nname = \"aho-corasick\"\nversion = \"1.1.5\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"c982642fa9e8606056828ee9a8505737230110bb1099153c79efe865c59d12ba\"\ndependencies = [\n \"memchr\",\n]\n\n[[package]]\nname = \"anyhow\"\nversion = \"1.0.104\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"330a5ed07fa54e4702c9d6c4174f74427fc0ef6e214bbd677ae50a5099946470\"\n\n[[package]]\nname = \"autocfg\"\nversion = \"1.5.1\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"f2032f911046de80f0a198e0901378627c33f59ea0ac00e363d481118bd70a53\"\n\n[[package]]\nname = \"bindgen\"\nversion = \"0.71.1\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"5f58bf3d7db68cfbac37cfc485a8d711e87e064c3d0fe0435b92f7a407f9d6b3\"\ndependencies = [\n \"bitflags\",\n \"cexpr\",\n \"clang-sys\",\n \"itertools\",\n \"log\",\n \"prettyplease 0.2.37\",\n \"proc-macro2\",\n \"quote\",\n \"regex\",\n \"rustc-hash\",\n \"shlex\",\n \"syn 2.0.119\",\n]\n\n[[package]]\nname = \"bitflags\"\nversion = \"2.13.2\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"3ded4057c258ba199e2d26386d3af3780957ecaee6c4ef4041c6b4b8b97c0b06\"\n\n[[package]]\nname = \"bon\"\nversion = \"3.10.1\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"60eafe0d77c3a2fc292c1d1346c3041b33c0a108085a2afabf672b70f69dbbc9\"\ndependencies = [\n \"bon-macros\",\n]\n\n[[package]]\nname = \"bon-macros\"\nversion = \"3.10.1\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"bd0f9631d8aaaee112c41985d675ef269e02acbd4f33122836af4f0c5f699ff6\"\ndependencies = [\n \"darling\",\n \"ident_case\",\n \"prettyplease 0.3.0\",\n \"proc-macro2\",\n \"quote\",\n \"syn 3.0.6\",\n]\n\n[[package]]\nname = \"bytemuck\"\nversion = \"1.25.2\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"95832e849adfb21180ccb6826a99da14e5d266ae5c2e668e1602cf234f153797\"\n\n[[package]]\nname = \"byteorder-lite\"\nversion = \"0.1.0\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"8f1fe948ff07f4bd06c30984e69f5b4899c516a3ef74f34df92a2df2ab535495\"\n\n[[package]]\nname = \"camino\"\nversion = \"1.2.6\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"bbbad30e4b4c14a39e3cc8aed085a12a327257c316619c93581e017bc52be591\"\n\n[[package]]\nname = \"cexpr\"\nversion = \"0.6.0\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"6fac387a98bb7c37292057cffc56d62ecb629900026402633ae9160df93a8766\"\ndependencies = [\n \"nom\",\n]\n\n[[package]]\nname = \"cfg-if\"\nversion = \"1.0.5\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"4e7648175b45a9a48536d676f68d918270699102aa8dab5496df06904c914600\"\n\n[[package]]\nname = \"clang-sys\"\nversion = \"1.9.1\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"157a8ba7b480713b56f4c09fd13fc3e0a22a5dfab8097ba61cbc5feef950788a\"\ndependencies = [\n \"glob\",\n \"libc\",\n \"libloading\",\n]\n\n[[package]]\nname = \"crc32fast\"\nversion = \"1.5.2\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"01a7799fd6b852db0e61728dde9a204c423b44d689dbd432522543614b490e78\"\ndependencies = [\n \"cfg-if\",\n]\n\n[[package]]\nname = \"darling\"\nversion = \"0.24.1\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"ed17f5901b6630b993ca003def43f2f8ef4014fc13b047b57aad617ff32bc2ec\"\ndependencies = [\n \"darling_core\",\n \"darling_macro\",\n]\n\n[[package]]\nname = \"darling_core\"\nversion = \"0.24.1\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"6837e2cf7485aaae18f86181d2f0e9a7ed297a025e220aeabf63fdebd3a2ddff\"\ndependencies = [\n \"ident_case\",\n \"proc-macro2\",\n \"quote\",\n \"strsim\",\n \"syn 3.0.6\",\n]\n\n[[package]]\nname = \"darling_macro\"\nversion = \"0.24.1\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"2ac7135c3ef02b2f7833bbeb1be5ba7f966dcde8a87c6b87f65a778d71a02785\"\ndependencies = [\n \"darling_core\",\n \"quote\",\n \"syn 3.0.6\",\n]\n\n[[package]]\nname = \"either\"\nversion = \"1.18.0\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"252afb9ae5eaa683babdc6a068b3f5726eb19e05070c731f9b2a23a7c3e8ed34\"\n\n[[package]]\nname = \"fdeflate\"\nversion = \"0.3.7\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"1e6853b52649d4ac5c0bd02320cddc5ba956bdb407c4b75a2c6b75bf51500f8c\"\ndependencies = [\n \"simd-adler32\",\n]\n\n[[package]]\nname = \"flate2\"\nversion = \"1.1.10\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"6e634e2e0ebac1ee034020da1ca582e17ffe4e0f5e985823721e168928136dcb\"\ndependencies = [\n \"crc32fast\",\n \"miniz_oxide 0.9.1\",\n \"zlib-rs\",\n]\n\n[[package]]\nname = \"glob\"\nversion = \"0.3.4\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"e4eba85ea1d0a966a983acd07deee566e67395d2d96b6fb39e62b5a833f1eb0b\"\n\n[[package]]\nname = \"ident_case\"\nversion = \"1.0.1\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"b9e0384b61958566e926dc50660321d12159025e767c18e043daf26b70104c39\"\n\n[[package]]\nname = \"image\"\nversion = \"0.25.10\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"85ab80394333c02fe689eaf900ab500fbd0c2213da414687ebf995a65d5a6104\"\ndependencies = [\n \"bytemuck\",\n \"byteorder-lite\",\n \"moxcms\",\n \"num-traits\",\n \"png\",\n]\n\n[[package]]\nname = \"itertools\"\nversion = \"0.13.0\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"413ee7dfc52ee1a4949ceeb7dbc8a33f2d6c088194d9f922fb8318faf1f01186\"\ndependencies = [\n \"either\",\n]\n\n[[package]]\nname = \"libc\"\nversion = \"0.2.189\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"3eaf3ede3fee6db1a4c2ee091bf8a8b4dccdc6d17f656fb07896ee72867612f2\"\n\n[[package]]\nname = \"libloading\"\nversion = \"0.8.9\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"d7c4b02199fee7c5d21a5ae7d8cfa79a6ef5bb2fc834d6e9058e89c825efdc55\"\ndependencies = [\n \"cfg-if\",\n \"windows-link\",\n]\n\n[[package]]\nname = \"log\"\nversion = \"0.4.34\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"f9f8bd3e56ce4dfc153cf470fffbfa98c7620958b312ca5c3a4b8d5181fd13c6\"\n\n[[package]]\nname = \"memchr\"\nversion = \"2.8.3\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"cf8baf1c55e62ffcace7a9f06f4bd9cd3f0c4beb022d3b367256b91b87513d98\"\n\n[[package]]\nname = \"minimal-lexical\"\nversion = \"0.2.1\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"68354c5c6bd36d73ff3feceb05efa59b6acb7626617f4962be322a825e61f79a\"\n\n[[package]]\nname = \"miniz_oxide\"\nversion = \"0.8.9\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"1fa76a2c86f704bdb222d66965fb3d63269ce38518b83cb0575fca855ebb6316\"\ndependencies = [\n \"adler2\",\n \"simd-adler32\",\n]\n\n[[package]]\nname = \"miniz_oxide\"\nversion = \"0.9.1\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"b63fbc4a50860e98e7b2aa7804ded1db5cbc3aff9193adaff57a6931bf7c4b4c\"\ndependencies = [\n \"adler2\",\n \"simd-adler32\",\n]\n\n[[package]]\nname = \"moxcms\"\nversion = \"0.8.1\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"bb85c154ba489f01b25c0d36ae69a87e4a1c73a72631fc6c0eb6dde34a73e44b\"\ndependencies = [\n \"num-traits\",\n \"pxfm\",\n]\n\n[[package]]\nname = \"nom\"\nversion = \"7.1.3\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"d273983c5a657a70a3e8f2a01329822f3b8c8172b73826411a55751e404a0a4a\"\ndependencies = [\n \"memchr\",\n \"minimal-lexical\",\n]\n\n[[package]]\nname = \"num-traits\"\nversion = \"0.2.19\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"071dfc062690e90b734c0b2273ce72ad0ffa95f0c74596bc250dcfd960262841\"\ndependencies = [\n \"autocfg\",\n]\n\n[[package]]\nname = \"once_cell\"\nversion = \"1.21.4\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"9f7c3e4beb33f85d45ae3e3a1792185706c8e16d043238c593331cc7cd313b50\"\n\n[[package]]\nname = \"paste\"\nversion = \"1.0.15\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"57c0d7b74b563b49d38dae00a0c37d4d6de9b432382b2892f0574ddcae73fd0a\"\n\n[[package]]\nname = \"pkg-config\"\nversion = \"0.3.34\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"f6b464fbc74e149a392436b17d523f769e057cb6877f6a5c4618bc6f11800548\"\n\n[[package]]\nname = \"png\"\nversion = \"0.18.1\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"60769b8b31b2a9f263dae2776c37b1b28ae246943cf719eb6946a1db05128a61\"\ndependencies = [\n \"bitflags\",\n \"crc32fast\",\n \"fdeflate\",\n \"flate2\",\n \"miniz_oxide 0.8.9\",\n]\n\n[[package]]\nname = \"prettyplease\"\nversion = \"0.2.37\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"479ca8adacdd7ce8f1fb39ce9ecccbfe93a3f1344b3d0d97f20bc0196208f62b\"\ndependencies = [\n \"proc-macro2\",\n \"syn 2.0.119\",\n]\n\n[[package]]\nname = \"prettyplease\"\nversion = \"0.3.0\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"2bfe0f4c752e450fc2faf62654f1c134747922825d5b04ca717b8874f41a40c0\"\ndependencies = [\n \"proc-macro2\",\n \"syn 3.0.6\",\n]\n\n[[package]]\nname = \"proc-macro2\"\nversion = \"1.0.107\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"985e7ec9bb745e6ce6535b544d84d6cd6f7ad8bd711c398938ae983b91a766d9\"\ndependencies = [\n \"unicode-ident\",\n]\n\n[[package]]\nname = \"pxfm\"\nversion = \"0.1.30\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"d55d956fa96f5ec02be2e13af0e20391a5aa83d6a074e3ad368959d0fab299ea\"\n\n[[package]]\nname = \"quote\"\nversion = \"1.0.47\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"1fbf4db142a473a8d80c26bbf18454ed458bf8d26c8219c331daecfdbd079001\"\ndependencies = [\n \"proc-macro2\",\n]\n\n[[package]]\nname = \"regex\"\nversion = \"1.13.1\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"f020237b6c8eed93db2e2cb53c00c60a8e1bc73da7d073199a1180401450218d\"\ndependencies = [\n \"aho-corasick\",\n \"memchr\",\n \"regex-automata\",\n \"regex-syntax\",\n]\n\n[[package]]\nname = \"regex-automata\"\nversion = \"0.4.18\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"ad8553b9b26413251cbf30e620595c7a41b3887f03da04579c0e6b0d6a06b4b2\"\ndependencies = [\n \"aho-corasick\",\n \"memchr\",\n \"regex-syntax\",\n]\n\n[[package]]\nname = \"regex-syntax\"\nversion = \"0.8.11\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"d6f6ff9a378485b298a5286656da665ba74413d36db0979633275d2e708145d4\"\n\n[[package]]\nname = \"rsmpeg\"\nversion = \"0.18.0+ffmpeg.8.0\"\ndependencies = [\n \"anyhow\",\n \"bon\",\n \"camino\",\n \"image\",\n \"libc\",\n \"once_cell\",\n \"paste\",\n \"rusty_ffmpeg\",\n \"thiserror\",\n]\n\n[[package]]\nname = \"rustc-hash\"\nversion = \"2.1.3\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"6b1e7f9a428571be2dc5bc0505c13fb6bf936822b894ec87abf8a08a4e51742d\"\n\n[[package]]\nname = \"rusty_ffmpeg\"\nversion = \"0.16.7+ffmpeg.8\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"f25d40a46450059278c9f9f2616018910b647877a66a2093a83f115f59763967\"\ndependencies = [\n \"bindgen\",\n \"camino\",\n \"once_cell\",\n \"pkg-config\",\n \"vcpkg\",\n]\n\n[[package]]\nname = \"shlex\"\nversion = \"1.3.0\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"0fda2ff0d084019ba4d7c6f371c95d8fd75ce3524c3cb8fb653a3023f6323e64\"\n\n[[package]]\nname = \"simd-adler32\"\nversion = \"0.3.10\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"3a219298ac11a56ea9a6d2120044824d6f01aeb034955e7af7bc16858527deea\"\n\n[[package]]\nname = \"strsim\"\nversion = \"0.11.1\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"7da8b5736845d9f2fcb837ea5d9e2628564b3b043a70948a3f0b778838c5fb4f\"\n\n[[package]]\nname = \"syn\"\nversion = \"2.0.119\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"872831b642d1a07999a962a351ed35b955ea2cfc8f3862091e2a240a84f17297\"\ndependencies = [\n \"proc-macro2\",\n \"quote\",\n \"unicode-ident\",\n]\n\n[[package]]\nname = \"syn\"\nversion = \"3.0.6\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"8593e8e72159ed2257d083c7a454a85cbf854f37a0966d8d483aff8c8a3ebcee\"\ndependencies = [\n \"proc-macro2\",\n \"quote\",\n \"unicode-ident\",\n]\n\n[[package]]\nname = \"thiserror\"\nversion = \"2.0.20\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"ec86235f5fcc2a73650310756d2ac5b138a5780bbbdfae3eeccec992c435ba4f\"\ndependencies = [\n \"thiserror-impl\",\n]\n\n[[package]]\nname = \"thiserror-impl\"\nversion = \"2.0.20\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"bc04cd3e1236dd4a98afca4569f2deb3f120e5422a4023be2cb683f8486292af\"\ndependencies = [\n \"proc-macro2\",\n \"quote\",\n \"syn 3.0.6\",\n]\n\n[[package]]\nname = \"unicode-ident\"\nversion = \"1.0.26\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"d245f478577f809a851594d02313b640fb437e0bb33866753cff937863096954\"\n\n[[package]]\nname = \"vcpkg\"\nversion = \"0.2.15\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"accd4ea62f7bb7a82fe23066fb0957d48ef677f6eeb8215f372f52e48bb32426\"\n\n[[package]]\nname = \"windows-link\"\nversion = \"0.2.1\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"f0805222e57f7521d6a62e36fa9163bc891acd422f971defe97d64e70d0a4fe5\"\n\n[[package]]\nname = \"zlib-rs\"\nversion = \"0.6.8\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"b268e58e7c693d7c271f93ffc4ba3b380412554231c85bf61ca7af91042a4112\"\n",
+  "cutlass_lock_sha256": "0bb8ea50bcf3267e5f3fe86a2fa749b2291485bb8985f9ea9c3e1f36ae7daf72",
+  "downstream_inputs_sha256": {
+    "Cargo.toml": "d673da65db6baa0412fbff6c7170b29a2190477d5c7ec89b1476d54fa46ad77d",
+    "Cargo.lock": "c5e6637eaf3a06e7086adee0ec56622b32ed102718556e84c524e8e945019517",
+    "src/main.rs": "86f0b3c38bdbfdacdb280c7a75056276bd06ba074c3fd3d9e0235f0e3b2235ee"
+  },
+  "comparisons": [
+    {
+      "name": "x264-cfr",
+      "fixture_sha256": "d3c1402d2063e886f2174700ae415c9af582c82251d877caebac122c50192593",
+      "exit_code": 0,
+      "metrics": {
+        "frames": 120,
+        "exact_seeks": 12,
+        "linear_decode_ms": 252.03575,
+        "seek_ms": [
+          10.040916000000001,
+          16.421083,
+          12.391167,
+          13.142416,
+          19.115667,
+          1.652625,
+          20.54675,
+          0.673458,
+          16.420958,
+          17.0645,
+          20.26025,
+          12.905292000000001
+        ]
+      }
+    },
+    {
+      "name": "x264-vfr",
+      "fixture_sha256": "5122490dbbc14049e13acf1affdf5854d27891e23f34c55dab64bc37ac982a99",
+      "exit_code": 0,
+      "metrics": {
+        "frames": 120,
+        "exact_seeks": 12,
+        "linear_decode_ms": 242.653166,
+        "seek_ms": [
+          9.3925,
+          16.1535,
+          16.872249999999998,
+          15.034708,
+          21.642667,
+          1.15825,
+          19.911749999999998,
+          0.6925,
+          16.270833,
+          17.698833,
+          23.196041,
+          13.431334
+        ]
+      }
+    },
+    {
+      "name": "x264-offset",
+      "fixture_sha256": "6b62417c9f8ff4f58ba010e45ae9114d10c6ceb0524a8c864b58e7bcc2770151",
+      "exit_code": 101,
+      "metrics": null
+    },
+    {
+      "name": "videotoolbox-software",
+      "fixture_sha256": "009dcd325d21dc3dd615f09795f109d0fe5c9547f94ca31f1b07e0829e30cbe8",
+      "exit_code": 0,
+      "metrics": {
+        "frames": 120,
+        "exact_seeks": 12,
+        "linear_decode_ms": 241.973584,
+        "seek_ms": [
+          10.394458,
+          17.489958,
+          14.8155,
+          14.097042,
+          19.246624999999998,
+          1.073958,
+          20.002499999999998,
+          0.603125,
+          15.673584,
+          17.154916999999998,
+          19.721666999999997,
+          14.116416999999998
+        ]
+      }
+    },
+    {
+      "name": "videotoolbox-hardware-no-b",
+      "fixture_sha256": "53f9e3c66e565a403c00c92f415c923f9e8db2aaaace2e1cd6711575bb61fb49",
+      "exit_code": 0,
+      "metrics": {
+        "frames": 120,
+        "exact_seeks": 12,
+        "linear_decode_ms": 253.641375,
+        "seek_ms": [
+          10.997207999999999,
+          18.541375,
+          14.127333,
+          21.139208999999997,
+          21.784666,
+          1.040375,
+          20.494042,
+          0.463917,
+          20.226333999999998,
+          16.567709,
+          16.491166,
+          12.826334
+        ]
+      }
+    },
+    {
+      "name": "videotoolbox-software-no-b",
+      "fixture_sha256": "f25e818314b9b08135a72c74f4717c4246280f08eda8b4b3cf71f5927e9b7ec9",
+      "exit_code": 0,
+      "metrics": {
+        "frames": 120,
+        "exact_seeks": 12,
+        "linear_decode_ms": 250.10816699999998,
+        "seek_ms": [
+          11.55075,
+          15.837459,
+          13.419791,
+          13.377167,
+          19.665499999999998,
+          1.118208,
+          19.461292,
+          0.7308749999999999,
+          14.631416,
+          15.560041,
+          19.591166,
+          12.505917
+        ]
+      }
+    }
+  ],
+  "downstream_resolved_lock": "# This file is automatically @generated by Cargo.\n# It is not intended for manual editing.\nversion = 4\n\n[[package]]\nname = \"adler2\"\nversion = \"2.0.1\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"320119579fcad9c21884f5c4861d16174d0e06250625266f50fe6898340abefa\"\n\n[[package]]\nname = \"arrayvec\"\nversion = \"0.7.8\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"d3fb67a6e08acf24fdeccbac2cb6ac4305825bd1f117462e0e6f2f193345ad56\"\n\n[[package]]\nname = \"autocfg\"\nversion = \"1.5.1\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"f2032f911046de80f0a198e0901378627c33f59ea0ac00e363d481118bd70a53\"\n\n[[package]]\nname = \"bitflags\"\nversion = \"1.3.2\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"bef38d45163c2f1dde094a7dfd33ccf595c92905c8f8f4fdc18d06fb1037718a\"\n\n[[package]]\nname = \"bitflags\"\nversion = \"2.13.2\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"3ded4057c258ba199e2d26386d3af3780957ecaee6c4ef4041c6b4b8b97c0b06\"\n\n[[package]]\nname = \"block2\"\nversion = \"0.6.2\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"cdeb9d870516001442e364c5220d3574d2da8dc765554b4a617230d33fa58ef5\"\ndependencies = [\n \"objc2\",\n]\n\n[[package]]\nname = \"bytemuck\"\nversion = \"1.25.2\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"95832e849adfb21180ccb6826a99da14e5d266ae5c2e668e1602cf234f153797\"\ndependencies = [\n \"bytemuck_derive\",\n]\n\n[[package]]\nname = \"bytemuck_derive\"\nversion = \"1.12.1\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"6a1f896587b6f2c069c73d2f0913e2d590c3990285cd2f0b6aa02b786b4c679c\"\ndependencies = [\n \"proc-macro2\",\n \"quote\",\n \"syn 3.0.6\",\n]\n\n[[package]]\nname = \"cfg-if\"\nversion = \"1.0.5\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"4e7648175b45a9a48536d676f68d918270699102aa8dab5496df06904c914600\"\n\n[[package]]\nname = \"color\"\nversion = \"0.3.3\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"2ec7c5eb7a16992b1904d76c517d170ab353b0e0b3d5a0c81a8a0cd1037893cf\"\ndependencies = [\n \"bytemuck\",\n]\n\n[[package]]\nname = \"color_quant\"\nversion = \"1.1.0\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"3d7b894f5411737b7867f4827955924d7c254fc9f4d91a6aad6b097804b1018b\"\n\n[[package]]\nname = \"crc32fast\"\nversion = \"1.5.2\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"01a7799fd6b852db0e61728dde9a204c423b44d689dbd432522543614b490e78\"\ndependencies = [\n \"cfg-if\",\n]\n\n[[package]]\nname = \"cutlass-core\"\nversion = \"0.7.0-alpha.0\"\ndependencies = [\n \"serde\",\n \"thiserror\",\n]\n\n[[package]]\nname = \"cutlass-decoder\"\nversion = \"0.7.0-alpha.0\"\ndependencies = [\n \"cutlass-core\",\n \"gif\",\n \"kurbo\",\n \"ndk-sys\",\n \"objc2\",\n \"objc2-av-foundation\",\n \"objc2-core-foundation\",\n \"objc2-core-graphics\",\n \"objc2-core-media\",\n \"objc2-core-video\",\n \"objc2-foundation\",\n \"objc2-image-io\",\n \"peniko\",\n \"png 0.17.16\",\n \"thiserror\",\n \"tracing\",\n \"velato\",\n \"vello_cpu\",\n \"windows\",\n \"zune-jpeg\",\n]\n\n[[package]]\nname = \"deadpan-cutlass-qualification\"\nversion = \"0.0.0\"\ndependencies = [\n \"cutlass-core\",\n \"cutlass-decoder\",\n]\n\n[[package]]\nname = \"dispatch2\"\nversion = \"0.3.1\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"1e0e367e4e7da84520dedcac1901e4da967309406d1e51017ae1abfb97adbd38\"\ndependencies = [\n \"bitflags 2.13.2\",\n \"block2\",\n \"objc2\",\n]\n\n[[package]]\nname = \"euclid\"\nversion = \"0.22.14\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"f1a05365e3b1c6d1650318537c7460c6923f1abdd272ad6842baa2b509957a06\"\ndependencies = [\n \"num-traits\",\n]\n\n[[package]]\nname = \"fdeflate\"\nversion = \"0.3.7\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"1e6853b52649d4ac5c0bd02320cddc5ba956bdb407c4b75a2c6b75bf51500f8c\"\ndependencies = [\n \"simd-adler32\",\n]\n\n[[package]]\nname = \"fearless_simd\"\nversion = \"0.4.1\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"b97b65636e5b9ef369943878ac74335ba1c55c1cb6adbf1e2c293c624248d693\"\n\n[[package]]\nname = \"flate2\"\nversion = \"1.1.10\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"6e634e2e0ebac1ee034020da1ca582e17ffe4e0f5e985823721e168928136dcb\"\ndependencies = [\n \"crc32fast\",\n \"miniz_oxide 0.9.1\",\n \"zlib-rs\",\n]\n\n[[package]]\nname = \"foldhash\"\nversion = \"0.2.0\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"77ce24cb58228fbb8aa041425bb1050850ac19177686ea6e0f41a70416f56fdb\"\n\n[[package]]\nname = \"font-types\"\nversion = \"0.11.3\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"5b38ad915f6dadd993ced50848a8291a543bd41ca62bc10740d5e64e2ab4cfd7\"\ndependencies = [\n \"bytemuck\",\n]\n\n[[package]]\nname = \"gif\"\nversion = \"0.14.2\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"ee8cfcc411d9adbbaba82fb72661cc1bcca13e8bba98b364e62b2dba8f960159\"\ndependencies = [\n \"color_quant\",\n \"weezl\",\n]\n\n[[package]]\nname = \"glifo\"\nversion = \"0.1.1\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"d99fc21d493812643aae86d53b7bbd02f376434a90317e8a790bc209fdd6605e\"\ndependencies = [\n \"bytemuck\",\n \"foldhash\",\n \"hashbrown\",\n \"log\",\n \"peniko\",\n \"png 0.18.1\",\n \"skrifa\",\n \"smallvec\",\n \"vello_common\",\n]\n\n[[package]]\nname = \"guillotiere\"\nversion = \"0.7.0\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"6b17e70c989c36bad147b27a58d148c0741c51448aa5653436547323e524d0ab\"\ndependencies = [\n \"euclid\",\n]\n\n[[package]]\nname = \"hashbrown\"\nversion = \"0.17.1\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"ed5909b6e89a2db4456e54cd5f673791d7eca6732202bbf2a9cc504fe2f9b84a\"\ndependencies = [\n \"foldhash\",\n]\n\n[[package]]\nname = \"itoa\"\nversion = \"1.0.18\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682\"\n\n[[package]]\nname = \"jni-sys\"\nversion = \"0.3.1\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"41a652e1f9b6e0275df1f15b32661cf0d4b78d4d87ddec5e0c3c20f097433258\"\ndependencies = [\n \"jni-sys 0.4.1\",\n]\n\n[[package]]\nname = \"jni-sys\"\nversion = \"0.4.1\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"c6377a88cb3910bee9b0fa88d4f42e1d2da8e79915598f65fb0c7ee14c878af2\"\ndependencies = [\n \"jni-sys-macros\",\n]\n\n[[package]]\nname = \"jni-sys-macros\"\nversion = \"0.4.1\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"38c0b942f458fe50cdac086d2f946512305e5631e720728f2a61aabcd47a6264\"\ndependencies = [\n \"quote\",\n \"syn 2.0.119\",\n]\n\n[[package]]\nname = \"kurbo\"\nversion = \"0.13.1\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"4b60dfc32f652b926df6192e55525b16d186c69d47876c3ead4da5cc9f8450e2\"\ndependencies = [\n \"arrayvec\",\n \"euclid\",\n \"polycool\",\n \"smallvec\",\n]\n\n[[package]]\nname = \"libc\"\nversion = \"0.2.189\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"3eaf3ede3fee6db1a4c2ee091bf8a8b4dccdc6d17f656fb07896ee72867612f2\"\n\n[[package]]\nname = \"linebender_resource_handle\"\nversion = \"0.1.1\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"d4a5ff6bcca6c4867b1c4fd4ef63e4db7436ef363e0ad7531d1558856bae64f4\"\n\n[[package]]\nname = \"log\"\nversion = \"0.4.34\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"f9f8bd3e56ce4dfc153cf470fffbfa98c7620958b312ca5c3a4b8d5181fd13c6\"\n\n[[package]]\nname = \"memchr\"\nversion = \"2.8.3\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"cf8baf1c55e62ffcace7a9f06f4bd9cd3f0c4beb022d3b367256b91b87513d98\"\n\n[[package]]\nname = \"miniz_oxide\"\nversion = \"0.8.9\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"1fa76a2c86f704bdb222d66965fb3d63269ce38518b83cb0575fca855ebb6316\"\ndependencies = [\n \"adler2\",\n \"simd-adler32\",\n]\n\n[[package]]\nname = \"miniz_oxide\"\nversion = \"0.9.1\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"b63fbc4a50860e98e7b2aa7804ded1db5cbc3aff9193adaff57a6931bf7c4b4c\"\ndependencies = [\n \"adler2\",\n \"simd-adler32\",\n]\n\n[[package]]\nname = \"ndk-sys\"\nversion = \"0.6.0+11769913\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"ee6cda3051665f1fb8d9e08fc35c96d5a244fb1be711a03b71118828afc9a873\"\ndependencies = [\n \"jni-sys 0.3.1\",\n]\n\n[[package]]\nname = \"num-traits\"\nversion = \"0.2.19\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"071dfc062690e90b734c0b2273ce72ad0ffa95f0c74596bc250dcfd960262841\"\ndependencies = [\n \"autocfg\",\n]\n\n[[package]]\nname = \"objc2\"\nversion = \"0.6.4\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"3a12a8ed07aefc768292f076dc3ac8c48f3781c8f2d5851dd3d98950e8c5a89f\"\ndependencies = [\n \"objc2-encode\",\n]\n\n[[package]]\nname = \"objc2-av-foundation\"\nversion = \"0.3.2\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"478ae33fcac9df0a18db8302387c666b8ef08a3e2d62b510ca4fc278a384b6c0\"\ndependencies = [\n \"bitflags 2.13.2\",\n \"block2\",\n \"dispatch2\",\n \"objc2\",\n \"objc2-avf-audio\",\n \"objc2-core-audio-types\",\n \"objc2-core-foundation\",\n \"objc2-core-graphics\",\n \"objc2-core-image\",\n \"objc2-core-media\",\n \"objc2-core-video\",\n \"objc2-foundation\",\n \"objc2-image-io\",\n \"objc2-media-toolbox\",\n \"objc2-quartz-core\",\n]\n\n[[package]]\nname = \"objc2-avf-audio\"\nversion = \"0.3.2\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"13a380031deed8e99db00065c45937da434ca987c034e13b87e4441f9e4090be\"\ndependencies = [\n \"objc2\",\n \"objc2-foundation\",\n]\n\n[[package]]\nname = \"objc2-core-audio\"\nversion = \"0.3.2\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"e1eebcea8b0dbff5f7c8504f3107c68fc061a3eb44932051c8cf8a68d969c3b2\"\ndependencies = [\n \"dispatch2\",\n \"objc2\",\n \"objc2-core-audio-types\",\n \"objc2-core-foundation\",\n]\n\n[[package]]\nname = \"objc2-core-audio-types\"\nversion = \"0.3.2\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"5a89f2ec274a0cf4a32642b2991e8b351a404d290da87bb6a9a9d8632490bd1c\"\ndependencies = [\n \"bitflags 2.13.2\",\n \"objc2\",\n]\n\n[[package]]\nname = \"objc2-core-foundation\"\nversion = \"0.3.2\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"2a180dd8642fa45cdb7dd721cd4c11b1cadd4929ce112ebd8b9f5803cc79d536\"\ndependencies = [\n \"bitflags 2.13.2\",\n \"block2\",\n \"dispatch2\",\n \"libc\",\n \"objc2\",\n]\n\n[[package]]\nname = \"objc2-core-graphics\"\nversion = \"0.3.2\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"e022c9d066895efa1345f8e33e584b9f958da2fd4cd116792e15e07e4720a807\"\ndependencies = [\n \"bitflags 2.13.2\",\n \"block2\",\n \"dispatch2\",\n \"libc\",\n \"objc2\",\n \"objc2-core-foundation\",\n \"objc2-io-surface\",\n \"objc2-metal\",\n]\n\n[[package]]\nname = \"objc2-core-image\"\nversion = \"0.3.2\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"e5d563b38d2b97209f8e861173de434bd0214cf020e3423a52624cd1d989f006\"\ndependencies = [\n \"objc2\",\n \"objc2-foundation\",\n]\n\n[[package]]\nname = \"objc2-core-media\"\nversion = \"0.3.2\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"05ec576860167a15dd9fce7fbee7512beb4e31f532159d3482d1f9c6caedf31d\"\ndependencies = [\n \"bitflags 2.13.2\",\n \"block2\",\n \"dispatch2\",\n \"objc2\",\n \"objc2-core-audio\",\n \"objc2-core-audio-types\",\n \"objc2-core-foundation\",\n \"objc2-core-video\",\n]\n\n[[package]]\nname = \"objc2-core-video\"\nversion = \"0.3.2\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"d425caf1df73233f29fd8a5c3e5edbc30d2d4307870f802d18f00d83dc5141a6\"\ndependencies = [\n \"bitflags 2.13.2\",\n \"block2\",\n \"objc2\",\n \"objc2-core-foundation\",\n \"objc2-core-graphics\",\n \"objc2-io-surface\",\n \"objc2-metal\",\n]\n\n[[package]]\nname = \"objc2-encode\"\nversion = \"4.1.0\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"ef25abbcd74fb2609453eb695bd2f860d389e457f67dc17cafc8b8cbc89d0c33\"\n\n[[package]]\nname = \"objc2-foundation\"\nversion = \"0.3.2\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"e3e0adef53c21f888deb4fa59fc59f7eb17404926ee8a6f59f5df0fd7f9f3272\"\ndependencies = [\n \"bitflags 2.13.2\",\n \"block2\",\n \"libc\",\n \"objc2\",\n \"objc2-core-foundation\",\n]\n\n[[package]]\nname = \"objc2-image-io\"\nversion = \"0.3.2\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"32b0446e98cf4a784cc7a0177715ff317eeaa8463841c616cfc78aa4f953c4ea\"\ndependencies = [\n \"block2\",\n \"objc2\",\n \"objc2-core-foundation\",\n \"objc2-core-graphics\",\n]\n\n[[package]]\nname = \"objc2-io-surface\"\nversion = \"0.3.2\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"180788110936d59bab6bd83b6060ffdfffb3b922ba1396b312ae795e1de9d81d\"\ndependencies = [\n \"bitflags 2.13.2\",\n \"objc2\",\n \"objc2-core-foundation\",\n]\n\n[[package]]\nname = \"objc2-media-toolbox\"\nversion = \"0.3.2\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"edd9fdde720df3da7046bb9097811000c1e7ab5cd579fa89d96b27d56781fb30\"\ndependencies = [\n \"objc2\",\n \"objc2-core-audio-types\",\n \"objc2-core-foundation\",\n \"objc2-core-media\",\n]\n\n[[package]]\nname = \"objc2-metal\"\nversion = \"0.3.2\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"a0125f776a10d00af4152d74616409f0d4a2053a6f57fa5b7d6aa2854ac04794\"\ndependencies = [\n \"bitflags 2.13.2\",\n \"objc2\",\n \"objc2-foundation\",\n]\n\n[[package]]\nname = \"objc2-quartz-core\"\nversion = \"0.3.2\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"96c1358452b371bf9f104e21ec536d37a650eb10f7ee379fff67d2e08d537f1f\"\ndependencies = [\n \"bitflags 2.13.2\",\n \"objc2\",\n \"objc2-foundation\",\n]\n\n[[package]]\nname = \"once_cell\"\nversion = \"1.21.4\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"9f7c3e4beb33f85d45ae3e3a1792185706c8e16d043238c593331cc7cd313b50\"\n\n[[package]]\nname = \"peniko\"\nversion = \"0.6.1\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"839c8299360d2e998bdb106dc0a6cd71dcc5f4df51df1b620361bf50e283cca6\"\ndependencies = [\n \"bytemuck\",\n \"color\",\n \"kurbo\",\n \"linebender_resource_handle\",\n \"smallvec\",\n]\n\n[[package]]\nname = \"pin-project-lite\"\nversion = \"0.2.17\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"a89322df9ebe1c1578d689c92318e070967d1042b512afbe49518723f4e6d5cd\"\n\n[[package]]\nname = \"png\"\nversion = \"0.17.16\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"82151a2fc869e011c153adc57cf2789ccb8d9906ce52c0b39a6b5697749d7526\"\ndependencies = [\n \"bitflags 1.3.2\",\n \"crc32fast\",\n \"fdeflate\",\n \"flate2\",\n \"miniz_oxide 0.8.9\",\n]\n\n[[package]]\nname = \"png\"\nversion = \"0.18.1\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"60769b8b31b2a9f263dae2776c37b1b28ae246943cf719eb6946a1db05128a61\"\ndependencies = [\n \"bitflags 2.13.2\",\n \"crc32fast\",\n \"fdeflate\",\n \"flate2\",\n \"miniz_oxide 0.8.9\",\n]\n\n[[package]]\nname = \"polycool\"\nversion = \"0.4.0\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"50596ddc09eb5ad5f75cacd40209568e66df71baf86e1499a0e99c4cff12a5a6\"\ndependencies = [\n \"arrayvec\",\n]\n\n[[package]]\nname = \"proc-macro2\"\nversion = \"1.0.107\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"985e7ec9bb745e6ce6535b544d84d6cd6f7ad8bd711c398938ae983b91a766d9\"\ndependencies = [\n \"unicode-ident\",\n]\n\n[[package]]\nname = \"quote\"\nversion = \"1.0.47\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"1fbf4db142a473a8d80c26bbf18454ed458bf8d26c8219c331daecfdbd079001\"\ndependencies = [\n \"proc-macro2\",\n]\n\n[[package]]\nname = \"read-fonts\"\nversion = \"0.39.2\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"c4ed38b89c2c77ff968c524145ad65fb010f38af5c7a224b53b81d47ac2daa81\"\ndependencies = [\n \"bytemuck\",\n \"font-types\",\n]\n\n[[package]]\nname = \"serde\"\nversion = \"1.0.229\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"4148590afebada386688f18773da617792bf2ef03ffc1e4cbd2b1d45b023e0ba\"\ndependencies = [\n \"serde_core\",\n \"serde_derive\",\n]\n\n[[package]]\nname = \"serde_core\"\nversion = \"1.0.229\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"67dca2c9c51e58a4791a4b1ed58308b39c64224d349a935ab5039aa360942a48\"\ndependencies = [\n \"serde_derive\",\n]\n\n[[package]]\nname = \"serde_derive\"\nversion = \"1.0.229\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"e7a5d71263a5a7d47b41f6b3f06ba276f10cc18b0931f1799f710578e2309348\"\ndependencies = [\n \"proc-macro2\",\n \"quote\",\n \"syn 3.0.6\",\n]\n\n[[package]]\nname = \"serde_json\"\nversion = \"1.0.151\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"c841b55ecdae098c80dcae9cf767f6f8a0c2cdb3416bbef72181df4d0fe73f14\"\ndependencies = [\n \"itoa\",\n \"memchr\",\n \"serde\",\n \"serde_core\",\n \"zmij\",\n]\n\n[[package]]\nname = \"serde_repr\"\nversion = \"0.1.21\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"8d3b1629de253c70a0508c3899572da79ca359fdab27c7920ff00406df418906\"\ndependencies = [\n \"proc-macro2\",\n \"quote\",\n \"syn 3.0.6\",\n]\n\n[[package]]\nname = \"simd-adler32\"\nversion = \"0.3.10\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"3a219298ac11a56ea9a6d2120044824d6f01aeb034955e7af7bc16858527deea\"\n\n[[package]]\nname = \"skrifa\"\nversion = \"0.42.1\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"0c34617370ae968efb7161bb2beb517d9084659aae19e24b89e3db25b46e4564\"\ndependencies = [\n \"bytemuck\",\n \"read-fonts\",\n]\n\n[[package]]\nname = \"smallvec\"\nversion = \"1.16.1\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"ba467056f1b547ed52077911161fc86985becbc60e8e1857c8a144dab0def891\"\n\n[[package]]\nname = \"syn\"\nversion = \"2.0.119\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"872831b642d1a07999a962a351ed35b955ea2cfc8f3862091e2a240a84f17297\"\ndependencies = [\n \"proc-macro2\",\n \"quote\",\n \"unicode-ident\",\n]\n\n[[package]]\nname = \"syn\"\nversion = \"3.0.6\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"8593e8e72159ed2257d083c7a454a85cbf854f37a0966d8d483aff8c8a3ebcee\"\ndependencies = [\n \"proc-macro2\",\n \"quote\",\n \"unicode-ident\",\n]\n\n[[package]]\nname = \"thiserror\"\nversion = \"2.0.20\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"ec86235f5fcc2a73650310756d2ac5b138a5780bbbdfae3eeccec992c435ba4f\"\ndependencies = [\n \"thiserror-impl\",\n]\n\n[[package]]\nname = \"thiserror-impl\"\nversion = \"2.0.20\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"bc04cd3e1236dd4a98afca4569f2deb3f120e5422a4023be2cb683f8486292af\"\ndependencies = [\n \"proc-macro2\",\n \"quote\",\n \"syn 3.0.6\",\n]\n\n[[package]]\nname = \"tracing\"\nversion = \"0.1.44\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"63e71662fa4b2a2c3a26f570f037eb95bb1f85397f3cd8076caed2f026a6d100\"\ndependencies = [\n \"pin-project-lite\",\n \"tracing-attributes\",\n \"tracing-core\",\n]\n\n[[package]]\nname = \"tracing-attributes\"\nversion = \"0.1.31\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"7490cfa5ec963746568740651ac6781f701c9c5ea257c58e057f3ba8cf69e8da\"\ndependencies = [\n \"proc-macro2\",\n \"quote\",\n \"syn 2.0.119\",\n]\n\n[[package]]\nname = \"tracing-core\"\nversion = \"0.1.36\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"db97caf9d906fbde555dd62fa95ddba9eecfd14cb388e4f491a66d74cd5fb79a\"\ndependencies = [\n \"once_cell\",\n]\n\n[[package]]\nname = \"unicode-ident\"\nversion = \"1.0.26\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"d245f478577f809a851594d02313b640fb437e0bb33866753cff937863096954\"\n\n[[package]]\nname = \"velato\"\nversion = \"0.10.0\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"93af7e70afc7895124207bb59b08ab12cd6a1a5a3ab2e4d16f4329a8bfa1b218\"\ndependencies = [\n \"kurbo\",\n \"peniko\",\n \"serde\",\n \"serde_json\",\n \"serde_repr\",\n]\n\n[[package]]\nname = \"vello_common\"\nversion = \"0.0.9\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"19d672facaa2d697285a786cd9d44d614cd2ce54cdc022504bf339f8fff3b750\"\ndependencies = [\n \"bytemuck\",\n \"fearless_simd\",\n \"guillotiere\",\n \"hashbrown\",\n \"log\",\n \"peniko\",\n \"png 0.18.1\",\n \"smallvec\",\n \"thiserror\",\n]\n\n[[package]]\nname = \"vello_cpu\"\nversion = \"0.0.9\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"588691169aed86b5c8fb487266afee01323234e6fd0a3f2aaec0eaa8e4007f23\"\ndependencies = [\n \"bytemuck\",\n \"glifo\",\n \"hashbrown\",\n \"png 0.18.1\",\n \"vello_common\",\n]\n\n[[package]]\nname = \"weezl\"\nversion = \"0.1.12\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"a28ac98ddc8b9274cb41bb4d9d4d5c425b6020c50c46f25559911905610b4a88\"\n\n[[package]]\nname = \"windows\"\nversion = \"0.62.2\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"527fadee13e0c05939a6a05d5bd6eec6cd2e3dbd648b9f8e447c6518133d8580\"\ndependencies = [\n \"windows-collections\",\n \"windows-core\",\n \"windows-future\",\n \"windows-numerics\",\n]\n\n[[package]]\nname = \"windows-collections\"\nversion = \"0.3.2\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"23b2d95af1a8a14a3c7367e1ed4fc9c20e0a26e79551b1454d72583c97cc6610\"\ndependencies = [\n \"windows-core\",\n]\n\n[[package]]\nname = \"windows-core\"\nversion = \"0.62.2\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"b8e83a14d34d0623b51dce9581199302a221863196a1dde71a7663a4c2be9deb\"\ndependencies = [\n \"windows-implement\",\n \"windows-interface\",\n \"windows-link\",\n \"windows-result\",\n \"windows-strings\",\n]\n\n[[package]]\nname = \"windows-future\"\nversion = \"0.3.2\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"e1d6f90251fe18a279739e78025bd6ddc52a7e22f921070ccdc67dde84c605cb\"\ndependencies = [\n \"windows-core\",\n \"windows-link\",\n \"windows-threading\",\n]\n\n[[package]]\nname = \"windows-implement\"\nversion = \"0.60.2\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"053e2e040ab57b9dc951b72c264860db7eb3b0200ba345b4e4c3b14f67855ddf\"\ndependencies = [\n \"proc-macro2\",\n \"quote\",\n \"syn 2.0.119\",\n]\n\n[[package]]\nname = \"windows-interface\"\nversion = \"0.59.3\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"3f316c4a2570ba26bbec722032c4099d8c8bc095efccdc15688708623367e358\"\ndependencies = [\n \"proc-macro2\",\n \"quote\",\n \"syn 2.0.119\",\n]\n\n[[package]]\nname = \"windows-link\"\nversion = \"0.2.1\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"f0805222e57f7521d6a62e36fa9163bc891acd422f971defe97d64e70d0a4fe5\"\n\n[[package]]\nname = \"windows-numerics\"\nversion = \"0.3.1\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"6e2e40844ac143cdb44aead537bbf727de9b044e107a0f1220392177d15b0f26\"\ndependencies = [\n \"windows-core\",\n \"windows-link\",\n]\n\n[[package]]\nname = \"windows-result\"\nversion = \"0.4.1\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"7781fa89eaf60850ac3d2da7af8e5242a5ea78d1a11c49bf2910bb5a73853eb5\"\ndependencies = [\n \"windows-link\",\n]\n\n[[package]]\nname = \"windows-strings\"\nversion = \"0.5.1\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"7837d08f69c77cf6b07689544538e017c1bfcf57e34b4c0ff58e6c2cd3b37091\"\ndependencies = [\n \"windows-link\",\n]\n\n[[package]]\nname = \"windows-threading\"\nversion = \"0.2.1\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"3949bd5b99cafdf1c7ca86b43ca564028dfe27d66958f2470940f73d86d75b37\"\ndependencies = [\n \"windows-link\",\n]\n\n[[package]]\nname = \"zlib-rs\"\nversion = \"0.6.8\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"b268e58e7c693d7c271f93ffc4ba3b380412554231c85bf61ca7af91042a4112\"\n\n[[package]]\nname = \"zmij\"\nversion = \"1.0.23\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"29666d0abbfad1e3dc4dcf6144730dd3a3ab225bbbdac83319345b1b44ccfc1b\"\n\n[[package]]\nname = \"zune-core\"\nversion = \"0.5.3\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"d56377fd46368984a170bc5aac5567e52ca5da874caa60bea39fcbca78fb658b\"\n\n[[package]]\nname = \"zune-jpeg\"\nversion = \"0.5.15\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum = \"27bc9d5b815bc103f142aa054f561d9187d191692ec7c2d1e2b4737f8dbd7296\"\ndependencies = [\n \"zune-core\",\n]\n",
+  "status": "failed qualification"
+}

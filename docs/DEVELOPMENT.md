@@ -18,6 +18,8 @@ cargo run -p deadpan-cli -- doctor
 
 Use `cargo fmt --all` to apply formatting. Keep `Cargo.lock` committed; dependency updates are explicit reviewed changes. Tests should establish meaningful behavior and failure modes rather than mirror implementation.
 
+Prefer meaningful unit tests, integration tests, and deterministic headless harnesses for most verification. Keep keyboard grammar, focus routing decisions, command transactions, geometry, and worker state transitions testable without live UI automation. Review GUI aesthetics and natural keyboard navigation explicitly. Use computer interaction when visual quality, native focus/IME, accessibility, or end-to-end ergonomics need observation.
+
 The gate verifies only the implemented foundation. It does not establish media accuracy, AI quality, accessibility conformance, signed distribution, or performance budgets. Those require the evidence in the [requirement tracker](REQUIREMENTS.md) and specification.
 
 ## Native application smoke test
@@ -29,7 +31,7 @@ cargo run -p deadpan-app -- --smoke-test
 cargo run -p deadpan-app
 ```
 
-`--smoke-test` opens the native window, closes it after frames have rendered, and checks the shutdown callback. Also inspect the application interactively: confirm it opens with a truthful description of current scope, responds to resize/focus, and closes cleanly. Confirm no media/import/render controls imply unavailable functionality. For lifecycle changes, also verify the intended quit/SIGTERM behavior and exit status. Record the actual OS/hardware and what was observed; a successful compile is not a UI smoke test.
+`--smoke-test` opens the native window, closes it after frames have rendered, and checks the shutdown callback. Run it for native startup or lifecycle changes. Where an interactive check adds evidence, confirm the affected layout, focus, keyboard navigation, and close behavior. Do not repeat GUI testing for unrelated pure-core changes. Confirm no media/import/render controls imply unavailable functionality. For lifecycle changes, verify the intended quit/SIGTERM behavior and exit status. Record the actual OS/hardware and what was observed; a successful compile is not a UI smoke test.
 
 The shell does not test frame decoding, a media texture path, realtime audio, or preview/export equivalence. Qualify those using isolated technical harnesses before integrating an editing workspace.
 

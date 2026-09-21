@@ -1,19 +1,34 @@
+use serde::{Deserialize, Serialize};
 use std::{error::Error, fmt, ops::Range};
 
 /// Internal audio mix samples per second, as specified in §4.1.
 pub const MIX_SAMPLE_RATE: u32 = 48_000;
 
 /// A signed boundary on the project's presentation-frame clock.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct ProjectFrame(pub i64);
 
 /// A signed boundary on the internal 48 kHz audio clock.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct AudioSample(pub i64);
 
 /// A nonnegative number of project frames, distinct from a frame position.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[serde(try_from = "i64", into = "i64")]
 pub struct FrameDuration(i64);
+
+impl TryFrom<i64> for FrameDuration {
+    type Error = TimeError;
+    fn try_from(value: i64) -> Result<Self, Self::Error> {
+        Self::new(value)
+    }
+}
+
+impl From<FrameDuration> for i64 {
+    fn from(value: FrameDuration) -> Self {
+        value.frames()
+    }
+}
 
 impl FrameDuration {
     pub const ZERO: Self = Self(0);
@@ -40,10 +55,25 @@ impl FrameDuration {
 }
 
 /// An exact, positive, normalized presentation rate in frames per second.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(try_from = "RatioWire")]
 pub struct FrameRate {
     numerator: u32,
     denominator: u32,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct RatioWire {
+    numerator: u32,
+    denominator: u32,
+}
+
+impl TryFrom<RatioWire> for FrameRate {
+    type Error = TimeError;
+    fn try_from(value: RatioWire) -> Result<Self, Self::Error> {
+        Self::new(value.numerator, value.denominator)
+    }
 }
 
 impl FrameRate {
@@ -87,10 +117,25 @@ impl FrameRate {
 /// A validated half-open project interval `[start, end)`.
 ///
 /// Empty intervals are allowed. Its duration must fit in `FrameDuration`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(try_from = "FrameRangeWire")]
 pub struct FrameRange {
     start: ProjectFrame,
     end: ProjectFrame,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct FrameRangeWire {
+    start: ProjectFrame,
+    end: ProjectFrame,
+}
+
+impl TryFrom<FrameRangeWire> for FrameRange {
+    type Error = TimeError;
+    fn try_from(value: FrameRangeWire) -> Result<Self, Self::Error> {
+        Self::new(value.start, value.end)
+    }
 }
 
 impl FrameRange {
@@ -131,10 +176,18 @@ impl FrameRange {
 /// An exact, positive, normalized source-stream time base in seconds per tick.
 ///
 /// This is deliberately distinct from a project presentation frame rate.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(try_from = "RatioWire")]
 pub struct SourceTimeBase {
     numerator: u32,
     denominator: u32,
+}
+
+impl TryFrom<RatioWire> for SourceTimeBase {
+    type Error = TimeError;
+    fn try_from(value: RatioWire) -> Result<Self, Self::Error> {
+        Self::new(value.numerator, value.denominator)
+    }
 }
 
 impl SourceTimeBase {
@@ -162,7 +215,8 @@ impl SourceTimeBase {
 ///
 /// No project-frame conversion or implicit origin normalization is performed.
 /// Ordering timestamps across streams requires explicit time-base conversion.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct SourceTimestamp {
     pub ticks: i64,
     pub time_base: SourceTimeBase,
