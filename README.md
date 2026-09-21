@@ -9,6 +9,7 @@ This repository currently contains an **editing foundation**, not a working vide
 - `deadpan-core`: exact time, validated beat documents, structural commands, nested occurrence edits, and reversible transactions.
 - `deadpan-store`: SQLite project packages, persistent marks and undo/redo, schema-1/2/3 migration, and recovery checkpoints.
 - `deadpan-plan`: immutable indexed picture mappings with exact retiming, stable repeated-play identities, and sparse play overrides.
+- `deadpan-jobs`: bounded worker messages, job lifecycle, and isolated subprocess supervision. No inference backend is connected yet.
 - `deadpan-app`: an `egui`/`eframe` native development welcome shell using `wgpu` on Metal.
 - `deadpan-cli`: headless project/command/history operations, migration, picture-plan inspection, and exact boundary selection, also available through `deadpan-app --headless`.
 

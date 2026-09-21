@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/deadpan-core", "crates/deadpan-store", "crates/deadpan-plan", "crates/deadpan-app", "crates/deadpan-cli"]
+members = ["crates/deadpan-core", "crates/deadpan-store", "crates/deadpan-plan", "crates/deadpan-jobs", "crates/deadpan-app", "crates/deadpan-cli", "native/deadpan-process"]
 default-members = ["crates/deadpan-app"]
 
 [workspace.package]
@@ -15,6 +15,10 @@ publish = false
 deadpan-core = { path = "crates/deadpan-core" }
 deadpan-store = { path = "crates/deadpan-store" }
 deadpan-plan = { path = "crates/deadpan-plan" }
+deadpan-jobs = { path = "crates/deadpan-jobs" }
+deadpan-native-process = { path = "native/deadpan-process" }
+libc = "=0.2.189"
+rustix = { version = "=1.1.5", features = ["process", "fs"] }
 eframe = { version = "=0.36.2", default-features = false, features = ["accesskit", "default_fonts", "wgpu"] }
 proptest = "=1.11.0"
 serde = { version = "=1.0.229", features = ["derive"] }

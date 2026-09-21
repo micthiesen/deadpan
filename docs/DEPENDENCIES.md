@@ -20,6 +20,8 @@ requirement in this scaffold.
 | tempfile | 3.27.0 | MIT OR Apache-2.0 | Atomic checkpoint files and isolated integration fixtures. |
 | thiserror | 2.0.20 | MIT OR Apache-2.0 | Typed storage and CLI errors. |
 | uuid | 1.26.1 | MIT OR Apache-2.0 | Host-generated v4 project/node/revision identities; no randomness in core. |
+| rustix | 1.1.5 | Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT | Safe process-group signalling, unreaped exit observation, and nonblocking worker pipes on macOS/Linux. Already locked transitively; now pinned directly with `process` and `fs`. |
+| libc | 0.2.189 | MIT OR Apache-2.0 | Already locked transitively; direct macOS-only binding inside `native/deadpan-process` for a bounded process-group membership query. Uses OS libproc, with no bundled native library. |
 | proptest | 1.11.0 | MIT OR Apache-2.0 | Development-only exact-time, document, and transaction property tests. |
 
 `Cargo.toml` pins direct versions. `Cargo.lock` records every resolved transitive
@@ -42,6 +44,13 @@ Version and feature references: [eframe 0.36.2](https://docs.rs/eframe/0.36.2/ef
 [tempfile](https://github.com/Stebalien/tempfile),
 [thiserror](https://github.com/dtolnay/thiserror), and
 [uuid](https://github.com/uuid-rs/uuid).
+
+[Worker verification](WORKER_VERIFICATION.md) records the process tests and
+Darwin adapter qualification. The adapter checks the installed Apple SDK ABI and
+[XNU's libproc wrapper](https://github.com/apple-oss-distributions/xnu/blob/f6217f891ac0bb64f3d375211650a4c1ff8ca1ea/libsyscall/wrappers/libproc/libproc.c)
+and [process enumeration](https://github.com/apple-oss-distributions/xnu/blob/f6217f891ac0bb64f3d375211650a4c1ff8ca1ea/bsd/kern/proc_info.c).
+It links the system API through the pinned libc declarations. Tests qualify the
+observed host behavior, not all OS versions or sandbox entitlements.
 
 The storage foundation tests writer ownership, read-only coexistence, durable
 undo/redo, retained branches, actual SQLite disk-full rollback, interrupted

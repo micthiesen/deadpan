@@ -730,6 +730,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "deadpan-jobs"
+version = "0.1.0"
+dependencies = [
+ "deadpan-core",
+ "deadpan-native-process",
+ "rustix 1.1.5",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror 2.0.20",
+]
+
+[[package]]
+name = "deadpan-native-process"
+version = "0.1.0"
+dependencies = [
+ "libc",
+ "rustix 1.1.5",
+]
+
+[[package]]
 name = "deadpan-plan"
 version = "0.1.0"
 dependencies = [

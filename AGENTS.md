@@ -29,6 +29,8 @@ Current crates:
 - `crates/deadpan-core`: exact time, validated documents, structural commands, and reversible patches; no I/O or identity generation.
 - `crates/deadpan-store`: authoritative SQLite packages, immutable revisions, atomic writes, durable undo/redo, and database checkpoints.
 - `crates/deadpan-plan`: immutable indexed picture mappings through structural beats, using exact frame centers and original source identities; no decoding or DSP.
+- `crates/deadpan-jobs`: bounded worker protocol, pure attempt lifecycle, and process supervision; no inference backend or job persistence yet.
+- `native/deadpan-process`: narrow Darwin group-membership adapter; unsafe is denied except for its documented bounded libproc call. Higher layers continue to forbid unsafe.
 - `crates/deadpan-app`: native `egui`/`eframe` application using `wgpu` on Metal; development welcome shell.
 - `crates/deadpan-cli`: versioned headless project/command API, reused by `deadpan-app --headless`.
 
@@ -94,6 +96,15 @@ a matching checkpoint, exact canonical replay, or prepared PCM, and measure the
 work and cache lifecycle. DSP preparation and file reads stay off the device
 callback. The isolated canonical prototype is evidence for that boundary, not
 application playback or listening qualification.
+
+Worker stdout contains only versioned, bounded, length-framed control messages;
+stderr is drained into a bounded diagnostic tail. A completed manifest enters
+host validation, never automatic acceptance. Preserve the original revision as
+provenance while comparing actual generation dependencies for relevance, so an
+unrelated edit does not stale a Hold. Stale or detached attempts never revive.
+The job service polls process deadlines and owns shutdown; pipe pumping and
+process reaping never belong to the audio callback. Vetted executable selection,
+artifact containment/validation, and durable promotion remain host boundaries.
 
 For native startup or lifecycle changes, also run `cargo run -p deadpan-app -- --smoke-test` on supported Apple Silicon macOS. This checks startup and the shutdown callback, not media or accessibility qualification. Choose interactive checks for affected behavior when they add evidence; do not repeat them mechanically for unrelated changes. Add relevant media, persistence, worker, accessibility, or packaging checks as those systems are implemented. Record skipped checks and exact failures in the delivery report. [Development](docs/DEVELOPMENT.md) describes the workflow.
 
