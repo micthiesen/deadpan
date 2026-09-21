@@ -95,6 +95,175 @@ fn indexed_original_frames_seek_exactly_and_own_pixels_after_source_and_decoder_
 }
 
 #[test]
+fn natural_picture_plan_selects_and_decodes_original_pixels_after_trim_rounding() {
+    use std::collections::BTreeMap;
+
+    use deadpan_core::{
+        AssetRecord, AudioSample, BeatNode, ColorPolicy, Command, CommandRequest, EndpointPolicy,
+        ExactRatio, FrameDuration, FrameRate, LinkRelation, NodeId, NodeKind, PresentationBasis,
+        ProjectDocument, ProjectFrame, ProjectId, RevisionId, SourceAudioMapping, SourceNode,
+        SourceSpan, SourceTimestamp, SourceVideo, SourceVideoMapping, Subtree, apply,
+    };
+    use deadpan_plan::RenderPlan;
+
+    let bytes = fixture("rgb25_24");
+    let mut session = open(&bytes, SourceSessionLimits::default());
+    let index = session.index().index();
+    let clock = index.time_base();
+    let full = SourceSpan::new(
+        SourceTimestamp {
+            ticks: index.frames()[0].pts,
+            time_base: clock,
+        },
+        SourceTimestamp {
+            ticks: index.terminal_end(),
+            time_base: clock,
+        },
+    )
+    .unwrap();
+    // Trim one frame from each end. The remaining 23 source frames at 24 fps
+    // occupy 28750/1001 project frames, rounded once to 29.
+    let selected = SourceSpan::new(
+        SourceTimestamp {
+            ticks: index.frames()[1].pts,
+            time_base: clock,
+        },
+        SourceTimestamp {
+            ticks: index.frames()[24].pts,
+            time_base: clock,
+        },
+    )
+    .unwrap();
+    let rate = FrameRate::new(30000, 1001).unwrap();
+    let mapping = SourceVideoMapping::natural_rate(selected, rate, EndpointPolicy::Reject).unwrap();
+    let duration = FrameDuration::new(29).unwrap();
+    assert_eq!(
+        mapping.duration_frames(duration).unwrap(),
+        ExactRatio::new(28750, 1001).unwrap()
+    );
+    let asset = AssetId::new("source").unwrap();
+    let root = NodeId::new("root").unwrap();
+    let leaf = NodeId::new("clip").unwrap();
+    let mut document = ProjectDocument::new(
+        ProjectId::new("native-picture-mapping").unwrap(),
+        RevisionId::new("initial").unwrap(),
+        PresentationBasis {
+            width: 4,
+            height: 2,
+            frame_rate: rate,
+            color_policy: ColorPolicy::SdrRec709,
+        },
+        root.clone(),
+    )
+    .unwrap();
+    for (revision, command) in [
+        (
+            "asset",
+            Command::AddAsset {
+                id: asset.clone(),
+                asset: AssetRecord {
+                    label: "Measured RGB fixture".into(),
+                    content_hash: blake3::hash(&bytes).to_hex().to_string(),
+                    video: Some(full),
+                    audio: None,
+                    still_image: false,
+                    frame_count: Some(FrameDuration::new(25).unwrap()),
+                },
+            },
+        ),
+        (
+            "insert",
+            Command::Insert {
+                parent: root,
+                index: 0,
+                subtree: Subtree {
+                    root: leaf.clone(),
+                    overrides: Default::default(),
+                    nodes: BTreeMap::from([(
+                        leaf.clone(),
+                        BeatNode {
+                            label: "Natural trimmed picture".into(),
+                            kind: NodeKind::Source {
+                                source: SourceNode {
+                                    duration,
+                                    video: SourceVideo::Stream {
+                                        asset,
+                                        span: selected,
+                                    },
+                                    video_mapping: mapping,
+                                    audio: None,
+                                    audio_mapping: SourceAudioMapping::FitBeat,
+                                    audio_offset: AudioSample(0),
+                                    link: LinkRelation::Independent,
+                                },
+                            },
+                        },
+                    )]),
+                },
+            },
+        ),
+    ] {
+        let transaction = apply(
+            &document,
+            &CommandRequest {
+                project_id: document.project_id().clone(),
+                expected_revision: document.revision_id().clone(),
+                new_revision: RevisionId::new(revision).unwrap(),
+                command,
+            },
+        )
+        .unwrap();
+        document = transaction.forward.apply(&document).unwrap();
+    }
+    let natural = RenderPlan::compile(&document).unwrap();
+    let transaction = apply(
+        &document,
+        &CommandRequest {
+            project_id: document.project_id().clone(),
+            expected_revision: document.revision_id().clone(),
+            new_revision: RevisionId::new("fit").unwrap(),
+            command: Command::SetSourceVideoMapping {
+                node: leaf,
+                mapping: SourceVideoMapping::FitBeat,
+            },
+        },
+    )
+    .unwrap();
+    let fit = RenderPlan::compile(&transaction.forward.apply(&document).unwrap()).unwrap();
+    let cancelled = AtomicBool::new(false);
+    let mut differing_frames = Vec::new();
+    for frame in 0..29 {
+        let index = session.index().index();
+        let selected = natural
+            .picture(ProjectFrame(frame))
+            .unwrap()
+            .picture
+            .select_source_frame(index)
+            .unwrap()
+            .identity;
+        // Independent integer oracle: source frame coordinate = 1 +
+        // project center * 24 * 1001/30000. Floor at the original PTS boundary.
+        let expected = u64::try_from(1 + 1001 * (2 * frame + 1) / 2500).unwrap();
+        assert_eq!(selected, SourceFrameId(expected));
+        let old = fit
+            .picture(ProjectFrame(frame))
+            .unwrap()
+            .picture
+            .select_source_frame(index)
+            .unwrap()
+            .identity;
+        if old != selected {
+            differing_frames.push(frame);
+        }
+        let decoded = session
+            .frame(selected, Duration::from_secs(2), &cancelled)
+            .unwrap();
+        assert_eq!(decoded.rgba, expected_rgba(expected));
+    }
+    assert_eq!(differing_frames, [2, 7, 12, 17, 22, 27]);
+}
+
+#[test]
 fn invalid_native_limits_fail_before_any_snapshot_read() {
     struct NoRead;
     impl std::io::Read for NoRead {

@@ -65,7 +65,7 @@ never-reused revision rule as commit. A stale expected
 revision fails with `RevisionConflict` and the current revision, without writing.
 
 Supported commands are `insert`, `delete`, `move`, `group`,
-`ungroup`, `wrap_repeat`, `set_repeat`, `insert_plays`, `move_plays`, `set_hold_duration`, `set_hold_provider`, `set_source_audio_mapping`,
+`ungroup`, `wrap_repeat`, `set_repeat`, `insert_plays`, `move_plays`, `set_hold_duration`, `set_hold_provider`, `set_source_audio_mapping`, `set_source_video_mapping`,
 `rename`, `add_asset`, `set_mark`, `delete_mark`, `set_play_override`, `clear_play_override`, and `edit_occurrence`. Their exact typed parameters are defined in
 [`Command`](../crates/deadpan-core/src/command.rs). `set_repeat` changes an existing
 Repeat; `wrap_repeat` deliberately adds nesting. A three-play repeat includes
@@ -73,8 +73,10 @@ three total plays and only two gaps. These are structural edits, not rendered
 media. Editing through range/text selectors, registers, macros, and effects
 remain required future work.
 
-Documents use schema 6. [Source audio mappings](SOURCE_AUDIO_MAPPING.md) explicitly
-choose the beat duration or an independent exact audio duration. Repeat `iterations.runs` store
+Documents use schema 7. [Source audio mappings](SOURCE_AUDIO_MAPPING.md) and
+[picture mappings](SOURCE_VIDEO_MAPPING.md) independently choose the beat duration
+or an exact stream duration. Picture endpoint policy is persisted and enforced
+against the chosen trim. Repeat `iterations.runs` store
 `allocation`, `first`, and `count`. Commands `wrap_repeat` and `set_repeat` still
 take a total `plays` count. `insert_plays` takes `node`, `index`, and `count`;
 `move_plays` takes `node`, a half-open `start`/`end` play range, and `destination`
@@ -421,20 +423,22 @@ future-schema read-only inspection still needs a compatibility implementation.
 
 ## Schema migration
 
-Database schemas 1 through 10 return `MigrationRequired` when opened. Upgrade explicitly:
+Database schemas 1 through 11 return `MigrationRequired` when opened. Upgrade explicitly:
 
 ```sh
 cargo run --locked -p deadpan-cli -- project migrate /tmp/example.deadpan
 ```
 
 Migration holds the project writer lock, keeps a consistent SQLite backup under
-`Snapshots/before-schema-11-*.sqlite`, and upgrades a separate candidate. It
+`Snapshots/before-schema-12-*.sqlite`, and upgrades a separate candidate. It
 replays all commands, undo/redo revisions, and abandoned branches with their
 original revision IDs. Every snapshot and forward/inverse transaction is checked
 against its strict original schema meaning. Migration goes directly to database
-schema 11 and core document schema 6. Schema-7/8/9/10 histories use the frozen core
-schema-5 adapter. Every old Source retains its prior duration mapping as explicit
-`fit_beat`; the new audio mapping field and commands are rejected in old history.
+schema 12 and core document schema 7. Database-11 histories use the frozen core-6
+adapter, retaining explicit audio mappings. Database-7/8/9/10 histories use the
+frozen core-5 adapter and retain prior audio duration mapping as `fit_beat`.
+Every old Source gains `video_mapping: fit_beat` to retain prior picture timing.
+New fields and commands are rejected in histories that predate their vocabulary.
 Schemas 1 through 3 gain
 empty override maps. Schema-1/2 histories also gain empty mark
 maps; schema-3 mark histories retain their exact ownership, bias, and loss states.
@@ -447,7 +451,7 @@ their bundle receipt table starts empty. Existing schema-8 plans and receipt JSO
 remain unchanged; receipts gain no admission evidence. New admission vocabulary
 is rejected in pre-schema-9 receipts, even when null. Schema-9 admission receipts
 remain unchanged. Schemas 1 through 9 gain an empty original-media table;
-an unexpected preexisting modern table is rejected. Schema-10 original records
+an unexpected preexisting modern table is rejected. Schema-10/11 original records
 are validated and retained. Fields or
 commands that did not exist in the old schema are rejected. SQLite atomically promotes the validated
 candidate through its backup API; the main file is never renamed around a live

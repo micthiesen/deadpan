@@ -163,10 +163,11 @@ fn headless_edit_dry_run_conflict_and_durable_history() -> Result {
 }
 
 #[test]
-fn independent_audio_mapping_uses_headless_commands_and_durable_undo() -> Result {
+fn independent_stream_mappings_use_headless_commands_and_durable_undo() -> Result {
     use deadpan_core::{
-        AssetId, AssetRecord, AudioSample, LinkRelation, NodeKind, SourceAudio, SourceAudioMapping,
-        SourceNode, SourceSpan, SourceTimeBase, SourceTimestamp, SourceVideo,
+        AssetId, AssetRecord, AudioSample, EndpointPolicy, LinkRelation, NodeKind, SourceAudio,
+        SourceAudioMapping, SourceNode, SourceSpan, SourceTimeBase, SourceTimestamp, SourceVideo,
+        SourceVideoMapping,
     };
 
     let scratch = tempfile::tempdir()?;
@@ -240,6 +241,7 @@ fn independent_audio_mapping_uses_headless_commands_and_durable_undo() -> Result
                                 },
                                 audio: Some(SourceAudio { asset, span: audio }),
                                 audio_mapping: SourceAudioMapping::FitBeat,
+                                video_mapping: SourceVideoMapping::FitBeat,
                                 link: LinkRelation::Linked,
                                 audio_offset: AudioSample(0),
                             },
@@ -254,7 +256,7 @@ fn independent_audio_mapping_uses_headless_commands_and_durable_undo() -> Result
     let before = ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?;
     write_command(
         Command::SetSourceAudioMapping {
-            node: source,
+            node: source.clone(),
             mapping: SourceAudioMapping::natural_rate(
                 audio,
                 before.presentation_basis().frame_rate,
@@ -315,6 +317,76 @@ fn independent_audio_mapping_uses_headless_commands_and_durable_undo() -> Result
         success(&["project", "validate", path])?["duration_frames"],
         60
     );
+    let before_video = ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?;
+    write_command(
+        Command::SetSourceVideoMapping {
+            node: source,
+            mapping: SourceVideoMapping::natural_rate(
+                video,
+                before_video.presentation_basis().frame_rate,
+                EndpointPolicy::HoldAdjacent,
+            )?,
+        },
+        "video-mapped",
+    )?;
+    let preview = success(&[
+        "command",
+        path,
+        "--json",
+        input.to_str().unwrap(),
+        "--dry-run",
+    ])?;
+    assert_eq!(preview["edit"]["duration_delta"], 0);
+    assert_eq!(
+        ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?,
+        before_video
+    );
+    success(&["command", path, "--json", input.to_str().unwrap()])?;
+    let video_endpoint = || -> Result<Value> {
+        let document = ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?;
+        fs::write(&query, json!({"protocol":1,"request":{
+            "project_id":document.project_id(),"expected_revision":document.revision_id(),"role":"video",
+            "selector":{"type":"point","target":{
+                "boundary":{"coordinate":{"space":"source","asset":"original",
+                    "moment":{"type":"timestamp","stream":"video","timestamp":{
+                        "ticks":90000,"time_base":{"numerator":1,"denominator":90000}
+                    }}},"bias":"right"},
+                "occurrence":{"node":"source","repeats":[]}
+            }}
+        }}).to_string())?;
+        Ok(success(&["resolve-selection",path,"--json",query.to_str().unwrap()])?["resolved"]["selection"]["point"].clone())
+    };
+    assert_eq!(
+        video_endpoint()?["exact_frame"],
+        json!({"numerator":"60000","denominator":"1001"})
+    );
+    assert_eq!(
+        endpoint()?["exact_frame"],
+        json!({"numerator":"40010","denominator":"1001"})
+    );
+    let undo = success(&["project", "undo", path, "--expected", "video-mapped"])?;
+    assert_eq!(video_endpoint()?["frame"], 60);
+    success(&[
+        "project",
+        "redo",
+        path,
+        "--expected",
+        undo["outcome"]["revision_id"].as_str().unwrap(),
+    ])?;
+    assert_eq!(
+        video_endpoint()?["exact_frame"],
+        json!({"numerator":"60000","denominator":"1001"})
+    );
+    assert_eq!(
+        endpoint()?["exact_frame"],
+        json!({"numerator":"40010","denominator":"1001"})
+    );
+    let stale = cli(&["command", path, "--json", input.to_str().unwrap()])?;
+    assert_eq!(
+        serde_json::from_slice::<Value>(&stale.stderr)?["error"]["code"],
+        "RevisionConflict"
+    );
+    success(&["project", "validate", path])?;
     Ok(())
 }
 

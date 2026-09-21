@@ -1,10 +1,10 @@
 use std::collections::BTreeMap;
 
 use deadpan_core::{
-    AssetId, ExactRatio, FrameDuration, FrameRange, HoldRecipe, HoldVideo, InsertionBias,
-    InstancePath, NodeId, NodeKind, PresentationBasis, ProjectDocument, ProjectFrame, ProjectId,
-    RepeatInstance, RepeatLayout, RevisionId, SourceFrameId, SourcePoint, SourceTimeBase,
-    SourceVideo, TimeError,
+    AssetId, EndpointPolicy, ExactRatio, FrameDuration, FrameRange, HoldRecipe, HoldVideo,
+    InsertionBias, InstancePath, NodeId, NodeKind, PresentationBasis, ProjectDocument,
+    ProjectFrame, ProjectId, RepeatInstance, RepeatLayout, RevisionId, SourceFrameId, SourcePoint,
+    SourceTimeBase, SourceVideo, TimeError,
 };
 use serde::Serialize;
 
@@ -83,6 +83,8 @@ struct PlanNode {
 enum CompiledKind {
     Source {
         video: SourceVideo,
+        duration: ExactRatio,
+        endpoints: EndpointPolicy,
     },
     Sequence {
         entries: Vec<SequenceEntry>,
@@ -218,6 +220,8 @@ impl RenderPlan {
                 NodeKind::Source { source } => (
                     CompiledKind::Source {
                         video: source.video.clone(),
+                        duration: source.video_mapping.duration_frames(source.duration)?,
+                        endpoints: source.video_mapping.endpoints(),
                     },
                     NodeType::Source,
                 ),
@@ -366,15 +370,19 @@ impl RenderPlan {
                 ));
             }
             match &node.kind {
-                CompiledKind::Source { video } => {
+                CompiledKind::Source {
+                    video,
+                    duration,
+                    endpoints,
+                } => {
                     let picture = match video {
                         SourceVideo::Stream { asset, span } => {
-                            let scale = ExactRatio::new(
-                                i128::from(span.end().ticks) - i128::from(span.start().ticks),
-                                i128::from(node.inspection.duration.frames()),
-                            )?;
+                            let scale = ExactRatio::integer(span.end().ticks - span.start().ticks)
+                                .checked_div(*duration)?;
                             Picture::Source {
                                 asset: asset.clone(),
+                                span: *span,
+                                endpoints: *endpoints,
                                 point: SourcePoint {
                                     ticks: ExactRatio::integer(span.start().ticks)
                                         .checked_add(local.checked_mul(scale)?)?,

@@ -1,7 +1,7 @@
 # Independent source audio timing
 
-Core schema 6 gives every Source an explicit `audio_mapping`. Picture still maps
-its selected span across `SourceNode.duration`. Audio maps its own selected span
+Every Source has an explicit `audio_mapping`, introduced in core schema 6.
+[Picture mapping](SOURCE_VIDEO_MAPPING.md) is independent. Audio maps its own selected span
 over either that beat duration (`fit_beat`) or an independently authored exact
 project-frame duration (`duration`). The signed 48 kHz `audio_offset` translates
 the audio start. It does not change the audio rate or erase original timestamps.
@@ -43,10 +43,11 @@ Use this inside the normal revision-checked [headless command](HEADLESS.md)
 envelope. Preview, commit, undo and redo use the same store transaction path.
 This is an authored mapping operation; no UI control or audio renderer is added.
 
-Database schema 11 migrates every prior database directly to current core JSON.
-Frozen source wires preserve each old mapping as `fit_beat`, including offsets,
-historical snapshots and forward/inverse patches. They reject `audio_mapping`
-fields and mapping commands in old history, even null fields. Migration keeps
+Database schema 12 migrates every prior database directly to current core JSON.
+Frozen source wires preserve pre-schema-11 audio mappings as `fit_beat`, including
+offsets, historical snapshots and forward/inverse patches. They reject
+`audio_mapping` fields and commands in history predating that vocabulary, even
+null fields. Schema-11 explicit audio mappings remain unchanged. Migration keeps
 original-media and generation records, revisions, undo/redo and branches; it
 does not reinterpret old selections as natural-rate imports.
 

@@ -24,5 +24,8 @@ tempfile.workspace = true
 [target.'cfg(target_os = "macos")'.dependencies]
 deadpan-native-process.workspace = true
 
+[dev-dependencies]
+deadpan-plan.workspace = true
+
 [lints]
 workspace = true

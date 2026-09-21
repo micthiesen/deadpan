@@ -1,0 +1,27 @@
+{
+  "base_revision": "8a6c264e447615c585a2b9f849edfe44f51504fd",
+  "subject": "Uncommitted source-video mapping implementation, tests, migration and fixture evidence against the base revision",
+  "reviews": [
+    {
+      "lens": "general correctness and integration",
+      "result": "No actionable findings",
+      "checks": "Core/plan, store migration and CLI tests passed independently. Reviewed exact mapping, span selection, nested retimes, anchors, commands, adapters and native integration test.",
+      "limitation": "Reviewer could not execute native media test without DEADPAN_FFMPEG_PREFIX. Root executed it standalone and in the recorded workspace gate using the qualified pinned prefix."
+    },
+    {
+      "lens": "exact timing and selected-span boundaries",
+      "result": "No findings",
+      "checks": "Targeted core and plan tests passed, including anchors, picture selection, nested retimes and repeated occurrences.",
+      "limitation": "Reviewer native test invocation lacked the FFmpeg prefix; root native verification is retained separately."
+    },
+    {
+      "lens": "migration, frozen vocabulary and history preservation",
+      "result": "No findings",
+      "checks": "All 29 migration tests passed. Independently verified schema-6 audio preservation, new video vocabulary rejection, branch/redo/operational row preservation, backup behavior and archived fixture provenance hashes."
+    }
+  ],
+  "applied_findings": [],
+  "unresolved_findings": [],
+  "dismissed_findings": [],
+  "verification": "Recorded full gate passes 458 Rust tests with zero failures or ignored tests, formatting, strict Clippy, locked build and headless doctor."
+}

@@ -1,0 +1,93 @@
+["cargo", "build", "--manifest-path", "/tmp/deadpan-schema11-reproduce-ptb27mlq/source/Cargo.toml", "-p", "deadpan-cli", "--locked"]
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.19s
+
+["/tmp/deadpan-video-mapping-migration/old-target/debug/deadpan-cli", "doctor"]
+{
+  "application": "deadpan",
+  "architecture": "aarch64",
+  "database_schema": 11,
+  "document_schema": 6,
+  "internal_audio_sample_rate": 48000,
+  "os": "macos",
+  "partial": [
+    "structural-editing-commands",
+    "sqlite-project-history",
+    "schema-1-through-10-migration",
+    "indexed-picture-plan",
+    "exact-boundary-selectors",
+    "persistent-marks",
+    "sparse-play-overrides",
+    "nested-occurrence-edits",
+    "persistent-generation-requests",
+    "persistent-generation-attempts",
+    "authored-generated-hold-semantics",
+    "generated-media-conversion",
+    "native-bridge-bundle-qualification",
+    "durable-generated-bundle-acceptance",
+    "durable-original-byte-ownership",
+    "identity-checked-relinking",
+    "persistent-source-decoding",
+    "measured-source-audio-indexes",
+    "independent-source-audio-mapping",
+    "shared-sdr-picture-pipeline",
+    "native-source-preview"
+  ],
+  "schema_version": 1,
+  "sqlite_version": "3.53.2",
+  "stage": "development-foundation",
+  "timing_probe": {
+    "frame": 1,
+    "frame_rate_denominator": 1001,
+    "frame_rate_numerator": 30000,
+    "sample_boundary": 1602
+  },
+  "unimplemented": [
+    "app-media-import-and-playback",
+    "audio-output",
+    "keyboard-editor",
+    "timeline-media-preview",
+    "analysis",
+    "ai-generation",
+    "youtube-import",
+    "export",
+    "distribution"
+  ],
+  "version": "0.1.0"
+}
+
+["/tmp/deadpan-video-mapping-migration/old-target/debug/deadpan-cli", "project", "migrate", "/tmp/deadpan-schema11-reproduce-ptb27mlq/fixture.deadpan"]
+{
+  "migration": {
+    "backup": "/private/tmp/deadpan-schema11-reproduce-ptb27mlq/fixture.deadpan/Snapshots/before-schema-11-MZ7rr7.sqlite",
+    "from_schema": 10,
+    "to_schema": 11
+  },
+  "protocol": 1
+}
+
+["cargo", "run", "--manifest-path", "/tmp/deadpan-schema11-reproduce-ptb27mlq/source/Cargo.toml", "-p", "deadpan-store", "--example", "schema11_fixture", "--locked", "--", "/tmp/deadpan-schema11-reproduce-ptb27mlq/fixture.deadpan"]
+schema11 exact audio mappings, abandoned branch, and pending redo validated at schema11-pending-redo
+   Compiling deadpan-store v0.1.0 (/tmp/deadpan-schema11-reproduce-ptb27mlq/source/crates/deadpan-store)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.98s
+     Running `/tmp/deadpan-video-mapping-migration/old-target/debug/examples/schema11_fixture /tmp/deadpan-schema11-reproduce-ptb27mlq/fixture.deadpan`
+
+["/tmp/deadpan-video-mapping-migration/old-target/debug/deadpan-cli", "project", "validate", "/tmp/deadpan-schema11-reproduce-ptb27mlq/fixture.deadpan"]
+{
+  "duration_frames": 150,
+  "mark_count": 3,
+  "node_count": 4,
+  "presentation_basis": {
+    "color_policy": "sdr_rec709",
+    "frame_rate": {
+      "denominator": 1001,
+      "numerator": 30000
+    },
+    "height": 320,
+    "width": 768
+  },
+  "project_id": "probe-ad82362664564e1a97c381111aaad5aa",
+  "protocol": 1,
+  "revision_id": "schema11-pending-redo",
+  "root": "acceptance-probe-root",
+  "valid": true
+}

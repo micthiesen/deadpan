@@ -65,3 +65,10 @@ device, aesthetics, keyboard, IME and accessibility checks were not repeated for
 this pure authored-state change. The previous source-audio sanitizer and CI
 results remain limited to [that implementation](source-audio-2026-09-21.md).
 Audio render plans, resampling, output and authored import are still required.
+
+GitHub Actions also passed for commit
+`8a6c264e447615c585a2b9f849edfe44f51504fd` in
+[run 35630554002](https://github.com/micthiesen/deadpan/actions/runs/35630554002).
+The [CI result](../../tools/media-qualification/evidence/2026-09-21-audio-mapping/ci-result.json)
+records the pinned native build, workspace gate, fixture reproducibility and
+Python contract/harness checks. It does not add GUI or playback evidence.

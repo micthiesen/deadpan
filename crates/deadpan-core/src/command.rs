@@ -10,7 +10,7 @@ use crate::{
     HoldFallback, HoldRecipe, HoldVideo, InstancePath, IterationId, IterationOrder,
     MAX_DOCUMENT_MARKS, MAX_DOCUMENT_NODES, Mark, MarkId, MarkState, NodeId, NodeKind,
     OccurrenceEdit, OccurrenceIdentities, PlayOverrides, ProjectDocument, ProjectId, RevisionId,
-    SourceAudioMapping, WrapAnchorPolicy,
+    SourceAudioMapping, SourceVideo, SourceVideoMapping, WrapAnchorPolicy,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -81,6 +81,11 @@ pub enum Command {
     SetHoldDuration {
         node: NodeId,
         duration: FrameDuration,
+    },
+    /// Changes picture rate and endpoint behavior without changing beat or audio time.
+    SetSourceVideoMapping {
+        node: NodeId,
+        mapping: SourceVideoMapping,
     },
     /// Changes audio alignment and extent without changing picture or beat time.
     SetSourceAudioMapping {
@@ -478,6 +483,21 @@ pub(crate) fn reduce(
         } => {
             let iterations = iterations_mut(document, node)?;
             *iterations = iterations.moved(*start, *end, *destination)?;
+        }
+        Command::SetSourceVideoMapping { node, mapping } => {
+            let NodeKind::Source { source } = &mut node_mut(document, node)?.kind else {
+                return Err(EditError::new(
+                    EditErrorCode::WrongNodeKind,
+                    "video mapping requires a Source beat",
+                ));
+            };
+            if !matches!(source.video, SourceVideo::Stream { .. }) {
+                return Err(EditError::new(
+                    EditErrorCode::SourceRangeInvalid,
+                    "video mapping requires selected video",
+                ));
+            }
+            source.video_mapping = *mapping;
         }
         Command::SetSourceAudioMapping {
             node,
@@ -1008,6 +1028,7 @@ fn description(command: &Command) -> &'static str {
         Command::MovePlays { .. } => "Move repeat plays",
         Command::SetHoldDuration { .. } => "Change hold duration",
         Command::SetSourceAudioMapping { .. } => "Change source audio mapping",
+        Command::SetSourceVideoMapping { .. } => "Change source video mapping",
         Command::SetHoldProvider { .. } => "Change hold provider",
         Command::AcceptGeneratedHold { .. } => "Accept generated hold",
         Command::RevertGeneratedHold { .. } => "Revert generated hold",

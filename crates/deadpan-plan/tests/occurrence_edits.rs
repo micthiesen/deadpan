@@ -63,6 +63,7 @@ fn source(frames: i64, start: i64, end: i64) -> BeatNode {
         kind: NodeKind::Source {
             source: SourceNode {
                 duration: duration(frames),
+                video_mapping: SourceVideoMapping::FitBeat,
                 video: SourceVideo::Stream {
                     asset: AssetId::new("video").unwrap(),
                     span: span(start, end),
@@ -161,7 +162,7 @@ fn change(
     (after, transaction)
 }
 fn ticks(picture: &Picture) -> ExactRatio {
-    let Picture::Source { asset, point } = picture else {
+    let Picture::Source { asset, point, .. } = picture else {
         panic!("expected original source, got {picture:?}")
     };
     assert_eq!(*asset, AssetId::new("video").unwrap());

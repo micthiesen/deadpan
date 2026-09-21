@@ -18,12 +18,15 @@ pub mod legacy_v2;
 pub mod legacy_v3;
 pub mod legacy_v4;
 pub mod legacy_v5;
+pub mod legacy_v6;
 mod marks;
 mod occurrence;
 mod occurrence_edit;
 mod repeat_layout;
 mod source_index;
+mod source_mapping;
 mod time;
+mod video_mapping;
 
 pub use anchor::*;
 pub use audio_mapping::SourceAudioMapping;
@@ -36,6 +39,7 @@ pub use occurrence::*;
 pub use occurrence_edit::{OccurrenceEdit, OccurrenceIdentities};
 pub use repeat_layout::*;
 pub use source_index::*;
+pub use video_mapping::SourceVideoMapping;
 
 pub use time::{
     AudioSample, FrameDuration, FrameRange, FrameRate, MIX_SAMPLE_RATE, ProjectFrame,

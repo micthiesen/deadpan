@@ -9,7 +9,8 @@ use crate::{
     AssetId, AssetRecord, AudioSample, Command, DocumentError, DocumentErrorCode, EditError,
     EditErrorCode, FrameDuration, GeneratedArtifact, HoldRecipe, HoldVideo, InstancePath,
     IterationId, MAX_DOCUMENT_MARKS, MAX_DOCUMENT_NODES, MarkId, NodeId, NodeKind, PlayOverride,
-    PlayOverrides, ProjectDocument, RevisionId, SourceAudioMapping, Subtree, WrapAnchorPolicy,
+    PlayOverrides, ProjectDocument, RevisionId, SourceAudioMapping, SourceVideoMapping, Subtree,
+    WrapAnchorPolicy,
 };
 
 /// A bounded pool supplied by the host. Unused identities do not enter the document.
@@ -60,6 +61,9 @@ pub enum OccurrenceEdit {
     },
     SetHoldDuration {
         duration: FrameDuration,
+    },
+    SetSourceVideoMapping {
+        mapping: SourceVideoMapping,
     },
     SetSourceAudioMapping {
         mapping: SourceAudioMapping,
@@ -143,6 +147,10 @@ impl OccurrenceEdit {
             Self::SetHoldDuration { duration } => Command::SetHoldDuration {
                 node,
                 duration: *duration,
+            },
+            Self::SetSourceVideoMapping { mapping } => Command::SetSourceVideoMapping {
+                node,
+                mapping: *mapping,
             },
             Self::SetSourceAudioMapping { mapping, offset } => Command::SetSourceAudioMapping {
                 node,

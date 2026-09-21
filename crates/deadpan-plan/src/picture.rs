@@ -1,6 +1,6 @@
 use deadpan_core::{
     AssetId, EndpointPolicy, ExactRatio, IndexedSourceFrame, InstancePath, IterationId,
-    ProjectFrame, ProjectId, RevisionId, SourceFrameId, SourceFrameIndex, SourcePoint,
+    ProjectFrame, ProjectId, RevisionId, SourceFrameId, SourceFrameIndex, SourcePoint, SourceSpan,
     SourceTimeBase,
 };
 use serde::Serialize;
@@ -15,6 +15,8 @@ pub enum Picture {
     Source {
         asset: AssetId,
         point: SourcePoint,
+        span: SourceSpan,
+        endpoints: EndpointPolicy,
     },
     Still {
         asset: AssetId,
@@ -37,16 +39,16 @@ pub enum Picture {
 
 impl Picture {
     /// Select an original presentation frame using a measured source index.
-    /// Asset and exact timestamp clock must match; endpoint holding is opt-in.
+    /// Asset and exact timestamp clock must match. Sources retain their authored
+    /// span and endpoint policy; Freeze points must be inside the measured index.
     /// Accepted artifacts address original presentation ordinals directly and
     /// never apply an endpoint fallback to a missing accepted frame.
     pub fn select_source_frame<'a>(
         &self,
         index: &'a SourceFrameIndex,
-        endpoints: EndpointPolicy,
     ) -> Result<&'a IndexedSourceFrame, PlanError> {
         let (asset, time_base) = match self {
-            Self::Source { asset, point } | Self::Freeze { asset, point } => {
+            Self::Source { asset, point, .. } | Self::Freeze { asset, point } => {
                 (asset, point.time_base)
             }
             Self::Accepted {
@@ -69,9 +71,13 @@ impl Picture {
             });
         }
         match self {
-            Self::Source { point, .. } | Self::Freeze { point, .. } => {
-                Ok(index.select(*point, endpoints)?)
-            }
+            Self::Source {
+                point,
+                span,
+                endpoints,
+                ..
+            } => Ok(index.select_in_span(*point, *span, *endpoints)?),
+            Self::Freeze { point, .. } => Ok(index.select(*point, EndpointPolicy::Reject)?),
             Self::Accepted { frame, .. } => usize::try_from(frame.0)
                 .ok()
                 .and_then(|number| index.frames().get(number))

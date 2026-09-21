@@ -45,7 +45,7 @@ impl ProjectStore {
                 backup: None,
             });
         }
-        if !matches!(version, 1..=10) {
+        if !matches!(version, 1..=11) {
             return Err(StoreError::UnsupportedSchema(version));
         }
         let lock = acquire_lock(&package)?;
@@ -170,9 +170,10 @@ fn migrate_candidate(
             ));
         }
     }
-    // Database versions 4 through 6 share core schema 4, and 7 through 10
-    // share core schema 5. Replay all authored history, preserving operational
-    // rows and identities while assigning the legacy FitBeat audio mapping.
+    // Database versions 4 through 6 share core schema 4, 7 through 10 share
+    // core schema 5, and 11 uses core schema 6 with explicit audio mappings.
+    // Replay all authored history, preserving operational rows and identities
+    // while assigning FitBeat only to mappings absent in that legacy schema.
     validation::migrate_history(&transaction, source_version)?;
     crate::generation::validate_store(&transaction)?;
     transaction.pragma_update(None, "user_version", schema::VERSION)?;

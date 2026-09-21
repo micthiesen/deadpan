@@ -2,6 +2,7 @@
 
 use serde::{Deserialize, Serialize};
 
+use crate::source_mapping::{natural_duration, validate_duration};
 use crate::{ExactRatio, FrameDuration, FrameRate, SourceSpan, TimeError};
 
 /// The selected original audio span maps linearly over this destination extent.
@@ -40,18 +41,9 @@ impl SourceAudioMapping {
     /// Preserve the selected span's original rate, independently of picture
     /// duration. Timestamp origins do not affect duration or imply alignment.
     pub fn natural_rate(span: SourceSpan, rate: FrameRate) -> Result<Self, TimeError> {
-        let clock = span.start().time_base;
-        let frames = ExactRatio::integer(span.end().ticks - span.start().ticks)
-            .checked_mul(ExactRatio::new(
-                i128::from(clock.numerator()),
-                i128::from(clock.denominator()),
-            )?)?
-            .checked_mul(ExactRatio::new(
-                i128::from(rate.numerator()),
-                i128::from(rate.denominator()),
-            )?)?;
-        validate_duration(frames)?;
-        Ok(Self::Duration { frames })
+        Ok(Self::Duration {
+            frames: natural_duration(span, rate)?,
+        })
     }
 
     pub fn duration_frames(self, beat: FrameDuration) -> Result<ExactRatio, TimeError> {
@@ -62,14 +54,4 @@ impl SourceAudioMapping {
         validate_duration(frames)?;
         Ok(frames)
     }
-}
-
-fn validate_duration(frames: ExactRatio) -> Result<(), TimeError> {
-    if frames.compare_integer(0) != std::cmp::Ordering::Greater {
-        return Err(TimeError::InvalidRatio);
-    }
-    if frames.compare_integer(i64::MAX) == std::cmp::Ordering::Greater {
-        return Err(TimeError::Overflow);
-    }
-    Ok(())
 }

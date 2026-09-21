@@ -6,7 +6,7 @@ use std::{
 
 use deadpan_core::{
     IterationOrder, NodeId, NodeKind, ProjectDocument, RevisionId, legacy_v1, legacy_v2, legacy_v3,
-    legacy_v4, legacy_v5,
+    legacy_v4, legacy_v5, legacy_v6,
 };
 use deadpan_jobs::{Relevance, RequestId};
 use deadpan_store::generation::{
@@ -24,6 +24,251 @@ fn fixture(scratch: &Path) -> Result<PathBuf> {
 fn original_metadata(connection: &Connection) -> Result<Vec<String>> {
     Ok(connection.prepare("SELECT json_array(content_id, version, record) FROM original_media ORDER BY content_id")?
         .query_map([], |row| row.get(0))?.collect::<std::result::Result<_, _>>()?)
+}
+
+fn operational_metadata(connection: &Connection) -> Result<Vec<String>> {
+    let mut rows = Vec::new();
+    for table in [
+        "hold_request_clocks",
+        "generation_requests",
+        "generation_attempts",
+        "generation_candidate_receipts",
+        "generation_attempt_heads",
+        "generation_bundle_receipts",
+        "original_media",
+    ] {
+        let exists: bool = connection.query_row(
+            "SELECT EXISTS(SELECT 1 FROM sqlite_schema WHERE type='table' AND name=?1)",
+            [table],
+            |row| row.get(0),
+        )?;
+        rows.push(format!("{table}: {exists}"));
+        if !exists {
+            continue;
+        }
+        let mut statement = connection.prepare(&format!("SELECT * FROM {table} ORDER BY rowid"))?;
+        let count = statement.column_count();
+        rows.extend(
+            statement
+                .query_map([], |row| {
+                    (0..count)
+                        .map(|index| row.get_ref(index).map(|value| format!("{value:?}")))
+                        .collect::<std::result::Result<Vec<_>, _>>()
+                        .map(|values| values.join("|"))
+                })?
+                .collect::<std::result::Result<Vec<_>, _>>()?,
+        );
+    }
+    Ok(rows)
+}
+
+#[test]
+fn schema_eleven_preserves_independent_audio_chronology_and_all_operational_rows() -> Result {
+    use deadpan_core::{
+        AudioSample, Command, CommandRequest, EndpointPolicy, ExactRatio, SourceAudioMapping,
+        SourceVideoMapping,
+    };
+    let scratch = tempfile::tempdir()?;
+    let path = fixture_version(scratch.path(), 11)?;
+    let database = Connection::open(path.join("project.sqlite"))?;
+    let before = contents(&database)?;
+    let before_docs = docs(&database)?;
+    let before_history = history_json(&database)?;
+    let before_metadata = metadata(&database)?;
+    let before_operational = operational_metadata(&database)?;
+    assert_eq!(before_docs.len(), 24);
+    assert_eq!(before_history.len(), 13);
+    assert_eq!(original_metadata(&database)?.len(), 1);
+    assert!(matches!(
+        ProjectStore::open(&path, AccessMode::ReadOnly),
+        Err(StoreError::MigrationRequired(11))
+    ));
+    let outcome = ProjectStore::migrate(&path)?;
+    assert_eq!(
+        (outcome.from_schema, outcome.to_schema),
+        (11, DATABASE_SCHEMA_VERSION)
+    );
+    let backup = Connection::open(outcome.backup.unwrap())?;
+    assert_eq!(contents(&backup)?, before);
+    assert_eq!(operational_metadata(&backup)?, before_operational);
+    assert_eq!(
+        backup.pragma_query_value(None, "user_version", |r| r.get::<_, u32>(0))?,
+        11
+    );
+    let migrated_docs = docs(&database)?;
+    assert_eq!(before_docs.len(), migrated_docs.len());
+    for ((old_id, old_json), (new_id, new_json)) in before_docs.iter().zip(migrated_docs) {
+        assert_eq!(old_id, &new_id);
+        assert!(
+            legacy_v6::Document::from_json(old_json)?
+                .matches(&ProjectDocument::from_json(&new_json)?),
+            "{old_id}"
+        );
+    }
+    let migrated_history = history_json(&database)?;
+    assert_eq!(before_history.len(), migrated_history.len());
+    for ((old_request, old_edit), (new_request, new_edit)) in
+        before_history.iter().zip(migrated_history)
+    {
+        assert_eq!(
+            legacy_v6::upgrade_request(old_request)?,
+            serde_json::from_str::<CommandRequest>(&new_request)?
+        );
+        assert!(legacy_v6::matches_edit(
+            old_edit,
+            &serde_json::from_str(&new_edit)?
+        )?);
+    }
+    assert_eq!(metadata(&database)?, before_metadata);
+    assert_eq!(operational_metadata(&database)?, before_operational);
+    let mut store = ProjectStore::open(&path, AccessMode::ReadWrite)?;
+    let initial = store.snapshot()?;
+    for (id, offset, numerator) in [
+        ("source-negative", -137, 60000),
+        ("source-positive", 2401, 120000),
+    ] {
+        let NodeKind::Source { source } = &initial.nodes()[&NodeId::new(id)?].kind else {
+            panic!()
+        };
+        assert_eq!(
+            source.audio_mapping,
+            SourceAudioMapping::Duration {
+                frames: ExactRatio::new(numerator, 1001)?
+            }
+        );
+        assert_eq!(source.audio_offset, AudioSample(offset));
+        assert_eq!(source.video_mapping, SourceVideoMapping::FitBeat);
+    }
+    assert_eq!(initial.marks().len(), 3);
+    let relevance = |store: &ProjectStore, next: &RevisionId| -> Result<RelevancePlan> {
+        Ok(RelevancePlan {
+            from_revision: store.snapshot()?.revision_id().clone(),
+            to_revision: next.clone(),
+            observations: store
+                .current_generation_requests()?
+                .into_iter()
+                .map(|request| RelevanceObservation {
+                    request_id: request.request_id,
+                    after_context: ContextObservation::Resolved(
+                        request.binding.context_sha256.clone(),
+                    ),
+                    binding: request.binding,
+                })
+                .collect(),
+        })
+    };
+    let next = RevisionId::new("schema12-redo")?;
+    store.redo_reconciled(
+        initial.revision_id(),
+        next.clone(),
+        &relevance(&store, &next)?,
+    )?;
+    let baseline = store.snapshot()?;
+    assert_eq!(
+        baseline.nodes()[&NodeId::new("source-negative")?].label,
+        "Schema 11 independent audio"
+    );
+    assert_eq!(baseline.marks(), initial.marks());
+    let next = RevisionId::new("schema12-video-mapping")?;
+    let mapping = SourceVideoMapping::Duration {
+        frames: ExactRatio::new(120000, 1001)?,
+        endpoints: EndpointPolicy::Reject,
+    };
+    store.commit_reconciled(
+        &CommandRequest {
+            project_id: baseline.project_id().clone(),
+            expected_revision: baseline.revision_id().clone(),
+            new_revision: next.clone(),
+            command: Command::SetSourceVideoMapping {
+                node: NodeId::new("source-negative")?,
+                mapping,
+            },
+        },
+        &relevance(&store, &next)?,
+    )?;
+    let changed = store.snapshot()?;
+    assert_eq!(changed.duration()?, baseline.duration()?);
+    let NodeKind::Source { source } = &changed.nodes()[&NodeId::new("source-negative")?].kind
+    else {
+        panic!()
+    };
+    assert_eq!(source.video_mapping, mapping);
+    assert_eq!(
+        source.audio_mapping,
+        SourceAudioMapping::Duration {
+            frames: ExactRatio::new(60000, 1001)?
+        }
+    );
+    assert_eq!(source.audio_offset, AudioSample(-137));
+    let next = RevisionId::new("schema12-undo-mapping")?;
+    store.undo_reconciled(
+        changed.revision_id(),
+        next.clone(),
+        &relevance(&store, &next)?,
+    )?;
+    assert_eq!(store.snapshot()?.nodes(), baseline.nodes());
+    assert_eq!(store.snapshot()?.marks(), baseline.marks());
+    let next = RevisionId::new("schema12-redo-mapping")?;
+    store.redo_reconciled(
+        store.snapshot()?.revision_id(),
+        next.clone(),
+        &relevance(&store, &next)?,
+    )?;
+    assert_eq!(store.snapshot()?.nodes(), changed.nodes());
+    assert_eq!(store.snapshot()?.marks(), changed.marks());
+    store.validate()?;
+    drop(store);
+    let reopened = ProjectStore::open(&path, AccessMode::ReadOnly)?;
+    assert_eq!(reopened.snapshot()?.nodes(), changed.nodes());
+    assert_eq!(reopened.snapshot()?.marks(), changed.marks());
+    reopened.validate()?;
+    assert_eq!(operational_metadata(&database)?, before_operational);
+    Ok(())
+}
+
+#[test]
+fn schema_eleven_rejects_video_vocabulary_and_corruption_without_promotion() -> Result {
+    for corruption in [
+        "UPDATE revisions SET document=json_set(document,'$.nodes.\"source-negative\".kind.source.video_mapping',NULL) WHERE json_type(document,'$.nodes.\"source-negative\"') IS NOT NULL",
+        "UPDATE revisions SET document=json_set(document,'$.nodes.\"source-negative\".kind.source.video_mapping',json('{\"type\":\"fit_beat\"}')) WHERE json_type(document,'$.nodes.\"source-negative\"') IS NOT NULL",
+        "UPDATE history SET request=json_set(request,'$.command.subtree.nodes.\"source-negative\".kind.source.video_mapping',NULL) WHERE revision_id='schema10-insert-negative'",
+        "UPDATE history SET edit=json_set(edit,'$.forward.nodes.\"source-negative\".after.kind.source.video_mapping',NULL) WHERE revision_id='schema11-audio-negative'",
+        "UPDATE history SET request=json_set(request,'$.command',json('{\"command\":\"set_source_video_mapping\",\"node\":\"source-negative\",\"mapping\":{\"type\":\"fit_beat\"}}')) WHERE revision_id='schema11-audio-negative'",
+        "UPDATE history SET request=json_set(request,'$.command.edit',json('{\"type\":\"set_source_video_mapping\",\"mapping\":{\"type\":\"fit_beat\"}}')) WHERE revision_id='schema11-audio-positive'",
+        "UPDATE revisions SET document=json_remove(document,'$.nodes.\"source-negative\".kind.source.audio_mapping') WHERE id='schema11-audio-negative'",
+        "UPDATE revisions SET document=json_set(document,'$.nodes.\"source-negative\".kind.source.audio_mapping',NULL) WHERE id='schema11-audio-negative'",
+        "UPDATE revisions SET document=json_set(document,'$.nodes.\"source-negative\".kind.source.audio_mapping.frames.numerator','30000') WHERE id='schema11-audio-negative'",
+        "UPDATE history SET request=json_set(request,'$.command.offset',0) WHERE revision_id='schema11-audio-negative'",
+        "UPDATE history SET edit=json_set(edit,'$.inverse.nodes.\"source-negative\".before.kind.source.audio_offset',0) WHERE revision_id='schema11-audio-negative'",
+        "UPDATE revisions SET document=json_set(document,'$.schema_version',7) WHERE id='schema11-pending-redo'",
+        "UPDATE original_media SET version=2",
+        "DROP TABLE original_media",
+    ] {
+        let scratch = tempfile::tempdir()?;
+        let path = fixture_version(scratch.path(), 11)?;
+        let database = Connection::open(path.join("project.sqlite"))?;
+        database.execute_batch(corruption)?;
+        let before = contents(&database)?;
+        let before_operational = operational_metadata(&database)?;
+        let backup = match ProjectStore::migrate(&path) {
+            Err(StoreError::MigrationFailed { backup, .. }) => backup,
+            result => panic!("{corruption}: {result:?}"),
+        };
+        assert_eq!(contents(&database)?, before, "{corruption}");
+        assert_eq!(
+            operational_metadata(&database)?,
+            before_operational,
+            "{corruption}"
+        );
+        let backup = Connection::open(backup)?;
+        assert_eq!(contents(&backup)?, before, "{corruption}");
+        assert_eq!(
+            operational_metadata(&backup)?,
+            before_operational,
+            "{corruption}"
+        );
+    }
+    Ok(())
 }
 
 #[test]
@@ -378,6 +623,7 @@ fn fixture_version(scratch: &Path, version: u32) -> Result<PathBuf> {
         8 => include_str!("fixtures/v8-history.sql"),
         9 => include_str!("fixtures/v9-history.sql"),
         10 => include_str!("fixtures/v10-history.sql"),
+        11 => include_str!("fixtures/v11-history.sql"),
         _ => panic!("unsupported fixture"),
     })?;
     Ok(package)

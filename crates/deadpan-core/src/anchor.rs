@@ -569,7 +569,7 @@ impl<'a> AnchorIndex<'a> {
                     span,
                 } if selected_asset == asset => (
                     *span,
-                    ExactRatio::integer(source.duration.frames()),
+                    source.video_mapping.duration_frames(source.duration)?,
                     ExactRatio::ZERO,
                 ),
                 _ => {

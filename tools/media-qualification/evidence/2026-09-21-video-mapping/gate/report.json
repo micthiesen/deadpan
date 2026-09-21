@@ -1,0 +1,59 @@
+[
+  {
+    "command": [
+      "cargo",
+      "fmt",
+      "--all",
+      "--",
+      "--check"
+    ],
+    "exit_code": 0,
+    "seconds": 0.9642674999777228
+  },
+  {
+    "command": [
+      "cargo",
+      "clippy",
+      "--workspace",
+      "--all-targets",
+      "--locked",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "exit_code": 0,
+    "seconds": 36.00508779194206
+  },
+  {
+    "command": [
+      "cargo",
+      "test",
+      "--workspace",
+      "--locked"
+    ],
+    "exit_code": 0,
+    "seconds": 128.39881462487392
+  },
+  {
+    "command": [
+      "cargo",
+      "build",
+      "--workspace",
+      "--locked"
+    ],
+    "exit_code": 0,
+    "seconds": 0.48385295807383955
+  },
+  {
+    "command": [
+      "cargo",
+      "run",
+      "-p",
+      "deadpan-cli",
+      "--",
+      "doctor"
+    ],
+    "exit_code": 0,
+    "seconds": 2.473634917056188
+  }
+]

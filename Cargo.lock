@@ -810,6 +810,7 @@ dependencies = [
  "blake3",
  "deadpan-core",
  "deadpan-native-process",
+ "deadpan-plan",
  "deadpan-source",
  "rustix 1.1.5",
  "serde",

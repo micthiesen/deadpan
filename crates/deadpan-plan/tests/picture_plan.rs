@@ -54,9 +54,18 @@ fn hold(frames: i64) -> BeatNode {
     })
 }
 fn source(frames: i64, start: i64, end: i64) -> BeatNode {
+    source_with_mapping(frames, start, end, SourceVideoMapping::FitBeat)
+}
+fn source_with_mapping(
+    frames: i64,
+    start: i64,
+    end: i64,
+    video_mapping: SourceVideoMapping,
+) -> BeatNode {
     node(NodeKind::Source {
         source: SourceNode {
             duration: duration(frames),
+            video_mapping,
             video: SourceVideo::Stream {
                 asset: asset_id("video"),
                 span: span(start, end),
@@ -169,11 +178,7 @@ fn fractional_source_centers_and_vfr_selection_preserve_original_pts() {
             ExactRatio::new(-2002 * 12 + (2 * frame as i128 + 1) * 7007, 12).unwrap()
         );
         assert_eq!(
-            sample
-                .picture
-                .select_source_frame(&index, EndpointPolicy::Reject)
-                .unwrap()
-                .identity,
+            sample.picture.select_source_frame(&index).unwrap().identity,
             SourceFrameId(expected)
         );
         sample.instance.validate(&document).unwrap();
@@ -185,36 +190,150 @@ fn fractional_source_centers_and_vfr_selection_preserve_original_pts() {
 }
 
 #[test]
-fn source_index_checks_asset_clock_and_explicit_endpoint_policy() {
+fn natural_video_duration_preserves_vfr_selection_after_beat_rounding() {
+    let mapping = SourceVideoMapping::natural_rate(
+        span(0, 30_000),
+        FrameRate::new(30_000, 1001).unwrap(),
+        EndpointPolicy::Reject,
+    )
+    .unwrap();
+    let natural = RenderPlan::compile(&document(
+        &["source"],
+        vec![("source", source_with_mapping(30, 0, 30_000, mapping))],
+    ))
+    .unwrap();
+    let fitted = RenderPlan::compile(&document(
+        &["source"],
+        vec![("source", source(30, 0, 30_000))],
+    ))
+    .unwrap();
+    let source_index = index("video", clock(), &[0, 14_014, 15_510, 16_016], 30_000);
+    let natural_picture = natural.picture(ProjectFrame(15)).unwrap().picture;
+    let fitted_picture = fitted.picture(ProjectFrame(15)).unwrap().picture;
+    assert_eq!(ticks(&natural_picture), ExactRatio::new(31_031, 2).unwrap());
+    assert_eq!(ticks(&fitted_picture), ExactRatio::integer(15_500));
+    assert_eq!(
+        natural_picture
+            .select_source_frame(&source_index)
+            .unwrap()
+            .identity,
+        SourceFrameId(2)
+    );
+    assert_eq!(
+        fitted_picture
+            .select_source_frame(&source_index)
+            .unwrap()
+            .identity,
+        SourceFrameId(1)
+    );
+    assert_eq!(natural.duration(), duration(30));
+}
+
+#[test]
+fn rounded_video_tail_uses_the_authored_policy_and_selected_span() {
+    // The exact 3/2-frame selection rounds ties-to-even to two frames. The
+    // second frame center reaches its exclusive end, where later media exists.
+    let source_index = index("video", clock(), &[0, 500, 1000, 1500, 2000], 2500);
+    for endpoints in [EndpointPolicy::Reject, EndpointPolicy::HoldAdjacent] {
+        let mapping = SourceVideoMapping::Duration {
+            frames: ExactRatio::new(3, 2).unwrap(),
+            endpoints,
+        };
+        let plan = RenderPlan::compile(&document(
+            &["source"],
+            vec![("source", source_with_mapping(2, 0, 1500, mapping))],
+        ))
+        .unwrap();
+        let first = plan.picture(ProjectFrame(0)).unwrap().picture;
+        assert_eq!(ticks(&first), ExactRatio::integer(500));
+        assert_eq!(
+            first.select_source_frame(&source_index).unwrap().identity,
+            SourceFrameId(1)
+        );
+        let last = plan.picture(ProjectFrame(1)).unwrap().picture;
+        assert_eq!(ticks(&last), ExactRatio::integer(1500));
+        let selected = last.select_source_frame(&source_index);
+        match endpoints {
+            EndpointPolicy::Reject => assert!(selected.is_err()),
+            EndpointPolicy::HoldAdjacent => {
+                assert_eq!(selected.unwrap().identity, SourceFrameId(2));
+            }
+        }
+        let retimed = RenderPlan::compile(&document(
+            &["outer"],
+            vec![
+                ("source", source_with_mapping(2, 0, 1500, mapping)),
+                ("inner", retime("source", 4, 0, 2)),
+                ("outer", retime("inner", 8, 0, 4)),
+            ],
+        ))
+        .unwrap();
+        let tail = retimed.picture(ProjectFrame(7)).unwrap().picture;
+        assert_eq!(ticks(&tail), ExactRatio::integer(1875));
+        let selected = tail.select_source_frame(&source_index);
+        match endpoints {
+            EndpointPolicy::Reject => assert!(selected.is_err()),
+            EndpointPolicy::HoldAdjacent => {
+                assert_eq!(selected.unwrap().identity, SourceFrameId(2));
+            }
+        }
+    }
+}
+
+#[test]
+fn exact_video_mapping_composes_nested_retimes_before_pts_selection() {
+    let mapping = SourceVideoMapping::natural_rate(
+        span(-2002, 27998),
+        FrameRate::new(30_000, 1001).unwrap(),
+        EndpointPolicy::Reject,
+    )
+    .unwrap();
+    let plan = RenderPlan::compile(&document(
+        &["outer"],
+        vec![
+            ("source", source_with_mapping(30, -2002, 27998, mapping)),
+            ("inner", retime("source", 20, 0, 30)),
+            ("outer", retime("inner", 30, 0, 20)),
+        ],
+    ))
+    .unwrap();
+    let source_index = index("video", clock(), &[-2002, 12012, 13508, 14014], 27998);
+    let picture = plan.picture(ProjectFrame(15)).unwrap().picture;
+    assert_eq!(ticks(&picture), ExactRatio::new(27027, 2).unwrap());
+    assert_eq!(
+        picture.select_source_frame(&source_index).unwrap().identity,
+        SourceFrameId(2)
+    );
+}
+
+#[test]
+fn source_index_checks_asset_clock_and_measured_coverage() {
     let plan =
         RenderPlan::compile(&document(&["source"], vec![("source", source(2, 0, 1001))])).unwrap();
     let picture = plan.picture(ProjectFrame(0)).unwrap().picture;
     assert!(matches!(
-        picture.select_source_frame(&index("other", clock(), &[0], 1001), EndpointPolicy::Reject),
+        picture.select_source_frame(&index("other", clock(), &[0], 1001)),
         Err(PlanError::IndexAssetMismatch { .. })
     ));
     assert!(matches!(
-        picture.select_source_frame(
-            &index("video", SourceTimeBase::new(1, 1000).unwrap(), &[0], 1001),
-            EndpointPolicy::Reject
-        ),
+        picture.select_source_frame(&index(
+            "video",
+            SourceTimeBase::new(1, 1000).unwrap(),
+            &[0],
+            1001
+        )),
         Err(PlanError::IndexClockMismatch { .. })
     ));
     let shortened = index("video", clock(), &[500], 1001);
-    assert!(
-        picture
-            .select_source_frame(&shortened, EndpointPolicy::Reject)
-            .is_err()
-    );
-    assert_eq!(
-        picture
-            .select_source_frame(&shortened, EndpointPolicy::HoldAdjacent)
-            .unwrap()
-            .identity,
-        SourceFrameId(0)
-    );
+    assert!(picture.select_source_frame(&shortened).is_err());
+    let mut held = picture;
+    let Picture::Source { endpoints, .. } = &mut held else {
+        panic!("source")
+    };
+    *endpoints = EndpointPolicy::HoldAdjacent;
+    assert!(held.select_source_frame(&shortened).is_err());
     assert!(matches!(
-        Picture::Background.select_source_frame(&shortened, EndpointPolicy::Reject),
+        Picture::Background.select_source_frame(&shortened),
         Err(PlanError::NoSourceFrame)
     ));
 }
@@ -485,7 +604,7 @@ fn accepted_frames_floor_only_after_composed_retimes_and_validate_index() {
         assert_eq!(
             sample
                 .picture
-                .select_source_frame(&source_index, EndpointPolicy::Reject)
+                .select_source_frame(&source_index)
                 .unwrap()
                 .identity,
             source_frame
@@ -493,16 +612,13 @@ fn accepted_frames_floor_only_after_composed_retimes_and_validate_index() {
     }
     let last = plan.picture(ProjectFrame(5)).unwrap().picture;
     assert!(matches!(
-        last.select_source_frame(
-            &index("video", clock(), &[0], 1000),
-            EndpointPolicy::HoldAdjacent
-        ),
+        last.select_source_frame(&index("video", clock(), &[0], 1000)),
         Err(PlanError::MissingSourceFrame {
             frame: SourceFrameId(8)
         })
     ));
     assert!(matches!(
-        last.select_source_frame(&index("wrong", clock(), &[0], 1000), EndpointPolicy::Reject),
+        last.select_source_frame(&index("wrong", clock(), &[0], 1000)),
         Err(PlanError::IndexAssetMismatch { .. })
     ));
 }
@@ -512,6 +628,7 @@ fn still_blank_freeze_and_background_are_distinct_picture_requests() {
     let still = node(NodeKind::Source {
         source: SourceNode {
             duration: duration(1),
+            video_mapping: SourceVideoMapping::FitBeat,
             video: SourceVideo::Still {
                 asset: asset_id("still"),
             },
@@ -524,6 +641,7 @@ fn still_blank_freeze_and_background_are_distinct_picture_requests() {
     let blank = node(NodeKind::Source {
         source: SourceNode {
             duration: duration(1),
+            video_mapping: SourceVideoMapping::FitBeat,
             video: SourceVideo::Blank,
             audio: Some(SourceAudio {
                 asset: asset_id("video"),
@@ -567,9 +685,19 @@ fn still_blank_freeze_and_background_are_distinct_picture_requests() {
         plan.picture(ProjectFrame(1)).unwrap().picture,
         Picture::Blank
     );
+    let frozen = plan.picture(ProjectFrame(2)).unwrap().picture;
+    assert_eq!(ticks(&frozen), ExactRatio::integer(-1001));
     assert_eq!(
-        ticks(&plan.picture(ProjectFrame(2)).unwrap().picture),
-        ExactRatio::integer(-1001)
+        frozen
+            .select_source_frame(&index("video", clock(), &[-2002, -1001, 0], 1001))
+            .unwrap()
+            .identity,
+        SourceFrameId(1)
+    );
+    assert!(
+        frozen
+            .select_source_frame(&index("video", clock(), &[0], 1001))
+            .is_err()
     );
     assert_eq!(
         plan.picture(ProjectFrame(3)).unwrap().picture,

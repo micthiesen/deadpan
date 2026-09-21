@@ -449,6 +449,7 @@ fn source_document() -> ProjectDocument {
                                 audio: Some(SourceAudio { asset, span: audio }),
                                 link: LinkRelation::Linked,
                                 audio_mapping: SourceAudioMapping::FitBeat,
+                                video_mapping: SourceVideoMapping::FitBeat,
                                 audio_offset: AudioSample(0),
                             },
                         },
@@ -651,6 +652,271 @@ fn natural_audio_duration_is_independent_of_picture_and_preserves_alignment() {
                 point(&document, &target).exact_frame,
                 point(&original, &target).exact_frame
             );
+        }
+    }
+}
+
+#[test]
+fn natural_video_mapping_keeps_exact_source_time_and_independent_audio() {
+    let original = source_document();
+    let video = original.assets()[&AssetId::new("asset").unwrap()]
+        .video
+        .unwrap();
+    let mapped = edit(
+        &original,
+        Command::SetSourceVideoMapping {
+            node: node("source"),
+            mapping: SourceVideoMapping::natural_rate(
+                video,
+                original.presentation_basis().frame_rate,
+                EndpointPolicy::HoldAdjacent,
+            )
+            .unwrap(),
+        },
+        "natural-video",
+    );
+    for ticks in [-90000, -45000, 0, 90000] {
+        let target = source_target(SourceMoment::Timestamp {
+            stream: SourceStream::Video,
+            timestamp: SourceTimestamp {
+                ticks,
+                time_base: SourceTimeBase::new(1, 90000).unwrap(),
+            },
+        });
+        // Original elapsed seconds × rational project fps, from a negative origin.
+        let expected = ExactRatio::new(i128::from(ticks + 90000), 3003).unwrap();
+        assert_eq!(point(&mapped, &target).exact_frame, expected);
+        let equivalent = source_target(SourceMoment::Timestamp {
+            stream: SourceStream::Video,
+            timestamp: SourceTimestamp {
+                ticks: ticks / 3,
+                time_base: SourceTimeBase::new(1, 30000).unwrap(),
+            },
+        });
+        assert_eq!(point(&mapped, &equivalent).exact_frame, expected);
+    }
+    for sample in [-48000, 0, 48000] {
+        let target = source_target(SourceMoment::AudioSample {
+            sample,
+            sample_rate: 48000,
+        });
+        assert_eq!(point(&mapped, &target), point(&original, &target));
+    }
+    assert_eq!(mapped.duration().unwrap(), duration(60));
+}
+
+#[test]
+fn video_mapping_keeps_source_marks_and_composes_isolated_retimed_occurrences() {
+    let original = source_document();
+    let endpoint = source_target(SourceMoment::Timestamp {
+        stream: SourceStream::Video,
+        timestamp: SourceTimestamp {
+            ticks: 90000,
+            time_base: SourceTimeBase::new(1, 90000).unwrap(),
+        },
+    });
+    let marked = edit(
+        &original,
+        Command::SetMark {
+            id: MarkId::new("video-end").unwrap(),
+            owner: node("source"),
+            label: "Video end".into(),
+            boundary: endpoint.boundary.clone(),
+            loss_policy: AnchorLossPolicy::KeepUnresolved,
+        },
+        "marked-video",
+    );
+    let mapping = SourceVideoMapping::Duration {
+        frames: ExactRatio::new(71, 2).unwrap(),
+        endpoints: EndpointPolicy::Reject,
+    };
+    let mapped = edit(
+        &marked,
+        Command::SetSourceVideoMapping {
+            node: node("source"),
+            mapping,
+        },
+        "mapped-video",
+    );
+    assert_eq!(mapped.marks(), marked.marks());
+    let repeated = edit(
+        &original,
+        Command::WrapRepeat {
+            node: node("source"),
+            id: node("repeat"),
+            plays: 2,
+            gap: None,
+            anchor_policy: WrapAnchorPolicy::default(),
+        },
+        "repeat-video",
+    );
+    let first = play(&repeated, "repeat", 0);
+    let second = play(&repeated, "repeat", 1);
+    let isolated = edit(
+        &repeated,
+        Command::EditOccurrence {
+            instance: InstancePath {
+                node: node("source"),
+                repeats: vec![second.clone()],
+            },
+            edit: OccurrenceEdit::SetSourceVideoMapping { mapping },
+            identities: OccurrenceIdentities {
+                nodes: vec![node("isolated")],
+                marks: vec![],
+            },
+        },
+        "isolated-video",
+    );
+    let mut json = serde_json::to_value(&isolated).unwrap();
+    json["nodes"]["root"]["kind"]["children"] = serde_json::json!(["retime"]);
+    json["nodes"]["retime"] = serde_json::to_value(retime("repeat", 0, 120, 173)).unwrap();
+    let document = ProjectDocument::from_json(&json.to_string()).unwrap();
+    for (host, occurrence, frames) in [
+        ("source", first, ExactRatio::integer(60)),
+        ("isolated", second, ExactRatio::new(191, 2).unwrap()),
+    ] {
+        let mut target = endpoint.clone();
+        target.occurrence = Some(InstancePath {
+            node: node(host),
+            repeats: vec![occurrence],
+        });
+        assert_eq!(
+            point(&document, &target).exact_frame,
+            frames
+                .checked_mul(ExactRatio::new(173, 120).unwrap())
+                .unwrap()
+        );
+    }
+}
+
+#[test]
+fn endpoint_holding_does_not_rebind_video_anchors_outside_the_beat() {
+    let original = source_document();
+    let mapped = edit(
+        &original,
+        Command::SetSourceVideoMapping {
+            node: node("source"),
+            mapping: SourceVideoMapping::Duration {
+                frames: ExactRatio::integer(120),
+                endpoints: EndpointPolicy::HoldAdjacent,
+            },
+        },
+        "long-video",
+    );
+    let target = |ticks| {
+        source_target(SourceMoment::Timestamp {
+            stream: SourceStream::Video,
+            timestamp: SourceTimestamp {
+                ticks,
+                time_base: SourceTimeBase::new(1, 90000).unwrap(),
+            },
+        })
+    };
+    assert_eq!(
+        point(&mapped, &target(0)).exact_frame,
+        ExactRatio::integer(60)
+    );
+    assert_eq!(
+        AnchorIndex::new(&mapped)
+            .unwrap()
+            .resolve_target(&target(90000))
+            .unwrap_err()
+            .code,
+        AnchorErrorCode::OutOfRange
+    );
+}
+
+#[test]
+fn invalid_video_mapping_and_non_stream_targets_reject_atomically() {
+    let document = source_document();
+    let request = |mapping| CommandRequest {
+        project_id: document.project_id().clone(),
+        expected_revision: document.revision_id().clone(),
+        new_revision: revision("invalid-video"),
+        command: Command::SetSourceVideoMapping {
+            node: node("source"),
+            mapping,
+        },
+    };
+    for frames in [
+        ExactRatio::ZERO,
+        ExactRatio::integer(-1),
+        ExactRatio::new(i128::from(i64::MAX) + 1, 1).unwrap(),
+    ] {
+        let mapping = SourceVideoMapping::Duration {
+            frames,
+            endpoints: EndpointPolicy::Reject,
+        };
+        assert!(apply(&document, &request(mapping)).is_err());
+        assert!(
+            serde_json::from_value::<SourceVideoMapping>(serde_json::to_value(mapping).unwrap())
+                .is_err()
+        );
+    }
+    let encoded = serde_json::to_value(&document).unwrap();
+    for mapping in [
+        serde_json::Value::Null,
+        serde_json::json!({"type":"fit_beat","endpoints":null}),
+        serde_json::json!({"type":"duration","frames":{"numerator":"3","denominator":"2"}}),
+        serde_json::json!({"type":"duration","frames":{"numerator":"3","denominator":"2"},"endpoints":"clamp"}),
+    ] {
+        let mut json = encoded.clone();
+        json["nodes"]["source"]["kind"]["source"]["video_mapping"] = mapping;
+        assert!(ProjectDocument::from_json(&json.to_string()).is_err());
+    }
+    let mut missing = encoded.clone();
+    missing["nodes"]["source"]["kind"]["source"]
+        .as_object_mut()
+        .unwrap()
+        .remove("video_mapping");
+    assert!(ProjectDocument::from_json(&missing.to_string()).is_err());
+    for video in [
+        serde_json::json!({"type":"blank"}),
+        serde_json::json!({"type":"still","asset":"asset"}),
+    ] {
+        let mut json = encoded.clone();
+        json["assets"]["asset"]["still_image"] = serde_json::json!(true);
+        json["nodes"]["source"]["kind"]["source"]["video"] = video;
+        json["nodes"]["source"]["kind"]["source"]["link"] = serde_json::json!("independent");
+        let no_stream = ProjectDocument::from_json(&json.to_string()).unwrap();
+        assert_eq!(
+            apply(&no_stream, &request(SourceVideoMapping::FitBeat))
+                .unwrap_err()
+                .code,
+            EditErrorCode::SourceRangeInvalid
+        );
+        json["nodes"]["source"]["kind"]["source"]["video_mapping"] =
+            serde_json::to_value(SourceVideoMapping::Duration {
+                frames: ExactRatio::integer(30),
+                endpoints: EndpointPolicy::Reject,
+            })
+            .unwrap();
+        assert!(ProjectDocument::from_json(&json.to_string()).is_err());
+    }
+}
+
+proptest! {
+    #[test]
+    fn natural_video_mapping_preserves_exact_elapsed_time(ticks in -90000i64..=90000,
+        rate_num in 1u32..=120000, rate_den in 1u32..=1001) {
+        let original = source_document();
+        let span = original.assets()[&AssetId::new("asset").unwrap()].video.unwrap();
+        let mut json = serde_json::to_value(&original).unwrap();
+        let rate = FrameRate::new(rate_num, rate_den).unwrap();
+        json["presentation_basis"]["frame_rate"] = serde_json::to_value(rate).unwrap();
+        let original = ProjectDocument::from_json(&json.to_string()).unwrap();
+        let document = edit(&original, Command::SetSourceVideoMapping { node: node("source"),
+            mapping: SourceVideoMapping::natural_rate(span, rate, EndpointPolicy::HoldAdjacent).unwrap(),
+        }, "natural-video");
+        let target = source_target(SourceMoment::Timestamp { stream: SourceStream::Video,
+            timestamp: SourceTimestamp { ticks, time_base: SourceTimeBase::new(1, 90000).unwrap() },
+        });
+        let expected = ExactRatio::new(i128::from(ticks + 90000) * i128::from(rate_num), 90000 * i128::from(rate_den)).unwrap();
+        let result = AnchorIndex::new(&document).unwrap().resolve_target(&target);
+        if expected.compare_integer(60).is_gt() {
+            prop_assert_eq!(result.unwrap_err().code, AnchorErrorCode::OutOfRange);
+        } else {
+            prop_assert_eq!(result.unwrap().exact_frame, expected);
         }
     }
 }

@@ -665,6 +665,7 @@ fn source_streams_retain_timestamps_and_validate_bounds_independently() {
         }),
         link: LinkRelation::Linked,
         audio_mapping: SourceAudioMapping::FitBeat,
+        video_mapping: SourceVideoMapping::FitBeat,
         audio_offset: AudioSample(2400),
     };
     let command = Command::Insert {

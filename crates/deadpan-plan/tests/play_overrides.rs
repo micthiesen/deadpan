@@ -41,6 +41,7 @@ fn source(frames: i64, start: i64, end: i64) -> BeatNode {
         kind: NodeKind::Source {
             source: SourceNode {
                 duration: duration(frames),
+                video_mapping: SourceVideoMapping::FitBeat,
                 video: SourceVideo::Stream {
                     asset: AssetId::new("video").unwrap(),
                     span: span(start, end),

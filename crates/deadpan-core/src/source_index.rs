@@ -2,7 +2,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::{AssetId, DocumentError, DocumentErrorCode, ExactRatio, SourceTimeBase};
+use crate::{AssetId, DocumentError, DocumentErrorCode, ExactRatio, SourceSpan, SourceTimeBase};
 
 pub const MAX_SOURCE_INDEX_FRAMES: usize = 10_000_000;
 
@@ -39,7 +39,8 @@ pub struct SourcePoint {
     pub time_base: SourceTimeBase,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum EndpointPolicy {
     Reject,
     HoldAdjacent,
@@ -158,6 +159,48 @@ impl SourceFrameIndex {
             .partition_point(|frame| !point.ticks.compare_integer(frame.pts).is_lt());
         Ok(&self.frames[right - 1])
     }
+
+    /// Select within an authored half-open span, holding only its intersecting
+    /// endpoint frames when allowed. The measured index must cover the entire
+    /// selection even when holding is permitted. Lookup remains O(log frames).
+    pub fn select_in_span(
+        &self,
+        point: SourcePoint,
+        span: SourceSpan,
+        endpoints: EndpointPolicy,
+    ) -> Result<&IndexedSourceFrame, DocumentError> {
+        if point.time_base != self.time_base || span.start().time_base != self.time_base {
+            return Err(invalid("source lookup uses a different timestamp clock"));
+        }
+        if span.start().ticks < self.frames[0].pts || span.end().ticks > self.terminal_end {
+            return Err(invalid(
+                "selected span is outside the measured source presentation interval",
+            ));
+        }
+        let before = point.ticks.compare_integer(span.start().ticks).is_lt();
+        let after = !point.ticks.compare_integer(span.end().ticks).is_lt();
+        if before || after {
+            if endpoints == EndpointPolicy::Reject {
+                return Err(invalid(
+                    "requested time is outside the selected source span",
+                ));
+            }
+            if after {
+                let right = self
+                    .frames
+                    .partition_point(|frame| frame.pts < span.end().ticks);
+                return Ok(&self.frames[right - 1]);
+            }
+            return self.select(
+                SourcePoint {
+                    ticks: ExactRatio::integer(span.start().ticks),
+                    time_base: self.time_base,
+                },
+                EndpointPolicy::Reject,
+            );
+        }
+        self.select(point, EndpointPolicy::Reject)
+    }
 }
 
 fn invalid(message: &str) -> DocumentError {
@@ -240,6 +283,125 @@ mod tests {
                     .identity
                     .0,
                 expected
+            );
+        }
+    }
+
+    #[test]
+    fn selected_span_endpoints_hold_only_intersecting_presentation_intervals() {
+        let index = fixture();
+        let span = |start, end| {
+            SourceSpan::new(
+                crate::SourceTimestamp {
+                    ticks: start,
+                    time_base: index.time_base(),
+                },
+                crate::SourceTimestamp {
+                    ticks: end,
+                    time_base: index.time_base(),
+                },
+            )
+            .unwrap()
+        };
+        let selected = span(-1500, 1001);
+        for (ticks, expected) in [(-1500, 0), (-1001, 1), (0, 1)] {
+            let point = SourcePoint {
+                ticks: ExactRatio::integer(ticks),
+                time_base: index.time_base(),
+            };
+            assert_eq!(
+                index
+                    .select_in_span(point, selected, EndpointPolicy::Reject)
+                    .unwrap()
+                    .identity,
+                SourceFrameId(expected)
+            );
+        }
+        for (ticks, expected) in [
+            (i64::MIN, 0),
+            (-2002, 0),
+            (1001, 1),
+            (4004, 1),
+            (i64::MAX, 1),
+        ] {
+            let point = SourcePoint {
+                ticks: ExactRatio::integer(ticks),
+                time_base: index.time_base(),
+            };
+            assert!(
+                index
+                    .select_in_span(point, selected, EndpointPolicy::Reject)
+                    .is_err()
+            );
+            assert_eq!(
+                index
+                    .select_in_span(point, selected, EndpointPolicy::HoldAdjacent)
+                    .unwrap()
+                    .identity,
+                SourceFrameId(expected)
+            );
+        }
+        // A trim inside an interval holds that intersecting frame, while a trim
+        // exactly on its left boundary excludes it.
+        let point = SourcePoint {
+            ticks: ExactRatio::integer(5005),
+            time_base: index.time_base(),
+        };
+        for (selected, expected) in [
+            (span(-1500, 500), 1),
+            (span(-1500, -1001), 0),
+            (span(0, 5005), 3),
+        ] {
+            assert_eq!(
+                index
+                    .select_in_span(point, selected, EndpointPolicy::HoldAdjacent)
+                    .unwrap()
+                    .identity,
+                SourceFrameId(expected)
+            );
+        }
+    }
+
+    #[test]
+    fn selected_span_requires_matching_clocks_and_complete_measured_coverage() {
+        let index = fixture();
+        let span = |start, end, time_base| {
+            SourceSpan::new(
+                crate::SourceTimestamp {
+                    ticks: start,
+                    time_base,
+                },
+                crate::SourceTimestamp {
+                    ticks: end,
+                    time_base,
+                },
+            )
+            .unwrap()
+        };
+        let point = SourcePoint {
+            ticks: ExactRatio::ZERO,
+            time_base: index.time_base(),
+        };
+        for endpoints in [EndpointPolicy::Reject, EndpointPolicy::HoldAdjacent] {
+            for invalid_span in [
+                span(-2003, 5005, index.time_base()),
+                span(-2002, 5006, index.time_base()),
+                span(-2002, 5005, SourceTimeBase::new(1, 1000).unwrap()),
+            ] {
+                assert!(
+                    index
+                        .select_in_span(point, invalid_span, endpoints)
+                        .is_err()
+                );
+            }
+            let wrong_clock = SourcePoint {
+                time_base: SourceTimeBase::new(1, 1000).unwrap(),
+                ..point
+            };
+            assert!(
+                index
+                    .select_in_span(wrong_clock, span(-2002, 5005, index.time_base()), endpoints)
+                    .is_err()
             );
         }
     }

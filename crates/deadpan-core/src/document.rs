@@ -5,10 +5,10 @@ use serde::{Deserialize, Deserializer, Serialize, de};
 
 use crate::{
     AudioSample, FrameDuration, FrameRange, FrameRate, IterationOrder, Mark, PlayOverrides,
-    RepeatLayout, SourceAudioMapping, SourceTimestamp, TimeError,
+    RepeatLayout, SourceAudioMapping, SourceTimestamp, SourceVideoMapping, TimeError,
 };
 
-pub const DOCUMENT_SCHEMA_VERSION: u32 = 6;
+pub const DOCUMENT_SCHEMA_VERSION: u32 = 7;
 /// Bounds apply before traversal. Structure is walked iteratively, never recursively.
 pub const MAX_DOCUMENT_NODES: usize = 100_000;
 pub const MAX_DOCUMENT_ASSETS: usize = 100_000;
@@ -180,6 +180,8 @@ pub enum LinkRelation {
 pub struct SourceNode {
     pub duration: FrameDuration,
     pub video: SourceVideo,
+    /// Exact picture extent and selected-span endpoint behavior.
+    pub video_mapping: SourceVideoMapping,
     pub audio: Option<SourceAudio>,
     /// Explicit audio destination extent, independent of picture duration.
     pub audio_mapping: SourceAudioMapping,
@@ -604,7 +606,8 @@ impl ProjectDocument {
                     positive(source.duration, "source")?;
                     match &source.video {
                         SourceVideo::Stream { asset, span } => {
-                            self.validate_video_span(asset, *span)?
+                            self.validate_video_span(asset, *span)?;
+                            source.video_mapping.duration_frames(source.duration)?;
                         }
                         SourceVideo::Still { asset } => {
                             if !self.asset(asset)?.still_image {
@@ -615,6 +618,14 @@ impl ProjectDocument {
                             }
                         }
                         SourceVideo::Blank => {}
+                    }
+                    if !matches!(source.video, SourceVideo::Stream { .. })
+                        && source.video_mapping != SourceVideoMapping::FitBeat
+                    {
+                        return Err(DocumentError::new(
+                            DocumentErrorCode::SourceRangeInvalid,
+                            "an explicit video duration requires selected video",
+                        ));
                     }
                     if let Some(audio) = &source.audio {
                         self.validate_audio(audio)?;

@@ -15,13 +15,17 @@ nodes. `LookupStats` records actual node visits and binary-search comparisons.
 Picture descent is O(depth × log(max(children, iteration runs))).
 
 Nested Retime maps retain `ExactRatio` coordinates through the entire structural
-path. Source spans map that exact coordinate into their original signed stream
-clock. The frame index is selected only through
-`Picture::select_source_frame(index, EndpointPolicy)`, which checks the asset and
-timestamp clock. VFR selection uses the measured `SourceFrameIndex` and an
-explicit endpoint policy. Accepted artifacts retain their exact original-frame
+path. Sources map that exact coordinate into their original signed stream clock.
+`FitBeat` preserves the historical span-to-beat mapping; `SourceVideoMapping::natural_rate`
+records an exact video extent that preserves natural-rate timing even when the
+beat duration rounds to integer project frames. The frame index is selected only through
+`Picture::select_source_frame(index)`, which checks the asset and timestamp clock.
+VFR selection uses the measured `SourceFrameIndex`, the selected span, and the
+Source's persisted endpoint policy. Holding selects only frames intersecting the
+authored span and never supplies missing index coverage. Freeze points reject
+out-of-index timestamps. Accepted artifacts retain their exact original-frame
 coordinate and floor only after all structural transforms, within the authored
-half-open range. Missing accepted frames fail even under endpoint holding.
+half-open range. Missing accepted frames fail.
 
 Each sample carries a core `InstancePath`. A normal sample targets its Source or
 Hold and includes all repeated ancestors. A gap targets the Repeat node with
