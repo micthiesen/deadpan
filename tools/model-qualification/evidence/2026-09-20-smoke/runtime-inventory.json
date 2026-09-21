@@ -1,0 +1,181 @@
+{
+  "scope": "developer runtime import and tiny Metal calculation; no model or inference",
+  "python": "3.12.13 (main, Mar 25 2026, 03:16:06) [Clang 22.1.1 ]",
+  "executable": "/private/tmp/deadpan-ltx2src-3392/ltx-2-mlx-3392d75934120b7e69eefbe55893f7ef82be92a4/.venv/bin/python3",
+  "platform": "macOS-26.5.2-arm64-arm-64bit",
+  "default_device": "Device(gpu, 0)",
+  "device_info": {
+    "device_name": "Apple M5 Max",
+    "max_recommended_working_set_size": 115448725504,
+    "memory_size": 137438953472,
+    "architecture": "applegpu_g17s",
+    "max_buffer_length": 86586540032,
+    "resource_limit": 499000
+  },
+  "measured_sum_of_squares": 690880.0,
+  "expected_sum_of_squares": 690880,
+  "elapsed_seconds": 0.18796012504026294,
+  "peak_mlx_bytes": 1028,
+  "active_mlx_bytes": 516,
+  "runtime_source_commit": "3392d75934120b7e69eefbe55893f7ef82be92a4",
+  "source_sha256": {
+    "uv.lock": "ae86eddcaacdf1d5e2709470b9960ba7647dab252512d209d7f33cec00572823",
+    "pyproject.toml": "d197343b3a4e441f711b2c3ce15ef95bbdef22f1dc716cc378da035d6a79e789",
+    "LICENSE": "b1865d0e24b5adf6c91de99c33067992ecfd3895b152ad50911e2e7747e28778",
+    ".python-version": "49a506dd32096b010d75205acf3430c9ae6c40351888129499e5a5e487126c93"
+  },
+  "installed_packages": [
+    {
+      "name": "Jinja2",
+      "version": "3.1.6"
+    },
+    {
+      "name": "MarkupSafe",
+      "version": "3.0.3"
+    },
+    {
+      "name": "PyYAML",
+      "version": "6.0.3"
+    },
+    {
+      "name": "Pygments",
+      "version": "2.19.2"
+    },
+    {
+      "name": "annotated-doc",
+      "version": "0.0.4"
+    },
+    {
+      "name": "anyio",
+      "version": "4.12.1"
+    },
+    {
+      "name": "certifi",
+      "version": "2026.2.25"
+    },
+    {
+      "name": "click",
+      "version": "8.3.1"
+    },
+    {
+      "name": "filelock",
+      "version": "3.25.2"
+    },
+    {
+      "name": "fsspec",
+      "version": "2026.2.0"
+    },
+    {
+      "name": "h11",
+      "version": "0.16.0"
+    },
+    {
+      "name": "hf-xet",
+      "version": "1.4.2"
+    },
+    {
+      "name": "httpcore",
+      "version": "1.0.9"
+    },
+    {
+      "name": "httpx",
+      "version": "0.28.1"
+    },
+    {
+      "name": "huggingface_hub",
+      "version": "1.7.1"
+    },
+    {
+      "name": "idna",
+      "version": "3.11"
+    },
+    {
+      "name": "ltx-core-mlx",
+      "version": "0.15.8"
+    },
+    {
+      "name": "ltx-pipelines-mlx",
+      "version": "0.15.8"
+    },
+    {
+      "name": "markdown-it-py",
+      "version": "4.0.0"
+    },
+    {
+      "name": "mdurl",
+      "version": "0.1.2"
+    },
+    {
+      "name": "mlx",
+      "version": "0.32.2"
+    },
+    {
+      "name": "mlx-arsenal",
+      "version": "0.2.4"
+    },
+    {
+      "name": "mlx-lm",
+      "version": "0.31.1"
+    },
+    {
+      "name": "mlx-metal",
+      "version": "0.32.2"
+    },
+    {
+      "name": "numpy",
+      "version": "2.4.3"
+    },
+    {
+      "name": "packaging",
+      "version": "26.0"
+    },
+    {
+      "name": "pillow",
+      "version": "12.1.1"
+    },
+    {
+      "name": "protobuf",
+      "version": "6.33.6"
+    },
+    {
+      "name": "regex",
+      "version": "2026.2.28"
+    },
+    {
+      "name": "rich",
+      "version": "14.3.3"
+    },
+    {
+      "name": "safetensors",
+      "version": "0.7.0"
+    },
+    {
+      "name": "sentencepiece",
+      "version": "0.2.1"
+    },
+    {
+      "name": "shellingham",
+      "version": "1.5.4"
+    },
+    {
+      "name": "tokenizers",
+      "version": "0.22.2"
+    },
+    {
+      "name": "tqdm",
+      "version": "4.67.3"
+    },
+    {
+      "name": "transformers",
+      "version": "5.3.0"
+    },
+    {
+      "name": "typer",
+      "version": "0.24.1"
+    },
+    {
+      "name": "typing_extensions",
+      "version": "4.15.0"
+    }
+  ]
+}

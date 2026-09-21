@@ -21,7 +21,7 @@ Current measured evidence: [editing foundation verification](FOUNDATION_VERIFICA
 | DP-09 | All audio operations with preserved intentional dynamics. | Open | No app audio operations. [Raw DSP qualification](qualification/audio-2026-09-20.md) retains failed targets. A [canonical worker prototype](qualification/audio-canonical-2026-09-20.md) passes synthetic consistency, replay/cache seek, short-clip, pitch/dynamics, and sanitizer checks, with alternative-window failures preserved. | Integrated PCM/gain/tail/stretch fixtures, preview/export equivalence, listening, device behavior, and the complete operation catalogue. |
 | DP-10 | Local transcript, timing refinement, shot/silence proposals. | Open | None. | Analysis accuracy and correction tests. |
 | DP-11 | Selected target tracking with manual correction and loss handling. | Open | None. | Occlusion/shot-change fixtures. |
-| DP-12 | Local AI hold generation, exact seams/duration, variants, acceptance. | Open | None; no inference backend or model pack. | Actual qualified model corpus, not mocks. |
+| DP-12 | Local AI hold generation, exact seams/duration, variants, acceptance. | Open | One [actual LTX MLX generated-file smoke](qualification/model-smoke-2026-09-20.md), outside the app. No integrated inference backend or qualified model pack. | Exact interior sampling and source joins, variants/acceptance, and the full qualified model corpus. |
 | DP-13 | Model/runtime manager, safe downloads, offline pack installation. | Open | None. | Clean-machine and interrupted-install tests. |
 | DP-14 | YouTube URL import with bundled JavaScript support. | Open | None. | Clean-machine permitted-source import. |
 | DP-15 | Local media import, managed/linked assets, relinking. | Open | None. | Ownership/relink/failure tests. |
@@ -38,6 +38,10 @@ Current measured evidence: [editing foundation verification](FOUNDATION_VERIFICA
 ## Delivery gates
 
 [Specification Section 30](spec/DEADPAN_SPEC.md#30-implementation-workstreams-and-delivery-gates) defines the complete ordered build plan. Gates may have parallel work behind their interfaces; none permits calling an earlier subset the completed product.
+
+The [first actual LTX MLX probe](qualification/model-smoke-2026-09-20.md) adds
+single-file generation evidence to Gate A. It does not select a model or satisfy
+the corpus, warm-performance, exact seam, color, or packaging gates.
 
 | Gate | Status | Required work and exit evidence |
 | --- | --- | --- |

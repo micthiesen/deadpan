@@ -1,0 +1,64 @@
+{
+  "scope": "Single generated-file smoke, not usable-hold qualification",
+  "decoded_video_streams": 1,
+  "decoded_frames": 25,
+  "width": 768,
+  "height": 320,
+  "frame_rate": {
+    "numerator": 24,
+    "denominator": 1
+  },
+  "audio_streams": 0,
+  "output_bytes": 54092,
+  "output_sha256": "54c06089b7cc8602bb4b93762317aa6540ca3d8a9dec1d3753b2518c93861b57",
+  "generation_call_seconds": 90.96797420899384,
+  "process_seconds": 95.40335966693237,
+  "process_peak_rss_bytes": 14506835968,
+  "sampled_peak_rss_bytes": 14506819584,
+  "end_stage_mlx_peak_counter_bytes": 8966382168,
+  "mlx_peak_caveat": "Upstream VideoDecoderBlock calls reset_peak_memory before VAE decode. The raw peak_mlx_bytes field is NOT whole-run GPU/unified memory peak.",
+  "color_tags_missing": [
+    "color_range",
+    "color_space",
+    "color_transfer",
+    "color_primaries"
+  ],
+  "unverified": [
+    "interior-only authored Hold duration",
+    "source joins and original speech preservation",
+    "30-moment corpus",
+    "other precisions",
+    "official 2B MPS baseline",
+    "warm p50/p95 and usable holds per minute",
+    "UI interference",
+    "human acceptability",
+    "thermal pressure",
+    "portable runtime and license redistribution"
+  ],
+  "ffmpeg_version": [
+    "ffmpeg version 9.0.1 Copyright (c) 2000-2026 the FFmpeg developers",
+    "built with Apple clang version 21.0.0 (clang-2100.1.1.101)",
+    "configuration: --prefix=/opt/homebrew/Cellar/ffmpeg/9.0.1_1 --enable-shared --enable-pthreads --enable-version3 --cc=clang --host-cflags= --host-ldflags= --enable-ffplay --enable-gpl --enable-libsvtav1 --enable-libopus --enable-libx264 --enable-libmp3lame --enable-libdav1d --enable-libvmaf --enable-libvpx --enable-libx265 --enable-openssl --enable-videotoolbox --enable-audiotoolbox --enable-neon"
+  ],
+  "ffmpeg_distribution_status": "Developer Homebrew GPL build used for this smoke. Not selected or bundled in Deadpan.",
+  "captured_files_sha256": {
+    "captured_probe.py": "4bb30b3be4ebc825990da3000ec97c4872684f977c702216e71f810b3e0f4ac9",
+    "captured_launcher.py": "4c8207740efee4b4cb6a8968383b7a823b23d2c722b6d8dd1a816c4be91f696c",
+    "runtime-report.json": "db5ee630da443bfcfa7969c0c0a7e6d1ee7c2213fa5ed676814e809d993154c4",
+    "supervision.json": "739d5e4065732e69cca2c309719064abf1b86f6878e9e4d2a3b11f0213c0ef0a",
+    "output-probe.json": "683decc53dd80d891304b5ca1b3a0f3e82d75a73bdbc6a71947d0c5d747166c6",
+    "download-manifest.json": "832ae3d693732478fe5d0c6e4a45c10c4744c0c3fdafc4ea217a3e559a01b179",
+    "download-results.json": "39f7cedf23ecfae8780ce64e1dbe60bbcf7b8d7e71a5f1b4902ffba085540da4",
+    "runtime-inventory.json": "94f033ccfb071d69dc750221adf3f37437c00d66c70cf1b2475223b28ed034f7",
+    "runtime.log.gz": "7ce5ac889a1928a35914d240fcf11d48a36a699ac67228b9661e77a4a29e368a"
+  },
+  "runtime_log_uncompressed_sha256": "b08b077096f89106205674cebb4cd2bef90a1afbceba992b71ba6e659dc3636f",
+  "critical_runtime_source_sha256": {
+    "packages/ltx-pipelines-mlx/src/ltx_pipelines_mlx/keyframe_interpolation.py": "7488545e59610ab5f318eaa10a9cb8a34cced5d4b3738395ba082f368553d16b",
+    "packages/ltx-pipelines-mlx/src/ltx_pipelines_mlx/_base.py": "9fe662df38f16cc84108918ca4d4e57450df51c4d67bd704d98fd2afff007899",
+    "packages/ltx-pipelines-mlx/src/ltx_pipelines_mlx/utils/blocks.py": "768b0e766eb2da9962d7a26f4eca7d3b9215af4825d68832851e4c63d30c7a38",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/text_encoders/gemma/encoders/base_encoder.py": "d43a4a64a2ba8c3784398f86686e9dabdd14acf5b40ba3547b551c3cb198c3a2"
+  },
+  "external_contact_sheet_sha256": "b2d85bfd80b9654807c46dfc60e375dbb78be8f4415b23e431a44a25f0ca1ff2",
+  "supervised_command_seconds": 97.43999350001104
+}

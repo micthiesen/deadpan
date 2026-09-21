@@ -13,7 +13,7 @@ This repository currently contains an **editing foundation**, not a working vide
 - `deadpan-app`: an `egui`/`eframe` native development welcome shell using `wgpu` on Metal.
 - `deadpan-cli`: headless project/command/history operations, migration, picture-plan inspection, and exact boundary selection, also available through `deadpan-app --headless`.
 
-Media import, interactive keyboard editing, playback, AI generation, and export are not implemented. All 24 full-product requirements remain open or partial in the [requirement tracker](docs/REQUIREMENTS.md). [Compatible native media qualification](docs/qualification/media-compatible-2026-09-20.md) and [canonical audio qualification](docs/qualification/audio-canonical-2026-09-20.md) record actual native tests, failed configurations, and measured limits separately from the application.
+Media import, interactive keyboard editing, playback, AI generation, and export are not implemented in the app. All 24 full-product requirements remain open or partial in the [requirement tracker](docs/REQUIREMENTS.md). [Compatible native media qualification](docs/qualification/media-compatible-2026-09-20.md), [canonical audio qualification](docs/qualification/audio-canonical-2026-09-20.md), and a [real local model smoke](docs/qualification/model-smoke-2026-09-20.md) record actual tests, failed configurations, and measured limits separately from the application.
 
 ## Run the foundation
 

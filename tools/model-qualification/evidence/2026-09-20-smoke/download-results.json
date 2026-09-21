@@ -1,0 +1,88 @@
+{
+  "results": [
+    {
+      "path": "/tmp/deadpan-model-qualification-cache/mlx_ltx_q4_pack/56a5866d638ecfe37c54d348e88938235185c2d4/audio_vae.safetensors",
+      "expected_bytes": 106509048,
+      "expected_sha256": "442119db8eaf976f83a105cc8c5f2c930e0f625062f9776b10adcdb7bc96c416",
+      "status": "verified",
+      "seconds": 18.124103833921254
+    },
+    {
+      "path": "/tmp/deadpan-model-qualification-cache/mlx_ltx_q4_pack/56a5866d638ecfe37c54d348e88938235185c2d4/connector.safetensors",
+      "expected_bytes": 6344495512,
+      "expected_sha256": "5885c2bd7af4e761b3257cf5b17bc1fdb2d187cea3ca520ea723b6a129b7029f",
+      "status": "verified",
+      "seconds": 202.57564370892942
+    },
+    {
+      "path": "/tmp/deadpan-model-qualification-cache/mlx_ltx_q4_pack/56a5866d638ecfe37c54d348e88938235185c2d4/spatial_upscaler_x2_v1_1.safetensors",
+      "expected_bytes": 995745061,
+      "expected_sha256": "755f69dcb8a3f9589045925eb4a2237e9969f9c026a016393bc395e65ebd5788",
+      "status": "verified",
+      "seconds": 33.8114090829622
+    },
+    {
+      "path": "/tmp/deadpan-model-qualification-cache/mlx_ltx_q4_pack/56a5866d638ecfe37c54d348e88938235185c2d4/ltx-2.3-22b-distilled-lora-384.safetensors",
+      "expected_bytes": 7605507256,
+      "expected_sha256": "2943ab994f3c9d88052e5a2a34cca14e4a2dfc36b1d8c407931d52d5c25dd72b",
+      "status": "verified",
+      "seconds": 289.81937629194
+    },
+    {
+      "path": "/tmp/deadpan-model-qualification-cache/mlx_ltx_q4_pack/56a5866d638ecfe37c54d348e88938235185c2d4/vae_decoder.safetensors",
+      "expected_bytes": 814349531,
+      "expected_sha256": "f404026fe0b59418eaec4a3fcdc474125c798f0b787dc390f6eb4e79934d4160",
+      "status": "verified",
+      "seconds": 18.567662875168025
+    },
+    {
+      "path": "/tmp/deadpan-model-qualification-cache/mlx_ltx_q4_pack/56a5866d638ecfe37c54d348e88938235185c2d4/vae_encoder.safetensors",
+      "expected_bytes": 637885319,
+      "expected_sha256": "1512f5ef8387901db0baecb328690676e2667ddf2b63e28f8e6645188c1a8c06",
+      "status": "verified",
+      "seconds": 19.01508841686882
+    },
+    {
+      "path": "/tmp/deadpan-model-qualification-cache/mlx_ltx_q4_pack/56a5866d638ecfe37c54d348e88938235185c2d4/vocoder.safetensors",
+      "expected_bytes": 258313851,
+      "expected_sha256": "410cee86c14f76956bf487d153211ef15050fe8bf51f86d47a1d27ca6e3ba287",
+      "status": "verified",
+      "seconds": 20.311835666187108
+    },
+    {
+      "path": "/tmp/deadpan-model-qualification-cache/mlx_gemma_default_text_encoder/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/model-00001-of-00002.safetensors",
+      "expected_bytes": 5367455313,
+      "expected_sha256": "995cbd05b7bfd8f5ab5307b476eb5496b5ec3f5256a9dd26366236ce8816c93f",
+      "status": "verified",
+      "seconds": 154.1221800839994
+    },
+    {
+      "path": "/tmp/deadpan-model-qualification-cache/mlx_gemma_default_text_encoder/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/model-00002-of-00002.safetensors",
+      "expected_bytes": 2661219935,
+      "expected_sha256": "8b7af7eb5ff32109fc65cbcd0af5b8016ac0de46df17f40705f043f899495333",
+      "status": "verified",
+      "seconds": 62.092045082943514
+    },
+    {
+      "path": "/tmp/deadpan-model-qualification-cache/mlx_gemma_default_text_encoder/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/tokenizer.json",
+      "expected_bytes": 33384568,
+      "expected_sha256": "4667f2089529e8e7657cfb6d1c19910ae71ff5f28aa7ab2ff2763330affad795",
+      "status": "verified",
+      "seconds": 1.5701740831136703
+    },
+    {
+      "path": "/tmp/deadpan-model-qualification-cache/mlx_gemma_default_text_encoder/86cc6a8dedbc456dd0e4af01a9d09f396f77e558/tokenizer.model",
+      "expected_bytes": 4689074,
+      "expected_sha256": "1299c11d7cf632ef3b4e11937501358ada021bbdf7c47638d13c0ee982f2e79c",
+      "status": "verified",
+      "seconds": 0.7489446250256151
+    },
+    {
+      "path": "/tmp/deadpan-model-qualification-cache/mlx_ltx_q4_pack/56a5866d638ecfe37c54d348e88938235185c2d4/transformer-dev.safetensors",
+      "expected_bytes": 11322002285,
+      "expected_sha256": "c9d9def8657cca30ac6736b8b44503cfbc7984a8447dca1c0fc911aa312421fb",
+      "status": "verified",
+      "seconds": 405.40533145912923
+    }
+  ]
+}

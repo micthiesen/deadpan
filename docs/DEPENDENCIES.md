@@ -113,6 +113,18 @@ file reads must stay off the callback. App binding, plan integration, cache/job
 lifecycle, output devices, listening, and the remaining audio operations are
 still unqualified.
 
+## First real local model probe
+
+The [LTX MLX smoke](qualification/model-smoke-2026-09-20.md) pins runtime commit
+`3392d75934120b7e69eefbe55893f7ef82be92a4`, the LTX-2.3 q4 pack, and the Gemma
+4-bit text encoder. Verified selected files total 36,152,862,913 bytes. On the
+reference M5 Max, one cold-process generation produced 25 silent 768×320 frames
+at 24 fps in 90.968 seconds inside the generation call. It does not establish
+warm latency, an authored interior Hold, corpus acceptability, or a selected
+shipping backend. Missing color tags and developer GPL FFmpeg use remain
+unqualified. Runtime, LTX, and Gemma license layers are recorded separately;
+neither runtime nor weights are approved for redistribution by this probe.
+
 ## Qualification still required
 
 Gate A remains open. Before adding each executable or native dependency, record
