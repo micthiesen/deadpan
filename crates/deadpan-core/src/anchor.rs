@@ -6,9 +6,9 @@ use std::{cmp::Ordering, collections::BTreeMap, error::Error, fmt};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    AssetId, ExactRatio, FrameDuration, FrameRange, InstancePath, MIX_SAMPLE_RATE, MarkId,
-    MarkState, NodeId, NodeKind, ProjectDocument, ProjectFrame, ProjectId, RevisionId, SourceSpan,
-    SourceTimeBase, SourceTimestamp, SourceVideo, TimeError,
+    AssetId, ExactRatio, FrameDuration, FrameRange, InstancePath, MarkId, MarkState, NodeId,
+    NodeKind, ProjectDocument, ProjectFrame, ProjectId, RevisionId, SourceSpan, SourceTimeBase,
+    SourceTimestamp, SourceVideo, TimeError,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -570,7 +570,7 @@ impl<'a> AnchorIndex<'a> {
                 } if selected_asset == asset => (
                     *span,
                     source.video_mapping.duration_frames(source.duration)?,
-                    ExactRatio::ZERO,
+                    source.video_mapping.start_frames(),
                 ),
                 _ => {
                     return Err(AnchorError::new(
@@ -591,11 +591,9 @@ impl<'a> AnchorIndex<'a> {
                         )
                     })?;
                 let rate = self.document.presentation_basis().frame_rate;
-                let offset =
-                    ExactRatio::integer(source.audio_offset.0).checked_mul(ExactRatio::new(
-                        i128::from(rate.numerator()),
-                        i128::from(MIX_SAMPLE_RATE) * i128::from(rate.denominator()),
-                    )?)?;
+                let offset = source
+                    .audio_mapping
+                    .start_frames_with_offset(source.audio_offset, rate)?;
                 (
                     audio.span,
                     source.audio_mapping.duration_frames(source.duration)?,

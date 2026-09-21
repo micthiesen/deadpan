@@ -1,16 +1,15 @@
-//! Frozen schema-6 document and history adapter. Independent source video mappings
-//! and their editing commands must never enter old history through current serde.
+//! Frozen schema-7 document and history adapter. Source placement vocabulary
+//! must never enter old history through current serde.
 
 use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
 use crate::document::unique_map;
-use crate::legacy_source_mapping::AudioMapping;
+use crate::legacy_source_mapping::{AudioMapping, VideoMapping};
 use crate::*;
 
-/// Schema-6 source wire retains its required audio mapping. Even a null
-/// `video_mapping` is unknown vocabulary and cannot be migrated as legacy data.
+/// Schema-7 source wire retains independent extents but cannot admit placements.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub(crate) struct LegacySourceNode {
@@ -20,6 +19,7 @@ pub(crate) struct LegacySourceNode {
     link: LinkRelation,
     audio_offset: AudioSample,
     audio_mapping: AudioMapping,
+    video_mapping: VideoMapping,
 }
 
 impl LegacySourceNode {
@@ -31,14 +31,11 @@ impl LegacySourceNode {
             link: self.link,
             audio_offset: self.audio_offset,
             audio_mapping: self.audio_mapping.upgrade(),
-            video_mapping: SourceVideoMapping::FitBeat,
+            video_mapping: self.video_mapping.upgrade(),
         }
     }
 
     pub(crate) fn project(source: &SourceNode) -> Option<Self> {
-        if source.video_mapping != SourceVideoMapping::FitBeat {
-            return None;
-        }
         Some(Self {
             duration: source.duration,
             video: source.video.clone(),
@@ -46,6 +43,7 @@ impl LegacySourceNode {
             link: source.link,
             audio_offset: source.audio_offset,
             audio_mapping: AudioMapping::project(source.audio_mapping)?,
+            video_mapping: VideoMapping::project(source.video_mapping)?,
         })
     }
 }
@@ -189,8 +187,8 @@ pub struct Document {
 impl Document {
     pub fn from_json(json: &str) -> Result<Self, DocumentError> {
         let old: Self = parse(json)?;
-        if old.schema_version != 6 {
-            return Err(invalid("migration requires document schema 6"));
+        if old.schema_version != 7 {
+            return Err(invalid("migration requires document schema 7"));
         }
         old.clone().upgrade()?;
         Ok(old)
@@ -230,7 +228,7 @@ impl Document {
             return false;
         };
         self == &Self {
-            schema_version: 6,
+            schema_version: 7,
             project_id: document.project_id.clone(),
             revision_id: document.revision_id.clone(),
             presentation_basis: document.presentation_basis.clone(),
@@ -249,7 +247,7 @@ struct OldSubtree {
     root: NodeId,
     #[serde(deserialize_with = "unique_map")]
     nodes: BTreeMap<NodeId, LegacyBeatNode>,
-    #[serde(deserialize_with = "unique_map")]
+    #[serde(default, deserialize_with = "unique_map")]
     overrides: BTreeMap<NodeId, PlayOverrides>,
 }
 
@@ -301,6 +299,9 @@ enum OldOccurrenceEdit {
         start: u32,
         end: u32,
         destination: u32,
+    },
+    SetSourceVideoMapping {
+        mapping: VideoMapping,
     },
     SetSourceAudioMapping {
         mapping: AudioMapping,
@@ -371,6 +372,9 @@ impl OldOccurrenceEdit {
                 start,
                 end,
                 destination,
+            },
+            Self::SetSourceVideoMapping { mapping } => OccurrenceEdit::SetSourceVideoMapping {
+                mapping: mapping.upgrade(),
             },
             Self::SetSourceAudioMapping { mapping, offset } => {
                 OccurrenceEdit::SetSourceAudioMapping {
@@ -445,6 +449,10 @@ enum OldCommand {
         start: u32,
         end: u32,
         destination: u32,
+    },
+    SetSourceVideoMapping {
+        node: NodeId,
+        mapping: VideoMapping,
     },
     SetSourceAudioMapping {
         node: NodeId,
@@ -574,6 +582,10 @@ pub fn upgrade_request(json: &str) -> Result<CommandRequest, DocumentError> {
             start,
             end,
             destination,
+        },
+        OldCommand::SetSourceVideoMapping { node, mapping } => Command::SetSourceVideoMapping {
+            node,
+            mapping: mapping.upgrade(),
         },
         OldCommand::SetSourceAudioMapping {
             node,
@@ -760,9 +772,12 @@ mod tests {
         if version >= 4 {
             value["overrides"] = json!({});
         }
-        if version == 6 {
+        if version >= 6 {
             value["nodes"]["source"]["kind"]["source"]["audio_mapping"] =
                 json!({"type":"duration", "frames":{"numerator":"60000","denominator":"1001"}});
+        }
+        if version >= 7 {
+            value["nodes"]["source"]["kind"]["source"]["video_mapping"] = json!({"type":"duration", "frames":{"numerator":"55", "denominator":"1"}, "endpoints":"hold_adjacent"});
         }
         value
     }
@@ -774,7 +789,8 @@ mod tests {
             3 => legacy_v3::Document::from_json(json)?.upgrade(),
             4 => legacy_v4::Document::from_json(json)?.upgrade(),
             5 => legacy_v5::Document::from_json(json)?.upgrade(),
-            6 => Document::from_json(json)?.upgrade(),
+            6 => legacy_v6::Document::from_json(json)?.upgrade(),
+            7 => Document::from_json(json)?.upgrade(),
             _ => unreachable!(),
         }
     }
@@ -796,110 +812,162 @@ mod tests {
             5 => legacy_v5::Document::from_json(json)
                 .unwrap()
                 .matches(current),
-            6 => Document::from_json(json).unwrap().matches(current),
+            6 => legacy_v6::Document::from_json(json)
+                .unwrap()
+                .matches(current),
+            7 => Document::from_json(json).unwrap().matches(current),
             _ => unreachable!(),
         }
     }
 
     type RequestAdapter = fn(&str) -> Result<CommandRequest, DocumentError>;
-    const REQUEST_ADAPTERS: [RequestAdapter; 6] = [
+    const REQUEST_ADAPTERS: [RequestAdapter; 7] = [
         legacy_v1::upgrade_request,
         legacy_v2::upgrade_request,
         legacy_v3::upgrade_request,
         legacy_v4::upgrade_request,
         legacy_v5::upgrade_request,
+        legacy_v6::upgrade_request,
         upgrade_request,
     ];
     type EditAdapter = fn(&str, &EditTransaction) -> Result<bool, DocumentError>;
-    const EDIT_ADAPTERS: [EditAdapter; 6] = [
+    const EDIT_ADAPTERS: [EditAdapter; 7] = [
         legacy_v1::matches_edit,
         legacy_v2::matches_edit,
         legacy_v3::matches_edit,
         legacy_v4::matches_edit,
         legacy_v5::matches_edit,
+        legacy_v6::matches_edit,
         matches_edit,
     ];
 
-    #[test]
-    fn every_legacy_source_preserves_audio_and_projects_only_fit_beat_video() {
-        for version in 1..=6 {
-            let old = document(version).to_string();
-            let mut current = upgrade(version, &old).unwrap();
-            assert!(matches_document(version, &old, &current));
-            let NodeKind::Source { source } = &mut current
-                .nodes
-                .get_mut(&NodeId::new("source").unwrap())
-                .unwrap()
-                .kind
-            else {
-                panic!()
-            };
-            assert_eq!(source.video_mapping, SourceVideoMapping::FitBeat);
-            assert_eq!(source.audio_offset, AudioSample(-137));
-            assert_eq!(
-                source.audio_mapping,
-                if version == 6 {
-                    SourceAudioMapping::Duration {
-                        frames: ExactRatio::new(60000, 1001).unwrap(),
-                    }
-                } else {
-                    SourceAudioMapping::FitBeat
-                }
-            );
-            // Even equal duration is new authored intent and cannot project as old.
-            source.video_mapping = SourceVideoMapping::Duration {
-                frames: ExactRatio::integer(60),
-                endpoints: EndpointPolicy::Reject,
-            };
-            assert!(!matches_document(version, &old, &current));
+    fn placement(video: bool) -> Value {
+        let mut value = json!({"type":"placement", "start":{"numerator":"0", "denominator":"1"}, "frames":{"numerator":"60", "denominator":"1"}});
+        if video {
+            value["endpoints"] = json!("hold_adjacent");
         }
+        value
     }
 
     #[test]
-    fn every_legacy_document_and_subtree_rejects_video_mapping_even_null() {
-        for version in 1..=6 {
-            let source = document(version)["nodes"]["source"].clone();
-            let mut subtree = json!({"root":"source", "nodes":{"source":source}});
-            if version >= 4 {
-                subtree["overrides"] = json!({});
-            }
-            let request = json!({"project_id":"legacy", "expected_revision":"initial", "new_revision":"insert", "command":{"command":"insert", "parent":"root", "index":0, "subtree":subtree}});
+    fn all_legacy_documents_subtrees_and_commands_reject_placements() {
+        for version in 1..=7 {
+            let old = document(version);
+            let current = upgrade(version, &old.to_string()).unwrap();
+            assert_eq!(current.schema_version(), 8);
+            assert!(matches_document(version, &old.to_string(), &current));
             let adapter = REQUEST_ADAPTERS[(version - 1) as usize];
-            assert!(adapter(&request.to_string()).is_ok());
-            for mapping in [
-                Value::Null,
-                json!({"type":"fit_beat"}),
-                json!({"type":"duration", "frames":{"numerator":"60","denominator":"1"}, "endpoints":"reject"}),
-            ] {
-                let mut forged = document(version);
-                forged["nodes"]["source"]["kind"]["source"]["video_mapping"] = mapping.clone();
+            for video in [false, true] {
+                let field = if video {
+                    "video_mapping"
+                } else {
+                    "audio_mapping"
+                };
+                let mut forged = old.clone();
+                forged["nodes"]["source"]["kind"]["source"][field] = placement(video);
                 assert!(
                     upgrade(version, &forged.to_string()).is_err(),
-                    "schema {version}"
+                    "schema {version} {field}"
                 );
-                let mut forged = request.clone();
-                forged["command"]["subtree"]["nodes"]["source"]["kind"]["source"]["video_mapping"] =
-                    mapping;
-                assert!(adapter(&forged.to_string()).is_err(), "schema {version}");
+                let mut subtree =
+                    json!({"root":"source", "nodes":{"source": old["nodes"]["source"]}});
+                if version >= 4 {
+                    subtree["overrides"] = json!({});
+                }
+                subtree["nodes"]["source"]["kind"]["source"][field] = placement(video);
+                let mut direct = json!({"command":format!("set_source_{field}"), "node":"source", "mapping":placement(video)});
+                let mut occurrence =
+                    json!({"type":format!("set_source_{field}"), "mapping":placement(video)});
+                if !video {
+                    direct["offset"] = json!(0);
+                    occurrence["offset"] = json!(0);
+                }
+                for command in [
+                    json!({"command":"insert", "parent":"root", "index":0, "subtree":subtree}),
+                    direct,
+                    json!({"command":"edit_occurrence", "instance":{"node":"source","repeats":[]}, "edit":occurrence, "identities":{"nodes":[],"marks":[]}}),
+                ] {
+                    let request = json!({"project_id":"legacy", "expected_revision":"initial", "new_revision":"changed", "command":command});
+                    assert!(
+                        adapter(&request.to_string()).is_err(),
+                        "schema {version} {field}"
+                    );
+                }
             }
         }
     }
 
     #[test]
-    fn every_legacy_command_rejects_direct_and_occurrence_video_mapping_edits() {
-        for adapter in REQUEST_ADAPTERS {
-            for command in [
-                json!({"command":"set_source_video_mapping", "node":"source", "mapping":{"type":"fit_beat"}}),
-                json!({"command":"edit_occurrence", "instance":{"node":"source","repeats":[]}, "edit":{"type":"set_source_video_mapping","mapping":{"type":"fit_beat"}}, "identities":{"nodes":[],"marks":[]}}),
+    fn schema_seven_preserves_both_extent_commands_and_requires_strict_mapping_fields() {
+        let old = document(7);
+        let current = upgrade(7, &old.to_string()).unwrap();
+        let source = match &current.nodes()[&NodeId::new("source").unwrap()].kind {
+            NodeKind::Source { source } => source,
+            _ => panic!(),
+        };
+        assert_eq!(
+            source.video_mapping,
+            SourceVideoMapping::Duration {
+                frames: ExactRatio::integer(55),
+                endpoints: EndpointPolicy::HoldAdjacent
+            }
+        );
+        assert_eq!(
+            source.audio_mapping,
+            SourceAudioMapping::Duration {
+                frames: ExactRatio::new(60000, 1001).unwrap()
+            }
+        );
+        assert_eq!(source.audio_offset, AudioSample(-137));
+        for field in ["audio_mapping", "video_mapping"] {
+            for invalid in [
+                Value::Null,
+                json!({"type":"fit_beat", "start":null}),
+                json!({"type":"duration", "frames":{"numerator":"1", "denominator":"1"}, "endpoints":"reject", "start":null}),
             ] {
-                let request = json!({"project_id":"legacy","expected_revision":"initial","new_revision":"mapped","command":command});
-                assert!(adapter(&request.to_string()).is_err());
+                let mut forged = old.clone();
+                forged["nodes"]["source"]["kind"]["source"][field] = invalid;
+                assert!(Document::from_json(&forged.to_string()).is_err());
             }
+            let mut missing = old.clone();
+            missing["nodes"]["source"]["kind"]["source"]
+                .as_object_mut()
+                .unwrap()
+                .remove(field);
+            assert!(Document::from_json(&missing.to_string()).is_err());
+            for occurrence in [false, true] {
+                let mut operation =
+                    json!({"mapping": old["nodes"]["source"]["kind"]["source"][field]});
+                if field == "audio_mapping" {
+                    operation["offset"] = json!(-137);
+                }
+                let command = if occurrence {
+                    operation["type"] = json!(format!("set_source_{field}"));
+                    json!({"command":"edit_occurrence", "instance":{"node":"source", "repeats":[]}, "edit":operation, "identities":{"nodes":[], "marks":[]}})
+                } else {
+                    operation["command"] = json!(format!("set_source_{field}"));
+                    operation["node"] = json!("source");
+                    operation
+                };
+                let request = json!({"project_id":"legacy", "expected_revision":"initial", "new_revision":"changed", "command":command}).to_string();
+                assert_eq!(
+                    upgrade_request(&request).unwrap(),
+                    serde_json::from_str::<CommandRequest>(&request).unwrap()
+                );
+            }
+        }
+        for mapping in [
+            json!({"type":"fit_beat", "start":null}),
+            json!({"type":"duration", "frames":{"numerator":"1", "denominator":"1"}, "start":null}),
+        ] {
+            let mut old = document(6);
+            old["nodes"]["source"]["kind"]["source"]["audio_mapping"] = mapping;
+            assert!(legacy_v6::Document::from_json(&old.to_string()).is_err());
         }
     }
 
     #[test]
-    fn every_legacy_patch_rejects_video_mapping_and_cannot_hide_new_intent() {
+    fn all_legacy_patches_reject_placements_and_projection_cannot_hide_them() {
         for (index, adapter) in EDIT_ADAPTERS.into_iter().enumerate() {
             let version = index as u32 + 1;
             let current = upgrade(version, &document(version).to_string()).unwrap();
@@ -928,58 +996,67 @@ mod tests {
                     let source = old[direction]["nodes"]["source"][side]["kind"]["source"]
                         .as_object_mut()
                         .unwrap();
-                    source.remove("video_mapping");
+                    if version < 7 {
+                        source.remove("video_mapping");
+                    }
                     if version < 6 {
                         source.remove("audio_mapping");
                     }
                 }
             }
             assert!(adapter(&old.to_string(), &edit).unwrap());
-            for direction in ["forward", "inverse"] {
-                for side in ["before", "after"] {
-                    let mut forged = old.clone();
-                    forged[direction]["nodes"]["source"][side]["kind"]["source"]["video_mapping"] =
-                        Value::Null;
-                    assert!(adapter(&forged.to_string(), &edit).is_err());
+            for video in [false, true] {
+                let field = if video {
+                    "video_mapping"
+                } else {
+                    "audio_mapping"
+                };
+                for direction in ["forward", "inverse"] {
+                    for side in ["before", "after"] {
+                        let mut forged = old.clone();
+                        forged[direction]["nodes"]["source"][side]["kind"]["source"][field] =
+                            placement(video);
+                        assert!(adapter(&forged.to_string(), &edit).is_err());
+                    }
                 }
+                let mutate = |source: &mut SourceNode| {
+                    if video {
+                        source.video_mapping = serde_json::from_value(placement(true)).unwrap();
+                    } else {
+                        source.audio_mapping = serde_json::from_value(placement(false)).unwrap();
+                    }
+                };
+                let mut forged = edit.clone();
+                let NodeKind::Source { source } = &mut forged
+                    .forward
+                    .nodes
+                    .get_mut(&NodeId::new("source").unwrap())
+                    .unwrap()
+                    .after
+                    .as_mut()
+                    .unwrap()
+                    .kind
+                else {
+                    panic!()
+                };
+                mutate(source);
+                assert!(!adapter(&old.to_string(), &forged).unwrap());
+                let mut forged = current.clone();
+                let NodeKind::Source { source } = &mut forged
+                    .nodes
+                    .get_mut(&NodeId::new("source").unwrap())
+                    .unwrap()
+                    .kind
+                else {
+                    panic!()
+                };
+                mutate(source);
+                assert!(!matches_document(
+                    version,
+                    &document(version).to_string(),
+                    &forged
+                ));
             }
-            let mut forged = edit.clone();
-            let node = forged
-                .forward
-                .nodes
-                .get_mut(&NodeId::new("source").unwrap())
-                .unwrap()
-                .after
-                .as_mut()
-                .unwrap();
-            let NodeKind::Source { source } = &mut node.kind else {
-                panic!()
-            };
-            source.video_mapping = SourceVideoMapping::Duration {
-                frames: ExactRatio::integer(60),
-                endpoints: EndpointPolicy::Reject,
-            };
-            assert!(!adapter(&old.to_string(), &forged).unwrap());
-        }
-    }
-
-    #[test]
-    fn schema_six_requires_audio_mapping_and_preserves_audio_commands() {
-        let mut missing = document(6);
-        missing["nodes"]["source"]["kind"]["source"]
-            .as_object_mut()
-            .unwrap()
-            .remove("audio_mapping");
-        assert!(Document::from_json(&missing.to_string()).is_err());
-        for command in [
-            json!({"command":"set_source_audio_mapping", "node":"source", "mapping":{"type":"duration", "frames":{"numerator":"60000","denominator":"1001"}}, "offset":-137}),
-            json!({"command":"edit_occurrence", "instance":{"node":"source","repeats":[]}, "edit":{"type":"set_source_audio_mapping","mapping":{"type":"fit_beat"}, "offset":2401}, "identities":{"nodes":[],"marks":[]}}),
-        ] {
-            let request = json!({"project_id":"legacy", "expected_revision":"initial", "new_revision":"mapped", "command":command}).to_string();
-            assert_eq!(
-                upgrade_request(&request).unwrap(),
-                serde_json::from_str::<CommandRequest>(&request).unwrap()
-            );
         }
     }
 }

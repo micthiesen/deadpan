@@ -15,6 +15,9 @@ identifies the base commit, changed implementation and exact committed fixtures.
 - The repository gate passed formatting, workspace Clippy with warnings denied,
   **486 Rust tests**, workspace build and headless doctor. No tests failed or were
   ignored. [Commands and logs](../../tools/media-qualification/evidence/2026-09-21-video-admission/gate/report.json).
+- GitHub Actions [run 35637623153](https://github.com/micthiesen/deadpan/actions/runs/35637623153)
+  passed for commit `35b8011e775049af41ef5e12c40fa49e62467cef`.
+  [Recorded result](../../tools/media-qualification/evidence/2026-09-21-video-admission/ci-result.json).
 - **93 source/media tests passed under ASan/UBSan** with no failed or ignored
   tests. The instrumentation covers the selected C adapters and target C
   dependencies, not Rust or the separately built FFmpeg libraries.

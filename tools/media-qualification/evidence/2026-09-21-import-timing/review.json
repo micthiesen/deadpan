@@ -1,0 +1,69 @@
+{
+  "base_revision": "35b8011e775049af41ef5e12c40fa49e62467cef",
+  "scope": "Staged/unstaged/untracked import timing, exact Source placements, core8/store13 migration and evidence",
+  "reviews": [
+    {
+      "reviewer": "import_timing_map",
+      "lens": "Exact clocks and import candidate policy",
+      "result": "No concrete timing findings",
+      "verification": "9 source_import_timing tests passed before final integrated test was added",
+      "limits": [
+        "No authored readiness or basis adoption",
+        "No actual audio playback",
+        "Conservative cadence and geometry candidates only"
+      ]
+    },
+    {
+      "reviewer": "import_timing_storage_review",
+      "lens": "Migration and historical meaning",
+      "result": "No findings",
+      "verification": "Core/store tests passed, including 31 migration tests; schema12 fixture hashes checked",
+      "coverage": [
+        "Frozen legacy mapping wires",
+        "34 historical revisions and 18 edits",
+        "All operational rows, branches, undo/redo and pending redo",
+        "Failed migration retains original and backup"
+      ]
+    },
+    {
+      "reviewer": "import_timing_general_review",
+      "lens": "General correctness",
+      "result": "Proposed color-policy finding dismissed by parent and withdrawn by reviewer; no remaining concrete findings",
+      "verification": "10 source_import_timing tests passed; ripwire and diff inspection; diff check passed",
+      "finding": {
+        "severity_proposed": "major",
+        "claim": "SdrRec709 basis relabels BT2020/P3/linear source interpretation",
+        "disposition": "dismissed",
+        "reason": "PresentationBasis.color_policy proposes project/output policy. Spec 17.5 separates source interpretation from output, and 22.3 specifies Rec709 SDR output. Native metadata retains source primaries/transfer and admits no PQ/HLG transfer. The helper borrows metadata unchanged and performs no pixel/tag replacement. Existing renderer interprets BT2020/P3/linear into linear Rec2020 before its explicit SDR display transform. Future source qualification receipts remain separate host work.",
+        "evidence": [
+          "docs/spec/DEADPAN_SPEC.md sections17.5 and22.3",
+          "native/deadpan-source/src/lib.rs ColorMetadata and SourceStreamInfo",
+          "crates/deadpan-render/src/color.rs source_to_working and working_to_display",
+          "crates/deadpan-media/src/source_import_timing.rs derive_presentation_basis"
+        ],
+        "action": "Clarified source interpretation versus output policy in docs/SOURCE_IMPORT_TIMING.md; no implementation change",
+        "reviewer_followup": "Reviewer confirmed output/source distinction and withdrew finding after refutation"
+      },
+      "initial_test_compile_failure": {
+        "code": "E0502",
+        "file": "crates/deadpan-media/tests/source_import_timing.rs",
+        "message": "cannot borrow video as mutable because it is also borrowed as immutable",
+        "context": "Concurrent review compilation while root added integrated decode test; selected index frame was borrowed across mutable video.frame()",
+        "fix": "Clone selected frame before mutable decode",
+        "final_verification": "10 focused tests and final 508-test workspace gate passed",
+        "evidence_type": "Reviewer-reported compiler excerpt, not a retained full build log"
+      }
+    }
+  ],
+  "final_repository_gate": {
+    "passed": 508,
+    "failed": 0,
+    "ignored": 0,
+    "report": "gate/report.json"
+  },
+  "skipped": [
+    "No GUI/startup/IME/accessibility rerun: no native controls/lifecycle changed",
+    "No new native sanitizer run: no native adapter changes",
+    "Unchanged Python qualification harnesses not rerun locally"
+  ]
+}

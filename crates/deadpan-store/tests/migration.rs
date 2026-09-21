@@ -6,7 +6,7 @@ use std::{
 
 use deadpan_core::{
     IterationOrder, NodeId, NodeKind, ProjectDocument, RevisionId, legacy_v1, legacy_v2, legacy_v3,
-    legacy_v4, legacy_v5, legacy_v6,
+    legacy_v4, legacy_v5, legacy_v6, legacy_v7,
 };
 use deadpan_jobs::{Relevance, RequestId};
 use deadpan_store::generation::{
@@ -16,6 +16,174 @@ use deadpan_store::{AccessMode, DATABASE_SCHEMA_VERSION, ProjectStore, StoreErro
 use rusqlite::Connection;
 
 type Result<T = ()> = std::result::Result<T, Box<dyn Error>>;
+
+#[test]
+fn schema_twelve_preserves_stream_mappings_and_accepts_reversible_exact_placement() -> Result {
+    use deadpan_core::{CommandRequest, SourceAudioMapping, SourceVideoMapping};
+    use serde_json::json;
+    let scratch = tempfile::tempdir()?;
+    let path = fixture_version(scratch.path(), 12)?;
+    let database = Connection::open(path.join("project.sqlite"))?;
+    let before = contents(&database)?;
+    let old_docs = docs(&database)?;
+    let old_history = history_json(&database)?;
+    let old_metadata = metadata(&database)?;
+    let old_operational = operational_metadata(&database)?;
+    assert_eq!(old_docs.len(), 34);
+    assert_eq!(old_history.len(), 18);
+    assert!(matches!(
+        ProjectStore::open(&path, AccessMode::ReadOnly),
+        Err(StoreError::MigrationRequired(12))
+    ));
+    let migration = ProjectStore::migrate(&path)?;
+    assert_eq!(
+        (migration.from_schema, migration.to_schema),
+        (12, DATABASE_SCHEMA_VERSION)
+    );
+    let backup = Connection::open(migration.backup.unwrap())?;
+    assert_eq!(contents(&backup)?, before);
+    assert_eq!(operational_metadata(&backup)?, old_operational);
+    let new_docs = docs(&database)?;
+    assert_eq!(new_docs.len(), old_docs.len());
+    for ((old_id, old_json), (new_id, new_json)) in old_docs.iter().zip(&new_docs) {
+        assert_eq!(old_id, new_id);
+        assert!(
+            legacy_v7::Document::from_json(old_json)?
+                .matches(&ProjectDocument::from_json(new_json)?)
+        );
+    }
+    let new_history = history_json(&database)?;
+    assert_eq!(new_history.len(), old_history.len());
+    for ((old_request, old_edit), (new_request, new_edit)) in old_history.iter().zip(new_history) {
+        assert_eq!(
+            legacy_v7::upgrade_request(old_request)?,
+            serde_json::from_str::<CommandRequest>(&new_request)?
+        );
+        assert!(legacy_v7::matches_edit(
+            old_edit,
+            &serde_json::from_str(&new_edit)?
+        )?);
+    }
+    assert_eq!(metadata(&database)?, old_metadata);
+    assert_eq!(operational_metadata(&database)?, old_operational);
+    let mut store = ProjectStore::open(&path, AccessMode::ReadWrite)?;
+    let relevance = |store: &ProjectStore, next: &RevisionId| -> Result<RelevancePlan> {
+        Ok(RelevancePlan {
+            from_revision: store.snapshot()?.revision_id().clone(),
+            to_revision: next.clone(),
+            observations: store
+                .current_generation_requests()?
+                .into_iter()
+                .map(|request| RelevanceObservation {
+                    request_id: request.request_id,
+                    after_context: ContextObservation::Resolved(
+                        request.binding.context_sha256.clone(),
+                    ),
+                    binding: request.binding,
+                })
+                .collect(),
+        })
+    };
+    let next = RevisionId::new("schema13-redo-inherited")?;
+    store.redo_reconciled(
+        store.snapshot()?.revision_id(),
+        next.clone(),
+        &relevance(&store, &next)?,
+    )?;
+    let baseline = store.snapshot()?;
+    let id = NodeId::new("source-negative")?;
+    let NodeKind::Source { source } = &baseline.nodes()[&id].kind else {
+        panic!()
+    };
+    assert!(matches!(
+        source.video_mapping,
+        SourceVideoMapping::Duration { .. }
+    ));
+    assert!(matches!(
+        source.audio_mapping,
+        SourceAudioMapping::Duration { .. }
+    ));
+    for (revision, command) in [
+        (
+            "schema13-place-video",
+            json!({"command":"set_source_video_mapping","node":id,"mapping":{"type":"placement","start":{"numerator":"2","denominator":"3"},"frames":{"numerator":"28750","denominator":"1001"},"endpoints":"hold_adjacent"}}),
+        ),
+        (
+            "schema13-place-audio",
+            json!({"command":"edit_occurrence","instance":{"node":id,"repeats":[]},"edit":{"type":"set_source_audio_mapping","mapping":{"type":"placement","start":{"numerator":"-1","denominator":"147"},"frames":{"numerator":"60000","denominator":"1001"}},"offset":-137},"identities":{"nodes":[],"marks":[]}}),
+        ),
+    ] {
+        let snapshot = store.snapshot()?;
+        let request: CommandRequest = serde_json::from_value(json!({
+            "project_id":snapshot.project_id(),"expected_revision":snapshot.revision_id(),"new_revision":revision,"command":command
+        }))?;
+        store.commit_reconciled(&request, &relevance(&store, &request.new_revision)?)?;
+    }
+    let changed = store.snapshot()?;
+    assert_eq!(changed.duration()?, baseline.duration()?);
+    assert_eq!(changed.marks(), baseline.marks());
+    assert_eq!(changed.assets(), baseline.assets());
+    for label in ["schema13-undo-audio", "schema13-undo-video"] {
+        let next = RevisionId::new(label)?;
+        store.undo_reconciled(
+            store.snapshot()?.revision_id(),
+            next.clone(),
+            &relevance(&store, &next)?,
+        )?;
+    }
+    assert_eq!(store.snapshot()?.nodes(), baseline.nodes());
+    for label in ["schema13-redo-video", "schema13-redo-audio"] {
+        let next = RevisionId::new(label)?;
+        store.redo_reconciled(
+            store.snapshot()?.revision_id(),
+            next.clone(),
+            &relevance(&store, &next)?,
+        )?;
+    }
+    assert_eq!(store.snapshot()?.nodes(), changed.nodes());
+    store.validate()?;
+    drop(store);
+    let reopened = ProjectStore::open(&path, AccessMode::ReadOnly)?;
+    assert_eq!(reopened.snapshot()?.nodes(), changed.nodes());
+    assert_eq!(reopened.snapshot()?.marks(), baseline.marks());
+    assert_eq!(operational_metadata(&database)?, old_operational);
+    Ok(())
+}
+
+#[test]
+fn schema_twelve_rejects_placement_vocabulary_in_all_history_surfaces() -> Result {
+    for corruption in [
+        "UPDATE revisions SET document=json_set(document,'$.nodes.\"source-negative\".kind.source.video_mapping.start',NULL) WHERE id='schema12-video-negative'",
+        "UPDATE revisions SET document=json_set(document,'$.nodes.\"source-negative\".kind.source.audio_mapping.type','placement','$.nodes.\"source-negative\".kind.source.audio_mapping.start',json('{\"numerator\":\"0\",\"denominator\":\"1\"}')) WHERE id='schema12-video-negative'",
+        "UPDATE history SET request=json_set(request,'$.command.mapping.type','placement','$.command.mapping.start',json('{\"numerator\":\"0\",\"denominator\":\"1\"}')) WHERE revision_id='schema12-video-negative'",
+        "UPDATE history SET request=json_set(request,'$.command.edit.mapping.start',NULL) WHERE revision_id='schema12-video-positive'",
+        "UPDATE history SET edit=json_set(edit,'$.forward.nodes.\"source-negative\".after.kind.source.video_mapping.start',NULL) WHERE revision_id='schema12-video-negative'",
+        "UPDATE history SET edit=json_set(edit,'$.inverse.nodes.\"source-negative\".before.kind.source.audio_mapping.start',NULL) WHERE revision_id='schema12-video-negative'",
+        "UPDATE revisions SET document=json_set(document,'$.nodes.\"source-negative\".kind.source.video_mapping.frames.numerator','30000') WHERE id='schema12-video-negative'",
+        "UPDATE revisions SET document=json_set(document,'$.schema_version',8) WHERE id='schema12-pending-redo'",
+    ] {
+        let scratch = tempfile::tempdir()?;
+        let path = fixture_version(scratch.path(), 12)?;
+        let database = Connection::open(path.join("project.sqlite"))?;
+        database.execute_batch(corruption)?;
+        assert!(
+            database.changes() > 0,
+            "fixture mutation did not run: {corruption}"
+        );
+        let before = contents(&database)?;
+        let operational = operational_metadata(&database)?;
+        let backup = match ProjectStore::migrate(&path) {
+            Err(StoreError::MigrationFailed { backup, .. }) => backup,
+            result => panic!("{corruption}: {result:?}"),
+        };
+        assert_eq!(contents(&database)?, before, "{corruption}");
+        assert_eq!(operational_metadata(&database)?, operational);
+        let backup = Connection::open(backup)?;
+        assert_eq!(contents(&backup)?, before);
+        assert_eq!(operational_metadata(&backup)?, operational);
+    }
+    Ok(())
+}
 
 fn fixture(scratch: &Path) -> Result<PathBuf> {
     fixture_version(scratch, 1)
@@ -624,6 +792,7 @@ fn fixture_version(scratch: &Path, version: u32) -> Result<PathBuf> {
         9 => include_str!("fixtures/v9-history.sql"),
         10 => include_str!("fixtures/v10-history.sql"),
         11 => include_str!("fixtures/v11-history.sql"),
+        12 => include_str!("fixtures/v12-history.sql"),
         _ => panic!("unsupported fixture"),
     })?;
     Ok(package)

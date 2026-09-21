@@ -73,9 +73,11 @@ three total plays and only two gaps. These are structural edits, not rendered
 media. Editing through range/text selectors, registers, macros, and effects
 remain required future work.
 
-Documents use schema 7. [Source audio mappings](SOURCE_AUDIO_MAPPING.md) and
+Documents use schema 8. [Source audio mappings](SOURCE_AUDIO_MAPPING.md) and
 [picture mappings](SOURCE_VIDEO_MAPPING.md) independently choose the beat duration
-or an exact stream duration. Picture endpoint policy is persisted and enforced
+or an exact stream duration and start with `placement`.
+[Measured import timing](SOURCE_IMPORT_TIMING.md) describes the candidate policy.
+Picture endpoint policy is persisted and enforced
 against the chosen trim. Repeat `iterations.runs` store
 `allocation`, `first`, and `count`. Commands `wrap_repeat` and `set_repeat` still
 take a total `plays` count. `insert_plays` takes `node`, `index`, and `count`;
@@ -423,21 +425,22 @@ future-schema read-only inspection still needs a compatibility implementation.
 
 ## Schema migration
 
-Database schemas 1 through 11 return `MigrationRequired` when opened. Upgrade explicitly:
+Database schemas 1 through 12 return `MigrationRequired` when opened. Upgrade explicitly:
 
 ```sh
 cargo run --locked -p deadpan-cli -- project migrate /tmp/example.deadpan
 ```
 
 Migration holds the project writer lock, keeps a consistent SQLite backup under
-`Snapshots/before-schema-12-*.sqlite`, and upgrades a separate candidate. It
+`Snapshots/before-schema-13-*.sqlite`, and upgrades a separate candidate. It
 replays all commands, undo/redo revisions, and abandoned branches with their
 original revision IDs. Every snapshot and forward/inverse transaction is checked
 against its strict original schema meaning. Migration goes directly to database
-schema 12 and core document schema 7. Database-11 histories use the frozen core-6
+schema 13 and core document schema 8. Database-12 histories use the frozen core-7
+adapter, retaining independent picture/audio mappings. Database-11 histories use the frozen core-6
 adapter, retaining explicit audio mappings. Database-7/8/9/10 histories use the
 frozen core-5 adapter and retain prior audio duration mapping as `fit_beat`.
-Every old Source gains `video_mapping: fit_beat` to retain prior picture timing.
+Sources predating database 12 gain `video_mapping: fit_beat` to retain prior picture timing.
 New fields and commands are rejected in histories that predate their vocabulary.
 Schemas 1 through 3 gain
 empty override maps. Schema-1/2 histories also gain empty mark

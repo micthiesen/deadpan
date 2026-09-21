@@ -1,0 +1,19 @@
+{
+  "duration_frames": 150,
+  "mark_count": 4,
+  "node_count": 4,
+  "presentation_basis": {
+    "color_policy": "sdr_rec709",
+    "frame_rate": {
+      "denominator": 1001,
+      "numerator": 30000
+    },
+    "height": 320,
+    "width": 768
+  },
+  "project_id": "probe-ad82362664564e1a97c381111aaad5aa",
+  "protocol": 1,
+  "revision_id": "schema12-pending-redo",
+  "root": "acceptance-probe-root",
+  "valid": true
+}

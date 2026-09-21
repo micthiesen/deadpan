@@ -1,0 +1,51 @@
+{
+  "base_revision": "35b8011e775049af41ef5e12c40fa49e62467cef",
+  "implementation_sha256": {
+    "crates/deadpan-cli/src/doctor.rs": "446eb81a6490e82979a293be12f78d761a0900141bef97befefc22e74de93cd2",
+    "crates/deadpan-core/src/anchor.rs": "dce1e6aa9f098ac2c930131482a484af6970a16d77a98888948618e03320cc5e",
+    "crates/deadpan-core/src/audio_mapping.rs": "bcba9de5cdbbe1a35817d3193df73f176a36bd3dab974f2b21607a8c6e4ca97c",
+    "crates/deadpan-core/src/document.rs": "a45151f513eb60462e0bb4650cc9a0c8cb21926992fc4ebc59cc3213a5cb4024",
+    "crates/deadpan-core/src/legacy_source_mapping.rs": "7ce8d31b2bcc93a5570cf6ddcbf13736a8d5a30c692afc37b9bdbaa4c3f91e11",
+    "crates/deadpan-core/src/legacy_v6.rs": "7f33133e4e80c3ee411634ba4a5aa442e5f3c8cb145d90c43d15af33fc9bc028",
+    "crates/deadpan-core/src/legacy_v7.rs": "6fc158ce21c71f37e5bff80eb45606c8d4989f5e8652a73b631a4ac3076eb767",
+    "crates/deadpan-core/src/lib.rs": "e57257c6b889ee66cc91d9fc720f75e1d15db3763352076f6cd02637bc4c88d8",
+    "crates/deadpan-core/src/source_mapping.rs": "23e8e0954bf165c809f9dcf479a0e0979bafe5454ad3e2cea68d82de061fc30d",
+    "crates/deadpan-core/src/video_mapping.rs": "7ff1a5284fced0457d892c644d89115ada0000830e4d93313d5c516d9d968cdb",
+    "crates/deadpan-core/tests/anchors.rs": "83eb8fd359d9de763a11cc462c3b23a9e73edad27fd017d336427c7a152d7796",
+    "crates/deadpan-media/src/lib.rs": "0afc02dba4cae8c2e88287e8a08c7980931e9bbc98fa9945e354da5aedd2f55d",
+    "crates/deadpan-media/src/source_import_timing.rs": "e4ad73d92ba300818ac35fe96f1fa86495f2aeb1e6f1d65b424c738a7f9e6719",
+    "crates/deadpan-media/tests/source_import_timing.rs": "258b5ec86e1c0a7c84423adfd788ffcf9837688412a39fc036f547f73907e7c9",
+    "crates/deadpan-plan/src/plan.rs": "ea1328e30c3cd8a0a1b39f0a4f5f737e8facef0c4a295860ad6f846f5ce9559e",
+    "crates/deadpan-plan/tests/occurrence_edits.rs": "e584faee18cf050a2f18af8866e5c4f27ef6a8fd8bd43320249e6895b3847ce6",
+    "crates/deadpan-plan/tests/picture_plan.rs": "b02fe12404d51f7940ffd2e4cb015026019a7744c959b84130b8c3c40f754e2a",
+    "crates/deadpan-store/src/migration.rs": "2b23d1504312731e08068a71277311307feb41002a932464923165bff7c8a6c7",
+    "crates/deadpan-store/src/schema.rs": "bda6c4b6e2ab515f3633fa8417e04feb641f3681ae5226df6e847a65e056b096",
+    "crates/deadpan-store/src/validation.rs": "b28a8727bf422eb688f5869cbe1768c6246f4746bf39c19f82bcc5626520e877",
+    "crates/deadpan-store/tests/fixtures/v12-history.sql": "e88552f2f42fcba1071d4b09f268e10877aff2e326f4929e6c8bfea7eeb56d7c",
+    "crates/deadpan-store/tests/migration.rs": "55e4860501e1ad6486dbf02510e3c5657a2a9a75f1b4578230ec883730fdea76"
+  },
+  "fixture_sha256": {
+    "native/deadpan-source/tests/fixtures/cfr-bframes.mp4": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+    "native/deadpan-source/tests/fixtures/offset-bframes.mp4": "1504e8c41c2e8e33cf588bbe46e7c79f9fb507437533f5d6cd6f280b6bfdb120",
+    "native/deadpan-source/tests/fixtures/vfr.mp4": "3fd07d00aa604554dc5389530cd261ac8961aded6361426fb00bf5519ac64884",
+    "native/deadpan-source/tests/fixtures/rotated90.mp4": "d8a51344c8ddb32b49206d4577aaabd9313216981171117f5e52ad2b360bc5aa",
+    "native/deadpan-source/tests/fixtures/anamorphic.mkv": "0d5cd53df885fb890c48ad65ccf931577f3a6761510e746507253078d3ebe837",
+    "native/deadpan-source/tests/audio-fixtures/pcm-mono-44100.wav": "b95b3debd2c83cf2590fddfaa98276c23c3b383b720fd96ac52c2c00c668318b",
+    "native/deadpan-media-worker/tests/fixtures/rgb25_24.mp4": "b16a7ab4aa925c1f432075b7cb6b28e7b38fc1e5187ef7cbec07d400dd756492",
+    "native/deadpan-media-worker/tests/fixtures/rgb30_30000_1001.mp4": "450d5e4d878f26d47442f2165265b514346945646074c2bf69b0fdcbfadee7e6"
+  },
+  "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "environment": {
+    "model": "Apple M5 Max",
+    "memory_gib": 128,
+    "macos": "26.5.2",
+    "ffmpeg": "8.0.3",
+    "ffmpeg_prefix": "/tmp/deadpan-media-compatible-xyhilms4/prefix"
+  },
+  "scope": "Exact source placement and measured import timing candidates; no authored import/readiness/adoption/UI",
+  "tests": {
+    "passed": 508,
+    "failed": 0,
+    "ignored": 0
+  }
+}

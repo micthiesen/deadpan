@@ -3,7 +3,9 @@
 Every Source has an explicit `audio_mapping`, introduced in core schema 6.
 [Picture mapping](SOURCE_VIDEO_MAPPING.md) is independent. Audio maps its own selected span
 over either that beat duration (`fit_beat`) or an independently authored exact
-project-frame duration (`duration`). The signed 48 kHz `audio_offset` translates
+project-frame duration (`duration`). Core schema 8 adds an exact project-frame
+start with `placement`; see [import timing](SOURCE_IMPORT_TIMING.md).
+The signed 48 kHz `audio_offset` additionally translates
 the audio start. It does not change the audio rate or erase original timestamps.
 
 `SourceAudioMapping::natural_rate(span, frame_rate)` computes the destination
@@ -16,7 +18,7 @@ host interval fail instead of clamping or stretching audio to fit.
 
 Explicit durations must be positive and at most `i64::MAX` project frames. Their
 JSON numerators and denominators are decimal strings. A Source without audio
-uses `fit_beat`; it cannot carry a separate audio duration. Neither duration mode
+uses `fit_beat`; it cannot carry a separate audio placement. No mapping mode
 establishes codec-delay, priming, A/V origin, or import readiness evidence.
 
 The reversible `set_source_audio_mapping` command accepts a Source node, mapping
@@ -43,7 +45,7 @@ Use this inside the normal revision-checked [headless command](HEADLESS.md)
 envelope. Preview, commit, undo and redo use the same store transaction path.
 This is an authored mapping operation; no UI control or audio renderer is added.
 
-Database schema 12 migrates every prior database directly to current core JSON.
+Database schema 13 migrates every prior database directly to current core JSON.
 Frozen source wires preserve pre-schema-11 audio mappings as `fit_beat`, including
 offsets, historical snapshots and forward/inverse patches. They reject
 `audio_mapping` fields and commands in history predating that vocabulary, even
@@ -51,6 +53,7 @@ null fields. Schema-11 explicit audio mappings remain unchanged. Migration keeps
 original-media and generation records, revisions, undo/redo and branches; it
 does not reinterpret old selections as natural-rate imports.
 
-Qualified selected-stream receipts, durable source indexes, common A/V origin
-selection, atomic authored registration/insertion, audio rendering and native
+The measured import helper derives a common A/V origin while retaining all
+available audio. Qualified selected-stream receipts, durable source indexes,
+atomic authored registration/insertion, audio rendering and native
 import remain required. See [source audio decoding](SOURCE_AUDIO.md).

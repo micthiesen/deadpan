@@ -437,3 +437,83 @@ fn maximum_play_count_isolates_one_nested_play_without_expanding_other_occurrenc
     assert_eq!(gap.instance.node, id("gag"));
     assert_eq!(gap.gap_after, Some(play("isolate", 0)));
 }
+
+#[test]
+fn fractional_placement_isolates_nested_play_and_composes_nested_retimes() {
+    let base = nested(2, 4, 2);
+    let mut wire = serde_json::to_value(base).unwrap();
+    wire["nodes"]["root"]["kind"]["children"] = serde_json::json!(["rate-outer"]);
+    wire["nodes"]["rate-inner"] = serde_json::to_value(retime("outer", 60, 0, 30)).unwrap();
+    wire["nodes"]["rate-outer"] = serde_json::to_value(retime("rate-inner", 45, 0, 60)).unwrap();
+    let before = ProjectDocument::from_json(&wire.to_string()).unwrap();
+    let mapping = SourceVideoMapping::Placement {
+        start: ExactRatio::new(3, 4).unwrap(),
+        frames: ExactRatio::new(7, 2).unwrap(),
+        endpoints: EndpointPolicy::HoldAdjacent,
+    };
+    let (after, transaction) = change(
+        &before,
+        "placed",
+        InstancePath {
+            node: id("source"),
+            repeats: vec![step("outer", 1), step("inner", 1)],
+        },
+        OccurrenceEdit::SetSourceVideoMapping { mapping },
+        3,
+    );
+    assert_eq!(transaction.duration_delta, 0);
+    assert_eq!(after.duration().unwrap(), before.duration().unwrap());
+    let before_plan = RenderPlan::compile(&before).unwrap();
+    let after_plan = RenderPlan::compile(&after).unwrap();
+    let mut selected_path = None;
+    for frame in 0..45 {
+        let old = before_plan.picture(ProjectFrame(frame)).unwrap();
+        let new = after_plan.picture(ProjectFrame(frame)).unwrap();
+        if old.instance.repeats == vec![step("outer", 1), step("inner", 1)] {
+            let expected = ExactRatio::integer(100)
+                .checked_add(
+                    old.local_position
+                        .checked_sub(ExactRatio::new(3, 4).unwrap())
+                        .unwrap()
+                        .checked_mul(ExactRatio::new(800, 7).unwrap())
+                        .unwrap(),
+                )
+                .unwrap();
+            assert_eq!(ticks(&new.picture), expected);
+            assert_eq!(new.local_position, old.local_position);
+            selected_path = Some(new.instance);
+        } else {
+            assert_eq!(new.picture, old.picture);
+        }
+    }
+    let target = AnchorTarget {
+        boundary: BoundaryAnchor {
+            coordinate: Anchor::Source {
+                asset: AssetId::new("video").unwrap(),
+                moment: SourceMoment::Timestamp {
+                    stream: SourceStream::Video,
+                    timestamp: SourceTimestamp {
+                        ticks: 300,
+                        time_base: clock(),
+                    },
+                },
+            },
+            bias: InsertionBias::Right,
+        },
+        occurrence: selected_path,
+    };
+    assert_eq!(
+        AnchorIndex::new(&after)
+            .unwrap()
+            .resolve_target(&target)
+            .unwrap()
+            .exact_frame,
+        ExactRatio::new(141, 4).unwrap()
+    );
+    assert_eq!(
+        RenderPlan::compile(&transaction.inverse.apply(&after).unwrap())
+            .unwrap()
+            .inspect(),
+        before_plan.inspect()
+    );
+}

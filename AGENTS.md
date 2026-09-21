@@ -65,13 +65,13 @@ display color, editorial effects, playback or an encoded export path.
 
 Every persisted edit, undo, and redo gets a never-reused revision ID. Core inverse patches can restore exact fixture identity; the store rebases them onto fresh revisions to prevent stale commands becoming valid after undo. Store writes use one transaction for the revision, history, and cursor. Keep `.writer.lock` held for the writable store lifetime; read-only inspection and dry runs may coexist. Take live database snapshots through SQLite's backup API, never copy only an open main database file.
 
-Repeat play IDs are scoped by Repeat node and allocation revision, with an ordinal inside that allocation. Preserve surviving IDs through resizing and reorder; allocate fresh IDs for growth and inserted subtrees. Imported initial snapshots reserve their allocation names even after plays are removed. Keep compact runs bounded and never expand a repeat merely to seek. Core schema 7 retains these runs, marks, sparse overrides and generated Hold metadata, and includes independent source audio and picture mappings. Database schemas 1 through 11 replay the complete chronology directly into the current schema on a consistent copy, compare every legacy snapshot/transaction, and promote through SQLite's backup transaction only after validation. Strict legacy adapters freeze nested provider vocabulary and reject new fields, commands, and unexpected mark or override changes. Preserve the pre-migration backup.
+Repeat play IDs are scoped by Repeat node and allocation revision, with an ordinal inside that allocation. Preserve surviving IDs through resizing and reorder; allocate fresh IDs for growth and inserted subtrees. Imported initial snapshots reserve their allocation names even after plays are removed. Keep compact runs bounded and never expand a repeat merely to seek. Core schema 8 retains these runs, marks, sparse overrides and generated Hold metadata, and includes independent source audio and picture mappings. Database schemas 1 through 12 replay the complete chronology directly into the current schema on a consistent copy, compare every legacy snapshot/transaction, and promote through SQLite's backup transaction only after validation. Strict legacy adapters freeze nested provider vocabulary and reject new fields, commands, and unexpected mark or override changes. Preserve the pre-migration backup.
 
-Database schema 12 stores core schema 7 and retains operational generation requests,
+Database schema 13 stores core schema 8 and retains operational generation requests,
 attempts, validation receipts, and candidate selection. Modern bundle receipts add
 optional measured spans and retained-input admission evidence; legacy receipts
 gain none. Legacy requests retain no plan and remain protocol 1. Schema-7/8/9/10
-history uses the frozen core schema-5 adapter; schema-11 history uses core schema 6.
+history uses the frozen core schema-5 adapter; schema-11 history uses core schema 6; schema-12 uses frozen core schema 7.
 Migration upgrades authored
 JSON through strict replay, preserves existing operational rows and clocks, and
 adds only missing operational tables. Request versions belong
@@ -143,7 +143,7 @@ Ready bundles alone do not authorize an edit. See [acceptance](docs/GENERATION_A
 See [generated Hold semantics](docs/GENERATED_HOLDS.md).
 
 Original byte ownership is operational and separate from stream readiness.
-Database schema 12 retains content-keyed original records with monotonic location
+Database schema 13 retains content-keyed original records with monotonic location
 versions introduced in schema 10; earlier schemas gain an empty inventory. Use the
 shared descriptor-relative object engine for `Media/Originals` and
 `Media/Generated`. Managed originals try APFS clone, then verified copy; retain
@@ -174,6 +174,16 @@ must cover the entire selection, even when holding is permitted. Inverse source
 anchors remain exact and reject out-of-host positions. Old histories gain
 `FitBeat`, preserving their authored timing and existing audio mappings. See
 [source picture mapping](docs/SOURCE_VIDEO_MAPPING.md).
+
+Both source mapping enums also accept `Placement` with exact signed start and
+positive duration in project frames. Audio adds its separate mix-clock offset;
+picture sampling subtracts the start, while inverse source anchors add it.
+Measured import candidates use the earliest selected stream start as a common
+origin, preserve all original spans and available audio, and enclose the stream
+union by rounding the beat end upward once. Never infer a missing priming trim.
+Picture endpoint holding covers only the selected span. Cadence and even-raster
+geometry results remain candidates with explicit evidence, not import readiness
+or project basis adoption. See [import timing](docs/SOURCE_IMPORT_TIMING.md).
 
 `VerifiedSourceInput` shares one private byte snapshot between independent source
 decoders. `AudioSession` retains physical PCM in a bounded temporary cache and

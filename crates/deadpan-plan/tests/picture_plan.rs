@@ -1026,3 +1026,61 @@ proptest! {
         }
     }
 }
+
+#[test]
+fn placed_picture_holds_only_selected_endpoints_and_preserves_negative_starts() {
+    let source_index = index("video", clock(), &[0, 500, 1000, 1500, 2000], 2500);
+    for start in [
+        ExactRatio::new(5, 4).unwrap(),
+        ExactRatio::new(-3, 4).unwrap(),
+    ] {
+        for endpoints in [EndpointPolicy::Reject, EndpointPolicy::HoldAdjacent] {
+            let frames = ExactRatio::new(3, 2).unwrap();
+            let plan = RenderPlan::compile(&document(
+                &["source"],
+                vec![(
+                    "source",
+                    source_with_mapping(
+                        4,
+                        500,
+                        1500,
+                        SourceVideoMapping::Placement {
+                            start,
+                            frames,
+                            endpoints,
+                        },
+                    ),
+                )],
+            ))
+            .unwrap();
+            for frame in 0..4 {
+                let picture = plan.picture(ProjectFrame(frame)).unwrap().picture;
+                let relative = ExactRatio::new(i128::from(frame) * 2 + 1, 2)
+                    .unwrap()
+                    .checked_sub(start)
+                    .unwrap();
+                let expected = ExactRatio::integer(500)
+                    .checked_add(
+                        relative
+                            .checked_mul(ExactRatio::new(2000, 3).unwrap())
+                            .unwrap(),
+                    )
+                    .unwrap();
+                assert_eq!(ticks(&picture), expected);
+                let outside = expected.compare_integer(500).is_lt()
+                    || !expected.compare_integer(1500).is_lt();
+                let selected = picture.select_source_frame(&source_index);
+                if outside && endpoints == EndpointPolicy::Reject {
+                    assert!(selected.is_err());
+                } else {
+                    let expected_id = if expected.compare_integer(1000).is_lt() {
+                        1
+                    } else {
+                        2
+                    };
+                    assert_eq!(selected.unwrap().identity, SourceFrameId(expected_id));
+                }
+            }
+        }
+    }
+}

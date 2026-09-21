@@ -1328,3 +1328,318 @@ proptest! {
         prop_assert_eq!(point(&document,&local(children[selected],position)).exact_frame,expected);
     }
 }
+
+#[test]
+fn independent_stream_placements_preserve_exact_anchors_offsets_and_inverse_history() {
+    let original = source_document();
+    for (video_start, audio_start) in [(3, -5), (-3, 5)] {
+        let video_start = ExactRatio::new(video_start, 2).unwrap();
+        let audio_start = ExactRatio::new(audio_start, 3).unwrap();
+        let audio_offset = AudioSample(137);
+        let video_frames = ExactRatio::new(101, 2).unwrap();
+        let audio_frames = ExactRatio::new(137, 3).unwrap();
+        let marked = edit(
+            &original,
+            Command::SetMark {
+                id: MarkId::new("source-midpoint").unwrap(),
+                owner: node("source"),
+                label: "Original midpoint".into(),
+                boundary: source_target(SourceMoment::AudioSample {
+                    sample: 0,
+                    sample_rate: 48000,
+                })
+                .boundary,
+                loss_policy: AnchorLossPolicy::KeepUnresolved,
+            },
+            "marked-placement",
+        );
+        let video = edit(
+            &marked,
+            Command::SetSourceVideoMapping {
+                node: node("source"),
+                mapping: SourceVideoMapping::Placement {
+                    start: video_start,
+                    frames: video_frames,
+                    endpoints: EndpointPolicy::HoldAdjacent,
+                },
+            },
+            "placed-video",
+        );
+        let document = edit(
+            &video,
+            Command::SetSourceAudioMapping {
+                node: node("source"),
+                mapping: SourceAudioMapping::Placement {
+                    start: audio_start,
+                    frames: audio_frames,
+                },
+                offset: audio_offset,
+            },
+            "placed-audio",
+        );
+        assert_eq!(document.marks(), marked.marks());
+        assert_eq!(document.duration().unwrap(), original.duration().unwrap());
+        assert_eq!(document.assets(), original.assets());
+        let original_video_midpoint = source_target(SourceMoment::Timestamp {
+            stream: SourceStream::Video,
+            timestamp: SourceTimestamp {
+                ticks: 0,
+                time_base: SourceTimeBase::new(1, 90000).unwrap(),
+            },
+        });
+        assert_eq!(
+            point(&document, &original_video_midpoint).exact_frame,
+            video_start
+                .checked_add(video_frames.checked_div(ExactRatio::integer(2)).unwrap())
+                .unwrap()
+        );
+        let expected_audio = audio_start
+            .checked_add(ExactRatio::new(685, 8008).unwrap())
+            .unwrap()
+            .checked_add(audio_frames.checked_div(ExactRatio::integer(2)).unwrap())
+            .unwrap();
+        assert_eq!(
+            point(
+                &document,
+                &source_target(SourceMoment::AudioSample {
+                    sample: 0,
+                    sample_rate: 48000
+                })
+            )
+            .exact_frame,
+            expected_audio
+        );
+        assert_eq!(
+            ProjectDocument::from_json(&document.to_json().unwrap()).unwrap(),
+            document
+        );
+        // Placement does not allow inverse anchors to jump into endpoint holds.
+        if video_start.compare_integer(0).is_lt() {
+            let target = source_target(SourceMoment::Timestamp {
+                stream: SourceStream::Video,
+                timestamp: SourceTimestamp {
+                    ticks: -90000,
+                    time_base: SourceTimeBase::new(1, 90000).unwrap(),
+                },
+            });
+            assert_eq!(
+                AnchorIndex::new(&document)
+                    .unwrap()
+                    .resolve_target(&target)
+                    .unwrap_err()
+                    .code,
+                AnchorErrorCode::OutOfRange
+            );
+        }
+    }
+}
+
+#[test]
+fn placement_boundaries_and_combined_audio_arithmetic_reject_atomically() {
+    let document = source_document();
+    for (start, frames) in [
+        (ExactRatio::ZERO, ExactRatio::ZERO),
+        (ExactRatio::ZERO, ExactRatio::integer(-1)),
+        (
+            ExactRatio::new(i128::from(i64::MIN) * 2 - 1, 2).unwrap(),
+            ExactRatio::ONE,
+        ),
+        (
+            ExactRatio::new(i128::from(i64::MAX) * 2 + 1, 2).unwrap(),
+            ExactRatio::ONE,
+        ),
+        (
+            ExactRatio::integer(i64::MAX),
+            ExactRatio::new(1, 2).unwrap(),
+        ),
+        (
+            ExactRatio::new(1, i128::MAX).unwrap(),
+            ExactRatio::new(1, i128::MAX - 1).unwrap(),
+        ),
+    ] {
+        let audio = SourceAudioMapping::Placement { start, frames };
+        let video = SourceVideoMapping::Placement {
+            start,
+            frames,
+            endpoints: EndpointPolicy::Reject,
+        };
+        assert!(
+            serde_json::from_value::<SourceAudioMapping>(serde_json::to_value(audio).unwrap())
+                .is_err()
+        );
+        assert!(
+            serde_json::from_value::<SourceVideoMapping>(serde_json::to_value(video).unwrap())
+                .is_err()
+        );
+        for command in [
+            Command::SetSourceAudioMapping {
+                node: node("source"),
+                mapping: audio,
+                offset: AudioSample(0),
+            },
+            Command::SetSourceVideoMapping {
+                node: node("source"),
+                mapping: video,
+            },
+        ] {
+            assert!(
+                apply(
+                    &document,
+                    &CommandRequest {
+                        project_id: document.project_id().clone(),
+                        expected_revision: document.revision_id().clone(),
+                        new_revision: revision("invalid-placement"),
+                        command
+                    }
+                )
+                .is_err()
+            );
+        }
+    }
+    // The unshifted placement is valid, but adding the independent mix offset
+    // overflows the exact representation. Admission rejects it before a query.
+    let mapping = SourceAudioMapping::Placement {
+        start: ExactRatio::new(1, i128::MAX).unwrap(),
+        frames: ExactRatio::new(1, i128::MAX).unwrap(),
+    };
+    assert!(mapping.duration_frames(duration(60)).is_ok());
+    assert!(
+        apply(
+            &document,
+            &CommandRequest {
+                project_id: document.project_id().clone(),
+                expected_revision: document.revision_id().clone(),
+                new_revision: revision("overflowing-offset"),
+                command: Command::SetSourceAudioMapping {
+                    node: node("source"),
+                    mapping,
+                    offset: AudioSample(1)
+                }
+            }
+        )
+        .is_err()
+    );
+    for start in [
+        ExactRatio::integer(i64::MIN),
+        ExactRatio::new(i128::from(i64::MAX) * 2 - 1, 2).unwrap(),
+    ] {
+        let frames = ExactRatio::new(1, 2).unwrap();
+        assert!(
+            SourceAudioMapping::Placement { start, frames }
+                .duration_frames(duration(60))
+                .is_ok()
+        );
+        assert!(
+            SourceVideoMapping::Placement {
+                start,
+                frames,
+                endpoints: EndpointPolicy::Reject
+            }
+            .duration_frames(duration(60))
+            .is_ok()
+        );
+    }
+}
+
+proptest! {
+    #[test]
+    fn signed_fractional_placements_map_independent_source_midpoints_exactly(
+        start_numerator in -100i128..=100,
+        denominator in 1i128..=100,
+        offset in -1600i64..=1600,
+    ) {
+        let original = source_document();
+        let start = ExactRatio::new(start_numerator, denominator).unwrap();
+        let frames = ExactRatio::new(101, 2).unwrap();
+        let document = edit(&original, Command::SetSourceAudioMapping {
+            node: node("source"), mapping: SourceAudioMapping::Placement { start, frames }, offset: AudioSample(offset),
+        }, "property-placement");
+        let expected = start.checked_add(ExactRatio::new(i128::from(offset) * 5, 8008).unwrap()).unwrap().checked_add(ExactRatio::new(101, 4).unwrap()).unwrap();
+        let target = source_target(SourceMoment::AudioSample { sample: 0, sample_rate: 48000 });
+        let result = AnchorIndex::new(&document).unwrap().resolve_target(&target);
+        if expected.compare_integer(0).is_lt() || expected.compare_integer(60).is_gt() {
+            prop_assert_eq!(result.unwrap_err().code, AnchorErrorCode::OutOfRange);
+        } else {
+            prop_assert_eq!(result.unwrap().exact_frame, expected);
+        }
+    }
+}
+
+#[test]
+fn audio_placement_isolates_one_play_and_retains_source_marks_through_retimes() {
+    let original = source_document();
+    let coordinate = source_target(SourceMoment::AudioSample {
+        sample: 0,
+        sample_rate: 48000,
+    });
+    let marked = edit(
+        &original,
+        Command::SetMark {
+            id: MarkId::new("audio-mid").unwrap(),
+            owner: node("source"),
+            label: "Original sample".into(),
+            boundary: coordinate.boundary.clone(),
+            loss_policy: AnchorLossPolicy::KeepUnresolved,
+        },
+        "marked-audio-placement",
+    );
+    let repeated = edit(
+        &marked,
+        Command::WrapRepeat {
+            node: node("source"),
+            id: node("repeat"),
+            plays: 2,
+            gap: None,
+            anchor_policy: WrapAnchorPolicy::default(),
+        },
+        "repeated-audio-placement",
+    );
+    let first = play(&repeated, "repeat", 0);
+    let second = play(&repeated, "repeat", 1);
+    let isolated = edit(
+        &repeated,
+        Command::EditOccurrence {
+            instance: InstancePath {
+                node: node("source"),
+                repeats: vec![second.clone()],
+            },
+            edit: OccurrenceEdit::SetSourceAudioMapping {
+                mapping: SourceAudioMapping::Placement {
+                    start: ExactRatio::new(-5, 3).unwrap(),
+                    frames: ExactRatio::integer(45),
+                },
+                offset: AudioSample(8008),
+            },
+            identities: OccurrenceIdentities {
+                nodes: vec![node("audio-isolated")],
+                marks: vec![MarkId::new("isolated-audio-mid").unwrap()],
+            },
+        },
+        "isolated-audio-placement",
+    );
+    assert_eq!(
+        isolated.nodes()[&node("source")],
+        repeated.nodes()[&node("source")]
+    );
+    let mut wire = serde_json::to_value(&isolated).unwrap();
+    wire["nodes"]["root"]["kind"]["children"] = serde_json::json!(["outer-rate"]);
+    wire["nodes"]["inner-rate"] = serde_json::to_value(retime("repeat", 0, 120, 100)).unwrap();
+    wire["nodes"]["outer-rate"] = serde_json::to_value(retime("inner-rate", 0, 100, 200)).unwrap();
+    let document = ProjectDocument::from_json(&wire.to_string()).unwrap();
+    for (host, play, expected) in [
+        ("source", first, ExactRatio::integer(50)),
+        ("audio-isolated", second, ExactRatio::new(2575, 18).unwrap()),
+    ] {
+        let mut target = coordinate.clone();
+        target.occurrence = Some(InstancePath {
+            node: node(host),
+            repeats: vec![play],
+        });
+        assert_eq!(point(&document, &target).exact_frame, expected);
+    }
+    for name in ["audio-mid", "isolated-audio-mid"] {
+        let mark = &document.marks()[&MarkId::new(name).unwrap()];
+        assert_eq!(mark.state, MarkState::Bound);
+        assert_eq!(mark.boundary, coordinate.boundary);
+    }
+}

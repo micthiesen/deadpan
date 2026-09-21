@@ -1,0 +1,53 @@
+{
+  "application": "deadpan",
+  "architecture": "aarch64",
+  "database_schema": 12,
+  "document_schema": 7,
+  "internal_audio_sample_rate": 48000,
+  "os": "macos",
+  "partial": [
+    "structural-editing-commands",
+    "sqlite-project-history",
+    "schema-1-through-11-migration",
+    "indexed-picture-plan",
+    "exact-boundary-selectors",
+    "persistent-marks",
+    "sparse-play-overrides",
+    "nested-occurrence-edits",
+    "persistent-generation-requests",
+    "persistent-generation-attempts",
+    "authored-generated-hold-semantics",
+    "generated-media-conversion",
+    "native-bridge-bundle-qualification",
+    "durable-generated-bundle-acceptance",
+    "durable-original-byte-ownership",
+    "identity-checked-relinking",
+    "persistent-source-decoding",
+    "measured-source-audio-indexes",
+    "independent-source-audio-mapping",
+    "independent-source-video-mapping",
+    "shared-sdr-picture-pipeline",
+    "native-source-preview"
+  ],
+  "schema_version": 1,
+  "sqlite_version": "3.53.2",
+  "stage": "development-foundation",
+  "timing_probe": {
+    "frame": 1,
+    "frame_rate_denominator": 1001,
+    "frame_rate_numerator": 30000,
+    "sample_boundary": 1602
+  },
+  "unimplemented": [
+    "app-media-import-and-playback",
+    "audio-output",
+    "keyboard-editor",
+    "timeline-media-preview",
+    "analysis",
+    "ai-generation",
+    "youtube-import",
+    "export",
+    "distribution"
+  ],
+  "version": "0.1.0"
+}

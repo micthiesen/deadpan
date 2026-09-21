@@ -8,7 +8,7 @@ use crate::{
     RepeatLayout, SourceAudioMapping, SourceTimestamp, SourceVideoMapping, TimeError,
 };
 
-pub const DOCUMENT_SCHEMA_VERSION: u32 = 7;
+pub const DOCUMENT_SCHEMA_VERSION: u32 = 8;
 /// Bounds apply before traversal. Structure is walked iteratively, never recursively.
 pub const MAX_DOCUMENT_NODES: usize = 100_000;
 pub const MAX_DOCUMENT_ASSETS: usize = 100_000;
@@ -180,10 +180,10 @@ pub enum LinkRelation {
 pub struct SourceNode {
     pub duration: FrameDuration,
     pub video: SourceVideo,
-    /// Exact picture extent and selected-span endpoint behavior.
+    /// Exact picture placement and selected-span endpoint behavior.
     pub video_mapping: SourceVideoMapping,
     pub audio: Option<SourceAudio>,
-    /// Explicit audio destination extent, independent of picture duration.
+    /// Explicit audio destination placement, independent of picture timing.
     pub audio_mapping: SourceAudioMapping,
     pub link: LinkRelation,
     /// Signed alignment in the project mix clock; never discard source PTS origins.
@@ -629,7 +629,16 @@ impl ProjectDocument {
                     }
                     if let Some(audio) = &source.audio {
                         self.validate_audio(audio)?;
-                        source.audio_mapping.duration_frames(source.duration)?;
+                        let frames = source.audio_mapping.duration_frames(source.duration)?;
+                        if matches!(source.audio_mapping, SourceAudioMapping::Placement { .. }) {
+                            source
+                                .audio_mapping
+                                .start_frames_with_offset(
+                                    source.audio_offset,
+                                    self.presentation_basis.frame_rate,
+                                )?
+                                .checked_add(frames)?;
+                        }
                     } else if source.audio_mapping != SourceAudioMapping::FitBeat {
                         return Err(DocumentError::new(
                             DocumentErrorCode::SourceRangeInvalid,

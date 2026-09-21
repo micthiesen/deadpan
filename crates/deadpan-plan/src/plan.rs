@@ -83,6 +83,7 @@ struct PlanNode {
 enum CompiledKind {
     Source {
         video: SourceVideo,
+        start: ExactRatio,
         duration: ExactRatio,
         endpoints: EndpointPolicy,
     },
@@ -220,6 +221,7 @@ impl RenderPlan {
                 NodeKind::Source { source } => (
                     CompiledKind::Source {
                         video: source.video.clone(),
+                        start: source.video_mapping.start_frames(),
                         duration: source.video_mapping.duration_frames(source.duration)?,
                         endpoints: source.video_mapping.endpoints(),
                     },
@@ -372,6 +374,7 @@ impl RenderPlan {
             match &node.kind {
                 CompiledKind::Source {
                     video,
+                    start,
                     duration,
                     endpoints,
                 } => {
@@ -384,8 +387,9 @@ impl RenderPlan {
                                 span: *span,
                                 endpoints: *endpoints,
                                 point: SourcePoint {
-                                    ticks: ExactRatio::integer(span.start().ticks)
-                                        .checked_add(local.checked_mul(scale)?)?,
+                                    ticks: ExactRatio::integer(span.start().ticks).checked_add(
+                                        local.checked_sub(*start)?.checked_mul(scale)?,
+                                    )?,
                                     time_base: span.start().time_base,
                                 },
                             }

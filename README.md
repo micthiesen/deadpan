@@ -7,12 +7,13 @@ Deadpan is a Rust-native macOS video editor designed around editable beats: paus
 This repository currently contains an **editing foundation**, not a working video editor:
 
 - `deadpan-core`: exact time, validated beat documents, structural commands, nested occurrence edits, reversible transactions, and [generated Hold intent and retained sampling](docs/GENERATED_HOLDS.md).
-- `deadpan-store`: SQLite project packages, persistent marks and undo/redo, monotonic generation requests, durable attempts and interrupted-job recovery, schema-1-through-11 migration to schema 12, checkpoints, verified media storage, and [explicit durable bundle acceptance](docs/GENERATION_ACCEPTANCE.md). Generic new generated-provider ingress remains guarded.
+- `deadpan-store`: SQLite project packages, persistent marks and undo/redo, monotonic generation requests, durable attempts and interrupted-job recovery, schema-1-through-12 migration to schema 13, checkpoints, verified media storage, and [explicit durable bundle acceptance](docs/GENERATION_ACCEPTANCE.md). Generic new generated-provider ingress remains guarded.
 - `deadpan-plan`: immutable indexed picture mappings with exact retiming, stable repeated-play identities, and sparse play overrides.
 - `deadpan-jobs`: bounded worker messages, job lifecycle, subprocess supervision, contained artifact snapshots, and exact bridge-generation planning. A real MLX development adapter exercises this boundary; it is not connected to the app yet.
 - `deadpan-media`: shared verified originals, measured video/audio indexes, exact video seeks and bounded original-rate PCM caches through `native/deadpan-source`, plus isolated FFV1 conversion and exact interior bridge sampling.
 - [Independent source audio timing](docs/SOURCE_AUDIO_MAPPING.md): exact audio durations and offsets, reversible commands, and per-play edits that preserve picture timing.
 - [Exact source picture timing](docs/SOURCE_VIDEO_MAPPING.md): natural-rate frame selection independent of beat rounding, with persisted endpoint holding restricted to the selected trim.
+- [Measured import timing](docs/SOURCE_IMPORT_TIMING.md): exact independent stream starts, preserved available audio, full-source enclosure and presentation-basis candidates. Authored import remains open.
 - [Original media ownership](docs/ORIGINAL_MEDIA.md): durable managed originals, APFS clone/copy, linked locations, identity-checked relinking and private snapshots. Stream qualification and authored import remain separate.
 - `deadpan-render`: shared SDR GPU picture baseline, linear Rec.2020 composition, source aspect/rotation and explicit sRGB display conversion.
 - `deadpan-models`: [native bridge bundles](docs/GENERATION_BUNDLES.md), retained conditioning inputs, provenance binding, and measured media identities/spans. Admission-bearing schema-9 receipts require all six objects before Ready and explicit acceptance.

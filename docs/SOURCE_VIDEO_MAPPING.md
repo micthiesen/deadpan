@@ -4,6 +4,9 @@ Core schema 7 gives every Source a required `video_mapping`, independent of its
 audio mapping and integer timeline duration. `fit_beat` preserves the historical
 mapping of the entire selected span across the beat. `duration` maps that span
 over an exact positive project-frame extent and records an endpoint policy.
+Core schema 8 adds `placement`, which also specifies an exact project-frame
+start. [Import timing](SOURCE_IMPORT_TIMING.md) explains independent stream
+placement and full-source enclosure.
 
 `SourceVideoMapping::natural_rate(span, frame_rate, endpoints)` derives the exact
 extent from original timestamp units and the rational project rate. The host
@@ -23,7 +26,7 @@ audio offset, node duration and original-coordinate marks remain unchanged.
 
 ## Selected endpoints
 
-`duration` requires one of two explicit policies:
+`duration` and `placement` require one of two explicit policies:
 
 - `reject`: an out-of-selection picture request fails.
 - `hold_adjacent`: it holds the first or last original presentation interval
@@ -71,13 +74,15 @@ Use the [headless command envelope](HEADLESS.md) for preview and commit. Duratio
 must be positive and at most `i64::MAX` project frames. Missing mapping or
 endpoint fields, unknown fields and unsupported policies fail parsing.
 
-Database schema 12 replays old history through frozen core schemas. Every old
-Source gains `video_mapping: fit_beat`, preserving prior timing. Database schema
-11's explicit audio mappings remain intact. New picture fields and commands are
-rejected inside old snapshots, commands and patches, even when a field is null.
+Database schema 13 replays old history through frozen core schemas. Sources
+predating database schema 12 gain `video_mapping: fit_beat`, preserving prior
+timing. Schema-11 audio and schema-12 picture mappings remain intact. Fields,
+variants and commands absent from each historical vocabulary are rejected inside
+old snapshots, commands and patches, even when a field is null.
 Migration retains revision identities, undo/redo, abandoned branches and
 operational original-media and generation records.
 
 This provides authored timing and frame selection. It does not establish source
-qualification, common A/V origin, import rounding policy, first-primary project
-basis selection, native editorial playback or export. Those remain required.
+qualification, first-primary project basis adoption, native editorial playback
+or export. The measured import helper supplies common-origin and enclosure
+candidates; the authored host workflow remains required.

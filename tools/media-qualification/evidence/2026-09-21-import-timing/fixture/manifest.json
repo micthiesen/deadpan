@@ -1,0 +1,18 @@
+{
+  "source_revision": "35b8011e775049af41ef5e12c40fa49e62467cef",
+  "scratch": "/tmp/deadpan-schema12-reproduce-owx_m5p7",
+  "archive_sha256": "7b5670fe29e0688391957f5e9fc3125e3d4398c91827c8269aeb3345f1c12183",
+  "cli": "/tmp/deadpan-import-timing-migration/old-target/debug/deadpan-cli",
+  "cli_sha256": "ffa97f161b7836058d1112d92468a1ce37040ba6898b7c6b1b19ff0f5f174d69",
+  "generator_sha256": "ea56f02675004b7d3535d428c54e35fe79bac756c6100a84a5a7ba43892e0efc",
+  "harness_sha256": "cf3ae278318f84f15c7c36e22d929f2b5ca2dbaa4dfcac11e93ace0e6cc0c7c4",
+  "seed_fixture": "crates/deadpan-store/tests/fixtures/v11-history.sql",
+  "seed_sha256": "eda12aee024469967669920c5e09d86e429c87d6de5e68646167426ac972cda1",
+  "sql_fixture": "crates/deadpan-store/tests/fixtures/v12-history.sql",
+  "sql_sha256": "e88552f2f42fcba1071d4b09f268e10877aff2e326f4929e6c8bfea7eeb56d7c",
+  "sql_byte_reproduction": true,
+  "revisions": 34,
+  "history_edits": 18,
+  "original_records": 1,
+  "pending_redo": 1
+}

@@ -1,12 +1,14 @@
-//! Independent source-audio destination duration in the project frame clock.
+//! Independent source-audio destination placement in the project frame clock.
 
 use serde::{Deserialize, Serialize};
 
-use crate::source_mapping::{natural_duration, validate_duration};
-use crate::{ExactRatio, FrameDuration, FrameRate, SourceSpan, TimeError};
+use crate::source_mapping::{natural_duration, validate_duration, validate_placement};
+use crate::{
+    AudioSample, ExactRatio, FrameDuration, FrameRate, MIX_SAMPLE_RATE, SourceSpan, TimeError,
+};
 
 /// The selected original audio span maps linearly over this destination extent.
-/// Its start is the Source node's signed mix-clock `audio_offset`. Enclosing
+/// Its start adds the Source node's signed mix-clock `audio_offset`. Enclosing
 /// structural retimes compose with this mapping without intermediate rounding.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
@@ -15,6 +17,11 @@ pub enum SourceAudioMapping {
     FitBeat,
     /// An independently authored positive duration in exact project frames.
     Duration { frames: ExactRatio },
+    /// An exact signed start and positive extent, independent of picture timing.
+    Placement {
+        start: ExactRatio,
+        frames: ExactRatio,
+    },
 }
 
 #[derive(Deserialize)]
@@ -22,7 +29,13 @@ pub enum SourceAudioMapping {
 enum MappingWire {
     // A struct variant rejects extra fields; serde's tagged unit variant does not.
     FitBeat {},
-    Duration { frames: ExactRatio },
+    Duration {
+        frames: ExactRatio,
+    },
+    Placement {
+        start: ExactRatio,
+        frames: ExactRatio,
+    },
 }
 
 impl<'de> Deserialize<'de> for SourceAudioMapping {
@@ -32,6 +45,10 @@ impl<'de> Deserialize<'de> for SourceAudioMapping {
             MappingWire::Duration { frames } => {
                 validate_duration(frames).map_err(serde::de::Error::custom)?;
                 Ok(Self::Duration { frames })
+            }
+            MappingWire::Placement { start, frames } => {
+                validate_placement(start, frames).map_err(serde::de::Error::custom)?;
+                Ok(Self::Placement { start, frames })
             }
         }
     }
@@ -50,8 +67,33 @@ impl SourceAudioMapping {
         let frames = match self {
             Self::FitBeat => ExactRatio::integer(beat.frames()),
             Self::Duration { frames } => frames,
+            Self::Placement { start, frames } => {
+                validate_placement(start, frames)?;
+                frames
+            }
         };
         validate_duration(frames)?;
         Ok(frames)
+    }
+
+    /// Destination start before the independent mix offset and structural mappings.
+    pub fn start_frames(self) -> ExactRatio {
+        match self {
+            Self::FitBeat | Self::Duration { .. } => ExactRatio::ZERO,
+            Self::Placement { start, .. } => start,
+        }
+    }
+
+    /// Translate the authored placement by the independent 48 kHz mix offset.
+    pub fn start_frames_with_offset(
+        self,
+        offset: AudioSample,
+        rate: FrameRate,
+    ) -> Result<ExactRatio, TimeError> {
+        self.start_frames()
+            .checked_add(ExactRatio::integer(offset.0).checked_mul(ExactRatio::new(
+                i128::from(rate.numerator()),
+                i128::from(MIX_SAMPLE_RATE) * i128::from(rate.denominator()),
+            )?)?)
     }
 }
