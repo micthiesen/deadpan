@@ -65,6 +65,7 @@ fn insert_holds(durations: &[i64]) -> ProjectDocument {
         .collect();
     let group = id("group");
     let mut subtree = Subtree {
+        overrides: Default::default(),
         root: group.clone(),
         nodes,
     };
@@ -260,6 +261,7 @@ fn inserted_repeat_cannot_reserve_a_future_revision_and_revive_retired_plays() {
             parent: id("root"),
             index: 0,
             subtree: Subtree {
+                overrides: Default::default(),
                 root: id("repeat"),
                 nodes: BTreeMap::from([
                     (id("child"), hold(1)),
@@ -414,6 +416,7 @@ fn structural_depth_is_bounded_without_recursive_documents() {
             parent: id("root"),
             index: 0,
             subtree: Subtree {
+                overrides: Default::default(),
                 root: id("level-1"),
                 nodes,
             },
@@ -667,6 +670,7 @@ fn source_streams_retain_timestamps_and_validate_bounds_independently() {
         parent: id("root"),
         index: 0,
         subtree: Subtree {
+            overrides: Default::default(),
             root: id("source"),
             nodes: BTreeMap::from([(
                 id("source"),
@@ -718,6 +722,7 @@ fn hold_provider_changes_are_explicit_and_duration_checked() {
             parent: id("root"),
             index: 0,
             subtree: Subtree {
+                overrides: Default::default(),
                 root: id("hold"),
                 nodes: BTreeMap::from([(id("hold"), hold(12))]),
             },
@@ -831,6 +836,7 @@ fn retime_range_is_in_child_clock_and_overflow_is_rejected() {
             parent: id("root"),
             index: 0,
             subtree: Subtree {
+                overrides: Default::default(),
                 root: id("retime"),
                 nodes,
             },

@@ -1,5 +1,9 @@
 # Persistent marks and schema-3 verification
 
+Historical report: [sparse override verification](OVERRIDE_VERIFICATION.md)
+records the subsequent schema-4 implementation and direct schema-1/2/3 migration.
+The results below describe the schema-3 mark slice.
+
 This report covers `Persist marks through structural edits and project history`,
 based on `63e4d6258f03aef335f890b3b75a7e01de10cb13`. It extends the
 [exact boundary resolver](ANCHOR_VERIFICATION.md) with authored marks and atomic

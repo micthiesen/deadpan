@@ -49,6 +49,7 @@ fn request(document: &ProjectDocument) -> Result<Value> {
     Ok(json!({
         "protocol": 1, "project_id": document.project_id(), "expected_revision": document.revision_id(), "new_revision": "after-hold",
         "command": Command::Insert {parent: document.root().clone(), index: 0, subtree: Subtree {
+                overrides: Default::default(),
             root: node.clone(), nodes: BTreeMap::from([(node, BeatNode::hold("Silence", HoldRecipe {
                 duration: FrameDuration::new(45)?, video: HoldVideo::Background, audio: HoldAudio::Silence,
             }))]),
@@ -77,7 +78,7 @@ fn headless_migration_and_plan_inspection_are_explicit_and_read_only() -> Result
     );
     let outcome = success(&["project", "migrate", path])?;
     assert_eq!(outcome["migration"]["from_schema"], 1);
-    assert_eq!(outcome["migration"]["to_schema"], 3);
+    assert_eq!(outcome["migration"]["to_schema"], 4);
     assert!(Path::new(outcome["migration"]["backup"].as_str().unwrap()).is_file());
     let writer = ProjectStore::open(&package, AccessMode::ReadWrite)?;
     let before = writer.snapshot()?;
@@ -548,5 +549,104 @@ fn persistent_mark_queries_and_loss_states_share_the_headless_command_path() -> 
         serde_json::from_slice::<Value>(&output.stderr)?["error"]["code"],
         "MarkMissing"
     );
+    Ok(())
+}
+
+#[test]
+fn sparse_override_commands_and_inspection_share_revision_and_dry_run_guards() -> Result {
+    use deadpan_core::{NodeKind, WrapAnchorPolicy};
+    let scratch = tempfile::tempdir()?;
+    let package = create(scratch.path())?;
+    let path = package.to_str().unwrap();
+    let file = scratch.path().join("command.json");
+    let file_path = file.to_str().unwrap();
+    let snapshot = || -> Result<ProjectDocument> {
+        Ok(ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?)
+    };
+    fs::write(&file, request(&snapshot()?)?.to_string())?;
+    success(&["command", path, "--json", file_path])?;
+    let write = |command: Command| -> Result {
+        let current = snapshot()?;
+        fs::write(&file, json!({
+            "protocol":1,"project_id":current.project_id(),"expected_revision":current.revision_id(),"command":command
+        }).to_string())?;
+        Ok(())
+    };
+    write(Command::WrapRepeat {
+        node: NodeId::new("hold")?,
+        id: NodeId::new("repeat")?,
+        plays: 3,
+        gap: None,
+        anchor_policy: WrapAnchorPolicy::First,
+    })?;
+    success(&["command", path, "--json", file_path])?;
+    let before = snapshot()?;
+    let NodeKind::Repeat { iterations, .. } = &before.nodes()[&NodeId::new("repeat")?].kind else {
+        panic!()
+    };
+    let selected = iterations.at(1).unwrap();
+    write(Command::SetPlayOverride {
+        node: NodeId::new("repeat")?,
+        iteration: selected.clone(),
+        subtree: Subtree {
+            root: NodeId::new("custom")?,
+            overrides: BTreeMap::new(),
+            nodes: BTreeMap::from([(
+                NodeId::new("custom")?,
+                BeatNode::hold(
+                    "Longer pause",
+                    HoldRecipe {
+                        duration: FrameDuration::new(60)?,
+                        video: HoldVideo::Background,
+                        audio: HoldAudio::Silence,
+                    },
+                ),
+            )]),
+        },
+    })?;
+    let writer = ProjectStore::open(&package, AccessMode::ReadWrite)?;
+    let preview = success(&["command", path, "--json", file_path, "--dry-run"])?;
+    assert_eq!(preview["edit"]["duration_delta"], 15);
+    assert_eq!(
+        preview["edit"]["forward"]["overrides"]["repeat"]["after"][0]["iteration"],
+        serde_json::to_value(&selected)?
+    );
+    assert_eq!(writer.snapshot()?, before);
+    drop(writer);
+    success(&["command", path, "--json", file_path])?;
+    // Replaying an already committed request must fail before allocating another subtree.
+    let stale = cli(&["command", path, "--json", file_path])?;
+    assert!(!stale.status.success());
+    assert_eq!(
+        serde_json::from_slice::<Value>(&stale.stderr)?["error"]["code"],
+        "RevisionConflict"
+    );
+    let writer = ProjectStore::open(&package, AccessMode::ReadWrite)?;
+    let after = writer.snapshot()?;
+    assert_eq!(after.duration()?.frames(), 150);
+    let inspected = success(&["inspect-plan", path, "--frame", "46"])?;
+    assert_eq!(inspected["sample"]["instance"]["node"], "custom");
+    assert_eq!(
+        inspected["sample"]["instance"]["repeats"][0]["iteration"],
+        serde_json::to_value(&selected)?
+    );
+    assert_eq!(writer.snapshot()?, after);
+    drop(writer);
+    write(Command::ClearPlayOverride {
+        node: NodeId::new("repeat")?,
+        iteration: selected,
+    })?;
+    success(&["command", path, "--json", file_path])?;
+    let cleared = snapshot()?;
+    assert_eq!(cleared.duration()?.frames(), 135);
+    assert!(cleared.overrides().is_empty());
+    success(&[
+        "project",
+        "undo",
+        path,
+        "--expected",
+        cleared.revision_id().as_str(),
+    ])?;
+    assert_eq!(snapshot()?.overrides(), after.overrides());
     Ok(())
 }

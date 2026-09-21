@@ -46,7 +46,7 @@ Version and feature references: [eframe 0.36.2](https://docs.rs/eframe/0.36.2/ef
 The storage foundation tests writer ownership, read-only coexistence, durable
 undo/redo, retained branches, actual SQLite disk-full rollback, interrupted
 transactions, and live backup consistency. This is partial storage
-qualification. Schema-1/2-to-3 migration now replays a backed-up copy and atomically
+qualification. Schema-1/2/3-to-4 migration now replays a backed-up copy and atomically
 promotes it through SQLite. Restore/recovery policy and portable managed-media
 ownership remain open.
 

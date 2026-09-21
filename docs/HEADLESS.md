@@ -66,24 +66,81 @@ revision fails with `RevisionConflict` and the current revision, without writing
 
 Supported commands are `insert`, `delete`, `move`, `group`,
 `ungroup`, `wrap_repeat`, `set_repeat`, `insert_plays`, `move_plays`, `set_hold_duration`, `set_hold_provider`,
-`rename`, `add_asset`, `set_mark`, and `delete_mark`. Their exact typed parameters are defined in
+`rename`, `add_asset`, `set_mark`, `delete_mark`, `set_play_override`, and `clear_play_override`. Their exact typed parameters are defined in
 [`Command`](../crates/deadpan-core/src/command.rs). `set_repeat` changes an existing
 Repeat; `wrap_repeat` deliberately adds nesting. A three-play repeat includes
 three total plays and only two gaps. These are structural edits, not rendered
-media. Editing through range/text selectors, registers, macros, per-play overrides, and effects
+media. Editing through range/text selectors, registers, macros, nested occurrence selection edits, and effects
 remain required future work.
 
-Documents use schema 3 and store compact Repeat `iterations.runs` with
+Documents use schema 4 and store compact Repeat `iterations.runs` with
 `allocation`, `first`, and `count`. Commands `wrap_repeat` and `set_repeat` still
 take a total `plays` count. `insert_plays` takes `node`, `index`, and `count`;
 `move_plays` takes `node`, a half-open `start`/`end` play range, and `destination`
 measured after removal. Surviving identities remain stable; inserted/grown plays
 use the command's new revision. The run limit is 100,000 per Repeat, checked
 without expanding plays. `InstancePath` identifies the target node and its exact
-ordered Repeat ancestors. Sparse occurrence overrides remain open.
+ordered Repeat ancestors. Sparse play overrides are described below.
 Inserting a subtree remaps its Repeat plays to the actual insertion revision,
 preserving their count. An imported initial document reserves its existing
 allocation names, so later revisions cannot resurrect retired identities.
+
+## Sparse play overrides
+
+`set_play_override` replaces one play of an authored Repeat with an ordinary
+editable subtree. It takes `node`, the stable `iteration` from the document, and
+`subtree` using the same shape as `insert`. For example, the command inside a
+current protocol/revision envelope can be:
+
+```json
+{
+  "command": "set_play_override",
+  "node": "repeat-1",
+  "iteration": {"allocation": "REVISION_THAT_CREATED_THE_PLAY", "ordinal": 1},
+  "subtree": {
+    "root": "different-pause",
+    "nodes": {
+      "different-pause": {
+        "label": "Only this play",
+        "kind": {
+          "type": "hold",
+          "recipe": {
+            "duration": 60,
+            "video": {"type": "background"},
+            "audio": {"type": "silence"}
+          }
+        }
+      }
+    },
+    "overrides": {}
+  }
+}
+```
+
+The document stores `overrides[repeat_id]` as an array of `{iteration, root}`
+entries. Each root has one structural owner. Its duration may differ from the
+default child; later plays move by the exact difference, with gaps only between
+plays. Nested overrides are supported through `subtree.overrides`. Insertion
+reallocates nested Repeat identities and remaps those override keys by play
+position. Other plays retain the default child and their original identities.
+
+`clear_play_override` takes `node` and `iteration`, removes the owned subtree,
+and restores that play's default child. It fails if no override exists. Edit an
+existing override's nodes with the ordinary commands; replacing its entire
+subtree requires fresh node IDs. Both commands support dry-run and durable
+undo/redo. Reordering preserves overrides by identity. Shrinking retires removed
+overrides into undo history; newly inserted or grown plays inherit none.
+
+Occurrence paths must target the effective child of their selected play. A path
+to the default child is invalid for an overridden play, and an override child
+cannot be addressed through another play. Marks attached to replaced or removed
+content follow their declared loss policy. Gaps follow their preceding stable
+play even when its duration changes.
+
+This command targets an authored Repeat and one of its plays. If that Repeat
+itself occurs within another Repeat, the authored change applies in each outer
+occurrence using it. Automatic isolation from a complete nested occurrence
+selection, partial range operators, and role-only overlays remain required work.
 
 ## Picture plan inspection
 
@@ -160,7 +217,7 @@ plays does not expand them. Repeat identity lookup scans compact runs.
 
 `set_mark` persists one of these boundaries, its owner, label, and explicit loss
 policy. Named-mark selectors are described below. Range-editing operators,
-temporal attachments, and sparse occurrence overrides remain to be implemented.
+temporal attachments, and automatic nested occurrence edits remain to be implemented.
 [Boundary verification](ANCHOR_VERIFICATION.md) preserves the original query
 evidence; [mark verification](MARK_VERIFICATION.md) covers the schema-3 extension.
 
@@ -268,18 +325,19 @@ future-schema read-only inspection still needs a compatibility implementation.
 
 ## Schema migration
 
-Schema-1 and schema-2 projects return `MigrationRequired` when opened. Upgrade explicitly:
+Schema-1, schema-2, and schema-3 projects return `MigrationRequired` when opened. Upgrade explicitly:
 
 ```sh
 cargo run --locked -p deadpan-cli -- project migrate /tmp/example.deadpan
 ```
 
 Migration holds the project writer lock, keeps a consistent SQLite backup under
-`Snapshots/before-schema-3-*.sqlite`, and rewrites a separate candidate. It
+`Snapshots/before-schema-4-*.sqlite`, and rewrites a separate candidate. It
 replays all commands, undo/redo revisions, and abandoned branches with their
 original revision IDs. Every snapshot and forward/inverse transaction is checked
-against its strict original schema meaning. Migration goes directly to schema 3
-and introduces an empty mark map in each old snapshot and patch. Fields or
+against its strict original schema meaning. Migration goes directly to schema 4
+and introduces empty override maps. Schema-1/2 histories also gain empty mark
+maps; schema-3 mark histories retain their exact ownership, bias, and loss states. Fields or
 commands that did not exist in the old schema are rejected. SQLite atomically promotes the validated
 candidate through its backup API; the main file is never renamed around a live
 WAL. Existing read transactions keep their old snapshot. Failure before promotion

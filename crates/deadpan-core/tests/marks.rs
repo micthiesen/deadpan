@@ -85,6 +85,7 @@ fn tree(children: &[&str], nodes: Vec<(&str, BeatNode)>) -> ProjectDocument {
             parent: node("root"),
             index: 0,
             subtree: Subtree {
+                overrides: Default::default(),
                 root: node("group"),
                 nodes,
             },
@@ -210,6 +211,7 @@ fn biased_insertions_and_outside_edges_follow_original_content() {
         parent: node("group"),
         index,
         subtree: Subtree {
+            overrides: Default::default(),
             root: node(id),
             nodes: BTreeMap::from([(node(id), hold(2))]),
         },
@@ -238,6 +240,7 @@ fn empty_hosts_retain_biased_edges_and_zero_children_do_not_capture_time() {
             parent: node("group"),
             index: 0,
             subtree: Subtree {
+                overrides: Default::default(),
                 root: node("a"),
                 nodes: BTreeMap::from([(node("a"), hold(5))]),
             },
@@ -252,6 +255,7 @@ fn empty_hosts_retain_biased_edges_and_zero_children_do_not_capture_time() {
             parent: node("group"),
             index: 0,
             subtree: Subtree {
+                overrides: Default::default(),
                 root: node("zero"),
                 nodes: BTreeMap::from([(node("zero"), BeatNode::sequence("Empty", vec![]))]),
             },
@@ -339,6 +343,7 @@ fn ownership_loss_is_independent_and_unresolved_requires_explicit_reattachment()
             parent: node("group"),
             index: 0,
             subtree: Subtree {
+                overrides: Default::default(),
                 root: node("a"),
                 nodes: BTreeMap::from([(node("a"), hold(3))]),
             },
@@ -933,6 +938,7 @@ fn named_source_and_authored_local_marks_require_explicit_repeat_scope() {
             parent: node("root"),
             index: 0,
             subtree: Subtree {
+                overrides: Default::default(),
                 root: node("source"),
                 nodes: BTreeMap::from([(
                     node("source"),

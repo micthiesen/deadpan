@@ -13,8 +13,10 @@ mod document;
 mod exact;
 pub mod legacy_v1;
 pub mod legacy_v2;
+pub mod legacy_v3;
 mod marks;
 mod occurrence;
+mod repeat_layout;
 mod source_index;
 mod time;
 
@@ -24,6 +26,7 @@ pub use document::*;
 pub use exact::ExactRatio;
 pub use marks::*;
 pub use occurrence::*;
+pub use repeat_layout::*;
 pub use source_index::*;
 
 pub use time::{

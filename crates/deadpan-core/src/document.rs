@@ -4,11 +4,11 @@ use std::{error::Error, fmt};
 use serde::{Deserialize, Deserializer, Serialize, de};
 
 use crate::{
-    AudioSample, FrameDuration, FrameRange, FrameRate, IterationOrder, Mark, SourceTimestamp,
-    TimeError, repeat_duration,
+    AudioSample, FrameDuration, FrameRange, FrameRate, IterationOrder, Mark, PlayOverrides,
+    RepeatLayout, SourceTimestamp, TimeError,
 };
 
-pub const DOCUMENT_SCHEMA_VERSION: u32 = 3;
+pub const DOCUMENT_SCHEMA_VERSION: u32 = 4;
 /// Bounds apply before traversal. Structure is walked iteratively, never recursively.
 pub const MAX_DOCUMENT_NODES: usize = 100_000;
 pub const MAX_DOCUMENT_ASSETS: usize = 100_000;
@@ -300,6 +300,7 @@ pub struct ProjectDocument {
     pub(crate) nodes: BTreeMap<NodeId, BeatNode>,
     pub(crate) assets: BTreeMap<AssetId, AssetRecord>,
     pub(crate) marks: BTreeMap<MarkId, Mark>,
+    pub(crate) overrides: BTreeMap<NodeId, PlayOverrides>,
 }
 
 #[derive(Deserialize)]
@@ -316,6 +317,8 @@ struct DocumentWire {
     assets: BTreeMap<AssetId, AssetRecord>,
     #[serde(deserialize_with = "unique_map")]
     marks: BTreeMap<MarkId, Mark>,
+    #[serde(deserialize_with = "unique_map")]
+    overrides: BTreeMap<NodeId, PlayOverrides>,
 }
 
 impl TryFrom<DocumentWire> for ProjectDocument {
@@ -330,6 +333,7 @@ impl TryFrom<DocumentWire> for ProjectDocument {
             nodes: value.nodes,
             assets: value.assets,
             marks: value.marks,
+            overrides: value.overrides,
         };
         document.validate()?;
         Ok(document)
@@ -352,6 +356,7 @@ impl ProjectDocument {
             root,
             assets: BTreeMap::new(),
             marks: BTreeMap::new(),
+            overrides: BTreeMap::new(),
         };
         document.validate()?;
         Ok(document)
@@ -379,6 +384,24 @@ impl ProjectDocument {
     }
     pub fn marks(&self) -> &BTreeMap<MarkId, Mark> {
         &self.marks
+    }
+    pub fn overrides(&self) -> &BTreeMap<NodeId, PlayOverrides> {
+        &self.overrides
+    }
+
+    /// All owned structural children, including sparse Repeat override roots.
+    /// Use this for tree traversal instead of the primitive-only NodeKind list.
+    pub fn children<'a>(&'a self, id: &NodeId) -> impl DoubleEndedIterator<Item = &'a NodeId> {
+        self.nodes
+            .get(id)
+            .into_iter()
+            .flat_map(|node| node.kind.children())
+            .chain(
+                self.overrides
+                    .get(id)
+                    .into_iter()
+                    .flat_map(|entries| entries.iter().map(|(_, root)| root)),
+            )
     }
 
     pub fn to_json(&self) -> Result<String, DocumentError> {
@@ -429,7 +452,7 @@ impl ProjectDocument {
     pub(crate) fn parent_of(&self, id: &NodeId) -> Option<NodeId> {
         self.nodes
             .iter()
-            .find(|(_, node)| node.kind.children().contains(id))
+            .find(|(parent, _)| self.children(parent).any(|child| child == id))
             .map(|(id, _)| id.clone())
     }
 
@@ -460,10 +483,29 @@ impl ProjectDocument {
                 "document exceeds 100,000 nodes or assets",
             ));
         }
+        if self.overrides.len() > MAX_DOCUMENT_NODES {
+            return Err(DocumentError::new(
+                DocumentErrorCode::LimitExceeded,
+                "too many override owners",
+            ));
+        }
+        for (id, entries) in &self.overrides {
+            if entries.is_empty()
+                || !matches!(
+                    self.nodes.get(id).map(|node| &node.kind),
+                    Some(NodeKind::Repeat { .. })
+                )
+            {
+                return Err(DocumentError::new(
+                    DocumentErrorCode::InvalidTree,
+                    "nonempty overrides must belong to an existing Repeat",
+                ));
+            }
+        }
         let mut edge_count = 0usize;
-        for node in self.nodes.values() {
+        for id in self.nodes.keys() {
             edge_count = edge_count
-                .checked_add(node.kind.children().len())
+                .checked_add(self.children(id).count())
                 .ok_or_else(|| {
                     DocumentError::new(
                         DocumentErrorCode::LimitExceeded,
@@ -521,7 +563,7 @@ impl ProjectDocument {
                 }
                 validate_label(&node.label)?;
                 stack.push((id.clone(), depth, true));
-                for child in node.kind.children().iter().rev() {
+                for child in self.children(&id).rev() {
                     stack.push((child.clone(), depth + 1, false));
                 }
                 continue;
@@ -590,11 +632,14 @@ impl ProjectDocument {
                     if let Some(gap) = gap {
                         self.validate_hold(gap)?;
                     }
-                    repeat_duration(
-                        child_duration(child)?,
-                        iterations.len(),
+                    RepeatLayout::compile(
+                        iterations,
+                        child,
+                        self.overrides.get(&id),
                         gap.as_ref().map_or(FrameDuration::ZERO, |gap| gap.duration),
+                        &durations,
                     )?
+                    .duration()
                 }
                 NodeKind::Retime {
                     child,

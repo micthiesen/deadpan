@@ -249,18 +249,29 @@ impl InstancePath {
         }
         let parents: BTreeMap<_, _> = document
             .nodes()
-            .iter()
-            .flat_map(|(id, node)| node.kind.children().iter().map(move |child| (child, id)))
+            .keys()
+            .flat_map(|id| document.children(id).map(move |child| (child, id)))
             .collect();
         let mut target = &self.node;
         let mut step = self.repeats.len();
         while let Some(parent) = parents.get(target) {
-            if let crate::NodeKind::Repeat { iterations, .. } = &document.nodes()[*parent].kind {
+            if let crate::NodeKind::Repeat {
+                iterations, child, ..
+            } = &document.nodes()[*parent].kind
+            {
                 step = step
                     .checked_sub(1)
                     .ok_or_else(|| invalid("instance path omits a Repeat ancestor"))?;
                 let instance = &self.repeats[step];
-                if &instance.node != *parent || iterations.position(&instance.iteration).is_none() {
+                let effective = document
+                    .overrides()
+                    .get(*parent)
+                    .and_then(|entries| entries.get(&instance.iteration))
+                    .unwrap_or(child);
+                if &instance.node != *parent
+                    || iterations.position(&instance.iteration).is_none()
+                    || effective != target
+                {
                     return Err(invalid(
                         "instance path names the wrong Repeat or a retired iteration",
                     ));

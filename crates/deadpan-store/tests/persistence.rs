@@ -38,6 +38,7 @@ fn insert(document: &ProjectDocument, revision: &str, node: &str) -> Result<Comm
             parent: document.root().clone(),
             index: 0,
             subtree: Subtree {
+                overrides: Default::default(),
                 root: id.clone(),
                 nodes: BTreeMap::from([(
                     id,
@@ -592,5 +593,178 @@ fn marks_and_loss_states_commit_atomically_and_survive_history_reopen() -> Resul
     )?;
     assert_eq!(store.snapshot()?.marks(), before.marks());
     store.validate()?;
+    Ok(())
+}
+
+#[test]
+fn play_overrides_retire_with_identity_and_survive_durable_undo_redo() -> Result {
+    use deadpan_core::{IterationId, NodeKind, WrapAnchorPolicy};
+    let scratch = tempfile::tempdir()?;
+    let path = scratch.path().join("overrides.deadpan");
+    let mut store = ProjectStore::create(&path, &document()?)?;
+    let request = |store: &ProjectStore, command, name: &str| -> Result<CommandRequest> {
+        let before = store.snapshot()?;
+        Ok(CommandRequest {
+            project_id: before.project_id().clone(),
+            expected_revision: before.revision_id().clone(),
+            new_revision: RevisionId::new(name)?,
+            command,
+        })
+    };
+    let identity = |document: &ProjectDocument, index| -> IterationId {
+        let NodeKind::Repeat { iterations, .. } =
+            &document.nodes()[&NodeId::new("repeat").unwrap()].kind
+        else {
+            panic!()
+        };
+        iterations.at(index).unwrap()
+    };
+    store.commit(&insert(&store.snapshot()?, "insert", "hold")?)?;
+    let repeat = NodeId::new("repeat")?;
+    store.commit(&request(
+        &store,
+        Command::WrapRepeat {
+            node: NodeId::new("hold")?,
+            id: repeat.clone(),
+            plays: 3,
+            gap: None,
+            anchor_policy: WrapAnchorPolicy::First,
+        },
+        "wrap",
+    )?)?;
+    let original = store.snapshot()?;
+    let retired = identity(&original, 2);
+    let replacement = NodeId::new("replacement")?;
+    let set = request(
+        &store,
+        Command::SetPlayOverride {
+            node: repeat.clone(),
+            iteration: retired.clone(),
+            subtree: Subtree {
+                root: replacement.clone(),
+                overrides: Default::default(),
+                nodes: BTreeMap::from([(
+                    replacement.clone(),
+                    BeatNode::hold(
+                        "Alternate pause",
+                        HoldRecipe {
+                            duration: FrameDuration::new(5)?,
+                            video: HoldVideo::Background,
+                            audio: HoldAudio::Silence,
+                        },
+                    ),
+                )]),
+            },
+        },
+        "set-override",
+    )?;
+    let before_revisions = revision_count(&path)?;
+    let preview = store.preview(&set)?;
+    assert!(!preview.forward.overrides.is_empty());
+    assert!(preview.forward.nodes.contains_key(&replacement));
+    assert_eq!(store.snapshot()?, original);
+    assert_eq!(revision_count(&path)?, before_revisions);
+    store.commit(&set)?;
+    let overridden = store.snapshot()?;
+    assert_eq!(overridden.duration()?.frames(), 29);
+    assert_eq!(preview.forward.apply(&original)?, overridden);
+    drop(store);
+    let mut store = ProjectStore::open(&path, AccessMode::ReadWrite)?;
+    assert_eq!(store.snapshot()?, overridden);
+    store.commit(&request(
+        &store,
+        Command::ClearPlayOverride {
+            node: repeat.clone(),
+            iteration: retired.clone(),
+        },
+        "clear-override",
+    )?)?;
+    let cleared = store.snapshot()?;
+    assert!(cleared.overrides().is_empty());
+    assert!(!cleared.nodes().contains_key(&replacement));
+    assert_eq!(cleared.duration()?.frames(), 36);
+    drop(store);
+    let mut store = ProjectStore::open(&path, AccessMode::ReadWrite)?;
+    store.undo(
+        store.snapshot()?.revision_id(),
+        RevisionId::new("undo-clear")?,
+    )?;
+    assert_eq!(store.snapshot()?.overrides(), overridden.overrides());
+    assert_eq!(store.snapshot()?.nodes(), overridden.nodes());
+    drop(store);
+    let mut store = ProjectStore::open(&path, AccessMode::ReadWrite)?;
+    store.redo(
+        store.snapshot()?.revision_id(),
+        RevisionId::new("redo-clear")?,
+    )?;
+    assert_eq!(store.snapshot()?.overrides(), cleared.overrides());
+    assert_eq!(store.snapshot()?.nodes(), cleared.nodes());
+    store.undo(
+        store.snapshot()?.revision_id(),
+        RevisionId::new("restore-before-shrink")?,
+    )?;
+    store.commit(&request(
+        &store,
+        Command::SetRepeat {
+            node: repeat.clone(),
+            plays: 2,
+            gap: None,
+        },
+        "shrink",
+    )?)?;
+    let shrunk = store.snapshot()?;
+    assert!(shrunk.overrides().is_empty());
+    assert!(!shrunk.nodes().contains_key(&replacement));
+    assert_eq!(shrunk.duration()?.frames(), 24);
+    drop(store);
+    let mut store = ProjectStore::open(&path, AccessMode::ReadWrite)?;
+    store.undo(
+        store.snapshot()?.revision_id(),
+        RevisionId::new("undo-shrink")?,
+    )?;
+    assert_eq!(store.snapshot()?.overrides(), overridden.overrides());
+    assert_eq!(store.snapshot()?.nodes(), overridden.nodes());
+    assert_eq!(identity(&store.snapshot()?, 2), retired);
+    store.redo(
+        store.snapshot()?.revision_id(),
+        RevisionId::new("redo-shrink")?,
+    )?;
+    assert_eq!(store.snapshot()?.overrides(), shrunk.overrides());
+    assert_eq!(store.snapshot()?.nodes(), shrunk.nodes());
+    store.commit(&request(
+        &store,
+        Command::SetRepeat {
+            node: repeat.clone(),
+            plays: 3,
+            gap: None,
+        },
+        "grow",
+    )?)?;
+    let grown = store.snapshot()?;
+    assert_ne!(identity(&grown, 2), retired);
+    assert_eq!(identity(&grown, 2).allocation.as_str(), "grow");
+    assert!(grown.overrides().is_empty());
+    assert_eq!(grown.duration()?.frames(), 36);
+    let before_revisions = revision_count(&path)?;
+    assert!(
+        store
+            .commit(&request(
+                &store,
+                Command::ClearPlayOverride {
+                    node: repeat,
+                    iteration: retired,
+                },
+                "cannot-revive-retired"
+            )?)
+            .is_err()
+    );
+    assert_eq!(revision_count(&path)?, before_revisions);
+    assert_eq!(store.snapshot()?, grown);
+    store.validate()?;
+    drop(store);
+    assert_eq!(
+        ProjectStore::open(&path, AccessMode::ReadOnly)?.snapshot()?,
+        grown
+    );
     Ok(())
 }

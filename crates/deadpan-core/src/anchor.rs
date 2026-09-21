@@ -220,6 +220,7 @@ pub struct AnchorIndex<'a> {
     pub(crate) document: &'a ProjectDocument,
     pub(crate) durations: BTreeMap<NodeId, FrameDuration>,
     pub(crate) parents: BTreeMap<NodeId, (NodeId, i64)>,
+    pub(crate) repeats: BTreeMap<NodeId, crate::RepeatLayout>,
 }
 
 impl<'a> AnchorIndex<'a> {
@@ -227,28 +228,48 @@ impl<'a> AnchorIndex<'a> {
         let durations = document.durations().map_err(|error| {
             AnchorError::new(AnchorErrorCode::InvalidDocument, error.to_string())
         })?;
-        Ok(Self::from_durations(document, durations))
+        Self::from_durations(document, durations)
+            .map_err(|error| AnchorError::new(AnchorErrorCode::InvalidDocument, error.to_string()))
     }
 
     pub(crate) fn from_durations(
         document: &'a ProjectDocument,
         durations: BTreeMap<NodeId, FrameDuration>,
-    ) -> Self {
+    ) -> Result<Self, crate::DocumentError> {
         let mut parents = BTreeMap::new();
+        let mut repeats = BTreeMap::new();
         for (id, node) in document.nodes() {
             let mut offset = 0;
-            for child in node.kind.children() {
+            for child in document.children(id) {
                 parents.insert(child.clone(), (id.clone(), offset));
-                // Only Sequences have multiple children. Its validated duration
-                // proves this cumulative sum fits i64.
-                offset += durations[child].frames();
+                if matches!(node.kind, NodeKind::Sequence { .. }) {
+                    offset += durations[child].frames();
+                }
+            }
+            if let NodeKind::Repeat {
+                child,
+                iterations,
+                gap,
+            } = &node.kind
+            {
+                repeats.insert(
+                    id.clone(),
+                    crate::RepeatLayout::compile(
+                        iterations,
+                        child,
+                        document.overrides().get(id),
+                        gap.as_ref().map_or(FrameDuration::ZERO, |gap| gap.duration),
+                        &durations,
+                    )?,
+                );
             }
         }
-        Self {
+        Ok(Self {
             document,
             durations,
             parents,
-        }
+            repeats,
+        })
     }
 
     pub fn resolve(&self, request: &SelectionRequest) -> Result<ResolvedSelection, AnchorError> {
@@ -413,7 +434,12 @@ impl<'a> AnchorIndex<'a> {
                     )
                 })?;
                 let selected = &path.repeats[step];
-                if &selected.node != parent || iterations.position(&selected.iteration).is_none() {
+                if &selected.node != parent
+                    || iterations.position(&selected.iteration).is_none()
+                    || self.repeats[parent]
+                        .play(&selected.iteration)
+                        .is_none_or(|play| &play.child != node)
+                {
                     return Err(AnchorError::new(
                         AnchorErrorCode::OccurrenceInvalid,
                         "occurrence names a wrong Repeat or retired play",
@@ -448,23 +474,17 @@ impl<'a> AnchorIndex<'a> {
         while let Some((parent, offset)) = self.parents.get(node) {
             position = match &self.document.nodes()[parent].kind {
                 NodeKind::Sequence { .. } => position.checked_add(ExactRatio::integer(*offset))?,
-                NodeKind::Repeat {
-                    iterations, gap, ..
-                } => {
-                    step -= 1; // validate_path checked the full ordered ancestry.
-                    let ordinal = iterations
-                        .position(&path.repeats[step].iteration)
+                NodeKind::Repeat { .. } => {
+                    step -= 1; // validate_path checked ordered ancestry and effective child.
+                    let play = self.repeats[parent]
+                        .play(&path.repeats[step].iteration)
                         .ok_or_else(|| {
                             AnchorError::new(
                                 AnchorErrorCode::OccurrenceInvalid,
                                 "iteration disappeared from immutable index",
                             )
                         })?;
-                    // A single play may have an unused gap that would overflow
-                    // i64 if added to its child. Keep the period wide until used.
-                    let period = i128::from(self.durations[node].frames())
-                        + i128::from(gap.as_ref().map_or(0, |g| g.duration.frames()));
-                    position.checked_add(ExactRatio::new(period * i128::from(ordinal), 1)?)?
+                    position.checked_add(ExactRatio::integer(play.start))?
                 }
                 NodeKind::Retime {
                     mapping, duration, ..

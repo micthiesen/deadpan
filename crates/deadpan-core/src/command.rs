@@ -6,9 +6,9 @@ use serde::{Deserialize, Serialize};
 use crate::document::unique_map;
 use crate::{
     AnchorLossPolicy, AssetId, AssetRecord, BeatNode, BoundaryAnchor, DocumentError,
-    DocumentErrorCode, FrameDuration, HoldRecipe, HoldVideo, IterationOrder, MAX_DOCUMENT_MARKS,
-    MAX_DOCUMENT_NODES, Mark, MarkId, MarkState, NodeId, NodeKind, ProjectDocument, ProjectId,
-    RevisionId, WrapAnchorPolicy,
+    DocumentErrorCode, FrameDuration, HoldRecipe, HoldVideo, IterationId, IterationOrder,
+    MAX_DOCUMENT_MARKS, MAX_DOCUMENT_NODES, Mark, MarkId, MarkState, NodeId, NodeKind,
+    PlayOverrides, ProjectDocument, ProjectId, RevisionId, WrapAnchorPolicy,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -17,6 +17,8 @@ pub struct Subtree {
     pub root: NodeId,
     #[serde(deserialize_with = "unique_map")]
     pub nodes: BTreeMap<NodeId, BeatNode>,
+    #[serde(default, deserialize_with = "unique_map")]
+    pub overrides: BTreeMap<NodeId, PlayOverrides>,
 }
 
 /// Structural node selectors are explicit. Range/text/occurrence resolution is
@@ -100,6 +102,15 @@ pub enum Command {
     DeleteMark {
         id: MarkId,
     },
+    SetPlayOverride {
+        node: NodeId,
+        iteration: IterationId,
+        subtree: Subtree,
+    },
+    ClearPlayOverride {
+        node: NodeId,
+        iteration: IterationId,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -133,6 +144,8 @@ pub struct DocumentPatch {
     pub assets: BTreeMap<AssetId, ValueChange<AssetRecord>>,
     #[serde(deserialize_with = "unique_map")]
     pub marks: BTreeMap<MarkId, ValueChange<Mark>>,
+    #[serde(deserialize_with = "unique_map")]
+    pub overrides: BTreeMap<NodeId, ValueChange<PlayOverrides>>,
 }
 
 impl DocumentPatch {
@@ -156,6 +169,7 @@ impl DocumentPatch {
         if self.nodes.len() > MAX_DOCUMENT_NODES
             || self.assets.len() > MAX_DOCUMENT_NODES
             || self.marks.len() > MAX_DOCUMENT_MARKS
+            || self.overrides.len() > MAX_DOCUMENT_NODES
         {
             return Err(EditError::new(
                 EditErrorCode::InvalidCommand,
@@ -176,6 +190,7 @@ impl DocumentPatch {
         }
         apply_changes(&mut result.assets, &self.assets)?;
         apply_changes(&mut result.marks, &self.marks)?;
+        apply_changes(&mut result.overrides, &self.overrides)?;
         result.revision_id = self.to_revision.clone();
         result.validate()?;
         Ok(result)
@@ -189,6 +204,7 @@ impl DocumentPatch {
             nodes: inverse_changes(&self.nodes),
             assets: inverse_changes(&self.assets),
             marks: inverse_changes(&self.marks),
+            overrides: inverse_changes(&self.overrides),
         }
     }
 }
@@ -233,9 +249,17 @@ pub fn apply(
         nodes: diff(&document.nodes, &result.nodes),
         assets: diff(&document.assets, &result.assets),
         marks: diff(&document.marks, &result.marks),
+        overrides: diff(&document.overrides, &result.overrides),
     };
     Ok(EditTransaction {
-        changed_ids: forward.nodes.keys().cloned().collect(),
+        changed_ids: forward
+            .nodes
+            .keys()
+            .chain(forward.overrides.keys())
+            .cloned()
+            .collect::<BTreeSet<_>>()
+            .into_iter()
+            .collect(),
         inverse: forward.inverse(),
         forward,
         // Both durations are nonnegative i64, so their difference always fits.
@@ -286,46 +310,15 @@ fn reduce(
             index,
             subtree,
         } => {
-            if !subtree.nodes.contains_key(&subtree.root) {
-                return Err(EditError::new(
-                    EditErrorCode::SelectionUnavailable,
-                    "inserted subtree root is missing",
-                ));
-            }
-            if subtree
-                .nodes
-                .len()
-                .checked_add(document.nodes.len())
-                .is_none_or(|len| len > MAX_DOCUMENT_NODES)
-            {
-                return Err(EditError::new(
-                    EditErrorCode::InvalidCommand,
-                    "insertion exceeds document node limit",
-                ));
-            }
-            for id in subtree.nodes.keys() {
-                unused(document, id)?;
-            }
-            insert_child(document, parent, *index, subtree.root.clone())?;
-            for (id, node) in &subtree.nodes {
-                let mut node = node.clone();
-                if let NodeKind::Repeat { iterations, .. } = &mut node.kind {
-                    // Inserting new authored nodes creates new occurrences. Do
-                    // not import arbitrary/foreign allocation namespaces that
-                    // could collide with a later revision after shrinking.
-                    *iterations = IterationOrder::new(allocation.clone(), iterations.len())?;
-                }
-                document.nodes.insert(id.clone(), node);
-            }
+            let prepared = prepare_subtree(document, subtree, allocation)?;
+            insert_child(document, parent, *index, prepared.root.clone())?;
+            install_subtree(document, prepared);
         }
         Command::Delete { node } => {
             detach(document, node)?;
-            let mut pending = vec![node.clone()];
-            while let Some(id) = pending.pop() {
-                let removed = document.nodes.remove(&id).ok_or_else(|| missing(&id))?;
-                pending.extend(removed.kind.children().iter().cloned());
-            }
+            remove_subtree(document, node)?;
         }
+
         Command::Move {
             node,
             parent,
@@ -415,6 +408,19 @@ fn reduce(
             };
             *iterations = iterations.resized(*plays, allocation.clone())?;
             *old_gap = gap.clone();
+            let retained = iterations.clone();
+            let retired: Vec<_> = document
+                .overrides
+                .get(node)
+                .into_iter()
+                .flat_map(|entries| entries.iter())
+                .filter(|(identity, _)| retained.position(identity).is_none())
+                .map(|(identity, root)| (identity.clone(), root.clone()))
+                .collect();
+            for (identity, root) in retired {
+                remove_override(document, node, &identity);
+                remove_subtree(document, &root)?;
+            }
         }
         Command::InsertPlays { node, index, count } => {
             let iterations = iterations_mut(document, node)?;
@@ -447,6 +453,37 @@ fn reduce(
             }
             document.assets.insert(id.clone(), asset.clone());
         }
+        Command::SetPlayOverride {
+            node,
+            iteration,
+            subtree,
+        } => {
+            require_play(document, node, iteration)?;
+            // Check fresh identities before retiring the prior override. A
+            // replacement cannot quietly resurrect that subtree's marks.
+            let prepared = prepare_subtree(document, subtree, allocation)?;
+            if let Some(old) = remove_override(document, node, iteration) {
+                remove_subtree(document, &old)?;
+            }
+            let root = prepared.root.clone();
+            install_subtree(document, prepared);
+            document
+                .overrides
+                .entry(node.clone())
+                .or_default()
+                .insert(iteration.clone(), root);
+        }
+        Command::ClearPlayOverride { node, iteration } => {
+            require_play(document, node, iteration)?;
+            let root = remove_override(document, node, iteration).ok_or_else(|| {
+                EditError::new(
+                    EditErrorCode::SelectionUnavailable,
+                    "selected play has no override",
+                )
+            })?;
+            remove_subtree(document, &root)?;
+        }
+
         Command::SetMark {
             id,
             owner,
@@ -475,6 +512,112 @@ fn reduce(
         }
     }
     Ok(())
+}
+
+fn prepare_subtree(
+    document: &ProjectDocument,
+    subtree: &Subtree,
+    allocation: &RevisionId,
+) -> Result<Subtree, EditError> {
+    if !subtree.nodes.contains_key(&subtree.root) {
+        return Err(EditError::new(
+            EditErrorCode::SelectionUnavailable,
+            "inserted subtree root is missing",
+        ));
+    }
+    if subtree.nodes.len() > MAX_DOCUMENT_NODES || subtree.overrides.len() > MAX_DOCUMENT_NODES {
+        return Err(EditError::new(
+            EditErrorCode::InvalidCommand,
+            "inserted subtree exceeds node limit",
+        ));
+    }
+    for id in subtree.nodes.keys() {
+        unused(document, id)?;
+    }
+    let mut prepared = subtree.clone();
+    for (id, entries) in &subtree.overrides {
+        let Some(BeatNode {
+            kind: NodeKind::Repeat { iterations, .. },
+            ..
+        }) = subtree.nodes.get(id)
+        else {
+            return Err(EditError::new(
+                EditErrorCode::InvalidCommand,
+                "inserted override owner is not an inserted Repeat",
+            ));
+        };
+        let normalized = IterationOrder::new(allocation.clone(), iterations.len())?;
+        let mut remapped = Vec::with_capacity(entries.len());
+        for (identity, root) in entries.iter() {
+            let position = iterations.position(identity).ok_or_else(|| {
+                EditError::new(
+                    EditErrorCode::InvalidCommand,
+                    "inserted override names a retired play",
+                )
+            })?;
+            remapped.push(crate::PlayOverride {
+                iteration: normalized.at(position).ok_or_else(|| missing(id))?,
+                root: root.clone(),
+            });
+        }
+        prepared
+            .overrides
+            .insert(id.clone(), PlayOverrides::try_from(remapped)?);
+    }
+    for node in prepared.nodes.values_mut() {
+        if let NodeKind::Repeat { iterations, .. } = &mut node.kind {
+            *iterations = IterationOrder::new(allocation.clone(), iterations.len())?;
+        }
+    }
+    Ok(prepared)
+}
+fn install_subtree(document: &mut ProjectDocument, subtree: Subtree) {
+    document.nodes.extend(subtree.nodes);
+    document.overrides.extend(subtree.overrides);
+}
+fn remove_subtree(document: &mut ProjectDocument, root: &NodeId) -> Result<(), EditError> {
+    let mut pending = vec![root.clone()];
+    while let Some(id) = pending.pop() {
+        pending.extend(document.children(&id).cloned());
+        document.nodes.remove(&id).ok_or_else(|| missing(&id))?;
+        document.overrides.remove(&id);
+    }
+    Ok(())
+}
+fn require_play(
+    document: &ProjectDocument,
+    node: &NodeId,
+    iteration: &IterationId,
+) -> Result<(), EditError> {
+    let Some(BeatNode {
+        kind: NodeKind::Repeat { iterations, .. },
+        ..
+    }) = document.nodes.get(node)
+    else {
+        return Err(EditError::new(
+            EditErrorCode::WrongNodeKind,
+            "play override requires a Repeat",
+        ));
+    };
+    if iterations.position(iteration).is_none() {
+        return Err(EditError::new(
+            EditErrorCode::SelectionUnavailable,
+            "override names a missing or retired play",
+        ));
+    }
+    Ok(())
+}
+fn remove_override(
+    document: &mut ProjectDocument,
+    node: &NodeId,
+    iteration: &IterationId,
+) -> Option<NodeId> {
+    let entries = document.overrides.get_mut(node)?;
+    let root = entries.remove(iteration);
+    if entries.is_empty() {
+        document.overrides.remove(node);
+    }
+    root
 }
 
 fn iterations_mut<'a>(
@@ -593,6 +736,16 @@ fn replace_child(
     old: &NodeId,
     new: NodeId,
 ) -> Result<(), EditError> {
+    if let Some(entries) = document.overrides.get_mut(parent) {
+        let identity = entries
+            .iter()
+            .find(|(_, root)| *root == old)
+            .map(|(identity, _)| identity.clone());
+        if let Some(identity) = identity {
+            entries.insert(identity, new);
+            return Ok(());
+        }
+    }
     let kind = &mut node_mut(document, parent)?.kind;
     let children = match kind {
         NodeKind::Sequence { children } => children.as_mut_slice(),
@@ -696,6 +849,8 @@ fn description(command: &Command) -> &'static str {
         Command::AddAsset { .. } => "Register media asset",
         Command::SetMark { .. } => "Set mark",
         Command::DeleteMark { .. } => "Delete mark",
+        Command::SetPlayOverride { .. } => "Set play override",
+        Command::ClearPlayOverride { .. } => "Clear play override",
     }
 }
 

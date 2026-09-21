@@ -66,6 +66,7 @@ fn tree(children: &[&str], nodes: Vec<(&str, BeatNode)>) -> ProjectDocument {
             parent: node("root"),
             index: 0,
             subtree: Subtree {
+                overrides: Default::default(),
                 root: node("group"),
                 nodes,
             },
@@ -432,6 +433,7 @@ fn source_document() -> ProjectDocument {
             parent: node("root"),
             index: 0,
             subtree: Subtree {
+                overrides: Default::default(),
                 root: node("source"),
                 nodes: BTreeMap::from([(
                     node("source"),

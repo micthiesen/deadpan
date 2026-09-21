@@ -1,9 +1,10 @@
 use std::collections::BTreeMap;
 
 use deadpan_core::{
-    AssetId, ExactRatio, FrameDuration, FrameRange, HoldRecipe, HoldVideo, InstancePath,
-    IterationId, NodeId, NodeKind, PresentationBasis, ProjectDocument, ProjectFrame, ProjectId,
-    RepeatInstance, RevisionId, SourceFrameId, SourcePoint, SourceTimeBase, SourceVideo, TimeError,
+    AssetId, ExactRatio, FrameDuration, FrameRange, HoldRecipe, HoldVideo, InsertionBias,
+    InstancePath, NodeId, NodeKind, PresentationBasis, ProjectDocument, ProjectFrame, ProjectId,
+    RepeatInstance, RepeatLayout, RevisionId, SourceFrameId, SourcePoint, SourceTimeBase,
+    SourceVideo, TimeError,
 };
 use serde::Serialize;
 
@@ -14,6 +15,8 @@ pub struct StorageStats {
     pub authored_nodes: usize,
     pub sequence_prefix_entries: usize,
     pub iteration_run_entries: usize,
+    pub repeat_segment_entries: usize,
+    pub sparse_override_entries: usize,
     /// Sum of authored counts, not an allocation or an expanded occurrence count.
     pub referenced_plays: u64,
 }
@@ -88,12 +91,7 @@ enum CompiledKind {
         video: CompiledHold,
     },
     Repeat {
-        child: usize,
-        child_duration: i64,
-        /// i128 permits one play whose unused child+gap sum exceeds i64.
-        period: i128,
-        plays: u32,
-        runs: Vec<IterationRun>,
+        layout: RepeatLayout,
         gap: Option<CompiledHold>,
     },
     Retime {
@@ -108,14 +106,6 @@ struct SequenceEntry {
     child: usize,
     start: i64,
     end: i64,
-}
-
-#[derive(Debug, Clone)]
-struct IterationRun {
-    allocation: RevisionId,
-    first: u32,
-    start: u32,
-    end: u32,
 }
 
 #[derive(Debug, Clone)]
@@ -242,29 +232,22 @@ impl RenderPlan {
                     iterations,
                     gap,
                 } => {
-                    let mut runs = Vec::with_capacity(iterations.segment_count());
-                    let mut end = 0u32;
-                    for (allocation, first, count) in iterations.segments() {
-                        let start = end;
-                        end = end.checked_add(count).ok_or(TimeError::Overflow)?;
-                        runs.push(IterationRun {
-                            allocation: allocation.clone(),
-                            first,
-                            start,
-                            end,
-                        });
-                    }
-                    storage.iteration_run_entries += runs.len();
-                    storage.referenced_plays += u64::from(end);
-                    let child_duration = durations[child].frames();
-                    let gap_duration = gap.as_ref().map_or(0, |recipe| recipe.duration.frames());
+                    let overrides = document.overrides().get(id);
+                    let layout = RepeatLayout::compile(
+                        iterations,
+                        child,
+                        overrides,
+                        gap.as_ref()
+                            .map_or(FrameDuration::ZERO, |recipe| recipe.duration),
+                        &durations,
+                    )?;
+                    storage.iteration_run_entries += iterations.segment_count();
+                    storage.repeat_segment_entries += layout.segment_count();
+                    storage.sparse_override_entries += overrides.map_or(0, |entries| entries.len());
+                    storage.referenced_plays += u64::from(iterations.len());
                     (
                         CompiledKind::Repeat {
-                            child: by_id[child],
-                            child_duration,
-                            period: i128::from(child_duration) + i128::from(gap_duration),
-                            plays: end,
-                            runs,
+                            layout,
                             gap: gap
                                 .as_ref()
                                 .map(|recipe| CompiledHold::compile(recipe, document))
@@ -342,7 +325,7 @@ impl RenderPlan {
     }
 
     /// Sample the center of a half-open project frame. Structural descent costs
-    /// O(depth * log(max(children, runs))); repeat counts do not affect storage.
+    /// O(depth * log(max(children, runs + overrides))); repeat counts do not affect storage.
     /// Arithmetic overflow fails explicitly instead of rounding an intermediate.
     pub fn picture(&self, frame: ProjectFrame) -> Result<PictureSample, PlanError> {
         if frame.0 < 0 || frame.0 >= self.duration().frames() {
@@ -412,52 +395,21 @@ impl RenderPlan {
                     local = start.checked_add(local.checked_mul(*scale)?)?;
                     current = *child;
                 }
-                CompiledKind::Repeat {
-                    child,
-                    child_duration,
-                    period,
-                    plays,
-                    runs,
-                    gap,
-                } => {
-                    let play =
-                        u32::try_from(local.floor() / period).map_err(|_| TimeError::Overflow)?;
-                    if play >= *plays {
-                        return Err(PlanError::InvalidPlan("repeat play index exceeds count"));
-                    }
-                    let run_index = upper_bound(
-                        runs.len(),
-                        |index| play >= runs[index].end,
-                        &mut lookup.iteration_run_comparisons,
-                    );
-                    let run = runs
-                        .get(run_index)
-                        .ok_or(PlanError::InvalidPlan("repeat run index has no play"))?;
-                    let iteration = IterationId {
-                        allocation: run.allocation.clone(),
-                        ordinal: run
-                            .first
-                            .checked_add(play - run.start)
-                            .ok_or(TimeError::Overflow)?,
-                    };
-                    let offset = i64::try_from(i128::from(play) * period)
-                        .map_err(|_| TimeError::Overflow)?;
-                    local = local.checked_sub(ExactRatio::integer(offset))?;
-                    if !local.compare_integer(*child_duration).is_lt() {
-                        if play == plays - 1 {
-                            return Err(PlanError::InvalidPlan("repeat has no trailing gap"));
-                        }
-                        local = local.checked_sub(ExactRatio::integer(*child_duration))?;
+                CompiledKind::Repeat { layout, gap } => {
+                    let location = layout.locate(local, InsertionBias::Right)?;
+                    lookup.iteration_run_comparisons += location.comparisons;
+                    local = location.position;
+                    if location.in_gap {
                         let gap = gap
                             .as_ref()
                             .ok_or(PlanError::InvalidPlan("repeat gap recipe is missing"))?;
-                        break (gap.picture(local)?, Some(iteration));
+                        break (gap.picture(local)?, Some(location.play.iteration));
                     }
                     repeats.push(RepeatInstance {
                         node: node.inspection.id.clone(),
-                        iteration,
+                        iteration: location.play.iteration,
                     });
-                    current = *child;
+                    current = self.by_id[&location.play.child];
                 }
             }
         };

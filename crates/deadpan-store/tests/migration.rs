@@ -5,7 +5,7 @@ use std::{
 };
 
 use deadpan_core::{
-    IterationOrder, NodeId, NodeKind, ProjectDocument, RevisionId, legacy_v1, legacy_v2,
+    IterationOrder, NodeId, NodeKind, ProjectDocument, RevisionId, legacy_v1, legacy_v2, legacy_v3,
 };
 use deadpan_store::{AccessMode, ProjectStore, StoreError};
 use rusqlite::Connection;
@@ -24,6 +24,7 @@ fn fixture_version(scratch: &Path, version: u32) -> Result<PathBuf> {
     connection.execute_batch(match version {
         1 => include_str!("fixtures/v1-history.sql"),
         2 => include_str!("fixtures/v2-history.sql"),
+        3 => include_str!("fixtures/v3-history.sql"),
         _ => panic!("unsupported fixture"),
     })?;
     Ok(package)
@@ -88,7 +89,7 @@ fn order(document: &ProjectDocument) -> &IterationOrder {
 #[test]
 fn corrupt_old_tables_and_oversized_rows_retain_backup_before_validation() -> Result {
     let oversized_bytes = i64::try_from(deadpan_core::MAX_DOCUMENT_JSON_BYTES)? + 1;
-    for version in [1, 2] {
+    for version in [1, 2, 3] {
         for missing_table in [true, false] {
             let scratch = tempfile::tempdir()?;
             let path = fixture_version(scratch.path(), version)?;
@@ -161,7 +162,7 @@ fn old_binary_history_migrates_with_stable_ids_and_pending_redo() -> Result {
     let old_docs = docs(&database)?;
     drop(database);
     let migration = ProjectStore::migrate(&path)?;
-    assert_eq!((migration.from_schema, migration.to_schema), (1, 3));
+    assert_eq!((migration.from_schema, migration.to_schema), (1, 4));
     let backup = Connection::open(migration.backup.unwrap())?;
     assert_eq!(contents(&backup)?, before);
     let database = Connection::open(path.join("project.sqlite"))?;
@@ -240,7 +241,7 @@ fn migration_promotes_with_a_live_wal_reader_without_replacing_its_snapshot() ->
     reader.execute_batch("COMMIT")?;
     assert_eq!(
         reader.pragma_query_value(None, "user_version", |row| row.get::<_, u32>(0))?,
-        3
+        4
     );
     Ok(())
 }
@@ -272,7 +273,7 @@ fn corruption_is_rejected_without_promoting_any_migrated_rows() -> Result {
                 .unwrap()
                 .file_name()
                 .to_string_lossy()
-                .starts_with("before-schema-3-")
+                .starts_with("before-schema-4-")
         }));
     }
     Ok(())
@@ -320,7 +321,7 @@ fn schema_two_history_preserves_compact_identities_and_pending_redo() -> Result 
     let original_metadata = metadata(&database)?;
     let old_docs = docs(&database)?;
     let migration = ProjectStore::migrate(&path)?;
-    assert_eq!((migration.from_schema, migration.to_schema), (2, 3));
+    assert_eq!((migration.from_schema, migration.to_schema), (2, 4));
     assert_eq!(
         contents(&Connection::open(migration.backup.unwrap())?)?,
         original
@@ -333,6 +334,7 @@ fn schema_two_history_preserves_compact_identities_and_pending_redo() -> Result 
             "{revision}"
         );
         assert!(current.marks().is_empty());
+        assert!(current.overrides().is_empty());
     }
     let wrapped = snapshot(&database, "v2-wrap")?;
     let inserted = snapshot(&database, "v2-insert-plays")?;
@@ -355,6 +357,7 @@ fn schema_two_history_preserves_compact_identities_and_pending_redo() -> Result 
         let _: deadpan_core::CommandRequest = serde_json::from_str(&request)?;
         let edit: deadpan_core::EditTransaction = serde_json::from_str(&edit)?;
         assert!(edit.forward.marks.is_empty() && edit.inverse.marks.is_empty());
+        assert!(edit.forward.overrides.is_empty() && edit.inverse.overrides.is_empty());
     }
     drop(database);
     let mut store = ProjectStore::open(&path, AccessMode::ReadWrite)?;
@@ -515,6 +518,230 @@ fn legacy_projection_cannot_hide_marks_added_by_a_faulty_replay() -> Result {
             legacy_v2::Document::from_json(&initial_json)?.matches(&marked)
         };
         assert!(!matches_document);
+    }
+    Ok(())
+}
+
+#[test]
+fn schema_three_history_preserves_every_mark_and_pending_redo() -> Result {
+    use deadpan_core::{Anchor, InsertionBias, MarkId, MarkLossReason, MarkState};
+    let scratch = tempfile::tempdir()?;
+    let path = fixture_version(scratch.path(), 3)?;
+    for mode in [AccessMode::ReadOnly, AccessMode::ReadWrite] {
+        assert!(matches!(
+            ProjectStore::open(&path, mode),
+            Err(StoreError::MigrationRequired(3))
+        ));
+    }
+    let database = Connection::open(path.join("project.sqlite"))?;
+    let original = contents(&database)?;
+    let original_metadata = metadata(&database)?;
+    let old_docs = docs(&database)?;
+    let old_edits = database
+        .prepare("SELECT id,edit FROM history ORDER BY id")?
+        .query_map([], |row| {
+            Ok((row.get::<_, i64>(0)?, row.get::<_, String>(1)?))
+        })?
+        .collect::<std::result::Result<Vec<_>, _>>()?;
+    assert_eq!(old_docs.len(), 23);
+    assert_eq!(old_edits.len(), 17);
+    let migration = ProjectStore::migrate(&path)?;
+    assert_eq!((migration.from_schema, migration.to_schema), (3, 4));
+    let backup = migration.backup.unwrap();
+    assert!(
+        backup
+            .file_name()
+            .unwrap()
+            .to_string_lossy()
+            .starts_with("before-schema-4-")
+    );
+    assert_eq!(contents(&Connection::open(backup)?)?, original);
+    assert_eq!(metadata(&database)?, original_metadata);
+    for (revision, json) in old_docs {
+        let current = snapshot(&database, &revision)?;
+        assert!(
+            legacy_v3::Document::from_json(&json)?.matches(&current),
+            "{revision}"
+        );
+        let old: serde_json::Value = serde_json::from_str(&json)?;
+        assert_eq!(
+            serde_json::to_value(current.marks())?,
+            old["marks"],
+            "{revision}"
+        );
+        assert!(current.overrides().is_empty());
+    }
+    for (id, old_json) in old_edits {
+        let json: String =
+            database.query_row("SELECT edit FROM history WHERE id=?1", [id], |row| {
+                row.get(0)
+            })?;
+        let current: deadpan_core::EditTransaction = serde_json::from_str(&json)?;
+        assert!(legacy_v3::matches_edit(&old_json, &current)?);
+        assert!(current.forward.overrides.is_empty() && current.inverse.overrides.is_empty());
+    }
+    let wrapped = snapshot(&database, "v3-wrap")?;
+    let shrunk = snapshot(&database, "v3-shrink")?;
+    let grown = snapshot(&database, "v3-grow")?;
+    let retired = order(&wrapped).at(2).unwrap();
+    assert!(order(&shrunk).position(&retired).is_none());
+    assert!(order(&grown).position(&retired).is_none());
+    assert_eq!(order(&grown).at(2).unwrap().allocation.as_str(), "v3-grow");
+    let lost = MarkState::Unresolved {
+        reason: MarkLossReason::OccurrenceMissing,
+    };
+    assert_eq!(shrunk.marks()[&MarkId::new("occurrence")?].state, lost);
+    assert_eq!(grown.marks()[&MarkId::new("occurrence")?].state, lost);
+    let deleted = snapshot(&database, "v3-delete")?;
+    assert_eq!(
+        deleted.marks()[&MarkId::new("owned-keep")?].state,
+        MarkState::Unresolved {
+            reason: MarkLossReason::OwnerMissing
+        }
+    );
+    assert!(!deleted.marks().contains_key(&MarkId::new("owned-delete")?));
+    assert_eq!(
+        deleted.marks()[&MarkId::new("left")?].boundary.bias,
+        InsertionBias::Left
+    );
+    assert_eq!(
+        deleted.marks()[&MarkId::new("right")?].boundary.bias,
+        InsertionBias::Right
+    );
+    assert!(matches!(
+        deleted.marks()[&MarkId::new("pinned")?].boundary.coordinate,
+        Anchor::Sequence {
+            frame: deadpan_core::ProjectFrame(1)
+        }
+    ));
+    let branch = snapshot(&database, "v3-branch")?;
+    let mark_deleted = snapshot(&database, "v3-delete-mark")?;
+    drop(database);
+    let mut store = ProjectStore::open(&path, AccessMode::ReadWrite)?;
+    assert_eq!(store.snapshot()?.marks(), deleted.marks());
+    store.redo(
+        store.snapshot()?.revision_id(),
+        RevisionId::new("v4-redo-branch")?,
+    )?;
+    assert_eq!(store.snapshot()?.marks(), branch.marks());
+    drop(store);
+    let mut store = ProjectStore::open(&path, AccessMode::ReadWrite)?;
+    store.redo(
+        store.snapshot()?.revision_id(),
+        RevisionId::new("v4-redo-delete-mark")?,
+    )?;
+    assert_eq!(store.snapshot()?.marks(), mark_deleted.marks());
+    store.undo(
+        store.snapshot()?.revision_id(),
+        RevisionId::new("v4-undo-delete-mark")?,
+    )?;
+    assert_eq!(store.snapshot()?.marks(), branch.marks());
+    store.validate()?;
+    drop(store);
+    assert!(ProjectStore::migrate(&path)?.backup.is_none());
+    Ok(())
+}
+
+#[test]
+fn every_old_schema_rejects_override_vocabulary_before_promotion() -> Result {
+    for version in [1, 2, 3] {
+        for corruption in [
+            "UPDATE revisions SET document=json_set(document,'$.overrides',json('{}'))",
+            "UPDATE history SET edit=json_set(edit,'$.forward.overrides',json('{}'))",
+            "UPDATE history SET edit=json_set(edit,'$.inverse.overrides',json('{}'))",
+            "UPDATE history SET request=json_set(request,'$.command.subtree.overrides',json('{}')) WHERE json_extract(request,'$.command.command')='insert'",
+            "UPDATE history SET request=json_set(request,'$.command.command','set_play_override')",
+            "UPDATE history SET request=json_set(request,'$.command.command','clear_play_override')",
+            "UPDATE revisions SET document=json_set(document,'$.schema_version',4)",
+        ] {
+            let scratch = tempfile::tempdir()?;
+            let path = fixture_version(scratch.path(), version)?;
+            let database = Connection::open(path.join("project.sqlite"))?;
+            database.execute_batch(corruption)?;
+            let before = contents(&database)?;
+            let failure = ProjectStore::migrate(&path).unwrap_err();
+            let StoreError::MigrationFailed { backup, .. } = failure else {
+                panic!("schema {version}: {corruption}");
+            };
+            assert_eq!(contents(&database)?, before);
+            assert_eq!(contents(&Connection::open(backup)?)?, before);
+        }
+    }
+    Ok(())
+}
+
+#[test]
+fn legacy_projection_cannot_hide_empty_override_entries_from_faulty_replay() -> Result {
+    use deadpan_core::{EditTransaction, PlayOverrides, ValueChange};
+    for version in [1, 2, 3] {
+        let scratch = tempfile::tempdir()?;
+        let path = fixture_version(scratch.path(), version)?;
+        let database = Connection::open(path.join("project.sqlite"))?;
+        let initial_json: String = database.query_row(
+            "SELECT document FROM revisions WHERE kind='initial'",
+            [],
+            |row| row.get(0),
+        )?;
+        let base = match version {
+            1 => legacy_v1::Document::from_json(&initial_json)?.upgrade()?,
+            2 => legacy_v2::Document::from_json(&initial_json)?.upgrade()?,
+            _ => legacy_v3::Document::from_json(&initial_json)?.upgrade()?,
+        };
+        let (request_json, edit_json): (String, String) = database.query_row(
+            "SELECT request,edit FROM history WHERE parent_id IS NULL",
+            [],
+            |row| Ok((row.get(0)?, row.get(1)?)),
+        )?;
+        let request = match version {
+            1 => legacy_v1::upgrade_request(&request_json)?,
+            2 => legacy_v2::upgrade_request(&request_json)?,
+            _ => legacy_v3::upgrade_request(&request_json)?,
+        };
+        let expected = deadpan_core::apply(&base, &request)?;
+        let matches = |edit: &EditTransaction| match version {
+            1 => legacy_v1::matches_edit(&edit_json, edit),
+            2 => legacy_v2::matches_edit(&edit_json, edit),
+            _ => legacy_v3::matches_edit(&edit_json, edit),
+        };
+        assert!(matches(&expected)?);
+        for forward in [true, false] {
+            let mut forged = expected.clone();
+            let patch = if forward {
+                &mut forged.forward
+            } else {
+                &mut forged.inverse
+            };
+            patch.overrides.insert(
+                base.root().clone(),
+                ValueChange {
+                    before: None,
+                    after: Some(PlayOverrides::default()),
+                },
+            );
+            assert!(!matches(&forged)?);
+        }
+    }
+    Ok(())
+}
+
+#[test]
+fn schema_three_mark_corruption_retains_original_and_backup() -> Result {
+    for corruption in [
+        "UPDATE revisions SET document=json_set(document,'$.marks.left.boundary.bias','right') WHERE id='v3-mark-left'",
+        "UPDATE history SET request=json_set(request,'$.command.loss_policy','delete_owned') WHERE revision_id='v3-mark-occurrence'",
+        "UPDATE history SET edit=json_set(edit,'$.inverse.marks.left.after.label','tampered') WHERE revision_id='v3-delete-mark'",
+    ] {
+        let scratch = tempfile::tempdir()?;
+        let path = fixture_version(scratch.path(), 3)?;
+        let database = Connection::open(path.join("project.sqlite"))?;
+        database.execute_batch(corruption)?;
+        let before = contents(&database)?;
+        let StoreError::MigrationFailed { backup, .. } = ProjectStore::migrate(&path).unwrap_err()
+        else {
+            panic!()
+        };
+        assert_eq!(contents(&database)?, before);
+        assert_eq!(contents(&Connection::open(backup)?)?, before);
     }
     Ok(())
 }

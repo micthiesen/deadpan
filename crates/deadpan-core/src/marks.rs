@@ -69,6 +69,15 @@ impl From<TimeError> for Failure {
         Self::Arithmetic(error)
     }
 }
+impl From<DocumentError> for Failure {
+    fn from(error: DocumentError) -> Self {
+        if error.code == DocumentErrorCode::TimingOverflow {
+            Self::Arithmetic(TimeError::Overflow)
+        } else {
+            Self::Lost(MarkLossReason::ContentMissing)
+        }
+    }
+}
 impl From<AnchorError> for Failure {
     fn from(error: AnchorError) -> Self {
         Self::Lost(match error.code {
@@ -141,7 +150,10 @@ struct Index<'a> {
     sequences: BTreeMap<NodeId, Vec<(i64, NodeId)>>,
 }
 impl<'a> Index<'a> {
-    fn new(document: &'a ProjectDocument, durations: BTreeMap<NodeId, FrameDuration>) -> Self {
+    fn new(
+        document: &'a ProjectDocument,
+        durations: BTreeMap<NodeId, FrameDuration>,
+    ) -> std::result::Result<Self, DocumentError> {
         let mut sequences = BTreeMap::new();
         for (id, node) in document.nodes() {
             if let NodeKind::Sequence { children } = &node.kind {
@@ -157,10 +169,10 @@ impl<'a> Index<'a> {
                 sequences.insert(id.clone(), entries);
             }
         }
-        Self {
-            anchors: AnchorIndex::from_durations(document, durations),
+        Ok(Self {
+            anchors: AnchorIndex::from_durations(document, durations)?,
             sequences,
-        }
+        })
     }
     fn duration(&self, node: &NodeId) -> Result<i64> {
         self.anchors
@@ -218,42 +230,25 @@ impl<'a> Index<'a> {
                         .checked_add(ExactRatio::integer(mapping.start().0))?;
                     node = child;
                 }
-                NodeKind::Repeat {
-                    child,
-                    iterations,
-                    gap,
-                } => {
-                    let child_duration = self.duration(child)?;
-                    let period = i128::from(child_duration)
-                        + i128::from(gap.as_ref().map_or(0, |gap| gap.duration.frames()));
-                    let quotient = position.checked_div(ExactRatio::new(period, 1)?)?;
-                    let mut ordinal = quotient.floor();
-                    if bias == InsertionBias::Left && ordinal > 0 && quotient.denominator() == 1 {
-                        ordinal -= 1;
-                    }
-                    let ordinal = u32::try_from(ordinal)
-                        .map_err(|_| Failure::Lost(MarkLossReason::OccurrenceMissing))?;
-                    let identity = iterations
-                        .at(ordinal)
-                        .ok_or(Failure::Lost(MarkLossReason::OccurrenceMissing))?;
-                    position =
-                        position.checked_sub(ExactRatio::new(period * i128::from(ordinal), 1)?)?;
-                    if position.compare_integer(child_duration).is_gt()
-                        || (position.compare_integer(child_duration).is_eq()
-                            && bias == InsertionBias::Right
-                            && gap.is_some()
-                            && ordinal < iterations.len() - 1)
-                    {
-                        position = position.checked_sub(ExactRatio::integer(child_duration))?;
+                NodeKind::Repeat { .. } => {
+                    let location = self.anchors.repeats[node].locate(position, bias)?;
+                    position = location.position;
+                    if location.in_gap {
                         return Ok(ContentPoint::Content {
                             node: node.clone(),
                             position,
                             repeats,
-                            gap: Some(identity),
+                            gap: Some(location.play.iteration),
                         });
                     }
-                    repeats.insert(node.clone(), identity);
-                    node = child;
+                    repeats.insert(node.clone(), location.play.iteration);
+                    node = self
+                        .anchors
+                        .document
+                        .nodes()
+                        .get_key_value(&location.play.child)
+                        .ok_or(Failure::Lost(MarkLossReason::HostMissing))?
+                        .0;
                 }
                 NodeKind::Source { .. } | NodeKind::Hold { .. } => {
                     return Ok(ContentPoint::Content {
@@ -292,32 +287,24 @@ impl<'a> Index<'a> {
             return lost(MarkLossReason::ContentMissing);
         }
         if let Some(identity) = gap {
-            let NodeKind::Repeat {
-                child,
-                iterations,
-                gap: Some(gap),
-            } = &self.anchors.document.nodes()[&node].kind
-            else {
-                return lost(MarkLossReason::GapMissing);
-            };
-            let ordinal = iterations
-                .position(&identity)
+            let play = self
+                .anchors
+                .repeats
+                .get(&node)
+                .and_then(|layout| layout.play(&identity))
                 .ok_or(Failure::Lost(MarkLossReason::OccurrenceMissing))?;
-            if ordinal == iterations.len() - 1 {
+            if play.gap_after == FrameDuration::ZERO {
                 return lost(MarkLossReason::GapMissing);
             }
             within_content(
                 position,
-                gap.duration.frames(),
+                play.gap_after.frames(),
                 bias,
                 MarkLossReason::OutOfRange,
             )?;
-            let child_duration = self.duration(child)?;
-            let period = i128::from(child_duration) + i128::from(gap.duration.frames());
-            position = position.checked_add(ExactRatio::new(
-                period * i128::from(ordinal) + i128::from(child_duration),
-                1,
-            )?)?;
+            position = position
+                .checked_add(ExactRatio::integer(play.start))?
+                .checked_add(ExactRatio::integer(play.duration.frames()))?;
         } else {
             within_content(
                 position,
@@ -334,19 +321,18 @@ impl<'a> Index<'a> {
                 .ok_or(Failure::Lost(MarkLossReason::OutsideHost))?;
             position = match &self.anchors.document.nodes()[parent].kind {
                 NodeKind::Sequence { .. } => position.checked_add(ExactRatio::integer(*offset))?,
-                NodeKind::Repeat {
-                    iterations, gap, ..
-                } => {
+                NodeKind::Repeat { .. } => {
                     let identity = match repeats.remove(parent) {
                         Some(identity) => identity,
                         None => self.wrapped_iteration(parent, command)?,
                     };
-                    let ordinal = iterations
-                        .position(&identity)
+                    let play = self.anchors.repeats[parent]
+                        .play(&identity)
                         .ok_or(Failure::Lost(MarkLossReason::OccurrenceMissing))?;
-                    let period = i128::from(self.duration(&node)?)
-                        + i128::from(gap.as_ref().map_or(0, |gap| gap.duration.frames()));
-                    position.checked_add(ExactRatio::new(period * i128::from(ordinal), 1)?)?
+                    if play.child != node {
+                        return lost(MarkLossReason::ContentMissing);
+                    }
+                    position.checked_add(ExactRatio::integer(play.start))?
                 }
                 NodeKind::Retime {
                     mapping, duration, ..
@@ -409,7 +395,11 @@ impl<'a> Index<'a> {
                     Some(identity) => identity,
                     None => self.wrapped_iteration(parent, command)?,
                 };
-                if iterations.position(&identity).is_none() {
+                if iterations.position(&identity).is_none()
+                    || self.anchors.repeats[parent]
+                        .play(&identity)
+                        .is_none_or(|play| &play.child != node)
+                {
                     return lost(MarkLossReason::OccurrenceMissing);
                 }
                 repeats.push(RepeatInstance {
@@ -491,7 +481,7 @@ pub(crate) fn validate_marks(
     if document.marks().is_empty() {
         return Ok(());
     }
-    let index = Index::new(document, durations.clone());
+    let index = Index::new(document, durations.clone())?;
     for mark in document.marks().values() {
         crate::document::validate_label(&mark.label)?;
         match &mark.boundary.coordinate {
@@ -540,8 +530,8 @@ pub(crate) fn transform_marks(
     if before.marks().is_empty() {
         return Ok(BTreeMap::new());
     }
-    let old = Index::new(before, before.structural_durations()?);
-    let new = Index::new(after, new_durations);
+    let old = Index::new(before, before.structural_durations()?)?;
+    let new = Index::new(after, new_durations)?;
     let mut output = BTreeMap::new();
     for (id, original) in before.marks() {
         let mut mark = original.clone();

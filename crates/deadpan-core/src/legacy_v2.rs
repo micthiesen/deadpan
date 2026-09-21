@@ -1,7 +1,7 @@
 //! Frozen schema-2 document/history wire adapter. Only full chronological replay
 //! may use this module. Normal document ingress accepts the current schema only.
-//! The primitive beat/asset wire types are unchanged by schema 3; the command,
-//! document and patch vocabulary here deliberately excludes marks and policies.
+//! Primitive beat/asset wire types are unchanged; the command, document and patch
+//! vocabulary here deliberately excludes marks, policies, and play overrides.
 
 use crate::document::unique_map;
 use crate::*;
@@ -43,12 +43,14 @@ impl Document {
             nodes: self.nodes,
             assets: self.assets,
             marks: BTreeMap::new(),
+            overrides: BTreeMap::new(),
         };
         document.validate()?;
         Ok(document)
     }
     pub fn matches(&self, document: &ProjectDocument) -> bool {
         document.marks.is_empty()
+            && document.overrides.is_empty()
             && self
                 == &Self {
                     schema_version: 2,
@@ -156,6 +158,7 @@ pub fn upgrade_request(json: &str) -> Result<CommandRequest, DocumentError> {
             subtree: Subtree {
                 root: subtree.root,
                 nodes: subtree.nodes,
+                overrides: BTreeMap::new(),
             },
         },
         OldCommand::Delete { node } => Command::Delete { node },
@@ -259,6 +262,8 @@ pub fn matches_edit(json: &str, edit: &EditTransaction) -> Result<bool, Document
     let old: Edit = parse(json)?;
     Ok(edit.forward.marks.is_empty()
         && edit.inverse.marks.is_empty()
+        && edit.forward.overrides.is_empty()
+        && edit.inverse.overrides.is_empty()
         && old
             == Edit {
                 forward: Patch::project(&edit.forward),

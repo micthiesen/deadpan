@@ -1,110 +1,12 @@
-//! Strict schema-1 migration adapter. Normal document ingress never accepts old
-//! schemas. Hosts must replay the complete history, not upgrade each snapshot
-//! independently: the allocation revision is part of stable occurrence identity.
-
-use std::collections::BTreeMap;
-
-use serde::{Deserialize, Serialize, de::DeserializeOwned};
+//! Frozen schema-3 document/history wire adapter. Only full chronological replay
+//! may use this module. Normal document ingress accepts the current schema only.
+//! Beat, asset, and mark wires are unchanged by schema 4. Document, subtree,
+//! command, and patch wires explicitly exclude every play-override field.
 
 use crate::document::unique_map;
 use crate::*;
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
-enum Kind {
-    Source {
-        source: SourceNode,
-    },
-    Sequence {
-        children: Vec<NodeId>,
-    },
-    Hold {
-        recipe: HoldRecipe,
-    },
-    Repeat {
-        child: NodeId,
-        plays: u32,
-        gap: Option<HoldRecipe>,
-    },
-    Retime {
-        child: NodeId,
-        duration: FrameDuration,
-        mapping: FrameRange,
-        pitch: PitchPolicy,
-    },
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-struct Beat {
-    label: String,
-    kind: Kind,
-}
-
-impl Beat {
-    fn upgrade(self, allocation: &RevisionId) -> Result<BeatNode, DocumentError> {
-        Ok(BeatNode {
-            label: self.label,
-            kind: match self.kind {
-                Kind::Source { source } => NodeKind::Source { source },
-                Kind::Sequence { children } => NodeKind::Sequence { children },
-                Kind::Hold { recipe } => NodeKind::Hold { recipe },
-                Kind::Repeat { child, plays, gap } => NodeKind::Repeat {
-                    child,
-                    iterations: IterationOrder::new(allocation.clone(), plays)?,
-                    gap,
-                },
-                Kind::Retime {
-                    child,
-                    duration,
-                    mapping,
-                    pitch,
-                } => NodeKind::Retime {
-                    child,
-                    duration,
-                    mapping,
-                    pitch,
-                },
-            },
-        })
-    }
-    fn project(node: &BeatNode) -> Self {
-        Self {
-            label: node.label.clone(),
-            kind: match &node.kind {
-                NodeKind::Source { source } => Kind::Source {
-                    source: source.clone(),
-                },
-                NodeKind::Sequence { children } => Kind::Sequence {
-                    children: children.clone(),
-                },
-                NodeKind::Hold { recipe } => Kind::Hold {
-                    recipe: recipe.clone(),
-                },
-                NodeKind::Repeat {
-                    child,
-                    iterations,
-                    gap,
-                } => Kind::Repeat {
-                    child: child.clone(),
-                    plays: iterations.len(),
-                    gap: gap.clone(),
-                },
-                NodeKind::Retime {
-                    child,
-                    duration,
-                    mapping,
-                    pitch,
-                } => Kind::Retime {
-                    child: child.clone(),
-                    duration: *duration,
-                    mapping: *mapping,
-                    pitch: *pitch,
-                },
-            },
-        }
-    }
-}
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
+use std::collections::BTreeMap;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -115,62 +17,51 @@ pub struct Document {
     presentation_basis: PresentationBasis,
     root: NodeId,
     #[serde(deserialize_with = "unique_map")]
-    nodes: BTreeMap<NodeId, Beat>,
+    nodes: BTreeMap<NodeId, BeatNode>,
     #[serde(deserialize_with = "unique_map")]
     assets: BTreeMap<AssetId, AssetRecord>,
+    #[serde(deserialize_with = "unique_map")]
+    marks: BTreeMap<MarkId, Mark>,
 }
-
 impl Document {
     pub fn from_json(json: &str) -> Result<Self, DocumentError> {
-        let value: Self = parse(json)?;
-        if value.schema_version != 1 {
-            return Err(invalid("migration requires document schema 1"));
+        let old: Self = parse(json)?;
+        if old.schema_version != 3 {
+            return Err(invalid("migration requires document schema 3"));
         }
-        // Validate the complete tree and timing contract before comparison.
-        value.clone().upgrade()?;
-        Ok(value)
+        old.clone().upgrade()?;
+        Ok(old)
     }
     pub fn revision_id(&self) -> &RevisionId {
         &self.revision_id
     }
-    /// Use only for the initial revision. Subsequent states come from replay.
     pub fn upgrade(self) -> Result<ProjectDocument, DocumentError> {
-        let nodes = self
-            .nodes
-            .into_iter()
-            .map(|(id, node)| Ok((id, node.upgrade(&self.revision_id)?)))
-            .collect::<Result<_, DocumentError>>()?;
         let document = ProjectDocument {
             schema_version: DOCUMENT_SCHEMA_VERSION,
             project_id: self.project_id,
             revision_id: self.revision_id,
             presentation_basis: self.presentation_basis,
             root: self.root,
-            nodes,
+            nodes: self.nodes,
             assets: self.assets,
-            marks: BTreeMap::new(),
+            marks: self.marks,
             overrides: BTreeMap::new(),
         };
         document.validate()?;
         Ok(document)
     }
-    /// Compare every schema-1 field. Only new iteration metadata is projected out.
     pub fn matches(&self, document: &ProjectDocument) -> bool {
-        document.marks.is_empty()
-            && document.overrides.is_empty()
+        document.overrides.is_empty()
             && self
                 == &Self {
-                    schema_version: 1,
+                    schema_version: 3,
                     project_id: document.project_id.clone(),
                     revision_id: document.revision_id.clone(),
                     presentation_basis: document.presentation_basis.clone(),
                     root: document.root.clone(),
-                    nodes: document
-                        .nodes
-                        .iter()
-                        .map(|(id, node)| (id.clone(), Beat::project(node)))
-                        .collect(),
+                    nodes: document.nodes.clone(),
                     assets: document.assets.clone(),
+                    marks: document.marks.clone(),
                 }
     }
 }
@@ -180,11 +71,9 @@ impl Document {
 struct OldSubtree {
     root: NodeId,
     #[serde(deserialize_with = "unique_map")]
-    nodes: BTreeMap<NodeId, Beat>,
+    nodes: BTreeMap<NodeId, BeatNode>,
 }
 
-// Freeze the old command vocabulary. Unknown/new commands cannot enter a v1
-// history merely because today's reducer happens to understand them.
 #[derive(Deserialize)]
 #[serde(tag = "command", rename_all = "snake_case", deny_unknown_fields)]
 enum OldCommand {
@@ -216,11 +105,24 @@ enum OldCommand {
         id: NodeId,
         plays: u32,
         gap: Option<HoldRecipe>,
+        #[serde(default)]
+        anchor_policy: WrapAnchorPolicy,
     },
     SetRepeat {
         node: NodeId,
         plays: u32,
         gap: Option<HoldRecipe>,
+    },
+    InsertPlays {
+        node: NodeId,
+        index: u32,
+        count: u32,
+    },
+    MovePlays {
+        node: NodeId,
+        start: u32,
+        end: u32,
+        destination: u32,
     },
     SetHoldDuration {
         node: NodeId,
@@ -238,8 +140,17 @@ enum OldCommand {
         id: AssetId,
         asset: AssetRecord,
     },
+    SetMark {
+        id: MarkId,
+        owner: NodeId,
+        label: String,
+        boundary: BoundaryAnchor,
+        loss_policy: AnchorLossPolicy,
+    },
+    DeleteMark {
+        id: MarkId,
+    },
 }
-
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct OldRequest {
@@ -248,7 +159,6 @@ struct OldRequest {
     new_revision: RevisionId,
     command: OldCommand,
 }
-
 pub fn upgrade_request(json: &str) -> Result<CommandRequest, DocumentError> {
     let old: OldRequest = parse(json)?;
     let command = match old.command {
@@ -261,12 +171,8 @@ pub fn upgrade_request(json: &str) -> Result<CommandRequest, DocumentError> {
             index,
             subtree: Subtree {
                 root: subtree.root,
+                nodes: subtree.nodes,
                 overrides: BTreeMap::new(),
-                nodes: subtree
-                    .nodes
-                    .into_iter()
-                    .map(|(id, node)| Ok((id, node.upgrade(&old.new_revision)?)))
-                    .collect::<Result<_, DocumentError>>()?,
             },
         },
         OldCommand::Delete { node } => Command::Delete { node },
@@ -298,20 +204,49 @@ pub fn upgrade_request(json: &str) -> Result<CommandRequest, DocumentError> {
             id,
             plays,
             gap,
+            anchor_policy,
         } => Command::WrapRepeat {
             node,
             id,
             plays,
             gap,
-            anchor_policy: WrapAnchorPolicy::First,
+            anchor_policy,
         },
         OldCommand::SetRepeat { node, plays, gap } => Command::SetRepeat { node, plays, gap },
+        OldCommand::InsertPlays { node, index, count } => {
+            Command::InsertPlays { node, index, count }
+        }
+        OldCommand::MovePlays {
+            node,
+            start,
+            end,
+            destination,
+        } => Command::MovePlays {
+            node,
+            start,
+            end,
+            destination,
+        },
         OldCommand::SetHoldDuration { node, duration } => {
             Command::SetHoldDuration { node, duration }
         }
         OldCommand::SetHoldProvider { node, video } => Command::SetHoldProvider { node, video },
         OldCommand::Rename { node, label } => Command::Rename { node, label },
         OldCommand::AddAsset { id, asset } => Command::AddAsset { id, asset },
+        OldCommand::SetMark {
+            id,
+            owner,
+            label,
+            boundary,
+            loss_policy,
+        } => Command::SetMark {
+            id,
+            owner,
+            label,
+            boundary,
+            loss_policy,
+        },
+        OldCommand::DeleteMark { id } => Command::DeleteMark { id },
     };
     Ok(CommandRequest {
         project_id: old.project_id,
@@ -328,35 +263,24 @@ struct Patch {
     from_revision: RevisionId,
     to_revision: RevisionId,
     #[serde(deserialize_with = "unique_map")]
-    nodes: BTreeMap<NodeId, ValueChange<Beat>>,
+    nodes: BTreeMap<NodeId, ValueChange<BeatNode>>,
     #[serde(deserialize_with = "unique_map")]
     assets: BTreeMap<AssetId, ValueChange<AssetRecord>>,
+    #[serde(deserialize_with = "unique_map")]
+    marks: BTreeMap<MarkId, ValueChange<Mark>>,
 }
-
 impl Patch {
     fn project(patch: &DocumentPatch) -> Self {
         Self {
             project_id: patch.project_id.clone(),
             from_revision: patch.from_revision.clone(),
             to_revision: patch.to_revision.clone(),
-            nodes: patch
-                .nodes
-                .iter()
-                .map(|(id, change)| {
-                    (
-                        id.clone(),
-                        ValueChange {
-                            before: change.before.as_ref().map(Beat::project),
-                            after: change.after.as_ref().map(Beat::project),
-                        },
-                    )
-                })
-                .collect(),
+            nodes: patch.nodes.clone(),
             assets: patch.assets.clone(),
+            marks: patch.marks.clone(),
         }
     }
 }
-
 #[derive(Debug, PartialEq, Eq, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Edit {
@@ -366,12 +290,9 @@ struct Edit {
     duration_delta: i64,
     description: String,
 }
-
 pub fn matches_edit(json: &str, edit: &EditTransaction) -> Result<bool, DocumentError> {
     let old: Edit = parse(json)?;
-    Ok(edit.forward.marks.is_empty()
-        && edit.inverse.marks.is_empty()
-        && edit.forward.overrides.is_empty()
+    Ok(edit.forward.overrides.is_empty()
         && edit.inverse.overrides.is_empty()
         && old
             == Edit {
@@ -382,7 +303,6 @@ pub fn matches_edit(json: &str, edit: &EditTransaction) -> Result<bool, Document
                 description: edit.description.clone(),
             })
 }
-
 fn parse<T: DeserializeOwned>(json: &str) -> Result<T, DocumentError> {
     if json.len() > MAX_DOCUMENT_JSON_BYTES {
         return Err(invalid("legacy JSON exceeds 64 MiB"));
@@ -391,4 +311,40 @@ fn parse<T: DeserializeOwned>(json: &str) -> Result<T, DocumentError> {
 }
 fn invalid(message: &str) -> DocumentError {
     DocumentError::new(DocumentErrorCode::InvalidJson, message)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn legacy_document_projection_rejects_even_empty_override_entries() {
+        let mut current = ProjectDocument::new(
+            ProjectId::new("project").unwrap(),
+            RevisionId::new("initial").unwrap(),
+            PresentationBasis {
+                width: 1,
+                height: 1,
+                frame_rate: FrameRate::new(30, 1).unwrap(),
+                color_policy: ColorPolicy::SdrRec709,
+            },
+            NodeId::new("root").unwrap(),
+        )
+        .unwrap();
+        let mut wire = serde_json::to_value(&current).unwrap();
+        wire.as_object_mut().unwrap().remove("overrides");
+        wire["schema_version"] = serde_json::json!(3);
+        let v3 = Document::from_json(&wire.to_string()).unwrap();
+        wire.as_object_mut().unwrap().remove("marks");
+        wire["schema_version"] = serde_json::json!(2);
+        let v2 = legacy_v2::Document::from_json(&wire.to_string()).unwrap();
+        wire["schema_version"] = serde_json::json!(1);
+        let v1 = legacy_v1::Document::from_json(&wire.to_string()).unwrap();
+        assert!(v1.matches(&current) && v2.matches(&current) && v3.matches(&current));
+        // Model faulty replay without allowing projection to hide a new field.
+        current
+            .overrides
+            .insert(current.root.clone(), PlayOverrides::default());
+        assert!(!v1.matches(&current) && !v2.matches(&current) && !v3.matches(&current));
+    }
 }
