@@ -10,4 +10,7 @@ pub mod protocol;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 mod conversion;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
-pub use conversion::{CanonicalMedia, ConversionError, InputIdentity, canonicalize};
+pub use conversion::{
+    CanonicalBridge, CanonicalMedia, ConversionError, InputIdentity, canonicalize,
+    canonicalize_bridge, sample_bridge,
+};

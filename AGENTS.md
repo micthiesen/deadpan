@@ -174,6 +174,13 @@ contract, and stderr carries one bounded JSON result. Do not route codec work
 through the model worker's framed-message protocol. Native conversion stays on
 the job service, outside UI/audio callbacks and database transactions. A returned
 private FFV1 file is neither a Ready candidate bundle nor authored acceptance.
+Derive bridge masters with `canonicalize_bridge` from one verified native input
+and the original `BridgeSamplingMap`. The pair shares one hard deadline; native
+scratch is bounded independently of output count. Use exact encoded-sRGB RGB8
+linear half-up interpolation, then independently decode and compare the emitted
+frames. Preserve the original map when shortening or re-extending an accepted
+Hold; do not recompute it from the changed duration. The paired result still
+requires complete provenance, candidate relevance, and explicit store admission.
 
 For native startup or lifecycle changes, also run `cargo run -p deadpan-app -- --smoke-test` on supported Apple Silicon macOS. This checks startup and the shutdown callback, not media or accessibility qualification. Choose interactive checks for affected behavior when they add evidence; do not repeat them mechanically for unrelated changes. Add relevant media, persistence, worker, accessibility, or packaging checks as those systems are implemented. Record skipped checks and exact failures in the delivery report. [Development](docs/DEVELOPMENT.md) describes the workflow.
 

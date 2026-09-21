@@ -10,7 +10,7 @@ This repository currently contains an **editing foundation**, not a working vide
 - `deadpan-store`: SQLite project packages, persistent marks and undo/redo, monotonic generation requests, durable attempts and interrupted-job recovery, schema-1/2/3/4/5/6 migration, recovery checkpoints, and verified generated-object storage. Qualified media acceptance remains open and new generated-provider ingress is rejected.
 - `deadpan-plan`: immutable indexed picture mappings with exact retiming, stable repeated-play identities, and sparse play overrides.
 - `deadpan-jobs`: bounded worker messages, job lifecycle, subprocess supervision, contained artifact snapshots, and exact bridge-generation planning. A real MLX development adapter exercises this boundary; it is not connected to the app yet.
-- `deadpan-media`: bounded host supervision of the native FFV1 converter, with input hash verification and private content-addressed output. The helper compares decoded RGB pixels and timing before returning; candidate bundle admission remains open.
+- `deadpan-media`: bounded native FFV1 conversion and exact interior bridge sampling. One verified native snapshot produces private native/sampled masters under a shared deadline. The helper compares decoded RGB pixels and timing before returning; candidate bundle admission remains open.
 - `deadpan-app`: an `egui`/`eframe` native development welcome shell using `wgpu` on Metal.
 - `deadpan-cli`: headless project/command/history operations, migration, picture-plan inspection, and exact boundary selection, also available through `deadpan-app --headless`.
 

@@ -1,0 +1,198 @@
+{
+  "scope": "captured native model sequence to canonical native and host-sampled FFV1 pair; no candidate admission",
+  "label": "final-normal",
+  "work": "/tmp/deadpan-bridge-final-normal-7ks3ivry",
+  "command": [
+    "convert_generated",
+    "/tmp/deadpan-bridge-final-normal-7ks3ivry/deadpan-media-worker",
+    "/tmp/deadpan-supervised-mlx-20260921-attributed/worker/outputs/native.mp4",
+    "/tmp/deadpan-bridge-final-normal-7ks3ivry/request.json",
+    "c9d34268df14d105bb4f3799e9bfc9b946ad153de43e6ee4a73a44bb7833be33",
+    "/tmp/deadpan-bridge-final-normal-7ks3ivry/sampled.mkv",
+    "/tmp/deadpan-bridge-final-normal-7ks3ivry/native.mkv"
+  ],
+  "host": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
+  "machine": "arm64",
+  "revision": "01249c1971309692e5bef12db76a24f250923d04",
+  "sources_sha256": {
+    "crates/deadpan-media/src/conversion.rs": "8a1ff182cf485639ca94a4bbbf3731503ee26448ef0674239582292b71210cae",
+    "crates/deadpan-media/src/protocol.rs": "2e6eed239bf5a9f80acfb0a8b9921fed2b5ede807ea2caa4624a24e1d150afe9",
+    "crates/deadpan-media/src/lib.rs": "a071386c973da5a5ad403a4c6328c2af66219c5d2752a17410feb10c96bb9263",
+    "crates/deadpan-media/examples/convert_generated.rs": "35c8c70e65a00562b5e3127c73634795170ac578a422e9c359cb1b4f20e2de0a",
+    "native/deadpan-media-worker/src/converter.c": "1aee3a6d5fbee8e00abe79d093853970cb7d66fd11008e5fa027050f12e52052",
+    "native/deadpan-media-worker/src/converter.h": "e49a5ddf161c261e8d9268b7ca61b1f8c250f857f544adc50b018bf36f47e2b4",
+    "native/deadpan-media-worker/src/main.rs": "4be45d7f8cc0452e8307a69190e5f7ba4c97fbfc667c25b3b2a679f134be44fc",
+    "native/deadpan-media-worker/build.rs": "8841192b8b1b75bc57e95a05e9f407a48394618b48185865cf1b396aac16f5c1",
+    "Cargo.lock": "53c5dc62b2462ce01e563150adfcfd514c6739bffb0e18f896649f36405a4bdc"
+  },
+  "worker_sha256": "88ba517a9a4e7d8e50f85634aa806981551d779c353f00a14bb63a77b8bfe85a",
+  "host_sha256": "b933d52122c191f2afea2df406167117deee3cb8c6f41e5798258d044d6eaea9",
+  "source_sha256": "c9d34268df14d105bb4f3799e9bfc9b946ad153de43e6ee4a73a44bb7833be33",
+  "request": {
+    "protocol": 2,
+    "operation": "sample_bridge",
+    "native": {
+      "width": 768,
+      "height": 320,
+      "frames": 25,
+      "rate_num": 24,
+      "rate_den": 1
+    },
+    "sampling": {
+      "schema_version": 1,
+      "project_rate": {
+        "numerator": 30000,
+        "denominator": 1001
+      },
+      "native_rate": {
+        "numerator": 24,
+        "denominator": 1
+      },
+      "native_frame_count": 25,
+      "output_frame_count": 30,
+      "interpolation": "encoded_srgb_rgb8_linear_half_up"
+    },
+    "input_byte_length": 4911319,
+    "limits": {
+      "max_input_bytes": 33554432,
+      "max_output_bytes": 33554432,
+      "max_scratch_bytes": 18432000,
+      "timeout_ms": 120000
+    }
+  },
+  "libraries_sha256": {
+    "/tmp/deadpan-media-compatible-xyhilms4/prefix/lib/libswscale.dylib": "8c1055d2ee90df810289ce45a2e332afef24377dc9ea0e1118d3f0d6de1f657f",
+    "/tmp/deadpan-media-compatible-xyhilms4/prefix/lib/libavformat.62.dylib": "414b5d7b6bc6a4983535a6c61f8107a8563fa1a996bd1665c400a799d98eee6f",
+    "/tmp/deadpan-media-compatible-xyhilms4/prefix/lib/libavcodec.62.11.103.dylib": "e2abb19ad59f0097cf0780af2fbca14f5851d6d4c0e8ed21f9b59707a4500fab",
+    "/tmp/deadpan-media-compatible-xyhilms4/prefix/lib/libswresample.6.dylib": "d163bdbbc72234b9289dcca66a2cd6ddc989050f9b16c9307e02c3399068def9",
+    "/tmp/deadpan-media-compatible-xyhilms4/prefix/lib/libavformat.dylib": "414b5d7b6bc6a4983535a6c61f8107a8563fa1a996bd1665c400a799d98eee6f",
+    "/tmp/deadpan-media-compatible-xyhilms4/prefix/lib/libavutil.dylib": "0080fa764061a46d27f421c448eaf9e1af0c703ac743844bb8e8600baad0dd20",
+    "/tmp/deadpan-media-compatible-xyhilms4/prefix/lib/libavdevice.62.1.103.dylib": "238a704b9464dbda88b79121aee84ffd12300209149a34d87c072f3a11a97a5f",
+    "/tmp/deadpan-media-compatible-xyhilms4/prefix/lib/libavutil.60.8.103.dylib": "0080fa764061a46d27f421c448eaf9e1af0c703ac743844bb8e8600baad0dd20",
+    "/tmp/deadpan-media-compatible-xyhilms4/prefix/lib/libavfilter.11.dylib": "dab104715cabd9f283cfd2d1a0fde41c031cf9d9db1f3fece60ce1f12e189a1a",
+    "/tmp/deadpan-media-compatible-xyhilms4/prefix/lib/libavcodec.62.dylib": "e2abb19ad59f0097cf0780af2fbca14f5851d6d4c0e8ed21f9b59707a4500fab",
+    "/tmp/deadpan-media-compatible-xyhilms4/prefix/lib/libavcodec.dylib": "e2abb19ad59f0097cf0780af2fbca14f5851d6d4c0e8ed21f9b59707a4500fab",
+    "/tmp/deadpan-media-compatible-xyhilms4/prefix/lib/libswscale.9.1.103.dylib": "8c1055d2ee90df810289ce45a2e332afef24377dc9ea0e1118d3f0d6de1f657f",
+    "/tmp/deadpan-media-compatible-xyhilms4/prefix/lib/libswresample.dylib": "d163bdbbc72234b9289dcca66a2cd6ddc989050f9b16c9307e02c3399068def9",
+    "/tmp/deadpan-media-compatible-xyhilms4/prefix/lib/libavdevice.dylib": "238a704b9464dbda88b79121aee84ffd12300209149a34d87c072f3a11a97a5f",
+    "/tmp/deadpan-media-compatible-xyhilms4/prefix/lib/libavfilter.11.4.103.dylib": "dab104715cabd9f283cfd2d1a0fde41c031cf9d9db1f3fece60ce1f12e189a1a",
+    "/tmp/deadpan-media-compatible-xyhilms4/prefix/lib/libavfilter.dylib": "dab104715cabd9f283cfd2d1a0fde41c031cf9d9db1f3fece60ce1f12e189a1a",
+    "/tmp/deadpan-media-compatible-xyhilms4/prefix/lib/libswresample.6.1.103.dylib": "d163bdbbc72234b9289dcca66a2cd6ddc989050f9b16c9307e02c3399068def9",
+    "/tmp/deadpan-media-compatible-xyhilms4/prefix/lib/libswscale.9.dylib": "8c1055d2ee90df810289ce45a2e332afef24377dc9ea0e1118d3f0d6de1f657f",
+    "/tmp/deadpan-media-compatible-xyhilms4/prefix/lib/libavformat.62.3.103.dylib": "414b5d7b6bc6a4983535a6c61f8107a8563fa1a996bd1665c400a799d98eee6f",
+    "/tmp/deadpan-media-compatible-xyhilms4/prefix/lib/libavdevice.62.dylib": "238a704b9464dbda88b79121aee84ffd12300209149a34d87c072f3a11a97a5f",
+    "/tmp/deadpan-media-compatible-xyhilms4/prefix/lib/libavutil.60.dylib": "0080fa764061a46d27f421c448eaf9e1af0c703ac743844bb8e8600baad0dd20"
+  },
+  "expected_native_rgb_sha256": "be4ffce12b048457bcab1779eefe8683f41c242d013be7f488c25416491efe1a",
+  "expected_sampled_rgb_sha256": "eda362044e57353435b56756be4143419a3bb6ed52bb2f849102b3eff962c71a",
+  "exit_code": 0,
+  "elapsed_seconds": 4.8015926668886095,
+  "conversion": {
+    "elapsed_seconds": 4.788849084,
+    "input_sha256": "c9d34268df14d105bb4f3799e9bfc9b946ad153de43e6ee4a73a44bb7833be33",
+    "native": {
+      "object": {
+        "byte_length": 4544157,
+        "content": {
+          "algorithm": "blake3",
+          "digest": "b7ab48292917ad8615e8f87e34a16ec962fda8503f97477370169489a4a9ff64"
+        }
+      },
+      "report": {
+        "discarded_audio_streams": 0,
+        "ffv1_version": 3,
+        "first_output_pts": 0,
+        "input_rgb_sha256": "be4ffce12b048457bcab1779eefe8683f41c242d013be7f488c25416491efe1a",
+        "input_time_base_den": 24,
+        "input_time_base_num": 1,
+        "last_output_pts": 1000,
+        "output_bytes": 4544157,
+        "output_rgb_sha256": "be4ffce12b048457bcab1779eefe8683f41c242d013be7f488c25416491efe1a",
+        "output_time_base_den": 1000,
+        "output_time_base_num": 1,
+        "protocol": 1,
+        "slice_crc": true,
+        "video": {
+          "frames": 25,
+          "height": 320,
+          "rate_den": 1,
+          "rate_num": 24,
+          "width": 768
+        }
+      }
+    },
+    "object": {
+      "byte_length": 5450240,
+      "content": {
+        "algorithm": "blake3",
+        "digest": "b64fb8837da2e448554fee1f7e4c8da25f7e448a5be03f71e1189b9b1e7ecd84"
+      }
+    },
+    "report": {
+      "discarded_audio_streams": 0,
+      "ffv1_version": 3,
+      "first_output_pts": 0,
+      "input_rgb_sha256": "be4ffce12b048457bcab1779eefe8683f41c242d013be7f488c25416491efe1a",
+      "input_time_base_den": 24,
+      "input_time_base_num": 1,
+      "last_output_pts": 968,
+      "output_bytes": 5450240,
+      "output_rgb_sha256": "eda362044e57353435b56756be4143419a3bb6ed52bb2f849102b3eff962c71a",
+      "output_time_base_den": 1000,
+      "output_time_base_num": 1,
+      "protocol": 1,
+      "slice_crc": true,
+      "video": {
+        "frames": 30,
+        "height": 320,
+        "rate_den": 1001,
+        "rate_num": 30000,
+        "width": 768
+      }
+    },
+    "request": {
+      "input_byte_length": 4911319,
+      "limits": {
+        "max_input_bytes": 33554432,
+        "max_output_bytes": 33554432,
+        "max_scratch_bytes": 18432000,
+        "timeout_ms": 120000
+      },
+      "native": {
+        "frames": 25,
+        "height": 320,
+        "rate_den": 1,
+        "rate_num": 24,
+        "width": 768
+      },
+      "operation": "sample_bridge",
+      "protocol": 2,
+      "sampling": {
+        "interpolation": "encoded_srgb_rgb8_linear_half_up",
+        "native_frame_count": 25,
+        "native_rate": {
+          "denominator": 1,
+          "numerator": 24
+        },
+        "output_frame_count": 30,
+        "project_rate": {
+          "denominator": 1001,
+          "numerator": 30000
+        },
+        "schema_version": 1
+      }
+    },
+    "scope": "developer conversion qualification; not candidate acceptance"
+  },
+  "files": {
+    "native.mkv": {
+      "bytes": 4544157,
+      "sha256": "a3f3ee59e72b9c2885822b3ae0e6cfb5e058d1df4aecc334a31d82f17df63b35"
+    },
+    "sampled.mkv": {
+      "bytes": 5450240,
+      "sha256": "4df7c4863c108d5faec3281462a90aa2124ce58873bb7567410df107389443f6"
+    }
+  },
+  "status": "passed"
+}

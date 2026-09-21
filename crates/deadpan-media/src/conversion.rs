@@ -6,15 +6,15 @@ use std::process::{Child, Command, ExitStatus, Stdio};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
-use deadpan_core::{GeneratedContentId, GeneratedObjectRef};
+use deadpan_core::{BridgeSamplingMap, GeneratedContentId, GeneratedObjectRef};
 use rustix::fs::{OFlags, fcntl_getfl, fcntl_setfl};
 use rustix::process::{Pid, Signal, WaitId, WaitIdOptions, kill_process_group, waitid};
 use sha2::{Digest, Sha256};
 use thiserror::Error;
 
 use crate::protocol::{
-    ContractError, ConversionReport, ConversionRequest, MAX_REPLY_BYTES, MAX_REQUEST_BYTES,
-    WorkerReply,
+    BridgeConversionRequest, ContractError, ConversionReport, ConversionRequest, MAX_REPLY_BYTES,
+    MAX_REQUEST_BYTES, PROTOCOL_VERSION, WorkerReply, WorkerRequest,
 };
 
 /// SHA-256 of the closed worker artifact supplied by its declared manifest.
@@ -71,6 +71,39 @@ impl Seek for CanonicalMedia {
     }
 }
 
+/// Two verified private masters derived from one immutable native snapshot.
+/// This is media validation, not a selected-Ready receipt or authored acceptance.
+pub struct CanonicalBridge {
+    native: CanonicalMedia,
+    sampled: CanonicalMedia,
+    sampling: BridgeSamplingMap,
+    source_identity: InputIdentity,
+}
+
+impl CanonicalBridge {
+    pub fn native(&self) -> &CanonicalMedia {
+        &self.native
+    }
+
+    pub fn sampled(&self) -> &CanonicalMedia {
+        &self.sampled
+    }
+
+    pub fn sampling(&self) -> &BridgeSamplingMap {
+        &self.sampling
+    }
+
+    pub fn source_identity(&self) -> InputIdentity {
+        self.source_identity
+    }
+
+    /// Consume the pair to copy its private readers into verified object storage.
+    /// Publication callers still own relevance, cancellation, and acceptance.
+    pub fn into_parts(self) -> (CanonicalMedia, CanonicalMedia, BridgeSamplingMap) {
+        (self.native, self.sampled, self.sampling)
+    }
+}
+
 /// Run on a background job service, never the UI or audio callback and never
 /// inside a database transaction. `source` must be a finite local snapshot;
 /// arbitrary blocking readers cannot be interrupted by this synchronous API.
@@ -85,11 +118,106 @@ pub fn canonicalize(
     request: &ConversionRequest,
     cancelled: &AtomicBool,
 ) -> Result<CanonicalMedia, ConversionError> {
+    convert(
+        executable,
+        source,
+        identity,
+        &WorkerRequest::Convert(request.clone()),
+        cancelled,
+    )
+}
+
+/// Derive exactly the authored interior frames from the declared native video.
+/// Uses the same private snapshot, process, deadline, and output guarantees as
+/// [`canonicalize`]. The original sampling map must be retained with acceptance.
+pub fn sample_bridge(
+    executable: &Path,
+    source: &mut impl Read,
+    identity: InputIdentity,
+    request: &BridgeConversionRequest,
+    cancelled: &AtomicBool,
+) -> Result<CanonicalMedia, ConversionError> {
+    convert(
+        executable,
+        source,
+        identity,
+        &WorkerRequest::Bridge(request.clone()),
+        cancelled,
+    )
+}
+
+/// Preserve the native sequence and derive its exact interior sampled master.
+/// Copies the input once and applies one hard deadline across copying, both
+/// helper processes, independent decode verification, and final object hashing.
+/// The byte limits apply per file; scratch files are used sequentially.
+/// See [`canonicalize`] for the local-reader and trusted-executable contract.
+pub fn canonicalize_bridge(
+    executable: &Path,
+    source: &mut impl Read,
+    identity: InputIdentity,
+    request: &BridgeConversionRequest,
+    cancelled: &AtomicBool,
+) -> Result<CanonicalBridge, ConversionError> {
     request.validate()?;
     let deadline = Deadline {
         end: Instant::now() + Duration::from_millis(request.limits.timeout_ms),
         cancelled,
     };
+    deadline.check()?;
+    let mut input = snapshot(source, identity, request.input_byte_length, &deadline)?;
+    input.rewind()?;
+    let native_request = WorkerRequest::Convert(ConversionRequest {
+        protocol: PROTOCOL_VERSION,
+        video: request.native,
+        input_byte_length: request.input_byte_length,
+        limits: request.limits,
+    });
+    let native = convert_snapshot(executable, input.try_clone()?, &native_request, &deadline)?;
+    input.rewind()?;
+    let sampled = convert_snapshot(
+        executable,
+        input,
+        &WorkerRequest::Bridge(request.clone()),
+        &deadline,
+    )?;
+    if native.report.output_rgb_sha256 != sampled.report.input_rgb_sha256 {
+        return Err(ConversionError::Protocol(
+            "native and sampled masters decoded different source pixels".into(),
+        ));
+    }
+    deadline.check()?;
+    Ok(CanonicalBridge {
+        native,
+        sampled,
+        sampling: request.sampling.clone(),
+        source_identity: identity,
+    })
+}
+
+fn convert(
+    executable: &Path,
+    source: &mut impl Read,
+    identity: InputIdentity,
+    request: &WorkerRequest,
+    cancelled: &AtomicBool,
+) -> Result<CanonicalMedia, ConversionError> {
+    request.validate()?;
+    let deadline = Deadline {
+        end: Instant::now() + Duration::from_millis(request.limits().timeout_ms),
+        cancelled,
+    };
+    deadline.check()?;
+    let mut input = snapshot(source, identity, request.input_byte_length(), &deadline)?;
+    input.rewind()?;
+    convert_snapshot(executable, input, request, &deadline)
+}
+
+fn convert_snapshot(
+    executable: &Path,
+    input: File,
+    request: &WorkerRequest,
+    deadline: &Deadline<'_>,
+) -> Result<CanonicalMedia, ConversionError> {
     deadline.check()?;
     let serialized = serde_json::to_string(request)
         .map_err(|error| ConversionError::Protocol(error.to_string()))?;
@@ -98,8 +226,6 @@ pub fn canonicalize(
             "request exceeded wire budget".into(),
         ));
     }
-    let mut input = snapshot(source, identity, request.input_byte_length, &deadline)?;
-    input.rewind()?;
     let mut output = tempfile::tempfile()?;
     deadline.check()?;
     let child = Command::new(executable)
@@ -112,7 +238,7 @@ pub fn canonicalize(
         .process_group(0)
         .spawn()?;
     let mut process = OwnedProcess::new(child);
-    let (status, reply) = process.collect(&deadline, &output, request.limits.max_output_bytes)?;
+    let (status, reply) = process.collect(deadline, &output, request.limits().max_output_bytes)?;
     // Every failure discards the anonymous output. A well-formed success from a
     // nonzero exit or an unclosed control pipe cannot publish bytes.
     let reply: WorkerReply = serde_json::from_slice(&reply)
@@ -133,14 +259,14 @@ pub fn canonicalize(
             )));
         }
     };
-    report.validate(request)?;
+    report.validate_worker(request)?;
     if output.metadata()?.len() != report.output_bytes {
         return Err(ConversionError::Protocol(
             "output length differs from report".into(),
         ));
     }
     output.rewind()?;
-    let digest = hash_output(&mut output, report.output_bytes, &deadline)?;
+    let digest = hash_output(&mut output, report.output_bytes, deadline)?;
     output.rewind()?;
     let content = GeneratedContentId::new(digest)
         .map_err(|error| ConversionError::Protocol(error.to_string()))?;

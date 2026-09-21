@@ -7,10 +7,12 @@ use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
+use deadpan_core::{BridgeInterpolation, BridgeSamplingMap, FrameDuration, FrameRate};
 use deadpan_media::protocol::{
-    ConversionLimits, ConversionReport, ConversionRequest, VideoContract, WorkerReply,
+    BridgeConversionRequest, BridgeOperation, ConversionLimits, ConversionReport,
+    ConversionRequest, VideoContract, WorkerReply,
 };
-use deadpan_media::{ConversionError, InputIdentity, canonicalize};
+use deadpan_media::{ConversionError, InputIdentity, canonicalize, canonicalize_bridge};
 use sha2::{Digest, Sha256};
 
 fn request() -> ConversionRequest {
@@ -71,6 +73,127 @@ fn script_reply(report: ConversionReport) -> String {
     let wire = serde_json::to_string(&WorkerReply::Success { report }).unwrap();
     // This fixture JSON has no apostrophes or shell expansions.
     format!("printf media\nprintf '%s' '{wire}' >&2")
+}
+
+fn bridge_request() -> BridgeConversionRequest {
+    BridgeConversionRequest {
+        protocol: 2,
+        operation: BridgeOperation::SampleBridge,
+        native: VideoContract {
+            frames: 2,
+            ..request().video
+        },
+        sampling: BridgeSamplingMap::new(
+            FrameRate::new(30, 1).unwrap(),
+            FrameRate::new(24, 1).unwrap(),
+            FrameDuration::new(2).unwrap(),
+            FrameDuration::new(1).unwrap(),
+            BridgeInterpolation::EncodedSrgbRgb8LinearHalfUp,
+        )
+        .unwrap(),
+        input_byte_length: request().input_byte_length,
+        limits: request().limits,
+    }
+}
+
+fn bridge_reports() -> (ConversionReport, ConversionReport) {
+    let request = bridge_request();
+    (
+        ConversionReport {
+            video: request.native,
+            last_output_pts: 42,
+            ..success()
+        },
+        ConversionReport {
+            video: request.output_video().unwrap(),
+            output_rgb_sha256: "b".repeat(64),
+            ..success()
+        },
+    )
+}
+
+fn pair_script(native: ConversionReport, sampled: ConversionReport, prefix: &str) -> String {
+    format!(
+        "{prefix}\ncase \"$1\" in *'\"protocol\":1'*)\n{}\n;;\n*)\n{}\n;;\nesac",
+        script_reply(native),
+        script_reply(sampled)
+    )
+}
+
+#[test]
+fn bridge_pair_retains_mapping_and_checks_consistent_native_pixels() {
+    let directory = tempfile::tempdir().unwrap();
+    let (native, sampled) = bridge_reports();
+    let executable = helper(
+        directory.path(),
+        &pair_script(native.clone(), sampled.clone(), ""),
+    );
+    // A non-seekable reader also proves the source is snapshotted just once.
+    let mut input = b"input".as_slice();
+    let pair = canonicalize_bridge(
+        &executable,
+        &mut input,
+        identity(),
+        &bridge_request(),
+        &AtomicBool::new(false),
+    )
+    .unwrap();
+    assert!(input.is_empty());
+    assert_eq!(pair.native().report(), &native);
+    assert_eq!(pair.sampled().report(), &sampled);
+    assert_eq!(pair.source_identity(), identity());
+    assert_eq!(pair.sampling(), &bridge_request().sampling);
+    let (mut native_media, mut sampled_media, map) = pair.into_parts();
+    assert_eq!(map, bridge_request().sampling);
+    for media in [&mut native_media, &mut sampled_media] {
+        let mut bytes = Vec::new();
+        media.read_to_end(&mut bytes).unwrap();
+        assert_eq!(bytes, b"media");
+        assert_eq!(
+            media.object().content().digest(),
+            blake3::hash(&bytes).to_hex().as_str()
+        );
+    }
+    let mut mismatched = sampled.clone();
+    mismatched.input_rgb_sha256 = "c".repeat(64);
+    let mut malformed = sampled.clone();
+    malformed.output_rgb_sha256 = "B".repeat(64);
+    let mut wrong_contract = sampled;
+    wrong_contract.video.rate_num = 24;
+    for report in [mismatched, malformed, wrong_contract] {
+        let executable = helper(directory.path(), &pair_script(native.clone(), report, ""));
+        assert!(
+            canonicalize_bridge(
+                &executable,
+                &mut b"input".as_slice(),
+                identity(),
+                &bridge_request(),
+                &AtomicBool::new(false)
+            )
+            .is_err()
+        );
+    }
+}
+
+#[test]
+fn bridge_pair_uses_one_hard_deadline_for_both_conversions() {
+    let directory = tempfile::tempdir().unwrap();
+    let (native, sampled) = bridge_reports();
+    let executable = helper(directory.path(), &pair_script(native, sampled, "sleep 0.2"));
+    let mut request = bridge_request();
+    request.limits.timeout_ms = 300;
+    let started = Instant::now();
+    assert!(matches!(
+        canonicalize_bridge(
+            &executable,
+            &mut b"input".as_slice(),
+            identity(),
+            &request,
+            &AtomicBool::new(false)
+        ),
+        Err(ConversionError::Deadline)
+    ));
+    assert!(started.elapsed() < Duration::from_secs(2));
 }
 
 #[test]

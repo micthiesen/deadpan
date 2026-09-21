@@ -812,6 +812,7 @@ dependencies = [
  "cc",
  "deadpan-media",
  "serde_json",
+ "sha2",
  "tempfile",
 ]
 

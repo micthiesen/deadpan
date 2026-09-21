@@ -10,6 +10,10 @@ The [native host conversion qualification](qualification/media-host-conversion-2
 adds actual sampled/native model-output conversion, exact RGB comparisons,
 bounded failure tests, and adapter sanitizer evidence. Complete candidate bundle
 admission and explicit durable acceptance remain open.
+The [bridge sampling qualification](qualification/media-bridge-2026-09-21.md)
+adds paired native/sampled masters from one immutable input, exact integer
+interpolation, and comparison with the earlier captured-model pixels. This
+validates media derivation; it does not qualify candidate acceptance or seams.
 
 ## Product requirements
 

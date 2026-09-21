@@ -4,10 +4,13 @@
 //! using numeric fields. The contract deliberately supports only the qualified
 //! full-range RGB8 / sRGB / BT.709 generated-video route.
 
+use deadpan_core::BridgeSamplingMap;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 pub const PROTOCOL_VERSION: u32 = 1;
+/// Adds host-authoritative interior sampling; version-1 conversion is unchanged.
+pub const BRIDGE_PROTOCOL_VERSION: u32 = 2;
 pub const MAX_REPLY_BYTES: usize = 8192;
 pub const MAX_REQUEST_BYTES: usize = 4096;
 const MAX_FILE_BYTES: u64 = 16 * 1024 * 1024 * 1024;
@@ -131,6 +134,105 @@ impl ConversionRequest {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum BridgeOperation {
+    SampleBridge,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct BridgeConversionRequest {
+    pub protocol: u32,
+    pub operation: BridgeOperation,
+    pub native: VideoContract,
+    pub sampling: BridgeSamplingMap,
+    pub input_byte_length: u64,
+    pub limits: ConversionLimits,
+}
+
+impl BridgeConversionRequest {
+    pub fn output_video(&self) -> Result<VideoContract, ContractError> {
+        let video = VideoContract {
+            width: self.native.width,
+            height: self.native.height,
+            frames: u32::try_from(self.sampling.output_frame_count().frames())
+                .map_err(|_| ContractError("output frame count is not representable"))?,
+            rate_num: self.sampling.project_rate().numerator(),
+            rate_den: self.sampling.project_rate().denominator(),
+        };
+        video.validate()?;
+        Ok(video)
+    }
+
+    pub fn validate(&self) -> Result<(), ContractError> {
+        if self.protocol != BRIDGE_PROTOCOL_VERSION {
+            return Err(ContractError("unsupported bridge protocol version"));
+        }
+        self.native.validate()?;
+        self.output_video()?;
+        if self.sampling.native_frame_count().frames() != i64::from(self.native.frames)
+            || self.sampling.native_rate().numerator() != self.native.rate_num
+            || self.sampling.native_rate().denominator() != self.native.rate_den
+        {
+            return Err(ContractError("sampling map does not match native video"));
+        }
+        // The decoder stores only native frames. Output frames are computed one
+        // at a time, so upsampling does not multiply the scratch requirement.
+        ConversionRequest {
+            protocol: PROTOCOL_VERSION,
+            video: self.native,
+            input_byte_length: self.input_byte_length,
+            limits: self.limits,
+        }
+        .validate()
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum WorkerRequest {
+    Convert(ConversionRequest),
+    Bridge(BridgeConversionRequest),
+}
+
+impl WorkerRequest {
+    pub fn validate(&self) -> Result<(), ContractError> {
+        match self {
+            Self::Convert(request) => request.validate(),
+            Self::Bridge(request) => request.validate(),
+        }
+    }
+
+    pub fn native_video(&self) -> VideoContract {
+        match self {
+            Self::Convert(request) => request.video,
+            Self::Bridge(request) => request.native,
+        }
+    }
+
+    pub fn output_video(&self) -> Result<VideoContract, ContractError> {
+        match self {
+            Self::Convert(request) => Ok(request.video),
+            Self::Bridge(request) => request.output_video(),
+        }
+    }
+
+    pub fn input_byte_length(&self) -> u64 {
+        match self {
+            Self::Convert(request) => request.input_byte_length,
+            Self::Bridge(request) => request.input_byte_length,
+        }
+    }
+
+    pub fn limits(&self) -> ConversionLimits {
+        match self {
+            Self::Convert(request) => request.limits,
+            Self::Bridge(request) => request.limits,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct ConversionReport {
@@ -152,14 +254,22 @@ pub struct ConversionReport {
 
 impl ConversionReport {
     pub fn validate(&self, request: &ConversionRequest) -> Result<(), ContractError> {
+        self.validate_worker(&WorkerRequest::Convert(request.clone()))
+    }
+
+    pub fn validate_worker(&self, request: &WorkerRequest) -> Result<(), ContractError> {
         request.validate()?;
-        if self.protocol != PROTOCOL_VERSION || self.video != request.video {
+        if self.protocol != PROTOCOL_VERSION || self.video != request.output_video()? {
             return Err(ContractError("worker changed the requested video contract"));
         }
-        if self.output_bytes == 0 || self.output_bytes > request.limits.max_output_bytes {
+        if self.output_bytes == 0 || self.output_bytes > request.limits().max_output_bytes {
             return Err(ContractError("output size is empty or exceeds budget"));
         }
-        if !is_sha256(&self.input_rgb_sha256) || self.input_rgb_sha256 != self.output_rgb_sha256 {
+        if !is_sha256(&self.input_rgb_sha256)
+            || !is_sha256(&self.output_rgb_sha256)
+            || (matches!(request, WorkerRequest::Convert(_))
+                && self.input_rgb_sha256 != self.output_rgb_sha256)
+        {
             return Err(ContractError(
                 "decoded pixel identities differ or are invalid",
             ));
@@ -199,6 +309,35 @@ pub enum WorkerReply {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use deadpan_core::{BridgeInterpolation, FrameDuration, FrameRate};
+
+    fn bridge() -> BridgeConversionRequest {
+        BridgeConversionRequest {
+            protocol: BRIDGE_PROTOCOL_VERSION,
+            operation: BridgeOperation::SampleBridge,
+            native: VideoContract {
+                frames: 25,
+                rate_num: 24,
+                rate_den: 1,
+                ..video()
+            },
+            sampling: BridgeSamplingMap::new(
+                FrameRate::new(30000, 1001).unwrap(),
+                FrameRate::new(24, 1).unwrap(),
+                FrameDuration::new(25).unwrap(),
+                FrameDuration::new(30).unwrap(),
+                BridgeInterpolation::EncodedSrgbRgb8LinearHalfUp,
+            )
+            .unwrap(),
+            input_byte_length: 1024,
+            limits: ConversionLimits {
+                max_input_bytes: 1024,
+                max_output_bytes: 1024 * 1024,
+                max_scratch_bytes: 768 * 320 * 3 * 25,
+                timeout_ms: 5000,
+            },
+        }
+    }
 
     fn video() -> VideoContract {
         VideoContract {
@@ -253,6 +392,60 @@ mod tests {
         assert!(
             serde_json::from_str::<VideoContract>(&wire.replacen('{', "{\"path\":\"evil\",", 1))
                 .is_err()
+        );
+    }
+
+    #[test]
+    fn bridge_validates_native_mapping_and_only_native_scratch() {
+        let request = bridge();
+        request.validate().unwrap();
+        assert_eq!(request.output_video().unwrap(), video());
+        assert!(
+            request.output_video().unwrap().scratch_bytes().unwrap()
+                > request.limits.max_scratch_bytes
+        );
+        let mut mismatch = request.clone();
+        mismatch.native.frames = 24;
+        assert!(mismatch.validate().is_err());
+        mismatch = request.clone();
+        mismatch.native.rate_num = 25;
+        assert!(mismatch.validate().is_err());
+        mismatch = request;
+        mismatch.limits.max_scratch_bytes -= 1;
+        assert!(mismatch.validate().is_err());
+    }
+
+    #[test]
+    fn versioned_requests_reject_ambiguous_or_mismatched_wire_fields() {
+        let request = WorkerRequest::Bridge(bridge());
+        let wire = serde_json::to_string(&request).unwrap();
+        assert_eq!(
+            serde_json::from_str::<WorkerRequest>(&wire).unwrap(),
+            request
+        );
+        for extra in ["\"native\":{},", "\"video\":{},", "\"protocol\":2,"] {
+            assert!(
+                serde_json::from_str::<WorkerRequest>(&wire.replacen(
+                    '{',
+                    &format!("{{{extra}"),
+                    1
+                ))
+                .is_err()
+            );
+        }
+        let mut wrong_version = bridge();
+        wrong_version.protocol = PROTOCOL_VERSION;
+        assert!(WorkerRequest::Bridge(wrong_version).validate().is_err());
+        let conversion = ConversionRequest {
+            protocol: PROTOCOL_VERSION,
+            video: bridge().native,
+            input_byte_length: 1024,
+            limits: bridge().limits,
+        };
+        let wire = serde_json::to_string(&conversion).unwrap();
+        assert_eq!(
+            serde_json::from_str::<WorkerRequest>(&wire).unwrap(),
+            WorkerRequest::Convert(conversion)
         );
     }
 }

@@ -44,6 +44,10 @@
 #define IO_BUFFER_BYTES 32768
 #define MAX_PROBE_BYTES (1024 * 1024)
 #define MAX_STREAMS 8
+#define MAX_DIMENSION 4096U
+#define MAX_FRAMES 10000U
+#define MAX_RATE 240U
+#define MAX_FILE_BYTES (16ULL * 1024ULL * 1024ULL * 1024ULL)
 #define OUTPUT_TIME_BASE_NUM 1
 #define OUTPUT_TIME_BASE_DEN 1000
 
@@ -162,6 +166,51 @@ static int checked_add_u64(uint64_t left, uint64_t right, uint64_t *result) {
         return 0;
     }
     *result = left + right;
+    return 1;
+}
+
+static uint32_t gcd_u32(uint32_t left, uint32_t right) {
+    while (right != 0) {
+        uint32_t remainder = left % right;
+        left = right;
+        right = remainder;
+    }
+    return left;
+}
+
+static int valid_rate(uint32_t numerator, uint32_t denominator) {
+    return numerator > 0 && denominator > 0 && numerator <= INT_MAX &&
+           denominator <= INT_MAX && numerator >= denominator &&
+           (uint64_t)numerator <= (uint64_t)MAX_RATE * denominator &&
+           gcd_u32(numerator, denominator) == 1;
+}
+
+static int validate_request(const DeadpanConversionRequest *request) {
+    if (request->width == 0 || request->height == 0 ||
+        request->width > MAX_DIMENSION || request->height > MAX_DIMENSION ||
+        request->frames == 0 || request->frames > MAX_FRAMES ||
+        request->output_frames == 0 || request->output_frames > MAX_FRAMES ||
+        !valid_rate(request->rate_num, request->rate_den) ||
+        !valid_rate(request->output_rate_num, request->output_rate_den)) {
+        return fail("invalid_request", "video contract is outside worker bounds");
+    }
+    if (request->sample_bridge > 1 ||
+        (!request->sample_bridge &&
+         (request->frames != request->output_frames ||
+          request->rate_num != request->output_rate_num ||
+          request->rate_den != request->output_rate_den)) ||
+        (request->sample_bridge && request->frames < 2)) {
+        return fail("invalid_request", "bridge sampling configuration is inconsistent");
+    }
+    if (request->input_byte_length == 0 || request->max_input_bytes == 0 ||
+        request->max_output_bytes == 0 || request->max_scratch_bytes == 0 ||
+        request->timeout_ms == 0 || request->input_byte_length > request->max_input_bytes ||
+        request->max_input_bytes > MAX_FILE_BYTES ||
+        request->max_output_bytes > MAX_FILE_BYTES ||
+        request->max_scratch_bytes > MAX_FILE_BYTES ||
+        request->timeout_ms > 24ULL * 60ULL * 60ULL * 1000ULL) {
+        return fail("invalid_request", "conversion limits are invalid");
+    }
     return 1;
 }
 
@@ -702,10 +751,51 @@ cleanup:
 }
 
 static int64_t output_pts(uint32_t boundary, const DeadpanConversionRequest *request) {
-    AVRational frame_period = {(int)request->rate_den, (int)request->rate_num};
+    AVRational frame_period = {(int)request->output_rate_den,
+                               (int)request->output_rate_num};
     AVRational milliseconds = {OUTPUT_TIME_BASE_NUM, OUTPUT_TIME_BASE_DEN};
     return av_rescale_q_rnd((int64_t)boundary, frame_period, milliseconds,
                             AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX);
+}
+
+static int output_rgb_from_scratch(int scratch_fd, uint32_t output_index,
+                                   const DeadpanConversionRequest *request,
+                                   uint64_t frame_bytes, uint8_t *output,
+                                   uint8_t *left, uint8_t *right) {
+    if (!request->sample_bridge) {
+        uint64_t offset;
+        return checked_mul_u64(output_index, frame_bytes, &offset) &&
+               exact_read_at(scratch_fd, output, frame_bytes, offset);
+    }
+    uint64_t denominator = (uint64_t)request->output_frames + 1;
+    uint64_t numerator = ((uint64_t)output_index + 1) *
+                         ((uint64_t)request->frames - 1);
+    uint64_t lower = numerator / denominator;
+    uint64_t remainder = numerator % denominator;
+    uint64_t upper = lower + (remainder != 0);
+    uint64_t left_offset;
+    uint64_t right_offset;
+    if (left == NULL || right == NULL || lower >= request->frames ||
+        upper >= request->frames ||
+        !checked_mul_u64(lower, frame_bytes, &left_offset) ||
+        !exact_read_at(scratch_fd, left, frame_bytes, left_offset)) {
+        return fail("invalid_request", "bridge sample coordinate is outside native scratch");
+    }
+    if (remainder == 0) {
+        memcpy(output, left, (size_t)frame_bytes);
+        return 1;
+    }
+    if (!checked_mul_u64(upper, frame_bytes, &right_offset) ||
+        !exact_read_at(scratch_fd, right, frame_bytes, right_offset)) {
+        return 0;
+    }
+    uint64_t left_weight = denominator - remainder;
+    for (uint64_t byte = 0; byte < frame_bytes; byte++) {
+        uint64_t weighted = (uint64_t)left[byte] * left_weight +
+                            (uint64_t)right[byte] * remainder;
+        output[byte] = (uint8_t)((weighted + denominator / 2) / denominator);
+    }
+    return 1;
 }
 
 static int write_encoder_packets(AVCodecContext *codec, AVFormatContext *format, AVStream *stream,
@@ -743,6 +833,8 @@ static int encode_output(int output_fd, int scratch_fd, const DeadpanConversionR
     AVFrame *bgr0 = NULL;
     struct SwsContext *to_bgr0 = NULL;
     uint8_t *packed = NULL;
+    uint8_t *sample_left = NULL;
+    uint8_t *sample_right = NULL;
     int success = 0;
 
     int code = avformat_alloc_output_context2(&format, NULL, "matroska", NULL);
@@ -778,7 +870,8 @@ static int encode_output(int output_fd, int scratch_fd, const DeadpanConversionR
     encoder->height = (int)request->height;
     encoder->pix_fmt = AV_PIX_FMT_BGR0;
     encoder->time_base = (AVRational){OUTPUT_TIME_BASE_NUM, OUTPUT_TIME_BASE_DEN};
-    encoder->framerate = (AVRational){(int)request->rate_num, (int)request->rate_den};
+    encoder->framerate = (AVRational){(int)request->output_rate_num,
+                                      (int)request->output_rate_den};
     encoder->gop_size = 1;
     encoder->max_b_frames = 0;
     encoder->thread_count = 1;
@@ -818,8 +911,16 @@ static int encode_output(int output_fd, int scratch_fd, const DeadpanConversionR
     rgb = av_frame_alloc();
     bgr0 = av_frame_alloc();
     packed = av_malloc((size_t)frame_bytes);
+    if (request->sample_bridge) {
+        sample_left = av_malloc((size_t)frame_bytes);
+        sample_right = av_malloc((size_t)frame_bytes);
+    }
     if (packet == NULL || rgb == NULL || bgr0 == NULL || packed == NULL) {
         fail("resource_exhausted", "allocate bounded FFV1 conversion buffers");
+        goto cleanup;
+    }
+    if (request->sample_bridge && (sample_left == NULL || sample_right == NULL)) {
+        fail("resource_exhausted", "allocate bounded bridge sampling buffers");
         goto cleanup;
     }
     rgb->format = AV_PIX_FMT_RGB24;
@@ -839,13 +940,12 @@ static int encode_output(int output_fd, int scratch_fd, const DeadpanConversionR
         fail("resource_exhausted", "create BGR0 converter");
         goto cleanup;
     }
-    for (uint32_t index = 0; index < request->frames; index++) {
+    for (uint32_t index = 0; index < request->output_frames; index++) {
         if (!within_deadline()) {
             goto cleanup;
         }
-        uint64_t offset;
-        if (!checked_mul_u64(index, frame_bytes, &offset) ||
-            !exact_read_at(scratch_fd, packed, frame_bytes, offset) ||
+        if (!output_rgb_from_scratch(scratch_fd, index, request, frame_bytes,
+                                     packed, sample_left, sample_right) ||
             av_frame_make_writable(rgb) < 0 || av_frame_make_writable(bgr0) < 0) {
             if (state.error->code[0] == '\0') {
                 fail("resource_exhausted", "prepare writable FFV1 frame");
@@ -905,6 +1005,8 @@ static int encode_output(int output_fd, int scratch_fd, const DeadpanConversionR
     success = 1;
 
 cleanup:
+    av_free(sample_right);
+    av_free(sample_left);
     av_free(packed);
     sws_freeContext(to_bgr0);
     av_frame_free(&bgr0);
@@ -921,7 +1023,8 @@ cleanup:
 
 static int receive_verified_frames(AVCodecContext *decoder, AVFrame *decoded, AVFrame *rgb,
                                    struct SwsContext *to_rgb, int scratch_fd, uint8_t *expected,
-                                   uint8_t *actual, const DeadpanConversionRequest *request,
+                                   uint8_t *actual, uint8_t *sample_left, uint8_t *sample_right,
+                                   const DeadpanConversionRequest *request,
                                    uint64_t frame_bytes, struct AVSHA *output_sha,
                                    uint32_t *frame_count, int64_t *first_pts, int64_t *last_pts) {
     for (;;) {
@@ -936,13 +1039,15 @@ static int receive_verified_frames(AVCodecContext *decoder, AVFrame *decoded, AV
             return 0;
         }
         uint32_t index = *frame_count;
-        if (index >= request->frames || decoded->best_effort_timestamp == AV_NOPTS_VALUE) {
+        if (index >= request->output_frames ||
+            decoded->best_effort_timestamp == AV_NOPTS_VALUE) {
             return fail("verification_failed", "FFV1 output has extra frame or missing PTS");
         }
         int64_t wanted_pts = output_pts(index, request);
         int64_t wanted_next = output_pts(index + 1, request);
         int64_t default_duration =
-            ((int64_t)OUTPUT_TIME_BASE_DEN * request->rate_den) / request->rate_num;
+            ((int64_t)OUTPUT_TIME_BASE_DEN * request->output_rate_den) /
+            request->output_rate_num;
         if (decoded->width != (int)request->width ||
             decoded->height != (int)request->height || decoded->format != AV_PIX_FMT_BGR0 ||
             !check_frame_tags(decoded) || decoded->best_effort_timestamp != wanted_pts ||
@@ -957,9 +1062,8 @@ static int receive_verified_frames(AVCodecContext *decoder, AVFrame *decoded, AV
             return fail("ffmpeg_failure", "convert verified FFV1 frame to RGB8");
         }
         packed_rgb(rgb, request->width, request->height, actual);
-        uint64_t offset;
-        if (!checked_mul_u64(index, frame_bytes, &offset) ||
-            !exact_read_at(scratch_fd, expected, frame_bytes, offset)) {
+        if (!output_rgb_from_scratch(scratch_fd, index, request, frame_bytes,
+                                     expected, sample_left, sample_right)) {
             return 0;
         }
         if (memcmp(expected, actual, (size_t)frame_bytes) != 0) {
@@ -989,6 +1093,8 @@ static int verify_output(int output_fd, int scratch_fd,
     struct SwsContext *to_rgb = NULL;
     uint8_t *expected = NULL;
     uint8_t *actual = NULL;
+    uint8_t *sample_left = NULL;
+    uint8_t *sample_right = NULL;
     uint32_t frame_count = 0;
     int success = 0;
 
@@ -1005,7 +1111,8 @@ static int verify_output(int output_fd, int scratch_fd,
         goto cleanup;
     }
     AVStream *stream = format->streams[0];
-    AVRational requested_rate = {(int)request->rate_num, (int)request->rate_den};
+    AVRational requested_rate = {(int)request->output_rate_num,
+                                 (int)request->output_rate_den};
     if (stream->codecpar->codec_id != AV_CODEC_ID_FFV1 ||
         stream->codecpar->format != AV_PIX_FMT_BGR0 ||
         stream->codecpar->width != (int)request->width ||
@@ -1051,8 +1158,16 @@ static int verify_output(int output_fd, int scratch_fd,
     rgb = av_frame_alloc();
     expected = av_malloc((size_t)frame_bytes);
     actual = av_malloc((size_t)frame_bytes);
+    if (request->sample_bridge) {
+        sample_left = av_malloc((size_t)frame_bytes);
+        sample_right = av_malloc((size_t)frame_bytes);
+    }
     if (packet == NULL || decoded == NULL || rgb == NULL || expected == NULL || actual == NULL) {
         fail("resource_exhausted", "allocate bounded FFV1 verification buffers");
+        goto cleanup;
+    }
+    if (request->sample_bridge && (sample_left == NULL || sample_right == NULL)) {
+        fail("resource_exhausted", "allocate bounded bridge verification buffers");
         goto cleanup;
     }
     rgb->format = AV_PIX_FMT_RGB24;
@@ -1081,8 +1196,9 @@ static int verify_output(int output_fd, int scratch_fd,
                 goto cleanup;
             }
             if (!receive_verified_frames(decoder, decoded, rgb, to_rgb, scratch_fd, expected,
-                                         actual, request, frame_bytes, output_sha, &frame_count,
-                                         &report->first_output_pts, &report->last_output_pts)) {
+                                         actual, sample_left, sample_right, request, frame_bytes,
+                                         output_sha, &frame_count, &report->first_output_pts,
+                                         &report->last_output_pts)) {
                 goto cleanup;
             }
             break;
@@ -1098,12 +1214,13 @@ static int verify_output(int output_fd, int scratch_fd,
             goto cleanup;
         }
         if (!receive_verified_frames(decoder, decoded, rgb, to_rgb, scratch_fd, expected, actual,
-                                     request, frame_bytes, output_sha, &frame_count,
-                                     &report->first_output_pts, &report->last_output_pts)) {
+                                     sample_left, sample_right, request, frame_bytes, output_sha,
+                                     &frame_count, &report->first_output_pts,
+                                     &report->last_output_pts)) {
             goto cleanup;
         }
     }
-    if (frame_count != request->frames || state.observed_ffv1_version != 3 ||
+    if (frame_count != request->output_frames || state.observed_ffv1_version != 3 ||
         state.observed_ffv1_ec != 1) {
         fail("verification_failed",
              "FFV1 output frame count, version, or slice CRC does not match the contract");
@@ -1117,6 +1234,8 @@ static int verify_output(int output_fd, int scratch_fd,
 
 cleanup:
     sws_freeContext(to_rgb);
+    av_free(sample_right);
+    av_free(sample_left);
     av_free(actual);
     av_free(expected);
     av_frame_free(&rgb);
@@ -1223,6 +1342,9 @@ int deadpan_convert(int input_fd, int output_fd, int scratch_fd,
     state.error = error;
     state.observed_ffv1_version = -1;
     state.observed_ffv1_ec = -1;
+    if (!validate_request(request)) {
+        return 1;
+    }
     start = monotonic_ns();
     if (start == UINT64_MAX || !checked_mul_u64(request->timeout_ms, 1000000ULL, &timeout_ns) ||
         !checked_add_u64(start, timeout_ns, &state.deadline_ns)) {
@@ -1260,7 +1382,8 @@ int deadpan_convert(int input_fd, int output_fd, int scratch_fd,
     }
     digest_hex(decoded.input_sha, report->input_rgb_sha256);
     digest_hex(output_sha, report->output_rgb_sha256);
-    if (strcmp(report->input_rgb_sha256, report->output_rgb_sha256) != 0) {
+    if (!request->sample_bridge &&
+        strcmp(report->input_rgb_sha256, report->output_rgb_sha256) != 0) {
         fail("verification_failed", "decoded FFV1 RGB digest differs from input RGB digest");
         goto cleanup;
     }

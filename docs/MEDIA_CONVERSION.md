@@ -1,12 +1,15 @@
 # Generated media conversion
 
-`deadpan-media` supplies a safe host boundary for one generated-video conversion.
+`deadpan-media` supplies a safe host boundary for generated-video conversion and
+exact interior bridge sampling.
 `native/deadpan-media-worker` links the qualified LGPL FFmpeg 8.0.3 libraries in a
 private process. This is the first implemented media adapter, with a deliberately
 narrow input contract. General source import, playback, export, candidate bundle
 validation, and authored acceptance remain separate work.
 The [2026-09-21 qualification](qualification/media-host-conversion-2026-09-21.md)
 records actual captured-model conversions, sanitizer runs, failures, and limits.
+The [bridge sampling qualification](qualification/media-bridge-2026-09-21.md)
+checks host-derived frames against an independently captured model result.
 
 ## Ownership and execution
 
@@ -25,6 +28,27 @@ records actual captured-model conversions, sanitizer runs, failures, and limits.
 5. The host waits for clean exit and process-group cleanup, validates the report
    and output length, hashes the private file with BLAKE3, and returns a read/seek
    object. Failure drops the temporary output. Nothing is published to a project.
+
+`canonicalize_bridge` takes one declared native sequence and the original
+`BridgeSamplingMap`. It snapshots the input once, preserves a lossless native
+master, and derives the sampled master from that same snapshot. One hard deadline
+covers the entire pair, including both helper processes and hashing. The outputs
+and map stay together in a private `CanonicalBridge`; no partial pair is returned.
+Byte budgets are per file, and each helper's scratch file is discarded before the
+next helper starts. The aggregate retained disk usage includes both masters and
+the input snapshot.
+
+Protocol 1 remains the unchanged conversion request. Protocol 2 adds
+`operation: "sample_bridge"`, a native contract, and the typed sampling map.
+For output index `j`, the native position is `(j+1)*(M-1)/(N+1)`. The helper reads
+the adjacent native frames and blends encoded sRGB RGB8 channels using integer
+half-up rounding. It decodes native frames once into bounded scratch and computes
+each output frame on demand. Upsampling increases work/output size without
+expanding the raw scratch requirement. A fresh decoder verifies the sampled
+FFV1 against those expected pixels. Report version 1 is shared by both operations;
+its video contract describes the output. Native and output RGB hashes may differ
+for sampling, and must match for plain conversion. The paired host also checks
+that both helpers decoded the same native pixels.
 
 Run this synchronous boundary on the job service, outside UI/audio callbacks and
 database transactions. Cancellation is checked while copying/hashing; the helper
@@ -107,13 +131,20 @@ and emits a JSON report containing input, pixel, and output identities. This
 developer entrypoint does not mark a candidate Ready or bypass the store's
 generated-artifact admission guard.
 
+A protocol-2 request requires a second output path after `OUTPUT`, for the native
+master. It exercises the paired API and reports both object identities plus the
+original sampling map. These developer outputs are written exclusively in order;
+a failure writing the second file can leave the first file. This is qualification
+output, not atomic project publication.
+
 Any future promotion caller must recheck cancellation, selected candidate,
 request relevance, and retained object identities at its own commit boundary.
 Returning a private conversion result cannot make those later decisions atomic.
 
 The model protocol currently declares only its sampled candidate. Before durable
 acceptance, it must declare the native sequence and provenance as a complete
-hash-verified bundle; the host must convert both sequences, retain immutable
+hash-verified bundle; the host must derive the sampled master from the native
+sequence using the persisted request plan, retain immutable
 provenance, persist a qualified selected-Ready receipt, and revalidate relevance
 and all objects during explicit acceptance. This converter implements the actual
 media boundary needed by that flow. It does not yet implement the flow itself.

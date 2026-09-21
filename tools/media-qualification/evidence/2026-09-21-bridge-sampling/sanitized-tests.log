@@ -1,0 +1,70 @@
+   Compiling libc v0.2.189
+   Compiling proc-macro2 v1.0.107
+   Compiling quote v1.0.47
+   Compiling unicode-ident v1.0.26
+   Compiling shlex v2.0.1
+   Compiling find-msvc-tools v0.1.13
+   Compiling typenum v1.20.1
+   Compiling serde_core v1.0.229
+   Compiling cfg-if v1.0.5
+   Compiling zmij v1.0.23
+   Compiling rustix v1.1.5
+   Compiling serde v1.0.229
+   Compiling serde_json v1.0.151
+   Compiling bitflags v2.13.2
+   Compiling getrandom v0.4.3
+   Compiling thiserror v2.0.20
+   Compiling memchr v2.8.3
+   Compiling itoa v1.0.18
+   Compiling once_cell v1.21.4
+   Compiling arrayvec v0.7.8
+   Compiling constant_time_eq v0.4.2
+   Compiling cc v1.4.7
+   Compiling fastrand v2.5.0
+   Compiling hybrid-array v0.4.15
+   Compiling syn v3.0.6
+   Compiling errno v0.3.14
+   Compiling cpufeatures v0.3.1
+   Compiling blake3 v1.8.7
+   Compiling deadpan-media-worker v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-media-worker)
+   Compiling crypto-common v0.2.2
+   Compiling block-buffer v0.12.1
+   Compiling digest v0.11.3
+   Compiling sha2 v0.11.0
+   Compiling deadpan-native-process v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-process)
+   Compiling tempfile v3.27.0
+   Compiling serde_derive v1.0.229
+   Compiling thiserror-impl v2.0.20
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 26.95s
+     Running unittests src/main.rs (/private/tmp/deadpan-bridge-sanitized-final-20260921/target/aarch64-apple-darwin/debug/deps/deadpan_media_worker-969af176b7e0cfde)
+
+running 3 tests
+test tests::c_string_conversion_is_bounded_and_lossy ... ok
+test tests::native_boundary_rejects_inconsistent_bridge_configuration ... ok
+test tests::argument_parser_rejects_extra_oversized_and_non_utf8_requests ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/bridge_real_media.rs (/private/tmp/deadpan-bridge-sanitized-final-20260921/target/aarch64-apple-darwin/debug/deps/bridge_real_media-ecfb0f8d9031562a)
+
+running 3 tests
+test bridge_contract_rejects_bad_native_map_rate_and_scratch_before_worker ... ok
+test canonicalize_bridge_checks_halfway_rounding_and_audio_discard ... ok
+test canonicalize_bridge_retains_native_and_independently_checks_up_and_down_sampling ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.23s
+
+     Running tests/canonicalize_real_media.rs (/private/tmp/deadpan-bridge-sanitized-final-20260921/target/aarch64-apple-darwin/debug/deps/canonicalize_real_media-df62f0fd6c30abef)
+
+running 6 tests
+test cancellation_is_checked_before_spawning_the_worker ... ok
+test identity_length_and_contract_budgets_fail_before_or_at_the_worker_boundary ... ok
+test real_audio_stream_is_discarded_while_video_pixels_remain_exact ... ok
+test missing_color_tags_and_corrupt_encoded_picture_are_rejected ... ok
+test wrong_dimensions_rate_and_frame_count_are_rejected_by_real_decoder ... ok
+test real_rgb_inputs_preserve_pixels_profile_timing_and_object_identity ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.77s
+

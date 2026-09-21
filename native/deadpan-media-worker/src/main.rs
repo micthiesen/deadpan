@@ -6,8 +6,8 @@ use std::os::fd::AsRawFd;
 use std::process::ExitCode;
 
 use deadpan_media::protocol::{
-    ConversionReport, ConversionRequest, MAX_REPLY_BYTES, MAX_REQUEST_BYTES, PROTOCOL_VERSION,
-    WorkerReply,
+    ConversionReport, MAX_REPLY_BYTES, MAX_REQUEST_BYTES, PROTOCOL_VERSION, WorkerReply,
+    WorkerRequest,
 };
 
 #[allow(unsafe_code)]
@@ -26,6 +26,10 @@ mod ffi {
         pub max_output_bytes: u64,
         pub max_scratch_bytes: u64,
         pub timeout_ms: u64,
+        pub output_frames: u32,
+        pub output_rate_num: u32,
+        pub output_rate_den: u32,
+        pub sample_bridge: u32,
     }
 
     #[repr(C)]
@@ -115,7 +119,7 @@ fn failure(code: &str, message: impl Into<String>) -> WorkerReply {
 fn parse_request(
     argument: Option<OsString>,
     extra: Option<OsString>,
-) -> Result<ConversionRequest, (String, String)> {
+) -> Result<WorkerRequest, (String, String)> {
     if extra.is_some() {
         return Err((
             "invalid_request".into(),
@@ -140,7 +144,7 @@ fn parse_request(
             "request JSON exceeds the wire limit".into(),
         ));
     }
-    let request: ConversionRequest = serde_json::from_str(&encoded).map_err(|error| {
+    let request: WorkerRequest = serde_json::from_str(&encoded).map_err(|error| {
         (
             "invalid_request".into(),
             format!("invalid request JSON: {error}"),
@@ -161,22 +165,32 @@ fn bounded_c_string<const N: usize>(bytes: &[std::os::raw::c_char; N]) -> String
     String::from_utf8_lossy(&raw).into_owned()
 }
 
-fn convert(request: &ConversionRequest) -> WorkerReply {
+fn convert(request: &WorkerRequest) -> WorkerReply {
     let scratch = match tempfile::tempfile() {
         Ok(file) => file,
         Err(error) => return failure("io_failure", format!("create private RGB scratch: {error}")),
     };
+    let native = request.native_video();
+    let output = match request.output_video() {
+        Ok(video) => video,
+        Err(error) => return failure("invalid_request", error.to_string()),
+    };
+    let limits = request.limits();
     let native_request = ffi::Request {
-        width: request.video.width,
-        height: request.video.height,
-        frames: request.video.frames,
-        rate_num: request.video.rate_num,
-        rate_den: request.video.rate_den,
-        input_byte_length: request.input_byte_length,
-        max_input_bytes: request.limits.max_input_bytes,
-        max_output_bytes: request.limits.max_output_bytes,
-        max_scratch_bytes: request.limits.max_scratch_bytes,
-        timeout_ms: request.limits.timeout_ms,
+        width: native.width,
+        height: native.height,
+        frames: native.frames,
+        rate_num: native.rate_num,
+        rate_den: native.rate_den,
+        input_byte_length: request.input_byte_length(),
+        max_input_bytes: limits.max_input_bytes,
+        max_output_bytes: limits.max_output_bytes,
+        max_scratch_bytes: limits.max_scratch_bytes,
+        timeout_ms: limits.timeout_ms,
+        output_frames: output.frames,
+        output_rate_num: output.rate_num,
+        output_rate_den: output.rate_den,
+        sample_bridge: u32::from(matches!(request, WorkerRequest::Bridge(_))),
     };
     let mut native_report = ffi::Report::default();
     let mut native_error = ffi::Error::default();
@@ -206,7 +220,7 @@ fn convert(request: &ConversionRequest) -> WorkerReply {
     }
     let report = ConversionReport {
         protocol: PROTOCOL_VERSION,
-        video: request.video,
+        video: output,
         output_bytes: native_report.output_bytes,
         input_rgb_sha256: bounded_c_string(&native_report.input_rgb_sha256),
         output_rgb_sha256: bounded_c_string(&native_report.output_rgb_sha256),
@@ -220,7 +234,7 @@ fn convert(request: &ConversionRequest) -> WorkerReply {
         slice_crc: native_report.slice_crc == 1,
         discarded_audio_streams: native_report.discarded_audio_streams,
     };
-    match report.validate(request) {
+    match report.validate_worker(request) {
         Ok(()) => WorkerReply::Success { report },
         Err(error) => failure(
             "internal_error",
@@ -294,5 +308,34 @@ mod tests {
             )
             .is_err()
         );
+    }
+
+    #[test]
+    fn native_boundary_rejects_inconsistent_bridge_configuration() {
+        let request = ffi::Request {
+            width: 1,
+            height: 1,
+            frames: 2,
+            rate_num: 24,
+            rate_den: 1,
+            input_byte_length: 1,
+            max_input_bytes: 1,
+            max_output_bytes: 1,
+            max_scratch_bytes: 6,
+            timeout_ms: 1,
+            output_frames: 1,
+            output_rate_num: 24,
+            output_rate_den: 1,
+            sample_bridge: 2,
+        };
+        let mut report = ffi::Report::default();
+        let mut error = ffi::Error::default();
+
+        assert_ne!(
+            ffi::convert(-1, -1, -1, &request, &mut report, &mut error),
+            0
+        );
+        assert_eq!(bounded_c_string(&error.code), "invalid_request");
+        assert!(bounded_c_string(&error.message).contains("bridge sampling"));
     }
 }

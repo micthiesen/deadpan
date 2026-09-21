@@ -15,6 +15,10 @@ typedef struct {
     uint64_t max_output_bytes;
     uint64_t max_scratch_bytes;
     uint64_t timeout_ms;
+    uint32_t output_frames;
+    uint32_t output_rate_num;
+    uint32_t output_rate_den;
+    uint32_t sample_bridge;
 } DeadpanConversionRequest;
 
 typedef struct {
