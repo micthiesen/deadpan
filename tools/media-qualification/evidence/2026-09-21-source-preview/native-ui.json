@@ -1,0 +1,76 @@
+{
+  "scope": "Native source preview only; visual review, keyboard and AX structure, not full editorial/accessibility/display qualification",
+  "date": "2026-09-21",
+  "hardware": "Apple M5 Max, 128 GiB",
+  "os": "macOS 26.5.2",
+  "tool": "mcp__cua_repl native app API",
+  "wrapper": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-preview-gui-t82x0b0r/Deadpan.app",
+  "binary_sha256": "f4ccdafe8241af48f2dcdd9cdbb0b7a0ce8ecbbbe013513875017cfa168b2d0c",
+  "wrapper_reason": "Native automation did not recognize the Cargo unbundled executable; temporary development bundle contains the same debug binary, no distribution qualification.",
+  "startup": {
+    "command": "cargo run -p deadpan-app -- --smoke-test",
+    "exit_code": 0,
+    "observed": "Native GPU initialized: Apple M5 Max (Metal); shutdown callback completed"
+  },
+  "observations": [
+    {
+      "action": "Open CFR H264 source, Right, End, Home",
+      "result": "Frame 2/120 PTS1001, 120/120 PTS119119, 1/120 PTS0 in clock1/30000"
+    },
+    {
+      "action": "Cmd+O then Right",
+      "result": "Path focused, video frame unchanged"
+    },
+    {
+      "action": "Escape then Right",
+      "result": "NORMAL Source, next video frame"
+    },
+    {
+      "action": "Tab through path, Open, image, First; Space",
+      "result": "AX focus traverses controls and First selects frame1"
+    },
+    {
+      "action": "Fast Cmd+O, Cmd+A, paste, Enter with offset and VFR paths",
+      "result": "Correct replacement/open after focus-order fix; offset starts PTS60060/30000"
+    },
+    {
+      "action": "VFR End, Home, Right",
+      "result": "Latest request frame2, PTS1001; following frame3 PTS3003"
+    },
+    {
+      "action": "In focused path Cmd+A, Option+E, E",
+      "result": "Native accent composition produces \u00e9 without changing video frame; Escape/Right resumes navigation"
+    },
+    {
+      "action": "Open missing file then valid source",
+      "result": "Old picture cleared, explicit ENOENT, valid source recovers"
+    },
+    {
+      "action": "Open retained actual generated FFV1 master and End",
+      "result": "Visible picture, frame25/25 PTS1000/1000, terminal1041"
+    },
+    {
+      "action": "Resize observed1067x768 window to about670x452",
+      "result": "Picture fitted, labels/buttons/help/errors readable; no overlap observed"
+    },
+    {
+      "action": "Cmd+Q while visible loading of8GiB sparse source fixture",
+      "result": "App process exit0; no preview process remains"
+    }
+  ],
+  "fixes": [
+    "Secondary text contrast raised and body/button font set14",
+    "Missing arrow glyphs replaced with Left / Right words",
+    "Cmd+O requests focus before TextEdit processing; fast replacement no longer appends paths"
+  ],
+  "ax": "Labeled path, Open/frame buttons, picture, frame/PTS, loading and error text observed",
+  "not_tested": [
+    "VoiceOver",
+    "CJK IME",
+    "non-US physical keyboard layouts",
+    "light appearance",
+    "calibrated display/ICC",
+    "full editorial workflow"
+  ],
+  "subsequent_changes": "Source pixel-budget tightening, pre-copy limit validation, HDR/ICC/ambient metadata rejection and diagnostic capability labels were checked headlessly; app layout/keyboard behavior did not change."
+}

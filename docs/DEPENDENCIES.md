@@ -12,7 +12,9 @@ requires an explicit pinned FFmpeg developer prefix; see [Development](DEVELOPME
 | Component | Direct pin | Upstream license | Scope |
 | --- | --- | --- | --- |
 | Rust | 1.97.1 | MIT OR Apache-2.0 | Compiler, rustfmt, Clippy. |
-| eframe | 0.36.2 | MIT OR Apache-2.0 | Native welcome shell, egui, wgpu, AccessKit. No media preview yet. |
+| eframe | 0.36.2 | MIT OR Apache-2.0 | Native source preview, egui, wgpu and AccessKit. |
+| wgpu | 30.0.1 | MIT OR Apache-2.0 | Already locked through eframe; direct Metal/WGSL dependency for the shared picture baseline. |
+| pollster | 1.0.1 | Apache-2.0 OR MIT | Already locked; development-only offscreen GPU qualification. |
 | serde | 1.0.229 | MIT OR Apache-2.0 | Validated domain, transaction, and protocol serialization. |
 | serde_json | 1.0.151 | MIT OR Apache-2.0 | Bounded project/command JSON and diagnostics. |
 | rusqlite | 0.40.2 | MIT | Authoritative SQLite package/history, backup API, and SQLite limits. |
@@ -25,7 +27,7 @@ requires an explicit pinned FFmpeg developer prefix; see [Development](DEVELOPME
 | sha2 | 0.11.0 | MIT OR Apache-2.0 | Streaming SHA-256 for worker artifact snapshots; default `alloc`/`oid` features disabled. |
 | blake3 | 1.8.7 | CC0-1.0 OR Apache-2.0 OR Apache-2.0 WITH LLVM-exception | Streaming internal content addresses for project-managed generated objects. |
 | cc | 1.4.7 | MIT OR Apache-2.0 | Already locked transitively; direct build dependency for the isolated C codec adapter. |
-| FFmpeg | 8.0.3, commit `8ae0b34901ba60a802f183ee75a250a9fc3e09a5` | LGPL 2.1 or later for the selected build | Generated-video helper only, linked dynamically against the explicitly built prefix. GPL, nonfree, version-3, autodetected external libraries, and networking are disabled. App bundling remains open. |
+| FFmpeg | 8.0.3, commit `8ae0b34901ba60a802f183ee75a250a9fc3e09a5` | LGPL 2.1 or later for the selected build | Generated-video helper and persistent source adapter, dynamically linked against the explicit prefix. GPL, nonfree, version-3, autodetected external libraries and networking are disabled. App bundling remains open. |
 | proptest | 1.11.0 | MIT OR Apache-2.0 | Development-only exact-time, document, and transaction property tests. |
 
 `Cargo.toml` pins direct versions. `Cargo.lock` records every resolved transitive
@@ -36,8 +38,9 @@ color management, accessibility, or the shared renderer.
 
 `deadpan-models` adds host bundle qualification using the existing core, jobs,
 media, serialization and BLAKE3 dependencies. It adds no registry dependency or
-in-process codec/model runtime. Its integration tests use the isolated native
-helper and SQLite store; no model download is required by the repository gate.
+model runtime. Media now also links the persistent source adapter. Generation
+integration tests continue to exercise the isolated native helper and SQLite
+store; no model download is required by the repository gate.
 
 The app's initial deployment target is macOS 15; the test host and actual
 verification are recorded in [SETUP_VERIFICATION.md](SETUP_VERIFICATION.md).

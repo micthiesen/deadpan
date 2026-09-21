@@ -1,0 +1,126 @@
+{
+  "codec": "ffv1",
+  "color": "ColorMetadata { range: Full, matrix: Rgb, transfer: Srgb, primaries: Bt709 }",
+  "container_duration_microseconds": 1042000,
+  "container_start_microseconds": 0,
+  "content": {
+    "byte_length": 4544157,
+    "sha256": [
+      231,
+      125,
+      196,
+      252,
+      214,
+      212,
+      40,
+      109,
+      123,
+      151,
+      35,
+      233,
+      39,
+      182,
+      201,
+      83,
+      233,
+      244,
+      71,
+      200,
+      27,
+      121,
+      53,
+      174,
+      163,
+      31,
+      38,
+      167,
+      163,
+      9,
+      248,
+      45
+    ]
+  },
+  "dimensions": [
+    768,
+    320
+  ],
+  "first_pts": 0,
+  "frames": 25,
+  "index_sha256": "4f3ebbad08cf2fa1daa20d8aafd86ab41ae1d936a1a188405001a373186531f5",
+  "opening_seconds": 0.716597541,
+  "pixel_format": "bgr0",
+  "rotation_quarter_turns": 0,
+  "sample_aspect_ratio": [
+    1,
+    1
+  ],
+  "scope": "actual source snapshot, measured presentation index and persistent decoder seeks; not playback, project import, audio, HDR or display qualification",
+  "seeks": [
+    {
+      "frame": 0,
+      "pts": 0,
+      "reported_duration": 41,
+      "rgba_bytes": 983040,
+      "rgba_sha256": "6cd2cf8d0e9f24bc2c7ff54a3c6be2800357f37714cd49fcb98f6a1ceacd01bd",
+      "seconds": 0.060030333
+    },
+    {
+      "frame": 24,
+      "pts": 1000,
+      "reported_duration": 41,
+      "rgba_bytes": 983040,
+      "rgba_sha256": "09abf9fce56693ff69e6113457f134cbc6d595185daf4a5cf2f04073ccf621fd",
+      "seconds": 0.059505666
+    },
+    {
+      "frame": 0,
+      "pts": 0,
+      "reported_duration": 41,
+      "rgba_bytes": 983040,
+      "rgba_sha256": "6cd2cf8d0e9f24bc2c7ff54a3c6be2800357f37714cd49fcb98f6a1ceacd01bd",
+      "seconds": 0.059047084
+    },
+    {
+      "frame": 12,
+      "pts": 500,
+      "reported_duration": 41,
+      "rgba_bytes": 983040,
+      "rgba_sha256": "73c002bde7109a7b37a3f84c4a8f6d3f1cb0bffa8e91690a6bcad0af55627889",
+      "seconds": 0.059007125
+    },
+    {
+      "frame": 1,
+      "pts": 42,
+      "reported_duration": 41,
+      "rgba_bytes": 983040,
+      "rgba_sha256": "9af7a241f89a8b8c758c8ec56e95d3caec8347de7d15dcfab60366ee6d69f8c2",
+      "seconds": 0.059042667
+    },
+    {
+      "frame": 24,
+      "pts": 1000,
+      "reported_duration": 41,
+      "rgba_bytes": 983040,
+      "rgba_sha256": "09abf9fce56693ff69e6113457f134cbc6d595185daf4a5cf2f04073ccf621fd",
+      "seconds": 0.054521791
+    },
+    {
+      "frame": 0,
+      "pts": 0,
+      "reported_duration": 41,
+      "rgba_bytes": 983040,
+      "rgba_sha256": "6cd2cf8d0e9f24bc2c7ff54a3c6be2800357f37714cd49fcb98f6a1ceacd01bd",
+      "seconds": 0.058386167
+    }
+  ],
+  "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-durable-acceptance-q1rh36r4/accepted/native.mkv",
+  "stream_duration": null,
+  "stream_index": 0,
+  "stream_start": 0,
+  "terminal_end": 1041,
+  "terminal_provenance": "decoded_frame_duration",
+  "time_base": [
+    1,
+    1000
+  ]
+}

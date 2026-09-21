@@ -14,7 +14,7 @@ pub fn report() -> Result<serde_json::Value, CliError> {
         },
         "document_schema": deadpan_core::DOCUMENT_SCHEMA_VERSION,
         "database_schema": deadpan_store::DATABASE_SCHEMA_VERSION,
-        "partial": ["structural-editing-commands", "sqlite-project-history", "schema-1-through-8-migration", "indexed-picture-plan", "exact-boundary-selectors", "persistent-marks", "sparse-play-overrides", "nested-occurrence-edits", "persistent-generation-requests", "persistent-generation-attempts", "authored-generated-hold-semantics", "generated-media-conversion", "native-bridge-bundle-qualification", "durable-generated-bundle-acceptance"],
-        "unimplemented": ["app-media-import-and-playback", "audio-output", "keyboard-editor", "media-preview", "analysis", "ai-generation", "youtube-import", "export", "distribution"],
+        "partial": ["structural-editing-commands", "sqlite-project-history", "schema-1-through-8-migration", "indexed-picture-plan", "exact-boundary-selectors", "persistent-marks", "sparse-play-overrides", "nested-occurrence-edits", "persistent-generation-requests", "persistent-generation-attempts", "authored-generated-hold-semantics", "generated-media-conversion", "native-bridge-bundle-qualification", "durable-generated-bundle-acceptance", "persistent-source-decoding", "shared-sdr-picture-pipeline", "native-source-preview"],
+        "unimplemented": ["app-media-import-and-playback", "audio-output", "keyboard-editor", "timeline-media-preview", "analysis", "ai-generation", "youtube-import", "export", "distribution"],
     }))
 }

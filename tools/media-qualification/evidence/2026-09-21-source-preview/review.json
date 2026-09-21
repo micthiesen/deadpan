@@ -1,0 +1,59 @@
+{
+  "base_revision": "86fa1e7502c8cd58019e16b62d8da0735adf9347",
+  "scope": "Source-preview implementation, staged and unstaged changes, and new source/test files on main",
+  "independent_reviews": [
+    {
+      "lens": "General correctness and integration",
+      "agent": "source_preview_general_review",
+      "areas": ["host source snapshot/index/session", "app worker and navigation", "shared renderer", "native ABI", "sanitizer reporting"],
+      "final_result": "No remaining findings after pixel-budget and report fixes"
+    },
+    {
+      "lens": "Native decoder, ownership and recovery",
+      "agent": "source_preview_native_review",
+      "areas": ["descriptor-only AVIO", "original timestamps and seek", "limits", "color metadata", "FFI lifetimes", "cancellation and reopen"],
+      "final_result": "Production fixes confirmed; fixture-generator finding dismissed using pinned header and actual reproduction evidence"
+    },
+    {
+      "lens": "GPU pipeline and native UI",
+      "agent": "source_preview_gpu_ui_review",
+      "areas": ["transfer/gamut filtering", "target and egui texture lifetimes", "geometry", "worker coalescing", "keyboard focus ordering"],
+      "final_result": "No findings"
+    }
+  ],
+  "addressed": [
+    {
+      "finding": "No independent pixel/RGBA budget below the dimension cap",
+      "triage": "The existing 8192-square dimension cap already bounded RGBA to 256 MiB; the original unbounded characterization was too strong. Added explicit caller control with a 64 MiB default.",
+      "change": "max_pixels enforced before native probing, during codec allocation and before Rust RGBA allocation; cancellation precedes allocation",
+      "verification": "Real H264 coded-padding and small/invalid budget tests; full gate and ASan/UBSan"
+    },
+    {
+      "finding": "Source-only sanitizer reports included irrelevant worker artifact fields",
+      "change": "Report only selected package artifacts; worker fields require worker selection",
+      "verification": "Four native harness tests and final source/media sanitizer report"
+    },
+    {
+      "finding": "Invalid native limits were checked after host snapshot copying",
+      "change": "Pure Rust DecodeLimits::validate runs before any snapshot read; C independently rechecks",
+      "verification": "Seven invalid-limit configurations with a reader that panics on any read; full gate and ASan/UBSan"
+    },
+    {
+      "finding": "Stream HDR metadata could bypass frame-only checks while transfer tags claimed SDR",
+      "change": "Check stream and selected packet side data before decode; extend frame checks to HDR/ICC/ambient metadata",
+      "verification": "618-byte encoded FFV1 fixture failed before the fix and passes after it; ten native integration tests and final gate/sanitizers"
+    }
+  ],
+  "dismissed": [
+    {
+      "finding": "Fixture generator should compare av_packet_side_data_add result with < 0",
+      "evidence": "Pinned FFmpeg 8.0.3 libavcodec/packet.h:442-448 returns AVPacketSideData* on success and NULL on failure. Existing ! check is correct. Two actual generator runs reproduced identical fixture bytes."
+    }
+  ],
+  "native_interaction_fixes": [
+    "Raised secondary-text contrast and body/button font size",
+    "Replaced missing arrow glyphs with Left/Right labels",
+    "Moved Cmd+O focus request before TextEdit processing so fast select-all/paste replaces the path"
+  ],
+  "remaining_scope": "Source preview only. Full format/HDR/display, playback/audio/export, accessibility and editorial workflow acceptance remain open."
+}

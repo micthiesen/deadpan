@@ -1,0 +1,21 @@
+{
+  "fixture": "native/deadpan-source/tests/fixtures/sdr-with-stream-hdr.mkv",
+  "fixture_bytes": 618,
+  "fixture_sha256": "17d0c5f6203703d042150cc07fb7e793a82a174647f3400c468176944fd8e0e5",
+  "prefix": "/tmp/deadpan-media-compatible-xyhilms4/prefix",
+  "ffmpeg": "8.0.3",
+  "before_fix_regression": "Failed because SourceDecoder::open returned Ok; captured transcript in before-fix-test.log",
+  "after_fix_package_tests": {
+    "command": "cargo test -p deadpan-source --locked",
+    "exit_status": 0,
+    "integration_tests_passed": 10,
+    "integration_tests_failed": 0,
+    "integration_tests_ignored": 0
+  },
+  "after_fix_clippy": {
+    "command": "cargo clippy -p deadpan-source --all-targets --locked -- -D warnings",
+    "exit_status": 0
+  },
+  "fixture_reproduction": "Second generator run to /tmp/deadpan-source-hdr-regenerated.mkv compares byte-identical with cmp",
+  "ffprobe_command": "PATH=/tmp/deadpan-media-compatible-xyhilms4/prefix/bin:$PATH ffprobe -v error -show_streams -show_frames -of json native/deadpan-source/tests/fixtures/sdr-with-stream-hdr.mkv"
+}

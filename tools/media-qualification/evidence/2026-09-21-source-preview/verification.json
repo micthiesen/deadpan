@@ -1,0 +1,36 @@
+{
+  "rust_tests": 374,
+  "python_tests": {
+    "audio": 20,
+    "model": 54,
+    "ffv1_report": 5,
+    "native_harness": 4
+  },
+  "source_media_sanitizer_tests": 32,
+  "metal_cases": 76,
+  "fixture_manifest": "native/deadpan-source/tests/fixtures/manifest.json",
+  "fixture_manifest_hashes_verified": 11,
+  "log_encoding": "Each .log.gz decompresses to exact original log bytes; deterministic gzip mtime0.",
+  "initial_development_failures": [
+    {
+      "area": "native Rust Clippy",
+      "error": "manual_is_multiple_of at native/deadpan-source/src/lib.rs:359; corrected"
+    },
+    {
+      "area": "source inspector",
+      "error": "E0277 Sha256 digest Array does not implement LowerHex; replaced with per-byte hex formatting"
+    },
+    {
+      "area": "app build",
+      "error": "DEADPAN_FFMPEG_PREFIX missing; rerun with qualified explicit prefix"
+    },
+    {
+      "area": "app API",
+      "error": "egui0.36 panel API uses Panel::top/bottom, obsolete name corrected"
+    },
+    {
+      "area": "GUI",
+      "error": "fast path-focus/select-all/paste appended old path; focus ordering corrected and repeated natively"
+    }
+  ]
+}

@@ -2,8 +2,8 @@
 
 Deadpan uses a Rust workspace, pinned to Rust 1.97.1. Its native application targets Apple Silicon macOS; the specification proposes macOS 15 as the initial deployment baseline, pending qualification. Cargo installs/builds the locked Rust dependencies. Native development requires the macOS build tools.
 
-The CLI and welcome shell need no credentials or model weights. The complete
-workspace now builds an isolated FFV1 helper against pinned LGPL FFmpeg 8.0.3.
+The CLI and source preview need no credentials or model weights. The complete
+workspace builds an isolated FFV1 helper and persistent source decoder against pinned LGPL FFmpeg 8.0.3.
 Build that developer dependency once on Apple Silicon macOS with Python 3, GnuPG,
 Clang, and Make available:
 
@@ -18,7 +18,7 @@ The work directory must be empty. The builder verifies the pinned archive hash
 and release signature, disables GPL/nonfree/version-3 components and networking,
 and records build/license/library evidence. The Cargo build refuses an absent or
 incompatible prefix. It never falls back to a system FFmpeg installation.
-Keep the prefix available when running the development helper; its dynamic
+Keep the prefix available when running the app or development helper; its dynamic
 libraries have not yet been assembled into a portable signed app bundle.
 CI builds the same pinned dependency before running the complete gate.
 These developer tools must never become end-user requirements.
@@ -52,7 +52,24 @@ cargo run -p deadpan-app
 
 `--smoke-test` opens the native window, closes it after frames have rendered, and checks the shutdown callback. Run it for native startup or lifecycle changes. Where an interactive check adds evidence, confirm the affected layout, focus, keyboard navigation, and close behavior. Do not repeat GUI testing for unrelated pure-core changes. Confirm no media/import/render controls imply unavailable functionality. For lifecycle changes, verify the intended quit/SIGTERM behavior and exit status. Record the actual OS/hardware and what was observed; a successful compile is not a UI smoke test.
 
-The shell does not test frame decoding, a media texture path, realtime audio, or preview/export equivalence. Qualify those using isolated technical harnesses before integrating an editing workspace.
+The source preview opens explicitly tagged progressive 8-bit SDR H.264/FFV1 in
+MP4/Matroska. Use `cargo run -p deadpan-app -- --preview-source /absolute/video.mp4`,
+or focus the path with `⌘O` and press Enter. Left/Right step original frames;
+Home/End select the first/last frame. Text editing and IME events suppress frame
+commands. The app does not yet import into projects, edit, play audio or export.
+
+Headless source evidence uses `cargo run -p deadpan-media --example inspect_source -- /absolute/video.mp4 /tmp/new-source-report.json`.
+The report preserves original clocks, observed terminal duration, content identity,
+retained-pixel hashes and seek timings. The input must be a regular file at most
+256 MiB. Source indexing has independent memory, frame and cooperative time bounds.
+Missing terminal duration is an error, not an inferred nominal endpoint.
+
+Run `cargo run -p deadpan-render --example qualify_picture -- /tmp/new-picture-report.json`
+for actual offscreen Metal comparisons against the CPU reference. Run
+`python3 tools/media-qualification/host/build_sanitized.py --work /tmp/new-empty-source-sanitizers --package deadpan-source --package deadpan-media`
+for C-adapter ASan/UBSan with source-session integration tests. These harnesses
+complement [native visual and keyboard evidence](qualification/source-preview-2026-09-21.md);
+they do not establish playback, physical display calibration or preview/export equivalence.
 
 ## Implementation sequence
 

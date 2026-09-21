@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Instrument and test the native converter adapter on Apple Silicon macOS.
+"""Instrument and test selected native media adapters on Apple Silicon macOS.
 
 Native C dependencies such as BLAKE3 SIMD are also instrumented. Rust and the
 separately built FFmpeg libraries are not. This is a developer qualification
@@ -12,6 +12,7 @@ import json
 import os
 from pathlib import Path
 import platform
+import re
 import signal
 import subprocess
 import time
@@ -40,6 +41,9 @@ def run_test_command(command, *, cwd, env, log, timeout=600):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--work", type=Path, required=True)
+    parser.add_argument("--package", action="append", choices=[
+        "deadpan-media-worker", "deadpan-source", "deadpan-media"
+    ], help="Cargo package to instrument/test; repeat for an integrated boundary")
     args = parser.parse_args()
     if platform.system() != "Darwin" or platform.machine() != "arm64":
         parser.error("this qualification targets Apple Silicon macOS")
@@ -63,20 +67,31 @@ def main():
     env["CFLAGS"] = "-fsanitize=address,undefined -fno-omit-frame-pointer -fno-sanitize-recover=all"
     # An explicit target confines link flags to target crates. Applying the ASan
     # runtime to host proc-macro dylibs loads interceptors too late inside rustc.
-    command = ["cargo", "test", "-p", "deadpan-media-worker", "--locked",
-               "--target", "aarch64-apple-darwin", "--target-dir", str(work / "target")]
+    packages = args.package or ["deadpan-media-worker"]
+    command = ["cargo", "test"]
+    for package in packages:
+        command += ["-p", package]
+    command += ["--locked", "--target", "aarch64-apple-darwin",
+                "--target-dir", str(work / "target")]
     start = time.monotonic()
     with (work / "test.log").open("w") as log:
         exit_code, failure = run_test_command(command, cwd=repo, env=env, log=log)
     binary = work / "target/aarch64-apple-darwin/debug/deadpan-media-worker"
-    report = {"scope": "worker native C and target C dependencies ASan/UBSan; Rust and FFmpeg libraries not instrumented",
+    test_binaries = {}
+    for candidate in re.findall(r"Running .*\(([^\n]+)\)", (work / "test.log").read_text()):
+        path = Path(candidate)
+        if path.is_file() and path.is_relative_to(work / "target"):
+            test_binaries[str(path)] = hashlib.sha256(path.read_bytes()).hexdigest()
+    report = {"scope": "selected native C adapters and target C dependencies ASan/UBSan; Rust and FFmpeg libraries not instrumented",
+              "packages": packages, "test_binary_sha256": test_binaries,
               "command": command, "cflags": env["CFLAGS"], "rust_flags": flags,
               "runtime": str(runtime), "runtime_sha256": hashlib.sha256(runtime.read_bytes()).hexdigest(),
               "ffmpeg_prefix": prefix, "elapsed_seconds": time.monotonic() - start,
               "exit_code": exit_code, "failure": failure,
-              "test_log_sha256": hashlib.sha256((work / "test.log").read_bytes()).hexdigest(),
-              "worker": str(binary),
-              "worker_sha256": hashlib.sha256(binary.read_bytes()).hexdigest() if binary.exists() else None}
+              "test_log_sha256": hashlib.sha256((work / "test.log").read_bytes()).hexdigest()}
+    if "deadpan-media-worker" in packages:
+        report["worker"] = str(binary)
+        report["worker_sha256"] = hashlib.sha256(binary.read_bytes()).hexdigest() if binary.exists() else None
     (work / "report.json").write_text(json.dumps(report, indent=2) + "\n")
     print(json.dumps(report, indent=2), flush=True)
     if exit_code or failure:

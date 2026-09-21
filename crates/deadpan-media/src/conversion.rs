@@ -280,13 +280,13 @@ fn convert_snapshot(
     })
 }
 
-struct Deadline<'a> {
-    end: Instant,
-    cancelled: &'a AtomicBool,
+pub(crate) struct Deadline<'a> {
+    pub(crate) end: Instant,
+    pub(crate) cancelled: &'a AtomicBool,
 }
 
 impl Deadline<'_> {
-    fn check(&self) -> Result<(), ConversionError> {
+    pub(crate) fn check(&self) -> Result<(), ConversionError> {
         if self.cancelled.load(Ordering::Acquire) {
             return Err(ConversionError::Cancelled);
         }
@@ -297,7 +297,7 @@ impl Deadline<'_> {
     }
 }
 
-fn snapshot(
+pub(crate) fn snapshot(
     source: &mut impl Read,
     identity: InputIdentity,
     length: u64,

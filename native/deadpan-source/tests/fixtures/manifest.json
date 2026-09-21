@@ -1,0 +1,65 @@
+{
+  "producers": {
+    "h264_clock_fixtures": "tools/media-qualification/compatible/media_probe.c (includes ../media_probe.c), pinned FFmpeg 8.0.3 h264_videotoolbox require_software; recorded source run /tmp/deadpan-media-compatible-probe-8efkj8h2 and compatible/results/qualification-2026-09-20.json",
+    "ffv1_and_rotation": "tests/generate_color_fixtures.py, development-only ffmpeg 9.0.1 CLI; pinned FFmpeg 8.0.3 decoder validates emitted files",
+    "sdr_with_stream_hdr": "tests/generate_stream_hdr_fixture.c, pinned FFmpeg 8.0.3 libraries; bitexact Matroska remux of limited709.mkv without opening a decoder. Retains its 4x2 eight-bit FFV1 packet, BT.709 transfer/matrix/primary tags, and limited range; adds stream AV_PKT_DATA_CONTENT_LIGHT_LEVEL (MaxCLL=1000, MaxFALL=400). Pinned ffprobe confirms color_transfer=bt709 and Content light level metadata in streams[0].side_data_list."
+  },
+  "known_source_limit": "vfr.mp4 final decoded duration is 1001, not authored 3003 ticks. The failed 48-byte software-vfr-b.mp4 encode was not admitted.",
+  "files": [
+    {
+      "name": "anamorphic.mkv",
+      "bytes": 729,
+      "sha256": "0d5cd53df885fb890c48ad65ccf931577f3a6761510e746507253078d3ebe837"
+    },
+    {
+      "name": "cfr-bframes.mp4",
+      "bytes": 39157,
+      "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918"
+    },
+    {
+      "name": "full709.mkv",
+      "bytes": 718,
+      "sha256": "f77ee8867f196e6dbda1cc7d4a1f3b1a6f479c961d4ca92009dd3580589e9969"
+    },
+    {
+      "name": "hdr-pq.mkv",
+      "bytes": 718,
+      "sha256": "e03ec106d22c05e9ea30bced5627ee256f523d6a672c8761512fd272b6c22919"
+    },
+    {
+      "name": "interlaced.mkv",
+      "bytes": 720,
+      "sha256": "4c0a6bdc26b770e9dfe1e009de336674e41d91a7cd384d36417ac783fe2198bf"
+    },
+    {
+      "name": "limited709.mkv",
+      "bytes": 718,
+      "sha256": "5b8ef6643040319156c935fcf9c06b4d3ed54539ab20934b1d061dbf2a0e8c58"
+    },
+    {
+      "name": "offset-bframes.mp4",
+      "bytes": 39181,
+      "sha256": "1504e8c41c2e8e33cf588bbe46e7c79f9fb507437533f5d6cd6f280b6bfdb120"
+    },
+    {
+      "name": "rotated90.mp4",
+      "bytes": 2476,
+      "sha256": "d8a51344c8ddb32b49206d4577aaabd9313216981171117f5e52ad2b360bc5aa"
+    },
+    {
+      "name": "sdr-with-stream-hdr.mkv",
+      "bytes": 618,
+      "sha256": "17d0c5f6203703d042150cc07fb7e793a82a174647f3400c468176944fd8e0e5"
+    },
+    {
+      "name": "ten-bit.mkv",
+      "bytes": 874,
+      "sha256": "6a50ea0eee687c8b9d33c2b88ffce5110ea6d351484ab8e259b0e7af38b924d3"
+    },
+    {
+      "name": "vfr.mp4",
+      "bytes": 43455,
+      "sha256": "3fd07d00aa604554dc5389530cd261ac8961aded6361426fb00bf5519ac64884"
+    }
+  ]
+}

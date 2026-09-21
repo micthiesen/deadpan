@@ -1,0 +1,32 @@
+[
+  {
+    "name": "software-cfr",
+    "exit_code": 0,
+    "report": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-source-probes-oa6r4wa1/software-cfr.json"
+  },
+  {
+    "name": "software-no-b",
+    "exit_code": 0,
+    "report": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-source-probes-oa6r4wa1/software-no-b.json"
+  },
+  {
+    "name": "software-vfr-no-b",
+    "exit_code": 0,
+    "report": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-source-probes-oa6r4wa1/software-vfr-no-b.json"
+  },
+  {
+    "name": "software-offset",
+    "exit_code": 0,
+    "report": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-source-probes-oa6r4wa1/software-offset.json"
+  },
+  {
+    "name": "hardware-no-b",
+    "exit_code": 0,
+    "report": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-source-probes-oa6r4wa1/hardware-no-b.json"
+  },
+  {
+    "name": "generated-ffv1",
+    "exit_code": 0,
+    "report": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-source-probes-oa6r4wa1/generated-ffv1.json"
+  }
+]

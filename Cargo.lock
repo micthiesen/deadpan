@@ -747,8 +747,14 @@ name = "deadpan-app"
 version = "0.1.0"
 dependencies = [
  "deadpan-cli",
+ "deadpan-core",
+ "deadpan-media",
+ "deadpan-render",
+ "deadpan-source",
  "eframe",
+ "rustix 1.1.5",
  "serde_json",
+ "sha2",
 ]
 
 [[package]]
@@ -796,6 +802,7 @@ dependencies = [
  "blake3",
  "deadpan-core",
  "deadpan-native-process",
+ "deadpan-source",
  "rustix 1.1.5",
  "serde",
  "serde_json",
@@ -852,6 +859,27 @@ dependencies = [
  "proptest",
  "serde",
  "serde_json",
+ "thiserror 2.0.20",
+]
+
+[[package]]
+name = "deadpan-render"
+version = "0.1.0"
+dependencies = [
+ "deadpan-core",
+ "pollster",
+ "serde_json",
+ "thiserror 2.0.20",
+ "wgpu",
+]
+
+[[package]]
+name = "deadpan-source"
+version = "0.1.0"
+dependencies = [
+ "blake3",
+ "cc",
+ "tempfile",
  "thiserror 2.0.20",
 ]
 

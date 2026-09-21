@@ -1,0 +1,1193 @@
+{
+  "adapter": {
+    "backend": "Metal",
+    "device": 0,
+    "device_type": "IntegratedGpu",
+    "driver": "",
+    "driver_info": "",
+    "name": "Apple M5 Max",
+    "vendor": 0
+  },
+  "case_count": 76,
+  "cases": [
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec709-Srgb-None-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 6.0236659999999995,
+      "submit_through_readback_ms": 39.507833,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec709-Srgb-None-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.6887919999999998,
+      "submit_through_readback_ms": 3.0804169999999997,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec709-Srgb-Clockwise90-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.325334,
+      "submit_through_readback_ms": 2.4117919999999997,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec709-Srgb-Clockwise90-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.26,
+      "submit_through_readback_ms": 2.221667,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec709-Srgb-Clockwise180-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.256417,
+      "submit_through_readback_ms": 2.354125,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec709-Srgb-Clockwise180-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.222583,
+      "submit_through_readback_ms": 2.2585420000000003,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec709-Srgb-Clockwise270-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.0257910000000001,
+      "submit_through_readback_ms": 2.072791,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec709-Srgb-Clockwise270-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.125041,
+      "submit_through_readback_ms": 2.09925,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec709-Rec709-None-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.076958,
+      "submit_through_readback_ms": 2.123458,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec709-Rec709-None-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.202791,
+      "submit_through_readback_ms": 2.1484579999999998,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec709-Rec709-Clockwise90-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.5120419999999999,
+      "submit_through_readback_ms": 2.5655840000000003,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec709-Rec709-Clockwise90-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.05275,
+      "submit_through_readback_ms": 2.247167,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec709-Rec709-Clockwise180-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.131333,
+      "submit_through_readback_ms": 2.1581669999999997,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec709-Rec709-Clockwise180-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.0903340000000001,
+      "submit_through_readback_ms": 2.094542,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec709-Rec709-Clockwise270-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.272042,
+      "submit_through_readback_ms": 2.204917,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec709-Rec709-Clockwise270-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.113709,
+      "submit_through_readback_ms": 2.460875,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec709-Linear-None-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.1514579999999999,
+      "submit_through_readback_ms": 2.166208,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec709-Linear-None-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.151084,
+      "submit_through_readback_ms": 2.114,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec709-Linear-Clockwise90-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.119958,
+      "submit_through_readback_ms": 2.1454579999999996,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec709-Linear-Clockwise90-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.0150409999999999,
+      "submit_through_readback_ms": 1.936083,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec709-Linear-Clockwise180-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 0.9610000000000001,
+      "submit_through_readback_ms": 1.9790839999999998,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec709-Linear-Clockwise180-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.076917,
+      "submit_through_readback_ms": 2.0761249999999998,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec709-Linear-Clockwise270-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.121208,
+      "submit_through_readback_ms": 2.140958,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec709-Linear-Clockwise270-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.000583,
+      "submit_through_readback_ms": 1.954916,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec2020-Srgb-None-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.025958,
+      "submit_through_readback_ms": 1.9807499999999998,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec2020-Srgb-None-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 0.939,
+      "submit_through_readback_ms": 1.859375,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec2020-Srgb-Clockwise90-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.229333,
+      "submit_through_readback_ms": 2.281417,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec2020-Srgb-Clockwise90-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.0213329999999998,
+      "submit_through_readback_ms": 1.9469999999999998,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec2020-Srgb-Clockwise180-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 0.994291,
+      "submit_through_readback_ms": 1.999083,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec2020-Srgb-Clockwise180-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 0.9235,
+      "submit_through_readback_ms": 1.953208,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec2020-Srgb-Clockwise270-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.0984580000000002,
+      "submit_through_readback_ms": 2.164583,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec2020-Srgb-Clockwise270-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.178708,
+      "submit_through_readback_ms": 2.2004580000000002,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec2020-Rec709-None-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.142417,
+      "submit_through_readback_ms": 2.207167,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec2020-Rec709-None-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.0895,
+      "submit_through_readback_ms": 2.104958,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec2020-Rec709-Clockwise90-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.007833,
+      "submit_through_readback_ms": 2.0855829999999997,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec2020-Rec709-Clockwise90-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.0791659999999998,
+      "submit_through_readback_ms": 2.1562080000000003,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec2020-Rec709-Clockwise180-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.036875,
+      "submit_through_readback_ms": 2.084292,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec2020-Rec709-Clockwise180-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.0742919999999998,
+      "submit_through_readback_ms": 2.030917,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec2020-Rec709-Clockwise270-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.044875,
+      "submit_through_readback_ms": 2.081791,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec2020-Rec709-Clockwise270-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.050292,
+      "submit_through_readback_ms": 2.139875,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec2020-Linear-None-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.155375,
+      "submit_through_readback_ms": 2.186875,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec2020-Linear-None-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.0315,
+      "submit_through_readback_ms": 2.044333,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec2020-Linear-Clockwise90-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.1320830000000002,
+      "submit_through_readback_ms": 2.2125410000000003,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec2020-Linear-Clockwise90-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 0.977166,
+      "submit_through_readback_ms": 1.966166,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec2020-Linear-Clockwise180-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.0250000000000001,
+      "submit_through_readback_ms": 2.080292,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec2020-Linear-Clockwise180-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.02325,
+      "submit_through_readback_ms": 2.0456250000000002,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec2020-Linear-Clockwise270-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.092167,
+      "submit_through_readback_ms": 2.176209,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec2020-Linear-Clockwise270-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.359542,
+      "submit_through_readback_ms": 1.935167,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-DisplayP3D65-Srgb-None-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 0.998625,
+      "submit_through_readback_ms": 2.032209,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-DisplayP3D65-Srgb-None-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.2803339999999999,
+      "submit_through_readback_ms": 2.3285419999999997,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-DisplayP3D65-Srgb-Clockwise90-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.159083,
+      "submit_through_readback_ms": 2.205458,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-DisplayP3D65-Srgb-Clockwise90-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 0.9882090000000001,
+      "submit_through_readback_ms": 1.980959,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-DisplayP3D65-Srgb-Clockwise180-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.303542,
+      "submit_through_readback_ms": 2.345292,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-DisplayP3D65-Srgb-Clockwise180-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.1183750000000001,
+      "submit_through_readback_ms": 2.155459,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-DisplayP3D65-Srgb-Clockwise270-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.024292,
+      "submit_through_readback_ms": 2.0656250000000003,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-DisplayP3D65-Srgb-Clockwise270-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.17875,
+      "submit_through_readback_ms": 2.089,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-DisplayP3D65-Rec709-None-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.1850829999999999,
+      "submit_through_readback_ms": 2.207041,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-DisplayP3D65-Rec709-None-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.086709,
+      "submit_through_readback_ms": 2.074375,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-DisplayP3D65-Rec709-Clockwise90-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.057583,
+      "submit_through_readback_ms": 2.102208,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-DisplayP3D65-Rec709-Clockwise90-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.08625,
+      "submit_through_readback_ms": 2.0892910000000002,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-DisplayP3D65-Rec709-Clockwise180-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.163666,
+      "submit_through_readback_ms": 2.214916,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-DisplayP3D65-Rec709-Clockwise180-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.112292,
+      "submit_through_readback_ms": 2.160542,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-DisplayP3D65-Rec709-Clockwise270-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.158208,
+      "submit_through_readback_ms": 2.20975,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-DisplayP3D65-Rec709-Clockwise270-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.0754160000000001,
+      "submit_through_readback_ms": 2.1179580000000002,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-DisplayP3D65-Linear-None-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.0790000000000002,
+      "submit_through_readback_ms": 2.060625,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-DisplayP3D65-Linear-None-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.0204579999999999,
+      "submit_through_readback_ms": 2.057416,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 0,
+      "name": "odd-padded-DisplayP3D65-Linear-Clockwise90-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.032458,
+      "submit_through_readback_ms": 2.045416,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-DisplayP3D65-Linear-Clockwise90-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 0.9584590000000001,
+      "submit_through_readback_ms": 1.909167,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-DisplayP3D65-Linear-Clockwise180-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.075042,
+      "submit_through_readback_ms": 2.055792,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-DisplayP3D65-Linear-Clockwise180-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.15025,
+      "submit_through_readback_ms": 2.19625,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 0,
+      "name": "odd-padded-DisplayP3D65-Linear-Clockwise270-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 0.9983749999999999,
+      "submit_through_readback_ms": 2.00875,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 1,
+      "name": "odd-padded-DisplayP3D65-Linear-Clockwise270-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.129958,
+      "submit_through_readback_ms": 2.1625,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "max_channel_difference": 0,
+      "name": "linear-light-midpoint",
+      "source_size": [
+        2,
+        1
+      ],
+      "source_stride": 8,
+      "submit_cpu_ms": 1.272041,
+      "submit_through_readback_ms": 3.164666,
+      "target_size": [
+        1,
+        1
+      ]
+    },
+    {
+      "max_channel_difference": 0,
+      "name": "transparent-magenta-no-fringe",
+      "source_size": [
+        2,
+        1
+      ],
+      "source_stride": 8,
+      "submit_cpu_ms": 1.06025,
+      "submit_through_readback_ms": 2.116208,
+      "target_size": [
+        1,
+        1
+      ]
+    },
+    {
+      "max_channel_difference": 0,
+      "name": "single-pixel-fit-bars",
+      "source_size": [
+        1,
+        1
+      ],
+      "source_stride": 8,
+      "submit_cpu_ms": 1.242083,
+      "submit_through_readback_ms": 2.2174579999999997,
+      "target_size": [
+        7,
+        3
+      ]
+    },
+    {
+      "max_channel_difference": 2,
+      "name": "larger-anamorphic-padded",
+      "source_size": [
+        193,
+        109
+      ],
+      "source_stride": 800,
+      "submit_cpu_ms": 12.936625,
+      "submit_through_readback_ms": 14.242125,
+      "target_size": [
+        319,
+        181
+      ]
+    }
+  ],
+  "checks": [
+    "invalid output limits rejected",
+    "foreign targets rejected",
+    "all output pixels compared to f64 CPU reference",
+    "negative working gamut coordinate retained"
+  ],
+  "display_channel_tolerance_codes": 2,
+  "input": "full-range straight-alpha progressive RGBA8; row padding retained; original PTS unchanged",
+  "limitations": [
+    "synthetic SDR input only",
+    "no HDR tone mapping or HDR input",
+    "no ICC display management",
+    "no encoder/output-file verification",
+    "no realtime throughput claim",
+    "no UI/Metal interop qualification"
+  ],
+  "output": "Rec709 primaries, explicit sRGB encoding, opaque RGBA8Unorm; SDR clipping only",
+  "platform": {
+    "arch": "aarch64",
+    "os": "macos"
+  },
+  "provenance": {
+    "crate_working_tree_status": "?? ./",
+    "git_head": "86fa1e7502c8cd58019e16b62d8da0735adf9347",
+    "macos_version": "26.5.2",
+    "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)"
+  },
+  "renderer": "deadpan-render-0.1.0",
+  "schema_version": 1,
+  "status": "passed",
+  "wgpu": "30.0.1",
+  "working": "linear Rec2020 D65 RGBA16Float, no normalized clamp",
+  "working_absolute_tolerance": 0.0005,
+  "working_p3_red_rgba": [
+    0.75341796875,
+    0.04571533203125,
+    -0.0012102127075195312,
+    1.0
+  ]
+}

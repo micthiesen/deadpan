@@ -11,6 +11,12 @@ publish.workspace = true
 [dependencies]
 eframe.workspace = true
 deadpan-cli = { path = "../deadpan-cli" }
+deadpan-core.workspace = true
+deadpan-media.workspace = true
+deadpan-render.workspace = true
+deadpan-source.workspace = true
+sha2.workspace = true
+rustix.workspace = true
 
 [dev-dependencies]
 serde_json.workspace = true

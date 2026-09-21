@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/deadpan-core", "crates/deadpan-store", "crates/deadpan-plan", "crates/deadpan-jobs", "crates/deadpan-media", "crates/deadpan-models", "crates/deadpan-app", "crates/deadpan-cli", "native/deadpan-process", "native/deadpan-media-worker"]
+members = ["crates/deadpan-core", "crates/deadpan-store", "crates/deadpan-plan", "crates/deadpan-jobs", "crates/deadpan-media", "crates/deadpan-models", "crates/deadpan-render", "crates/deadpan-app", "crates/deadpan-cli", "native/deadpan-process", "native/deadpan-media-worker", "native/deadpan-source"]
 default-members = ["crates/deadpan-app"]
 
 [workspace.package]
@@ -18,11 +18,15 @@ deadpan-plan = { path = "crates/deadpan-plan" }
 deadpan-jobs = { path = "crates/deadpan-jobs" }
 deadpan-media = { path = "crates/deadpan-media" }
 deadpan-models = { path = "crates/deadpan-models" }
+deadpan-render = { path = "crates/deadpan-render" }
+deadpan-source = { path = "native/deadpan-source" }
 deadpan-native-process = { path = "native/deadpan-process" }
 cc = "=1.4.7"
 libc = "=0.2.189"
 rustix = { version = "=1.1.5", features = ["process", "fs"] }
 eframe = { version = "=0.36.2", default-features = false, features = ["accesskit", "default_fonts", "wgpu"] }
+wgpu = { version = "=30.0.1", default-features = false, features = ["metal", "wgsl"] }
+pollster = "=1.0.1"
 proptest = "=1.11.0"
 serde = { version = "=1.0.229", features = ["derive"] }
 serde_json = "=1.0.151"
