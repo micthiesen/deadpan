@@ -142,6 +142,11 @@ model's conditioning preprocessing and chosen RGB color interpretation belong
 in provenance. A generated file passing hash, frame, and metadata checks still
 needs continuity review, explicit acceptance, durable storage, and app integration.
 
+FFV1/Matroska container timestamps are not an exact authored clock. The qualified
+FFmpeg muxer uses millisecond timestamps; retain the native rational frame rate,
+frame ordinals, and sampling map separately. A complete pixel decode can succeed
+after trailer truncation, so also verify immutable artifact length and hash.
+
 For native startup or lifecycle changes, also run `cargo run -p deadpan-app -- --smoke-test` on supported Apple Silicon macOS. This checks startup and the shutdown callback, not media or accessibility qualification. Choose interactive checks for affected behavior when they add evidence; do not repeat them mechanically for unrelated changes. Add relevant media, persistence, worker, accessibility, or packaging checks as those systems are implemented. Record skipped checks and exact failures in the delivery report. [Development](docs/DEVELOPMENT.md) describes the workflow.
 
 For authorized scoped work in this personal project, implement, review, verify, commit, and push to `main` using `git push`. Preserve concurrent changes and do not include unrelated files. Release publishing, signing, notarization, and external service actions need their applicable authorization; pushing source is not product release qualification.

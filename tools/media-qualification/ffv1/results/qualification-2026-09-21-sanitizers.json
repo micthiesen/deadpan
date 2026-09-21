@@ -1,0 +1,1483 @@
+{
+  "schema_version": 1,
+  "scope": "developer canonical lossless FFV1 master qualification; not app integration, Gate A, or release acceptance",
+  "started_utc": "2026-09-21T08:43:25.132658+00:00",
+  "sanitizers": true,
+  "work_directory": "/private/tmp/deadpan-ffv1-final3-sanitizers",
+  "prefix": "/private/tmp/deadpan-media-compatible-xyhilms4/prefix",
+  "commands": [
+    {
+      "argv": [
+        "clang",
+        "-std=c11",
+        "-fsanitize=address,undefined",
+        "-fno-omit-frame-pointer",
+        "-O2",
+        "-g",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-I/private/tmp/deadpan-media-compatible-xyhilms4/prefix/include",
+        "/Users/michael/Code/deadpan/tools/media-qualification/ffv1/ffv1_probe.c",
+        "-L/private/tmp/deadpan-media-compatible-xyhilms4/prefix/lib",
+        "-Wl,-rpath,/private/tmp/deadpan-media-compatible-xyhilms4/prefix/lib",
+        "-lavformat",
+        "-lavcodec",
+        "-lavutil",
+        "-lswscale",
+        "-o",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/ffv1_probe_asan"
+      ],
+      "cwd": "/private/tmp/deadpan-ffv1-final3-sanitizers",
+      "returncode": 0,
+      "expected_returncode": 0,
+      "elapsed_seconds": 1.010009,
+      "stdout": "",
+      "stdout_truncated": false,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr": "",
+      "stderr_truncated": false,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "argv": [
+        "otool",
+        "-L",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/ffv1_probe_asan"
+      ],
+      "cwd": "/private/tmp/deadpan-ffv1-final3-sanitizers",
+      "returncode": 0,
+      "expected_returncode": 0,
+      "elapsed_seconds": 0.027425,
+      "stdout": "/private/tmp/deadpan-ffv1-final3-sanitizers/ffv1_probe_asan:\n\t/tmp/deadpan-media-compatible-xyhilms4/prefix/lib/libavformat.62.dylib (compatibility version 62.0.0, current version 62.3.103)\n\t/tmp/deadpan-media-compatible-xyhilms4/prefix/lib/libavcodec.62.dylib (compatibility version 62.0.0, current version 62.11.103)\n\t/tmp/deadpan-media-compatible-xyhilms4/prefix/lib/libavutil.60.dylib (compatibility version 60.0.0, current version 60.8.103)\n\t/tmp/deadpan-media-compatible-xyhilms4/prefix/lib/libswscale.9.dylib (compatibility version 9.0.0, current version 9.1.103)\n\t@rpath/libclang_rt.asan_osx_dynamic.dylib (compatibility version 0.0.0, current version 0.0.0)\n\t/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1356.0.0)\n",
+      "stdout_truncated": false,
+      "stdout_sha256": "102984a522b1b36dc2dab75ba3c2a5539a38526419648f3dcea7aa657a842177",
+      "stderr": "",
+      "stderr_truncated": false,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "argv": [
+        "ffprobe",
+        "-version"
+      ],
+      "cwd": "/private/tmp/deadpan-ffv1-final3-sanitizers",
+      "returncode": 0,
+      "expected_returncode": 0,
+      "elapsed_seconds": 0.024803,
+      "stdout": "ffprobe version 8.0.3 Copyright (c) 2007-2026 the FFmpeg developers\nbuilt with Apple clang version 21.0.0 (clang-2100.1.1.101)\nconfiguration: --prefix=/tmp/deadpan-media-compatible-xyhilms4/prefix --enable-shared --disable-static --enable-pic --disable-gpl --disable-nonfree --disable-version3 --disable-autodetect --disable-network --disable-doc --disable-debug --disable-ffmpeg --disable-ffplay --arch=aarch64 --cpu=generic --target-os=darwin --sysroot=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk --enable-videotoolbox --enable-audiotoolbox --extra-cflags='-arch arm64 -mmacosx-version-min=15.0' --extra-ldflags='-arch arm64 -mmacosx-version-min=15.0'\nlibavutil      60.  8.103 / 60.  8.103\nlibavcodec     62. 11.103 / 62. 11.103\nlibavformat    62.  3.103 / 62.  3.103\nlibavdevice    62.  1.103 / 62.  1.103\nlibavfilter    11.  4.103 / 11.  4.103\nlibswscale      9.  1.103 /  9.  1.103\nlibswresample   6.  1.103 /  6.  1.103\n",
+      "stdout_truncated": false,
+      "stdout_sha256": "661ad1b392c73f11f6b90f5b204da5e6b857104d803031b406de145e83b87082",
+      "stderr": "",
+      "stderr_truncated": false,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "argv": [
+        "./ffv1_probe_asan",
+        "synth",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/synthetic-32x16.mkv",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/synthetic-32x16.rgb"
+      ],
+      "cwd": "/private/tmp/deadpan-ffv1-final3-sanitizers",
+      "returncode": 0,
+      "expected_returncode": 0,
+      "elapsed_seconds": 0.171519,
+      "stdout": "{\"status\":\"passed\",\"source\":{\"width\":32,\"height\":16,\"frames\":30,\"time_base\":[1,30000],\"frame_rate\":[30000,1001],\"start_pts\":0,\"native_pts\":[0,1001,2002,3003,4004,5005,6006,7007,8008,9009,10010,11011,12012,13013,14014,15015,16016,17017,18018,19019,20020,21021,22022,23023,24024,25025,26026,27027,28028,29029],\"durations\":[1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001]},\"output\":{\"codec\":\"ffv1\",\"pixel_format\":\"bgr0\",\"ffv1_version\":3,\"slice_crc\":true,\"color_range\":\"full\",\"color_space\":\"gbr\",\"color_transfer\":\"sRGB\",\"color_primaries\":\"bt709\",\"frames\":30,\"time_base\":[1,1000],\"frame_rate\":[30000,1001],\"native_pts\":[0,33,67,100,133,167,200,234,267,300,334,367,400,434,467,501,534,567,601,634,667,701,734,767,801,834,868,901,934,968],\"durations\":[33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33]}}\n",
+      "stdout_truncated": false,
+      "stdout_sha256": "42a0733876d6911452c214bc5d8397275271ad69a152fa2d45eeeeb20cdeb10a",
+      "stderr": "",
+      "stderr_truncated": false,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "argv": [
+        "ffprobe",
+        "-v",
+        "error",
+        "-show_streams",
+        "-show_format",
+        "-of",
+        "json",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/synthetic-32x16.mkv"
+      ],
+      "cwd": "/private/tmp/deadpan-ffv1-final3-sanitizers",
+      "returncode": 0,
+      "expected_returncode": 0,
+      "elapsed_seconds": 0.028887,
+      "stdout": "{\n    \"streams\": [\n        {\n            \"index\": 0,\n            \"codec_name\": \"ffv1\",\n            \"codec_long_name\": \"FFmpeg video codec #1\",\n            \"codec_type\": \"video\",\n            \"codec_tag_string\": \"[0][0][0][0]\",\n            \"codec_tag\": \"0x0000\",\n            \"width\": 32,\n            \"height\": 16,\n            \"coded_width\": 32,\n            \"coded_height\": 16,\n            \"has_b_frames\": 0,\n            \"pix_fmt\": \"bgr0\",\n            \"level\": -99,\n            \"color_range\": \"pc\",\n            \"color_space\": \"gbr\",\n            \"color_transfer\": \"iec61966-2-1\",\n            \"color_primaries\": \"bt709\",\n            \"refs\": 1,\n            \"r_frame_rate\": \"30000/1001\",\n            \"avg_frame_rate\": \"30000/1001\",\n            \"time_base\": \"1/1000\",\n            \"start_pts\": 0,\n            \"start_time\": \"0.000000\",\n            \"bits_per_raw_sample\": \"8\",\n            \"extradata_size\": 42,\n            \"disposition\": {\n                \"default\": 0,\n                \"dub\": 0,\n                \"original\": 0,\n                \"comment\": 0,\n                \"lyrics\": 0,\n                \"karaoke\": 0,\n                \"forced\": 0,\n                \"hearing_impaired\": 0,\n                \"visual_impaired\": 0,\n                \"clean_effects\": 0,\n                \"attached_pic\": 0,\n                \"timed_thumbnails\": 0,\n                \"non_diegetic\": 0,\n                \"captions\": 0,\n                \"descriptions\": 0,\n                \"metadata\": 0,\n                \"dependent\": 0,\n                \"still_image\": 0,\n                \"multilayer\": 0\n            },\n            \"tags\": {\n                \"COLOR_RANGE\": \"full\",\n                \"COLOR_SPACE\": \"gbr\",\n                \"COLOR_TRANSFER\": \"sRGB\",\n                \"COLOR_PRIMARIES\": \"bt709\",\n                \"DURATION\": \"00:00:01.001000000\"\n            }\n        }\n    ],\n    \"format\": {\n        \"filename\": \"/private/tmp/deadpan-ffv1-final3-sanitizers/synthetic-32x16.mkv\",\n        \"nb_streams\": 1,\n        \"nb_programs\": 0,\n        \"nb_stream_groups\": 0,\n        \"format_name\": \"matroska,webm\",\n        \"format_long_name\": \"Matroska / WebM\",\n        \"start_time\": \"0.000000\",\n        \"duration\": \"1.001000\",\n        \"size\": \"24066\",\n        \"bit_rate\": \"192335\",\n        \"probe_score\": 100,\n        \"tags\": {\n            \"ENCODER\": \"Lavf62.3.103\"\n        }\n    }\n}\n",
+      "stdout_truncated": false,
+      "stdout_sha256": "0e53f4704d1e122052f6c3062a83fd4691c5637a290b15b220f3349508f69dc0",
+      "stderr": "",
+      "stderr_truncated": false,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "argv": [
+        "./ffv1_probe_asan",
+        "verify",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/synthetic-32x16.tail-truncated.mkv",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/synthetic-32x16.rgb"
+      ],
+      "cwd": "/private/tmp/deadpan-ffv1-final3-sanitizers",
+      "returncode": 0,
+      "expected_returncode": 0,
+      "elapsed_seconds": 0.157414,
+      "stdout": "{\"status\":\"passed\",\"source\":{\"width\":32,\"height\":16,\"frames\":30,\"time_base\":[1,30000],\"frame_rate\":[30000,1001],\"start_pts\":0,\"native_pts\":[0,1001,2002,3003,4004,5005,6006,7007,8008,9009,10010,11011,12012,13013,14014,15015,16016,17017,18018,19019,20020,21021,22022,23023,24024,25025,26026,27027,28028,29029],\"durations\":[1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001]},\"output\":{\"codec\":\"ffv1\",\"pixel_format\":\"bgr0\",\"ffv1_version\":3,\"slice_crc\":true,\"color_range\":\"full\",\"color_space\":\"gbr\",\"color_transfer\":\"sRGB\",\"color_primaries\":\"bt709\",\"frames\":30,\"time_base\":[1,1000],\"frame_rate\":[30000,1001],\"native_pts\":[0,33,67,100,133,167,200,234,267,300,334,367,400,434,467,501,534,567,601,634,667,701,734,767,801,834,868,901,934,968],\"durations\":[33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33]}}\n",
+      "stdout_truncated": false,
+      "stdout_sha256": "42a0733876d6911452c214bc5d8397275271ad69a152fa2d45eeeeb20cdeb10a",
+      "stderr": "Truncating packet of size 563 to 562\n",
+      "stderr_truncated": false,
+      "stderr_sha256": "ed8b56cd5abb051ec4ad1b539b4af0c8be7cb95623b5065c2592900be5d9f916"
+    },
+    {
+      "argv": [
+        "./ffv1_probe_asan",
+        "verify",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/synthetic-32x16.truncated.mkv",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/synthetic-32x16.rgb"
+      ],
+      "cwd": "/private/tmp/deadpan-ffv1-final3-sanitizers",
+      "returncode": 1,
+      "expected_returncode": 1,
+      "elapsed_seconds": 0.166251,
+      "stdout": "",
+      "stdout_truncated": false,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr": "File ended prematurely\nerror: FFV1 output frame count differs from source\n",
+      "stderr_truncated": false,
+      "stderr_sha256": "5c2ad577b5527d2fed6814edefac9fe533b243ed439b353c3060dec10ccddc70"
+    },
+    {
+      "argv": [
+        "./ffv1_probe_asan",
+        "verify",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/synthetic-32x16.corrupted.mkv",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/synthetic-32x16.rgb"
+      ],
+      "cwd": "/private/tmp/deadpan-ffv1-final3-sanitizers",
+      "returncode": 1,
+      "expected_returncode": 1,
+      "elapsed_seconds": 0.16484,
+      "stdout": "",
+      "stdout_truncated": false,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr": "slice count 79 is invalid (max=4)\nsend FFV1 packet: Invalid data found when processing input (-1094995529)\n",
+      "stderr_truncated": false,
+      "stderr_sha256": "e4642a182ee5f5dacb24d6f996129f7050ab7618201d003887223c8014eb4f3d"
+    },
+    {
+      "argv": [
+        "./ffv1_probe_asan",
+        "verify",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/synthetic-32x16.mkv",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/synthetic-32x16.mutated.rgb"
+      ],
+      "cwd": "/private/tmp/deadpan-ffv1-final3-sanitizers",
+      "returncode": 1,
+      "expected_returncode": 1,
+      "elapsed_seconds": 0.154678,
+      "stdout": "",
+      "stdout_truncated": false,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr": "error: FFV1 RGB pixel mismatch\n",
+      "stderr_truncated": false,
+      "stderr_sha256": "7c8e6b368db22fee10a09ac581c09b6e801bbdac773c8662c52b427b0a708d06"
+    },
+    {
+      "argv": [
+        "./ffv1_probe_asan",
+        "verify",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/synthetic-32x16.mkv",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/synthetic-32x16.zero_header.rgb"
+      ],
+      "cwd": "/private/tmp/deadpan-ffv1-final3-sanitizers",
+      "returncode": 1,
+      "expected_returncode": 1,
+      "elapsed_seconds": 0.154804,
+      "stdout": "",
+      "stdout_truncated": false,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr": "invalid RGB source header: /private/tmp/deadpan-ffv1-final3-sanitizers/synthetic-32x16.zero_header.rgb\n",
+      "stderr_truncated": false,
+      "stderr_sha256": "bd63feffb9c97cccfc34cefe458b3ae790bf2d3ac1a07d82dd98fca14b997b72"
+    },
+    {
+      "argv": [
+        "./ffv1_probe_asan",
+        "verify",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/synthetic-32x16.mkv",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/synthetic-32x16.invalid_dimensions.rgb"
+      ],
+      "cwd": "/private/tmp/deadpan-ffv1-final3-sanitizers",
+      "returncode": 1,
+      "expected_returncode": 1,
+      "elapsed_seconds": 0.160331,
+      "stdout": "",
+      "stdout_truncated": false,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr": "invalid or oversized RGB source metadata: /private/tmp/deadpan-ffv1-final3-sanitizers/synthetic-32x16.invalid_dimensions.rgb\n",
+      "stderr_truncated": false,
+      "stderr_sha256": "fe1971742cd7bb52d7495734cdc833d9f79745a994127e84e56eb2cbcafb98f6"
+    },
+    {
+      "argv": [
+        "./ffv1_probe_asan",
+        "verify",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/synthetic-32x16.mkv",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/synthetic-32x16.zero_frames.rgb"
+      ],
+      "cwd": "/private/tmp/deadpan-ffv1-final3-sanitizers",
+      "returncode": 1,
+      "expected_returncode": 1,
+      "elapsed_seconds": 0.158292,
+      "stdout": "",
+      "stdout_truncated": false,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr": "invalid or oversized RGB source metadata: /private/tmp/deadpan-ffv1-final3-sanitizers/synthetic-32x16.zero_frames.rgb\n",
+      "stderr_truncated": false,
+      "stderr_sha256": "23b13e7706a4cfdff479fb982ab6d60a4fe9ef751e66f4db2fcf098264d9524f"
+    },
+    {
+      "argv": [
+        "./ffv1_probe_asan",
+        "verify",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/synthetic-32x16.mkv",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/synthetic-32x16.wrong-size.rgb"
+      ],
+      "cwd": "/private/tmp/deadpan-ffv1-final3-sanitizers",
+      "returncode": 1,
+      "expected_returncode": 1,
+      "elapsed_seconds": 0.157567,
+      "stdout": "",
+      "stdout_truncated": false,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr": "RGB source has truncated or trailing bytes: /private/tmp/deadpan-ffv1-final3-sanitizers/synthetic-32x16.wrong-size.rgb\n",
+      "stderr_truncated": false,
+      "stderr_sha256": "16353bbf116d1126d6321dba10cdff444f465cf609f3acb6f47d6bbbb8f7ed13"
+    },
+    {
+      "argv": [
+        "./ffv1_probe_asan",
+        "qualify",
+        "/tmp/deadpan-supervised-mlx-20260921-attributed/host/candidate.snapshot.mp4",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/candidate-snapshot.mkv",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/candidate-snapshot.rgb"
+      ],
+      "cwd": "/private/tmp/deadpan-ffv1-final3-sanitizers",
+      "returncode": 0,
+      "expected_returncode": 0,
+      "elapsed_seconds": 1.965186,
+      "stdout": "{\"status\":\"passed\",\"source\":{\"width\":768,\"height\":320,\"frames\":30,\"time_base\":[1,30000],\"frame_rate\":[30000,1001],\"start_pts\":0,\"native_pts\":[0,1001,2002,3003,4004,5005,6006,7007,8008,9009,10010,11011,12012,13013,14014,15015,16016,17017,18018,19019,20020,21021,22022,23023,24024,25025,26026,27027,28028,29029],\"durations\":[1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001]},\"output\":{\"codec\":\"ffv1\",\"pixel_format\":\"bgr0\",\"ffv1_version\":3,\"slice_crc\":true,\"color_range\":\"full\",\"color_space\":\"gbr\",\"color_transfer\":\"sRGB\",\"color_primaries\":\"bt709\",\"frames\":30,\"time_base\":[1,1000],\"frame_rate\":[30000,1001],\"native_pts\":[0,33,67,100,133,167,200,234,267,300,334,367,400,434,467,501,534,567,601,634,667,701,734,767,801,834,868,901,934,968],\"durations\":[33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33]}}\n",
+      "stdout_truncated": false,
+      "stdout_sha256": "2859b3b6c5275c944d9791e40cc9928dcb8dc5d32ae0ef9aff06a593337a4a93",
+      "stderr": "",
+      "stderr_truncated": false,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "argv": [
+        "ffprobe",
+        "-v",
+        "error",
+        "-show_streams",
+        "-show_format",
+        "-of",
+        "json",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/candidate-snapshot.mkv"
+      ],
+      "cwd": "/private/tmp/deadpan-ffv1-final3-sanitizers",
+      "returncode": 0,
+      "expected_returncode": 0,
+      "elapsed_seconds": 0.030546,
+      "stdout": "{\n    \"streams\": [\n        {\n            \"index\": 0,\n            \"codec_name\": \"ffv1\",\n            \"codec_long_name\": \"FFmpeg video codec #1\",\n            \"codec_type\": \"video\",\n            \"codec_tag_string\": \"[0][0][0][0]\",\n            \"codec_tag\": \"0x0000\",\n            \"width\": 768,\n            \"height\": 320,\n            \"coded_width\": 768,\n            \"coded_height\": 320,\n            \"has_b_frames\": 0,\n            \"pix_fmt\": \"bgr0\",\n            \"level\": -99,\n            \"color_range\": \"pc\",\n            \"color_space\": \"gbr\",\n            \"color_transfer\": \"iec61966-2-1\",\n            \"color_primaries\": \"bt709\",\n            \"refs\": 1,\n            \"r_frame_rate\": \"30000/1001\",\n            \"avg_frame_rate\": \"30000/1001\",\n            \"time_base\": \"1/1000\",\n            \"start_pts\": 0,\n            \"start_time\": \"0.000000\",\n            \"bits_per_raw_sample\": \"8\",\n            \"extradata_size\": 42,\n            \"disposition\": {\n                \"default\": 0,\n                \"dub\": 0,\n                \"original\": 0,\n                \"comment\": 0,\n                \"lyrics\": 0,\n                \"karaoke\": 0,\n                \"forced\": 0,\n                \"hearing_impaired\": 0,\n                \"visual_impaired\": 0,\n                \"clean_effects\": 0,\n                \"attached_pic\": 0,\n                \"timed_thumbnails\": 0,\n                \"non_diegetic\": 0,\n                \"captions\": 0,\n                \"descriptions\": 0,\n                \"metadata\": 0,\n                \"dependent\": 0,\n                \"still_image\": 0,\n                \"multilayer\": 0\n            },\n            \"tags\": {\n                \"COLOR_RANGE\": \"full\",\n                \"COLOR_SPACE\": \"gbr\",\n                \"COLOR_TRANSFER\": \"sRGB\",\n                \"COLOR_PRIMARIES\": \"bt709\",\n                \"DURATION\": \"00:00:01.001000000\"\n            }\n        }\n    ],\n    \"format\": {\n        \"filename\": \"/private/tmp/deadpan-ffv1-final3-sanitizers/candidate-snapshot.mkv\",\n        \"nb_streams\": 1,\n        \"nb_programs\": 0,\n        \"nb_stream_groups\": 0,\n        \"format_name\": \"matroska,webm\",\n        \"format_long_name\": \"Matroska / WebM\",\n        \"start_time\": \"0.000000\",\n        \"duration\": \"1.001000\",\n        \"size\": \"5450240\",\n        \"bit_rate\": \"43558361\",\n        \"probe_score\": 100,\n        \"tags\": {\n            \"ENCODER\": \"Lavf62.3.103\"\n        }\n    }\n}\n",
+      "stdout_truncated": false,
+      "stdout_sha256": "5e6c7390f7136c59f02843061f6e9c0c6864442797a8d93e2ac740cd56ec9a56",
+      "stderr": "",
+      "stderr_truncated": false,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "argv": [
+        "./ffv1_probe_asan",
+        "verify",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/candidate-snapshot.tail-truncated.mkv",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/candidate-snapshot.rgb"
+      ],
+      "cwd": "/private/tmp/deadpan-ffv1-final3-sanitizers",
+      "returncode": 0,
+      "expected_returncode": 0,
+      "elapsed_seconds": 0.914052,
+      "stdout": "{\"status\":\"passed\",\"source\":{\"width\":768,\"height\":320,\"frames\":30,\"time_base\":[1,30000],\"frame_rate\":[30000,1001],\"start_pts\":0,\"native_pts\":[0,1001,2002,3003,4004,5005,6006,7007,8008,9009,10010,11011,12012,13013,14014,15015,16016,17017,18018,19019,20020,21021,22022,23023,24024,25025,26026,27027,28028,29029],\"durations\":[1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001]},\"output\":{\"codec\":\"ffv1\",\"pixel_format\":\"bgr0\",\"ffv1_version\":3,\"slice_crc\":true,\"color_range\":\"full\",\"color_space\":\"gbr\",\"color_transfer\":\"sRGB\",\"color_primaries\":\"bt709\",\"frames\":30,\"time_base\":[1,1000],\"frame_rate\":[30000,1001],\"native_pts\":[0,33,67,100,133,167,200,234,267,300,334,367,400,434,467,501,534,567,601,634,667,701,734,767,801,834,868,901,934,968],\"durations\":[33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33]}}\n",
+      "stdout_truncated": false,
+      "stdout_sha256": "2859b3b6c5275c944d9791e40cc9928dcb8dc5d32ae0ef9aff06a593337a4a93",
+      "stderr": "Truncating packet of size 567 to 566\n",
+      "stderr_truncated": false,
+      "stderr_sha256": "d8d0fa3148f275124b0660fbfaabcd6977aec36ba1bdacacdf028cfcf9eb0c73"
+    },
+    {
+      "argv": [
+        "./ffv1_probe_asan",
+        "verify",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/candidate-snapshot.truncated.mkv",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/candidate-snapshot.rgb"
+      ],
+      "cwd": "/private/tmp/deadpan-ffv1-final3-sanitizers",
+      "returncode": 1,
+      "expected_returncode": 1,
+      "elapsed_seconds": 0.542157,
+      "stdout": "",
+      "stdout_truncated": false,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr": "File ended prematurely\nerror: FFV1 output frame count differs from source\n",
+      "stderr_truncated": false,
+      "stderr_sha256": "5c2ad577b5527d2fed6814edefac9fe533b243ed439b353c3060dec10ccddc70"
+    },
+    {
+      "argv": [
+        "./ffv1_probe_asan",
+        "verify",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/candidate-snapshot.corrupted.mkv",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/candidate-snapshot.rgb"
+      ],
+      "cwd": "/private/tmp/deadpan-ffv1-final3-sanitizers",
+      "returncode": 1,
+      "expected_returncode": 1,
+      "elapsed_seconds": 0.566128,
+      "stdout": "",
+      "stdout_truncated": false,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr": "slice CRC mismatch 304060A9!at 501\nerror: FFV1 RGB pixel mismatch\n",
+      "stderr_truncated": false,
+      "stderr_sha256": "b4ec4de84a521371fc2096565d981db76dde57c7ba575b5be3d1214a2c311851"
+    },
+    {
+      "argv": [
+        "./ffv1_probe_asan",
+        "verify",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/candidate-snapshot.mkv",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/candidate-snapshot.mutated.rgb"
+      ],
+      "cwd": "/private/tmp/deadpan-ffv1-final3-sanitizers",
+      "returncode": 1,
+      "expected_returncode": 1,
+      "elapsed_seconds": 0.190907,
+      "stdout": "",
+      "stdout_truncated": false,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr": "error: FFV1 RGB pixel mismatch\n",
+      "stderr_truncated": false,
+      "stderr_sha256": "7c8e6b368db22fee10a09ac581c09b6e801bbdac773c8662c52b427b0a708d06"
+    },
+    {
+      "argv": [
+        "./ffv1_probe_asan",
+        "verify",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/candidate-snapshot.mkv",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/candidate-snapshot.zero_header.rgb"
+      ],
+      "cwd": "/private/tmp/deadpan-ffv1-final3-sanitizers",
+      "returncode": 1,
+      "expected_returncode": 1,
+      "elapsed_seconds": 0.159039,
+      "stdout": "",
+      "stdout_truncated": false,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr": "invalid RGB source header: /private/tmp/deadpan-ffv1-final3-sanitizers/candidate-snapshot.zero_header.rgb\n",
+      "stderr_truncated": false,
+      "stderr_sha256": "8061cca47b919aeaf95f6ff027eb137870657d2b1e26006efb67608c077526c4"
+    },
+    {
+      "argv": [
+        "./ffv1_probe_asan",
+        "verify",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/candidate-snapshot.mkv",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/candidate-snapshot.invalid_dimensions.rgb"
+      ],
+      "cwd": "/private/tmp/deadpan-ffv1-final3-sanitizers",
+      "returncode": 1,
+      "expected_returncode": 1,
+      "elapsed_seconds": 0.160537,
+      "stdout": "",
+      "stdout_truncated": false,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr": "invalid or oversized RGB source metadata: /private/tmp/deadpan-ffv1-final3-sanitizers/candidate-snapshot.invalid_dimensions.rgb\n",
+      "stderr_truncated": false,
+      "stderr_sha256": "7cab535977dd2f4da7619a77641fb80f29e3250424acd0fdb902bb270763dbd3"
+    },
+    {
+      "argv": [
+        "./ffv1_probe_asan",
+        "verify",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/candidate-snapshot.mkv",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/candidate-snapshot.zero_frames.rgb"
+      ],
+      "cwd": "/private/tmp/deadpan-ffv1-final3-sanitizers",
+      "returncode": 1,
+      "expected_returncode": 1,
+      "elapsed_seconds": 0.162126,
+      "stdout": "",
+      "stdout_truncated": false,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr": "invalid or oversized RGB source metadata: /private/tmp/deadpan-ffv1-final3-sanitizers/candidate-snapshot.zero_frames.rgb\n",
+      "stderr_truncated": false,
+      "stderr_sha256": "53ed5bc35075d23e5f7ca3945214e6e63ebe95df1cfacace230d03aca01edca1"
+    },
+    {
+      "argv": [
+        "./ffv1_probe_asan",
+        "verify",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/candidate-snapshot.mkv",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/candidate-snapshot.wrong-size.rgb"
+      ],
+      "cwd": "/private/tmp/deadpan-ffv1-final3-sanitizers",
+      "returncode": 1,
+      "expected_returncode": 1,
+      "elapsed_seconds": 0.159568,
+      "stdout": "",
+      "stdout_truncated": false,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr": "RGB source has truncated or trailing bytes: /private/tmp/deadpan-ffv1-final3-sanitizers/candidate-snapshot.wrong-size.rgb\n",
+      "stderr_truncated": false,
+      "stderr_sha256": "c646cf3319ffe278c2cd5fa4d5ab52c02fec1f61076f0fc49a88504d168798b3"
+    },
+    {
+      "argv": [
+        "./ffv1_probe_asan",
+        "qualify",
+        "/tmp/deadpan-supervised-mlx-20260921-attributed/worker/outputs/native.mp4",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/native-25-sequence.mkv",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/native-25-sequence.rgb"
+      ],
+      "cwd": "/private/tmp/deadpan-ffv1-final3-sanitizers",
+      "returncode": 0,
+      "expected_returncode": 0,
+      "elapsed_seconds": 1.667095,
+      "stdout": "{\"status\":\"passed\",\"source\":{\"width\":768,\"height\":320,\"frames\":25,\"time_base\":[1,24],\"frame_rate\":[24,1],\"start_pts\":0,\"native_pts\":[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24],\"durations\":[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]},\"output\":{\"codec\":\"ffv1\",\"pixel_format\":\"bgr0\",\"ffv1_version\":3,\"slice_crc\":true,\"color_range\":\"full\",\"color_space\":\"gbr\",\"color_transfer\":\"sRGB\",\"color_primaries\":\"bt709\",\"frames\":25,\"time_base\":[1,1000],\"frame_rate\":[24,1],\"native_pts\":[0,42,83,125,167,208,250,292,333,375,417,458,500,542,583,625,667,708,750,792,833,875,917,958,1000],\"durations\":[41,41,41,41,41,41,41,41,41,41,41,41,41,41,41,41,41,41,41,41,41,41,41,41,41]}}\n",
+      "stdout_truncated": false,
+      "stdout_sha256": "59b9baff5b47e838486b88d6584d8d057ca4d64e0da743d41b3b4dba044f384b",
+      "stderr": "",
+      "stderr_truncated": false,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "argv": [
+        "ffprobe",
+        "-v",
+        "error",
+        "-show_streams",
+        "-show_format",
+        "-of",
+        "json",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/native-25-sequence.mkv"
+      ],
+      "cwd": "/private/tmp/deadpan-ffv1-final3-sanitizers",
+      "returncode": 0,
+      "expected_returncode": 0,
+      "elapsed_seconds": 0.027063,
+      "stdout": "{\n    \"streams\": [\n        {\n            \"index\": 0,\n            \"codec_name\": \"ffv1\",\n            \"codec_long_name\": \"FFmpeg video codec #1\",\n            \"codec_type\": \"video\",\n            \"codec_tag_string\": \"[0][0][0][0]\",\n            \"codec_tag\": \"0x0000\",\n            \"width\": 768,\n            \"height\": 320,\n            \"coded_width\": 768,\n            \"coded_height\": 320,\n            \"has_b_frames\": 0,\n            \"pix_fmt\": \"bgr0\",\n            \"level\": -99,\n            \"color_range\": \"pc\",\n            \"color_space\": \"gbr\",\n            \"color_transfer\": \"iec61966-2-1\",\n            \"color_primaries\": \"bt709\",\n            \"refs\": 1,\n            \"r_frame_rate\": \"24/1\",\n            \"avg_frame_rate\": \"24/1\",\n            \"time_base\": \"1/1000\",\n            \"start_pts\": 0,\n            \"start_time\": \"0.000000\",\n            \"bits_per_raw_sample\": \"8\",\n            \"extradata_size\": 42,\n            \"disposition\": {\n                \"default\": 0,\n                \"dub\": 0,\n                \"original\": 0,\n                \"comment\": 0,\n                \"lyrics\": 0,\n                \"karaoke\": 0,\n                \"forced\": 0,\n                \"hearing_impaired\": 0,\n                \"visual_impaired\": 0,\n                \"clean_effects\": 0,\n                \"attached_pic\": 0,\n                \"timed_thumbnails\": 0,\n                \"non_diegetic\": 0,\n                \"captions\": 0,\n                \"descriptions\": 0,\n                \"metadata\": 0,\n                \"dependent\": 0,\n                \"still_image\": 0,\n                \"multilayer\": 0\n            },\n            \"tags\": {\n                \"COLOR_RANGE\": \"full\",\n                \"COLOR_SPACE\": \"gbr\",\n                \"COLOR_TRANSFER\": \"sRGB\",\n                \"COLOR_PRIMARIES\": \"bt709\",\n                \"DURATION\": \"00:00:01.042000000\"\n            }\n        }\n    ],\n    \"format\": {\n        \"filename\": \"/private/tmp/deadpan-ffv1-final3-sanitizers/native-25-sequence.mkv\",\n        \"nb_streams\": 1,\n        \"nb_programs\": 0,\n        \"nb_stream_groups\": 0,\n        \"format_name\": \"matroska,webm\",\n        \"format_long_name\": \"Matroska / WebM\",\n        \"start_time\": \"0.000000\",\n        \"duration\": \"1.042000\",\n        \"size\": \"4544157\",\n        \"bit_rate\": \"34887961\",\n        \"probe_score\": 100,\n        \"tags\": {\n            \"ENCODER\": \"Lavf62.3.103\"\n        }\n    }\n}\n",
+      "stdout_truncated": false,
+      "stdout_sha256": "39cb2209e24058938dfe6a6c413ad4c98ab9ca859098320844e076daa24223c6",
+      "stderr": "",
+      "stderr_truncated": false,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "argv": [
+        "./ffv1_probe_asan",
+        "verify",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/native-25-sequence.tail-truncated.mkv",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/native-25-sequence.rgb"
+      ],
+      "cwd": "/private/tmp/deadpan-ffv1-final3-sanitizers",
+      "returncode": 0,
+      "expected_returncode": 0,
+      "elapsed_seconds": 0.783561,
+      "stdout": "{\"status\":\"passed\",\"source\":{\"width\":768,\"height\":320,\"frames\":25,\"time_base\":[1,24],\"frame_rate\":[24,1],\"start_pts\":0,\"native_pts\":[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24],\"durations\":[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]},\"output\":{\"codec\":\"ffv1\",\"pixel_format\":\"bgr0\",\"ffv1_version\":3,\"slice_crc\":true,\"color_range\":\"full\",\"color_space\":\"gbr\",\"color_transfer\":\"sRGB\",\"color_primaries\":\"bt709\",\"frames\":25,\"time_base\":[1,1000],\"frame_rate\":[24,1],\"native_pts\":[0,42,83,125,167,208,250,292,333,375,417,458,500,542,583,625,667,708,750,792,833,875,917,958,1000],\"durations\":[41,41,41,41,41,41,41,41,41,41,41,41,41,41,41,41,41,41,41,41,41,41,41,41,41]}}\n",
+      "stdout_truncated": false,
+      "stdout_sha256": "59b9baff5b47e838486b88d6584d8d057ca4d64e0da743d41b3b4dba044f384b",
+      "stderr": "Truncating packet of size 473 to 472\n",
+      "stderr_truncated": false,
+      "stderr_sha256": "7304f7638914512ca38da5ea49e23ff098bef330088dba8ea7ca9ec82e94cbf5"
+    },
+    {
+      "argv": [
+        "./ffv1_probe_asan",
+        "verify",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/native-25-sequence.truncated.mkv",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/native-25-sequence.rgb"
+      ],
+      "cwd": "/private/tmp/deadpan-ffv1-final3-sanitizers",
+      "returncode": 1,
+      "expected_returncode": 1,
+      "elapsed_seconds": 0.459956,
+      "stdout": "",
+      "stdout_truncated": false,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr": "File ended prematurely\nerror: FFV1 output frame count differs from source\n",
+      "stderr_truncated": false,
+      "stderr_sha256": "5c2ad577b5527d2fed6814edefac9fe533b243ed439b353c3060dec10ccddc70"
+    },
+    {
+      "argv": [
+        "./ffv1_probe_asan",
+        "verify",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/native-25-sequence.corrupted.mkv",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/native-25-sequence.rgb"
+      ],
+      "cwd": "/private/tmp/deadpan-ffv1-final3-sanitizers",
+      "returncode": 1,
+      "expected_returncode": 1,
+      "elapsed_seconds": 0.463013,
+      "stdout": "",
+      "stdout_truncated": false,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr": "slice count 37 is invalid (max=4)\nsend FFV1 packet: Invalid data found when processing input (-1094995529)\n",
+      "stderr_truncated": false,
+      "stderr_sha256": "02500c446048f9612dc20732e7ddd7978bb3872ba3e4c7a70f01ef69db9026c8"
+    },
+    {
+      "argv": [
+        "./ffv1_probe_asan",
+        "verify",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/native-25-sequence.mkv",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/native-25-sequence.mutated.rgb"
+      ],
+      "cwd": "/private/tmp/deadpan-ffv1-final3-sanitizers",
+      "returncode": 1,
+      "expected_returncode": 1,
+      "elapsed_seconds": 0.190824,
+      "stdout": "",
+      "stdout_truncated": false,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr": "error: FFV1 RGB pixel mismatch\n",
+      "stderr_truncated": false,
+      "stderr_sha256": "7c8e6b368db22fee10a09ac581c09b6e801bbdac773c8662c52b427b0a708d06"
+    },
+    {
+      "argv": [
+        "./ffv1_probe_asan",
+        "verify",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/native-25-sequence.mkv",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/native-25-sequence.zero_header.rgb"
+      ],
+      "cwd": "/private/tmp/deadpan-ffv1-final3-sanitizers",
+      "returncode": 1,
+      "expected_returncode": 1,
+      "elapsed_seconds": 0.158074,
+      "stdout": "",
+      "stdout_truncated": false,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr": "invalid RGB source header: /private/tmp/deadpan-ffv1-final3-sanitizers/native-25-sequence.zero_header.rgb\n",
+      "stderr_truncated": false,
+      "stderr_sha256": "d3eabf1b3f4a838abf7ae8c4d7af13d9a893c33335eb9bf95017205d769c3206"
+    },
+    {
+      "argv": [
+        "./ffv1_probe_asan",
+        "verify",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/native-25-sequence.mkv",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/native-25-sequence.invalid_dimensions.rgb"
+      ],
+      "cwd": "/private/tmp/deadpan-ffv1-final3-sanitizers",
+      "returncode": 1,
+      "expected_returncode": 1,
+      "elapsed_seconds": 0.160193,
+      "stdout": "",
+      "stdout_truncated": false,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr": "invalid or oversized RGB source metadata: /private/tmp/deadpan-ffv1-final3-sanitizers/native-25-sequence.invalid_dimensions.rgb\n",
+      "stderr_truncated": false,
+      "stderr_sha256": "8a543795ff089590e9713b062cf58df95c28e2a046fd2e71bc5b06d6df7af670"
+    },
+    {
+      "argv": [
+        "./ffv1_probe_asan",
+        "verify",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/native-25-sequence.mkv",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/native-25-sequence.zero_frames.rgb"
+      ],
+      "cwd": "/private/tmp/deadpan-ffv1-final3-sanitizers",
+      "returncode": 1,
+      "expected_returncode": 1,
+      "elapsed_seconds": 0.154602,
+      "stdout": "",
+      "stdout_truncated": false,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr": "invalid or oversized RGB source metadata: /private/tmp/deadpan-ffv1-final3-sanitizers/native-25-sequence.zero_frames.rgb\n",
+      "stderr_truncated": false,
+      "stderr_sha256": "6ca2d9e2b85a3906fa2cc53e0234097a7cf1a560289a41de228cb5203b9c7a78"
+    },
+    {
+      "argv": [
+        "./ffv1_probe_asan",
+        "verify",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/native-25-sequence.mkv",
+        "/private/tmp/deadpan-ffv1-final3-sanitizers/native-25-sequence.wrong-size.rgb"
+      ],
+      "cwd": "/private/tmp/deadpan-ffv1-final3-sanitizers",
+      "returncode": 1,
+      "expected_returncode": 1,
+      "elapsed_seconds": 0.162046,
+      "stdout": "",
+      "stdout_truncated": false,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr": "RGB source has truncated or trailing bytes: /private/tmp/deadpan-ffv1-final3-sanitizers/native-25-sequence.wrong-size.rgb\n",
+      "stderr_truncated": false,
+      "stderr_sha256": "98bc9388c7928bf1124571467f3e69ab996e52e41b7ace4cac80e9f4cc520ecc"
+    }
+  ],
+  "cases": [
+    {
+      "name": "synthetic-32x16-30-cfr",
+      "input": {
+        "kind": "deterministic RGB8 pattern",
+        "sha256": null
+      },
+      "decoded_rgb_source": {
+        "path": "/private/tmp/deadpan-ffv1-final3-sanitizers/synthetic-32x16.rgb",
+        "sha256": "bde0cb31ccc494085c58ed5020bd140a3e413495dadfc23b33d821253e2ef26d",
+        "size_bytes": 46624
+      },
+      "master": {
+        "path": "/private/tmp/deadpan-ffv1-final3-sanitizers/synthetic-32x16.mkv",
+        "sha256": "6c347b5db69b6ec806d7903bfbec96aea63d67a5f6322d5d083e78195ad1b62d",
+        "size_bytes": 24066
+      },
+      "native_result": {
+        "status": "passed",
+        "source": {
+          "width": 32,
+          "height": 16,
+          "frames": 30,
+          "time_base": [
+            1,
+            30000
+          ],
+          "frame_rate": [
+            30000,
+            1001
+          ],
+          "start_pts": 0,
+          "native_pts": [
+            0,
+            1001,
+            2002,
+            3003,
+            4004,
+            5005,
+            6006,
+            7007,
+            8008,
+            9009,
+            10010,
+            11011,
+            12012,
+            13013,
+            14014,
+            15015,
+            16016,
+            17017,
+            18018,
+            19019,
+            20020,
+            21021,
+            22022,
+            23023,
+            24024,
+            25025,
+            26026,
+            27027,
+            28028,
+            29029
+          ],
+          "durations": [
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001
+          ]
+        },
+        "output": {
+          "codec": "ffv1",
+          "pixel_format": "bgr0",
+          "ffv1_version": 3,
+          "slice_crc": true,
+          "color_range": "full",
+          "color_space": "gbr",
+          "color_transfer": "sRGB",
+          "color_primaries": "bt709",
+          "frames": 30,
+          "time_base": [
+            1,
+            1000
+          ],
+          "frame_rate": [
+            30000,
+            1001
+          ],
+          "native_pts": [
+            0,
+            33,
+            67,
+            100,
+            133,
+            167,
+            200,
+            234,
+            267,
+            300,
+            334,
+            367,
+            400,
+            434,
+            467,
+            501,
+            534,
+            567,
+            601,
+            634,
+            667,
+            701,
+            734,
+            767,
+            801,
+            834,
+            868,
+            901,
+            934,
+            968
+          ],
+          "durations": [
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33
+          ]
+        }
+      },
+      "ffprobe": {
+        "codec_name": "ffv1",
+        "codec_type": "video",
+        "width": 32,
+        "height": 16,
+        "pix_fmt": "bgr0",
+        "color_range": "pc",
+        "color_space": "gbr",
+        "color_transfer": "iec61966-2-1",
+        "color_primaries": "bt709",
+        "time_base": "1/1000",
+        "r_frame_rate": "30000/1001",
+        "avg_frame_rate": "30000/1001",
+        "nb_frames": null,
+        "tags": {
+          "COLOR_RANGE": "full",
+          "COLOR_SPACE": "gbr",
+          "COLOR_TRANSFER": "sRGB",
+          "COLOR_PRIMARIES": "bt709",
+          "DURATION": "00:00:01.001000000"
+        }
+      },
+      "status": "passed exact RGB pixel and ordinal comparison"
+    },
+    {
+      "name": "candidate-snapshot",
+      "input": {
+        "path": "/tmp/deadpan-supervised-mlx-20260921-attributed/host/candidate.snapshot.mp4",
+        "sha256": "d7fcf04e2bbe213d0352153443eb77c4a1534855ab8c19c0ff5dde4f2ddf85d9",
+        "size_bytes": 5023208
+      },
+      "decoded_rgb_source": {
+        "path": "/private/tmp/deadpan-ffv1-final3-sanitizers/candidate-snapshot.rgb",
+        "sha256": "31145e3422613c73d434e8448453ef6a1bc67fa7c3bd431e11081da4a8287cf0",
+        "size_bytes": 22118944
+      },
+      "master": {
+        "path": "/private/tmp/deadpan-ffv1-final3-sanitizers/candidate-snapshot.mkv",
+        "sha256": "db0f385abde2731def58145b26440c841952ec083feb5d96d14024eafac34e6b",
+        "size_bytes": 5450240
+      },
+      "native_result": {
+        "status": "passed",
+        "source": {
+          "width": 768,
+          "height": 320,
+          "frames": 30,
+          "time_base": [
+            1,
+            30000
+          ],
+          "frame_rate": [
+            30000,
+            1001
+          ],
+          "start_pts": 0,
+          "native_pts": [
+            0,
+            1001,
+            2002,
+            3003,
+            4004,
+            5005,
+            6006,
+            7007,
+            8008,
+            9009,
+            10010,
+            11011,
+            12012,
+            13013,
+            14014,
+            15015,
+            16016,
+            17017,
+            18018,
+            19019,
+            20020,
+            21021,
+            22022,
+            23023,
+            24024,
+            25025,
+            26026,
+            27027,
+            28028,
+            29029
+          ],
+          "durations": [
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001
+          ]
+        },
+        "output": {
+          "codec": "ffv1",
+          "pixel_format": "bgr0",
+          "ffv1_version": 3,
+          "slice_crc": true,
+          "color_range": "full",
+          "color_space": "gbr",
+          "color_transfer": "sRGB",
+          "color_primaries": "bt709",
+          "frames": 30,
+          "time_base": [
+            1,
+            1000
+          ],
+          "frame_rate": [
+            30000,
+            1001
+          ],
+          "native_pts": [
+            0,
+            33,
+            67,
+            100,
+            133,
+            167,
+            200,
+            234,
+            267,
+            300,
+            334,
+            367,
+            400,
+            434,
+            467,
+            501,
+            534,
+            567,
+            601,
+            634,
+            667,
+            701,
+            734,
+            767,
+            801,
+            834,
+            868,
+            901,
+            934,
+            968
+          ],
+          "durations": [
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33
+          ]
+        }
+      },
+      "ffprobe": {
+        "codec_name": "ffv1",
+        "codec_type": "video",
+        "width": 768,
+        "height": 320,
+        "pix_fmt": "bgr0",
+        "color_range": "pc",
+        "color_space": "gbr",
+        "color_transfer": "iec61966-2-1",
+        "color_primaries": "bt709",
+        "time_base": "1/1000",
+        "r_frame_rate": "30000/1001",
+        "avg_frame_rate": "30000/1001",
+        "nb_frames": null,
+        "tags": {
+          "COLOR_RANGE": "full",
+          "COLOR_SPACE": "gbr",
+          "COLOR_TRANSFER": "sRGB",
+          "COLOR_PRIMARIES": "bt709",
+          "DURATION": "00:00:01.001000000"
+        }
+      },
+      "status": "passed exact RGB pixel and ordinal comparison"
+    },
+    {
+      "name": "native-25-sequence",
+      "input": {
+        "path": "/tmp/deadpan-supervised-mlx-20260921-attributed/worker/outputs/native.mp4",
+        "sha256": "c9d34268df14d105bb4f3799e9bfc9b946ad153de43e6ee4a73a44bb7833be33",
+        "size_bytes": 4911319
+      },
+      "decoded_rgb_source": {
+        "path": "/private/tmp/deadpan-ffv1-final3-sanitizers/native-25-sequence.rgb",
+        "sha256": "8e424f9effebea4f9c8a989788161c4bddc802fc0202694ab22bbbba1760a68d",
+        "size_bytes": 18432464
+      },
+      "master": {
+        "path": "/private/tmp/deadpan-ffv1-final3-sanitizers/native-25-sequence.mkv",
+        "sha256": "9194c8f60705738cb1d367f2c7bf97481c0090b3daba96afd4a817bb9bae24bf",
+        "size_bytes": 4544157
+      },
+      "native_result": {
+        "status": "passed",
+        "source": {
+          "width": 768,
+          "height": 320,
+          "frames": 25,
+          "time_base": [
+            1,
+            24
+          ],
+          "frame_rate": [
+            24,
+            1
+          ],
+          "start_pts": 0,
+          "native_pts": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24
+          ],
+          "durations": [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        "output": {
+          "codec": "ffv1",
+          "pixel_format": "bgr0",
+          "ffv1_version": 3,
+          "slice_crc": true,
+          "color_range": "full",
+          "color_space": "gbr",
+          "color_transfer": "sRGB",
+          "color_primaries": "bt709",
+          "frames": 25,
+          "time_base": [
+            1,
+            1000
+          ],
+          "frame_rate": [
+            24,
+            1
+          ],
+          "native_pts": [
+            0,
+            42,
+            83,
+            125,
+            167,
+            208,
+            250,
+            292,
+            333,
+            375,
+            417,
+            458,
+            500,
+            542,
+            583,
+            625,
+            667,
+            708,
+            750,
+            792,
+            833,
+            875,
+            917,
+            958,
+            1000
+          ],
+          "durations": [
+            41,
+            41,
+            41,
+            41,
+            41,
+            41,
+            41,
+            41,
+            41,
+            41,
+            41,
+            41,
+            41,
+            41,
+            41,
+            41,
+            41,
+            41,
+            41,
+            41,
+            41,
+            41,
+            41,
+            41,
+            41
+          ]
+        }
+      },
+      "ffprobe": {
+        "codec_name": "ffv1",
+        "codec_type": "video",
+        "width": 768,
+        "height": 320,
+        "pix_fmt": "bgr0",
+        "color_range": "pc",
+        "color_space": "gbr",
+        "color_transfer": "iec61966-2-1",
+        "color_primaries": "bt709",
+        "time_base": "1/1000",
+        "r_frame_rate": "24/1",
+        "avg_frame_rate": "24/1",
+        "nb_frames": null,
+        "tags": {
+          "COLOR_RANGE": "full",
+          "COLOR_SPACE": "gbr",
+          "COLOR_TRANSFER": "sRGB",
+          "COLOR_PRIMARIES": "bt709",
+          "DURATION": "00:00:01.042000000"
+        }
+      },
+      "status": "passed exact RGB pixel and ordinal comparison"
+    }
+  ],
+  "negative_controls": [
+    {
+      "case": "synthetic-32x16",
+      "kind": "truncated_matroska",
+      "input_sha256": "d815872aec0cb466907e83bf7cba98160929305ff09f21d2a8bb8d1bec0a6989",
+      "returncode": 1,
+      "stderr": "File ended prematurely\nerror: FFV1 output frame count differs from source\n"
+    },
+    {
+      "case": "synthetic-32x16",
+      "kind": "corrupted_matroska",
+      "input_sha256": "d9478dad19382f7a311db1e41a14cc8ccb0120df1e609cb1d4763ed265d5f385",
+      "returncode": 1,
+      "stderr": "slice count 79 is invalid (max=4)\nsend FFV1 packet: Invalid data found when processing input (-1094995529)\n"
+    },
+    {
+      "case": "synthetic-32x16",
+      "kind": "mutated_source_pixel",
+      "input_sha256": "f2fa95c7877f26511594d99cda71c3f0a5701528c4e12642b53a1ce891895bd0",
+      "returncode": 1,
+      "stderr": "error: FFV1 RGB pixel mismatch\n"
+    },
+    {
+      "case": "synthetic-32x16",
+      "kind": "raw_zero_header",
+      "input_sha256": "c3f32a3a53ee4abb78a2a780507864c164e33d0a2ca42ad6aae18be2a526a3b8",
+      "returncode": 1,
+      "stderr": "invalid RGB source header: /private/tmp/deadpan-ffv1-final3-sanitizers/synthetic-32x16.zero_header.rgb\n"
+    },
+    {
+      "case": "synthetic-32x16",
+      "kind": "raw_invalid_dimensions",
+      "input_sha256": "f0dac9472eee67bdf1cd43d416442b027cbbd5fea04d9e68502993987b42b28a",
+      "returncode": 1,
+      "stderr": "invalid or oversized RGB source metadata: /private/tmp/deadpan-ffv1-final3-sanitizers/synthetic-32x16.invalid_dimensions.rgb\n"
+    },
+    {
+      "case": "synthetic-32x16",
+      "kind": "raw_zero_frames",
+      "input_sha256": "f535bd386e3d505cdf4ff45ab6fcff6da9f3dca0624fb05ea561b9b28430f48c",
+      "returncode": 1,
+      "stderr": "invalid or oversized RGB source metadata: /private/tmp/deadpan-ffv1-final3-sanitizers/synthetic-32x16.zero_frames.rgb\n"
+    },
+    {
+      "case": "synthetic-32x16",
+      "kind": "raw_size_mismatch",
+      "input_sha256": "2ebc392e0a2a49250b6b557c8c03229dfc5ec87bdb3bf74c5d3859f350c68936",
+      "returncode": 1,
+      "stderr": "RGB source has truncated or trailing bytes: /private/tmp/deadpan-ffv1-final3-sanitizers/synthetic-32x16.wrong-size.rgb\n"
+    },
+    {
+      "case": "candidate-snapshot",
+      "kind": "truncated_matroska",
+      "input_sha256": "735a1e0dbb1b8b7b5b62e0f128a3597c0b782ffbf42e85fd46d7e85a944ca4d4",
+      "returncode": 1,
+      "stderr": "File ended prematurely\nerror: FFV1 output frame count differs from source\n"
+    },
+    {
+      "case": "candidate-snapshot",
+      "kind": "corrupted_matroska",
+      "input_sha256": "da57b256f9fc63a75865a2124e9bee77a5ebc730756b266b97d700af613c2f05",
+      "returncode": 1,
+      "stderr": "slice CRC mismatch 304060A9!at 501\nerror: FFV1 RGB pixel mismatch\n"
+    },
+    {
+      "case": "candidate-snapshot",
+      "kind": "mutated_source_pixel",
+      "input_sha256": "2ba42298bc52078acc4111dd97cf8d45228a9fa5ff5f6451bb03cf22b0d1aaeb",
+      "returncode": 1,
+      "stderr": "error: FFV1 RGB pixel mismatch\n"
+    },
+    {
+      "case": "candidate-snapshot",
+      "kind": "raw_zero_header",
+      "input_sha256": "682f06dd54d0fd8c5041d9698c1b282aa696b6b1f8e646f0eb8f1884e4f4b76a",
+      "returncode": 1,
+      "stderr": "invalid RGB source header: /private/tmp/deadpan-ffv1-final3-sanitizers/candidate-snapshot.zero_header.rgb\n"
+    },
+    {
+      "case": "candidate-snapshot",
+      "kind": "raw_invalid_dimensions",
+      "input_sha256": "243e3af2f1c63c90b553206998116a6370191b189882bc70e71b9e44615c33de",
+      "returncode": 1,
+      "stderr": "invalid or oversized RGB source metadata: /private/tmp/deadpan-ffv1-final3-sanitizers/candidate-snapshot.invalid_dimensions.rgb\n"
+    },
+    {
+      "case": "candidate-snapshot",
+      "kind": "raw_zero_frames",
+      "input_sha256": "38c35e1165d7c38017a320bf39a8de35c6c93fe41f298f33ff451235d2f5f404",
+      "returncode": 1,
+      "stderr": "invalid or oversized RGB source metadata: /private/tmp/deadpan-ffv1-final3-sanitizers/candidate-snapshot.zero_frames.rgb\n"
+    },
+    {
+      "case": "candidate-snapshot",
+      "kind": "raw_size_mismatch",
+      "input_sha256": "f0d249ee98d15d30cadd8a89ca7c10a0c90781df571f665504a5eaa1e390763e",
+      "returncode": 1,
+      "stderr": "RGB source has truncated or trailing bytes: /private/tmp/deadpan-ffv1-final3-sanitizers/candidate-snapshot.wrong-size.rgb\n"
+    },
+    {
+      "case": "native-25-sequence",
+      "kind": "truncated_matroska",
+      "input_sha256": "7df80c43b51eeedb54b2720fdd57fedf494b373c987229c4dd166a238253b135",
+      "returncode": 1,
+      "stderr": "File ended prematurely\nerror: FFV1 output frame count differs from source\n"
+    },
+    {
+      "case": "native-25-sequence",
+      "kind": "corrupted_matroska",
+      "input_sha256": "1772d69af48a1f69e8deadd90bb5a92013af39d3cbd3da52f35f9afb0b91d417",
+      "returncode": 1,
+      "stderr": "slice count 37 is invalid (max=4)\nsend FFV1 packet: Invalid data found when processing input (-1094995529)\n"
+    },
+    {
+      "case": "native-25-sequence",
+      "kind": "mutated_source_pixel",
+      "input_sha256": "b603d6018a0010d40460a1da2dcf8a3facff19bfe283d2e5d278bfbec35827d5",
+      "returncode": 1,
+      "stderr": "error: FFV1 RGB pixel mismatch\n"
+    },
+    {
+      "case": "native-25-sequence",
+      "kind": "raw_zero_header",
+      "input_sha256": "b3509e0e2cc62322d044bf64176096f89e04002785968b64103e15fa96577482",
+      "returncode": 1,
+      "stderr": "invalid RGB source header: /private/tmp/deadpan-ffv1-final3-sanitizers/native-25-sequence.zero_header.rgb\n"
+    },
+    {
+      "case": "native-25-sequence",
+      "kind": "raw_invalid_dimensions",
+      "input_sha256": "3758bb5778a15669a2f4eee1c01c6d12818c26800a427f5fb5e70da72188b67c",
+      "returncode": 1,
+      "stderr": "invalid or oversized RGB source metadata: /private/tmp/deadpan-ffv1-final3-sanitizers/native-25-sequence.invalid_dimensions.rgb\n"
+    },
+    {
+      "case": "native-25-sequence",
+      "kind": "raw_zero_frames",
+      "input_sha256": "52d21e0ba6df1f3d9f7e8cdc1fc6c832aa694a73537d53db8d0fae0d54a0f287",
+      "returncode": 1,
+      "stderr": "invalid or oversized RGB source metadata: /private/tmp/deadpan-ffv1-final3-sanitizers/native-25-sequence.zero_frames.rgb\n"
+    },
+    {
+      "case": "native-25-sequence",
+      "kind": "raw_size_mismatch",
+      "input_sha256": "da0f2ff6a6859ff21b6fac847e3f792ac5f365987f94d0982fc139dd6efe884d",
+      "returncode": 1,
+      "stderr": "RGB source has truncated or trailing bytes: /private/tmp/deadpan-ffv1-final3-sanitizers/native-25-sequence.wrong-size.rgb\n"
+    }
+  ],
+  "decoder_limitations": [
+    {
+      "case": "synthetic-32x16",
+      "kind": "last_byte_truncation_not_detected_by_pixel_decode",
+      "input_sha256": "9df2161240ebb80f20ebf7b679917b716e2176a1de0bfc59f72e81130f770280",
+      "returncode": 0,
+      "stderr": "Truncating packet of size 563 to 562\n",
+      "host_requirement": "reject changed byte length or SHA-256 before decode"
+    },
+    {
+      "case": "candidate-snapshot",
+      "kind": "last_byte_truncation_not_detected_by_pixel_decode",
+      "input_sha256": "c0f4644ea273ab090088275871293b122c025190dedcc8d56d2b085f5f67c679",
+      "returncode": 0,
+      "stderr": "Truncating packet of size 567 to 566\n",
+      "host_requirement": "reject changed byte length or SHA-256 before decode"
+    },
+    {
+      "case": "native-25-sequence",
+      "kind": "last_byte_truncation_not_detected_by_pixel_decode",
+      "input_sha256": "13ac3d5b5c400f2b675dcefbcb3a70598c320aa166280e4418a7f281ec5e7d51",
+      "returncode": 0,
+      "stderr": "Truncating packet of size 473 to 472\n",
+      "host_requirement": "reject changed byte length or SHA-256 before decode"
+    }
+  ],
+  "source_sha256": {
+    "tools/media-qualification/ffv1/ffv1_probe.c": "7bdf587372867ecfcf3075627a4e7ec0ae9ed012b6d31c8dc82b33250bb2bd2e",
+    "tools/media-qualification/ffv1/qualify.py": "6fa4466770b640265a24cbeaa19128c7a0341da798ee0701c91be77a5cca6271",
+    "tools/media-qualification/ffv1/test_qualify.py": "e3723098f3f8b639fed85f23d083bfaba2d589a3bb800f57d804c353ec88f084"
+  },
+  "binary": {
+    "path": "/private/tmp/deadpan-ffv1-final3-sanitizers/ffv1_probe_asan",
+    "sha256": "1629d7b88c9de1a43feb3bf9469efc459bcd030bc47956e0faec590af5f215b8",
+    "size_bytes": 157488
+  },
+  "linked_libraries": "/private/tmp/deadpan-ffv1-final3-sanitizers/ffv1_probe_asan:\n\t/tmp/deadpan-media-compatible-xyhilms4/prefix/lib/libavformat.62.dylib (compatibility version 62.0.0, current version 62.3.103)\n\t/tmp/deadpan-media-compatible-xyhilms4/prefix/lib/libavcodec.62.dylib (compatibility version 62.0.0, current version 62.11.103)\n\t/tmp/deadpan-media-compatible-xyhilms4/prefix/lib/libavutil.60.dylib (compatibility version 60.0.0, current version 60.8.103)\n\t/tmp/deadpan-media-compatible-xyhilms4/prefix/lib/libswscale.9.dylib (compatibility version 9.0.0, current version 9.1.103)\n\t@rpath/libclang_rt.asan_osx_dynamic.dylib (compatibility version 0.0.0, current version 0.0.0)\n\t/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1356.0.0)\n",
+  "ffprobe_version": "ffprobe version 8.0.3 Copyright (c) 2007-2026 the FFmpeg developers",
+  "library_sha256": {
+    "libavcodec.62.11.103.dylib": {
+      "path": "/private/tmp/deadpan-media-compatible-xyhilms4/prefix/lib/libavcodec.62.11.103.dylib",
+      "sha256": "e2abb19ad59f0097cf0780af2fbca14f5851d6d4c0e8ed21f9b59707a4500fab"
+    },
+    "libavformat.62.3.103.dylib": {
+      "path": "/private/tmp/deadpan-media-compatible-xyhilms4/prefix/lib/libavformat.62.3.103.dylib",
+      "sha256": "414b5d7b6bc6a4983535a6c61f8107a8563fa1a996bd1665c400a799d98eee6f"
+    },
+    "libavutil.60.8.103.dylib": {
+      "path": "/private/tmp/deadpan-media-compatible-xyhilms4/prefix/lib/libavutil.60.8.103.dylib",
+      "sha256": "0080fa764061a46d27f421c448eaf9e1af0c703ac743844bb8e8600baad0dd20"
+    },
+    "libswscale.9.1.103.dylib": {
+      "path": "/private/tmp/deadpan-media-compatible-xyhilms4/prefix/lib/libswscale.9.1.103.dylib",
+      "sha256": "8c1055d2ee90df810289ce45a2e332afef24377dc9ea0e1118d3f0d6de1f657f"
+    }
+  },
+  "build_receipt": {
+    "path": "/Users/michael/Code/deadpan/tools/media-qualification/compatible/results/build-2026-09-20.json",
+    "sha256": "c4d9be6fa2592229a22daedb974c89384c0bc1f9db0ad5993d8af5e2fed83695",
+    "size_bytes": 122727,
+    "ffmpeg": {
+      "version": "8.0.3",
+      "tag": "n8.0.3",
+      "commit": "8ae0b34901ba60a802f183ee75a250a9fc3e09a5",
+      "archive_url": "https://ffmpeg.org/releases/ffmpeg-8.0.3.tar.xz",
+      "archive_sha256": "6136812ea6d4e68bdba27e33c2a94382711cdf4f8602ffef056ff792bd6f9818",
+      "signature_sha256": "975f9512458fc39cacf35a9496f51c9d82e3a3b684a9db111bedcfa523f2b2b8",
+      "key_url": "https://ffmpeg.org/ffmpeg-devel.asc",
+      "key_sha256": "397b3becedcd5a98769967ff1ff8501ddc89f8368b8f766e4701377d7dbaabe5",
+      "signing_key_fingerprint": "FCF986EA15E6E293A5644F10B4322F04D67658D8"
+    },
+    "configure_argv": [
+      "/tmp/deadpan-media-compatible-xyhilms4/ffmpeg-8.0.3/configure",
+      "--prefix=/tmp/deadpan-media-compatible-xyhilms4/prefix",
+      "--enable-shared",
+      "--disable-static",
+      "--enable-pic",
+      "--disable-gpl",
+      "--disable-nonfree",
+      "--disable-version3",
+      "--disable-autodetect",
+      "--disable-network",
+      "--disable-doc",
+      "--disable-debug",
+      "--disable-ffmpeg",
+      "--disable-ffplay",
+      "--arch=aarch64",
+      "--cpu=generic",
+      "--target-os=darwin",
+      "--sysroot=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk",
+      "--enable-videotoolbox",
+      "--enable-audiotoolbox",
+      "--extra-cflags=-arch arm64 -mmacosx-version-min=15.0",
+      "--extra-ldflags=-arch arm64 -mmacosx-version-min=15.0"
+    ],
+    "license_file_sha256": {
+      "COPYING.LGPLv2.1": "246041b6ecf9bc32d718a62c57877c78b5eb397b6467e74ed7ae2626ab189c30",
+      "LICENSE.md": "2e1d16c72fd74e12063776371da757322f8b77589386532f4fd8634bde7de1af"
+    }
+  },
+  "input_provenance": {
+    "path": "/Users/michael/Code/deadpan/docs/qualification/model-worker-2026-09-21.md",
+    "sha256": "f2366c8709ab9c94d5deed0f2194581a6c6a7a7379319a57a071568f1b62b993",
+    "size_bytes": 10186,
+    "captured_run": "/tmp/deadpan-supervised-mlx-20260921-attributed"
+  },
+  "status": "passed scoped qualification",
+  "completed_utc": "2026-09-21T08:43:37.220601+00:00"
+}

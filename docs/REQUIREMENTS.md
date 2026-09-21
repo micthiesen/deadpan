@@ -28,7 +28,7 @@ Current measured evidence: [editing foundation verification](FOUNDATION_VERIFICA
 | DP-16 | Shared realtime/offline renderer, bounded decode and proxy paths. | Partial | Immutable structural picture-plan mappings and original frame-index selection. No integrated media renderer or proxy path yet. | Actual decode/GPU/audio integration, preview/export comparison, and stress benchmarks. |
 | DP-17 | One-action automatic SDR/HDR YouTube-oriented output. | Open | None. | Encoded-file metadata/pixel/sync verification. |
 | DP-18 | Nonblocking worker lifecycle, cancellation, stale result handling. | Partial | [`deadpan-jobs`](../crates/deadpan-jobs/) adds bounded typed framing, a revision-aware attempt lifecycle, native subprocess supervision, and [contained hash-verified snapshots](ARTIFACT_VERIFICATION.md). A [real MLX development worker](qualification/model-worker-2026-09-21.md) exercises this boundary. [Persistent requests](GENERATION_REQUESTS.md) atomically reconcile relevance; [attempts](GENERATION_ATTEMPTS.md) retain retries, validation receipts, candidate selection, and interrupted states across restart. | Bounded priority scheduling, app-connected inference/render workers and context resolution, production media validation/promotion, application lifecycle, and full concurrency/chaos coverage. |
-| DP-19 | Cache integrity and accepted-media portability. | Open | None. | Eviction/reference/offline-project tests. |
+| DP-19 | Cache integrity and accepted-media portability. | Open | [FFV1 master qualification](qualification/ffv1-2026-09-21.md) preserves actual generated RGB pixels and records container-clock and truncation limits. Candidate receipts/availability are metadata only; no accepted-media ownership or cache policy yet. | Durable master promotion, eviction/reference/offline-project tests. |
 | DP-20 | Accessible, native-behaving, simple UI. | Partial | [`deadpan-app`](../crates/deadpan-app/): native development welcome shell only. | Accessibility inspection and keyboard acceptance for the full workflow. |
 | DP-21 | CLI/JSON API with revision checks and dry-run. | Partial | [Shared headless API](HEADLESS.md): project/command/history operations, explicit migration, indexed picture-plan inspection, exact boundary and named-mark range resolution, and structured errors; [CLI integration tests](../crates/deadpan-cli/tests/project_commands.rs) exercise persistent marks, sparse overrides, automatic nested occurrence edits, and read-only coexistence. | Complete command/selector surface, host socket routing, render operations, and headless/GUI parity. |
 | DP-22 | Signed/notarized zero-manual-setup distribution. | Open | None; source development builds are not an application distribution. | Clean-machine online and offline acceptance. |
@@ -44,6 +44,10 @@ single-file generation evidence to Gate A. It does not select a model or satisfy
 the corpus, warm-performance, exact seam, color, or packaging gates.
 The [supervised adapter](qualification/model-worker-2026-09-21.md) adds real
 worker-boundary and exact interior-file evidence while those gates remain open.
+The [lossless master probe](qualification/ffv1-2026-09-21.md) adds actual generated
+frame conversion through LGPL FFmpeg, with normal/sanitizer runs, failed initial
+duration metadata, rejected corrupt payloads, and retained trailer-truncation
+limitations. Durable promotion and application rendering remain open.
 
 | Gate | Status | Required work and exit evidence |
 | --- | --- | --- |

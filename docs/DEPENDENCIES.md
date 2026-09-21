@@ -130,6 +130,15 @@ connects this same candidate to the Rust process boundary and exact bridge plan.
 Its tagged, lossless RGB serialization still uses developer GPL FFmpeg. This
 qualifies a development boundary, not an app codec/runtime redistribution choice.
 
+The [FFV1 master probe](qualification/ffv1-2026-09-21.md) converts the actual
+native sequence and sampled candidate through the isolated LGPL FFmpeg 8.0.3
+libraries. Normal and instrumented adapters preserve every RGB8 pixel, frame
+ordinal, and color tag in FFV1 v3/Matroska, with slice CRC enabled. The container
+clock rounds to milliseconds, so native rational timing and sampling remain
+separate metadata. Tail truncation can preserve all decodable pictures; artifact
+hash and length checks remain required. This does not integrate a media adapter
+or replace the model worker's development serialization dependency.
+
 ## Qualification still required
 
 Gate A remains open. Before adding each executable or native dependency, record

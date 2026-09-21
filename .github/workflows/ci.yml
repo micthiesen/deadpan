@@ -33,6 +33,8 @@ jobs:
         run: python3 -m unittest discover -s tools/audio-qualification -p 'test_*.py' -v
       - name: Model worker contract tests
         run: python3 -m unittest discover -s tools/model-qualification/tests -p 'test_*.py' -v
+      - name: FFV1 qualification report tests
+        run: python3 -m unittest discover -s tools/media-qualification/ffv1 -p 'test_*.py' -v
       - name: Build
         run: cargo build --workspace --locked
       - name: Headless diagnostics
