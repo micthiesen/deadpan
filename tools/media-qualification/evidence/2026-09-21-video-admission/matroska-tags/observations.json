@@ -1,0 +1,43 @@
+{
+  "source": "Independent focused reviewer observations; exact retrospective counts, no fabricated raw log",
+  "pinned_ffmpeg": "8.0.3",
+  "successful_native_open_cases": [
+    {
+      "depth": 1,
+      "input_bytes": 484,
+      "metadata_entries": 3,
+      "native_open_result": 0
+    },
+    {
+      "depth": 7,
+      "input_bytes": 996,
+      "metadata_entries": 255,
+      "native_open_result": 0
+    },
+    {
+      "depth": 9,
+      "input_bytes": 1166,
+      "metadata_entries": 1023,
+      "native_open_result": 0
+    }
+  ],
+  "incomplete_batch": {
+    "depth_arguments": [
+      1,
+      10,
+      13
+    ],
+    "terminated_after_seconds_approximately": 34,
+    "result": "did not complete before termination",
+    "limitation": "buffered output cannot attribute elapsed time to any single depth"
+  },
+  "applied_fix": "No nested SimpleTag; at most1024aggregate SimpleTags; flat language metadata remains admitted",
+  "incomplete_review": "Automatic cyber-risk filter stopped the agent while investigating a possible demux-resynchronization differential; no defect established and this check is not marked passed",
+  "fixture_sha256": {
+    "deadpan-matroska-tag-amplification-1.mkv": "ed7e5032e1e29140c82ccc18efafc8a0b14bc718c24eec7f38a7886447488c52",
+    "deadpan-matroska-tag-amplification-10.mkv": "8f61caca616575c60d6e6629f50c6793b29398fc7db2eeb0d07196069e2ac0f9",
+    "deadpan-matroska-tag-amplification-13.mkv": "52f9b559ddbbbd54d77447cd662d5a6b7dceb20aa1baa5575c4d869f7f6a5c63",
+    "deadpan-matroska-tag-amplification-7.mkv": "9c1906de724cd442f0c959cc4017a6ed0561608297759ee1161259f713156feb",
+    "deadpan-matroska-tag-amplification-9.mkv": "accb5f09b7b553e54347ca38afaf5779ce8bcdd786706118e09d83673c8073d3"
+  }
+}

@@ -290,6 +290,10 @@ fn invalid_native_limits_fail_before_any_snapshot_read() {
             ..defaults
         },
         deadpan_source::DecodeLimits {
+            max_packet_bytes: 16 * 1024 * 1024 + 1,
+            ..defaults
+        },
+        deadpan_source::DecodeLimits {
             max_pixels: 8192 * 8192 + 1,
             ..defaults
         },

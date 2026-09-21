@@ -185,12 +185,20 @@ offset fixture's leading trim from a codec-wide constant. Exact range reads fail
 on gaps, excluded samples and unsupported clocks; they do not insert silence.
 PCM cache access is media-thread work, not audio-callback work. See
 [source audio](docs/SOURCE_AUDIO.md) for limits and qualification boundaries.
-Audio container admission precedes FFmpeg parsing: bound declared packet sizes,
+Source container admission precedes FFmpeg parsing: bound declared packet sizes,
 all-track sample/table expansion and nested metadata lengths, not only bytes
 already read. Keep unqualified grammars rejected. Header validation and native
 opening share one deadline and input-byte allowance; later decoder operations
 receive their normal per-call budgets. Do not use process-global allocator
 changes to enforce one decoder's limit.
+
+Video admission is a closed MP4/H.264 or finite Matroska/FFV1 grammar. Validate
+FFV1 configuration expansion before opening the codec, and H.264 coded geometry
+before its macroblock allocation. Never reintroduce an uncontrolled probing
+decoder. Retain the controlled first frame for the caller and charge it to the
+opening budgets. Container guards and post-demux packet guards serve different
+allocation boundaries; preserve both. See [source admission](docs/SOURCE_ADMISSION.md)
+for qualified limits and rejected grammars.
 
 The setup workflow's TypeScript/Bun/mitools/Biome defaults do not apply to this Rust-native product. The maintained Rust sibling `beastie` supplies the initial workspace conventions; consult maintained siblings for evolving personal tooling patterns. [Dependency decisions](docs/DEPENDENCIES.md) records the pins and qualification boundaries. Do not introduce Bun, Node, Python, or shell setup as an end-user requirement. Future model workers use an app-managed private runtime selected through measurement.
 

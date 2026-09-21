@@ -36,6 +36,12 @@ baseline and a native preview with frame navigation. Actual Metal comparisons,
 source/session sanitizer tests and native visual/keyboard observations are
 recorded separately. Project import, editorial playback and export remain open.
 
+[Video admission qualification](qualification/video-admission-2026-09-21.md)
+adds closed MP4/Matroska checks before demux allocation, FFV1 configuration
+expansion limits, controlled first-frame probing and per-packet bounds. It
+preserves the measured source fixtures and an accepted generated master. The
+full required format matrix and authored import remain open.
+
 [Original ownership qualification](qualification/original-media-2026-09-21.md)
 adds managed complete-file retention, APFS clone/copy, linked locations,
 identity-checked relinking, private snapshots and schema-10 migration. A bounded

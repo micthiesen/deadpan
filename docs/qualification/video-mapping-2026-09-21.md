@@ -85,3 +85,9 @@ accessibility checks were not repeated for this authored-state change. Prior
 its tested surface. Native video resource admission, qualified stream receipts,
 common A/V origin, project-basis selection, authored import, playback and export
 remain required.
+
+GitHub Actions passed for commit
+`9f93b49600f74df3ed9233a9cb8d80e0979fa260` in
+[run 35633923483](https://github.com/micthiesen/deadpan/actions/runs/35633923483).
+The [CI result](../../tools/media-qualification/evidence/2026-09-21-video-mapping/ci-result.json)
+retains the pinned native build, repository gate and fixture/contract checks.

@@ -11,6 +11,7 @@ typedef struct {
     uint64_t max_frames;
     uint64_t max_packets;
     uint64_t max_io_bytes_per_call;
+    uint64_t max_packet_bytes;
     uint64_t max_pixels;
     uint32_t max_dimension;
     uint32_t max_packets_per_frame;
@@ -44,7 +45,7 @@ typedef struct {
     char message[256];
 } DeadpanSourceError;
 int deadpan_source_open(int fd, int64_t length, const DeadpanSourceLimits *limits,
-    uint64_t timeout_ms, DeadpanCancelled cancelled, const void *opaque,
+    uint64_t preflight_io_bytes, uint64_t timeout_ms, DeadpanCancelled cancelled, const void *opaque,
     DeadpanSource **out, DeadpanSourceInfo *info, DeadpanSourceError *error);
 int deadpan_source_next(DeadpanSource *source, uint64_t timeout_ms,
     DeadpanCancelled cancelled, const void *opaque, DeadpanSourceFrame *frame,

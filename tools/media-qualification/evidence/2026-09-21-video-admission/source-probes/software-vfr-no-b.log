@@ -1,0 +1,126 @@
+{
+  "codec": "h264",
+  "color": "ColorMetadata { range: Limited, matrix: Bt709, transfer: Bt709, primaries: Bt709 }",
+  "container_duration_microseconds": null,
+  "container_start_microseconds": null,
+  "content": {
+    "byte_length": 43455,
+    "sha256": [
+      63,
+      208,
+      125,
+      0,
+      170,
+      96,
+      69,
+      84,
+      220,
+      83,
+      137,
+      83,
+      12,
+      210,
+      97,
+      172,
+      137,
+      97,
+      173,
+      237,
+      99,
+      97,
+      66,
+      111,
+      176,
+      11,
+      245,
+      81,
+      154,
+      198,
+      72,
+      132
+    ]
+  },
+  "dimensions": [
+    320,
+    180
+  ],
+  "first_pts": 0,
+  "frames": 120,
+  "index_sha256": "10ac66964111966acecc206410a2cbc6618c84836addd375aef616b0aca22953",
+  "opening_seconds": 0.01733325,
+  "pixel_format": "yuv420p",
+  "rotation_quarter_turns": 0,
+  "sample_aspect_ratio": [
+    1,
+    1
+  ],
+  "scope": "actual source snapshot, measured presentation index and persistent decoder seeks; not playback, project import, audio, HDR or display qualification",
+  "seeks": [
+    {
+      "frame": 0,
+      "pts": 0,
+      "reported_duration": 1001,
+      "rgba_bytes": 230400,
+      "rgba_sha256": "a97af6b9129b7846157b12c2b137087d0a6382b1fa703b180e1e17ab8495223f",
+      "seconds": 0.009385708
+    },
+    {
+      "frame": 119,
+      "pts": 237237,
+      "reported_duration": 1001,
+      "rgba_bytes": 230400,
+      "rgba_sha256": "6e644c664d535500d4b8c31ba6ef2b02d7cfe8715da5df6b683815083da31a63",
+      "seconds": 0.009844375
+    },
+    {
+      "frame": 0,
+      "pts": 0,
+      "reported_duration": 1001,
+      "rgba_bytes": 230400,
+      "rgba_sha256": "a97af6b9129b7846157b12c2b137087d0a6382b1fa703b180e1e17ab8495223f",
+      "seconds": 0.009007792
+    },
+    {
+      "frame": 59,
+      "pts": 117117,
+      "reported_duration": 3003,
+      "rgba_bytes": 230400,
+      "rgba_sha256": "813c71c5abe82fba5c96377786493c222e8edd6552bcbf03dbbd50507ef6994e",
+      "seconds": 0.010594167
+    },
+    {
+      "frame": 1,
+      "pts": 1001,
+      "reported_duration": 2002,
+      "rgba_bytes": 230400,
+      "rgba_sha256": "71dd7441498f39f50f1b8839f277be74f42b4c93dd6dccee5abbde3ed648f5bf",
+      "seconds": 0.009830834
+    },
+    {
+      "frame": 119,
+      "pts": 237237,
+      "reported_duration": 1001,
+      "rgba_bytes": 230400,
+      "rgba_sha256": "6e644c664d535500d4b8c31ba6ef2b02d7cfe8715da5df6b683815083da31a63",
+      "seconds": 0.009622459
+    },
+    {
+      "frame": 0,
+      "pts": 0,
+      "reported_duration": 1001,
+      "rgba_bytes": 230400,
+      "rgba_sha256": "a97af6b9129b7846157b12c2b137087d0a6382b1fa703b180e1e17ab8495223f",
+      "seconds": 0.008702042
+    }
+  ],
+  "source": "/tmp/deadpan-media-compatible-probe-8efkj8h2/software-vfr-no-b.mp4",
+  "stream_duration": 238238,
+  "stream_index": 0,
+  "stream_start": 0,
+  "terminal_end": 238238,
+  "terminal_provenance": "decoded_frame_duration",
+  "time_base": [
+    1,
+    30000
+  ]
+}

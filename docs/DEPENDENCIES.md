@@ -72,6 +72,14 @@ checksums are retained in `Cargo.lock`. The default implementation detects
 available ARM SHA instructions and otherwise uses its portable software path.
 No external executable or native library is added for hashing.
 
+The FFV1 admission parser uses the default range probability table and bitstream
+rules from [RFC 9043](https://www.rfc-editor.org/rfc/rfc9043.html). Its Code
+Components carry the RFC's Simplified BSD notice in
+[`video_codec.rs`](../native/deadpan-source/src/video_codec.rs). Preserve that
+notice in future binary-distribution materials. The surrounding original parser
+is MIT; it does not copy FFmpeg's LGPL implementation. This adds no dependency or
+runtime download. The release notice/SBOM assembly remains open.
+
 The [official BLAKE3 implementation](https://docs.rs/blake3/1.8.7/blake3/)
 adds `constant_time_eq` 0.4.2 (`CC0-1.0 OR MIT-0 OR Apache-2.0`); its other
 dependencies were already locked. The default `std` feature is enabled;

@@ -17,10 +17,7 @@
 
 use std::{fs::File, time::Instant};
 
-use crate::{DecodeControl, SourceDecodeError};
-
-#[path = "audio_input.rs"]
-mod input;
+use crate::{DecodeControl, SourceDecodeError, input};
 
 #[derive(Clone, Copy, Debug)]
 pub struct AudioDecodeLimits {
@@ -186,7 +183,8 @@ mod opening_budget_tests {
             cancelled: &cancelled,
         };
         let defaults = AudioDecodeLimits::default();
-        let used = input::validate(&file, 0, defaults, control).unwrap();
+        let used =
+            input::validate(&file, input::Selection::Audio(0), defaults.into(), control).unwrap();
         assert!(used > 0);
         // Find the measured minimum for FFmpeg alone, without depending on a
         // particular AVIO buffer fill strategy. These are trusted fixture bytes.
@@ -219,7 +217,10 @@ mod opening_budget_tests {
             ..defaults
         };
         assert!(admitted(low));
-        assert_eq!(input::validate(&file, 0, limits, control).unwrap(), used);
+        assert_eq!(
+            input::validate(&file, input::Selection::Audio(0), limits.into(), control).unwrap(),
+            used
+        );
         let error = AudioDecoder::open(file.try_clone().unwrap(), 0, limits, control)
             .err()
             .unwrap();
@@ -248,7 +249,12 @@ impl AudioDecoder {
         let started = Instant::now();
         ffi::preflight(control)?;
         limits.validate()?;
-        let preflight_io_bytes = input::validate(&file, selected_stream, limits, control)?;
+        let preflight_io_bytes = input::validate(
+            &file,
+            input::Selection::Audio(selected_stream),
+            limits.into(),
+            control,
+        )?;
         let timeout = control
             .timeout
             .checked_sub(started.elapsed())

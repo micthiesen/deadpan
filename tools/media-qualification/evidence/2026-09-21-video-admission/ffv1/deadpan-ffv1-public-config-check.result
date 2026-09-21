@@ -1,0 +1,8 @@
+/tmp/deadpan-ffv1-many-slices.config bytes=22 avcodec_open2=0
+/tmp/deadpan-ffv1-large-context.config bytes=24 avcodec_open2=0
+/tmp/deadpan-ffv1-coder-0-initial-false.config bytes=20 avcodec_open2=0
+/tmp/deadpan-ffv1-coder-0-initial-true.config bytes=197 avcodec_open2=0
+/tmp/deadpan-ffv1-coder-1-initial-false.config bytes=20 avcodec_open2=0
+/tmp/deadpan-ffv1-coder-1-initial-true.config bytes=197 avcodec_open2=0
+/tmp/deadpan-ffv1-coder-2-initial-false.config bytes=31 avcodec_open2=0
+/tmp/deadpan-ffv1-coder-2-initial-true.config bytes=208 avcodec_open2=0

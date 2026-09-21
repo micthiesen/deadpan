@@ -1,0 +1,59 @@
+{
+  "base_revision": "9f93b49600f74df3ed9233a9cb8d80e0979fa260",
+  "scope": "dirty native source admission/controlled probe and tests; unchanged history and previous mapping CI record separately identified",
+  "reviews": [
+    {
+      "lens": "general",
+      "status": "complete",
+      "finding": "no additional actionable findings confirmed",
+      "independent_checks": [
+        "cargo test -p deadpan-source --locked:35unit+9audio+14picture tests",
+        "cargo test -p deadpan-media --locked:passed",
+        "git diff --check:passed"
+      ]
+    },
+    {
+      "lens": "native codec allocation/configuration",
+      "status": "complete",
+      "finding": "no remaining concrete bypass found against pinnedFFmpeg8.0.3",
+      "checked": [
+        "FFV1 guard before codec open",
+        "H264 get_format before macroblock tables",
+        "bounded frame allocation",
+        "packet guards before codec submission"
+      ]
+    },
+    {
+      "lens": "Matroska demux metadata",
+      "status": "confirmed finding fixed; final additional investigation incomplete",
+      "finding": "Nested language/default tags expand metadata exponentially in pinned converter",
+      "fix": "Flat SimpleTags only; aggregate1024cap",
+      "regression": "Fails before fix, passes after; committed fixture/native source checks pass",
+      "fix_review": "original reviewer confirmed no recursive tag pair remains and cap aggregates all Tag groups",
+      "incomplete": "Agent stopped by automated cyber-risk filter during extra resynchronization investigation; no defect established or passing result claimed"
+    }
+  ],
+  "triage": [
+    {
+      "item": "Matroska magic detection rereads bytes already seen by shared detector",
+      "disposition": "not a defect: actual repeated reads consume the documented shared descriptor-work allowance"
+    },
+    {
+      "item": "32MiB FFV1 estimate rejects some legal configurations",
+      "disposition": "intentional closed qualification policy; documented with independent legal-header evidence; fullformat work remains open"
+    },
+    {
+      "item": "Matroska audio error code changed to unsupported_streams",
+      "disposition": "fixed shared dispatch to retain unsupported_container without weakening existing test"
+    }
+  ],
+  "verification": {
+    "repository_rust_tests": 486,
+    "native_sanitizer_tests": 93,
+    "historical_source_probes": 6,
+    "failed": 0,
+    "ignored": 0,
+    "gui": "not repeated; no controls/lifecycle changes"
+  },
+  "remaining": "Full maliciousinput corpus, unqualified formats, authored import and performance remain open; no processwideheap/preemptive-timeout claim"
+}

@@ -223,6 +223,7 @@ fn pixel_budget_rejects_sources_before_frame_decode() {
         (0, "invalid_configuration"),
         (8192 * 8192 + 1, "invalid_configuration"),
         (1024, "resource_limit"),
+        (320 * 180, "resource_limit"),
     ] {
         let error = SourceDecoder::open(
             File::open(fixture("cfr-bframes.mp4")).unwrap(),
@@ -299,7 +300,7 @@ fn input_interpretation_and_resource_bounds_fail_explicitly() {
         "resource_limit",
     );
     assert_code(decoder.seek(0, control()).unwrap_err(), "session_failed");
-    let mut decoder = SourceDecoder::open(
+    let error = SourceDecoder::open(
         File::open(fixture("cfr-bframes.mp4")).unwrap(),
         DecodeLimits {
             max_packets_per_frame: 1,
@@ -307,11 +308,9 @@ fn input_interpretation_and_resource_bounds_fail_explicitly() {
         },
         control(),
     )
-    .unwrap();
-    assert_code(
-        decoder.next_metadata(control()).unwrap_err(),
-        "resource_limit",
-    );
+    .err()
+    .expect("the controlled first-frame probe shares the packet work bound");
+    assert_code(error, "resource_limit");
     let file = tempfile::tempfile().unwrap();
     assert_code(
         SourceDecoder::open(file, DecodeLimits::default(), control())
@@ -448,5 +447,95 @@ fn descriptor_byte_budget_and_external_playlist_fail_closed() {
     let error = SourceDecoder::open(file, DecodeLimits::default(), control())
         .err()
         .unwrap();
-    assert_code(error, "ffmpeg_failure");
+    assert_code(error, "unsupported_container");
+}
+
+/// Rebuild the sole sample in a committed single-frame MP4. The chunk begins at
+/// the same byte offset; only mdat size and constant stsz size need to change.
+fn single_sample_mp4(packet: impl FnOnce(&[u8]) -> Vec<u8>) -> File {
+    use std::io::Write;
+    let mut bytes = std::fs::read(rgb_fixture("rgb1_24.mp4")).unwrap();
+    let mdat = bytes.windows(4).position(|tag| tag == b"mdat").unwrap();
+    let old_size = u32::from_be_bytes(bytes[mdat - 4..mdat].try_into().unwrap()) as usize;
+    let replacement = packet(&bytes[mdat + 4..mdat - 4 + old_size]);
+    bytes.splice(mdat + 4..mdat - 4 + old_size, replacement.iter().copied());
+    let size = u32::try_from(replacement.len()).unwrap();
+    bytes[mdat - 4..mdat].copy_from_slice(&(size + 8).to_be_bytes());
+    let stsz = bytes.windows(4).position(|tag| tag == b"stsz").unwrap();
+    assert_eq!(&bytes[stsz + 12..stsz + 16], &1_u32.to_be_bytes());
+    bytes[stsz + 8..stsz + 12].copy_from_slice(&size.to_be_bytes());
+    let mut file = tempfile::tempfile().unwrap();
+    file.write_all(&bytes).unwrap();
+    file
+}
+
+#[test]
+fn h264_packet_expansion_and_invalid_nal_lengths_fail_before_codec_submission() {
+    let file = single_sample_mp4(|original| {
+        let mut packet = [0, 0, 0, 3, 0x0c, 0xff, 0x80].repeat(4097);
+        packet.extend_from_slice(original);
+        packet
+    });
+    let error = SourceDecoder::open(file, DecodeLimits::default(), control())
+        .err()
+        .unwrap();
+    assert!(matches!(error, SourceDecodeError::Native {code, message}
+        if code == "resource_limit" && message.contains("4096 NAL")));
+
+    let file = single_sample_mp4(|original| {
+        let mut packet = original.to_vec();
+        packet[..4].copy_from_slice(&u32::MAX.to_be_bytes());
+        packet
+    });
+    let error = SourceDecoder::open(file, DecodeLimits::default(), control())
+        .err()
+        .unwrap();
+    assert!(matches!(error, SourceDecodeError::Native {code, message}
+        if code == "invalid_input" && message.contains("NAL escapes")));
+}
+
+#[test]
+fn packet_byte_limits_are_validated_and_applied_before_decode() {
+    for (max_packet_bytes, expected) in [
+        (0, "invalid_configuration"),
+        (16 * 1024 * 1024 + 1, "invalid_configuration"),
+        (1, "resource_limit"),
+    ] {
+        let error = SourceDecoder::open(
+            File::open(rgb_fixture("rgb1_24.mp4")).unwrap(),
+            DecodeLimits {
+                max_packet_bytes,
+                ..DecodeLimits::default()
+            },
+            control(),
+        )
+        .err()
+        .unwrap();
+        assert_code(error, expected);
+    }
+}
+
+#[test]
+fn first_frame_probe_is_retained_counted_and_discarded_on_seek() {
+    let mut decoder = SourceDecoder::open(
+        File::open(rgb_fixture("rgb1_24.mp4")).unwrap(),
+        DecodeLimits {
+            max_frames: 1,
+            ..DecodeLimits::default()
+        },
+        control(),
+    )
+    .unwrap();
+    let first = decoder.next_rgba(control()).unwrap().unwrap();
+    assert_eq!(first.metadata.pts, 0);
+    assert!(decoder.next_metadata(control()).unwrap().is_none());
+
+    let mut decoder = open("cfr-bframes.mp4");
+    decoder.seek(60_060, control()).unwrap();
+    let frame = decoder.next_rgba(control()).unwrap().unwrap();
+    assert!(frame.metadata.pts > 0);
+    assert_eq!(
+        authored_identity(&frame.rgba),
+        usize::try_from(frame.metadata.pts / 1001).unwrap()
+    );
 }

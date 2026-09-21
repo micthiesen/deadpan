@@ -43,6 +43,7 @@ struct DeadpanSource {
     AVFrame *frame;
     struct SwsContext *scaler;
     int stream, pixel_format, chroma_location, draining, ended, poisoned, inventory_ready;
+    int pending_first_frame, h264_length_bytes;
     unsigned int stream_count;
     uint64_t frames, packets, io_bytes, deadline;
     DeadpanCancelled cancelled;
@@ -294,11 +295,41 @@ static int capture_audio_inventory(DeadpanSource *s) {
     s->inventory_ready = 1;
     return 1;
 }
+// These callbacks run on the controlled decoder. In pinned FFmpeg 8.0.3,
+// h264_init_ps calls get_format after installing SPS coded dimensions and before
+// h264_slice_header_init allocates macroblock tables. Frame-buffer max_pixels
+// alone is later than that allocation. No hidden probing decoder may bypass us.
+static enum AVPixelFormat bounded_format(AVCodecContext *context, const enum AVPixelFormat *formats) {
+    DeadpanSource *s = context->opaque;
+    if (check(s) < 0 || geometry(s, context->width, context->height) < 0 ||
+        geometry(s, context->coded_width, context->coded_height) < 0) return AV_PIX_FMT_NONE;
+    for (unsigned int i = 0; i < 64 && formats[i] != AV_PIX_FMT_NONE; i++) {
+        const AVPixFmtDescriptor *pixel = av_pix_fmt_desc_get(formats[i]);
+        if (!pixel || (pixel->flags & AV_PIX_FMT_FLAG_HWACCEL)) continue;
+        for (unsigned int component = 0; component < pixel->nb_components; component++) {
+            if (pixel->comp[component].depth != 8) {
+                fail(s, "unsupported_depth", "only eight-bit SDR decode is qualified");
+                return AV_PIX_FMT_NONE;
+            }
+        }
+        return formats[i];
+    }
+    fail(s, "unsupported_pixel_format", "no bounded software picture format");
+    return AV_PIX_FMT_NONE;
+}
+static int bounded_buffer(AVCodecContext *context, AVFrame *frame, int flags) {
+    DeadpanSource *s = context->opaque;
+    if (check(s) < 0 || geometry(s, frame->width, frame->height) < 0) return AVERROR(EINVAL);
+    return avcodec_default_get_buffer2(context, frame, flags);
+}
+static int receive_frame(DeadpanSource *s);
+static int check_frame(DeadpanSource *s);
 static int open_impl(DeadpanSource *s) {
     if (runtime(s) < 0) return -1;
     if (!s->limits.max_input_bytes || s->limits.max_input_bytes > 64ULL*1024*1024*1024 ||
         !s->limits.max_frames || s->limits.max_frames > 10000000 || !s->limits.max_packets || s->limits.max_packets > 40000000 ||
         !s->limits.max_io_bytes_per_call || s->limits.max_io_bytes_per_call > 1024ULL*1024*1024 ||
+        !s->limits.max_packet_bytes || s->limits.max_packet_bytes > 16ULL*1024*1024 ||
         !s->limits.max_pixels || s->limits.max_pixels > 8192ULL*8192 ||
         !s->limits.max_dimension || s->limits.max_dimension > 8192 || !s->limits.max_packets_per_frame || s->limits.max_packets_per_frame > 10000)
         return fail(s, "invalid_configuration", "source decode limits exceed hard bounds");
@@ -313,7 +344,10 @@ static int open_impl(DeadpanSource *s) {
     s->format = avformat_alloc_context();
     if (!s->format) return fail(s, "resource_exhausted", "allocate demux context");
     s->format->pb = s->io;
-    s->format->flags |= AVFMT_FLAG_CUSTOM_IO;
+    // Container admission has already bounded every declared packet/table. Do
+    // not let libavformat invoke an opaque parser or probing decoder before our
+    // per-packet codec checks and allocation callbacks.
+    s->format->flags |= AVFMT_FLAG_CUSTOM_IO | AVFMT_FLAG_NOPARSE | AVFMT_FLAG_NOFILLIN;
     s->format->probesize = s->length < MAX_PROBE_BYTES ? s->length : MAX_PROBE_BYTES;
     s->format->format_probesize = MAX_PROBE_BYTES;
     s->format->max_analyze_duration = 5000000;
@@ -337,51 +371,32 @@ static int open_impl(DeadpanSource *s) {
     av_dict_free(&options);
     if (result < 0) return fferror(s, "open source descriptor", result);
     if (table(s, 1) < 0) return -1;
-    unsigned int count = s->stream_count;
-    AVDictionary **probe_options = av_calloc(count, sizeof(*probe_options));
-    if (!probe_options) return fail(s, "resource_exhausted", "allocate bounded probe options");
     int64_t max_pixels = (int64_t)s->limits.max_dimension * s->limits.max_dimension;
     if ((uint64_t)max_pixels > s->limits.max_pixels) max_pixels = (int64_t)s->limits.max_pixels;
-    int options_result = 0;
-    for (unsigned int i = 0; i < count; i++) {
-        if ((int)i != s->stream) continue;
-        if (av_dict_set(&probe_options[i], "threads", "1", 0) < 0 ||
-            av_dict_set(&probe_options[i], "err_detect", "explode", 0) < 0 ||
-            av_dict_set_int(&probe_options[i], "max_pixels", max_pixels, 0) < 0) options_result = AVERROR(ENOMEM);
-    }
-    result = options_result < 0 ? options_result : avformat_find_stream_info(s->format, probe_options);
-    for (unsigned int i = 0; i < count; i++) av_dict_free(&probe_options[i]);
-    av_free(probe_options);
-    if (result < 0) return fferror(s, "probe source stream", result);
     if (check(s) < 0 || table(s, 0) < 0) return -1;
     AVStream *stream = s->format->streams[s->stream];
     AVCodecParameters *p = stream->codecpar;
     if (stream->time_base.num <= 0 || stream->time_base.den <= 0) return fail(s, "invalid_time_base", "source stream has no positive time base");
     if (p->field_order != AV_FIELD_UNKNOWN && p->field_order != AV_FIELD_PROGRESSIVE) return fail(s, "unsupported_interlace", "interlaced source requires a qualified deinterlacer");
-    if (color(s, p->format, p->color_range, p->color_space, p->color_trc, p->color_primaries) < 0) return -1;
-    const AVPixFmtDescriptor *pixel = av_pix_fmt_desc_get(p->format);
-    if (!(pixel->flags & AV_PIX_FMT_FLAG_RGB) && (pixel->log2_chroma_w || pixel->log2_chroma_h)) {
-        int x, y;
-        if (av_chroma_location_enum_to_pos(&x, &y, p->chroma_location) < 0)
-            return fail(s, "missing_interpretation", "subsampled YUV needs an explicit chroma location");
-    }
-    s->chroma_location = p->chroma_location;
-    AVRational aspect = sar(stream->sample_aspect_ratio.num ? stream->sample_aspect_ratio : p->sample_aspect_ratio);
-    if (aspect.num <= 0 || aspect.den <= 0 || aspect.num > 1000000 || aspect.den > 1000000) return fail(s, "unsupported_aspect", "invalid or excessive sample aspect ratio");
-    s->info = (DeadpanSourceInfo){.width=p->width,.height=p->height,.stream_index=stream->index,.time_base_num=stream->time_base.num,.time_base_den=stream->time_base.den,.sar_num=aspect.num,.sar_den=aspect.den,.range=p->color_range,.matrix=p->color_space,.transfer=p->color_trc,.primaries=p->color_primaries,.stream_start=stream->start_time,.stream_duration=stream->duration,.container_start=s->format->start_time,.container_duration=s->format->duration};
-    if (capture_audio_inventory(s) < 0) return -1;
-    if (rotation(s, p->coded_side_data, p->nb_coded_side_data, &s->info.rotation) < 0) return -1;
-    s->pixel_format = p->format;
     const AVCodec *codec = avcodec_find_decoder(p->codec_id);
     if (!codec) return fail(s, "unsupported_codec", "required source software decoder is unavailable");
-    (void)snprintf(s->info.codec, sizeof(s->info.codec), "%s", codec->name);
-    (void)snprintf(s->info.pixel_format, sizeof(s->info.pixel_format), "%s", av_get_pix_fmt_name(p->format));
+    if (p->extradata_size <= 0 || p->extradata_size > 65536)
+        return fail(s, "resource_limit", "source codec configuration is absent or exceeds its bound");
+    if (p->codec_id == AV_CODEC_ID_H264) {
+        if (p->extradata_size < 7 || p->extradata[0] != 1)
+            return fail(s, "unsupported_codec", "H264 source requires admitted AVC configuration");
+        s->h264_length_bytes = (p->extradata[4] & 3) + 1;
+        if (s->h264_length_bytes == 3) return fail(s, "unsupported_codec", "unsupported AVC NAL length field");
+    }
     s->decoder = avcodec_alloc_context3(codec);
     s->packet = av_packet_alloc(); s->frame = av_frame_alloc();
     if (!s->decoder || !s->packet || !s->frame) return fail(s, "resource_exhausted", "allocate source decode context");
     if ((result = avcodec_parameters_to_context(s->decoder, p)) < 0) return fferror(s, "copy source codec parameters", result);
     s->decoder->thread_count = 1;
     s->decoder->thread_type = 0;
+    s->decoder->opaque = s;
+    s->decoder->get_format = bounded_format;
+    s->decoder->get_buffer2 = bounded_buffer;
     s->decoder->max_pixels = max_pixels;
     s->decoder->err_recognition = AV_EF_EXPLODE | AV_EF_CAREFUL;
     s->decoder->pkt_timebase = stream->time_base;
@@ -389,6 +404,32 @@ static int open_impl(DeadpanSource *s) {
     // aperture change inside libavcodec.
     s->decoder->apply_cropping = 0;
     if ((result = avcodec_open2(s->decoder, codec, NULL)) < 0) return fferror(s, "open source decoder", result);
+    // Decode once under the same opening deadline/input allowance and retain
+    // this frame for the first caller. Probe work cannot create a second decoder,
+    // skip initial content, or bypass the configured frame/packet counters.
+    result = receive_frame(s);
+    if (result < 0) return -1;
+    if (!result) return fail(s, "invalid_stream", "source contains no decoded picture");
+    AVFrame *f = s->frame;
+    if (color(s, f->format, f->color_range, f->colorspace, f->color_trc, f->color_primaries) < 0) return -1;
+    const AVPixFmtDescriptor *pixel = av_pix_fmt_desc_get(f->format);
+    if (!(pixel->flags & AV_PIX_FMT_FLAG_RGB) && (pixel->log2_chroma_w || pixel->log2_chroma_h)) {
+        int x, y;
+        if (av_chroma_location_enum_to_pos(&x, &y, f->chroma_location) < 0)
+            return fail(s, "missing_interpretation", "subsampled YUV needs an explicit chroma location");
+    }
+    s->chroma_location = f->chroma_location;
+    AVRational declared_aspect = stream->sample_aspect_ratio.num ? stream->sample_aspect_ratio : p->sample_aspect_ratio;
+    AVRational aspect = declared_aspect.num ? declared_aspect : sar(f->sample_aspect_ratio);
+    if (aspect.num <= 0 || aspect.den <= 0 || aspect.num > 1000000 || aspect.den > 1000000)
+        return fail(s, "unsupported_aspect", "invalid or excessive sample aspect ratio");
+    s->info = (DeadpanSourceInfo){.width=p->width,.height=p->height,.stream_index=stream->index,.time_base_num=stream->time_base.num,.time_base_den=stream->time_base.den,.sar_num=aspect.num,.sar_den=aspect.den,.range=f->color_range,.matrix=f->colorspace,.transfer=f->color_trc,.primaries=f->color_primaries,.stream_start=stream->start_time,.stream_duration=stream->duration,.container_start=s->format->start_time,.container_duration=s->format->duration};
+    if (capture_audio_inventory(s) < 0 || rotation(s, p->coded_side_data, p->nb_coded_side_data, &s->info.rotation) < 0) return -1;
+    s->pixel_format = f->format;
+    (void)snprintf(s->info.codec, sizeof(s->info.codec), "%s", codec->name);
+    (void)snprintf(s->info.pixel_format, sizeof(s->info.pixel_format), "%s", av_get_pix_fmt_name(f->format));
+    if (check_frame(s) < 0) return -1;
+    s->pending_first_frame = 1;
     return check(s);
 }
 void deadpan_source_close(DeadpanSource *s) {
@@ -401,14 +442,18 @@ void deadpan_source_close(DeadpanSource *s) {
     if (s->io) { av_freep(&s->io->buffer); avio_context_free(&s->io); }
     av_free(s);
 }
-int deadpan_source_open(int fd, int64_t length, const DeadpanSourceLimits *limits, uint64_t timeout,
+int deadpan_source_open(int fd, int64_t length, const DeadpanSourceLimits *limits, uint64_t preflight_io_bytes, uint64_t timeout,
                         DeadpanCancelled cancelled, const void *opaque, DeadpanSource **out,
                         DeadpanSourceInfo *info, DeadpanSourceError *error) {
     *out = NULL; memset(error, 0, sizeof(*error));
     DeadpanSource *s = av_mallocz(sizeof(*s));
     if (!s) { (void)snprintf(error->code, sizeof(error->code), "resource_exhausted"); (void)snprintf(error->message, sizeof(error->message), "allocate source session"); return -1; }
     s->fd = fd; s->length = length; s->limits = *limits;
-    if (begin(s, timeout, cancelled, opaque, error) < 0 || open_impl(s) < 0) { deadpan_source_close(s); return -1; }
+    int result = begin(s, timeout, cancelled, opaque, error);
+    if (result > 0 && preflight_io_bytes > s->limits.max_io_bytes_per_call)
+        result = fail(s, "resource_limit", "container admission exhausted the opening input budget");
+    s->io_bytes = preflight_io_bytes;
+    if (result < 0 || open_impl(s) < 0) { deadpan_source_close(s); return -1; }
     *info = s->info; *out = s;
     return finish(s, 1);
 }
@@ -506,7 +551,42 @@ static int rgba(DeadpanSource *s, uint8_t *pixels, size_t length) {
 static void metadata(DeadpanSource *s, DeadpanSourceFrame *out) {
     *out = (DeadpanSourceFrame){.pts=s->frame->pts,.duration=s->frame->duration,.dts=s->frame->pkt_dts,.keyframe=!!(s->frame->flags & AV_FRAME_FLAG_KEY)};
 }
-static int next_impl(DeadpanSource *s, DeadpanSourceFrame *out, uint8_t *pixels, size_t length) {
+static int packet_budget(DeadpanSource *s) {
+    if (s->packet->size <= 0 || (uint64_t)s->packet->size > s->limits.max_packet_bytes)
+        return fail(s, "resource_limit", "source packet exceeds configured byte bound");
+    uint64_t bytes = (uint64_t)s->packet->size;
+    for (int i = 0; i < s->packet->side_data_elems; i++) {
+        const AVPacketSideData *side = &s->packet->side_data[i];
+        if (side->size > s->limits.max_packet_bytes - bytes)
+            return fail(s, "resource_limit", "source packet side data exceeds configured byte bound");
+        bytes += side->size;
+        if (side->type == AV_PKT_DATA_NEW_EXTRADATA || side->type == AV_PKT_DATA_PARAM_CHANGE)
+            return fail(s, "stream_changed", "packet changes admitted codec configuration");
+    }
+    if (s->packet->stream_index == s->stream && s->h264_length_bytes) {
+        size_t position = 0;
+        uint32_t count = 0;
+        size_t length = (size_t)s->packet->size;
+        const uint8_t *data = s->packet->data;
+        // A packet that FFmpeg would reinterpret as avcC is a configuration
+        // change, not an ordinary length-prefixed picture packet.
+        if (length >= 7 && data[0] == 1 && (data[4] & 0xfc) == 0xfc && (data[5] & 0xe0) == 0xe0)
+            return fail(s, "stream_changed", "packet carries replacement AVC configuration");
+        while (position < length) {
+            if (check(s) < 0) return -1;
+            if (++count > 4096) return fail(s, "resource_limit", "H264 packet exceeds 4096 NAL units");
+            if ((size_t)s->h264_length_bytes > length - position)
+                return fail(s, "invalid_input", "truncated H264 NAL length");
+            uint32_t amount = 0;
+            for (int i = 0; i < s->h264_length_bytes; i++) amount = (amount << 8) | data[position++];
+            if (!amount || amount > length - position)
+                return fail(s, "invalid_input", "H264 NAL escapes its packet");
+            position += amount;
+        }
+    }
+    return check(s);
+}
+static int receive_frame(DeadpanSource *s) {
     av_frame_unref(s->frame);
     if (s->ended) return 0;
     uint32_t packets = 0;
@@ -518,9 +598,7 @@ static int next_impl(DeadpanSource *s, DeadpanSourceFrame *out, uint8_t *pixels,
         if (result == 0) {
             if (s->frames >= s->limits.max_frames) return fail(s, "resource_limit", "decoded frame count exceeds configured bound");
             s->frames++;
-            if (table(s, 0) < 0 || check_frame(s) < 0) return -1;
-            metadata(s, out);
-            return pixels ? rgba(s, pixels, length) : 1;
+            return 1;
         }
         if (result == AVERROR_EOF) { s->ended = 1; return 0; }
         if (result != AVERROR(EAGAIN)) return fferror(s, "receive source frame", result);
@@ -538,6 +616,7 @@ static int next_impl(DeadpanSource *s, DeadpanSourceFrame *out, uint8_t *pixels,
             }
             if (result < 0) return fferror(s, "read source packet", result);
             packets++; s->packets++;
+            if (packet_budget(s) < 0) { av_packet_unref(s->packet); return -1; }
             if (s->packet->flags & AV_PKT_FLAG_CORRUPT) { av_packet_unref(s->packet); return fail(s, "corrupt_packet", "demuxer reported a corrupt packet"); }
             if (s->packet->stream_index == s->stream) {
                 if (table(s, 0) < 0 || packet_color_metadata(s, s->packet->side_data, s->packet->side_data_elems, "packet") < 0) {
@@ -556,6 +635,16 @@ static int next_impl(DeadpanSource *s, DeadpanSourceFrame *out, uint8_t *pixels,
     }
     return fail(s, "resource_limit", "bounded decode progress budget exhausted");
 }
+static int next_impl(DeadpanSource *s, DeadpanSourceFrame *out, uint8_t *pixels, size_t length) {
+    if (s->pending_first_frame) s->pending_first_frame = 0;
+    else {
+        int result = receive_frame(s);
+        if (result <= 0) return result;
+    }
+    if (table(s, 0) < 0 || check_frame(s) < 0) return -1;
+    metadata(s, out);
+    return pixels ? rgba(s, pixels, length) : 1;
+}
 int deadpan_source_next(DeadpanSource *s, uint64_t timeout, DeadpanCancelled cancelled,
                         const void *opaque, DeadpanSourceFrame *frame, uint8_t *pixels,
                         size_t length, DeadpanSourceError *error) {
@@ -566,7 +655,7 @@ int deadpan_source_copy(DeadpanSource *s, uint64_t timeout, DeadpanCancelled can
                         const void *opaque, DeadpanSourceFrame *frame, uint8_t *pixels,
                         size_t length, DeadpanSourceError *error) {
     if (begin(s, timeout, cancelled, opaque, error) < 0) return finish(s, -1);
-    if (!s->frame->buf[0]) return finish(s, fail(s, "no_current_frame", "decode a frame before copying its pixels"));
+    if (s->pending_first_frame || !s->frame->buf[0]) return finish(s, fail(s, "no_current_frame", "decode a frame before copying its pixels"));
     metadata(s, frame);
     return finish(s, rgba(s, pixels, length));
 }
@@ -575,6 +664,7 @@ int deadpan_source_seek(DeadpanSource *s, int64_t pts, uint64_t timeout, Deadpan
     if (begin(s, timeout, cancelled, opaque, error) < 0) return finish(s, -1);
     if (pts == AV_NOPTS_VALUE) return finish(s, fail(s, "invalid_timestamp", "seek timestamp is reserved for unknown PTS"));
     av_frame_unref(s->frame); av_packet_unref(s->packet);
+    s->pending_first_frame = 0;
     int result = av_seek_frame(s->format, s->stream, pts, AVSEEK_FLAG_BACKWARD);
     if (result < 0) return finish(s, fferror(s, "seek source", result));
     avcodec_flush_buffers(s->decoder);

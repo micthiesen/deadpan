@@ -1,8 +1,8 @@
 //! Closed container grammar checked before FFmpeg can allocate from header counts.
 //! This is allocation admission for immutable snapshots, not media qualification.
 
-use super::AudioDecodeLimits;
-use crate::{DecodeControl, SourceDecodeError};
+use crate::audio::AudioDecodeLimits;
+use crate::{DecodeControl, DecodeLimits, SourceDecodeError};
 use std::{fs::File, os::unix::fs::FileExt, sync::atomic::Ordering, time::Instant};
 
 const HEADER_BYTES: u64 = 16 * 1024 * 1024;
@@ -10,6 +10,59 @@ const ITEMS: u64 = 1_000_000;
 const ATOMS: u32 = 100_000;
 const TRACKS: usize = 33;
 const EXTRA_BYTES: u64 = 64 * 1024;
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Selection {
+    Audio(u32),
+    Video,
+}
+
+/// Container allocation ceilings derived from already validated decoder limits.
+/// Audio selection keeps the existing hard video bounds for ignored tracks.
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct InputLimits {
+    pub(crate) max_input_bytes: u64,
+    pub(crate) max_packets: u64,
+    pub(crate) max_io_bytes_per_call: u64,
+    pub(crate) max_packet_bytes: u64,
+    pub(crate) max_decoded_samples: u64,
+    pub(crate) max_channels: u32,
+    pub(crate) max_sample_rate: u32,
+    pub(crate) max_pixels: u64,
+    pub(crate) max_dimension: u32,
+}
+
+impl From<AudioDecodeLimits> for InputLimits {
+    fn from(limits: AudioDecodeLimits) -> Self {
+        Self {
+            max_input_bytes: limits.max_input_bytes,
+            max_packets: limits.max_packets,
+            max_io_bytes_per_call: limits.max_io_bytes_per_call,
+            max_packet_bytes: u64::from(limits.max_packet_bytes),
+            max_decoded_samples: limits.max_decoded_samples,
+            max_channels: limits.max_channels,
+            max_sample_rate: limits.max_sample_rate,
+            max_pixels: 8192 * 8192,
+            max_dimension: 8192,
+        }
+    }
+}
+
+impl From<DecodeLimits> for InputLimits {
+    fn from(limits: DecodeLimits) -> Self {
+        Self {
+            max_input_bytes: limits.max_input_bytes,
+            max_packets: limits.max_packets,
+            max_io_bytes_per_call: limits.max_io_bytes_per_call,
+            max_packet_bytes: limits.max_packet_bytes,
+            max_decoded_samples: 1_000_000_000_000,
+            max_channels: 32,
+            max_sample_rate: 384_000,
+            max_pixels: limits.max_pixels,
+            max_dimension: limits.max_dimension,
+        }
+    }
+}
 
 type Result<T> = std::result::Result<T, SourceDecodeError>;
 
@@ -28,7 +81,7 @@ fn limit(message: &'static str) -> SourceDecodeError {
 fn selection() -> SourceDecodeError {
     SourceDecodeError::Native {
         code: "unsupported_streams".into(),
-        message: "selected stream is not admitted audio".into(),
+        message: "selected media streams do not match the admitted container grammar".into(),
     }
 }
 fn require(value: bool, message: &'static str) -> Result<()> {
@@ -126,20 +179,20 @@ struct Reader<'a> {
     atoms: u32,
     rows: u64,
     samples: u64,
-    limits: AudioDecodeLimits,
+    limits: InputLimits,
 }
 impl Reader<'_> {
     fn check(&self) -> Result<()> {
         if self.control.cancelled.load(Ordering::Relaxed) {
             return Err(SourceDecodeError::Native {
                 code: "cancelled".into(),
-                message: "audio input preflight cancelled".into(),
+                message: "input preflight cancelled".into(),
             });
         }
         if self.started.elapsed() >= self.control.timeout {
             return Err(SourceDecodeError::Native {
                 code: "deadline_exceeded".into(),
-                message: "audio input preflight exceeded its cooperative deadline".into(),
+                message: "input preflight exceeded its cooperative deadline".into(),
             });
         }
         Ok(())
@@ -174,7 +227,7 @@ impl Reader<'_> {
                 if self.read_bytes + amount as u64 > HEADER_BYTES
                     || self.read_bytes + amount as u64 > self.limits.max_io_bytes_per_call
                 {
-                    return Err(limit("audio preflight header read budget exceeded"));
+                    return Err(limit("input preflight header read budget exceeded"));
                 }
                 while self.cache[index].length < amount {
                     self.check()?;
@@ -309,7 +362,7 @@ impl Reader<'_> {
                 _ => return Err(invalid("unsupported sample-size field width")),
             }
         };
-        if size == 0 || size > self.limits.max_packet_bytes {
+        if size == 0 || u64::from(size) > self.limits.max_packet_bytes {
             return Err(limit(
                 "declared media sample exceeds packet bound or is empty",
             ));
@@ -318,13 +371,12 @@ impl Reader<'_> {
     }
 }
 
-pub(super) fn validate(
+pub(crate) fn validate(
     file: &File,
-    selected_stream: u32,
-    limits: AudioDecodeLimits,
+    policy: Selection,
+    limits: InputLimits,
     control: DecodeControl<'_>,
 ) -> Result<u64> {
-    limits.validate()?;
     if control.timeout.is_zero() || control.timeout > std::time::Duration::from_secs(60) {
         return Err(SourceDecodeError::InvalidConfiguration(
             "timeout must be positive and at most 60 seconds",
@@ -335,7 +387,7 @@ pub(super) fn validate(
     if !metadata.is_file() || metadata.len() == 0 || metadata.len() > limits.max_input_bytes {
         return Err(SourceDecodeError::Native {
             code: "invalid_input".into(),
-            message: "audio input must be a nonempty bounded regular snapshot".into(),
+            message: "input must be a nonempty bounded regular snapshot".into(),
         });
     }
     let mut reader = Reader {
@@ -352,14 +404,50 @@ pub(super) fn validate(
         samples: 0,
         limits,
     };
-    if reader.bytes::<4>(0)? == *b"RIFF" {
+    let magic = reader.bytes::<4>(0)?;
+    if magic == [0x1a, 0x45, 0xdf, 0xa3] {
+        if policy != Selection::Video {
+            return Err(SourceDecodeError::Native {
+                code: "unsupported_container".into(),
+                message: "Matroska audio admission is not qualified".into(),
+            });
+        }
+        let remaining_io = limits
+            .max_io_bytes_per_call
+            .min(HEADER_BYTES)
+            .checked_sub(reader.read_bytes)
+            .filter(|bytes| *bytes > 0)
+            .ok_or_else(|| limit("Matroska detection exhausted the input admission budget"))?;
+        let timeout = control
+            .timeout
+            .checked_sub(started.elapsed())
+            .filter(|timeout| !timeout.is_zero())
+            .ok_or_else(|| SourceDecodeError::Native {
+                code: "deadline_exceeded".into(),
+                message: "Matroska detection exhausted the admission deadline".into(),
+            })?;
+        let charged = crate::matroska_input::validate(
+            file,
+            InputLimits {
+                max_io_bytes_per_call: remaining_io,
+                ..limits
+            },
+            DecodeControl { timeout, ..control },
+        )?;
+        return Ok(reader.read_bytes + charged);
+    }
+    if magic == *b"RIFF" {
+        let Selection::Audio(selected_stream) = policy else {
+            return Err(selection());
+        };
         wave(&mut reader, selected_stream)?;
     } else if reader.length >= 8 && reader.bytes::<4>(4)? == *b"ftyp" {
-        mp4(&mut reader, selected_stream)?;
+        mp4(&mut reader, policy)?;
     } else {
         return Err(SourceDecodeError::Native {
             code: "unsupported_container".into(),
-            message: "only strict nonfragmented MP4 and plain PCM16 RIFF/WAVE are admitted".into(),
+            message: "only strict MP4, finite FFV1 Matroska, and PCM16 RIFF/WAVE are admitted"
+                .into(),
         });
     }
     reader.check()?;
@@ -431,7 +519,7 @@ fn wave(r: &mut Reader<'_>, selected: u32) -> Result<()> {
                         && u64::from(byte_rate) == u64::from(rate) * u64::from(block),
                     "WAVE block alignment or byte rate disagrees with PCM16",
                 )?;
-                if block > r.limits.max_packet_bytes {
+                if u64::from(block) > r.limits.max_packet_bytes {
                     return Err(limit("one PCM sample frame exceeds packet bound"));
                 }
                 align = Some(block);
@@ -457,7 +545,7 @@ fn wave(r: &mut Reader<'_>, selected: u32) -> Result<()> {
     require(data && align.is_some(), "WAVE has no complete PCM stream")
 }
 
-fn mp4(r: &mut Reader<'_>, selected: u32) -> Result<()> {
+fn mp4(r: &mut Reader<'_>, policy: Selection) -> Result<()> {
     let mut cursor = 0;
     let mut brands = false;
     let mut movie = false;
@@ -530,7 +618,19 @@ fn mp4(r: &mut Reader<'_>, selected: u32) -> Result<()> {
     for track in &tracks {
         validate_track(r, track, media)?;
     }
-    if tracks.get(selected as usize).and_then(|track| track.codec) != Some(Kind::Audio) {
+    let selected = match policy {
+        Selection::Audio(index) => {
+            tracks.get(index as usize).and_then(|track| track.codec) == Some(Kind::Audio)
+        }
+        Selection::Video => {
+            tracks
+                .iter()
+                .filter(|track| track.codec == Some(Kind::Video))
+                .count()
+                == 1
+        }
+    };
+    if !selected {
         return Err(selection());
     }
     Ok(())
@@ -972,12 +1072,18 @@ fn sample_description(r: &mut Reader<'_>, span: Span) -> Result<Kind> {
             "unsupported MP4 audio sample description units",
         )?;
     } else {
-        let width = u16::from_be_bytes(r.bytes(entry.body.start + 24)?);
-        let height = u16::from_be_bytes(r.bytes(entry.body.start + 26)?);
+        let width = u32::from(u16::from_be_bytes(r.bytes(entry.body.start + 24)?));
+        let height = u32::from(u16::from_be_bytes(r.bytes(entry.body.start + 26)?));
         require(
-            width > 0 && height > 0 && width <= 8192 && height <= 8192,
-            "unqualified MP4 video dimensions",
+            width > 0 && height > 0,
+            "MP4 video dimensions must be positive",
         )?;
+        if width > r.limits.max_dimension
+            || height > r.limits.max_dimension
+            || u64::from(width) * u64::from(height) > r.limits.max_pixels
+        {
+            return Err(limit("MP4 video dimensions exceed configured bounds"));
+        }
     }
     let children = entry.body.suffix(fixed)?;
     let mut cursor = children.start;
@@ -1052,7 +1158,7 @@ fn avcc(r: &mut Reader<'_>, span: Span) -> Result<()> {
     nal_units(r, &mut cursor, span.end, pps)?;
     if cursor < span.end {
         require(
-            matches!(bytes[1], 100 | 110 | 122 | 144),
+            matches!(bytes[1], 100 | 110 | 122 | 144 | 244),
             "unqualified AVC configuration extension",
         )?;
         require(
@@ -1318,6 +1424,17 @@ mod tests {
     use std::{io::Write, path::PathBuf, sync::atomic::AtomicBool, time::Duration};
 
     static CANCELLED: AtomicBool = AtomicBool::new(false);
+    // Keep the original audio guard's tests intact while exercising the shared
+    // policy boundary. Production callers validate their own decoder limits.
+    fn validate(
+        file: &File,
+        selected: u32,
+        limits: AudioDecodeLimits,
+        control: DecodeControl<'_>,
+    ) -> Result<u64> {
+        limits.validate()?;
+        super::validate(file, Selection::Audio(selected), limits.into(), control)
+    }
     fn control() -> DecodeControl<'static> {
         DecodeControl {
             timeout: Duration::from_secs(10),
@@ -1374,8 +1491,21 @@ mod tests {
         chunked_mp4(bits, wide, constant, 1)
     }
     fn chunked_mp4(bits: u32, wide: bool, constant: bool, chunks: u32) -> Vec<u8> {
+        described_mp4(Kind::Audio, bits, wide, constant, chunks)
+    }
+    fn described_mp4(kind: Kind, bits: u32, wide: bool, constant: bool, chunks: u32) -> Vec<u8> {
         let original = fixture();
-        let at = tag(&original, b"mp4a") - 4;
+        let description_start = tag(&original, b"stsd");
+        let at = description_start
+            + tag(
+                &original[description_start..],
+                if kind == Kind::Audio {
+                    b"mp4a"
+                } else {
+                    b"avc1"
+                },
+            )
+            - 4;
         let length = u32::from_be_bytes(original[at..at + 4].try_into().unwrap()) as usize;
         let description = original[at..at + length].to_vec();
         let mut stsd = words(&[0, 1]);
@@ -1421,14 +1551,20 @@ mod tests {
             b"dref",
             [words(&[0, 1, 12]), b"url ".to_vec(), words(&[1])].concat(),
         );
-        let minf = atom(
-            b"minf",
-            [atom(b"smhd", vec![0; 8]), atom(b"dinf", dref), stbl].concat(),
-        );
+        let header = if kind == Kind::Audio {
+            atom(b"smhd", vec![0; 8])
+        } else {
+            atom(b"vmhd", words(&[1, 0, 0]))
+        };
+        let minf = atom(b"minf", [header, atom(b"dinf", dref), stbl].concat());
         let mut mdhd = vec![0; 24];
         set32(&mut mdhd, 12, 48_000);
         let mut hdlr = vec![0; 24];
-        hdlr[8..12].copy_from_slice(b"soun");
+        hdlr[8..12].copy_from_slice(if kind == Kind::Audio {
+            b"soun"
+        } else {
+            b"vide"
+        });
         let mdia = atom(
             b"mdia",
             [atom(b"mdhd", mdhd), atom(b"hdlr", hdlr), minf].concat(),
@@ -1446,6 +1582,224 @@ mod tests {
             moov,
         ]
         .concat()
+    }
+
+    fn with_tracks(video: u32, audio: u32) -> Vec<u8> {
+        let video_file = described_mp4(Kind::Video, 8, false, false, 1);
+        let audio_file = small_mp4(8, false, false);
+        let movie = tag(&video_file, b"moov") - 4;
+        let video_start = tag(&video_file, b"trak") - 4;
+        let audio_start = tag(&audio_file, b"trak") - 4;
+        let mut body = video_file[movie + 8..video_start].to_vec();
+        for index in 0..video + audio {
+            let mut track = if index < video {
+                video_file[video_start..].to_vec()
+            } else {
+                audio_file[audio_start..].to_vec()
+            };
+            let header = tag(&track, b"tkhd");
+            set32(&mut track, header + 16, index + 1);
+            body.extend(track);
+        }
+        [video_file[..movie].to_vec(), atom(b"moov", body)].concat()
+    }
+
+    fn video_limits() -> InputLimits {
+        InputLimits {
+            max_pixels: 16_777_216,
+            ..AudioDecodeLimits::default().into()
+        }
+    }
+
+    fn video_admission(file: &File, limits: InputLimits) -> Result<u64> {
+        super::validate(file, Selection::Video, limits, control())
+    }
+
+    #[test]
+    fn every_committed_mp4_passes_video_allocation_admission() {
+        use std::io::{Seek, SeekFrom};
+        let fixtures = [
+            path("fixtures", "cfr-bframes.mp4"),
+            path("fixtures", "offset-bframes.mp4"),
+            path("fixtures", "vfr.mp4"),
+            path("fixtures", "rotated90.mp4"),
+            path("../../deadpan-media-worker/tests/fixtures", "rgb1_24.mp4"),
+            path(
+                "../../deadpan-media-worker/tests/fixtures",
+                "rgb2_24_audio.mp4",
+            ),
+            path("../../deadpan-media-worker/tests/fixtures", "rgb25_24.mp4"),
+            path(
+                "../../deadpan-media-worker/tests/fixtures",
+                "rgb30_30000_1001.mp4",
+            ),
+            // Admission establishes bounded declarations, not payload or color validity.
+            path(
+                "../../deadpan-media-worker/tests/fixtures",
+                "rgb1_24_corrupt.mp4",
+            ),
+            path(
+                "../../deadpan-media-worker/tests/fixtures",
+                "rgb1_24_no_tags.mp4",
+            ),
+        ];
+        for path in fixtures {
+            let mut source = File::open(&path).unwrap();
+            source.seek(SeekFrom::Start(19)).unwrap();
+            let used = video_admission(&source, video_limits())
+                .unwrap_or_else(|error| panic!("{}: {error}", path.display()));
+            assert!(used > 0 && used <= HEADER_BYTES);
+            assert_eq!(source.stream_position().unwrap(), 19);
+        }
+    }
+
+    #[test]
+    fn video_selection_requires_one_video_and_bounded_audio_inventory() {
+        for (video, audio) in [(0, 1), (2, 0)] {
+            assert_eq!(
+                code(
+                    video_admission(&file(&with_tracks(video, audio)), video_limits()).unwrap_err()
+                ),
+                "unsupported_streams"
+            );
+        }
+        video_admission(&file(&with_tracks(1, 32)), video_limits()).unwrap();
+        assert_eq!(
+            code(video_admission(&file(&with_tracks(1, 33)), video_limits()).unwrap_err()),
+            "resource_limit"
+        );
+        assert_eq!(
+            code(
+                video_admission(
+                    &File::open(path("audio-fixtures", "pcm-stereo-48000.wav")).unwrap(),
+                    video_limits(),
+                )
+                .unwrap_err()
+            ),
+            "unsupported_streams"
+        );
+    }
+
+    #[test]
+    fn declared_video_geometry_obeys_dimension_and_pixel_limits() {
+        let original = described_mp4(Kind::Video, 8, false, false, 1);
+        let dimensions = tag(&original, b"avc1") + 28;
+        for (width, height, expected) in [
+            (0_u16, 16_u16, "invalid_input"),
+            (16, 0, "invalid_input"),
+            (8193, 16, "resource_limit"),
+            (16, 8193, "resource_limit"),
+            (8192, 8192, "resource_limit"),
+        ] {
+            let mut changed = original.clone();
+            changed[dimensions..dimensions + 2].copy_from_slice(&width.to_be_bytes());
+            changed[dimensions + 2..dimensions + 4].copy_from_slice(&height.to_be_bytes());
+            assert_eq!(
+                code(video_admission(&file(&changed), video_limits()).unwrap_err()),
+                expected
+            );
+        }
+        for limits in [
+            InputLimits {
+                max_pixels: 1,
+                ..video_limits()
+            },
+            InputLimits {
+                max_dimension: 1,
+                ..video_limits()
+            },
+        ] {
+            assert_eq!(
+                code(video_admission(&file(&original), limits).unwrap_err()),
+                "resource_limit"
+            );
+        }
+    }
+
+    #[test]
+    fn video_admission_checks_ignored_audio_counts_and_every_packet_size() {
+        let original = with_tracks(1, 1);
+        let tables: Vec<_> = original
+            .windows(4)
+            .enumerate()
+            .filter_map(|(index, bytes)| (bytes == b"stz2").then_some(index))
+            .collect();
+        assert_eq!(tables.len(), 2);
+        for table in tables {
+            let mut changed = original.clone();
+            set32(&mut changed, table + 12, 1_000_001);
+            assert_eq!(
+                code(video_admission(&file(&changed), video_limits()).unwrap_err()),
+                "resource_limit"
+            );
+            let mut changed = original.clone();
+            changed[table + 16] = 8;
+            assert_eq!(
+                code(
+                    video_admission(
+                        &file(&changed),
+                        InputLimits {
+                            max_packet_bytes: 7,
+                            ..video_limits()
+                        }
+                    )
+                    .unwrap_err()
+                ),
+                "resource_limit"
+            );
+        }
+        assert_eq!(
+            code(
+                video_admission(
+                    &file(&original),
+                    InputLimits {
+                        max_packets: 3,
+                        ..video_limits()
+                    }
+                )
+                .unwrap_err()
+            ),
+            "resource_limit"
+        );
+        let original = fixture();
+        for table in original
+            .windows(4)
+            .enumerate()
+            .filter_map(|(index, bytes)| (bytes == b"stsz").then_some(index))
+        {
+            let mut changed = original.clone();
+            set32(&mut changed, table + 16, 16 * 1024 * 1024 + 1);
+            assert_eq!(
+                code(video_admission(&file(&changed), video_limits()).unwrap_err()),
+                "resource_limit"
+            );
+        }
+    }
+
+    #[test]
+    fn sparse_large_table_is_rejected_before_reading_or_allocating_its_rows() {
+        let mut source = tempfile::tempfile().unwrap();
+        let prefix = atom(b"ftyp", [b"isom".as_slice(), &[0; 4], b"mp41"].concat());
+        source.write_all(&prefix).unwrap();
+        let rows = 1_000_001_u32;
+        let table_size = 16 + rows * 4;
+        let parents = [b"moov", b"trak", b"mdia", b"minf", b"stbl"];
+        for (index, tag) in parents.iter().enumerate() {
+            source
+                .write_all(&(table_size + (parents.len() - index) as u32 * 8).to_be_bytes())
+                .unwrap();
+            source.write_all(*tag).unwrap();
+        }
+        source.write_all(&table_size.to_be_bytes()).unwrap();
+        source.write_all(b"stco").unwrap();
+        source.write_all(&words(&[0, rows])).unwrap();
+        source
+            .set_len(prefix.len() as u64 + parents.len() as u64 * 8 + u64::from(table_size))
+            .unwrap();
+        assert_eq!(
+            code(video_admission(&source, video_limits()).unwrap_err()),
+            "resource_limit"
+        );
     }
 
     #[test]
@@ -1650,7 +2004,7 @@ mod tests {
             atoms: 0,
             rows: 0,
             samples: 0,
-            limits: AudioDecodeLimits::default(),
+            limits: AudioDecodeLimits::default().into(),
         };
         reader.bytes::<4>(0).unwrap();
         let sizes = Sizes {

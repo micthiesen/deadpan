@@ -7,9 +7,16 @@
 //! Encoded RGB values retain their source transfer and primaries. No gamma or
 //! gamut conversion, deinterlacing, tone mapping, or orientation is performed.
 
-use std::{fs::File, sync::atomic::AtomicBool, time::Duration};
+use std::{
+    fs::File,
+    sync::atomic::AtomicBool,
+    time::{Duration, Instant},
+};
 
 pub mod audio;
+mod input;
+mod matroska_input;
+mod video_codec;
 
 #[derive(Clone, Copy, Debug)]
 pub struct DecodeLimits {
@@ -19,6 +26,8 @@ pub struct DecodeLimits {
     /// Demuxed packets since the most recent successful seek.
     pub max_packets: u64,
     pub max_io_bytes_per_call: u64,
+    /// Encoded payload plus side data per packet; container admission checks declarations first.
+    pub max_packet_bytes: u64,
     /// Coded/visible pixels per frame. Also bounds owned RGBA bytes to four times this value.
     pub max_pixels: u64,
     pub max_dimension: u32,
@@ -32,6 +41,7 @@ impl Default for DecodeLimits {
             max_frames: 10_000_000,
             max_packets: 40_000_000,
             max_io_bytes_per_call: 256 * 1024 * 1024,
+            max_packet_bytes: 16 * 1024 * 1024,
             max_pixels: 16_777_216,
             max_dimension: 8192,
             max_packets_per_frame: 10_000,
@@ -47,6 +57,7 @@ impl DecodeLimits {
             || !(1..=10_000_000).contains(&self.max_frames)
             || !(1..=40_000_000).contains(&self.max_packets)
             || !(1..=1024 * 1024 * 1024).contains(&self.max_io_bytes_per_call)
+            || !(1..=16 * 1024 * 1024).contains(&self.max_packet_bytes)
             || !(1..=8192 * 8192).contains(&self.max_pixels)
             || !(1..=8192).contains(&self.max_dimension)
             || !(1..=10_000).contains(&self.max_packets_per_frame)
@@ -183,13 +194,108 @@ pub struct SourceDecoder {
     max_pixels: u64,
 }
 
+#[cfg(test)]
+mod opening_budget_tests {
+    use super::*;
+    use std::path::PathBuf;
+
+    #[test]
+    fn admission_and_controlled_first_frame_share_the_opening_io_budget() {
+        let cancelled = AtomicBool::new(false);
+        let control = DecodeControl {
+            timeout: Duration::from_secs(2),
+            cancelled: &cancelled,
+        };
+        for relative in [
+            "../deadpan-media-worker/tests/fixtures/rgb1_24.mp4",
+            "tests/fixtures/full709.mkv",
+        ] {
+            let file =
+                File::open(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(relative)).unwrap();
+            let defaults = DecodeLimits::default();
+            let used =
+                input::validate(&file, input::Selection::Video, defaults.into(), control).unwrap();
+            assert!(used > 0);
+            // Measure the pinned native decoder's requirement on trusted fixture
+            // bytes. Avoid coupling this check to AVIO's current fill strategy.
+            let admitted = |bytes| {
+                ffi::Decoder::open(
+                    file.try_clone().unwrap(),
+                    DecodeLimits {
+                        max_io_bytes_per_call: bytes,
+                        ..defaults
+                    },
+                    0,
+                    control,
+                )
+                .is_ok()
+            };
+            let mut low = 1;
+            let mut high = 1024 * 1024;
+            assert!(admitted(high));
+            while low < high {
+                let middle = low + (high - low) / 2;
+                if admitted(middle) {
+                    high = middle;
+                } else {
+                    low = middle + 1;
+                }
+            }
+            let limit = low.max(used);
+            let limits = DecodeLimits {
+                max_io_bytes_per_call: limit,
+                ..defaults
+            };
+            assert_eq!(
+                input::validate(&file, input::Selection::Video, limits.into(), control).unwrap(),
+                used
+            );
+            assert!(admitted(limit));
+            let error = SourceDecoder::open(file.try_clone().unwrap(), limits, control)
+                .err()
+                .unwrap();
+            assert!(
+                matches!(error, SourceDecodeError::Native { code, .. } if code == "resource_limit")
+            );
+            let mut decoder = SourceDecoder::open(
+                file,
+                DecodeLimits {
+                    max_io_bytes_per_call: low + used,
+                    ..defaults
+                },
+                control,
+            )
+            .unwrap();
+            assert!(decoder.next_metadata(control).unwrap().is_some());
+        }
+    }
+}
+
 impl SourceDecoder {
     pub fn open(
         file: File,
         limits: DecodeLimits,
         control: DecodeControl<'_>,
     ) -> Result<Self, SourceDecodeError> {
-        let (inner, info) = ffi::Decoder::open(file, limits, control)?;
+        let started = Instant::now();
+        ffi::preflight(control)?;
+        limits.validate()?;
+        let preflight_io_bytes =
+            input::validate(&file, input::Selection::Video, limits.into(), control)?;
+        let timeout = control
+            .timeout
+            .checked_sub(started.elapsed())
+            .filter(|value| !value.is_zero())
+            .ok_or_else(|| SourceDecodeError::Native {
+                code: "deadline_exceeded".into(),
+                message: "video header admission exhausted the opening budget".into(),
+            })?;
+        let (inner, info) = ffi::Decoder::open(
+            file,
+            limits,
+            preflight_io_bytes,
+            DecodeControl { timeout, ..control },
+        )?;
         Ok(Self {
             inner,
             info,
@@ -287,6 +393,7 @@ mod ffi {
         max_frames: u64,
         max_packets: u64,
         max_io_bytes_per_call: u64,
+        max_packet_bytes: u64,
         max_pixels: u64,
         max_dimension: u32,
         max_packets_per_frame: u32,
@@ -374,6 +481,7 @@ mod ffi {
             fd: c_int,
             length: i64,
             limits: *const Limits,
+            preflight_io_bytes: u64,
             timeout_ms: u64,
             cancelled: Cancel,
             opaque: *const c_void,
@@ -459,6 +567,7 @@ mod ffi {
         pub(super) fn open(
             file: File,
             limits: DecodeLimits,
+            preflight_io_bytes: u64,
             ctl: DecodeControl<'_>,
         ) -> Result<(Self, SourceStreamInfo), SourceDecodeError> {
             let (timeout, opaque) = control(ctl)?;
@@ -477,6 +586,7 @@ mod ffi {
                 max_frames: limits.max_frames,
                 max_packets: limits.max_packets,
                 max_io_bytes_per_call: limits.max_io_bytes_per_call,
+                max_packet_bytes: limits.max_packet_bytes,
                 max_pixels: limits.max_pixels,
                 max_dimension: limits.max_dimension,
                 max_packets_per_frame: limits.max_packets_per_frame,
@@ -491,6 +601,7 @@ mod ffi {
                     file.as_raw_fd(),
                     length,
                     &limits,
+                    preflight_io_bytes,
                     timeout,
                     cancelled,
                     opaque,

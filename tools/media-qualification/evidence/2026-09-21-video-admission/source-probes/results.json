@@ -1,0 +1,32 @@
+[
+  {
+    "name": "software-cfr",
+    "exit_code": 0,
+    "report": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-admission-source-probes-p54nm3vc/software-cfr.json"
+  },
+  {
+    "name": "software-no-b",
+    "exit_code": 0,
+    "report": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-admission-source-probes-p54nm3vc/software-no-b.json"
+  },
+  {
+    "name": "software-vfr-no-b",
+    "exit_code": 0,
+    "report": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-admission-source-probes-p54nm3vc/software-vfr-no-b.json"
+  },
+  {
+    "name": "software-offset",
+    "exit_code": 0,
+    "report": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-admission-source-probes-p54nm3vc/software-offset.json"
+  },
+  {
+    "name": "hardware-no-b",
+    "exit_code": 0,
+    "report": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-admission-source-probes-p54nm3vc/hardware-no-b.json"
+  },
+  {
+    "name": "generated-ffv1",
+    "exit_code": 0,
+    "report": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-admission-source-probes-p54nm3vc/generated-ffv1.json"
+  }
+]

@@ -53,7 +53,7 @@ cargo run -p deadpan-app
 `--smoke-test` opens the native window, closes it after frames have rendered, and checks the shutdown callback. Run it for native startup or lifecycle changes. Where an interactive check adds evidence, confirm the affected layout, focus, keyboard navigation, and close behavior. Do not repeat GUI testing for unrelated pure-core changes. Confirm no media/import/render controls imply unavailable functionality. For lifecycle changes, verify the intended quit/SIGTERM behavior and exit status. Record the actual OS/hardware and what was observed; a successful compile is not a UI smoke test.
 
 The source preview opens explicitly tagged progressive 8-bit SDR H.264/FFV1 in
-MP4/Matroska. Use `cargo run -p deadpan-app -- --preview-source /absolute/video.mp4`,
+the [admitted MP4/Matroska grammar](SOURCE_ADMISSION.md). Use `cargo run -p deadpan-app -- --preview-source /absolute/video.mp4`,
 or focus the path with `⌘O` and press Enter. Left/Right step original frames;
 Home/End select the first/last frame. Text editing and IME events suppress frame
 commands. The app does not yet import into projects, edit, play audio or export.
