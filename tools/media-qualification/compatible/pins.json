@@ -1,0 +1,19 @@
+{
+  "ffmpeg": {
+    "version": "8.0.3",
+    "tag": "n8.0.3",
+    "commit": "8ae0b34901ba60a802f183ee75a250a9fc3e09a5",
+    "archive_url": "https://ffmpeg.org/releases/ffmpeg-8.0.3.tar.xz",
+    "archive_sha256": "6136812ea6d4e68bdba27e33c2a94382711cdf4f8602ffef056ff792bd6f9818",
+    "signature_sha256": "975f9512458fc39cacf35a9496f51c9d82e3a3b684a9db111bedcfa523f2b2b8",
+    "key_url": "https://ffmpeg.org/ffmpeg-devel.asc",
+    "key_sha256": "397b3becedcd5a98769967ff1ff8501ddc89f8368b8f766e4701377d7dbaabe5",
+    "signing_key_fingerprint": "FCF986EA15E6E293A5644F10B4322F04D67658D8"
+  },
+  "rsmpeg": {
+    "repository": "https://github.com/larksuite/rsmpeg.git",
+    "commit": "b21fcfde8bb1ffdc179504e370e330385baa9819",
+    "version": "0.18.0+ffmpeg.8.0",
+    "license": "MIT"
+  }
+}

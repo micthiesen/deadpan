@@ -1,0 +1,17 @@
+[package]
+name = "deadpan-rsmpeg-qualification"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[[bin]]
+name = "rsmpeg-probe"
+path = "probe.rs"
+
+[dependencies]
+# qualify.py creates this sibling solely from the exact committed git archive
+# pinned in pins.json. No upstream working tree or ignored output enters it.
+rsmpeg = { path = "../rsmpeg", features = ["link_system_ffmpeg"] }
+serde_json = "1.0"
