@@ -192,6 +192,23 @@ conversion loop; it does not select a general Rust media binding for import or
 playback. It does not replace the model worker's development serialization
 dependency or qualify app bundling, signing, or redistribution of model runtimes.
 
+## Source resampling boundary
+
+`deadpan-audio` adds no third-party package or native library. It reuses the
+locked core/media/serialization dependencies and implements a bounded,
+versioned finite FIR in safe Rust. Exact fractional start phase is part of the
+source mapping contract. The pinned FFmpeg SWR API's integer drop/insertion and
+phase-table resolution do not supply an arbitrary initial fractional position;
+Rubato's current asynchronous API also keeps its running phase private. Neither
+was added as an unused dependency or treated as an exact-phase solution.
+
+[Source preparation](AUDIO_PREPARATION.md) defines the kernel and speaker matrix.
+Its [measurements](qualification/audio-preparation-2026-09-21.md) retain actual
+signal errors and block costs. This is a worker sampler, not a replacement for
+the qualified stretch adapter or an audio-device selection. A full listening
+corpus, format/layout choices, voice integration and callback scheduling remain
+required.
+
 ## Qualification still required
 
 Gate A remains open. Before adding each executable or native dependency, record

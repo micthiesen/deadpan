@@ -1,0 +1,111 @@
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.17s
+     Running unittests src/main.rs (target/debug/deps/deadpan_app-9fba61ad7da2710c)
+
+running 41 tests
+test dialogs::tests::project_names_preserve_authored_suffixes_and_end_in_deadpan ... ok
+test navigation::tests::boundaries_include_the_end_and_saturate_without_wrapping ... ok
+test navigation::tests::control_r_is_redo_only_outside_text_and_composition ... ok
+test navigation::tests::endpoint_search_history_and_pane_actions_clear_counts ... ok
+test navigation::tests::counts_saturate_and_zero_never_creates_a_zero_distance_motion ... ok
+test navigation::tests::invalid_prefixes_escape_and_explicit_reset_discard_pending_input ... ok
+test navigation::tests::logical_symbols_and_digits_do_not_assume_a_us_layout ... ok
+test navigation::tests::frame_and_beat_bindings_use_one_accumulated_count ... ok
+test navigation::tests::modified_navigation_and_reserved_shortcuts_do_not_edit ... ok
+test navigation::tests::pane_order_cycles_both_directions_and_reverses_exactly ... ok
+test navigation::tests::native_command_shortcuts_preserve_text_editing_history ... ok
+test navigation::tests::enter_and_escape_belong_to_composition_until_it_finishes ... ok
+test navigation::tests::text_and_ime_discard_pending_normal_mode_bindings ... ok
+test preview::tests::preview_target_bounds_retina_and_preserves_canvas_geometry ... ok
+test dialogs::tests::chosen_project_path_is_returned_once_with_its_extension ... ok
+test dialogs::tests::pending_dialog_rejects_another_and_cancellation_releases_it ... ok
+test worker::project_tests::index_validation_observes_cancellation_between_bounded_chunks ... ok
+test navigation::tests::g_prefix_survives_idle_observation_without_a_clock_or_timeout ... ok
+test preview::tests::pane_focus_survives_egui_arrow_routing_and_cycles_explicitly ... ok
+test preview::tests::text_exit_keeps_final_text_and_returns_to_a_real_pane ... ok
+test worker::tests::nonregular_input_is_rejected_before_hashing ... ok
+test worker::tests::opening_another_source_invalidates_even_completed_old_reply ... ok
+test worker::tests::rapid_navigation_keeps_only_latest_work_and_cancels_inflight_decode ... ok
+test worker::tests::shutdown_cancels_active_and_pending_and_prevents_publication ... ok
+test project::tests::shutdown_finishes_an_admitted_command_before_releasing_the_store ... ok
+test worker::tests::actual_preview_worker_opens_then_coalesces_source_frame_requests ... ok
+test worker::project_tests::cancelled_open_does_not_leave_a_later_project_request_without_a_source ... ok
+test worker::project_tests::sequence_samples_exact_mapping_and_endpoint_policy_after_a_revision_change ... ok
+test project::tests::shutdown_does_not_wait_for_import_and_rejects_new_commands ... ok
+test worker::project_tests::freeze_background_and_empty_sequence_follow_the_plan ... ok
+test project::tests::lost_import_worker_reports_failure_without_closing_project ... ok
+test project::tests::cancel_and_switch_reject_late_prepared_results_and_release_writer_lock ... ok
+test worker::project_tests::revision_receipt_index_and_session_identity_are_checked ... ok
+test worker::project_tests::registered_source_and_sequence_decode_the_same_original_frame ... ok
+test project::tests::explicit_audio_import_is_measured_and_invalid_selected_stream_fails ... ok
+test project::tests::consecutive_cached_insertions_report_distinct_committed_nodes ... ok
+test project::tests::unavailable_linked_original_invalidates_cached_insertion_without_losing_registration ... ok
+test project::tests::prepared_insertion_retains_captured_revision_and_never_retargets_after_undo ... ok
+test project::tests::project_commands_and_undo_continue_during_preparation_and_errors_survive_progress ... ok
+test project::tests::real_import_registers_without_inserting_and_round_trips_entire_history ... ok
+test project::tests::insertion_completion_survives_import_progress_and_replaced_mailbox_updates ... ok
+
+test result: ok. 41 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.63s
+
+     Running tests/headless.rs (target/debug/deps/headless-a9a6d7f26ba79835)
+
+running 2 tests
+test headless_errors_keep_the_same_structured_protocol ... ok
+test native_binary_runs_headless_without_initializing_a_window ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running unittests src/lib.rs (target/debug/deps/deadpan_audio-1311061af1121fde)
+
+running 8 tests
+test matrix::tests::ambiguous_invalid_and_unsupported_layouts_fail_explicitly ... ok
+test matrix::tests::every_supported_non_lfe_speaker_can_be_interpreted ... ok
+test matrix::tests::fixed_matrix_preserves_dynamics_without_normalizing_or_clipping ... ok
+test matrix::tests::malformed_pcm_and_invalid_omitted_lfe_are_rejected ... ok
+test matrix::tests::mono_and_stereo_retain_unity_gain_and_channel_separation ... ok
+test matrix::tests::native_channel_impulses_follow_speaker_bits_with_holes ... ok
+test matrix::tests::sparse_surround_layout_uses_native_interleaved_order ... ok
+test session::tests::index_comparison_checks_cancellation_through_raw_and_derived_chunks ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/resample.rs (target/debug/deps/resample-88326032e3218e5c)
+
+running 7 tests
+test invalid_recipes_and_arithmetic_overflow_fail_without_clamping ... ok
+test source_halo_is_bounded_and_missing_or_invalid_pcm_is_never_substituted ... ok
+test integer_unity_is_exact_and_zero_extension_never_reads_outside_authored_trim ... ok
+test translating_huge_signed_source_and_output_clocks_preserves_fractional_phase ... ok
+test dc_calibration_is_independent_of_level_and_does_not_renormalize_trim_edges ... ok
+test partitions_and_isolated_seeks_are_bit_equal_for_fractional_negative_and_large_origins ... ok
+test actual_tones_preserve_passband_phase_and_reject_aliases_and_images ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.37s
+
+     Running tests/session.rs (target/debug/deps/session-4eaa2c430cefe077)
+
+running 8 tests
+test private_media_read_limits_and_preparation_limits_are_not_silently_relaxed ... ok
+test verified_stereo_unity_preserves_actual_fixture_amplitudes_and_terminal_samples ... ok
+test filter_context_reads_only_the_authored_trim_and_unavailable_selected_samples_fail ... ok
+test cancellation_prevents_admission_and_block_preparation_without_poisoning_the_source ... ok
+test mono_44100_to_mix_rate_keeps_fractional_origin_across_partitions_and_random_seeks ... ok
+test admission_rechecks_identity_stream_and_raw_observations_before_exposing_pcm ... ok
+test unspecified_original_layouts_require_explicit_consistent_host_interpretation ... ok
+test actual_native_aac_layout_cannot_be_reinterpreted_as_different_speakers ... FAILED
+
+failures:
+
+---- actual_native_aac_layout_cannot_be_reinterpreted_as_different_speakers stdout ----
+
+thread 'actual_native_aac_layout_cannot_be_reinterpreted_as_different_speakers' (37848274) panicked at crates/deadpan-audio/tests/session.rs:450:5:
+assertion failed: original.samples.iter().any(|sample| sample.abs() > 0.01)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    actual_native_aac_layout_cannot_be_reinterpreted_as_different_speakers
+
+test result: FAILED. 7 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s
+
+error: test failed, to rerun pass `-p deadpan-audio --test session`

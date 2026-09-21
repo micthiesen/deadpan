@@ -1,0 +1,49 @@
+//! Bounded source preparation for worker threads, never an audio callback.
+//! Exact affine sampling and explicit channel matrices are shared by consumers;
+//! this is not yet the voice/effect graph, stretcher binding, or device engine.
+
+mod matrix;
+mod resample;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+mod session;
+
+pub use matrix::StereoMatrix;
+pub use resample::{PcmWindow, ResampleRecipe, Resampler, StereoBlock};
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+pub use session::PreparedSource;
+
+use std::sync::atomic::{AtomicBool, Ordering};
+
+pub const RESAMPLER_ID: &str = "deadpan-exact-sinc-bh4-128-v1";
+pub const MATRIX_ID: &str = "deadpan-stereo-speaker-matrix-v1";
+pub const BOUNDARY_ID: &str = "authored-trim-zero-extension-v1";
+pub const MAX_OUTPUT_FRAMES: u32 = 256;
+pub const MAX_SOURCE_FRAMES: u32 = 32_706;
+pub const MAX_INPUT_MAGNITUDE: f32 = 16.0;
+
+#[derive(Debug, thiserror::Error)]
+pub enum PreparationError {
+    #[error("invalid source preparation recipe: {0}")]
+    InvalidRecipe(&'static str),
+    #[error("source channel layout has no supported explicit stereo interpretation")]
+    UnsupportedLayout,
+    #[error("source PCM does not match the requested window or contains invalid samples")]
+    InvalidSamples,
+    #[error("source preparation was cancelled")]
+    Cancelled,
+    #[error("reopened source audio differs from its qualified index")]
+    IndexMismatch,
+    #[error(transparent)]
+    Time(#[from] deadpan_core::TimeError),
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    #[error(transparent)]
+    Session(#[from] deadpan_media::audio_session::AudioSessionError),
+}
+
+pub(crate) fn check_cancel(cancelled: &AtomicBool) -> Result<(), PreparationError> {
+    if cancelled.load(Ordering::Relaxed) {
+        Err(PreparationError::Cancelled)
+    } else {
+        Ok(())
+    }
+}

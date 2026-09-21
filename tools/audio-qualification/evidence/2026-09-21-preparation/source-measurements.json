@@ -1,0 +1,272 @@
+{
+  "boundary": "authored-trim-zero-extension-v1",
+  "cases": [
+    {
+      "input_bytes": 2080,
+      "lower_nyquist_stopband_peak": null,
+      "maximum_passband_sample_error": 7.819679362919274e-7,
+      "median_ms": 2.975959,
+      "milliseconds_sorted": [
+        1.648292,
+        2.966458,
+        2.9667909999999997,
+        2.975959,
+        2.981125,
+        2.9904580000000003,
+        3.081167
+      ],
+      "mixed_staging_bytes": 4160,
+      "output_sha256_f32le": "27ae29590980f3eb099fac21d8b565283fc7d7799dc92a78c5e66b629052d705",
+      "recipe": {
+        "output_origin": 0,
+        "output_range": {
+          "end": 256,
+          "start": 0
+        },
+        "selection": {
+          "end": 100000,
+          "start": -100000
+        },
+        "source_origin": {
+          "denominator": "3",
+          "numerator": "1"
+        },
+        "source_step": {
+          "denominator": "64",
+          "numerator": "1"
+        }
+      },
+      "source_frames": 260
+    },
+    {
+      "input_bytes": 3920,
+      "lower_nyquist_stopband_peak": null,
+      "maximum_passband_sample_error": 8.033505620730352e-7,
+      "median_ms": 2.979792,
+      "milliseconds_sorted": [
+        2.9762500000000003,
+        2.9775829999999996,
+        2.978542,
+        2.979792,
+        2.98575,
+        2.997834,
+        3.005
+      ],
+      "mixed_staging_bytes": 7840,
+      "output_sha256_f32le": "4a865e8c366004fcacaf46cd72ed46b080eb0c0bc850566959cfc0d415f9cf9d",
+      "recipe": {
+        "output_origin": 0,
+        "output_range": {
+          "end": 256,
+          "start": 0
+        },
+        "selection": {
+          "end": 100000,
+          "start": -100000
+        },
+        "source_origin": {
+          "denominator": "3",
+          "numerator": "1"
+        },
+        "source_step": {
+          "denominator": "160",
+          "numerator": "147"
+        }
+      },
+      "source_frames": 490
+    },
+    {
+      "input_bytes": 2048,
+      "lower_nyquist_stopband_peak": null,
+      "maximum_passband_sample_error": 2.7274931202470043e-8,
+      "median_ms": 0.045250000000000005,
+      "milliseconds_sorted": [
+        0.044958,
+        0.045125,
+        0.045167000000000006,
+        0.045250000000000005,
+        0.045291,
+        0.046208,
+        0.04975
+      ],
+      "mixed_staging_bytes": 4096,
+      "output_sha256_f32le": "6ed3a168413f1f18a9daa34acae8eb4d9b75b1d38a229fe1d1c3677433e9d5fa",
+      "recipe": {
+        "output_origin": 0,
+        "output_range": {
+          "end": 256,
+          "start": 0
+        },
+        "selection": {
+          "end": 100000,
+          "start": -100000
+        },
+        "source_origin": {
+          "denominator": "1",
+          "numerator": "1"
+        },
+        "source_step": {
+          "denominator": "1",
+          "numerator": "1"
+        }
+      },
+      "source_frames": 256
+    },
+    {
+      "input_bytes": 4088,
+      "lower_nyquist_stopband_peak": null,
+      "maximum_passband_sample_error": 7.425306702835144e-7,
+      "median_ms": 2.849125,
+      "milliseconds_sorted": [
+        2.842917,
+        2.843667,
+        2.84775,
+        2.849125,
+        2.8523340000000004,
+        2.856875,
+        3.0172499999999998
+      ],
+      "mixed_staging_bytes": 8176,
+      "output_sha256_f32le": "716a320e245d714b5de232a4a53f36517353f5211c938c1649d51f1b8dd02f7b",
+      "recipe": {
+        "output_origin": 0,
+        "output_range": {
+          "end": 256,
+          "start": 0
+        },
+        "selection": {
+          "end": 100000,
+          "start": -100000
+        },
+        "source_origin": {
+          "denominator": "3",
+          "numerator": "1"
+        },
+        "source_step": {
+          "denominator": "1",
+          "numerator": "1"
+        }
+      },
+      "source_frames": 511
+    },
+    {
+      "input_bytes": 8176,
+      "lower_nyquist_stopband_peak": 5.504644491338695e-7,
+      "maximum_passband_sample_error": 7.55199381141658e-7,
+      "median_ms": 5.61025,
+      "milliseconds_sorted": [
+        5.600292,
+        5.600875,
+        5.601375,
+        5.61025,
+        5.631958,
+        5.794709,
+        5.817667
+      ],
+      "mixed_staging_bytes": 16352,
+      "output_sha256_f32le": "016949f7481919ebe3b9b564144bf385e1f8dfddb1616fde9b8498ae6f8586ab",
+      "recipe": {
+        "output_origin": 0,
+        "output_range": {
+          "end": 256,
+          "start": 0
+        },
+        "selection": {
+          "end": 100000,
+          "start": -100000
+        },
+        "source_origin": {
+          "denominator": "3",
+          "numerator": "1"
+        },
+        "source_step": {
+          "denominator": "1",
+          "numerator": "2"
+        }
+      },
+      "source_frames": 1022
+    },
+    {
+      "input_bytes": 32704,
+      "lower_nyquist_stopband_peak": 3.3738510296643653e-7,
+      "maximum_passband_sample_error": 7.560467196743303e-7,
+      "median_ms": 21.987209,
+      "milliseconds_sorted": [
+        21.938875,
+        21.949959,
+        21.977333,
+        21.987209,
+        21.987375,
+        21.987666,
+        22.059792
+      ],
+      "mixed_staging_bytes": 65408,
+      "output_sha256_f32le": "1c52f06e83eeaf1d67713e0572aca2dc3a1c9996d6e04e2a9408d1727fcf6aa7",
+      "recipe": {
+        "output_origin": 0,
+        "output_range": {
+          "end": 256,
+          "start": 0
+        },
+        "selection": {
+          "end": 100000,
+          "start": -100000
+        },
+        "source_origin": {
+          "denominator": "3",
+          "numerator": "1"
+        },
+        "source_step": {
+          "denominator": "1",
+          "numerator": "8"
+        }
+      },
+      "source_frames": 4088
+    },
+    {
+      "input_bytes": 261632,
+      "lower_nyquist_stopband_peak": 2.646839050157723e-7,
+      "maximum_passband_sample_error": 7.374920267810836e-7,
+      "median_ms": 171.602959,
+      "milliseconds_sorted": [
+        159.567541,
+        168.232041,
+        171.54625000000001,
+        171.602959,
+        172.217417,
+        172.87966699999998,
+        173.549542
+      ],
+      "mixed_staging_bytes": 523264,
+      "output_sha256_f32le": "d5eacae3cdf8a56a6ccf572811e638f2789b07d7ce512413a81728d6435f902b",
+      "recipe": {
+        "output_origin": 0,
+        "output_range": {
+          "end": 256,
+          "start": 0
+        },
+        "selection": {
+          "end": 100000,
+          "start": -100000
+        },
+        "source_origin": {
+          "denominator": "3",
+          "numerator": "1"
+        },
+        "source_step": {
+          "denominator": "1",
+          "numerator": "64"
+        }
+      },
+      "source_frames": 32704
+    }
+  ],
+  "debug_assertions": false,
+  "matrix": "deadpan-stereo-speaker-matrix-v1",
+  "maximum_output_frames": 256,
+  "maximum_source_frames": 32706,
+  "resampler": "deadpan-exact-sinc-bh4-128-v1",
+  "sample_rate": 48000,
+  "schema_version": 1,
+  "scope": "Synthetic stereo source windows through production worker sampler; seven sequential timings per recipe include input clone, mixing and convolution. No decoding, device output, stretch, effects or listening."
+}

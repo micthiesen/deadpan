@@ -34,6 +34,7 @@ Current crates:
 - `crates/deadpan-media`: shared verified source snapshots, measured video/audio indexes, exact video seeks and bounded private PCM caches, plus isolated conversion, strict helper reports and private BLAKE3 output. No database or authored-state mutation.
 - `native/deadpan-source`: separate persistent descriptor-only FFmpeg video/audio decoders, raw metadata, owned RGBA and original-rate interleaved f32. Unsafe code stays in this narrow adapter; unsupported interpretations fail explicitly.
 - `native/deadpan-dsp`: bounded owned planar PCM and the canonical pinned stretch schedule through a safe Rust/C++ boundary. Construct it on a preparation worker; no device output or media decoding.
+- `crates/deadpan-audio`: exact-phase source resampling, explicit speaker matrices and qualified PCM access. Preparation is worker work; full voice graph and device output remain open.
 - `native/deadpan-fileclone`: bounded safe descriptor-clone interface around the macOS system call. The store owns copying, checksums, publication and durability.
 - `crates/deadpan-render`: bounded shared SDR picture pipeline, linear Rec.2020 working textures, explicit sRGB display transform, aspect and rotation. No decoding, document mutation or encoding.
 - `native/deadpan-media-worker`: process-isolated FFmpeg conversion and independent decode verification through bounded descriptor-only AVIO. Only the documented FFI call permits unsafe Rust. Requires the explicitly selected pinned LGPL FFmpeg development prefix.
@@ -316,6 +317,16 @@ The Rust wrapper retains boxed input until after native destruction, bounds each
 read and replay step, and rejects nonfinite/extreme input without normalization.
 Its 1,048,576-frame input bound is explicit; do not fake long-clip support by
 resetting the stretcher at arbitrary chunk boundaries. See [DSP](docs/AUDIO_DSP.md).
+
+Source resampling evaluates each original coordinate from its exact affine
+origin, splitting the integer floor before float conversion. Keep fixed filter
+order and versioned kernel/matrix/trim-context policies. Never reset phase at a
+read boundary or derive speed from rounded allocated counts. A block reads one
+bounded halo intersected with the authored trim; zero extension outside the trim
+must not conceal unavailable selected PCM. Unknown speaker layouts require an
+explicit interpretation, never a channel-count guess. Preserve source dynamics
+and retain the chosen layout in preparation provenance. See
+[source preparation](docs/AUDIO_PREPARATION.md).
 
 Worker stdout contains only versioned, bounded, length-framed control messages;
 stderr is drained into a bounded diagnostic tail. A completed manifest enters

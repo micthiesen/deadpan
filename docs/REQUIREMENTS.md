@@ -111,8 +111,11 @@ provider preview, export and release acceptance remain open.
 original coordinates and distinct authored policies. The [native DSP boundary](AUDIO_DSP.md)
 binds the canonical stretch schedule to owned Rust PCM. [Qualification](qualification/audio-foundation-2026-09-21.md)
 records independent interval references, 50 prior PCM hash matches, native ABI
-sanitizers and the 648-test repository gate. Plan-to-PCM preparation, native
-audio playback, effects and export remain open.
+sanitizers and the 648-test repository gate. [Source preparation](AUDIO_PREPARATION.md)
+now adds exact-phase resampling, explicit stereo speaker mixing and full-index
+verification of original PCM sessions. Its [qualification](qualification/audio-preparation-2026-09-21.md)
+records real PCM/AAC tests, signal checks and measured worker cost. Full
+plan-to-voice preparation, native audio playback, effects and export remain open.
 
 ## Product requirements
 
@@ -126,7 +129,7 @@ audio playback, effects and export remain open.
 | DP-06 | Registers, macros, semantic dot-repeat, configurable bindings. | Open | None. | Parser/transaction/replay tests. |
 | DP-07 | All time/delivery operations in Section 8. | Partial | Core commands insert/delete/move/group/ungroup nodes, wrap/update structural repeats, and change Hold duration/provider. No rendered creative operation or interactive inspector yet. | Remaining operations, semantic targeting, recipe fixture renders, and editable inspector demos. |
 | DP-08 | All framing/picture operations and keyboard target selection. | Partial | [Canvas geometry transactions](PRESENTATION_BASIS.md) preserve frame rate, nodes and marks; source-derived geometry uses qualified receipt metadata. | Framing/camera operations, keyboard target selection, effect reevaluation, and tracking/geometry/interaction tests. |
-| DP-09 | All audio operations with preserved intentional dynamics. | Partial | No app audio operations. [Raw DSP qualification](qualification/audio-2026-09-20.md) retains failed targets. The [canonical worker prototype](qualification/audio-canonical-2026-09-20.md) supplies the single schedule now used by the bounded [production DSP adapter](AUDIO_DSP.md), with pinned vendored headers, owned PCM, explicit recipe identity and cooperative replay. [Structural planning](AUDIO_PLAN.md) preserves audio policies without claiming effects render. | Plan-to-PCM integration, resampling/downmix, fades/gain/tails/room tone/limiting, all remaining audio operations, preview/export equivalence, listening, devices, long-clip preparation and cache lifecycle. |
+| DP-09 | All audio operations with preserved intentional dynamics. | Partial | No app audio operations. [Raw DSP qualification](qualification/audio-2026-09-20.md) retains failed targets. The [canonical worker prototype](qualification/audio-canonical-2026-09-20.md) supplies the single schedule now used by the bounded [production DSP adapter](AUDIO_DSP.md). [Structural planning](AUDIO_PLAN.md) preserves policies; [source preparation](AUDIO_PREPARATION.md) implements exact-phase resampling, explicit matrices without loudness normalization and bounded qualified PCM reads. | Plan-to-voice/stretch integration, authored layout choice, full signal/format/listening corpus, fades/gain/tails/room tone/limiting, all remaining audio operations, preview/export equivalence, devices, long-clip preparation and cache lifecycle. |
 | DP-10 | Local transcript, timing refinement, shot/silence proposals. | Open | None. | Analysis accuracy and correction tests. |
 | DP-11 | Selected target tracking with manual correction and loss handling. | Open | None. | Occlusion/shot-change fixtures. |
 | DP-12 | Local AI hold generation, exact seams/duration, variants, acceptance. | Open | A [real supervised MLX development adapter](qualification/model-worker-2026-09-21.md) uses exact bridge planning and interior sampling, with decoded-file timing/color/hash checks. [Generated Hold semantics](GENERATED_HOLDS.md) retain sampling and resize fallback. [Dedicated store acceptance](GENERATION_ACCEPTANCE.md) binds the selected Ready receipt, retained inputs and derived assets to one reversible edit. Generic ingress remains guarded; no app backend or qualified model pack. | Source joins, speech preservation, source/color context, audition/variants, app integration, and the full qualified model corpus. |

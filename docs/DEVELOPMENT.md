@@ -41,6 +41,19 @@ Prefer meaningful unit tests, integration tests, and deterministic headless harn
 
 The gate verifies only the implemented foundation. It does not establish media accuracy, AI quality, accessibility conformance, signed distribution, or performance budgets. Those require the evidence in the [requirement tracker](REQUIREMENTS.md) and specification.
 
+Source audio preparation has a deterministic headless signal/performance probe:
+
+```sh
+cargo run -p deadpan-audio --release --example qualify_source --locked
+```
+
+It prints JSON for seven source-rate/phase cases, actual output hashes, sampled
+signal errors and seven block timings per case. It measures the production
+sampler and matrix on synthetic stereo windows, including staging. It does not
+measure decoding, a full mix, device deadlines or listening quality. The crate's
+integration tests separately exercise verified PCM/AAC sessions and explicit
+speaker interpretation. See [source preparation](AUDIO_PREPARATION.md).
+
 ## Native application smoke test
 
 On a supported Apple Silicon Mac:

@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "base_revision": "cc403cb80e44647abef08e16bdda913830bb2c44",
+  "scope": "Cargo workspace changes, new deadpan-audio crate, source preparation documentation and evidence",
+  "reviews": [
+    {
+      "lens": "general code, API, failure handling, bounds, tests, documentation",
+      "reviewer": "independent check agent",
+      "findings": [],
+      "checks": "23 focused tests and strict crate Clippy passed"
+    },
+    {
+      "lens": "exact affine phase and signal processing",
+      "reviewer": "matrix author reviewing separately authored sampler, sampler tests and probe only",
+      "findings": [],
+      "checks": "7 sampler tests passed"
+    }
+  ],
+  "main_integration": [
+    "Verified explicit speaker choices cannot contradict native layouts",
+    "Added actual AAC original-to-prepared unity comparison using fixture impulse at sample100",
+    "Reviewed complete authored diff and required full workspace gate"
+  ],
+  "remaining": [
+    "Full voice graph, stretch/plan binding, authored layout choice, device output and cache lifecycle",
+    "Listening and full frequency/format corpus",
+    "High-rate worker cost exceeds device deadlines; no callback safety claim"
+  ],
+  "gui": "Not repeated: no UI, keyboard, focus or native lifecycle changes"
+}

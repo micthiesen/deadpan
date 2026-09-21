@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "started_utc": "2026-09-21T22:39:17.214819+00:00",
+  "base_revision": "cc403cb80e44647abef08e16bdda913830bb2c44",
+  "checks": [
+    {
+      "name": "format",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 1.336,
+      "log": "format.log"
+    },
+    {
+      "name": "clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 1.908,
+      "log": "clippy.log"
+    },
+    {
+      "name": "test",
+      "command": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked"
+      ],
+      "exit_code": 101,
+      "seconds": 5.528,
+      "log": "test.log"
+    }
+  ],
+  "status": "failed",
+  "skipped": [
+    "Native GUI: no UI/startup/lifecycle changes in this milestone. Prior native workspace evidence remains separate.",
+    "Device output and listening: no native playback backend is implemented."
+  ]
+}

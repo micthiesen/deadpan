@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "base_revision": "cc403cb80e44647abef08e16bdda913830bb2c44",
+  "scope": "Final uncommitted source/doc delta, excluding evidence directory to avoid self-reference",
+  "files_sha256": {
+    "AGENTS.md": "a88406116c6f506a705537686a6456d72047656463de66afb4cf11b9f123b8e2",
+    "Cargo.lock": "86cb018da42d940d1854721fa913026827fa43d887a62cdfc378eb2006b887e3",
+    "Cargo.toml": "cc1f329d64401dc37b93f1e35b45c4fb5a2441cd55a7a3f2aa43150e7573a7bc",
+    "README.md": "1529357887318727df5e47f66f50492f7b695ca1f8572ea95921ba54ade781f2",
+    "crates/deadpan-audio/Cargo.toml": "1c873175b877b50842298c93fee465b0dc4d839a33cbf07634c460dab27883d3",
+    "crates/deadpan-audio/examples/qualify_source.rs": "1018a598e7f6d77476c058d68f4713c3e82ecccbfdd8c628153b7618aef1c415",
+    "crates/deadpan-audio/src/lib.rs": "d0c9a200db8a90934fb0d39acf14b4533be8b87cf3c528bd3cb58f9cabbaee0b",
+    "crates/deadpan-audio/src/matrix.rs": "447eee01eb575ed701e99dd6770bc186cf770750a0a7a46c610cda9062a01732",
+    "crates/deadpan-audio/src/resample.rs": "cf630ce0f30050e2da6cd4fe00f6672468c7310add617058d6aa0c7ec5ed22c1",
+    "crates/deadpan-audio/src/session.rs": "71df678c227f43ee6cddc3afe86f88e662d4d5849f934f7744814f58af0861fe",
+    "crates/deadpan-audio/tests/resample.rs": "65cca48d611b5ad490a9cd1d3a38f93174d690adf8bddcf13cab58a905a82e83",
+    "crates/deadpan-audio/tests/session.rs": "a609cc65cbfffccd9e9645738b14cebeadd2ffb3b0dcdb57c10e3aa80fd43720",
+    "docs/ARCHITECTURE.md": "d3d15bb09dc1532f1533f8743b0f58028e7fc0f022ea0992338d784ea4bf3f5c",
+    "docs/AUDIO_PREPARATION.md": "143fe350102814ceeb08b2e5f43aa4d4833100afb20cf97d3b143d7a17dcd8f2",
+    "docs/DEPENDENCIES.md": "c8bca2364cfc4e323cc5591c97381c86aba7f3e97ae3c7d4f7cc3081fefc85e6",
+    "docs/DEVELOPMENT.md": "7bfdf9a3a33ec1c9b90eeb9ce8ab1f58e54b15ceeae698c7bf506de26dbd98cd",
+    "docs/REQUIREMENTS.md": "2eb7afed2ce5cd99c34d4aa01b3664407da9e80117911710895ff832e9d8da08",
+    "docs/qualification/audio-preparation-2026-09-21.md": "0bacb1b029d365c83fa79ff2bdd0e1749b671f84ecbab60ade22a1f52a2dba36"
+  },
+  "existing_fixture_inputs_sha256": {
+    "native/deadpan-source/tests/audio-fixtures/pcm-stereo-48000.wav": "e79aba90eab42dc057171be52be9ecb794c3e2790c5731783270ece73c24d2ee",
+    "native/deadpan-source/tests/audio-fixtures/pcm-mono-44100.wav": "b95b3debd2c83cf2590fddfaa98276c23c3b383b720fd96ac52c2c00c668318b",
+    "native/deadpan-source/tests/fixtures/cfr-bframes.mp4": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+    "tools/media-qualification/media_probe.c": "cd676b9d27bdb41878e61e1b731677344af3dd47ed2d4155ccb2513a1ee1c5e2"
+  }
+}
