@@ -1,0 +1,11 @@
+{
+  "accepted": false,
+  "cancellation_sent": false,
+  "clean_exit": true,
+  "discarded_log_bytes": 0,
+  "elapsed_seconds": 0.569633542,
+  "failure": "Worker(WorkerFailure { code: BackendFailure, detail: Diagnostic(\"context manifest hash mismatch\") })",
+  "faults": [],
+  "media_validated": false,
+  "state": "Failed"
+}

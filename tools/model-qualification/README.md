@@ -1,4 +1,70 @@
-# Local model qualification evidence
+# Local model qualification
+
+This directory contains a development adapter and measurement evidence. The app
+does not install or invoke it yet. It requires an already assembled, pinned
+private development environment and model data. It is not an end-user setup
+procedure or a selected shipping runtime.
+
+## Supervised bridge probe
+
+`worker.py` accepts one `deadpan-jobs` framed request. `worker_protocol.py` checks
+the Rust wire contract without importing MLX. `mlx_backend.py` binds the pinned
+LTX-2.3 q4 pipeline, keeps its CRF-33 conditioning preprocessing, polls
+cancellation between denoising steps, and serializes native and sampled RGB
+sequences. `worker_media.py` verifies the legal model grid, exact interior sample
+positions, full decoded RGB, frame timestamps/durations, and explicit color tags.
+
+The current adapter deliberately supports only two-endpoint bridges, Still
+motion, 768×320, native 24 fps and `8*k+1` native frames in [9, 97]. These are
+qualification bounds, not timeline UI limits or full provider capabilities.
+It uses the existing developer GPL FFmpeg with lossless RGB intermediates.
+Neither this codec choice nor the runtime is selected for distribution.
+
+Build the Rust developer examples from the repository:
+
+```sh
+cargo build -p deadpan-jobs --examples --locked
+cargo run -p deadpan-jobs --example plan_mlx_bridge --locked -- 24 24 1
+```
+
+Run `prepare_run.py --help` inside the already pinned private environment for
+the required local paths. It prepares fresh, padded conditioning images, records
+their original hashes and explicit color interpretation, obtains the plan from
+Rust, and writes a host configuration. Its `--input-color-interpretation` field
+is an explicit fixture assumption; preparation does not perform a color transform.
+The `--run-directory` must not exist. No runtime or model is downloaded.
+
+Then, from the repository:
+
+```sh
+cargo run -p deadpan-jobs --example qualify_model_worker --locked -- /absolute/run/host-config.json
+python3 tools/model-qualification/verify_run.py /absolute/run
+```
+
+The Rust example supplies a cleared environment, launches the selected private
+interpreter with `-I`, supervises the group, applies the lifecycle, and snapshots
+the candidate after clean exit. The independent verifier reads
+`host/candidate.snapshot.mp4`. The host stays in `Validating`; no project edit,
+candidate acceptance, promotion, or job persistence happens here. Provenance and
+the native sequence remain development outputs, not yet managed project assets.
+
+Use a fresh run with `--cancel-after-millis` or `--cancel-at-stage inference`
+to exercise actual cancellation.
+The host enforces a 30-minute attempt deadline and a five-second cancellation
+grace period. MLX's 64 GiB setting is a guideline; the worker checks 80 GiB process
+RSS at cooperative boundaries. These are not OS memory or network isolation.
+Blocking FFmpeg pipe I/O has no cooperative polling guarantee; the supervisor's
+termination deadline is the bound there. All 139 LTX source files are verified
+against a manifest bound to the upstream Git tree, and imported package/module
+locations and hashes are checked before generation and again before completion.
+
+Routine contract tests need only Python's standard library:
+
+```sh
+python3 -m unittest discover -s tools/model-qualification/tests -p 'test_*.py' -v
+```
+
+## Earlier standalone probe
 
 [`evidence/2026-09-20-smoke`](evidence/2026-09-20-smoke/) captures one executed
 LTX MLX keyframe probe. The Python files are the exact historical harnesses used

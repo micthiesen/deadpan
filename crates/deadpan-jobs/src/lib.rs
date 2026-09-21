@@ -8,10 +8,12 @@
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod artifact;
+pub mod generation_plan;
 pub mod lifecycle;
 pub mod protocol;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod supervisor;
 
+pub use generation_plan::*;
 pub use lifecycle::*;
 pub use protocol::*;

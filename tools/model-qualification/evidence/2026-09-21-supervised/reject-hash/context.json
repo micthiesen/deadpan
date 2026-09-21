@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "model_color": "srgb",
+  "plan": {
+    "schema_version": 1,
+    "operation": "bridge",
+    "interpolation": "linear",
+    "project": {
+      "interior_frames": 24,
+      "frame_rate": {
+        "numerator": 24,
+        "denominator": 1
+      }
+    },
+    "native": {
+      "frame_count": 25,
+      "frame_rate": {
+        "numerator": 24,
+        "denominator": 1
+      },
+      "width": 768,
+      "height": 320
+    },
+    "timing": {
+      "requested_boundary_duration": {
+        "numerator": "25",
+        "denominator": "24"
+      },
+      "actual_boundary_duration": {
+        "numerator": "1",
+        "denominator": "1"
+      },
+      "retime_deviation": {
+        "numerator": "-1",
+        "denominator": "24"
+      }
+    },
+    "sampling": {
+      "endpoint_policy": "interior_only"
+    }
+  },
+  "left": {
+    "reference": "inputs/left.png",
+    "sha256": "de50d9c4a413f3b1f8916fc92afb4ef8587cb70f4f8de6212461c396538a3951",
+    "byte_length": 310963
+  },
+  "right": {
+    "reference": "inputs/right.png",
+    "sha256": "dc742a2e38aec18a2b4b15e33b21fa062f5bc93517a59674eb79e6c9c461e5bc",
+    "byte_length": 310279
+  },
+  "input_color_interpretation": "Existing RGB PNG interpreted as sRGB; original untagged movie color has not been qualified"
+}

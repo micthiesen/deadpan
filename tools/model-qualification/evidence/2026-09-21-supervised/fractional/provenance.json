@@ -1,0 +1,700 @@
+{
+  "runtime_commit": "3392d75934120b7e69eefbe55893f7ef82be92a4",
+  "adapter_sources_sha256": {
+    "worker.py": "a55a8f796799818196c711e9a97853aa889ba44948eb6ab13b8fc3011b3b32d3",
+    "worker_protocol.py": "11f55d0c8f6334f518f2001407b73000d7b2b455f37b618d14deb416e0573508",
+    "worker_media.py": "c072cb78e13fadd3873715d90924c3993389cf5c8abc71d25d99df0c3307723e",
+    "mlx_backend.py": "8e75d6a01e092526904994bbdc95e211ba58702cbf21458493c59119c294c59c",
+    "runtime_source.py": "83dddd9cd6e84d1c2d01d27e6d28098325624afc3572f17ba7037ecd4acbbbad",
+    "ltx-source-manifest.json": "abc7e873e28097d1f9307b030dd4b1f415f6b5091c841ac1babd421c8d74f092"
+  },
+  "pack_revision": "56a5866d638ecfe37c54d348e88938235185c2d4",
+  "request_binding": {
+    "identity": {
+      "request_id": "probe-809eaea8dd93450cac95918f57e8eba8",
+      "attempt_id": "attempt-1"
+    },
+    "project_id": "probe-809eaea8dd93450cac95918f57e8eba8",
+    "revision_id": "revision-1",
+    "target": {
+      "hold_id": "hold-1",
+      "request_version": 1
+    },
+    "input": {
+      "manifest": "inputs/context.json",
+      "sha256": "8050f304e6f624989e0a03c4df640738082705f70c9254d6d2f3fc162275b99f"
+    },
+    "constraints": {
+      "video": {
+        "frames": 30,
+        "frame_rate": {
+          "numerator": 30000,
+          "denominator": 1001
+        },
+        "width": 768,
+        "height": 320
+      },
+      "conditioning": "bridge",
+      "motion": "still"
+    },
+    "provider": {
+      "pack_id": "ltx-2.3-q4-development",
+      "pack_version": "56a5866d",
+      "runtime_id": "ltx-mlx-development",
+      "runtime_version": "0.15.8+deadpan1",
+      "seed": 1
+    }
+  },
+  "gemma_revision": "86cc6a8dedbc456dd0e4af01a9d09f396f77e558",
+  "prompt_version": "deadpan-hold-1",
+  "prompt": "Locked camera. The person maintains the same identity, pose, expression, and composition, with quiet minimal natural motion. No speech, no new objects, no scene change.",
+  "seed": 1,
+  "context": {
+    "schema_version": 1,
+    "model_color": "srgb",
+    "plan": {
+      "schema_version": 1,
+      "operation": "bridge",
+      "interpolation": "linear",
+      "project": {
+        "interior_frames": 30,
+        "frame_rate": {
+          "numerator": 30000,
+          "denominator": 1001
+        }
+      },
+      "native": {
+        "frame_count": 25,
+        "frame_rate": {
+          "numerator": 24,
+          "denominator": 1
+        },
+        "width": 768,
+        "height": 320
+      },
+      "timing": {
+        "requested_boundary_duration": {
+          "numerator": "31031",
+          "denominator": "30000"
+        },
+        "actual_boundary_duration": {
+          "numerator": "1",
+          "denominator": "1"
+        },
+        "retime_deviation": {
+          "numerator": "-1031",
+          "denominator": "30000"
+        }
+      },
+      "sampling": {
+        "endpoint_policy": "interior_only"
+      }
+    },
+    "left": {
+      "reference": "inputs/left.png",
+      "sha256": "de50d9c4a413f3b1f8916fc92afb4ef8587cb70f4f8de6212461c396538a3951",
+      "byte_length": 310963
+    },
+    "right": {
+      "reference": "inputs/right.png",
+      "sha256": "dc742a2e38aec18a2b4b15e33b21fa062f5bc93517a59674eb79e6c9c461e5bc",
+      "byte_length": 310279
+    },
+    "input_color_interpretation": "Existing RGB PNG interpreted as sRGB; original untagged movie color has not been qualified"
+  },
+  "model_color_interpretation": "full-range SDR sRGB RGB, BT.709 primaries",
+  "temporal_interpolation": "linear in encoded sRGB, half-up RGB8 quantization",
+  "conditioning_preprocessing": "pinned upstream CRF-33 H.264 round trip, resize and center crop at both stage resolutions; original prepared PNGs retained",
+  "configuration": {
+    "stage1_steps": 20,
+    "stage2_steps": 3,
+    "cfg_scale": 3.0,
+    "low_memory": true,
+    "low_ram_streaming": false,
+    "generate_audio": false
+  },
+  "device_info": {
+    "device_name": "Apple M5 Max",
+    "max_recommended_working_set_size": 115448725504,
+    "memory_size": 137438953472,
+    "architecture": "applegpu_g17s",
+    "max_buffer_length": 86586540032,
+    "resource_limit": 499000
+  },
+  "native_rgb": {
+    "frames": 25,
+    "rgb_sha256": "be4ffce12b048457bcab1779eefe8683f41c242d013be7f488c25416491efe1a",
+    "command": [
+      "/opt/homebrew/bin/ffmpeg",
+      "-hide_banner",
+      "-loglevel",
+      "error",
+      "-nostdin",
+      "-n",
+      "-f",
+      "rawvideo",
+      "-pix_fmt",
+      "rgb24",
+      "-video_size",
+      "768x320",
+      "-framerate",
+      "24/1",
+      "-i",
+      "pipe:0",
+      "-an",
+      "-vf",
+      "setparams=range=full:color_primaries=bt709:color_trc=iec61966-2-1:colorspace=gbr",
+      "-c:v",
+      "libx264rgb",
+      "-crf",
+      "0",
+      "-preset",
+      "ultrafast",
+      "-pix_fmt",
+      "rgb24",
+      "-color_range",
+      "pc",
+      "-colorspace",
+      "rgb",
+      "-color_trc",
+      "iec61966-2-1",
+      "-color_primaries",
+      "bt709",
+      "-movflags",
+      "+write_colr",
+      "-video_track_timescale",
+      "24",
+      "/private/tmp/deadpan-supervised-mlx-20260921-attributed/worker/outputs/native.mp4"
+    ]
+  },
+  "candidate_rgb": {
+    "frames": 30,
+    "rgb_sha256": "eda362044e57353435b56756be4143419a3bb6ed52bb2f849102b3eff962c71a",
+    "command": [
+      "/opt/homebrew/bin/ffmpeg",
+      "-hide_banner",
+      "-loglevel",
+      "error",
+      "-nostdin",
+      "-n",
+      "-f",
+      "rawvideo",
+      "-pix_fmt",
+      "rgb24",
+      "-video_size",
+      "768x320",
+      "-framerate",
+      "30000/1001",
+      "-i",
+      "pipe:0",
+      "-an",
+      "-vf",
+      "setparams=range=full:color_primaries=bt709:color_trc=iec61966-2-1:colorspace=gbr",
+      "-c:v",
+      "libx264rgb",
+      "-crf",
+      "0",
+      "-preset",
+      "ultrafast",
+      "-pix_fmt",
+      "rgb24",
+      "-color_range",
+      "pc",
+      "-colorspace",
+      "rgb",
+      "-color_trc",
+      "iec61966-2-1",
+      "-color_primaries",
+      "bt709",
+      "-movflags",
+      "+write_colr",
+      "-video_track_timescale",
+      "30000",
+      "/private/tmp/deadpan-supervised-mlx-20260921-attributed/worker/outputs/candidate.mp4"
+    ]
+  },
+  "native_probe": {
+    "frames": [
+      {
+        "best_effort_timestamp": 0,
+        "duration": 1,
+        "side_data_list": [
+          {
+            "side_data_type": "H.26[45] User Data Unregistered SEI message"
+          }
+        ]
+      },
+      {
+        "best_effort_timestamp": 1,
+        "duration": 1
+      },
+      {
+        "best_effort_timestamp": 2,
+        "duration": 1
+      },
+      {
+        "best_effort_timestamp": 3,
+        "duration": 1
+      },
+      {
+        "best_effort_timestamp": 4,
+        "duration": 1
+      },
+      {
+        "best_effort_timestamp": 5,
+        "duration": 1
+      },
+      {
+        "best_effort_timestamp": 6,
+        "duration": 1
+      },
+      {
+        "best_effort_timestamp": 7,
+        "duration": 1
+      },
+      {
+        "best_effort_timestamp": 8,
+        "duration": 1
+      },
+      {
+        "best_effort_timestamp": 9,
+        "duration": 1
+      },
+      {
+        "best_effort_timestamp": 10,
+        "duration": 1
+      },
+      {
+        "best_effort_timestamp": 11,
+        "duration": 1
+      },
+      {
+        "best_effort_timestamp": 12,
+        "duration": 1
+      },
+      {
+        "best_effort_timestamp": 13,
+        "duration": 1
+      },
+      {
+        "best_effort_timestamp": 14,
+        "duration": 1
+      },
+      {
+        "best_effort_timestamp": 15,
+        "duration": 1
+      },
+      {
+        "best_effort_timestamp": 16,
+        "duration": 1
+      },
+      {
+        "best_effort_timestamp": 17,
+        "duration": 1
+      },
+      {
+        "best_effort_timestamp": 18,
+        "duration": 1
+      },
+      {
+        "best_effort_timestamp": 19,
+        "duration": 1
+      },
+      {
+        "best_effort_timestamp": 20,
+        "duration": 1
+      },
+      {
+        "best_effort_timestamp": 21,
+        "duration": 1
+      },
+      {
+        "best_effort_timestamp": 22,
+        "duration": 1
+      },
+      {
+        "best_effort_timestamp": 23,
+        "duration": 1
+      },
+      {
+        "best_effort_timestamp": 24,
+        "duration": 1
+      }
+    ],
+    "streams": [
+      {
+        "index": 0,
+        "codec_name": "h264",
+        "codec_long_name": "H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10",
+        "profile": "High 4:4:4 Predictive",
+        "codec_type": "video",
+        "codec_tag_string": "avc1",
+        "codec_tag": "0x31637661",
+        "mime_codec_string": "avc1.f4001e",
+        "width": 768,
+        "height": 320,
+        "coded_width": 768,
+        "coded_height": 320,
+        "has_b_frames": 0,
+        "pix_fmt": "gbrp",
+        "level": 30,
+        "color_range": "pc",
+        "color_space": "gbr",
+        "color_transfer": "iec61966-2-1",
+        "color_primaries": "bt709",
+        "chroma_location": "left",
+        "field_order": "progressive",
+        "refs": 1,
+        "is_avc": "true",
+        "nal_length_size": "4",
+        "id": "0x1",
+        "r_frame_rate": "24/1",
+        "avg_frame_rate": "24/1",
+        "time_base": "1/24",
+        "start_pts": 0,
+        "start_time": "0.000000",
+        "duration_ts": 25,
+        "duration": "1.041667",
+        "bit_rate": "37711050",
+        "bits_per_raw_sample": "8",
+        "nb_frames": "25",
+        "nb_read_frames": "25",
+        "extradata_size": 47,
+        "disposition": {
+          "default": 1,
+          "dub": 0,
+          "original": 0,
+          "comment": 0,
+          "lyrics": 0,
+          "karaoke": 0,
+          "forced": 0,
+          "hearing_impaired": 0,
+          "visual_impaired": 0,
+          "clean_effects": 0,
+          "attached_pic": 0,
+          "timed_thumbnails": 0,
+          "non_diegetic": 0,
+          "captions": 0,
+          "descriptions": 0,
+          "metadata": 0,
+          "dependent": 0,
+          "still_image": 0,
+          "multilayer": 0
+        },
+        "tags": {
+          "language": "und",
+          "handler_name": "VideoHandler",
+          "encoder": "Lavc63.1.101 libx264rgb"
+        }
+      }
+    ]
+  },
+  "native_sha256": "c9d34268df14d105bb4f3799e9bfc9b946ad153de43e6ee4a73a44bb7833be33",
+  "native_bytes": 4911319,
+  "candidate_probe": {
+    "frames": [
+      {
+        "best_effort_timestamp": 0,
+        "duration": 1001,
+        "side_data_list": [
+          {
+            "side_data_type": "H.26[45] User Data Unregistered SEI message"
+          }
+        ]
+      },
+      {
+        "best_effort_timestamp": 1001,
+        "duration": 1001
+      },
+      {
+        "best_effort_timestamp": 2002,
+        "duration": 1001
+      },
+      {
+        "best_effort_timestamp": 3003,
+        "duration": 1001
+      },
+      {
+        "best_effort_timestamp": 4004,
+        "duration": 1001
+      },
+      {
+        "best_effort_timestamp": 5005,
+        "duration": 1001
+      },
+      {
+        "best_effort_timestamp": 6006,
+        "duration": 1001
+      },
+      {
+        "best_effort_timestamp": 7007,
+        "duration": 1001
+      },
+      {
+        "best_effort_timestamp": 8008,
+        "duration": 1001
+      },
+      {
+        "best_effort_timestamp": 9009,
+        "duration": 1001
+      },
+      {
+        "best_effort_timestamp": 10010,
+        "duration": 1001
+      },
+      {
+        "best_effort_timestamp": 11011,
+        "duration": 1001
+      },
+      {
+        "best_effort_timestamp": 12012,
+        "duration": 1001
+      },
+      {
+        "best_effort_timestamp": 13013,
+        "duration": 1001
+      },
+      {
+        "best_effort_timestamp": 14014,
+        "duration": 1001
+      },
+      {
+        "best_effort_timestamp": 15015,
+        "duration": 1001
+      },
+      {
+        "best_effort_timestamp": 16016,
+        "duration": 1001
+      },
+      {
+        "best_effort_timestamp": 17017,
+        "duration": 1001
+      },
+      {
+        "best_effort_timestamp": 18018,
+        "duration": 1001
+      },
+      {
+        "best_effort_timestamp": 19019,
+        "duration": 1001
+      },
+      {
+        "best_effort_timestamp": 20020,
+        "duration": 1001
+      },
+      {
+        "best_effort_timestamp": 21021,
+        "duration": 1001
+      },
+      {
+        "best_effort_timestamp": 22022,
+        "duration": 1001
+      },
+      {
+        "best_effort_timestamp": 23023,
+        "duration": 1001
+      },
+      {
+        "best_effort_timestamp": 24024,
+        "duration": 1001
+      },
+      {
+        "best_effort_timestamp": 25025,
+        "duration": 1001
+      },
+      {
+        "best_effort_timestamp": 26026,
+        "duration": 1001
+      },
+      {
+        "best_effort_timestamp": 27027,
+        "duration": 1001
+      },
+      {
+        "best_effort_timestamp": 28028,
+        "duration": 1001
+      },
+      {
+        "best_effort_timestamp": 29029,
+        "duration": 1001
+      }
+    ],
+    "streams": [
+      {
+        "index": 0,
+        "codec_name": "h264",
+        "codec_long_name": "H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10",
+        "profile": "High 4:4:4 Predictive",
+        "codec_type": "video",
+        "codec_tag_string": "avc1",
+        "codec_tag": "0x31637661",
+        "mime_codec_string": "avc1.f4001e",
+        "width": 768,
+        "height": 320,
+        "coded_width": 768,
+        "coded_height": 320,
+        "has_b_frames": 0,
+        "pix_fmt": "gbrp",
+        "level": 30,
+        "color_range": "pc",
+        "color_space": "gbr",
+        "color_transfer": "iec61966-2-1",
+        "color_primaries": "bt709",
+        "chroma_location": "left",
+        "field_order": "progressive",
+        "refs": 1,
+        "is_avc": "true",
+        "nal_length_size": "4",
+        "id": "0x1",
+        "r_frame_rate": "30000/1001",
+        "avg_frame_rate": "30000/1001",
+        "time_base": "1/30000",
+        "start_pts": 0,
+        "start_time": "0.000000",
+        "duration_ts": 30030,
+        "duration": "1.001000",
+        "bit_rate": "40137238",
+        "bits_per_raw_sample": "8",
+        "nb_frames": "30",
+        "nb_read_frames": "30",
+        "extradata_size": 45,
+        "disposition": {
+          "default": 1,
+          "dub": 0,
+          "original": 0,
+          "comment": 0,
+          "lyrics": 0,
+          "karaoke": 0,
+          "forced": 0,
+          "hearing_impaired": 0,
+          "visual_impaired": 0,
+          "clean_effects": 0,
+          "attached_pic": 0,
+          "timed_thumbnails": 0,
+          "non_diegetic": 0,
+          "captions": 0,
+          "descriptions": 0,
+          "metadata": 0,
+          "dependent": 0,
+          "still_image": 0,
+          "multilayer": 0
+        },
+        "tags": {
+          "language": "und",
+          "handler_name": "VideoHandler",
+          "encoder": "Lavc63.1.101 libx264rgb"
+        }
+      }
+    ]
+  },
+  "candidate_sha256": "d7fcf04e2bbe213d0352153443eb77c4a1534855ab8c19c0ff5dde4f2ddf85d9",
+  "candidate_bytes": 5023208,
+  "loaded_ltx_sources_sha256": {
+    "packages/ltx-core-mlx/src/ltx_core_mlx/__init__.py": "263c083aa64737a07abfa323c23a23072423c545b954db6b2068a3ec61d95387",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/utils/memory.py": "99c51c9794688c5a70410e8b32a43c1c1c40c65876604dcb4fc89759a0774b14",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/utils/__init__.py": "7b1f92b31bee1290c1e499bd093b64f3eed3bd0dc1d0399a0d7bd325fd714a14",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/utils/diffusion.py": "d1077a7e48690ec1de782fb2161e892fdb39eb1d42e085c3e52d6c93992ce425",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/components/diffusion_steps.py": "75374be9991da30bcc49dbb14aa0642caa479380de9b7c5d36303691149327f3",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/components/guiders.py": "11ae27a6df0f274ca79754f313104a10c35f9cafdc4c5d798764d258253f2560",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/components/patchifiers.py": "6b3b1f21d94942553da1e9b03b82ddf065811e71015133e24a5781bc10163a8f",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/components/__init__.py": "fd98ec43fbb8fcf722193df14ad6bd42f1cca6de1f35c66555580d1ba26d22dd",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/model/audio_vae/audio_vae.py": "63e6105f42cf3203ca5bec9813c1f0ad95fb694dfabbc75d0947a3b7aaf86c28",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/model/audio_vae/vocoder.py": "7734ae7e4ea59e42c9990a1d437ae79859b54c661b9e6c56a3c66ee2c722ff30",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/model/audio_vae/bwe.py": "f19ad3cad3154312fa1c2ea82a4dd8af5e8ee92675eb1ffa1d54bcb96535ae88",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/model/audio_vae/encoder.py": "4c83e88aaf25391ffd3716a6865def8ae96060b8939b6e3231c9564673ee7184",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/model/audio_vae/processor.py": "8304afe7b620f4baa60bdc99cf4264a2e84a7c425f1f97c539e13a2d3515e47b",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/model/audio_vae/__init__.py": "75e7748a806709965a00065d21391dcb750c3c72e09c2d0beae3a5bf8160d30c",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/model/transformer/timestep_embedding.py": "0081f3b17ed90265c88ccb17025119aaf049aca6a2d0db215f101e147db88915",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/model/transformer/adaln.py": "d386363e2b89587b860e5e1f283d9e643c1c4c1744524854f4c8fac929f03e62",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/model/transformer/rope.py": "c9273a9362e91443757033efcb06d614fa76d4ad22bfc4fe977bcc11ea184cee",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/model/transformer/attention.py": "ba5ed5c7009e9bdc92dd1472a10adffdb1e9cb22ad2a88122ad122c508768747",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/model/transformer/feed_forward.py": "037a5630adad4e05060c589f46cc5a8aabf7b5121f999aacd73b5c3657d7298c",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/guidance/perturbations.py": "e589ecff085fe5422b3a3d9c31dcb97b4dfbf2c2fb15db32226001ae50bc2e6b",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/guidance/__init__.py": "dc9f2d7b8bf832d482a8d561c37b4ac88c03404ccfa26c89718b4dd6e51cccfa",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/model/transformer/transformer.py": "174641b62835d0dd15dc92d8ee4c7b56c253d54694fda2829e32b52d3f097f06",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/model/transformer/model.py": "eeaf26171cead964ab1f9bc084835a1a9a3e3ce8e0e27eb4bb75fb8e7fdbc217",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/model/transformer/__init__.py": "3725d548940ceb76528b41ac168b8563bc062d3c72aa5f75019e06b122caceb2",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/model/upsampler/model.py": "3b332ed0d4976fd971a630bc0b777a8360700aa0d42edde6d4b99f7b2579e005",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/model/upsampler/__init__.py": "fbbf56029c5c729ea5d097edf0da1cd3dea3ed1443ac732b3a16c45ce66ea050",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/model/__init__.py": "668ac376594ffadcbed1c2f25266e9a98af7db95d67d643cdf36c0dc2a79f3a2",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/model/video_vae/ops.py": "56bc6a25795d598212e89ac78282162a51c67fae043d0a52949c5470ac0fe1b0",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/model/video_vae/tiling.py": "a6acb4e99d508e37458346b445d036622336b9477518e85715f1f672bb0b727f",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/model/video_vae/convolution.py": "33ad2fc78067d3eaeebbb3e094787fe03daf29c59d24d721d31368165e1ed62f",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/model/video_vae/normalization.py": "c248598d155222a6ca9ec183bebd533c2c538523f3512097075aa8b91d57d8b1",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/model/video_vae/resnet.py": "d43da6892cde7eb48ab283a5847c0851af90a4ad221fbe2a939338fcfea01f8c",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/model/video_vae/sampling.py": "791efaa10e9023364e434b0fdd1bf1c17d7a5695cbc9fd5746e3ad7043e15356",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/utils/ffmpeg.py": "f3ce8ce2774e3aa0b73f194b8faa6b7470aae674954f85b8d412a1642eb58ca7",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/model/video_vae/video_vae.py": "871d0c1daac3dff6f7b4b2ef181dd5d433f0795f70c641d2a6728cd2b911e4af",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/model/video_vae/__init__.py": "a51a0ba24cd8dd10d5e7ef9443e866d41bf98641fb690be2393f3ee5063f2f77",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/text_encoders/__init__.py": "adf76a99d574140fd7946d1e190d9b474114ef1c4723daf366c44d5071d15bd2",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/text_encoders/gemma/embeddings_connector.py": "14e82bd7c16741bc4f39681d481e85d8f3dd8fbe88078dafb3e11dabdd05b6ad",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/text_encoders/gemma/encoders/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/text_encoders/gemma/encoders/base_encoder.py": "d43a4a64a2ba8c3784398f86686e9dabdd14acf5b40ba3547b551c3cb198c3a2",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/text_encoders/gemma/feature_extractor.py": "6b4bb80609e3c582c1b645b11b81a70ed49928a7ac20d605dd3f2aa507c57f58",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/text_encoders/gemma/__init__.py": "4a14fc2d479e8ea86d424298b0e05d24f8b97824fc2f14dd3b366459aeb63061",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/conditioning/mask_utils.py": "a257812ce9d18ab7c01f66c17ca15105421d0ec8d50d4fff7bc8d27b6e217ca3",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/conditioning/types/latent_cond.py": "1961d7707561dd9aed30f503ad539c24dbe0c9ccc8cc44de122fbe08c7a4e517",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/conditioning/types/attention_strength_wrapper.py": "3e35fc5a81eea44dcd0f07bc0bcc977cf20f953e9c475ea26ed712ad72586dfb",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/utils/positions.py": "1fd34c2b0fb3a23e933079b43c8b823d9bd8cbf59b1f80ecfe5afdef1ff4eff5",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/conditioning/types/keyframe_cond.py": "9f22655c2ef5392df5488b01cfaed85c292b82beee497039cb914425de8cca48",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/conditioning/types/reference_audio_cond.py": "0b19251348b5414bf861c66a2b40947838a3d36706f40edb2fbe53a5ce5cee86",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/conditioning/types/reference_video_cond.py": "1d817a839863367e5e505e8a49f4a6549901c0d2a9757e217c9e96cdd3252b40",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/conditioning/types/__init__.py": "e2224ca24655c3a278d00e6947443dfb808bbf222f664c21892f40cf3fc78046",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/conditioning/__init__.py": "c55ff9c8e414be1c1985c0bde2b5343ec04a26c2ba5aa55999a153b94419c3d3",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/utils/weights.py": "bb26fda5c5c7761bcaa9508b620d9d779c25ff66ba3b06cafc1f3070f9c0033e",
+    "packages/ltx-pipelines-mlx/src/ltx_pipelines_mlx/utils/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/duration_head/duration_head.py": "fa6e9effbe0e0a84d6505ae406df36538870ce3df4bcc0477f75d1714e8c738a",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/duration_head/__init__.py": "d409f61ca862c9fe730ea2816bd643b1bc32d3d401774a4d168c49db3129d071",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/model/video_vae/diffusion_decoder/config.py": "f0569dab207386c03eb7ecaa3f4b118ea98e0963a2a3131a32f9d7a724e8d6cf",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/model/video_vae/diffusion_decoder/patching.py": "d3f90a365452beb3005b0432589c51400c6a5dd1375018cfcf60e5bd75224054",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/model/video_vae/diffusion_decoder/layers.py": "072b2299bcb90728b136a38af40b1388ba2a2670f498acb056b0330df87b4a5e",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/model/video_vae/diffusion_decoder/neighborhood_attention.py": "1811090b3498abcfeae6a978b8b6817fbf2dc3276bdfb87fc7a2a5a7809c6622",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/model/video_vae/diffusion_decoder/rope.py": "06aead540d5052b68d911d0f7b399c9e59174b5be8c826b67f591b38add9f5d7",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/model/video_vae/diffusion_decoder/blocks.py": "80af6889c278c77c750328b161448c14d16cf39a847ec58f916b240171a0c8d6",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/model/video_vae/diffusion_decoder/chunked.py": "3da550871ff61faaa5c0930262b35fbb35a4142933e244d5efb5e84ed0e71c1e",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/model/video_vae/diffusion_decoder/tiling.py": "ee9840d96d6343706af76e9440a2989b7b229ad35ff59cfc6af66e1385c4113e",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/model/video_vae/diffusion_decoder/decoder.py": "b7a7b44e0a3332c1bb286fbb117c530748ef068c42f98f02a458ff80ff8aa661",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/model/video_vae/diffusion_decoder/__init__.py": "79b1656978afa6378ff3c6cdadbebec300179ed222f6a9be4b34e3fde446d55d",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/text_encoders/gemma/encoders/encoder_configurator.py": "e6e2678667143fd8216b22471f95978818558a8215ed78e654b5535bbfb49209",
+    "packages/ltx-pipelines-mlx/src/ltx_pipelines_mlx/utils/types.py": "42072169c4bd6b45c81da18ecb851692766f749af1d583eec3050774b29ee36f",
+    "packages/ltx-pipelines-mlx/src/ltx_pipelines_mlx/utils/blocks.py": "768b0e766eb2da9962d7a26f4eca7d3b9215af4825d68832851e4c63d30c7a38",
+    "packages/ltx-pipelines-mlx/src/ltx_pipelines_mlx/utils/constants.py": "01e5428b91724b5bb7a12e19027a1a4c4eb9a6ee9de737bb757b020fe4303bb0",
+    "packages/ltx-pipelines-mlx/src/ltx_pipelines_mlx/utils/helpers.py": "98c0c32474ab4ffb6a6aeebd809728fe772c8eb9cb61f6011adebcb4379b8900",
+    "packages/ltx-pipelines-mlx/src/ltx_pipelines_mlx/utils/progress.py": "50b092599494e3cd477606f93cae9481fa024a75df89167672462a375e8a7994",
+    "packages/ltx-pipelines-mlx/src/ltx_pipelines_mlx/_base.py": "9fe662df38f16cc84108918ca4d4e57450df51c4d67bd704d98fd2afff007899",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/utils/audio.py": "2943f5dc0c00df12618d1022283e327d733de1bc5ce9acbdad6e2f63fe9047fb",
+    "packages/ltx-pipelines-mlx/src/ltx_pipelines_mlx/scheduler.py": "71a4f2f73eb049b4000084fc7147beb28dd7fefaa07eb8d4daed46e867a1bf14",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/conditioning/types/keyframe_slots.py": "0a8b4af52d31fda3734a5391593bca3784cb61e46582a3a7ffa0c7af06b6e64b",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/loader/sd_ops.py": "f68d41cdd74fc3524f03c9161c77e333033a85ac672abf5541f218c3e8dfc98d",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/loader/primitives.py": "6ead91e49409431987182f08b9982052e9464eaf9ddac0ccb3d6cf53f4b6e5da",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/loader/fuse_loras.py": "6afefc5bc81b9c0ce1561d3eb800884bc573120e25683b59d7a410dab37c6e12",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/loader/sft_loader.py": "3689a2d7c6de558a1100a810fd68f32ff5a841d611c2f106b530a2a1ee9706ea",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/loader/__init__.py": "cc45cf339d00e0ce977dc90d30654ff1378c60f8cfe967c5df934b74e5b4e533",
+    "packages/ltx-pipelines-mlx/src/ltx_pipelines_mlx/utils/generation.py": "702b93653fa926cc4115743e14b81d3f98be0aa98c6a55c7e3f4946e0bf4706d",
+    "packages/ltx-pipelines-mlx/src/ltx_pipelines_mlx/utils/estimate.py": "f5c6f5bced7f589c9be5b9788c07c7c5f1fdd452517ec38205921afbd723342e",
+    "packages/ltx-pipelines-mlx/src/ltx_pipelines_mlx/utils/res2s.py": "43aae479c122a91a327089a6d46bf5b7389b7052953af9ad2f1565389296aee0",
+    "packages/ltx-pipelines-mlx/src/ltx_pipelines_mlx/utils/samplers.py": "121eb98b50b2e7cf91da02daa1a72f9713b9b9fd8af2003d48f7615380b13ff0",
+    "packages/ltx-pipelines-mlx/src/ltx_pipelines_mlx/ti2vid_two_stages.py": "91f58d8fca85f2c04932ecb9a0d909a196b3c977db69a161e7f723b51b6a9085",
+    "packages/ltx-pipelines-mlx/src/ltx_pipelines_mlx/a2vid_two_stage.py": "3ab8aeaa973e3d9716108f6e3541eb0638fed3b160393a0c018c1049d84c7893",
+    "packages/ltx-pipelines-mlx/src/ltx_pipelines_mlx/distilled.py": "528dee83a37cdc3d96cd6aa84ad1e0bbc6ad7e170dd4abdb83be290e3d84f660",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/hdr.py": "87e320475b97b8ca2a988bfe1642c9b418c6054f69b5bf2035d43675ae86f9bc",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/loader/hdr_metadata.py": "2823f92500f98ad5e6259ba778ffc431ad4034648724a3caa4508c566fd878db",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/utils/video.py": "2fc183fceb9ebaac90f55c16881c07cee202202fde3d0927b6bf405d4aa05c63",
+    "packages/ltx-pipelines-mlx/src/ltx_pipelines_mlx/iclora_utils.py": "20d5a13f44ba2e3ed6c347ac0a2030a5658c8a1447d9c42afa60c7684cc6b880",
+    "packages/ltx-pipelines-mlx/src/ltx_pipelines_mlx/ic_lora.py": "7c6cec74f97b93b07ba95d21bcbbf6d3c21e66fb6066e11ad501ed7f51d725ea",
+    "packages/ltx-pipelines-mlx/src/ltx_pipelines_mlx/hdr_ic_lora.py": "06d7f827be43d74e36bceefde93310b5b3085bfcbeabe7c1698285f80ba091ad",
+    "packages/ltx-core-mlx/src/ltx_core_mlx/utils/image.py": "7e2bba0a8381bdc842d6dda107f598084190b9c01fc9bfbdb5eceb24dc3c3838",
+    "packages/ltx-pipelines-mlx/src/ltx_pipelines_mlx/keyframe_interpolation.py": "7488545e59610ab5f318eaa10a9cb8a34cced5d4b3738395ba082f368553d16b",
+    "packages/ltx-pipelines-mlx/src/ltx_pipelines_mlx/lipdub.py": "37f73fdb66b84b90a1dd4d5e3346e60b565d4c534e3ed2e24120705762ba9bbc",
+    "packages/ltx-pipelines-mlx/src/ltx_pipelines_mlx/retake.py": "b1df94d9d2a7b932728bec8f5b3d5b53af15497fc17c2017f0dd888cd8747295",
+    "packages/ltx-pipelines-mlx/src/ltx_pipelines_mlx/ti2vid_one_stage.py": "6f6e7f7f8a78c96206cabed02113574f2019a14d48a902cf0aaba56d9a69ef64",
+    "packages/ltx-pipelines-mlx/src/ltx_pipelines_mlx/ti2vid_two_stages_hq.py": "9fe96944fe89183fe229de97a4b45ef1330d226df041fc4679a632045a13507c",
+    "packages/ltx-pipelines-mlx/src/ltx_pipelines_mlx/__init__.py": "360eb57bc873c36a5834ed8824558c62240cd42923b86ed7a8c6364a66fc6f63",
+    "packages/ltx-pipelines-mlx/src/ltx_pipelines_mlx/utils/media_io.py": "85d0f3a5a2a136e9e43228646a9e15b5bd2cc16431a750154adf6d9dd65cd6bd",
+    "packages/ltx-pipelines-mlx/src/ltx_pipelines_mlx/utils/_orchestration.py": "93653331a06dc68707e079e55ba6bd222eb8a6d61ab0a6e59922ae929b3efb1c"
+  },
+  "backend_seconds": 74.99141237512231,
+  "process_peak_rss_bytes": 14492975104,
+  "mlx_counter_at_end_bytes": 17767443772,
+  "status": "worker_validated_not_host_validated_or_accepted"
+}

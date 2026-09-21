@@ -1,0 +1,35 @@
+{
+  "accepted": false,
+  "cancellation_sent": false,
+  "candidate": {
+    "media": {
+      "byte_length": 5023208,
+      "reference": "outputs/candidate.mp4",
+      "sha256": "d7fcf04e2bbe213d0352153443eb77c4a1534855ab8c19c0ff5dde4f2ddf85d9"
+    },
+    "provider": {
+      "pack_id": "ltx-2.3-q4-development",
+      "pack_version": "56a5866d",
+      "runtime_id": "ltx-mlx-development",
+      "runtime_version": "0.15.8+deadpan1",
+      "seed": 1
+    },
+    "video": {
+      "frame_rate": {
+        "denominator": 1001,
+        "numerator": 30000
+      },
+      "frames": 30,
+      "height": 320,
+      "width": 768
+    }
+  },
+  "clean_exit": true,
+  "discarded_log_bytes": 0,
+  "elapsed_seconds": 114.511458584,
+  "failure": null,
+  "faults": [],
+  "hash_verified_snapshot": true,
+  "media_validated": false,
+  "state": "Validating"
+}

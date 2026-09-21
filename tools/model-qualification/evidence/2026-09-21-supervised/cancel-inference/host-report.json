@@ -1,0 +1,11 @@
+{
+  "accepted": false,
+  "cancellation_sent": true,
+  "clean_exit": true,
+  "discarded_log_bytes": 0,
+  "elapsed_seconds": 54.121779833,
+  "failure": null,
+  "faults": [],
+  "media_validated": false,
+  "state": "Cancelled"
+}

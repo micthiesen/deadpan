@@ -1,0 +1,3 @@
+{"message":{"event":"stage","identity":{"attempt_id":"attempt-1","request_id":"probe-b73dd081109a4e25bcc938387d79acdc"},"protocol":1,"stage":"preflight"},"seconds":0.370415792}
+{"message":{"event":"failed","failure":{"code":"backend_failure","detail":"context manifest hash mismatch"},"identity":{"attempt_id":"attempt-1","request_id":"probe-b73dd081109a4e25bcc938387d79acdc"},"protocol":1},"seconds":0.370809708}
+{"cancellation_escalated":false,"exit":"exit status: 0","seconds":0.37088825}

@@ -29,7 +29,7 @@ Current crates:
 - `crates/deadpan-core`: exact time, validated documents, structural commands, and reversible patches; no I/O or identity generation.
 - `crates/deadpan-store`: authoritative SQLite packages, immutable revisions, atomic writes, durable undo/redo, and database checkpoints.
 - `crates/deadpan-plan`: immutable indexed picture mappings through structural beats, using exact frame centers and original source identities; no decoding or DSP.
-- `crates/deadpan-jobs`: bounded worker protocol, pure attempt lifecycle, and process supervision; no inference backend or job persistence yet.
+- `crates/deadpan-jobs`: bounded worker protocol, pure attempt lifecycle, process supervision, contained artifact snapshots, and exact bridge-generation planning. The real MLX adapter in `tools/model-qualification` is a development harness; app inference and job persistence remain open.
 - `native/deadpan-process`: narrow Darwin group-membership adapter; unsafe is denied except for its documented bounded libproc call. Higher layers continue to forbid unsafe.
 - `crates/deadpan-app`: native `egui`/`eframe` application using `wgpu` on Metal; development welcome shell.
 - `crates/deadpan-cli`: versioned headless project/command API, reused by `deadpan-app --headless`.
@@ -109,6 +109,14 @@ Pin `ArtifactWorkspace` before launching the worker. Snapshot only below the
 host-selected output scope after clean teardown; consume that immutable copy
 for subsequent media validation, never reopen a worker-supplied pathname.
 The snapshot verifies bytes and containment, not media validity or acceptance.
+
+Bridge plans select the nearest legal native count with exact rational boundary
+duration and upward tie-breaking. Revalidate deserialized plans against the
+selected provider capability, including nearest-count selection. Sample only at
+`(j+1)*(M-1)/(N+1)` and keep the native sequence and interpolation policy. The
+model's conditioning preprocessing and chosen RGB color interpretation belong
+in provenance. A generated file passing hash, frame, and metadata checks still
+needs continuity review, explicit acceptance, durable storage, and app integration.
 
 For native startup or lifecycle changes, also run `cargo run -p deadpan-app -- --smoke-test` on supported Apple Silicon macOS. This checks startup and the shutdown callback, not media or accessibility qualification. Choose interactive checks for affected behavior when they add evidence; do not repeat them mechanically for unrelated changes. Add relevant media, persistence, worker, accessibility, or packaging checks as those systems are implemented. Record skipped checks and exact failures in the delivery report. [Development](docs/DEVELOPMENT.md) describes the workflow.
 

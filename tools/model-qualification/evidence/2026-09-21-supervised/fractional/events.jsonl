@@ -1,0 +1,9 @@
+{"message":{"event":"stage","identity":{"attempt_id":"attempt-1","request_id":"probe-809eaea8dd93450cac95918f57e8eba8"},"protocol":1,"stage":"preflight"},"seconds":0.170898709}
+{"message":{"event":"stage","identity":{"attempt_id":"attempt-1","request_id":"probe-809eaea8dd93450cac95918f57e8eba8"},"protocol":1,"stage":"runtime_loading"},"seconds":39.147658584}
+{"message":{"event":"stage","identity":{"attempt_id":"attempt-1","request_id":"probe-809eaea8dd93450cac95918f57e8eba8"},"protocol":1,"stage":"model_loading"},"seconds":41.060613375}
+{"message":{"event":"stage","identity":{"attempt_id":"attempt-1","request_id":"probe-809eaea8dd93450cac95918f57e8eba8"},"protocol":1,"stage":"inference"},"seconds":51.115928959}
+{"message":{"event":"stage","identity":{"attempt_id":"attempt-1","request_id":"probe-809eaea8dd93450cac95918f57e8eba8"},"protocol":1,"stage":"decoding"},"seconds":110.309098292}
+{"message":{"event":"stage","identity":{"attempt_id":"attempt-1","request_id":"probe-809eaea8dd93450cac95918f57e8eba8"},"protocol":1,"stage":"encoding"},"seconds":112.655654834}
+{"message":{"event":"stage","identity":{"attempt_id":"attempt-1","request_id":"probe-809eaea8dd93450cac95918f57e8eba8"},"protocol":1,"stage":"worker_validation"},"seconds":113.048594625}
+{"message":{"candidate":{"media":{"byte_length":5023208,"reference":"outputs/candidate.mp4","sha256":"d7fcf04e2bbe213d0352153443eb77c4a1534855ab8c19c0ff5dde4f2ddf85d9"},"provider":{"pack_id":"ltx-2.3-q4-development","pack_version":"56a5866d","runtime_id":"ltx-mlx-development","runtime_version":"0.15.8+deadpan1","seed":1},"video":{"frame_rate":{"denominator":1001,"numerator":30000},"frames":30,"height":320,"width":768}},"event":"completed","identity":{"attempt_id":"attempt-1","request_id":"probe-809eaea8dd93450cac95918f57e8eba8"},"protocol":1},"seconds":114.302090375}
+{"cancellation_escalated":false,"exit":"exit status: 0","seconds":114.302250709}

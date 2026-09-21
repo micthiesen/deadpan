@@ -1,0 +1,24 @@
+{
+  "original_sha256": "fc380eb28a1434270a86009031fa9e5bc881d036830129317699516146185758",
+  "original_size": [
+    1280,
+    534
+  ],
+  "resized_size": [
+    767,
+    320
+  ],
+  "offset": [
+    0,
+    0
+  ],
+  "padding_rgb": [
+    0,
+    0,
+    0
+  ],
+  "resampling": "Lanczos",
+  "input_color_interpretation": "Existing RGB PNG interpreted as sRGB; original untagged movie color has not been qualified",
+  "model_color_interpretation": "full-range SDR sRGB RGB, BT.709 primaries",
+  "color_transform_performed": false
+}

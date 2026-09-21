@@ -125,6 +125,11 @@ shipping backend. Missing color tags and developer GPL FFmpeg use remain
 unqualified. Runtime, LTX, and Gemma license layers are recorded separately;
 neither runtime nor weights are approved for redistribution by this probe.
 
+The [supervised development adapter](qualification/model-worker-2026-09-21.md)
+connects this same candidate to the Rust process boundary and exact bridge plan.
+Its tagged, lossless RGB serialization still uses developer GPL FFmpeg. This
+qualifies a development boundary, not an app codec/runtime redistribution choice.
+
 ## Qualification still required
 
 Gate A remains open. Before adding each executable or native dependency, record

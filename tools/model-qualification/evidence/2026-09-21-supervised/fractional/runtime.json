@@ -1,0 +1,6 @@
+{
+  "runtime_source": "/tmp/deadpan-ltx2src-3392/ltx-2-mlx-3392d75934120b7e69eefbe55893f7ef82be92a4",
+  "model_cache": "/tmp/deadpan-model-qualification-cache",
+  "ffmpeg": "/opt/homebrew/bin/ffmpeg",
+  "ffprobe": "/opt/homebrew/bin/ffprobe"
+}

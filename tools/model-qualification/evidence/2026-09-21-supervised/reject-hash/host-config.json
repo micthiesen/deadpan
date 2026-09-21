@@ -1,0 +1,49 @@
+{
+  "executable": "/private/tmp/deadpan-ltx2src-3392/ltx-2-mlx-3392d75934120b7e69eefbe55893f7ef82be92a4/.venv/bin/python3",
+  "worker_script": "/Users/michael/Code/deadpan/tools/model-qualification/worker.py",
+  "runtime_config": "/tmp/deadpan-supervised-mlx-20260921-reject-hash/runtime.json",
+  "workspace": "/tmp/deadpan-supervised-mlx-20260921-reject-hash/worker",
+  "report_directory": "/tmp/deadpan-supervised-mlx-20260921-reject-hash/host",
+  "request": {
+    "operation": "generate_hold",
+    "protocol": 1,
+    "identity": {
+      "request_id": "probe-b73dd081109a4e25bcc938387d79acdc",
+      "attempt_id": "attempt-1"
+    },
+    "cancellation_token": "b88813b29237455dae09e24ddbcf7596",
+    "project_id": "probe-b73dd081109a4e25bcc938387d79acdc",
+    "revision_id": "revision-1",
+    "target": {
+      "hold_id": "hold-1",
+      "request_version": 1
+    },
+    "input": {
+      "manifest": "inputs/context.json",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "output_workspace": "outputs",
+    "constraints": {
+      "conditioning": "bridge",
+      "motion": "still",
+      "video": {
+        "frames": 24,
+        "frame_rate": {
+          "numerator": 24,
+          "denominator": 1
+        },
+        "width": 768,
+        "height": 320
+      }
+    },
+    "provider": {
+      "pack_id": "ltx-2.3-q4-development",
+      "pack_version": "56a5866d",
+      "runtime_id": "ltx-mlx-development",
+      "runtime_version": "0.15.8+deadpan1",
+      "seed": 1
+    }
+  },
+  "cancel_after_millis": null,
+  "cancel_at_stage": null
+}

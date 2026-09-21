@@ -1,0 +1,373 @@
+[
+  {
+    "scope": "Earlier development iteration, predates final adapter source-hash capture",
+    "name": "cancel",
+    "host_report": {
+      "accepted": false,
+      "cancellation_sent": true,
+      "clean_exit": true,
+      "discarded_log_bytes": 0,
+      "elapsed_seconds": 0.7325195,
+      "faults": [],
+      "media_validated": false,
+      "state": "Cancelled"
+    },
+    "events": [
+      {
+        "message": {
+          "event": "stage",
+          "identity": {
+            "attempt_id": "attempt-1",
+            "request_id": "probe-bade2eba47db4d8d929debc054482581"
+          },
+          "protocol": 1,
+          "stage": "preflight"
+        },
+        "seconds": 0.168206458
+      },
+      {
+        "message": {
+          "event": "cancelled",
+          "identity": {
+            "attempt_id": "attempt-1",
+            "request_id": "probe-bade2eba47db4d8d929debc054482581"
+          },
+          "protocol": 1
+        },
+        "seconds": 0.523064958
+      },
+      {
+        "cancellation_escalated": false,
+        "exit": "exit status: 0",
+        "seconds": 0.523198
+      }
+    ]
+  },
+  {
+    "scope": "Earlier development iteration, predates final adapter source-hash capture",
+    "name": "full",
+    "host_report": {
+      "accepted": false,
+      "cancellation_sent": false,
+      "candidate": {
+        "media": {
+          "byte_length": 4541763,
+          "reference": "outputs/candidate.mp4",
+          "sha256": "11fb3a8673848cf6cfe809fadcbfcd108cd9040fae194f9b8e2aaef3251f5cef"
+        },
+        "provider": {
+          "pack_id": "ltx-2.3-q4-development",
+          "pack_version": "56a5866d",
+          "runtime_id": "ltx-mlx-development",
+          "runtime_version": "0.15.8+deadpan1",
+          "seed": 1
+        },
+        "video": {
+          "frame_rate": {
+            "denominator": 1,
+            "numerator": 24
+          },
+          "frames": 24,
+          "height": 320,
+          "width": 768
+        }
+      },
+      "clean_exit": true,
+      "discarded_log_bytes": 0,
+      "elapsed_seconds": 114.431101584,
+      "faults": [],
+      "hash_verified_snapshot": true,
+      "media_validated": false,
+      "state": "Validating"
+    },
+    "events": [
+      {
+        "message": {
+          "event": "stage",
+          "identity": {
+            "attempt_id": "attempt-1",
+            "request_id": "probe-5568b1f7b0744d12a5f7f6a78cb0f406"
+          },
+          "protocol": 1,
+          "stage": "preflight"
+        },
+        "seconds": 0.38656975
+      },
+      {
+        "message": {
+          "event": "stage",
+          "identity": {
+            "attempt_id": "attempt-1",
+            "request_id": "probe-5568b1f7b0744d12a5f7f6a78cb0f406"
+          },
+          "protocol": 1,
+          "stage": "runtime_loading"
+        },
+        "seconds": 39.450886792
+      },
+      {
+        "message": {
+          "event": "stage",
+          "identity": {
+            "attempt_id": "attempt-1",
+            "request_id": "probe-5568b1f7b0744d12a5f7f6a78cb0f406"
+          },
+          "protocol": 1,
+          "stage": "model_loading"
+        },
+        "seconds": 41.586001959
+      },
+      {
+        "message": {
+          "event": "stage",
+          "identity": {
+            "attempt_id": "attempt-1",
+            "request_id": "probe-5568b1f7b0744d12a5f7f6a78cb0f406"
+          },
+          "protocol": 1,
+          "stage": "inference"
+        },
+        "seconds": 51.430642084
+      },
+      {
+        "message": {
+          "event": "stage",
+          "identity": {
+            "attempt_id": "attempt-1",
+            "request_id": "probe-5568b1f7b0744d12a5f7f6a78cb0f406"
+          },
+          "protocol": 1,
+          "stage": "decoding"
+        },
+        "seconds": 110.465275375
+      },
+      {
+        "message": {
+          "event": "stage",
+          "identity": {
+            "attempt_id": "attempt-1",
+            "request_id": "probe-5568b1f7b0744d12a5f7f6a78cb0f406"
+          },
+          "protocol": 1,
+          "stage": "encoding"
+        },
+        "seconds": 112.958274
+      },
+      {
+        "message": {
+          "event": "stage",
+          "identity": {
+            "attempt_id": "attempt-1",
+            "request_id": "probe-5568b1f7b0744d12a5f7f6a78cb0f406"
+          },
+          "protocol": 1,
+          "stage": "worker_validation"
+        },
+        "seconds": 113.357115542
+      },
+      {
+        "message": {
+          "candidate": {
+            "media": {
+              "byte_length": 4541763,
+              "reference": "outputs/candidate.mp4",
+              "sha256": "11fb3a8673848cf6cfe809fadcbfcd108cd9040fae194f9b8e2aaef3251f5cef"
+            },
+            "provider": {
+              "pack_id": "ltx-2.3-q4-development",
+              "pack_version": "56a5866d",
+              "runtime_id": "ltx-mlx-development",
+              "runtime_version": "0.15.8+deadpan1",
+              "seed": 1
+            },
+            "video": {
+              "frame_rate": {
+                "denominator": 1,
+                "numerator": 24
+              },
+              "frames": 24,
+              "height": 320,
+              "width": 768
+            }
+          },
+          "event": "completed",
+          "identity": {
+            "attempt_id": "attempt-1",
+            "request_id": "probe-5568b1f7b0744d12a5f7f6a78cb0f406"
+          },
+          "protocol": 1
+        },
+        "seconds": 114.228885792
+      },
+      {
+        "cancellation_escalated": false,
+        "exit": "exit status: 0",
+        "seconds": 114.229123125
+      }
+    ]
+  },
+  {
+    "scope": "Fractional development run before complete runtime source attribution; code paths otherwise passed exact file verification",
+    "name": "fractional-before-source-audit",
+    "host_report": {
+      "accepted": false,
+      "cancellation_sent": false,
+      "candidate": {
+        "media": {
+          "byte_length": 5023208,
+          "reference": "outputs/candidate.mp4",
+          "sha256": "d7fcf04e2bbe213d0352153443eb77c4a1534855ab8c19c0ff5dde4f2ddf85d9"
+        },
+        "provider": {
+          "pack_id": "ltx-2.3-q4-development",
+          "pack_version": "56a5866d",
+          "runtime_id": "ltx-mlx-development",
+          "runtime_version": "0.15.8+deadpan1",
+          "seed": 1
+        },
+        "video": {
+          "frame_rate": {
+            "denominator": 1001,
+            "numerator": 30000
+          },
+          "frames": 30,
+          "height": 320,
+          "width": 768
+        }
+      },
+      "clean_exit": true,
+      "discarded_log_bytes": 0,
+      "elapsed_seconds": 114.653028625,
+      "failure": null,
+      "faults": [],
+      "hash_verified_snapshot": true,
+      "media_validated": false,
+      "state": "Validating"
+    },
+    "events": [
+      {
+        "message": {
+          "event": "stage",
+          "identity": {
+            "attempt_id": "attempt-1",
+            "request_id": "probe-3e88e4d5f5ee4cc380162ba914d31ed8"
+          },
+          "protocol": 1,
+          "stage": "preflight"
+        },
+        "seconds": 0.206761084
+      },
+      {
+        "message": {
+          "event": "stage",
+          "identity": {
+            "attempt_id": "attempt-1",
+            "request_id": "probe-3e88e4d5f5ee4cc380162ba914d31ed8"
+          },
+          "protocol": 1,
+          "stage": "runtime_loading"
+        },
+        "seconds": 39.559531959
+      },
+      {
+        "message": {
+          "event": "stage",
+          "identity": {
+            "attempt_id": "attempt-1",
+            "request_id": "probe-3e88e4d5f5ee4cc380162ba914d31ed8"
+          },
+          "protocol": 1,
+          "stage": "model_loading"
+        },
+        "seconds": 41.469021875
+      },
+      {
+        "message": {
+          "event": "stage",
+          "identity": {
+            "attempt_id": "attempt-1",
+            "request_id": "probe-3e88e4d5f5ee4cc380162ba914d31ed8"
+          },
+          "protocol": 1,
+          "stage": "inference"
+        },
+        "seconds": 51.19707425
+      },
+      {
+        "message": {
+          "event": "stage",
+          "identity": {
+            "attempt_id": "attempt-1",
+            "request_id": "probe-3e88e4d5f5ee4cc380162ba914d31ed8"
+          },
+          "protocol": 1,
+          "stage": "decoding"
+        },
+        "seconds": 110.5237695
+      },
+      {
+        "message": {
+          "event": "stage",
+          "identity": {
+            "attempt_id": "attempt-1",
+            "request_id": "probe-3e88e4d5f5ee4cc380162ba914d31ed8"
+          },
+          "protocol": 1,
+          "stage": "encoding"
+        },
+        "seconds": 112.815058542
+      },
+      {
+        "message": {
+          "event": "stage",
+          "identity": {
+            "attempt_id": "attempt-1",
+            "request_id": "probe-3e88e4d5f5ee4cc380162ba914d31ed8"
+          },
+          "protocol": 1,
+          "stage": "worker_validation"
+        },
+        "seconds": 113.1854195
+      },
+      {
+        "message": {
+          "candidate": {
+            "media": {
+              "byte_length": 5023208,
+              "reference": "outputs/candidate.mp4",
+              "sha256": "d7fcf04e2bbe213d0352153443eb77c4a1534855ab8c19c0ff5dde4f2ddf85d9"
+            },
+            "provider": {
+              "pack_id": "ltx-2.3-q4-development",
+              "pack_version": "56a5866d",
+              "runtime_id": "ltx-mlx-development",
+              "runtime_version": "0.15.8+deadpan1",
+              "seed": 1
+            },
+            "video": {
+              "frame_rate": {
+                "denominator": 1001,
+                "numerator": 30000
+              },
+              "frames": 30,
+              "height": 320,
+              "width": 768
+            }
+          },
+          "event": "completed",
+          "identity": {
+            "attempt_id": "attempt-1",
+            "request_id": "probe-3e88e4d5f5ee4cc380162ba914d31ed8"
+          },
+          "protocol": 1
+        },
+        "seconds": 114.457322
+      },
+      {
+        "cancellation_escalated": false,
+        "exit": "exit status: 0",
+        "seconds": 114.457544834
+      }
+    ]
+  }
+]
