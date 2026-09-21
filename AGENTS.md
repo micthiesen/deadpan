@@ -105,6 +105,10 @@ unrelated edit does not stale a Hold. Stale or detached attempts never revive.
 The job service polls process deadlines and owns shutdown; pipe pumping and
 process reaping never belong to the audio callback. Vetted executable selection,
 artifact containment/validation, and durable promotion remain host boundaries.
+Pin `ArtifactWorkspace` before launching the worker. Snapshot only below the
+host-selected output scope after clean teardown; consume that immutable copy
+for subsequent media validation, never reopen a worker-supplied pathname.
+The snapshot verifies bytes and containment, not media validity or acceptance.
 
 For native startup or lifecycle changes, also run `cargo run -p deadpan-app -- --smoke-test` on supported Apple Silicon macOS. This checks startup and the shutdown callback, not media or accessibility qualification. Choose interactive checks for affected behavior when they add evidence; do not repeat them mechanically for unrelated changes. Add relevant media, persistence, worker, accessibility, or packaging checks as those systems are implemented. Record skipped checks and exact failures in the delivery report. [Development](docs/DEVELOPMENT.md) describes the workflow.
 

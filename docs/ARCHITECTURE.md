@@ -9,7 +9,7 @@
 | `deadpan-core` | Exact time, validated flat beat tree, immutable asset metadata, structural commands, JSON, and reversible patches. | Pure Rust domain logic, independent of the application and external systems. |
 | `deadpan-store` | SQLite packages, immutable revision snapshots, atomic edit/history writes, undo/redo, writer ownership, and backup API checkpoints. | SQLite is authoritative; exported JSON is inspection only. |
 | `deadpan-plan` | Exact picture mappings, sequence duration indexes, compact repeat-run indexes, source-index selection, and deterministic inspection. | Immutable authored revision; no decoder, GPU handle, audio processing, or database connection. |
-| `deadpan-jobs` | Typed length-framed worker protocol, pure attempt lifecycle, and bounded subprocess supervision. | Candidates need independent host validation and explicit acceptance; no model backend, job persistence, or artifact promotion yet. |
+| `deadpan-jobs` | Typed length-framed worker protocol, pure attempt lifecycle, bounded subprocess supervision, and contained hash-verified artifact snapshots. | Candidates need independent media validation and explicit acceptance; no model backend, job persistence, or artifact promotion yet. |
 | `deadpan-app` | Native development welcome shell with `egui`/`eframe` and `wgpu` on Metal. | Application entry point only; no authored document or media workflow yet. |
 | `deadpan-cli` | Versioned headless project and command operations, dry runs, history, and diagnostics. | Shared with the native host's `--headless` path; no media rendering yet. |
 

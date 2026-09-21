@@ -22,6 +22,7 @@ requirement in this scaffold.
 | uuid | 1.26.1 | MIT OR Apache-2.0 | Host-generated v4 project/node/revision identities; no randomness in core. |
 | rustix | 1.1.5 | Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT | Safe process-group signalling, unreaped exit observation, and nonblocking worker pipes on macOS/Linux. Already locked transitively; now pinned directly with `process` and `fs`. |
 | libc | 0.2.189 | MIT OR Apache-2.0 | Already locked transitively; direct macOS-only binding inside `native/deadpan-process` for a bounded process-group membership query. Uses OS libproc, with no bundled native library. |
+| sha2 | 0.11.0 | MIT OR Apache-2.0 | Streaming SHA-256 for worker artifact snapshots; default `alloc`/`oid` features disabled. |
 | proptest | 1.11.0 | MIT OR Apache-2.0 | Development-only exact-time, document, and transaction property tests. |
 
 `Cargo.toml` pins direct versions. `Cargo.lock` records every resolved transitive
@@ -51,6 +52,14 @@ Darwin adapter qualification. The adapter checks the installed Apple SDK ABI and
 and [process enumeration](https://github.com/apple-oss-distributions/xnu/blob/f6217f891ac0bb64f3d375211650a4c1ff8ca1ea/bsd/kern/proc_info.c).
 It links the system API through the pinned libc declarations. Tests qualify the
 observed host behavior, not all OS versions or sandbox entitlements.
+
+The [RustCrypto SHA-2 implementation](https://docs.rs/sha2/0.11.0/sha2/)
+adds six locked transitive packages: block-buffer 0.12.1, cpufeatures 0.3.1,
+crypto-common 0.2.2, digest 0.11.3, hybrid-array 0.4.15, and typenum 1.20.1.
+Their published Cargo manifests all declare `MIT OR Apache-2.0`; registry
+checksums are retained in `Cargo.lock`. The default implementation detects
+available ARM SHA instructions and otherwise uses its portable software path.
+No external executable or native library is added for hashing.
 
 The storage foundation tests writer ownership, read-only coexistence, durable
 undo/redo, retained branches, actual SQLite disk-full rollback, interrupted

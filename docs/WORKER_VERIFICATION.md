@@ -147,3 +147,8 @@ fixtures qualifies model quality, GPU latency, packaging, or GUI interaction.
 The typed video metadata is not an allocation budget. Before any decode or
 inference, provider preflight must validate supported frame counts, dimensions,
 rates, and checked work/memory estimates against measured host capacity.
+
+The follow-up [artifact snapshot slice](ARTIFACT_VERIFICATION.md) implements
+descriptor-relative containment and hash-verified host-owned copies. Media
+validation, promotion, persistent ownership, and application integration remain
+open; the verification counts above describe the original worker slice.
