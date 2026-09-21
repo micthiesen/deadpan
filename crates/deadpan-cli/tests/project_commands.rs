@@ -57,6 +57,62 @@ fn request(document: &ProjectDocument) -> Result<Value> {
 }
 
 #[test]
+fn headless_migration_and_plan_inspection_are_explicit_and_read_only() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let package = scratch.path().join("legacy.deadpan");
+    fs::create_dir(&package)?;
+    fs::create_dir(package.join("Snapshots"))?;
+    let connection = rusqlite::Connection::open(package.join("project.sqlite"))?;
+    connection.pragma_update(None, "foreign_keys", false)?;
+    connection.execute_batch(include_str!(
+        "../../deadpan-store/tests/fixtures/v1-history.sql"
+    ))?;
+    drop(connection);
+    let path = package.to_str().unwrap();
+    let old = cli(&["project", "validate", path])?;
+    assert!(!old.status.success());
+    assert_eq!(
+        serde_json::from_slice::<Value>(&old.stderr)?["error"]["code"],
+        "MigrationRequired"
+    );
+    let outcome = success(&["project", "migrate", path])?;
+    assert_eq!(outcome["migration"]["from_schema"], 1);
+    assert_eq!(outcome["migration"]["to_schema"], 2);
+    assert!(Path::new(outcome["migration"]["backup"].as_str().unwrap()).is_file());
+    let writer = ProjectStore::open(&package, AccessMode::ReadWrite)?;
+    let before = writer.snapshot()?;
+    let plan = success(&["inspect-plan", path])?;
+    assert_eq!(
+        plan["plan"]["metadata"]["revision_id"],
+        before.revision_id().as_str()
+    );
+    assert_eq!(plan["plan"]["metadata"]["duration"], 26);
+    let first = success(&["inspect-plan", path, "--frame", "0"])?;
+    assert_eq!(first["sample"]["picture"]["type"], "background");
+    assert_eq!(
+        first["sample"]["instance"]["repeats"][0]["iteration"]["ordinal"],
+        0
+    );
+    let gap = success(&["inspect-plan", path, "--frame", "12"])?;
+    assert_eq!(gap["sample"]["gap_after"]["allocation"], "v1-wrap");
+    let second = success(&["inspect-plan", path, "--frame", "14"])?;
+    assert_eq!(
+        second["sample"]["instance"]["repeats"][0]["iteration"]["ordinal"],
+        1
+    );
+    for boundary in ["-1", "26"] {
+        let error = cli(&["inspect-plan", path, "--frame", boundary])?;
+        assert!(!error.status.success());
+        assert_eq!(
+            serde_json::from_slice::<Value>(&error.stderr)?["error"]["code"],
+            "FrameOutOfRange"
+        );
+    }
+    assert_eq!(writer.snapshot()?, before);
+    Ok(())
+}
+
+#[test]
 fn headless_edit_dry_run_conflict_and_durable_history() -> Result {
     let scratch = tempfile::tempdir()?;
     let package = create(scratch.path())?;
@@ -99,6 +155,39 @@ fn headless_edit_dry_run_conflict_and_durable_history() -> Result {
     assert_eq!(dump_a.stdout, dump_b.stdout, "dumps are deterministic");
     let checkpoint = success(&["project", "checkpoint", path])?;
     assert!(Path::new(checkpoint["database_checkpoint"].as_str().unwrap()).is_file());
+    Ok(())
+}
+
+#[test]
+fn failed_migration_returns_retained_backup_and_preserves_original() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let package = scratch.path().join("damaged.deadpan");
+    fs::create_dir(&package)?;
+    fs::create_dir(package.join("Snapshots"))?;
+    let database = package.join("project.sqlite");
+    let connection = rusqlite::Connection::open(&database)?;
+    connection.pragma_update(None, "foreign_keys", false)?;
+    connection.execute_batch(include_str!(
+        "../../deadpan-store/tests/fixtures/v1-history.sql"
+    ))?;
+    connection.execute_batch(
+        "UPDATE history SET edit=json_set(edit,'$.duration_delta',999) WHERE revision_id='v1-wrap'",
+    )?;
+    drop(connection);
+    let before = fs::read(&database)?;
+    let output = cli(&["project", "migrate", package.to_str().unwrap()])?;
+    assert!(!output.status.success());
+    assert!(output.stdout.is_empty());
+    let report: Value = serde_json::from_slice(&output.stderr)?;
+    assert_eq!(report["error"]["code"], "MigrationFailed");
+    let backup = Path::new(report["error"]["recovery_backup"].as_str().unwrap());
+    assert!(backup.is_file());
+    assert_eq!(fs::read(database)?, before);
+    assert_eq!(
+        rusqlite::Connection::open(backup)?
+            .pragma_query_value(None, "user_version", |row| row.get::<_, u32>(0))?,
+        1
+    );
     Ok(())
 }
 
@@ -230,7 +319,7 @@ fn dry_run_and_commit_preserve_actionable_domain_errors() -> Result {
     overflow["command"]["subtree"]["nodes"]["hold"]["kind"]["recipe"]["duration"] = json!(i64::MAX);
     overflow["command"]["subtree"]["root"] = json!("repeat");
     overflow["command"]["subtree"]["nodes"]["repeat"] = json!({
-        "label": "Overflow", "kind": {"type": "repeat", "child": "hold", "plays": 2, "gap": null}
+        "label": "Overflow", "kind": {"type": "repeat", "child": "hold", "iterations": {"runs": [{"allocation": "overflow", "first": 0, "count": 2}]}, "gap": null}
     });
     let mut limit = base;
     limit["command"]["subtree"]["nodes"]["hold"]["label"] = json!("x".repeat(1025));

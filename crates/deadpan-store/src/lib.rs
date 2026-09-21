@@ -6,6 +6,7 @@
 
 mod error;
 mod history;
+mod migration;
 mod schema;
 mod validation;
 
@@ -18,6 +19,7 @@ use rusqlite::{Connection, OpenFlags, OptionalExtension, params};
 use serde::Serialize;
 
 pub use error::StoreError;
+pub use migration::MigrationOutcome;
 
 pub fn sqlite_version() -> &'static str {
     rusqlite::version()
@@ -336,6 +338,18 @@ fn ensure_unused_revision(
         )
         .optional()?;
     if exists.is_some() {
+        return Err(StoreError::RevisionReused(revision.as_str().to_owned()));
+    }
+    // A package may start from a nonempty imported snapshot. Its occurrence
+    // allocations predate this database's revision rows, but still reserve those
+    // names forever. Subsequent Insert/Wrap/Grow allocations use committed IDs.
+    let initial =
+        validation::read_revision(connection, &validation::read_initial_id(connection)?)?.document;
+    if initial.nodes().values().any(|node| {
+        matches!(&node.kind,
+        deadpan_core::NodeKind::Repeat { iterations, .. }
+        if iterations.segments().any(|(allocation,_,_)| allocation == revision))
+    }) {
         return Err(StoreError::RevisionReused(revision.as_str().to_owned()));
     }
     Ok(())

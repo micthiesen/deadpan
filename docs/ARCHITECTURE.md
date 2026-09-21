@@ -8,10 +8,11 @@
 | --- | --- | --- |
 | `deadpan-core` | Exact time, validated flat beat tree, immutable asset metadata, structural commands, JSON, and reversible patches. | Pure Rust domain logic, independent of the application and external systems. |
 | `deadpan-store` | SQLite packages, immutable revision snapshots, atomic edit/history writes, undo/redo, writer ownership, and backup API checkpoints. | SQLite is authoritative; exported JSON is inspection only. |
+| `deadpan-plan` | Exact picture mappings, sequence duration indexes, compact repeat-run indexes, source-index selection, and deterministic inspection. | Immutable authored revision; no decoder, GPU handle, audio processing, or database connection. |
 | `deadpan-app` | Native development welcome shell with `egui`/`eframe` and `wgpu` on Metal. | Application entry point only; no authored document or media workflow yet. |
 | `deadpan-cli` | Versioned headless project and command operations, dry runs, history, and diagnostics. | Shared with the native host's `--headless` path; no media rendering yet. |
 
-The foundation has typed Source/Sequence/Hold/Repeat/Retime nodes and structural editing, but still lacks anchors, occurrence overrides, effects, semantic range selectors, a render plan, media engine, audio pipeline, and inference worker. The persistence implementation still needs migrations, recovery UI, managed-media import, and host socket routing. A native window is not a qualified media viewport.
+The foundation has typed Source/Sequence/Hold/Repeat/Retime nodes, stable nested occurrence identities, and an indexed structural picture plan. Anchors, occurrence overrides, effects, semantic range selectors, a media engine, audio pipeline, and inference worker remain open. Persistence has a tested schema-1-to-2 migration; recovery UI, managed-media import, and host socket routing remain open. A native window is not a qualified media viewport.
 
 ## Full component map
 
@@ -20,8 +21,8 @@ Section 24 defines boundaries, not an obligation to create empty crates. Introdu
 | Component | Required responsibility | Status |
 | --- | --- | --- |
 | `deadpan-core` | Document/time types, nodes, anchors, occurrences, selectors, commands, reduction, validation, and serialization contracts. | Documents, timing, node-targeted commands, and inverse patches implemented; remaining domains open. |
-| `deadpan-store` | Authoritative SQLite document/history, one writer, migrations, recovery, and asset ownership. | SQLite v1, revision/history transactions, writer lock, and checkpoints implemented; full lifecycle open. |
-| `deadpan-plan` | Compile immutable revisions into indexed render plans and incremental fragments. | Planned. |
+| `deadpan-store` | Authoritative SQLite document/history, one writer, migrations, recovery, and asset ownership. | SQLite schema 2, complete schema-1 history migration, writer lock, durable transactions, and checkpoints implemented; full lifecycle open. |
+| `deadpan-plan` | Compile immutable revisions into indexed render plans and incremental fragments. | Picture mapping and indexed seeking implemented; fragment reuse, effects, audio, and actual preview/export integration open. |
 | `deadpan-media` | Qualified FFmpeg/native probing, PTS indexing, bounded decoding, surfaces, encoding/mux interfaces. | Planned. |
 | `deadpan-render` | Shared GPU composition, framing, color, visual effects, and output transformations. | Planned. |
 | `deadpan-audio` | Audio master clock, sample-exact mixing/DSP, tails, and native device output. | Planned. |
@@ -30,7 +31,7 @@ Section 24 defines boundaries, not an obligation to create empty crates. Introdu
 | `deadpan-models` | Pack verification/install, capability planning, AI requests, and candidate validation. | Planned. |
 | `deadpan-ui` | Panes, keyboard routing, focus, inspectors, audition, and accessibility. | Planned; welcome UI currently belongs to the app. |
 | `deadpan-app` | Lifecycle, platform integration, document host, and command dispatch. | Development shell only. |
-| `deadpan-cli` | Headless validation/dump, revision-aware commands, render/plan inspection, benchmarks, diagnostics. | Project/command/history API implemented; render/plan/benchmark commands open. |
+| `deadpan-cli` | Headless validation/dump, revision-aware commands, render/plan inspection, benchmarks, diagnostics. | Project/command/history/migration and picture-plan inspection implemented; rendering and benchmarks open. |
 | `native/` | Narrow platform and DSP bridges with isolated unsafe lifetime handling. | Planned. |
 | `workers/` | Qualified private model runtime and provider adapters. | Planned. |
 | `recipes/` | Versioned declarative starter gags built from ordinary primitives. | Planned. |

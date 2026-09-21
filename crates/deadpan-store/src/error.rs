@@ -12,6 +12,20 @@ pub enum StoreError {
     ReadOnly,
     #[error("Unsupported database schema {0}; the project has not been rewritten")]
     UnsupportedSchema(u32),
+    #[error(
+        "Project schema {0} requires migration; run `deadpan-cli project migrate <project.deadpan>` to back up and upgrade its complete history"
+    )]
+    MigrationRequired(u32),
+    #[error(
+        "Migration promotion could not acquire the SQLite write lock; the original project remains unchanged"
+    )]
+    MigrationBusy,
+    #[error("Migration failed; retained backup at {backup}: {source}")]
+    MigrationFailed {
+        backup: PathBuf,
+        #[source]
+        source: Box<StoreError>,
+    },
     #[error("This database is not a Deadpan project")]
     WrongApplication,
     #[error("Project revision {0} has already been used; supply a new revision ID")]
@@ -45,6 +59,13 @@ impl StoreError {
             Self::AlreadyOpen => "ProjectAlreadyOpen",
             Self::ReadOnly => "ProjectReadOnly",
             Self::UnsupportedSchema(_) => "SchemaUnsupported",
+            Self::MigrationRequired(_) => "MigrationRequired",
+            Self::MigrationBusy => "ProjectBusy",
+            Self::MigrationFailed { source, .. } => match source.code() {
+                code @ ("DiskFull" | "PermissionDenied" | "ProjectBusy" | "ProjectReadOnly"
+                | "IoFailure") => code,
+                _ => "MigrationFailed",
+            },
             Self::RevisionReused(_) => "RevisionReused",
             Self::RevisionConflict { .. } => "RevisionConflict",
             Self::NothingToUndo => "NothingToUndo",

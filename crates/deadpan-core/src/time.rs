@@ -254,6 +254,7 @@ pub fn repeat_duration(
 /// Invalid timing inputs or an unrepresentable exact arithmetic result.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TimeError {
+    InvalidRatio,
     InvalidFrameRate,
     InvalidSourceTimeBase,
     NegativeDuration,
@@ -266,6 +267,7 @@ pub enum TimeError {
 impl fmt::Display for TimeError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str(match self {
+            Self::InvalidRatio => "exact ratios require a positive denominator and division requires a nonzero divisor",
             Self::InvalidFrameRate => "frame rate numerator and denominator must be positive",
             Self::InvalidSourceTimeBase => {
                 "source time-base numerator and denominator must be positive"

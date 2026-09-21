@@ -93,6 +93,220 @@ fn changed_json(
 }
 
 #[test]
+fn repeat_identity_survives_move_insert_group_and_exact_inverse() {
+    let initial = insert_holds(&[7]);
+    let (wrapped, _) = edited(
+        &initial,
+        Command::WrapRepeat {
+            node: id("hold-0"),
+            id: id("repeat"),
+            plays: 4,
+            gap: None,
+        },
+        "allocate",
+    );
+    let NodeKind::Repeat { iterations, .. } = &wrapped.nodes()[&id("repeat")].kind else {
+        unreachable!()
+    };
+    let original = iterations.clone();
+    let path = InstancePath {
+        node: id("hold-0"),
+        repeats: vec![RepeatInstance {
+            node: id("repeat"),
+            iteration: original.at(1).unwrap(),
+        }],
+    };
+    path.validate(&wrapped).unwrap();
+    let (moved, edit) = edited(
+        &wrapped,
+        Command::MovePlays {
+            node: id("repeat"),
+            start: 1,
+            end: 2,
+            destination: 3,
+        },
+        "move-play",
+    );
+    assert_eq!(edit.duration_delta, 0);
+    path.validate(&moved).unwrap();
+    let (inserted, edit) = edited(
+        &moved,
+        Command::InsertPlays {
+            node: id("repeat"),
+            index: 2,
+            count: 3,
+        },
+        "insert-plays",
+    );
+    assert_eq!(edit.duration_delta, 21);
+    path.validate(&inserted).unwrap();
+    let NodeKind::Repeat { iterations, .. } = &inserted.nodes()[&id("repeat")].kind else {
+        unreachable!()
+    };
+    assert_eq!(iterations.position(&path.repeats[0].iteration), Some(6));
+    let (grouped, _) = edited(
+        &inserted,
+        Command::Group {
+            parent: id("group"),
+            start: 0,
+            end: 1,
+            id: id("new-group"),
+            label: "Grouped".into(),
+        },
+        "group-repeat",
+    );
+    path.validate(&grouped).unwrap();
+    let (shrunk, _) = edited(
+        &grouped,
+        Command::SetRepeat {
+            node: id("repeat"),
+            plays: 6,
+            gap: None,
+        },
+        "retire-play",
+    );
+    assert!(path.validate(&shrunk).is_err());
+    let (grown, _) = edited(
+        &shrunk,
+        Command::SetRepeat {
+            node: id("repeat"),
+            plays: 7,
+            gap: None,
+        },
+        "grow-again",
+    );
+    assert!(
+        path.validate(&grown).is_err(),
+        "growth cannot retarget an old instance"
+    );
+    assert_eq!(
+        ProjectDocument::from_json(&grown.to_json().unwrap()).unwrap(),
+        grown
+    );
+}
+
+#[test]
+fn instance_paths_require_exact_ordered_repeat_ancestry() {
+    let (inner, _) = edited(
+        &insert_holds(&[3]),
+        Command::WrapRepeat {
+            node: id("hold-0"),
+            id: id("inner"),
+            plays: 2,
+            gap: None,
+        },
+        "inner-allocation",
+    );
+    let (outer, _) = edited(
+        &inner,
+        Command::WrapRepeat {
+            node: id("inner"),
+            id: id("outer"),
+            plays: 3,
+            gap: None,
+        },
+        "outer-allocation",
+    );
+    let step = |name: &str, position| {
+        let NodeKind::Repeat { iterations, .. } = &outer.nodes()[&id(name)].kind else {
+            unreachable!()
+        };
+        RepeatInstance {
+            node: id(name),
+            iteration: iterations.at(position).unwrap(),
+        }
+    };
+    let path = InstancePath {
+        node: id("hold-0"),
+        repeats: vec![step("outer", 2), step("inner", 1)],
+    };
+    path.validate(&outer).unwrap();
+    for repeats in [
+        vec![],
+        vec![step("inner", 1)],
+        vec![step("inner", 1), step("outer", 2)],
+        vec![step("outer", 2), step("inner", 1), step("inner", 0)],
+    ] {
+        assert!(
+            InstancePath {
+                repeats,
+                ..path.clone()
+            }
+            .validate(&outer)
+            .is_err()
+        );
+    }
+    // A Repeat node itself names only its outer occurrence, not one of its plays.
+    InstancePath {
+        node: id("inner"),
+        repeats: vec![step("outer", 2)],
+    }
+    .validate(&outer)
+    .unwrap();
+}
+
+#[test]
+fn inserted_repeat_cannot_reserve_a_future_revision_and_revive_retired_plays() {
+    let imported = IterationOrder::new(RevisionId::new("foreign").unwrap(), 3)
+        .unwrap()
+        .inserted(3, 1, RevisionId::new("future-r").unwrap())
+        .unwrap();
+    let (inserted, _) = edited(
+        &empty(),
+        Command::Insert {
+            parent: id("root"),
+            index: 0,
+            subtree: Subtree {
+                root: id("repeat"),
+                nodes: BTreeMap::from([
+                    (id("child"), hold(1)),
+                    (
+                        id("repeat"),
+                        BeatNode {
+                            label: "Imported".into(),
+                            kind: NodeKind::Repeat {
+                                child: id("child"),
+                                iterations: imported,
+                                gap: None,
+                            },
+                        },
+                    ),
+                ]),
+            },
+        },
+        "actual-insertion",
+    );
+    let NodeKind::Repeat { iterations, .. } = &inserted.nodes()[&id("repeat")].kind else {
+        unreachable!()
+    };
+    let retired = iterations.at(3).unwrap();
+    assert_eq!(retired.allocation.as_str(), "actual-insertion");
+    let (shrunk, _) = edited(
+        &inserted,
+        Command::SetRepeat {
+            node: id("repeat"),
+            plays: 3,
+            gap: None,
+        },
+        "shrink-import",
+    );
+    let (grown, _) = edited(
+        &shrunk,
+        Command::SetRepeat {
+            node: id("repeat"),
+            plays: 4,
+            gap: None,
+        },
+        "future-r",
+    );
+    let NodeKind::Repeat { iterations, .. } = &grown.nodes()[&id("repeat")].kind else {
+        unreachable!()
+    };
+    assert_ne!(iterations.at(3), Some(retired.clone()));
+    assert!(iterations.position(&retired).is_none());
+}
+
+#[test]
 fn deserialization_preserves_timing_invariants() {
     for json in ["-1", "-9223372036854775808", "1.5"] {
         assert!(serde_json::from_str::<FrameDuration>(json).is_err());
@@ -128,9 +342,10 @@ fn dump_is_deterministic_and_unknown_schemas_are_rejected() {
     assert_eq!(decoded, document);
     assert_eq!(decoded.to_json().unwrap(), json);
     assert_eq!(
-        changed_json(&document, |v| v["schema_version"] = json!(2))
-            .unwrap_err()
-            .code,
+        changed_json(&document, |v| v["schema_version"] =
+            json!(DOCUMENT_SCHEMA_VERSION + 1))
+        .unwrap_err()
+        .code,
         DocumentErrorCode::UnsupportedSchema
     );
     assert!(changed_json(&document, |v| v["unrecognized"] = json!(true)).is_err());
@@ -237,7 +452,7 @@ fn repeat_setter_is_not_a_wrapper_and_gaps_are_between_plays() {
     assert_eq!(updated.duration().unwrap().frames(), 26);
     assert_eq!(updated.nodes().len(), wrapped.nodes().len());
     assert!(
-        matches!(&updated.nodes()[&id("repeat")].kind, NodeKind::Repeat { child, plays:4, .. } if child == &id("hold-0"))
+        matches!(&updated.nodes()[&id("repeat")].kind, NodeKind::Repeat { child, iterations, .. } if child == &id("hold-0") && iterations.len() == 4)
     );
     let (nested, _) = edited(
         &updated,

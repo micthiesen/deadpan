@@ -6,7 +6,8 @@ use serde::{Deserialize, Serialize};
 use crate::document::unique_map;
 use crate::{
     AssetId, AssetRecord, BeatNode, DocumentError, DocumentErrorCode, FrameDuration, HoldRecipe,
-    HoldVideo, MAX_DOCUMENT_NODES, NodeId, NodeKind, ProjectDocument, ProjectId, RevisionId,
+    HoldVideo, IterationOrder, MAX_DOCUMENT_NODES, NodeId, NodeKind, ProjectDocument, ProjectId,
+    RevisionId,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -57,6 +58,18 @@ pub enum Command {
         node: NodeId,
         plays: u32,
         gap: Option<HoldRecipe>,
+    },
+    InsertPlays {
+        node: NodeId,
+        index: u32,
+        count: u32,
+    },
+    /// Moves [start,end); destination is measured after removal.
+    MovePlays {
+        node: NodeId,
+        start: u32,
+        end: u32,
+        destination: u32,
     },
     SetHoldDuration {
         node: NodeId,
@@ -184,7 +197,7 @@ pub fn apply(
     )?;
     let before_duration = document.duration()?.frames();
     let mut result = document.clone();
-    reduce(&mut result, &request.command)?;
+    reduce(&mut result, &request.command, &request.new_revision)?;
     result.revision_id = request.new_revision.clone();
     let after_duration = result.duration()?.frames();
     let forward = DocumentPatch {
@@ -235,7 +248,11 @@ fn check_revision(
     Ok(())
 }
 
-fn reduce(document: &mut ProjectDocument, command: &Command) -> Result<(), EditError> {
+fn reduce(
+    document: &mut ProjectDocument,
+    command: &Command,
+    allocation: &RevisionId,
+) -> Result<(), EditError> {
     match command {
         Command::Insert {
             parent,
@@ -263,7 +280,16 @@ fn reduce(document: &mut ProjectDocument, command: &Command) -> Result<(), EditE
                 unused(document, id)?;
             }
             insert_child(document, parent, *index, subtree.root.clone())?;
-            document.nodes.extend(subtree.nodes.clone());
+            for (id, node) in &subtree.nodes {
+                let mut node = node.clone();
+                if let NodeKind::Repeat { iterations, .. } = &mut node.kind {
+                    // Inserting new authored nodes creates new occurrences. Do
+                    // not import arbitrary/foreign allocation namespaces that
+                    // could collide with a later revision after shrinking.
+                    *iterations = IterationOrder::new(allocation.clone(), iterations.len())?;
+                }
+                document.nodes.insert(id.clone(), node);
+            }
         }
         Command::Delete { node } => {
             detach(document, node)?;
@@ -341,7 +367,7 @@ fn reduce(document: &mut ProjectDocument, command: &Command) -> Result<(), EditE
                     label: "Repeat".into(),
                     kind: NodeKind::Repeat {
                         child: node.clone(),
-                        plays: *plays,
+                        iterations: IterationOrder::new(allocation.clone(), *plays)?,
                         gap: gap.clone(),
                     },
                 },
@@ -349,7 +375,7 @@ fn reduce(document: &mut ProjectDocument, command: &Command) -> Result<(), EditE
         }
         Command::SetRepeat { node, plays, gap } => {
             let NodeKind::Repeat {
-                plays: old_plays,
+                iterations,
                 gap: old_gap,
                 ..
             } = &mut node_mut(document, node)?.kind
@@ -359,8 +385,21 @@ fn reduce(document: &mut ProjectDocument, command: &Command) -> Result<(), EditE
                     "set-repeat updates an existing Repeat; use wrap-repeat to insert a wrapper",
                 ));
             };
-            *old_plays = *plays;
+            *iterations = iterations.resized(*plays, allocation.clone())?;
             *old_gap = gap.clone();
+        }
+        Command::InsertPlays { node, index, count } => {
+            let iterations = iterations_mut(document, node)?;
+            *iterations = iterations.inserted(*index, *count, allocation.clone())?;
+        }
+        Command::MovePlays {
+            node,
+            start,
+            end,
+            destination,
+        } => {
+            let iterations = iterations_mut(document, node)?;
+            *iterations = iterations.moved(*start, *end, *destination)?;
         }
         Command::SetHoldDuration { node, duration } => {
             hold_mut(document, node)?.duration = *duration;
@@ -382,6 +421,19 @@ fn reduce(document: &mut ProjectDocument, command: &Command) -> Result<(), EditE
         }
     }
     Ok(())
+}
+
+fn iterations_mut<'a>(
+    document: &'a mut ProjectDocument,
+    id: &NodeId,
+) -> Result<&'a mut IterationOrder, EditError> {
+    match &mut node_mut(document, id)?.kind {
+        NodeKind::Repeat { iterations, .. } => Ok(iterations),
+        _ => Err(EditError::new(
+            EditErrorCode::WrongNodeKind,
+            "play editing requires a Repeat",
+        )),
+    }
 }
 
 fn unused(document: &ProjectDocument, id: &NodeId) -> Result<(), EditError> {
@@ -582,6 +634,8 @@ fn description(command: &Command) -> &'static str {
         Command::Ungroup { .. } => "Ungroup beats",
         Command::WrapRepeat { .. } => "Wrap repeat",
         Command::SetRepeat { .. } => "Set repeat parameters",
+        Command::InsertPlays { .. } => "Insert repeat plays",
+        Command::MovePlays { .. } => "Move repeat plays",
         Command::SetHoldDuration { .. } => "Change hold duration",
         Command::SetHoldProvider { .. } => "Change hold provider",
         Command::Rename { .. } => "Rename beat",

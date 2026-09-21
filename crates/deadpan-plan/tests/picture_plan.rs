@@ -1,0 +1,760 @@
+use std::collections::BTreeMap;
+
+use deadpan_core::*;
+use deadpan_plan::{Picture, PlanError, RenderPlan};
+use proptest::prelude::*;
+
+fn id(value: &str) -> NodeId {
+    NodeId::new(value).unwrap()
+}
+fn asset_id(value: &str) -> AssetId {
+    AssetId::new(value).unwrap()
+}
+fn revision(value: &str) -> RevisionId {
+    RevisionId::new(value).unwrap()
+}
+fn duration(value: i64) -> FrameDuration {
+    FrameDuration::new(value).unwrap()
+}
+fn range(start: i64, end: i64) -> FrameRange {
+    FrameRange::new(ProjectFrame(start), ProjectFrame(end)).unwrap()
+}
+fn clock() -> SourceTimeBase {
+    SourceTimeBase::new(1, 30_000).unwrap()
+}
+fn span(start: i64, end: i64) -> SourceSpan {
+    SourceSpan::new(
+        SourceTimestamp {
+            ticks: start,
+            time_base: clock(),
+        },
+        SourceTimestamp {
+            ticks: end,
+            time_base: clock(),
+        },
+    )
+    .unwrap()
+}
+fn node(kind: NodeKind) -> BeatNode {
+    BeatNode {
+        label: "Fixture".into(),
+        kind,
+    }
+}
+fn background(frames: i64) -> HoldRecipe {
+    HoldRecipe {
+        duration: duration(frames),
+        video: HoldVideo::Background,
+        audio: HoldAudio::Silence,
+    }
+}
+fn hold(frames: i64) -> BeatNode {
+    node(NodeKind::Hold {
+        recipe: background(frames),
+    })
+}
+fn source(frames: i64, start: i64, end: i64) -> BeatNode {
+    node(NodeKind::Source {
+        source: SourceNode {
+            duration: duration(frames),
+            video: SourceVideo::Stream {
+                asset: asset_id("video"),
+                span: span(start, end),
+            },
+            audio: None,
+            link: LinkRelation::Independent,
+            audio_offset: AudioSample(0),
+        },
+    })
+}
+fn retime(child: &str, frames: i64, start: i64, end: i64) -> BeatNode {
+    node(NodeKind::Retime {
+        child: id(child),
+        duration: duration(frames),
+        mapping: range(start, end),
+        pitch: PitchPolicy::Preserve,
+    })
+}
+fn repeat(child: &str, plays: u32, gap: i64, allocation: &str) -> BeatNode {
+    node(NodeKind::Repeat {
+        child: id(child),
+        iterations: IterationOrder::new(revision(allocation), plays).unwrap(),
+        gap: (gap > 0).then(|| background(gap)),
+    })
+}
+fn document(roots: &[&str], nodes: Vec<(&str, BeatNode)>) -> ProjectDocument {
+    let empty = ProjectDocument::new(
+        ProjectId::new("project").unwrap(),
+        revision("initial"),
+        PresentationBasis {
+            width: 1920,
+            height: 1080,
+            frame_rate: FrameRate::new(30_000, 1001).unwrap(),
+            color_policy: ColorPolicy::SdrRec709,
+        },
+        id("root"),
+    )
+    .unwrap();
+    let mut value = serde_json::to_value(empty).unwrap();
+    let mut nodes: BTreeMap<_, _> = nodes
+        .into_iter()
+        .map(|(name, node)| (id(name), node))
+        .collect();
+    nodes.insert(
+        id("root"),
+        BeatNode::sequence("Root", roots.iter().map(|name| id(name)).collect()),
+    );
+    value["nodes"] = serde_json::to_value(nodes).unwrap();
+    let video = AssetRecord {
+        label: "Video".into(),
+        content_hash: "a".repeat(64),
+        video: Some(span(-10000, 100000)),
+        audio: Some(span(-10000, 100000)),
+        still_image: false,
+        frame_count: Some(duration(10000)),
+    };
+    let still = AssetRecord {
+        label: "Still".into(),
+        content_hash: "b".repeat(64),
+        video: None,
+        audio: None,
+        still_image: true,
+        frame_count: None,
+    };
+    value["assets"] = serde_json::to_value(BTreeMap::from([
+        (asset_id("video"), video),
+        (asset_id("still"), still),
+    ]))
+    .unwrap();
+    ProjectDocument::from_json(&value.to_string()).unwrap()
+}
+fn index(asset: &str, time_base: SourceTimeBase, pts: &[i64], end: i64) -> SourceFrameIndex {
+    SourceFrameIndex::new(
+        asset_id(asset),
+        time_base,
+        pts.iter()
+            .enumerate()
+            .map(|(number, pts)| IndexedSourceFrame {
+                identity: SourceFrameId(number as u64),
+                pts: *pts,
+                reported_duration: None,
+                keyframe: number == 0,
+                seek_from: Some(SourceFrameId(0)),
+                decode_timestamp: None,
+            })
+            .collect(),
+        end,
+        TerminalProvenance::Explicit,
+    )
+    .unwrap()
+}
+fn ticks(picture: &Picture) -> ExactRatio {
+    match picture {
+        Picture::Source { point, .. } | Picture::Freeze { point, .. } => point.ticks,
+        other => panic!("unexpected {other:?}"),
+    }
+}
+
+#[test]
+fn fractional_source_centers_and_vfr_selection_preserve_original_pts() {
+    let document = document(&["source"], vec![("source", source(6, -2002, 5005))]);
+    let plan = RenderPlan::compile(&document).unwrap();
+    let index = index("video", clock(), &[-2002, -1001, 1001, 4004], 5005);
+    let expected = [0, 1, 1, 2, 2, 3];
+    for (frame, expected) in expected.into_iter().enumerate() {
+        let sample = plan.picture(ProjectFrame(frame as i64)).unwrap();
+        assert_eq!(
+            ticks(&sample.picture),
+            ExactRatio::new(-2002 * 12 + (2 * frame as i128 + 1) * 7007, 12).unwrap()
+        );
+        assert_eq!(
+            sample
+                .picture
+                .select_source_frame(&index, EndpointPolicy::Reject)
+                .unwrap()
+                .identity,
+            SourceFrameId(expected)
+        );
+        sample.instance.validate(&document).unwrap();
+    }
+    assert_eq!(
+        plan.metadata().presentation_basis.frame_rate,
+        FrameRate::new(30000, 1001).unwrap()
+    );
+}
+
+#[test]
+fn source_index_checks_asset_clock_and_explicit_endpoint_policy() {
+    let plan =
+        RenderPlan::compile(&document(&["source"], vec![("source", source(2, 0, 1001))])).unwrap();
+    let picture = plan.picture(ProjectFrame(0)).unwrap().picture;
+    assert!(matches!(
+        picture.select_source_frame(&index("other", clock(), &[0], 1001), EndpointPolicy::Reject),
+        Err(PlanError::IndexAssetMismatch { .. })
+    ));
+    assert!(matches!(
+        picture.select_source_frame(
+            &index("video", SourceTimeBase::new(1, 1000).unwrap(), &[0], 1001),
+            EndpointPolicy::Reject
+        ),
+        Err(PlanError::IndexClockMismatch { .. })
+    ));
+    let shortened = index("video", clock(), &[500], 1001);
+    assert!(
+        picture
+            .select_source_frame(&shortened, EndpointPolicy::Reject)
+            .is_err()
+    );
+    assert_eq!(
+        picture
+            .select_source_frame(&shortened, EndpointPolicy::HoldAdjacent)
+            .unwrap()
+            .identity,
+        SourceFrameId(0)
+    );
+    assert!(matches!(
+        Picture::Background.select_source_frame(&shortened, EndpointPolicy::Reject),
+        Err(PlanError::NoSourceFrame)
+    ));
+}
+
+#[test]
+fn exact_retime_boundary_selects_the_right_sequence_child() {
+    let document = document(
+        &["retime"],
+        vec![
+            ("retime", retime("sequence", 1, 0, 2)),
+            (
+                "sequence",
+                BeatNode::sequence("Sequence", vec![id("left"), id("empty"), id("right")]),
+            ),
+            ("left", source(1, -1001, 0)),
+            ("empty", BeatNode::sequence("Empty", vec![])),
+            ("right", source(1, 0, 1001)),
+        ],
+    );
+    let sample = RenderPlan::compile(&document)
+        .unwrap()
+        .picture(ProjectFrame(0))
+        .unwrap();
+    assert_eq!(sample.instance.node, id("right"));
+    assert_eq!(sample.local_position, ExactRatio::ZERO);
+    assert_eq!(ticks(&sample.picture), ExactRatio::ZERO);
+}
+
+#[test]
+fn nested_retimes_repeat_paths_and_gap_coordinates_stay_exact() {
+    let mut inner = repeat("inner-retime", 2, 1, "inner-plays");
+    if let NodeKind::Repeat { gap: Some(gap), .. } = &mut inner.kind {
+        gap.video = HoldVideo::Freeze {
+            asset: asset_id("video"),
+            timestamp: SourceTimestamp {
+                ticks: 10,
+                time_base: clock(),
+            },
+        };
+    }
+    let document = document(
+        &["outer"],
+        vec![
+            ("source", source(6, -1001, 5005)),
+            ("inner-retime", retime("source", 4, 0, 6)),
+            ("inner", inner),
+            ("outer-retime", retime("inner", 6, 1, 9)),
+            ("outer", repeat("outer-retime", 3, 2, "outer-plays")),
+        ],
+    );
+    let plan = RenderPlan::compile(&document).unwrap();
+    assert_eq!(plan.duration(), duration(22));
+    for (frame, outer_ordinal) in [(0, 0), (8, 1), (16, 2)] {
+        let sample = plan.picture(ProjectFrame(frame)).unwrap();
+        assert_eq!(sample.local_position, ExactRatio::new(5, 2).unwrap());
+        assert_eq!(ticks(&sample.picture), ExactRatio::new(3003, 2).unwrap());
+        assert_eq!(
+            sample
+                .instance
+                .repeats
+                .iter()
+                .map(|r| (&r.node, r.iteration.ordinal))
+                .collect::<Vec<_>>(),
+            vec![(&id("outer"), outer_ordinal), (&id("inner"), 0)]
+        );
+        assert_eq!(sample.gap_after, None);
+        sample.instance.validate(&document).unwrap();
+    }
+    let inner_gap = plan.picture(ProjectFrame(2)).unwrap();
+    assert_eq!(inner_gap.instance.node, id("inner"));
+    assert_eq!(inner_gap.instance.repeats.len(), 1);
+    assert_eq!(
+        inner_gap.gap_after.unwrap(),
+        IterationId {
+            allocation: revision("inner-plays"),
+            ordinal: 0
+        }
+    );
+    assert_eq!(inner_gap.local_position, ExactRatio::new(1, 3).unwrap());
+    assert_eq!(ticks(&inner_gap.picture), ExactRatio::integer(10));
+    inner_gap.instance.validate(&document).unwrap();
+    for frame in [6, 7] {
+        let outer_gap = plan.picture(ProjectFrame(frame)).unwrap();
+        assert_eq!(outer_gap.instance.node, id("outer"));
+        assert!(outer_gap.instance.repeats.is_empty());
+        assert_eq!(outer_gap.gap_after.unwrap().ordinal, 0);
+        assert_eq!(outer_gap.picture, Picture::Background);
+        outer_gap.instance.validate(&document).unwrap();
+    }
+    assert!(plan.picture(ProjectFrame(21)).unwrap().gap_after.is_none());
+    assert!(plan.picture(ProjectFrame(22)).is_err());
+}
+
+#[test]
+fn accepted_frames_floor_only_after_composed_retimes_and_validate_index() {
+    let mut recipe = background(6);
+    recipe.video = HoldVideo::Accepted {
+        asset: asset_id("video"),
+        frames: range(3, 9),
+    };
+    let document = document(
+        &["outer"],
+        vec![
+            ("accepted", node(NodeKind::Hold { recipe })),
+            ("inner", retime("accepted", 4, 0, 6)),
+            ("outer", retime("inner", 6, 0, 4)),
+        ],
+    );
+    let plan = RenderPlan::compile(&document).unwrap();
+    let source_index = index(
+        "video",
+        clock(),
+        &[0, 100, 200, 300, 400, 500, 600, 700, 800, 900],
+        1000,
+    );
+    for frame in 0..6 {
+        let sample = plan.picture(ProjectFrame(frame)).unwrap();
+        let Picture::Accepted {
+            position,
+            frame: source_frame,
+            ..
+        } = sample.picture
+        else {
+            panic!("accepted")
+        };
+        assert_eq!(
+            position,
+            ExactRatio::new(2 * i128::from(frame + 3) + 1, 2).unwrap()
+        );
+        assert_eq!(source_frame, SourceFrameId((frame + 3) as u64));
+        assert_eq!(
+            sample
+                .picture
+                .select_source_frame(&source_index, EndpointPolicy::Reject)
+                .unwrap()
+                .identity,
+            source_frame
+        );
+    }
+    let last = plan.picture(ProjectFrame(5)).unwrap().picture;
+    assert!(matches!(
+        last.select_source_frame(
+            &index("video", clock(), &[0], 1000),
+            EndpointPolicy::HoldAdjacent
+        ),
+        Err(PlanError::MissingSourceFrame {
+            frame: SourceFrameId(8)
+        })
+    ));
+    assert!(matches!(
+        last.select_source_frame(&index("wrong", clock(), &[0], 1000), EndpointPolicy::Reject),
+        Err(PlanError::IndexAssetMismatch { .. })
+    ));
+}
+
+#[test]
+fn still_blank_freeze_and_background_are_distinct_picture_requests() {
+    let still = node(NodeKind::Source {
+        source: SourceNode {
+            duration: duration(1),
+            video: SourceVideo::Still {
+                asset: asset_id("still"),
+            },
+            audio: None,
+            link: LinkRelation::Independent,
+            audio_offset: AudioSample(0),
+        },
+    });
+    let blank = node(NodeKind::Source {
+        source: SourceNode {
+            duration: duration(1),
+            video: SourceVideo::Blank,
+            audio: Some(SourceAudio {
+                asset: asset_id("video"),
+                span: span(0, 1001),
+            }),
+            link: LinkRelation::Independent,
+            audio_offset: AudioSample(0),
+        },
+    });
+    let freeze = node(NodeKind::Hold {
+        recipe: HoldRecipe {
+            duration: duration(1),
+            video: HoldVideo::Freeze {
+                asset: asset_id("video"),
+                timestamp: SourceTimestamp {
+                    ticks: -1001,
+                    time_base: clock(),
+                },
+            },
+            audio: HoldAudio::Silence,
+        },
+    });
+    let plan = RenderPlan::compile(&document(
+        &["still", "blank", "freeze", "background"],
+        vec![
+            ("still", still),
+            ("blank", blank),
+            ("freeze", freeze),
+            ("background", hold(1)),
+        ],
+    ))
+    .unwrap();
+    assert_eq!(
+        plan.picture(ProjectFrame(0)).unwrap().picture,
+        Picture::Still {
+            asset: asset_id("still")
+        }
+    );
+    assert_eq!(
+        plan.picture(ProjectFrame(1)).unwrap().picture,
+        Picture::Blank
+    );
+    assert_eq!(
+        ticks(&plan.picture(ProjectFrame(2)).unwrap().picture),
+        ExactRatio::integer(-1001)
+    );
+    assert_eq!(
+        plan.picture(ProjectFrame(3)).unwrap().picture,
+        Picture::Background
+    );
+}
+
+#[test]
+fn empty_sequences_are_skipped_and_invalid_seeks_are_rejected() {
+    let empty = document(&[], vec![]);
+    let empty_plan = RenderPlan::compile(&empty).unwrap();
+    assert_eq!(empty_plan.duration(), FrameDuration::ZERO);
+    assert!(matches!(
+        empty_plan.picture(ProjectFrame(0)),
+        Err(PlanError::FrameOutOfRange { .. })
+    ));
+    let plan = RenderPlan::compile(&document(
+        &["a", "b", "hold", "c"],
+        vec![
+            ("a", BeatNode::sequence("A", vec![])),
+            ("b", BeatNode::sequence("B", vec![])),
+            ("hold", hold(2)),
+            ("c", BeatNode::sequence("C", vec![])),
+        ],
+    ))
+    .unwrap();
+    for frame in [0, 1] {
+        assert_eq!(
+            plan.picture(ProjectFrame(frame)).unwrap().instance.node,
+            id("hold")
+        );
+    }
+    for frame in [i64::MIN, -1, 2, i64::MAX] {
+        assert!(matches!(
+            plan.picture(ProjectFrame(frame)),
+            Err(PlanError::FrameOutOfRange { .. })
+        ));
+    }
+    assert_eq!(plan.node_duration(&id("a")), Some(FrameDuration::ZERO));
+    assert_eq!(plan.node_duration(&id("missing")), None);
+}
+
+#[test]
+fn maximum_play_count_and_last_frame_seek_do_not_expand_occurrences() {
+    let document = document(
+        &["repeat"],
+        vec![
+            ("child", hold(1)),
+            ("repeat", repeat("child", u32::MAX, 1, "plays")),
+        ],
+    );
+    let plan = RenderPlan::compile(&document).unwrap();
+    let expected_duration = i64::from(u32::MAX) * 2 - 1;
+    assert_eq!(plan.duration(), duration(expected_duration));
+    assert_eq!(plan.metadata().storage.authored_nodes, 3);
+    assert_eq!(plan.metadata().storage.sequence_prefix_entries, 1);
+    assert_eq!(plan.metadata().storage.iteration_run_entries, 1);
+    assert_eq!(
+        plan.metadata().storage.referenced_plays,
+        u64::from(u32::MAX)
+    );
+    let last = plan.picture(ProjectFrame(expected_duration - 1)).unwrap();
+    assert_eq!(last.instance.repeats[0].iteration.ordinal, u32::MAX - 1);
+    assert_eq!(last.lookup.iteration_run_comparisons, 1);
+    assert_eq!(last.lookup.visited_nodes, 3);
+    assert!(last.gap_after.is_none());
+    last.instance.validate(&document).unwrap();
+    assert!(plan.picture(ProjectFrame(expected_duration)).is_err());
+    assert!(serde_json::to_string(&plan.inspect()).unwrap().len() < 2000);
+}
+
+#[test]
+fn single_play_ignores_unrepresentable_unused_period() {
+    let document = document(
+        &["repeat"],
+        vec![
+            ("child", hold(i64::MAX)),
+            ("repeat", repeat("child", 1, i64::MAX, "plays")),
+        ],
+    );
+    let plan = RenderPlan::compile(&document).unwrap();
+    let sample = plan.picture(ProjectFrame(i64::MAX - 1)).unwrap();
+    assert_eq!(sample.instance.node, id("child"));
+    assert_eq!(sample.instance.repeats[0].iteration.ordinal, 0);
+    assert!(sample.gap_after.is_none());
+}
+
+#[test]
+fn exact_repeat_child_gap_and_next_play_boundaries_are_half_open() {
+    for (start, end, in_gap) in [(3, 5, true), (4, 6, false)] {
+        let document = document(
+            &["retime"],
+            vec![
+                ("child", hold(4)),
+                ("repeat", repeat("child", 2, 1, "plays")),
+                ("retime", retime("repeat", 1, start, end)),
+            ],
+        );
+        let plan = RenderPlan::compile(&document).unwrap();
+        let sample = plan.picture(ProjectFrame(0)).unwrap();
+        assert_eq!(sample.local_position, ExactRatio::ZERO);
+        sample.instance.validate(&document).unwrap();
+        if in_gap {
+            assert_eq!(sample.instance.node, id("repeat"));
+            assert_eq!(sample.gap_after.unwrap().ordinal, 0);
+        } else {
+            assert_eq!(sample.instance.node, id("child"));
+            assert!(sample.gap_after.is_none());
+            assert_eq!(sample.instance.repeats[0].iteration.ordinal, 1);
+        }
+    }
+}
+
+#[test]
+fn moved_and_inserted_iteration_runs_use_binary_selection_and_stable_gap_identity() {
+    let original = IterationOrder::new(revision("original"), 5).unwrap();
+    let moved = original.moved(1, 3, 3).unwrap();
+    let document = document(
+        &["repeat"],
+        vec![
+            ("child", hold(1)),
+            (
+                "repeat",
+                node(NodeKind::Repeat {
+                    child: id("child"),
+                    iterations: moved,
+                    gap: Some(background(1)),
+                }),
+            ),
+        ],
+    );
+    let plan = RenderPlan::compile(&document).unwrap();
+    for (play, ordinal) in [0, 3, 4, 1, 2].into_iter().enumerate() {
+        let child = plan.picture(ProjectFrame(play as i64 * 2)).unwrap();
+        assert_eq!(
+            child.instance.repeats[0].iteration,
+            original.at(ordinal).unwrap()
+        );
+        if play < 4 {
+            let gap = plan.picture(ProjectFrame(play as i64 * 2 + 1)).unwrap();
+            assert_eq!(gap.gap_after, original.at(ordinal));
+            gap.instance.validate(&document).unwrap();
+        }
+    }
+    let mut many_runs = IterationOrder::new(revision("run0"), 1).unwrap();
+    for number in 1..128 {
+        many_runs = many_runs
+            .inserted(number, 1, revision(&format!("run{number}")))
+            .unwrap();
+    }
+    let many = document_with_repeat_order(many_runs);
+    let plan = RenderPlan::compile(&many).unwrap();
+    assert_eq!(plan.metadata().storage.iteration_run_entries, 128);
+    for play in 0..128 {
+        let sample = plan.picture(ProjectFrame(play)).unwrap();
+        assert_eq!(
+            sample.instance.repeats[0].iteration.allocation,
+            revision(&format!("run{play}"))
+        );
+        assert!(sample.lookup.iteration_run_comparisons <= 8);
+    }
+}
+
+fn document_with_repeat_order(iterations: IterationOrder) -> ProjectDocument {
+    document(
+        &["repeat"],
+        vec![
+            ("child", hold(1)),
+            (
+                "repeat",
+                node(NodeKind::Repeat {
+                    child: id("child"),
+                    iterations,
+                    gap: None,
+                }),
+            ),
+        ],
+    )
+}
+
+#[test]
+fn compiled_revision_is_immutable_and_inverse_restores_deterministic_inspection() {
+    let document = document(&["hold"], vec![("hold", hold(3))]);
+    let original = RenderPlan::compile(&document).unwrap();
+    let transaction = apply(
+        &document,
+        &CommandRequest {
+            project_id: document.project_id().clone(),
+            expected_revision: document.revision_id().clone(),
+            new_revision: revision("edit"),
+            command: Command::SetHoldDuration {
+                node: id("hold"),
+                duration: duration(9),
+            },
+        },
+    )
+    .unwrap();
+    let edited = transaction.forward.apply(&document).unwrap();
+    let edited_plan = RenderPlan::compile(&edited).unwrap();
+    assert_eq!(edited_plan.duration(), duration(9));
+    assert_eq!(original.duration(), duration(3));
+    assert_eq!(original.metadata().revision_id, revision("initial"));
+    assert_eq!(
+        edited_plan.picture(ProjectFrame(2)).unwrap().revision_id,
+        revision("edit")
+    );
+    let restored = RenderPlan::compile(&transaction.inverse.apply(&edited).unwrap()).unwrap();
+    assert_eq!(restored.inspect(), original.inspect());
+    assert_eq!(
+        serde_json::to_string(&restored.inspect()).unwrap(),
+        serde_json::to_string(&original.inspect()).unwrap()
+    );
+    assert_eq!(
+        restored.picture(ProjectFrame(2)).unwrap(),
+        original.picture(ProjectFrame(2)).unwrap()
+    );
+}
+
+#[test]
+fn accepted_repeat_gap_maps_exact_fractional_positions_without_a_trailing_gap() {
+    let recipe = HoldRecipe {
+        duration: duration(3),
+        video: HoldVideo::Accepted {
+            asset: asset_id("video"),
+            frames: range(20, 23),
+        },
+        audio: HoldAudio::Silence,
+    };
+    let document = document(
+        &["retime"],
+        vec![
+            ("child", hold(2)),
+            (
+                "repeat",
+                node(NodeKind::Repeat {
+                    child: id("child"),
+                    iterations: IterationOrder::new(revision("plays"), 2).unwrap(),
+                    gap: Some(recipe),
+                }),
+            ),
+            ("retime", retime("repeat", 14, 0, 7)),
+        ],
+    );
+    let plan = RenderPlan::compile(&document).unwrap();
+    for (frame, expected) in [(4, 20), (5, 20), (6, 21), (7, 21), (8, 22), (9, 22)] {
+        let sample = plan.picture(ProjectFrame(frame)).unwrap();
+        assert_eq!(sample.instance.node, id("repeat"));
+        sample.instance.validate(&document).unwrap();
+        assert_eq!(sample.gap_after.unwrap().ordinal, 0);
+        let Picture::Accepted {
+            position,
+            frame: original,
+            ..
+        } = sample.picture
+        else {
+            panic!("accepted gap")
+        };
+        assert_eq!(original, SourceFrameId(expected));
+        assert_eq!(
+            position,
+            ExactRatio::new(80 + i128::from(frame * 2 - 7), 4).unwrap()
+        );
+    }
+    assert!(plan.picture(ProjectFrame(10)).unwrap().gap_after.is_none());
+    assert!(plan.picture(ProjectFrame(13)).unwrap().gap_after.is_none());
+    assert!(plan.picture(ProjectFrame(14)).is_err());
+}
+
+#[test]
+fn unrepresentable_nested_exact_arithmetic_is_an_error_not_rounded_output() {
+    let document = document(
+        &["outer"],
+        vec![
+            ("child", hold(i64::MAX)),
+            ("inner", retime("child", i64::MAX, 1, i64::MAX)),
+            ("middle", retime("inner", i64::MAX, 1, i64::MAX)),
+            ("outer", retime("middle", i64::MAX, 1, i64::MAX)),
+        ],
+    );
+    let plan = RenderPlan::compile(&document).unwrap();
+    assert!(matches!(
+        plan.picture(ProjectFrame(0)),
+        Err(PlanError::Time(TimeError::Overflow))
+    ));
+}
+
+proptest! {
+    #[test]
+    fn prefix_index_matches_explicit_sequence_reference(lengths in proptest::collection::vec(0_i64..12, 0..80)) {
+        let names: Vec<_> = (0..lengths.len()).map(|i| format!("node-{i}")).collect();
+        let nodes = names.iter().zip(&lengths).map(|(name, frames)| (name.as_str(), if *frames == 0 { BeatNode::sequence("Empty", vec![]) } else { hold(*frames) })).collect();
+        let roots: Vec<_> = names.iter().map(String::as_str).collect();
+        let plan = RenderPlan::compile(&document(&roots, nodes)).unwrap();
+        let mut cursor = 0;
+        for (name, frames) in names.iter().zip(&lengths) {
+            for local in 0..*frames {
+                let sample = plan.picture(ProjectFrame(cursor + local)).unwrap();
+                prop_assert_eq!(sample.instance.node, id(name));
+                prop_assert_eq!(sample.local_position, ExactRatio::new(i128::from(local) * 2 + 1, 2).unwrap());
+                prop_assert!(sample.lookup.sequence_comparisons <= 7);
+            }
+            cursor += frames;
+        }
+        prop_assert_eq!(plan.duration().frames(), cursor);
+        prop_assert!(plan.picture(ProjectFrame(cursor)).is_err());
+    }
+
+    #[test]
+    fn compact_repeat_matches_explicit_reference(child in 1_i64..10, gap in 0_i64..7, plays in 1_u32..40) {
+        let doc = document(&["repeat"], vec![("child", hold(child)), ("repeat", repeat("child", plays, gap, "plays"))]);
+        let plan = RenderPlan::compile(&doc).unwrap();
+        for frame in 0..plan.duration().frames() {
+            let play = (frame / (child + gap)) as u32;
+            let local = frame % (child + gap);
+            let sample = plan.picture(ProjectFrame(frame)).unwrap();
+            if local < child {
+                prop_assert_eq!(&sample.instance.node, &id("child"));
+                prop_assert_eq!(sample.instance.repeats[0].iteration.ordinal, play);
+                prop_assert!(sample.gap_after.is_none());
+            } else {
+                prop_assert!(play < plays - 1);
+                prop_assert_eq!(&sample.instance.node, &id("repeat"));
+                prop_assert_eq!(sample.gap_after.unwrap().ordinal, play);
+            }
+            sample.instance.validate(&doc).unwrap();
+        }
+    }
+}

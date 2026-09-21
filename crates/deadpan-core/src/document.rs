@@ -4,10 +4,11 @@ use std::{error::Error, fmt};
 use serde::{Deserialize, Deserializer, Serialize, de};
 
 use crate::{
-    AudioSample, FrameDuration, FrameRange, FrameRate, SourceTimestamp, TimeError, repeat_duration,
+    AudioSample, FrameDuration, FrameRange, FrameRate, IterationOrder, SourceTimestamp, TimeError,
+    repeat_duration,
 };
 
-pub const DOCUMENT_SCHEMA_VERSION: u32 = 1;
+pub const DOCUMENT_SCHEMA_VERSION: u32 = 2;
 /// Bounds apply before traversal. Structure is walked iteratively, never recursively.
 pub const MAX_DOCUMENT_NODES: usize = 100_000;
 pub const MAX_DOCUMENT_ASSETS: usize = 100_000;
@@ -241,7 +242,7 @@ pub enum NodeKind {
     },
     Repeat {
         child: NodeId,
-        plays: u32,
+        iterations: IterationOrder,
         gap: Option<HoldRecipe>,
     },
     Retime {
@@ -422,7 +423,8 @@ impl ProjectDocument {
             .map(|(id, _)| id.clone())
     }
 
-    fn durations(&self) -> Result<BTreeMap<NodeId, FrameDuration>, DocumentError> {
+    /// Validate once and return every authored duration for plan compilation.
+    pub fn durations(&self) -> Result<BTreeMap<NodeId, FrameDuration>, DocumentError> {
         if self.schema_version != DOCUMENT_SCHEMA_VERSION {
             return Err(DocumentError::new(
                 DocumentErrorCode::UnsupportedSchema,
@@ -559,13 +561,18 @@ impl ProjectDocument {
                     self.validate_hold(recipe)?;
                     recipe.duration
                 }
-                NodeKind::Repeat { child, plays, gap } => {
+                NodeKind::Repeat {
+                    child,
+                    iterations,
+                    gap,
+                } => {
+                    iterations.validate()?;
                     if let Some(gap) = gap {
                         self.validate_hold(gap)?;
                     }
                     repeat_duration(
                         child_duration(child)?,
-                        *plays,
+                        iterations.len(),
                         gap.as_ref().map_or(FrameDuration::ZERO, |gap| gap.duration),
                     )?
                 }
@@ -837,7 +844,7 @@ impl DocumentError {
             message: message.into(),
         }
     }
-    fn json(error: serde_json::Error) -> Self {
+    pub(crate) fn json(error: serde_json::Error) -> Self {
         Self::new(DocumentErrorCode::InvalidJson, error.to_string())
     }
 }

@@ -12,7 +12,8 @@ pub fn report() -> Result<serde_json::Value, CliError> {
             "frame_rate_numerator": rate.numerator(), "frame_rate_denominator": rate.denominator(),
             "frame": 1, "sample_boundary": rate.audio_boundary(ProjectFrame(1))?.0,
         },
-        "partial": ["structural-editing-commands", "sqlite-project-history"],
+        "document_schema": deadpan_core::DOCUMENT_SCHEMA_VERSION,
+        "partial": ["structural-editing-commands", "sqlite-project-history", "schema-1-migration", "indexed-picture-plan"],
         "unimplemented": ["media-decode", "audio-output", "keyboard-editor", "media-preview", "analysis", "ai-generation", "youtube-import", "export", "distribution"],
     }))
 }

@@ -710,7 +710,9 @@ name = "deadpan-cli"
 version = "0.1.0"
 dependencies = [
  "deadpan-core",
+ "deadpan-plan",
  "deadpan-store",
+ "rusqlite",
  "serde",
  "serde_json",
  "tempfile",
@@ -725,6 +727,17 @@ dependencies = [
  "proptest",
  "serde",
  "serde_json",
+]
+
+[[package]]
+name = "deadpan-plan"
+version = "0.1.0"
+dependencies = [
+ "deadpan-core",
+ "proptest",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.20",
 ]
 
 [[package]]

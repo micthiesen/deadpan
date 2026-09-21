@@ -22,6 +22,8 @@ const HELP: &str = "Deadpan headless commands:
   project undo <project.deadpan> --expected <revision> [--dry-run]
   project redo <project.deadpan> --expected <revision> [--dry-run]
   project checkpoint <project.deadpan>
+  project migrate <project.deadpan>
+  inspect-plan <project.deadpan> [--frame <N>]
   command <project.deadpan> --json <request.json> [--dry-run]
 
 Creation currently requires an explicit presentation basis.
@@ -40,6 +42,8 @@ pub enum CliError {
     #[error(transparent)]
     Timing(#[from] deadpan_core::TimeError),
     #[error(transparent)]
+    Plan(#[from] deadpan_plan::PlanError),
+    #[error(transparent)]
     Json(#[from] serde_json::Error),
     #[error(transparent)]
     Io(#[from] std::io::Error),
@@ -51,6 +55,9 @@ impl CliError {
             Self::Usage(_) | Self::Timing(_) | Self::Json(_) => "InvalidInput",
             Self::Protocol(_) => "ProtocolUnsupported",
             Self::Document(_) => "ProjectInvalid",
+            Self::Plan(deadpan_plan::PlanError::FrameOutOfRange { .. }) => "FrameOutOfRange",
+            Self::Plan(deadpan_plan::PlanError::Time(_)) => "TimingOverflow",
+            Self::Plan(_) => "PlanInvalid",
             Self::Io(_) => "IoFailure",
             Self::Store(error) => error.code(),
         }
@@ -61,6 +68,12 @@ impl CliError {
             Self::Store(StoreError::Edit(error)) => {
                 error.current_revision.as_ref().map(RevisionId::as_str)
             }
+            _ => None,
+        }
+    }
+    fn recovery_backup(&self) -> Option<&Path> {
+        match self {
+            Self::Store(StoreError::MigrationFailed { backup, .. }) => Some(backup),
             _ => None,
         }
     }
@@ -86,7 +99,7 @@ pub fn entry(arguments: impl IntoIterator<Item = String>) -> ExitCode {
         Ok(()) => ExitCode::SUCCESS,
         Err(error) => {
             let report = serde_json::json!({ "schema_version": 1, "error": {
-                "code": error.code(), "message": error.to_string(), "current_revision": error.current_revision()
+                "code": error.code(), "message": error.to_string(), "current_revision": error.current_revision(), "recovery_backup": error.recovery_backup()
             }});
             let _ = writeln!(io::stderr().lock(), "{report}");
             ExitCode::FAILURE
@@ -150,6 +163,24 @@ fn run(arguments: &[String]) -> Result<(), CliError> {
             let store = ProjectStore::open(Path::new(path), AccessMode::ReadWrite)?;
             write_json(
                 &serde_json::json!({ "protocol": 1, "database_checkpoint": store.checkpoint()? }),
+            )
+        }
+        ["project", "migrate", path] => write_json(
+            &serde_json::json!({ "protocol": 1, "migration": ProjectStore::migrate(Path::new(path))? }),
+        ),
+        ["inspect-plan", path] => {
+            let document = ProjectStore::open(Path::new(path), AccessMode::ReadOnly)?.snapshot()?;
+            let plan = deadpan_plan::RenderPlan::compile(&document)?;
+            write_json(&serde_json::json!({ "protocol": 1, "plan": plan.inspect() }))
+        }
+        ["inspect-plan", path, "--frame", frame] => {
+            let frame = frame
+                .parse::<i64>()
+                .map_err(|_| CliError::Usage("Frame must be a signed integer".into()))?;
+            let document = ProjectStore::open(Path::new(path), AccessMode::ReadOnly)?.snapshot()?;
+            let plan = deadpan_plan::RenderPlan::compile(&document)?;
+            write_json(
+                &serde_json::json!({ "protocol": 1, "sample": plan.picture(deadpan_core::ProjectFrame(frame))? }),
             )
         }
         ["command", path, "--json", request] => command(Path::new(path), Path::new(request), false),

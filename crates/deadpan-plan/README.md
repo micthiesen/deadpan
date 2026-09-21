@@ -1,0 +1,51 @@
+# Structural picture plan
+
+`RenderPlan::compile(&ProjectDocument)` validates and owns an immutable snapshot
+of one committed revision. `metadata()`, `node_duration()`, and deterministic
+`inspect()` expose its identity, presentation basis, duration, and storage
+counts. `picture(ProjectFrame)` produces a serializable original-media picture
+request for a project frame center. Callers can share this pure mapping between
+preview, export, and headless inspection.
+
+Sequences store cumulative child-duration boundaries and select them by binary
+search. Empty Sequences retain their authored identities and duration zero but
+are skipped during picture selection. Repeats store the child once and index
+compact iteration identity runs; even `u32::MAX` plays do not allocate per-play
+nodes. `LookupStats` records actual node visits and binary-search comparisons.
+Picture descent is O(depth × log(max(children, iteration runs))).
+
+Nested Retime maps retain `ExactRatio` coordinates through the entire structural
+path. Source spans map that exact coordinate into their original signed stream
+clock. The frame index is selected only through
+`Picture::select_source_frame(index, EndpointPolicy)`, which checks the asset and
+timestamp clock. VFR selection uses the measured `SourceFrameIndex` and an
+explicit endpoint policy. Accepted artifacts retain their exact original-frame
+coordinate and floor only after all structural transforms, within the authored
+half-open range. Missing accepted frames fail even under endpoint holding.
+
+Each sample carries a core `InstancePath`. A normal sample targets its Source or
+Hold and includes all repeated ancestors. A gap targets the Repeat node with
+only its repeated ancestors; `gap_after` identifies the stable preceding
+iteration. Both paths satisfy core validation. No gap follows the last play,
+and iteration reordering changes positions without changing those identities.
+
+The tests cover negative/fractional source origins, exact sequence boundaries,
+VFR lookup, nested retimes/repeats, accepted frame mapping, all picture provider
+variants, stable gap identities after reordering, binary iteration-run lookup,
+zero-duration Sequences, invalid seeks, billions of compact plays, immutable
+revision behavior, inverse-compatible deterministic inspection, and explicit
+exact-arithmetic overflow. Property tests compare indexed sequence and repeat
+lookup against simple enumerated references for bounded generated documents.
+
+```sh
+cargo test -p deadpan-plan --locked
+cargo clippy -p deadpan-plan --all-targets --locked -- -D warnings
+cargo fmt -p deadpan-plan -- --check
+```
+
+This is a structural picture mapping layer, not a media renderer. It has no
+decoders, pixels, GPU handles, audio mapping/DSP, effects, framing, attachments,
+color transforms, cache fragments, incremental recompilation, transport, or
+export implementation. Compilation currently rebuilds the full structural
+index. Exact arithmetic is bounded by checked `i128` intermediates; an
+unrepresentable nested mapping returns an error instead of rounding it.

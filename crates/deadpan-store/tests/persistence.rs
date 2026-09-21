@@ -88,6 +88,85 @@ fn one_writer_readers_and_reopen_preserve_the_document() -> Result {
 }
 
 #[test]
+fn imported_initial_allocations_stay_reserved_after_their_plays_are_removed() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let base = document()?;
+    let inserted = deadpan_core::apply(&base, &insert(&base, "insert-initial", "hold")?)?
+        .forward
+        .apply(&base)?;
+    let request = CommandRequest {
+        project_id: inserted.project_id().clone(),
+        expected_revision: inserted.revision_id().clone(),
+        new_revision: RevisionId::new("initial-import")?,
+        command: Command::WrapRepeat {
+            node: NodeId::new("hold")?,
+            id: NodeId::new("repeat")?,
+            plays: 4,
+            gap: None,
+        },
+    };
+    let wrapped = deadpan_core::apply(&inserted, &request)?
+        .forward
+        .apply(&inserted)?;
+    let mut wire = serde_json::to_value(wrapped)?;
+    wire["nodes"]["repeat"]["kind"]["iterations"]["runs"] = serde_json::json!([
+        {"allocation":"base-allocation","first":0,"count":3},
+        {"allocation":"reserved-name","first":0,"count":1}
+    ]);
+    let initial = ProjectDocument::from_json(&wire.to_string())?;
+    let path = scratch.path().join("imported.deadpan");
+    let mut store = ProjectStore::create(&path, &initial)?;
+    store.commit(&CommandRequest {
+        project_id: initial.project_id().clone(),
+        expected_revision: initial.revision_id().clone(),
+        new_revision: RevisionId::new("shrink-import")?,
+        command: Command::SetRepeat {
+            node: NodeId::new("repeat")?,
+            plays: 3,
+            gap: None,
+        },
+    })?;
+    let current = store.snapshot()?;
+    let grow = CommandRequest {
+        project_id: current.project_id().clone(),
+        expected_revision: current.revision_id().clone(),
+        new_revision: RevisionId::new("reserved-name")?,
+        command: Command::SetRepeat {
+            node: NodeId::new("repeat")?,
+            plays: 4,
+            gap: None,
+        },
+    };
+    assert!(matches!(
+        store.preview(&grow),
+        Err(StoreError::RevisionReused(_))
+    ));
+    assert!(matches!(
+        store.commit(&grow),
+        Err(StoreError::RevisionReused(_))
+    ));
+    assert!(matches!(
+        store.undo(current.revision_id(), RevisionId::new("reserved-name")?),
+        Err(StoreError::RevisionReused(_))
+    ));
+    assert_eq!(store.snapshot()?, current);
+    drop(store);
+    ProjectStore::open(&path, AccessMode::ReadOnly)?.validate()?;
+    // Even otherwise self-consistent forged history cannot reuse a namespace
+    // from the imported initial document. This checks the replay invariant too.
+    let connection = Connection::open(path.join("project.sqlite"))?;
+    connection.execute_batch("PRAGMA foreign_keys=OFF; BEGIN;
+        UPDATE revisions SET id='reserved-name',document=json_set(document,'$.revision_id','reserved-name') WHERE id='shrink-import';
+        UPDATE history SET revision_id='reserved-name',request=json_set(request,'$.new_revision','reserved-name'),edit=json_set(edit,'$.forward.to_revision','reserved-name','$.inverse.from_revision','reserved-name') WHERE revision_id='shrink-import';
+        UPDATE state SET head_revision='reserved-name'; COMMIT;")?;
+    assert!(matches!(
+        ProjectStore::open(&path, AccessMode::ReadOnly),
+        Err(StoreError::History(_))
+    ));
+    Ok(())
+}
+
+#[test]
 fn undo_and_redo_survive_restart_without_reusing_revision_identity() -> Result {
     let scratch = tempfile::tempdir()?;
     let path = scratch.path().join("history.deadpan");

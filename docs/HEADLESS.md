@@ -65,13 +65,41 @@ never-reused revision rule as commit. A stale expected
 revision fails with `RevisionConflict` and the current revision, without writing.
 
 Supported node-targeted commands are `insert`, `delete`, `move`, `group`,
-`ungroup`, `wrap_repeat`, `set_repeat`, `set_hold_duration`, `set_hold_provider`,
+`ungroup`, `wrap_repeat`, `set_repeat`, `insert_plays`, `move_plays`, `set_hold_duration`, `set_hold_provider`,
 `rename`, and `add_asset`. Their exact typed parameters are defined in
 [`Command`](../crates/deadpan-core/src/command.rs). `set_repeat` changes an existing
 Repeat; `wrap_repeat` deliberately adds nesting. A three-play repeat includes
 three total plays and only two gaps. These are structural edits, not rendered
 media. Text/range selectors, registers, macros, per-play overrides, and effects
 remain required future work.
+
+Repeat documents use schema 2 and store compact `iterations.runs` with
+`allocation`, `first`, and `count`. Commands `wrap_repeat` and `set_repeat` still
+take a total `plays` count. `insert_plays` takes `node`, `index`, and `count`;
+`move_plays` takes `node`, a half-open `start`/`end` play range, and `destination`
+measured after removal. Surviving identities remain stable; inserted/grown plays
+use the command's new revision. The run limit is 100,000 per Repeat, checked
+without expanding plays. `InstancePath` identifies the target node and its exact
+ordered Repeat ancestors. Sparse overrides and persistent anchors are still open.
+Inserting a subtree remaps its Repeat plays to the actual insertion revision,
+preserving their count. An imported initial document reserves its existing
+allocation names, so later revisions cannot resurrect retired identities.
+
+## Picture plan inspection
+
+```sh
+cargo run --locked -p deadpan-cli -- inspect-plan /tmp/example.deadpan
+cargo run --locked -p deadpan-cli -- inspect-plan /tmp/example.deadpan --frame 10
+```
+
+The first command reports the immutable revision, authored node durations, and
+index storage. The second resolves one project-frame center through Sequences,
+Repeat plays/gaps, and nested Retimes. It returns an original media coordinate
+or the authored Hold/blank/still provider, plus stable occurrence identity and
+lookup work counters. Fractions use decimal numerator/denominator strings so
+wide exact values survive JSON clients. Out-of-range frames fail explicitly.
+These commands work read-only alongside a writer and do not decode media,
+evaluate effects, mix audio, or render a file.
 
 ## History and checkpoints
 
@@ -108,9 +136,33 @@ CLI request to an already-open GUI through a host socket is still outstanding.
 
 A checkpoint is a consistent SQLite backup including committed WAL data, stored
 under `Snapshots/`. It is not a portable project copy: the media directories are
-not duplicated. Full recovery/migration UI and portable media ownership remain
-open. Unsupported database schema versions are refused without rewriting them;
+not duplicated. Full recovery UI and portable media ownership remain open.
+Unsupported database schema versions are refused without rewriting them;
 future-schema read-only inspection still needs a compatibility implementation.
+
+## Schema migration
+
+Schema-1 projects return `MigrationRequired` when opened. Upgrade explicitly:
+
+```sh
+cargo run --locked -p deadpan-cli -- project migrate /tmp/example.deadpan
+```
+
+Migration holds the project writer lock, keeps a consistent SQLite backup under
+`Snapshots/before-schema-2-*.sqlite`, and rewrites a separate candidate. It
+replays all commands, undo/redo revisions, and abandoned branches with their
+original revision IDs. Every snapshot and forward/inverse transaction is checked
+against its strict schema-1 meaning. SQLite atomically promotes the validated
+candidate through its backup API; the main file is never renamed around a live
+WAL. Existing read transactions keep their old snapshot. Failure before promotion
+leaves authored contents unchanged. A current-schema project is validated with
+no new backup. The result reports source/destination schemas and backup path.
+Failures after backup creation include `error.recovery_backup`. Semantic migration
+failures use `MigrationFailed`; disk, permission, and lock failures keep their
+actionable storage error codes and still identify the retained backup.
+
+This is a database migration, not portable media copying or a recovery UI. The
+immutable source specification and media references are unaffected.
 
 Machine-readable failures go to stderr with a schema version, stable error code,
 and explanation; the process exits nonzero. A failed storage write never reports

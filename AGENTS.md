@@ -6,7 +6,7 @@ Deadpan is a native macOS structural video editor for timing and attention, buil
 
 Read [the full specification](docs/spec/DEADPAN_SPEC.md) and [agent handoff](docs/spec/AGENT_HANDOFF.md) before feature work. The Markdown specification is normative; summaries here do not reduce its scope. [Requirements](docs/REQUIREMENTS.md) tracks DP-01 through DP-24 and Gates A through G. Keep code, tests, evidence, and remaining work current there.
 
-The current foundation includes validated beat documents, reversible structural commands, SQLite project/history storage, and a shared headless command entrypoint. The native UI remains a welcome shell. It is not yet a usable video editor or release candidate. All product requirements remain open or partial. A button, mock worker, downloaded model, ignored test, or proposed target does not prove implementation.
+The current foundation includes validated beat documents, reversible structural commands, stable repeat identities, exact indexed picture plans, SQLite project/history storage with schema migration, and a shared headless command entrypoint. The native UI remains a welcome shell. It is not yet a usable video editor or release candidate. All product requirements remain open or partial. A button, mock worker, downloaded model, ignored test, or proposed target does not prove implementation.
 
 ## Design philosophy
 
@@ -28,6 +28,7 @@ Current crates:
 
 - `crates/deadpan-core`: exact time, validated documents, structural commands, and reversible patches; no I/O or identity generation.
 - `crates/deadpan-store`: authoritative SQLite packages, immutable revisions, atomic writes, durable undo/redo, and database checkpoints.
+- `crates/deadpan-plan`: immutable indexed picture mappings through structural beats, using exact frame centers and original source identities; no decoding or DSP.
 - `crates/deadpan-app`: native `egui`/`eframe` application using `wgpu` on Metal; development welcome shell.
 - `crates/deadpan-cli`: versioned headless project/command API, reused by `deadpan-app --headless`.
 
@@ -36,6 +37,8 @@ Current crates:
 Use Rust 1.97.1 as pinned in `rust-toolchain.toml`, Cargo, rustfmt, Clippy, strong types, and meaningful unit/property tests. Keep platform-specific unsafe code inside qualified adapters and out of core. Avoid debug leftovers, broad suppressions, unchecked conversions, and unrelated dependency additions. Commit `Cargo.lock` and test locked dependencies.
 
 Every persisted edit, undo, and redo gets a never-reused revision ID. Core inverse patches can restore exact fixture identity; the store rebases them onto fresh revisions to prevent stale commands becoming valid after undo. Store writes use one transaction for the revision, history, and cursor. Keep `.writer.lock` held for the writable store lifetime; read-only inspection and dry runs may coexist. Take live database snapshots through SQLite's backup API, never copy only an open main database file.
+
+Repeat play IDs are scoped by Repeat node and allocation revision, with an ordinal inside that allocation. Preserve surviving IDs through resizing and reorder; allocate fresh IDs for growth and inserted subtrees. Imported initial snapshots reserve their allocation names even after plays are removed. Keep compact runs bounded and never expand a repeat merely to seek. Schema 2 derives the play count from these runs. Schema-1 migrations replay the complete chronology on a consistent copy, compare every legacy snapshot/transaction, and promote through SQLite's backup transaction only after validation. Preserve the pre-migration backup.
 
 The setup workflow's TypeScript/Bun/mitools/Biome defaults do not apply to this Rust-native product. The maintained Rust sibling `beastie` supplies the initial workspace conventions; consult maintained siblings for evolving personal tooling patterns. [Dependency decisions](docs/DEPENDENCIES.md) records the pins and qualification boundaries. Do not introduce Bun, Node, Python, or shell setup as an end-user requirement. Future model workers use an app-managed private runtime selected through measurement.
 

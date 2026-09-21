@@ -9,10 +9,17 @@
 
 mod command;
 mod document;
+mod exact;
+pub mod legacy_v1;
+mod occurrence;
+mod source_index;
 mod time;
 
 pub use command::*;
 pub use document::*;
+pub use exact::ExactRatio;
+pub use occurrence::*;
+pub use source_index::*;
 
 pub use time::{
     AudioSample, FrameDuration, FrameRange, FrameRate, MIX_SAMPLE_RATE, ProjectFrame,

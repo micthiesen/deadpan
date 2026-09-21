@@ -46,7 +46,8 @@ Version and feature references: [eframe 0.36.2](https://docs.rs/eframe/0.36.2/ef
 The storage foundation tests writer ownership, read-only coexistence, durable
 undo/redo, retained branches, actual SQLite disk-full rollback, interrupted
 transactions, and live backup consistency. This is partial storage
-qualification. Migration, restore/recovery policy, and portable managed-media
+qualification. Schema-1-to-2 migration now replays a backed-up copy and atomically
+promotes it through SQLite. Restore/recovery policy and portable managed-media
 ownership remain open.
 
 ## Measured media candidates
@@ -63,8 +64,14 @@ Pinned rsmpeg `b21fcfde8bb1ffdc179504e370e330385baa9819` does not compile agains
 that FFmpeg 9 build. Pinned Cutlass
 `22437e2837340c7c57d62e438117f9a0fb4096d2` passes its scoped upstream tests but
 fails Deadpan's nonzero-start timestamp fixture. Neither combination is adopted
-unchanged. The next media adapter must qualify compatible pinned bindings and a
-shipping FFmpeg configuration.
+unchanged. The [compatible qualification](qualification/media-compatible-2026-09-20.md)
+now establishes the same rsmpeg pin with signed FFmpeg 8.0.3, built separately
+under LGPL 2.1-or-later flags with no GPL/nonfree codecs. Normal and sanitizer
+harness runs pass 252 positive assertions each, including original picture
+identity and retained-frame ownership. Hardware/VFR B-frame mux failures and VFR
+terminal-duration loss remain explicit negatives. An explicit 240000 Hz MP4 movie
+timescale preserves the measured AAC offset. App integration, no-edit-list export,
+format/color coverage, relocation/signing, and a shipping bundle remain open.
 
 ## Qualification still required
 

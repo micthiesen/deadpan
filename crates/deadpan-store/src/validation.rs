@@ -2,22 +2,18 @@
 //! their text; historical documents are replayed one at a time, not accumulated.
 
 use deadpan_core::{
-    CommandRequest, EditTransaction, MAX_IDENTITY_BYTES, ProjectDocument, RevisionId,
+    CommandRequest, EditTransaction, MAX_IDENTITY_BYTES, ProjectDocument, RevisionId, legacy_v1,
 };
 use rusqlite::{Connection, params};
 
 use crate::{StoreError, history};
 
 pub(crate) struct RevisionRecord {
-    pub parent: Option<String>,
-    pub kind: String,
     pub document: ProjectDocument,
 }
 
 pub(crate) struct HistoryRecord {
     pub parent: Option<i64>,
-    pub revision: String,
-    pub request: CommandRequest,
     pub edit: EditTransaction,
 }
 
@@ -71,6 +67,21 @@ fn read_revision_bounded(
     id: &str,
     limit: usize,
 ) -> Result<RevisionRecord, StoreError> {
+    let (_, _, json) = read_revision_json(connection, id, limit)?;
+    let document = ProjectDocument::from_json(&json)?;
+    if document.revision_id().as_str() != id {
+        return Err(StoreError::Integrity(
+            "revision identity disagrees with document".into(),
+        ));
+    }
+    Ok(RevisionRecord { document })
+}
+
+fn read_revision_json(
+    connection: &Connection,
+    id: &str,
+    limit: usize,
+) -> Result<(Option<String>, String, String), StoreError> {
     let (parent, kind, json): (Option<String>, Option<String>, Option<String>) = connection.query_row(
         "SELECT CASE WHEN parent_id IS NULL THEN '' WHEN typeof(parent_id)='text' AND length(CAST(parent_id AS BLOB)) BETWEEN 1 AND ?3 THEN parent_id END,
          CASE WHEN typeof(kind)='text' AND length(CAST(kind AS BLOB)) BETWEEN 1 AND 7 AND kind IN ('initial','edit','undo','redo') THEN kind END,
@@ -88,17 +99,7 @@ fn read_revision_bounded(
     let json = json.ok_or_else(|| {
         StoreError::Integrity("stored document exceeds the 64 MiB limit or is not text".into())
     })?;
-    let document = ProjectDocument::from_json(&json)?;
-    if document.revision_id().as_str() != id {
-        return Err(StoreError::Integrity(
-            "revision identity disagrees with document".into(),
-        ));
-    }
-    Ok(RevisionRecord {
-        parent,
-        kind,
-        document,
-    })
+    Ok((parent, kind, json))
 }
 
 pub(crate) fn read_history(connection: &Connection, id: i64) -> Result<HistoryRecord, StoreError> {
@@ -110,6 +111,26 @@ fn read_history_bounded(
     id: i64,
     limit: usize,
 ) -> Result<HistoryRecord, StoreError> {
+    let (parent, revision, request, edit) = read_history_json(connection, id, limit)?;
+    let request: CommandRequest = serde_json::from_str(&request)?;
+    let edit: EditTransaction = serde_json::from_str(&edit)?;
+    if request.new_revision.as_str() != revision
+        || request.new_revision != edit.forward.to_revision
+        || request.expected_revision != edit.forward.from_revision
+        || request.project_id != edit.forward.project_id
+    {
+        return Err(history_error(
+            "history request and patch identities disagree",
+        ));
+    }
+    Ok(HistoryRecord { parent, edit })
+}
+
+fn read_history_json(
+    connection: &Connection,
+    id: i64,
+    limit: usize,
+) -> Result<(Option<i64>, String, String, String), StoreError> {
     let (parent, revision, request, edit): (Option<i64>, Option<String>, Option<String>, Option<String>) =
         connection.query_row(
             "SELECT parent_id,CASE WHEN typeof(revision_id)='text' AND length(CAST(revision_id AS BLOB)) BETWEEN 1 AND ?3 THEN revision_id END,
@@ -124,12 +145,7 @@ fn read_history_bounded(
     };
     let request = request.ok_or_else(oversized)?;
     let edit = edit.ok_or_else(oversized)?;
-    Ok(HistoryRecord {
-        parent,
-        revision: checked_id(revision)?,
-        request: serde_json::from_str(&request)?,
-        edit: serde_json::from_str(&edit)?,
-    })
+    Ok((parent, checked_id(revision)?, request, edit))
 }
 
 fn history_error(message: &str) -> StoreError {
@@ -137,8 +153,67 @@ fn history_error(message: &str) -> StoreError {
 }
 
 pub(crate) fn validate_history(connection: &Connection) -> Result<(), StoreError> {
-    let count: i64 =
-        connection.query_row("SELECT COUNT(*) FROM revisions", [], |row| row.get(0))?;
+    replay(connection, false)
+}
+
+/// Called only on an isolated, backed-up migration candidate inside a transaction.
+pub(crate) fn migrate_history(connection: &Connection) -> Result<(), StoreError> {
+    replay(connection, true)
+}
+
+enum StoredDocument {
+    Current(ProjectDocument),
+    Legacy(legacy_v1::Document),
+}
+impl StoredDocument {
+    fn revision_id(&self) -> &RevisionId {
+        match self {
+            Self::Current(doc) => doc.revision_id(),
+            Self::Legacy(doc) => doc.revision_id(),
+        }
+    }
+    fn initial(self) -> Result<ProjectDocument, StoreError> {
+        match self {
+            Self::Current(doc) => Ok(doc),
+            Self::Legacy(doc) => Ok(doc.upgrade()?),
+        }
+    }
+    fn matches(&self, doc: &ProjectDocument) -> bool {
+        match self {
+            Self::Current(stored) => stored == doc,
+            Self::Legacy(stored) => stored.matches(doc),
+        }
+    }
+}
+fn read_replay_revision(
+    connection: &Connection,
+    id: &str,
+    migrate: bool,
+) -> Result<(Option<String>, String, StoredDocument), StoreError> {
+    let (parent, kind, json) =
+        read_revision_json(connection, id, crate::schema::MAX_DOCUMENT_BYTES)?;
+    let document = if migrate {
+        StoredDocument::Legacy(legacy_v1::Document::from_json(&json)?)
+    } else {
+        StoredDocument::Current(ProjectDocument::from_json(&json)?)
+    };
+    if document.revision_id().as_str() != id {
+        return Err(history_error("revision identity disagrees with document"));
+    }
+    Ok((parent, kind, document))
+}
+fn write_migrated_revision(
+    connection: &Connection,
+    document: &ProjectDocument,
+) -> Result<(), StoreError> {
+    connection.execute(
+        "UPDATE revisions SET document=?1 WHERE id=?2",
+        params![document.to_json()?, document.revision_id().as_str()],
+    )?;
+    Ok(())
+}
+
+pub(crate) fn read_initial_id(connection: &Connection) -> Result<String, StoreError> {
     let mut roots = connection.prepare("SELECT CASE WHEN typeof(id)='text' AND length(CAST(id AS BLOB)) BETWEEN 1 AND ?1 THEN id END FROM revisions WHERE parent_id IS NULL LIMIT 2")?;
     let mut rows = roots.query([MAX_IDENTITY_BYTES as i64])?;
     let initial = checked_id(
@@ -149,11 +224,34 @@ pub(crate) fn validate_history(connection: &Connection) -> Result<(), StoreError
     if rows.next()?.is_some() {
         return Err(history_error("multiple initial revisions"));
     }
-    let first = read_revision(connection, &initial)?;
-    if first.kind != "initial" {
+    Ok(initial)
+}
+
+fn replay(connection: &Connection, migrate: bool) -> Result<(), StoreError> {
+    let count: i64 =
+        connection.query_row("SELECT COUNT(*) FROM revisions", [], |row| row.get(0))?;
+    let initial = read_initial_id(connection)?;
+    let (_, kind, first) = read_replay_revision(connection, &initial, migrate)?;
+    if kind != "initial" {
         return Err(history_error("root revision is not initial"));
     }
-    let mut current = first.document;
+    let mut current = first.initial()?;
+    let initial_allocations: std::collections::BTreeSet<_> = current
+        .nodes()
+        .values()
+        .filter_map(|node| match &node.kind {
+            deadpan_core::NodeKind::Repeat { iterations, .. } => Some(iterations),
+            _ => None,
+        })
+        .flat_map(|iterations| {
+            iterations
+                .segments()
+                .map(|(allocation, _, _)| allocation.as_str().to_owned())
+        })
+        .collect();
+    if migrate {
+        write_migrated_revision(connection, &current)?;
+    }
     let mut cursor = None;
     // Only numeric history identifiers are retained. Memory is independent of
     // total historical document size; the stack grows only with undone edits.
@@ -168,14 +266,19 @@ pub(crate) fn validate_history(connection: &Connection) -> Result<(), StoreError
         ])?;
         let Some(row) = rows.next()? else { break };
         let id = checked_id(row.get(0)?)?;
+        if initial_allocations.contains(&id) {
+            return Err(history_error(
+                "revision reuses an initial occurrence allocation",
+            ));
+        }
         if rows.next()?.is_some() {
             return Err(history_error("revision chronology forks"));
         }
-        let next = read_revision(connection, &id)?;
-        if next.parent.as_deref() != Some(current.revision_id().as_str()) {
+        let (parent, kind, next) = read_replay_revision(connection, &id, migrate)?;
+        if parent.as_deref() != Some(current.revision_id().as_str()) {
             return Err(history_error("revision parent disagrees"));
         }
-        match next.kind.as_str() {
+        let next_document = match kind.as_str() {
             "edit" => {
                 let mut entries =
                     connection.prepare("SELECT id FROM history WHERE revision_id=?1 LIMIT 2")?;
@@ -187,25 +290,47 @@ pub(crate) fn validate_history(connection: &Connection) -> Result<(), StoreError
                 if entries.next()?.is_some() {
                     return Err(history_error("edit has multiple history entries"));
                 }
-                let record = read_history(connection, entry)?;
-                if record.parent != cursor || record.revision != id {
+                let (parent, revision, request_json, edit_json) =
+                    read_history_json(connection, entry, crate::schema::MAX_DOCUMENT_BYTES)?;
+                if parent != cursor || revision != id {
                     return Err(history_error("history parent or revision disagrees"));
                 }
-                let calculated = deadpan_core::apply(&current, &record.request)?;
-                if calculated != record.edit || calculated.forward.apply(&current)? != next.document
-                {
+                let request = if migrate {
+                    legacy_v1::upgrade_request(&request_json)?
+                } else {
+                    serde_json::from_str(&request_json)?
+                };
+                let calculated = deadpan_core::apply(&current, &request)?;
+                let matches_edit = if migrate {
+                    legacy_v1::matches_edit(&edit_json, &calculated)?
+                } else {
+                    calculated == serde_json::from_str::<EditTransaction>(&edit_json)?
+                };
+                let next_document = calculated.forward.apply(&current)?;
+                if !matches_edit || !next.matches(&next_document) {
                     return Err(history_error(
                         "stored command, patches, and revision disagree",
                     ));
                 }
-                if calculated.inverse.apply(&next.document)? != current {
+                if calculated.inverse.apply(&next_document)? != current {
                     return Err(history_error(
                         "inverse does not restore the preceding revision",
                     ));
                 }
+                if migrate {
+                    let request = serde_json::to_string(&request)?;
+                    let edit = serde_json::to_string(&calculated)?;
+                    crate::check_document_size(&request)?;
+                    crate::check_document_size(&edit)?;
+                    connection.execute(
+                        "UPDATE history SET request=?1,edit=?2 WHERE id=?3",
+                        params![request, edit, entry],
+                    )?;
+                }
                 cursor = Some(entry);
                 redo.clear();
                 edits += 1;
+                next_document
             }
             kind @ ("undo" | "redo") => {
                 let is_redo = kind == "redo";
@@ -214,12 +339,12 @@ pub(crate) fn validate_history(connection: &Connection) -> Result<(), StoreError
                 let plan = history::build_navigation(
                     connection,
                     current,
-                    next.document.revision_id().clone(),
+                    next.revision_id().clone(),
                     is_redo,
                     cursor,
                     entry,
                 )?;
-                if plan.next != next.document {
+                if !next.matches(&plan.next) {
                     return Err(history_error(
                         "history navigation disagrees with its revision",
                     ));
@@ -228,10 +353,14 @@ pub(crate) fn validate_history(connection: &Connection) -> Result<(), StoreError
                 if !is_redo {
                     redo.push(entry);
                 }
+                plan.next
             }
             _ => return Err(history_error("noninitial revision has an invalid kind")),
+        };
+        current = next_document;
+        if migrate {
+            write_migrated_revision(connection, &current)?;
         }
-        current = next.document;
         visited += 1;
         if visited > count {
             return Err(history_error("revision chronology contains a cycle"));

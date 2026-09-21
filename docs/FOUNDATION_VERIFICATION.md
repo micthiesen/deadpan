@@ -1,5 +1,9 @@
 # Editing foundation verification
 
+Historical evidence for commit `f15ad742bf1e0ec47981bc3416d239760abc9621`.
+The later [picture plan and migration report](PLAN_MIGRATION_VERIFICATION.md)
+records the next implementation and supersedes the remaining-work list below.
+
 Verified on 20 September 2026 on Apple M5 Max, 128 GiB unified memory,
 arm64 macOS 26.5.2 (25F84), Rust/Cargo 1.97.1, and bundled SQLite 3.53.2.
 This report accompanies the first structural editing and SQLite implementation,

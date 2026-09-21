@@ -2,7 +2,7 @@ use rusqlite::{Connection, limits::Limit};
 
 use crate::StoreError;
 
-pub const VERSION: u32 = 1;
+pub const VERSION: u32 = 2;
 pub const APPLICATION_ID: u32 = 0x4450_4e31;
 pub const MAX_DOCUMENT_BYTES: usize = deadpan_core::MAX_DOCUMENT_JSON_BYTES;
 
@@ -15,16 +15,24 @@ pub fn configure(connection: &Connection) -> Result<(), StoreError> {
 }
 
 pub fn check_version(connection: &Connection) -> Result<(), StoreError> {
+    let version = read_version(connection)?;
+    if version == 1 {
+        return Err(StoreError::MigrationRequired(version));
+    }
+    if version != VERSION {
+        return Err(StoreError::UnsupportedSchema(version));
+    }
+    Ok(())
+}
+
+pub fn read_version(connection: &Connection) -> Result<u32, StoreError> {
     let application: u32 =
         connection.pragma_query_value(None, "application_id", |row| row.get(0))?;
     if application != APPLICATION_ID {
         return Err(StoreError::WrongApplication);
     }
     let version: u32 = connection.pragma_query_value(None, "user_version", |row| row.get(0))?;
-    if version != VERSION {
-        return Err(StoreError::UnsupportedSchema(version));
-    }
-    Ok(())
+    Ok(version)
 }
 
 pub fn create(connection: &mut Connection) -> Result<(), StoreError> {
