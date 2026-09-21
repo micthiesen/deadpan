@@ -1,0 +1,220 @@
+{
+  "binding": {
+    "constraints": {
+      "conditioning": "bridge",
+      "motion": "still",
+      "video": {
+        "frame_rate": {
+          "denominator": 1001,
+          "numerator": 30000
+        },
+        "frames": 30,
+        "height": 320,
+        "width": 768
+      }
+    },
+    "identity": {
+      "attempt_id": "attempt-1",
+      "request_id": "probe-ad82362664564e1a97c381111aaad5aa"
+    },
+    "input": {
+      "manifest": "inputs/context.json",
+      "sha256": "54e84510a24b18437e79145c9cca90230bf0e38d48d72107006ac3f2e0de5eb4"
+    },
+    "plan": {
+      "interpolation": "linear",
+      "native": {
+        "frame_count": 25,
+        "frame_rate": {
+          "denominator": 1,
+          "numerator": 24
+        },
+        "height": 320,
+        "width": 768
+      },
+      "operation": "bridge",
+      "project": {
+        "frame_rate": {
+          "denominator": 1001,
+          "numerator": 30000
+        },
+        "interior_frames": 30
+      },
+      "sampling": {
+        "endpoint_policy": "interior_only"
+      },
+      "schema_version": 1,
+      "timing": {
+        "actual_boundary_duration": {
+          "denominator": "1",
+          "numerator": "1"
+        },
+        "requested_boundary_duration": {
+          "denominator": "30000",
+          "numerator": "31031"
+        },
+        "retime_deviation": {
+          "denominator": "30000",
+          "numerator": "-1031"
+        }
+      }
+    },
+    "project_id": "probe-ad82362664564e1a97c381111aaad5aa",
+    "provider": {
+      "pack_id": "ltx-2.3-q4-development",
+      "pack_version": "56a5866d",
+      "runtime_id": "ltx-mlx-development",
+      "runtime_version": "0.15.8+deadpan1",
+      "seed": 1
+    },
+    "revision_id": "revision-1",
+    "target": {
+      "hold_id": "hold-1",
+      "request_version": 1
+    }
+  },
+  "conditioning": {
+    "left": {
+      "declaration": {
+        "byte_length": 310963,
+        "reference": "inputs/left.png",
+        "sha256": "de50d9c4a413f3b1f8916fc92afb4ef8587cb70f4f8de6212461c396538a3951"
+      },
+      "object": {
+        "byte_length": 310963,
+        "content": {
+          "algorithm": "blake3",
+          "digest": "7074ad08d6a13fddcc615c7bf2fc4d7d3cd67320ae813e0f4af83e3c544ccf3e"
+        }
+      }
+    },
+    "manifest": {
+      "declaration": {
+        "byte_length": 1350,
+        "reference": "inputs/context.json",
+        "sha256": "54e84510a24b18437e79145c9cca90230bf0e38d48d72107006ac3f2e0de5eb4"
+      },
+      "object": {
+        "byte_length": 1350,
+        "content": {
+          "algorithm": "blake3",
+          "digest": "fa905adba9f3b7b84cb1ade4b537ec3a2c7514c94bdcc3c4c16735f8d112fa92"
+        }
+      }
+    },
+    "right": {
+      "declaration": {
+        "byte_length": 310279,
+        "reference": "inputs/right.png",
+        "sha256": "dc742a2e38aec18a2b4b15e33b21fa062f5bc93517a59674eb79e6c9c461e5bc"
+      },
+      "object": {
+        "byte_length": 310279,
+        "content": {
+          "algorithm": "blake3",
+          "digest": "1546d7b105d6fcf262b93fabc5683642358930f897e0bd1c28617c1141482c3a"
+        }
+      }
+    },
+    "schema_version": 1
+  },
+  "declaration": {
+    "native": {
+      "byte_length": 4911319,
+      "reference": "outputs/native.mp4",
+      "sha256": "c9d34268df14d105bb4f3799e9bfc9b946ad153de43e6ee4a73a44bb7833be33"
+    },
+    "provenance": {
+      "byte_length": 37241,
+      "reference": "outputs/provenance.json",
+      "sha256": "7a74f15d64d30f98035b43193a4c624cb0102325b54e73eccf7405c5e7d5e18e"
+    },
+    "provider": {
+      "pack_id": "ltx-2.3-q4-development",
+      "pack_version": "56a5866d",
+      "runtime_id": "ltx-mlx-development",
+      "runtime_version": "0.15.8+deadpan1",
+      "seed": 1
+    },
+    "video": {
+      "frame_rate": {
+        "denominator": 1,
+        "numerator": 24
+      },
+      "frames": 25,
+      "height": 320,
+      "width": 768
+    }
+  },
+  "elapsed_seconds": 5.015565042,
+  "native": {
+    "object": {
+      "byte_length": 4544157,
+      "content": {
+        "algorithm": "blake3",
+        "digest": "10eb7822ca74bd0e4ea3bdbceac3c359c0b7435df9992b849fc788dc7af96ee9"
+      }
+    },
+    "report": {
+      "discarded_audio_streams": 0,
+      "ffv1_version": 3,
+      "first_output_pts": 0,
+      "input_rgb_sha256": "be4ffce12b048457bcab1779eefe8683f41c242d013be7f488c25416491efe1a",
+      "input_time_base_den": 24,
+      "input_time_base_num": 1,
+      "last_output_pts": 1000,
+      "output_bytes": 4544157,
+      "output_rgb_sha256": "be4ffce12b048457bcab1779eefe8683f41c242d013be7f488c25416491efe1a",
+      "output_time_base_den": 1000,
+      "output_time_base_num": 1,
+      "protocol": 1,
+      "slice_crc": true,
+      "video": {
+        "frames": 25,
+        "height": 320,
+        "rate_den": 1,
+        "rate_num": 24,
+        "width": 768
+      }
+    }
+  },
+  "provenance": {
+    "byte_length": 44659,
+    "content": {
+      "algorithm": "blake3",
+      "digest": "d6095abf910f02a373e0ae4e97c3942f2295dd67ae3305f572e974e08e227121"
+    }
+  },
+  "sampled": {
+    "object": {
+      "byte_length": 5450240,
+      "content": {
+        "algorithm": "blake3",
+        "digest": "987ea014efe9f7740ab9c7cae128c8589d19c3bdeb4ecbb2ba37650bd7a3cadb"
+      }
+    },
+    "report": {
+      "discarded_audio_streams": 0,
+      "ffv1_version": 3,
+      "first_output_pts": 0,
+      "input_rgb_sha256": "be4ffce12b048457bcab1779eefe8683f41c242d013be7f488c25416491efe1a",
+      "input_time_base_den": 24,
+      "input_time_base_num": 1,
+      "last_output_pts": 968,
+      "output_bytes": 5450240,
+      "output_rgb_sha256": "eda362044e57353435b56756be4143419a3bb6ed52bb2f849102b3eff962c71a",
+      "output_time_base_den": 1000,
+      "output_time_base_num": 1,
+      "protocol": 1,
+      "slice_crc": true,
+      "video": {
+        "frames": 30,
+        "height": 320,
+        "rate_den": 1001,
+        "rate_num": 30000,
+        "width": 768
+      }
+    }
+  },
+  "scope": "complete media/provenance qualification; no selected-Ready persistence or acceptance"
+}

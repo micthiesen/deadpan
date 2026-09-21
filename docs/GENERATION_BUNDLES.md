@@ -24,7 +24,7 @@ retain a pre-migration backup, then promote through SQLite's backup transaction.
 `record_bridge_generation_request` checks the plan against the request's project
 duration, rate, native grid, and conditioning. Its typed completion is retained
 through validation, cancellation, restart recovery, retry, and stale relevance.
-`record_generation_bundle_ready` checks every generated object's actual length
+`record_generation_bundle_ready` checks the native, sampled and provenance objects' actual length
 and BLAKE3 digest before opening the SQLite transaction. It then atomically stores
 the receipt, terminal state, and eligible latest selection. Legacy and modern
 selection APIs reject cross-kind use. Selection remains metadata; consumers must
@@ -32,8 +32,17 @@ read through verified snapshots because files can become missing or corrupt late
 
 ## Host qualification
 
-Pin the artifact workspace before worker launch and qualify only after clean
-process-group teardown. Reconstruct the original request from persisted intent.
+Pin the artifact workspace and call `capture_bridge_conditioning` before worker
+launch. It freezes the exact context JSON and both prepared input byte streams,
+checking SHA-256, byte length, descriptor-relative containment, disjoint input/output
+scopes, cancellation and one shared capture deadline. The strict context must match
+the request's plan and manifest identity. Frames are opaque at this boundary;
+capturing them does not qualify image decoding, source-clock coordinates or color.
+Snapshots expose only read/seek, and their BLAKE3 identities form a typed
+`ConditioningReceipt`. Identical left/right inputs can share an object identity.
+
+Qualify only after clean process-group teardown. Reconstruct the original request
+from persisted intent and pass the already retained inputs in `BridgeQualification`.
 Supply `SelectedBridgeProvider` from the trusted host provider selection, separately
 from the worker request. Qualification calls `validate_for` to check support,
 grid/rate/count restrictions and the nearest legal native frame count. It retains
@@ -47,26 +56,37 @@ its Ready API relies on this independent host qualification.
 2. Reject duplicate JSON keys. Require a matching typed request binding, plan,
    seed and native identity, nonempty model asset receipts, source hashes,
    revision hashes, prompt/version, settings and conditioning/color descriptions.
-   Check bounded counts, strings, valid hashes, and unique asset identities.
+   Check bounded counts, strings, valid hashes, and unique asset identities. Require
+   the worker's complete context to equal the independently captured host context,
+   including both prepared input declarations and the color interpretation.
 3. Snapshot native bytes with the same controls. Derive canonical native and
    sampled FFV1 masters under the remaining shared deadline, using
    [`canonicalize_bridge`](MEDIA_CONVERSION.md). Independently decode outputs and
    verify exact picture/timing contracts.
 4. Produce a bounded immutable provenance envelope containing the original worker
    report's exact UTF-8 bytes, original request/declaration, both generated-object
-   identities, and host media-validation reports. Stop serialization at its budget.
-5. Publish all three immutable BLAKE3 objects through the store's
-   [generated-media API](GENERATED_MEDIA.md), then record Ready. A failed database
-   write can leave unreferenced objects; it cannot authorize an incomplete bundle.
+   identities, host media-validation reports and conditioning receipt. Envelope
+   schema 2 uses profile `deadpan-ffv1-bridge-2`. Earlier schema-1 envelopes lack
+   retained-input evidence and must not be treated as equivalent.
+   Stop serialization at its budget.
+5. Return both masters, host provenance and all three immutable input snapshots.
+   Publish these through the store's [generated-media API](GENERATED_MEDIA.md).
+   The current Ready receipt verifies only the masters and provenance; it does
+   not yet enforce conditioning dependency publication or reachability. A future
+   dedicated acceptance transaction must reverify the whole dependency set.
 
 Provenance records the worker's asset/runtime claims. Parsing and matching these
 claims does not independently prove which model bytes executed. Installed-pack
-attestation, host-managed conditioning retention and source-clock/color checks
-remain required. Extra bounded backend diagnostics are retained without granting
+attestation and source-clock/color checks remain required. Extra bounded backend diagnostics are retained without granting
 them authority. Host decoded-media results remain separate from worker reports.
 
-The standalone `qualify_bridge_bundle` example qualifies an already-reaped
-developer workspace into new output files. It does not publish to a project or
+The standalone `retain_bridge_conditioning` example captures prepared input bytes
+before generation into a new host directory. `prepare_run.py` invokes it before
+writing the launch configuration. `qualify_bridge_bundle` reloads those retained
+bytes and verifies their identities separately from the completed worker's
+workspace. Its configuration requires a `conditioning` object containing that
+host workspace, input scope, manifest declaration and capture limits. Never use
+post-completion worker inputs as pre-launch evidence. The examples do not publish to a project or
 select Ready. Its output directory may contain partial diagnostic files after an
 I/O failure; the project publication API has the durable byte-storage contract.
 
@@ -81,8 +101,10 @@ conditioning provenance and an undoable command. No background result may change
 the authored provider automatically.
 
 The [real-media integration tests](../native/deadpan-media-worker/tests/bundle_qualification.rs)
-exercise exact pixels, malformed/missing provenance, cancellation and size limits,
-missing objects, actual three-object promotion, Ready persistence and reopening.
+exercise exact pixels, malformed/missing or substituted provenance, cancellation
+and size limits, deleted worker inputs after host capture, missing objects,
+six-object publication, Ready persistence and package relocation with all worker
+input/output files removed.
 They use a synthetic model-provenance fixture and do not establish model quality.
 
 [Measured local generation and repository verification](qualification/model-bundle-2026-09-21.md)

@@ -9,8 +9,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     use std::sync::atomic::AtomicBool;
 
     use deadpan_jobs::artifact::ArtifactWorkspace;
-    use deadpan_jobs::{HostMessage, NativeCandidateManifest};
-    use deadpan_models::{QualificationLimits, SelectedBridgeProvider, qualify_bridge};
+    use deadpan_jobs::{HostMessage, NativeCandidateManifest, WorkspaceArtifact, WorkspaceRef};
+    use deadpan_models::{
+        BridgeQualification, ConditioningLimits, QualificationLimits, SelectedBridgeProvider,
+        capture_bridge_conditioning, qualify_bridge,
+    };
     use serde::Deserialize;
     use serde_json::json;
 
@@ -22,8 +25,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         request: HostMessage,
         candidate: NativeCandidateManifest,
         selected_provider: SelectedBridgeProvider,
+        conditioning: ConditioningConfiguration,
         output_directory: PathBuf,
         limits: QualificationLimits,
+    }
+
+    #[derive(Deserialize)]
+    #[serde(deny_unknown_fields)]
+    struct ConditioningConfiguration {
+        workspace: PathBuf,
+        input_scope: WorkspaceRef,
+        manifest: WorkspaceArtifact,
+        limits: ConditioningLimits,
     }
 
     fn write_media(path: &Path, source: &mut impl Read, length: u64) -> std::io::Result<()> {
@@ -48,9 +61,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Err("configuration exceeds 1 MiB".into());
     }
     let config: Configuration = serde_json::from_slice(&bytes)?;
-    if [&config.codec, &config.workspace, &config.output_directory]
-        .iter()
-        .any(|path| !path.is_absolute())
+    if [
+        &config.codec,
+        &config.workspace,
+        &config.output_directory,
+        &config.conditioning.workspace,
+    ]
+    .iter()
+    .any(|path| !path.is_absolute())
     {
         return Err("host paths must be absolute".into());
     }
@@ -58,12 +76,27 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // reported clean teardown; live app code must pin before worker launch.
     let workspace = ArtifactWorkspace::open(&config.workspace)?;
     let started = std::time::Instant::now();
+    // These are host-retained bytes captured before generation, outside the
+    // worker workspace. Recheck their hashes on reload; never recapture inputs
+    // from the completed worker and call that pre-launch evidence.
+    let conditioning_workspace = ArtifactWorkspace::open(&config.conditioning.workspace)?;
+    let conditioning = capture_bridge_conditioning(
+        &conditioning_workspace,
+        &config.request,
+        &config.conditioning.manifest,
+        &config.conditioning.input_scope,
+        config.conditioning.limits,
+        &AtomicBool::new(false),
+    )?;
     let bundle = qualify_bridge(
         &config.codec,
         &workspace,
-        &config.request,
-        &config.candidate,
-        &config.selected_provider,
+        BridgeQualification {
+            request: &config.request,
+            declaration: &config.candidate,
+            selected_provider: &config.selected_provider,
+            conditioning,
+        },
         config.limits,
         &AtomicBool::new(false),
     )?;
@@ -73,13 +106,27 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "native": {"object":bundle.native().object(), "report":bundle.native().report()},
         "sampled": {"object":bundle.sampled().object(), "report":bundle.sampled().report()},
         "provenance": bundle.provenance().object(),
+        "conditioning": bundle.conditioning().receipt(),
         "elapsed_seconds": started.elapsed().as_secs_f64(),
     });
     fs::create_dir(&config.output_directory)?;
     let native_length = bundle.native().object().byte_length();
     let sampled_length = bundle.sampled().object().byte_length();
     let provenance_length = bundle.provenance().object().byte_length();
-    let (mut native, mut sampled, mut provenance) = bundle.into_parts();
+    let (mut native, mut sampled, mut provenance, conditioning) = bundle.into_parts();
+    let (manifest, left, right) = conditioning.into_parts();
+    let retained_directory = config.output_directory.join("conditioning");
+    fs::create_dir(&retained_directory)?;
+    let mut written = std::collections::BTreeSet::new();
+    for mut input in [manifest, left, right] {
+        if !written.insert(input.declaration().reference().clone()) {
+            continue;
+        }
+        let path = retained_directory.join(input.declaration().reference().as_str());
+        fs::create_dir_all(path.parent().ok_or("input path lacks a parent")?)?;
+        let length = input.object().byte_length();
+        write_media(&path, &mut input, length)?;
+    }
     write_media(
         &config.output_directory.join("native.mkv"),
         &mut native,

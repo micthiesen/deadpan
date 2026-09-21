@@ -1,0 +1,15 @@
+{
+  "Cargo.lock": "afe2a8aea866501634023e3cd74b330e4f8327bb63300b6509fdd156b715fc75",
+  "crates/deadpan-models/Cargo.toml": "6569eb17707802c0e42366b6a1e0f39db210454dd38723f6cc431312089cb766",
+  "tools/model-qualification/prepare_run.py": "aae8f9bce112795004c1e68486ee6bfa292d67b420629f7f3835464fc12c0eb4",
+  "native/deadpan-media-worker/tests/bundle_qualification.rs": "ab865db19af021fc12f9f4438a854b642de9a59c2d1e3a3a826a727994e35716",
+  "crates/deadpan-models/examples/qualify_bridge_bundle.rs": "a283e5413392c3c6dfd891223669b84d23901bc3c79024bf4836f797b453de94",
+  "crates/deadpan-models/examples/retain_bridge_conditioning.rs": "995796a33308764ec2ff795b4a8fde0bd2519ad8582349657097d54197fbf60d",
+  "crates/deadpan-models/src/bounded_json.rs": "2500877d86a6295a7d864579c1d8fe7554995140d3b2b5ab936dd333650923a0",
+  "crates/deadpan-models/src/conditioning.rs": "4d1118c26973fb81839817fe48f5676bea0f473acce0eb1189781c3c58333fa4",
+  "crates/deadpan-models/src/lib.rs": "304ec89345b850108e8c9783f82f4b8be09e2864ce92f2828dda1d764a08a6ea",
+  "crates/deadpan-models/src/provenance.rs": "2535c91a86f7e9d6b6595d7d5e3bef0f1842fcba4710a0cd50144fc9a9d73da0",
+  "crates/deadpan-models/src/provider.rs": "2516fc8a4b4d54ebe8bad11d47f82972d4df2cfa8f1930d086f61593468f2da3",
+  "crates/deadpan-models/src/qualification.rs": "b60f8b1c0345be8c3201af95936fde4c1438a9b094456ac53e6d245275b846cc",
+  "crates/deadpan-models/src/strict_json.rs": "6940c851f2efb779c0e3b3811d584547cf897d3cddf4b3627704aad023264126"
+}

@@ -1,8 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet};
 
-use deadpan_jobs::{
-    BridgeGenerationPlan, NativeCandidateManifest, Sha256, WorkspaceArtifact, WorkspaceRef,
-};
+use deadpan_jobs::{NativeCandidateManifest, Sha256, WorkspaceRef};
 use serde::Deserialize;
 use serde_json::{Map, Value};
 
@@ -23,7 +21,7 @@ struct WorkerProvenance {
     prompt_version: String,
     prompt: String,
     seed: u64,
-    context: ContextClaim,
+    context: crate::BridgeContext,
     configuration: Map<String, Value>,
     model_color_interpretation: String,
     temporal_interpolation: String,
@@ -41,21 +39,11 @@ struct AssetClaim {
     sha256: Sha256,
 }
 
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct ContextClaim {
-    schema_version: u32,
-    model_color: String,
-    plan: BridgeGenerationPlan,
-    left: WorkspaceArtifact,
-    right: WorkspaceArtifact,
-    input_color_interpretation: String,
-}
-
 pub(crate) fn validate(
     value: Value,
     binding: &GenerationBinding,
     declaration: &NativeCandidateManifest,
+    conditioning: &crate::BridgeContext,
 ) -> Result<(), QualificationError> {
     let report: WorkerProvenance = serde_json::from_value(value)?;
     let invalid = |reason: &str| QualificationError::Provenance(reason.into());
@@ -67,9 +55,7 @@ pub(crate) fn validate(
     if report.seed != binding.provider.seed
         || &report.native_sha256 != declaration.native.sha256()
         || report.native_bytes != declaration.native.byte_length()
-        || report.context.schema_version != 1
-        || report.context.model_color != "srgb"
-        || report.context.plan != binding.plan
+        || &report.context != conditioning
     {
         return Err(invalid(
             "worker provenance contradicts its request or native declaration",
@@ -96,7 +82,6 @@ pub(crate) fn validate(
         (&report.model_color_interpretation, 4096),
         (&report.temporal_interpolation, 4096),
         (&report.conditioning_preprocessing, 4096),
-        (&report.context.input_color_interpretation, 4096),
     ] {
         if text.trim().is_empty() || text.len() > maximum || text.contains('\0') {
             return Err(invalid("missing or oversized provenance description"));
@@ -133,8 +118,7 @@ pub(crate) fn validate(
         // attest the worker's claim that these bytes were loaded by its runtime.
         let _ = asset.sha256;
     }
-    // Input artifacts are recorded claims. Host-managed conditioning retention
-    // and comparison to an installed-pack receipt remain separate obligations.
-    let _ = (report.context.left, report.context.right);
+    // Exact prepared input bytes are independently retained by the host. The
+    // worker's source/model loading claims still require installed-pack attestation.
     Ok(())
 }

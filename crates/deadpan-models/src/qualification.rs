@@ -144,6 +144,7 @@ pub struct QualifiedBridgeBundle {
     native: CanonicalMedia,
     sampled: CanonicalMedia,
     provenance: QualifiedProvenance,
+    conditioning: crate::RetainedConditioning,
 }
 
 impl QualifiedBridgeBundle {
@@ -162,9 +163,24 @@ impl QualifiedBridgeBundle {
     pub fn provenance(&self) -> &QualifiedProvenance {
         &self.provenance
     }
+    pub fn conditioning(&self) -> &crate::RetainedConditioning {
+        &self.conditioning
+    }
 
-    pub fn into_parts(self) -> (CanonicalMedia, CanonicalMedia, QualifiedProvenance) {
-        (self.native, self.sampled, self.provenance)
+    pub fn into_parts(
+        self,
+    ) -> (
+        CanonicalMedia,
+        CanonicalMedia,
+        QualifiedProvenance,
+        crate::RetainedConditioning,
+    ) {
+        (
+            self.native,
+            self.sampled,
+            self.provenance,
+            self.conditioning,
+        )
     }
 }
 
@@ -179,25 +195,40 @@ struct HostProvenance<'a> {
     sampled: &'a GeneratedObjectRef,
     native_validation: &'a ConversionReport,
     sampled_validation: &'a ConversionReport,
+    conditioning: &'a crate::ConditioningReceipt,
     // A string preserves original bytes exactly, including formatting. Backend
     // claims are retained as provenance, never used as media validation results.
     worker_provenance_utf8: &'a str,
+}
+
+/// Worker declarations paired with independently selected host inputs.
+pub struct BridgeQualification<'a> {
+    pub request: &'a HostMessage,
+    pub declaration: &'a NativeCandidateManifest,
+    pub selected_provider: &'a crate::SelectedBridgeProvider,
+    pub conditioning: crate::RetainedConditioning,
 }
 
 /// Qualify a modern worker result after clean process-group teardown. Pin the
 /// workspace before launching that worker. The caller supplies the immutable
 /// request reconstructed from persisted intent, never a worker-chosen plan.
 /// Supply the capability from the host's selected provider, never from the worker.
+/// Capture conditioning before launching the worker and retain it separately from
+/// its writable workspace. Qualification never rereads worker-controlled inputs.
 /// Run on the background job service, outside UI/audio or database transactions.
 pub fn qualify_bridge(
     executable: &Path,
     workspace: &ArtifactWorkspace,
-    request: &HostMessage,
-    declaration: &NativeCandidateManifest,
-    selected_provider: &crate::SelectedBridgeProvider,
+    inputs: BridgeQualification<'_>,
     limits: QualificationLimits,
     cancelled: &AtomicBool,
 ) -> Result<QualifiedBridgeBundle, QualificationError> {
+    let BridgeQualification {
+        request,
+        declaration,
+        selected_provider,
+        conditioning,
+    } = inputs;
     limits.validate()?;
     let deadline = Instant::now() + Duration::from_millis(limits.media.timeout_ms);
     let check = || {
@@ -229,6 +260,7 @@ pub fn qualify_bridge(
         .plan
         .validate_for(selected_provider.capability())
         .map_err(|error| QualificationError::Request(error.to_string()))?;
+    conditioning.validate_for(request)?;
     let HostMessage::GenerateBridge {
         output_workspace, ..
     } = request
@@ -260,7 +292,7 @@ pub fn qualify_bridge(
     let mut provenance_bytes = Vec::new();
     provenance_snapshot.read_to_end(&mut provenance_bytes)?;
     let report = crate::strict_json::parse(&provenance_bytes)?;
-    crate::provenance::validate(report, &binding, declaration)?;
+    crate::provenance::validate(report, &binding, declaration, conditioning.context())?;
     check()?;
     let mut native_snapshot = workspace
         .snapshot_with_control(
@@ -312,8 +344,8 @@ pub fn qualify_bridge(
         .map_err(|error| QualificationError::Provenance(error.to_string()))?;
     let bytes = crate::bounded_json::encode(
         &HostProvenance {
-            schema_version: 1,
-            validation_profile: "deadpan-ffv1-bridge-1",
+            schema_version: 2,
+            validation_profile: "deadpan-ffv1-bridge-2",
             binding: &binding,
             selected_provider,
             declaration,
@@ -321,6 +353,7 @@ pub fn qualify_bridge(
             sampled: masters.sampled().object(),
             native_validation: masters.native().report(),
             sampled_validation: masters.sampled().report(),
+            conditioning: conditioning.receipt(),
             worker_provenance_utf8,
         },
         limits.maximum_host_provenance_bytes,
@@ -343,6 +376,7 @@ pub fn qualify_bridge(
             bytes: Cursor::new(bytes),
             object,
         },
+        conditioning,
     })
 }
 

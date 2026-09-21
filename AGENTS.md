@@ -76,9 +76,17 @@ sampled master. Qualify the complete bundle against persisted intent with
 and a separately host-selected provider capability; recheck its exact plan with
 `BridgeGenerationPlan::validate_for` before media work. Retain that capability in
 host provenance. Native/sample objects may deduplicate only when video contracts agree.
+Capture the context manifest and both prepared frame byte streams before worker
+launch with `capture_bridge_conditioning`. Keep the snapshots outside worker
+control and pass them into qualification. Require the reported context to match;
+host provenance schema 2 records all three input identities. These are opaque
+prepared bytes, not source-clock or color qualification. Publish their immutable
+objects with the masters/provenance. The current Ready receipt checks only the
+three output objects; dedicated acceptance must later enforce full dependency
+reachability and source evidence. Never upgrade old envelopes by assertion.
 Use one shared deadline and bounded provenance serialization. Preserve exact worker
 provenance as claims alongside independent host decode reports. Publish all three
-objects before Ready; the store rechecks their hashes before its transaction.
+output objects before Ready; the store rechecks their hashes before its transaction.
 Ready and selection never authorize an authored provider change. Keep legacy
 sampled receipts separate. See [bundle validation](docs/GENERATION_BUNDLES.md).
 

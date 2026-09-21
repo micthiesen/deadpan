@@ -1,0 +1,24 @@
+{
+  "runtime_commit": "3392d75934120b7e69eefbe55893f7ef82be92a4",
+  "pack_revision": "56a5866d638ecfe37c54d348e88938235185c2d4",
+  "gemma_revision": "86cc6a8dedbc456dd0e4af01a9d09f396f77e558",
+  "backend_seconds": 82.08841333305463,
+  "process_peak_rss_bytes": 14494613504,
+  "mlx_counter_at_end_bytes": 17767443772,
+  "device_info": {
+    "device_name": "Apple M5 Max",
+    "max_recommended_working_set_size": 115448725504,
+    "memory_size": 137438953472,
+    "architecture": "applegpu_g17s",
+    "max_buffer_length": 86586540032,
+    "resource_limit": 499000
+  },
+  "status": "worker_validated_not_host_validated_or_accepted",
+  "base_commit": "1e0e46465f891e0dc5457bdf76a47bbfd7a82907",
+  "local_run": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-retained-bridge-n63mnepg/run",
+  "capture_build": "initial implementation before final control checks and test refinements; current source revalidated retained archive during qualification",
+  "source_color_qualification": false,
+  "image_decode_qualification": false,
+  "authored_acceptance": false,
+  "independent_review": "general and focused input-boundary reviews complete; no confirmed findings"
+}

@@ -28,13 +28,17 @@ Build the Rust developer examples from the repository:
 
 ```sh
 cargo build -p deadpan-jobs --examples --locked
+cargo build -p deadpan-models --examples --locked
 cargo run -p deadpan-jobs --example plan_mlx_bridge --locked -- 24 24 1
 ```
 
 Run `prepare_run.py --help` inside the already pinned private environment for
 the required local paths. It prepares fresh, padded conditioning images, records
 their original hashes and explicit color interpretation, obtains the plan from
-Rust, and writes a host configuration. Its `--input-color-interpretation` field
+Rust, invokes `retain_bridge_conditioning` to freeze the prepared inputs in
+`retained-conditioning/`, and writes a host configuration only after capture.
+`retention-config.json` records the exact capture request and limits.
+Its `--input-color-interpretation` field
 is an explicit fixture assumption; preparation does not perform a color transform.
 The `--run-directory` must not exist. No runtime or model is downloaded.
 
@@ -54,7 +58,8 @@ It checks native media only. Legacy protocol-1 runs still use
 candidate acceptance, promotion, or job persistence happens here. Provenance and
 the native sequence remain development outputs, not yet managed project assets.
 Then use the Rust `deadpan-models` example `qualify_bridge_bundle` with the
-original request and completed native declaration to derive and verify both
+original request, completed native declaration and the pre-launch host-retained
+conditioning workspace to derive and verify both
 masters. [Bundle qualification](../../docs/GENERATION_BUNDLES.md) documents the
 boundary, configuration fields are in the example, and measured runs retain
 their exact configurations. Its output is still separate from project Ready

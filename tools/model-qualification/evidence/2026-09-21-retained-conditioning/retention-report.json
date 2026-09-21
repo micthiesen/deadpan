@@ -1,0 +1,48 @@
+{
+  "conditioning": {
+    "left": {
+      "declaration": {
+        "byte_length": 310963,
+        "reference": "inputs/left.png",
+        "sha256": "de50d9c4a413f3b1f8916fc92afb4ef8587cb70f4f8de6212461c396538a3951"
+      },
+      "object": {
+        "byte_length": 310963,
+        "content": {
+          "algorithm": "blake3",
+          "digest": "7074ad08d6a13fddcc615c7bf2fc4d7d3cd67320ae813e0f4af83e3c544ccf3e"
+        }
+      }
+    },
+    "manifest": {
+      "declaration": {
+        "byte_length": 1350,
+        "reference": "inputs/context.json",
+        "sha256": "54e84510a24b18437e79145c9cca90230bf0e38d48d72107006ac3f2e0de5eb4"
+      },
+      "object": {
+        "byte_length": 1350,
+        "content": {
+          "algorithm": "blake3",
+          "digest": "fa905adba9f3b7b84cb1ade4b537ec3a2c7514c94bdcc3c4c16735f8d112fa92"
+        }
+      }
+    },
+    "right": {
+      "declaration": {
+        "byte_length": 310279,
+        "reference": "inputs/right.png",
+        "sha256": "dc742a2e38aec18a2b4b15e33b21fa062f5bc93517a59674eb79e6c9c461e5bc"
+      },
+      "object": {
+        "byte_length": 310279,
+        "content": {
+          "algorithm": "blake3",
+          "digest": "1546d7b105d6fcf262b93fabc5683642358930f897e0bd1c28617c1141482c3a"
+        }
+      }
+    },
+    "schema_version": 1
+  },
+  "scope": "pre-launch prepared input byte retention; no image decode, source-clock or color qualification"
+}

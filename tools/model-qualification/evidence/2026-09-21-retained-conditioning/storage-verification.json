@@ -1,0 +1,155 @@
+{
+  "scope": "six immutable objects after project relocation, original worker path unavailable; no authored acceptance",
+  "results": [
+    {
+      "command": "promote",
+      "package": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-retained-bridge-n63mnepg/run/objects.deadpan",
+      "reference": {
+        "content": {
+          "algorithm": "blake3",
+          "digest": "10eb7822ca74bd0e4ea3bdbceac3c359c0b7435df9992b849fc788dc7af96ee9"
+        },
+        "byte_length": 4544157
+      }
+    },
+    {
+      "command": "promote",
+      "package": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-retained-bridge-n63mnepg/run/objects.deadpan",
+      "reference": {
+        "content": {
+          "algorithm": "blake3",
+          "digest": "987ea014efe9f7740ab9c7cae128c8589d19c3bdeb4ecbb2ba37650bd7a3cadb"
+        },
+        "byte_length": 5450240
+      }
+    },
+    {
+      "command": "promote",
+      "package": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-retained-bridge-n63mnepg/run/objects.deadpan",
+      "reference": {
+        "content": {
+          "algorithm": "blake3",
+          "digest": "d6095abf910f02a373e0ae4e97c3942f2295dd67ae3305f572e974e08e227121"
+        },
+        "byte_length": 44659
+      }
+    },
+    {
+      "command": "promote",
+      "package": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-retained-bridge-n63mnepg/run/objects.deadpan",
+      "reference": {
+        "content": {
+          "algorithm": "blake3",
+          "digest": "fa905adba9f3b7b84cb1ade4b537ec3a2c7514c94bdcc3c4c16735f8d112fa92"
+        },
+        "byte_length": 1350
+      }
+    },
+    {
+      "command": "promote",
+      "package": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-retained-bridge-n63mnepg/run/objects.deadpan",
+      "reference": {
+        "content": {
+          "algorithm": "blake3",
+          "digest": "7074ad08d6a13fddcc615c7bf2fc4d7d3cd67320ae813e0f4af83e3c544ccf3e"
+        },
+        "byte_length": 310963
+      }
+    },
+    {
+      "command": "promote",
+      "package": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-retained-bridge-n63mnepg/run/objects.deadpan",
+      "reference": {
+        "content": {
+          "algorithm": "blake3",
+          "digest": "1546d7b105d6fcf262b93fabc5683642358930f897e0bd1c28617c1141482c3a"
+        },
+        "byte_length": 310279
+      }
+    },
+    {
+      "command": "read",
+      "package": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-retained-bridge-n63mnepg/run/relocated-objects.deadpan",
+      "reference": {
+        "content": {
+          "algorithm": "blake3",
+          "digest": "10eb7822ca74bd0e4ea3bdbceac3c359c0b7435df9992b849fc788dc7af96ee9"
+        },
+        "byte_length": 4544157
+      },
+      "output": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-retained-bridge-n63mnepg/run/readback/native",
+      "verified_blake3": "10eb7822ca74bd0e4ea3bdbceac3c359c0b7435df9992b849fc788dc7af96ee9",
+      "verified_byte_length": 4544157
+    },
+    {
+      "command": "read",
+      "package": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-retained-bridge-n63mnepg/run/relocated-objects.deadpan",
+      "reference": {
+        "content": {
+          "algorithm": "blake3",
+          "digest": "987ea014efe9f7740ab9c7cae128c8589d19c3bdeb4ecbb2ba37650bd7a3cadb"
+        },
+        "byte_length": 5450240
+      },
+      "output": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-retained-bridge-n63mnepg/run/readback/sampled",
+      "verified_blake3": "987ea014efe9f7740ab9c7cae128c8589d19c3bdeb4ecbb2ba37650bd7a3cadb",
+      "verified_byte_length": 5450240
+    },
+    {
+      "command": "read",
+      "package": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-retained-bridge-n63mnepg/run/relocated-objects.deadpan",
+      "reference": {
+        "content": {
+          "algorithm": "blake3",
+          "digest": "d6095abf910f02a373e0ae4e97c3942f2295dd67ae3305f572e974e08e227121"
+        },
+        "byte_length": 44659
+      },
+      "output": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-retained-bridge-n63mnepg/run/readback/provenance",
+      "verified_blake3": "d6095abf910f02a373e0ae4e97c3942f2295dd67ae3305f572e974e08e227121",
+      "verified_byte_length": 44659
+    },
+    {
+      "command": "read",
+      "package": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-retained-bridge-n63mnepg/run/relocated-objects.deadpan",
+      "reference": {
+        "content": {
+          "algorithm": "blake3",
+          "digest": "fa905adba9f3b7b84cb1ade4b537ec3a2c7514c94bdcc3c4c16735f8d112fa92"
+        },
+        "byte_length": 1350
+      },
+      "output": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-retained-bridge-n63mnepg/run/readback/manifest",
+      "verified_blake3": "fa905adba9f3b7b84cb1ade4b537ec3a2c7514c94bdcc3c4c16735f8d112fa92",
+      "verified_byte_length": 1350
+    },
+    {
+      "command": "read",
+      "package": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-retained-bridge-n63mnepg/run/relocated-objects.deadpan",
+      "reference": {
+        "content": {
+          "algorithm": "blake3",
+          "digest": "7074ad08d6a13fddcc615c7bf2fc4d7d3cd67320ae813e0f4af83e3c544ccf3e"
+        },
+        "byte_length": 310963
+      },
+      "output": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-retained-bridge-n63mnepg/run/readback/left",
+      "verified_blake3": "7074ad08d6a13fddcc615c7bf2fc4d7d3cd67320ae813e0f4af83e3c544ccf3e",
+      "verified_byte_length": 310963
+    },
+    {
+      "command": "read",
+      "package": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-retained-bridge-n63mnepg/run/relocated-objects.deadpan",
+      "reference": {
+        "content": {
+          "algorithm": "blake3",
+          "digest": "1546d7b105d6fcf262b93fabc5683642358930f897e0bd1c28617c1141482c3a"
+        },
+        "byte_length": 310279
+      },
+      "output": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-retained-bridge-n63mnepg/run/readback/right",
+      "verified_blake3": "1546d7b105d6fcf262b93fabc5683642358930f897e0bd1c28617c1141482c3a",
+      "verified_byte_length": 310279
+    }
+  ]
+}

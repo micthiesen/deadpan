@@ -20,7 +20,8 @@ use deadpan_jobs::{
 };
 use deadpan_media::protocol::ConversionLimits;
 use deadpan_models::{
-    GenerationBinding, QualificationError, QualificationLimits, SelectedBridgeProvider,
+    BridgeQualification, ConditioningLimits, GenerationBinding, QualificationError,
+    QualificationLimits, RetainedConditioning, SelectedBridgeProvider, capture_bridge_conditioning,
     qualify_bridge,
 };
 use deadpan_store::generated_media::GeneratedMediaLimits;
@@ -130,9 +131,38 @@ struct Fixture {
     request: HostMessage,
     declaration: NativeCandidateManifest,
     provenance: Vec<u8>,
+    manifest: WorkspaceArtifact,
 }
 
 impl Fixture {
+    fn conditioning(&self) -> RetainedConditioning {
+        capture_bridge_conditioning(
+            &self.workspace,
+            &self.request,
+            &self.manifest,
+            &WorkspaceRef::new("inputs").unwrap(),
+            ConditioningLimits {
+                maximum_manifest_bytes: 64 * 1024,
+                maximum_frame_bytes: 1024,
+                timeout_ms: 30000,
+            },
+            &AtomicBool::new(false),
+        )
+        .unwrap()
+    }
+
+    fn qualification<'a>(
+        &'a self,
+        selected_provider: &'a SelectedBridgeProvider,
+    ) -> BridgeQualification<'a> {
+        BridgeQualification {
+            request: &self.request,
+            declaration: &self.declaration,
+            selected_provider,
+            conditioning: self.conditioning(),
+        }
+    }
+
     fn selected_provider(&self) -> SelectedBridgeProvider {
         SelectedBridgeProvider::new(self.declaration.provider.clone(), capability())
     }
@@ -140,8 +170,27 @@ impl Fixture {
     fn new() -> Self {
         let directory = tempfile::tempdir().unwrap();
         fs::create_dir(directory.path().join("outputs")).unwrap();
+        fs::create_dir(directory.path().join("inputs")).unwrap();
         let workspace = ArtifactWorkspace::open(directory.path()).unwrap();
-        let request = request();
+        // Opaque prepared-byte fixtures exercise retention, not PNG validation.
+        let left = b"prepared left image";
+        let right = b"prepared right image";
+        fs::write(directory.path().join("inputs/left.png"), left).unwrap();
+        fs::write(directory.path().join("inputs/right.png"), right).unwrap();
+        let context = json!({
+            "schema_version":1, "model_color":"srgb", "plan":plan(),
+            "left":declared("inputs/left.png", left),
+            "right":declared("inputs/right.png", right),
+            "input_color_interpretation":"fixture RGB"
+        });
+        let context_bytes = serde_json::to_vec_pretty(&context).unwrap();
+        fs::write(directory.path().join("inputs/context.json"), &context_bytes).unwrap();
+        let manifest = declared("inputs/context.json", &context_bytes);
+        let mut request = request();
+        let HostMessage::GenerateBridge { input, .. } = &mut request else {
+            unreachable!()
+        };
+        input.sha256 = manifest.sha256().clone();
         let binding = GenerationBinding::from_request(&request).unwrap();
         let source = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/rgb25_24.mp4");
         let native = fs::read(source).unwrap();
@@ -158,12 +207,7 @@ impl Fixture {
             "model_color_interpretation":"fixture SDR sRGB", "temporal_interpolation":"fixture linear encoded RGB",
             "conditioning_preprocessing":"fixture no transform",
             "native_sha256": sha256(&native), "native_bytes":native.len(),
-            "context": {
-                "schema_version":1, "model_color":"srgb", "plan":binding.plan,
-                "left":{"reference":"inputs/left.png","sha256":"d".repeat(64),"byte_length":1},
-                "right":{"reference":"inputs/right.png","sha256":"e".repeat(64),"byte_length":1},
-                "input_color_interpretation":"fixture RGB"
-            },
+            "context": context,
         }))
         .unwrap();
         fs::write(
@@ -189,6 +233,7 @@ impl Fixture {
             request,
             declaration,
             provenance,
+            manifest,
         }
     }
 
@@ -206,12 +251,15 @@ impl Fixture {
 #[test]
 fn complete_bundle_derives_media_and_retains_exact_worker_provenance() {
     let fixture = Fixture::new();
+    let provider = fixture.selected_provider();
+    let inputs = fixture.qualification(&provider);
+    // Qualification must use the host snapshots even if the worker's input
+    // directory has disappeared after launch.
+    fs::remove_dir_all(fixture.directory.path().join("inputs")).unwrap();
     let bundle = qualify_bridge(
         Path::new(env!("CARGO_BIN_EXE_deadpan-media-worker")),
         &fixture.workspace,
-        &fixture.request,
-        &fixture.declaration,
-        &fixture.selected_provider(),
+        inputs,
         limits(),
         &AtomicBool::new(false),
     )
@@ -232,7 +280,15 @@ fn complete_bundle_derives_media_and_retains_exact_worker_provenance() {
     let provenance_ref = bundle.provenance().object().clone();
     let native_ref = bundle.native().object().clone();
     let sampled_ref = bundle.sampled().object().clone();
-    let (_, _, mut provenance) = bundle.into_parts();
+    let retained_receipt = bundle.conditioning().receipt().clone();
+    let (_, _, mut provenance, conditioning) = bundle.into_parts();
+    let (_, mut left, mut right) = conditioning.into_parts();
+    let mut left_bytes = Vec::new();
+    let mut right_bytes = Vec::new();
+    left.read_to_end(&mut left_bytes).unwrap();
+    right.read_to_end(&mut right_bytes).unwrap();
+    assert_eq!(left_bytes, b"prepared left image");
+    assert_eq!(right_bytes, b"prepared right image");
     let mut bytes = Vec::new();
     provenance.read_to_end(&mut bytes).unwrap();
     assert_eq!(bytes.len() as u64, provenance_ref.byte_length());
@@ -241,6 +297,11 @@ fn complete_bundle_derives_media_and_retains_exact_worker_provenance() {
         provenance_ref.content().digest()
     );
     let envelope: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    assert_eq!(envelope["schema_version"], 2);
+    assert_eq!(
+        envelope["conditioning"],
+        serde_json::to_value(retained_receipt).unwrap()
+    );
     assert_eq!(
         envelope["worker_provenance_utf8"]
             .as_str()
@@ -284,6 +345,10 @@ fn provenance_binding_and_containment_fail_before_any_codec_is_started() {
     wrong_native["native_bytes"] = json!(1);
     let mut wrong_context = original.clone();
     wrong_context["context"]["schema_version"] = json!(2);
+    let mut wrong_left = original.clone();
+    wrong_left["context"]["left"] = original["context"]["right"].clone();
+    let mut wrong_color = original.clone();
+    wrong_color["context"]["input_color_interpretation"] = json!("Different source assumptions");
     let duplicate = String::from_utf8(fixture.provenance.clone())
         .unwrap()
         .replacen('{', "{\"schema_version\":2,", 1)
@@ -297,15 +362,15 @@ fn provenance_binding_and_containment_fail_before_any_codec_is_started() {
         serde_json::to_vec(&wrong_seed).unwrap(),
         serde_json::to_vec(&wrong_native).unwrap(),
         serde_json::to_vec(&wrong_context).unwrap(),
+        serde_json::to_vec(&wrong_left).unwrap(),
+        serde_json::to_vec(&wrong_color).unwrap(),
         duplicate,
     ] {
         fixture.replace_provenance(bytes);
         let error = qualify_bridge(
             Path::new("/missing/codec"),
             &fixture.workspace,
-            &fixture.request,
-            &fixture.declaration,
-            &fixture.selected_provider(),
+            fixture.qualification(&fixture.selected_provider()),
             limits(),
             &AtomicBool::new(false),
         );
@@ -324,9 +389,7 @@ fn provenance_binding_and_containment_fail_before_any_codec_is_started() {
         qualify_bridge(
             Path::new("/missing/codec"),
             &fixture.workspace,
-            &fixture.request,
-            &fixture.declaration,
-            &fixture.selected_provider(),
+            fixture.qualification(&fixture.selected_provider()),
             limits(),
             &AtomicBool::new(false)
         ),
@@ -341,9 +404,7 @@ fn cancellation_and_provenance_budgets_cannot_return_a_partial_bundle() {
         qualify_bridge(
             Path::new("/missing/codec"),
             &fixture.workspace,
-            &fixture.request,
-            &fixture.declaration,
-            &fixture.selected_provider(),
+            fixture.qualification(&fixture.selected_provider()),
             limits(),
             &AtomicBool::new(true)
         ),
@@ -357,9 +418,7 @@ fn cancellation_and_provenance_budgets_cannot_return_a_partial_bundle() {
         qualify_bridge(
             Path::new("/missing/codec"),
             &fixture.workspace,
-            &fixture.request,
-            &fixture.declaration,
-            &fixture.selected_provider(),
+            fixture.qualification(&fixture.selected_provider()),
             small,
             &AtomicBool::new(false)
         ),
@@ -373,9 +432,7 @@ fn cancellation_and_provenance_budgets_cannot_return_a_partial_bundle() {
         qualify_bridge(
             Path::new(env!("CARGO_BIN_EXE_deadpan-media-worker")),
             &fixture.workspace,
-            &fixture.request,
-            &fixture.declaration,
-            &fixture.selected_provider(),
+            fixture.qualification(&fixture.selected_provider()),
             small,
             &AtomicBool::new(false)
         ),
@@ -403,9 +460,7 @@ fn host_selected_capability_rejects_mismatched_or_non_nearest_plans_before_io() 
             qualify_bridge(
                 Path::new("/missing/codec"),
                 &fixture.workspace,
-                &fixture.request,
-                &fixture.declaration,
-                &selected,
+                fixture.qualification(&selected),
                 limits(),
                 &AtomicBool::new(false)
             ),
@@ -426,7 +481,7 @@ fn host_selected_capability_rejects_mismatched_or_non_nearest_plans_before_io() 
     **plan = non_nearest;
     assert!(
         matches!(qualify_bridge(Path::new("/missing/codec"), &fixture.workspace,
-        &request, &fixture.declaration, &fixture.selected_provider(), limits(), &AtomicBool::new(false)),
+        BridgeQualification { request: &request, ..fixture.qualification(&fixture.selected_provider()) }, limits(), &AtomicBool::new(false)),
         Err(QualificationError::Request(reason)) if reason.contains("nearest"))
     );
 
@@ -534,9 +589,7 @@ fn actual_bundle_becomes_ready_only_after_all_objects_exist_and_survives_reopen(
     let bundle = qualify_bridge(
         Path::new(env!("CARGO_BIN_EXE_deadpan-media-worker")),
         &fixture.workspace,
-        &fixture.request,
-        &fixture.declaration,
-        &fixture.selected_provider(),
+        fixture.qualification(&fixture.selected_provider()),
         limits(),
         &AtomicBool::new(false),
     )
@@ -574,7 +627,16 @@ fn actual_bundle_becomes_ready_only_after_all_objects_exist_and_survives_reopen(
             .state,
         JobState::Validating
     );
-    let (mut native, mut sampled, mut provenance) = bundle.into_parts();
+    let (mut native, mut sampled, mut provenance, conditioning) = bundle.into_parts();
+    let (manifest, left, right) = conditioning.into_parts();
+    let mut retained_refs = Vec::new();
+    for mut input in [manifest, left, right] {
+        let object = input.object().clone();
+        store
+            .promote_generated_object(&mut input, &object, budget)
+            .unwrap();
+        retained_refs.push(object);
+    }
     store
         .promote_generated_object(&mut native, &native_ref, budget)
         .unwrap();
@@ -610,7 +672,12 @@ fn actual_bundle_becomes_ready_only_after_all_objects_exist_and_survives_reopen(
             .is_none()
     );
     drop(store);
-    let reopened = ProjectStore::open(&package, AccessMode::ReadOnly).unwrap();
+    let relocated = tempfile::tempdir().unwrap();
+    let relocated_package = relocated.path().join("retained.deadpan");
+    fs::rename(&package, &relocated_package).unwrap();
+    fs::remove_dir_all(fixture.directory.path().join("inputs")).unwrap();
+    fs::remove_dir_all(fixture.directory.path().join("outputs")).unwrap();
+    let reopened = ProjectStore::open(&relocated_package, AccessMode::ReadOnly).unwrap();
     let selected = reopened
         .selected_generation_bundle(&binding.identity.request_id)
         .unwrap()
@@ -618,7 +685,10 @@ fn actual_bundle_becomes_ready_only_after_all_objects_exist_and_survives_reopen(
     assert_eq!(selected.identity, binding.identity);
     assert_eq!(selected.receipt, receipt);
     assert_eq!(reopened.snapshot().unwrap(), document);
-    for object in [&native_ref, &sampled_ref, &provenance_ref] {
+    for object in [&native_ref, &sampled_ref, &provenance_ref]
+        .into_iter()
+        .chain(retained_refs.iter())
+    {
         let mut bytes = Vec::new();
         reopened
             .snapshot_generated_object(object, budget)

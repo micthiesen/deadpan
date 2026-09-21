@@ -95,6 +95,19 @@ def main():
                      "runtime_id": "ltx-mlx-development", "runtime_version": "0.15.8+deadpan1", "seed": args.seed},
         "plan": plan,
     }
+    retention = {
+        "workspace": str(workspace), "request": request, "input_scope": "inputs",
+        "manifest": {"reference": "inputs/context.json", "sha256": request["input"]["sha256"],
+                     "byte_length": (inputs / "context.json").stat().st_size},
+        "limits": {"maximum_manifest_bytes": 1024 * 1024, "maximum_frame_bytes": 64 * 1024 * 1024,
+                   "timeout_ms": 30_000},
+        "output_directory": str(run / "retained-conditioning"),
+    }
+    save(run / "retention-config.json", retention)
+    subprocess.run([
+        str(root / "target/debug/examples/retain_bridge_conditioning"),
+        str(run / "retention-config.json"),
+    ], check=True, stdout=subprocess.DEVNULL)
     save(run / "host-config.json", {
         "executable": sys.executable, "worker_script": str(root / "tools/model-qualification/worker.py"),
         "runtime_config": str(run / "runtime.json"), "workspace": str(workspace),

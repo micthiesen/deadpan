@@ -10,6 +10,11 @@ mod qualification;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub use qualification::*;
 
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+mod conditioning;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+pub use conditioning::*;
+
 mod provider;
 pub use provider::SelectedBridgeProvider;
 

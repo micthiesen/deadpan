@@ -1,0 +1,46 @@
+[
+  {
+    "label": "prepare-and-retain",
+    "command": [
+      "/tmp/deadpan-ltx2src-3392/ltx-2-mlx-3392d75934120b7e69eefbe55893f7ef82be92a4/.venv/bin/python3",
+      "/Users/michael/Code/deadpan/tools/model-qualification/prepare_run.py",
+      "--runtime-source",
+      "/tmp/deadpan-ltx2src-3392/ltx-2-mlx-3392d75934120b7e69eefbe55893f7ef82be92a4",
+      "--model-cache",
+      "/tmp/deadpan-model-qualification-cache",
+      "--ffmpeg",
+      "/opt/homebrew/bin/ffmpeg",
+      "--ffprobe",
+      "/opt/homebrew/bin/ffprobe",
+      "--left",
+      "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-native-bundle-v2-mi0kfnxo/worker/inputs/left.png",
+      "--right",
+      "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-native-bundle-v2-mi0kfnxo/worker/inputs/right.png",
+      "--input-color-interpretation",
+      "Previously prepared developer fixture interpreted as full-range sRGB; original source color and source-clock extraction remain unqualified.",
+      "--run-directory",
+      "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-retained-bridge-n63mnepg/run",
+      "--frames",
+      "30",
+      "--fps",
+      "30000/1001",
+      "--seed",
+      "1"
+    ],
+    "started_unix_seconds": 1789994906.560469,
+    "finished_unix_seconds": 1789994906.926908,
+    "elapsed_seconds": 0.3664407089818269,
+    "exit_code": 0
+  },
+  {
+    "label": "supervised-generation",
+    "command": [
+      "/Users/michael/Code/deadpan/target/debug/examples/qualify_model_worker",
+      "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-retained-bridge-n63mnepg/run/host-config.json"
+    ],
+    "started_unix_seconds": 1789994906.927806,
+    "finished_unix_seconds": 1789995028.825404,
+    "elapsed_seconds": 121.8973593749106,
+    "exit_code": 0
+  }
+]
