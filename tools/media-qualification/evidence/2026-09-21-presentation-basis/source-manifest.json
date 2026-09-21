@@ -1,0 +1,59 @@
+{
+  "base_revision": "14c75218b695e732773a4b247a45db3b7290faac",
+  "implementation_sha256": {
+    "Cargo.lock": "a16d4362ee309a9664638f748c25b0c07a203debf5f1f277f518e7283da6a301",
+    "crates/deadpan-cli/src/doctor.rs": "780c9140009f8eabf1a46e99dab68c155bd1d47258f2512cdc11d1223ad9cfa7",
+    "crates/deadpan-cli/src/lib.rs": "acc9539805149933900cd8fcafc71f37c26355cc40def023ee39486b6267973d",
+    "crates/deadpan-cli/src/source_registration.rs": "da37a4a5838a171a05e79289dc83e8f6a6bfba60438c902f126781b71071f138",
+    "crates/deadpan-cli/tests/source_registration.rs": "bcb87a5bc39db0ba7419c974ad76776b60401ede3add720c2bf4c1c8ee610e72",
+    "crates/deadpan-core/src/basis.rs": "dc54427ea2b353c0699e4494fe7f9bc7a8efe555b7a3ce0066cdab75e6042880",
+    "crates/deadpan-core/src/command.rs": "ab74214ab67a7a7e162bea57175aabc49d6af4aa515507b8c4d688424fb68840",
+    "crates/deadpan-core/src/document.rs": "afa118af4c31fe0fb10bfb3aae5d99a7d73e98e8761a6e3ba03f9d8e63e5b2be",
+    "crates/deadpan-core/src/legacy_v1.rs": "597042afecaa555cb3fa9f487e3c7b6cafde43a6ea65a7cbeee46322fed4902d",
+    "crates/deadpan-core/src/legacy_v2.rs": "d49f0610fd6b084bd43e9c43b05694fae68990d5c7fee33e781bb6f335275cca",
+    "crates/deadpan-core/src/legacy_v3.rs": "602f294a13aa78a1ca75ab524a391af29124276233496b07353995017f392179",
+    "crates/deadpan-core/src/legacy_v4.rs": "1c00aa269c2decefe701f4558202757438a62aa6163f01ce60a10330e02e321f",
+    "crates/deadpan-core/src/legacy_v5.rs": "3e0b08db69c3542aa049e472f7d92e4dcef6904c8de00ced9a23d9167fcadf36",
+    "crates/deadpan-core/src/legacy_v6.rs": "5180bb272cdc2261f6606e15d4595e758386f7f53ec371e3767bab1130d3fee6",
+    "crates/deadpan-core/src/legacy_v7.rs": "77f8d5f19a22dcc77db04f4fb00c5e5379840bb60ec1d742e5b555b418c217e7",
+    "crates/deadpan-core/src/legacy_v8.rs": "7d9d89382b15703a6217e1ce13d72667266fce302ba5314812ff6a26d0b22d79",
+    "crates/deadpan-core/src/legacy_v9.rs": "5adeebb7327a59385eb72f376c5acebf8a205893b694c05fe85229aa57d11ed9",
+    "crates/deadpan-core/src/lib.rs": "f6f488d8ec73f8bad8a09f5833a5c071a2455635d6fc8a1083f62239b9b54781",
+    "crates/deadpan-core/tests/generated_holds.rs": "e9cf0717f006909523316c16ec0d86cbb05c1d6749b7556a205d5a640ee029eb",
+    "crates/deadpan-core/tests/presentation_basis.rs": "f46868d5a3cb30cad9cf3f30430538d592fa3b9aa89aaa29eac45b25ae4c021d",
+    "crates/deadpan-core/tests/source_import.rs": "0124175cc922d4c7d584c18169875d652348ed14d9fd209c41847d7c59a5a85a",
+    "crates/deadpan-media/src/source_import_timing.rs": "dff53662e9cfb16667488086671bdf478e5168c5148d526ae47b54ec41662470",
+    "crates/deadpan-media/src/source_qualification.rs": "9aff232ea6cdddbdc839f7dc9cfdd025c8f714168b8f481a531bf983cdb9e4f6",
+    "crates/deadpan-media/tests/source_import_timing.rs": "22c6139e5c908adfe256e1dc46cb1a9bef112161f688b4ebda722ee3cc37b45f",
+    "crates/deadpan-store/src/error.rs": "ae0a675c2d42c8cd7f351e460dcb43c548eaed5fbd71086ea9837126edfbd414",
+    "crates/deadpan-store/src/lib.rs": "56aa6ec138b4f064bcaa9dfe5668e5bfbba5904ea4a2616ac6a8ff52aac9fc1d",
+    "crates/deadpan-store/src/migration.rs": "04ba0c16eb7da271fed4b1bf628eb55f26187c553dbaa37e805becf6dd682a62",
+    "crates/deadpan-store/src/schema.rs": "90def2cc97134ce6469b8d87ac4db044cab6707f2f3342c0210181ffe1fea627",
+    "crates/deadpan-store/src/source_registration.rs": "7eb592a90a46cbccf403f1d9a0592f93bd3f6752505d38312b15aa6199028cd1",
+    "crates/deadpan-store/src/validation.rs": "41ee65c2fc7f484254ff25517b6d894c426bc0938b95be5325848c15d090e209",
+    "crates/deadpan-store/tests/fixtures/v14-history.sql": "b1f91bcd279877ddd5c6b33d656ddd0faa55ed11e1bdc9e155191f40b4b3d112",
+    "crates/deadpan-store/tests/migration.rs": "f1928386af1c54715c8b6212f6c3765a49fb77a776c000cdc881eb4267f0266a",
+    "crates/deadpan-store/tests/presentation_basis.rs": "efa36e075635cf0063b7a38dcd41dce72d33c45793cf430e587b74e6cd3d1d71",
+    "crates/deadpan-store/tests/source_registration.rs": "ba608b04ad9354de46ea1043b00974d72ceda6433d380df53bd37e2f0c9a2549"
+  },
+  "fixture_sha256": {
+    "native/deadpan-source/tests/fixtures/cfr-bframes.mp4": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+    "native/deadpan-source/tests/fixtures/vfr.mp4": "3fd07d00aa604554dc5389530cd261ac8961aded6361426fb00bf5519ac64884",
+    "native/deadpan-source/tests/fixtures/rotated90.mp4": "d8a51344c8ddb32b49206d4577aaabd9313216981171117f5e52ad2b360bc5aa",
+    "native/deadpan-source/tests/fixtures/anamorphic.mkv": "0d5cd53df885fb890c48ad65ccf931577f3a6761510e746507253078d3ebe837",
+    "native/deadpan-source/tests/audio-fixtures/pcm-mono-44100.wav": "b95b3debd2c83cf2590fddfaa98276c23c3b383b720fd96ac52c2c00c668318b"
+  },
+  "environment": {
+    "hardware": "Apple M5 Max, 128 GiB",
+    "os": "macOS 26.5.2",
+    "rust": "1.97.1",
+    "ffmpeg": "8.0.3 LGPL",
+    "ffmpeg_prefix": "/tmp/deadpan-media-compatible-xyhilms4/prefix"
+  },
+  "prior_ci": {
+    "run": 35645569091,
+    "head": "14c75218b695e732773a4b247a45db3b7290faac",
+    "conclusion": "success"
+  },
+  "scope": "Authored automatic presentation basis, timed locking, source-qualified geometry adoption, canvas transactions and schema-14 migration; no native UI change."
+}

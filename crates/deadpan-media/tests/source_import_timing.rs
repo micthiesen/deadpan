@@ -17,6 +17,7 @@ use deadpan_media::audio_session::{AudioSession, AudioSessionLimits};
 use deadpan_media::source_import_timing::{
     CadenceConfidence, ImportAudioPolicy, ImportTimingError, MAX_CADENCE_INTERVALS,
     audio_only_basis, derive_import_timing, derive_presentation_basis,
+    derive_presentation_geometry,
 };
 use deadpan_media::source_index::{SourceContentIdentity, SourceIndexSnapshot};
 use deadpan_media::source_input::VerifiedSourceInput;
@@ -660,6 +661,8 @@ fn cadence_requires_repeated_integral_evidence_and_bounds_histogram_growth() {
             derive_presentation_basis(&video, &info(clock)),
             Err(ImportTimingError::AmbiguousCadence)
         ));
+        let geometry = derive_presentation_geometry(&video, &info(clock)).unwrap();
+        assert_eq!((geometry.width, geometry.height), (1920, 1080));
     }
     let intervals = (1..=MAX_CADENCE_INTERVALS + 2)
         .map(|value| value as i64)

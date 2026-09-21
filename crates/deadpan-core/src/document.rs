@@ -4,11 +4,12 @@ use std::{error::Error, fmt};
 use serde::{Deserialize, Deserializer, Serialize, de};
 
 use crate::{
-    AudioSample, FrameDuration, FrameRange, FrameRate, IterationOrder, Mark, PlayOverrides,
-    RepeatLayout, SourceAudioMapping, SourceTimestamp, SourceVideoMapping, TimeError,
+    AudioSample, BasisState, FrameDuration, FrameRange, FrameRate, IterationOrder, Mark,
+    PlayOverrides, RepeatLayout, SourceAudioMapping, SourceTimestamp, SourceVideoMapping,
+    TimeError,
 };
 
-pub const DOCUMENT_SCHEMA_VERSION: u32 = 9;
+pub const DOCUMENT_SCHEMA_VERSION: u32 = 10;
 /// Bounds apply before traversal. Structure is walked iteratively, never recursively.
 pub const MAX_DOCUMENT_NODES: usize = 100_000;
 pub const MAX_DOCUMENT_ASSETS: usize = 100_000;
@@ -369,6 +370,7 @@ pub struct ProjectDocument {
     pub(crate) project_id: ProjectId,
     pub(crate) revision_id: RevisionId,
     pub(crate) presentation_basis: PresentationBasis,
+    pub(crate) basis_state: BasisState,
     pub(crate) root: NodeId,
     pub(crate) nodes: BTreeMap<NodeId, BeatNode>,
     pub(crate) assets: BTreeMap<AssetId, AssetRecord>,
@@ -383,6 +385,7 @@ struct DocumentWire {
     project_id: ProjectId,
     revision_id: RevisionId,
     presentation_basis: PresentationBasis,
+    basis_state: BasisState,
     root: NodeId,
     #[serde(deserialize_with = "unique_map")]
     nodes: BTreeMap<NodeId, BeatNode>,
@@ -402,6 +405,7 @@ impl TryFrom<DocumentWire> for ProjectDocument {
             project_id: value.project_id,
             revision_id: value.revision_id,
             presentation_basis: value.presentation_basis,
+            basis_state: value.basis_state,
             root: value.root,
             nodes: value.nodes,
             assets: value.assets,
@@ -425,6 +429,7 @@ impl ProjectDocument {
             project_id,
             revision_id,
             presentation_basis,
+            basis_state: BasisState::explicit(),
             nodes: BTreeMap::from([(root.clone(), BeatNode::sequence("Sequence", vec![]))]),
             root,
             assets: BTreeMap::new(),
@@ -432,6 +437,16 @@ impl ProjectDocument {
             overrides: BTreeMap::new(),
         };
         document.validate()?;
+        Ok(document)
+    }
+    /// Start with the audio-only default, still eligible for first-primary adoption.
+    pub fn new_automatic(
+        project_id: ProjectId,
+        revision_id: RevisionId,
+        root: NodeId,
+    ) -> Result<Self, DocumentError> {
+        let mut document = Self::new(project_id, revision_id, crate::basis::default_basis(), root)?;
+        document.basis_state = BasisState::provisional();
         Ok(document)
     }
     pub fn schema_version(&self) -> u32 {
@@ -445,6 +460,9 @@ impl ProjectDocument {
     }
     pub fn presentation_basis(&self) -> &PresentationBasis {
         &self.presentation_basis
+    }
+    pub fn basis_state(&self) -> &BasisState {
+        &self.basis_state
     }
     pub fn root(&self) -> &NodeId {
         &self.root
@@ -532,6 +550,7 @@ impl ProjectDocument {
     /// Validate once and return every authored duration for plan compilation.
     pub fn durations(&self) -> Result<BTreeMap<NodeId, FrameDuration>, DocumentError> {
         let durations = self.structural_durations()?;
+        self.validate_basis_state(&durations)?;
         crate::marks::validate_marks(self, &durations)?;
         Ok(durations)
     }

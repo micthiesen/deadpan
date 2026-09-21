@@ -502,6 +502,7 @@ fn every_legacy_adapter_rejects_generated_documents_and_commands() {
         "generated",
     );
     let mut wire = serde_json::to_value(&generated).unwrap();
+    wire.as_object_mut().unwrap().remove("basis_state");
     wire["schema_version"] = json!(4);
     assert!(legacy_v4::Document::from_json(&wire.to_string()).is_err());
     wire.as_object_mut().unwrap().remove("overrides");
@@ -572,6 +573,7 @@ fn every_legacy_adapter_rejects_only_the_new_asset_hash_vocabulary() {
     let current = transaction.forward.apply(&base).unwrap();
 
     let mut base_wire = serde_json::to_value(&base).unwrap();
+    base_wire.as_object_mut().unwrap().remove("basis_state");
     base_wire["schema_version"] = json!(4);
     let old4 = legacy_v4::Document::from_json(&base_wire.to_string()).unwrap();
     base_wire.as_object_mut().unwrap().remove("overrides");
@@ -588,6 +590,7 @@ fn every_legacy_adapter_rejects_only_the_new_asset_hash_vocabulary() {
     assert!(!old4.matches(&current));
 
     let mut current_wire = serde_json::to_value(&current).unwrap();
+    current_wire.as_object_mut().unwrap().remove("basis_state");
     current_wire["schema_version"] = json!(4);
     assert!(legacy_v4::Document::from_json(&current_wire.to_string()).is_err());
     current_wire.as_object_mut().unwrap().remove("overrides");

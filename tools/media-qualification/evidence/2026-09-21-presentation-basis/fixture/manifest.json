@@ -1,0 +1,34 @@
+{
+  "source_revision": "14c75218b695e732773a4b247a45db3b7290faac",
+  "scratch": "/tmp/deadpan-schema14-reproduce-fm7li74v",
+  "archive_sha256": "0015668d334165703f83af40370c9fe763b71055048979457fd86002cdfaeb51",
+  "cli": "/tmp/deadpan-presentation-basis-migration/old-target/debug/deadpan-cli",
+  "cli_sha256": "5d97e2f2a36ef1059d356aed8074ca7e4c2998f287fc3d3346aaf0cc1d4c489c",
+  "generator_sha256": "7fe2a7ee7c7d4d875d42a5f8721e04cf970f8cdf01da70312a3ba388895138bc",
+  "harness_sha256": "33d531187ec012a979d273a13e2e1d05e48623de51520cd0785f79aef4e5e7cd",
+  "ffmpeg_prefix": "/tmp/deadpan-media-compatible-xyhilms4/prefix",
+  "seed_fixture": "crates/deadpan-store/tests/fixtures/v13-history.sql",
+  "seed_sha256": "e37a4072a03e62b845d4f34b0cb34ae3bc9c0b00e7a34b034b7a8a38f1f60ad4",
+  "sql_fixture": "crates/deadpan-store/tests/fixtures/v14-history.sql",
+  "sql_sha256": "b1f91bcd279877ddd5c6b33d656ddd0faa55ed11e1bdc9e155191f40b4b3d112",
+  "sql_byte_reproduction": true,
+  "reproduced_sql_sha256": [
+    "b1f91bcd279877ddd5c6b33d656ddd0faa55ed11e1bdc9e155191f40b4b3d112",
+    "b1f91bcd279877ddd5c6b33d656ddd0faa55ed11e1bdc9e155191f40b4b3d112"
+  ],
+  "source_fixture_sha256": {
+    "cfr-bframes.mp4": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+    "vfr.mp4": "3fd07d00aa604554dc5389530cd261ac8961aded6361426fb00bf5519ac64884"
+  },
+  "counts": {
+    "revisions": 54,
+    "history": 28,
+    "original_media": 3,
+    "source_qualifications": 2,
+    "redo": 1,
+    "generation_requests": 1,
+    "generation_attempts": 1,
+    "generation_bundle_receipts": 1
+  },
+  "log": "generation-deadpan-schema14-reproduce-fm7li74v.txt.gz"
+}

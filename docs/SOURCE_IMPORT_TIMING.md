@@ -79,14 +79,14 @@ source metadata into linear Rec.2020 before its explicit SDR display transform.
 The helper borrows the source metadata unchanged; qualification receipts
 retain it separately from the presentation basis.
 
-The provisional audio-only basis is 1920×1080 at 30 fps. These are candidates,
-not basis-adoption state. The first primary video insertion, provisional-rate
-locking after a timed edit and explicit later geometry adoption remain host
-work under specification Section 4.
+The provisional audio-only basis is 1920×1080 at 30 fps. The separate
+[presentation host](PRESENTATION_BASIS.md) records adoption and timed-rate locking
+under specification Section 4. Geometry-only candidate derivation is independent
+of cadence, so ambiguous VFR cadence need not block explicit later geometry adoption.
 
 ## Persistence and evidence
 
-Database schema 14 migrates schemas 1 through 13 into core schema 9 by replaying
+Database schema 15 migrates schemas 1 through 14 into core schema 10 by replaying
 their complete history against frozen core wires. Schema-12 picture and audio durations remain
 unchanged. Older history rejects placement variants and fields, including null
 fields in snapshots, commands and patches. Migration preserves all operational

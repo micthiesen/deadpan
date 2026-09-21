@@ -9,7 +9,7 @@ use deadpan_media::source_input::VerifiedSourceInput;
 use deadpan_media::source_qualification::DecodedSourceQualification;
 use deadpan_media::source_session::{SourceSession, SourceSessionLimits};
 use deadpan_store::original_media::OriginalMediaLimits;
-use deadpan_store::source_registration::SourceRegistration;
+use deadpan_store::source_registration::{PrimaryGeometryAdoption, SourceRegistration};
 use deadpan_store::{AccessMode, ProjectStore, StoreError};
 use serde::Deserialize;
 
@@ -30,6 +30,39 @@ enum Streams {
     VideoOnly {},
     VideoAndAudio { audio_stream: u32 },
     AudioOnly { stream: u32 },
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct GeometryEnvelope {
+    protocol: u32,
+    adoption: PrimaryGeometryAdoption,
+}
+
+pub(super) fn adopt_geometry(
+    package: &Path,
+    request: &Path,
+    dry_run: bool,
+) -> Result<(), CliError> {
+    let envelope: GeometryEnvelope = serde_json::from_str(&read_request(request)?)?;
+    if envelope.protocol != 1 {
+        return Err(CliError::Protocol(envelope.protocol));
+    }
+    let mut store = ProjectStore::open(
+        package,
+        if dry_run {
+            AccessMode::ReadOnly
+        } else {
+            AccessMode::ReadWrite
+        },
+    )?;
+    if dry_run {
+        let edit = store.preview_primary_geometry(&envelope.adoption)?;
+        write_json(&serde_json::json!({"protocol":1,"committed":false,"edit":edit}))
+    } else {
+        let outcome = store.adopt_primary_geometry(&envelope.adoption, None)?;
+        write_json(&serde_json::json!({"protocol":1,"committed":true,"outcome":outcome}))
+    }
 }
 
 pub(super) fn run(package: &Path, request: &Path, dry_run: bool) -> Result<(), CliError> {

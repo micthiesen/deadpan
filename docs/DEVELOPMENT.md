@@ -91,6 +91,14 @@ video/audio fixtures and cover persisted evidence, transactional insertion,
 historical lookup, rollback and explicit stream selection. Run the migration
 suite for schema changes. See [source registration](SOURCE_REGISTRATION.md).
 
+For presentation policy, core `presentation_basis` tests exercise origin and
+lock transitions, marks, occurrence edits and inverse patches. Store
+`presentation_basis` tests use real sources for first-primary selection,
+unchanged audio coordinates, geometry-only adoption, admission guards and
+rollback. The CLI `source_registration` suite covers automatic creation and
+versioned geometry preview/commit. [Presentation policy](PRESENTATION_BASIS.md)
+documents the boundary; these tests establish no native canvas-preview quality.
+
 ## Source audio checks
 
 Run `cargo test --locked -p deadpan-source -p deadpan-media` for native audio

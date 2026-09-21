@@ -1,0 +1,62 @@
+{
+  "scope": "origin/main at 14c75218b695e732773a4b247a45db3b7290faac plus staged, unstaged and untracked presentation-basis changes",
+  "reviews": [
+    {
+      "agent": "basis_general_review",
+      "lens": "general correctness, behavior, tests and maintainability",
+      "findings": [],
+      "verification": "Focused core presentation/source, media timing, store presentation, CLI registration tests and git diff --check passed."
+    },
+    {
+      "agent": "basis_timing_review",
+      "lens": "exact timing, state transitions, marks, geometry, inverse/history and spec fidelity",
+      "findings": [],
+      "verification": "Targeted core and store presentation-basis tests passed."
+    },
+    {
+      "agent": "basis_storage_review",
+      "lens": "storage admission, historical receipt validation and migration compatibility",
+      "findings": [
+        {
+          "severity": "major",
+          "file": "crates/deadpan-core/src/basis.rs",
+          "finding": "A supplied initial snapshot could claim Default geometry while storing a nondefault raster; related TimedEdit provenance could claim a nondefault frame rate.",
+          "disposition": "Applied: Default geometry requires 1920x1080 and Provisional/TimedEdit rate origins; TimedEdit rate requires 30 fps. Core/store regression tests reject false initial snapshot claims and preserve explicit geometry at locked rate.",
+          "regression_before_fix": [
+            "deadpan-basis-origin-before.log.gz",
+            "deadpan-basis-store-origin-before.log.gz"
+          ],
+          "followup": "Reviewer reread the fix and tests and reported no remaining findings."
+        }
+      ]
+    }
+  ],
+  "unresolved_findings": [],
+  "intermediate_failures": [
+    {
+      "failure": "Two new origin-validation regression tests failed against the pre-fix implementation.",
+      "fix": "Validate default geometry and timed-edit rate provenance in the core document validator.",
+      "evidence": [
+        "deadpan-basis-origin-before.log.gz",
+        "deadpan-basis-store-origin-before.log.gz"
+      ]
+    },
+    {
+      "failure": "Worker-reported synthetic legacy core test fixtures still contained the new basis_state field.",
+      "fix": "Strip basis_state before interpreting synthetic current JSON as a legacy document.",
+      "evidence": "Worker report retained in qualification narrative; no separate raw failure log retained."
+    }
+  ],
+  "skipped_checks": [
+    "Native ASan/UBSan: adapter code unchanged",
+    "GUI aesthetics, native focus/IME/accessibility/keyboard and lifecycle: no native UI changed",
+    "Python media qualification harnesses: unchanged and not rerun locally"
+  ],
+  "remaining_product_scope": [
+    "Native project and import workflow",
+    "Visible canvas/basis previews and framing-effect reevaluation",
+    "Still-image and full format/color qualification",
+    "Source-aware generation context",
+    "Audio output, playback and export"
+  ]
+}

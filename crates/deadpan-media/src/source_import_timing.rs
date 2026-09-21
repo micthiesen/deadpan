@@ -275,12 +275,19 @@ pub struct BasisCandidate {
     pub geometry: GeometryEvidence,
 }
 
-/// Derive a candidate only. This function does not choose which import is the
-/// primary picture, change a document, or establish any basis-adoption state.
-pub fn derive_presentation_basis(
+/// Display raster independently of cadence, for an explicitly previewed canvas
+/// adoption after the project clock is already fixed.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct GeometryCandidate {
+    pub width: u32,
+    pub height: u32,
+    pub evidence: GeometryEvidence,
+}
+
+pub fn derive_presentation_geometry(
     snapshot: &SourceIndexSnapshot,
     info: &SourceStreamInfo,
-) -> Result<BasisCandidate, ImportTimingError> {
+) -> Result<GeometryCandidate, ImportTimingError> {
     if snapshot.stream_index() != info.stream_index
         || snapshot.index().time_base()
             != SourceTimeBase::new(info.time_base_num, info.time_base_den)?
@@ -288,17 +295,31 @@ pub fn derive_presentation_basis(
         return Err(ImportTimingError::VideoMetadataMismatch);
     }
     video_span(snapshot)?;
+    let (width, height, evidence) = derive_geometry(info)?;
+    Ok(GeometryCandidate {
+        width,
+        height,
+        evidence,
+    })
+}
+
+/// Derive a candidate only. This function does not choose which import is the
+/// primary picture, change a document, or establish any basis-adoption state.
+pub fn derive_presentation_basis(
+    snapshot: &SourceIndexSnapshot,
+    info: &SourceStreamInfo,
+) -> Result<BasisCandidate, ImportTimingError> {
+    let geometry = derive_presentation_geometry(snapshot, info)?;
     let (frame_rate, cadence) = derive_cadence(snapshot)?;
-    let (width, height, geometry) = derive_geometry(info)?;
     Ok(BasisCandidate {
         basis: PresentationBasis {
-            width,
-            height,
+            width: geometry.width,
+            height: geometry.height,
             frame_rate,
             color_policy: ColorPolicy::SdrRec709,
         },
         cadence,
-        geometry,
+        geometry: geometry.evidence,
     })
 }
 

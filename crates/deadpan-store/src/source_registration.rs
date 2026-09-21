@@ -10,7 +10,8 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 use deadpan_core::{
     AssetId, AssetRecord, Command, CommandRequest, EditTransaction, FrameDuration, FrameRate,
-    NodeId, ProjectDocument, RevisionId, SourceFrameIndex, SourceInsertion, SourceQualificationId,
+    FrameRateOrigin, GeometryOrigin, NodeId, PrimarySourceImport, ProjectDocument, RevisionId,
+    SourceFrameIndex, SourceInsertion, SourceQualificationId,
 };
 use deadpan_media::source_qualification::{
     DecodedSourceQualification, MAX_SOURCE_QUALIFICATION_JSON_BYTES, SourceQualificationSnapshot,
@@ -35,6 +36,25 @@ pub struct SourceInsertionRequest {
     pub index: usize,
     pub node: NodeId,
     pub label: String,
+    /// Ordinary sequence insertion is primary; reactions/supporting material
+    /// must opt into Secondary and can never choose the project basis.
+    #[serde(default)]
+    pub purpose: SourceInsertionPurpose,
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum SourceInsertionPurpose {
+    #[default]
+    Primary,
+    Secondary,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct PrimaryGeometryAdoption {
+    pub expected_revision: RevisionId,
+    pub new_revision: RevisionId,
 }
 
 /// Allocation IDs are supplied by the host. Existing equal qualification is
@@ -117,6 +137,31 @@ struct PreparedRegistration {
 }
 
 impl ProjectStore {
+    /// Derives the recorded first primary source's geometry at the already
+    /// fixed project rate. Metadata can be inspected even when media is offline.
+    pub fn preview_primary_geometry(
+        &self,
+        input: &PrimaryGeometryAdoption,
+    ) -> Result<EditTransaction, StoreError> {
+        let transaction = self.connection.unchecked_transaction()?;
+        Ok(prepare_primary_geometry(&transaction, input)?.edit)
+    }
+
+    pub fn adopt_primary_geometry(
+        &mut self,
+        input: &PrimaryGeometryAdoption,
+        relevance: Option<&RelevancePlan>,
+    ) -> Result<CommitOutcome, StoreError> {
+        self.require_writer()?;
+        let transaction = self
+            .connection
+            .transaction_with_behavior(TransactionBehavior::Immediate)?;
+        let plan = prepare_primary_geometry(&transaction, input)?;
+        let outcome = crate::write_command_plan(&transaction, plan, relevance)?;
+        transaction.commit()?;
+        Ok(outcome)
+    }
+
     /// Resolve media through the revision being rendered, never the latest
     /// meaning of a potentially reused asset alias. This does not verify bytes.
     pub fn registered_source(
@@ -301,6 +346,33 @@ fn prepare_registration(
             plan: None,
         });
     }
+    let primary = if input
+        .insertion
+        .as_ref()
+        .is_some_and(|target| target.purpose == SourceInsertionPurpose::Primary)
+        && receipt.snapshot.video().is_some()
+        && current.basis_state().primary.is_none()
+    {
+        Some(
+            if current.basis_state().rate_origin == FrameRateOrigin::Provisional {
+                PrimarySourceImport::Adopt {
+                    basis: receipt
+                        .snapshot
+                        .basis_candidate()?
+                        .ok_or_else(|| invalid("primary source has no picture basis"))?
+                        .basis,
+                }
+            } else {
+                PrimarySourceImport::KeepBasis
+            },
+        )
+    } else {
+        None
+    };
+    let frame_rate = match &primary {
+        Some(PrimarySourceImport::Adopt { basis }) => basis.frame_rate,
+        _ => current.presentation_basis().frame_rate,
+    };
     let insertion = input
         .insertion
         .as_ref()
@@ -312,7 +384,7 @@ fn prepare_registration(
                 label: target.label.clone(),
                 source: receipt
                     .snapshot
-                    .derive_timing(current.presentation_basis().frame_rate)?
+                    .derive_timing(frame_rate)?
                     .source_node(asset_id.clone()),
             })
         })
@@ -325,6 +397,7 @@ fn prepare_registration(
             id: asset_id.clone(),
             asset: record.clone(),
             insertion: insertion.map(Box::new),
+            primary,
         },
     };
     let plan = crate::prepare_command_with_admission(
@@ -332,11 +405,61 @@ fn prepare_registration(
         &request,
         None,
         Some((&asset_id, &record)),
+        None,
     )?;
     Ok(PreparedRegistration {
         asset_id,
         plan: Some(plan),
     })
+}
+
+fn prepare_primary_geometry(
+    connection: &Connection,
+    input: &PrimaryGeometryAdoption,
+) -> Result<CommandPlan, StoreError> {
+    let current = crate::read_snapshot(connection)?;
+    if current.revision_id() != &input.expected_revision {
+        return Err(StoreError::RevisionConflict {
+            expected: input.expected_revision.as_str().into(),
+            current: current.revision_id().as_str().into(),
+        });
+    }
+    let primary = current
+        .basis_state()
+        .primary
+        .as_ref()
+        .ok_or_else(|| invalid("project has no recorded primary picture source"))?;
+    let receipt = read_receipt(connection, &primary.qualification)?
+        .ok_or_else(|| invalid("primary source qualification is missing"))?;
+    let record = current
+        .assets()
+        .get(&primary.asset)
+        .ok_or_else(|| invalid("primary asset is absent"))?;
+    if receipt.asset_record(record.label.clone())? != *record {
+        return Err(invalid(
+            "primary asset disagrees with measured source evidence",
+        ));
+    }
+    let geometry = receipt
+        .snapshot
+        .geometry_candidate()?
+        .ok_or_else(|| invalid("primary source has no picture geometry"))?;
+    let request = CommandRequest {
+        project_id: current.project_id().clone(),
+        expected_revision: input.expected_revision.clone(),
+        new_revision: input.new_revision.clone(),
+        command: Command::AdoptPrimaryGeometry {
+            width: geometry.width,
+            height: geometry.height,
+        },
+    };
+    crate::prepare_command_with_admission(
+        connection,
+        &request,
+        None,
+        None,
+        Some((geometry.width, geometry.height)),
+    )
 }
 
 fn check_revision(current: &ProjectDocument, input: &SourceRegistration) -> Result<(), StoreError> {
@@ -478,7 +601,22 @@ pub(crate) fn validate_store(connection: &Connection) -> Result<(), StoreError> 
         let id = SourceQualificationId::new(row.get(0)?)?;
         let receipt =
             read_receipt(connection, &id)?.ok_or_else(|| invalid("qualification disappeared"))?;
-        metadata.insert(id, receipt.asset_record(String::new())?);
+        // Candidate derivation may legitimately be unavailable for a source
+        // used at an explicit project basis. Retain only compact results and
+        // require them when history claims source-derived presentation.
+        let basis = receipt
+            .snapshot
+            .basis_candidate()
+            .ok()
+            .flatten()
+            .map(|candidate| candidate.basis);
+        let geometry = receipt
+            .snapshot
+            .geometry_candidate()
+            .ok()
+            .flatten()
+            .map(|candidate| (candidate.width, candidate.height));
+        metadata.insert(id, (receipt.asset_record(String::new())?, basis, geometry));
     }
     // Include abandoned branches, not only current head or active redo. Each
     // asset carries its own receipt ID even if its alias is reused after undo.
@@ -494,12 +632,37 @@ pub(crate) fn validate_store(connection: &Connection) -> Result<(), StoreError> 
             };
             let mut expected = metadata
                 .get(id)
-                .cloned()
-                .ok_or_else(|| invalid("historical asset has no qualification receipt"))?;
+                .ok_or_else(|| invalid("historical asset has no qualification receipt"))?
+                .0
+                .clone();
             expected.label.clone_from(&asset.label);
             if expected != *asset {
                 return Err(invalid(
                     "historical asset differs from immutable measured metadata",
+                ));
+            }
+        }
+        if let Some(primary) = &document.basis_state().primary {
+            let (_, basis, geometry) = metadata
+                .get(&primary.qualification)
+                .ok_or_else(|| invalid("historical primary source has no qualification receipt"))?;
+            if document.basis_state().rate_origin == FrameRateOrigin::PrimarySource
+                && basis.as_ref().map(|basis| basis.frame_rate)
+                    != Some(document.presentation_basis().frame_rate)
+            {
+                return Err(invalid(
+                    "source-derived project rate differs from measured cadence",
+                ));
+            }
+            if document.basis_state().geometry_origin == GeometryOrigin::PrimarySource
+                && *geometry
+                    != Some((
+                        document.presentation_basis().width,
+                        document.presentation_basis().height,
+                    ))
+            {
+                return Err(invalid(
+                    "source-derived canvas differs from measured geometry",
                 ));
             }
         }

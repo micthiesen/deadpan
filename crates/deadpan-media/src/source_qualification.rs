@@ -18,8 +18,8 @@ use serde::{Deserialize, Serialize};
 use crate::audio_index::AudioIndexSnapshot;
 use crate::audio_session::AudioSession;
 use crate::source_import_timing::{
-    BasisCandidate, ImportTiming, ImportTimingError, derive_import_timing,
-    derive_presentation_basis,
+    BasisCandidate, GeometryCandidate, ImportTiming, ImportTimingError, derive_import_timing,
+    derive_presentation_basis, derive_presentation_geometry,
 };
 use crate::source_index::{
     MAX_SOURCE_INDEX_JSON_BYTES, SourceContentIdentity, SourceIndexError, SourceIndexSnapshot,
@@ -222,6 +222,20 @@ impl SourceQualificationSnapshot {
             .as_ref()
             .map(|video| {
                 Ok(derive_presentation_basis(
+                    &video.index,
+                    &video.interpretation,
+                )?)
+            })
+            .transpose()
+    }
+
+    pub fn geometry_candidate(
+        &self,
+    ) -> Result<Option<GeometryCandidate>, SourceQualificationError> {
+        self.video
+            .as_ref()
+            .map(|video| {
+                Ok(derive_presentation_geometry(
                     &video.index,
                     &video.interpretation,
                 )?)

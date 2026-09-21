@@ -20,7 +20,7 @@ use serde::{Deserialize, Serialize};
 
 const HELP: &str = "Deadpan headless commands:
   doctor
-  project create <project.deadpan> --fps <N/D> --size <WIDTHxHEIGHT>
+  project create <project.deadpan> [--fps <N/D> --size <WIDTHxHEIGHT>]
   project validate <project.deadpan>
   project dump <project.deadpan> --json
   project undo <project.deadpan> --expected <revision> [--dry-run]
@@ -29,6 +29,7 @@ const HELP: &str = "Deadpan headless commands:
   project migrate <project.deadpan>
   project retain-original <project.deadpan> <absolute-source> [--linked]
   project register-source <project.deadpan> --request-json <request.json> [--dry-run]
+  project adopt-primary-geometry <project.deadpan> --request-json <request.json> [--dry-run]
   project originals <project.deadpan> [--after <blake3-digest>]
   project verify-original <project.deadpan> <blake3-digest>
   project relink-original <project.deadpan> <blake3-digest> <absolute-source> --expected-version <N>
@@ -36,7 +37,7 @@ const HELP: &str = "Deadpan headless commands:
   resolve-selection <project.deadpan> --json <selection.json>
   command <project.deadpan> --json <request.json> [--dry-run]
 
-Creation currently requires an explicit presentation basis.
+Creation defaults to a provisional 1920x1080, 30 fps presentation basis.
 Document dumps are inspection output; SQLite remains authoritative.
 Original retention preserves complete bytes; stream qualification and authored import remain separate.";
 
@@ -175,6 +176,32 @@ fn run(arguments: &[String]) -> Result<(), CliError> {
             request,
             "--dry-run",
         ] => source_registration::run(Path::new(path), Path::new(request), true),
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        [
+            "project",
+            "adopt-primary-geometry",
+            path,
+            "--request-json",
+            request,
+        ] => source_registration::adopt_geometry(Path::new(path), Path::new(request), false),
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        [
+            "project",
+            "adopt-primary-geometry",
+            path,
+            "--request-json",
+            request,
+            "--dry-run",
+        ] => source_registration::adopt_geometry(Path::new(path), Path::new(request), true),
+        ["project", "create", path] => {
+            let document = ProjectDocument::new_automatic(
+                ProjectId::new(uuid::Uuid::new_v4().to_string())?,
+                new_revision()?,
+                NodeId::new(uuid::Uuid::new_v4().to_string())?,
+            )?;
+            let store = ProjectStore::create(Path::new(path), &document)?;
+            summary(&store.snapshot()?)
+        }
         ["project", "create", path, "--fps", fps, "--size", size] => {
             let (numerator, denominator) = pair(fps, '/')?;
             let (width, height) = pair(size, 'x')?;
@@ -352,7 +379,7 @@ fn summary(document: &ProjectDocument) -> Result<(), CliError> {
     write_json(&serde_json::json!({
         "protocol": 1, "valid": true, "project_id": document.project_id(), "revision_id": document.revision_id(),
         "root": document.root(), "duration_frames": document.duration()?.frames(), "node_count": document.nodes().len(), "mark_count": document.marks().len(),
-        "presentation_basis": document.presentation_basis()
+        "presentation_basis": document.presentation_basis(), "basis_state": document.basis_state()
     }))
 }
 

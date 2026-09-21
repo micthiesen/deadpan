@@ -64,6 +64,8 @@ pub enum StoreError {
     GenerationAcceptance(String),
     #[error("New source qualifications require decoded-source registration")]
     SourceAdmissionUnavailable,
+    #[error("Source-derived presentation changes require the qualified source host")]
+    SourceBasisAdmissionUnavailable,
     #[error("Source registration is invalid: {0}")]
     SourceRegistration(String),
     #[cfg(any(target_os = "macos", target_os = "linux"))]
@@ -122,6 +124,7 @@ impl StoreError {
             Self::GeneratedAcceptanceUnavailable => "GeneratedAcceptanceUnavailable",
             Self::GenerationAcceptance(_) => "GenerationAcceptanceInvalid",
             Self::SourceAdmissionUnavailable => "SourceAdmissionUnavailable",
+            Self::SourceBasisAdmissionUnavailable => "SourceBasisAdmissionUnavailable",
             Self::SourceRegistration(_) => "SourceRegistrationInvalid",
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             Self::SourceQualification(_) => "SourceQualificationInvalid",

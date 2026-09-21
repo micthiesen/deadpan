@@ -74,7 +74,7 @@ Use the [headless command envelope](HEADLESS.md) for preview and commit. Duratio
 must be positive and at most `i64::MAX` project frames. Missing mapping or
 endpoint fields, unknown fields and unsupported policies fail parsing.
 
-Database schema 14 replays schemas 1 through 13 through frozen core schemas. Sources
+Database schema 15 replays schemas 1 through 14 through frozen core schemas. Sources
 predating database schema 12 gain `video_mapping: fit_beat`, preserving prior
 timing. Schema-11 audio and schema-12 picture mappings remain intact. Fields,
 variants and commands absent from each historical vocabulary are rejected inside
@@ -83,7 +83,7 @@ Migration retains revision identities, undo/redo, abandoned branches and
 operational original-media and generation records.
 
 This provides authored timing and frame selection. It does not establish source
-qualification, first-primary project basis adoption, native editorial playback
-or export. The measured import helper supplies common-origin and enclosure
+qualification, native editorial playback or export. The measured import helper supplies common-origin and enclosure
 candidates. [Source registration](SOURCE_REGISTRATION.md) separately implements
-qualification and atomic registration/insertion through the headless host.
+qualification and atomic registration/insertion through the headless host, with
+[automatic basis state](PRESENTATION_BASIS.md).

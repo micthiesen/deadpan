@@ -6,7 +6,7 @@ use std::{
 
 use deadpan_core::{
     IterationOrder, NodeId, NodeKind, ProjectDocument, RevisionId, legacy_v1, legacy_v2, legacy_v3,
-    legacy_v4, legacy_v5, legacy_v6, legacy_v7, legacy_v8,
+    legacy_v4, legacy_v5, legacy_v6, legacy_v7, legacy_v8, legacy_v9,
 };
 use deadpan_jobs::{Relevance, RequestId};
 use deadpan_store::generation::{
@@ -16,6 +16,255 @@ use deadpan_store::{AccessMode, DATABASE_SCHEMA_VERSION, ProjectStore, StoreErro
 use rusqlite::Connection;
 
 type Result<T = ()> = std::result::Result<T, Box<dyn Error>>;
+
+#[test]
+fn schema_fourteen_preserves_explicit_basis_and_qualified_source_branches() -> Result {
+    use deadpan_core::{AssetId, BasisState, CommandRequest, EditTransaction};
+    let scratch = tempfile::tempdir()?;
+    let path = fixture_version(scratch.path(), 14)?;
+    let database = Connection::open(path.join("project.sqlite"))?;
+    let before = contents(&database)?;
+    let old_docs = docs(&database)?;
+    let old_history = history_json(&database)?;
+    let old_metadata = metadata(&database)?;
+    let old_operational = operational_metadata(&database)?;
+    let old_qualifications = qualification_metadata(&database)?;
+    assert_eq!(old_docs.len(), 54);
+    assert_eq!(old_history.len(), 28);
+    assert_eq!(old_qualifications.len(), 2);
+    assert!(matches!(
+        ProjectStore::open(&path, AccessMode::ReadOnly),
+        Err(StoreError::MigrationRequired(14))
+    ));
+    let migration = ProjectStore::migrate(&path)?;
+    assert_eq!(
+        (migration.from_schema, migration.to_schema),
+        (14, DATABASE_SCHEMA_VERSION)
+    );
+    let backup = Connection::open(migration.backup.unwrap())?;
+    assert_eq!(contents(&backup)?, before);
+    assert_eq!(operational_metadata(&backup)?, old_operational);
+    assert_eq!(qualification_metadata(&backup)?, old_qualifications);
+    let new_docs = docs(&database)?;
+    assert_eq!(new_docs.len(), old_docs.len());
+    for ((old_id, old_json), (new_id, new_json)) in old_docs.iter().zip(&new_docs) {
+        assert_eq!(old_id, new_id);
+        let current = ProjectDocument::from_json(new_json)?;
+        assert!(
+            legacy_v9::Document::from_json(old_json)?.matches(&current),
+            "{old_id}"
+        );
+        assert_eq!(current.basis_state(), &BasisState::explicit());
+        let legacy: serde_json::Value = serde_json::from_str(old_json)?;
+        assert_eq!(
+            serde_json::to_value(current.presentation_basis())?,
+            legacy["presentation_basis"]
+        );
+    }
+    let new_history = history_json(&database)?;
+    assert_eq!(new_history.len(), old_history.len());
+    for ((old_request, old_edit), (new_request, new_edit)) in old_history.iter().zip(new_history) {
+        let request: CommandRequest = serde_json::from_str(&new_request)?;
+        assert_eq!(legacy_v9::upgrade_request(old_request)?, request);
+        let edit: EditTransaction = serde_json::from_str(&new_edit)?;
+        assert!(legacy_v9::matches_edit(old_edit, &edit)?);
+        let prior = snapshot(&database, request.expected_revision.as_str())?;
+        let after = snapshot(&database, request.new_revision.as_str())?;
+        assert_eq!(edit.forward.apply(&prior)?, after);
+        assert_eq!(edit.inverse.apply(&after)?, prior);
+    }
+    assert_eq!(metadata(&database)?, old_metadata);
+    assert_eq!(operational_metadata(&database)?, old_operational);
+    assert_eq!(qualification_metadata(&database)?, old_qualifications);
+    // The SQL fixture deliberately has no source bytes. Every retained index
+    // remains readable from immutable receipts, including the abandoned alias.
+    let alias = AssetId::new("qualified-camera")?;
+    let first_revision = RevisionId::new("schema14-first-import")?;
+    let second_revision = RevisionId::new("schema14-second-import")?;
+    let mut store = ProjectStore::open(&path, AccessMode::ReadWrite)?;
+    let first = store.registered_source(&first_revision, &alias)?;
+    let second = store.registered_source(&second_revision, &alias)?;
+    assert_ne!(first.id(), second.id());
+    let first_index = store.source_video_index(&first_revision, &alias)?;
+    let second_index = store.source_video_index(&second_revision, &alias)?;
+    assert_ne!(first_index.terminal_end(), second_index.terminal_end());
+    let baseline = store.snapshot()?;
+    assert_eq!(baseline.revision_id().as_str(), "schema14-pending-redo");
+    assert_eq!(
+        baseline.assets()[&alias].source_qualification.as_ref(),
+        Some(second.id())
+    );
+    for (redo, revision) in [
+        (true, "schema15-redo-inherited"),
+        (false, "schema15-undo-rename"),
+        (false, "schema15-undo-import"),
+        (true, "schema15-redo-import"),
+    ] {
+        let next = RevisionId::new(revision)?;
+        let head = store.snapshot()?.revision_id().clone();
+        let relevance = retained_relevance(&store, &next)?;
+        if redo {
+            store.redo_reconciled(&head, next, &relevance)?;
+        } else {
+            store.undo_reconciled(&head, next, &relevance)?;
+        }
+        assert_eq!(store.snapshot()?.basis_state(), &BasisState::explicit());
+        assert_eq!(
+            store.snapshot()?.presentation_basis(),
+            baseline.presentation_basis()
+        );
+        if revision == "schema15-redo-inherited" {
+            assert_eq!(
+                store.snapshot()?.nodes()[&NodeId::new("second-qualified-clip")?].label,
+                "Schema 14 qualified branch"
+            );
+        }
+        if revision == "schema15-undo-import" {
+            assert!(!store.snapshot()?.assets().contains_key(&alias));
+        }
+    }
+    assert_eq!(store.snapshot()?.nodes(), baseline.nodes());
+    assert_eq!(store.snapshot()?.assets(), baseline.assets());
+    store.validate()?;
+    drop(store);
+    let reopened = ProjectStore::open(&path, AccessMode::ReadOnly)?;
+    assert_eq!(reopened.snapshot()?.nodes(), baseline.nodes());
+    assert_eq!(reopened.registered_source(&first_revision, &alias)?, first);
+    assert_eq!(
+        reopened.registered_source(&second_revision, &alias)?,
+        second
+    );
+    assert_eq!(
+        reopened.source_video_index(&first_revision, &alias)?,
+        first_index
+    );
+    assert_eq!(
+        reopened.source_video_index(&second_revision, &alias)?,
+        second_index
+    );
+    assert_eq!(operational_metadata(&database)?, old_operational);
+    assert_eq!(qualification_metadata(&database)?, old_qualifications);
+    Ok(())
+}
+
+fn retained_relevance(store: &ProjectStore, next: &RevisionId) -> Result<RelevancePlan> {
+    Ok(RelevancePlan {
+        from_revision: store.snapshot()?.revision_id().clone(),
+        to_revision: next.clone(),
+        observations: store
+            .current_generation_requests()?
+            .into_iter()
+            .map(|request| RelevanceObservation {
+                request_id: request.request_id,
+                after_context: ContextObservation::Resolved(request.binding.context_sha256.clone()),
+                binding: request.binding,
+            })
+            .collect(),
+    })
+}
+
+fn qualification_metadata(connection: &Connection) -> Result<Vec<String>> {
+    Ok(connection.prepare("SELECT json_array(id,original_content_id,original_ref,hex(snapshot)) FROM source_qualifications ORDER BY id")?
+        .query_map([], |row| row.get(0))?
+        .collect::<std::result::Result<_, _>>()?)
+}
+
+#[test]
+fn every_legacy_snapshot_retains_its_exact_explicit_presentation_basis() -> Result {
+    for version in 1..=14 {
+        let scratch = tempfile::tempdir()?;
+        let path = fixture_version(scratch.path(), version)?;
+        let database = Connection::open(path.join("project.sqlite"))?;
+        let before = docs(&database)?;
+        ProjectStore::migrate(&path)?;
+        let after = docs(&database)?;
+        assert_eq!(after.len(), before.len());
+        for ((old_id, old_json), (new_id, new_json)) in before.iter().zip(after) {
+            assert_eq!(old_id, &new_id);
+            let old: serde_json::Value = serde_json::from_str(old_json)?;
+            let current = ProjectDocument::from_json(&new_json)?;
+            assert_eq!(
+                current.basis_state(),
+                &deadpan_core::BasisState::explicit(),
+                "schema {version}, {old_id}"
+            );
+            assert_eq!(
+                serde_json::to_value(current.presentation_basis())?,
+                old["presentation_basis"],
+                "schema {version}, {old_id}"
+            );
+        }
+    }
+    Ok(())
+}
+
+#[test]
+fn every_legacy_schema_rejects_presentation_vocabulary_without_promotion() -> Result {
+    for version in 1..=14 {
+        for corruption in [
+            "UPDATE revisions SET document=json_set(document,'$.basis_state',NULL) WHERE parent_id IS NULL",
+            "UPDATE history SET request=json_set(request,'$.command',json('{\"command\":\"set_canvas\",\"width\":1920,\"height\":1080}')) WHERE id=(SELECT MIN(id) FROM history)",
+            "UPDATE history SET request=json_set(request,'$.command',json('{\"command\":\"adopt_primary_geometry\",\"width\":1920,\"height\":1080}')) WHERE id=(SELECT MIN(id) FROM history)",
+            "UPDATE history SET edit=json_set(edit,'$.forward.presentation',NULL) WHERE id=(SELECT MIN(id) FROM history)",
+            "UPDATE history SET edit=json_set(edit,'$.inverse.presentation',NULL) WHERE id=(SELECT MIN(id) FROM history)",
+        ] {
+            let scratch = tempfile::tempdir()?;
+            let path = fixture_version(scratch.path(), version)?;
+            let database = Connection::open(path.join("project.sqlite"))?;
+            database.execute_batch(corruption)?;
+            assert!(database.changes() > 0, "schema {version}: {corruption}");
+            let before = contents(&database)?;
+            let operational = operational_metadata(&database)?;
+            let qualifications = (version == 14)
+                .then(|| qualification_metadata(&database))
+                .transpose()?;
+            let backup = match ProjectStore::migrate(&path) {
+                Err(StoreError::MigrationFailed { backup, .. }) => backup,
+                result => panic!("schema {version}: {corruption}: {result:?}"),
+            };
+            for connection in [&database, &Connection::open(backup)?] {
+                assert_eq!(contents(connection)?, before);
+                assert_eq!(operational_metadata(connection)?, operational);
+                if let Some(qualifications) = &qualifications {
+                    assert_eq!(&qualification_metadata(connection)?, qualifications);
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
+#[test]
+fn schema_fourteen_rejects_new_primary_fields_and_damaged_historical_receipts() -> Result {
+    for corruption in [
+        "UPDATE history SET request=json_set(request,'$.command.primary',NULL) WHERE revision_id='schema14-first-import'",
+        "UPDATE revisions SET document=json_set(document,'$.basis_state',json('{\"rate_origin\":\"provisional\",\"geometry_origin\":\"provisional\",\"primary\":null}')) WHERE id='schema14-first-import'",
+        "UPDATE source_qualifications SET snapshot=CAST(CAST(snapshot AS TEXT)||' ' AS BLOB) WHERE id=(SELECT json_extract(document,'$.assets.\"qualified-camera\".source_qualification') FROM revisions WHERE id='schema14-first-import')",
+        "DELETE FROM source_qualifications WHERE id=(SELECT json_extract(document,'$.assets.\"qualified-camera\".source_qualification') FROM revisions WHERE id='schema14-first-import')",
+        "UPDATE source_qualifications SET original_ref=json_set(original_ref,'$.byte_length',1234)",
+        "DELETE FROM original_media WHERE content_id=(SELECT original_content_id FROM source_qualifications LIMIT 1)",
+    ] {
+        let scratch = tempfile::tempdir()?;
+        let path = fixture_version(scratch.path(), 14)?;
+        let database = Connection::open(path.join("project.sqlite"))?;
+        database.pragma_update(None, "foreign_keys", false)?;
+        database.execute_batch(corruption)?;
+        assert!(database.changes() > 0, "{corruption}");
+        let before = contents(&database)?;
+        let operational = operational_metadata(&database)?;
+        let qualifications = qualification_metadata(&database)?;
+        let backup = match ProjectStore::migrate(&path) {
+            Err(StoreError::MigrationFailed { backup, .. }) => backup,
+            result => panic!("{corruption}: {result:?}"),
+        };
+        for connection in [&database, &Connection::open(backup)?] {
+            assert_eq!(contents(connection)?, before);
+            assert_eq!(operational_metadata(connection)?, operational);
+            assert_eq!(qualification_metadata(connection)?, qualifications);
+        }
+    }
+    Ok(())
+}
 
 #[test]
 fn schema_thirteen_preserves_exact_placements_without_inventing_qualification() -> Result {
@@ -1011,6 +1260,7 @@ fn fixture_version(scratch: &Path, version: u32) -> Result<PathBuf> {
         11 => include_str!("fixtures/v11-history.sql"),
         12 => include_str!("fixtures/v12-history.sql"),
         13 => include_str!("fixtures/v13-history.sql"),
+        14 => include_str!("fixtures/v14-history.sql"),
         _ => panic!("unsupported fixture"),
     })?;
     Ok(package)

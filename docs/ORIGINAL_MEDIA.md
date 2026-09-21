@@ -45,7 +45,7 @@ Missing or corrupt media returns an error. No placeholder is silently rendered.
 
 ## Database and failure boundaries
 
-Database schema 14 retains the `original_media` table introduced in schema 10. Content identity is its key;
+Database schema 15 retains the `original_media` table introduced in schema 10. Content identity is its key;
 location versions and bounded records are operational, outside document undo.
 An authored `AssetId` is unsuitable as a location key because it can be reused
 after its registration is undone. Original retention does not change project
@@ -58,8 +58,8 @@ written only by the project writer; read-only inventory and snapshots may coexis
 Inventory uses bounded keyset pages. All retained originals are currently kept;
 history-based reference collection and eviction policy are not implemented.
 
-Schemas 1 through 13 migrate on a consistent backup/copy into schema 14.
-Schema-10-through-13 original records are preserved. For schemas 1 through 9, the new
+Schemas 1 through 14 migrate on a consistent backup/copy into schema 15.
+Schema-10-through-14 original records are preserved. For schemas 1 through 9, the new
 table is created without `IF NOT EXISTS`, so legacy files containing unexpected
 modern tables fail rather than acquire implied trust. Existing document history,
 generation requests, attempts and admission receipts retain their prior meaning.
@@ -87,7 +87,7 @@ inventory is distinct from audio that exists but has not been qualified.
 [Source registration](SOURCE_REGISTRATION.md) now joins actual selected-stream
 qualification with retained ownership. It persists measured indexes and source
 interpretation, then registers and optionally inserts in one undoable command.
-It uses the existing explicit project basis. Automatic basis adoption, import
+[Automatic basis selection](PRESENTATION_BASIS.md) applies before timed edits. Import
 progress, retry UI, native dialogs, source-browser integration and the full
 format matrix remain open.
 

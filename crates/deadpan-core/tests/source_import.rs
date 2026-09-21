@@ -107,6 +107,7 @@ fn edit(
 }
 fn import(insertion: Option<SourceInsertion>) -> Command {
     Command::ImportSource {
+        primary: None,
         id: asset_id(),
         asset: asset(),
         insertion: insertion.map(Box::new),
@@ -210,6 +211,7 @@ fn matching_assets_can_be_registered_once_and_inserted_repeatedly() {
             _ => unreachable!(),
         }
         let command = Command::ImportSource {
+            primary: None,
             id: asset_id(),
             asset: changed,
             insertion: Some(Box::new(insertion("third", 2))),
@@ -269,6 +271,7 @@ fn invalid_import_insertion_or_missing_qualification_leaves_no_registered_asset_
             _ => unreachable!(),
         }
         let command = Command::ImportSource {
+            primary: None,
             id: asset_id(),
             asset: record,
             insertion: Some(Box::new(insert)),
@@ -313,6 +316,7 @@ fn imported_audio_only_and_still_sources_use_the_supplied_asset() {
         let (document, _) = edit(
             &empty(),
             Command::ImportSource {
+                primary: None,
                 id: asset_id(),
                 asset: record.clone(),
                 insertion: Some(Box::new(insert.clone())),
@@ -330,6 +334,7 @@ fn imported_audio_only_and_still_sources_use_the_supplied_asset() {
                     &request(
                         &empty(),
                         Command::ImportSource {
+                            primary: None,
                             id: asset_id(),
                             asset: record,
                             insertion: Some(Box::new(insert))

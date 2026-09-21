@@ -45,7 +45,7 @@ impl ProjectStore {
                 backup: None,
             });
         }
-        if !matches!(version, 1..=13) {
+        if !matches!(version, 1..=14) {
             return Err(StoreError::UnsupportedSchema(version));
         }
         let lock = acquire_lock(&package)?;
@@ -148,7 +148,9 @@ fn migrate_candidate(
         crate::original_media::create_tables(&transaction)?;
     }
     #[cfg(any(target_os = "macos", target_os = "linux"))]
-    crate::source_registration::create_tables(&transaction)?;
+    if source_version < 14 {
+        crate::source_registration::create_tables(&transaction)?;
+    }
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     crate::source_registration::check_stored_sizes(&transaction)?;
     validation::check_stored_sizes(&transaction, schema::MAX_DOCUMENT_BYTES)?;
@@ -178,8 +180,10 @@ fn migrate_candidate(
     // core schema 5, 11 uses core schema 6 with explicit audio mappings, and
     // 12 uses core schema 7 with independent picture durations, and 13 uses
     // core schema 8 with signed stream placements and no source qualification.
+    // Schema 14 uses core schema 9 with immutable source qualifications.
     // Replay all authored history, preserving operational rows and identities
     // while assigning FitBeat only to mappings absent in that legacy schema.
+    // Every legacy presentation basis remains explicitly authored.
     validation::migrate_history(&transaction, source_version)?;
     crate::generation::validate_store(&transaction)?;
     transaction.pragma_update(None, "user_version", schema::VERSION)?;

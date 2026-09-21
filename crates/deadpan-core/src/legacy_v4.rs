@@ -314,6 +314,7 @@ impl Document {
             project_id: self.project_id,
             revision_id: self.revision_id,
             presentation_basis: self.presentation_basis,
+            basis_state: BasisState::explicit(),
             root: self.root,
             nodes: self
                 .nodes
@@ -333,6 +334,9 @@ impl Document {
     }
 
     pub fn matches(&self, document: &ProjectDocument) -> bool {
+        if document.basis_state != BasisState::explicit() {
+            return false;
+        }
         let Some(nodes) = document
             .nodes
             .iter()
@@ -744,6 +748,9 @@ struct Patch {
 
 impl Patch {
     fn project(patch: &DocumentPatch) -> Option<Self> {
+        if patch.presentation.is_some() {
+            return None;
+        }
         Some(Self {
             project_id: patch.project_id.clone(),
             from_revision: patch.from_revision.clone(),

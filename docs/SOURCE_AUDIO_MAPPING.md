@@ -45,7 +45,7 @@ Use this inside the normal revision-checked [headless command](HEADLESS.md)
 envelope. Preview, commit, undo and redo use the same store transaction path.
 This is an authored mapping operation; no UI control or audio renderer is added.
 
-Database schema 14 migrates schemas 1 through 13 directly to core schema 9 JSON.
+Database schema 15 migrates schemas 1 through 14 directly to core schema 10 JSON.
 Frozen source wires preserve pre-schema-11 audio mappings as `fit_beat`, including
 offsets, historical snapshots and forward/inverse patches. They reject
 `audio_mapping` fields and commands in history predating that vocabulary, even
@@ -55,6 +55,6 @@ does not reinterpret old selections as natural-rate imports.
 
 The measured import helper derives a common A/V origin while retaining all
 available audio. [Source registration](SOURCE_REGISTRATION.md) retains selected-stream
-receipts and indexes and applies atomic registration/insertion. Automatic basis
-adoption, audio rendering and native import remain required.
+receipts and indexes and applies atomic registration/insertion with
+[presentation state](PRESENTATION_BASIS.md). Audio rendering and native import remain required.
 See [source audio decoding](SOURCE_AUDIO.md).

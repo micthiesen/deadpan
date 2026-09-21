@@ -7,7 +7,9 @@ use std::{
     process::{Command, Output},
 };
 
-use deadpan_core::{AssetId, ExactRatio, NodeId, NodeKind, SourceVideo};
+use deadpan_core::{
+    AssetId, ExactRatio, FrameRate, FrameRateOrigin, GeometryOrigin, NodeId, NodeKind, SourceVideo,
+};
 use deadpan_store::{AccessMode, ProjectStore};
 use rusqlite::Connection;
 use serde_json::{Value, json};
@@ -323,6 +325,142 @@ fn protocol_is_required_and_rejected_before_opening_the_project() -> Result {
         }
     }
     assert!(writer.snapshot()?.assets().is_empty());
+    Ok(())
+}
+
+#[test]
+fn automatic_creation_adopts_first_inserted_picture_and_secondary_preserves_the_clock() -> Result {
+    let scratch = tempfile::tempdir()?;
+    for secondary in [false, true] {
+        let package = scratch
+            .path()
+            .join(format!("automatic-{secondary}.deadpan"));
+        let created = success(&["project", "create", package.to_str().unwrap()])?;
+        assert_eq!(created["basis_state"]["rate_origin"], "provisional");
+        let original = retain(
+            &package,
+            &scratch.path().join("source.mp4"),
+            include_bytes!("../../../native/deadpan-source/tests/fixtures/cfr-bframes.mp4"),
+            false,
+        )?;
+        let mut input = request(
+            &package,
+            original,
+            json!({"type":"video_and_audio","audio_stream":1}),
+            "inserted",
+        )?;
+        input["registration"]["insertion"]["purpose"] =
+            json!(if secondary { "secondary" } else { "primary" });
+        let file = save(scratch.path(), &input)?;
+        let preview = registration(&package, &file, true, true)?;
+        assert!(preview["preview"]["edit"]["forward"]["presentation"].is_object());
+        registration(&package, &file, false, true)?;
+        let store = ProjectStore::open(&package, AccessMode::ReadOnly)?;
+        let current = store.snapshot()?;
+        if secondary {
+            assert_eq!(
+                current.basis_state().rate_origin,
+                FrameRateOrigin::TimedEdit
+            );
+            assert_eq!(
+                current.presentation_basis().frame_rate,
+                FrameRate::new(30, 1)?
+            );
+            assert!(current.basis_state().primary.is_none());
+        } else {
+            assert_eq!(
+                current.basis_state().rate_origin,
+                FrameRateOrigin::PrimarySource
+            );
+            assert_eq!(
+                current.presentation_basis().frame_rate,
+                FrameRate::new(30000, 1001)?
+            );
+            assert_eq!(current.duration()?.frames(), 120);
+        }
+    }
+    Ok(())
+}
+
+#[test]
+fn explicit_geometry_cli_previews_then_changes_only_canvas_and_keeps_version_guards() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let package = scratch.path().join("geometry.deadpan");
+    create(&package, "30000/1001")?;
+    let original = retain(
+        &package,
+        &scratch.path().join("portrait.mp4"),
+        include_bytes!("../../../native/deadpan-source/tests/fixtures/rotated90.mp4"),
+        false,
+    )?;
+    let input = request(&package, original, json!({"type":"video_only"}), "picture")?;
+    registration(&package, &save(scratch.path(), &input)?, false, true)?;
+    let writer = ProjectStore::open(&package, AccessMode::ReadWrite)?;
+    let before = writer.snapshot()?;
+    assert_eq!(before.basis_state().rate_origin, FrameRateOrigin::Explicit);
+    let mut input = json!({"protocol":1,"adoption":{"expected_revision":before.revision_id(),"new_revision":"geometry"}});
+    let file = save(scratch.path(), &input)?;
+    let mut args = vec![
+        "project",
+        "adopt-primary-geometry",
+        package.to_str().unwrap(),
+        "--request-json",
+        file.to_str().unwrap(),
+    ];
+    assert_eq!(failure(&args)?["error"]["code"], "ProjectAlreadyOpen");
+    args.push("--dry-run");
+    let preview = success(&args)?;
+    assert_eq!(preview["committed"], false);
+    assert!(
+        preview["edit"]["forward"]["nodes"]
+            .as_object()
+            .unwrap()
+            .is_empty()
+    );
+    assert_eq!(writer.snapshot()?, before);
+    input["protocol"] = json!(999);
+    save(scratch.path(), &input)?;
+    assert_eq!(failure(&args)?["error"]["code"], "ProtocolUnsupported");
+    input.as_object_mut().unwrap().remove("protocol");
+    save(scratch.path(), &input)?;
+    assert_eq!(failure(&args)?["error"]["code"], "InvalidInput");
+    input["protocol"] = json!(1);
+    save(scratch.path(), &input)?;
+    drop(writer);
+    args.pop();
+    assert_eq!(success(&args)?["committed"], true);
+    let after = ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?;
+    assert_eq!(
+        (
+            after.presentation_basis().width,
+            after.presentation_basis().height
+        ),
+        (2, 4)
+    );
+    assert_eq!(
+        after.presentation_basis().frame_rate,
+        before.presentation_basis().frame_rate
+    );
+    assert_eq!(
+        after.basis_state().geometry_origin,
+        GeometryOrigin::PrimarySource
+    );
+    assert_eq!(after.nodes(), before.nodes());
+    assert_eq!(after.marks(), before.marks());
+    assert_eq!(failure(&args)?["error"]["code"], "RevisionConflict");
+    success(&[
+        "project",
+        "undo",
+        package.to_str().unwrap(),
+        "--expected",
+        "geometry",
+    ])?;
+    assert_eq!(
+        ProjectStore::open(&package, AccessMode::ReadOnly)?
+            .snapshot()?
+            .presentation_basis(),
+        before.presentation_basis()
+    );
     Ok(())
 }
 

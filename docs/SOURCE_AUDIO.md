@@ -68,8 +68,8 @@ by the store. [Source registration](SOURCE_REGISTRATION.md) retains measured
 indexes and binds exact independent mappings to qualified selected streams and
 their common A/V origin. A source index alone cannot establish that decision.
 [Independent destination mapping](SOURCE_AUDIO_MAPPING.md) represents shorter
-or delayed audio without changing its natural rate. Automatic basis adoption,
-resampling, DSP, device output, listening, scheduling and preview/export
+or delayed audio without changing its natural rate. [Basis state](PRESENTATION_BASIS.md)
+locks the clock on timed insertion. Resampling, DSP, device output, listening, scheduling and preview/export
 equivalence remain open.
 
 Run `cargo test -p deadpan-source -p deadpan-media --locked` with the qualified

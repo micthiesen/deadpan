@@ -9,6 +9,7 @@
 
 mod anchor;
 mod audio_mapping;
+mod basis;
 mod command;
 mod document;
 mod exact;
@@ -23,6 +24,7 @@ pub mod legacy_v5;
 pub mod legacy_v6;
 pub mod legacy_v7;
 pub mod legacy_v8;
+pub mod legacy_v9;
 mod marks;
 mod occurrence;
 mod occurrence_edit;
@@ -34,6 +36,7 @@ mod video_mapping;
 
 pub use anchor::*;
 pub use audio_mapping::SourceAudioMapping;
+pub use basis::*;
 pub use command::*;
 pub use document::*;
 pub use exact::ExactRatio;

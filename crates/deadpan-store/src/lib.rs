@@ -396,7 +396,7 @@ fn prepare_admitted_command(
     request: &CommandRequest,
     admitted: Option<&deadpan_core::GeneratedArtifact>,
 ) -> Result<CommandPlan, StoreError> {
-    prepare_command_with_admission(connection, request, admitted, None)
+    prepare_command_with_admission(connection, request, admitted, None, None)
 }
 
 fn prepare_command_with_admission(
@@ -404,6 +404,7 @@ fn prepare_command_with_admission(
     request: &CommandRequest,
     generated: Option<&deadpan_core::GeneratedArtifact>,
     source: Option<(&deadpan_core::AssetId, &deadpan_core::AssetRecord)>,
+    geometry: Option<(u32, u32)>,
 ) -> Result<CommandPlan, StoreError> {
     let current = read_snapshot(connection)?;
     let edit = deadpan_core::apply(&current, request)?;
@@ -412,6 +413,19 @@ fn prepare_command_with_admission(
     check_document_size(&next.to_json()?)?;
     ensure_generated_admission_with(Some(&current), &next, generated)?;
     ensure_source_admission(Some(&current), &next, source)?;
+    match &request.command {
+        deadpan_core::Command::ImportSource {
+            primary: Some(_), ..
+        } if source.is_none() => {
+            return Err(StoreError::SourceBasisAdmissionUnavailable);
+        }
+        deadpan_core::Command::AdoptPrimaryGeometry { width, height }
+            if geometry != Some((*width, *height)) =>
+        {
+            return Err(StoreError::SourceBasisAdmissionUnavailable);
+        }
+        _ => {}
+    }
     let request_json = serde_json::to_string(request)?;
     let edit_json = serde_json::to_string(&edit)?;
     check_document_size(&request_json)?;

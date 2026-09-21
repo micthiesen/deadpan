@@ -2,9 +2,9 @@
 
 The headless host can register a retained original as a qualified asset, or
 register and insert its full selected streams in one undoable edit. Registration
-uses the existing explicit project basis. Automatic first-primary basis adoption,
-provisional basis locking, native import UI and the complete format matrix remain
-open. See [measured timing](SOURCE_IMPORT_TIMING.md) for the exact mapping policy.
+uses [automatic presentation policy](PRESENTATION_BASIS.md): the first primary
+picture can establish a provisional basis; timed or explicit projects keep their
+clock. Native import UI and the complete format matrix remain open. See [measured timing](SOURCE_IMPORT_TIMING.md) for the exact mapping policy.
 
 ## Admission and evidence
 
@@ -29,8 +29,8 @@ The receipt identity hashes a versioned domain, original BLAKE3 and byte length,
 and canonical qualification bytes. Asset labels, file locations, location
 versions and temporary decode aliases do not change that identity.
 
-Database schema 14 stores immutable receipts in `source_qualifications`, separate
-from authored undo history. Core schema 9 assets bind `source_qualification` to
+Database schema 15 stores immutable receipts in `source_qualifications`, separate
+from authored undo history. Core schema 10 assets bind `source_qualification` to
 the receipt ID. The store commits a new receipt, derived asset, optional Source,
 mark transforms, history and generation relevance in one SQLite transaction.
 A later database failure preserves the already retained original and commits no
@@ -65,9 +65,10 @@ returning payloads. Validation processes one receipt at a time and retains only
 compact asset metadata while checking history. These are defensive limits, not
 measured large-project capacity or performance claims.
 
-Schema 1 through 13 migration replays complete history using frozen core wires.
-Schema 13 uses core 8, including signed independent stream placements. Older
-projects gain an empty qualification table; their assets remain unqualified.
+Schema 1 through 14 migration replays complete history using frozen core wires.
+Schema 14 uses core 9 and retains its source qualifications. Schema 13 uses core 8,
+including signed independent stream placements. Projects before schema 14 gain
+an empty qualification table; their assets remain unqualified.
 No receipt is inferred from an old asset hash or span. Unexpected modern tables
 in old schemas are rejected before promotion and the backup is retained.
 
@@ -80,7 +81,7 @@ and audio-only media, plus historical migration fixtures. [Qualification and
 review evidence](qualification/source-registration-2026-09-21.md) records results.
 
 The app still previews individual sources without editing project documents.
-Native import/retry/relink controls, first-primary basis state, qualification of
+Native import/retry/relink controls, visible canvas previews, qualification of
 existing legacy assets, still-image import, bookmark resolution, full codec/color
 support, audio playback and export remain required work. No GUI or release
 readiness is implied by this developer API.

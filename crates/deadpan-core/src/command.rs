@@ -6,11 +6,12 @@ use serde::{Deserialize, Serialize};
 use crate::document::unique_map;
 use crate::{
     AcceptedGeneration, AnchorLossPolicy, AssetId, AssetRecord, AudioSample, BeatNode,
-    BoundaryAnchor, DocumentError, DocumentErrorCode, FrameDuration, GeneratedArtifact,
-    HoldFallback, HoldRecipe, HoldVideo, InstancePath, IterationId, IterationOrder,
-    MAX_DOCUMENT_MARKS, MAX_DOCUMENT_NODES, Mark, MarkId, MarkState, NodeId, NodeKind,
-    OccurrenceEdit, OccurrenceIdentities, PlayOverrides, ProjectDocument, ProjectId, RevisionId,
-    SourceAudioMapping, SourceNode, SourceVideo, SourceVideoMapping, WrapAnchorPolicy,
+    BoundaryAnchor, DocumentError, DocumentErrorCode, FrameDuration, FrameRateOrigin,
+    GeneratedArtifact, GeometryOrigin, HoldFallback, HoldRecipe, HoldVideo, InstancePath,
+    IterationId, IterationOrder, MAX_DOCUMENT_MARKS, MAX_DOCUMENT_NODES, Mark, MarkId, MarkState,
+    NodeId, NodeKind, OccurrenceEdit, OccurrenceIdentities, PlayOverrides, PresentationChange,
+    PrimarySource, PrimarySourceImport, ProjectDocument, ProjectId, RevisionId, SourceAudioMapping,
+    SourceNode, SourceVideo, SourceVideoMapping, WrapAnchorPolicy,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -130,6 +131,16 @@ pub enum Command {
         id: AssetId,
         asset: AssetRecord,
         insertion: Option<Box<SourceInsertion>>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        primary: Option<PrimarySourceImport>,
+    },
+    SetCanvas {
+        width: u32,
+        height: u32,
+    },
+    AdoptPrimaryGeometry {
+        width: u32,
+        height: u32,
     },
     SetMark {
         id: MarkId,
@@ -182,6 +193,8 @@ pub struct DocumentPatch {
     pub project_id: ProjectId,
     pub from_revision: RevisionId,
     pub to_revision: RevisionId,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub presentation: Option<PresentationChange>,
     #[serde(deserialize_with = "unique_map")]
     pub nodes: BTreeMap<NodeId, ValueChange<BeatNode>>,
     #[serde(deserialize_with = "unique_map")]
@@ -221,6 +234,16 @@ impl DocumentPatch {
             ));
         }
         let mut result = document.clone();
+        if let Some(change) = &self.presentation {
+            if document.presentation_state() != change.before {
+                return Err(EditError::new(
+                    EditErrorCode::PatchConflict,
+                    "presentation patch before-value does not match the current document",
+                ));
+            }
+            result.presentation_basis = change.after.basis.clone();
+            result.basis_state = change.after.state.clone();
+        }
         apply_changes(&mut result.nodes, &self.nodes)?;
         for change in self.assets.values() {
             if let (Some(before), Some(after)) = (&change.before, &change.after)
@@ -245,6 +268,10 @@ impl DocumentPatch {
             project_id: self.project_id.clone(),
             from_revision: self.to_revision.clone(),
             to_revision: self.from_revision.clone(),
+            presentation: self.presentation.as_ref().map(|change| PresentationChange {
+                before: change.after.clone(),
+                after: change.before.clone(),
+            }),
             nodes: inverse_changes(&self.nodes),
             assets: inverse_changes(&self.assets),
             marks: inverse_changes(&self.marks),
@@ -300,12 +327,19 @@ pub fn apply(
             result
         }
     };
+    result.lock_timed_basis(document)?;
     result.revision_id = request.new_revision.clone();
     let after_duration = result.duration()?.frames();
     let forward = DocumentPatch {
         project_id: document.project_id.clone(),
         from_revision: document.revision_id.clone(),
         to_revision: request.new_revision.clone(),
+        presentation: (document.presentation_state() != result.presentation_state()).then(|| {
+            PresentationChange {
+                before: document.presentation_state(),
+                after: result.presentation_state(),
+            }
+        }),
         nodes: diff(&document.nodes, &result.nodes),
         assets: diff(&document.assets, &result.assets),
         marks: diff(&document.marks, &result.marks),
@@ -585,6 +619,7 @@ pub(crate) fn reduce(
             id,
             asset,
             insertion,
+            primary,
         } => {
             if asset.source_qualification.is_none() {
                 return Err(EditError::new(
@@ -601,6 +636,44 @@ pub(crate) fn reduce(
                 }
             } else {
                 document.assets.insert(id.clone(), asset.clone());
+            }
+            if let Some(primary) = primary {
+                if document.basis_state.primary.is_some()
+                    || !insertion.as_ref().is_some_and(|insertion| matches!(&insertion.source.video, SourceVideo::Stream { asset, .. } if asset == id))
+                {
+                    return Err(EditError::new(EditErrorCode::InvalidCommand, "first-primary designation requires an inserted stream from the supplied qualified asset and no prior primary"));
+                }
+                match primary {
+                    PrimarySourceImport::Adopt { basis } => {
+                        if document.basis_state.rate_origin != FrameRateOrigin::Provisional {
+                            return Err(EditError::new(
+                                EditErrorCode::InvalidCommand,
+                                "primary basis adoption requires a provisional project",
+                            ));
+                        }
+                        crate::basis::validate_canvas(basis.width, basis.height)?;
+                        document.presentation_basis = basis.clone();
+                        document.basis_state.rate_origin = FrameRateOrigin::PrimarySource;
+                        document.basis_state.geometry_origin = GeometryOrigin::PrimarySource;
+                    }
+                    PrimarySourceImport::KeepBasis => {
+                        if document.basis_state.rate_origin == FrameRateOrigin::Provisional {
+                            return Err(EditError::new(
+                                EditErrorCode::InvalidCommand,
+                                "a provisional first primary must adopt its measured basis",
+                            ));
+                        }
+                    }
+                }
+                document.basis_state.primary = Some(PrimarySource {
+                    asset: id.clone(),
+                    qualification: asset.source_qualification.clone().ok_or_else(|| {
+                        EditError::new(
+                            EditErrorCode::InvalidCommand,
+                            "primary source requires qualification",
+                        )
+                    })?,
+                });
             }
             if let Some(insertion) = insertion {
                 let video_matches = match &insertion.source.video {
@@ -636,6 +709,27 @@ pub(crate) fn reduce(
                     },
                 );
             }
+        }
+        Command::SetCanvas { width, height } => {
+            crate::basis::validate_canvas(*width, *height)?;
+            document.presentation_basis.width = *width;
+            document.presentation_basis.height = *height;
+            document.basis_state.geometry_origin = GeometryOrigin::Explicit;
+            if document.basis_state.rate_origin == FrameRateOrigin::Provisional {
+                document.basis_state.rate_origin = FrameRateOrigin::Explicit;
+            }
+        }
+        Command::AdoptPrimaryGeometry { width, height } => {
+            crate::basis::validate_canvas(*width, *height)?;
+            if document.basis_state.primary.is_none() {
+                return Err(EditError::new(
+                    EditErrorCode::InvalidCommand,
+                    "primary geometry adoption requires a recorded primary source",
+                ));
+            }
+            document.presentation_basis.width = *width;
+            document.presentation_basis.height = *height;
+            document.basis_state.geometry_origin = GeometryOrigin::PrimarySource;
         }
         Command::SetPlayOverride {
             node,
@@ -1108,6 +1202,8 @@ fn description(command: &Command) -> &'static str {
         Command::Rename { .. } => "Rename beat",
         Command::AddAsset { .. } => "Register media asset",
         Command::ImportSource { .. } => "Import source media",
+        Command::SetCanvas { .. } => "Change canvas geometry",
+        Command::AdoptPrimaryGeometry { .. } => "Adopt primary source geometry",
         Command::SetMark { .. } => "Set mark",
         Command::DeleteMark { .. } => "Delete mark",
         Command::SetPlayOverride { .. } => "Set play override",

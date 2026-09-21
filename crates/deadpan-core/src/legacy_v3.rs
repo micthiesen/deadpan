@@ -42,6 +42,7 @@ impl Document {
             project_id: self.project_id,
             revision_id: self.revision_id,
             presentation_basis: self.presentation_basis,
+            basis_state: BasisState::explicit(),
             root: self.root,
             nodes: self
                 .nodes
@@ -60,6 +61,9 @@ impl Document {
         Ok(document)
     }
     pub fn matches(&self, document: &ProjectDocument) -> bool {
+        if document.basis_state != BasisState::explicit() {
+            return false;
+        }
         let projected = document
             .nodes
             .iter()
@@ -307,6 +311,9 @@ struct Patch {
 }
 impl Patch {
     fn project(patch: &DocumentPatch) -> Option<Self> {
+        if patch.presentation.is_some() {
+            return None;
+        }
         Some(Self {
             project_id: patch.project_id.clone(),
             from_revision: patch.from_revision.clone(),
@@ -410,6 +417,7 @@ mod tests {
         )
         .unwrap();
         let mut wire = serde_json::to_value(&current).unwrap();
+        wire.as_object_mut().unwrap().remove("basis_state");
         wire.as_object_mut().unwrap().remove("overrides");
         wire["schema_version"] = serde_json::json!(3);
         let v3 = Document::from_json(&wire.to_string()).unwrap();

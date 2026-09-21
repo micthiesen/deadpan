@@ -11,9 +11,10 @@ cargo run --locked -p deadpan-cli -- project validate /tmp/example.deadpan
 cargo run --locked -p deadpan-app -- --headless project dump /tmp/example.deadpan --json
 ```
 
-Creation requires a new `.deadpan` directory path and an explicit presentation
-basis. Automatic first-source adoption remains open. Headless source registration
-uses this explicit basis. Sources, analysis, and renderers cannot be inferred from this blank
+Creation requires a new `.deadpan` directory path. Without `--fps` and `--size`,
+the basis is provisional 1920×1080 at 30 fps; a first primary picture insertion
+can choose it before timed edits. Supplying both options establishes an explicit
+fixed basis. Sources, analysis, and renderers cannot be inferred from this blank
 project. The source package's `project.sqlite` is authoritative; `manifest.json`
 contains discovery identity only. No loose JSON document is read as current state.
 
@@ -67,14 +68,14 @@ revision fails with `RevisionConflict` and the current revision, without writing
 
 Supported commands are `insert`, `delete`, `move`, `group`,
 `ungroup`, `wrap_repeat`, `set_repeat`, `insert_plays`, `move_plays`, `set_hold_duration`, `set_hold_provider`, `set_source_audio_mapping`, `set_source_video_mapping`,
-`rename`, `add_asset`, `set_mark`, `delete_mark`, `set_play_override`, `clear_play_override`, and `edit_occurrence`. Their exact typed parameters are defined in
+`rename`, `add_asset`, `set_canvas`, `set_mark`, `delete_mark`, `set_play_override`, `clear_play_override`, and `edit_occurrence`. Their exact typed parameters are defined in
 [`Command`](../crates/deadpan-core/src/command.rs). `set_repeat` changes an existing
 Repeat; `wrap_repeat` deliberately adds nesting. A three-play repeat includes
 three total plays and only two gaps. These are structural edits, not rendered
 media. Editing through range/text selectors, registers, macros, and effects
 remain required future work.
 
-Documents use schema 9. [Source audio mappings](SOURCE_AUDIO_MAPPING.md) and
+Documents use schema 10. [Source audio mappings](SOURCE_AUDIO_MAPPING.md) and
 [picture mappings](SOURCE_VIDEO_MAPPING.md) independently choose the beat duration
 or an exact stream duration and start with `placement`.
 [Measured import timing](SOURCE_IMPORT_TIMING.md) describes the candidate policy.
@@ -408,7 +409,7 @@ content identity from `retain-original`. Registration requires a fresh explicit
     "original": {"algorithm": "blake3", "digest": "64_LOWERCASE_HEX_DIGITS_FROM_RETENTION"},
     "new_asset_id": "camera-1",
     "label": "Camera original",
-    "insertion": {"parent": "ROOT_NODE_ID", "index": 0, "node": "clip-1", "label": "Opening"}
+    "insertion": {"parent": "ROOT_NODE_ID", "index": 0, "node": "clip-1", "label": "Opening", "purpose": "primary"}
   },
   "streams": {"type": "video_and_audio", "audio_stream": 1}
 }
@@ -419,7 +420,10 @@ before opening the project or source. Select the actual audio stream index. Othe
 `{"type":"video_only"}` and `{"type":"audio_only","stream":0}`.
 Omitting or failing a selected stream is an error. Set `insertion` to `null` to
 register without inserting. The host derives exact full-source placements from
-measured indexes using the existing project basis; it does not adopt a new basis.
+measured indexes at the final chosen rate. A first primary picture can establish
+a provisional basis; timed or explicit projects preserve it. `purpose` defaults
+to `primary`; use `secondary` for supporting/reaction media that cannot choose
+the basis. Registration without insertion never chooses or locks the basis.
 
 The response has `protocol: 1`, `committed`, and `preview` or `outcome` containing
 the resolved asset and qualification IDs plus the proposed edit or commit.
@@ -433,6 +437,51 @@ requests require host relevance context and return `GenerationRelevanceRequired`
 through this CLI; preview remains available to a host resolver. The CLI does not
 invent unchanged context. [Source registration](SOURCE_REGISTRATION.md) documents
 durability, historical lookup, bounded evidence and remaining native workflow work.
+
+## Presentation and canvas
+
+```sh
+cargo run --locked -p deadpan-cli -- project create /tmp/automatic.deadpan
+```
+
+This starts a provisional 1920×1080, 30 fps canvas. The first primary video
+insertion chooses its measured cadence and display geometry before calculating
+source timing. Audio/Hold/secondary picture insertion or a project-time mark
+locks the rate. Later primary picture records its identity without changing the
+clock or canvas automatically. Registration alone leaves provisional state intact.
+The dump and validation response expose `basis_state` and the first primary
+source's immutable qualification binding. See [presentation policy](PRESENTATION_BASIS.md).
+
+To preview the recorded first primary picture's geometry at the fixed rate, use:
+
+```json
+{
+  "protocol": 1,
+  "adoption": {
+    "expected_revision": "CURRENT_REVISION",
+    "new_revision": "adopt-primary-geometry-1"
+  }
+}
+```
+
+```sh
+cargo run --locked -p deadpan-cli -- project adopt-primary-geometry /tmp/automatic.deadpan --request-json /tmp/geometry.json --dry-run
+cargo run --locked -p deadpan-cli -- project adopt-primary-geometry /tmp/automatic.deadpan --request-json /tmp/geometry.json
+```
+
+The preview returns `edit.forward.presentation` with the exact before/after basis
+and origin state. It changes no authored state and can coexist with a writer.
+Commit is undoable and requires the expected revision; current generation
+requests require host relevance resolution. Both forms use persisted measured
+geometry, not caller-supplied dimensions or a guessed video cadence.
+
+For an intentional creative canvas, the ordinary command envelope accepts
+`{"command":"set_canvas","width":1080,"height":1920}` and supports `--dry-run`.
+Both geometry paths keep frame rate, nodes, marks and temporal coordinates fixed.
+`set_canvas` records explicit geometry; on a provisional blank project it also
+fixes the existing rate. Generic commands that claim source-derived adoption
+return `SourceBasisAdmissionUnavailable`; they must use the qualified host path.
+Native visual canvas previews and framing-effect reevaluation remain open.
 
 ## History and checkpoints
 
@@ -475,21 +524,24 @@ future-schema read-only inspection still needs a compatibility implementation.
 
 ## Schema migration
 
-Database schemas 1 through 13 return `MigrationRequired` when opened. Upgrade explicitly:
+Database schemas 1 through 14 return `MigrationRequired` when opened. Upgrade explicitly:
 
 ```sh
 cargo run --locked -p deadpan-cli -- project migrate /tmp/example.deadpan
 ```
 
 Migration holds the project writer lock, keeps a consistent SQLite backup under
-`Snapshots/before-schema-14-*.sqlite`, and upgrades a separate candidate. It
+`Snapshots/before-schema-15-*.sqlite`, and upgrades a separate candidate. It
 replays all commands, undo/redo revisions, and abandoned branches with their
 original revision IDs. Every snapshot and forward/inverse transaction is checked
 against its strict original schema meaning. Migration goes directly to database
-schema 14 and core document schema 9. Database-13 histories use the frozen core-8
-adapter, retaining independent placements. Old assets gain no qualification IDs,
-and the new source qualification table starts empty. A preexisting modern table
-is rejected. Database-12 histories use the frozen core-7
+schema 15 and core document schema 10. Database-14 histories use frozen core 9,
+retain qualified sources and their complete receipt inventory, and gain explicit
+basis state. All older projects also remain explicit, even when empty.
+Database-13 histories use the frozen core-8 adapter, retaining independent
+placements. Projects predating database 14 gain no qualification IDs and start
+with an empty source qualification table; a preexisting modern table in those
+schemas is rejected. Database-12 histories use the frozen core-7
 adapter, retaining independent picture/audio mappings. Database-11 histories use the frozen core-6
 adapter, retaining explicit audio mappings. Database-7/8/9/10 histories use the
 frozen core-5 adapter and retain prior audio duration mapping as `fit_beat`.

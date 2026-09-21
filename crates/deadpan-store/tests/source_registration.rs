@@ -108,6 +108,7 @@ fn request(
             index: 0,
             node: NodeId::new(node).unwrap(),
             label: "Inserted source".into(),
+            purpose: Default::default(),
         }),
     })
 }
