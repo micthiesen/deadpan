@@ -73,6 +73,20 @@ terminal-duration loss remain explicit negatives. An explicit 240000 Hz MP4 movi
 timescale preserves the measured AAC offset. App integration, no-edit-list export,
 format/color coverage, relocation/signing, and a shipping bundle remain open.
 
+## Measured audio candidate
+
+[Signalsmith qualification](qualification/audio-2026-09-20.md) pins Stretch
+1.3.2 at `57b93f4e9206a089a45387eaa39bdc9f310d3308` and Linear 0.3.1 at
+`5668673560146a9cfe38c25315071e3fd68c8317`, both MIT. The isolated C++17
+harness uses the portable FFT, 48 kHz stereo, five speeds, and three pitch
+settings. Normal and ASan/UBSan runs each pass 523 of 605 declared targets;
+82 fail. Pitch, dynamics, channel levels, duration, reset, and latency alignment
+pass. Block partition and local-seek equivalence, short clips, and realtime
+deadlines are not qualified. All 130 PCM hashes match across the two builds.
+The reports retain failures and complete notices. No app binding, DSP adapter,
+or device output has been added. Preview/export must share a measured processing
+schedule and state strategy before integration can qualify.
+
 ## Qualification still required
 
 Gate A remains open. Before adding each executable or native dependency, record
@@ -84,7 +98,7 @@ Keep this log current; a selection in the spec is not a tested integration.
 | --- | --- | --- |
 | Media | rsmpeg + pinned FFmpeg; compare isolated Cutlass components | Decode/seek/encode, VFR and AAC sync, native ownership, color, codec/license flags. |
 | GPU preview | wgpu/Metal, narrow objc2 interop | Actual decoded textures, lifetime/synchronization, color, preview/export parity. |
-| Audio | CPAL + Signalsmith Stretch | Device changes, callback deadlines, DSP latency/preroll, random access, license pin. |
+| Audio | CPAL + pinned Signalsmith Stretch/Linear | Shared processing schedule, state-aware seeks, short clips, app binding, device changes, callback deadlines, speech/music listening review. |
 | Storage | Adopted rusqlite + bundled SQLite | Complete semantic integrity/recovery, migrations, managed media, bounded history, and lifecycle failure qualification. |
 | Analysis | whisper.cpp, Silero VAD, Apple Vision; ort where useful | Correctable word timing, tracking loss, privacy, actual model/runtime packaging. |
 | AI baseline | Distilled LTX-Video 2B on a supported MPS path | Real hold corpus, exact seams/duration, usable-output latency and memory by hardware tier. |

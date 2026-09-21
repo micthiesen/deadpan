@@ -1,0 +1,20 @@
+{
+  "stretch": {
+    "repository": "https://github.com/Signalsmith-Audio/signalsmith-stretch",
+    "revision": "57b93f4e9206a089a45387eaa39bdc9f310d3308",
+    "version": "1.3.2",
+    "archive_url": "https://codeload.github.com/Signalsmith-Audio/signalsmith-stretch/tar.gz/57b93f4e9206a089a45387eaa39bdc9f310d3308",
+    "archive_sha256": "ad02e24334438b203e81d44f6c9906f3c6773e90a4ea923bb3e73d15697187d6",
+    "directory": "signalsmith-stretch-57b93f4e9206a089a45387eaa39bdc9f310d3308",
+    "license": "MIT"
+  },
+  "linear": {
+    "repository": "https://github.com/Signalsmith-Audio/linear",
+    "revision": "5668673560146a9cfe38c25315071e3fd68c8317",
+    "version": "0.3.1",
+    "archive_url": "https://codeload.github.com/Signalsmith-Audio/linear/tar.gz/5668673560146a9cfe38c25315071e3fd68c8317",
+    "archive_sha256": "91d09ff4924c6958c70b2d182ec2553526fc301176652111b27cb08fc03f532e",
+    "directory": "linear-5668673560146a9cfe38c25315071e3fd68c8317",
+    "license": "MIT"
+  }
+}

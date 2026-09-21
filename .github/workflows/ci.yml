@@ -29,6 +29,8 @@ jobs:
         run: cargo clippy --workspace --all-targets --locked -- -D warnings
       - name: Test
         run: cargo test --workspace --locked
+      - name: Audio measurement regression tests
+        run: python3 -m unittest discover -s tools/audio-qualification -p 'test_*.py' -v
       - name: Build
         run: cargo build --workspace --locked
       - name: Headless diagnostics
