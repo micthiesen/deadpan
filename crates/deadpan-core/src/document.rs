@@ -4,14 +4,15 @@ use std::{error::Error, fmt};
 use serde::{Deserialize, Deserializer, Serialize, de};
 
 use crate::{
-    AudioSample, FrameDuration, FrameRange, FrameRate, IterationOrder, SourceTimestamp, TimeError,
-    repeat_duration,
+    AudioSample, FrameDuration, FrameRange, FrameRate, IterationOrder, Mark, SourceTimestamp,
+    TimeError, repeat_duration,
 };
 
-pub const DOCUMENT_SCHEMA_VERSION: u32 = 2;
+pub const DOCUMENT_SCHEMA_VERSION: u32 = 3;
 /// Bounds apply before traversal. Structure is walked iteratively, never recursively.
 pub const MAX_DOCUMENT_NODES: usize = 100_000;
 pub const MAX_DOCUMENT_ASSETS: usize = 100_000;
+pub const MAX_DOCUMENT_MARKS: usize = 100_000;
 pub const MAX_DOCUMENT_DEPTH: usize = 256;
 pub const MAX_DOCUMENT_JSON_BYTES: usize = 64 * 1024 * 1024;
 pub const MAX_IDENTITY_BYTES: usize = 128;
@@ -67,6 +68,7 @@ identifier!(ProjectId);
 identifier!(RevisionId);
 identifier!(NodeId);
 identifier!(AssetId);
+identifier!(MarkId);
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -297,6 +299,7 @@ pub struct ProjectDocument {
     pub(crate) root: NodeId,
     pub(crate) nodes: BTreeMap<NodeId, BeatNode>,
     pub(crate) assets: BTreeMap<AssetId, AssetRecord>,
+    pub(crate) marks: BTreeMap<MarkId, Mark>,
 }
 
 #[derive(Deserialize)]
@@ -311,6 +314,8 @@ struct DocumentWire {
     nodes: BTreeMap<NodeId, BeatNode>,
     #[serde(deserialize_with = "unique_map")]
     assets: BTreeMap<AssetId, AssetRecord>,
+    #[serde(deserialize_with = "unique_map")]
+    marks: BTreeMap<MarkId, Mark>,
 }
 
 impl TryFrom<DocumentWire> for ProjectDocument {
@@ -324,6 +329,7 @@ impl TryFrom<DocumentWire> for ProjectDocument {
             root: value.root,
             nodes: value.nodes,
             assets: value.assets,
+            marks: value.marks,
         };
         document.validate()?;
         Ok(document)
@@ -345,6 +351,7 @@ impl ProjectDocument {
             nodes: BTreeMap::from([(root.clone(), BeatNode::sequence("Sequence", vec![]))]),
             root,
             assets: BTreeMap::new(),
+            marks: BTreeMap::new(),
         };
         document.validate()?;
         Ok(document)
@@ -369,6 +376,9 @@ impl ProjectDocument {
     }
     pub fn assets(&self) -> &BTreeMap<AssetId, AssetRecord> {
         &self.assets
+    }
+    pub fn marks(&self) -> &BTreeMap<MarkId, Mark> {
+        &self.marks
     }
 
     pub fn to_json(&self) -> Result<String, DocumentError> {
@@ -425,6 +435,16 @@ impl ProjectDocument {
 
     /// Validate once and return every authored duration for plan compilation.
     pub fn durations(&self) -> Result<BTreeMap<NodeId, FrameDuration>, DocumentError> {
+        let durations = self.structural_durations()?;
+        crate::marks::validate_marks(self, &durations)?;
+        Ok(durations)
+    }
+
+    /// Structural validation precedes mark transforms; no anchor validation
+    /// calls back into this traversal or into public `durations()`.
+    pub(crate) fn structural_durations(
+        &self,
+    ) -> Result<BTreeMap<NodeId, FrameDuration>, DocumentError> {
         if self.schema_version != DOCUMENT_SCHEMA_VERSION {
             return Err(DocumentError::new(
                 DocumentErrorCode::UnsupportedSchema,
@@ -794,7 +814,7 @@ mod serialization_tests {
     }
 }
 
-fn validate_label(label: &str) -> Result<(), DocumentError> {
+pub(crate) fn validate_label(label: &str) -> Result<(), DocumentError> {
     if label.len() > 1024 || label.contains('\0') {
         return Err(DocumentError::new(
             DocumentErrorCode::LimitExceeded,
@@ -829,6 +849,7 @@ pub enum DocumentErrorCode {
     LimitExceeded,
     UnsupportedSchema,
     InvalidJson,
+    InvalidAnchor,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]

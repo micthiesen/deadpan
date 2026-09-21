@@ -98,6 +98,7 @@ fn repeat_identity_survives_move_insert_group_and_exact_inverse() {
     let (wrapped, _) = edited(
         &initial,
         Command::WrapRepeat {
+            anchor_policy: WrapAnchorPolicy::First,
             node: id("hold-0"),
             id: id("repeat"),
             plays: 4,
@@ -190,6 +191,7 @@ fn instance_paths_require_exact_ordered_repeat_ancestry() {
     let (inner, _) = edited(
         &insert_holds(&[3]),
         Command::WrapRepeat {
+            anchor_policy: WrapAnchorPolicy::First,
             node: id("hold-0"),
             id: id("inner"),
             plays: 2,
@@ -200,6 +202,7 @@ fn instance_paths_require_exact_ordered_repeat_ancestry() {
     let (outer, _) = edited(
         &inner,
         Command::WrapRepeat {
+            anchor_policy: WrapAnchorPolicy::First,
             node: id("inner"),
             id: id("outer"),
             plays: 3,
@@ -431,6 +434,7 @@ fn repeat_setter_is_not_a_wrapper_and_gaps_are_between_plays() {
     let (wrapped, first) = edited(
         &document,
         Command::WrapRepeat {
+            anchor_policy: WrapAnchorPolicy::First,
             node: id("hold-0"),
             id: id("repeat"),
             plays: 3,
@@ -457,6 +461,7 @@ fn repeat_setter_is_not_a_wrapper_and_gaps_are_between_plays() {
     let (nested, _) = edited(
         &updated,
         Command::WrapRepeat {
+            anchor_policy: WrapAnchorPolicy::First,
             node: id("repeat"),
             id: id("outer-repeat"),
             plays: 2,
@@ -540,12 +545,14 @@ fn failed_edits_do_not_mutate_input_and_conflicts_identify_revision() {
             label: "Invalid".into(),
         },
         Command::WrapRepeat {
+            anchor_policy: WrapAnchorPolicy::First,
             node: id("hold-0"),
             id: id("repeat"),
             plays: 0,
             gap: None,
         },
         Command::WrapRepeat {
+            anchor_policy: WrapAnchorPolicy::First,
             node: id("hold-0"),
             id: id("hold-0"),
             plays: 2,
@@ -849,6 +856,7 @@ fn retime_range_is_in_child_clock_and_overflow_is_rejected() {
             &request(
                 &huge,
                 Command::WrapRepeat {
+                    anchor_policy: WrapAnchorPolicy::First,
                     node: id("hold-0"),
                     id: id("repeat"),
                     plays: 2,
@@ -869,7 +877,7 @@ proptest! {
         prop_assert_eq!(document.duration().unwrap().frames(), expected);
         let (grouped, _) = edited(&document, Command::Group { parent:id("group"),start:0,end:frames.len(),id:id("nested"),label:"Nested".into() },"grouped");
         prop_assert_eq!(grouped.duration().unwrap().frames(), expected);
-        let (wrapped, _) = edited(&grouped, Command::WrapRepeat { node:id("nested"),id:id("repeat"),plays,gap:Some(HoldRecipe { duration:duration(gap),video:HoldVideo::Background,audio:HoldAudio::Silence }) },"wrapped");
+        let (wrapped, _) = edited(&grouped, Command::WrapRepeat { node:id("nested"),id:id("repeat"),plays,gap:Some(HoldRecipe { duration:duration(gap),video:HoldVideo::Background,audio:HoldAudio::Silence }),anchor_policy:WrapAnchorPolicy::First },"wrapped");
         prop_assert_eq!(wrapped.duration().unwrap().frames(), i64::from(plays)*expected+i64::from(plays-1)*gap);
         let encoded = wrapped.to_json().unwrap();
         prop_assert_eq!(ProjectDocument::from_json(&encoded).unwrap(), wrapped);

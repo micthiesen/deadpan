@@ -303,7 +303,7 @@ fn command(package: &Path, request: &Path, dry_run: bool) -> Result<(), CliError
 fn summary(document: &ProjectDocument) -> Result<(), CliError> {
     write_json(&serde_json::json!({
         "protocol": 1, "valid": true, "project_id": document.project_id(), "revision_id": document.revision_id(),
-        "root": document.root(), "duration_frames": document.duration()?.frames(), "node_count": document.nodes().len(),
+        "root": document.root(), "duration_frames": document.duration()?.frames(), "node_count": document.nodes().len(), "mark_count": document.marks().len(),
         "presentation_basis": document.presentation_basis()
     }))
 }

@@ -6,9 +6,9 @@ use std::{cmp::Ordering, collections::BTreeMap, error::Error, fmt};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    AssetId, ExactRatio, FrameDuration, FrameRange, InstancePath, MIX_SAMPLE_RATE, NodeId,
-    NodeKind, ProjectDocument, ProjectFrame, ProjectId, RevisionId, SourceSpan, SourceTimeBase,
-    SourceTimestamp, SourceVideo, TimeError,
+    AssetId, ExactRatio, FrameDuration, FrameRange, InstancePath, MIX_SAMPLE_RATE, MarkId,
+    MarkState, NodeId, NodeKind, ProjectDocument, ProjectFrame, ProjectId, RevisionId, SourceSpan,
+    SourceTimeBase, SourceTimestamp, SourceVideo, TimeError,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -88,6 +88,14 @@ pub struct AnchorTarget {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct NamedMarkTarget {
+    pub id: MarkId,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub occurrence: Option<InstancePath>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
 pub enum BoundarySelector {
     Point {
@@ -96,6 +104,13 @@ pub enum BoundarySelector {
     Range {
         start: AnchorTarget,
         end: AnchorTarget,
+    },
+    Mark {
+        target: NamedMarkTarget,
+    },
+    MarkRange {
+        start: NamedMarkTarget,
+        end: NamedMarkTarget,
     },
 }
 
@@ -150,6 +165,8 @@ pub enum AnchorErrorCode {
     InvalidRange,
     TimingOverflow,
     InvalidDocument,
+    MarkMissing,
+    MarkUnresolved,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -179,6 +196,8 @@ impl AnchorError {
             AnchorErrorCode::InvalidRange => "InvalidRange",
             AnchorErrorCode::TimingOverflow => "TimingOverflow",
             AnchorErrorCode::InvalidDocument => "InvalidDocument",
+            AnchorErrorCode::MarkMissing => "MarkMissing",
+            AnchorErrorCode::MarkUnresolved => "MarkUnresolved",
         }
     }
 }
@@ -198,9 +217,9 @@ impl From<TimeError> for AnchorError {
 /// structure, not expanded plays; repeated queries reuse parent/prefix indexes.
 /// Repeat identity lookups currently scan compact runs, never individual plays.
 pub struct AnchorIndex<'a> {
-    document: &'a ProjectDocument,
-    durations: BTreeMap<NodeId, FrameDuration>,
-    parents: BTreeMap<NodeId, (NodeId, i64)>,
+    pub(crate) document: &'a ProjectDocument,
+    pub(crate) durations: BTreeMap<NodeId, FrameDuration>,
+    pub(crate) parents: BTreeMap<NodeId, (NodeId, i64)>,
 }
 
 impl<'a> AnchorIndex<'a> {
@@ -208,6 +227,13 @@ impl<'a> AnchorIndex<'a> {
         let durations = document.durations().map_err(|error| {
             AnchorError::new(AnchorErrorCode::InvalidDocument, error.to_string())
         })?;
+        Ok(Self::from_durations(document, durations))
+    }
+
+    pub(crate) fn from_durations(
+        document: &'a ProjectDocument,
+        durations: BTreeMap<NodeId, FrameDuration>,
+    ) -> Self {
         let mut parents = BTreeMap::new();
         for (id, node) in document.nodes() {
             let mut offset = 0;
@@ -218,11 +244,11 @@ impl<'a> AnchorIndex<'a> {
                 offset += durations[child].frames();
             }
         }
-        Ok(Self {
+        Self {
             document,
             durations,
             parents,
-        })
+        }
     }
 
     pub fn resolve(&self, request: &SelectionRequest) -> Result<ResolvedSelection, AnchorError> {
@@ -248,31 +274,13 @@ impl<'a> AnchorIndex<'a> {
                 point: self.resolve_target(target)?,
             },
             BoundarySelector::Range { start, end } => {
-                let start = self.resolve_target(start)?;
-                let end = self.resolve_target(end)?;
-                if end
-                    .exact_frame
-                    .checked_sub(start.exact_frame)?
-                    .compare_integer(0)
-                    != Ordering::Greater
-                {
-                    return Err(AnchorError::new(
-                        AnchorErrorCode::InvalidRange,
-                        "range end must follow its start; reversed endpoints are not swapped",
-                    ));
-                }
-                if end.frame <= start.frame {
-                    return Err(AnchorError::new(
-                        AnchorErrorCode::InvalidRange,
-                        "range collapses after project-frame quantization",
-                    ));
-                }
-                let frames = FrameRange::new(start.frame, end.frame)?;
-                ResolvedSelectionKind::Range {
-                    start: Box::new(start),
-                    end: Box::new(end),
-                    frames,
-                }
+                Self::range(self.resolve_target(start)?, self.resolve_target(end)?)?
+            }
+            BoundarySelector::Mark { target } => ResolvedSelectionKind::Point {
+                point: self.resolve_mark(target)?,
+            },
+            BoundarySelector::MarkRange { start, end } => {
+                Self::range(self.resolve_mark(start)?, self.resolve_mark(end)?)?
             }
         };
         Ok(ResolvedSelection {
@@ -280,6 +288,54 @@ impl<'a> AnchorIndex<'a> {
             revision_id: request.expected_revision.clone(),
             role: request.role,
             selection,
+        })
+    }
+
+    fn resolve_mark(&self, target: &NamedMarkTarget) -> Result<ResolvedBoundary, AnchorError> {
+        let mark = self.document.marks().get(&target.id).ok_or_else(|| {
+            AnchorError::new(
+                AnchorErrorCode::MarkMissing,
+                format!("mark {} does not exist", target.id),
+            )
+        })?;
+        if let MarkState::Unresolved { reason } = mark.state {
+            return Err(AnchorError::new(
+                AnchorErrorCode::MarkUnresolved,
+                format!("mark {} is unresolved: {reason:?}", target.id),
+            ));
+        }
+        self.resolve_target(&AnchorTarget {
+            boundary: mark.boundary.clone(),
+            occurrence: target.occurrence.clone(),
+        })
+    }
+
+    fn range(
+        start: ResolvedBoundary,
+        end: ResolvedBoundary,
+    ) -> Result<ResolvedSelectionKind, AnchorError> {
+        if end
+            .exact_frame
+            .checked_sub(start.exact_frame)?
+            .compare_integer(0)
+            != Ordering::Greater
+        {
+            return Err(AnchorError::new(
+                AnchorErrorCode::InvalidRange,
+                "range end must follow its start; reversed endpoints are not swapped",
+            ));
+        }
+        if end.frame <= start.frame {
+            return Err(AnchorError::new(
+                AnchorErrorCode::InvalidRange,
+                "range collapses after project-frame quantization",
+            ));
+        }
+        let frames = FrameRange::new(start.frame, end.frame)?;
+        Ok(ResolvedSelectionKind::Range {
+            start: Box::new(start),
+            end: Box::new(end),
+            frames,
         })
     }
 
@@ -375,7 +431,7 @@ impl<'a> AnchorIndex<'a> {
         Ok(())
     }
 
-    fn to_project(
+    pub(crate) fn to_project(
         &self,
         path: &InstancePath,
         mut position: ExactRatio,
@@ -548,7 +604,7 @@ fn within(position: ExactRatio, end: i64, code: AnchorErrorCode) -> Result<(), A
     Ok(())
 }
 
-fn source_fraction(
+pub(crate) fn source_fraction(
     timestamp: SourceTimestamp,
     span: SourceSpan,
 ) -> Result<ExactRatio, AnchorError> {

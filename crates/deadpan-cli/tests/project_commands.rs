@@ -77,7 +77,7 @@ fn headless_migration_and_plan_inspection_are_explicit_and_read_only() -> Result
     );
     let outcome = success(&["project", "migrate", path])?;
     assert_eq!(outcome["migration"]["from_schema"], 1);
-    assert_eq!(outcome["migration"]["to_schema"], 2);
+    assert_eq!(outcome["migration"]["to_schema"], 3);
     assert!(Path::new(outcome["migration"]["backup"].as_str().unwrap()).is_file());
     let writer = ProjectStore::open(&package, AccessMode::ReadWrite)?;
     let before = writer.snapshot()?;
@@ -429,5 +429,124 @@ fn selection_resolution_is_revision_checked_exact_and_read_only() -> Result {
         "ProtocolUnsupported"
     );
     assert_eq!(writer.snapshot()?, before);
+    Ok(())
+}
+
+#[test]
+fn persistent_mark_queries_and_loss_states_share_the_headless_command_path() -> Result {
+    use deadpan_core::{
+        Anchor, AnchorLossPolicy, BoundaryAnchor, ExactRatio, InsertionBias, MarkId, ProjectFrame,
+    };
+    let scratch = tempfile::tempdir()?;
+    let package = create(scratch.path())?;
+    let path = package.to_str().unwrap();
+    let initial = ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?;
+    let command_file = scratch.path().join("command.json");
+    let command_path = command_file.to_str().unwrap();
+    fs::write(&command_file, request(&initial)?.to_string())?;
+    success(&["command", path, "--json", command_path])?;
+    let write_command = |command: Command, revision: &str| -> Result {
+        let document = ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?;
+        fs::write(&command_file,json!({"protocol":1,"project_id":document.project_id(),"expected_revision":document.revision_id(),"new_revision":revision,"command":command}).to_string())?;
+        Ok(())
+    };
+    let writer = ProjectStore::open(&package, AccessMode::ReadWrite)?;
+    let before = writer.snapshot()?;
+    write_command(
+        Command::SetMark {
+            id: MarkId::new("a")?,
+            owner: before.root().clone(),
+            label: "Start of the pause".into(),
+            boundary: BoundaryAnchor {
+                coordinate: Anchor::Local {
+                    node: NodeId::new("hold")?,
+                    position: ExactRatio::integer(12),
+                },
+                bias: InsertionBias::Right,
+            },
+            loss_policy: AnchorLossPolicy::KeepUnresolved,
+        },
+        "mark-a",
+    )?;
+    let dry = success(&["command", path, "--json", command_path, "--dry-run"])?;
+    assert_eq!(
+        dry["edit"]["forward"]["marks"]["a"]["after"]["state"]["type"],
+        "bound"
+    );
+    assert_eq!(writer.snapshot()?, before);
+    drop(writer);
+    success(&["command", path, "--json", command_path])?;
+    write_command(
+        Command::SetMark {
+            id: MarkId::new("b")?,
+            owner: before.root().clone(),
+            label: "Pinned end".into(),
+            boundary: BoundaryAnchor {
+                coordinate: Anchor::Sequence {
+                    frame: ProjectFrame(20),
+                },
+                bias: InsertionBias::Left,
+            },
+            loss_policy: AnchorLossPolicy::KeepUnresolved,
+        },
+        "mark-b",
+    )?;
+    success(&["command", path, "--json", command_path])?;
+    let selection_file = scratch.path().join("selection.json");
+    let query = |selector: Value| -> Result<Output> {
+        let document = ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?;
+        fs::write(&selection_file,json!({"protocol":1,"request":{"project_id":document.project_id(),"expected_revision":document.revision_id(),"role":"linked","selector":selector}}).to_string())?;
+        cli(&[
+            "resolve-selection",
+            path,
+            "--json",
+            selection_file.to_str().unwrap(),
+        ])
+    };
+    let writer = ProjectStore::open(&package, AccessMode::ReadWrite)?;
+    let output = query(json!({"type":"mark_range","start":{"id":"a"},"end":{"id":"b"}}))?;
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(
+        serde_json::from_slice::<Value>(&output.stdout)?["resolved"]["selection"]["frames"],
+        json!({"start":12,"end":20})
+    );
+    drop(writer);
+    write_command(
+        Command::Delete {
+            node: NodeId::new("hold")?,
+        },
+        "delete-hold",
+    )?;
+    success(&["command", path, "--json", command_path])?;
+    let output = query(json!({"type":"mark","target":{"id":"a"}}))?;
+    assert!(!output.status.success());
+    assert_eq!(
+        serde_json::from_slice::<Value>(&output.stderr)?["error"]["code"],
+        "MarkUnresolved"
+    );
+    let document = ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?;
+    success(&[
+        "project",
+        "undo",
+        path,
+        "--expected",
+        document.revision_id().as_str(),
+    ])?;
+    let output = query(json!({"type":"mark","target":{"id":"a"}}))?;
+    assert!(output.status.success());
+    assert_eq!(
+        serde_json::from_slice::<Value>(&output.stdout)?["resolved"]["selection"]["point"]["frame"],
+        12
+    );
+    let output = query(json!({"type":"mark","target":{"id":"missing"}}))?;
+    assert!(!output.status.success());
+    assert_eq!(
+        serde_json::from_slice::<Value>(&output.stderr)?["error"]["code"],
+        "MarkMissing"
+    );
     Ok(())
 }

@@ -12,6 +12,8 @@ mod command;
 mod document;
 mod exact;
 pub mod legacy_v1;
+pub mod legacy_v2;
+mod marks;
 mod occurrence;
 mod source_index;
 mod time;
@@ -20,6 +22,7 @@ pub use anchor::*;
 pub use command::*;
 pub use document::*;
 pub use exact::ExactRatio;
+pub use marks::*;
 pub use occurrence::*;
 pub use source_index::*;
 

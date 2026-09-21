@@ -3,6 +3,7 @@
 
 use deadpan_core::{
     CommandRequest, EditTransaction, MAX_IDENTITY_BYTES, ProjectDocument, RevisionId, legacy_v1,
+    legacy_v2,
 };
 use rusqlite::{Connection, params};
 
@@ -153,49 +154,65 @@ fn history_error(message: &str) -> StoreError {
 }
 
 pub(crate) fn validate_history(connection: &Connection) -> Result<(), StoreError> {
-    replay(connection, false)
+    replay(connection, ReplaySchema::Current)
 }
 
 /// Called only on an isolated, backed-up migration candidate inside a transaction.
-pub(crate) fn migrate_history(connection: &Connection) -> Result<(), StoreError> {
-    replay(connection, true)
+pub(crate) fn migrate_history(connection: &Connection, version: u32) -> Result<(), StoreError> {
+    let schema = match version {
+        1 => ReplaySchema::V1,
+        2 => ReplaySchema::V2,
+        _ => return Err(StoreError::UnsupportedSchema(version)),
+    };
+    replay(connection, schema)
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum ReplaySchema {
+    Current,
+    V1,
+    V2,
 }
 
 enum StoredDocument {
     Current(ProjectDocument),
-    Legacy(legacy_v1::Document),
+    V1(legacy_v1::Document),
+    V2(legacy_v2::Document),
 }
 impl StoredDocument {
     fn revision_id(&self) -> &RevisionId {
         match self {
             Self::Current(doc) => doc.revision_id(),
-            Self::Legacy(doc) => doc.revision_id(),
+            Self::V1(doc) => doc.revision_id(),
+            Self::V2(doc) => doc.revision_id(),
         }
     }
     fn initial(self) -> Result<ProjectDocument, StoreError> {
         match self {
             Self::Current(doc) => Ok(doc),
-            Self::Legacy(doc) => Ok(doc.upgrade()?),
+            Self::V1(doc) => Ok(doc.upgrade()?),
+            Self::V2(doc) => Ok(doc.upgrade()?),
         }
     }
     fn matches(&self, doc: &ProjectDocument) -> bool {
         match self {
             Self::Current(stored) => stored == doc,
-            Self::Legacy(stored) => stored.matches(doc),
+            Self::V1(stored) => stored.matches(doc),
+            Self::V2(stored) => stored.matches(doc),
         }
     }
 }
 fn read_replay_revision(
     connection: &Connection,
     id: &str,
-    migrate: bool,
+    schema: ReplaySchema,
 ) -> Result<(Option<String>, String, StoredDocument), StoreError> {
     let (parent, kind, json) =
         read_revision_json(connection, id, crate::schema::MAX_DOCUMENT_BYTES)?;
-    let document = if migrate {
-        StoredDocument::Legacy(legacy_v1::Document::from_json(&json)?)
-    } else {
-        StoredDocument::Current(ProjectDocument::from_json(&json)?)
+    let document = match schema {
+        ReplaySchema::Current => StoredDocument::Current(ProjectDocument::from_json(&json)?),
+        ReplaySchema::V1 => StoredDocument::V1(legacy_v1::Document::from_json(&json)?),
+        ReplaySchema::V2 => StoredDocument::V2(legacy_v2::Document::from_json(&json)?),
     };
     if document.revision_id().as_str() != id {
         return Err(history_error("revision identity disagrees with document"));
@@ -227,11 +244,12 @@ pub(crate) fn read_initial_id(connection: &Connection) -> Result<String, StoreEr
     Ok(initial)
 }
 
-fn replay(connection: &Connection, migrate: bool) -> Result<(), StoreError> {
+fn replay(connection: &Connection, schema: ReplaySchema) -> Result<(), StoreError> {
+    let migrate = schema != ReplaySchema::Current;
     let count: i64 =
         connection.query_row("SELECT COUNT(*) FROM revisions", [], |row| row.get(0))?;
     let initial = read_initial_id(connection)?;
-    let (_, kind, first) = read_replay_revision(connection, &initial, migrate)?;
+    let (_, kind, first) = read_replay_revision(connection, &initial, schema)?;
     if kind != "initial" {
         return Err(history_error("root revision is not initial"));
     }
@@ -274,7 +292,7 @@ fn replay(connection: &Connection, migrate: bool) -> Result<(), StoreError> {
         if rows.next()?.is_some() {
             return Err(history_error("revision chronology forks"));
         }
-        let (parent, kind, next) = read_replay_revision(connection, &id, migrate)?;
+        let (parent, kind, next) = read_replay_revision(connection, &id, schema)?;
         if parent.as_deref() != Some(current.revision_id().as_str()) {
             return Err(history_error("revision parent disagrees"));
         }
@@ -295,16 +313,18 @@ fn replay(connection: &Connection, migrate: bool) -> Result<(), StoreError> {
                 if parent != cursor || revision != id {
                     return Err(history_error("history parent or revision disagrees"));
                 }
-                let request = if migrate {
-                    legacy_v1::upgrade_request(&request_json)?
-                } else {
-                    serde_json::from_str(&request_json)?
+                let request = match schema {
+                    ReplaySchema::Current => serde_json::from_str(&request_json)?,
+                    ReplaySchema::V1 => legacy_v1::upgrade_request(&request_json)?,
+                    ReplaySchema::V2 => legacy_v2::upgrade_request(&request_json)?,
                 };
                 let calculated = deadpan_core::apply(&current, &request)?;
-                let matches_edit = if migrate {
-                    legacy_v1::matches_edit(&edit_json, &calculated)?
-                } else {
-                    calculated == serde_json::from_str::<EditTransaction>(&edit_json)?
+                let matches_edit = match schema {
+                    ReplaySchema::Current => {
+                        calculated == serde_json::from_str::<EditTransaction>(&edit_json)?
+                    }
+                    ReplaySchema::V1 => legacy_v1::matches_edit(&edit_json, &calculated)?,
+                    ReplaySchema::V2 => legacy_v2::matches_edit(&edit_json, &calculated)?,
                 };
                 let next_document = calculated.forward.apply(&current)?;
                 if !matches_edit || !next.matches(&next_document) {

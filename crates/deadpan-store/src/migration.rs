@@ -45,7 +45,7 @@ impl ProjectStore {
                 backup: None,
             });
         }
-        if version != 1 {
+        if !matches!(version, 1 | 2) {
             return Err(StoreError::UnsupportedSchema(version));
         }
         let lock = acquire_lock(&package)?;
@@ -67,14 +67,13 @@ impl ProjectStore {
         if schema::read_version(&original)? != version {
             return Err(StoreError::MigrationBusy);
         }
-        validation::check_stored_sizes(&original, schema::MAX_DOCUMENT_BYTES)?;
         original.pragma_update(None, "synchronous", "FULL")?;
         let directory = package.join("Snapshots");
         if !std::fs::symlink_metadata(&directory)?.file_type().is_dir() {
             return Err(StoreError::UnsafePath(directory));
         }
         let backup = tempfile::Builder::new()
-            .prefix("before-schema-2-")
+            .prefix("before-schema-3-")
             .suffix(".sqlite")
             .tempfile_in(&directory)?;
         original.backup(rusqlite::MAIN_DB, backup.path(), None)?;
@@ -82,7 +81,7 @@ impl ProjectStore {
         let (_, backup_path) = backup.keep().map_err(|error| error.error)?;
         let migration = (|| {
             File::open(&directory)?.sync_all()?;
-            migrate_candidate(&mut original, &directory, &backup_path)
+            migrate_candidate(&mut original, &directory, &backup_path, version)
         })();
         if let Err(source) = migration {
             return Err(StoreError::MigrationFailed {
@@ -102,6 +101,7 @@ fn migrate_candidate(
     original: &mut Connection,
     directory: &Path,
     backup_path: &Path,
+    source_version: u32,
 ) -> Result<(), StoreError> {
     let candidate_file = tempfile::Builder::new()
         .prefix("migration-")
@@ -128,7 +128,7 @@ fn migrate_candidate(
     if violations != 0 {
         return Err(StoreError::Integrity("foreign-key violation".into()));
     }
-    validation::migrate_history(&transaction)?;
+    validation::migrate_history(&transaction, source_version)?;
     transaction.pragma_update(None, "user_version", schema::VERSION)?;
     validation::validate_history(&transaction)?;
     transaction.commit()?;

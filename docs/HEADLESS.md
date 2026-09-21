@@ -64,23 +64,23 @@ or change undo history. It checks the same reducer, serialized size limits, and
 never-reused revision rule as commit. A stale expected
 revision fails with `RevisionConflict` and the current revision, without writing.
 
-Supported node-targeted commands are `insert`, `delete`, `move`, `group`,
+Supported commands are `insert`, `delete`, `move`, `group`,
 `ungroup`, `wrap_repeat`, `set_repeat`, `insert_plays`, `move_plays`, `set_hold_duration`, `set_hold_provider`,
-`rename`, and `add_asset`. Their exact typed parameters are defined in
+`rename`, `add_asset`, `set_mark`, and `delete_mark`. Their exact typed parameters are defined in
 [`Command`](../crates/deadpan-core/src/command.rs). `set_repeat` changes an existing
 Repeat; `wrap_repeat` deliberately adds nesting. A three-play repeat includes
 three total plays and only two gaps. These are structural edits, not rendered
 media. Editing through range/text selectors, registers, macros, per-play overrides, and effects
 remain required future work.
 
-Repeat documents use schema 2 and store compact `iterations.runs` with
+Documents use schema 3 and store compact Repeat `iterations.runs` with
 `allocation`, `first`, and `count`. Commands `wrap_repeat` and `set_repeat` still
 take a total `plays` count. `insert_plays` takes `node`, `index`, and `count`;
 `move_plays` takes `node`, a half-open `start`/`end` play range, and `destination`
 measured after removal. Surviving identities remain stable; inserted/grown plays
 use the command's new revision. The run limit is 100,000 per Repeat, checked
 without expanding plays. `InstancePath` identifies the target node and its exact
-ordered Repeat ancestors. Sparse overrides and persistent anchors are still open.
+ordered Repeat ancestors. Sparse occurrence overrides remain open.
 Inserting a subtree remaps its Repeat plays to the actual insertion revision,
 preserving their count. An imported initial document reserves its existing
 allocation names, so later revisions cannot resurrect retired identities.
@@ -158,11 +158,74 @@ guess a play, even for a one-play Repeat. Missing or retired iterations fail.
 The index stores authored parents and sequence prefixes; seeking billions of
 plays does not expand them. Repeat identity lookup scans compact runs.
 
-These are query coordinates, not persisted marks. Bias is carried in the result;
-insertion/deletion transforms, ownership/loss policy, named marks, attachments,
-and editing commands that consume these selectors remain to be implemented.
-Document/database schema stays at 2. [Verification](ANCHOR_VERIFICATION.md)
-records the exact test coverage and limits.
+`set_mark` persists one of these boundaries, its owner, label, and explicit loss
+policy. Named-mark selectors are described below. Range-editing operators,
+temporal attachments, and sparse occurrence overrides remain to be implemented.
+[Boundary verification](ANCHOR_VERIFICATION.md) preserves the original query
+evidence; [mark verification](MARK_VERIFICATION.md) covers the schema-3 extension.
+
+## Persistent marks
+
+A mark command uses the same protocol/revision envelope as every other edit:
+
+```json
+{
+  "command": "set_mark",
+  "id": "a",
+  "owner": "ROOT_NODE_ID_FROM_DUMP",
+  "label": "After the answer",
+  "boundary": {
+    "coordinate": {
+      "space": "local",
+      "node": "pause-1",
+      "position": {"numerator": "12", "denominator": "1"}
+    },
+    "bias": "right"
+  },
+  "loss_policy": "keep_unresolved"
+}
+```
+
+`set_mark` creates or replaces the named mark, including deliberately rebinding
+an unresolved mark. `delete_mark` takes `id`. The owner controls lifecycle and
+is separate from the anchor coordinate. Labels accept Unicode; IDs use the
+existing 1–128 byte ASCII identity rule. Documents permit up to 100,000 marks
+within the shared 64 MiB JSON limit.
+
+Local and occurrence marks follow retained content through edits, using exact
+fractions. At an internal boundary, left bias follows preceding content and right
+bias follows following content. At a host's outside leading/trailing edge, the
+corresponding left/right bias stays with that edge. A mark inside moved content
+follows it within the same host; moving its host carries the mark too. Repeat
+marks follow stable play identities, and gaps belong to the preceding play.
+Source coordinates stay in the original asset clock, independent of ownership
+or whether a timeline occurrence currently uses that moment. Sequence-pinned
+coordinates stay fixed through ripple edits.
+
+When an owner, host, play, gap, or targeted content disappears, `delete_owned`
+removes the mark or `keep_unresolved` preserves its original coordinate and a
+typed reason. Unresolved marks never attach automatically to a replacement at
+the same timestamp or ID. `wrap_repeat` accepts `anchor_policy: "first"` or
+`"unresolved"`; omission defaults to `first` for compatibility. A concrete old
+occurrence can follow the first new play, while an authored Local child mark
+still applies to that child across its plays. New plays do not copy concrete
+occurrence marks. Every mark change is part of the same reversible transaction
+as its structural edit; dry-run exposes it in `edit.forward.marks`.
+
+Use `resolve-selection` with these selector shapes and the current project,
+revision, and media role:
+
+```json
+{"type": "mark", "target": {"id": "a"}}
+```
+
+```json
+{"type": "mark_range", "start": {"id": "a"}, "end": {"id": "b"}}
+```
+
+Each named target may supply `occurrence` when its stored Local/Source coordinate
+needs explicit scope. Missing and unresolved marks return `MarkMissing` and
+`MarkUnresolved`; the retained coordinate is not used as a fallback.
 
 ## History and checkpoints
 
@@ -205,17 +268,19 @@ future-schema read-only inspection still needs a compatibility implementation.
 
 ## Schema migration
 
-Schema-1 projects return `MigrationRequired` when opened. Upgrade explicitly:
+Schema-1 and schema-2 projects return `MigrationRequired` when opened. Upgrade explicitly:
 
 ```sh
 cargo run --locked -p deadpan-cli -- project migrate /tmp/example.deadpan
 ```
 
 Migration holds the project writer lock, keeps a consistent SQLite backup under
-`Snapshots/before-schema-2-*.sqlite`, and rewrites a separate candidate. It
+`Snapshots/before-schema-3-*.sqlite`, and rewrites a separate candidate. It
 replays all commands, undo/redo revisions, and abandoned branches with their
 original revision IDs. Every snapshot and forward/inverse transaction is checked
-against its strict schema-1 meaning. SQLite atomically promotes the validated
+against its strict original schema meaning. Migration goes directly to schema 3
+and introduces an empty mark map in each old snapshot and patch. Fields or
+commands that did not exist in the old schema are rejected. SQLite atomically promotes the validated
 candidate through its backup API; the main file is never renamed around a live
 WAL. Existing read transactions keep their old snapshot. Failure before promotion
 leaves authored contents unchanged. A current-schema project is validated with

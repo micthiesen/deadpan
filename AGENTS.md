@@ -6,7 +6,7 @@ Deadpan is a native macOS structural video editor for timing and attention, buil
 
 Read [the full specification](docs/spec/DEADPAN_SPEC.md) and [agent handoff](docs/spec/AGENT_HANDOFF.md) before feature work. The Markdown specification is normative; summaries here do not reduce its scope. [Requirements](docs/REQUIREMENTS.md) tracks DP-01 through DP-24 and Gates A through G. Keep code, tests, evidence, and remaining work current there.
 
-The current foundation includes validated beat documents, reversible structural commands, stable repeat identities, exact indexed picture plans and boundary queries, SQLite project/history storage with schema migration, and a shared headless command entrypoint. The native UI remains a welcome shell. It is not yet a usable video editor or release candidate. All product requirements remain open or partial. A button, mock worker, downloaded model, ignored test, or proposed target does not prove implementation.
+The current foundation includes validated beat documents, reversible structural commands, persistent marks with edit transforms, stable repeat identities, exact indexed picture plans and boundary queries, SQLite project/history storage with schema migration, and a shared headless command entrypoint. The native UI remains a welcome shell. It is not yet a usable video editor or release candidate. All product requirements remain open or partial. A button, mock worker, downloaded model, ignored test, or proposed target does not prove implementation.
 
 ## Design philosophy
 
@@ -38,7 +38,7 @@ Use Rust 1.97.1 as pinned in `rust-toolchain.toml`, Cargo, rustfmt, Clippy, stro
 
 Every persisted edit, undo, and redo gets a never-reused revision ID. Core inverse patches can restore exact fixture identity; the store rebases them onto fresh revisions to prevent stale commands becoming valid after undo. Store writes use one transaction for the revision, history, and cursor. Keep `.writer.lock` held for the writable store lifetime; read-only inspection and dry runs may coexist. Take live database snapshots through SQLite's backup API, never copy only an open main database file.
 
-Repeat play IDs are scoped by Repeat node and allocation revision, with an ordinal inside that allocation. Preserve surviving IDs through resizing and reorder; allocate fresh IDs for growth and inserted subtrees. Imported initial snapshots reserve their allocation names even after plays are removed. Keep compact runs bounded and never expand a repeat merely to seek. Schema 2 derives the play count from these runs. Schema-1 migrations replay the complete chronology on a consistent copy, compare every legacy snapshot/transaction, and promote through SQLite's backup transaction only after validation. Preserve the pre-migration backup.
+Repeat play IDs are scoped by Repeat node and allocation revision, with an ordinal inside that allocation. Preserve surviving IDs through resizing and reorder; allocate fresh IDs for growth and inserted subtrees. Imported initial snapshots reserve their allocation names even after plays are removed. Keep compact runs bounded and never expand a repeat merely to seek. Schema 3 retains these runs and adds persistent marks. Schema-1 and schema-2 migrations replay the complete chronology directly into the current schema on a consistent copy, compare every legacy snapshot/transaction, and promote through SQLite's backup transaction only after validation. Strict legacy adapters reject new fields and unexpected mark changes. Preserve the pre-migration backup.
 
 The setup workflow's TypeScript/Bun/mitools/Biome defaults do not apply to this Rust-native product. The maintained Rust sibling `beastie` supplies the initial workspace conventions; consult maintained siblings for evolving personal tooling patterns. [Dependency decisions](docs/DEPENDENCIES.md) records the pins and qualification boundaries. Do not introduce Bun, Node, Python, or shell setup as an end-user requirement. Future model workers use an app-managed private runtime selected through measurement.
 
@@ -47,8 +47,13 @@ The setup workflow's TypeScript/Bun/mitools/Biome defaults do not apply to this 
 Boundary queries use `AnchorIndex` against one immutable revision. Keep source
 clocks, local fractions, and complete occurrence paths explicit; never infer a
 repeated play or clamp a missing source interval. Round once at the final project
-boundary and return the exact coordinate too. The current query API does not
-persist marks or implement anchor edit transforms.
+boundary and return the exact coordinate too. Persist mark ownership separately
+from its coordinate. Structural commands transform marks in the same forward and
+inverse patch as the tree edit. Follow stable content/play/gap identities inside
+the retained host, apply explicit loss policy, and never automatically reattach
+an unresolved mark. Original source coordinates and sequence-pinned coordinates
+stay fixed in their respective clocks. Named-mark queries still require explicit
+occurrence scope when the stored coordinate is ambiguous.
 
 Run the exact repository gate after implementation:
 

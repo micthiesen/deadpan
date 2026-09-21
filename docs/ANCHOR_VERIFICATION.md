@@ -1,5 +1,9 @@
 # Exact boundary resolver verification
 
+Historical report: the later [persistent mark implementation](MARK_VERIFICATION.md)
+adds schema 3, mark ownership, and atomic edit transforms. The evidence below
+describes the earlier query-only revision.
+
 This report covers the source change titled `Resolve exact revision-aware edit boundaries`, based on `b2c8314b44f2a2de53f61a1b158029ba5ce36f6e`. It implements a read-only query surface. Persistent marks, attachment ownership, insertion/deletion transforms, and commands that edit a resolved range remain required work. Schema 2 is unchanged.
 
 ## Implemented contract

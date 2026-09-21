@@ -103,6 +103,7 @@ fn imported_initial_allocations_stay_reserved_after_their_plays_are_removed() ->
             id: NodeId::new("repeat")?,
             plays: 4,
             gap: None,
+            anchor_policy: deadpan_core::WrapAnchorPolicy::First,
         },
     };
     let wrapped = deadpan_core::apply(&inserted, &request)?
@@ -462,5 +463,134 @@ fn semantic_validation_rejects_forged_history_and_state() -> Result {
             "opened corruption: {change}"
         );
     }
+    Ok(())
+}
+
+#[test]
+fn marks_and_loss_states_commit_atomically_and_survive_history_reopen() -> Result {
+    use deadpan_core::{
+        Anchor, AnchorLossPolicy, BoundaryAnchor, ExactRatio, InsertionBias, MarkId, MarkState,
+    };
+    let scratch = tempfile::tempdir()?;
+    let path = scratch.path().join("marks.deadpan");
+    let mut store = ProjectStore::create(&path, &document()?)?;
+    let commit = |store: &mut ProjectStore, command, name: &str| -> Result {
+        let before = store.snapshot()?;
+        store.commit(&CommandRequest {
+            project_id: before.project_id().clone(),
+            expected_revision: before.revision_id().clone(),
+            new_revision: RevisionId::new(name)?,
+            command,
+        })?;
+        Ok(())
+    };
+    store.commit(&insert(&store.snapshot()?, "insert", "hold")?)?;
+    let mark = MarkId::new("a")?;
+    commit(
+        &mut store,
+        Command::SetMark {
+            id: mark.clone(),
+            owner: NodeId::new("root")?,
+            label: "The pause".into(),
+            boundary: BoundaryAnchor {
+                coordinate: Anchor::Local {
+                    node: NodeId::new("hold")?,
+                    position: ExactRatio::new(13, 2)?,
+                },
+                bias: InsertionBias::Right,
+            },
+            loss_policy: AnchorLossPolicy::KeepUnresolved,
+        },
+        "mark",
+    )?;
+    let marked = store.snapshot()?;
+    let before_revisions = revision_count(&path)?;
+    let request = CommandRequest {
+        project_id: marked.project_id().clone(),
+        expected_revision: marked.revision_id().clone(),
+        new_revision: RevisionId::new("delete")?,
+        command: Command::Delete {
+            node: NodeId::new("hold")?,
+        },
+    };
+    let preview = store.preview(&request)?;
+    assert!(matches!(
+        preview.forward.marks[&mark].after.as_ref().unwrap().state,
+        MarkState::Unresolved { .. }
+    ));
+    assert_eq!(store.snapshot()?, marked);
+    assert_eq!(revision_count(&path)?, before_revisions);
+    store.commit(&request)?;
+    let removed = store.snapshot()?;
+    assert_eq!(preview.forward.apply(&marked)?, removed);
+    assert!(matches!(
+        removed.marks()[&mark].state,
+        MarkState::Unresolved { .. }
+    ));
+    drop(store);
+    let mut store = ProjectStore::open(&path, AccessMode::ReadWrite)?;
+    assert_eq!(store.snapshot()?, removed);
+    store.undo(
+        store.snapshot()?.revision_id(),
+        RevisionId::new("undo-delete")?,
+    )?;
+    assert_eq!(store.snapshot()?.marks(), marked.marks());
+    assert_eq!(store.snapshot()?.nodes(), marked.nodes());
+    drop(store);
+    let mut store = ProjectStore::open(&path, AccessMode::ReadWrite)?;
+    store.redo(
+        store.snapshot()?.revision_id(),
+        RevisionId::new("redo-delete")?,
+    )?;
+    assert_eq!(store.snapshot()?.marks(), removed.marks());
+    // A new node at the same identity/time does not reattach the lost mark.
+    store.commit(&insert(&store.snapshot()?, "new-content", "hold")?)?;
+    assert_eq!(store.snapshot()?.marks(), removed.marks());
+    let current = store.snapshot()?;
+    commit(
+        &mut store,
+        Command::SetMark {
+            id: mark.clone(),
+            owner: NodeId::new("hold")?,
+            label: "New deliberate target".into(),
+            boundary: BoundaryAnchor {
+                coordinate: Anchor::Local {
+                    node: NodeId::new("hold")?,
+                    position: ExactRatio::integer(4),
+                },
+                bias: InsertionBias::Left,
+            },
+            loss_policy: AnchorLossPolicy::DeleteOwned,
+        },
+        "reattach",
+    )?;
+    assert!(matches!(
+        store.snapshot()?.marks()[&mark].state,
+        MarkState::Bound
+    ));
+    // Stale destructive requests cannot change either marks or structure.
+    let before = store.snapshot()?;
+    let stale = CommandRequest {
+        project_id: current.project_id().clone(),
+        expected_revision: current.revision_id().clone(),
+        new_revision: RevisionId::new("stale")?,
+        command: Command::DeleteMark { id: mark.clone() },
+    };
+    assert_eq!(store.commit(&stale).unwrap_err().code(), "RevisionConflict");
+    assert_eq!(store.snapshot()?, before);
+    commit(
+        &mut store,
+        Command::Delete {
+            node: NodeId::new("hold")?,
+        },
+        "delete-owned",
+    )?;
+    assert!(!store.snapshot()?.marks().contains_key(&mark));
+    store.undo(
+        store.snapshot()?.revision_id(),
+        RevisionId::new("restore-owned")?,
+    )?;
+    assert_eq!(store.snapshot()?.marks(), before.marks());
+    store.validate()?;
     Ok(())
 }

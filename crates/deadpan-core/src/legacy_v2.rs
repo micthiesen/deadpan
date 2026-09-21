@@ -1,110 +1,12 @@
-//! Strict schema-1 migration adapter. Normal document ingress never accepts old
-//! schemas. Hosts must replay the complete history, not upgrade each snapshot
-//! independently: the allocation revision is part of stable occurrence identity.
-
-use std::collections::BTreeMap;
-
-use serde::{Deserialize, Serialize, de::DeserializeOwned};
+//! Frozen schema-2 document/history wire adapter. Only full chronological replay
+//! may use this module. Normal document ingress accepts the current schema only.
+//! The primitive beat/asset wire types are unchanged by schema 3; the command,
+//! document and patch vocabulary here deliberately excludes marks and policies.
 
 use crate::document::unique_map;
 use crate::*;
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
-enum Kind {
-    Source {
-        source: SourceNode,
-    },
-    Sequence {
-        children: Vec<NodeId>,
-    },
-    Hold {
-        recipe: HoldRecipe,
-    },
-    Repeat {
-        child: NodeId,
-        plays: u32,
-        gap: Option<HoldRecipe>,
-    },
-    Retime {
-        child: NodeId,
-        duration: FrameDuration,
-        mapping: FrameRange,
-        pitch: PitchPolicy,
-    },
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-struct Beat {
-    label: String,
-    kind: Kind,
-}
-
-impl Beat {
-    fn upgrade(self, allocation: &RevisionId) -> Result<BeatNode, DocumentError> {
-        Ok(BeatNode {
-            label: self.label,
-            kind: match self.kind {
-                Kind::Source { source } => NodeKind::Source { source },
-                Kind::Sequence { children } => NodeKind::Sequence { children },
-                Kind::Hold { recipe } => NodeKind::Hold { recipe },
-                Kind::Repeat { child, plays, gap } => NodeKind::Repeat {
-                    child,
-                    iterations: IterationOrder::new(allocation.clone(), plays)?,
-                    gap,
-                },
-                Kind::Retime {
-                    child,
-                    duration,
-                    mapping,
-                    pitch,
-                } => NodeKind::Retime {
-                    child,
-                    duration,
-                    mapping,
-                    pitch,
-                },
-            },
-        })
-    }
-    fn project(node: &BeatNode) -> Self {
-        Self {
-            label: node.label.clone(),
-            kind: match &node.kind {
-                NodeKind::Source { source } => Kind::Source {
-                    source: source.clone(),
-                },
-                NodeKind::Sequence { children } => Kind::Sequence {
-                    children: children.clone(),
-                },
-                NodeKind::Hold { recipe } => Kind::Hold {
-                    recipe: recipe.clone(),
-                },
-                NodeKind::Repeat {
-                    child,
-                    iterations,
-                    gap,
-                } => Kind::Repeat {
-                    child: child.clone(),
-                    plays: iterations.len(),
-                    gap: gap.clone(),
-                },
-                NodeKind::Retime {
-                    child,
-                    duration,
-                    mapping,
-                    pitch,
-                } => Kind::Retime {
-                    child: child.clone(),
-                    duration: *duration,
-                    mapping: *mapping,
-                    pitch: *pitch,
-                },
-            },
-        }
-    }
-}
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
+use std::collections::BTreeMap;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -115,59 +17,46 @@ pub struct Document {
     presentation_basis: PresentationBasis,
     root: NodeId,
     #[serde(deserialize_with = "unique_map")]
-    nodes: BTreeMap<NodeId, Beat>,
+    nodes: BTreeMap<NodeId, BeatNode>,
     #[serde(deserialize_with = "unique_map")]
     assets: BTreeMap<AssetId, AssetRecord>,
 }
-
 impl Document {
     pub fn from_json(json: &str) -> Result<Self, DocumentError> {
-        let value: Self = parse(json)?;
-        if value.schema_version != 1 {
-            return Err(invalid("migration requires document schema 1"));
+        let old: Self = parse(json)?;
+        if old.schema_version != 2 {
+            return Err(invalid("migration requires document schema 2"));
         }
-        // Validate the complete tree and timing contract before comparison.
-        value.clone().upgrade()?;
-        Ok(value)
+        old.clone().upgrade()?;
+        Ok(old)
     }
     pub fn revision_id(&self) -> &RevisionId {
         &self.revision_id
     }
-    /// Use only for the initial revision. Subsequent states come from replay.
     pub fn upgrade(self) -> Result<ProjectDocument, DocumentError> {
-        let nodes = self
-            .nodes
-            .into_iter()
-            .map(|(id, node)| Ok((id, node.upgrade(&self.revision_id)?)))
-            .collect::<Result<_, DocumentError>>()?;
         let document = ProjectDocument {
             schema_version: DOCUMENT_SCHEMA_VERSION,
             project_id: self.project_id,
             revision_id: self.revision_id,
             presentation_basis: self.presentation_basis,
             root: self.root,
-            nodes,
+            nodes: self.nodes,
             assets: self.assets,
             marks: BTreeMap::new(),
         };
         document.validate()?;
         Ok(document)
     }
-    /// Compare every schema-1 field. Only new iteration metadata is projected out.
     pub fn matches(&self, document: &ProjectDocument) -> bool {
         document.marks.is_empty()
             && self
                 == &Self {
-                    schema_version: 1,
+                    schema_version: 2,
                     project_id: document.project_id.clone(),
                     revision_id: document.revision_id.clone(),
                     presentation_basis: document.presentation_basis.clone(),
                     root: document.root.clone(),
-                    nodes: document
-                        .nodes
-                        .iter()
-                        .map(|(id, node)| (id.clone(), Beat::project(node)))
-                        .collect(),
+                    nodes: document.nodes.clone(),
                     assets: document.assets.clone(),
                 }
     }
@@ -178,11 +67,9 @@ impl Document {
 struct OldSubtree {
     root: NodeId,
     #[serde(deserialize_with = "unique_map")]
-    nodes: BTreeMap<NodeId, Beat>,
+    nodes: BTreeMap<NodeId, BeatNode>,
 }
 
-// Freeze the old command vocabulary. Unknown/new commands cannot enter a v1
-// history merely because today's reducer happens to understand them.
 #[derive(Deserialize)]
 #[serde(tag = "command", rename_all = "snake_case", deny_unknown_fields)]
 enum OldCommand {
@@ -220,6 +107,17 @@ enum OldCommand {
         plays: u32,
         gap: Option<HoldRecipe>,
     },
+    InsertPlays {
+        node: NodeId,
+        index: u32,
+        count: u32,
+    },
+    MovePlays {
+        node: NodeId,
+        start: u32,
+        end: u32,
+        destination: u32,
+    },
     SetHoldDuration {
         node: NodeId,
         duration: FrameDuration,
@@ -237,7 +135,6 @@ enum OldCommand {
         asset: AssetRecord,
     },
 }
-
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct OldRequest {
@@ -246,7 +143,6 @@ struct OldRequest {
     new_revision: RevisionId,
     command: OldCommand,
 }
-
 pub fn upgrade_request(json: &str) -> Result<CommandRequest, DocumentError> {
     let old: OldRequest = parse(json)?;
     let command = match old.command {
@@ -259,11 +155,7 @@ pub fn upgrade_request(json: &str) -> Result<CommandRequest, DocumentError> {
             index,
             subtree: Subtree {
                 root: subtree.root,
-                nodes: subtree
-                    .nodes
-                    .into_iter()
-                    .map(|(id, node)| Ok((id, node.upgrade(&old.new_revision)?)))
-                    .collect::<Result<_, DocumentError>>()?,
+                nodes: subtree.nodes,
             },
         },
         OldCommand::Delete { node } => Command::Delete { node },
@@ -303,6 +195,20 @@ pub fn upgrade_request(json: &str) -> Result<CommandRequest, DocumentError> {
             anchor_policy: WrapAnchorPolicy::First,
         },
         OldCommand::SetRepeat { node, plays, gap } => Command::SetRepeat { node, plays, gap },
+        OldCommand::InsertPlays { node, index, count } => {
+            Command::InsertPlays { node, index, count }
+        }
+        OldCommand::MovePlays {
+            node,
+            start,
+            end,
+            destination,
+        } => Command::MovePlays {
+            node,
+            start,
+            end,
+            destination,
+        },
         OldCommand::SetHoldDuration { node, duration } => {
             Command::SetHoldDuration { node, duration }
         }
@@ -325,35 +231,21 @@ struct Patch {
     from_revision: RevisionId,
     to_revision: RevisionId,
     #[serde(deserialize_with = "unique_map")]
-    nodes: BTreeMap<NodeId, ValueChange<Beat>>,
+    nodes: BTreeMap<NodeId, ValueChange<BeatNode>>,
     #[serde(deserialize_with = "unique_map")]
     assets: BTreeMap<AssetId, ValueChange<AssetRecord>>,
 }
-
 impl Patch {
     fn project(patch: &DocumentPatch) -> Self {
         Self {
             project_id: patch.project_id.clone(),
             from_revision: patch.from_revision.clone(),
             to_revision: patch.to_revision.clone(),
-            nodes: patch
-                .nodes
-                .iter()
-                .map(|(id, change)| {
-                    (
-                        id.clone(),
-                        ValueChange {
-                            before: change.before.as_ref().map(Beat::project),
-                            after: change.after.as_ref().map(Beat::project),
-                        },
-                    )
-                })
-                .collect(),
+            nodes: patch.nodes.clone(),
             assets: patch.assets.clone(),
         }
     }
 }
-
 #[derive(Debug, PartialEq, Eq, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Edit {
@@ -363,7 +255,6 @@ struct Edit {
     duration_delta: i64,
     description: String,
 }
-
 pub fn matches_edit(json: &str, edit: &EditTransaction) -> Result<bool, DocumentError> {
     let old: Edit = parse(json)?;
     Ok(edit.forward.marks.is_empty()
@@ -377,7 +268,6 @@ pub fn matches_edit(json: &str, edit: &EditTransaction) -> Result<bool, Document
                 description: edit.description.clone(),
             })
 }
-
 fn parse<T: DeserializeOwned>(json: &str) -> Result<T, DocumentError> {
     if json.len() > MAX_DOCUMENT_JSON_BYTES {
         return Err(invalid("legacy JSON exceeds 64 MiB"));

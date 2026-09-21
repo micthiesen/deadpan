@@ -176,6 +176,7 @@ fn occurrences_follow_stable_plays_and_groups_but_never_choose_a_play() {
     let repeated = edit(
         &initial,
         Command::WrapRepeat {
+            anchor_policy: WrapAnchorPolicy::First,
             node: node("leaf"),
             id: node("repeat"),
             plays: 4,
@@ -279,6 +280,7 @@ fn nested_occurrences_require_exact_complete_order_and_scope() {
     let inner = edit(
         &document,
         Command::WrapRepeat {
+            anchor_policy: WrapAnchorPolicy::First,
             node: node("leaf"),
             id: node("inner"),
             plays: 2,
@@ -289,6 +291,7 @@ fn nested_occurrences_require_exact_complete_order_and_scope() {
     let outer = edit(
         &inner,
         Command::WrapRepeat {
+            anchor_policy: WrapAnchorPolicy::First,
             node: node("inner"),
             id: node("outer"),
             plays: 3,
@@ -346,6 +349,7 @@ fn billions_of_plays_and_unused_overflowing_gap_do_not_expand() {
     let repeated = edit(
         &document,
         Command::WrapRepeat {
+            anchor_policy: WrapAnchorPolicy::First,
             node: node("leaf"),
             id: node("repeat"),
             plays: u32::MAX,
@@ -368,6 +372,7 @@ fn billions_of_plays_and_unused_overflowing_gap_do_not_expand() {
     let repeated = edit(
         &document,
         Command::WrapRepeat {
+            anchor_policy: WrapAnchorPolicy::First,
             node: node("leaf"),
             id: node("repeat"),
             plays: 1,

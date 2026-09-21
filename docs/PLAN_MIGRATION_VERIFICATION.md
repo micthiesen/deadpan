@@ -1,5 +1,9 @@
 # Exact picture plans and schema migration
 
+Historical report: [persistent mark verification](MARK_VERIFICATION.md) records
+the subsequent schema-3 implementation and direct schema-1/2 migration. The
+schema-2 measurements below describe this earlier slice.
+
 This slice adds stable repeat occurrences, original presentation-frame lookup,
 an immutable indexed picture plan, and complete schema-1-to-2 history migration.
 It is groundwork for the editor, not a completed renderer or release gate.

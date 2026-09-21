@@ -5,9 +5,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::document::unique_map;
 use crate::{
-    AssetId, AssetRecord, BeatNode, DocumentError, DocumentErrorCode, FrameDuration, HoldRecipe,
-    HoldVideo, IterationOrder, MAX_DOCUMENT_NODES, NodeId, NodeKind, ProjectDocument, ProjectId,
-    RevisionId,
+    AnchorLossPolicy, AssetId, AssetRecord, BeatNode, BoundaryAnchor, DocumentError,
+    DocumentErrorCode, FrameDuration, HoldRecipe, HoldVideo, IterationOrder, MAX_DOCUMENT_MARKS,
+    MAX_DOCUMENT_NODES, Mark, MarkId, MarkState, NodeId, NodeKind, ProjectDocument, ProjectId,
+    RevisionId, WrapAnchorPolicy,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -53,6 +54,8 @@ pub enum Command {
         id: NodeId,
         plays: u32,
         gap: Option<HoldRecipe>,
+        #[serde(default)]
+        anchor_policy: WrapAnchorPolicy,
     },
     SetRepeat {
         node: NodeId,
@@ -87,6 +90,16 @@ pub enum Command {
         id: AssetId,
         asset: AssetRecord,
     },
+    SetMark {
+        id: MarkId,
+        owner: NodeId,
+        label: String,
+        boundary: BoundaryAnchor,
+        loss_policy: AnchorLossPolicy,
+    },
+    DeleteMark {
+        id: MarkId,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -118,6 +131,8 @@ pub struct DocumentPatch {
     pub nodes: BTreeMap<NodeId, ValueChange<BeatNode>>,
     #[serde(deserialize_with = "unique_map")]
     pub assets: BTreeMap<AssetId, ValueChange<AssetRecord>>,
+    #[serde(deserialize_with = "unique_map")]
+    pub marks: BTreeMap<MarkId, ValueChange<Mark>>,
 }
 
 impl DocumentPatch {
@@ -138,7 +153,10 @@ impl DocumentPatch {
             &self.from_revision,
             &self.to_revision,
         )?;
-        if self.nodes.len() > MAX_DOCUMENT_NODES || self.assets.len() > MAX_DOCUMENT_NODES {
+        if self.nodes.len() > MAX_DOCUMENT_NODES
+            || self.assets.len() > MAX_DOCUMENT_NODES
+            || self.marks.len() > MAX_DOCUMENT_MARKS
+        {
             return Err(EditError::new(
                 EditErrorCode::InvalidCommand,
                 "patch exceeds document limits",
@@ -157,6 +175,7 @@ impl DocumentPatch {
             }
         }
         apply_changes(&mut result.assets, &self.assets)?;
+        apply_changes(&mut result.marks, &self.marks)?;
         result.revision_id = self.to_revision.clone();
         result.validate()?;
         Ok(result)
@@ -169,6 +188,7 @@ impl DocumentPatch {
             to_revision: self.from_revision.clone(),
             nodes: inverse_changes(&self.nodes),
             assets: inverse_changes(&self.assets),
+            marks: inverse_changes(&self.marks),
         }
     }
 }
@@ -198,6 +218,12 @@ pub fn apply(
     let before_duration = document.duration()?.frames();
     let mut result = document.clone();
     reduce(&mut result, &request.command, &request.new_revision)?;
+    if !matches!(
+        request.command,
+        Command::SetMark { .. } | Command::DeleteMark { .. }
+    ) {
+        result.marks = crate::marks::transform_marks(document, &result, &request.command)?;
+    }
     result.revision_id = request.new_revision.clone();
     let after_duration = result.duration()?.frames();
     let forward = DocumentPatch {
@@ -206,6 +232,7 @@ pub fn apply(
         to_revision: request.new_revision.clone(),
         nodes: diff(&document.nodes, &result.nodes),
         assets: diff(&document.assets, &result.assets),
+        marks: diff(&document.marks, &result.marks),
     };
     Ok(EditTransaction {
         changed_ids: forward.nodes.keys().cloned().collect(),
@@ -352,6 +379,7 @@ fn reduce(
             id,
             plays,
             gap,
+            ..
         } => {
             unused(document, id)?;
             let parent = document.parent_of(node).ok_or_else(|| {
@@ -418,6 +446,32 @@ fn reduce(
                 ));
             }
             document.assets.insert(id.clone(), asset.clone());
+        }
+        Command::SetMark {
+            id,
+            owner,
+            label,
+            boundary,
+            loss_policy,
+        } => {
+            document.marks.insert(
+                id.clone(),
+                Mark {
+                    owner: owner.clone(),
+                    label: label.clone(),
+                    boundary: boundary.clone(),
+                    loss_policy: *loss_policy,
+                    state: MarkState::Bound,
+                },
+            );
+        }
+        Command::DeleteMark { id } => {
+            if document.marks.remove(id).is_none() {
+                return Err(EditError::new(
+                    EditErrorCode::SelectionUnavailable,
+                    format!("mark {id} does not exist"),
+                ));
+            }
         }
     }
     Ok(())
@@ -640,6 +694,8 @@ fn description(command: &Command) -> &'static str {
         Command::SetHoldProvider { .. } => "Change hold provider",
         Command::Rename { .. } => "Rename beat",
         Command::AddAsset { .. } => "Register media asset",
+        Command::SetMark { .. } => "Set mark",
+        Command::DeleteMark { .. } => "Delete mark",
     }
 }
 
@@ -715,6 +771,7 @@ impl From<DocumentError> for EditError {
             | DocumentErrorCode::InvalidRoot
             | DocumentErrorCode::InvalidTree
             | DocumentErrorCode::MissingAsset => EditErrorCode::InvalidCommand,
+            DocumentErrorCode::InvalidAnchor => EditErrorCode::InvalidCommand,
         };
         Self::new(code, value.to_string())
     }
