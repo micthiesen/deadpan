@@ -78,7 +78,7 @@ fn headless_migration_and_plan_inspection_are_explicit_and_read_only() -> Result
     );
     let outcome = success(&["project", "migrate", path])?;
     assert_eq!(outcome["migration"]["from_schema"], 1);
-    assert_eq!(outcome["migration"]["to_schema"], 4);
+    assert_eq!(outcome["migration"]["to_schema"], 5);
     assert!(Path::new(outcome["migration"]["backup"].as_str().unwrap()).is_file());
     let writer = ProjectStore::open(&package, AccessMode::ReadWrite)?;
     let before = writer.snapshot()?;
@@ -156,6 +156,77 @@ fn headless_edit_dry_run_conflict_and_durable_history() -> Result {
     assert_eq!(dump_a.stdout, dump_b.stdout, "dumps are deterministic");
     let checkpoint = success(&["project", "checkpoint", path])?;
     assert!(Path::new(checkpoint["database_checkpoint"].as_str().unwrap()).is_file());
+    Ok(())
+}
+
+#[test]
+fn current_generation_requires_host_reconciliation_but_allows_cli_preview() -> Result {
+    use deadpan_store::generation::GenerationRequestInput;
+
+    let scratch = tempfile::tempdir()?;
+    let package = create(scratch.path())?;
+    let path = package.to_str().unwrap();
+    let document = ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?;
+    let input = scratch.path().join("command.json");
+    fs::write(&input, serde_json::to_vec(&request(&document)?)?)?;
+    success(&["command", path, "--json", input.to_str().unwrap()])?;
+
+    let mut store = ProjectStore::open(&package, AccessMode::ReadWrite)?;
+    let before = store.snapshot()?;
+    let generation = store.allocate_generation_request(GenerationRequestInput {
+        request_id: serde_json::from_value(json!("pending-generation"))?,
+        expected_revision: before.revision_id().clone(),
+        hold_id: NodeId::new("hold")?,
+        context_sha256: serde_json::from_value(json!("a".repeat(64)))?,
+        constraints: serde_json::from_value(json!({
+            "video": {"frames": 45, "frame_rate": before.presentation_basis().frame_rate,
+                      "width": 768, "height": 320},
+            "conditioning": "bridge", "motion": "still"
+        }))?,
+        provider: serde_json::from_value(json!({
+            "pack_id": "fixture", "pack_version": "1", "runtime_id": "fixture",
+            "runtime_version": "1", "seed": 7
+        }))?,
+    })?;
+    drop(store);
+    fs::write(
+        &input,
+        serde_json::to_vec(&json!({
+            "protocol": 1, "project_id": before.project_id(),
+            "expected_revision": before.revision_id(), "new_revision": "renamed",
+            "command": {"command": "rename", "node": "hold", "label": "Renamed"}
+        }))?,
+    )?;
+    assert_eq!(
+        success(&[
+            "command",
+            path,
+            "--json",
+            input.to_str().unwrap(),
+            "--dry-run"
+        ])?["committed"],
+        false
+    );
+    for arguments in [
+        vec!["command", path, "--json", input.to_str().unwrap()],
+        vec![
+            "project",
+            "undo",
+            path,
+            "--expected",
+            before.revision_id().as_str(),
+        ],
+    ] {
+        let output = cli(&arguments)?;
+        assert!(!output.status.success());
+        assert_eq!(
+            serde_json::from_slice::<Value>(&output.stderr)?["error"]["code"],
+            "GenerationRelevanceRequired"
+        );
+    }
+    let reader = ProjectStore::open(&package, AccessMode::ReadOnly)?;
+    assert_eq!(reader.snapshot()?, before);
+    assert_eq!(reader.current_generation_requests()?, vec![generation]);
     Ok(())
 }
 

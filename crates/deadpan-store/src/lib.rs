@@ -5,6 +5,7 @@
 //! optimistic request never becomes valid again after undo.
 
 mod error;
+pub mod generation;
 mod history;
 mod migration;
 mod schema;
@@ -20,6 +21,9 @@ use serde::Serialize;
 
 pub use error::StoreError;
 pub use migration::MigrationOutcome;
+
+/// SQLite package format, versioned separately from authored document JSON.
+pub const DATABASE_SCHEMA_VERSION: u32 = schema::VERSION;
 
 pub fn sqlite_version() -> &'static str {
     rusqlite::version()
@@ -162,6 +166,7 @@ impl ProjectStore {
     pub fn validate(&self) -> Result<(), StoreError> {
         let transaction = self.connection.unchecked_transaction()?;
         validation::check_stored_sizes(&transaction, schema::MAX_DOCUMENT_BYTES)?;
+        generation::check_stored_sizes(&transaction)?;
         let integrity: String =
             transaction.query_row("PRAGMA quick_check", [], |row| row.get(0))?;
         if integrity != "ok" {
@@ -174,7 +179,8 @@ impl ProjectStore {
         if foreign_keys != 0 {
             return Err(StoreError::Integrity("foreign-key violation".into()));
         }
-        validation::validate_history(&transaction)
+        validation::validate_history(&transaction)?;
+        generation::validate_store(&transaction)
     }
 
     pub fn preview(&self, request: &CommandRequest) -> Result<EditTransaction, StoreError> {
@@ -183,11 +189,36 @@ impl ProjectStore {
     }
 
     pub fn commit(&mut self, request: &CommandRequest) -> Result<CommitOutcome, StoreError> {
+        self.commit_inner(request, None)
+    }
+
+    pub fn commit_reconciled(
+        &mut self,
+        request: &CommandRequest,
+        relevance: &generation::RelevancePlan,
+    ) -> Result<CommitOutcome, StoreError> {
+        self.commit_inner(request, Some(relevance))
+    }
+
+    fn commit_inner(
+        &mut self,
+        request: &CommandRequest,
+        relevance: Option<&generation::RelevancePlan>,
+    ) -> Result<CommitOutcome, StoreError> {
         self.require_writer()?;
         let transaction = self
             .connection
             .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
         let plan = prepare_command(&transaction, request)?;
+        match relevance {
+            Some(relevance) => generation::apply_relevance_plan(
+                &transaction,
+                &plan.current,
+                &plan.next,
+                relevance,
+            )?,
+            None => generation::ensure_no_current(&transaction)?,
+        }
         insert_revision(&transaction, &plan.current, &plan.next, "edit")?;
         let cursor: Option<i64> =
             transaction.query_row("SELECT cursor FROM state WHERE singleton=1", [], |row| {

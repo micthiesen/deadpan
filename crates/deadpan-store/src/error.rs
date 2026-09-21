@@ -36,6 +36,16 @@ pub enum StoreError {
     NothingToUndo,
     #[error("There is no edit to redo")]
     NothingToRedo,
+    #[error("Generation request ID {0} has already been used")]
+    GenerationRequestReused(String),
+    #[error("Generation target is invalid: {0}")]
+    GenerationTarget(String),
+    #[error("Current generation requests require an explicit complete relevance plan")]
+    GenerationRelevanceRequired,
+    #[error("Generation relevance plan is invalid: {0}")]
+    GenerationPlan(String),
+    #[error("Generation request versions are exhausted for Hold {0}")]
+    GenerationVersionExhausted(String),
     #[error("Project history is inconsistent: {0}")]
     History(String),
     #[error("Project integrity check failed: {0}")]
@@ -70,6 +80,11 @@ impl StoreError {
             Self::RevisionConflict { .. } => "RevisionConflict",
             Self::NothingToUndo => "NothingToUndo",
             Self::NothingToRedo => "NothingToRedo",
+            Self::GenerationRequestReused(_) => "GenerationRequestReused",
+            Self::GenerationTarget(_) => "GenerationTargetInvalid",
+            Self::GenerationRelevanceRequired => "GenerationRelevanceRequired",
+            Self::GenerationPlan(_) => "GenerationPlanInvalid",
+            Self::GenerationVersionExhausted(_) => "GenerationVersionExhausted",
             Self::Edit(error) => error.code.as_str(),
             Self::Database(rusqlite::Error::SqliteFailure(error, _)) => match error.code {
                 rusqlite::ErrorCode::DiskFull => "DiskFull",

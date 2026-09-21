@@ -3,7 +3,7 @@ use rusqlite::{Connection, OptionalExtension, params};
 
 use crate::{
     CommitOutcome, ProjectStore, StoreError, check_document_size, ensure_unused_revision,
-    insert_revision, read_snapshot, validation,
+    generation, insert_revision, read_snapshot, validation,
 };
 
 pub(crate) struct NavigationPlan {
@@ -20,7 +20,7 @@ impl ProjectStore {
         expected_revision: &RevisionId,
         new_revision: RevisionId,
     ) -> Result<CommitOutcome, StoreError> {
-        self.navigate_history(expected_revision, new_revision, false)
+        self.navigate_history(expected_revision, new_revision, false, None)
     }
 
     pub fn redo(
@@ -28,7 +28,25 @@ impl ProjectStore {
         expected_revision: &RevisionId,
         new_revision: RevisionId,
     ) -> Result<CommitOutcome, StoreError> {
-        self.navigate_history(expected_revision, new_revision, true)
+        self.navigate_history(expected_revision, new_revision, true, None)
+    }
+
+    pub fn undo_reconciled(
+        &mut self,
+        expected_revision: &RevisionId,
+        new_revision: RevisionId,
+        relevance: &generation::RelevancePlan,
+    ) -> Result<CommitOutcome, StoreError> {
+        self.navigate_history(expected_revision, new_revision, false, Some(relevance))
+    }
+
+    pub fn redo_reconciled(
+        &mut self,
+        expected_revision: &RevisionId,
+        new_revision: RevisionId,
+        relevance: &generation::RelevancePlan,
+    ) -> Result<CommitOutcome, StoreError> {
+        self.navigate_history(expected_revision, new_revision, true, Some(relevance))
     }
 
     pub fn preview_undo(
@@ -66,12 +84,22 @@ impl ProjectStore {
         expected: &RevisionId,
         next_revision: RevisionId,
         redo: bool,
+        relevance: Option<&generation::RelevancePlan>,
     ) -> Result<CommitOutcome, StoreError> {
         self.require_writer()?;
         let transaction = self
             .connection
             .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
         let plan = prepare_navigation(&transaction, expected, next_revision, redo)?;
+        match relevance {
+            Some(relevance) => generation::apply_relevance_plan(
+                &transaction,
+                &plan.current,
+                &plan.next,
+                relevance,
+            )?,
+            None => generation::ensure_no_current(&transaction)?,
+        }
         insert_revision(
             &transaction,
             &plan.current,

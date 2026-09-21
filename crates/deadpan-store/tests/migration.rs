@@ -25,6 +25,7 @@ fn fixture_version(scratch: &Path, version: u32) -> Result<PathBuf> {
         1 => include_str!("fixtures/v1-history.sql"),
         2 => include_str!("fixtures/v2-history.sql"),
         3 => include_str!("fixtures/v3-history.sql"),
+        4 => include_str!("fixtures/v4-history.sql"),
         _ => panic!("unsupported fixture"),
     })?;
     Ok(package)
@@ -51,6 +52,12 @@ fn metadata(connection: &Connection) -> Result<String> {
         );
     }
     Ok(parts.join("\n"))
+}
+fn history_json(connection: &Connection) -> Result<Vec<(String, String)>> {
+    Ok(connection
+        .prepare("SELECT request,edit FROM history ORDER BY id")?
+        .query_map([], |row| Ok((row.get(0)?, row.get(1)?)))?
+        .collect::<std::result::Result<_, _>>()?)
 }
 fn contents(connection: &Connection) -> Result<String> {
     let mut values = vec![
@@ -89,7 +96,7 @@ fn order(document: &ProjectDocument) -> &IterationOrder {
 #[test]
 fn corrupt_old_tables_and_oversized_rows_retain_backup_before_validation() -> Result {
     let oversized_bytes = i64::try_from(deadpan_core::MAX_DOCUMENT_JSON_BYTES)? + 1;
-    for version in [1, 2, 3] {
+    for version in [1, 2, 3, 4] {
         for missing_table in [true, false] {
             let scratch = tempfile::tempdir()?;
             let path = fixture_version(scratch.path(), version)?;
@@ -162,7 +169,7 @@ fn old_binary_history_migrates_with_stable_ids_and_pending_redo() -> Result {
     let old_docs = docs(&database)?;
     drop(database);
     let migration = ProjectStore::migrate(&path)?;
-    assert_eq!((migration.from_schema, migration.to_schema), (1, 4));
+    assert_eq!((migration.from_schema, migration.to_schema), (1, 5));
     let backup = Connection::open(migration.backup.unwrap())?;
     assert_eq!(contents(&backup)?, before);
     let database = Connection::open(path.join("project.sqlite"))?;
@@ -241,8 +248,96 @@ fn migration_promotes_with_a_live_wal_reader_without_replacing_its_snapshot() ->
     reader.execute_batch("COMMIT")?;
     assert_eq!(
         reader.pragma_query_value(None, "user_version", |row| row.get::<_, u32>(0))?,
-        4
+        5
     );
+    Ok(())
+}
+
+#[test]
+fn schema_four_adds_operational_tables_without_rewriting_authored_history() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let path = fixture_version(scratch.path(), 4)?;
+    for mode in [AccessMode::ReadOnly, AccessMode::ReadWrite] {
+        assert!(matches!(
+            ProjectStore::open(&path, mode),
+            Err(StoreError::MigrationRequired(4))
+        ));
+    }
+    let database = Connection::open(path.join("project.sqlite"))?;
+    let before = contents(&database)?;
+    let original_docs = docs(&database)?;
+    let original_history = history_json(&database)?;
+    let original_metadata = metadata(&database)?;
+    assert_eq!(original_docs.len(), 11);
+    assert_eq!(original_history.len(), 6);
+    let outcome = ProjectStore::migrate(&path)?;
+    assert_eq!((outcome.from_schema, outcome.to_schema), (4, 5));
+    assert_eq!(
+        contents(&Connection::open(outcome.backup.unwrap())?)?,
+        before
+    );
+    assert_eq!(docs(&database)?, original_docs);
+    assert_eq!(history_json(&database)?, original_history);
+    assert_eq!(metadata(&database)?, original_metadata);
+    assert_eq!(
+        database.query_row(
+            "SELECT (SELECT COUNT(*) FROM hold_request_clocks) + (SELECT COUNT(*) FROM generation_requests)",
+            [],
+            |row| row.get::<_, i64>(0),
+        )?,
+        0
+    );
+    let shrunk = snapshot(&database, "v4-shrink")?;
+    drop(database);
+    let mut store = ProjectStore::open(&path, AccessMode::ReadWrite)?;
+    let restored = store.snapshot()?;
+    assert_eq!(restored.overrides().len(), 1);
+    assert_eq!(restored.marks().len(), 1);
+    store.redo(restored.revision_id(), RevisionId::new("v5-redo")?)?;
+    let redone = store.snapshot()?;
+    assert_eq!(redone.nodes(), shrunk.nodes());
+    assert_eq!(redone.overrides(), shrunk.overrides());
+    assert_eq!(redone.marks(), shrunk.marks());
+    store.undo(redone.revision_id(), RevisionId::new("v5-undo")?)?;
+    let undone = store.snapshot()?;
+    assert_eq!(undone.nodes(), restored.nodes());
+    assert_eq!(undone.overrides(), restored.overrides());
+    assert_eq!(undone.marks(), restored.marks());
+    store.validate()?;
+    drop(store);
+    assert!(ProjectStore::migrate(&path)?.backup.is_none());
+    Ok(())
+}
+
+#[test]
+fn schema_four_rejects_corruption_and_operational_table_collisions_before_promotion() -> Result {
+    for corruption in [
+        "UPDATE history SET edit=json_set(edit,'$.inverse.overrides',json('{}')) WHERE revision_id='v4-clear'",
+        "UPDATE revisions SET document=json_set(document,'$.schema_version',5) WHERE kind='initial'",
+        "UPDATE revisions SET document=json_set(document,'$.generation_requests',json('{}')) WHERE kind='initial'",
+        "CREATE TABLE generation_requests(preserved TEXT); INSERT INTO generation_requests VALUES ('existing')",
+    ] {
+        let scratch = tempfile::tempdir()?;
+        let path = fixture_version(scratch.path(), 4)?;
+        let database = Connection::open(path.join("project.sqlite"))?;
+        database.execute_batch(corruption)?;
+        let before = contents(&database)?;
+        let failure = ProjectStore::migrate(&path).unwrap_err();
+        assert_eq!(failure.code(), "MigrationFailed", "{corruption}");
+        let StoreError::MigrationFailed { backup, .. } = failure else {
+            panic!("migration must retain its backup")
+        };
+        assert_eq!(contents(&Connection::open(backup)?)?, before);
+        assert_eq!(contents(&database)?, before);
+        if corruption.starts_with("CREATE") {
+            assert_eq!(
+                database.query_row("SELECT preserved FROM generation_requests", [], |row| {
+                    row.get::<_, String>(0)
+                })?,
+                "existing"
+            );
+        }
+    }
     Ok(())
 }
 
@@ -273,7 +368,7 @@ fn corruption_is_rejected_without_promoting_any_migrated_rows() -> Result {
                 .unwrap()
                 .file_name()
                 .to_string_lossy()
-                .starts_with("before-schema-4-")
+                .starts_with("before-schema-5-")
         }));
     }
     Ok(())
@@ -321,7 +416,7 @@ fn schema_two_history_preserves_compact_identities_and_pending_redo() -> Result 
     let original_metadata = metadata(&database)?;
     let old_docs = docs(&database)?;
     let migration = ProjectStore::migrate(&path)?;
-    assert_eq!((migration.from_schema, migration.to_schema), (2, 4));
+    assert_eq!((migration.from_schema, migration.to_schema), (2, 5));
     assert_eq!(
         contents(&Connection::open(migration.backup.unwrap())?)?,
         original
@@ -546,14 +641,14 @@ fn schema_three_history_preserves_every_mark_and_pending_redo() -> Result {
     assert_eq!(old_docs.len(), 23);
     assert_eq!(old_edits.len(), 17);
     let migration = ProjectStore::migrate(&path)?;
-    assert_eq!((migration.from_schema, migration.to_schema), (3, 4));
+    assert_eq!((migration.from_schema, migration.to_schema), (3, 5));
     let backup = migration.backup.unwrap();
     assert!(
         backup
             .file_name()
             .unwrap()
             .to_string_lossy()
-            .starts_with("before-schema-4-")
+            .starts_with("before-schema-5-")
     );
     assert_eq!(contents(&Connection::open(backup)?)?, original);
     assert_eq!(metadata(&database)?, original_metadata);

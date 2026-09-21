@@ -387,19 +387,22 @@ future-schema read-only inspection still needs a compatibility implementation.
 
 ## Schema migration
 
-Schema-1, schema-2, and schema-3 projects return `MigrationRequired` when opened. Upgrade explicitly:
+Database schemas 1 through 4 return `MigrationRequired` when opened. Upgrade explicitly:
 
 ```sh
 cargo run --locked -p deadpan-cli -- project migrate /tmp/example.deadpan
 ```
 
 Migration holds the project writer lock, keeps a consistent SQLite backup under
-`Snapshots/before-schema-4-*.sqlite`, and rewrites a separate candidate. It
+`Snapshots/before-schema-5-*.sqlite`, and upgrades a separate candidate. It
 replays all commands, undo/redo revisions, and abandoned branches with their
 original revision IDs. Every snapshot and forward/inverse transaction is checked
-against its strict original schema meaning. Migration goes directly to schema 4
-and introduces empty override maps. Schema-1/2 histories also gain empty mark
-maps; schema-3 mark histories retain their exact ownership, bias, and loss states. Fields or
+against its strict original schema meaning. Migration goes directly to database
+schema 5, with core documents remaining at schema 4. Schemas 1 through 3 gain
+empty override maps. Schema-1/2 histories also gain empty mark
+maps; schema-3 mark histories retain their exact ownership, bias, and loss states.
+Schema-4 authored snapshots, commands, and patches remain byte-for-byte unchanged.
+All migrated databases gain empty operational generation-request tables. Fields or
 commands that did not exist in the old schema are rejected. SQLite atomically promotes the validated
 candidate through its backup API; the main file is never renamed around a live
 WAL. Existing read transactions keep their old snapshot. Failure before promotion
@@ -411,6 +414,12 @@ actionable storage error codes and still identify the retained backup.
 
 This is a database migration, not portable media copying or a recovery UI. The
 immutable source specification and media references are unaffected.
+
+Generation request storage currently has a Rust host API, described in
+[generation request storage](GENERATION_REQUESTS.md). There is no CLI generation
+command yet. A plain CLI edit/undo/redo fails with `GenerationRelevanceRequired`
+when current requests require host context reconciliation; it cannot silently
+bypass that transaction boundary. Dry-run remains read-only.
 
 Machine-readable failures go to stderr with a schema version, stable error code,
 and explanation; the process exits nonzero. A failed storage write never reports

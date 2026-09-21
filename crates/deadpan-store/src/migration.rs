@@ -45,7 +45,7 @@ impl ProjectStore {
                 backup: None,
             });
         }
-        if !matches!(version, 1..=3) {
+        if !matches!(version, 1..=4) {
             return Err(StoreError::UnsupportedSchema(version));
         }
         let lock = acquire_lock(&package)?;
@@ -73,7 +73,7 @@ impl ProjectStore {
             return Err(StoreError::UnsafePath(directory));
         }
         let backup = tempfile::Builder::new()
-            .prefix("before-schema-4-")
+            .prefix("before-schema-5-")
             .suffix(".sqlite")
             .tempfile_in(&directory)?;
         original.backup(rusqlite::MAIN_DB, backup.path(), None)?;
@@ -128,9 +128,17 @@ fn migrate_candidate(
     if violations != 0 {
         return Err(StoreError::Integrity("foreign-key violation".into()));
     }
-    validation::migrate_history(&transaction, source_version)?;
+    if source_version == 4 {
+        // Schema 5 adds operational state only. Core schema-4 documents and
+        // their complete chronology must validate without being rewritten.
+        validation::validate_history(&transaction)?;
+    } else {
+        validation::migrate_history(&transaction, source_version)?;
+    }
+    crate::generation::create_tables(&transaction)?;
     transaction.pragma_update(None, "user_version", schema::VERSION)?;
     validation::validate_history(&transaction)?;
+    crate::generation::validate_store(&transaction)?;
     transaction.commit()?;
     candidate_file.as_file().sync_all()?;
     // One step copies all pages in one destination transaction. SQLITE_BUSY

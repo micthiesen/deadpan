@@ -794,6 +794,7 @@ name = "deadpan-store"
 version = "0.1.0"
 dependencies = [
  "deadpan-core",
+ "deadpan-jobs",
  "rusqlite",
  "serde",
  "serde_json",

@@ -7,13 +7,13 @@
 | Crate | Present responsibility | Boundary |
 | --- | --- | --- |
 | `deadpan-core` | Exact time, validated flat beat tree, immutable asset metadata, structural commands, JSON, and reversible patches. | Pure Rust domain logic, independent of the application and external systems. |
-| `deadpan-store` | SQLite packages, immutable revision snapshots, atomic edit/history writes, undo/redo, writer ownership, and backup API checkpoints. | SQLite is authoritative; exported JSON is inspection only. |
+| `deadpan-store` | SQLite packages, immutable revision snapshots, atomic edit/history writes, monotonic generation requests, undo/redo, writer ownership, and backup API checkpoints. | SQLite is authoritative; exported JSON is inspection only. Request relevance changes atomically with authored revisions. |
 | `deadpan-plan` | Exact picture mappings, sequence duration indexes, compact repeat-run indexes, source-index selection, and deterministic inspection. | Immutable authored revision; no decoder, GPU handle, audio processing, or database connection. |
 | `deadpan-jobs` | Typed length-framed worker protocol, pure attempt lifecycle, bounded subprocess supervision, contained hash-verified artifact snapshots, and exact bridge-generation planning. | Real MLX qualification uses this boundary in a developer harness. App inference, job persistence, and artifact promotion remain open. |
 | `deadpan-app` | Native development welcome shell with `egui`/`eframe` and `wgpu` on Metal. | Application entry point only; no authored document or media workflow yet. |
 | `deadpan-cli` | Versioned headless project and command operations, dry runs, history, and diagnostics. | Shared with the native host's `--headless` path; no media rendering yet. |
 
-The foundation has typed Source/Sequence/Hold/Repeat/Retime nodes, stable nested occurrence identities, persistent marks with atomic edit transforms, sparse play override subtrees, automatic isolation for node edits through complete occurrence paths, an indexed structural picture plan, and exact revision-aware boundary/named-mark range queries. Temporal attachments, effects, semantic editing through ranges, a media engine, audio pipeline, and an app-managed inference worker remain open. Persistence migrates schema-1, schema-2, and schema-3 histories directly to schema 4; recovery UI, managed-media import, and host socket routing remain open. A native window is not a qualified media viewport.
+The foundation has typed Source/Sequence/Hold/Repeat/Retime nodes, stable nested occurrence identities, persistent marks with atomic edit transforms, sparse play override subtrees, automatic isolation for node edits through complete occurrence paths, an indexed structural picture plan, and exact revision-aware boundary/named-mark range queries. Temporal attachments, effects, semantic editing through ranges, a media engine, audio pipeline, and an app-managed inference worker remain open. Persistence migrates database schemas 1 through 4 directly to schema 5, retaining core document schema 4; recovery UI, managed-media import, and host socket routing remain open. A native window is not a qualified media viewport.
 
 ## Full component map
 
@@ -22,7 +22,7 @@ Section 24 defines boundaries, not an obligation to create empty crates. Introdu
 | Component | Required responsibility | Status |
 | --- | --- | --- |
 | `deadpan-core` | Document/time types, nodes, anchors, occurrences, selectors, commands, reduction, validation, and serialization contracts. | Documents, timing, node/occurrence-targeted commands, inverse patches, persistent marks/edit transforms, sparse play overrides, and exact boundary queries implemented; temporal attachments and remaining domains open. |
-| `deadpan-store` | Authoritative SQLite document/history, one writer, migrations, recovery, and asset ownership. | SQLite schema 4, complete schema-1/2/3 history migration, writer lock, durable transactions, and checkpoints implemented; full lifecycle open. |
+| `deadpan-store` | Authoritative SQLite document/history, one writer, migrations, recovery, and asset ownership. | SQLite schema 5, complete schema-1/2/3/4 history migration, writer lock, durable transactions, generation request relevance, and checkpoints implemented; full lifecycle open. |
 | `deadpan-plan` | Compile immutable revisions into indexed render plans and incremental fragments. | Picture mapping and indexed seeking implemented; fragment reuse, effects, audio, and actual preview/export integration open. |
 | `deadpan-media` | Qualified FFmpeg/native probing, PTS indexing, bounded decoding, surfaces, encoding/mux interfaces. | Planned. |
 | `deadpan-render` | Shared GPU composition, framing, color, visual effects, and output transformations. | Planned. |
@@ -43,7 +43,11 @@ Section 24 defines boundaries, not an obligation to create empty crates. Introdu
 
 ## Dependency rules
 
-`core` has no higher-layer dependency. `store` and `plan` depend on core. Media, rendering, and audio consume plans and media interfaces without mutating documents. Jobs supervise workers; models and analysis submit jobs and return proposals or candidates. The UI issues commands through the application host.
+`core` has no higher-layer dependency. `store` and `plan` depend on core; `store`
+also uses the job protocol's typed request values and relevance vocabulary.
+Media, rendering, and audio consume plans and media interfaces without mutating
+documents. Jobs supervise workers; models and analysis submit jobs and return
+proposals or candidates. The UI issues commands through the application host.
 
 Every input follows the same intended route:
 
@@ -56,7 +60,15 @@ gesture / menu / inspector / macro / CLI
   -> committed revision, invalidations, and job requests
 ```
 
-Job requests are data in the core. A command cannot perform network work while holding a project lock. A render plan cannot contain a widget, database transaction, or Python object. An asset record cannot own a decoder. Narrow provider interfaces advertise actual capabilities and structured failure modes.
+Generation recipes are authored data; request versions and operational relevance
+live outside document history. The host resolves dependency hashes before
+submitting a complete reconciliation plan to the store. No model loading or
+media analysis occurs inside the SQLite transaction. A command cannot perform
+network work while holding a project lock. A render plan cannot contain a widget,
+database transaction, or Python object. An asset record cannot own a decoder.
+Narrow provider interfaces advertise actual capabilities and structured failure
+modes. [Generation request storage](GENERATION_REQUESTS.md) describes the current
+boundary and remaining integration.
 
 ## Contracts that guide implementation
 
