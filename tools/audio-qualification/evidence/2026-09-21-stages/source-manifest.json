@@ -1,0 +1,73 @@
+{
+  "base_revision": "9bc3bb90ae45d7d4f1cacee1be230f0c1824038d",
+  "files": [
+    {
+      "path": "Cargo.lock",
+      "sha256": "b143d965fde2d66db79bc70a738bfe7c9e576e2cf090314257e69c35933bc98c"
+    },
+    {
+      "path": "Cargo.toml",
+      "sha256": "9455d2ee244fce2cd172b7df30c3a5ad52788fc2f9d3ba12b439de0c4dde2f26"
+    },
+    {
+      "path": "crates/deadpan-audio/Cargo.toml",
+      "sha256": "0cf630dcc51ccb37509bb4cad7ab492d3d1d1f48175964644fa6fba60fef03f0"
+    },
+    {
+      "path": "crates/deadpan-audio/src/lib.rs",
+      "sha256": "6305cb3ad400437932cbf9fe4473064d9de7c908caea5d7d9f606171b8cddeaf"
+    },
+    {
+      "path": "crates/deadpan-audio/src/sequence.rs",
+      "sha256": "2e01c64674d350013154d5addf332635e6a5f40f60e0c1657879d5edc9bceec7"
+    },
+    {
+      "path": "crates/deadpan-audio/src/session.rs",
+      "sha256": "f2e7aff7b7383796117ab8b03d1c69a3762c4920f1ac1ed20639bb00f49b8d79"
+    },
+    {
+      "path": "crates/deadpan-audio/src/stages.rs",
+      "sha256": "8ab6000d2f92701a5f97a234749e670d01a156e1a2f479a323a008f74c9ab54b"
+    },
+    {
+      "path": "crates/deadpan-audio/tests/stages.rs",
+      "sha256": "1cdf8d03a3ac16d0559599cac012c232f97d6008b4d8db42a4622a9e35798736"
+    },
+    {
+      "path": "crates/deadpan-cli/src/audio.rs",
+      "sha256": "ad7e8af9add8cc2dad92f5bf6e49cdd24adc77c575a8e5f22beb5ef927462b41"
+    },
+    {
+      "path": "crates/deadpan-cli/src/doctor.rs",
+      "sha256": "58b60f4b53f011f860f58231bc23e7e27c7180dd281b2bf2769f647bd8f74464"
+    },
+    {
+      "path": "crates/deadpan-cli/src/lib.rs",
+      "sha256": "ab09a364844e49ff7b947b81150cd5d72693daf391c4f0d78195adf801b396eb"
+    },
+    {
+      "path": "crates/deadpan-cli/tests/audio_inspection.rs",
+      "sha256": "ae9b026b4f5b3fde4fac830906c29c470bfb923dbe576168c4ee59d5dc97415a"
+    },
+    {
+      "path": "crates/deadpan-plan/src/audio.rs",
+      "sha256": "14fd14bab31abaf78adfc7b94ad3e7ba2f0b126839e13dafb40c2ef49f755444"
+    },
+    {
+      "path": "crates/deadpan-plan/src/audio_signal.rs",
+      "sha256": "6c3e8f33d282e679e939dd96d8d14557b2541c616fa810701ccde546df602082"
+    },
+    {
+      "path": "crates/deadpan-plan/src/lib.rs",
+      "sha256": "330441210e110f147ca0e08291592b513d770cdaccb7e3ef07ddffe7189d14ee"
+    },
+    {
+      "path": "crates/deadpan-plan/src/plan.rs",
+      "sha256": "a27b081c869cca129340e1472e2d196d0fb883140f841285162af6fb12848775"
+    },
+    {
+      "path": "crates/deadpan-plan/tests/audio_signal.rs",
+      "sha256": "c65b6a28d0a6a56a5bcb2c652781b81876489f479da916a5d5cf032c139d62d3"
+    }
+  ]
+}

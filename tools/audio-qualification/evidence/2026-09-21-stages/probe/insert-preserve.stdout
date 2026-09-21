@@ -1,0 +1,204 @@
+{
+  "committed": true,
+  "outcome": {
+    "edit": {
+      "changed_ids": [
+        "8eafbf45-9ad1-45e7-b44b-1fbf228a0202",
+        "preserve",
+        "source-copy"
+      ],
+      "description": "Insert beats",
+      "duration_delta": 2,
+      "forward": {
+        "assets": {},
+        "from_revision": "remove-source",
+        "marks": {},
+        "nodes": {
+          "8eafbf45-9ad1-45e7-b44b-1fbf228a0202": {
+            "after": {
+              "kind": {
+                "children": [
+                  "preserve"
+                ],
+                "type": "sequence"
+              },
+              "label": "Sequence"
+            },
+            "before": {
+              "kind": {
+                "children": [],
+                "type": "sequence"
+              },
+              "label": "Sequence"
+            }
+          },
+          "preserve": {
+            "after": {
+              "kind": {
+                "child": "source-copy",
+                "duration": 2,
+                "mapping": {
+                  "end": 3,
+                  "start": 0
+                },
+                "pitch": "preserve",
+                "type": "retime"
+              },
+              "label": "Three frames into two, preserve pitch"
+            },
+            "before": null
+          },
+          "source-copy": {
+            "after": {
+              "kind": {
+                "source": {
+                  "audio": {
+                    "asset": "fixture-audio",
+                    "span": {
+                      "end": {
+                        "ticks": 192192,
+                        "time_base": {
+                          "denominator": 48000,
+                          "numerator": 1
+                        }
+                      },
+                      "start": {
+                        "ticks": 0,
+                        "time_base": {
+                          "denominator": 48000,
+                          "numerator": 1
+                        }
+                      }
+                    }
+                  },
+                  "audio_mapping": {
+                    "frames": {
+                      "denominator": "1",
+                      "numerator": "120"
+                    },
+                    "start": {
+                      "denominator": "1",
+                      "numerator": "0"
+                    },
+                    "type": "placement"
+                  },
+                  "audio_offset": 0,
+                  "duration": 120,
+                  "link": "independent",
+                  "video": {
+                    "type": "blank"
+                  },
+                  "video_mapping": {
+                    "type": "fit_beat"
+                  }
+                },
+                "type": "source"
+              },
+              "label": "Source"
+            },
+            "before": null
+          }
+        },
+        "overrides": {},
+        "project_id": "9285d538-981a-4b2b-a0d6-f70b27ca9f3e",
+        "to_revision": "preserve-three-into-two"
+      },
+      "inverse": {
+        "assets": {},
+        "from_revision": "preserve-three-into-two",
+        "marks": {},
+        "nodes": {
+          "8eafbf45-9ad1-45e7-b44b-1fbf228a0202": {
+            "after": {
+              "kind": {
+                "children": [],
+                "type": "sequence"
+              },
+              "label": "Sequence"
+            },
+            "before": {
+              "kind": {
+                "children": [
+                  "preserve"
+                ],
+                "type": "sequence"
+              },
+              "label": "Sequence"
+            }
+          },
+          "preserve": {
+            "after": null,
+            "before": {
+              "kind": {
+                "child": "source-copy",
+                "duration": 2,
+                "mapping": {
+                  "end": 3,
+                  "start": 0
+                },
+                "pitch": "preserve",
+                "type": "retime"
+              },
+              "label": "Three frames into two, preserve pitch"
+            }
+          },
+          "source-copy": {
+            "after": null,
+            "before": {
+              "kind": {
+                "source": {
+                  "audio": {
+                    "asset": "fixture-audio",
+                    "span": {
+                      "end": {
+                        "ticks": 192192,
+                        "time_base": {
+                          "denominator": 48000,
+                          "numerator": 1
+                        }
+                      },
+                      "start": {
+                        "ticks": 0,
+                        "time_base": {
+                          "denominator": 48000,
+                          "numerator": 1
+                        }
+                      }
+                    }
+                  },
+                  "audio_mapping": {
+                    "frames": {
+                      "denominator": "1",
+                      "numerator": "120"
+                    },
+                    "start": {
+                      "denominator": "1",
+                      "numerator": "0"
+                    },
+                    "type": "placement"
+                  },
+                  "audio_offset": 0,
+                  "duration": 120,
+                  "link": "independent",
+                  "video": {
+                    "type": "blank"
+                  },
+                  "video_mapping": {
+                    "type": "fit_beat"
+                  }
+                },
+                "type": "source"
+              },
+              "label": "Source"
+            }
+          }
+        },
+        "overrides": {},
+        "project_id": "9285d538-981a-4b2b-a0d6-f70b27ca9f3e",
+        "to_revision": "remove-source"
+      }
+    },
+    "revision_id": "preserve-three-into-two"
+  },
+  "protocol": 1
+}

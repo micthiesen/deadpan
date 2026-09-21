@@ -1,0 +1,10 @@
+{
+  "protocol": 1,
+  "project_id": "9285d538-981a-4b2b-a0d6-f70b27ca9f3e",
+  "expected_revision": "source-import",
+  "new_revision": "remove-source",
+  "command": {
+    "command": "delete",
+    "node": "fixture-source"
+  }
+}

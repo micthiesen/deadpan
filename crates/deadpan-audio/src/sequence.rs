@@ -228,14 +228,14 @@ fn source_recipe(
     )?))
 }
 
-fn source_samples(point: SourcePoint, rate: u32) -> Result<ExactRatio, TimeError> {
+pub(crate) fn source_samples(point: SourcePoint, rate: u32) -> Result<ExactRatio, TimeError> {
     point.ticks.checked_mul(ExactRatio::new(
         i128::from(point.time_base.numerator()) * i128::from(rate),
         i128::from(point.time_base.denominator()),
     )?)
 }
 
-fn original_sample(point: SourceTimestamp, rate: u32) -> Result<i64, PreparationError> {
+pub(crate) fn original_sample(point: SourceTimestamp, rate: u32) -> Result<i64, PreparationError> {
     let samples = source_samples(
         SourcePoint {
             ticks: ExactRatio::integer(point.ticks),

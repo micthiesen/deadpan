@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "base_revision": "9bc3bb90ae45d7d4f1cacee1be230f0c1824038d",
+  "subject": "Dirty tracked and untracked continuous audio stage implementation and tests",
+  "focused_review": {
+    "scope": "Separately authored StageAudio renderer, source provider/CLI integration, exact timing, provenance and work bounds",
+    "findings_fixed": [
+      "Validate full intrinsic output policies before PCM access, including sub-sample RoomTone/Tail Holds expanded by an ancestor.",
+      "Bound per-read aggregate stage preparation, input/output work and source checks; share cooperative deadline.",
+      "Retain and revalidate transitive source-index and speaker-layout fingerprints before cached PCM reuse."
+    ],
+    "followup": "No additional findings. Error cleanup, reservations and exact phase/crop arithmetic inspected.",
+    "remaining_limitation": "Deadline is cooperative across provider and native calls, not preemptive."
+  },
+  "test_authorship": "Plan and PCM tests authored separately from production implementation.",
+  "development_failure": "The initial host test compared parsed JSON f64 representations against direct serde values. All512 f32 sample bits were identical; assertion now compares every bit and remaining metadata exactly. Initial missing constructor/workspace edge and argument-count lint errors corrected before full gate.",
+  "general_review": {
+    "result": "No actionable findings.",
+    "scope": [
+      "Plan point/root grid traversal and opaque stage integration",
+      "Stage renderer, source session and sequence integration",
+      "CLI time-mapped wiring and failure mapping",
+      "Stage and signal integration tests",
+      "Nested Preserve, repeat overrides, exact grids, output preflight, transitive provenance, deadlines, cancellation and bounds"
+    ],
+    "verification": "Root ran complete required gate:719 passed,0failed,0ignored. Reviewer did not repeat the gate.",
+    "excluded": [
+      "GUI",
+      "device output",
+      "final mix"
+    ]
+  }
+}

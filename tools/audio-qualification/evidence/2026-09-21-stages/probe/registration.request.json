@@ -1,0 +1,23 @@
+{
+  "protocol": 1,
+  "registration": {
+    "expected_revision": "77856736-ef50-4508-96c6-3be46406dbe8",
+    "new_revision": "source-import",
+    "original": {
+      "algorithm": "blake3",
+      "digest": "16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1"
+    },
+    "new_asset_id": "fixture-audio",
+    "label": "Own synthetic AAC fixture",
+    "insertion": {
+      "parent": "8eafbf45-9ad1-45e7-b44b-1fbf228a0202",
+      "index": 0,
+      "node": "fixture-source",
+      "label": "Source"
+    }
+  },
+  "streams": {
+    "type": "audio_only",
+    "stream": 1
+  }
+}

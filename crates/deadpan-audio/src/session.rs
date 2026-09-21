@@ -1,12 +1,14 @@
 //! Worker-side access to verified, original-rate PCM. This adapter owns no
 //! authored state and does not admit a source merely because its hash matches.
 
+use std::io::{self, Write};
 use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
 use deadpan_core::AudioSample;
 use deadpan_media::audio_index::{AudioChannelLayout, AudioIndexSnapshot};
 use deadpan_media::audio_session::{AudioSession, SourceAudioSample};
+use sha2::{Digest, Sha256};
 
 use crate::{
     PcmWindow, PreparationError, ResampleRecipe, Resampler, StereoBlock, StereoMatrix, check_cancel,
@@ -18,6 +20,7 @@ use crate::{
 pub struct PreparedSource {
     session: AudioSession,
     matrix: StereoMatrix,
+    provenance: [u8; 32],
 }
 
 impl PreparedSource {
@@ -49,8 +52,13 @@ impl PreparedSource {
             return Err(PreparationError::UnsupportedLayout);
         }
         let matrix = StereoMatrix::new(layout)?;
+        let provenance = source_provenance(session.index(), layout, cancelled)?;
         check_cancel(cancelled)?;
-        Ok(Self { session, matrix })
+        Ok(Self {
+            session,
+            matrix,
+            provenance,
+        })
     }
 
     pub fn index(&self) -> &AudioIndexSnapshot {
@@ -59,6 +67,10 @@ impl PreparedSource {
 
     pub fn matrix_layout(&self) -> AudioChannelLayout {
         self.matrix.layout()
+    }
+
+    pub(crate) fn provenance(&self) -> [u8; 32] {
+        self.provenance
     }
 
     /// Prepare one bounded output block using an exact origin-based recipe.
@@ -115,6 +127,42 @@ impl PreparedSource {
             .transpose()?;
         resampler.render(start, frames, window, cancelled)
     }
+}
+
+// Stream the complete validated index into the digest without duplicating its
+// potentially large observation array. Derived fields are deterministic from
+// this envelope and were compared above. Cancellation is checked per write.
+fn source_provenance(
+    index: &AudioIndexSnapshot,
+    layout: AudioChannelLayout,
+    cancelled: &AtomicBool,
+) -> Result<[u8; 32], PreparationError> {
+    struct HashWriter<'a>(Sha256, &'a AtomicBool);
+    impl Write for HashWriter<'_> {
+        fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
+            check_cancel(self.1).map_err(io::Error::other)?;
+            self.0.update(bytes);
+            Ok(bytes.len())
+        }
+        fn flush(&mut self) -> io::Result<()> {
+            Ok(())
+        }
+    }
+    let mut writer = HashWriter(Sha256::new(), cancelled);
+    let result = serde_json::to_writer(
+        &mut writer,
+        &(
+            "deadpan-prepared-source-1",
+            index,
+            layout,
+            crate::MATRIX_ID,
+            crate::RESAMPLER_ID,
+            crate::BOUNDARY_ID,
+        ),
+    );
+    check_cancel(cancelled)?;
+    result.map_err(|error| PreparationError::SourceUnavailable(error.to_string()))?;
+    Ok(writer.0.finalize().into())
 }
 
 fn verify_index(

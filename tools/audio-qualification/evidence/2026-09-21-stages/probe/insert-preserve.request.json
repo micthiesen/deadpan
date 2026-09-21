@@ -1,0 +1,77 @@
+{
+  "protocol": 1,
+  "project_id": "9285d538-981a-4b2b-a0d6-f70b27ca9f3e",
+  "expected_revision": "remove-source",
+  "new_revision": "preserve-three-into-two",
+  "command": {
+    "command": "insert",
+    "parent": "8eafbf45-9ad1-45e7-b44b-1fbf228a0202",
+    "index": 0,
+    "subtree": {
+      "root": "preserve",
+      "overrides": {},
+      "nodes": {
+        "source-copy": {
+          "label": "Source",
+          "kind": {
+            "type": "source",
+            "source": {
+              "duration": 120,
+              "video": {
+                "type": "blank"
+              },
+              "video_mapping": {
+                "type": "fit_beat"
+              },
+              "audio": {
+                "asset": "fixture-audio",
+                "span": {
+                  "start": {
+                    "ticks": 0,
+                    "time_base": {
+                      "numerator": 1,
+                      "denominator": 48000
+                    }
+                  },
+                  "end": {
+                    "ticks": 192192,
+                    "time_base": {
+                      "numerator": 1,
+                      "denominator": 48000
+                    }
+                  }
+                }
+              },
+              "audio_mapping": {
+                "type": "placement",
+                "start": {
+                  "numerator": "0",
+                  "denominator": "1"
+                },
+                "frames": {
+                  "numerator": "120",
+                  "denominator": "1"
+                }
+              },
+              "link": "independent",
+              "audio_offset": 0
+            }
+          }
+        },
+        "preserve": {
+          "label": "Three frames into two, preserve pitch",
+          "kind": {
+            "type": "retime",
+            "child": "source-copy",
+            "duration": 2,
+            "mapping": {
+              "start": 0,
+              "end": 3
+            },
+            "pitch": "preserve"
+          }
+        }
+      }
+    }
+  }
+}

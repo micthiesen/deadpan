@@ -1,0 +1,54 @@
+{
+  "authored_asset_registered": false,
+  "protocol": 1,
+  "retained_original": {
+    "method": "cloned",
+    "record": {
+      "label": "cfr-bframes.mp4",
+      "linked": null,
+      "managed": true,
+      "object": {
+        "byte_length": 39157,
+        "content": {
+          "algorithm": "blake3",
+          "digest": "16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1"
+        }
+      },
+      "sha256": [
+        90,
+        130,
+        10,
+        121,
+        191,
+        85,
+        13,
+        72,
+        77,
+        142,
+        203,
+        55,
+        255,
+        221,
+        208,
+        72,
+        208,
+        99,
+        103,
+        148,
+        235,
+        206,
+        93,
+        184,
+        62,
+        79,
+        92,
+        229,
+        245,
+        230,
+        73,
+        24
+      ],
+      "version": 1
+    }
+  }
+}

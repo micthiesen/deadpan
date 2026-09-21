@@ -34,7 +34,7 @@ Current crates:
 - `crates/deadpan-media`: shared verified source snapshots, measured video/audio indexes, exact video seeks and bounded private PCM caches, plus isolated conversion, strict helper reports and private BLAKE3 output. No database or authored-state mutation.
 - `native/deadpan-source`: separate persistent descriptor-only FFmpeg video/audio decoders, raw metadata, owned RGBA and original-rate interleaved f32. Unsafe code stays in this narrow adapter; unsupported interpretations fail explicitly.
 - `native/deadpan-dsp`: bounded owned planar PCM and the canonical pinned stretch schedule through a safe Rust/C++ boundary. Construct it on a preparation worker; no device output or media decoding.
-- `crates/deadpan-audio`: exact-phase source resampling, explicit speaker matrices, qualified PCM access and plan-driven source-stage blocks. Preparation is worker work; full voice graph and device output remain open.
+- `crates/deadpan-audio`: exact-phase source resampling, explicit speaker matrices, qualified PCM access, source-stage blocks and bounded continuous Preserve preparation. Preparation is worker work; full voice graph and device output remain open.
 - `native/deadpan-fileclone`: bounded safe descriptor-clone interface around the macOS system call. The store owns copying, checksums, publication and durability.
 - `crates/deadpan-render`: bounded shared SDR picture pipeline, linear Rec.2020 working textures, explicit sRGB display transform, aspect and rotation. No decoding, document mutation or encoding.
 - `native/deadpan-media-worker`: process-isolated FFmpeg conversion and independent decode verification through bounded descriptor-only AVIO. Only the documented FFI call permits unsafe Rust. Requires the explicitly selected pinned LGPL FFmpeg development prefix.
@@ -326,6 +326,16 @@ This API does not provide fractional phase. Prepare that phase with the sampler,
 and process whole Retime occurrences continuously through their child cuts.
 Outer crops must not reset inner stage history. Preserve ordered mixed pitch
 policies. See [stage preparation](docs/AUDIO_STAGE_PREPARATION.md).
+
+Use borrowed `AudioStage` handles and distinct `SignalSample` grids for continuous
+retimes. Virtual point-grid storage uses ceil; final root allocation uses exact
+absolute round-even boundaries. Neither storage count changes the authored rate.
+Validate complete intrinsic output policies before input preparation, including
+Holds with no input-grid samples. Reapply explicit silence after DSP and retain
+its suppression metadata. Cache entries retain transitive source fingerprints
+including full qualified index and chosen matrix layout; verify them on hits.
+Share preparation work, residency and cancellation/deadline budgets across all
+nested stages. Never reset an inner history to satisfy an outer crop or budget.
 
 Source resampling evaluates each original coordinate from its exact affine
 origin, splitting the integer floor before float conversion. Keep fixed filter

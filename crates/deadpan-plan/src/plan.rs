@@ -13,6 +13,9 @@ use crate::{Picture, PictureSample, PlanError};
 #[path = "audio.rs"]
 mod audio;
 pub use audio::*;
+#[path = "audio_signal.rs"]
+mod audio_signal;
+pub use audio_signal::*;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize)]
 pub struct StorageStats {

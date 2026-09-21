@@ -18,6 +18,7 @@ deadpan-plan = { path = "crates/deadpan-plan" }
 deadpan-jobs = { path = "crates/deadpan-jobs" }
 deadpan-media = { path = "crates/deadpan-media" }
 deadpan-audio = { path = "crates/deadpan-audio" }
+deadpan-dsp = { path = "native/deadpan-dsp" }
 deadpan-models = { path = "crates/deadpan-models" }
 deadpan-render = { path = "crates/deadpan-render" }
 deadpan-source = { path = "native/deadpan-source" }

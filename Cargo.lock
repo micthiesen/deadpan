@@ -767,6 +767,7 @@ name = "deadpan-audio"
 version = "0.1.0"
 dependencies = [
  "deadpan-core",
+ "deadpan-dsp",
  "deadpan-media",
  "deadpan-plan",
  "serde",

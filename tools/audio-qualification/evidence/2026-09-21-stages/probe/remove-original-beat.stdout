@@ -1,0 +1,171 @@
+{
+  "committed": true,
+  "outcome": {
+    "edit": {
+      "changed_ids": [
+        "8eafbf45-9ad1-45e7-b44b-1fbf228a0202",
+        "fixture-source"
+      ],
+      "description": "Delete beat",
+      "duration_delta": -120,
+      "forward": {
+        "assets": {},
+        "from_revision": "source-import",
+        "marks": {},
+        "nodes": {
+          "8eafbf45-9ad1-45e7-b44b-1fbf228a0202": {
+            "after": {
+              "kind": {
+                "children": [],
+                "type": "sequence"
+              },
+              "label": "Sequence"
+            },
+            "before": {
+              "kind": {
+                "children": [
+                  "fixture-source"
+                ],
+                "type": "sequence"
+              },
+              "label": "Sequence"
+            }
+          },
+          "fixture-source": {
+            "after": null,
+            "before": {
+              "kind": {
+                "source": {
+                  "audio": {
+                    "asset": "fixture-audio",
+                    "span": {
+                      "end": {
+                        "ticks": 192192,
+                        "time_base": {
+                          "denominator": 48000,
+                          "numerator": 1
+                        }
+                      },
+                      "start": {
+                        "ticks": 0,
+                        "time_base": {
+                          "denominator": 48000,
+                          "numerator": 1
+                        }
+                      }
+                    }
+                  },
+                  "audio_mapping": {
+                    "frames": {
+                      "denominator": "1",
+                      "numerator": "120"
+                    },
+                    "start": {
+                      "denominator": "1",
+                      "numerator": "0"
+                    },
+                    "type": "placement"
+                  },
+                  "audio_offset": 0,
+                  "duration": 120,
+                  "link": "independent",
+                  "video": {
+                    "type": "blank"
+                  },
+                  "video_mapping": {
+                    "type": "fit_beat"
+                  }
+                },
+                "type": "source"
+              },
+              "label": "Source"
+            }
+          }
+        },
+        "overrides": {},
+        "project_id": "9285d538-981a-4b2b-a0d6-f70b27ca9f3e",
+        "to_revision": "remove-source"
+      },
+      "inverse": {
+        "assets": {},
+        "from_revision": "remove-source",
+        "marks": {},
+        "nodes": {
+          "8eafbf45-9ad1-45e7-b44b-1fbf228a0202": {
+            "after": {
+              "kind": {
+                "children": [
+                  "fixture-source"
+                ],
+                "type": "sequence"
+              },
+              "label": "Sequence"
+            },
+            "before": {
+              "kind": {
+                "children": [],
+                "type": "sequence"
+              },
+              "label": "Sequence"
+            }
+          },
+          "fixture-source": {
+            "after": {
+              "kind": {
+                "source": {
+                  "audio": {
+                    "asset": "fixture-audio",
+                    "span": {
+                      "end": {
+                        "ticks": 192192,
+                        "time_base": {
+                          "denominator": 48000,
+                          "numerator": 1
+                        }
+                      },
+                      "start": {
+                        "ticks": 0,
+                        "time_base": {
+                          "denominator": 48000,
+                          "numerator": 1
+                        }
+                      }
+                    }
+                  },
+                  "audio_mapping": {
+                    "frames": {
+                      "denominator": "1",
+                      "numerator": "120"
+                    },
+                    "start": {
+                      "denominator": "1",
+                      "numerator": "0"
+                    },
+                    "type": "placement"
+                  },
+                  "audio_offset": 0,
+                  "duration": 120,
+                  "link": "independent",
+                  "video": {
+                    "type": "blank"
+                  },
+                  "video_mapping": {
+                    "type": "fit_beat"
+                  }
+                },
+                "type": "source"
+              },
+              "label": "Source"
+            },
+            "before": null
+          }
+        },
+        "overrides": {},
+        "project_id": "9285d538-981a-4b2b-a0d6-f70b27ca9f3e",
+        "to_revision": "source-import"
+      }
+    },
+    "revision_id": "remove-source"
+  },
+  "protocol": 1
+}

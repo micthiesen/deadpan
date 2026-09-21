@@ -37,7 +37,7 @@ const HELP: &str = "Deadpan headless commands:
   project relink-original <project.deadpan> <blake3-digest> <absolute-source> --expected-version <N>
   inspect-plan <project.deadpan> [--frame <N>]
   inspect-plan <project.deadpan> --audio-samples <START> <END>
-  inspect-audio <project.deadpan> --samples <START> <END>
+  inspect-audio <project.deadpan> --samples <START> <END> [--time-mapped]
   resolve-selection <project.deadpan> --json <selection.json>
   command <project.deadpan> --json <request.json> [--dry-run]
 
@@ -105,6 +105,41 @@ impl CliError {
                 audio::ProjectAudioError::Store(error) => error.code(),
                 audio::ProjectAudioError::Sequence(deadpan_audio::SequenceAudioError::Range) => {
                     "AudioRangeOutOfRange"
+                }
+                audio::ProjectAudioError::Stage(deadpan_audio::StageAudioError::Range) => {
+                    "AudioRangeOutOfRange"
+                }
+                audio::ProjectAudioError::Stage(
+                    deadpan_audio::StageAudioError::Limit(_)
+                    | deadpan_audio::StageAudioError::InvalidLimits,
+                ) => "AudioPreparationLimit",
+                audio::ProjectAudioError::Stage(deadpan_audio::StageAudioError::Timeout) => {
+                    "AudioPreparationTimeout"
+                }
+                audio::ProjectAudioError::Stage(deadpan_audio::StageAudioError::Unsupported(_)) => {
+                    "AudioOperationUnsupported"
+                }
+                audio::ProjectAudioError::Stage(deadpan_audio::StageAudioError::Preparation(
+                    error,
+                )) => match error {
+                    deadpan_audio::PreparationError::UnsupportedLayout => "AudioLayoutUnsupported",
+                    deadpan_audio::PreparationError::SourceUnavailable(_) => {
+                        "SourceAudioUnavailable"
+                    }
+                    deadpan_audio::PreparationError::IndexMismatch => "SourceAudioIndexMismatch",
+                    deadpan_audio::PreparationError::Cancelled => "Cancelled",
+                    deadpan_audio::PreparationError::Time(_) => "TimingOverflow",
+                    _ => "AudioInspectionFailed",
+                },
+                audio::ProjectAudioError::Stage(error @ deadpan_audio::StageAudioError::Dsp(_)) => {
+                    if error.is_cancelled() {
+                        "Cancelled"
+                    } else {
+                        "AudioProcessingFailed"
+                    }
+                }
+                audio::ProjectAudioError::Stage(deadpan_audio::StageAudioError::Time(_)) => {
+                    "TimingOverflow"
                 }
                 audio::ProjectAudioError::Sequence(
                     deadpan_audio::SequenceAudioError::Unsupported { .. },
@@ -198,7 +233,15 @@ fn run(arguments: &[String]) -> Result<(), CliError> {
         }
         ["doctor"] => write_json(&doctor::report()?),
         #[cfg(any(target_os = "macos", target_os = "linux"))]
-        ["inspect-audio", path, "--samples", start, end] => {
+        ["inspect-audio", path, "--samples", start, end]
+        | [
+            "inspect-audio",
+            path,
+            "--samples",
+            start,
+            end,
+            "--time-mapped",
+        ] => {
             let start = start
                 .parse::<i64>()
                 .map_err(|_| CliError::Usage("invalid audio sample start".into()))?;
@@ -212,11 +255,20 @@ fn run(arguments: &[String]) -> Result<(), CliError> {
                     deadpan_audio::SequenceAudioError::Range,
                 ))?;
             let mut session = audio::ProjectAudioSession::open(Path::new(path))?;
-            let block = session.read(
-                deadpan_core::AudioSample(start),
-                frames,
-                &std::sync::atomic::AtomicBool::new(false),
-            )?;
+            let cancelled = std::sync::atomic::AtomicBool::new(false);
+            let block = if arguments.len() == 6 {
+                serde_json::to_value(session.read_time_mapped(
+                    deadpan_core::AudioSample(start),
+                    frames,
+                    &cancelled,
+                )?)?
+            } else {
+                serde_json::to_value(session.read(
+                    deadpan_core::AudioSample(start),
+                    frames,
+                    &cancelled,
+                )?)?
+            };
             write_json(&serde_json::json!({ "protocol": 1, "audio": block }))
         }
         #[cfg(any(target_os = "macos", target_os = "linux"))]

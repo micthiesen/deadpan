@@ -1,0 +1,42 @@
+{
+  "table_counts": {
+    "generation_attempt_heads": 0,
+    "generation_attempts": 0,
+    "generation_bundle_receipts": 0,
+    "generation_candidate_receipts": 0,
+    "generation_requests": 0,
+    "history": 3,
+    "hold_request_clocks": 0,
+    "original_media": 1,
+    "redo": 0,
+    "revisions": 4,
+    "source_qualifications": 1,
+    "state": 1
+  },
+  "state": [
+    [
+      1,
+      "preserve-three-into-two",
+      3
+    ]
+  ],
+  "history": [
+    [
+      1,
+      null,
+      "source-import"
+    ],
+    [
+      2,
+      1,
+      "remove-source"
+    ],
+    [
+      3,
+      2,
+      "preserve-three-into-two"
+    ]
+  ],
+  "logical_dump_sha256": "92e06ae8b539e9bbbaf6cb277249f9ea1da8c77dc52183dfba7b1aa74f5d8dea",
+  "user_version": 15
+}

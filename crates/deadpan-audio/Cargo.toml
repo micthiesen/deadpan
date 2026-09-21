@@ -14,10 +14,11 @@ deadpan-plan.workspace = true
 deadpan-media.workspace = true
 serde.workspace = true
 thiserror.workspace = true
-
-[dev-dependencies]
 sha2.workspace = true
 serde_json.workspace = true
+
+[target.'cfg(any(target_os = "macos", target_os = "linux"))'.dependencies]
+deadpan-dsp.workspace = true
 
 [lints]
 workspace = true

@@ -1,0 +1,101 @@
+{
+  "audio": {
+    "lookup": {
+      "iteration_run_comparisons": 0,
+      "sequence_comparisons": 1,
+      "visited_nodes": 3
+    },
+    "project_id": "9285d538-981a-4b2b-a0d6-f70b27ca9f3e",
+    "revision_id": "preserve-three-into-two",
+    "samples": {
+      "end": 3203,
+      "start": 0
+    },
+    "spans": [
+      {
+        "allocated_samples": {
+          "end": 3203,
+          "start": 0
+        },
+        "content": {
+          "duration": {
+            "denominator": "1",
+            "numerator": "120"
+          },
+          "source": {
+            "asset": "fixture-audio",
+            "span": {
+              "end": {
+                "ticks": 192192,
+                "time_base": {
+                  "denominator": 48000,
+                  "numerator": 1
+                }
+              },
+              "start": {
+                "ticks": 0,
+                "time_base": {
+                  "denominator": 48000,
+                  "numerator": 1
+                }
+              }
+            }
+          },
+          "start": {
+            "denominator": "1",
+            "numerator": "0"
+          },
+          "type": "source"
+        },
+        "gap_after": null,
+        "instance": {
+          "node": "source-copy",
+          "repeats": []
+        },
+        "project_extent": {
+          "end": {
+            "denominator": "1",
+            "numerator": "2"
+          },
+          "start": {
+            "denominator": "1",
+            "numerator": "0"
+          }
+        },
+        "retimes": [
+          {
+            "child_frames_per_local_frame": {
+              "denominator": "2",
+              "numerator": "3"
+            },
+            "child_start": {
+              "denominator": "1",
+              "numerator": "0"
+            },
+            "node": "preserve",
+            "pitch": "preserve"
+          }
+        ],
+        "samples": {
+          "end": 3203,
+          "start": 0
+        },
+        "transform": {
+          "project_frames_per_local_frame": {
+            "denominator": "3",
+            "numerator": "2"
+          },
+          "project_frames_per_sample": {
+            "denominator": "8008",
+            "numerator": "5"
+          },
+          "project_origin": {
+            "denominator": "1",
+            "numerator": "0"
+          }
+        }
+      }
+    ]
+  },
+  "protocol": 1
+}

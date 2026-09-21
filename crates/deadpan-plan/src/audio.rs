@@ -197,13 +197,13 @@ pub struct AudioQuery {
     pub lookup: LookupStats,
 }
 
-struct Budget {
-    remaining: usize,
-    lookup: LookupStats,
+pub(super) struct Budget {
+    pub(super) remaining: usize,
+    pub(super) lookup: LookupStats,
 }
 
 impl Budget {
-    fn spend(&mut self, amount: usize) -> Result<(), PlanError> {
+    pub(super) fn spend(&mut self, amount: usize) -> Result<(), PlanError> {
         self.remaining = self
             .remaining
             .checked_sub(amount)
@@ -448,20 +448,23 @@ impl RenderPlan {
     }
 }
 
-fn minimum(a: ExactRatio, b: ExactRatio) -> Result<ExactRatio, TimeError> {
+pub(super) fn minimum(a: ExactRatio, b: ExactRatio) -> Result<ExactRatio, TimeError> {
     Ok(if a.checked_sub(b)?.compare_integer(0).is_le() {
         a
     } else {
         b
     })
 }
-fn maximum(a: ExactRatio, b: ExactRatio) -> Result<ExactRatio, TimeError> {
+pub(super) fn maximum(a: ExactRatio, b: ExactRatio) -> Result<ExactRatio, TimeError> {
     Ok(if a.checked_sub(b)?.compare_integer(0).is_ge() {
         a
     } else {
         b
     })
 }
-fn intersect(a: Range<ExactRatio>, b: Range<ExactRatio>) -> Result<Range<ExactRatio>, TimeError> {
+pub(super) fn intersect(
+    a: Range<ExactRatio>,
+    b: Range<ExactRatio>,
+) -> Result<Range<ExactRatio>, TimeError> {
     Ok(maximum(a.start, b.start)?..minimum(a.end, b.end)?)
 }

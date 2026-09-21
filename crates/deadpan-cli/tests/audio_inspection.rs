@@ -1,5 +1,6 @@
 #![cfg(any(target_os = "macos", target_os = "linux"))]
 
+use std::collections::BTreeMap;
 use std::error::Error;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -9,9 +10,9 @@ use std::time::Duration;
 
 use deadpan_cli::audio::ProjectAudioSession;
 use deadpan_core::{
-    AssetId, AudioSample, ColorPolicy, Command, CommandRequest, FrameDuration, FrameRate,
-    HoldAudio, HoldRecipe, HoldVideo, NodeId, PresentationBasis, ProjectDocument, ProjectFrame,
-    ProjectId, RevisionId,
+    AssetId, AudioSample, BeatNode, ColorPolicy, Command, CommandRequest, FrameDuration,
+    FrameRange, FrameRate, HoldAudio, HoldRecipe, HoldVideo, NodeId, NodeKind, PitchPolicy,
+    PresentationBasis, ProjectDocument, ProjectFrame, ProjectId, RevisionId, Subtree,
 };
 use deadpan_media::audio_session::{AudioSession, AudioSessionLimits, SourceAudioSample};
 use deadpan_media::source_index::SourceContentIdentity;
@@ -170,6 +171,120 @@ fn counts(path: &Path) -> Result<(i64, i64, i64)> {
         [],
         |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
     )?)
+}
+
+#[test]
+fn mapped_inspection_prepares_preserve_from_historical_aac_without_writing() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let (path, mut store) = project(scratch.path())?;
+    register(
+        &mut store,
+        &fixture("cfr-bframes.mp4"),
+        1,
+        OriginalOwnership::Managed,
+        "import",
+    )?;
+    let document = store.snapshot()?;
+    let clip = document.nodes()[&node("clip")].clone();
+    let length = document.node_duration(&node("clip"))?.frames();
+    commit(&mut store, "remove", Command::Delete { node: node("clip") })?;
+    commit(
+        &mut store,
+        "slow",
+        Command::Insert {
+            parent: node("root"),
+            index: 0,
+            subtree: Subtree {
+                root: node("slow"),
+                nodes: BTreeMap::from([
+                    (node("copy"), clip),
+                    (
+                        node("slow"),
+                        BeatNode {
+                            label: "Preserve speech pitch".into(),
+                            kind: NodeKind::Retime {
+                                child: node("copy"),
+                                duration: FrameDuration::new(length * 2)?,
+                                mapping: FrameRange::new(ProjectFrame(0), ProjectFrame(length))?,
+                                pitch: PitchPolicy::Preserve,
+                            },
+                        },
+                    ),
+                ]),
+                overrides: BTreeMap::new(),
+            },
+        },
+    )?;
+    let before = store.snapshot()?;
+    let before_counts = counts(&path)?;
+    let mut session = ProjectAudioSession::open(&path)?;
+    assert!(session.read(AudioSample(0), 256, &active()).is_err());
+    let mapped = session.read_time_mapped(AudioSample(0), 256, &active())?;
+    assert_eq!(mapped.stage, "time_mapped_pcm_before_effects");
+    assert_eq!(mapped.revision_id, revision("slow"));
+    assert!(
+        mapped
+            .samples
+            .iter()
+            .flatten()
+            .any(|sample| sample.abs() > 0.01)
+    );
+    assert!(mapped.suppressed.is_empty());
+    let output = ProcessCommand::new(env!("CARGO_BIN_EXE_deadpan-cli"))
+        .args([
+            "inspect-audio",
+            path.to_str().unwrap(),
+            "--samples",
+            "0",
+            "256",
+            "--time-mapped",
+        ])
+        .output()?;
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert!(output.stderr.is_empty());
+    let wire: Value = serde_json::from_slice(&output.stdout)?;
+    assert_eq!(wire["protocol"], 1);
+    let mut actual_metadata = wire["audio"].as_object().unwrap().clone();
+    let actual_samples: Vec<[f32; 2]> =
+        serde_json::from_value(actual_metadata.remove("samples").unwrap())?;
+    let mut expected_metadata = serde_json::to_value(&mapped)?.as_object().unwrap().clone();
+    expected_metadata.remove("samples");
+    assert_eq!(actual_metadata, expected_metadata);
+    // A JSON f64 parse can differ from direct f32-to-Value promotion. Compare
+    // the PCM in its actual f32 format, including every bit and signed zero.
+    assert_eq!(actual_samples.len(), mapped.samples.len());
+    for (frame, (actual, expected)) in actual_samples.iter().zip(&mapped.samples).enumerate() {
+        for channel in 0..2 {
+            assert_eq!(
+                actual[channel].to_bits(),
+                expected[channel].to_bits(),
+                "PCM differs at frame {frame}, channel {channel}"
+            );
+        }
+    }
+    for (start, end) in [("0", "257"), ("-1", "1")] {
+        let invalid = ProcessCommand::new(env!("CARGO_BIN_EXE_deadpan-cli"))
+            .args([
+                "inspect-audio",
+                path.to_str().unwrap(),
+                "--samples",
+                start,
+                end,
+                "--time-mapped",
+            ])
+            .output()?;
+        assert!(!invalid.status.success());
+        assert!(invalid.stdout.is_empty());
+        let error: Value = serde_json::from_slice(&invalid.stderr)?;
+        assert_eq!(error["error"]["code"], "AudioRangeOutOfRange");
+    }
+    assert_eq!(store.snapshot()?, before);
+    assert_eq!(counts(&path)?, before_counts);
+    Ok(())
 }
 
 #[test]

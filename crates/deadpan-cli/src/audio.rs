@@ -8,7 +8,7 @@ use std::time::Duration;
 
 use deadpan_audio::{
     AudioSourceProvider, PreparationError, PreparedSource, SequenceAudio, SequenceAudioError,
-    SourceStageBlock,
+    SourceStageBlock, StageAudio, StageAudioError, TimeMappedBlock,
 };
 use deadpan_core::{AssetId, AudioSample, ProjectDocument, ProjectId, RevisionId};
 use deadpan_media::audio_session::{AudioSession, AudioSessionLimits};
@@ -24,6 +24,8 @@ pub enum ProjectAudioError {
     Plan(#[from] PlanError),
     #[error(transparent)]
     Sequence(#[from] SequenceAudioError),
+    #[error(transparent)]
+    Stage(#[from] StageAudioError),
 }
 
 /// A fixed revision with one retained source PCM session. Subsequent writer
@@ -31,6 +33,7 @@ pub enum ProjectAudioError {
 /// Returned PCM is explicitly before voice effects and the master pipeline.
 pub struct ProjectAudioSession {
     sequence: SequenceAudio,
+    stages: StageAudio,
     sources: RegisteredSources,
 }
 
@@ -38,9 +41,11 @@ impl ProjectAudioSession {
     pub fn open(path: &Path) -> Result<Self, ProjectAudioError> {
         let store = ProjectStore::open(path, AccessMode::ReadOnly)?;
         let document = store.snapshot()?;
-        let sequence = SequenceAudio::new(Arc::new(RenderPlan::compile(&document)?));
+        let plan = Arc::new(RenderPlan::compile(&document)?);
+        let sequence = SequenceAudio::new(Arc::clone(&plan));
         Ok(Self {
             sequence,
+            stages: StageAudio::new(plan),
             sources: RegisteredSources {
                 store,
                 document,
@@ -64,6 +69,21 @@ impl ProjectAudioSession {
         cancelled: &AtomicBool,
     ) -> Result<SourceStageBlock, ProjectAudioError> {
         Ok(self.sequence.read_sources(
+            &mut self.sources,
+            start,
+            frames,
+            Duration::from_secs(10),
+            cancelled,
+        )?)
+    }
+
+    pub fn read_time_mapped(
+        &mut self,
+        start: AudioSample,
+        frames: u32,
+        cancelled: &AtomicBool,
+    ) -> Result<TimeMappedBlock, ProjectAudioError> {
+        Ok(self.stages.read(
             &mut self.sources,
             start,
             frames,

@@ -1,6 +1,7 @@
 //! Bounded source preparation for worker threads, never an audio callback.
 //! Exact affine sampling and explicit channel matrices are shared by consumers;
-//! this is not yet the voice/effect graph, stretcher binding, or device engine.
+//! continuous Preserve stages retain canonical history across source seams.
+//! Voice effects, mastering and the device engine remain separate work.
 
 mod matrix;
 mod resample;
@@ -8,6 +9,8 @@ mod resample;
 mod sequence;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 mod session;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+mod stages;
 
 pub use matrix::StereoMatrix;
 pub use resample::{PcmWindow, ResampleRecipe, Resampler, StereoBlock};
@@ -15,6 +18,8 @@ pub use resample::{PcmWindow, ResampleRecipe, Resampler, StereoBlock};
 pub use sequence::{AudioSourceProvider, SequenceAudio, SequenceAudioError, SourceStageBlock};
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub use session::PreparedSource;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+pub use stages::{StageAudio, StageAudioError, StageLimits, TimeMappedBlock};
 
 use std::sync::atomic::{AtomicBool, Ordering};
 

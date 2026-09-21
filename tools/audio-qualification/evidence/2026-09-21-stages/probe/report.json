@@ -1,0 +1,1303 @@
+{
+  "schema_version": 1,
+  "started_utc": "2026-09-21T23:56:29.929772+00:00",
+  "expected_base_revision_prefix": "9bc3bb9",
+  "scratch": "/tmp/deadpan-stages-audio-process-b2jqf_t_",
+  "package": "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+  "ffmpeg_prefix": "/tmp/deadpan-media-compatible-xyhilms4/prefix",
+  "commands": [
+    {
+      "name": "git-head",
+      "arguments": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.017718416871502995,
+      "stdout": "git-head.stdout",
+      "stderr": "git-head.stderr"
+    },
+    {
+      "name": "hardware-model",
+      "arguments": [
+        "sysctl",
+        "-n",
+        "hw.model"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.009382500080391765,
+      "stdout": "hardware-model.stdout",
+      "stderr": "hardware-model.stderr"
+    },
+    {
+      "name": "hardware-processor",
+      "arguments": [
+        "sysctl",
+        "-n",
+        "machdep.cpu.brand_string"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.007765624905005097,
+      "stdout": "hardware-processor.stdout",
+      "stderr": "hardware-processor.stderr"
+    },
+    {
+      "name": "hardware-memory",
+      "arguments": [
+        "sysctl",
+        "-n",
+        "hw.memsize"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.0073836250230669975,
+      "stdout": "hardware-memory.stdout",
+      "stderr": "hardware-memory.stderr"
+    },
+    {
+      "name": "operating-system",
+      "arguments": [
+        "sw_vers"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.025595624931156635,
+      "stdout": "operating-system.stdout",
+      "stderr": "operating-system.stderr"
+    },
+    {
+      "name": "rustc",
+      "arguments": [
+        "rustc",
+        "--version"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.07422158308327198,
+      "stdout": "rustc.stdout",
+      "stderr": "rustc.stderr"
+    },
+    {
+      "name": "create",
+      "arguments": [
+        "deadpan-cli",
+        "project",
+        "create",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--fps",
+        "30000/1001",
+        "--size",
+        "320x180"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.045480707893148065,
+      "stdout": "create.stdout",
+      "stderr": "create.stderr"
+    },
+    {
+      "name": "retain",
+      "arguments": [
+        "deadpan-cli",
+        "project",
+        "retain-original",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "/Users/michael/Code/deadpan/native/deadpan-source/tests/fixtures/cfr-bframes.mp4"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.049890708178281784,
+      "stdout": "retain.stdout",
+      "stderr": "retain.stderr"
+    },
+    {
+      "name": "register",
+      "arguments": [
+        "deadpan-cli",
+        "project",
+        "register-source",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--request-json",
+        "/tmp/deadpan-stages-audio-20260921/probe/registration.request.json"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.10767658310942352,
+      "stdout": "register.stdout",
+      "stderr": "register.stderr"
+    },
+    {
+      "name": "registered-document",
+      "arguments": [
+        "deadpan-cli",
+        "project",
+        "dump",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--json"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.04350562486797571,
+      "stdout": "registered-document.stdout",
+      "stderr": "registered-document.stderr"
+    },
+    {
+      "name": "remove-original-beat",
+      "arguments": [
+        "deadpan-cli",
+        "command",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--json",
+        "/tmp/deadpan-stages-audio-20260921/probe/remove-original-beat.request.json"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.04508887487463653,
+      "stdout": "remove-original-beat.stdout",
+      "stderr": "remove-original-beat.stderr"
+    },
+    {
+      "name": "removed-document",
+      "arguments": [
+        "deadpan-cli",
+        "project",
+        "dump",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--json"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.03994483407586813,
+      "stdout": "removed-document.stdout",
+      "stderr": "removed-document.stderr"
+    },
+    {
+      "name": "insert-preserve",
+      "arguments": [
+        "deadpan-cli",
+        "command",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--json",
+        "/tmp/deadpan-stages-audio-20260921/probe/insert-preserve.request.json"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.04321491718292236,
+      "stdout": "insert-preserve.stdout",
+      "stderr": "insert-preserve.stderr"
+    },
+    {
+      "name": "before-inspection",
+      "arguments": [
+        "deadpan-cli",
+        "project",
+        "dump",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--json"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.0391635422129184,
+      "stdout": "before-inspection.stdout",
+      "stderr": "before-inspection.stderr"
+    },
+    {
+      "name": "validate",
+      "arguments": [
+        "deadpan-cli",
+        "project",
+        "validate",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.05832637497223914,
+      "stdout": "validate.stdout",
+      "stderr": "validate.stderr"
+    },
+    {
+      "name": "plan-audio",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-plan",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--audio-samples",
+        "0",
+        "3203"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.04116074997000396,
+      "stdout": "plan-audio.stdout",
+      "stderr": "plan-audio.stderr"
+    },
+    {
+      "name": "source-only-rejection",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--samples",
+        "0",
+        "256"
+      ],
+      "expected_exit_code": 1,
+      "exit_code": 1,
+      "elapsed_seconds": 0.03965637506917119,
+      "stdout": "source-only-rejection.stdout",
+      "stderr": "source-only-rejection.stderr"
+    },
+    {
+      "name": "mapped-first-cli",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--samples",
+        "0",
+        "256",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.13530908292159438,
+      "stdout": "mapped-first-cli.stdout",
+      "stderr": "mapped-first-cli.stderr"
+    },
+    {
+      "name": "mapped-first-app",
+      "arguments": [
+        "deadpan-app",
+        "--headless",
+        "inspect-audio",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--samples",
+        "0",
+        "256",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.15607500006444752,
+      "stdout": "mapped-first-app.stdout",
+      "stderr": "mapped-first-app.stderr"
+    },
+    {
+      "name": "mapped-full-256",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--samples",
+        "256",
+        "512",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.13170800008811057,
+      "stdout": "mapped-full-256.stdout",
+      "stderr": "mapped-full-256.stderr"
+    },
+    {
+      "name": "mapped-full-512",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--samples",
+        "512",
+        "768",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.13640733296051621,
+      "stdout": "mapped-full-512.stdout",
+      "stderr": "mapped-full-512.stderr"
+    },
+    {
+      "name": "mapped-full-768",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--samples",
+        "768",
+        "1024",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.1374036248307675,
+      "stdout": "mapped-full-768.stdout",
+      "stderr": "mapped-full-768.stderr"
+    },
+    {
+      "name": "mapped-full-1024",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--samples",
+        "1024",
+        "1280",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.13846008386462927,
+      "stdout": "mapped-full-1024.stdout",
+      "stderr": "mapped-full-1024.stderr"
+    },
+    {
+      "name": "mapped-full-1280",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--samples",
+        "1280",
+        "1536",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.13784170802682638,
+      "stdout": "mapped-full-1280.stdout",
+      "stderr": "mapped-full-1280.stderr"
+    },
+    {
+      "name": "mapped-full-1536",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--samples",
+        "1536",
+        "1792",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.13591404189355671,
+      "stdout": "mapped-full-1536.stdout",
+      "stderr": "mapped-full-1536.stderr"
+    },
+    {
+      "name": "mapped-full-1792",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--samples",
+        "1792",
+        "2048",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.1367154170293361,
+      "stdout": "mapped-full-1792.stdout",
+      "stderr": "mapped-full-1792.stderr"
+    },
+    {
+      "name": "mapped-full-2048",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--samples",
+        "2048",
+        "2304",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.13717120909132063,
+      "stdout": "mapped-full-2048.stdout",
+      "stderr": "mapped-full-2048.stderr"
+    },
+    {
+      "name": "mapped-full-2304",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--samples",
+        "2304",
+        "2560",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.1368119998369366,
+      "stdout": "mapped-full-2304.stdout",
+      "stderr": "mapped-full-2304.stderr"
+    },
+    {
+      "name": "mapped-full-2560",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--samples",
+        "2560",
+        "2816",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.13943487498909235,
+      "stdout": "mapped-full-2560.stdout",
+      "stderr": "mapped-full-2560.stderr"
+    },
+    {
+      "name": "mapped-full-2816",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--samples",
+        "2816",
+        "3072",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.13769645802676678,
+      "stdout": "mapped-full-2816.stdout",
+      "stderr": "mapped-full-2816.stderr"
+    },
+    {
+      "name": "mapped-full-3072",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--samples",
+        "3072",
+        "3203",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.1357232080772519,
+      "stdout": "mapped-full-3072.stdout",
+      "stderr": "mapped-full-3072.stderr"
+    },
+    {
+      "name": "mapped-part-0",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--samples",
+        "0",
+        "1",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.13594420813024044,
+      "stdout": "mapped-part-0.stdout",
+      "stderr": "mapped-part-0.stderr"
+    },
+    {
+      "name": "mapped-part-1",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--samples",
+        "1",
+        "74",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.13415337493643165,
+      "stdout": "mapped-part-1.stdout",
+      "stderr": "mapped-part-1.stderr"
+    },
+    {
+      "name": "mapped-part-2",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--samples",
+        "74",
+        "330",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.13914879085496068,
+      "stdout": "mapped-part-2.stdout",
+      "stderr": "mapped-part-2.stderr"
+    },
+    {
+      "name": "mapped-part-3",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--samples",
+        "330",
+        "347",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.1344582079909742,
+      "stdout": "mapped-part-3.stdout",
+      "stderr": "mapped-part-3.stderr"
+    },
+    {
+      "name": "mapped-part-4",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--samples",
+        "347",
+        "474",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.1360776659566909,
+      "stdout": "mapped-part-4.stdout",
+      "stderr": "mapped-part-4.stderr"
+    },
+    {
+      "name": "mapped-part-5",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--samples",
+        "474",
+        "475",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.13222229108214378,
+      "stdout": "mapped-part-5.stdout",
+      "stderr": "mapped-part-5.stderr"
+    },
+    {
+      "name": "mapped-part-6",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--samples",
+        "475",
+        "548",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.13743237499147654,
+      "stdout": "mapped-part-6.stdout",
+      "stderr": "mapped-part-6.stderr"
+    },
+    {
+      "name": "mapped-part-7",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--samples",
+        "548",
+        "804",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.13735325005836785,
+      "stdout": "mapped-part-7.stdout",
+      "stderr": "mapped-part-7.stderr"
+    },
+    {
+      "name": "mapped-part-8",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--samples",
+        "804",
+        "821",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.13509012502618134,
+      "stdout": "mapped-part-8.stdout",
+      "stderr": "mapped-part-8.stderr"
+    },
+    {
+      "name": "mapped-part-9",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--samples",
+        "821",
+        "948",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.13571629184298217,
+      "stdout": "mapped-part-9.stdout",
+      "stderr": "mapped-part-9.stderr"
+    },
+    {
+      "name": "mapped-part-10",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--samples",
+        "948",
+        "949",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.13434454100206494,
+      "stdout": "mapped-part-10.stdout",
+      "stderr": "mapped-part-10.stderr"
+    },
+    {
+      "name": "mapped-part-11",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--samples",
+        "949",
+        "1022",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.13448783289641142,
+      "stdout": "mapped-part-11.stdout",
+      "stderr": "mapped-part-11.stderr"
+    },
+    {
+      "name": "mapped-part-12",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--samples",
+        "1022",
+        "1278",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.13853279105387628,
+      "stdout": "mapped-part-12.stdout",
+      "stderr": "mapped-part-12.stderr"
+    },
+    {
+      "name": "mapped-part-13",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--samples",
+        "1278",
+        "1295",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.13790233293548226,
+      "stdout": "mapped-part-13.stdout",
+      "stderr": "mapped-part-13.stderr"
+    },
+    {
+      "name": "mapped-part-14",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--samples",
+        "1295",
+        "1422",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.13962170807644725,
+      "stdout": "mapped-part-14.stdout",
+      "stderr": "mapped-part-14.stderr"
+    },
+    {
+      "name": "mapped-part-15",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--samples",
+        "1422",
+        "1423",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.13453937508165836,
+      "stdout": "mapped-part-15.stdout",
+      "stderr": "mapped-part-15.stderr"
+    },
+    {
+      "name": "mapped-part-16",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--samples",
+        "1423",
+        "1496",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.13798504206351936,
+      "stdout": "mapped-part-16.stdout",
+      "stderr": "mapped-part-16.stderr"
+    },
+    {
+      "name": "mapped-part-17",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--samples",
+        "1496",
+        "1752",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.13688512495718896,
+      "stdout": "mapped-part-17.stdout",
+      "stderr": "mapped-part-17.stderr"
+    },
+    {
+      "name": "mapped-part-18",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--samples",
+        "1752",
+        "1769",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.13584850006736815,
+      "stdout": "mapped-part-18.stdout",
+      "stderr": "mapped-part-18.stderr"
+    },
+    {
+      "name": "mapped-part-19",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--samples",
+        "1769",
+        "1896",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.12317241705022752,
+      "stdout": "mapped-part-19.stdout",
+      "stderr": "mapped-part-19.stderr"
+    },
+    {
+      "name": "mapped-part-20",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--samples",
+        "1896",
+        "1897",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.1332372089382261,
+      "stdout": "mapped-part-20.stdout",
+      "stderr": "mapped-part-20.stderr"
+    },
+    {
+      "name": "mapped-part-21",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--samples",
+        "1897",
+        "1970",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.1382615000475198,
+      "stdout": "mapped-part-21.stdout",
+      "stderr": "mapped-part-21.stderr"
+    },
+    {
+      "name": "mapped-part-22",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--samples",
+        "1970",
+        "2226",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.1358298328705132,
+      "stdout": "mapped-part-22.stdout",
+      "stderr": "mapped-part-22.stderr"
+    },
+    {
+      "name": "mapped-part-23",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--samples",
+        "2226",
+        "2243",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.1368410000577569,
+      "stdout": "mapped-part-23.stdout",
+      "stderr": "mapped-part-23.stderr"
+    },
+    {
+      "name": "mapped-part-24",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--samples",
+        "2243",
+        "2370",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.13496470800600946,
+      "stdout": "mapped-part-24.stdout",
+      "stderr": "mapped-part-24.stderr"
+    },
+    {
+      "name": "mapped-part-25",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--samples",
+        "2370",
+        "2371",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.13308433280326426,
+      "stdout": "mapped-part-25.stdout",
+      "stderr": "mapped-part-25.stderr"
+    },
+    {
+      "name": "mapped-part-26",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--samples",
+        "2371",
+        "2444",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.13868391700088978,
+      "stdout": "mapped-part-26.stdout",
+      "stderr": "mapped-part-26.stderr"
+    },
+    {
+      "name": "mapped-part-27",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--samples",
+        "2444",
+        "2700",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.13854225003160536,
+      "stdout": "mapped-part-27.stdout",
+      "stderr": "mapped-part-27.stderr"
+    },
+    {
+      "name": "mapped-part-28",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--samples",
+        "2700",
+        "2717",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.1343519170768559,
+      "stdout": "mapped-part-28.stdout",
+      "stderr": "mapped-part-28.stderr"
+    },
+    {
+      "name": "mapped-part-29",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--samples",
+        "2717",
+        "2844",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.13702079211361706,
+      "stdout": "mapped-part-29.stdout",
+      "stderr": "mapped-part-29.stderr"
+    },
+    {
+      "name": "mapped-part-30",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--samples",
+        "2844",
+        "2845",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.13508162484504282,
+      "stdout": "mapped-part-30.stdout",
+      "stderr": "mapped-part-30.stderr"
+    },
+    {
+      "name": "mapped-part-31",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--samples",
+        "2845",
+        "2918",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.13494458398781717,
+      "stdout": "mapped-part-31.stdout",
+      "stderr": "mapped-part-31.stderr"
+    },
+    {
+      "name": "mapped-part-32",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--samples",
+        "2918",
+        "3174",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.1296372499782592,
+      "stdout": "mapped-part-32.stdout",
+      "stderr": "mapped-part-32.stderr"
+    },
+    {
+      "name": "mapped-part-33",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--samples",
+        "3174",
+        "3191",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.13556895917281508,
+      "stdout": "mapped-part-33.stdout",
+      "stderr": "mapped-part-33.stderr"
+    },
+    {
+      "name": "mapped-part-34",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--samples",
+        "3191",
+        "3203",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.13589437515474856,
+      "stdout": "mapped-part-34.stdout",
+      "stderr": "mapped-part-34.stderr"
+    },
+    {
+      "name": "mapped-middle-cli",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--samples",
+        "1499",
+        "1718",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.13521316600963473,
+      "stdout": "mapped-middle-cli.stdout",
+      "stderr": "mapped-middle-cli.stderr"
+    },
+    {
+      "name": "mapped-middle-app",
+      "arguments": [
+        "deadpan-app",
+        "--headless",
+        "inspect-audio",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--samples",
+        "1499",
+        "1718",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.13744049984961748,
+      "stdout": "mapped-middle-app.stdout",
+      "stderr": "mapped-middle-app.stderr"
+    },
+    {
+      "name": "mapped-near-end-cli",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--samples",
+        "3026",
+        "3203",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.1433833329938352,
+      "stdout": "mapped-near-end-cli.stdout",
+      "stderr": "mapped-near-end-cli.stderr"
+    },
+    {
+      "name": "mapped-near-end-app",
+      "arguments": [
+        "deadpan-app",
+        "--headless",
+        "inspect-audio",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--samples",
+        "3026",
+        "3203",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.1435405418742448,
+      "stdout": "mapped-near-end-app.stdout",
+      "stderr": "mapped-near-end-app.stderr"
+    },
+    {
+      "name": "after-inspection",
+      "arguments": [
+        "deadpan-cli",
+        "project",
+        "dump",
+        "/tmp/deadpan-stages-audio-process-b2jqf_t_/Stages.deadpan",
+        "--json"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.04424266703426838,
+      "stdout": "after-inspection.stdout",
+      "stderr": "after-inspection.stderr"
+    }
+  ],
+  "checks": [
+    "Stored three-frame child selection maps to two NTSC frames with exact Preserve speed 3/2 and final allocation 3203 samples",
+    "Source-only inspection explicitly rejects pitch-preserving processing",
+    "CLI and native-app headless processes emit identical first, middle and near-end time-mapped PCM",
+    "A complete 3203-sample read split into canonical-size and irregular process queries is exactly equal",
+    "Authored snapshot, every SQLite table count, history rows and complete logical database dump remain unchanged"
+  ],
+  "status": "passed",
+  "base_revision": "9bc3bb90ae45d7d4f1cacee1be230f0c1824038d",
+  "hardware": {
+    "model": "Mac17,7",
+    "processor": "Apple M5 Max",
+    "memory_bytes": 137438953472,
+    "macos": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84",
+    "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)"
+  },
+  "source_sha256": {
+    "Cargo.lock": "b143d965fde2d66db79bc70a738bfe7c9e576e2cf090314257e69c35933bc98c",
+    "crates/deadpan-audio/src/stages.rs": "8ab6000d2f92701a5f97a234749e670d01a156e1a2f479a323a008f74c9ab54b",
+    "crates/deadpan-audio/src/resample.rs": "cf630ce0f30050e2da6cd4fe00f6672468c7310add617058d6aa0c7ec5ed22c1",
+    "crates/deadpan-audio/src/session.rs": "f2e7aff7b7383796117ab8b03d1c69a3762c4920f1ac1ed20639bb00f49b8d79",
+    "crates/deadpan-plan/src/audio_signal.rs": "6c3e8f33d282e679e939dd96d8d14557b2541c616fa810701ccde546df602082",
+    "crates/deadpan-plan/src/audio.rs": "14fd14bab31abaf78adfc7b94ad3e7ba2f0b126839e13dafb40c2ef49f755444",
+    "crates/deadpan-cli/src/audio.rs": "ad7e8af9add8cc2dad92f5bf6e49cdd24adc77c575a8e5f22beb5ef927462b41",
+    "crates/deadpan-cli/src/lib.rs": "ab09a364844e49ff7b947b81150cd5d72693daf391c4f0d78195adf801b396eb",
+    "native/deadpan-dsp/src/lib.rs": "039ab9209a04c5f76c9fb37677a302a440a492ff37bcdc63b8e47b5dd263cf20"
+  },
+  "binary_sha256": {
+    "deadpan-cli": "5658468a1494f9f1790ec4ee68315d729a156f58e6dcc9869879a2f906f4d7d3",
+    "deadpan-app": "054b591441896893473a14a916f86ce6aea81aadb1ebe914b89ccd36d55287a9"
+  },
+  "script_sha256": "74dadddecddb984869225912efbfdae29f7bb27fde5ac82ccd685e17cc475aed",
+  "fixture": "native/deadpan-source/tests/fixtures/cfr-bframes.mp4",
+  "fixture_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+  "rendered_frames": 3203,
+  "prepared_input_extent": {
+    "numerator": 24024,
+    "denominator": 5
+  },
+  "prepared_output_extent": {
+    "numerator": 16016,
+    "denominator": 5
+  },
+  "complete_pcm_sha256": "3033935cbf1faed5242a831a04c986e739dfc5658829505fe387560ef1281218",
+  "database_before": {
+    "table_counts": {
+      "generation_attempt_heads": 0,
+      "generation_attempts": 0,
+      "generation_bundle_receipts": 0,
+      "generation_candidate_receipts": 0,
+      "generation_requests": 0,
+      "history": 3,
+      "hold_request_clocks": 0,
+      "original_media": 1,
+      "redo": 0,
+      "revisions": 4,
+      "source_qualifications": 1,
+      "state": 1
+    },
+    "state": [
+      [
+        1,
+        "preserve-three-into-two",
+        3
+      ]
+    ],
+    "history": [
+      [
+        1,
+        null,
+        "source-import"
+      ],
+      [
+        2,
+        1,
+        "remove-source"
+      ],
+      [
+        3,
+        2,
+        "preserve-three-into-two"
+      ]
+    ],
+    "logical_dump_sha256": "92e06ae8b539e9bbbaf6cb277249f9ea1da8c77dc52183dfba7b1aa74f5d8dea",
+    "user_version": 15
+  },
+  "database_after": {
+    "table_counts": {
+      "generation_attempt_heads": 0,
+      "generation_attempts": 0,
+      "generation_bundle_receipts": 0,
+      "generation_candidate_receipts": 0,
+      "generation_requests": 0,
+      "history": 3,
+      "hold_request_clocks": 0,
+      "original_media": 1,
+      "redo": 0,
+      "revisions": 4,
+      "source_qualifications": 1,
+      "state": 1
+    },
+    "state": [
+      [
+        1,
+        "preserve-three-into-two",
+        3
+      ]
+    ],
+    "history": [
+      [
+        1,
+        null,
+        "source-import"
+      ],
+      [
+        2,
+        1,
+        "remove-source"
+      ],
+      [
+        3,
+        2,
+        "preserve-three-into-two"
+      ]
+    ],
+    "logical_dump_sha256": "92e06ae8b539e9bbbaf6cb277249f9ea1da8c77dc52183dfba7b1aa74f5d8dea",
+    "user_version": 15
+  },
+  "completed_utc": "2026-09-21T23:56:38.389162+00:00"
+}

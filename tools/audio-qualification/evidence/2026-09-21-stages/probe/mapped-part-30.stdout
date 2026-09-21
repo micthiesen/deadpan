@@ -1,0 +1,17 @@
+{
+  "audio": {
+    "project_id": "9285d538-981a-4b2b-a0d6-f70b27ca9f3e",
+    "revision_id": "preserve-three-into-two",
+    "samples": [
+      [
+        -2.064140971924644e-6,
+        -1.7613034515306936e-6
+      ]
+    ],
+    "schema_version": 1,
+    "stage": "time_mapped_pcm_before_effects",
+    "start": 2844,
+    "suppressed": []
+  },
+  "protocol": 1
+}

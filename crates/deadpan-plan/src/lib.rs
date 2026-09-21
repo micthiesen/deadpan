@@ -14,6 +14,10 @@ pub use plan::{
     LookupStats, NodeInspection, NodeType, PlanInspection, PlanMetadata, RenderPlan, SilenceReason,
     StorageStats,
 };
+pub use plan::{
+    AudioProcessingQuery, AudioProcessingSpan, AudioSignal, AudioSignalContent, AudioSignalQuery,
+    AudioSignalSpan, AudioStage, AudioStageDescriptor, SignalSample, SignalTransform,
+};
 
 use deadpan_core::{
     AssetId, DocumentError, FrameDuration, ProjectFrame, SourceFrameId, SourceTimeBase, TimeError,

@@ -1,0 +1,57 @@
+{
+  "schema_version": 10,
+  "project_id": "9285d538-981a-4b2b-a0d6-f70b27ca9f3e",
+  "revision_id": "remove-source",
+  "presentation_basis": {
+    "width": 320,
+    "height": 180,
+    "frame_rate": {
+      "numerator": 30000,
+      "denominator": 1001
+    },
+    "color_policy": "sdr_rec709"
+  },
+  "basis_state": {
+    "rate_origin": "explicit",
+    "geometry_origin": "explicit",
+    "primary": null
+  },
+  "root": "8eafbf45-9ad1-45e7-b44b-1fbf228a0202",
+  "nodes": {
+    "8eafbf45-9ad1-45e7-b44b-1fbf228a0202": {
+      "label": "Sequence",
+      "kind": {
+        "type": "sequence",
+        "children": []
+      }
+    }
+  },
+  "assets": {
+    "fixture-audio": {
+      "label": "Own synthetic AAC fixture",
+      "content_hash": "blake3:16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+      "video": null,
+      "audio": {
+        "start": {
+          "ticks": 0,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 48000
+          }
+        },
+        "end": {
+          "ticks": 192192,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 48000
+          }
+        }
+      },
+      "still_image": false,
+      "frame_count": null,
+      "source_qualification": "e9a6894438eac3e069888a424dfc42dfbe42adc877f6ab6ad7501c8d134c114d"
+    }
+  },
+  "marks": {},
+  "overrides": {}
+}
