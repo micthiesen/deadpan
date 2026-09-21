@@ -10,6 +10,7 @@ description = "Exact-phase source audio preparation for the shared 48 kHz mix"
 
 [dependencies]
 deadpan-core.workspace = true
+deadpan-plan.workspace = true
 deadpan-media.workspace = true
 serde.workspace = true
 thiserror.workspace = true

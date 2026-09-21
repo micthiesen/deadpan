@@ -211,6 +211,21 @@ Inheritance follows the owner: an externally owned Local mark referencing a
 copied host remains on its original authored host. It is not implicitly copied.
 See [nested occurrence verification](OCCURRENCE_VERIFICATION.md).
 
+## Source-stage audio inspection
+
+```sh
+cargo run --locked -p deadpan-cli -- inspect-audio /tmp/example.deadpan --samples 0 256
+```
+
+This read-only command decodes qualified originals and returns 1 through 256
+stereo samples under protocol 1's `audio` key. It pins the opened revision and
+labels the result `source_pcm_before_effects`. This is source PCM before edge
+fades, effects and mastering, not the final mix or an export file. Natural-rate
+source placement, silent Holds, structural repeats and explicit tape-speed
+retimes are supported. Unsupported pitch/effect policies and ambiguous speaker
+layouts fail explicitly. The same command runs through `deadpan-app --headless`.
+See [the contract and failure codes](SOURCE_STAGE_AUDIO.md).
+
 ## Picture and audio plan inspection
 
 ```sh

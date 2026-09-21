@@ -34,7 +34,7 @@ Current crates:
 - `crates/deadpan-media`: shared verified source snapshots, measured video/audio indexes, exact video seeks and bounded private PCM caches, plus isolated conversion, strict helper reports and private BLAKE3 output. No database or authored-state mutation.
 - `native/deadpan-source`: separate persistent descriptor-only FFmpeg video/audio decoders, raw metadata, owned RGBA and original-rate interleaved f32. Unsafe code stays in this narrow adapter; unsupported interpretations fail explicitly.
 - `native/deadpan-dsp`: bounded owned planar PCM and the canonical pinned stretch schedule through a safe Rust/C++ boundary. Construct it on a preparation worker; no device output or media decoding.
-- `crates/deadpan-audio`: exact-phase source resampling, explicit speaker matrices and qualified PCM access. Preparation is worker work; full voice graph and device output remain open.
+- `crates/deadpan-audio`: exact-phase source resampling, explicit speaker matrices, qualified PCM access and plan-driven source-stage blocks. Preparation is worker work; full voice graph and device output remain open.
 - `native/deadpan-fileclone`: bounded safe descriptor-clone interface around the macOS system call. The store owns copying, checksums, publication and durability.
 - `crates/deadpan-render`: bounded shared SDR picture pipeline, linear Rec.2020 working textures, explicit sRGB display transform, aspect and rotation. No decoding, document mutation or encoding.
 - `native/deadpan-media-worker`: process-isolated FFmpeg conversion and independent decode verification through bounded descriptor-only AVIO. Only the documented FFI call permits unsafe Rust. Requires the explicitly selected pinned LGPL FFmpeg development prefix.
@@ -327,6 +327,18 @@ must not conceal unavailable selected PCM. Unknown speaker layouts require an
 explicit interpretation, never a channel-count guess. Preserve source dynamics
 and retain the chosen layout in preparation provenance. See
 [source preparation](docs/AUDIO_PREPARATION.md).
+
+`SequenceAudio` reads an immutable plan through a revision-aware source provider.
+Anchor recipes to the full allocated span, never the current query. Convert exact
+source clocks using the actual sample rate, and clip discrete PCM context with
+`[ceil(start), ceil(end))` at exact structural edges. Historical assets resolve by
+project/revision/asset and retain full receipt and original-byte verification.
+Preflight unsupported processing before source I/O; never omit a Preserve stage
+because another stage cancels its aggregate speed. Source-stage blocks explicitly
+identify `source_pcm_before_effects`; they cannot stand in for the final mix.
+The host currently retains one bounded decoded session and reopens on source
+switches. Full prepared-cache scheduling remains open. See
+[source-stage audio](docs/SOURCE_STAGE_AUDIO.md).
 
 Worker stdout contains only versioned, bounded, length-framed control messages;
 stderr is drained into a bounded diagnostic tail. A completed manifest enters

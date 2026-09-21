@@ -5,10 +5,14 @@
 mod matrix;
 mod resample;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+mod sequence;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 mod session;
 
 pub use matrix::StereoMatrix;
 pub use resample::{PcmWindow, ResampleRecipe, Resampler, StereoBlock};
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+pub use sequence::{AudioSourceProvider, SequenceAudio, SequenceAudioError, SourceStageBlock};
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub use session::PreparedSource;
 
@@ -33,6 +37,8 @@ pub enum PreparationError {
     Cancelled,
     #[error("reopened source audio differs from its qualified index")]
     IndexMismatch,
+    #[error("qualified source audio is unavailable: {0}")]
+    SourceUnavailable(String),
     #[error(transparent)]
     Time(#[from] deadpan_core::TimeError),
     #[cfg(any(target_os = "macos", target_os = "linux"))]

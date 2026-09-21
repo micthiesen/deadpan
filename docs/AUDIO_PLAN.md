@@ -32,6 +32,10 @@ requested exact sample boundary. A rounded edge can map slightly outside an
 authored source interval; `source_point` reports that fraction without clamping
 or permitting a decoder read outside measured availability. Edge extension,
 resampling, fades and DSP context remain explicit renderer responsibilities.
+`source_point_at_project_frame` also maps exact fractional structural edges,
+without replacing them with rounded sample allocations. The
+[source-stage reader](SOURCE_STAGE_AUDIO.md) uses these edges to constrain
+filter context and uses the full allocated span as its phase origin.
 
 Sequences use prefix binary search. Repeats use the shared compact
 `RepeatLayout`, including sparse overrides, variable play durations and gaps
@@ -53,7 +57,8 @@ The same command is available through `deadpan-app --headless`. It opens SQLite
 read-only and reports protocol 1, the pinned project/revision, spans and measured
 lookup counters. It neither renders audio nor changes history.
 
-This establishes structural planning only. Attachment voices, effect routing,
-incremental fragment reuse, mixed-policy DSP composition, room-tone crossfades,
-tails, resampling/downmix, gain/fades/limiting, prepared cache lifecycle, native
-device output and preview/export playback remain required work.
+This API establishes structural planning only. A separate source-stage reader
+now connects supported spans to [actual source preparation](AUDIO_PREPARATION.md).
+Attachment voices, effect routing, incremental fragment reuse, mixed-policy DSP
+composition, room-tone crossfades, tails, gain/fades/limiting, prepared cache
+lifecycle, native devices and preview/export playback remain required work.

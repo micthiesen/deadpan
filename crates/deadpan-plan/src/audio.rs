@@ -150,6 +150,24 @@ impl AudioSpan {
     /// can place an edge sample slightly outside the authored source interval;
     /// this method does not clamp it or authorize reading excluded source PCM.
     pub fn source_point(&self, sample: AudioSample) -> Result<SourcePoint, PlanError> {
+        self.source_point_from_local(self.transform.local_at(sample)?)
+    }
+
+    /// Exact source coordinate at a project-frame coordinate, including a
+    /// fractional clipped edge. This is distinct from the rounded allocation
+    /// of output samples and does not authorize reading excluded source PCM.
+    pub fn source_point_at_project_frame(
+        &self,
+        frame: ExactRatio,
+    ) -> Result<SourcePoint, PlanError> {
+        self.source_point_from_local(
+            frame
+                .checked_sub(self.transform.project_origin)?
+                .checked_div(self.transform.project_frames_per_local_frame)?,
+        )
+    }
+
+    fn source_point_from_local(&self, local: ExactRatio) -> Result<SourcePoint, PlanError> {
         let AudioContent::Source {
             source,
             start,
@@ -158,11 +176,7 @@ impl AudioSpan {
         else {
             return Err(PlanError::NoSourceAudio);
         };
-        let fraction = self
-            .transform
-            .local_at(sample)?
-            .checked_sub(*start)?
-            .checked_div(*duration)?;
+        let fraction = local.checked_sub(*start)?.checked_div(*duration)?;
         let ticks =
             ExactRatio::integer(source.span.start().ticks).checked_add(fraction.checked_mul(
                 ExactRatio::integer(source.span.end().ticks - source.span.start().ticks),

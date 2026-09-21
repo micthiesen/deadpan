@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "base_revision": "70d465a7d385d68710c82db438267da374f18465",
+  "general": {
+    "reviewer": "source_audio_general_review",
+    "independent_of_implementation": true,
+    "scope": ["sequence.rs", "sequence integration tests", "CLI audio host and inspection tests", "Cargo wiring", "AudioSpan coordinate helper and callers"],
+    "lenses": ["historical receipt identity", "source retention", "exact timing", "unsupported processing", "bounds and cancellation", "CLI errors"],
+    "actionable_findings": []
+  },
+  "timing": {
+    "reviewer": "audio_matrix",
+    "independent_of_production_reader": true,
+    "authored_sequence_integration_tests": true,
+    "scope": ["sequence.rs", "AudioSpan coordinate helper"],
+    "actionable_findings": [],
+    "extra_scratch_tests_passed": 4,
+    "harness_setup_failure": "Initial standalone compilation needed matching Cargo artifacts and native library search paths; corrected invocation passed all four tests."
+  },
+  "gui": "Not repeated: no native UI, focus, keyboard, startup or lifecycle changes."
+}

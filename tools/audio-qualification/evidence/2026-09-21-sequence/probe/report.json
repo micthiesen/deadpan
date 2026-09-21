@@ -1,0 +1,274 @@
+{
+  "schema_version": 1,
+  "started_utc": "2026-09-21T23:03:41.098225+00:00",
+  "base_revision": "70d465a7d385d68710c82db438267da374f18465",
+  "scratch": "/tmp/deadpan-sequence-audio-probe-n3m0rj6z",
+  "commands": [
+    {
+      "name": "create",
+      "arguments": [
+        "deadpan-cli",
+        "project",
+        "create",
+        "/tmp/deadpan-sequence-audio-probe-n3m0rj6z/Sequence.deadpan",
+        "--fps",
+        "30000/1001",
+        "--size",
+        "320x180"
+      ],
+      "exit_code": 0,
+      "stdout": "create.stdout",
+      "stderr": "create.stderr"
+    },
+    {
+      "name": "retain",
+      "arguments": [
+        "deadpan-cli",
+        "project",
+        "retain-original",
+        "/tmp/deadpan-sequence-audio-probe-n3m0rj6z/Sequence.deadpan",
+        "/Users/michael/Code/deadpan/native/deadpan-source/tests/fixtures/cfr-bframes.mp4"
+      ],
+      "exit_code": 0,
+      "stdout": "retain.stdout",
+      "stderr": "retain.stderr"
+    },
+    {
+      "name": "register",
+      "arguments": [
+        "deadpan-cli",
+        "project",
+        "register-source",
+        "/tmp/deadpan-sequence-audio-probe-n3m0rj6z/Sequence.deadpan",
+        "--request-json",
+        "/tmp/deadpan-sequence-audio-probe-n3m0rj6z/registration.json"
+      ],
+      "exit_code": 0,
+      "stdout": "register.stdout",
+      "stderr": "register.stderr"
+    },
+    {
+      "name": "source-document",
+      "arguments": [
+        "deadpan-cli",
+        "project",
+        "dump",
+        "/tmp/deadpan-sequence-audio-probe-n3m0rj6z/Sequence.deadpan",
+        "--json"
+      ],
+      "exit_code": 0,
+      "stdout": "source-document.stdout",
+      "stderr": "source-document.stderr"
+    },
+    {
+      "name": "source-cli",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-sequence-audio-probe-n3m0rj6z/Sequence.deadpan",
+        "--samples",
+        "0",
+        "256"
+      ],
+      "exit_code": 0,
+      "stdout": "source-cli.stdout",
+      "stderr": "source-cli.stderr"
+    },
+    {
+      "name": "source-app",
+      "arguments": [
+        "deadpan-app",
+        "--headless",
+        "inspect-audio",
+        "/tmp/deadpan-sequence-audio-probe-n3m0rj6z/Sequence.deadpan",
+        "--samples",
+        "0",
+        "256"
+      ],
+      "exit_code": 0,
+      "stdout": "source-app.stdout",
+      "stderr": "source-app.stderr"
+    },
+    {
+      "name": "repeat",
+      "arguments": [
+        "deadpan-cli",
+        "command",
+        "/tmp/deadpan-sequence-audio-probe-n3m0rj6z/Sequence.deadpan",
+        "--json",
+        "/tmp/deadpan-sequence-audio-probe-n3m0rj6z/repeat.json"
+      ],
+      "exit_code": 0,
+      "stdout": "repeat.stdout",
+      "stderr": "repeat.stderr"
+    },
+    {
+      "name": "before-inspection",
+      "arguments": [
+        "deadpan-cli",
+        "project",
+        "dump",
+        "/tmp/deadpan-sequence-audio-probe-n3m0rj6z/Sequence.deadpan",
+        "--json"
+      ],
+      "exit_code": 0,
+      "stdout": "before-inspection.stdout",
+      "stderr": "before-inspection.stderr"
+    },
+    {
+      "name": "repeat-first",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-sequence-audio-probe-n3m0rj6z/Sequence.deadpan",
+        "--samples",
+        "0",
+        "256"
+      ],
+      "exit_code": 0,
+      "stdout": "repeat-first.stdout",
+      "stderr": "repeat-first.stderr"
+    },
+    {
+      "name": "repeat-second",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-sequence-audio-probe-n3m0rj6z/Sequence.deadpan",
+        "--samples",
+        "193794",
+        "194050"
+      ],
+      "exit_code": 0,
+      "stdout": "repeat-second.stdout",
+      "stderr": "repeat-second.stderr"
+    },
+    {
+      "name": "repeat-second-app",
+      "arguments": [
+        "deadpan-app",
+        "--headless",
+        "inspect-audio",
+        "/tmp/deadpan-sequence-audio-probe-n3m0rj6z/Sequence.deadpan",
+        "--samples",
+        "193794",
+        "194050"
+      ],
+      "exit_code": 0,
+      "stdout": "repeat-second-app.stdout",
+      "stderr": "repeat-second-app.stderr"
+    },
+    {
+      "name": "repeat-second-prefix",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-sequence-audio-probe-n3m0rj6z/Sequence.deadpan",
+        "--samples",
+        "193794",
+        "193867"
+      ],
+      "exit_code": 0,
+      "stdout": "repeat-second-prefix.stdout",
+      "stderr": "repeat-second-prefix.stderr"
+    },
+    {
+      "name": "repeat-second-suffix",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-sequence-audio-probe-n3m0rj6z/Sequence.deadpan",
+        "--samples",
+        "193867",
+        "194050"
+      ],
+      "exit_code": 0,
+      "stdout": "repeat-second-suffix.stdout",
+      "stderr": "repeat-second-suffix.stderr"
+    },
+    {
+      "name": "gap-0",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-sequence-audio-probe-n3m0rj6z/Sequence.deadpan",
+        "--samples",
+        "192192",
+        "192448"
+      ],
+      "exit_code": 0,
+      "stdout": "gap-0.stdout",
+      "stderr": "gap-0.stderr"
+    },
+    {
+      "name": "gap-1",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-sequence-audio-probe-n3m0rj6z/Sequence.deadpan",
+        "--samples",
+        "385986",
+        "386242"
+      ],
+      "exit_code": 0,
+      "stdout": "gap-1.stdout",
+      "stderr": "gap-1.stderr"
+    },
+    {
+      "name": "repeat-third",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-sequence-audio-probe-n3m0rj6z/Sequence.deadpan",
+        "--samples",
+        "387587",
+        "387843"
+      ],
+      "exit_code": 0,
+      "stdout": "repeat-third.stdout",
+      "stderr": "repeat-third.stderr"
+    },
+    {
+      "name": "validate",
+      "arguments": [
+        "deadpan-cli",
+        "project",
+        "validate",
+        "/tmp/deadpan-sequence-audio-probe-n3m0rj6z/Sequence.deadpan"
+      ],
+      "exit_code": 0,
+      "stdout": "validate.stdout",
+      "stderr": "validate.stderr"
+    },
+    {
+      "name": "after-inspection",
+      "arguments": [
+        "deadpan-cli",
+        "project",
+        "dump",
+        "/tmp/deadpan-sequence-audio-probe-n3m0rj6z/Sequence.deadpan",
+        "--json"
+      ],
+      "exit_code": 0,
+      "stdout": "after-inspection.stdout",
+      "stderr": "after-inspection.stderr"
+    }
+  ],
+  "checks": [
+    "CLI and native host headless entrypoints emit identical source PCM around the known AAC impulse at sample 100",
+    "Three total plays, two silent gaps, no trailing gap in validated duration",
+    "Irregular query partitions preserve exact second-play PCM on the NTSC sample grid",
+    "Post-inspection authored snapshot equals pre-inspection snapshot"
+  ],
+  "status": "passed",
+  "fixture_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+  "source_duration_frames": 120,
+  "repeat_duration_frames": 362,
+  "repeat_duration_samples": 579779,
+  "play_sample_starts": [
+    0,
+    193794,
+    387587
+  ],
+  "completed_utc": "2026-09-21T23:03:42.547909+00:00"
+}

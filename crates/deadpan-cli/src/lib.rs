@@ -1,5 +1,7 @@
 //! Headless application boundary, shared with the native host.
 
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+pub mod audio;
 mod doctor;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 mod originals;
@@ -35,12 +37,14 @@ const HELP: &str = "Deadpan headless commands:
   project relink-original <project.deadpan> <blake3-digest> <absolute-source> --expected-version <N>
   inspect-plan <project.deadpan> [--frame <N>]
   inspect-plan <project.deadpan> --audio-samples <START> <END>
+  inspect-audio <project.deadpan> --samples <START> <END>
   resolve-selection <project.deadpan> --json <selection.json>
   command <project.deadpan> --json <request.json> [--dry-run]
 
 Creation defaults to a provisional 1920x1080, 30 fps presentation basis.
 Document dumps are inspection output; SQLite remains authoritative.
-Original retention preserves complete bytes; stream qualification and authored import remain separate.";
+Original retention preserves complete bytes; stream qualification and authored import remain separate.
+Audio inspection returns at most 256 stereo source samples before effects and mastering.";
 
 #[derive(Debug, thiserror::Error)]
 pub enum CliError {
@@ -71,6 +75,9 @@ pub enum CliError {
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     #[error(transparent)]
     SourceAudio(#[from] deadpan_media::audio_session::AudioSessionError),
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    #[error(transparent)]
+    ProjectAudio(#[from] audio::ProjectAudioError),
 }
 
 impl CliError {
@@ -93,6 +100,40 @@ impl CliError {
             Self::SourceVideo(_) => "SourceVideoDecodeFailed",
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             Self::SourceAudio(_) => "SourceAudioDecodeFailed",
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            Self::ProjectAudio(error) => match error {
+                audio::ProjectAudioError::Store(error) => error.code(),
+                audio::ProjectAudioError::Sequence(deadpan_audio::SequenceAudioError::Range) => {
+                    "AudioRangeOutOfRange"
+                }
+                audio::ProjectAudioError::Sequence(
+                    deadpan_audio::SequenceAudioError::Unsupported { .. },
+                ) => "AudioOperationUnsupported",
+                audio::ProjectAudioError::Sequence(
+                    deadpan_audio::SequenceAudioError::Preparation(
+                        deadpan_audio::PreparationError::UnsupportedLayout,
+                    ),
+                ) => "AudioLayoutUnsupported",
+                audio::ProjectAudioError::Sequence(
+                    deadpan_audio::SequenceAudioError::Preparation(
+                        deadpan_audio::PreparationError::SourceUnavailable(_),
+                    ),
+                ) => "SourceAudioUnavailable",
+                audio::ProjectAudioError::Sequence(
+                    deadpan_audio::SequenceAudioError::Preparation(
+                        deadpan_audio::PreparationError::IndexMismatch,
+                    ),
+                ) => "SourceAudioIndexMismatch",
+                audio::ProjectAudioError::Sequence(
+                    deadpan_audio::SequenceAudioError::Preparation(
+                        deadpan_audio::PreparationError::Cancelled,
+                    ),
+                ) => "Cancelled",
+                audio::ProjectAudioError::Sequence(deadpan_audio::SequenceAudioError::Time(_)) => {
+                    "TimingOverflow"
+                }
+                _ => "AudioInspectionFailed",
+            },
         }
     }
     fn current_revision(&self) -> Option<&str> {
@@ -156,6 +197,28 @@ fn run(arguments: &[String]) -> Result<(), CliError> {
             Ok(())
         }
         ["doctor"] => write_json(&doctor::report()?),
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        ["inspect-audio", path, "--samples", start, end] => {
+            let start = start
+                .parse::<i64>()
+                .map_err(|_| CliError::Usage("invalid audio sample start".into()))?;
+            let end = end
+                .parse::<i64>()
+                .map_err(|_| CliError::Usage("invalid audio sample end".into()))?;
+            let frames = end
+                .checked_sub(start)
+                .and_then(|value| u32::try_from(value).ok())
+                .ok_or(audio::ProjectAudioError::Sequence(
+                    deadpan_audio::SequenceAudioError::Range,
+                ))?;
+            let mut session = audio::ProjectAudioSession::open(Path::new(path))?;
+            let block = session.read(
+                deadpan_core::AudioSample(start),
+                frames,
+                &std::sync::atomic::AtomicBool::new(false),
+            )?;
+            write_json(&serde_json::json!({ "protocol": 1, "audio": block }))
+        }
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         [
             "project",

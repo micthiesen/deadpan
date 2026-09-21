@@ -1,0 +1,131 @@
+{
+  "committed": true,
+  "outcome": {
+    "edit": {
+      "changed_ids": [
+        "5447064b-7a8e-4cf9-8914-23afab160d7b",
+        "repeat"
+      ],
+      "description": "Wrap repeat",
+      "duration_delta": 242,
+      "forward": {
+        "assets": {},
+        "from_revision": "source-import",
+        "marks": {},
+        "nodes": {
+          "5447064b-7a8e-4cf9-8914-23afab160d7b": {
+            "after": {
+              "kind": {
+                "children": [
+                  "repeat"
+                ],
+                "type": "sequence"
+              },
+              "label": "Sequence"
+            },
+            "before": {
+              "kind": {
+                "children": [
+                  "fixture-source"
+                ],
+                "type": "sequence"
+              },
+              "label": "Sequence"
+            }
+          },
+          "repeat": {
+            "after": {
+              "kind": {
+                "child": "fixture-source",
+                "gap": {
+                  "audio": {
+                    "type": "silence"
+                  },
+                  "duration": 1,
+                  "video": {
+                    "type": "background"
+                  }
+                },
+                "iterations": {
+                  "runs": [
+                    {
+                      "allocation": "three-plays",
+                      "count": 3,
+                      "first": 0
+                    }
+                  ]
+                },
+                "type": "repeat"
+              },
+              "label": "Repeat"
+            },
+            "before": null
+          }
+        },
+        "overrides": {},
+        "project_id": "2c95be28-3a23-46dd-8d79-b62269f03214",
+        "to_revision": "three-plays"
+      },
+      "inverse": {
+        "assets": {},
+        "from_revision": "three-plays",
+        "marks": {},
+        "nodes": {
+          "5447064b-7a8e-4cf9-8914-23afab160d7b": {
+            "after": {
+              "kind": {
+                "children": [
+                  "fixture-source"
+                ],
+                "type": "sequence"
+              },
+              "label": "Sequence"
+            },
+            "before": {
+              "kind": {
+                "children": [
+                  "repeat"
+                ],
+                "type": "sequence"
+              },
+              "label": "Sequence"
+            }
+          },
+          "repeat": {
+            "after": null,
+            "before": {
+              "kind": {
+                "child": "fixture-source",
+                "gap": {
+                  "audio": {
+                    "type": "silence"
+                  },
+                  "duration": 1,
+                  "video": {
+                    "type": "background"
+                  }
+                },
+                "iterations": {
+                  "runs": [
+                    {
+                      "allocation": "three-plays",
+                      "count": 3,
+                      "first": 0
+                    }
+                  ]
+                },
+                "type": "repeat"
+              },
+              "label": "Repeat"
+            }
+          }
+        },
+        "overrides": {},
+        "project_id": "2c95be28-3a23-46dd-8d79-b62269f03214",
+        "to_revision": "source-import"
+      }
+    },
+    "revision_id": "three-plays"
+  },
+  "protocol": 1
+}

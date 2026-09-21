@@ -1,0 +1,413 @@
+#![cfg(any(target_os = "macos", target_os = "linux"))]
+
+use std::error::Error;
+use std::fs;
+use std::path::{Path, PathBuf};
+use std::process::Command as ProcessCommand;
+use std::sync::atomic::AtomicBool;
+use std::time::Duration;
+
+use deadpan_cli::audio::ProjectAudioSession;
+use deadpan_core::{
+    AssetId, AudioSample, ColorPolicy, Command, CommandRequest, FrameDuration, FrameRate,
+    HoldAudio, HoldRecipe, HoldVideo, NodeId, PresentationBasis, ProjectDocument, ProjectFrame,
+    ProjectId, RevisionId,
+};
+use deadpan_media::audio_session::{AudioSession, AudioSessionLimits, SourceAudioSample};
+use deadpan_media::source_index::SourceContentIdentity;
+use deadpan_media::source_qualification::DecodedSourceQualification;
+use deadpan_store::ProjectStore;
+use deadpan_store::original_media::{OriginalMediaLimits, OriginalOwnership};
+use deadpan_store::source_registration::{SourceInsertionRequest, SourceRegistration};
+use serde_json::{Value, json};
+
+type Result<T = ()> = std::result::Result<T, Box<dyn Error>>;
+
+fn active() -> AtomicBool {
+    AtomicBool::new(false)
+}
+fn node(value: &str) -> NodeId {
+    NodeId::new(value).unwrap()
+}
+fn revision(value: &str) -> RevisionId {
+    RevisionId::new(value).unwrap()
+}
+fn asset() -> AssetId {
+    AssetId::new("camera").unwrap()
+}
+fn limits() -> OriginalMediaLimits {
+    OriginalMediaLimits::new(2_000_000, Duration::from_secs(10)).unwrap()
+}
+fn fixture(name: &str) -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../native/deadpan-source/tests")
+        .join(if name.ends_with(".wav") {
+            "audio-fixtures"
+        } else {
+            "fixtures"
+        })
+        .join(name)
+        .canonicalize()
+        .unwrap()
+}
+fn project(parent: &Path) -> Result<(PathBuf, ProjectStore)> {
+    let path = parent.join("audio.deadpan");
+    let document = ProjectDocument::new(
+        ProjectId::new("audio-inspection")?,
+        revision("initial"),
+        PresentationBasis {
+            width: 320,
+            height: 180,
+            frame_rate: FrameRate::new(30, 1)?,
+            color_policy: ColorPolicy::SdrRec709,
+        },
+        node("root"),
+    )?;
+    Ok((path.clone(), ProjectStore::create(&path, &document)?))
+}
+
+fn register(
+    store: &mut ProjectStore,
+    path: &Path,
+    stream: u32,
+    ownership: OriginalOwnership,
+    next: &str,
+) -> Result<Vec<[f32; 2]>> {
+    let original = store
+        .retain_original(path, ownership, limits(), &active())?
+        .record;
+    let mut snapshot = store.snapshot_original(original.object().content(), limits(), &active())?;
+    let audio = AudioSession::open_verified(
+        &mut snapshot,
+        SourceContentIdentity::new(original.sha256(), original.object().byte_length())?,
+        stream,
+        AudioSessionLimits::default(),
+        &active(),
+    )?;
+    let first = audio
+        .index()
+        .frames()
+        .iter()
+        .find(|frame| frame.valid_start < frame.valid_end)
+        .unwrap()
+        .valid_start;
+    let original_block = audio.read_samples(
+        SourceAudioSample(first),
+        256,
+        Duration::from_secs(2),
+        &active(),
+    )?;
+    let expected = original_block
+        .samples
+        .chunks_exact(2)
+        .map(|frame| [frame[0], frame[1]])
+        .collect();
+    let decoded = DecodedSourceQualification::from_sessions(None, Some(&audio))?;
+    store.register_source(
+        &SourceRegistration {
+            expected_revision: store.snapshot()?.revision_id().clone(),
+            new_revision: revision(next),
+            original: original.object().content().clone(),
+            new_asset_id: asset(),
+            label: "Measured audio".into(),
+            insertion: Some(SourceInsertionRequest {
+                parent: node("root"),
+                index: 0,
+                node: node("clip"),
+                label: "Full source audio".into(),
+                purpose: Default::default(),
+            }),
+        },
+        &decoded,
+        None,
+        limits(),
+        &active(),
+    )?;
+    Ok(expected)
+}
+
+fn commit(store: &mut ProjectStore, next: &str, command: Command) -> Result {
+    let before = store.snapshot()?;
+    store.commit(&CommandRequest {
+        project_id: before.project_id().clone(),
+        expected_revision: before.revision_id().clone(),
+        new_revision: revision(next),
+        command,
+    })?;
+    Ok(())
+}
+
+fn inspect(path: &Path, start: &str, end: &str, succeeds: bool) -> Result<Value> {
+    let output = ProcessCommand::new(env!("CARGO_BIN_EXE_deadpan-cli"))
+        .args([
+            "inspect-audio",
+            path.to_str().unwrap(),
+            "--samples",
+            start,
+            end,
+        ])
+        .output()?;
+    assert_eq!(
+        output.status.success(),
+        succeeds,
+        "stdout: {}; stderr: {}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    if succeeds {
+        assert!(output.stderr.is_empty());
+        Ok(serde_json::from_slice(&output.stdout)?)
+    } else {
+        assert!(output.stdout.is_empty());
+        Ok(serde_json::from_slice(&output.stderr)?)
+    }
+}
+
+fn counts(path: &Path) -> Result<(i64, i64, i64)> {
+    let database = rusqlite::Connection::open(path.join("project.sqlite"))?;
+    Ok(database.query_row(
+        "SELECT (SELECT count(*) FROM revisions), (SELECT count(*) FROM history), (SELECT count(*) FROM source_qualifications)",
+        [],
+        |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+    )?)
+}
+
+#[test]
+fn actual_aac_pcm_inspection_is_read_only_beside_writer_and_matches_original_impulse() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let (path, mut store) = project(scratch.path())?;
+    let expected = register(
+        &mut store,
+        &fixture("cfr-bframes.mp4"),
+        1,
+        OriginalOwnership::Managed,
+        "registered",
+    )?;
+    // This fixture's encoded source event is at original sample 100. Compare
+    // the actual independent decoder oracle, without assuming lossy amplitude.
+    let peak = expected
+        .iter()
+        .enumerate()
+        .max_by(|(_, left), (_, right)| left[0].abs().total_cmp(&right[0].abs()))
+        .unwrap()
+        .0;
+    assert_eq!(peak, 100);
+    assert!(expected[peak][0] > 0.1);
+    assert!(expected[peak][1] < -0.1);
+    let before = store.snapshot()?;
+    let before_counts = counts(&path)?;
+    let report = inspect(&path, "0", "256", true)?;
+    assert_eq!(report["protocol"], 1);
+    assert_eq!(report["audio"]["schema_version"], 1);
+    assert_eq!(report["audio"]["stage"], "source_pcm_before_effects");
+    assert_eq!(report["audio"]["revision_id"], "registered");
+    assert_eq!(report["audio"]["start"], 0);
+    assert_eq!(
+        serde_json::from_value::<Vec<[f32; 2]>>(report["audio"]["samples"].clone())?,
+        expected
+    );
+    let mut session = ProjectAudioSession::open(&path)?;
+    assert_eq!(session.revision(), before.revision_id());
+    let block = session.read(AudioSample(83), 31, &active())?;
+    assert_eq!(block.samples, expected[83..114]);
+    assert_eq!(store.snapshot()?, before);
+    assert_eq!(counts(&path)?, before_counts);
+    Ok(())
+}
+
+#[test]
+fn source_repeat_gaps_and_silent_hold_boundaries_follow_exact_sequence_allocation() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let (path, mut store) = project(scratch.path())?;
+    let expected = register(
+        &mut store,
+        &fixture("cfr-bframes.mp4"),
+        1,
+        OriginalOwnership::Managed,
+        "registered",
+    )?;
+    let child_frames = store.snapshot()?.duration()?.frames();
+    commit(
+        &mut store,
+        "repeated",
+        Command::WrapRepeat {
+            node: node("clip"),
+            id: node("repeat"),
+            plays: 2,
+            gap: Some(HoldRecipe {
+                duration: FrameDuration::new(1)?,
+                video: HoldVideo::Background,
+                audio: HoldAudio::Silence,
+            }),
+            anchor_policy: Default::default(),
+        },
+    )?;
+    let mut session = ProjectAudioSession::open(&path)?;
+    let rate = session.plan().metadata().presentation_basis.frame_rate;
+    let gap = rate.audio_boundary(ProjectFrame(child_frames))?;
+    let second = rate.audio_boundary(ProjectFrame(child_frames + 1))?;
+    assert_eq!(
+        session.read(gap, 256, &active())?.samples,
+        vec![[0.0; 2]; 256]
+    );
+    assert_eq!(session.read(second, 256, &active())?.samples, expected);
+    let across = session.read(AudioSample(second.0 - 17), 128, &active())?;
+    assert_eq!(across.samples[..17], [[0.0; 2]; 17]);
+    assert_eq!(across.samples[17..], expected[..111]);
+    let report = inspect(&path, &gap.0.to_string(), &(gap.0 + 32).to_string(), true)?;
+    assert_eq!(report["audio"]["samples"], json!(vec![[0.0; 2]; 32]));
+    Ok(())
+}
+
+#[test]
+fn frozen_session_resolves_historical_receipt_after_undo_and_asset_alias_reuse() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let (path, mut store) = project(scratch.path())?;
+    let expected = register(
+        &mut store,
+        &fixture("cfr-bframes.mp4"),
+        1,
+        OriginalOwnership::Managed,
+        "first-import",
+    )?;
+    // Keep the reader cold until after the current alias means another source.
+    let mut frozen = ProjectAudioSession::open(&path)?;
+    store.undo(&revision("first-import"), revision("undone"))?;
+    let replacement = register(
+        &mut store,
+        &fixture("offset-bframes.mp4"),
+        1,
+        OriginalOwnership::Managed,
+        "second-import",
+    )?;
+    assert_ne!(replacement, expected);
+    let before = store.snapshot()?;
+    let before_counts = counts(&path)?;
+    assert_eq!(frozen.revision(), &revision("first-import"));
+    assert_eq!(
+        frozen.read(AudioSample(0), 256, &active())?.samples,
+        expected
+    );
+    let mut current = ProjectAudioSession::open(&path)?;
+    assert_eq!(current.revision(), &revision("second-import"));
+    assert_eq!(
+        current.read(AudioSample(0), 256, &active())?.samples,
+        replacement
+    );
+    assert_eq!(
+        frozen.read(AudioSample(90), 21, &active())?.samples,
+        expected[90..111]
+    );
+    assert_eq!(store.snapshot()?, before);
+    assert_eq!(counts(&path)?, before_counts);
+    Ok(())
+}
+
+#[test]
+fn invalid_ranges_and_cancellation_fail_without_returning_partial_pcm() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let (path, mut store) = project(scratch.path())?;
+    register(
+        &mut store,
+        &fixture("cfr-bframes.mp4"),
+        1,
+        OriginalOwnership::Managed,
+        "registered",
+    )?;
+    let before = store.snapshot()?;
+    for (start, end, code) in [
+        ("-1", "1", "AudioRangeOutOfRange"),
+        ("0", "257", "AudioRangeOutOfRange"),
+        ("2", "1", "AudioRangeOutOfRange"),
+        ("0", "0", "AudioRangeOutOfRange"),
+        ("0", "bad", "InvalidInput"),
+    ] {
+        assert_eq!(inspect(&path, start, end, false)?["error"]["code"], code);
+    }
+    let mut session = ProjectAudioSession::open(&path)?;
+    assert!(session.read(AudioSample(0), 0, &active()).is_err());
+    assert!(session.read(AudioSample(0), 257, &active()).is_err());
+    assert!(session.read(AudioSample(-1), 1, &active()).is_err());
+    assert!(
+        session
+            .read(AudioSample(0), 1, &AtomicBool::new(true))
+            .is_err()
+    );
+    assert_eq!(session.read(AudioSample(0), 1, &active())?.samples.len(), 1);
+    assert_eq!(store.snapshot()?, before);
+    Ok(())
+}
+
+#[test]
+fn missing_and_corrupt_linked_originals_fail_before_pcm_is_exposed() -> Result {
+    for corrupt in [false, true] {
+        let scratch = tempfile::tempdir()?;
+        let (path, mut store) = project(scratch.path())?;
+        let local = scratch.path().join("linked.mp4");
+        fs::copy(fixture("cfr-bframes.mp4"), &local)?;
+        register(
+            &mut store,
+            &local,
+            1,
+            OriginalOwnership::Linked { bookmark: None },
+            "registered",
+        )?;
+        let before = store.snapshot()?;
+        let mut session = ProjectAudioSession::open(&path)?;
+        if corrupt {
+            let mut bytes = fs::read(&local)?;
+            bytes[100] ^= 1;
+            fs::write(&local, bytes)?;
+        } else {
+            fs::remove_file(&local)?;
+        }
+        assert!(session.read(AudioSample(0), 256, &active()).is_err());
+        let error = inspect(&path, "0", "256", false)?;
+        assert_eq!(error["error"]["code"], "SourceAudioUnavailable");
+        assert!(
+            error["error"]["message"]
+                .as_str()
+                .is_some_and(|message| !message.is_empty())
+        );
+        assert_eq!(store.snapshot()?, before);
+    }
+    Ok(())
+}
+
+#[test]
+fn unspecified_layout_and_legacy_unqualified_assets_are_not_guessed() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let (path, mut store) = project(scratch.path())?;
+    register(
+        &mut store,
+        &fixture("pcm-stereo-48000.wav"),
+        0,
+        OriginalOwnership::Managed,
+        "registered",
+    )?;
+    let error = inspect(&path, "0", "16", false)?;
+    assert_eq!(error["error"]["code"], "AudioLayoutUnsupported");
+    assert!(
+        error["error"]["message"]
+            .as_str()
+            .unwrap()
+            .contains("layout")
+    );
+    let mut legacy = serde_json::to_value(store.snapshot()?)?;
+    legacy["assets"]["camera"]["source_qualification"] = Value::Null;
+    let legacy = ProjectDocument::from_json(&serde_json::to_string(&legacy)?)?;
+    let legacy_path = scratch.path().join("legacy.deadpan");
+    let legacy_store = ProjectStore::create(&legacy_path, &legacy)?;
+    let mut session = ProjectAudioSession::open(&legacy_path)?;
+    assert!(session.read(AudioSample(0), 16, &active()).is_err());
+    let error = inspect(&legacy_path, "0", "16", false)?;
+    assert_eq!(error["error"]["code"], "SourceAudioUnavailable");
+    assert!(
+        error["error"]["message"]
+            .as_str()
+            .unwrap()
+            .contains("qualification")
+    );
+    assert_eq!(legacy_store.snapshot()?, legacy);
+    Ok(())
+}

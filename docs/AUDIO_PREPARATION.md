@@ -92,11 +92,13 @@ layout and count. The adapter reads no database and mutates no authored state.
 Future cache keys must include original byte and selected-stream identity, full
 qualification contract/index, authored trim and exact affine recipe, chosen
 speaker layout, and all three engine/matrix/boundary IDs. Neither a pathname nor
-an engine ID alone identifies prepared audio. No prepared-cache publication or
-store-to-plan binding is implemented in this crate yet.
+an engine ID alone identifies prepared audio. Prepared-cache publication is not
+implemented. The [source-stage reader](SOURCE_STAGE_AUDIO.md) connects immutable
+plan spans to this sampler; its shared headless host binds assets through their
+historical store receipts and verified originals.
 
-The structural plan's exact source points and retained pitch stages must feed
-the eventual voice preparation. Feeding rounded input/output counts into
+The complete voice graph must also honor the plan's retained pitch stages.
+Feeding rounded input/output counts into
 `deadpan-dsp` does not establish exact fractional phase or mixed pitch semantics.
 Edge fades, gain/effects, room tone/tails, master limiting, long-clip stretch,
 device scheduling and preview/export comparison remain open. See the

@@ -1,0 +1,9 @@
+
+running 4 tests
+test review_maximum_source_coordinates_remain_exact_at_clipped_edges ... ok
+test review_fractional_original_trim_rejects_before_reading_selected_pcm ... ok
+test review_half_sample_ties_skip_zero_allocations_without_resetting_phase ... ok
+test review_signed_fractional_placement_composes_with_follow_speed_and_crop ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 10 filtered out; finished in 0.02s
+

@@ -1,0 +1,80 @@
+{
+  "base_revision": "70d465a7d385d68710c82db438267da374f18465",
+  "files": [
+    {
+      "path": "Cargo.lock",
+      "sha256": "4bf7ee7c0fb38026008549de201f46cd5fcafe91af9e920ce50f3376bbbb2dbc",
+      "bytes": 107980
+    },
+    {
+      "path": "crates/deadpan-audio/Cargo.toml",
+      "sha256": "c3c53f0c3c2dda9804657c9d48971a6cbd38c4c426c18fb27eb4a66cd882759d",
+      "bytes": 523
+    },
+    {
+      "path": "crates/deadpan-audio/src/lib.rs",
+      "sha256": "9ab006fccf470d9ac3904fc62aa3282400663bb1da822bf4da7861b06c077992",
+      "bytes": 2152
+    },
+    {
+      "path": "crates/deadpan-audio/src/sequence.rs",
+      "sha256": "364e9f016edf174277f7b35db29fa98cd161d796a1df9eb0675898a2bfdf48f0",
+      "bytes": 9661
+    },
+    {
+      "path": "crates/deadpan-audio/tests/sequence.rs",
+      "sha256": "2b8b65807bb3a8e2c0bd7a9edaa9897b5b3f31794cb18b81af1819dd0fdaa159",
+      "bytes": 23533
+    },
+    {
+      "path": "crates/deadpan-cli/Cargo.toml",
+      "sha256": "4a656821d81018b6694002e394858ccb6103c65adc53fdf15621a7a79609a2db",
+      "bytes": 720
+    },
+    {
+      "path": "crates/deadpan-cli/src/audio.rs",
+      "sha256": "5155c457be0a7e85e8fce4bfa6b2e8e3e87009b270169043ea91bd662ce125cf",
+      "bytes": 6020
+    },
+    {
+      "path": "crates/deadpan-cli/src/doctor.rs",
+      "sha256": "dc35be4ebc8604a8b61e68d6e9c2b42b6aba80e5a3e27dbe659418c1122976ce",
+      "bytes": 2165
+    },
+    {
+      "path": "crates/deadpan-cli/src/lib.rs",
+      "sha256": "c137c79b60329060173039e293f32811d3bd97ce9591df28941963a00dac330c",
+      "bytes": 19693
+    },
+    {
+      "path": "crates/deadpan-cli/tests/audio_inspection.rs",
+      "sha256": "529815364daa4ac3a8915176079bd13a0210306864d3b54d8dbaf32d86fe32a1",
+      "bytes": 14096
+    },
+    {
+      "path": "crates/deadpan-plan/src/audio.rs",
+      "sha256": "e01bb9f7b55ac0ef67db53d881f6be38b26f898f96cfe6d36832008ee7c02d34",
+      "bytes": 17973
+    },
+    {
+      "path": "native/deadpan-source/tests/audio-fixtures/pcm-mono-44100.wav",
+      "sha256": "b95b3debd2c83cf2590fddfaa98276c23c3b383b720fd96ac52c2c00c668318b",
+      "bytes": 88278
+    },
+    {
+      "path": "native/deadpan-source/tests/audio-fixtures/pcm-stereo-48000.wav",
+      "sha256": "e79aba90eab42dc057171be52be9ecb794c3e2790c5731783270ece73c24d2ee",
+      "bytes": 32832
+    },
+    {
+      "path": "native/deadpan-source/tests/fixtures/cfr-bframes.mp4",
+      "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+      "bytes": 39157
+    },
+    {
+      "path": "native/deadpan-source/tests/fixtures/offset-bframes.mp4",
+      "sha256": "1504e8c41c2e8e33cf588bbe46e7c79f9fb507437533f5d6cd6f280b6bfdb120",
+      "bytes": 39181
+    }
+  ]
+}

@@ -56,5 +56,7 @@ does not reinterpret old selections as natural-rate imports.
 The measured import helper derives a common A/V origin while retaining all
 available audio. [Source registration](SOURCE_REGISTRATION.md) retains selected-stream
 receipts and indexes and applies atomic registration/insertion with
-[presentation state](PRESENTATION_BASIS.md). Audio rendering and native import remain required.
+[presentation state](PRESENTATION_BASIS.md). Native source registration is connected;
+[source-stage PCM](SOURCE_STAGE_AUDIO.md) now renders natural placements and
+explicit tape-speed retimes. Complete voice processing and playback remain required.
 See [source audio decoding](SOURCE_AUDIO.md).

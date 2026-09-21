@@ -134,6 +134,13 @@ documents the boundary; these tests establish no native canvas-preview quality.
 
 ## Source audio checks
 
+Run `cargo test --locked -p deadpan-audio --test sequence` and
+`cargo test --locked -p deadpan-cli --test audio_inspection` for plan-driven
+source PCM, exact fractional phase, trimmed filter context, historical receipt
+binding and read-only inspection. `inspect-audio PROJECT --samples START END`
+returns at most 256 stereo samples before effects; the app exposes the same
+command through `--headless`. See [source-stage audio](SOURCE_STAGE_AUDIO.md).
+
 Run `cargo test --locked -p deadpan-source -p deadpan-media` for native audio
 decode, measured indexes, exact PCM ranges, AAC padding, shared video/audio
 snapshots and failure boundaries. Verify fixture bytes with

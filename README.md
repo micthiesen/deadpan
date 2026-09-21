@@ -12,7 +12,7 @@ This repository currently contains an **editing foundation**, not a working vide
 - `deadpan-jobs`: bounded worker messages, job lifecycle, subprocess supervision, contained artifact snapshots, and exact bridge-generation planning. A real MLX development adapter exercises this boundary; it is not connected to the app yet.
 - `deadpan-media`: shared verified originals, measured video/audio indexes, exact video seeks and bounded original-rate PCM caches through `native/deadpan-source`, plus isolated FFV1 conversion and exact interior bridge sampling.
 - `deadpan-dsp`: a bounded [worker-side canonical stretch adapter](docs/AUDIO_DSP.md) with owned PCM and a shared preview/export preparation schedule; device output remains open.
-- `deadpan-audio`: [exact source resampling and explicit stereo mixing](docs/AUDIO_PREPARATION.md), with bounded reads from verified original PCM; the full voice graph remains open.
+- `deadpan-audio`: [exact source resampling and explicit stereo mixing](docs/AUDIO_PREPARATION.md), with [plan-driven source PCM](docs/SOURCE_STAGE_AUDIO.md) from verified original media; the full voice graph remains open.
 - [Independent source audio timing](docs/SOURCE_AUDIO_MAPPING.md): exact audio durations and offsets, reversible commands, and per-play edits that preserve picture timing.
 - [Exact source picture timing](docs/SOURCE_VIDEO_MAPPING.md): natural-rate frame selection independent of beat rounding, with persisted endpoint holding restricted to the selected trim.
 - [Measured import timing](docs/SOURCE_IMPORT_TIMING.md): exact independent stream starts, preserved available audio, full-source enclosure and presentation-basis candidates.
@@ -21,7 +21,7 @@ This repository currently contains an **editing foundation**, not a working vide
 - `deadpan-render`: shared SDR GPU picture baseline, linear Rec.2020 composition, source aspect/rotation and explicit sRGB display conversion.
 - `deadpan-models`: [native bridge bundles](docs/GENERATION_BUNDLES.md), retained conditioning inputs, provenance binding, and measured media identities/spans. Admission-bearing schema-9 receipts require all six objects before Ready and explicit acceptance.
 - `deadpan-app`: an `egui`/`eframe` [native project workspace](docs/NATIVE_WORKSPACE.md) using Metal, with background media import, source browsing, explicit whole-source insertion, durable undo/redo, and exact Source/Sequence frame inspection.
-- `deadpan-cli`: headless project/command/history operations, migration, picture-plan inspection, and exact boundary selection, also available through `deadpan-app --headless`.
+- `deadpan-cli`: headless project/command/history operations, migration, picture/audio-plan and source-PCM inspection, and exact boundary selection, also available through `deadpan-app --headless`.
 
 The app implements a first create/import/insert/reopen workflow. Full structural keyboard editing, playback, AI generation, and export remain unimplemented in the app. All 24 full-product requirements remain open or partial in the [requirement tracker](docs/REQUIREMENTS.md). [Compatible native media qualification](docs/qualification/media-compatible-2026-09-20.md), [canonical audio qualification](docs/qualification/audio-canonical-2026-09-20.md), and a [real local model smoke](docs/qualification/model-smoke-2026-09-20.md) record actual tests, failed configurations, and measured limits separately from the application.
 

@@ -768,6 +768,7 @@ version = "0.1.0"
 dependencies = [
  "deadpan-core",
  "deadpan-media",
+ "deadpan-plan",
  "serde",
  "serde_json",
  "sha2",
@@ -778,6 +779,7 @@ dependencies = [
 name = "deadpan-cli"
 version = "0.1.0"
 dependencies = [
+ "deadpan-audio",
  "deadpan-core",
  "deadpan-media",
  "deadpan-plan",
