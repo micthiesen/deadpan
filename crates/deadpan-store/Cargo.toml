@@ -17,5 +17,10 @@ serde_json.workspace = true
 tempfile.workspace = true
 thiserror.workspace = true
 
+[target.'cfg(any(target_os = "macos", target_os = "linux"))'.dependencies]
+blake3.workspace = true
+rustix.workspace = true
+uuid.workspace = true
+
 [lints]
 workspace = true

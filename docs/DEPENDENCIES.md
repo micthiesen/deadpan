@@ -23,6 +23,7 @@ requirement in this scaffold.
 | rustix | 1.1.5 | Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT | Safe process-group signalling, unreaped exit observation, and nonblocking worker pipes on macOS/Linux. Already locked transitively; now pinned directly with `process` and `fs`. |
 | libc | 0.2.189 | MIT OR Apache-2.0 | Already locked transitively; direct macOS-only binding inside `native/deadpan-process` for a bounded process-group membership query. Uses OS libproc, with no bundled native library. |
 | sha2 | 0.11.0 | MIT OR Apache-2.0 | Streaming SHA-256 for worker artifact snapshots; default `alloc`/`oid` features disabled. |
+| blake3 | 1.8.7 | CC0-1.0 OR Apache-2.0 OR Apache-2.0 WITH LLVM-exception | Streaming internal content addresses for project-managed generated objects. |
 | proptest | 1.11.0 | MIT OR Apache-2.0 | Development-only exact-time, document, and transaction property tests. |
 
 `Cargo.toml` pins direct versions. `Cargo.lock` records every resolved transitive
@@ -60,6 +61,15 @@ Their published Cargo manifests all declare `MIT OR Apache-2.0`; registry
 checksums are retained in `Cargo.lock`. The default implementation detects
 available ARM SHA instructions and otherwise uses its portable software path.
 No external executable or native library is added for hashing.
+
+The [official BLAKE3 implementation](https://docs.rs/blake3/1.8.7/blake3/)
+adds `constant_time_eq` 0.4.2 (`CC0-1.0 OR MIT-0 OR Apache-2.0`); its other
+dependencies were already locked. The default `std` feature is enabled;
+optional mmap and parallel hashing are disabled. BLAKE3 supports the specification's
+internal content addressing and does not replace SHA-256 worker declarations.
+The [generated-object store](GENERATED_MEDIA.md) uses the existing safe rustix
+filesystem bindings for descriptor-relative paths, exclusive rename, and macOS
+`F_FULLFSYNC`. No external runtime is added for this storage boundary.
 
 The storage foundation tests writer ownership, read-only coexistence, durable
 undo/redo, retained branches, actual SQLite disk-full rollback, interrupted

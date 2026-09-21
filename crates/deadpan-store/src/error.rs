@@ -56,6 +56,9 @@ pub enum StoreError {
     GenerationProgressNotPersistent,
     #[error("Generation attempt transition is invalid: {0}")]
     GenerationAttempt(String),
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    #[error(transparent)]
+    GeneratedMedia(#[from] crate::generated_media::GeneratedMediaError),
     #[error("Project history is inconsistent: {0}")]
     History(String),
     #[error("Project integrity check failed: {0}")]
@@ -100,6 +103,8 @@ impl StoreError {
             Self::GenerationAttemptExhausted(_) => "GenerationAttemptExhausted",
             Self::GenerationProgressNotPersistent => "GenerationProgressNotPersistent",
             Self::GenerationAttempt(_) => "GenerationAttemptInvalid",
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            Self::GeneratedMedia(error) => error.code(),
             Self::Edit(error) => error.code.as_str(),
             Self::Database(rusqlite::Error::SqliteFailure(error, _)) => match error.code {
                 rusqlite::ErrorCode::DiskFull => "DiskFull",

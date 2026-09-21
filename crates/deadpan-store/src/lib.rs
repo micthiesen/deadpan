@@ -5,6 +5,8 @@
 //! optimistic request never becomes valid again after undo.
 
 mod error;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+pub mod generated_media;
 pub mod generation;
 pub mod generation_attempts;
 mod history;
@@ -40,6 +42,8 @@ pub struct ProjectStore {
     connection: Connection,
     package: PathBuf,
     mode: AccessMode,
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    generated_storage: generated_media::GeneratedStorage,
     // Explicitly unlocked on drop so a briefly inherited descriptor in a spawned
     // child cannot extend this writer's ownership beyond the store lifetime.
     _writer_lock: Option<File>,
@@ -111,10 +115,14 @@ impl ProjectStore {
         writeln!(file)?;
         file.sync_all()?;
         File::open(&package)?.sync_all()?;
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        let generated_storage = generated_media::GeneratedStorage::open(&package)?;
         Ok(Self {
             connection,
             package,
             mode: AccessMode::ReadWrite,
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            generated_storage,
             _writer_lock: Some(lock),
         })
     }
@@ -150,10 +158,14 @@ impl ProjectStore {
         } else {
             connection.pragma_update(None, "query_only", true)?;
         }
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        let generated_storage = generated_media::GeneratedStorage::open(&package)?;
         let mut store = Self {
             connection,
             package,
             mode,
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            generated_storage,
             _writer_lock: lock,
         };
         store.validate()?;
@@ -268,6 +280,32 @@ impl ProjectStore {
         let (_, path) = temporary.keep().map_err(|error| error.error)?;
         File::open(&directory)?.sync_all()?;
         Ok(path)
+    }
+
+    /// Publishes verified bytes in the project's non-cache generated-media area.
+    /// This does not validate a codec, register an asset, or accept a candidate.
+    /// Call on a host I/O worker, before committing any authored reference.
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    pub fn promote_generated_object(
+        &mut self,
+        reader: &mut impl std::io::Read,
+        expected: &generated_media::GeneratedObjectRef,
+        limits: generated_media::GeneratedMediaLimits,
+    ) -> Result<generated_media::GeneratedObjectRef, StoreError> {
+        self.require_writer()?;
+        Ok(self.generated_storage.promote(reader, expected, limits)?)
+    }
+
+    /// Verifies stored bytes into an immutable read/seek snapshot. Available to
+    /// read-only consumers; the worker workspace and generation runtime are not
+    /// consulted. This is a bounded I/O operation, not a realtime callback API.
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    pub fn snapshot_generated_object(
+        &self,
+        expected: &generated_media::GeneratedObjectRef,
+        limits: generated_media::GeneratedMediaLimits,
+    ) -> Result<generated_media::VerifiedGeneratedObject, StoreError> {
+        Ok(self.generated_storage.snapshot(expected, limits)?)
     }
 
     fn require_writer(&self) -> Result<(), StoreError> {

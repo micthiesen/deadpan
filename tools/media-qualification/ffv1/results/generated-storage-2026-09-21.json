@@ -1,0 +1,891 @@
+{
+  "schema_version": 1,
+  "status": "passed scoped generated-object storage qualification",
+  "scope": "bounded byte publication, relocation, fresh-process readback, and separate FFV1 pixel verification; no accepted-project or release claim",
+  "host": {
+    "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
+    "machine": "arm64",
+    "macos": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84\n",
+    "cpu": "Apple M5 Max",
+    "memory_bytes": 137438953472
+  },
+  "scratch": {
+    "path": "/tmp/deadpan-generated-storage-final-ak64vd61",
+    "package_before_relocation": "/tmp/deadpan-generated-storage-final-ak64vd61/original.deadpan",
+    "package_after_relocation": "/tmp/deadpan-generated-storage-final-ak64vd61/relocated.deadpan",
+    "private_input_copies_removed_before_readback": true,
+    "original_qualification_inputs_untouched": true
+  },
+  "limits": {
+    "maximum_media_bytes": 67108864,
+    "copy_buffer_bytes": 65536,
+    "reference_read_bound_bytes": 16384
+  },
+  "inputs_and_masters": {
+    "ffv1_report": {
+      "path": "/Users/michael/Code/deadpan/tools/media-qualification/ffv1/results/qualification-2026-09-21.json",
+      "sha256": "ba53514e6b3cd97b606fc793fa1d7ec7f6901cd400c0ff64de99251272f1b91b"
+    },
+    "candidate_input": {
+      "path": "/tmp/deadpan-supervised-mlx-20260921-attributed/host/candidate.snapshot.mp4",
+      "sha256": "d7fcf04e2bbe213d0352153443eb77c4a1534855ab8c19c0ff5dde4f2ddf85d9"
+    },
+    "native_input": {
+      "path": "/tmp/deadpan-supervised-mlx-20260921-attributed/worker/outputs/native.mp4",
+      "sha256": "c9d34268df14d105bb4f3799e9bfc9b946ad153de43e6ee4a73a44bb7833be33"
+    }
+  },
+  "cases": [
+    {
+      "name": "candidate-snapshot",
+      "canonical_master": {
+        "path": "/private/tmp/deadpan-ffv1-final3-normal/candidate-snapshot.mkv",
+        "bytes": 5450240,
+        "sha256": "a6dc975063db480471d111b1e821c9f3931e57d3a330808751667709aa8b1dda"
+      },
+      "retained_rgb_fixture": {
+        "path": "/private/tmp/deadpan-ffv1-final3-normal/candidate-snapshot.rgb",
+        "bytes": 22118944,
+        "sha256": "31145e3422613c73d434e8448453ef6a1bc67fa7c3bd431e11081da4a8287cf0"
+      },
+      "reference_json": {
+        "path": "/tmp/deadpan-generated-storage-final-ak64vd61/refs/candidate-snapshot.json",
+        "bytes": 133,
+        "sha256": "ffc4f8928fef598a4a0e8678aa1babeecbc5d6b2a27ef08dc7d12829a89a6214",
+        "wire": {
+          "content": {
+            "algorithm": "blake3",
+            "digest": "d14a394d0deb6900bb54522c53d38301e7f79063c56f9b4d26763b539b11e00d"
+          },
+          "byte_length": 5450240
+        }
+      },
+      "stored_object": {
+        "path": "/tmp/deadpan-generated-storage-final-ak64vd61/relocated.deadpan/Media/Generated/blake3-d14a394d0deb6900bb54522c53d38301e7f79063c56f9b4d26763b539b11e00d",
+        "bytes": 5450240,
+        "sha256": "a6dc975063db480471d111b1e821c9f3931e57d3a330808751667709aa8b1dda"
+      },
+      "readback": {
+        "path": "/tmp/deadpan-generated-storage-final-ak64vd61/readback/candidate-snapshot.mkv",
+        "bytes": 5450240,
+        "sha256": "a6dc975063db480471d111b1e821c9f3931e57d3a330808751667709aa8b1dda"
+      },
+      "ffv1_probe_verify": {
+        "status": "passed",
+        "source": {
+          "width": 768,
+          "height": 320,
+          "frames": 30,
+          "time_base": [
+            1,
+            30000
+          ],
+          "frame_rate": [
+            30000,
+            1001
+          ],
+          "start_pts": 0,
+          "native_pts": [
+            0,
+            1001,
+            2002,
+            3003,
+            4004,
+            5005,
+            6006,
+            7007,
+            8008,
+            9009,
+            10010,
+            11011,
+            12012,
+            13013,
+            14014,
+            15015,
+            16016,
+            17017,
+            18018,
+            19019,
+            20020,
+            21021,
+            22022,
+            23023,
+            24024,
+            25025,
+            26026,
+            27027,
+            28028,
+            29029
+          ],
+          "durations": [
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001,
+            1001
+          ]
+        },
+        "output": {
+          "codec": "ffv1",
+          "pixel_format": "bgr0",
+          "ffv1_version": 3,
+          "slice_crc": true,
+          "color_range": "full",
+          "color_space": "gbr",
+          "color_transfer": "sRGB",
+          "color_primaries": "bt709",
+          "frames": 30,
+          "time_base": [
+            1,
+            1000
+          ],
+          "frame_rate": [
+            30000,
+            1001
+          ],
+          "native_pts": [
+            0,
+            33,
+            67,
+            100,
+            133,
+            167,
+            200,
+            234,
+            267,
+            300,
+            334,
+            367,
+            400,
+            434,
+            467,
+            501,
+            534,
+            567,
+            601,
+            634,
+            667,
+            701,
+            734,
+            767,
+            801,
+            834,
+            868,
+            901,
+            934,
+            968
+          ],
+          "durations": [
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33,
+            33
+          ]
+        }
+      }
+    },
+    {
+      "name": "native-25-sequence",
+      "canonical_master": {
+        "path": "/private/tmp/deadpan-ffv1-final3-normal/native-25-sequence.mkv",
+        "bytes": 4544157,
+        "sha256": "a04d7778169328def88878e90cbf8b06629c612c5efdeddae7061efc302fde11"
+      },
+      "retained_rgb_fixture": {
+        "path": "/private/tmp/deadpan-ffv1-final3-normal/native-25-sequence.rgb",
+        "bytes": 18432464,
+        "sha256": "8e424f9effebea4f9c8a989788161c4bddc802fc0202694ab22bbbba1760a68d"
+      },
+      "reference_json": {
+        "path": "/tmp/deadpan-generated-storage-final-ak64vd61/refs/native-25-sequence.json",
+        "bytes": 133,
+        "sha256": "35bfd67fdd84e4b7e1ebe23bd6795392a895f3af2ecdbfcabc9363bd96455248",
+        "wire": {
+          "content": {
+            "algorithm": "blake3",
+            "digest": "b5b5955bf988496908e057be1bfd06bb4f3bda15ee725804faa2299fdba9b31a"
+          },
+          "byte_length": 4544157
+        }
+      },
+      "stored_object": {
+        "path": "/tmp/deadpan-generated-storage-final-ak64vd61/relocated.deadpan/Media/Generated/blake3-b5b5955bf988496908e057be1bfd06bb4f3bda15ee725804faa2299fdba9b31a",
+        "bytes": 4544157,
+        "sha256": "a04d7778169328def88878e90cbf8b06629c612c5efdeddae7061efc302fde11"
+      },
+      "readback": {
+        "path": "/tmp/deadpan-generated-storage-final-ak64vd61/readback/native-25-sequence.mkv",
+        "bytes": 4544157,
+        "sha256": "a04d7778169328def88878e90cbf8b06629c612c5efdeddae7061efc302fde11"
+      },
+      "ffv1_probe_verify": {
+        "status": "passed",
+        "source": {
+          "width": 768,
+          "height": 320,
+          "frames": 25,
+          "time_base": [
+            1,
+            24
+          ],
+          "frame_rate": [
+            24,
+            1
+          ],
+          "start_pts": 0,
+          "native_pts": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24
+          ],
+          "durations": [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        "output": {
+          "codec": "ffv1",
+          "pixel_format": "bgr0",
+          "ffv1_version": 3,
+          "slice_crc": true,
+          "color_range": "full",
+          "color_space": "gbr",
+          "color_transfer": "sRGB",
+          "color_primaries": "bt709",
+          "frames": 25,
+          "time_base": [
+            1,
+            1000
+          ],
+          "frame_rate": [
+            24,
+            1
+          ],
+          "native_pts": [
+            0,
+            42,
+            83,
+            125,
+            167,
+            208,
+            250,
+            292,
+            333,
+            375,
+            417,
+            458,
+            500,
+            542,
+            583,
+            625,
+            667,
+            708,
+            750,
+            792,
+            833,
+            875,
+            917,
+            958,
+            1000
+          ],
+          "durations": [
+            41,
+            41,
+            41,
+            41,
+            41,
+            41,
+            41,
+            41,
+            41,
+            41,
+            41,
+            41,
+            41,
+            41,
+            41,
+            41,
+            41,
+            41,
+            41,
+            41,
+            41,
+            41,
+            41,
+            41,
+            41
+          ]
+        }
+      }
+    }
+  ],
+  "filesystem_steps_after_promotion": [
+    {
+      "operation": "remove_private_input_copies",
+      "directory": "/tmp/deadpan-generated-storage-final-ak64vd61/inputs",
+      "removed_files": [
+        {
+          "path": "/tmp/deadpan-generated-storage-final-ak64vd61/inputs/native-25-sequence.mkv",
+          "bytes": 4544157,
+          "sha256": "a04d7778169328def88878e90cbf8b06629c612c5efdeddae7061efc302fde11"
+        },
+        {
+          "path": "/tmp/deadpan-generated-storage-final-ak64vd61/inputs/candidate-snapshot.mkv",
+          "bytes": 5450240,
+          "sha256": "a6dc975063db480471d111b1e821c9f3931e57d3a330808751667709aa8b1dda"
+        }
+      ]
+    },
+    {
+      "operation": "rename_project_package",
+      "from": "/tmp/deadpan-generated-storage-final-ak64vd61/original.deadpan",
+      "to": "/tmp/deadpan-generated-storage-final-ak64vd61/relocated.deadpan"
+    }
+  ],
+  "executions": [
+    {
+      "argv": [
+        "cargo",
+        "build",
+        "-p",
+        "deadpan-store",
+        "--example",
+        "qualify_generated_storage",
+        "--locked"
+      ],
+      "cwd": "/Users/michael/Code/deadpan",
+      "resolved_executable": "/Users/michael/.cargo/bin/cargo",
+      "environment_overrides": {
+        "PATH_prefix": [
+          "/Users/michael/Code/deadpan/target/debug/examples",
+          "/private/tmp/deadpan-ffv1-final3-normal"
+        ],
+        "DYLD_LIBRARY_PATH": "/private/tmp/deadpan-media-compatible-xyhilms4/prefix/lib"
+      },
+      "exit_code": 0,
+      "seconds": 0.2839936250820756,
+      "stdout": "",
+      "stderr": "    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.18s\n",
+      "stdout_log": {
+        "path": "/tmp/deadpan-generated-storage-final-ak64vd61/logs/0.stdout",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stderr_log": {
+        "path": "/tmp/deadpan-generated-storage-final-ak64vd61/logs/0.stderr",
+        "bytes": 72,
+        "sha256": "299f16a2c523be18fef769975d2df00e0505521db047540feea3a74b94666887"
+      }
+    },
+    {
+      "argv": [
+        "rustc",
+        "--version",
+        "--verbose"
+      ],
+      "cwd": "/Users/michael/Code/deadpan",
+      "resolved_executable": "/Users/michael/.cargo/bin/rustc",
+      "environment_overrides": {
+        "PATH_prefix": [
+          "/tmp/deadpan-generated-storage-final-ak64vd61/retained-bin",
+          "/private/tmp/deadpan-ffv1-final3-normal"
+        ],
+        "DYLD_LIBRARY_PATH": "/private/tmp/deadpan-media-compatible-xyhilms4/prefix/lib"
+      },
+      "exit_code": 0,
+      "seconds": 0.08892566687427461,
+      "stdout": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: aarch64-apple-darwin\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+      "stderr": "",
+      "stdout_log": {
+        "path": "/tmp/deadpan-generated-storage-final-ak64vd61/logs/1.stdout",
+        "bytes": 192,
+        "sha256": "e794146d99fad54562fdcbd4a7c8b22b0240d2b0312ff6d879d67939b3131850"
+      },
+      "stderr_log": {
+        "path": "/tmp/deadpan-generated-storage-final-ak64vd61/logs/1.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "argv": [
+        "cargo",
+        "--version"
+      ],
+      "cwd": "/Users/michael/Code/deadpan",
+      "resolved_executable": "/Users/michael/.cargo/bin/cargo",
+      "environment_overrides": {
+        "PATH_prefix": [
+          "/tmp/deadpan-generated-storage-final-ak64vd61/retained-bin",
+          "/private/tmp/deadpan-ffv1-final3-normal"
+        ],
+        "DYLD_LIBRARY_PATH": "/private/tmp/deadpan-media-compatible-xyhilms4/prefix/lib"
+      },
+      "exit_code": 0,
+      "seconds": 0.07946075010113418,
+      "stdout": "cargo 1.97.1 (c980f4866 2026-06-30)\n",
+      "stderr": "",
+      "stdout_log": {
+        "path": "/tmp/deadpan-generated-storage-final-ak64vd61/logs/2.stdout",
+        "bytes": 36,
+        "sha256": "1aedaa9cce116919d39b1eb303a58865771582bc24fc259aa8e26cb212e0f59e"
+      },
+      "stderr_log": {
+        "path": "/tmp/deadpan-generated-storage-final-ak64vd61/logs/2.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "argv": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "cwd": "/Users/michael/Code/deadpan",
+      "resolved_executable": "/opt/homebrew/bin/git",
+      "environment_overrides": {
+        "PATH_prefix": [
+          "/tmp/deadpan-generated-storage-final-ak64vd61/retained-bin",
+          "/private/tmp/deadpan-ffv1-final3-normal"
+        ],
+        "DYLD_LIBRARY_PATH": "/private/tmp/deadpan-media-compatible-xyhilms4/prefix/lib"
+      },
+      "exit_code": 0,
+      "seconds": 0.020608500111848116,
+      "stdout": "47f0257201c939b5a2e844184924b1083c983c78\n",
+      "stderr": "",
+      "stdout_log": {
+        "path": "/tmp/deadpan-generated-storage-final-ak64vd61/logs/3.stdout",
+        "bytes": 41,
+        "sha256": "0b139539266c1782bdef8c2a45233a1cca0d5a3a2334a7f37bc5b56b63edaadf"
+      },
+      "stderr_log": {
+        "path": "/tmp/deadpan-generated-storage-final-ak64vd61/logs/3.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "argv": [
+        "qualify_generated_storage",
+        "promote",
+        "/tmp/deadpan-generated-storage-final-ak64vd61/original.deadpan",
+        "/tmp/deadpan-generated-storage-final-ak64vd61/inputs/candidate-snapshot.mkv",
+        "/tmp/deadpan-generated-storage-final-ak64vd61/refs/candidate-snapshot.json"
+      ],
+      "cwd": "/Users/michael/Code/deadpan",
+      "resolved_executable": "/tmp/deadpan-generated-storage-final-ak64vd61/retained-bin/qualify_generated_storage",
+      "environment_overrides": {
+        "PATH_prefix": [
+          "/tmp/deadpan-generated-storage-final-ak64vd61/retained-bin",
+          "/private/tmp/deadpan-ffv1-final3-normal"
+        ],
+        "DYLD_LIBRARY_PATH": "/private/tmp/deadpan-media-compatible-xyhilms4/prefix/lib"
+      },
+      "exit_code": 0,
+      "seconds": 0.6461800830438733,
+      "stdout": "{\"command\":\"promote\",\"package\":\"/tmp/deadpan-generated-storage-final-ak64vd61/original.deadpan\",\"reference\":{\"content\":{\"algorithm\":\"blake3\",\"digest\":\"d14a394d0deb6900bb54522c53d38301e7f79063c56f9b4d26763b539b11e00d\"},\"byte_length\":5450240}}\n",
+      "stderr": "",
+      "stdout_log": {
+        "path": "/tmp/deadpan-generated-storage-final-ak64vd61/logs/4.stdout",
+        "bytes": 242,
+        "sha256": "c63650c74def9a0b4d092329492c3be91083bfaa63d0cd140c85abaea421e285"
+      },
+      "stderr_log": {
+        "path": "/tmp/deadpan-generated-storage-final-ak64vd61/logs/4.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "argv": [
+        "qualify_generated_storage",
+        "promote",
+        "/tmp/deadpan-generated-storage-final-ak64vd61/original.deadpan",
+        "/tmp/deadpan-generated-storage-final-ak64vd61/inputs/native-25-sequence.mkv",
+        "/tmp/deadpan-generated-storage-final-ak64vd61/refs/native-25-sequence.json"
+      ],
+      "cwd": "/Users/michael/Code/deadpan",
+      "resolved_executable": "/tmp/deadpan-generated-storage-final-ak64vd61/retained-bin/qualify_generated_storage",
+      "environment_overrides": {
+        "PATH_prefix": [
+          "/tmp/deadpan-generated-storage-final-ak64vd61/retained-bin",
+          "/private/tmp/deadpan-ffv1-final3-normal"
+        ],
+        "DYLD_LIBRARY_PATH": "/private/tmp/deadpan-media-compatible-xyhilms4/prefix/lib"
+      },
+      "exit_code": 0,
+      "seconds": 0.621997624868527,
+      "stdout": "{\"command\":\"promote\",\"package\":\"/tmp/deadpan-generated-storage-final-ak64vd61/original.deadpan\",\"reference\":{\"content\":{\"algorithm\":\"blake3\",\"digest\":\"b5b5955bf988496908e057be1bfd06bb4f3bda15ee725804faa2299fdba9b31a\"},\"byte_length\":4544157}}\n",
+      "stderr": "",
+      "stdout_log": {
+        "path": "/tmp/deadpan-generated-storage-final-ak64vd61/logs/5.stdout",
+        "bytes": 242,
+        "sha256": "c5bd85ede004c147bae60eabf17fdc44b8ae6818a011da2cba6bc9851cb3af41"
+      },
+      "stderr_log": {
+        "path": "/tmp/deadpan-generated-storage-final-ak64vd61/logs/5.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "argv": [
+        "qualify_generated_storage",
+        "read",
+        "/tmp/deadpan-generated-storage-final-ak64vd61/relocated.deadpan",
+        "/tmp/deadpan-generated-storage-final-ak64vd61/refs/candidate-snapshot.json",
+        "/tmp/deadpan-generated-storage-final-ak64vd61/readback/candidate-snapshot.mkv"
+      ],
+      "cwd": "/Users/michael/Code/deadpan",
+      "resolved_executable": "/tmp/deadpan-generated-storage-final-ak64vd61/retained-bin/qualify_generated_storage",
+      "environment_overrides": {
+        "PATH_prefix": [
+          "/tmp/deadpan-generated-storage-final-ak64vd61/retained-bin",
+          "/private/tmp/deadpan-ffv1-final3-normal"
+        ],
+        "DYLD_LIBRARY_PATH": "/private/tmp/deadpan-media-compatible-xyhilms4/prefix/lib"
+      },
+      "exit_code": 0,
+      "seconds": 0.4328610000666231,
+      "stdout": "{\"command\":\"read\",\"package\":\"/tmp/deadpan-generated-storage-final-ak64vd61/relocated.deadpan\",\"reference\":{\"content\":{\"algorithm\":\"blake3\",\"digest\":\"d14a394d0deb6900bb54522c53d38301e7f79063c56f9b4d26763b539b11e00d\"},\"byte_length\":5450240},\"output\":\"/tmp/deadpan-generated-storage-final-ak64vd61/readback/candidate-snapshot.mkv\",\"verified_blake3\":\"d14a394d0deb6900bb54522c53d38301e7f79063c56f9b4d26763b539b11e00d\",\"verified_byte_length\":5450240}\n",
+      "stderr": "",
+      "stdout_log": {
+        "path": "/tmp/deadpan-generated-storage-final-ak64vd61/logs/6.stdout",
+        "bytes": 445,
+        "sha256": "d8a1185aae9d1ef30aac6d6315647e70157053a4224b1f5496565d8e7eb3c952"
+      },
+      "stderr_log": {
+        "path": "/tmp/deadpan-generated-storage-final-ak64vd61/logs/6.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "argv": [
+        "ffv1_probe",
+        "verify",
+        "/tmp/deadpan-generated-storage-final-ak64vd61/readback/candidate-snapshot.mkv",
+        "/private/tmp/deadpan-ffv1-final3-normal/candidate-snapshot.rgb"
+      ],
+      "cwd": "/Users/michael/Code/deadpan",
+      "resolved_executable": "/private/tmp/deadpan-ffv1-final3-normal/ffv1_probe",
+      "environment_overrides": {
+        "PATH_prefix": [
+          "/tmp/deadpan-generated-storage-final-ak64vd61/retained-bin",
+          "/private/tmp/deadpan-ffv1-final3-normal"
+        ],
+        "DYLD_LIBRARY_PATH": "/private/tmp/deadpan-media-compatible-xyhilms4/prefix/lib"
+      },
+      "exit_code": 0,
+      "seconds": 0.7701404171530157,
+      "stdout": "{\"status\":\"passed\",\"source\":{\"width\":768,\"height\":320,\"frames\":30,\"time_base\":[1,30000],\"frame_rate\":[30000,1001],\"start_pts\":0,\"native_pts\":[0,1001,2002,3003,4004,5005,6006,7007,8008,9009,10010,11011,12012,13013,14014,15015,16016,17017,18018,19019,20020,21021,22022,23023,24024,25025,26026,27027,28028,29029],\"durations\":[1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001,1001]},\"output\":{\"codec\":\"ffv1\",\"pixel_format\":\"bgr0\",\"ffv1_version\":3,\"slice_crc\":true,\"color_range\":\"full\",\"color_space\":\"gbr\",\"color_transfer\":\"sRGB\",\"color_primaries\":\"bt709\",\"frames\":30,\"time_base\":[1,1000],\"frame_rate\":[30000,1001],\"native_pts\":[0,33,67,100,133,167,200,234,267,300,334,367,400,434,467,501,534,567,601,634,667,701,734,767,801,834,868,901,934,968],\"durations\":[33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33]}}\n",
+      "stderr": "",
+      "stdout_log": {
+        "path": "/tmp/deadpan-generated-storage-final-ak64vd61/logs/7.stdout",
+        "bytes": 943,
+        "sha256": "2859b3b6c5275c944d9791e40cc9928dcb8dc5d32ae0ef9aff06a593337a4a93"
+      },
+      "stderr_log": {
+        "path": "/tmp/deadpan-generated-storage-final-ak64vd61/logs/7.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "argv": [
+        "qualify_generated_storage",
+        "read",
+        "/tmp/deadpan-generated-storage-final-ak64vd61/relocated.deadpan",
+        "/tmp/deadpan-generated-storage-final-ak64vd61/refs/native-25-sequence.json",
+        "/tmp/deadpan-generated-storage-final-ak64vd61/readback/native-25-sequence.mkv"
+      ],
+      "cwd": "/Users/michael/Code/deadpan",
+      "resolved_executable": "/tmp/deadpan-generated-storage-final-ak64vd61/retained-bin/qualify_generated_storage",
+      "environment_overrides": {
+        "PATH_prefix": [
+          "/tmp/deadpan-generated-storage-final-ak64vd61/retained-bin",
+          "/private/tmp/deadpan-ffv1-final3-normal"
+        ],
+        "DYLD_LIBRARY_PATH": "/private/tmp/deadpan-media-compatible-xyhilms4/prefix/lib"
+      },
+      "exit_code": 0,
+      "seconds": 0.3660597091075033,
+      "stdout": "{\"command\":\"read\",\"package\":\"/tmp/deadpan-generated-storage-final-ak64vd61/relocated.deadpan\",\"reference\":{\"content\":{\"algorithm\":\"blake3\",\"digest\":\"b5b5955bf988496908e057be1bfd06bb4f3bda15ee725804faa2299fdba9b31a\"},\"byte_length\":4544157},\"output\":\"/tmp/deadpan-generated-storage-final-ak64vd61/readback/native-25-sequence.mkv\",\"verified_blake3\":\"b5b5955bf988496908e057be1bfd06bb4f3bda15ee725804faa2299fdba9b31a\",\"verified_byte_length\":4544157}\n",
+      "stderr": "",
+      "stdout_log": {
+        "path": "/tmp/deadpan-generated-storage-final-ak64vd61/logs/8.stdout",
+        "bytes": 445,
+        "sha256": "0ffbdae347fda0434cd3e2034b7a721ee6ac42d099d0e09e267b885b316b85b4"
+      },
+      "stderr_log": {
+        "path": "/tmp/deadpan-generated-storage-final-ak64vd61/logs/8.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "argv": [
+        "ffv1_probe",
+        "verify",
+        "/tmp/deadpan-generated-storage-final-ak64vd61/readback/native-25-sequence.mkv",
+        "/private/tmp/deadpan-ffv1-final3-normal/native-25-sequence.rgb"
+      ],
+      "cwd": "/Users/michael/Code/deadpan",
+      "resolved_executable": "/private/tmp/deadpan-ffv1-final3-normal/ffv1_probe",
+      "environment_overrides": {
+        "PATH_prefix": [
+          "/tmp/deadpan-generated-storage-final-ak64vd61/retained-bin",
+          "/private/tmp/deadpan-ffv1-final3-normal"
+        ],
+        "DYLD_LIBRARY_PATH": "/private/tmp/deadpan-media-compatible-xyhilms4/prefix/lib"
+      },
+      "exit_code": 0,
+      "seconds": 0.6419068339746445,
+      "stdout": "{\"status\":\"passed\",\"source\":{\"width\":768,\"height\":320,\"frames\":25,\"time_base\":[1,24],\"frame_rate\":[24,1],\"start_pts\":0,\"native_pts\":[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24],\"durations\":[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]},\"output\":{\"codec\":\"ffv1\",\"pixel_format\":\"bgr0\",\"ffv1_version\":3,\"slice_crc\":true,\"color_range\":\"full\",\"color_space\":\"gbr\",\"color_transfer\":\"sRGB\",\"color_primaries\":\"bt709\",\"frames\":25,\"time_base\":[1,1000],\"frame_rate\":[24,1],\"native_pts\":[0,42,83,125,167,208,250,292,333,375,417,458,500,542,583,625,667,708,750,792,833,875,917,958,1000],\"durations\":[41,41,41,41,41,41,41,41,41,41,41,41,41,41,41,41,41,41,41,41,41,41,41,41,41]}}\n",
+      "stderr": "",
+      "stdout_log": {
+        "path": "/tmp/deadpan-generated-storage-final-ak64vd61/logs/9.stdout",
+        "bytes": 692,
+        "sha256": "59b9baff5b47e838486b88d6584d8d057ca4d64e0da743d41b3b4dba044f384b"
+      },
+      "stderr_log": {
+        "path": "/tmp/deadpan-generated-storage-final-ak64vd61/logs/9.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    }
+  ],
+  "tooling": {
+    "base_revision": "47f0257201c939b5a2e844184924b1083c983c78",
+    "modified_sources": {
+      "Cargo.toml": {
+        "path": "/Users/michael/Code/deadpan/Cargo.toml",
+        "bytes": 1430,
+        "sha256": "93ca22cef2cd1e84d5c119d90e5e2e636b527e27c6d2d7af73435f5fe9d82066"
+      },
+      "Cargo.lock": {
+        "path": "/Users/michael/Code/deadpan/Cargo.lock",
+        "bytes": 105851,
+        "sha256": "0f08f2cdf09e38ac1f08ae04094a22406bf31b38e7354a1272894f33df51611d"
+      },
+      "rust-toolchain.toml": {
+        "path": "/Users/michael/Code/deadpan/rust-toolchain.toml",
+        "bytes": 86,
+        "sha256": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc"
+      },
+      "crates/deadpan-store/Cargo.toml": {
+        "path": "/Users/michael/Code/deadpan/crates/deadpan-store/Cargo.toml",
+        "bytes": 651,
+        "sha256": "0c8528c2397cfc287b5552d4b20abec2d24c574935d00b165a023380fe0a93a2"
+      },
+      "crates/deadpan-store/src/generated_media.rs": {
+        "path": "/Users/michael/Code/deadpan/crates/deadpan-store/src/generated_media.rs",
+        "bytes": 49247,
+        "sha256": "985b0cdbf495ef74a4ba43aed4a4626ba8eae04d18180592f986689b6ed6d107"
+      },
+      "crates/deadpan-store/src/lib.rs": {
+        "path": "/Users/michael/Code/deadpan/crates/deadpan-store/src/lib.rs",
+        "bytes": 19049,
+        "sha256": "73362d7eaa9df8e6ac36f5a9ff1410c72b1c5555857180a3721622eff471c99a"
+      },
+      "crates/deadpan-store/src/error.rs": {
+        "path": "/Users/michael/Code/deadpan/crates/deadpan-store/src/error.rs",
+        "bytes": 6037,
+        "sha256": "08ff9b5e7a153aa5b396fe575238410a9f14f517d3bc7cafa33d8e7220282e54"
+      },
+      "crates/deadpan-store/examples/qualify_generated_storage.rs": {
+        "path": "/Users/michael/Code/deadpan/crates/deadpan-store/examples/qualify_generated_storage.rs",
+        "bytes": 8459,
+        "sha256": "2bf980a4de2dd8f5df3134a1fb1cc7e7cab948fa3d3086522f98ab2107fc009b"
+      }
+    },
+    "storage_binary": {
+      "path": "/tmp/deadpan-generated-storage-final-ak64vd61/retained-bin/qualify_generated_storage",
+      "bytes": 16632520,
+      "sha256": "94c3390353d8330d5298bc43b7d78d38516882429222fc51912b4de697a18a4c"
+    },
+    "build_output_sha256": "94c3390353d8330d5298bc43b7d78d38516882429222fc51912b4de697a18a4c",
+    "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: aarch64-apple-darwin\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+    "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)\n",
+    "qualification_script": {
+      "path": "/tmp/deadpan-storage-final-qualification.py",
+      "bytes": 8026,
+      "sha256": "3c5f9b53cda7ee684148d81582fb9b5d055dfb1c51cbf0bc4a93da4a3f68babb"
+    },
+    "ffv1_probe_binary": {
+      "path": "/private/tmp/deadpan-ffv1-final3-normal/ffv1_probe",
+      "bytes": 55304,
+      "sha256": "0cd307e746c1aa600f9bcfdf36e74e95da16ea8b37c32b415e72d337e1f525f2"
+    },
+    "ffmpeg_libraries": {
+      "libavcodec.62.11.103.dylib": {
+        "path": "/private/tmp/deadpan-media-compatible-xyhilms4/prefix/lib/libavcodec.62.11.103.dylib",
+        "bytes": 12808632,
+        "sha256": "e2abb19ad59f0097cf0780af2fbca14f5851d6d4c0e8ed21f9b59707a4500fab"
+      },
+      "libavformat.62.3.103.dylib": {
+        "path": "/private/tmp/deadpan-media-compatible-xyhilms4/prefix/lib/libavformat.62.3.103.dylib",
+        "bytes": 2244152,
+        "sha256": "414b5d7b6bc6a4983535a6c61f8107a8563fa1a996bd1665c400a799d98eee6f"
+      },
+      "libavutil.60.8.103.dylib": {
+        "path": "/private/tmp/deadpan-media-compatible-xyhilms4/prefix/lib/libavutil.60.8.103.dylib",
+        "bytes": 725688,
+        "sha256": "0080fa764061a46d27f421c448eaf9e1af0c703ac743844bb8e8600baad0dd20"
+      },
+      "libswscale.9.1.103.dylib": {
+        "path": "/private/tmp/deadpan-media-compatible-xyhilms4/prefix/lib/libswscale.9.1.103.dylib",
+        "bytes": 949464,
+        "sha256": "8c1055d2ee90df810289ce45a2e332afef24377dc9ea0e1118d3f0d6de1f657f"
+      }
+    },
+    "ffmpeg_build_receipt": {
+      "path": "/Users/michael/Code/deadpan/tools/media-qualification/compatible/results/build-2026-09-20.json",
+      "sha256": "c4d9be6fa2592229a22daedb974c89384c0bc1f9db0ad5993d8af5e2fed83695",
+      "version": "8.0.3",
+      "configure": [
+        "/tmp/deadpan-media-compatible-xyhilms4/ffmpeg-8.0.3/configure",
+        "--prefix=/tmp/deadpan-media-compatible-xyhilms4/prefix",
+        "--enable-shared",
+        "--disable-static",
+        "--enable-pic",
+        "--disable-gpl",
+        "--disable-nonfree",
+        "--disable-version3",
+        "--disable-autodetect",
+        "--disable-network",
+        "--disable-doc",
+        "--disable-debug",
+        "--disable-ffmpeg",
+        "--disable-ffplay",
+        "--arch=aarch64",
+        "--cpu=generic",
+        "--target-os=darwin",
+        "--sysroot=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk",
+        "--enable-videotoolbox",
+        "--enable-audiotoolbox",
+        "--extra-cflags=-arch arm64 -mmacosx-version-min=15.0",
+        "--extra-ldflags=-arch arm64 -mmacosx-version-min=15.0"
+      ],
+      "license_file_sha256": {
+        "COPYING.LGPLv2.1": "246041b6ecf9bc32d718a62c57877c78b5eb397b6467e74ed7ae2626ab189c30",
+        "LICENSE.md": "2e1d16c72fd74e12063776371da757322f8b77589386532f4fd8634bde7de1af"
+      }
+    },
+    "retained_storage_binary": {
+      "path": "/tmp/deadpan-generated-storage-final-ak64vd61/retained-bin/qualify_generated_storage",
+      "bytes": 16632520,
+      "sha256": "94c3390353d8330d5298bc43b7d78d38516882429222fc51912b4de697a18a4c"
+    }
+  },
+  "limitations": [
+    "This proves bounded content-addressed publication and relocation readback only.",
+    "The storage path does not validate FFV1 or any other media semantics; the separate FFV1 probe supplies the pixel/frame/tag evidence.",
+    "The Matroska output timebase is recorded by the FFV1 report as 1/1000; the source rational clocks remain in each probe receipt and are not claimed to be physically preserved by Matroska PTS.",
+    "No model, worker input, acceptance, project-document registration, eviction, or hostile same-user process isolation is qualified.",
+    "Linux was not exercised by this run.",
+    "Physical power-loss, filesystem disk-full, and process-kill recovery were not exercised. Unit tests inject publication/durability failures; they do not simulate hardware power loss.",
+    "No GUI, audio device, inference, or end-user distribution was exercised.",
+    "Linux was not exercised by this run.",
+    "Physical power-loss, filesystem disk-full, and process-kill recovery were not exercised. Unit tests inject publication/durability failures; they do not simulate hardware power loss.",
+    "No GUI, audio device, inference, or end-user distribution was exercised."
+  ]
+}

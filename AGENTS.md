@@ -66,6 +66,15 @@ Candidate receipts record a trusted host validator's declaration; metadata alone
 does not establish durable file ownership, media validity, or acceptability.
 See [attempt storage](docs/GENERATION_ATTEMPTS.md).
 
+Generated-object publication is a filesystem operation before authored
+acceptance, never an edit by itself. Use the store's descriptor-relative
+`Media/Generated` API and algorithm-tagged BLAKE3 references. Verify bytes before
+exclusive publication, synchronize the file and namespace, and preserve any
+unreferenced object if a later database commit fails. A verified byte object is
+not proof of canonical media or user acceptance. Read through verified snapshots;
+do not reopen a worker path or treat generated objects as evictable cache entries.
+See [generated-object storage](docs/GENERATED_MEDIA.md).
+
 The setup workflow's TypeScript/Bun/mitools/Biome defaults do not apply to this Rust-native product. The maintained Rust sibling `beastie` supplies the initial workspace conventions; consult maintained siblings for evolving personal tooling patterns. [Dependency decisions](docs/DEPENDENCIES.md) records the pins and qualification boundaries. Do not introduce Bun, Node, Python, or shell setup as an end-user requirement. Future model workers use an app-managed private runtime selected through measurement.
 
 ## Validation and delivery

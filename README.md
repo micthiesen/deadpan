@@ -7,7 +7,7 @@ Deadpan is a Rust-native macOS video editor designed around editable beats: paus
 This repository currently contains an **editing foundation**, not a working video editor:
 
 - `deadpan-core`: exact time, validated beat documents, structural commands, nested occurrence edits, and reversible transactions.
-- `deadpan-store`: SQLite project packages, persistent marks and undo/redo, monotonic generation requests, durable attempts and interrupted-job recovery, schema-1/2/3/4/5 migration, and recovery checkpoints.
+- `deadpan-store`: SQLite project packages, persistent marks and undo/redo, monotonic generation requests, durable attempts and interrupted-job recovery, schema-1/2/3/4/5 migration, recovery checkpoints, and verified generated-object storage. Media acceptance remains open.
 - `deadpan-plan`: immutable indexed picture mappings with exact retiming, stable repeated-play identities, and sparse play overrides.
 - `deadpan-jobs`: bounded worker messages, job lifecycle, subprocess supervision, contained artifact snapshots, and exact bridge-generation planning. A real MLX development adapter exercises this boundary; it is not connected to the app yet.
 - `deadpan-app`: an `egui`/`eframe` native development welcome shell using `wgpu` on Metal.
