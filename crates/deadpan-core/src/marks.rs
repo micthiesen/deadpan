@@ -577,6 +577,88 @@ pub(crate) fn transform_marks(
     Ok(output)
 }
 
+/// A transparent clone changes structure, not local time. Keeping coordinates
+/// exact here lets the ordinary edit transform decompose against the isolated
+/// structure afterward, including ancestor-local boundaries inside that play.
+pub(crate) fn clone_occurrence_marks(
+    before: &ProjectDocument,
+    selected: &RepeatInstance,
+    mapping: &BTreeMap<NodeId, NodeId>,
+    mut fresh_mark: impl FnMut() -> std::result::Result<MarkId, DocumentError>,
+) -> std::result::Result<BTreeMap<MarkId, Mark>, DocumentError> {
+    if before.marks().is_empty() {
+        return Ok(BTreeMap::new());
+    }
+    let copies = before
+        .marks()
+        .values()
+        .filter(|mark| {
+            mapping.contains_key(&mark.owner)
+                && matches!(
+                    mark.boundary.coordinate,
+                    Anchor::Local { .. } | Anchor::Source { .. }
+                )
+        })
+        .count();
+    if before
+        .marks()
+        .len()
+        .checked_add(copies)
+        .is_none_or(|count| count > MAX_DOCUMENT_MARKS)
+    {
+        return Err(DocumentError::new(
+            DocumentErrorCode::LimitExceeded,
+            "occurrence isolation exceeds mark limit",
+        ));
+    }
+    let index = Index::new(before, before.structural_durations()?)?;
+    let mut output = BTreeMap::new();
+    for (id, original) in before.marks() {
+        let mut mark = original.clone();
+        if mark.state == MarkState::Bound
+            && let Anchor::Occurrence { instance, position } = &mut mark.boundary.coordinate
+        {
+            let enters = instance.repeats.contains(selected);
+            if let Some(owner) = mapping.get(&mark.owner) {
+                let point_enters = match index
+                    .decompose(&instance.node, *position, mark.boundary.bias)
+                    .map_err(Failure::document)?
+                {
+                    ContentPoint::Content { repeats, .. } => {
+                        repeats.get(&selected.node) == Some(&selected.iteration)
+                    }
+                    _ => false,
+                };
+                if enters || point_enters {
+                    mark.owner = owner.clone();
+                }
+            }
+            if enters {
+                crate::occurrence_edit::remap_instance(instance, mapping);
+            }
+        }
+        output.insert(id.clone(), mark);
+        if matches!(
+            original.boundary.coordinate,
+            Anchor::Local { .. } | Anchor::Source { .. }
+        ) && let Some(owner) = mapping.get(&original.owner)
+        {
+            let mut copy = original.clone();
+            copy.owner = owner.clone();
+            // Unresolved records retain their last coordinate and never bind as
+            // a side effect of cloning, even when a matching host now exists.
+            if copy.state == MarkState::Bound
+                && let Anchor::Local { node, .. } = &mut copy.boundary.coordinate
+                && let Some(host) = mapping.get(node)
+            {
+                *node = host.clone();
+            }
+            output.insert(fresh_mark()?, copy);
+        }
+    }
+    Ok(output)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

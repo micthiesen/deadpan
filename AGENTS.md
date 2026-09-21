@@ -6,7 +6,7 @@ Deadpan is a native macOS structural video editor for timing and attention, buil
 
 Read [the full specification](docs/spec/DEADPAN_SPEC.md) and [agent handoff](docs/spec/AGENT_HANDOFF.md) before feature work. The Markdown specification is normative; summaries here do not reduce its scope. [Requirements](docs/REQUIREMENTS.md) tracks DP-01 through DP-24 and Gates A through G. Keep code, tests, evidence, and remaining work current there.
 
-The current foundation includes validated beat documents, reversible structural commands, persistent marks with edit transforms, sparse per-play overrides, stable repeat identities, exact indexed picture plans and boundary queries, SQLite project/history storage with schema migration, and a shared headless command entrypoint. The native UI remains a welcome shell. It is not yet a usable video editor or release candidate. All product requirements remain open or partial. A button, mock worker, downloaded model, ignored test, or proposed target does not prove implementation.
+The current foundation includes validated beat documents, reversible structural commands, persistent marks with edit transforms, sparse per-play overrides and automatic nested occurrence isolation, stable repeat identities, exact indexed picture plans and boundary queries, SQLite project/history storage with schema migration, and a shared headless command entrypoint. The native UI remains a welcome shell. It is not yet a usable video editor or release candidate. All product requirements remain open or partial. A button, mock worker, downloaded model, ignored test, or proposed target does not prove implementation.
 
 ## Design philosophy
 
@@ -52,6 +52,17 @@ durations and gaps use the same exact mapping. Reject paths into a default child
 for an overridden play. Shrinking or clearing an override removes its owned
 subtree atomically, preserving inverse history and applying mark loss policy.
 Imported subtrees normalize both their Repeat allocations and override keys.
+
+`EditOccurrence` isolates repeated ancestors from outside inward and applies the
+node operation in one transaction. Reuse existing override branches. Transparent
+internal copies retain compact play orders under fresh caller-supplied node IDs;
+they share immutable media references, never authored nodes. Preserve exact
+coordinates during isolation, then transform marks against that isolated tree
+for the actual edit. Copy owned Local/Source marks with fresh IDs, relocate
+concrete occurrence marks once, keep sequence-pinned events once, and never
+rebind unresolved marks. Ownership determines inheritance even when a mark's
+coordinate host differs from its owner. Reject exhausted identity pools or
+document-limit growth atomically.
 
 Boundary queries use `AnchorIndex` against one immutable revision. Keep source
 clocks, local fractions, and complete occurrence paths explicit; never infer a

@@ -5,6 +5,9 @@ based on `cc2494c043e450a49e7da443c38e817fb1a7770c`. It implements a prerequisit
 for editing a partial repeated selection without flattening the Repeat or
 changing every play. DP-04 and Gate B remain partial.
 
+This is the original override checkpoint. Subsequent automatic isolation through
+complete occurrence paths is recorded in [nested occurrence verification](OCCURRENCE_VERIFICATION.md).
+
 ## Implemented behavior
 
 A schema-4 document stores sparse overrides by authored Repeat node and stable

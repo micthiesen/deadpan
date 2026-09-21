@@ -650,3 +650,79 @@ fn sparse_override_commands_and_inspection_share_revision_and_dry_run_guards() -
     assert_eq!(snapshot()?.overrides(), after.overrides());
     Ok(())
 }
+
+#[test]
+fn nested_occurrence_command_is_atomic_and_uses_the_same_headless_plan() -> Result {
+    use deadpan_core::{NodeKind, WrapAnchorPolicy};
+    let scratch = tempfile::tempdir()?;
+    let package = create(scratch.path())?;
+    let path = package.to_str().unwrap();
+    let file = scratch.path().join("command.json");
+    let file_path = file.to_str().unwrap();
+    let snapshot = || -> Result<ProjectDocument> {
+        Ok(ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?)
+    };
+    fs::write(&file, request(&snapshot()?)?.to_string())?;
+    success(&["command", path, "--json", file_path])?;
+    for (child, id) in [("hold", "inner"), ("inner", "outer")] {
+        let current = snapshot()?;
+        fs::write(&file,json!({"protocol":1,"project_id":current.project_id(),"expected_revision":current.revision_id(),
+            "command":Command::WrapRepeat {node:NodeId::new(child)?,id:NodeId::new(id)?,plays:2,gap:None,anchor_policy:WrapAnchorPolicy::First}
+        }).to_string())?;
+        success(&["command", path, "--json", file_path])?;
+    }
+    let before = snapshot()?;
+    let play = |name: &str| -> Result<Value> {
+        let NodeKind::Repeat { iterations, .. } = &before.nodes()[&NodeId::new(name)?].kind else {
+            panic!()
+        };
+        Ok(serde_json::to_value(iterations.at(1).unwrap())?)
+    };
+    fs::write(&file,json!({"protocol":1,"project_id":before.project_id(),"expected_revision":before.revision_id(),
+        "new_revision":"occurrence-change",
+        "command":{"command":"edit_occurrence",
+            "instance":{"node":"hold","repeats":[{"node":"outer","iteration":play("outer")?},{"node":"inner","iteration":play("inner")?}]},
+            "edit":{"type":"set_hold_duration","duration":60},
+            "identities":{"nodes":["outer-inner","outer-default","selected-hold"],"marks":[]}
+        }
+    }).to_string())?;
+    let writer = ProjectStore::open(&package, AccessMode::ReadWrite)?;
+    let preview = success(&["command", path, "--json", file_path, "--dry-run"])?;
+    assert_eq!(preview["edit"]["duration_delta"], 15);
+    assert_eq!(writer.snapshot()?, before);
+    drop(writer);
+    let committed = success(&["command", path, "--json", file_path])?;
+    assert_eq!(committed["outcome"]["edit"], preview["edit"]);
+    let after = snapshot()?;
+    assert_eq!(after.duration()?.frames(), 195);
+    assert_eq!(after.nodes().len(), before.nodes().len() + 3);
+    let selected = success(&["inspect-plan", path, "--frame", "136"])?;
+    assert_eq!(selected["sample"]["instance"]["node"], "selected-hold");
+    assert_eq!(
+        selected["sample"]["instance"]["repeats"][1]["node"],
+        "outer-inner"
+    );
+    let other = success(&["inspect-plan", path, "--frame", "46"])?;
+    assert_eq!(other["sample"]["instance"]["node"], "hold");
+    success(&[
+        "project",
+        "undo",
+        path,
+        "--expected",
+        after.revision_id().as_str(),
+    ])?;
+    let undone = snapshot()?;
+    assert_eq!(undone.nodes(), before.nodes());
+    assert_eq!(undone.overrides(), before.overrides());
+    success(&[
+        "project",
+        "redo",
+        path,
+        "--expected",
+        undone.revision_id().as_str(),
+    ])?;
+    let redone = snapshot()?;
+    assert_eq!(redone.nodes(), after.nodes());
+    assert_eq!(redone.overrides(), after.overrides());
+    Ok(())
+}

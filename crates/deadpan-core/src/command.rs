@@ -6,9 +6,10 @@ use serde::{Deserialize, Serialize};
 use crate::document::unique_map;
 use crate::{
     AnchorLossPolicy, AssetId, AssetRecord, BeatNode, BoundaryAnchor, DocumentError,
-    DocumentErrorCode, FrameDuration, HoldRecipe, HoldVideo, IterationId, IterationOrder,
-    MAX_DOCUMENT_MARKS, MAX_DOCUMENT_NODES, Mark, MarkId, MarkState, NodeId, NodeKind,
-    PlayOverrides, ProjectDocument, ProjectId, RevisionId, WrapAnchorPolicy,
+    DocumentErrorCode, FrameDuration, HoldRecipe, HoldVideo, InstancePath, IterationId,
+    IterationOrder, MAX_DOCUMENT_MARKS, MAX_DOCUMENT_NODES, Mark, MarkId, MarkState, NodeId,
+    NodeKind, OccurrenceEdit, OccurrenceIdentities, PlayOverrides, ProjectDocument, ProjectId,
+    RevisionId, WrapAnchorPolicy,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -110,6 +111,11 @@ pub enum Command {
     ClearPlayOverride {
         node: NodeId,
         iteration: IterationId,
+    },
+    EditOccurrence {
+        instance: InstancePath,
+        edit: OccurrenceEdit,
+        identities: OccurrenceIdentities,
     },
 }
 
@@ -232,14 +238,30 @@ pub fn apply(
         &request.new_revision,
     )?;
     let before_duration = document.duration()?.frames();
-    let mut result = document.clone();
-    reduce(&mut result, &request.command, &request.new_revision)?;
-    if !matches!(
-        request.command,
-        Command::SetMark { .. } | Command::DeleteMark { .. }
-    ) {
-        result.marks = crate::marks::transform_marks(document, &result, &request.command)?;
-    }
+    let mut result = match &request.command {
+        Command::EditOccurrence {
+            instance,
+            edit,
+            identities,
+        } => crate::occurrence_edit::apply(
+            document,
+            instance,
+            edit,
+            identities,
+            &request.new_revision,
+        )?,
+        command => {
+            let mut result = document.clone();
+            reduce(&mut result, command, &request.new_revision)?;
+            if !matches!(
+                command,
+                Command::SetMark { .. } | Command::DeleteMark { .. }
+            ) {
+                result.marks = crate::marks::transform_marks(document, &result, command)?;
+            }
+            result
+        }
+    };
     result.revision_id = request.new_revision.clone();
     let after_duration = result.duration()?.frames();
     let forward = DocumentPatch {
@@ -299,12 +321,18 @@ fn check_revision(
     Ok(())
 }
 
-fn reduce(
+pub(crate) fn reduce(
     document: &mut ProjectDocument,
     command: &Command,
     allocation: &RevisionId,
 ) -> Result<(), EditError> {
     match command {
+        Command::EditOccurrence { .. } => {
+            return Err(EditError::new(
+                EditErrorCode::InvalidCommand,
+                "occurrence edits require the isolation entrypoint",
+            ));
+        }
         Command::Insert {
             parent,
             index,
@@ -851,6 +879,7 @@ fn description(command: &Command) -> &'static str {
         Command::DeleteMark { .. } => "Delete mark",
         Command::SetPlayOverride { .. } => "Set play override",
         Command::ClearPlayOverride { .. } => "Clear play override",
+        Command::EditOccurrence { .. } => "Edit selected occurrence",
     }
 }
 
@@ -901,7 +930,7 @@ pub struct EditError {
 }
 
 impl EditError {
-    fn new(code: EditErrorCode, message: impl Into<String>) -> Self {
+    pub(crate) fn new(code: EditErrorCode, message: impl Into<String>) -> Self {
         Self {
             code,
             message: message.into(),

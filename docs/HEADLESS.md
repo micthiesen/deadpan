@@ -66,11 +66,11 @@ revision fails with `RevisionConflict` and the current revision, without writing
 
 Supported commands are `insert`, `delete`, `move`, `group`,
 `ungroup`, `wrap_repeat`, `set_repeat`, `insert_plays`, `move_plays`, `set_hold_duration`, `set_hold_provider`,
-`rename`, `add_asset`, `set_mark`, `delete_mark`, `set_play_override`, and `clear_play_override`. Their exact typed parameters are defined in
+`rename`, `add_asset`, `set_mark`, `delete_mark`, `set_play_override`, `clear_play_override`, and `edit_occurrence`. Their exact typed parameters are defined in
 [`Command`](../crates/deadpan-core/src/command.rs). `set_repeat` changes an existing
 Repeat; `wrap_repeat` deliberately adds nesting. A three-play repeat includes
 three total plays and only two gaps. These are structural edits, not rendered
-media. Editing through range/text selectors, registers, macros, nested occurrence selection edits, and effects
+media. Editing through range/text selectors, registers, macros, and effects
 remain required future work.
 
 Documents use schema 4 and store compact Repeat `iterations.runs` with
@@ -139,8 +139,70 @@ play even when its duration changes.
 
 This command targets an authored Repeat and one of its plays. If that Repeat
 itself occurs within another Repeat, the authored change applies in each outer
-occurrence using it. Automatic isolation from a complete nested occurrence
-selection, partial range operators, and role-only overlays remain required work.
+occurrence using it. Use `edit_occurrence` below to edit through one complete
+nested occurrence path. Partial range operators and role-only overlays remain
+required work.
+
+## Edits to one nested occurrence
+
+`edit_occurrence` resolves a complete `instance` against the expected revision,
+isolates its repeated ancestors, and applies one node operation as a single
+undoable edit. For each ancestor without an override for that play, it copies the
+default child's authored subtree and installs an override for only that play.
+Existing overrides are reused. Other plays keep their authored content. Nested
+copies include existing override subtrees and retain compact iteration orders
+under fresh authored node IDs, without expanding play counts or copying media.
+
+For example, in a tree `outer -> inner -> hold`, where both Repeats have two
+plays, this command changes only the second inner play of the second outer play:
+
+```json
+{
+  "command": "edit_occurrence",
+  "instance": {
+    "node": "hold",
+    "repeats": [
+      {"node": "outer", "iteration": {"allocation": "OUTER_ALLOCATION", "ordinal": 1}},
+      {"node": "inner", "iteration": {"allocation": "INNER_ALLOCATION", "ordinal": 1}}
+    ]
+  },
+  "edit": {"type": "set_hold_duration", "duration": 60},
+  "identities": {
+    "nodes": ["copied-inner", "copied-default-hold", "selected-hold"],
+    "marks": []
+  }
+}
+```
+
+Use the real allocation values from the document. The host supplies a bounded
+pool of fresh, distinct `nodes` and `marks`; unused identities have no effect.
+Node IDs are consumed in structural preorder for each copy, outside inward.
+Mark IDs are consumed in current mark-ID order for each copy. The example needs
+three node IDs and assumes no owned marks need copying. A subsequent edit through
+the resulting override path needs no new IDs when all its ancestors are isolated.
+Dry-run returns the same nodes, overrides, and mark changes as a commit with the
+same request and revision. An invalid path, stale revision, exhausted identity
+pool, invalid operation, or document-limit overflow commits nothing.
+
+Supported `edit.type` values are `insert`, `delete`, `group`, `ungroup`,
+`wrap_repeat`, `set_repeat`, `insert_plays`, `move_plays`, `set_hold_duration`,
+`set_hold_provider`, `rename`, `set_play_override`, and `clear_play_override`.
+They use the selected node as their implicit `node` or `parent`; other parameters
+match the corresponding ordinary command. Child-index and play-ID parameters
+remain local to that node. The ordinary operation's structural preconditions
+still apply. This entrypoint does not yet implement range deletion/splitting,
+multi-target moves, text selectors, or role-only operations.
+
+Isolation preserves local time before the edit, including exact fractions under
+Retime. Existing ancestor-local marks therefore follow the selected copied
+content when the actual edit transforms them. Owned Local/Source marks copy with
+fresh mark IDs; their external hosts and source clocks stay explicit. Concrete
+occurrence marks follow their selected copies while retaining their mark IDs.
+Sequence-pinned marks remain single events at fixed project coordinates.
+Unresolved marks remain unresolved and retain their last coordinates.
+Inheritance follows the owner: an externally owned Local mark referencing a
+copied host remains on its original authored host. It is not implicitly copied.
+See [nested occurrence verification](OCCURRENCE_VERIFICATION.md).
 
 ## Picture plan inspection
 
@@ -216,8 +278,8 @@ The index stores authored parents and sequence prefixes; seeking billions of
 plays does not expand them. Repeat identity lookup scans compact runs.
 
 `set_mark` persists one of these boundaries, its owner, label, and explicit loss
-policy. Named-mark selectors are described below. Range-editing operators,
-temporal attachments, and automatic nested occurrence edits remain to be implemented.
+policy. Named-mark selectors are described below. Range-editing operators and
+temporal attachments remain to be implemented.
 [Boundary verification](ANCHOR_VERIFICATION.md) preserves the original query
 evidence; [mark verification](MARK_VERIFICATION.md) covers the schema-3 extension.
 

@@ -13,7 +13,7 @@ pub fn report() -> Result<serde_json::Value, CliError> {
             "frame": 1, "sample_boundary": rate.audio_boundary(ProjectFrame(1))?.0,
         },
         "document_schema": deadpan_core::DOCUMENT_SCHEMA_VERSION,
-        "partial": ["structural-editing-commands", "sqlite-project-history", "schema-1-through-3-migration", "indexed-picture-plan", "exact-boundary-selectors", "persistent-marks", "sparse-play-overrides"],
+        "partial": ["structural-editing-commands", "sqlite-project-history", "schema-1-through-3-migration", "indexed-picture-plan", "exact-boundary-selectors", "persistent-marks", "sparse-play-overrides", "nested-occurrence-edits"],
         "unimplemented": ["media-decode", "audio-output", "keyboard-editor", "media-preview", "analysis", "ai-generation", "youtube-import", "export", "distribution"],
     }))
 }
