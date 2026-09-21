@@ -3,6 +3,8 @@
 This report covers `Edit one nested occurrence atomically`, based on
 `83ba5ef19533edb729b4eb6d10ca5f0c5af08fb5`. It extends schema-4 sparse overrides
 with node operations addressed through a complete nested `InstancePath`.
+It also includes the gap-mark ownership correction based on
+`40956523b68dd01e8fcadec0325390e671070694`.
 DP-04, DP-21, and Gate B remain partial.
 
 ## Implemented behavior
@@ -75,16 +77,28 @@ the edit through undo/redo.
 On 2026-09-20, the complete repository gate passed on Apple M5 Max with 128 GiB
 RAM, macOS 26.5.2 (25F84), Rust 1.97.1, locked dependencies, and bundled SQLite
 3.53.2. Formatting, workspace Clippy with warnings denied, workspace tests,
-workspace build, and `deadpan-cli doctor` passed. There were **156 passing Rust
-tests**, none ignored: 81 core, 36 store, 24 plan, 13 CLI, and two native headless
+workspace build, and `deadpan-cli doctor` passed. After the gap-mark correction,
+there were **157 passing Rust tests**, none ignored: 82 core, 36 store, 24 plan,
+13 CLI, and two native headless
 tests. All six Python audio-measurement regression tests passed as well.
 Diagnostics lists nested occurrence edits as partial and continues to identify
 the unimplemented media, interactive editor, AI, export, and distribution paths.
 
-Independent review found no actionable issues in occurrence isolation, command
+General independent review found no actionable issues in occurrence isolation, command
 dispatch and patching, mark relocation/copying, owned subtree traversal, and the
 plan/store/CLI evidence against specification Sections 5.2–5.4 and 6.1–6.3.
 The reviewer also reran the targeted core occurrence tests successfully.
+
+A separate focused review found that an occurrence mark inside a Repeat gap
+retained its original owner during isolation. The gap's stable play identity
+was absent from the content point's ancestor map. Isolation now checks that
+identity explicitly. The new regression failed before the fix with owner
+`gap-n3` instead of `gap-n7`, then passed. Its eight cases cover inner/outer
+gaps, both biases at gap edges, unaffected plays, and owner-loss policy when
+either override is cleared. All edits check inverse equality and JSON round-trip.
+The complete repository gate and six audio analyzer tests passed again after
+the correction. The focused follow-up review found no remaining issues and
+reran the regression successfully.
 
 ## Remaining work
 

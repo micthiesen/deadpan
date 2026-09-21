@@ -624,8 +624,11 @@ pub(crate) fn clone_occurrence_marks(
                     .decompose(&instance.node, *position, mark.boundary.bias)
                     .map_err(Failure::document)?
                 {
-                    ContentPoint::Content { repeats, .. } => {
+                    ContentPoint::Content {
+                        node, repeats, gap, ..
+                    } => {
                         repeats.get(&selected.node) == Some(&selected.iteration)
+                            || (node == selected.node && gap.as_ref() == Some(&selected.iteration))
                     }
                     _ => false,
                 };

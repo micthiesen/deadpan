@@ -176,6 +176,164 @@ fn at(document: &ProjectDocument, name: &str) -> ExactRatio {
 }
 
 #[test]
+fn concrete_gap_marks_follow_selected_owners_and_respect_boundary_bias() {
+    let mut document = fixture(3, 2, 2, 1);
+    // The second outer play starts at 20. Its first inner play ends at 29,
+    // followed by a one-frame gap; the outer play's gap occupies [38, 40).
+    let cases = [
+        (
+            "inner-gap",
+            "inside",
+            59,
+            InsertionBias::Right,
+            "gap-n7",
+            65,
+        ),
+        (
+            "gap-start-left",
+            "inside",
+            58,
+            InsertionBias::Left,
+            "gap-n7",
+            64,
+        ),
+        (
+            "gap-start-right",
+            "inside",
+            58,
+            InsertionBias::Right,
+            "gap-n7",
+            64,
+        ),
+        (
+            "gap-end-left",
+            "inside",
+            60,
+            InsertionBias::Left,
+            "gap-n7",
+            66,
+        ),
+        (
+            "gap-end-right",
+            "inside",
+            60,
+            InsertionBias::Right,
+            "gap-n3",
+            66,
+        ),
+        ("outer-gap", "group", 78, InsertionBias::Right, "gap-n0", 84),
+        (
+            "other-inner-gap",
+            "inside",
+            19,
+            InsertionBias::Right,
+            "inside",
+            19,
+        ),
+        (
+            "other-outer-gap",
+            "group",
+            38,
+            InsertionBias::Right,
+            "group",
+            38,
+        ),
+    ];
+    for (name, owner, twice_position, bias, _, _) in cases {
+        document = put(
+            &document,
+            name,
+            owner,
+            Anchor::Occurrence {
+                instance: InstancePath {
+                    node: node("root"),
+                    repeats: vec![],
+                },
+                position: ExactRatio::new(twice_position, 2).unwrap(),
+            },
+            bias,
+        );
+    }
+    let selected = path(&document, "a", 1, 0);
+    let next = edit(
+        &document,
+        occurrence(
+            selected,
+            OccurrenceEdit::SetHoldDuration {
+                duration: duration(5),
+            },
+            identities("gap", 10, 0),
+        ),
+    );
+    assert_eq!(next.marks().len(), cases.len());
+    for (name, _, _, _, owner, twice_position) in cases {
+        let stored = &next.marks()[&mark(name)];
+        assert_eq!(stored.owner, node(owner), "{name}");
+        assert_eq!(stored.state, MarkState::Bound, "{name}");
+        assert_eq!(
+            stored.boundary.coordinate,
+            Anchor::Occurrence {
+                instance: InstancePath {
+                    node: node("root"),
+                    repeats: vec![]
+                },
+                position: ExactRatio::new(twice_position, 2).unwrap(),
+            },
+            "{name}",
+        );
+    }
+    let cleared_inner = edit(
+        &next,
+        Command::ClearPlayOverride {
+            node: node("gap-n2"),
+            iteration: iteration(&next, "gap-n2", 0),
+        },
+    );
+    for name in [
+        "inner-gap",
+        "gap-start-left",
+        "gap-start-right",
+        "gap-end-left",
+    ] {
+        let stored = &cleared_inner.marks()[&mark(name)];
+        assert_eq!(
+            stored.state,
+            MarkState::Unresolved {
+                reason: MarkLossReason::OwnerMissing
+            }
+        );
+        assert_eq!(stored.boundary, next.marks()[&mark(name)].boundary);
+    }
+    for name in [
+        "gap-end-right",
+        "outer-gap",
+        "other-inner-gap",
+        "other-outer-gap",
+    ] {
+        assert_eq!(cleared_inner.marks()[&mark(name)].state, MarkState::Bound);
+    }
+    let cleared_outer = edit(
+        &next,
+        Command::ClearPlayOverride {
+            node: node("outer"),
+            iteration: iteration(&next, "outer", 1),
+        },
+    );
+    assert_eq!(
+        cleared_outer.marks()[&mark("outer-gap")].state,
+        MarkState::Unresolved {
+            reason: MarkLossReason::OwnerMissing
+        },
+    );
+    for name in ["other-inner-gap", "other-outer-gap"] {
+        assert_eq!(
+            cleared_outer.marks()[&mark(name)],
+            document.marks()[&mark(name)]
+        );
+    }
+}
+
+#[test]
 fn nested_edit_isolates_one_play_and_preserves_ancestor_boundaries_and_gaps() {
     let mut document = fixture(3, 2, 2, 1);
     assert_eq!(document.duration().unwrap(), duration(58));
