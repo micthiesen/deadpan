@@ -4,13 +4,15 @@
 //! using numeric fields. The contract deliberately supports only the qualified
 //! full-range RGB8 / sRGB / BT.709 generated-video route.
 
-use deadpan_core::BridgeSamplingMap;
+use deadpan_core::{BridgeSamplingMap, SourceSpan, SourceTimeBase, SourceTimestamp};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 pub const PROTOCOL_VERSION: u32 = 1;
 /// Adds host-authoritative interior sampling; version-1 conversion is unchanged.
 pub const BRIDGE_PROTOCOL_VERSION: u32 = 2;
+/// Adds the measured duration of the final decoded output frame to reports.
+pub const REPORT_PROTOCOL_VERSION: u32 = 2;
 pub const MAX_REPLY_BYTES: usize = 8192;
 pub const MAX_REQUEST_BYTES: usize = 4096;
 const MAX_FILE_BYTES: u64 = 16 * 1024 * 1024 * 1024;
@@ -247,19 +249,49 @@ pub struct ConversionReport {
     pub output_time_base_den: u32,
     pub first_output_pts: i64,
     pub last_output_pts: i64,
+    pub last_output_duration: i64,
     pub ffv1_version: u32,
     pub slice_crc: bool,
     pub discarded_audio_streams: u32,
 }
 
 impl ConversionReport {
+    /// Returns the exact half-open bounds observed by the verification decoder.
+    ///
+    /// This is deliberately independent from the requested project duration.
+    /// The final boundary is the checked sum of the final decoded PTS and its
+    /// measured positive duration in the reported output time base.
+    pub fn output_span(&self) -> Result<SourceSpan, ContractError> {
+        self.validate_observed_output_clock()?;
+        let time_base = SourceTimeBase::new(self.output_time_base_num, self.output_time_base_den)
+            .map_err(|_| ContractError("invalid observed media clocks"))?;
+        let end = self
+            .last_output_pts
+            .checked_add(self.last_output_duration)
+            .ok_or(ContractError("output span overflow"))?;
+        SourceSpan::new(
+            SourceTimestamp {
+                ticks: self.first_output_pts,
+                time_base,
+            },
+            SourceTimestamp {
+                ticks: end,
+                time_base,
+            },
+        )
+        .map_err(|_| ContractError("invalid observed output span"))
+    }
+
     pub fn validate(&self, request: &ConversionRequest) -> Result<(), ContractError> {
         self.validate_worker(&WorkerRequest::Convert(request.clone()))
     }
 
     pub fn validate_worker(&self, request: &WorkerRequest) -> Result<(), ContractError> {
         request.validate()?;
-        if self.protocol != PROTOCOL_VERSION || self.video != request.output_video()? {
+        if self.protocol != REPORT_PROTOCOL_VERSION {
+            return Err(ContractError("unsupported report protocol version"));
+        }
+        if self.video != request.output_video()? {
             return Err(ContractError("worker changed the requested video contract"));
         }
         if self.output_bytes == 0 || self.output_bytes > request.limits().max_output_bytes {
@@ -278,15 +310,36 @@ impl ConversionReport {
             || self.input_time_base_den == 0
             || self.input_time_base_num > i32::MAX as u32
             || self.input_time_base_den > i32::MAX as u32
-            || self.output_time_base_num != 1
-            || self.output_time_base_den != 1000
-            || self.first_output_pts != 0
-            || self.last_output_pts != self.video.matroska_pts(self.video.frames - 1)?
         {
             return Err(ContractError("invalid observed media clocks"));
         }
+        self.output_span()?;
         if self.ffv1_version != 3 || !self.slice_crc || self.discarded_audio_streams > 7 {
             return Err(ContractError("unexpected codec profile or stream count"));
+        }
+        Ok(())
+    }
+
+    fn validate_observed_output_clock(&self) -> Result<(), ContractError> {
+        if self.protocol != REPORT_PROTOCOL_VERSION {
+            return Err(ContractError("unsupported report protocol version"));
+        }
+        self.video.validate()?;
+        let expected_duration = i64::try_from(
+            u64::from(self.video.rate_den)
+                .checked_mul(1000)
+                .ok_or(ContractError("output duration overflow"))?
+                / u64::from(self.video.rate_num),
+        )
+        .map_err(|_| ContractError("output duration overflow"))?;
+        if self.output_time_base_num != 1
+            || self.output_time_base_den != 1000
+            || self.first_output_pts != 0
+            || self.last_output_pts != self.video.matroska_pts(self.video.frames - 1)?
+            || self.last_output_duration <= 0
+            || self.last_output_duration != expected_duration
+        {
+            return Err(ContractError("invalid observed media clocks"));
         }
         Ok(())
     }
@@ -310,6 +363,40 @@ pub enum WorkerReply {
 mod tests {
     use super::*;
     use deadpan_core::{BridgeInterpolation, FrameDuration, FrameRate};
+
+    fn report(video: VideoContract) -> ConversionReport {
+        ConversionReport {
+            protocol: REPORT_PROTOCOL_VERSION,
+            video,
+            output_bytes: 1024,
+            input_rgb_sha256: "a".repeat(64),
+            output_rgb_sha256: "a".repeat(64),
+            input_time_base_num: 1,
+            input_time_base_den: video.rate_num,
+            output_time_base_num: 1,
+            output_time_base_den: 1000,
+            first_output_pts: 0,
+            last_output_pts: video.matroska_pts(video.frames - 1).unwrap(),
+            last_output_duration: i64::from((video.rate_den * 1000) / video.rate_num),
+            ffv1_version: 3,
+            slice_crc: true,
+            discarded_audio_streams: 0,
+        }
+    }
+
+    fn conversion(video: VideoContract) -> ConversionRequest {
+        ConversionRequest {
+            protocol: PROTOCOL_VERSION,
+            video,
+            input_byte_length: 1024,
+            limits: ConversionLimits {
+                max_input_bytes: 1024,
+                max_output_bytes: 1024,
+                max_scratch_bytes: video.scratch_bytes().unwrap(),
+                timeout_ms: 5000,
+            },
+        }
+    }
 
     fn bridge() -> BridgeConversionRequest {
         BridgeConversionRequest {
@@ -447,5 +534,74 @@ mod tests {
             serde_json::from_str::<WorkerRequest>(&wire).unwrap(),
             WorkerRequest::Convert(conversion)
         );
+    }
+
+    #[test]
+    fn report_span_uses_measured_final_duration_instead_of_next_rounded_boundary() {
+        let contract = VideoContract {
+            width: 4,
+            height: 2,
+            frames: 25,
+            rate_num: 24,
+            rate_den: 1,
+        };
+        let measured = report(contract);
+        measured.validate(&conversion(contract)).unwrap();
+        assert_eq!(measured.last_output_pts, 1000);
+        assert_eq!(measured.last_output_duration, 41);
+        let span = measured.output_span().unwrap();
+        assert_eq!(span.start().ticks, 0);
+        assert_eq!(span.end().ticks, 1041);
+        assert_eq!(span.end().time_base.numerator(), 1);
+        assert_eq!(span.end().time_base.denominator(), 1000);
+        // The independently rounded boundary at ordinal 25 would be 1042.
+        assert_ne!(span.end().ticks, 1042);
+
+        let fractional = video();
+        let fractional_report = report(fractional);
+        fractional_report.validate(&conversion(fractional)).unwrap();
+        assert_eq!(fractional_report.last_output_pts, 968);
+        assert_eq!(fractional_report.last_output_duration, 33);
+        assert_eq!(fractional_report.output_span().unwrap().end().ticks, 1001);
+    }
+
+    #[test]
+    fn report_wire_and_validation_require_measured_duration_and_version_two() {
+        let video = VideoContract {
+            width: 4,
+            height: 2,
+            frames: 3,
+            rate_num: 24,
+            rate_den: 1,
+        };
+        let request = conversion(video);
+        let valid = report(video);
+        assert_eq!(valid.last_output_pts, 83);
+        assert_eq!(valid.last_output_duration, 41);
+        assert_eq!(valid.output_span().unwrap().end().ticks, 124);
+
+        let mut old = valid.clone();
+        old.protocol = 1;
+        assert_eq!(
+            old.validate(&request).unwrap_err(),
+            ContractError("unsupported report protocol version")
+        );
+        assert_eq!(
+            old.output_span().unwrap_err(),
+            ContractError("unsupported report protocol version")
+        );
+
+        let mut wrong_duration = valid.clone();
+        wrong_duration.last_output_duration = 42;
+        assert!(wrong_duration.validate(&request).is_err());
+        wrong_duration.last_output_duration = 0;
+        assert!(wrong_duration.output_span().is_err());
+
+        let mut missing = serde_json::to_value(valid).unwrap();
+        missing
+            .as_object_mut()
+            .unwrap()
+            .remove("last_output_duration");
+        assert!(serde_json::from_value::<ConversionReport>(missing).is_err());
     }
 }

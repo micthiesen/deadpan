@@ -107,6 +107,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "sampled": {"object":bundle.sampled().object(), "report":bundle.sampled().report()},
         "provenance": bundle.provenance().object(),
         "conditioning": bundle.conditioning().receipt(),
+        "native_span": bundle.native_span(), "sampled_span": bundle.sampled_span(),
         "elapsed_seconds": started.elapsed().as_secs_f64(),
     });
     fs::create_dir(&config.output_directory)?;

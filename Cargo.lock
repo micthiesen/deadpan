@@ -828,6 +828,7 @@ dependencies = [
  "deadpan-core",
  "deadpan-jobs",
  "deadpan-media",
+ "deadpan-store",
  "serde",
  "serde_json",
  "sha2",

@@ -65,6 +65,20 @@ boundary, configuration fields are in the example, and measured runs retain
 their exact configurations. Its output is still separate from project Ready
 publication and authored acceptance.
 
+`qualify_generated_acceptance` accepts the same configuration shape. It creates a
+fresh synthetic Hold project, qualifies the captured result, publishes all six
+objects, records Ready, previews and explicitly accepts, then relocates/reopens,
+undoes/redoes/reverts and reads back the objects. Run it with an absolute config:
+
+```sh
+cargo run --locked -p deadpan-models --example qualify_generated_acceptance -- /absolute/configuration.json
+```
+
+Use a new output directory. This developer probe reuses a completed generation;
+it neither runs inference nor supplies application source-context resolution,
+audition or rendering. [The acceptance contract](../../docs/GENERATION_ACCEPTANCE.md)
+records its scope and remaining product work.
+
 Use a fresh run with `--cancel-after-millis` or `--cancel-at-stage inference`
 to exercise actual cancellation.
 The host enforces a 30-minute attempt deadline and a five-second cancellation

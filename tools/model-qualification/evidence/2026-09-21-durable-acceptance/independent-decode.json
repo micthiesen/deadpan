@@ -1,0 +1,54 @@
+{
+  "scope": "independent developer FFmpeg decoding of accepted-history objects after relocation and reversion; no model/runtime path supplied; no application renderer qualification",
+  "ffmpeg_version": "ffmpeg version 9.0.1 Copyright (c) 2000-2026 the FFmpeg developers",
+  "results": [
+    {
+      "media": "native",
+      "command": [
+        "ffmpeg",
+        "-hide_banner",
+        "-v",
+        "error",
+        "-i",
+        "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-durable-acceptance-q1rh36r4/accepted/native.mkv",
+        "-map",
+        "0:v:0",
+        "-pix_fmt",
+        "rgb24",
+        "-fps_mode",
+        "passthrough",
+        "-f",
+        "rawvideo",
+        "pipe:1"
+      ],
+      "frames": 25,
+      "decoded_rgb_bytes": 18432000,
+      "decoded_rgb_sha256": "be4ffce12b048457bcab1779eefe8683f41c242d013be7f488c25416491efe1a",
+      "elapsed_seconds": 0.2967340829782188
+    },
+    {
+      "media": "sampled",
+      "command": [
+        "ffmpeg",
+        "-hide_banner",
+        "-v",
+        "error",
+        "-i",
+        "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-durable-acceptance-q1rh36r4/accepted/sampled.mkv",
+        "-map",
+        "0:v:0",
+        "-pix_fmt",
+        "rgb24",
+        "-fps_mode",
+        "passthrough",
+        "-f",
+        "rawvideo",
+        "pipe:1"
+      ],
+      "frames": 30,
+      "decoded_rgb_bytes": 22118400,
+      "decoded_rgb_sha256": "eda362044e57353435b56756be4143419a3bb6ed52bb2f849102b3eff962c71a",
+      "elapsed_seconds": 0.2578391660936177
+    }
+  ]
+}

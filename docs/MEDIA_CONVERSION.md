@@ -4,8 +4,9 @@
 exact interior bridge sampling.
 `native/deadpan-media-worker` links the qualified LGPL FFmpeg 8.0.3 libraries in a
 private process. This is the first implemented media adapter, with a deliberately
-narrow input contract. General source import, playback, export, candidate bundle
-validation, and authored acceptance remain separate work.
+narrow input contract. General source import, playback and export remain open.
+[Bundle qualification](GENERATION_BUNDLES.md) and [store acceptance](GENERATION_ACCEPTANCE.md)
+compose this boundary without granting the codec authored-edit authority.
 The [2026-09-21 qualification](qualification/media-host-conversion-2026-09-21.md)
 records actual captured-model conversions, sanitizer runs, failures, and limits.
 The [bridge sampling qualification](qualification/media-bridge-2026-09-21.md)
@@ -45,7 +46,7 @@ the adjacent native frames and blends encoded sRGB RGB8 channels using integer
 half-up rounding. It decodes native frames once into bounded scratch and computes
 each output frame on demand. Upsampling increases work/output size without
 expanding the raw scratch requirement. A fresh decoder verifies the sampled
-FFV1 against those expected pixels. Report version 1 is shared by both operations;
+FFV1 against those expected pixels. Report version 2 is shared by both operations;
 its video contract describes the output. Native and output RGB hashes may differ
 for sampling, and must match for plain conversion. The paired host also checks
 that both helpers decoded the same native pixels.
@@ -102,6 +103,13 @@ Container timestamps never replace that authored mapping. A complete decode can
 succeed after trailer truncation, so input hash/length verification remains
 mandatory even when every expected picture decodes.
 
+Report 2 requires `last_output_duration` from the actual final decoded frame.
+`output_span()` returns checked source coordinates from first PTS through last PTS
+plus that duration. Matroska's default duration is the integer millisecond floor
+of the frame period. Thus 25 frames at 24 fps end at 1041 ms in this container,
+not the rounded 1042-ms next frame boundary. Exact frame count/rate remains a
+separate contract. Old reports without this observation are rejected, not upgraded.
+
 ## Developer verification
 
 [Development](DEVELOPMENT.md) describes the explicit FFmpeg prefix build.
@@ -143,8 +151,8 @@ Returning a private conversion result cannot make those later decisions atomic.
 
 [Model protocol 2 and bundle qualification](GENERATION_BUNDLES.md) now declare
 native footage and provenance, derive both masters from the original request
-plan, retain an immutable provenance envelope, and persist Ready only after all
-three generated objects are verified. Explicit authored acceptance still needs
-current relevance, source/conditioning qualification, object revalidation,
-history retention and an undoable command. Legacy protocol-1 sampled receipts
-remain separate and cannot satisfy the modern bundle path.
+plan and retain an immutable provenance envelope. Admission-bearing Ready receipts
+require both masters, provenance, context and both prepared inputs. Explicit store
+acceptance rechecks objects, selection and current relevance in an undoable command.
+Source/conditioning qualification, audition and application rendering remain open.
+Legacy receipts remain separate and cannot satisfy the admission path.

@@ -8,6 +8,7 @@ mod error;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod generated_media;
 pub mod generation;
+pub mod generation_acceptance;
 pub mod generation_attempts;
 mod history;
 mod migration;
@@ -229,40 +230,9 @@ impl ProjectStore {
             .connection
             .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
         let plan = prepare_command(&transaction, request)?;
-        match relevance {
-            Some(relevance) => generation::apply_relevance_plan(
-                &transaction,
-                &plan.current,
-                &plan.next,
-                relevance,
-            )?,
-            None => generation::ensure_no_current(&transaction)?,
-        }
-        insert_revision(&transaction, &plan.current, &plan.next, "edit")?;
-        let cursor: Option<i64> =
-            transaction.query_row("SELECT cursor FROM state WHERE singleton=1", [], |row| {
-                row.get(0)
-            })?;
-        transaction.execute(
-            "INSERT INTO history(parent_id,revision_id,request,edit) VALUES (?1,?2,?3,?4)",
-            params![
-                cursor,
-                plan.next.revision_id().as_str(),
-                plan.request_json,
-                plan.edit_json
-            ],
-        )?;
-        let history_id = transaction.last_insert_rowid();
-        transaction.execute(
-            "UPDATE state SET head_revision=?1,cursor=?2 WHERE singleton=1",
-            params![plan.next.revision_id().as_str(), history_id],
-        )?;
-        transaction.execute("DELETE FROM redo", [])?;
+        let outcome = write_command_plan(&transaction, plan, relevance)?;
         transaction.commit()?;
-        Ok(CommitOutcome {
-            revision_id: plan.next.revision_id().clone(),
-            edit: plan.edit,
-        })
+        Ok(outcome)
     }
 
     /// Produces a consistent SQLite snapshot including all committed WAL pages.
@@ -384,12 +354,20 @@ fn prepare_command(
     connection: &Connection,
     request: &CommandRequest,
 ) -> Result<CommandPlan, StoreError> {
+    prepare_admitted_command(connection, request, None)
+}
+
+fn prepare_admitted_command(
+    connection: &Connection,
+    request: &CommandRequest,
+    admitted: Option<&deadpan_core::GeneratedArtifact>,
+) -> Result<CommandPlan, StoreError> {
     let current = read_snapshot(connection)?;
     let edit = deadpan_core::apply(&current, request)?;
     ensure_unused_revision(connection, &request.new_revision)?;
     let next = edit.forward.apply(&current)?;
     check_document_size(&next.to_json()?)?;
-    ensure_generated_admission(Some(&current), &next)?;
+    ensure_generated_admission_with(Some(&current), &next, admitted)?;
     let request_json = serde_json::to_string(request)?;
     let edit_json = serde_json::to_string(&edit)?;
     check_document_size(&request_json)?;
@@ -403,13 +381,58 @@ fn prepare_command(
     })
 }
 
+fn write_command_plan(
+    connection: &Connection,
+    plan: CommandPlan,
+    relevance: Option<&generation::RelevancePlan>,
+) -> Result<CommitOutcome, StoreError> {
+    match relevance {
+        Some(relevance) => {
+            generation::apply_relevance_plan(connection, &plan.current, &plan.next, relevance)?
+        }
+        None => generation::ensure_no_current(connection)?,
+    }
+    insert_revision(connection, &plan.current, &plan.next, "edit")?;
+    let cursor: Option<i64> =
+        connection.query_row("SELECT cursor FROM state WHERE singleton=1", [], |row| {
+            row.get(0)
+        })?;
+    connection.execute(
+        "INSERT INTO history(parent_id,revision_id,request,edit) VALUES (?1,?2,?3,?4)",
+        params![
+            cursor,
+            plan.next.revision_id().as_str(),
+            plan.request_json,
+            plan.edit_json
+        ],
+    )?;
+    let history_id = connection.last_insert_rowid();
+    connection.execute(
+        "UPDATE state SET head_revision=?1,cursor=?2 WHERE singleton=1",
+        params![plan.next.revision_id().as_str(), history_id],
+    )?;
+    connection.execute("DELETE FROM redo", [])?;
+    Ok(CommitOutcome {
+        revision_id: plan.next.revision_id().clone(),
+        edit: plan.edit,
+    })
+}
+
 /// Core edits describe authored intent. They cannot prove that a candidate was
-/// selected, revalidated, canonicalized and durably promoted. Until that host
-/// path exists, generic store commands may retain/copy an existing artifact,
+/// selected, revalidated, canonicalized and durably promoted. Generic store
+/// commands may retain/copy an existing artifact,
 /// but cannot introduce a new one, including through subtrees or Repeat gaps.
 fn ensure_generated_admission(
     current: Option<&ProjectDocument>,
     next: &ProjectDocument,
+) -> Result<(), StoreError> {
+    ensure_generated_admission_with(current, next, None)
+}
+
+fn ensure_generated_admission_with(
+    current: Option<&ProjectDocument>,
+    next: &ProjectDocument,
+    admitted: Option<&deadpan_core::GeneratedArtifact>,
 ) -> Result<(), StoreError> {
     use deadpan_core::{HoldVideo, NodeKind};
     use std::collections::BTreeSet;
@@ -432,10 +455,13 @@ fn ensure_generated_admission(
             .map(|artifact| serde_json::to_vec(artifact).map_err(StoreError::from))
             .collect()
     }
-    let retained = match current {
+    let mut retained = match current {
         Some(document) => artifacts(document)?,
         None => BTreeSet::new(),
     };
+    if let Some(artifact) = admitted {
+        retained.insert(serde_json::to_vec(artifact)?);
+    }
     if artifacts(next)?.is_subset(&retained) {
         Ok(())
     } else {

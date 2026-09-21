@@ -3,7 +3,7 @@ use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
-use deadpan_core::{GeneratedContentId, GeneratedObjectRef, ProjectId, RevisionId};
+use deadpan_core::{GeneratedContentId, GeneratedObjectRef, ProjectId, RevisionId, SourceSpan};
 use deadpan_jobs::artifact::{
     ArtifactError, ArtifactLimits, ArtifactWorkspace, SnapshotInterruption,
 };
@@ -145,6 +145,8 @@ pub struct QualifiedBridgeBundle {
     sampled: CanonicalMedia,
     provenance: QualifiedProvenance,
     conditioning: crate::RetainedConditioning,
+    native_span: SourceSpan,
+    sampled_span: SourceSpan,
 }
 
 impl QualifiedBridgeBundle {
@@ -165,6 +167,12 @@ impl QualifiedBridgeBundle {
     }
     pub fn conditioning(&self) -> &crate::RetainedConditioning {
         &self.conditioning
+    }
+    pub fn native_span(&self) -> SourceSpan {
+        self.native_span
+    }
+    pub fn sampled_span(&self) -> SourceSpan {
+        self.sampled_span
     }
 
     pub fn into_parts(
@@ -196,6 +204,8 @@ struct HostProvenance<'a> {
     native_validation: &'a ConversionReport,
     sampled_validation: &'a ConversionReport,
     conditioning: &'a crate::ConditioningReceipt,
+    native_span: SourceSpan,
+    sampled_span: SourceSpan,
     // A string preserves original bytes exactly, including formatting. Backend
     // claims are retained as provenance, never used as media validation results.
     worker_provenance_utf8: &'a str,
@@ -342,10 +352,20 @@ pub fn qualify_bridge(
     check()?;
     let worker_provenance_utf8 = std::str::from_utf8(&provenance_bytes)
         .map_err(|error| QualificationError::Provenance(error.to_string()))?;
+    let native_span = masters
+        .native()
+        .report()
+        .output_span()
+        .map_err(ConversionError::from)?;
+    let sampled_span = masters
+        .sampled()
+        .report()
+        .output_span()
+        .map_err(ConversionError::from)?;
     let bytes = crate::bounded_json::encode(
         &HostProvenance {
-            schema_version: 2,
-            validation_profile: "deadpan-ffv1-bridge-2",
+            schema_version: 3,
+            validation_profile: "deadpan-ffv1-bridge-3",
             binding: &binding,
             selected_provider,
             declaration,
@@ -354,6 +374,8 @@ pub fn qualify_bridge(
             native_validation: masters.native().report(),
             sampled_validation: masters.sampled().report(),
             conditioning: conditioning.receipt(),
+            native_span,
+            sampled_span,
             worker_provenance_utf8,
         },
         limits.maximum_host_provenance_bytes,
@@ -377,6 +399,8 @@ pub fn qualify_bridge(
             object,
         },
         conditioning,
+        native_span,
+        sampled_span,
     })
 }
 

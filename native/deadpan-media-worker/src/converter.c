@@ -1026,7 +1026,8 @@ static int receive_verified_frames(AVCodecContext *decoder, AVFrame *decoded, AV
                                    uint8_t *actual, uint8_t *sample_left, uint8_t *sample_right,
                                    const DeadpanConversionRequest *request,
                                    uint64_t frame_bytes, struct AVSHA *output_sha,
-                                   uint32_t *frame_count, int64_t *first_pts, int64_t *last_pts) {
+                                   uint32_t *frame_count, int64_t *first_pts, int64_t *last_pts,
+                                   int64_t *last_duration) {
     for (;;) {
         int code = avcodec_receive_frame(decoder, decoded);
         if (code == AVERROR(EAGAIN) || code == AVERROR_EOF) {
@@ -1074,6 +1075,7 @@ static int receive_verified_frames(AVCodecContext *decoder, AVFrame *decoded, AV
             *first_pts = decoded->best_effort_timestamp;
         }
         *last_pts = decoded->best_effort_timestamp;
+        *last_duration = decoded->duration;
         (*frame_count)++;
         av_frame_unref(decoded);
     }
@@ -1198,7 +1200,8 @@ static int verify_output(int output_fd, int scratch_fd,
             if (!receive_verified_frames(decoder, decoded, rgb, to_rgb, scratch_fd, expected,
                                          actual, sample_left, sample_right, request, frame_bytes,
                                          output_sha, &frame_count, &report->first_output_pts,
-                                         &report->last_output_pts)) {
+                                         &report->last_output_pts,
+                                         &report->last_output_duration)) {
                 goto cleanup;
             }
             break;
@@ -1216,7 +1219,8 @@ static int verify_output(int output_fd, int scratch_fd,
         if (!receive_verified_frames(decoder, decoded, rgb, to_rgb, scratch_fd, expected, actual,
                                      sample_left, sample_right, request, frame_bytes, output_sha,
                                      &frame_count, &report->first_output_pts,
-                                     &report->last_output_pts)) {
+                                     &report->last_output_pts,
+                                     &report->last_output_duration)) {
             goto cleanup;
         }
     }

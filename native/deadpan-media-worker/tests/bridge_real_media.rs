@@ -196,12 +196,23 @@ fn assert_object_bytes(media: &mut CanonicalMedia) {
 }
 
 fn assert_report_clock(report: &deadpan_media::protocol::ConversionReport) {
+    assert_eq!(report.protocol, 2);
     assert_eq!(report.output_time_base_num, 1);
     assert_eq!(report.output_time_base_den, 1000);
     assert_eq!(report.first_output_pts, 0);
     assert_eq!(
         report.last_output_pts,
         report.video.matroska_pts(report.video.frames - 1).unwrap()
+    );
+    assert_eq!(
+        report.last_output_duration,
+        i64::from((report.video.rate_den * 1000) / report.video.rate_num)
+    );
+    let span = report.output_span().unwrap();
+    assert_eq!(span.start().ticks, report.first_output_pts);
+    assert_eq!(
+        span.end().ticks,
+        report.last_output_pts + report.last_output_duration
     );
 }
 

@@ -387,18 +387,18 @@ future-schema read-only inspection still needs a compatibility implementation.
 
 ## Schema migration
 
-Database schemas 1 through 7 return `MigrationRequired` when opened. Upgrade explicitly:
+Database schemas 1 through 8 return `MigrationRequired` when opened. Upgrade explicitly:
 
 ```sh
 cargo run --locked -p deadpan-cli -- project migrate /tmp/example.deadpan
 ```
 
 Migration holds the project writer lock, keeps a consistent SQLite backup under
-`Snapshots/before-schema-8-*.sqlite`, and upgrades a separate candidate. It
+`Snapshots/before-schema-9-*.sqlite`, and upgrades a separate candidate. It
 replays all commands, undo/redo revisions, and abandoned branches with their
 original revision IDs. Every snapshot and forward/inverse transaction is checked
 against its strict original schema meaning. Migration goes directly to database
-schema 8 and core document schema 5. Schema-7 histories already use core schema 5
+schema 9 and core document schema 5. Schema-7/8 histories already use core schema 5
 and are validated without rewriting. Schemas 1 through 3 gain
 empty override maps. Schema-1/2 histories also gain empty mark
 maps; schema-3 mark histories retain their exact ownership, bias, and loss states.
@@ -406,8 +406,10 @@ Database schema-4/5/6 authored snapshots, commands, and patches are replayed thr
 the frozen core schema-4 adapter. Schema-5/6 generation requests and clocks are
 validated and preserved; older databases gain empty request tables. Schema-6
 attempt, candidate-receipt, and selection rows remain unchanged; older databases
-gain empty tables. Migrated requests have no bridge plan and remain legacy;
-the new bundle receipt table starts empty. Fields or
+gain empty tables. Pre-schema-8 requests have no bridge plan and remain legacy;
+their bundle receipt table starts empty. Existing schema-8 plans and receipt JSON
+remain unchanged; receipts gain no admission evidence. New admission vocabulary
+is rejected in old receipts, even when null. Fields or
 commands that did not exist in the old schema are rejected. SQLite atomically promotes the validated
 candidate through its backup API; the main file is never renamed around a live
 WAL. Existing read transactions keep their old snapshot. Failure before promotion
@@ -419,8 +421,9 @@ actionable storage error codes and still identify the retained backup.
 
 Generated Hold acceptance/reversion semantics exist in core schema 5, but generic
 project commands and initial import reject newly introduced generated artifacts
-with `GeneratedAcceptanceUnavailable`. Qualified candidate admission is still
-unimplemented; see [generated Hold semantics](GENERATED_HOLDS.md).
+with `GeneratedAcceptanceUnavailable`. The dedicated [store acceptance API](GENERATION_ACCEPTANCE.md)
+requires a current selected Ready receipt and all retained objects. It is a Rust
+host API, not a CLI generation or audition command.
 
 This is a database migration, not portable media copying or a recovery UI. The
 immutable source specification and media references are unaffected.

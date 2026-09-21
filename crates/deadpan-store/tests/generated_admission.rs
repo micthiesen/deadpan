@@ -122,7 +122,7 @@ fn fixture() -> Result<(
 }
 
 #[test]
-fn generic_commands_cannot_bypass_unimplemented_candidate_admission() -> Result {
+fn generic_commands_cannot_bypass_dedicated_candidate_admission() -> Result {
     let scratch = tempfile::tempdir()?;
     let (initial, artifact, assets) = fixture()?;
     let acceptance = request(

@@ -1,0 +1,22 @@
+    Checking deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+    Checking deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+    Checking deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+    Checking deadpan-media-worker v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-media-worker)
+    Checking deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+error[E0618]: expected function, found `Fixture`
+   --> native/deadpan-media-worker/tests/canonicalize_real_media.rs:210:22
+    |
+ 29 | fn fixture(name: &str) -> Fixture {
+    | --------------------------------- this function of the same name is available here, but it's shadowed by the local binding
+...
+201 |     let fixture = fixture("rgb25_24");
+    |         ------- `fixture` has type `Fixture`
+...
+210 |     let fractional = fixture("rgb30_30000_1001");
+    |                      ^^^^^^^--------------------
+    |                      |
+    |                      call expression requires function
+
+For more information about this error, try `rustc --explain E0618`.
+error: could not compile `deadpan-media-worker` (test "canonicalize_real_media") due to 1 previous error
+warning: build failed, waiting for other jobs to finish...

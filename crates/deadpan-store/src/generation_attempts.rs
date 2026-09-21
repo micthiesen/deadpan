@@ -4,11 +4,12 @@
 //! request relevance. Progress remains live in memory. A legacy Ready receipt
 //! records what the host says it validated and still requires the candidate
 //! cache artifact to be reopened and verified. A V2 Ready receipt is recorded
-//! only after this store has verified all three generated objects. Either kind
+//! only after this store has verified the masters and provenance, plus all
+//! retained inputs when admission evidence exists. Either kind
 //! still requires a current-relevance check and an authored acceptance
 //! transaction; Ready alone never changes the document.
 
-use deadpan_core::{FrameDuration, GeneratedObjectRef, NodeId, ProjectId};
+use deadpan_core::{FrameDuration, GeneratedObjectRef, NodeId, ProjectId, SourceSpan};
 use deadpan_jobs::{
     AttemptId, BridgeGenerationPlan, CancellationAcknowledgement, CancellationToken,
     CandidateDeclaration, CandidateManifest, Diagnostic, FailureCode, HoldConstraints, HostFailure,
@@ -221,6 +222,126 @@ pub struct BundleValidationReceipt {
     provenance_byte_length: u64,
     validator: ValidatorIdentity,
     availability: CandidateAvailability,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    admission: Option<BundleAdmissionEvidence>,
+}
+
+/// Retained pre-launch conditioning dependencies. These identities describe
+/// immutable prepared bytes; their source-clock and color meaning is host-owned.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(try_from = "BundleInputObjectsWire")]
+pub struct BundleInputObjects {
+    context_sha256: Sha256,
+    manifest: GeneratedObjectRef,
+    left: GeneratedObjectRef,
+    right: GeneratedObjectRef,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct BundleInputObjectsWire {
+    context_sha256: Sha256,
+    manifest: GeneratedObjectRef,
+    left: GeneratedObjectRef,
+    right: GeneratedObjectRef,
+}
+
+impl TryFrom<BundleInputObjectsWire> for BundleInputObjects {
+    type Error = AttemptValueError;
+
+    fn try_from(value: BundleInputObjectsWire) -> Result<Self, Self::Error> {
+        Self::new(
+            value.context_sha256,
+            value.manifest,
+            value.left,
+            value.right,
+        )
+    }
+}
+
+impl BundleInputObjects {
+    pub fn new(
+        context_sha256: Sha256,
+        manifest: GeneratedObjectRef,
+        left: GeneratedObjectRef,
+        right: GeneratedObjectRef,
+    ) -> Result<Self, AttemptValueError> {
+        if manifest.content() == left.content()
+            || manifest.content() == right.content()
+            || (left.content() == right.content() && left != right)
+        {
+            return Err(AttemptValueError::BundleMetadataMismatch);
+        }
+        Ok(Self {
+            context_sha256,
+            manifest,
+            left,
+            right,
+        })
+    }
+
+    pub fn context_sha256(&self) -> &Sha256 {
+        &self.context_sha256
+    }
+    pub fn manifest(&self) -> &GeneratedObjectRef {
+        &self.manifest
+    }
+    pub fn left(&self) -> &GeneratedObjectRef {
+        &self.left
+    }
+    pub fn right(&self) -> &GeneratedObjectRef {
+        &self.right
+    }
+}
+
+/// Media bounds measured by the host decoder, plus complete retained inputs.
+/// A legacy receipt without this evidence cannot authorize authored acceptance.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(try_from = "BundleAdmissionEvidenceWire")]
+pub struct BundleAdmissionEvidence {
+    native_span: SourceSpan,
+    sampled_span: SourceSpan,
+    inputs: BundleInputObjects,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct BundleAdmissionEvidenceWire {
+    native_span: SourceSpan,
+    sampled_span: SourceSpan,
+    inputs: BundleInputObjects,
+}
+
+impl TryFrom<BundleAdmissionEvidenceWire> for BundleAdmissionEvidence {
+    type Error = AttemptValueError;
+
+    fn try_from(value: BundleAdmissionEvidenceWire) -> Result<Self, Self::Error> {
+        Self::new(value.native_span, value.sampled_span, value.inputs)
+    }
+}
+
+impl BundleAdmissionEvidence {
+    pub fn new(
+        native_span: SourceSpan,
+        sampled_span: SourceSpan,
+        inputs: BundleInputObjects,
+    ) -> Result<Self, AttemptValueError> {
+        Ok(Self {
+            native_span,
+            sampled_span,
+            inputs,
+        })
+    }
+
+    pub const fn native_span(&self) -> SourceSpan {
+        self.native_span
+    }
+    pub const fn sampled_span(&self) -> SourceSpan {
+        self.sampled_span
+    }
+    pub fn inputs(&self) -> &BundleInputObjects {
+        &self.inputs
+    }
 }
 
 #[derive(Deserialize)]
@@ -239,6 +360,8 @@ struct BundleValidationReceiptWire {
     provenance_byte_length: u64,
     validator: ValidatorIdentity,
     availability: CandidateAvailability,
+    #[serde(default)]
+    admission: Option<BundleAdmissionEvidence>,
 }
 
 impl<'de> Deserialize<'de> for BundleValidationReceipt {
@@ -261,6 +384,7 @@ impl<'de> Deserialize<'de> for BundleValidationReceipt {
             provenance_byte_length: wire.provenance_byte_length,
             validator: wire.validator,
             availability: wire.availability,
+            admission: wire.admission,
         };
         receipt.validate_shape().map_err(D::Error::custom)?;
         Ok(receipt)
@@ -300,6 +424,7 @@ impl BundleValidationReceipt {
             provenance_byte_length: declaration.provenance.byte_length(),
             validator,
             availability: CandidateAvailability::Present,
+            admission: None,
         };
         if declaration.video != receipt.native_video {
             return Err(AttemptValueError::BundleMetadataMismatch);
@@ -320,16 +445,53 @@ impl BundleValidationReceipt {
             || self.sampled_video.frame_rate() != self.plan.project_frame_rate()
             || self.sampled_video.width() != dimensions.width()
             || self.sampled_video.height() != dimensions.height()
-            || (self.native_object == self.sampled_object
-                && self.native_video != self.sampled_video)
-            || self.provenance_object == self.native_object
-            || self.provenance_object == self.sampled_object
+            || (self.native_object.content() == self.sampled_object.content()
+                && (self.native_object != self.sampled_object
+                    || self.native_video != self.sampled_video))
+            || self.provenance_object.content() == self.native_object.content()
+            || self.provenance_object.content() == self.sampled_object.content()
             || self.native_byte_length == 0
             || self.provenance_byte_length == 0
         {
             return Err(AttemptValueError::BundleMetadataMismatch);
         }
+        if let Some(admission) = &self.admission {
+            if self.native_object == self.sampled_object
+                && admission.native_span != admission.sampled_span
+            {
+                return Err(AttemptValueError::BundleMetadataMismatch);
+            }
+            for input in [
+                &admission.inputs.manifest,
+                &admission.inputs.left,
+                &admission.inputs.right,
+            ] {
+                if [
+                    &self.native_object,
+                    &self.sampled_object,
+                    &self.provenance_object,
+                ]
+                .iter()
+                .any(|output| output.content() == input.content())
+                {
+                    return Err(AttemptValueError::BundleMetadataMismatch);
+                }
+            }
+        }
         Ok(())
+    }
+
+    pub fn with_admission(
+        mut self,
+        evidence: BundleAdmissionEvidence,
+    ) -> Result<Self, AttemptValueError> {
+        self.admission = Some(evidence);
+        self.validate_shape()?;
+        Ok(self)
+    }
+
+    pub fn admission(&self) -> Option<&BundleAdmissionEvidence> {
+        self.admission.as_ref()
     }
 
     pub fn native_object(&self) -> &GeneratedObjectRef {
@@ -672,6 +834,30 @@ pub(crate) fn validate_store(connection: &Connection) -> Result<(), StoreError> 
 }
 
 impl ProjectStore {
+    pub(crate) fn verify_bundle_objects(
+        &self,
+        receipt: &BundleValidationReceipt,
+        limits: crate::generated_media::GeneratedMediaLimits,
+    ) -> Result<(), StoreError> {
+        for object in [
+            receipt.native_object(),
+            receipt.sampled_object(),
+            receipt.provenance_object(),
+        ] {
+            drop(self.snapshot_generated_object(object, limits)?);
+        }
+        if let Some(evidence) = receipt.admission() {
+            for object in [
+                evidence.inputs().manifest(),
+                evidence.inputs().left(),
+                evidence.inputs().right(),
+            ] {
+                drop(self.snapshot_generated_object(object, limits)?);
+            }
+        }
+        Ok(())
+    }
+
     pub fn begin_generation_attempt(
         &mut self,
         input: BeginGenerationAttempt,
@@ -976,13 +1162,11 @@ impl ProjectStore {
         limits: crate::generated_media::GeneratedMediaLimits,
     ) -> Result<AttemptMutationOutcome, StoreError> {
         self.require_writer()?;
-        // Verify the three immutable objects before opening the SQLite
+        // Verify the receipt's complete immutable object set before opening the SQLite
         // transaction. A missing or corrupt object therefore cannot leave a
         // Ready receipt behind, and the bound is supplied by the host rather
         // than inferred from untrusted receipt metadata.
-        drop(self.snapshot_generated_object(receipt.native_object(), limits)?);
-        drop(self.snapshot_generated_object(receipt.sampled_object(), limits)?);
-        drop(self.snapshot_generated_object(receipt.provenance_object(), limits)?);
+        self.verify_bundle_objects(&receipt, limits)?;
         let transaction = self
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
@@ -1364,12 +1548,12 @@ pub(crate) fn recover_nonterminal(connection: &mut Connection) -> Result<usize, 
 }
 
 #[derive(Debug, Clone)]
-struct RequestMetadata {
-    binding: TargetBinding,
-    constraints: HoldConstraints,
-    provider: ProviderSelection,
-    bridge_plan: Option<BridgeGenerationPlan>,
-    relevance: Relevance,
+pub(crate) struct RequestMetadata {
+    pub(crate) binding: TargetBinding,
+    pub(crate) constraints: HoldConstraints,
+    pub(crate) provider: ProviderSelection,
+    pub(crate) bridge_plan: Option<BridgeGenerationPlan>,
+    pub(crate) relevance: Relevance,
 }
 
 #[derive(Debug)]
@@ -1377,7 +1561,7 @@ struct AttemptHead {
     high_water: i64,
 }
 
-fn read_request(
+pub(crate) fn read_request(
     connection: &Connection,
     request_id: &RequestId,
 ) -> Result<RequestMetadata, StoreError> {
@@ -1519,7 +1703,7 @@ fn read_attempt_optional(
     Ok(result)
 }
 
-fn read_attempt(
+pub(crate) fn read_attempt(
     connection: &Connection,
     identity: &MessageIdentity,
 ) -> Result<StoredGenerationAttempt, StoreError> {
@@ -1864,7 +2048,7 @@ fn validate_receipt(
     Ok(())
 }
 
-fn validate_bundle_receipt(
+pub(crate) fn validate_bundle_receipt(
     request: &RequestMetadata,
     candidate: Option<&CandidateDeclaration>,
     receipt: &BundleValidationReceipt,
@@ -1891,6 +2075,9 @@ fn validate_bundle_receipt(
         || receipt.native_video().height() != plan.native_dimensions().height()
         || receipt.sampled_video().frames() != plan.project_frames()
         || receipt.sampled_video().frame_rate() != plan.project_frame_rate()
+        || receipt.admission().is_some_and(|evidence| {
+            evidence.inputs().context_sha256() != &request.binding.context_sha256
+        })
     {
         return Err(attempt_error(
             "bundle receipt does not exactly match the request, plan, or worker declaration",

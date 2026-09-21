@@ -133,6 +133,7 @@ fn expect_worker(result: Result<deadpan_media::CanonicalMedia, ConversionError>)
 
 fn assert_valid_output(fixture: &Fixture, media: &mut deadpan_media::CanonicalMedia) {
     let report = media.report().clone();
+    assert_eq!(report.protocol, 2);
     assert_eq!(report.video.width, fixture.width);
     assert_eq!(report.video.height, fixture.height);
     assert_eq!(report.video.frames, fixture.frames);
@@ -146,6 +147,16 @@ fn assert_valid_output(fixture: &Fixture, media: &mut deadpan_media::CanonicalMe
     assert_eq!(
         report.last_output_pts,
         report.video.matroska_pts(fixture.frames - 1).unwrap()
+    );
+    assert_eq!(
+        report.last_output_duration,
+        i64::from((fixture.rate_den * 1000) / fixture.rate_num)
+    );
+    let output_span = report.output_span().unwrap();
+    assert_eq!(output_span.start().ticks, report.first_output_pts);
+    assert_eq!(
+        output_span.end().ticks,
+        report.last_output_pts + report.last_output_duration
     );
     assert_eq!(report.input_time_base_num, 1);
     assert_eq!(report.input_time_base_den, fixture.rate_num);
@@ -183,6 +194,25 @@ fn real_rgb_inputs_preserve_pixels_profile_timing_and_object_identity() {
         let mut media = run(&fixture, &request(&fixture)).unwrap();
         assert_valid_output(&fixture, &mut media);
     }
+}
+
+#[test]
+fn measured_final_span_preserves_matroska_default_duration() {
+    let native = fixture("rgb25_24");
+    let media = run(&native, &request(&native)).unwrap();
+    let report = media.report();
+    assert_eq!(report.last_output_pts, 1000);
+    assert_eq!(report.last_output_duration, 41);
+    assert_eq!(report.output_span().unwrap().end().ticks, 1041);
+    // Rounding the next 24 fps frame boundary would instead produce 1042 ms.
+    assert_ne!(report.output_span().unwrap().end().ticks, 1042);
+
+    let fractional = fixture("rgb30_30000_1001");
+    let media = run(&fractional, &request(&fractional)).unwrap();
+    let report = media.report();
+    assert_eq!(report.last_output_pts, 968);
+    assert_eq!(report.last_output_duration, 33);
+    assert_eq!(report.output_span().unwrap().end().ticks, 1001);
 }
 
 #[test]

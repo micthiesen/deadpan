@@ -1,0 +1,52 @@
+{
+  "base_revision": "a9555c6442c44a3e36b516bea442234329871606",
+  "source_sha256": {
+    "Cargo.lock": "cdbf7823b7833f8827a4fc64ea1ed263c08444bcf6dd7a379d105d15ff9316a8",
+    "crates/deadpan-cli/src/doctor.rs": "ce14b275113b3d1094c04916864274b9f923afaf9adb6390fcb890a5a9bbd379",
+    "crates/deadpan-cli/tests/project_commands.rs": "9cb2c3d7705de8186aa5a0b1465cfb28fec48da04cb4abd6cfecc232841093cf",
+    "crates/deadpan-media/src/protocol.rs": "39f0e6417329dd53d5d4fb4007c6ce8561316a9da35e6ab9c9114c959b12b78a",
+    "crates/deadpan-media/tests/host_boundary.rs": "760e3ed560b4ec5a260577c815a3ed0d0633b8cfc3e4dca6247b6f123861480a",
+    "crates/deadpan-models/Cargo.toml": "0ce630b8ef9aa59985c96b1af68730f89cedbec3037182d78db515700c42ff04",
+    "crates/deadpan-models/examples/qualify_bridge_bundle.rs": "1c855b9a621994a633c83766dbef3f8f3cc6e058d06bb4a8c6a9a11185483ba0",
+    "crates/deadpan-models/examples/qualify_generated_acceptance.rs": "433662c6bcf0c5c43f53167142f9bd0e0124fdd4e8a9bb720cf56d07fd32ccd0",
+    "crates/deadpan-models/src/qualification.rs": "fc73911147d4bb98646952109f6b1691e60f180c16826204cbaba893e91254b4",
+    "crates/deadpan-store/src/error.rs": "576dd86b5e4beafa324911738f4771b5003e6eeaeaa7ab9ed6cb3c926000382d",
+    "crates/deadpan-store/src/generation.rs": "372dbdc6e8e926c941bb45f07a8743ecbfad14c4adb48ad8234825b814182a59",
+    "crates/deadpan-store/src/generation_acceptance.rs": "e8ca4a5c9402f109275340dcb75d512337170e485872f44d6b382ffd859359d0",
+    "crates/deadpan-store/src/generation_attempts.rs": "c745fd050df080bddcf0bc9af9c73332859fa8e4d7db231299c2ab0b991ec032",
+    "crates/deadpan-store/src/lib.rs": "8a43f36322ac4187258906c7a259e3d027ef904e5c09568b9c4ae9b34ea31a9f",
+    "crates/deadpan-store/src/migration.rs": "57250cae710bde5c65a33fa7d258e711dca9278644c0266f82110a974a836f5d",
+    "crates/deadpan-store/src/schema.rs": "4bb183ac4b068f4780a9e6db6fb12adca53624047824b8fbae47830dbc8c0f69",
+    "crates/deadpan-store/tests/fixtures/v8-history.sql": "6de9d5157aa51d1583422254d91b6c3ece9142f4d7bcd3348b85d025ffb814f8",
+    "crates/deadpan-store/tests/generated_admission.rs": "367b9fde4593970ac8d149b26e8a056e5a4d953165ee3ff6972270f9eae54a97",
+    "crates/deadpan-store/tests/generation_bundles.rs": "8e0d16789c42eff574067a9228055874265e65d527e332832161b390ce64597e",
+    "crates/deadpan-store/tests/migration.rs": "487a9464b527fd0072f1a01a338cc8cc1042ad72e6a2c13f77d5ab384195f841",
+    "native/deadpan-media-worker/src/converter.c": "ed1fa9b0f561468a4560fed89aa93082774ab8df0aae8bf15714b5ca04e6f09f",
+    "native/deadpan-media-worker/src/converter.h": "a97e0571efb77f70a8b23391097b662a03843daad9fdae61d76f103ea2a54124",
+    "native/deadpan-media-worker/src/main.rs": "9f959390cff0c3391ecc96aa0ff61bce00133bedf1cab969bcadda4a132433e3",
+    "native/deadpan-media-worker/tests/bridge_real_media.rs": "ef59b03aea75b806fa993c7ac50049ab276254bef8779d259cb057a242b40f2f",
+    "native/deadpan-media-worker/tests/bundle_qualification.rs": "459ee0d06c900a3069f0fbcae160387ccec3a7fd10d998c79d396989a3ccfc5d",
+    "native/deadpan-media-worker/tests/canonicalize_real_media.rs": "5499b95decfefddfeb42b35354b1435b7865ee214650b7fa4b73d502182246c4"
+  },
+  "environment": {
+    "hardware": "Apple M5 Max, 128 GiB RAM",
+    "os": "macOS 26.5.2",
+    "rust": "1.97.1",
+    "ffmpeg": "qualified LGPL 8.0.3 developer prefix"
+  },
+  "gate_rust_tests": 339,
+  "gate_python_tests": 74,
+  "sanitized_rust_tests": 18,
+  "model_generation": "Reuses captured pre-launch-retained protocol-2 model result from 2026-09-21-retained-conditioning; no new inference.",
+  "limits": [
+    "Synthetic Hold project and fixture-specific unchanged context",
+    "No source-clock/image/color/seam/audition qualification",
+    "External independent decoder is developer QA, not the application renderer",
+    "C adapter/target C dependencies instrumented; Rust/FFmpeg libraries not instrumented",
+    "No GUI or startup changes; those checks not repeated",
+    "No performance distribution, power-loss, clean-machine or Linux qualification"
+  ],
+  "archived_logs": {
+    "format": "Lossless gzip with mtime=0 for gate-2.log.gz and sanitizer-tests.log.gz; reported log hashes refer to original uncompressed bytes."
+  }
+}

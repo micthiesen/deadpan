@@ -1,0 +1,26 @@
+{
+  "base": "a9555c6442c44a3e36b516bea442234329871606",
+  "scope": "Current source diff and untracked acceptance implementation/example/schema-8 fixture, with associated tests and callers. Documentation/evidence finalized by root.",
+  "reviews": [
+    {
+      "lens": "general correctness and regressions",
+      "agent": "acceptance_general_review",
+      "result": "No findings",
+      "coverage": "Acceptance module/example, migration fixture/path, receipt lifecycle, six-object verification, selection/relevance checks, timing reports and downstream callers."
+    },
+    {
+      "lens": "transaction, migration and authority safety",
+      "agent": "acceptance_storage_review",
+      "result": "No findings",
+      "coverage": "Object verification before transaction; selection/request checks inside transaction; relevance, revision, history, rollback, undo/redo and schema-8 preservation."
+    },
+    {
+      "lens": "decoded timing and qualification boundary",
+      "agent": "acceptance_timing_review",
+      "result": "No findings",
+      "coverage": "C/Rust FFI layout, strict report2 measured duration/output clock, checked source span, separate exact frame count/rate and Matroska floor-duration coverage."
+    }
+  ],
+  "root_triage": "No reviewer findings to apply, dismiss or defer. Root fixed the initial test fixture-function shadowing compile error before final gates. Source SHA-256 manifest matches the final checked implementation.",
+  "excluded_qualification": "No GUI, source-clock/color context, model attestation, audition, application renderer or release qualification is inferred from these reviews."
+}

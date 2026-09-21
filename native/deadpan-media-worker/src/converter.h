@@ -31,6 +31,7 @@ typedef struct {
     uint32_t output_time_base_den;
     int64_t first_output_pts;
     int64_t last_output_pts;
+    int64_t last_output_duration;
     uint32_t ffv1_version;
     uint8_t slice_crc;
     uint32_t discarded_audio_streams;

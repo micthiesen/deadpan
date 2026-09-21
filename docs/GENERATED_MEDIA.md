@@ -47,7 +47,7 @@ cache flush, including after the namespace synchronization.
 Failures before publication attempt to remove only the operation's own temporary
 file, after checking its directory-entry identity.
 Failure after rename can leave an unreferenced object, and is still reported as
-a failure. A future authored acceptance transaction must run only after this
+a failure. The authored acceptance transaction must run only after this
 method returns success. If that SQLite transaction fails, the object remains
 unreferenced. No existing media is deleted to roll back an authored transaction.
 
@@ -72,11 +72,13 @@ this synchronous API does not establish interactive responsiveness.
 
 ## Integration status
 
-Database schema 8 and authored document schema 5 retain
+Database schema 9 and authored document schema 5 retain
 [generated Hold intent](GENERATED_HOLDS.md). Publishing bytes
 does not create a revision, history entry, candidate receipt, or asset reference.
 The current API is implemented on macOS and Linux. [Native bundle qualification](GENERATION_BUNDLES.md)
-now composes media conversion, provenance and verified Ready publication.
+now composes media conversion, provenance and verified Ready publication. The
+dedicated [acceptance API](GENERATION_ACCEPTANCE.md) rechecks all six dependencies
+and commits derived assets and the selected provider in one reversible transaction.
 History reference tracking, qualified application acceptance, cache cleanup,
 portable project copying, and application rendering remain open.
 

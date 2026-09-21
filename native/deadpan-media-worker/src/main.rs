@@ -6,7 +6,7 @@ use std::os::fd::AsRawFd;
 use std::process::ExitCode;
 
 use deadpan_media::protocol::{
-    ConversionReport, MAX_REPLY_BYTES, MAX_REQUEST_BYTES, PROTOCOL_VERSION, WorkerReply,
+    ConversionReport, MAX_REPLY_BYTES, MAX_REQUEST_BYTES, REPORT_PROTOCOL_VERSION, WorkerReply,
     WorkerRequest,
 };
 
@@ -43,6 +43,7 @@ mod ffi {
         pub output_time_base_den: u32,
         pub first_output_pts: i64,
         pub last_output_pts: i64,
+        pub last_output_duration: i64,
         pub ffv1_version: u32,
         pub slice_crc: u8,
         pub discarded_audio_streams: u32,
@@ -60,6 +61,7 @@ mod ffi {
                 output_time_base_den: 0,
                 first_output_pts: 0,
                 last_output_pts: 0,
+                last_output_duration: 0,
                 ffv1_version: 0,
                 slice_crc: 0,
                 discarded_audio_streams: 0,
@@ -219,7 +221,7 @@ fn convert(request: &WorkerRequest) -> WorkerReply {
         );
     }
     let report = ConversionReport {
-        protocol: PROTOCOL_VERSION,
+        protocol: REPORT_PROTOCOL_VERSION,
         video: output,
         output_bytes: native_report.output_bytes,
         input_rgb_sha256: bounded_c_string(&native_report.input_rgb_sha256),
@@ -230,6 +232,7 @@ fn convert(request: &WorkerRequest) -> WorkerReply {
         output_time_base_den: native_report.output_time_base_den,
         first_output_pts: native_report.first_output_pts,
         last_output_pts: native_report.last_output_pts,
+        last_output_duration: native_report.last_output_duration,
         ffv1_version: native_report.ffv1_version,
         slice_crc: native_report.slice_crc == 1,
         discarded_audio_streams: native_report.discarded_audio_streams,

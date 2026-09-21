@@ -281,6 +281,10 @@ impl ProjectStore {
         validate_new_target(&document, &input.hold_id, &input.constraints)?;
         if let Some(plan) = bridge_plan.as_ref() {
             validate_bridge_plan_binding(&input.constraints, plan)?;
+            crate::generation_acceptance::require_single_generation_occurrence(
+                &document,
+                &input.hold_id,
+            )?;
         }
 
         let exists: Option<i64> = transaction

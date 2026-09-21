@@ -52,7 +52,7 @@ fn helper(directory: &Path, body: &str) -> std::path::PathBuf {
 
 fn success() -> ConversionReport {
     ConversionReport {
-        protocol: 1,
+        protocol: 2,
         video: request().video,
         output_bytes: 5,
         input_rgb_sha256: "a".repeat(64),
@@ -63,6 +63,7 @@ fn success() -> ConversionReport {
         output_time_base_den: 1000,
         first_output_pts: 0,
         last_output_pts: 0,
+        last_output_duration: 41,
         ffv1_version: 3,
         slice_crc: true,
         discarded_audio_streams: 0,
@@ -107,6 +108,7 @@ fn bridge_reports() -> (ConversionReport, ConversionReport) {
         ConversionReport {
             video: request.output_video().unwrap(),
             output_rgb_sha256: "b".repeat(64),
+            last_output_duration: 33,
             ..success()
         },
     )

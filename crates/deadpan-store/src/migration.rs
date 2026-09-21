@@ -45,7 +45,7 @@ impl ProjectStore {
                 backup: None,
             });
         }
-        if !matches!(version, 1..=7) {
+        if !matches!(version, 1..=8) {
             return Err(StoreError::UnsupportedSchema(version));
         }
         let lock = acquire_lock(&package)?;
@@ -73,7 +73,7 @@ impl ProjectStore {
             return Err(StoreError::UnsafePath(directory));
         }
         let backup = tempfile::Builder::new()
-            .prefix("before-schema-8-")
+            .prefix("before-schema-9-")
             .suffix(".sqlite")
             .tempfile_in(&directory)?;
         original.backup(rusqlite::MAIN_DB, backup.path(), None)?;
@@ -131,10 +131,10 @@ fn migrate_candidate(
     // request/attempt rows. ALTER/CREATE intentionally has no IF NOT EXISTS:
     // a legacy database that already contains modern operational vocabulary is
     // rejected instead of being silently reinterpreted.
-    if source_version >= 5 {
+    if (5..8).contains(&source_version) {
         crate::generation::add_schema8_columns(&transaction)?;
     }
-    if source_version >= 6 {
+    if (6..8).contains(&source_version) {
         crate::generation_attempts::add_schema8_tables(&transaction)?;
     }
     if source_version < 5 {
@@ -149,6 +149,22 @@ fn migrate_candidate(
     }
     if source_version >= 6 {
         crate::generation_attempts::check_stored_sizes(&transaction)?;
+    }
+    // Schema 8 receipts had no admission evidence. Reject new vocabulary even
+    // when set to null rather than interpreting it as an old qualified bundle.
+    // Valid old JSON is retained byte-for-byte, without fabricated evidence.
+    if source_version == 8 {
+        let modern: bool = transaction.query_row(
+            "SELECT EXISTS(SELECT 1 FROM generation_bundle_receipts
+             WHERE json_type(bundle, '$.admission') IS NOT NULL)",
+            [],
+            |row| row.get(0),
+        )?;
+        if modern {
+            return Err(StoreError::Integrity(
+                "schema-8 receipt contains schema-9 admission evidence".into(),
+            ));
+        }
     }
     // Database versions 4 through 6 share core schema 4. Replay their full
     // authored chronology while preserving operational rows and identities.

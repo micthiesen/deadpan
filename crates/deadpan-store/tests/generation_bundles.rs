@@ -8,9 +8,10 @@ use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 
 use deadpan_core::{
-    BeatNode, ColorPolicy, Command, CommandRequest, FrameDuration, FrameRate, GeneratedContentId,
-    GeneratedObjectRef, HoldAudio, HoldRecipe, HoldVideo, NodeId, PresentationBasis,
-    ProjectDocument, ProjectId, RevisionId, Subtree,
+    AssetId, BeatNode, ColorPolicy, Command, CommandRequest, FrameDuration, FrameRate,
+    GeneratedContentId, GeneratedObjectRef, HoldAudio, HoldRecipe, HoldVideo, NodeId, NodeKind,
+    PresentationBasis, ProjectDocument, ProjectId, RevisionId, SourceSpan, SourceTimeBase,
+    SourceTimestamp, Subtree,
 };
 use deadpan_jobs::{
     AttemptId, AxisLimits, BridgeCapability, BridgeGenerationPlan, CancellationAcknowledgement,
@@ -21,10 +22,15 @@ use deadpan_jobs::{
     WorkspaceArtifact, WorkspaceRef,
 };
 use deadpan_store::generated_media::GeneratedMediaLimits;
-use deadpan_store::generation::{GenerationRequestInput, StoredGenerationRequest};
+use deadpan_store::generation::{
+    ContextObservation, GenerationRequestInput, RelevanceObservation, RelevancePlan,
+    StoredGenerationRequest,
+};
+use deadpan_store::generation_acceptance::GenerationAcceptance;
 use deadpan_store::generation_attempts::{
-    AttemptMutationOutcome, AttemptValueError, BeginGenerationAttempt, BundleValidationReceipt,
-    CandidateAvailability, CandidateValidationReceipt, ManagedCandidateRef, ValidatorIdentity,
+    AttemptMutationOutcome, AttemptValueError, BeginGenerationAttempt, BundleAdmissionEvidence,
+    BundleInputObjects, BundleValidationReceipt, CandidateAvailability, CandidateValidationReceipt,
+    ManagedCandidateRef, ValidatorIdentity,
 };
 use deadpan_store::{AccessMode, ProjectStore, StoreError};
 use rusqlite::Connection;
@@ -800,5 +806,741 @@ fn malformed_nonnull_plan_is_never_projected_as_a_legacy_request() -> Result {
         store.generation_request(&request.request_id),
         Err(StoreError::Integrity(_))
     ));
+    Ok(())
+}
+
+const INPUT_BYTES: [&[u8]; 3] = [
+    b"context manifest fixture",
+    b"left prepared fixture",
+    b"right prepared fixture",
+];
+
+#[test]
+fn admission_wire_rejects_alias_conflicts_and_unchecked_spans() -> Result {
+    let inputs = BundleInputObjects::new(
+        sha('a'),
+        object(INPUT_BYTES[0]),
+        object(INPUT_BYTES[1]),
+        object(INPUT_BYTES[1]),
+    )?;
+    assert_eq!(inputs.left(), inputs.right());
+    assert!(
+        BundleInputObjects::new(
+            sha('a'),
+            object(INPUT_BYTES[0]),
+            object(INPUT_BYTES[0]),
+            object(INPUT_BYTES[1])
+        )
+        .is_err()
+    );
+    let candidate = same_contract_candidate();
+    let base = BundleValidationReceipt::new(
+        &candidate,
+        object(NATIVE_BYTES),
+        object(NATIVE_BYTES),
+        object(PROVENANCE_BYTES),
+        candidate.video.clone(),
+        same_contract_plan(),
+        ValidatorIdentity::new("validator", "1")?,
+    )?;
+    assert!(
+        base.clone()
+            .with_admission(BundleAdmissionEvidence::new(
+                measured_span(100),
+                measured_span(101),
+                inputs.clone()
+            )?)
+            .is_err()
+    );
+    let valid = base.clone().with_admission(BundleAdmissionEvidence::new(
+        measured_span(100),
+        measured_span(100),
+        inputs,
+    )?)?;
+    assert_eq!(
+        serde_json::from_str::<BundleValidationReceipt>(&serde_json::to_string(&valid)?)?,
+        valid
+    );
+    for path in ["manifest", "left", "right"] {
+        let mut bad = serde_json::to_value(&valid)?;
+        bad["admission"]["inputs"][path] = serde_json::to_value(valid.native_object())?;
+        assert!(serde_json::from_value::<BundleValidationReceipt>(bad).is_err());
+    }
+    let mut bad = serde_json::to_value(&valid)?;
+    bad["admission"]["native_span"]["end"]["ticks"] = serde_json::json!(0);
+    assert!(serde_json::from_value::<BundleValidationReceipt>(bad).is_err());
+    let mut bad = serde_json::to_value(&valid)?;
+    bad["admission"]["extra"] = serde_json::json!(true);
+    assert!(serde_json::from_value::<BundleValidationReceipt>(bad).is_err());
+    assert!(base.admission().is_none());
+    assert!(serde_json::to_value(base)?.get("admission").is_none());
+    Ok(())
+}
+
+#[test]
+fn identical_masters_can_share_one_fresh_asset_identity() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let before = document()?;
+    let short = deadpan_core::apply(
+        &before,
+        &CommandRequest {
+            project_id: before.project_id().clone(),
+            expected_revision: before.revision_id().clone(),
+            new_revision: RevisionId::new("short")?,
+            command: Command::SetHoldDuration {
+                node: NodeId::new("hold")?,
+                duration: FrameDuration::new(3)?,
+            },
+        },
+    )?
+    .forward
+    .apply(&before)?;
+    let mut store = ProjectStore::create(&scratch.path().join("aliased.deadpan"), &short)?;
+    let candidate = same_contract_candidate();
+    let request = store.record_bridge_generation_request(
+        GenerationRequestInput {
+            request_id: RequestId::new("aliased")?,
+            expected_revision: short.revision_id().clone(),
+            hold_id: NodeId::new("hold")?,
+            context_sha256: sha('a'),
+            provider: candidate.provider.clone(),
+            constraints: HoldConstraints {
+                video: candidate.video.clone(),
+                conditioning: ConditioningMode::Bridge,
+                motion: MotionAmount::Still,
+            },
+        },
+        same_contract_plan(),
+    )?;
+    let identity = begin(&mut store, &request, "attempt")?;
+    complete_bridge(&mut store, &identity, &candidate)?;
+    for bytes in [NATIVE_BYTES, PROVENANCE_BYTES]
+        .into_iter()
+        .chain(INPUT_BYTES)
+    {
+        store.promote_generated_object(&mut Cursor::new(bytes), &object(bytes), media_limits())?;
+    }
+    let receipt = BundleValidationReceipt::new(
+        &candidate,
+        object(NATIVE_BYTES),
+        object(NATIVE_BYTES),
+        object(PROVENANCE_BYTES),
+        candidate.video.clone(),
+        same_contract_plan(),
+        ValidatorIdentity::new("validator", "1")?,
+    )?
+    .with_admission(BundleAdmissionEvidence::new(
+        measured_span(100),
+        measured_span(100),
+        admission(sha('a')).inputs().clone(),
+    )?)?;
+    store.record_generation_bundle_ready(&identity, &candidate, receipt.clone(), media_limits())?;
+    let mut input = GenerationAcceptance {
+        expected_revision: short.revision_id().clone(),
+        new_revision: RevisionId::new("accepted")?,
+        identity,
+        expected_receipt: receipt,
+        sampled_asset: AssetId::new("shared")?,
+        native_asset: AssetId::new("shared")?,
+    };
+    store.accept_generation_bundle(
+        &input,
+        &unchanged_relevance(&store, &input.new_revision)?,
+        media_limits(),
+    )?;
+    assert_eq!(store.snapshot()?.assets().len(), 1);
+    input.expected_revision = input.new_revision;
+    input.new_revision = RevisionId::new("reused-assets")?;
+    assert!(
+        matches!(store.preview_generation_acceptance(&input, media_limits()), Err(StoreError::GenerationAcceptance(message)) if message.contains("fresh asset"))
+    );
+    store.validate()?;
+    Ok(())
+}
+
+fn measured_span(end: i64) -> SourceSpan {
+    let time_base = SourceTimeBase::new(1, 1000).unwrap();
+    SourceSpan::new(
+        SourceTimestamp {
+            ticks: 0,
+            time_base,
+        },
+        SourceTimestamp {
+            ticks: end,
+            time_base,
+        },
+    )
+    .unwrap()
+}
+
+fn admission(context: Sha256) -> BundleAdmissionEvidence {
+    BundleAdmissionEvidence::new(
+        measured_span(458),
+        measured_span(400),
+        BundleInputObjects::new(
+            context,
+            object(INPUT_BYTES[0]),
+            object(INPUT_BYTES[1]),
+            object(INPUT_BYTES[2]),
+        )
+        .unwrap(),
+    )
+    .unwrap()
+}
+
+fn ready_for_acceptance(store: &mut ProjectStore) -> Result<GenerationAcceptance> {
+    let request = allocate_bridge(store, "request", 1)?;
+    let identity = begin(store, &request, "attempt")?;
+    let candidate = native_candidate(&request);
+    complete_bridge(store, &identity, &candidate)?;
+    publish_bundle(store)?;
+    for bytes in INPUT_BYTES {
+        store.promote_generated_object(&mut Cursor::new(bytes), &object(bytes), media_limits())?;
+    }
+    let receipt = receipt(&candidate).with_admission(admission(request.binding.context_sha256))?;
+    store.record_generation_bundle_ready(&identity, &candidate, receipt.clone(), media_limits())?;
+    Ok(GenerationAcceptance {
+        expected_revision: store.snapshot()?.revision_id().clone(),
+        new_revision: RevisionId::new("accepted")?,
+        identity,
+        expected_receipt: receipt,
+        native_asset: AssetId::new("native")?,
+        sampled_asset: AssetId::new("sampled")?,
+    })
+}
+
+fn unchanged_relevance(store: &ProjectStore, next: &RevisionId) -> Result<RelevancePlan> {
+    Ok(RelevancePlan {
+        from_revision: store.snapshot()?.revision_id().clone(),
+        to_revision: next.clone(),
+        observations: store
+            .current_generation_requests()?
+            .into_iter()
+            .map(|request| RelevanceObservation {
+                request_id: request.request_id,
+                after_context: ContextObservation::Resolved(request.binding.context_sha256.clone()),
+                binding: request.binding,
+            })
+            .collect(),
+    })
+}
+
+fn edit_reconciled(store: &mut ProjectStore, revision: &str, command: Command) -> Result {
+    let current = store.snapshot()?;
+    let next = RevisionId::new(revision)?;
+    let relevance = unchanged_relevance(store, &next)?;
+    store.commit_reconciled(
+        &CommandRequest {
+            project_id: current.project_id().clone(),
+            expected_revision: current.revision_id().clone(),
+            new_revision: next,
+            command,
+        },
+        &relevance,
+    )?;
+    Ok(())
+}
+
+#[test]
+fn explicit_acceptance_derives_assets_and_survives_history_without_worker() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let package = scratch.path().join("acceptance.deadpan");
+    let mut store = ProjectStore::create(&package, &document()?)?;
+    let input = ready_for_acceptance(&mut store)?;
+    let before = store.snapshot()?;
+    let preview = store.preview_generation_acceptance(&input, media_limits())?;
+    assert_eq!(store.snapshot()?, before);
+    let accepted = preview.forward.apply(&before)?;
+    assert_eq!(
+        accepted.assets()[&input.native_asset].video,
+        Some(measured_span(458))
+    );
+    assert_eq!(
+        accepted.assets()[&input.sampled_asset].video,
+        Some(measured_span(400))
+    );
+    for (id, object, video) in [
+        (
+            &input.native_asset,
+            input.expected_receipt.native_object(),
+            input.expected_receipt.native_video(),
+        ),
+        (
+            &input.sampled_asset,
+            input.expected_receipt.sampled_object(),
+            input.expected_receipt.sampled_video(),
+        ),
+    ] {
+        let asset = &accepted.assets()[id];
+        assert_eq!(asset.content_hash, object.content().to_string());
+        assert_eq!(asset.frame_count, Some(video.frames()));
+        assert_eq!(asset.audio, None);
+        assert!(!asset.still_image);
+    }
+    let outcome = store.accept_generation_bundle(
+        &input,
+        &unchanged_relevance(&store, &input.new_revision)?,
+        media_limits(),
+    )?;
+    assert_eq!(outcome.edit, preview);
+    assert_eq!(store.snapshot()?, accepted);
+    store.validate()?;
+    drop(store);
+
+    let mut store = ProjectStore::open(&package, AccessMode::ReadWrite)?;
+    let undo = RevisionId::new("acceptance-undo")?;
+    store.undo_reconciled(
+        &input.new_revision,
+        undo.clone(),
+        &unchanged_relevance(&store, &undo)?,
+    )?;
+    assert!(store.snapshot()?.assets().is_empty());
+    let redo = RevisionId::new("acceptance-redo")?;
+    store.redo_reconciled(&undo, redo.clone(), &unchanged_relevance(&store, &redo)?)?;
+    edit_reconciled(
+        &mut store,
+        "reverted",
+        Command::RevertGeneratedHold {
+            node: NodeId::new("hold")?,
+        },
+    )?;
+    let reverted = store.snapshot()?;
+    let NodeKind::Hold { recipe } = &reverted.nodes()[&NodeId::new("hold")?].kind else {
+        panic!()
+    };
+    assert_eq!(recipe.video, HoldVideo::Background);
+    assert_eq!(store.snapshot()?.assets().len(), 2);
+    for bytes in [NATIVE_BYTES, SAMPLED_BYTES, PROVENANCE_BYTES]
+        .into_iter()
+        .chain(INPUT_BYTES)
+    {
+        assert_eq!(
+            store
+                .snapshot_generated_object(&object(bytes), media_limits())?
+                .reference(),
+            &object(bytes)
+        );
+    }
+    let undo_revert = RevisionId::new("undo-revert")?;
+    store.undo_reconciled(
+        &RevisionId::new("reverted")?,
+        undo_revert.clone(),
+        &unchanged_relevance(&store, &undo_revert)?,
+    )?;
+    edit_reconciled(
+        &mut store,
+        "branch",
+        Command::Rename {
+            node: NodeId::new("hold")?,
+            label: "New branch".into(),
+        },
+    )?;
+    assert!(matches!(
+        store.preview_redo(&RevisionId::new("branch")?, RevisionId::new("cannot-redo")?),
+        Err(StoreError::NothingToRedo)
+    ));
+    let mut reused = input.clone();
+    reused.expected_revision = store.snapshot()?.revision_id().clone();
+    reused.native_asset = AssetId::new("fresh-native")?;
+    reused.sampled_asset = AssetId::new("fresh-sampled")?;
+    assert!(matches!(
+        store.preview_generation_acceptance(&reused, media_limits()),
+        Err(StoreError::RevisionReused(_))
+    ));
+    store.validate()?;
+    Ok(())
+}
+
+#[test]
+fn admission_requires_all_six_immutable_objects_and_matching_context() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let package = scratch.path().join("dependencies.deadpan");
+    let mut store = ProjectStore::create(&package, &document()?)?;
+    let request = allocate_bridge(&mut store, "request", 1)?;
+    let identity = begin(&mut store, &request, "attempt")?;
+    let candidate = native_candidate(&request);
+    complete_bridge(&mut store, &identity, &candidate)?;
+    publish_bundle(&mut store)?;
+    let qualified = receipt(&candidate).with_admission(admission(sha('a')))?;
+    assert!(
+        store
+            .record_generation_bundle_ready(
+                &identity,
+                &candidate,
+                qualified.clone(),
+                media_limits()
+            )
+            .is_err()
+    );
+    assert_eq!(
+        store
+            .generation_attempt(&identity)?
+            .unwrap()
+            .checkpoint
+            .state,
+        JobState::Validating
+    );
+    for bytes in INPUT_BYTES {
+        store.promote_generated_object(&mut Cursor::new(bytes), &object(bytes), media_limits())?;
+    }
+    let mismatch = receipt(&candidate).with_admission(admission(sha('f')))?;
+    assert!(
+        store
+            .record_generation_bundle_ready(&identity, &candidate, mismatch, media_limits())
+            .is_err()
+    );
+    store.record_generation_bundle_ready(
+        &identity,
+        &candidate,
+        qualified.clone(),
+        media_limits(),
+    )?;
+    let input = GenerationAcceptance {
+        expected_revision: store.snapshot()?.revision_id().clone(),
+        new_revision: RevisionId::new("accepted")?,
+        identity,
+        expected_receipt: qualified,
+        sampled_asset: AssetId::new("sampled")?,
+        native_asset: AssetId::new("native")?,
+    };
+    let before = store.snapshot()?;
+    for bytes in [NATIVE_BYTES, SAMPLED_BYTES, PROVENANCE_BYTES]
+        .into_iter()
+        .chain(INPUT_BYTES)
+    {
+        let path = stored_path(&package, &object(bytes));
+        fs::remove_file(&path)?;
+        assert!(
+            store
+                .accept_generation_bundle(
+                    &input,
+                    &unchanged_relevance(&store, &input.new_revision)?,
+                    media_limits()
+                )
+                .is_err()
+        );
+        fs::write(&path, vec![b'!'; bytes.len()])?;
+        assert!(
+            store
+                .preview_generation_acceptance(&input, media_limits())
+                .is_err()
+        );
+        fs::remove_file(&path)?;
+        store.promote_generated_object(&mut Cursor::new(bytes), &object(bytes), media_limits())?;
+        assert_eq!(store.snapshot()?, before);
+    }
+    Ok(())
+}
+
+#[test]
+fn acceptance_rechecks_selection_receipt_revision_and_complete_relevance() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let package = scratch.path().join("optimistic.deadpan");
+    let mut store = ProjectStore::create(&package, &document()?)?;
+    let input = ready_for_acceptance(&mut store)?;
+    let before = store.snapshot()?;
+    let mut wrong = input.clone();
+    wrong.expected_revision = RevisionId::new("old")?;
+    assert!(matches!(
+        store.preview_generation_acceptance(&wrong, media_limits()),
+        Err(StoreError::RevisionConflict { .. })
+    ));
+    let mut plan = unchanged_relevance(&store, &input.new_revision)?;
+    plan.observations.clear();
+    assert!(
+        store
+            .accept_generation_bundle(&input, &plan, media_limits())
+            .is_err()
+    );
+    plan = unchanged_relevance(&store, &input.new_revision)?;
+    plan.observations[0].after_context = ContextObservation::Unresolved;
+    assert!(
+        store
+            .accept_generation_bundle(&input, &plan, media_limits())
+            .is_err()
+    );
+    wrong = input.clone();
+    wrong.sampled_asset = wrong.native_asset.clone();
+    assert!(
+        store
+            .preview_generation_acceptance(&wrong, media_limits())
+            .is_err()
+    );
+
+    let connection = Connection::open(package.join("project.sqlite"))?;
+    connection.execute("UPDATE generation_bundle_receipts SET bundle=json_set(bundle,'$.validator.version','different')", [])?;
+    assert!(
+        store
+            .preview_generation_acceptance(&input, media_limits())
+            .is_err()
+    );
+    connection.execute(
+        "UPDATE generation_bundle_receipts SET bundle=?1",
+        [serde_json::to_string(&input.expected_receipt)?],
+    )?;
+    let request = store
+        .generation_request(&input.identity.request_id)?
+        .unwrap();
+    let next = begin(&mut store, &request, "next-attempt")?;
+    let candidate = native_candidate(&request);
+    complete_bridge(&mut store, &next, &candidate)?;
+    store.record_generation_bundle_ready(
+        &next,
+        &candidate,
+        input.expected_receipt.clone(),
+        media_limits(),
+    )?;
+    assert!(
+        store
+            .preview_generation_acceptance(&input, media_limits())
+            .is_err()
+    );
+    store.select_generation_bundle_variant(&input.identity)?;
+    store.mark_generation_bundle_evicted(&input.identity)?;
+    assert!(
+        store
+            .preview_generation_acceptance(&input, media_limits())
+            .is_err()
+    );
+    assert_eq!(store.snapshot()?, before);
+    store.validate()?;
+    Ok(())
+}
+
+#[test]
+fn acceptance_rollback_read_only_and_legacy_receipt_are_safe() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let package = scratch.path().join("rollback.deadpan");
+    let mut store = ProjectStore::create(&package, &document()?)?;
+    let input = ready_for_acceptance(&mut store)?;
+    let plan = unchanged_relevance(&store, &input.new_revision)?;
+    let before = store.snapshot()?;
+    let connection = Connection::open(package.join("project.sqlite"))?;
+    connection.execute_batch("CREATE TRIGGER reject_acceptance BEFORE INSERT ON history BEGIN SELECT RAISE(ABORT,'injected'); END;")?;
+    assert!(
+        store
+            .accept_generation_bundle(&input, &plan, media_limits())
+            .is_err()
+    );
+    assert_eq!(store.snapshot()?, before);
+    assert_eq!(
+        connection.query_row(
+            "SELECT COUNT(*) FROM revisions WHERE id='accepted'",
+            [],
+            |row| row.get::<_, i64>(0)
+        )?,
+        0
+    );
+    store.validate()?;
+    connection.execute_batch("DROP TRIGGER reject_acceptance;")?;
+    drop(store);
+    let mut reader = ProjectStore::open(&package, AccessMode::ReadOnly)?;
+    reader.preview_generation_acceptance(&input, media_limits())?;
+    assert!(matches!(
+        reader.accept_generation_bundle(&input, &plan, media_limits()),
+        Err(StoreError::ReadOnly)
+    ));
+    drop(reader);
+    let legacy = receipt(&native_candidate(
+        &ProjectStore::open(&package, AccessMode::ReadOnly)?
+            .generation_request(&input.identity.request_id)?
+            .unwrap(),
+    ));
+    connection.execute(
+        "UPDATE generation_bundle_receipts SET bundle=?1",
+        [serde_json::to_string(&legacy)?],
+    )?;
+    let mut store = ProjectStore::open(&package, AccessMode::ReadWrite)?;
+    let legacy_input = GenerationAcceptance {
+        expected_receipt: legacy,
+        ..input
+    };
+    assert!(
+        matches!(store.accept_generation_bundle(&legacy_input, &plan, media_limits()), Err(StoreError::GenerationAcceptance(message)) if message.contains("legacy"))
+    );
+    assert_eq!(store.snapshot()?, before);
+    Ok(())
+}
+
+#[test]
+fn stale_and_detached_bundles_never_revive_through_undo() -> Result {
+    for detach in [false, true] {
+        let scratch = tempfile::tempdir()?;
+        let mut store = ProjectStore::create(&scratch.path().join("stale.deadpan"), &document()?)?;
+        let mut input = ready_for_acceptance(&mut store)?;
+        let command = if detach {
+            Command::Delete {
+                node: NodeId::new("hold")?,
+            }
+        } else {
+            Command::SetHoldDuration {
+                node: NodeId::new("hold")?,
+                duration: FrameDuration::new(11)?,
+            }
+        };
+        edit_reconciled(&mut store, "changed", command)?;
+        input.expected_revision = store.snapshot()?.revision_id().clone();
+        assert!(
+            store
+                .preview_generation_acceptance(&input, media_limits())
+                .is_err()
+        );
+        let undo = RevisionId::new("restored")?;
+        store.undo_reconciled(
+            &input.expected_revision,
+            undo.clone(),
+            &unchanged_relevance(&store, &undo)?,
+        )?;
+        input.expected_revision = undo;
+        assert!(
+            store
+                .preview_generation_acceptance(&input, media_limits())
+                .is_err()
+        );
+        assert_eq!(
+            store
+                .generation_request(&input.identity.request_id)?
+                .unwrap()
+                .relevance,
+            if detach {
+                deadpan_jobs::Relevance::Detached
+            } else {
+                deadpan_jobs::Relevance::Stale
+            }
+        );
+        store.validate()?;
+    }
+    Ok(())
+}
+
+#[test]
+fn bridge_allocation_and_acceptance_require_one_concrete_occurrence() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let mut store = ProjectStore::create(&scratch.path().join("repeated.deadpan"), &document()?)?;
+    let mut input = ready_for_acceptance(&mut store)?;
+    edit_reconciled(
+        &mut store,
+        "repeat",
+        Command::WrapRepeat {
+            node: NodeId::new("hold")?,
+            id: NodeId::new("repeat")?,
+            plays: 2,
+            gap: None,
+            anchor_policy: Default::default(),
+        },
+    )?;
+    input.expected_revision = store.snapshot()?.revision_id().clone();
+    assert!(
+        matches!(store.preview_generation_acceptance(&input, media_limits()), Err(StoreError::GenerationAcceptance(message)) if message.contains("isolated"))
+    );
+    assert!(allocate_bridge(&mut store, "ambiguous", 2).is_err());
+    assert!(
+        store
+            .generation_request(&RequestId::new("ambiguous")?)?
+            .is_none()
+    );
+    let iteration = match &store.snapshot()?.nodes()[&NodeId::new("repeat")?].kind {
+        NodeKind::Repeat { iterations, .. } => iterations.at(0).unwrap(),
+        _ => panic!(),
+    };
+    let override_hold = NodeId::new("override-hold")?;
+    edit_reconciled(
+        &mut store,
+        "override",
+        Command::SetPlayOverride {
+            node: NodeId::new("repeat")?,
+            iteration,
+            subtree: Subtree {
+                root: override_hold.clone(),
+                nodes: BTreeMap::from([(
+                    override_hold.clone(),
+                    BeatNode::hold(
+                        "One occurrence",
+                        HoldRecipe {
+                            duration: FrameDuration::new(12)?,
+                            video: HoldVideo::Background,
+                            audio: HoldAudio::Silence,
+                        },
+                    ),
+                )]),
+                overrides: BTreeMap::new(),
+            },
+        },
+    )?;
+    input.expected_revision = store.snapshot()?.revision_id().clone();
+    store.preview_generation_acceptance(&input, media_limits())?;
+    store.record_bridge_generation_request(
+        GenerationRequestInput {
+            request_id: RequestId::new("isolated-override")?,
+            expected_revision: input.expected_revision.clone(),
+            hold_id: override_hold.clone(),
+            context_sha256: sha('a'),
+            constraints: constraints(),
+            provider: provider(3),
+        },
+        plan(),
+    )?;
+    let iteration = match &store.snapshot()?.nodes()[&NodeId::new("repeat")?].kind {
+        NodeKind::Repeat { iterations, .. } => iterations.at(1).unwrap(),
+        _ => panic!(),
+    };
+    let second_override = NodeId::new("second-override")?;
+    edit_reconciled(
+        &mut store,
+        "hide-default",
+        Command::SetPlayOverride {
+            node: NodeId::new("repeat")?,
+            iteration,
+            subtree: Subtree {
+                root: second_override.clone(),
+                nodes: BTreeMap::from([(
+                    second_override,
+                    BeatNode::hold(
+                        "Other occurrence",
+                        HoldRecipe {
+                            duration: FrameDuration::new(12)?,
+                            video: HoldVideo::Background,
+                            audio: HoldAudio::Silence,
+                        },
+                    ),
+                )]),
+                overrides: BTreeMap::new(),
+            },
+        },
+    )?;
+    input.expected_revision = store.snapshot()?.revision_id().clone();
+    assert!(
+        store
+            .preview_generation_acceptance(&input, media_limits())
+            .is_err()
+    );
+    assert!(allocate_bridge(&mut store, "unreachable", 4).is_err());
+    edit_reconciled(
+        &mut store,
+        "nested-repeat",
+        Command::WrapRepeat {
+            node: NodeId::new("repeat")?,
+            id: NodeId::new("outer-repeat")?,
+            plays: 2,
+            gap: None,
+            anchor_policy: Default::default(),
+        },
+    )?;
+    assert!(
+        store
+            .record_bridge_generation_request(
+                GenerationRequestInput {
+                    request_id: RequestId::new("nested-override")?,
+                    expected_revision: store.snapshot()?.revision_id().clone(),
+                    hold_id: override_hold,
+                    context_sha256: sha('a'),
+                    constraints: constraints(),
+                    provider: provider(5),
+                },
+                plan()
+            )
+            .is_err()
+    );
+    store.validate()?;
     Ok(())
 }

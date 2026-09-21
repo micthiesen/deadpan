@@ -1,0 +1,30 @@
+{
+  "scope": "worker native C and target C dependencies ASan/UBSan; Rust and FFmpeg libraries not instrumented",
+  "command": [
+    "cargo",
+    "test",
+    "-p",
+    "deadpan-media-worker",
+    "--locked",
+    "--target",
+    "aarch64-apple-darwin",
+    "--target-dir",
+    "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-acceptance-sanitized-6bw7qbc7/target"
+  ],
+  "cflags": "-fsanitize=address,undefined -fno-omit-frame-pointer -fno-sanitize-recover=all",
+  "rust_flags": [
+    "-C",
+    "link-arg=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/21/lib/darwin/libclang_rt.asan_osx_dynamic.dylib",
+    "-C",
+    "link-arg=-Wl,-rpath,/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/21/lib/darwin"
+  ],
+  "runtime": "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/21/lib/darwin/libclang_rt.asan_osx_dynamic.dylib",
+  "runtime_sha256": "fe1e17021123184ac0380808606a7cce00ad657158d2d4f62916970df1e8eaef",
+  "ffmpeg_prefix": "/tmp/deadpan-media-compatible-xyhilms4/prefix",
+  "elapsed_seconds": 42.15574112487957,
+  "exit_code": 0,
+  "failure": null,
+  "test_log_sha256": "be667e131f333b06b0a0e23e8a05ba4a25b71dcd9e1c55473cdc1a6e011dd69a",
+  "worker": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-acceptance-sanitized-6bw7qbc7/target/aarch64-apple-darwin/debug/deadpan-media-worker",
+  "worker_sha256": "70edf86faa87ae4a52160c2b0bc6dd6a4e9653b60400a0f93042d47a82399ddb"
+}

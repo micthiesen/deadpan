@@ -5,9 +5,9 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
 
 use deadpan_core::{
-    BeatNode, ColorPolicy, Command, CommandRequest, FrameDuration, FrameRate, HoldAudio,
-    HoldRecipe, HoldVideo, NodeId, PresentationBasis, ProjectDocument, ProjectId, RevisionId,
-    Subtree,
+    AssetId, BeatNode, ColorPolicy, Command, CommandRequest, FrameDuration, FrameRate, HoldAudio,
+    HoldRecipe, HoldVideo, NodeId, NodeKind, PresentationBasis, ProjectDocument, ProjectId,
+    RevisionId, Subtree,
 };
 use deadpan_jobs::artifact::ArtifactWorkspace;
 use deadpan_jobs::{
@@ -25,9 +25,13 @@ use deadpan_models::{
     qualify_bridge,
 };
 use deadpan_store::generated_media::GeneratedMediaLimits;
-use deadpan_store::generation::GenerationRequestInput;
+use deadpan_store::generation::{
+    ContextObservation, GenerationRequestInput, RelevanceObservation, RelevancePlan,
+};
+use deadpan_store::generation_acceptance::GenerationAcceptance;
 use deadpan_store::generation_attempts::{
-    BeginGenerationAttempt, BundleValidationReceipt, ValidatorIdentity,
+    BeginGenerationAttempt, BundleAdmissionEvidence, BundleInputObjects, BundleValidationReceipt,
+    ValidatorIdentity,
 };
 use deadpan_store::{AccessMode, ProjectStore};
 use serde_json::json;
@@ -297,7 +301,7 @@ fn complete_bundle_derives_media_and_retains_exact_worker_provenance() {
         provenance_ref.content().digest()
     );
     let envelope: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
-    assert_eq!(envelope["schema_version"], 2);
+    assert_eq!(envelope["schema_version"], 3);
     assert_eq!(
         envelope["conditioning"],
         serde_json::to_value(retained_receipt).unwrap()
@@ -544,7 +548,7 @@ fn hold_document() -> ProjectDocument {
 }
 
 #[test]
-fn actual_bundle_becomes_ready_only_after_all_objects_exist_and_survives_reopen() {
+fn real_bundle_acceptance_is_explicit_durable_and_reversible_after_relocation() {
     let fixture = Fixture::new();
     let binding = GenerationBinding::from_request(&fixture.request).unwrap();
     let package = fixture.directory.path().join("project.deadpan");
@@ -597,6 +601,21 @@ fn actual_bundle_becomes_ready_only_after_all_objects_exist_and_survives_reopen(
     let native_ref = bundle.native().object().clone();
     let sampled_ref = bundle.sampled().object().clone();
     let provenance_ref = bundle.provenance().object().clone();
+    let native_span = bundle.native_span();
+    let sampled_span = bundle.sampled_span();
+    let inputs = bundle.conditioning().receipt();
+    let admission = BundleAdmissionEvidence::new(
+        native_span,
+        sampled_span,
+        BundleInputObjects::new(
+            binding.input.sha256.clone(),
+            inputs.manifest().object().clone(),
+            inputs.left().object().clone(),
+            inputs.right().object().clone(),
+        )
+        .unwrap(),
+    )
+    .unwrap();
     let receipt = BundleValidationReceipt::new(
         &fixture.declaration,
         native_ref.clone(),
@@ -604,8 +623,10 @@ fn actual_bundle_becomes_ready_only_after_all_objects_exist_and_survives_reopen(
         provenance_ref.clone(),
         binding.constraints.video.clone(),
         binding.plan.clone(),
-        ValidatorIdentity::new("native-ffv1", "bridge-1").unwrap(),
+        ValidatorIdentity::new("native-ffv1", "bridge-3").unwrap(),
     )
+    .unwrap()
+    .with_admission(admission)
     .unwrap();
     let budget = GeneratedMediaLimits::new(1024 * 1024).unwrap();
     assert!(
@@ -630,13 +651,6 @@ fn actual_bundle_becomes_ready_only_after_all_objects_exist_and_survives_reopen(
     let (mut native, mut sampled, mut provenance, conditioning) = bundle.into_parts();
     let (manifest, left, right) = conditioning.into_parts();
     let mut retained_refs = Vec::new();
-    for mut input in [manifest, left, right] {
-        let object = input.object().clone();
-        store
-            .promote_generated_object(&mut input, &object, budget)
-            .unwrap();
-        retained_refs.push(object);
-    }
     store
         .promote_generated_object(&mut native, &native_ref, budget)
         .unwrap();
@@ -656,6 +670,24 @@ fn actual_bundle_becomes_ready_only_after_all_objects_exist_and_survives_reopen(
     store
         .promote_generated_object(&mut provenance, &provenance_ref, budget)
         .unwrap();
+    for mut input in [manifest, left, right] {
+        // Each dependency is required; no incomplete bundle may become Ready.
+        assert!(
+            store
+                .record_generation_bundle_ready(
+                    &binding.identity,
+                    &fixture.declaration,
+                    receipt.clone(),
+                    budget
+                )
+                .is_err()
+        );
+        let object = input.object().clone();
+        store
+            .promote_generated_object(&mut input, &object, budget)
+            .unwrap();
+        retained_refs.push(object);
+    }
     store
         .record_generation_bundle_ready(
             &binding.identity,
@@ -671,20 +703,91 @@ fn actual_bundle_becomes_ready_only_after_all_objects_exist_and_survives_reopen(
             .unwrap()
             .is_none()
     );
+    let accept = GenerationAcceptance {
+        expected_revision: document.revision_id().clone(),
+        new_revision: RevisionId::new("accepted").unwrap(),
+        identity: binding.identity.clone(),
+        expected_receipt: receipt.clone(),
+        sampled_asset: AssetId::new("sampled").unwrap(),
+        native_asset: AssetId::new("native").unwrap(),
+    };
+    let preview = store
+        .preview_generation_acceptance(&accept, budget)
+        .unwrap();
+    let expected_accepted = preview.forward.apply(&document).unwrap();
+    assert_eq!(store.snapshot().unwrap(), document); // Preview never commits.
+    let relevance = fixture_relevance(&store, document.revision_id(), &accept.new_revision);
+    store
+        .accept_generation_bundle(&accept, &relevance, budget)
+        .unwrap();
+    let accepted = store.snapshot().unwrap();
+    assert_eq!(accepted, expected_accepted);
+    let NodeKind::Hold { recipe } = &accepted.nodes()[&binding.target.hold_id].kind else {
+        unreachable!()
+    };
+    let HoldVideo::Generated {
+        accepted: generation,
+    } = &recipe.video
+    else {
+        panic!("explicit accept did not change provider")
+    };
+    assert_eq!(generation.artifact.sampled_object, sampled_ref);
+    assert_eq!(generation.artifact.native_object, native_ref);
+    assert_eq!(generation.artifact.provenance, provenance_ref);
+    assert_eq!(
+        accepted.assets()[&accept.native_asset].video,
+        Some(native_span)
+    );
+    assert_eq!(
+        accepted.assets()[&accept.sampled_asset].video,
+        Some(sampled_span)
+    );
     drop(store);
     let relocated = tempfile::tempdir().unwrap();
     let relocated_package = relocated.path().join("retained.deadpan");
     fs::rename(&package, &relocated_package).unwrap();
     fs::remove_dir_all(fixture.directory.path().join("inputs")).unwrap();
     fs::remove_dir_all(fixture.directory.path().join("outputs")).unwrap();
-    let reopened = ProjectStore::open(&relocated_package, AccessMode::ReadOnly).unwrap();
+    let mut reopened = ProjectStore::open(&relocated_package, AccessMode::ReadWrite).unwrap();
     let selected = reopened
         .selected_generation_bundle(&binding.identity.request_id)
         .unwrap()
         .unwrap();
     assert_eq!(selected.identity, binding.identity);
     assert_eq!(selected.receipt, receipt);
-    assert_eq!(reopened.snapshot().unwrap(), document);
+    assert_eq!(reopened.snapshot().unwrap(), accepted);
+    let undo_revision = RevisionId::new("undo-accept").unwrap();
+    let relevance = fixture_relevance(&reopened, accepted.revision_id(), &undo_revision);
+    reopened
+        .undo_reconciled(accepted.revision_id(), undo_revision.clone(), &relevance)
+        .unwrap();
+    assert!(reopened.snapshot().unwrap().assets().is_empty());
+    let redo_revision = RevisionId::new("redo-accept").unwrap();
+    let relevance = fixture_relevance(&reopened, &undo_revision, &redo_revision);
+    reopened
+        .redo_reconciled(&undo_revision, redo_revision.clone(), &relevance)
+        .unwrap();
+    assert_eq!(reopened.snapshot().unwrap().assets(), accepted.assets());
+    let reverted_revision = RevisionId::new("reverted").unwrap();
+    let relevance = fixture_relevance(&reopened, &redo_revision, &reverted_revision);
+    reopened
+        .commit_reconciled(
+            &CommandRequest {
+                project_id: binding.project_id.clone(),
+                expected_revision: redo_revision,
+                new_revision: reverted_revision,
+                command: Command::RevertGeneratedHold {
+                    node: binding.target.hold_id.clone(),
+                },
+            },
+            &relevance,
+        )
+        .unwrap();
+    let reverted = reopened.snapshot().unwrap();
+    let NodeKind::Hold { recipe } = &reverted.nodes()[&binding.target.hold_id].kind else {
+        unreachable!()
+    };
+    assert_eq!(recipe.video, HoldVideo::Background);
     for object in [&native_ref, &sampled_ref, &provenance_ref]
         .into_iter()
         .chain(retained_refs.iter())
@@ -699,5 +802,22 @@ fn actual_bundle_becomes_ready_only_after_all_objects_exist_and_survives_reopen(
             blake3::hash(&bytes).to_hex().as_str(),
             object.content().digest()
         );
+    }
+}
+
+fn fixture_relevance(store: &ProjectStore, from: &RevisionId, to: &RevisionId) -> RelevancePlan {
+    RelevancePlan {
+        from_revision: from.clone(),
+        to_revision: to.clone(),
+        observations: store
+            .current_generation_requests()
+            .unwrap()
+            .into_iter()
+            .map(|request| RelevanceObservation {
+                request_id: request.request_id,
+                after_context: ContextObservation::Resolved(request.binding.context_sha256.clone()),
+                binding: request.binding,
+            })
+            .collect(),
     }
 }

@@ -1,10 +1,11 @@
 # Authored generated Hold foundation
 
 Core schema 5 records generated Hold intent and exact retained sampling metadata.
-It does not establish that a candidate has passed media validation, been auditioned,
-or been durably accepted by the application. Generic project creation and command
-ingress reject new generated artifacts with `GeneratedAcceptanceUnavailable` until
-the qualified host acceptance path exists. The native application remains a shell.
+It does not establish that a candidate has passed media validation or been auditioned
+in the application. Generic project creation and command ingress
+reject new generated artifacts with `GeneratedAcceptanceUnavailable`. The dedicated
+[store acceptance API](GENERATION_ACCEPTANCE.md) binds a selected Ready receipt,
+verified dependencies and an undoable edit. The native application remains a shell.
 
 ## Authored representation
 
@@ -53,9 +54,10 @@ History-aware media reference accounting and cleanup remain unimplemented.
 
 ## Storage and migration
 
-Database schema 8 stores core schema 5 while retaining the operational generation
+Database schema 9 stores core schema 5 while retaining the operational generation
 tables introduced in database schemas 5 and 6 and adding separate
-[modern bundle receipts](GENERATION_BUNDLES.md). Schemas 1 through 6 migrate through
+[modern bundle receipts](GENERATION_BUNDLES.md) with optional admission evidence.
+Schemas 1 through 6 migrate through
 complete chronological replay on a consistent backup. Frozen legacy adapters reject
 new generated providers and commands even when nested in old subtrees, gaps, or
 patches. Legacy asset records also retain their original SHA-256-only contract;
@@ -63,8 +65,8 @@ the newer BLAKE3 vocabulary cannot enter an old document, command, or patch.
 Every old snapshot and forward/inverse transaction is compared during
 replay. Existing requests, clocks, attempts, candidate receipts, and selection rows
 remain unchanged. Interrupted-job recovery occurs only on a subsequent writer open.
-Schema-7 history already uses core schema 5 and is validated without rewriting;
-its requests remain legacy and gain no inferred bridge plan.
+Schema-7/8 history already uses core schema 5 and is validated without rewriting.
+Old requests gain no inferred bridge plan and old receipts gain no admission evidence.
 
 Generic store ingress examines the resulting authored providers, including Repeat
 gaps and override-owned nodes. It can retain or copy an already present artifact,
@@ -96,8 +98,8 @@ database schema 7 and core schema 5. The audio, model, and FFV1 report suites pa
 was corrected before the full passing run. Native startup, GUI, inference and
 actual media-rendering checks were not repeated for these pure semantics.
 
-The qualified candidate-to-master
-conversion, provenance validation, selected-Ready/relevance checks, audition,
-explicit application acceptance, model-independent rendering and portable copy
-remain open. [Generated-object storage](GENERATED_MEDIA.md) supplies byte ownership,
-not those remaining guarantees.
+Candidate-to-master conversion, provenance binding and selected-Ready/relevance
+checks now support explicit durable store acceptance. Audition, exact source/color
+context, application acceptance, model-independent rendering and portable copy
+remain open. [Generated-object storage](GENERATED_MEDIA.md) supplies byte ownership;
+[the acceptance contract](GENERATION_ACCEPTANCE.md) describes the integrated boundary.
