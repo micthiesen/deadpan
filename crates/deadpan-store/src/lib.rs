@@ -6,6 +6,7 @@
 
 mod error;
 pub mod generation;
+pub mod generation_attempts;
 mod history;
 mod migration;
 mod schema;
@@ -149,13 +150,16 @@ impl ProjectStore {
         } else {
             connection.pragma_update(None, "query_only", true)?;
         }
-        let store = Self {
+        let mut store = Self {
             connection,
             package,
             mode,
             _writer_lock: lock,
         };
         store.validate()?;
+        if mode == AccessMode::ReadWrite {
+            generation_attempts::recover_nonterminal(&mut store.connection)?;
+        }
         Ok(store)
     }
 
@@ -167,6 +171,7 @@ impl ProjectStore {
         let transaction = self.connection.unchecked_transaction()?;
         validation::check_stored_sizes(&transaction, schema::MAX_DOCUMENT_BYTES)?;
         generation::check_stored_sizes(&transaction)?;
+        generation_attempts::check_stored_sizes(&transaction)?;
         let integrity: String =
             transaction.query_row("PRAGMA quick_check", [], |row| row.get(0))?;
         if integrity != "ok" {
@@ -180,7 +185,8 @@ impl ProjectStore {
             return Err(StoreError::Integrity("foreign-key violation".into()));
         }
         validation::validate_history(&transaction)?;
-        generation::validate_store(&transaction)
+        generation::validate_store(&transaction)?;
+        generation_attempts::validate_store(&transaction)
     }
 
     pub fn preview(&self, request: &CommandRequest) -> Result<EditTransaction, StoreError> {

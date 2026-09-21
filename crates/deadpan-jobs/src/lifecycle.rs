@@ -57,6 +57,7 @@ pub enum HostFailureCode {
     Io,
     DeadlineExceeded,
     OutputValidationFailed,
+    Interrupted,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -76,14 +77,38 @@ pub enum WorkerEventOutcome {
     Applied,
     Duplicate,
     IgnoredDuringCancellation,
-    CancelledAfterCompletion,
+    CompletionDiscardedDuringCancellation,
+    CancellationAcknowledged,
+}
+
+/// A terminal worker response received after cancellation was requested.
+/// The host still owns stopping and reaping the process before the lifecycle
+/// may become [`JobState::Cancelled`].
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum CancellationAcknowledgement {
+    Cancelled,
+    CompletionDiscarded(CandidateManifest),
+}
+
+/// Durable fields for one lifecycle attempt. Progress is intentionally absent:
+/// it is stage-local UI data and remains bounded in memory.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LifecycleCheckpoint {
+    pub identity: MessageIdentity,
+    pub cancellation_token: CancellationToken,
+    pub target: TargetBinding,
+    pub state: JobState,
+    pub worker_stage: Option<WorkerStage>,
+    pub cancellation_acknowledgement: Option<CancellationAcknowledgement>,
+    pub candidate: Option<CandidateManifest>,
+    pub failure: Option<JobFailure>,
 }
 
 /// Pure state for one worker attempt.
 ///
-/// Persistence and restart reconciliation are deferred to the store/supervisor.
-/// Recovery must create a new attempt ID; it must never infer success from an
-/// abandoned process or this in-memory state alone.
+/// Persistence stores a validated [`LifecycleCheckpoint`]. Recovery must create
+/// a new attempt ID; it must never infer success from an abandoned process or
+/// this in-memory state alone.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct JobLifecycle {
     identity: MessageIdentity,
@@ -93,6 +118,7 @@ pub struct JobLifecycle {
     relevance: Relevance,
     worker_stage: Option<WorkerStage>,
     progress: Option<JobProgress>,
+    cancellation_acknowledgement: Option<CancellationAcknowledgement>,
     candidate: Option<CandidateManifest>,
     failure: Option<JobFailure>,
 }
@@ -111,6 +137,7 @@ impl JobLifecycle {
             relevance: Relevance::Current,
             worker_stage: None,
             progress: None,
+            cancellation_acknowledgement: None,
             candidate: None,
             failure: None,
         }
@@ -152,6 +179,44 @@ impl JobLifecycle {
         self.failure.as_ref()
     }
 
+    pub fn cancellation_acknowledgement(&self) -> Option<&CancellationAcknowledgement> {
+        self.cancellation_acknowledgement.as_ref()
+    }
+
+    pub fn checkpoint(&self) -> LifecycleCheckpoint {
+        LifecycleCheckpoint {
+            identity: self.identity.clone(),
+            cancellation_token: self.cancellation_token.clone(),
+            target: self.target.clone(),
+            state: self.state,
+            worker_stage: self.worker_stage,
+            cancellation_acknowledgement: self.cancellation_acknowledgement.clone(),
+            candidate: self.candidate.clone(),
+            failure: self.failure.clone(),
+        }
+    }
+
+    /// Restores a validated durable checkpoint. Relevance is supplied from the
+    /// owning immutable request and is never duplicated in attempt storage.
+    pub fn from_checkpoint(
+        checkpoint: LifecycleCheckpoint,
+        relevance: Relevance,
+    ) -> Result<Self, LifecycleError> {
+        validate_checkpoint(&checkpoint)?;
+        Ok(Self {
+            identity: checkpoint.identity,
+            cancellation_token: checkpoint.cancellation_token,
+            target: checkpoint.target,
+            state: checkpoint.state,
+            relevance,
+            worker_stage: checkpoint.worker_stage,
+            progress: None,
+            cancellation_acknowledgement: checkpoint.cancellation_acknowledgement,
+            candidate: checkpoint.candidate,
+            failure: checkpoint.failure,
+        })
+    }
+
     /// Monotonically updates relevance without rebinding the job. `None` means
     /// the target Hold no longer exists. Matching values never revive stale work.
     pub fn observe_target(&mut self, current: Option<&TargetBinding>) {
@@ -181,6 +246,7 @@ impl JobLifecycle {
                 self.state = JobState::Cancelling;
                 self.candidate = None;
                 self.progress = None;
+                self.cancellation_acknowledgement = None;
                 Ok(WorkerEventOutcome::Applied)
             }
         }
@@ -213,10 +279,20 @@ impl JobLifecycle {
             } => self.apply_progress(*stage, progress.clone()),
             WorkerMessage::Completed { candidate, .. } => {
                 if self.state == JobState::Cancelling {
-                    self.state = JobState::Cancelled;
                     self.candidate = None;
                     self.progress = None;
-                    return Ok(WorkerEventOutcome::CancelledAfterCompletion);
+                    let acknowledgement =
+                        CancellationAcknowledgement::CompletionDiscarded(candidate.clone());
+                    return match &self.cancellation_acknowledgement {
+                        None => {
+                            self.cancellation_acknowledgement = Some(acknowledgement);
+                            Ok(WorkerEventOutcome::CompletionDiscardedDuringCancellation)
+                        }
+                        Some(previous) if previous == &acknowledgement => {
+                            Ok(WorkerEventOutcome::Duplicate)
+                        }
+                        Some(_) => Err(LifecycleError::ConflictingCancellationAcknowledgement),
+                    };
                 }
                 if self.state != JobState::Running {
                     return Err(LifecycleError::InvalidTransition {
@@ -230,6 +306,10 @@ impl JobLifecycle {
                 Ok(WorkerEventOutcome::Applied)
             }
             WorkerMessage::Failed { failure, .. } => {
+                if self.state == JobState::Cancelling && self.cancellation_acknowledgement.is_some()
+                {
+                    return Err(LifecycleError::ConflictingCancellationAcknowledgement);
+                }
                 self.state = JobState::Failed;
                 self.failure = Some(JobFailure::Worker(failure.clone()));
                 self.progress = None;
@@ -242,9 +322,20 @@ impl JobLifecycle {
                         event: "worker cancellation",
                     });
                 }
-                self.state = JobState::Cancelled;
                 self.progress = None;
-                Ok(WorkerEventOutcome::Applied)
+                match &self.cancellation_acknowledgement {
+                    None => {
+                        self.cancellation_acknowledgement =
+                            Some(CancellationAcknowledgement::Cancelled);
+                        Ok(WorkerEventOutcome::CancellationAcknowledged)
+                    }
+                    Some(CancellationAcknowledgement::Cancelled) => {
+                        Ok(WorkerEventOutcome::Duplicate)
+                    }
+                    Some(CancellationAcknowledgement::CompletionDiscarded(_)) => {
+                        Err(LifecycleError::ConflictingCancellationAcknowledgement)
+                    }
+                }
             }
         }
     }
@@ -264,6 +355,7 @@ impl JobLifecycle {
         self.failure = Some(JobFailure::Host(failure));
         self.progress = None;
         self.candidate = None;
+        self.cancellation_acknowledgement = None;
         Ok(())
     }
 
@@ -472,4 +564,61 @@ pub enum LifecycleError {
     ProgressTotalChanged { previous: u64, next: u64 },
     #[error("host validated a different candidate than the worker completed")]
     CandidateMismatch,
+    #[error("worker sent conflicting terminal responses during cancellation")]
+    ConflictingCancellationAcknowledgement,
+    #[error("invalid durable lifecycle checkpoint: {0}")]
+    InvalidCheckpoint(&'static str),
+}
+
+fn validate_checkpoint(checkpoint: &LifecycleCheckpoint) -> Result<(), LifecycleError> {
+    let candidate_required = matches!(checkpoint.state, JobState::Validating | JobState::Ready);
+    if checkpoint.candidate.is_some() != candidate_required {
+        return Err(LifecycleError::InvalidCheckpoint(
+            "candidate does not match lifecycle state",
+        ));
+    }
+    if checkpoint.failure.is_some() != (checkpoint.state == JobState::Failed) {
+        return Err(LifecycleError::InvalidCheckpoint(
+            "failure does not match lifecycle state",
+        ));
+    }
+    if checkpoint.cancellation_acknowledgement.is_some()
+        && !matches!(checkpoint.state, JobState::Cancelling | JobState::Cancelled)
+    {
+        return Err(LifecycleError::InvalidCheckpoint(
+            "cancellation acknowledgement is outside cancellation",
+        ));
+    }
+    match checkpoint.state {
+        JobState::Queued if checkpoint.worker_stage.is_some() => Err(
+            LifecycleError::InvalidCheckpoint("queued attempt has a worker stage"),
+        ),
+        JobState::Preflight | JobState::Loading | JobState::Running => {
+            let stage = checkpoint
+                .worker_stage
+                .ok_or(LifecycleError::InvalidCheckpoint(
+                    "active attempt is missing its worker stage",
+                ))?;
+            if state_for_stage(stage) != checkpoint.state {
+                return Err(LifecycleError::InvalidCheckpoint(
+                    "worker stage does not match lifecycle state",
+                ));
+            }
+            Ok(())
+        }
+        JobState::Validating | JobState::Ready => {
+            let stage = checkpoint
+                .worker_stage
+                .ok_or(LifecycleError::InvalidCheckpoint(
+                    "completed attempt is missing its worker stage",
+                ))?;
+            if state_for_stage(stage) != JobState::Running {
+                return Err(LifecycleError::InvalidCheckpoint(
+                    "completed attempt did not reach a running stage",
+                ));
+            }
+            Ok(())
+        }
+        _ => Ok(()),
+    }
 }

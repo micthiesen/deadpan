@@ -3,13 +3,14 @@
 [`deadpan-store`](../crates/deadpan-store/src/generation.rs) persists immutable
 generation request inputs, per-Hold request clocks, and current/stale/detached
 relevance. This implements the storage boundary for specification Sections 12.6
-and 12.7. It does not yet persist worker attempts, resume jobs, resolve source
-context, accept candidates, or promote media into a project. The development MLX
-worker remains separate from the native application.
+and 12.7. [Attempt storage](GENERATION_ATTEMPTS.md) adds durable worker state and
+restart recovery. Neither module resolves source context, accepts candidates, or
+promotes media into a project. The development MLX worker remains separate from
+the native application.
 
 ## Authored history and operational state
 
-Core documents remain schema 4. Database schema 5 adds `hold_request_clocks` and
+Core documents remain schema 4. Database schema 5 introduced `hold_request_clocks` and
 `generation_requests`. Requests retain their origin revision, project and Hold
 identities, context SHA-256, typed video/conditioning/motion constraints, provider
 pins, seed, and request version. The origin revision is provenance; an unrelated
@@ -68,8 +69,9 @@ waiting for a GPU kernel is not part of the document transaction.
 
 Schemas 1 through 3 replay and compare their complete chronology through the
 existing strict legacy adapters before adding empty operational tables. Schema 4
-validates the complete authored chronology without rewriting its JSON. All paths
-retain a `Snapshots/before-schema-5-*.sqlite` backup and promote only the validated
+validates the complete authored chronology without rewriting its JSON. Schema 5
+also validates and retains all request rows and clocks before adding the schema-6
+attempt tables. All paths retain a `Snapshots/before-schema-6-*.sqlite` backup and promote only the validated
 candidate through SQLite's backup transaction.
 
 The [schema-4 fixture](../crates/deadpan-store/tests/fixtures/v4-history.sql) was
@@ -93,8 +95,8 @@ explicit check and regression fixture address it. Candidate acceptance and
 durable media ownership remain separate required work. No GUI behavior changed
 in this slice, so native startup and interactive checks were not repeated.
 
-The repository gate passes: formatting, workspace Clippy with warnings denied,
+The schema-5 request implementation passed formatting, workspace Clippy with warnings denied,
 224 Rust tests (zero failed or ignored), workspace build, and `deadpan-cli doctor`.
 The audio and model qualification suites also pass 20 and 47 Python tests.
-Diagnostics distinguishes database schema 5 from core document schema 4 and
-continues to report application AI generation as unimplemented.
+The current diagnostics distinguish database schema 6 from core document schema 4
+and continue to report application AI generation as unimplemented.

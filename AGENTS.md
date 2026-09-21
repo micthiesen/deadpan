@@ -27,9 +27,9 @@ The current foundation includes validated beat documents, reversible structural 
 Current crates:
 
 - `crates/deadpan-core`: exact time, validated documents, structural commands, and reversible patches; no I/O or identity generation.
-- `crates/deadpan-store`: authoritative SQLite packages, immutable revisions, atomic writes, durable undo/redo, generation request relevance, and database checkpoints.
+- `crates/deadpan-store`: authoritative SQLite packages, immutable revisions, atomic writes, durable undo/redo, generation request relevance, persistent attempts and restart recovery, and database checkpoints.
 - `crates/deadpan-plan`: immutable indexed picture mappings through structural beats, using exact frame centers and original source identities; no decoding or DSP.
-- `crates/deadpan-jobs`: bounded worker protocol, pure attempt lifecycle, process supervision, contained artifact snapshots, and exact bridge-generation planning. The real MLX adapter in `tools/model-qualification` is a development harness; app inference and job persistence remain open.
+- `crates/deadpan-jobs`: bounded worker protocol, pure attempt lifecycle, process supervision, contained artifact snapshots, and exact bridge-generation planning. The real MLX adapter in `tools/model-qualification` is a development harness; app inference and durable media promotion remain open.
 - `native/deadpan-process`: narrow Darwin group-membership adapter; unsafe is denied except for its documented bounded libproc call. Higher layers continue to forbid unsafe.
 - `crates/deadpan-app`: native `egui`/`eframe` application using `wgpu` on Metal; development welcome shell.
 - `crates/deadpan-cli`: versioned headless project/command API, reused by `deadpan-app --headless`.
@@ -42,9 +42,11 @@ Every persisted edit, undo, and redo gets a never-reused revision ID. Core inver
 
 Repeat play IDs are scoped by Repeat node and allocation revision, with an ordinal inside that allocation. Preserve surviving IDs through resizing and reorder; allocate fresh IDs for growth and inserted subtrees. Imported initial snapshots reserve their allocation names even after plays are removed. Keep compact runs bounded and never expand a repeat merely to seek. Core schema 4 retains these runs and marks, and adds sparse override subtrees. Schema-1, schema-2, and schema-3 migrations replay the complete chronology directly into the current schema on a consistent copy, compare every legacy snapshot/transaction, and promote through SQLite's backup transaction only after validation. Strict legacy adapters reject new fields and unexpected mark or override changes. Preserve the pre-migration backup.
 
-Database schema 5 adds operational generation requests; core documents remain
-schema 4. Migrating a schema-4 database validates its complete history without
-rewriting authored JSON, then adds empty request tables. Request versions belong
+Database schema 6 retains operational generation requests and adds attempts,
+validation receipts, and candidate selection; core documents remain schema 4.
+Migrating a schema-4 or schema-5 database validates its complete history without
+rewriting authored JSON, preserves existing requests and clocks, and adds only
+the missing operational tables. Request versions belong
 to retained per-Hold clocks outside document history. Undo/redo must never restore
 request relevance or decrement a clock. Every document mutation with a current
 request requires complete revision-bound context observations and reconciles
@@ -52,6 +54,17 @@ relevance in the same SQLite transaction. The store independently checks Hold
 existence, duration, and project rate; the host resolves all media and generation
 dependencies into the context hash. Unrelated edits preserve matching requests.
 See [generation request storage](docs/GENERATION_REQUESTS.md) for the boundary.
+
+Attempt state is operational, separate from authored undo/redo and request
+relevance. A retry uses a new attempt identity and ordinal with the same immutable
+request inputs. Only one attempt per request can be nonterminal. Writer reopen
+validates the database before marking abandoned nonterminal attempts interrupted;
+read-only inspection never performs recovery. Never infer a worker's ownership
+from a stored PID. Cancellation acknowledgement keeps the attempt cancelling
+until the host has stopped and reaped the worker. Progress stays in memory.
+Candidate receipts record a trusted host validator's declaration; metadata alone
+does not establish durable file ownership, media validity, or acceptability.
+See [attempt storage](docs/GENERATION_ATTEMPTS.md).
 
 The setup workflow's TypeScript/Bun/mitools/Biome defaults do not apply to this Rust-native product. The maintained Rust sibling `beastie` supplies the initial workspace conventions; consult maintained siblings for evolving personal tooling patterns. [Dependency decisions](docs/DEPENDENCIES.md) records the pins and qualification boundaries. Do not introduce Bun, Node, Python, or shell setup as an end-user requirement. Future model workers use an app-managed private runtime selected through measurement.
 

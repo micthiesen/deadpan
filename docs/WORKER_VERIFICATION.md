@@ -1,8 +1,9 @@
 # Worker protocol and process boundary
 
 This slice implements a concrete worker boundary for Section 18. It does not
-implement inference, a model pack, an application job service, or durable job
-storage. DP-18 remains partial; Gates A and E remain open. The native application
+implement inference, a model pack, or an application job service. Follow-up
+[attempt storage](GENERATION_ATTEMPTS.md) adds persistence and restart recovery.
+DP-18 remains partial; Gates A and E remain open. The native application
 is still a welcome shell.
 
 ## Typed protocol and state
@@ -32,6 +33,11 @@ validation. Once completion arrives, further worker events are rejected while
 host validation, cancellation, and failure remain available.
 Only a separate host validation call can make that exact candidate `ready`.
 Acceptance remains an explicit revision-aware document command.
+
+Cancellation acknowledgements now remain `cancelling` until the host confirms
+worker teardown and reaping. Discarding a completion after cancellation follows
+the same rule. Validated lifecycle checkpoints retain these acknowledgements
+for attempt persistence; progress remains in memory.
 
 Relevance compares project, Hold, request version, and context hash. The original
 revision remains provenance, so moving a Hold or making an unrelated edit does
@@ -137,8 +143,8 @@ decode or inference; bounded JSON alone does not meet that requirement.
 
 ## Remaining work
 
-Persist jobs/attempts and reconcile interrupted workers after restart. Connect a
-bounded priority scheduler and resource budgets to application lifecycle, sleep,
+Connect the [persistent attempts and restart recovery](GENERATION_ATTEMPTS.md) to
+the application job service. Connect a bounded priority scheduler and resource budgets to application lifecycle, sleep,
 playback, and power state. Implement artifact containment, hash/media validation,
 atomic promotion, history pinning, and the explicit acceptance command. Connect
 the pinned private runtime and actual LTX candidates, then measure generated

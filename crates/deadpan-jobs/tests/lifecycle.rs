@@ -1,10 +1,11 @@
 use deadpan_core::{FrameDuration, FrameRate, NodeId, ProjectId};
 use deadpan_jobs::{
-    AttemptId, CancellationToken, CandidateManifest, Diagnostic, FailureCode, HostFailure,
-    HostFailureCode, JobFailure, JobLifecycle, JobState, LifecycleError, MessageIdentity,
-    ProtocolVersion, ProviderPackId, ProviderPackVersion, ProviderSelection, Relevance, RequestId,
-    RequestVersion, RuntimeId, RuntimeVersion, Sha256, StageProgress, TargetBinding, VideoSpec,
-    WorkerEventOutcome, WorkerFailure, WorkerMessage, WorkerStage, WorkspaceArtifact, WorkspaceRef,
+    AttemptId, CancellationAcknowledgement, CancellationToken, CandidateManifest, Diagnostic,
+    FailureCode, HostFailure, HostFailureCode, JobFailure, JobLifecycle, JobState, LifecycleError,
+    MessageIdentity, ProtocolVersion, ProviderPackId, ProviderPackVersion, ProviderSelection,
+    Relevance, RequestId, RequestVersion, RuntimeId, RuntimeVersion, Sha256, StageProgress,
+    TargetBinding, VideoSpec, WorkerEventOutcome, WorkerFailure, WorkerMessage, WorkerStage,
+    WorkspaceArtifact, WorkspaceRef,
 };
 
 fn sha(character: char) -> Sha256 {
@@ -180,7 +181,7 @@ fn progress_is_monotonic_within_the_announced_stage() {
 }
 
 #[test]
-fn completion_during_cancellation_becomes_cancelled_without_candidate() {
+fn completion_during_cancellation_waits_for_host_reap_without_candidate() {
     let identity = identity();
     let token = token();
     let mut job = JobLifecycle::new(identity.clone(), token.clone(), binding());
@@ -200,15 +201,61 @@ fn completion_during_cancellation_becomes_cancelled_without_candidate() {
     assert_eq!(
         job.apply_worker_message(&WorkerMessage::Completed {
             protocol: ProtocolVersion::V1,
-            identity,
+            identity: identity.clone(),
             candidate: candidate(),
         })
         .unwrap(),
-        WorkerEventOutcome::CancelledAfterCompletion
+        WorkerEventOutcome::CompletionDiscardedDuringCancellation
     );
-    assert_eq!(job.state(), JobState::Cancelled);
+    assert_eq!(job.state(), JobState::Cancelling);
+    assert!(matches!(
+        job.cancellation_acknowledgement(),
+        Some(CancellationAcknowledgement::CompletionDiscarded(_))
+    ));
     assert!(job.candidate().is_none());
     assert!(!job.can_authorize_acceptance());
+    let restored = JobLifecycle::from_checkpoint(job.checkpoint(), Relevance::Current).unwrap();
+    assert_eq!(restored, job);
+    job.host_cancelled(&identity, &token).unwrap();
+    assert_eq!(job.state(), JobState::Cancelled);
+}
+
+#[test]
+fn worker_cancellation_acknowledgement_is_durable_but_not_reaped() {
+    let identity = identity();
+    let token = token();
+    let mut job = JobLifecycle::new(identity.clone(), token.clone(), binding());
+    job.request_cancel(&identity, &token).unwrap();
+    let cancelled = WorkerMessage::Cancelled {
+        protocol: ProtocolVersion::V1,
+        identity: identity.clone(),
+    };
+    assert_eq!(
+        job.apply_worker_message(&cancelled).unwrap(),
+        WorkerEventOutcome::CancellationAcknowledged
+    );
+    assert_eq!(job.state(), JobState::Cancelling);
+    assert_eq!(
+        job.apply_worker_message(&cancelled).unwrap(),
+        WorkerEventOutcome::Duplicate
+    );
+    let before_conflict = job.clone();
+    assert_eq!(
+        job.apply_worker_message(&WorkerMessage::Failed {
+            protocol: ProtocolVersion::V1,
+            identity: identity.clone(),
+            failure: WorkerFailure {
+                code: FailureCode::BackendFailure,
+                detail: Diagnostic::new("conflicting failure").unwrap(),
+            },
+        }),
+        Err(LifecycleError::ConflictingCancellationAcknowledgement)
+    );
+    assert_eq!(job, before_conflict);
+    let restored = JobLifecycle::from_checkpoint(job.checkpoint(), Relevance::Current).unwrap();
+    assert_eq!(restored, job);
+    job.host_cancelled(&identity, &token).unwrap();
+    assert_eq!(job.state(), JobState::Cancelled);
 }
 
 #[test]
@@ -401,4 +448,49 @@ fn context_hash_changes_stale_a_job_but_unrelated_revision_is_not_a_binding() {
     changed_context.context_sha256 = sha('d');
     job.observe_target(Some(&changed_context));
     assert_eq!(job.relevance(), Relevance::Stale);
+}
+
+#[test]
+fn durable_checkpoint_rejects_impossible_state_payload_combinations() {
+    let identity = identity();
+    let base = JobLifecycle::new(identity.clone(), token(), binding());
+
+    let mut candidate_while_queued = base.checkpoint();
+    candidate_while_queued.candidate = Some(candidate());
+    assert!(matches!(
+        JobLifecycle::from_checkpoint(candidate_while_queued, Relevance::Current),
+        Err(LifecycleError::InvalidCheckpoint(_))
+    ));
+
+    let mut failed_without_reason = base.checkpoint();
+    failed_without_reason.state = JobState::Failed;
+    assert!(matches!(
+        JobLifecycle::from_checkpoint(failed_without_reason, Relevance::Current),
+        Err(LifecycleError::InvalidCheckpoint(_))
+    ));
+
+    let mut acknowledgement_while_queued = base.checkpoint();
+    acknowledgement_while_queued.cancellation_acknowledgement =
+        Some(CancellationAcknowledgement::Cancelled);
+    assert!(matches!(
+        JobLifecycle::from_checkpoint(acknowledgement_while_queued, Relevance::Current),
+        Err(LifecycleError::InvalidCheckpoint(_))
+    ));
+
+    let completed_candidate = candidate();
+    let mut completed = base;
+    running(&mut completed);
+    completed
+        .apply_worker_message(&WorkerMessage::Completed {
+            protocol: ProtocolVersion::V1,
+            identity,
+            candidate: completed_candidate,
+        })
+        .unwrap();
+    let mut impossible_stage = completed.checkpoint();
+    impossible_stage.worker_stage = Some(WorkerStage::ModelLoading);
+    assert!(matches!(
+        JobLifecycle::from_checkpoint(impossible_stage, Relevance::Current),
+        Err(LifecycleError::InvalidCheckpoint(_))
+    ));
 }

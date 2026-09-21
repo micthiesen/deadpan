@@ -46,6 +46,16 @@ pub enum StoreError {
     GenerationPlan(String),
     #[error("Generation request versions are exhausted for Hold {0}")]
     GenerationVersionExhausted(String),
+    #[error("Generation attempt {attempt} has already been used for request {request}")]
+    GenerationAttemptReused { request: String, attempt: String },
+    #[error("Generation attempt {attempt} does not exist for request {request}")]
+    GenerationAttemptNotFound { request: String, attempt: String },
+    #[error("Generation attempt ordinals are exhausted for request {0}")]
+    GenerationAttemptExhausted(String),
+    #[error("Generation progress is live UI data and is not persisted")]
+    GenerationProgressNotPersistent,
+    #[error("Generation attempt transition is invalid: {0}")]
+    GenerationAttempt(String),
     #[error("Project history is inconsistent: {0}")]
     History(String),
     #[error("Project integrity check failed: {0}")]
@@ -85,6 +95,11 @@ impl StoreError {
             Self::GenerationRelevanceRequired => "GenerationRelevanceRequired",
             Self::GenerationPlan(_) => "GenerationPlanInvalid",
             Self::GenerationVersionExhausted(_) => "GenerationVersionExhausted",
+            Self::GenerationAttemptReused { .. } => "GenerationAttemptReused",
+            Self::GenerationAttemptNotFound { .. } => "GenerationAttemptNotFound",
+            Self::GenerationAttemptExhausted(_) => "GenerationAttemptExhausted",
+            Self::GenerationProgressNotPersistent => "GenerationProgressNotPersistent",
+            Self::GenerationAttempt(_) => "GenerationAttemptInvalid",
             Self::Edit(error) => error.code.as_str(),
             Self::Database(rusqlite::Error::SqliteFailure(error, _)) => match error.code {
                 rusqlite::ErrorCode::DiskFull => "DiskFull",

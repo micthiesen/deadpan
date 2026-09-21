@@ -45,7 +45,7 @@ impl ProjectStore {
                 backup: None,
             });
         }
-        if !matches!(version, 1..=4) {
+        if !matches!(version, 1..=5) {
             return Err(StoreError::UnsupportedSchema(version));
         }
         let lock = acquire_lock(&package)?;
@@ -73,7 +73,7 @@ impl ProjectStore {
             return Err(StoreError::UnsafePath(directory));
         }
         let backup = tempfile::Builder::new()
-            .prefix("before-schema-5-")
+            .prefix("before-schema-6-")
             .suffix(".sqlite")
             .tempfile_in(&directory)?;
         original.backup(rusqlite::MAIN_DB, backup.path(), None)?;
@@ -116,6 +116,9 @@ fn migrate_candidate(
     candidate.pragma_update(None, "synchronous", "FULL")?;
     let transaction = candidate.transaction()?;
     validation::check_stored_sizes(&transaction, schema::MAX_DOCUMENT_BYTES)?;
+    if source_version == 5 {
+        crate::generation::check_stored_sizes(&transaction)?;
+    }
     let integrity: String =
         transaction.query_row("PRAGMA integrity_check", [], |row| row.get(0))?;
     if integrity != "ok" {
@@ -128,17 +131,22 @@ fn migrate_candidate(
     if violations != 0 {
         return Err(StoreError::Integrity("foreign-key violation".into()));
     }
-    if source_version == 4 {
-        // Schema 5 adds operational state only. Core schema-4 documents and
-        // their complete chronology must validate without being rewritten.
+    if matches!(source_version, 4 | 5) {
+        // These versions use the current core schema. Adding operational
+        // tables must preserve their authored JSON and complete chronology.
         validation::validate_history(&transaction)?;
     } else {
         validation::migrate_history(&transaction, source_version)?;
     }
-    crate::generation::create_tables(&transaction)?;
+    if source_version < 5 {
+        crate::generation::create_tables(&transaction)?;
+    }
+    crate::generation::validate_store(&transaction)?;
+    crate::generation_attempts::create_tables(&transaction)?;
     transaction.pragma_update(None, "user_version", schema::VERSION)?;
     validation::validate_history(&transaction)?;
     crate::generation::validate_store(&transaction)?;
+    crate::generation_attempts::validate_store(&transaction)?;
     transaction.commit()?;
     candidate_file.as_file().sync_all()?;
     // One step copies all pages in one destination transaction. SQLITE_BUSY
