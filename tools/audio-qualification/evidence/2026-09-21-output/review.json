@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "base_revision": "16120b7a90ffb313729bf5f173ec9299453781f5",
+  "general_review": {
+    "reviewer": "output_general_review",
+    "findings": [
+      {
+        "subject": "Resume after native pause with a completely full stale queue",
+        "disposition": "Addressed by explicit muted-callback restart protocol and actual-device regression coverage.",
+        "detail": "The reviewer originally described permanent queue blockage. start_device already allowed a muted Preparing state, so no ring reset was required. The missing usage contract and full-queue hardware coverage were real gaps. Resume now exercises restart, start muted callbacks, bounded prefill retries, then activate."
+      },
+      {
+        "subject": "Permanent device fault hidden by unchanged route",
+        "disposition": "Fixed.",
+        "detail": "check_route now returns Faulted before and after querying the route; injected actual-stream coverage verifies visibility and silent fault reports."
+      }
+    ],
+    "recheck": "No remaining actionable findings; all 21 output tests passed."
+  },
+  "concurrency_review": {
+    "reviewer": "output_concurrency_review",
+    "result": "No findings",
+    "scope": "Generation publication, final fault/control invalidation, partial packets, stale cleanup, prepare/activate, SPSC ordering, starvation/EOS, identities and telemetry clocks.",
+    "checks": "21 output tests, strict Clippy and macOS target check passed; no hardware run."
+  },
+  "implementation_corrections": [
+    "Split restart preparation from activation to avoid starvation before prefill.",
+    "Scope generation tokens to a checked unique channel identity.",
+    "Always stop native callbacks even if feed invalidation returns a permanent-fault error.",
+    "Rename the partial timing measurement to render_cost_ns and explicitly exclude telemetry/upstream work."
+  ],
+  "remaining_findings": [],
+  "qualification_limits": "See the separate source audit and hardware report; full callback exceptional paths, physical device lifecycle, acoustics, stress and application transport remain open."
+}

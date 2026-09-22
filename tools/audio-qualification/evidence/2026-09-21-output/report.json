@@ -1,0 +1,271 @@
+{
+  "schema_version": 1,
+  "collected_utc": "2026-09-22T00:51:52.747614+00:00",
+  "base_revision": "16120b7a90ffb313729bf5f173ec9299453781f5",
+  "hardware": {
+    "chip_type": "Apple M5 Max",
+    "machine_model": "Mac17,7",
+    "machine_name": "MacBook Pro",
+    "number_processors": "proc 18:6:0:12",
+    "physical_memory": "128 GB"
+  },
+  "os": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: aarch64-apple-darwin\nrelease: 1.97.1\nLLVM version: 22.1.6",
+  "reports": [
+    {
+      "file": "hardware-probe-1.json",
+      "sha256": "9ed326f540fac8c3500e6fc3e0fb80758f05f0d18a375936ac650cb77b7d02a5",
+      "status": "passed",
+      "checks": [
+        {
+          "frames": 96000,
+          "name": "steady_complete_pcm",
+          "passed": true
+        },
+        {
+          "name": "steady_no_starvation_or_fault",
+          "passed": true
+        },
+        {
+          "name": "explicit_end",
+          "passed": true
+        },
+        {
+          "name": "seek_new_coordinate",
+          "passed": true
+        },
+        {
+          "name": "starvation_latches_silence",
+          "passed": true
+        },
+        {
+          "name": "pause_resume_new_generation",
+          "passed": true
+        },
+        {
+          "flags": 0,
+          "name": "no_backend_errors",
+          "passed": true
+        },
+        {
+          "dropped": 0,
+          "name": "telemetry_complete",
+          "passed": true
+        },
+        {
+          "name": "timestamps_monotonic",
+          "passed": true
+        },
+        {
+          "name": "callback_work_within_buffer_duration",
+          "passed": true
+        }
+      ],
+      "callback_count": 322,
+      "device": {
+        "buffer_frames": 512,
+        "buffer_range": [
+          15,
+          4096
+        ],
+        "channels": 2,
+        "id": "coreaudio:BuiltInSpeakerDevice",
+        "name": "MacBook Pro Speakers",
+        "sample_format": "f32",
+        "sample_rate": 48000
+      },
+      "tone": true,
+      "render_cost_ns": {
+        "p50_nearest_rank": 3458,
+        "p99_nearest_rank": 5250,
+        "maximum": 5750
+      },
+      "timestamp_latency_estimates_ns": [
+        12916667
+      ]
+    },
+    {
+      "file": "hardware-probe-2.json",
+      "sha256": "967aa000ae2906578bb28e61bd9a9bd71f0f4b92ff8163a46eea9606ef2c15d4",
+      "status": "passed",
+      "checks": [
+        {
+          "frames": 96000,
+          "name": "steady_complete_pcm",
+          "passed": true
+        },
+        {
+          "name": "steady_no_starvation_or_fault",
+          "passed": true
+        },
+        {
+          "name": "explicit_end",
+          "passed": true
+        },
+        {
+          "name": "seek_new_coordinate",
+          "passed": true
+        },
+        {
+          "name": "starvation_latches_silence",
+          "passed": true
+        },
+        {
+          "name": "pause_resume_new_generation",
+          "passed": true
+        },
+        {
+          "flags": 0,
+          "name": "no_reported_backend_errors",
+          "passed": true
+        },
+        {
+          "dropped": 0,
+          "name": "telemetry_complete",
+          "passed": true
+        },
+        {
+          "name": "timestamps_monotonic",
+          "passed": true
+        },
+        {
+          "name": "measured_render_body_within_buffer_duration",
+          "passed": true
+        }
+      ],
+      "callback_count": 303,
+      "device": {
+        "buffer_frames": 512,
+        "buffer_range": [
+          15,
+          4096
+        ],
+        "channels": 2,
+        "id": "coreaudio:BuiltInSpeakerDevice",
+        "name": "MacBook Pro Speakers",
+        "sample_format": "f32",
+        "sample_rate": 48000
+      },
+      "tone": false,
+      "render_cost_ns": {
+        "p50_nearest_rank": 3625,
+        "p99_nearest_rank": 5500,
+        "maximum": 16292
+      },
+      "timestamp_latency_estimates_ns": [
+        12916667
+      ]
+    },
+    {
+      "file": "hardware-probe-3.json",
+      "sha256": "5b4ade2f8f8ecac1ee0038fbd661a89ec8b38a5570b704c5c73b2c443f8b6510",
+      "status": "passed",
+      "checks": [
+        {
+          "frames": 96000,
+          "name": "steady_complete_pcm",
+          "passed": true
+        },
+        {
+          "name": "steady_no_starvation_or_fault",
+          "passed": true
+        },
+        {
+          "name": "explicit_end",
+          "passed": true
+        },
+        {
+          "name": "seek_new_coordinate",
+          "passed": true
+        },
+        {
+          "name": "starvation_latches_silence",
+          "passed": true
+        },
+        {
+          "name": "pause_resume_full_stale_queue",
+          "passed": true
+        },
+        {
+          "name": "injected_fault_visibility",
+          "passed": true
+        },
+        {
+          "name": "fault_silences_callbacks",
+          "passed": true
+        },
+        {
+          "name": "pause_fault_stops_callbacks",
+          "passed": true
+        },
+        {
+          "flags": 0,
+          "name": "no_reported_backend_errors",
+          "passed": true
+        },
+        {
+          "dropped": 0,
+          "name": "telemetry_complete",
+          "passed": true
+        },
+        {
+          "name": "timestamps_monotonic",
+          "passed": true
+        },
+        {
+          "name": "measured_render_body_within_buffer_duration",
+          "passed": true
+        }
+      ],
+      "callback_count": 346,
+      "device": {
+        "buffer_frames": 512,
+        "buffer_range": [
+          15,
+          4096
+        ],
+        "channels": 2,
+        "id": "coreaudio:BuiltInSpeakerDevice",
+        "name": "MacBook Pro Speakers",
+        "sample_format": "f32",
+        "sample_rate": 48000
+      },
+      "tone": false,
+      "render_cost_ns": {
+        "p50_nearest_rank": 3250,
+        "p99_nearest_rank": 6334,
+        "maximum": 15250
+      },
+      "timestamp_latency_estimates_ns": [
+        12916667
+      ]
+    }
+  ],
+  "tests": {
+    "passed": 753,
+    "failed": 0,
+    "ignored": 0
+  },
+  "source_sha256": {
+    "Cargo.toml": "5074b74d3d41105e00c5389a77bc3c3817d3d6984e233de4aaecebb0ac5b06b1",
+    "Cargo.lock": "e6d5a0ab2e11c0e4544b8d32d7dda50a1d136bc73a9ef79607731edccce1791f",
+    "crates/deadpan-cli/src/doctor.rs": "dbffe839762c79b220920bc23ebcd0ed5cd417190ebc403ca3ea8acde9173075",
+    "native/deadpan-output/examples/qualify_output.rs": "c922efdd157268a63eedc77aee79605d8dabbce8763256364bb4c0e7c3d4fbe4",
+    "native/deadpan-output/src/device.rs": "8e3f298c1499272fedacd1fcf4cb8dc555d9f4672a495d5de1817843b7ed7ecb",
+    "native/deadpan-output/src/lib.rs": "59a4e181eebecbb95b70c7add6c6a0f5243f3a375ad5a9d63e6eeb4f4e902202",
+    "native/deadpan-output/src/queue.rs": "e3a57ab53aa94f033aee6e2dfcabe2b3ce0e487a4552458f8336de9c2dfd88d6",
+    "native/deadpan-output/tests/no_alloc.rs": "0771f08ed73d1472b4064ce81c6834a918a583c98b7c924210699ffd35193e0f",
+    "native/deadpan-output/tests/queue.rs": "efd04b74d67b877c4a9d3554f4a42cd394e34d96e8ece03c30ff6b44d74e23da",
+    "native/deadpan-output/Cargo.toml": "303f76b29c71aa477c81f8463996ce0cf189c741b8e971b93c4d4d384588a3b8"
+  },
+  "probe_binary_sha256": "cc508935edaacad5d656eabc03a07feede50023d5639a952b927312fbaf7b3e1",
+  "probe_load_commands": "target/release/examples/qualify_output:\n\t/System/Library/Frameworks/AudioToolbox.framework/Versions/A/AudioToolbox (compatibility version 1.0.0, current version 1000.0.0)\n\t/System/Library/Frameworks/CoreAudio.framework/Versions/A/CoreAudio (compatibility version 1.0.0, current version 1.0.0)\n\t/System/Library/Frameworks/Foundation.framework/Versions/C/Foundation (compatibility version 300.0.0, current version 5026.5.4)\n\t/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation (compatibility version 150.0.0, current version 5026.5.4)\n\t/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1356.0.0)\n\t/usr/lib/libiconv.2.dylib (compatibility version 7.0.0, current version 7.0.0)\n\t/usr/lib/libobjc.A.dylib (compatibility version 1.0.0, current version 228.0.0)",
+  "notes": [
+    "Hardware probe 1 predates the pause-on-fault fix and stronger contiguous-coordinate assertions.",
+    "Probe 1 callback_cost_ns measured the same partial body as the more accurately named render_cost_ns in later probes; neither includes telemetry publication or upstream/driver work.",
+    "Probe 2 adds stronger sample continuity checks and corrected pause-on-fault behavior.",
+    "Probe 3 additionally covers full stale queue resume and injected permanent fault visibility, silence and native callback stop. It uses the final production behavior.",
+    "Serial numbers, hardware UUIDs and unrelated input-device inventory were omitted from public evidence.",
+    "Ordinary CI never opens a device."
+  ]
+}

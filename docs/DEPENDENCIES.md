@@ -211,6 +211,14 @@ required.
 
 ## Qualification still required
 
+The [prepared output boundary](AUDIO_OUTPUT.md) pins CPAL 0.18.2 and rtrb 0.4.0
+for a narrow macOS device probe. [Source audit](qualification/audio-output-dependency-audit-2026-09-21.md)
+and [hardware results](qualification/audio-output-2026-09-21.md) keep normal
+callback evidence separate from exceptional OS-clock allocation, device changes,
+physical-format side effects, acoustics and full transport qualification.
+[Notices](../native/deadpan-output/THIRD_PARTY.md) retain exact dependency/license
+provenance; these do not establish a signed application distribution.
+
 Gate A remains open. Before adding each executable or native dependency, record
 its exact revision, source and transitive licenses, build configuration,
 supported OS/hardware, measured output, packaging requirements, and evidence.

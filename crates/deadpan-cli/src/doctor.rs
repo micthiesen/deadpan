@@ -17,6 +17,7 @@ pub fn report() -> Result<serde_json::Value, CliError> {
         "partial": ["structural-editing-commands", "sqlite-project-history", "schema-1-through-14-migration", "indexed-picture-plan", "indexed-audio-plan", "worker-dsp-adapter", "source-audio-preparation", "plan-driven-source-pcm", "exact-boundary-selectors", "persistent-marks", "sparse-play-overrides", "nested-occurrence-edits", "persistent-generation-requests", "persistent-generation-attempts", "authored-generated-hold-semantics", "generated-media-conversion", "native-bridge-bundle-qualification", "durable-generated-bundle-acceptance", "durable-original-byte-ownership", "identity-checked-relinking", "persistent-source-decoding", "measured-source-audio-indexes", "independent-source-audio-mapping", "independent-source-video-mapping", "exact-source-stream-placement", "measured-import-timing-candidates", "durable-source-qualification", "atomic-source-registration-and-insertion", "background-import-preparation", "automatic-presentation-basis", "timed-basis-locking", "explicit-canvas-geometry", "shared-sdr-picture-pipeline", "native-source-preview", "native-project-workspace"],
         "time_mapped_pcm": "bounded-continuous-preserve-before-effects",
         "room_tone_pcm": "explicit-source-range-exact-overlap-before-effects",
-        "unimplemented": ["app-playback", "audio-output", "full-keyboard-editor", "timeline-playback", "analysis", "ai-generation", "youtube-import", "export", "distribution"],
+        "device_output": "standalone-macos-prepared-pcm-qualification-boundary",
+        "unimplemented": ["app-playback", "app-audio-output", "full-keyboard-editor", "timeline-playback", "analysis", "ai-generation", "youtube-import", "export", "distribution"],
     }))
 }

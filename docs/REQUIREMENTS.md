@@ -129,6 +129,11 @@ PCM parity, Hold policies, cache changes and shared work admission.
 [Room-tone preparation](ROOM_TONE_AUDIO.md) now loops explicit retained source
 ranges through exact short crossfades, including retimes and repeat gaps. Full
 voice processing, native audio playback, effects and export remain open.
+[Prepared output](AUDIO_OUTPUT.md) adds a bounded generation-aware queue and a
+narrow macOS device boundary, with explicit prepare/activate, starvation and
+fault states. Its [hardware qualification](qualification/audio-output-2026-09-21.md)
+is separate from application playback, full device/lifecycle coverage and
+acoustic or stress acceptance.
 
 ## Product requirements
 

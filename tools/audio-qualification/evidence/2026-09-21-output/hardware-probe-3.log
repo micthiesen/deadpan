@@ -1,0 +1,3 @@
+   Compiling deadpan-output v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-output)
+    Finished `release` profile [optimized] target(s) in 8.00s
+     Running `target/release/examples/qualify_output`

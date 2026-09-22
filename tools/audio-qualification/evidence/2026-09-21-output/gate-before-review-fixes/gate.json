@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "base_revision": "16120b7a90ffb313729bf5f173ec9299453781f5",
+  "started_utc": "2026-09-22T00:43:24.383832+00:00",
+  "checks": [
+    {
+      "name": "format",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 1.474,
+      "log": "format.log"
+    },
+    {
+      "name": "clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 5.44,
+      "log": "clippy.log"
+    },
+    {
+      "name": "test",
+      "command": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked"
+      ],
+      "exit_code": 0,
+      "seconds": 84.456,
+      "log": "test.log"
+    },
+    {
+      "name": "build",
+      "command": [
+        "cargo",
+        "build",
+        "--workspace",
+        "--locked"
+      ],
+      "exit_code": 0,
+      "seconds": 0.596,
+      "log": "build.log"
+    },
+    {
+      "name": "doctor",
+      "command": [
+        "cargo",
+        "run",
+        "-p",
+        "deadpan-cli",
+        "--",
+        "doctor"
+      ],
+      "exit_code": 0,
+      "seconds": 0.324,
+      "log": "doctor.log"
+    }
+  ],
+  "status": "passed",
+  "skipped": [
+    "Native app GUI/startup smoke: no app or UI lifecycle integration changed; output lifecycle is exercised by the separate hardware probe.",
+    "Physical disconnect/rate switch/suspend, loopback/listening and full editing/inference stress remain open."
+  ],
+  "completed_utc": "2026-09-22T00:44:56.680088+00:00"
+}

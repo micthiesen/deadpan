@@ -177,6 +177,12 @@ integration work; these checks do not require GUI or device output.
 
 ## Implementation sequence
 
+Prepared output tests run with `cargo test --locked -p deadpan-output` without
+opening hardware. The explicit `qualify_output` release example opens the
+current admitted macOS output and records callback/seek/starvation evidence.
+See [audio output](AUDIO_OUTPUT.md) for its optional quiet tone, limits and
+dependency audit. Device probes are intentionally excluded from ordinary CI.
+
 1. Read [the specification](spec/DEADPAN_SPEC.md), [handoff](spec/AGENT_HANDOFF.md), and [AGENTS.md](../AGENTS.md). Sections 1–8 define semantics, 12–14 define AI/runtime contracts, 17–24 define architecture, and 26–31 define verification and command details.
 2. Consult [Architecture](ARCHITECTURE.md) for current responsibilities and planned boundaries. Keep the pure core independent; add a crate when working code benefits from isolation.
 3. Work on Gate A qualification alongside the pure Gate B domain foundation. Record decisions with exact dependency revisions, licenses, failures, fixture inputs, and reproducible measurements.
