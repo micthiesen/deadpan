@@ -1,0 +1,29 @@
+[in#0/f32le @ 0x7eac1c000] Estimating duration from bitrate, this may be inaccurate
+[aist#0:0/pcm_f32le @ 0x7eac14180] Guessed Channel Layout: stereo
+Input #0, f32le, from '/tmp/deadpan-master-research/review-tone.f32le':
+  Duration: 00:00:03.00, bitrate: 3072 kb/s
+  Stream #0:0: Audio: pcm_f32le, 48000 Hz, stereo, flt, 3072 kb/s
+Stream mapping:
+  Stream #0:0 -> #0:0 (pcm_f32le (native) -> pcm_s16le (native))
+Press [q] to stop, [?] for help
+Output #0, null, to 'pipe:':
+  Metadata:
+    encoder         : Lavf63.1.101
+  Stream #0:0: Audio: pcm_s16le, 192000 Hz, stereo, s16, 6144 kb/s
+    Metadata:
+      encoder         : Lavc63.1.101 pcm_s16le
+[Parsed_loudnorm_0 @ 0x7eac449c0] 
+{
+	"input_i" : "-18.05",
+	"input_tp" : "-18.06",
+	"input_lra" : "0.00",
+	"input_thresh" : "-28.05",
+	"output_i" : "-24.01",
+	"output_tp" : "-23.97",
+	"output_lra" : "0.00",
+	"output_thresh" : "-34.01",
+	"normalization_type" : "dynamic",
+	"target_offset" : "0.01"
+}
+[out#0/null @ 0x7eac44180] video:0KiB audio:2250KiB subtitle:0KiB other streams:0KiB global headers:0KiB muxing overhead: unknown
+size=N/A time=00:00:03.00 bitrate=N/A speed=19.6x elapsed=0:00:00.15    

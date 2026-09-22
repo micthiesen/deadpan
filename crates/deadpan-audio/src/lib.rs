@@ -1,8 +1,10 @@
 //! Bounded source preparation for worker threads, never an audio callback.
 //! Exact affine sampling and explicit channel matrices are shared by consumers;
 //! continuous Preserve stages retain canonical history across source seams.
-//! Voice effects, mastering and the device engine remain separate work.
+//! Informational peak/loudness meters leave PCM untouched. Voice effects,
+//! mastering gain and the device engine remain separate work.
 
+mod loudness;
 mod matrix;
 mod resample;
 mod room_tone;
@@ -12,7 +14,11 @@ mod sequence;
 mod session;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 mod stages;
+mod true_peak;
 
+pub use loudness::{
+    LOUDNESS_ID, LoudnessError, LoudnessMeter, LoudnessReport, MAX_LOUDNESS_FRAMES,
+};
 pub use matrix::StereoMatrix;
 pub use resample::{PcmWindow, ResampleRecipe, Resampler, StereoBlock};
 pub use room_tone::{ROOM_TONE_ID, RoomTone, RoomToneRecipe};
@@ -22,6 +28,9 @@ pub use sequence::{AudioSourceProvider, SequenceAudio, SequenceAudioError, Sourc
 pub use session::PreparedSource;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub use stages::{StageAudio, StageAudioError, StageLimits, TimeMappedBlock};
+pub use true_peak::{
+    MAX_TRUE_PEAK_FRAMES, TRUE_PEAK_ID, TruePeakError, TruePeakMeter, TruePeakReport,
+};
 
 use std::sync::atomic::{AtomicBool, Ordering};
 

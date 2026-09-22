@@ -142,6 +142,13 @@ fault states. Its [hardware qualification](qualification/audio-output-2026-09-21
 is separate from application playback, full device/lifecycle coverage and
 acoustic or stress acceptance.
 
+[Informational audio measurement](AUDIO_METERING.md) adds shared integrated
+loudness and true-peak meters, generated standard cases and an independent
+[reference qualification](qualification/audio-metering-2026-09-21.md). Meters
+preserve PCM; the failed limiter prototypes remain evidence rather than a
+production mastering implementation. Limiting, reduction reporting and final
+mix integration remain open.
+
 ## Product requirements
 
 | ID | Requirement | Status | Implementation / tests now | Required acceptance evidence still outstanding |

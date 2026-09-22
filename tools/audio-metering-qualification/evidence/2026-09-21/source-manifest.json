@@ -1,0 +1,963 @@
+{
+  "schema_version": 1,
+  "base_revision": "19922f89e40e1f8b3e73b1671c24322f1c9efb4d",
+  "source_files": [
+    {
+      "path": "AGENTS.md",
+      "bytes": 38157,
+      "sha256": "6d3a401fa59374dfcd6fc3f1deef2e95878e56a496b08f1b0cd2d267df9c3460"
+    },
+    {
+      "path": "Cargo.lock",
+      "bytes": 111639,
+      "sha256": "0ed1a0d41505d86a9679b81c13d2087c87f5560ba46658214ef2d4dd759af407"
+    },
+    {
+      "path": "crates/deadpan-audio/Cargo.toml",
+      "bytes": 654,
+      "sha256": "b9bd6eeccc207cd5d1d033f98b4eaa2161dd4519756c0dfb3cd65f2a68e4e817"
+    },
+    {
+      "path": "crates/deadpan-audio/src/lib.rs",
+      "bytes": 2805,
+      "sha256": "ee890f10301e53c5145b0d455dba2bd6b605bbb5918b4b127812f82fe5ca16ca"
+    },
+    {
+      "path": "crates/deadpan-audio/src/loudness.rs",
+      "bytes": 10718,
+      "sha256": "5cb6a31a2381115e3951ecb14052e943dbc95a60f21fa4015e26e3e84b4837b4"
+    },
+    {
+      "path": "crates/deadpan-audio/src/true_peak.rs",
+      "bytes": 6569,
+      "sha256": "6ced3d91cfe6cfe003eabb037a33e4d263ddf4206dfee50736c894fe97c464ae"
+    },
+    {
+      "path": "crates/deadpan-audio/tests/loudness.rs",
+      "bytes": 13075,
+      "sha256": "d746581a5b511dc9a3b350c097c43e714b867fcc228462968dc5bdece969bf42"
+    },
+    {
+      "path": "crates/deadpan-audio/tests/true_peak.rs",
+      "bytes": 7888,
+      "sha256": "376a463b07cb669266ad3771fa630fe4bd31e2a4809b8b92232038694161c482"
+    },
+    {
+      "path": "crates/deadpan-audio/examples/measure_pcm.rs",
+      "bytes": 3598,
+      "sha256": "374da0691f68e50f1370182c761fd2780f7ae9298b5a39d2a49f0cd22ba27528"
+    },
+    {
+      "path": "docs/AUDIO_METERING.md",
+      "bytes": 5263,
+      "sha256": "f335665aecfad9cd79160b338e5ef648f36b50bb66054c7e54e70e832bbfc8c2"
+    },
+    {
+      "path": "docs/qualification/audio-metering-2026-09-21.md",
+      "bytes": 9900,
+      "sha256": "091dd9de1237317e89719adbe8fc1a33d2cb1f677c2a91b97137e02fd83eca26"
+    },
+    {
+      "path": "docs/ARCHITECTURE.md",
+      "bytes": 15245,
+      "sha256": "14c0797575e4be1e3ac107ba108865435fd4681a924e367a70f4ee7de25343cd"
+    },
+    {
+      "path": "docs/DEVELOPMENT.md",
+      "bytes": 15041,
+      "sha256": "4fbc955b748f22bd702867cd6fc70c97221a22896cc67685eea131cd59bfefc4"
+    },
+    {
+      "path": "docs/REQUIREMENTS.md",
+      "bytes": 29406,
+      "sha256": "9933b26395d6657b96d662520139dce9b387ec2884c4c358b4478ef57f1289a9"
+    },
+    {
+      "path": "tools/audio-metering-qualification/run.py",
+      "bytes": 10797,
+      "sha256": "c6521b51261b28fffa1a5eee497fe53bb0ee5f9267b70c26e78b60028d657a1d"
+    }
+  ],
+  "evidence_files": [
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/development-failures.json",
+      "bytes": 1879,
+      "sha256": "b7ecec485c28509aea9b172fe7c9237ad760d8336e354bbb9d66af5b06fb5784"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/environment.json",
+      "bytes": 1224,
+      "sha256": "46106f97d0b5cbf3cb9989ba8ece2f0a55751c44c1a6dc0672c43f8b4d6508de"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/gate/build.log",
+      "bytes": 72,
+      "sha256": "efbe714146cf8404a1c2e821df4515a2b9795f4e550aee5db4cc65144a93763e"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/gate/clippy.log",
+      "bytes": 320,
+      "sha256": "1b2b21c1d8f0774872c8385d5d244087d0d388c004db5c7b850bcb7c36a0931e"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/gate/doctor.log",
+      "bytes": 2278,
+      "sha256": "8e050e92591419ed8eb88ff59528781cafdc226a00dc897bcc983e54d96d2d02"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/gate/format.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/gate/gate.json",
+      "bytes": 1498,
+      "sha256": "24aba79ff7bebcdee7cb9e659a6f8ec9483f6a226ea06102d755279b65f09293"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/gate/test.log",
+      "bytes": 81702,
+      "sha256": "7dfa2734d280468f7315d280ae424b2075dde2d165f495f8d86f110f98bc0a24"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/gate-final/build.log",
+      "bytes": 72,
+      "sha256": "4618eeba4e21359898995b7f544b56cd4d474efe9641525e1447388aaa8fabe6"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/gate-final/clippy.log",
+      "bytes": 157,
+      "sha256": "9df5e4f56c1dc3b397a91c706f508bce6ca7bf1fdc7e40661457174355c15b91"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/gate-final/doctor.log",
+      "bytes": 2196,
+      "sha256": "05fe68c68f5ce3c3e0c600c99adda868271be1971c8e43296a879b3dc74d5eb1"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/gate-final/format.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/gate-final/gate.json",
+      "bytes": 1497,
+      "sha256": "148584ea78d3e673db0237a37a2a7805e4e7b479e446a5eaa87f45a91d75cfa6"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/gate-final/runner.py",
+      "bytes": 2068,
+      "sha256": "e3c5a26d183274803dffe445639df531ee6b173294b73fa7d2aded080ca78ec2"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/gate-final/test.log",
+      "bytes": 81096,
+      "sha256": "367f2c9c3a95a89f615479072c9a2de30e2b23ad05c25a7cc4ff3863aa596582"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/limiter-research/ideal-sinc/README.md",
+      "bytes": 7364,
+      "sha256": "4def699bc2a90a6e51c379401f6d76ed318df4b33000352ba3fb7237d2317e13"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/limiter-research/ideal-sinc/check_oracle.py",
+      "bytes": 3968,
+      "sha256": "58f0d07bc02b481cf541c0de73c7392967b519bf28c4c26e690c1f718c0fcce9"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/limiter-research/ideal-sinc/checks.json",
+      "bytes": 4253,
+      "sha256": "2eec8c47292f0842dc1d03036f07a4eb3b83647be5910130ec774e98fe621b2b"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/limiter-research/ideal-sinc/environment.json",
+      "bytes": 2673,
+      "sha256": "f2978912dc63c77017d51536119f8b6d8db6dd4627c54b31c7e5cff681b5160d"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/limiter-research/ideal-sinc/inputs/alternating.wav",
+      "bytes": 65580,
+      "sha256": "ca41ec840d006f01fc6fbb67433b777c28a51ee82b2b09f21e2b9f9afe909b67"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/limiter-research/ideal-sinc/inputs/edge-burst.wav",
+      "bytes": 65580,
+      "sha256": "21df778aaddff2ede96589ae406a3e906488b4ee26f70671c13f54ac2b4ae5dd"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/limiter-research/ideal-sinc/inputs/impulse16.wav",
+      "bytes": 65580,
+      "sha256": "2309ce1800ec5eb113ed7739edf6a360e51a0871e4e4b836b03dc7a8925f3118"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/limiter-research/ideal-sinc/inputs/prototype-kaiser256.json",
+      "bytes": 10856,
+      "sha256": "24ea5c368651d726a893a84faf4b827f6b25aba1b0b5a8a5bc243a09841262e7"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/limiter-research/ideal-sinc/inputs/prototype.py",
+      "bytes": 3891,
+      "sha256": "580a42b0283f8aee2ba5e98ecb2f58da0d255d4162f8be544d8300dfcd33a1ab"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/limiter-research/ideal-sinc/inputs/random16.wav",
+      "bytes": 65580,
+      "sha256": "2ee63b0d08c9e0d96af88e8bf46c2f08583d5eb0724fc38f51e6bb0181f5058d"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/limiter-research/ideal-sinc/inputs/tone-12000-0.1.wav",
+      "bytes": 65580,
+      "sha256": "0925244554e41f0fc2281233ea8378b3fd36b876ce85435322f6f9c84724f7bf"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/limiter-research/ideal-sinc/inputs/tone-12000-0.86.wav",
+      "bytes": 65580,
+      "sha256": "dc1b345d7e1ebfd861baa2111f826527c6d993b010f23d232297a83490416606"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/limiter-research/ideal-sinc/inputs/tone-12000-1.wav",
+      "bytes": 65580,
+      "sha256": "10d5b1393c20b643cf69389ca856ef8657351206c2675f2dadc9e473142bd471"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/limiter-research/ideal-sinc/inputs/tone-12000-16.wav",
+      "bytes": 65580,
+      "sha256": "19e00c1d3c2c68bd2ed42525f015867d29154123629fff2168ab5e93543a4244"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/limiter-research/ideal-sinc/inputs/tone-12000-4.wav",
+      "bytes": 65580,
+      "sha256": "18432c97e2553aa2e08495462a4c704d18c8e5774cc2b20b9c3af51fbff91611"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/limiter-research/ideal-sinc/inputs/tone-200-0.1.wav",
+      "bytes": 65580,
+      "sha256": "8c1191ec193b7c2e08c15301c60039b12722b0d7ae8cdf803e3ffc55aca14521"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/limiter-research/ideal-sinc/inputs/tone-200-0.86.wav",
+      "bytes": 65580,
+      "sha256": "9e755bbdb304312a7023a40ea343fe3ea02d5650a4ddd4585b609e778be1874d"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/limiter-research/ideal-sinc/inputs/tone-200-1.wav",
+      "bytes": 65580,
+      "sha256": "db3a75c02a489f9719a23f64d7754375ed38d3c247430a8ac398e7420c58968a"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/limiter-research/ideal-sinc/inputs/tone-200-16.wav",
+      "bytes": 65580,
+      "sha256": "55dd37bc7c779156975877fffb3c14d415526f855e17492050262d5ac56465c2"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/limiter-research/ideal-sinc/inputs/tone-200-4.wav",
+      "bytes": 65580,
+      "sha256": "ed45ba4dff16c2818cf156c3ff7d8f9fbe2a88761e80536237b331a8c2179c54"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/limiter-research/ideal-sinc/inputs/tone-21600-0.1.wav",
+      "bytes": 65580,
+      "sha256": "f18156557a9bd4fe8550e46f42c52ffa093806a5b8730949c7a62ad5ab4206e6"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/limiter-research/ideal-sinc/inputs/tone-21600-0.86.wav",
+      "bytes": 65580,
+      "sha256": "a23b56ecc31b1cb5c28e79b3f44938340ef17fd39dd26197d4f442890e7fca58"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/limiter-research/ideal-sinc/inputs/tone-21600-1.wav",
+      "bytes": 65580,
+      "sha256": "2b39f4a02720e5a7c0c8917e2919631a799921e1ca12cd3aa4652dc86a4be05e"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/limiter-research/ideal-sinc/inputs/tone-21600-16.wav",
+      "bytes": 65580,
+      "sha256": "67d8b3434c5b43fe7c86c62b2869f6d25124d6c1e0945c2bed3f0e5aa11b5d67"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/limiter-research/ideal-sinc/inputs/tone-21600-4.wav",
+      "bytes": 65580,
+      "sha256": "543fbfd240afa635ac586dc64d2d417480a3d26b303c8648620bcea2578c9d7b"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/limiter-research/ideal-sinc/inputs/tone-23000-0.1.wav",
+      "bytes": 65580,
+      "sha256": "4e056041a4a4338d63a47377274282006d08c906a465ef915deb342018bdb3bf"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/limiter-research/ideal-sinc/inputs/tone-23000-0.86.wav",
+      "bytes": 65580,
+      "sha256": "6cb8ac688cd0c967ff37af9c40bc07dbf9cd6fa95c55604cc7ebf2bc5e53de67"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/limiter-research/ideal-sinc/inputs/tone-23000-1.wav",
+      "bytes": 65580,
+      "sha256": "b760c05b01f4f1d1c9def6d0d28367de58d15e5c3b53dd0390d52484bcccfea4"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/limiter-research/ideal-sinc/inputs/tone-23000-16.wav",
+      "bytes": 65580,
+      "sha256": "fb6f44d847ac4eb19f050940d119669f175282de538e796195a01daa0566f914"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/limiter-research/ideal-sinc/inputs/tone-23000-4.wav",
+      "bytes": 65580,
+      "sha256": "148c55f2f12b3f39f2545d2b5fec8f29ffd98f603aeb9a185c97a41bbb0e91a0"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/limiter-research/ideal-sinc/inputs/tone-23990-0.1.wav",
+      "bytes": 65580,
+      "sha256": "826ccc7d896f9a0cdc7dee2553b29dfc10e6e85cd4b64b17c05aea802686c9da"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/limiter-research/ideal-sinc/inputs/tone-23990-0.86.wav",
+      "bytes": 65580,
+      "sha256": "2aa8d4b319b054f592802e305dec4e3fd586aa5c0ef61a5b90a99337ab021183"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/limiter-research/ideal-sinc/inputs/tone-23990-1.wav",
+      "bytes": 65580,
+      "sha256": "cfa868f6de5bbceeebb3c4576d142fbf2a352654a841b72bfbe38cf6b00d4892"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/limiter-research/ideal-sinc/inputs/tone-23990-16.wav",
+      "bytes": 65580,
+      "sha256": "bde934d70904c8f21e9a46b5f72568cfa5c2bc430b54cf9d060dc4d4790b6ff1"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/limiter-research/ideal-sinc/inputs/tone-23990-4.wav",
+      "bytes": 65580,
+      "sha256": "c697bbc07acfce87313764a8b248b6efc51d07d969a7927084e926259a14b970"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/limiter-research/ideal-sinc/inputs/tone-3000-0.1.wav",
+      "bytes": 65580,
+      "sha256": "82c69186679ab5f3e0ca6911a0ba1c19e7cdfb1902dc50ea035fa1927e6fbe5b"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/limiter-research/ideal-sinc/inputs/tone-3000-0.86.wav",
+      "bytes": 65580,
+      "sha256": "d861a5f9ef6b5e0177b4de4fcd16f1be20afb5108317a0c411a89c0eca9ffd5a"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/limiter-research/ideal-sinc/inputs/tone-3000-1.wav",
+      "bytes": 65580,
+      "sha256": "9e0717b404135b86adaaacf0760e419bb9875cd6f7c9a20afcfdc12346a3a527"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/limiter-research/ideal-sinc/inputs/tone-3000-16.wav",
+      "bytes": 65580,
+      "sha256": "1ffa209b4f22fe9e9d2d28ac383de76a2948cd87e12efbf662af72da958daa35"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/limiter-research/ideal-sinc/inputs/tone-3000-4.wav",
+      "bytes": 65580,
+      "sha256": "ad1937155d306de65301d2baa0492199ecfcc492fa6a3e7377b5896ea43b18b7"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/limiter-research/ideal-sinc/inputs/two-positive-full-scale-samples.wav",
+      "bytes": 65580,
+      "sha256": "1a001dd1b31ddf840b51c524fb29d468ae8c96f0507ba1af1a032f909aff0b8b"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/limiter-research/ideal-sinc/oracle.py",
+      "bytes": 11958,
+      "sha256": "d5e8166bdf9b2e71d6b7a9c4fa3e3cb5dcafdc304ebe93a563bae82d2ece209e"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/limiter-research/ideal-sinc/results.json",
+      "bytes": 200512,
+      "sha256": "1226909933c2c515fbed8dcb87e46979c7830f05bdc9226d557bcc07b04e234c"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/limiter-research/ideal-sinc/support.json",
+      "bytes": 6739,
+      "sha256": "efcb3b95aa0c5d77a4524abe9f0f65fb7c6707d09ab999bf182af7ac129ace47"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/limiter-research/ideal-sinc/support.py",
+      "bytes": 1438,
+      "sha256": "3bacc5b0e6b5f2fc24e1f2e9a2f1115be5ed22d836f72c11bfbb1ff30a09cd45"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/limiter-research/initial-prototype.py",
+      "bytes": 3355,
+      "sha256": "2bb37655b21e3878f7d239e25e28d9bb477493d18f869bcb90961c8c278f821a"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/limiter-research/prototype-128.json",
+      "bytes": 10853,
+      "sha256": "2766ed660a965a1266f448f6749b2fc235a7f53b1e32936ce2d28c8444727d02"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/limiter-research/prototype-64.json",
+      "bytes": 10825,
+      "sha256": "04d739630a82f126f7ba14ed5418ac01736e92af9a8d525f318dcc49262fccad"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/limiter-research/prototype-kaiser256.json",
+      "bytes": 10856,
+      "sha256": "24ea5c368651d726a893a84faf4b827f6b25aba1b0b5a8a5bc243a09841262e7"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/limiter-research/prototype.py",
+      "bytes": 3891,
+      "sha256": "580a42b0283f8aee2ba5e98ecb2f58da0d255d4162f8be544d8300dfcd33a1ab"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe/below-gate-reference.log",
+      "bytes": 1136,
+      "sha256": "586b8c143c70fccb70e7ae120b9040f4b7786f73b163a9c3c20cce4a46086642"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe/below-gate.json",
+      "bytes": 822,
+      "sha256": "6c17ed2cf36acfb70f5ce055ddccdf5e33d7f15eb798e34933fc64a8f2a3b1d1"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe/ebu-1-reference.log",
+      "bytes": 1131,
+      "sha256": "80337b36ab94039f5e59139a93c84c793f5ed9abc031353368aa35c2d208a7ee"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe/ebu-1.json",
+      "bytes": 847,
+      "sha256": "dafd768b1c0baeaf16ea58bc5654bb7a6e3b6c24da4a2fec8e3103ca4cdf84cf"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe/ebu-15.json",
+      "bytes": 743,
+      "sha256": "803edc0a4ae5ceca444a6439285cb09d428f3777b3622252e49c93983319760c"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe/ebu-16.json",
+      "bytes": 804,
+      "sha256": "d4274ad3660dabe632dec36a0ef378b53ab0e30c0a0fcf5b7214db4b4fac1f14"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe/ebu-17.json",
+      "bytes": 805,
+      "sha256": "d3783232a6b67e5a13ff609968eb02c9f1783df3991478e4a86ef0c785591e2e"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe/ebu-18.json",
+      "bytes": 805,
+      "sha256": "22eb3bbc88abc20b3e66cc8464a96cd3d419b9dcdfd1c08d67813e47a175f15e"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe/ebu-19.json",
+      "bytes": 803,
+      "sha256": "22041acfff938d1b2fb2c7f56a84e0e7c57f741d60fa096aa5e88f349df1b069"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe/ebu-2-reference.log",
+      "bytes": 1131,
+      "sha256": "197690f642f94c7fcd76e2b6fd00fae088adafdf345f845c20fab9b2c93a2e26"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe/ebu-2.json",
+      "bytes": 843,
+      "sha256": "b0d7ecf5018adb1648b7751709465e1a59397cb5050b99549f7a60a3219c8fb9"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe/ebu-3-reference.log",
+      "bytes": 1132,
+      "sha256": "084903e82da142651d72bde3c47c164069b525745f58e1118faad9a6e5a23c14"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe/ebu-3.json",
+      "bytes": 848,
+      "sha256": "6646bea47608ea7af36463ad2a9b579186631cafbd8ee179228520d6f5154506"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe/ebu-4-reference.log",
+      "bytes": 1132,
+      "sha256": "864aef9abda98383f7a04d4fb56fd5ebc71b5b041b04ba3d8b62d30ef1110680"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe/ebu-4.json",
+      "bytes": 848,
+      "sha256": "36af9d568fd75dcb5791716d2d77badc80e54df7f11e15fb88f8970ee6b7ab7f"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe/ebu-5-reference.log",
+      "bytes": 1132,
+      "sha256": "0ad6d59de63adb3962fd8ee15b69a4c45d7a7de243dde0a82f7794aa9c009d6b"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe/ebu-5.json",
+      "bytes": 847,
+      "sha256": "d3a7b7ecf776170199a05f05127b0284e21d6e365aaa42b8dc0571842f3e811b"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe/empty-reference.log",
+      "bytes": 1230,
+      "sha256": "5d4dabe28dbc639101e3a355398cf80392ff9f8024f7f2a1490c004bc5d3daf9"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe/empty.json",
+      "bytes": 706,
+      "sha256": "d9559ecb54c8ccf3cef3936bfc24485a3f507ac7fb8389bcd1c147a58ca0d595"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe/ffmpeg-version.txt",
+      "bytes": 824,
+      "sha256": "4db45f7e79a457642a487a65a67bfe6be66b0cee1bd461fa5b432b373cdfbc0e"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe/high-10000-reference.log",
+      "bytes": 1136,
+      "sha256": "361f68aa6aabf707214be258355c938a399a259b1e8c0011a578338a09c0f421"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe/high-10000.json",
+      "bytes": 840,
+      "sha256": "b5f22561155c54e255e3920aa1e05e979820e016a994ca84ba759eccd6a8857e"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe/inverted-reference.log",
+      "bytes": 1134,
+      "sha256": "2dec3d6b05ceedfef06bf9519e3c504d2f4af432b83f6c21bb52f9466a200a8c"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe/inverted.json",
+      "bytes": 843,
+      "sha256": "717c09f044896ab0ef3875bb0126af53452f24d428ac1dae9015de103d3a5ed3"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe/low-20-reference.log",
+      "bytes": 1132,
+      "sha256": "578509e0abe913e62a2e07db4c6ca27d321d7c56751a47335b08b4a3892c3f5e"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe/low-20.json",
+      "bytes": 841,
+      "sha256": "dcd62c6382872c09646f17278185ec488671f1a9a6a81caae8f49732a96d3c4b"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe/mono-997-reference.log",
+      "bytes": 1134,
+      "sha256": "e432cb1d2d1bc3f4449be7fb6422804b96097ee7792900b664119d2a4c153eb8"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe/mono-997.json",
+      "bytes": 780,
+      "sha256": "a9db9c2f8b83fe848bd11469e75cce40631526165076792e91e05d8cb65d6c49"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe/qualification.json",
+      "bytes": 26821,
+      "sha256": "af1be9eaa69a98eee5c353be7d5b896774dd32625d6fb357fad17b03b93fda10"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe/short-reference.log",
+      "bytes": 1129,
+      "sha256": "66c1aa3943f05c4a0996a23ac7b3ae9d35b0de4ec5b92139e496a2c3b172551d"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe/short.json",
+      "bytes": 811,
+      "sha256": "728a13556c0a3858f79fc302229f6ca7ba9d552c0ffa9da21370af31858f16ec"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe/silence-reference.log",
+      "bytes": 1133,
+      "sha256": "95790071cc5f1143fa2880c3542687ffb8c8fc95d208cc62ef6b064fdd632531"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe/silence.json",
+      "bytes": 720,
+      "sha256": "5d74746f1ccb1468ebc28a110bd7a32fcf86846c3fd10618b69a96c9e13a80bf"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-comparison-failed/below-gate-reference.log",
+      "bytes": 1136,
+      "sha256": "38fd0b5ca0c9853f75515ca3a8ecd27bf380be118a0fffe98f46aa9afbd1de24"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-comparison-failed/below-gate.json",
+      "bytes": 821,
+      "sha256": "52beba41f32cdbe2e245536ad5c6ba107bd1f6d61e97567497be46cc38b99543"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-comparison-failed/ebu-1-reference.log",
+      "bytes": 1131,
+      "sha256": "39b697890c5e3f84f979d75cc4ef2b061d21b2077e77a0b4afe2010d2caf6218"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-comparison-failed/ebu-1.json",
+      "bytes": 847,
+      "sha256": "c6a4a2a6b41c837f6391d031065331e1bc635c5199583f94f0a09895033ed652"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-comparison-failed/ebu-15.json",
+      "bytes": 743,
+      "sha256": "ce29120d0c8ec5dfb0f915a11802e1bf9c841498c9b8779042b19e0c90d1e24f"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-comparison-failed/ebu-16.json",
+      "bytes": 802,
+      "sha256": "479f65a4fee5d19e8c76e79983a409647ab663590d1464741b8b4a8624c5d819"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-comparison-failed/ebu-17.json",
+      "bytes": 805,
+      "sha256": "71a52b935185169b8904dd45db0916d574eb6f2e341083d5666f2fa79906ce8a"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-comparison-failed/ebu-18.json",
+      "bytes": 805,
+      "sha256": "ef1662ddb948896e4c88daa985c3f415130a706cd783269c86c04fbe471b3928"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-comparison-failed/ebu-19.json",
+      "bytes": 803,
+      "sha256": "aa1d8faee66888b23af9366ee0d373447f3e66c612af82b0106b30ee1d34559c"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-comparison-failed/ebu-2-reference.log",
+      "bytes": 1131,
+      "sha256": "2371d49d78cb50d5348c4b711cd7925daea13fabd3d4a0bda655cd84b0a87395"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-comparison-failed/ebu-2.json",
+      "bytes": 843,
+      "sha256": "dc312363d6a57f2e96757bdad35a9db8f5c611820ac5905511dc4730f549f472"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-comparison-failed/ebu-3-reference.log",
+      "bytes": 1132,
+      "sha256": "6d342a5ce2252cbd398ae82a6a2e76f34586765cea8e4485a945a00e1cc1d9d2"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-comparison-failed/ebu-3.json",
+      "bytes": 847,
+      "sha256": "f05eec7474ef6b194b5e0ec035ace4af344d92e9ca4e2f014eef2183821cdd21"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-comparison-failed/ebu-4-reference.log",
+      "bytes": 1132,
+      "sha256": "29812366c90fd3deeeaecc467e60a77c9894765cc2b695987fbfdaa24805a6f4"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-comparison-failed/ebu-4.json",
+      "bytes": 849,
+      "sha256": "ddb485690940a3df2347fa12baeb3293a97490942fba5f96dfb79120c1ff73fc"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-comparison-failed/ebu-5-reference.log",
+      "bytes": 1132,
+      "sha256": "0a26637dbbd45fcdb25d137faf21c12da352438132678bd8c1fa9b0c313c89f6"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-comparison-failed/ebu-5.json",
+      "bytes": 844,
+      "sha256": "1fc40f55633c239691e8703ee44f2a1b499d528b23b56e1d97df04e8801c2a0f"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-comparison-failed/empty-reference.log",
+      "bytes": 1230,
+      "sha256": "019d132adbe890171472feb13d9a2f794737a2dcc878855ca0ce3cee8edc193b"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-comparison-failed/empty.json",
+      "bytes": 706,
+      "sha256": "a6b6c42183d00cd27cb2b1ac5007d3578051ab97a08c3ec63411561bc70d92d7"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-comparison-failed/ffmpeg-version.txt",
+      "bytes": 824,
+      "sha256": "4db45f7e79a457642a487a65a67bfe6be66b0cee1bd461fa5b432b373cdfbc0e"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-comparison-failed/high-10000-reference.log",
+      "bytes": 1136,
+      "sha256": "870097bdabcf936517bdc598ea995b680760cbec88b2acc3c33016cce643cf54"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-comparison-failed/high-10000.json",
+      "bytes": 841,
+      "sha256": "82164f5d4e452ae89ebee5f26941d2ddc1293e16ec6177f1e3e05e9a97424b6d"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-comparison-failed/inverted-reference.log",
+      "bytes": 1134,
+      "sha256": "3b8369111996afc62b4f7482f77f28ae9ad57b856999cad92ba28f3d1f0a7380"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-comparison-failed/inverted.json",
+      "bytes": 844,
+      "sha256": "97d06a3983116df7f273adad3261b37e0dfc5d2f07262e8f4f85b276db82bb99"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-comparison-failed/low-20-reference.log",
+      "bytes": 1132,
+      "sha256": "f024baa9984f734749f9f2d27cc01c3d0f230db6d0e823185c565d21e06927d5"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-comparison-failed/low-20.json",
+      "bytes": 841,
+      "sha256": "1b7e79189540a29a19390e9a23b3b6c387832ab64fe57a6d377c16f580d8842a"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-comparison-failed/mono-997-reference.log",
+      "bytes": 1134,
+      "sha256": "fdb852a0ae0407d5fec4fe7c358a12a29e0611495ed996a512d9bdd093cef4ca"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-comparison-failed/mono-997.json",
+      "bytes": 780,
+      "sha256": "8529c2c3fb928b8ebf0787b36297197ce67544d1eddf85c7a58ece60dbc01c7f"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-comparison-failed/qualification.json",
+      "bytes": 27519,
+      "sha256": "c8830a72a34ce7fcf88025fdceefe8e570bfb3a638658bc98521e3a987b710ee"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-comparison-failed/short-reference.log",
+      "bytes": 1129,
+      "sha256": "7c2111659ca46d9776db8389aeb377f18dce2c3a39c581bdba416073dc4f0290"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-comparison-failed/short.json",
+      "bytes": 811,
+      "sha256": "f3444b2b66f827dda9ae8d7816658d86896e7a79a48cb60a4a490e9a89d775df"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-comparison-failed/silence-reference.log",
+      "bytes": 1133,
+      "sha256": "cb933cc0c2b20bdd1be1f089607a09529d30aa1b7c537f783a1ee0f488f9b846"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-comparison-failed/silence.json",
+      "bytes": 720,
+      "sha256": "3ff8c7343ffb714c05d6081b203b31638231380db86d1da76d67925585abee61"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-final/below-gate-reference.log",
+      "bytes": 1136,
+      "sha256": "c3cac50fc409590d787f7c20f4b34756bef3cdf49712bb9b14d3dac6acabb2d5"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-final/below-gate.json",
+      "bytes": 822,
+      "sha256": "077039421601f0350feb49d8b32b900c92238d00561d858204debd603bc60dc0"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-final/ebu-1-reference.log",
+      "bytes": 1131,
+      "sha256": "c8edf6477e2d417eab77f6ec243aa6e0af9428bb4d571a2fd9f4b6e955c3cb69"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-final/ebu-1.json",
+      "bytes": 847,
+      "sha256": "7ffcd6b24bcd282579fad5970cbf687b2eeb73baf05bc2d56111e7acd0bd6efe"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-final/ebu-15-reference.log",
+      "bytes": 1130,
+      "sha256": "e913764a92907a23ade688588d9d381944777b6a1738649ffedb0ae85182365f"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-final/ebu-15.json",
+      "bytes": 743,
+      "sha256": "458d6132731d96ec4c7eb5d580fe10bbc3d022c21dfedf36f8885016dacf91a5"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-final/ebu-16-reference.log",
+      "bytes": 1130,
+      "sha256": "c44771573a58e43699a6e7355610705229b2e3ed345a979577c6f8aa2e4234f6"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-final/ebu-16.json",
+      "bytes": 805,
+      "sha256": "249dddfb7e1f694a27b2e9fd547eb14e3cae3b4ea1b35f54181bf1e387ab8d23"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-final/ebu-17-reference.log",
+      "bytes": 1130,
+      "sha256": "732a2cbb5c0efc88ba5a85fcab7f770acbf8338d74852448f73202546ada6d7d"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-final/ebu-17.json",
+      "bytes": 805,
+      "sha256": "7f50b57ca80d4d7bfbdbada176e4e981af09c88bfda90a93fcba08fe247d7146"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-final/ebu-18-reference.log",
+      "bytes": 1130,
+      "sha256": "342d6451536d65ff774716910ef7efdbdd29b50e0bc142e698c6e26325163579"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-final/ebu-18.json",
+      "bytes": 805,
+      "sha256": "06d85bd980e52129144b5dcab8a5055ab06439b46ecb8c5307a51b8025da31cb"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-final/ebu-19-reference.log",
+      "bytes": 1130,
+      "sha256": "69c91266b9e6923e49bab26ff5456b62c31a6f4eef25de94c1fd6ab25092e72d"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-final/ebu-19.json",
+      "bytes": 803,
+      "sha256": "25f8a9f8904a4b3ccb6955a76142df80f62458d30d2a1b004d88a9b18d6a6aa0"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-final/ebu-2-reference.log",
+      "bytes": 1131,
+      "sha256": "3036249411710342f0acac1434fc09b3f5111065a349ec7dfde3477449f40b42"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-final/ebu-2.json",
+      "bytes": 843,
+      "sha256": "e30ca0586050e75055e71fd2e469a0c807b2d4e44eca76249693ab84f498cc71"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-final/ebu-3-reference.log",
+      "bytes": 1132,
+      "sha256": "ad4f8d8ae496dc16a71cae4a62329b51154fab05a9c00d9472d049b3a5d8c094"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-final/ebu-3.json",
+      "bytes": 848,
+      "sha256": "3f4258ce2b4887dac87bf9832ad9e64163f2441066b9eb35971a64ed6c7a9cf9"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-final/ebu-4-reference.log",
+      "bytes": 1132,
+      "sha256": "6383ef40e141e29e8b5f1b0a6a462c1f7e62cdcd46b2cc146cae786f53961208"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-final/ebu-4.json",
+      "bytes": 848,
+      "sha256": "b381bee6d3ef21ca694b3e22f8775e8ff7a630f5519a91b4a30162a9327681d7"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-final/ebu-5-reference.log",
+      "bytes": 1132,
+      "sha256": "c4f35114f731bd0e668b450bef8d2154f94e8322f8660bcae1d48cc68dab6a95"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-final/ebu-5.json",
+      "bytes": 846,
+      "sha256": "e5fdb6336ceabbcd7c1f9d5d7f391dcb48dd0ad7c3a9ac0ec9c0922ec15acc37"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-final/empty-reference.log",
+      "bytes": 1230,
+      "sha256": "f7df097914b8fa1a2128d534252ce08b648958d7270eefb26e63105f9877001e"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-final/empty.json",
+      "bytes": 706,
+      "sha256": "cd74bde3fd438adb556d85a739d2f9efd7f71fcf0d56c3f2b9b017b31f214c06"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-final/ffmpeg-version.txt",
+      "bytes": 824,
+      "sha256": "4db45f7e79a457642a487a65a67bfe6be66b0cee1bd461fa5b432b373cdfbc0e"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-final/high-10000-reference.log",
+      "bytes": 1136,
+      "sha256": "1c431b7a036cd18dce8905d0bc476a2eca6b90779ac14db21a08cb866a247c99"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-final/high-10000.json",
+      "bytes": 838,
+      "sha256": "513ce2bb33e2e45f13f9dc3e3cc35fb5f9d012d50f23ab824c4d7dacb8d7938d"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-final/inverted-reference.log",
+      "bytes": 1134,
+      "sha256": "2f3ab6613083eeb505619644bffd0e0585b406ee0fa3774e15ad67c96bf4f825"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-final/inverted.json",
+      "bytes": 842,
+      "sha256": "11eab45fc5ba0b13e75118241b4c628e4d1bd0040826c2b8c030aff2c17c88bf"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-final/low-20-reference.log",
+      "bytes": 1132,
+      "sha256": "0292c09656bf7e07e4d3a7dd4af629c1656dbcb694dbdb6fd1506b72cf77ab50"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-final/low-20.json",
+      "bytes": 841,
+      "sha256": "e27d0b9054becccbf44211a1ddd0833917400491ad9dfc6d844daf01e9a1988e"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-final/mono-997-reference.log",
+      "bytes": 1134,
+      "sha256": "2ad15644043f8060a299ca13ac2b5e83b11d40839681a5e7b610a7192742255b"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-final/mono-997.json",
+      "bytes": 779,
+      "sha256": "ad44ab06f4d650993cfe92ab94ac205f7dac1652982b14916b3a813b8e260dd0"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-final/qualification.json",
+      "bytes": 29470,
+      "sha256": "e45df00bca30b95d3afd8474cef212e9840785122bcff07f98f5c8b3a948cfcc"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-final/short-reference.log",
+      "bytes": 1129,
+      "sha256": "946d19ab3d431e64a07f62dab3a203a7553d2977d0c4882ff851d64b74ef9eaa"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-final/short.json",
+      "bytes": 809,
+      "sha256": "a2d6e83a47a83c93f37c9acbbcb37f9f3e3529e05dffb9ee7f63dff4066f297d"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-final/silence-reference.log",
+      "bytes": 1133,
+      "sha256": "8973ff3773e01a43f697108abd443e487ad22c23f8b5a4c7b8380556c9f5f419"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/probe-final/silence.json",
+      "bytes": 720,
+      "sha256": "a91eeef5d1f00428e2249ca3552305b74bdf66ab984504cfe0252497ab18da7a"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/review-reference/check_10k_sinc.c",
+      "bytes": 1568,
+      "sha256": "b5845bbf9500c7915e9342e26819e1b5576daa6b9bfd4245f86a84e5ecba656d"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/review-reference/high-10000-ideal-sinc.txt",
+      "bytes": 1030,
+      "sha256": "e89c74a1b90e289dc81b6626acef4b66692eee035e08332348a0ad63256a7042"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/review-reference/input.json",
+      "bytes": 291,
+      "sha256": "542bd981958c7af956281b0c1b44505c9da005f79004ffb7ee9d4d3f61407cd2"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/review-reference/review-tone-ffmpeg-loudnorm.log",
+      "bytes": 1152,
+      "sha256": "516fbe9355682fa4f6f27b28795079e0b930591886aacf1e494ecfd465905479"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/review-reference/review-tone.json",
+      "bytes": 842,
+      "sha256": "f03b24236fea97365448b993d8de52130a7352cd50f32787e1d90745c65a45c6"
+    },
+    {
+      "path": "tools/audio-metering-qualification/evidence/2026-09-21/review.json",
+      "bytes": 2237,
+      "sha256": "8b29667b34aa207fb9728c81e26a3e9eb80457ccb5b67293d0924b8fd8b85769"
+    }
+  ],
+  "measured_binary": {
+    "path": "target/release/examples/measure_pcm",
+    "bytes": 514384,
+    "sha256": "97216bd091c1f54b769ccfa0c709590fd03ae7e095b94e7fd12a2dc3ba78eaae"
+  }
+}

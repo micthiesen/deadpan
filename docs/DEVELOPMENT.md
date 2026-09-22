@@ -162,6 +162,12 @@ loop period differs from rounded storage. The host integration verifies an
 explicit AAC loop, separate silence and following speech without history writes.
 See [room-tone audio](ROOM_TONE_AUDIO.md).
 
+Run `cargo test --locked -p deadpan-audio --test loudness --test true_peak` for
+informational metering, generated standard cases, channel/EOF behavior and
+transactional admission. [Audio measurement](AUDIO_METERING.md) describes the
+compiled raw-PCM harness and independent reference script. These tests need no
+GUI or device; metering is not limiting or app audio playback.
+
 Run `cargo test --locked -p deadpan-source -p deadpan-media` for native audio
 decode, measured indexes, exact PCM ranges, AAC padding, shared video/audio
 snapshots and failure boundaries. Verify fixture bytes with

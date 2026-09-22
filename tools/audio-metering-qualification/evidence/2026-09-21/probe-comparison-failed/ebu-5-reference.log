@@ -1,0 +1,30 @@
+[in#0/f32le @ 0x93b014000] Estimating duration from bitrate, this may be inaccurate
+[aist#0:0/pcm_f32le @ 0x93b010180] Guessed Channel Layout: stereo
+Input #0, f32le, from '/tmp/deadpan-metering-20260921-run2/ebu-5.f32le':
+  Duration: 00:01:00.10, bitrate: 3072 kb/s
+  Stream #0:0: Audio: pcm_f32le, 48000 Hz, stereo, flt, 3072 kb/s
+Stream mapping:
+  Stream #0:0 -> #0:0 (pcm_f32le (native) -> pcm_s16le (native))
+Press [q] to stop, [?] for help
+Output #0, null, to 'pipe:':
+  Metadata:
+    encoder         : Lavf63.1.101
+  Stream #0:0: Audio: pcm_s16le, 48000 Hz, stereo, s16, 1536 kb/s
+    Metadata:
+      encoder         : Lavc63.1.101 pcm_s16le
+[Parsed_ebur128_0 @ 0x93b0209c0] Summary:
+
+  Integrated loudness:
+    I:         -23.0 LUFS
+    Threshold: -33.0 LUFS
+
+  Loudness range:
+    LRA:         6.0 LU
+    Threshold: -42.9 LUFS
+    LRA low:   -26.0 LUFS
+    LRA high:  -20.0 LUFS
+
+  True peak:
+    Peak:      -20.0 dBFS
+[out#0/null @ 0x93b020180] video:0KiB audio:11269KiB subtitle:0KiB other streams:0KiB global headers:0KiB muxing overhead: unknown
+size=N/A time=00:01:00.10 bitrate=N/A speed=  99x elapsed=0:00:00.60    

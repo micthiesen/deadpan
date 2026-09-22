@@ -1,0 +1,242 @@
+[
+  {
+    "case": "alternating",
+    "channel": 0,
+    "coordinate": 8191.460636670931,
+    "full_signed_sum": -1.8519143723753557,
+    "support_sums": [
+      {
+        "radius": 64,
+        "kept_unwindowed_sum": -0.8135093702980937,
+        "omitted_signed_contribution": -1.038405002077262
+      },
+      {
+        "radius": 128,
+        "kept_unwindowed_sum": -0.9109770260732011,
+        "omitted_signed_contribution": -0.9409373463021546
+      },
+      {
+        "radius": 256,
+        "kept_unwindowed_sum": -1.0178035238309584,
+        "omitted_signed_contribution": -0.8341108485443973
+      },
+      {
+        "radius": 512,
+        "kept_unwindowed_sum": -1.1433757541604415,
+        "omitted_signed_contribution": -0.7085386182149143
+      },
+      {
+        "radius": 1024,
+        "kept_unwindowed_sum": -1.3064119526793487,
+        "omitted_signed_contribution": -0.545502419696007
+      },
+      {
+        "radius": 2048,
+        "kept_unwindowed_sum": -1.4960204773408052,
+        "omitted_signed_contribution": -0.3558938950345505
+      },
+      {
+        "radius": 4096,
+        "kept_unwindowed_sum": -1.6856263792353787,
+        "omitted_signed_contribution": -0.166287993139977
+      },
+      {
+        "radius": 8192,
+        "kept_unwindowed_sum": -1.8519143723753557,
+        "omitted_signed_contribution": 0.0
+      }
+    ]
+  },
+  {
+    "case": "tone-23990-16",
+    "channel": 0,
+    "coordinate": 6084.573545641963,
+    "full_signed_sum": 1.5475039710975342,
+    "support_sums": [
+      {
+        "radius": 64,
+        "kept_unwindowed_sum": 0.25855474736604883,
+        "omitted_signed_contribution": 1.2889492237314855
+      },
+      {
+        "radius": 128,
+        "kept_unwindowed_sum": 0.41168865357384,
+        "omitted_signed_contribution": 1.1358153175236942
+      },
+      {
+        "radius": 256,
+        "kept_unwindowed_sum": 0.6497015025509054,
+        "omitted_signed_contribution": 0.8978024685466288
+      },
+      {
+        "radius": 512,
+        "kept_unwindowed_sum": 0.9639363168005879,
+        "omitted_signed_contribution": 0.5835676542969463
+      },
+      {
+        "radius": 1024,
+        "kept_unwindowed_sum": 1.2860569794526544,
+        "omitted_signed_contribution": 0.26144699164487983
+      },
+      {
+        "radius": 2048,
+        "kept_unwindowed_sum": 1.6037656436995709,
+        "omitted_signed_contribution": -0.05626167260203663
+      },
+      {
+        "radius": 4096,
+        "kept_unwindowed_sum": 1.5408757887360987,
+        "omitted_signed_contribution": 0.006628182361435586
+      },
+      {
+        "radius": 8192,
+        "kept_unwindowed_sum": 1.5475039710975342,
+        "omitted_signed_contribution": 0.0
+      }
+    ]
+  },
+  {
+    "case": "tone-23990-4",
+    "channel": 0,
+    "coordinate": 8191.453839107329,
+    "full_signed_sum": 1.5129434592082378,
+    "support_sums": [
+      {
+        "radius": 64,
+        "kept_unwindowed_sum": 0.7972620626152667,
+        "omitted_signed_contribution": 0.7156813965929711
+      },
+      {
+        "radius": 128,
+        "kept_unwindowed_sum": 0.9155812962144803,
+        "omitted_signed_contribution": 0.5973621629937576
+      },
+      {
+        "radius": 256,
+        "kept_unwindowed_sum": 1.0588279009947075,
+        "omitted_signed_contribution": 0.45411555821353033
+      },
+      {
+        "radius": 512,
+        "kept_unwindowed_sum": 1.2344412370584972,
+        "omitted_signed_contribution": 0.27850222214974063
+      },
+      {
+        "radius": 1024,
+        "kept_unwindowed_sum": 1.4234684189302924,
+        "omitted_signed_contribution": 0.0894750402779454
+      },
+      {
+        "radius": 2048,
+        "kept_unwindowed_sum": 1.6015910041485228,
+        "omitted_signed_contribution": -0.08864754494028504
+      },
+      {
+        "radius": 4096,
+        "kept_unwindowed_sum": 1.4642105608468543,
+        "omitted_signed_contribution": 0.0487328983613835
+      },
+      {
+        "radius": 8192,
+        "kept_unwindowed_sum": 1.5129434592082378,
+        "omitted_signed_contribution": 0.0
+      }
+    ]
+  },
+  {
+    "case": "tone-23990-1",
+    "channel": 0,
+    "coordinate": 8191.457426854697,
+    "full_signed_sum": 1.1625689697929844,
+    "support_sums": [
+      {
+        "radius": 64,
+        "kept_unwindowed_sum": 0.5639762588416299,
+        "omitted_signed_contribution": 0.5985927109513545
+      },
+      {
+        "radius": 128,
+        "kept_unwindowed_sum": 0.6477583827847531,
+        "omitted_signed_contribution": 0.5148105870082313
+      },
+      {
+        "radius": 256,
+        "kept_unwindowed_sum": 0.755167311598899,
+        "omitted_signed_contribution": 0.40740165819408536
+      },
+      {
+        "radius": 512,
+        "kept_unwindowed_sum": 0.9013788432689108,
+        "omitted_signed_contribution": 0.2611901265240736
+      },
+      {
+        "radius": 1024,
+        "kept_unwindowed_sum": 1.084898301723187,
+        "omitted_signed_contribution": 0.07767066806979739
+      },
+      {
+        "radius": 2048,
+        "kept_unwindowed_sum": 1.2397166021388275,
+        "omitted_signed_contribution": -0.0771476323458431
+      },
+      {
+        "radius": 4096,
+        "kept_unwindowed_sum": 1.115675425378987,
+        "omitted_signed_contribution": 0.04689354441399751
+      },
+      {
+        "radius": 8192,
+        "kept_unwindowed_sum": 1.1625689697929844,
+        "omitted_signed_contribution": 0.0
+      }
+    ]
+  },
+  {
+    "case": "tone-23990-0.86",
+    "channel": 0,
+    "coordinate": 8191.458505766785,
+    "full_signed_sum": 1.0224940861618677,
+    "support_sums": [
+      {
+        "radius": 64,
+        "kept_unwindowed_sum": 0.4847848597023763,
+        "omitted_signed_contribution": 0.5377092264594914
+      },
+      {
+        "radius": 128,
+        "kept_unwindowed_sum": 0.5568690651221266,
+        "omitted_signed_contribution": 0.465625021039741
+      },
+      {
+        "radius": 256,
+        "kept_unwindowed_sum": 0.6492817871166063,
+        "omitted_signed_contribution": 0.3732122990452613
+      },
+      {
+        "radius": 512,
+        "kept_unwindowed_sum": 0.7777205189753154,
+        "omitted_signed_contribution": 0.2447735671865523
+      },
+      {
+        "radius": 1024,
+        "kept_unwindowed_sum": 0.9523155192916234,
+        "omitted_signed_contribution": 0.07017856687024426
+      },
+      {
+        "radius": 2048,
+        "kept_unwindowed_sum": 1.093008226466205,
+        "omitted_signed_contribution": -0.07051414030433745
+      },
+      {
+        "radius": 4096,
+        "kept_unwindowed_sum": 0.9793417486713603,
+        "omitted_signed_contribution": 0.0431523374905074
+      },
+      {
+        "radius": 8192,
+        "kept_unwindowed_sum": 1.0224940861618677,
+        "omitted_signed_contribution": 0.0
+      }
+    ]
+  }
+]

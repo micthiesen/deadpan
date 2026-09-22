@@ -1,0 +1,6 @@
+{
+  "sha256": "7b075e98b446726f830507a0588e0cd5492fe978da63a455a9d4cbd86e0d7827",
+  "bytes": 1152000,
+  "format": "f32le, 48 kHz, interleaved stereo",
+  "description": "Independent reviewer three-second 997 Hz stereo fixture; exact meter report and external FFmpeg loudnorm log retained."
+}

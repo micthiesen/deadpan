@@ -1,0 +1,8 @@
+Complete finite zero-extended sinc diagnostic for high-10000.f32le.
+First 480000 stereo frames, channel 0. Grid 256 phases over four samples inside/outside each record edge, then 64-iteration golden-section local refinement.
+bcb728230359b3eb3228cbe7d861873761fd1bbbcf75b3ec8034ea04fcc85d52  /tmp/deadpan-metering-20260921-run2/high-10000.f32le
+b5845bbf9500c7915e9342e26819e1b5576daa6b9bfd4245f86a84e5ecba656d  /tmp/deadpan-master-research/check_10k_sinc.c
+frames=480000 t=1.2725024258483355 peak=0.07449601170265796 dBTP=-22.557339549569 sample_peak=0.068382315337657928
+This is a diagnostic search around both record edges, not an interval-certified global maximum. For an exact 10 kHz steady sinusoid, ideal sinc reconstruction has the authored amplitude; the boundary is the relevant non-steady region.
+
+Evidence annotation: the scratch C probe labels x[1] as sample_peak in its printf; that field is not a maximum. The complete-sinc peak computation does not use that label. The Rust report records the actual sample maximum.

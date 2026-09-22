@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "recorded_utc": "2026-09-22T01:51:21.786848+00:00",
+  "base_revision": "19922f89e40e1f8b3e73b1671c24322f1c9efb4d",
+  "cpu": "Apple M5 Max",
+  "model": "Mac17,7",
+  "memory_bytes": 137438953472,
+  "macos": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+  "qualified_media_prefix": "/tmp/deadpan-media-compatible-xyhilms4/prefix",
+  "linked_ffmpeg": "8.0.3 LGPL; existing qualification",
+  "reference_ffmpeg": "9.0.1 Homebrew GPL; developer reference only, not linked or shipped",
+  "commands": [
+    [
+      "cargo",
+      "build",
+      "-p",
+      "deadpan-audio",
+      "--example",
+      "measure_pcm",
+      "--release",
+      "--locked"
+    ],
+    [
+      "python3",
+      "tools/audio-metering-qualification/run.py",
+      "--measure",
+      "target/release/examples/measure_pcm",
+      "--output",
+      "/tmp/deadpan-metering-20260921-run1"
+    ],
+    [
+      "python3",
+      "tools/audio-metering-qualification/run.py",
+      "--measure",
+      "target/release/examples/measure_pcm",
+      "--output",
+      "/tmp/deadpan-metering-20260921-run3"
+    ]
+  ]
+}

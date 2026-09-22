@@ -35,7 +35,7 @@ Current crates:
 - `native/deadpan-source`: separate persistent descriptor-only FFmpeg video/audio decoders, raw metadata, owned RGBA and original-rate interleaved f32. Unsafe code stays in this narrow adapter; unsupported interpretations fail explicitly.
 - `native/deadpan-dsp`: bounded owned planar PCM and the canonical pinned stretch schedule through a safe Rust/C++ boundary. Construct it on a preparation worker; no device output or media decoding.
 - `native/deadpan-output`: bounded prepared-PCM queue and narrow macOS device boundary. Prepare a fresh channel-scoped generation, prefill, then explicitly activate; starvation and device faults never silently resume. No project/DSP or application transport integration yet. See [output contract](docs/AUDIO_OUTPUT.md).
-- `crates/deadpan-audio`: exact-phase source resampling, explicit speaker matrices, qualified PCM access, source-stage blocks and bounded continuous Preserve preparation. Preparation is worker work; full voice graph and device output remain open.
+- `crates/deadpan-audio`: exact-phase source resampling, explicit speaker matrices, qualified PCM access, source-stage blocks, bounded continuous Preserve preparation and informational meters. Preparation/analysis is worker work; full voice graph, mastering and device integration remain open.
 - `native/deadpan-fileclone`: bounded safe descriptor-clone interface around the macOS system call. The store owns copying, checksums, publication and durability.
 - `crates/deadpan-render`: bounded shared SDR picture pipeline, linear Rec.2020 working textures, explicit sRGB display transform, aspect and rotation. No decoding, document mutation or encoding.
 - `native/deadpan-media-worker`: process-isolated FFmpeg conversion and independent decode verification through bounded descriptor-only AVIO. Only the documented FFI call permits unsafe Rust. Requires the explicitly selected pinned LGPL FFmpeg development prefix.
@@ -355,6 +355,15 @@ from the absolute Hold origin without accumulating loop rounding. Full intrinsic
 Hold/gap duration and gap-after identity survive plan crops. Room-tone and
 Preserve preparation share cache provenance and work/residency admission. See
 [room-tone audio](docs/ROOM_TONE_AUDIO.md); selection UI and audition remain open.
+
+Informational audio meters consume contiguous fixed 48 kHz stereo PCM on an
+analysis worker. Preserve filter history and zero-origin window alignment across
+blocks; a new origin requires a fresh analysis. Keep silence/short-programme
+results undefined instead of inventing a finite LUFS value. Only the peak meter
+flushes finite zero context; loudness discards incomplete final windows. Keep
+algorithm identities and frame/storage admission explicit. These meters change
+no gain and do not qualify a limiter or final master. See
+[audio measurement](docs/AUDIO_METERING.md).
 
 Source resampling evaluates each original coordinate from its exact affine
 origin, splitting the integer floor before float conversion. Keep fixed filter

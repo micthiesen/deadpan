@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "base_revision": "19922f89e40e1f8b3e73b1671c24322f1c9efb4d",
+  "numerical_review": {
+    "agent": "master_limiter_research",
+    "scope": "Coefficient transcription, FIR history/EOS, K-weighting/windows/gates, bounded transactional input, chunk and test correctness.",
+    "findings": [],
+    "checks": "7 peak integration tests, 9 loudness integration tests, 16 audio library tests and strict crate Clippy passed; independent FFmpeg loudnorm reference retained.",
+    "followup": "The abrupt 10 kHz difference is boundary reconstruction sensitivity, not an Annex 2 implementation fault. Complete finite-sinc edge scan -22.55733955 dB lies between Deadpan -22.70394665 and FFmpeg -22.2; source/result retained. This is not a certified global maximum."
+  },
+  "general_review": {
+    "agent": "meter_general_review",
+    "findings": [
+      {
+        "id": "R1",
+        "severity": "minor",
+        "finding": "Direct report writes may leave a partial destination after write failure.",
+        "resolution": "Write and sync a same-directory tempfile, then persist without clobbering; a real 32-byte write limit leaves neither report nor temporary file."
+      },
+      {
+        "id": "R2",
+        "severity": "minor",
+        "finding": "FFmpeg peak readings were recorded but not compared or qualified.",
+        "resolution": "Both implementations must meet the published EBU 15-19 expectations. Arbitrary waveform comparisons remain explicit diagnostics; retain the failed generic0.4dB comparison and high-10000 mismatch rather than widening the tolerance. Empty input is explicitly inapplicable."
+      }
+    ],
+    "followup": "Final changed harness and documentation reviewed; no new issues."
+  },
+  "triage": {
+    "applied": [
+      "R1",
+      "R2"
+    ],
+    "surfaced_unfixed": [],
+    "dismissed": [],
+    "qualification_limitations": [
+      "Unfaded10kHz finite-filter peak difference0.50394665dB remains; this is not a final-master safety qualification.",
+      "Official EBU programme archive was not tested.",
+      "Three limiter prototypes remain unqualified; full-sinc counterexamples retained."
+    ]
+  },
+  "gate": "gate-final/gate.json",
+  "source_manifest": "source-manifest.json"
+}

@@ -1,0 +1,942 @@
+{
+  "schema_version": 1,
+  "started_utc": "2026-09-22T01:47:06.505072+00:00",
+  "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
+  "python": "3.14.7 (main, Aug  5 2026, 10:29:49) [Clang 21.0.0 (clang-2100.1.1.101)]",
+  "measure_sha256": "b8b52b098d3349113581203e03aab293f08b7946660e5e420f67e0aeb2e49a4e",
+  "reference_sha256": "9f5ddd4f8b36eb07b0c5d60ab6ea1e618bedd70bc45feab82b4dc23be1596ad1",
+  "reference_version": "ffmpeg version 9.0.1 Copyright (c) 2000-2026 the FFmpeg developers",
+  "script_sha256": "b55cdb7704eef11aa6727cbd27b83d9ed09e8c53621210b95b127dce1da62577",
+  "cases": [
+    {
+      "name": "ebu-1",
+      "segments": [
+        [
+          960000,
+          -23
+        ]
+      ],
+      "frequency_hz": 1000,
+      "right_gain": 1,
+      "expected_lufs": -23,
+      "reference_lufs": -23.0,
+      "reference_peak_dbfs": "-23.0",
+      "assertions": {
+        "input_hash_unchanged": true,
+        "frame_counts": true,
+        "expected_integrated": true,
+        "reference_integrated": true
+      },
+      "result": {
+        "schema_version": 1,
+        "input_format": "f32le_interleaved_stereo_48000_hz",
+        "input_sha256": "b7c584123e7dd1dd65bab0002d64591a5164f7d37cfd471eb806d4690e333c7d",
+        "loudness_algorithm": "deadpan-bs1770-5-stereo-48k-integrated-v1",
+        "loudness": {
+          "measured_frames": 960000,
+          "complete_blocks": 197,
+          "gated_blocks": 197,
+          "integrated_lufs": -22.993297101683158,
+          "relative_gate_lufs": -32.993297101683154
+        },
+        "peaks": {
+          "algorithm": "deadpan-bs1770-5-48k-4x-48tap-v1",
+          "measured_frames": 960000,
+          "sample_peak": [
+            0.07079457491636276,
+            0.07079457491636276
+          ],
+          "true_peak": [
+            0.07084917161319026,
+            0.07084917161319026
+          ],
+          "true_peak_dbtp": [
+            -22.993304465401287,
+            -22.993304465401287
+          ]
+        },
+        "processing_seconds": 0.072761015,
+        "elapsed_seconds": 0.083466083
+      }
+    },
+    {
+      "name": "ebu-2",
+      "segments": [
+        [
+          960000,
+          -33
+        ]
+      ],
+      "frequency_hz": 1000,
+      "right_gain": 1,
+      "expected_lufs": -33,
+      "reference_lufs": -33.0,
+      "reference_peak_dbfs": "-33.0",
+      "assertions": {
+        "input_hash_unchanged": true,
+        "frame_counts": true,
+        "expected_integrated": true,
+        "reference_integrated": true
+      },
+      "result": {
+        "schema_version": 1,
+        "input_format": "f32le_interleaved_stereo_48000_hz",
+        "input_sha256": "a1c908738628f0414a2a542707ff51ff2244b12fc0b657c0fd19fd1664601928",
+        "loudness_algorithm": "deadpan-bs1770-5-stereo-48k-integrated-v1",
+        "loudness": {
+          "measured_frames": 960000,
+          "complete_blocks": 197,
+          "gated_blocks": 197,
+          "integrated_lufs": -32.99329704068303,
+          "relative_gate_lufs": -42.99329704068303
+        },
+        "peaks": {
+          "algorithm": "deadpan-bs1770-5-48k-4x-48tap-v1",
+          "measured_frames": 960000,
+          "sample_peak": [
+            0.02238721214234829,
+            0.02238721214234829
+          ],
+          "true_peak": [
+            0.02240447705344195,
+            0.02240447705344195
+          ],
+          "true_peak_dbtp": [
+            -32.99330377142135,
+            -32.99330377142135
+          ]
+        },
+        "processing_seconds": 0.076222427,
+        "elapsed_seconds": 0.087745916
+      }
+    },
+    {
+      "name": "ebu-3",
+      "segments": [
+        [
+          480000,
+          -36
+        ],
+        [
+          2880000,
+          -23
+        ],
+        [
+          480000,
+          -36
+        ]
+      ],
+      "frequency_hz": 1000,
+      "right_gain": 1,
+      "expected_lufs": -23,
+      "reference_lufs": -23.0,
+      "reference_peak_dbfs": "-23.0",
+      "assertions": {
+        "input_hash_unchanged": true,
+        "frame_counts": true,
+        "expected_integrated": true,
+        "reference_integrated": true
+      },
+      "result": {
+        "schema_version": 1,
+        "input_format": "f32le_interleaved_stereo_48000_hz",
+        "input_sha256": "a0419cffbcc0bfaddec337230da0999a35af17d561e15ca7febde3c54e9c602a",
+        "loudness_algorithm": "deadpan-bs1770-5-stereo-48k-integrated-v1",
+        "loudness": {
+          "measured_frames": 3840000,
+          "complete_blocks": 797,
+          "gated_blocks": 603,
+          "integrated_lufs": -23.013868674470054,
+          "relative_gate_lufs": -34.15548224439891
+        },
+        "peaks": {
+          "algorithm": "deadpan-bs1770-5-48k-4x-48tap-v1",
+          "measured_frames": 3840000,
+          "sample_peak": [
+            0.07079457491636276,
+            0.07079457491636276
+          ],
+          "true_peak": [
+            0.07084917161319026,
+            0.07084917161319026
+          ],
+          "true_peak_dbtp": [
+            -22.993304465401287,
+            -22.993304465401287
+          ]
+        },
+        "processing_seconds": 0.308104798,
+        "elapsed_seconds": 0.353160417
+      }
+    },
+    {
+      "name": "ebu-4",
+      "segments": [
+        [
+          480000,
+          -72
+        ],
+        [
+          480000,
+          -36
+        ],
+        [
+          2880000,
+          -23
+        ],
+        [
+          480000,
+          -36
+        ],
+        [
+          480000,
+          -72
+        ]
+      ],
+      "frequency_hz": 1000,
+      "right_gain": 1,
+      "expected_lufs": -23,
+      "reference_lufs": -23.0,
+      "reference_peak_dbfs": "-23.0",
+      "assertions": {
+        "input_hash_unchanged": true,
+        "frame_counts": true,
+        "expected_integrated": true,
+        "reference_integrated": true
+      },
+      "result": {
+        "schema_version": 1,
+        "input_format": "f32le_interleaved_stereo_48000_hz",
+        "input_sha256": "3711ff1a6536475dc1d65059af6c7088af54bfd2db79a328a2ce3e528d4b9a06",
+        "loudness_algorithm": "deadpan-bs1770-5-stereo-48k-integrated-v1",
+        "loudness": {
+          "measured_frames": 4800000,
+          "complete_blocks": 997,
+          "gated_blocks": 603,
+          "integrated_lufs": -23.013868674470054,
+          "relative_gate_lufs": -34.186983666671125
+        },
+        "peaks": {
+          "algorithm": "deadpan-bs1770-5-48k-4x-48tap-v1",
+          "measured_frames": 4800000,
+          "sample_peak": [
+            0.07079457491636276,
+            0.07079457491636276
+          ],
+          "true_peak": [
+            0.07084917161319026,
+            0.07084917161319026
+          ],
+          "true_peak_dbtp": [
+            -22.993304465401287,
+            -22.993304465401287
+          ]
+        },
+        "processing_seconds": 0.358142699,
+        "elapsed_seconds": 0.41106025
+      }
+    },
+    {
+      "name": "ebu-5",
+      "segments": [
+        [
+          960000,
+          -26
+        ],
+        [
+          964800,
+          -20
+        ],
+        [
+          960000,
+          -26
+        ]
+      ],
+      "frequency_hz": 1000,
+      "right_gain": 1,
+      "expected_lufs": -23,
+      "reference_lufs": -23.0,
+      "reference_peak_dbfs": "-20.0",
+      "assertions": {
+        "input_hash_unchanged": true,
+        "frame_counts": true,
+        "expected_integrated": true,
+        "reference_integrated": true
+      },
+      "result": {
+        "schema_version": 1,
+        "input_format": "f32le_interleaved_stereo_48000_hz",
+        "input_sha256": "f3fd57f0131f641c2a5cdae2812705e573ff6eb93ccda81ca0b29165a13142b3",
+        "loudness_algorithm": "deadpan-bs1770-5-stereo-48k-integrated-v1",
+        "loudness": {
+          "measured_frames": 2884800,
+          "complete_blocks": 598,
+          "gated_blocks": 598,
+          "integrated_lufs": -22.978657436578803,
+          "relative_gate_lufs": -32.9786574365788
+        },
+        "peaks": {
+          "algorithm": "deadpan-bs1770-5-48k-4x-48tap-v1",
+          "measured_frames": 2884800,
+          "sample_peak": [
+            0.10000000149011612,
+            0.10000000149011612
+          ],
+          "true_peak": [
+            0.10007712119022472,
+            0.10007712119022472
+          ],
+          "true_peak_dbtp": [
+            -19.993303920245964,
+            -19.993303920245964
+          ]
+        },
+        "processing_seconds": 0.223224122,
+        "elapsed_seconds": 0.255848541
+      }
+    },
+    {
+      "name": "inverted",
+      "segments": [
+        [
+          480000,
+          -23
+        ]
+      ],
+      "frequency_hz": 1000,
+      "right_gain": -1,
+      "expected_lufs": -23,
+      "reference_lufs": -23.0,
+      "reference_peak_dbfs": "-23.0",
+      "assertions": {
+        "input_hash_unchanged": true,
+        "frame_counts": true,
+        "expected_integrated": true,
+        "reference_integrated": true
+      },
+      "result": {
+        "schema_version": 1,
+        "input_format": "f32le_interleaved_stereo_48000_hz",
+        "input_sha256": "854a0f7d7aad516d1eb9653980b0999e4a541490f4219e79c469c805037a57dc",
+        "loudness_algorithm": "deadpan-bs1770-5-stereo-48k-integrated-v1",
+        "loudness": {
+          "measured_frames": 480000,
+          "complete_blocks": 97,
+          "gated_blocks": 97,
+          "integrated_lufs": -22.99329867005611,
+          "relative_gate_lufs": -32.993298670056106
+        },
+        "peaks": {
+          "algorithm": "deadpan-bs1770-5-48k-4x-48tap-v1",
+          "measured_frames": 480000,
+          "sample_peak": [
+            0.07079457491636276,
+            0.07079457491636276
+          ],
+          "true_peak": [
+            0.07084917161319026,
+            0.07084917161319026
+          ],
+          "true_peak_dbtp": [
+            -22.993304465401287,
+            -22.993304465401287
+          ]
+        },
+        "processing_seconds": 0.038924557,
+        "elapsed_seconds": 0.04447875
+      }
+    },
+    {
+      "name": "mono-997",
+      "segments": [
+        [
+          480000,
+          0
+        ]
+      ],
+      "frequency_hz": 997,
+      "right_gain": 0,
+      "expected_lufs": -3.01,
+      "reference_lufs": -3.0,
+      "reference_peak_dbfs": "0.0",
+      "assertions": {
+        "input_hash_unchanged": true,
+        "frame_counts": true,
+        "expected_integrated": true,
+        "reference_integrated": true
+      },
+      "result": {
+        "schema_version": 1,
+        "input_format": "f32le_interleaved_stereo_48000_hz",
+        "input_sha256": "689c7c3e90b84c9f7f9d6cb13474477e6462943ec98b0e23ba18b5efada63add",
+        "loudness_algorithm": "deadpan-bs1770-5-stereo-48k-integrated-v1",
+        "loudness": {
+          "measured_frames": 480000,
+          "complete_blocks": 97,
+          "gated_blocks": 97,
+          "integrated_lufs": -3.0102799217113705,
+          "relative_gate_lufs": -13.010279921711371
+        },
+        "peaks": {
+          "algorithm": "deadpan-bs1770-5-48k-4x-48tap-v1",
+          "measured_frames": 480000,
+          "sample_peak": [
+            1.0,
+            0.0
+          ],
+          "true_peak": [
+            1.001019259041641,
+            0.0
+          ],
+          "true_peak_dbtp": [
+            0.00884866277419805,
+            null
+          ]
+        },
+        "processing_seconds": 0.037276484,
+        "elapsed_seconds": 0.042699541
+      }
+    },
+    {
+      "name": "low-20",
+      "segments": [
+        [
+          480000,
+          -23
+        ]
+      ],
+      "frequency_hz": 20,
+      "right_gain": 1,
+      "expected_lufs": -36.96636779238207,
+      "reference_lufs": -37.0,
+      "reference_peak_dbfs": "-23.0",
+      "assertions": {
+        "input_hash_unchanged": true,
+        "frame_counts": true,
+        "expected_integrated": true,
+        "reference_integrated": true
+      },
+      "result": {
+        "schema_version": 1,
+        "input_format": "f32le_interleaved_stereo_48000_hz",
+        "input_sha256": "b5b50ac647d0bad7ac37b730b1fbdcdb047e19343276590260381b35e2f19809",
+        "loudness_algorithm": "deadpan-bs1770-5-stereo-48k-integrated-v1",
+        "loudness": {
+          "measured_frames": 480000,
+          "complete_blocks": 97,
+          "gated_blocks": 97,
+          "integrated_lufs": -36.96656347055183,
+          "relative_gate_lufs": -46.96656347055183
+        },
+        "peaks": {
+          "algorithm": "deadpan-bs1770-5-48k-4x-48tap-v1",
+          "measured_frames": 480000,
+          "sample_peak": [
+            0.07079457491636276,
+            0.07079457491636276
+          ],
+          "true_peak": [
+            0.07090689581855258,
+            0.07090689581855258
+          ],
+          "true_peak_dbtp": [
+            -22.98623053743448,
+            -22.98623053743448
+          ]
+        },
+        "processing_seconds": 0.027852792,
+        "elapsed_seconds": 0.032102375
+      }
+    },
+    {
+      "name": "high-10000",
+      "segments": [
+        [
+          480000,
+          -23
+        ]
+      ],
+      "frequency_hz": 10000,
+      "right_gain": 1,
+      "expected_lufs": -19.649117777429872,
+      "reference_lufs": -19.6,
+      "reference_peak_dbfs": "-22.2",
+      "assertions": {
+        "input_hash_unchanged": true,
+        "frame_counts": true,
+        "expected_integrated": true,
+        "reference_integrated": true
+      },
+      "result": {
+        "schema_version": 1,
+        "input_format": "f32le_interleaved_stereo_48000_hz",
+        "input_sha256": "bcb728230359b3eb3228cbe7d861873761fd1bbbcf75b3ec8034ea04fcc85d52",
+        "loudness_algorithm": "deadpan-bs1770-5-stereo-48k-integrated-v1",
+        "loudness": {
+          "measured_frames": 480000,
+          "complete_blocks": 97,
+          "gated_blocks": 97,
+          "integrated_lufs": -19.64911799255771,
+          "relative_gate_lufs": -29.64911799255771
+        },
+        "peaks": {
+          "algorithm": "deadpan-bs1770-5-48k-4x-48tap-v1",
+          "measured_frames": 480000,
+          "sample_peak": [
+            0.07079457491636276,
+            0.07079457491636276
+          ],
+          "true_peak": [
+            0.07324916320112607,
+            0.07324916320112607
+          ],
+          "true_peak_dbtp": [
+            -22.70394664656491,
+            -22.70394664656491
+          ]
+        },
+        "processing_seconds": 0.038803974,
+        "elapsed_seconds": 0.04442675
+      }
+    },
+    {
+      "name": "silence",
+      "segments": [
+        [
+          480000,
+          null
+        ]
+      ],
+      "frequency_hz": 1000,
+      "right_gain": 1,
+      "expected_lufs": null,
+      "reference_lufs": -70.0,
+      "reference_peak_dbfs": "-inf",
+      "assertions": {
+        "input_hash_unchanged": true,
+        "frame_counts": true,
+        "expected_integrated": true,
+        "reference_integrated": true
+      },
+      "result": {
+        "schema_version": 1,
+        "input_format": "f32le_interleaved_stereo_48000_hz",
+        "input_sha256": "ce42946b6db1f025581c2396f11c64cbd25c12c258dcdff42b6f9cddad62162f",
+        "loudness_algorithm": "deadpan-bs1770-5-stereo-48k-integrated-v1",
+        "loudness": {
+          "measured_frames": 480000,
+          "complete_blocks": 97,
+          "gated_blocks": 0,
+          "integrated_lufs": null,
+          "relative_gate_lufs": null
+        },
+        "peaks": {
+          "algorithm": "deadpan-bs1770-5-48k-4x-48tap-v1",
+          "measured_frames": 480000,
+          "sample_peak": [
+            0.0,
+            0.0
+          ],
+          "true_peak": [
+            0.0,
+            0.0
+          ],
+          "true_peak_dbtp": [
+            null,
+            null
+          ]
+        },
+        "processing_seconds": 0.036881631,
+        "elapsed_seconds": 0.042395333
+      }
+    },
+    {
+      "name": "below-gate",
+      "segments": [
+        [
+          480000,
+          -71
+        ]
+      ],
+      "frequency_hz": 1000,
+      "right_gain": 1,
+      "expected_lufs": null,
+      "reference_lufs": -70.0,
+      "reference_peak_dbfs": "-71.0",
+      "assertions": {
+        "input_hash_unchanged": true,
+        "frame_counts": true,
+        "expected_integrated": true,
+        "reference_integrated": true
+      },
+      "result": {
+        "schema_version": 1,
+        "input_format": "f32le_interleaved_stereo_48000_hz",
+        "input_sha256": "de585d3e1c6c6a18809929e3f0c0456ab276349aa00b5ede79c8a1300813f7c8",
+        "loudness_algorithm": "deadpan-bs1770-5-stereo-48k-integrated-v1",
+        "loudness": {
+          "measured_frames": 480000,
+          "complete_blocks": 97,
+          "gated_blocks": 0,
+          "integrated_lufs": null,
+          "relative_gate_lufs": null
+        },
+        "peaks": {
+          "algorithm": "deadpan-bs1770-5-48k-4x-48tap-v1",
+          "measured_frames": 480000,
+          "sample_peak": [
+            0.00028183829272165895,
+            0.00028183829272165895
+          ],
+          "true_peak": [
+            0.0002820556456519796,
+            0.0002820556456519796
+          ],
+          "true_peak_dbtp": [
+            -70.99330405945867,
+            -70.99330405945867
+          ]
+        },
+        "processing_seconds": 0.036058367,
+        "elapsed_seconds": 0.041207875
+      }
+    },
+    {
+      "name": "short",
+      "segments": [
+        [
+          19199,
+          -12
+        ]
+      ],
+      "frequency_hz": 1000,
+      "right_gain": 1,
+      "expected_lufs": null,
+      "reference_lufs": -70.0,
+      "reference_peak_dbfs": "-12.0",
+      "assertions": {
+        "input_hash_unchanged": true,
+        "frame_counts": true,
+        "expected_integrated": true,
+        "reference_integrated": true
+      },
+      "result": {
+        "schema_version": 1,
+        "input_format": "f32le_interleaved_stereo_48000_hz",
+        "input_sha256": "817f1fee3dbedb0229195ecc72d0c2d0eae1b15e6a68a6371444446d30b2ffd9",
+        "loudness_algorithm": "deadpan-bs1770-5-stereo-48k-integrated-v1",
+        "loudness": {
+          "measured_frames": 19199,
+          "complete_blocks": 0,
+          "gated_blocks": 0,
+          "integrated_lufs": null,
+          "relative_gate_lufs": null
+        },
+        "peaks": {
+          "algorithm": "deadpan-bs1770-5-48k-4x-48tap-v1",
+          "measured_frames": 19199,
+          "sample_peak": [
+            0.25118863582611084,
+            0.25118863582611084
+          ],
+          "true_peak": [
+            0.25138235197118775,
+            0.25138235197118775
+          ],
+          "true_peak_dbtp": [
+            -11.993304295177856,
+            -11.993304295177856
+          ]
+        },
+        "processing_seconds": 0.001507418,
+        "elapsed_seconds": 0.001857167
+      }
+    },
+    {
+      "name": "empty",
+      "segments": [],
+      "frequency_hz": 1000,
+      "right_gain": 1,
+      "expected_lufs": null,
+      "reference_lufs": -70.0,
+      "reference_peak_dbfs": "0.0",
+      "assertions": {
+        "input_hash_unchanged": true,
+        "frame_counts": true,
+        "expected_integrated": true,
+        "reference_integrated": true
+      },
+      "result": {
+        "schema_version": 1,
+        "input_format": "f32le_interleaved_stereo_48000_hz",
+        "input_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "loudness_algorithm": "deadpan-bs1770-5-stereo-48k-integrated-v1",
+        "loudness": {
+          "measured_frames": 0,
+          "complete_blocks": 0,
+          "gated_blocks": 0,
+          "integrated_lufs": null,
+          "relative_gate_lufs": null
+        },
+        "peaks": {
+          "algorithm": "deadpan-bs1770-5-48k-4x-48tap-v1",
+          "measured_frames": 0,
+          "sample_peak": [
+            0.0,
+            0.0
+          ],
+          "true_peak": [
+            0.0,
+            0.0
+          ],
+          "true_peak_dbtp": [
+            null,
+            null
+          ]
+        },
+        "processing_seconds": 7.375e-06,
+        "elapsed_seconds": 0.000125916
+      }
+    },
+    {
+      "name": "ebu-15",
+      "expected_dbtp": -6,
+      "assertions": {
+        "peak_tolerance": true,
+        "input_hash_unchanged": true,
+        "no_complete_loudness_window": true
+      },
+      "result": {
+        "schema_version": 1,
+        "input_format": "f32le_interleaved_stereo_48000_hz",
+        "input_sha256": "1e61012ded516ee879f411e64a31fb115624c86d2bcc7680667852442ea810bc",
+        "loudness_algorithm": "deadpan-bs1770-5-stereo-48k-integrated-v1",
+        "loudness": {
+          "measured_frames": 4800,
+          "complete_blocks": 0,
+          "gated_blocks": 0,
+          "integrated_lufs": null,
+          "relative_gate_lufs": null
+        },
+        "peaks": {
+          "algorithm": "deadpan-bs1770-5-48k-4x-48tap-v1",
+          "measured_frames": 4800,
+          "sample_peak": [
+            0.5,
+            0.5
+          ],
+          "true_peak": [
+            0.5,
+            0.5
+          ],
+          "true_peak_dbtp": [
+            -6.020599913279624,
+            -6.020599913279624
+          ]
+        },
+        "processing_seconds": 0.000376961,
+        "elapsed_seconds": 0.000560166
+      }
+    },
+    {
+      "name": "ebu-16",
+      "expected_dbtp": -6,
+      "assertions": {
+        "peak_tolerance": true,
+        "input_hash_unchanged": true,
+        "no_complete_loudness_window": true
+      },
+      "result": {
+        "schema_version": 1,
+        "input_format": "f32le_interleaved_stereo_48000_hz",
+        "input_sha256": "3539b054c17ca28a5400d6e91386b6f7d6ab291bee6837107fec68e26c797543",
+        "loudness_algorithm": "deadpan-bs1770-5-stereo-48k-integrated-v1",
+        "loudness": {
+          "measured_frames": 4800,
+          "complete_blocks": 0,
+          "gated_blocks": 0,
+          "integrated_lufs": null,
+          "relative_gate_lufs": null
+        },
+        "peaks": {
+          "algorithm": "deadpan-bs1770-5-48k-4x-48tap-v1",
+          "measured_frames": 4800,
+          "sample_peak": [
+            0.3535533845424652,
+            0.3535533845424652
+          ],
+          "true_peak": [
+            0.5025792435299081,
+            0.5025792435299081
+          ],
+          "true_peak_dbtp": [
+            -5.9759090337932275,
+            -5.9759090337932275
+          ]
+        },
+        "processing_seconds": 0.000380292,
+        "elapsed_seconds": 0.00053625
+      }
+    },
+    {
+      "name": "ebu-17",
+      "expected_dbtp": -6,
+      "assertions": {
+        "peak_tolerance": true,
+        "input_hash_unchanged": true,
+        "no_complete_loudness_window": true
+      },
+      "result": {
+        "schema_version": 1,
+        "input_format": "f32le_interleaved_stereo_48000_hz",
+        "input_sha256": "4113ba4e3435fcf18f53004b10f7bdd8250d38a5294dac653a3d88eae8838eca",
+        "loudness_algorithm": "deadpan-bs1770-5-stereo-48k-integrated-v1",
+        "loudness": {
+          "measured_frames": 4800,
+          "complete_blocks": 0,
+          "gated_blocks": 0,
+          "integrated_lufs": null,
+          "relative_gate_lufs": null
+        },
+        "peaks": {
+          "algorithm": "deadpan-bs1770-5-48k-4x-48tap-v1",
+          "measured_frames": 4800,
+          "sample_peak": [
+            0.4330126941204071,
+            0.4330126941204071
+          ],
+          "true_peak": [
+            0.48343294347432564,
+            0.48343294347432564
+          ],
+          "true_peak_dbtp": [
+            -6.313275159592474,
+            -6.313275159592474
+          ]
+        },
+        "processing_seconds": 0.000383625,
+        "elapsed_seconds": 0.000539083
+      }
+    },
+    {
+      "name": "ebu-18",
+      "expected_dbtp": -6,
+      "assertions": {
+        "peak_tolerance": true,
+        "input_hash_unchanged": true,
+        "no_complete_loudness_window": true
+      },
+      "result": {
+        "schema_version": 1,
+        "input_format": "f32le_interleaved_stereo_48000_hz",
+        "input_sha256": "dab823a2fa849e3acde194ebcd7b8f5a757509e14cde35caa730a267561a69f8",
+        "loudness_algorithm": "deadpan-bs1770-5-stereo-48k-integrated-v1",
+        "loudness": {
+          "measured_frames": 4800,
+          "complete_blocks": 0,
+          "gated_blocks": 0,
+          "integrated_lufs": null,
+          "relative_gate_lufs": null
+        },
+        "peaks": {
+          "algorithm": "deadpan-bs1770-5-48k-4x-48tap-v1",
+          "measured_frames": 4800,
+          "sample_peak": [
+            0.4619397521018982,
+            0.4619397521018982
+          ],
+          "true_peak": [
+            0.49966109703200345,
+            0.49966109703200345
+          ],
+          "true_peak_dbtp": [
+            -6.026489256977294,
+            -6.026489256977294
+          ]
+        },
+        "processing_seconds": 0.000380042,
+        "elapsed_seconds": 0.000562292
+      }
+    },
+    {
+      "name": "ebu-19",
+      "expected_dbtp": 3,
+      "assertions": {
+        "peak_tolerance": true,
+        "input_hash_unchanged": true,
+        "no_complete_loudness_window": true
+      },
+      "result": {
+        "schema_version": 1,
+        "input_format": "f32le_interleaved_stereo_48000_hz",
+        "input_sha256": "18e066980eedd36d5209ce4a8038673811c77ca2176dc051cd81502cecfc8743",
+        "loudness_algorithm": "deadpan-bs1770-5-stereo-48k-integrated-v1",
+        "loudness": {
+          "measured_frames": 4800,
+          "complete_blocks": 0,
+          "gated_blocks": 0,
+          "integrated_lufs": null,
+          "relative_gate_lufs": null
+        },
+        "peaks": {
+          "algorithm": "deadpan-bs1770-5-48k-4x-48tap-v1",
+          "measured_frames": 4800,
+          "sample_peak": [
+            0.9970205426216125,
+            0.9970205426216125
+          ],
+          "true_peak": [
+            1.4172734642124851,
+            1.4172734642124851
+          ],
+          "true_peak_dbtp": [
+            3.0290731170159995,
+            3.0290731170159995
+          ]
+        },
+        "processing_seconds": 0.000376458,
+        "elapsed_seconds": 0.000538417
+      }
+    }
+  ],
+  "failure_paths": [
+    {
+      "name": "truncated",
+      "exit_code": 1,
+      "stderr": "Error: \"input must be a regular file containing complete f32le stereo frames\"\n",
+      "passed": true
+    },
+    {
+      "name": "nan",
+      "exit_code": 1,
+      "stderr": "Error: InvalidSamples\n",
+      "passed": true
+    },
+    {
+      "name": "infinity",
+      "exit_code": 1,
+      "stderr": "Error: InvalidSamples\n",
+      "passed": true
+    },
+    {
+      "name": "magnitude",
+      "exit_code": 1,
+      "stderr": "Error: InvalidSamples\n",
+      "passed": true
+    },
+    {
+      "name": "over-budget",
+      "exit_code": 1,
+      "stderr": "Error: \"input exceeds the 24-hour analysis budget\"\n",
+      "passed": true
+    },
+    {
+      "name": "no-overwrite",
+      "exit_code": 1,
+      "stderr": "Error: Os { code: 17, kind: AlreadyExists, message: \"File exists\" }\n",
+      "passed": true
+    }
+  ],
+  "passed": true,
+  "completed_utc": "2026-09-22T01:47:13.118519+00:00"
+}

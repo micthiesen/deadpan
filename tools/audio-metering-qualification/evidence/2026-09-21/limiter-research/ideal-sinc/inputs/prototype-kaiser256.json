@@ -1,0 +1,363 @@
+{
+  "numpy": "2.5.3",
+  "kind": "kaiser",
+  "radius": 256,
+  "attack": 2048,
+  "internal_dbtp": -1.25,
+  "seconds": 7.149386459030211,
+  "kernel_l1": 4.084145341543642,
+  "kernel_distance_sum": 63.74500638865622,
+  "worst_margin_for_input16": 0.3679554609486886,
+  "results": [
+    {
+      "case": "tone-200-0.1",
+      "sample_peak": 0.09999143332242966,
+      "oracle_true_peak": 0.10006833777509307,
+      "oracle_dbtp": -19.994066283528372,
+      "gain_min": 1.0,
+      "gain_max": 1.0,
+      "input_unchanged": true,
+      "passes_ceiling": true
+    },
+    {
+      "case": "tone-200-0.86",
+      "sample_peak": 0.8526647090911865,
+      "oracle_true_peak": 0.8526650424131702,
+      "oracle_dbtp": -1.3844308373967449,
+      "gain_min": 0.9871176785732497,
+      "gain_max": 1.0,
+      "input_unchanged": false,
+      "passes_ceiling": true
+    },
+    {
+      "case": "tone-200-1",
+      "sample_peak": 0.8505119681358337,
+      "oracle_true_peak": 0.8505120228108605,
+      "oracle_dbtp": -1.4063908567011787,
+      "gain_min": 0.846146901313755,
+      "gain_max": 0.8790622390170876,
+      "input_unchanged": false,
+      "passes_ceiling": true
+    },
+    {
+      "case": "tone-200-4",
+      "sample_peak": 0.803608775138855,
+      "oracle_true_peak": 0.8036140437517816,
+      "oracle_dbtp": -1.8990496447821332,
+      "gain_min": 0.19667446026279714,
+      "gain_max": 0.22909229227205483,
+      "input_unchanged": false,
+      "passes_ceiling": true
+    },
+    {
+      "case": "tone-200-16",
+      "sample_peak": 0.6497657299041748,
+      "oracle_true_peak": 0.7348569037302001,
+      "oracle_dbtp": -2.675944428403116,
+      "gain_min": 0.03430635000005768,
+      "gain_max": 0.06441357232579764,
+      "input_unchanged": false,
+      "passes_ceiling": true
+    },
+    {
+      "case": "tone-3000-0.1",
+      "sample_peak": 0.09807852655649185,
+      "oracle_true_peak": 0.10009401187872843,
+      "oracle_dbtp": -19.99183806795894,
+      "gain_min": 1.0,
+      "gain_max": 1.0,
+      "input_unchanged": true,
+      "passes_ceiling": true
+    },
+    {
+      "case": "tone-3000-0.86",
+      "sample_peak": 0.8402611017227173,
+      "oracle_true_peak": 0.8572208981516304,
+      "oracle_dbtp": -1.3381449970908088,
+      "gain_min": 0.9869910835573763,
+      "gain_max": 0.9970225879386059,
+      "input_unchanged": false,
+      "passes_ceiling": true
+    },
+    {
+      "case": "tone-3000-1",
+      "sample_peak": 0.8387702107429504,
+      "oracle_true_peak": 0.8558001835537797,
+      "oracle_dbtp": -1.3525524940740852,
+      "gain_min": 0.846020366850259,
+      "gain_max": 0.8561048517938303,
+      "input_unchanged": false,
+      "passes_ceiling": true
+    },
+    {
+      "case": "tone-3000-4",
+      "sample_peak": 0.8092883229255676,
+      "oracle_true_peak": 0.8252549237086138,
+      "oracle_dbtp": -1.6682375172786164,
+      "gain_min": 0.1965478509836791,
+      "gain_max": 0.20724235608807498,
+      "input_unchanged": false,
+      "passes_ceiling": true
+    },
+    {
+      "case": "tone-3000-16",
+      "sample_peak": 0.691574215888977,
+      "oracle_true_peak": 0.7030743654646361,
+      "oracle_dbtp": -3.0599747285410794,
+      "gain_min": 0.03417972201703413,
+      "gain_max": 0.04502673216163616,
+      "input_unchanged": false,
+      "passes_ceiling": true
+    },
+    {
+      "case": "tone-12000-0.1",
+      "sample_peak": 0.0707106813788414,
+      "oracle_true_peak": 0.10101875657768328,
+      "oracle_dbtp": -19.91195962892127,
+      "gain_min": 1.0,
+      "gain_max": 1.0,
+      "input_unchanged": true,
+      "passes_ceiling": true
+    },
+    {
+      "case": "tone-12000-0.86",
+      "sample_peak": 0.6044108867645264,
+      "oracle_true_peak": 0.856454058559048,
+      "oracle_dbtp": -1.345918565222579,
+      "gain_min": 0.9849248874904917,
+      "gain_max": 0.9939140312893381,
+      "input_unchanged": false,
+      "passes_ceiling": true
+    },
+    {
+      "case": "tone-12000-1",
+      "sample_peak": 0.6031822562217712,
+      "oracle_true_peak": 0.8548966885096025,
+      "oracle_dbtp": -1.3617273035918727,
+      "gain_min": 0.8439541959277307,
+      "gain_max": 0.8530285447025472,
+      "input_unchanged": false,
+      "passes_ceiling": true
+    },
+    {
+      "case": "tone-12000-4",
+      "sample_peak": 0.5793508291244507,
+      "oracle_true_peak": 0.821634712181639,
+      "oracle_dbtp": -1.7064244215532582,
+      "gain_min": 0.19448179931105,
+      "gain_max": 0.20483145040093542,
+      "input_unchanged": false,
+      "passes_ceiling": true
+    },
+    {
+      "case": "tone-12000-16",
+      "sample_peak": 0.48834729194641113,
+      "oracle_true_peak": 0.6898190841089497,
+      "oracle_dbtp": -3.225295897587674,
+      "gain_min": 0.03211366835904036,
+      "gain_max": 0.04316421205256544,
+      "input_unchanged": false,
+      "passes_ceiling": true
+    },
+    {
+      "case": "tone-21600-0.1",
+      "sample_peak": 0.09876883774995804,
+      "oracle_true_peak": 0.11167473264874231,
+      "oracle_dbtp": -19.040901571268872,
+      "gain_min": 1.0,
+      "gain_max": 1.0,
+      "input_unchanged": true,
+      "passes_ceiling": true
+    },
+    {
+      "case": "tone-21600-0.86",
+      "sample_peak": 0.8395788073539734,
+      "oracle_true_peak": 0.8663916439689643,
+      "oracle_dbtp": -1.2457148994845793,
+      "gain_min": 0.8954638694887681,
+      "gain_max": 0.9885091221386407,
+      "input_unchanged": false,
+      "passes_ceiling": true
+    },
+    {
+      "case": "tone-21600-1",
+      "sample_peak": 0.8372096419334412,
+      "oracle_true_peak": 0.8657993958772352,
+      "oracle_dbtp": -1.251654431147349,
+      "gain_min": 0.769230512983439,
+      "gain_max": 0.847662095799398,
+      "input_unchanged": false,
+      "passes_ceiling": true
+    },
+    {
+      "case": "tone-21600-4",
+      "sample_peak": 0.8099470138549805,
+      "oracle_true_peak": 0.8490914329567657,
+      "oracle_dbtp": -1.4209108196080587,
+      "gain_min": 0.18765536882930497,
+      "gain_max": 0.20501077091016684,
+      "input_unchanged": false,
+      "passes_ceiling": true
+    },
+    {
+      "case": "tone-21600-16",
+      "sample_peak": 0.7037996053695679,
+      "oracle_true_peak": 0.7593189184722083,
+      "oracle_dbtp": -2.3915155903323058,
+      "gain_min": 0.0342258190656526,
+      "gain_max": 0.04574947018867823,
+      "input_unchanged": false,
+      "passes_ceiling": true
+    },
+    {
+      "case": "tone-23000-0.1",
+      "sample_peak": 0.09978589415550232,
+      "oracle_true_peak": 0.1269293204111022,
+      "oracle_dbtp": -17.92876090374701,
+      "gain_min": 1.0,
+      "gain_max": 1.0,
+      "input_unchanged": true,
+      "passes_ceiling": true
+    },
+    {
+      "case": "tone-23000-0.86",
+      "sample_peak": 0.8498319387435913,
+      "oracle_true_peak": 0.8606426072730747,
+      "oracle_dbtp": -1.3035431477431578,
+      "gain_min": 0.7884873243041339,
+      "gain_max": 0.9906392266354054,
+      "input_unchanged": false,
+      "passes_ceiling": true
+    },
+    {
+      "case": "tone-23000-1",
+      "sample_peak": 0.8474510312080383,
+      "oracle_true_peak": 0.8595992340965242,
+      "oracle_dbtp": -1.3140796027417465,
+      "gain_min": 0.6772852764530766,
+      "gain_max": 0.850553889388971,
+      "input_unchanged": false,
+      "passes_ceiling": true
+    },
+    {
+      "case": "tone-23000-4",
+      "sample_peak": 0.808285117149353,
+      "oracle_true_peak": 0.8372338486206785,
+      "oracle_dbtp": -1.5430644367669437,
+      "gain_min": 0.16496166056668185,
+      "gain_max": 0.20312331938997538,
+      "input_unchanged": false,
+      "passes_ceiling": true
+    },
+    {
+      "case": "tone-23000-16",
+      "sample_peak": 0.7025932669639587,
+      "oracle_true_peak": 0.7345379013392244,
+      "oracle_dbtp": -2.6797158036608275,
+      "gain_min": 0.034293595581736544,
+      "gain_max": 0.04400630006699721,
+      "input_unchanged": false,
+      "passes_ceiling": true
+    },
+    {
+      "case": "tone-23990-0.1",
+      "sample_peak": 0.09999997913837433,
+      "oracle_true_peak": 0.2120970126730174,
+      "oracle_dbtp": -13.469308967128523,
+      "gain_min": 1.0,
+      "gain_max": 1.0,
+      "input_unchanged": true,
+      "passes_ceiling": true
+    },
+    {
+      "case": "tone-23990-0.86",
+      "sample_peak": 0.8599998354911804,
+      "oracle_true_peak": 0.8601446875058577,
+      "oracle_dbtp": -1.3085697728007495,
+      "gain_min": 0.4686627637363632,
+      "gain_max": 1.0,
+      "input_unchanged": false,
+      "passes_ceiling": true
+    },
+    {
+      "case": "tone-23990-1",
+      "sample_peak": 0.865963339805603,
+      "oracle_true_peak": 0.865963339805603,
+      "oracle_dbtp": -1.250009865360655,
+      "gain_min": 0.402089437547237,
+      "gain_max": 1.0,
+      "input_unchanged": false,
+      "passes_ceiling": true
+    },
+    {
+      "case": "tone-23990-4",
+      "sample_peak": 0.865963339805603,
+      "oracle_true_peak": 0.865963339805603,
+      "oracle_dbtp": -1.250009865360655,
+      "gain_min": 0.09537657998438154,
+      "gain_max": 0.47024652840228737,
+      "input_unchanged": false,
+      "passes_ceiling": true
+    },
+    {
+      "case": "tone-23990-16",
+      "sample_peak": 0.7879368662834167,
+      "oracle_true_peak": 0.8593948717512462,
+      "oracle_dbtp": -1.316144844012307,
+      "gain_min": 0.018698365593667648,
+      "gain_max": 0.2091832536009707,
+      "input_unchanged": false,
+      "passes_ceiling": true
+    },
+    {
+      "case": "random16",
+      "sample_peak": 0.6652587652206421,
+      "oracle_true_peak": 0.7521169666945718,
+      "oracle_dbtp": -2.4742922828520437,
+      "gain_min": 0.020564479126957178,
+      "gain_max": 0.043832877097946255,
+      "input_unchanged": false,
+      "passes_ceiling": true
+    },
+    {
+      "case": "impulse16",
+      "sample_peak": 0.865963339805603,
+      "oracle_true_peak": 0.865963339805603,
+      "oracle_dbtp": -1.250009865360655,
+      "gain_min": 0.05412270771000408,
+      "gain_max": 1.0,
+      "input_unchanged": false,
+      "passes_ceiling": true
+    },
+    {
+      "case": "alternating",
+      "sample_peak": 0.865963339805603,
+      "oracle_true_peak": 0.867824611068764,
+      "oracle_dbtp": -1.2313607531889854,
+      "gain_min": 0.4232649037211925,
+      "gain_max": 0.91154035181734,
+      "input_unchanged": false,
+      "passes_ceiling": true
+    },
+    {
+      "case": "two-positive-full-scale-samples",
+      "sample_peak": 0.6801022291183472,
+      "oracle_true_peak": 0.8657851116081865,
+      "oracle_dbtp": -1.2517977352529055,
+      "gain_min": 0.6798938692277114,
+      "gain_max": 1.0,
+      "input_unchanged": false,
+      "passes_ceiling": true
+    },
+    {
+      "case": "edge-burst",
+      "sample_peak": 0.8027717471122742,
+      "oracle_true_peak": 0.8621241252783749,
+      "oracle_dbtp": -1.2886040328648605,
+      "gain_min": 0.04756676182718022,
+      "gain_max": 1.0,
+      "input_unchanged": false,
+      "passes_ceiling": true
+    }
+  ]
+}

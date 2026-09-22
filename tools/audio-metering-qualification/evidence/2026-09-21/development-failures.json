@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "failures": [
+    {
+      "stage": "initial Rust measure_pcm release build",
+      "error": "sha2 digest Array<u8, U32> does not implement LowerHex",
+      "resolution": "Hex-encode the digest bytes with the existing repository pattern; release build and actual harness passed."
+    },
+    {
+      "stage": "focused loudness worker test and independent numerical review test",
+      "error": "Required DEADPAN_FFMPEG_PREFIX environment omitted; native adapter build guard rejected ambient media libraries.",
+      "resolution": "Reran with qualified /tmp/deadpan-media-compatible-xyhilms4/prefix; focused tests and Clippy passed."
+    },
+    {
+      "stage": "initial BH4 limiter prototype",
+      "error": "Assertion failed when independent finite 32x Kaiser reference exceeded -1 dBTP.",
+      "resolution": "Not promoted. Parameterized reports retain all fixtures; radius64/radius128 failed7/35 and5/35."
+    },
+    {
+      "stage": "additional generic inter-filter peak comparison",
+      "error": "The abrupt 10 kHz tone differs by 0.50394665 dB between the published Annex 2 FIR and FFmpeg; empty FFmpeg input reports a 0 dB sentinel. Run 2 failed two comparison assertions.",
+      "resolution": "Preserve run 2. The final harness checks both implementations against published EBU 15-19 expectations and reports arbitrary-waveform discrepancies separately. high-10000 remains a named diagnostic mismatch; empty comparison is inapplicable."
+    }
+  ],
+  "unavailable": [
+    {
+      "check": "official EBU audio archive download",
+      "result": "HTTP403 via automated retrieval; no official programme files tested."
+    }
+  ],
+  "skipped": [
+    "GUI/native lifecycle/device tests: no UI/startup/device changes",
+    "Full24-hour PCM throughput and processRSS measurement",
+    "Limiter production/listening/encoded-master qualification"
+  ]
+}
