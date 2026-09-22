@@ -1,0 +1,6 @@
+{
+  "note": "Derived from raw log; original runner counted only successful test binaries. The run stopped at the first failed binary, before the rest of the workspace.",
+  "passed": 414,
+  "failed": 1,
+  "ignored": 0
+}

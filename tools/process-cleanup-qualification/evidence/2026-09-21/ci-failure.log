@@ -1,0 +1,862 @@
+macOS workspace	Test	﻿2026-09-22T02:13:52.8079850Z ##[group]Run cargo test --workspace --locked
+macOS workspace	Test	2026-09-22T02:13:52.8080240Z ^[[36;1mcargo test --workspace --locked^[[0m
+macOS workspace	Test	2026-09-22T02:13:52.8196620Z shell: /bin/bash -e {0}
+macOS workspace	Test	2026-09-22T02:13:52.8197010Z env:
+macOS workspace	Test	2026-09-22T02:13:52.8197320Z   DEADPAN_FFMPEG_PREFIX: /Users/runner/work/_temp/deadpan-ffmpeg/prefix
+macOS workspace	Test	2026-09-22T02:13:52.8197740Z ##[endgroup]
+macOS workspace	Test	2026-09-22T02:13:54.0099490Z    Compiling libc v0.2.189
+macOS workspace	Test	2026-09-22T02:13:54.0233100Z    Compiling unicode-ident v1.0.26
+macOS workspace	Test	2026-09-22T02:13:54.0365060Z    Compiling bitflags v2.13.2
+macOS workspace	Test	2026-09-22T02:13:54.2990730Z    Compiling proc-macro2 v1.0.107
+macOS workspace	Test	2026-09-22T02:13:54.4663910Z    Compiling cfg-if v1.0.5
+macOS workspace	Test	2026-09-22T02:13:54.5367090Z    Compiling once_cell v1.21.4
+macOS workspace	Test	2026-09-22T02:13:54.7179970Z    Compiling serde_core v1.0.229
+macOS workspace	Test	2026-09-22T02:13:54.8722500Z    Compiling quote v1.0.47
+macOS workspace	Test	2026-09-22T02:13:55.0363750Z    Compiling syn v3.0.6
+macOS workspace	Test	2026-09-22T02:13:55.1118100Z    Compiling getrandom v0.4.3
+macOS workspace	Test	2026-09-22T02:13:55.2195810Z    Compiling errno v0.3.14
+macOS workspace	Test	2026-09-22T02:13:55.3319840Z    Compiling rustix v1.1.5
+macOS workspace	Test	2026-09-22T02:13:56.9961740Z    Compiling zmij v1.0.23
+macOS workspace	Test	2026-09-22T02:13:57.0064130Z    Compiling itoa v1.0.18
+macOS workspace	Test	2026-09-22T02:13:57.1719130Z    Compiling memchr v2.8.3
+macOS workspace	Test	2026-09-22T02:13:57.3391170Z    Compiling fastrand v2.5.0
+macOS workspace	Test	2026-09-22T02:13:57.5592940Z    Compiling serde_json v1.0.151
+macOS workspace	Test	2026-09-22T02:13:57.6471460Z    Compiling tempfile v3.27.0
+macOS workspace	Test	2026-09-22T02:13:57.9870390Z    Compiling arrayvec v0.7.8
+macOS workspace	Test	2026-09-22T02:13:58.1264160Z    Compiling typenum v1.20.1
+macOS workspace	Test	2026-09-22T02:13:58.5676920Z    Compiling thiserror-impl v2.0.20
+macOS workspace	Test	2026-09-22T02:13:58.7433280Z    Compiling serde_derive v1.0.229
+macOS workspace	Test	2026-09-22T02:13:58.8693350Z    Compiling hybrid-array v0.4.15
+macOS workspace	Test	2026-09-22T02:13:59.3823910Z    Compiling crypto-common v0.2.2
+macOS workspace	Test	2026-09-22T02:13:59.7854800Z    Compiling thiserror v2.0.20
+macOS workspace	Test	2026-09-22T02:13:59.8696120Z    Compiling block-buffer v0.12.1
+macOS workspace	Test	2026-09-22T02:13:59.9570740Z    Compiling cpufeatures v0.3.1
+macOS workspace	Test	2026-09-22T02:14:00.0186100Z    Compiling deadpan-native-process v0.1.0 (/Users/runner/work/deadpan/deadpan/native/deadpan-process)
+macOS workspace	Test	2026-09-22T02:14:00.2182610Z    Compiling digest v0.11.3
+macOS workspace	Test	2026-09-22T02:14:00.3498770Z    Compiling sha2 v0.11.0
+macOS workspace	Test	2026-09-22T02:14:00.6361720Z    Compiling deadpan-source v0.1.0 (/Users/runner/work/deadpan/deadpan/native/deadpan-source)
+macOS workspace	Test	2026-09-22T02:14:01.1754760Z    Compiling constant_time_eq v0.4.2
+macOS workspace	Test	2026-09-22T02:14:01.2941230Z    Compiling blake3 v1.8.7
+macOS workspace	Test	2026-09-22T02:14:01.4621130Z    Compiling serde v1.0.229
+macOS workspace	Test	2026-09-22T02:14:01.7902840Z    Compiling foldhash v0.2.0
+macOS workspace	Test	2026-09-22T02:14:01.8906850Z    Compiling hashbrown v0.17.1
+macOS workspace	Test	2026-09-22T02:14:02.2024350Z    Compiling deadpan-core v0.1.0 (/Users/runner/work/deadpan/deadpan/crates/deadpan-core)
+macOS workspace	Test	2026-09-22T02:14:02.4843720Z    Compiling smallvec v1.16.1
+macOS workspace	Test	2026-09-22T02:14:02.6782490Z    Compiling uuid v1.26.1
+macOS workspace	Test	2026-09-22T02:14:03.1356800Z    Compiling libm v0.2.16
+macOS workspace	Test	2026-09-22T02:14:03.9333260Z    Compiling syn v2.0.119
+macOS workspace	Test	2026-09-22T02:14:04.5696500Z    Compiling num-traits v0.2.19
+macOS workspace	Test	2026-09-22T02:14:05.1673150Z    Compiling objc2-encode v4.1.0
+macOS workspace	Test	2026-09-22T02:14:05.4608550Z    Compiling libsqlite3-sys v0.38.2
+macOS workspace	Test	2026-09-22T02:14:05.6183160Z    Compiling hashlink v0.12.2
+macOS workspace	Test	2026-09-22T02:14:05.8715740Z    Compiling deadpan-fileclone v0.1.0 (/Users/runner/work/deadpan/deadpan/native/deadpan-fileclone)
+macOS workspace	Test	2026-09-22T02:14:06.0672560Z    Compiling fallible-streaming-iterator v0.1.9
+macOS workspace	Test	2026-09-22T02:14:06.1657580Z    Compiling fallible-iterator v0.3.0
+macOS workspace	Test	2026-09-22T02:14:06.4094120Z    Compiling rusqlite v0.40.2
+macOS workspace	Test	2026-09-22T02:14:07.1293530Z    Compiling zerocopy-derive v0.8.57
+macOS workspace	Test	2026-09-22T02:14:07.6330930Z    Compiling objc2 v0.6.4
+macOS workspace	Test	2026-09-22T02:14:08.4586950Z    Compiling zerocopy v0.8.57
+macOS workspace	Test	2026-09-22T02:14:08.9634460Z    Compiling block2 v0.6.2
+macOS workspace	Test	2026-09-22T02:14:09.2171310Z    Compiling dispatch2 v0.3.1
+macOS workspace	Test	2026-09-22T02:14:09.6450870Z    Compiling objc2-core-foundation v0.3.2
+macOS workspace	Test	2026-09-22T02:14:11.8212600Z    Compiling bytemuck_derive v1.12.1
+macOS workspace	Test	2026-09-22T02:14:12.0184670Z    Compiling objc2-foundation v0.3.2
+macOS workspace	Test	2026-09-22T02:14:12.8855950Z    Compiling bytemuck v1.25.2
+macOS workspace	Test	2026-09-22T02:14:13.1065120Z    Compiling deadpan-dsp v0.1.0 (/Users/runner/work/deadpan/deadpan/native/deadpan-dsp)
+macOS workspace	Test	2026-09-22T02:14:16.9519470Z    Compiling deadpan-media v0.1.0 (/Users/runner/work/deadpan/deadpan/crates/deadpan-media)
+macOS workspace	Test	2026-09-22T02:14:17.7968390Z    Compiling deadpan-jobs v0.1.0 (/Users/runner/work/deadpan/deadpan/crates/deadpan-jobs)
+macOS workspace	Test	2026-09-22T02:14:20.2636980Z    Compiling deadpan-plan v0.1.0 (/Users/runner/work/deadpan/deadpan/crates/deadpan-plan)
+macOS workspace	Test	2026-09-22T02:14:21.0351570Z    Compiling deadpan-store v0.1.0 (/Users/runner/work/deadpan/deadpan/crates/deadpan-store)
+macOS workspace	Test	2026-09-22T02:14:21.6536830Z    Compiling getrandom v0.3.4
+macOS workspace	Test	2026-09-22T02:14:21.7887020Z    Compiling deadpan-audio v0.1.0 (/Users/runner/work/deadpan/deadpan/crates/deadpan-audio)
+macOS workspace	Test	2026-09-22T02:14:23.0527100Z    Compiling log v0.4.34
+macOS workspace	Test	2026-09-22T02:14:23.1481320Z    Compiling rand_core v0.9.5
+macOS workspace	Test	2026-09-22T02:14:23.2521560Z    Compiling ppv-lite86 v0.2.21
+macOS workspace	Test	2026-09-22T02:14:23.4261570Z    Compiling half v2.7.1
+macOS workspace	Test	2026-09-22T02:14:23.7283460Z    Compiling objc2-core-graphics v0.3.2
+macOS workspace	Test	2026-09-22T02:14:24.0893830Z    Compiling wait-timeout v0.2.1
+macOS workspace	Test	2026-09-22T02:14:24.2710940Z    Compiling bit-vec v0.8.0
+macOS workspace	Test	2026-09-22T02:14:24.3814910Z    Compiling quick-error v1.2.3
+macOS workspace	Test	2026-09-22T02:14:24.4236240Z    Compiling fnv v1.0.7
+macOS workspace	Test	2026-09-22T02:14:24.4682390Z    Compiling raw-window-handle v0.6.2
+macOS workspace	Test	2026-09-22T02:14:24.5891820Z    Compiling rusty-fork v0.3.1
+macOS workspace	Test	2026-09-22T02:14:24.9686160Z    Compiling bit-set v0.8.0
+macOS workspace	Test	2026-09-22T02:14:25.0489970Z    Compiling rand_chacha v0.9.0
+macOS workspace	Test	2026-09-22T02:14:25.3306910Z    Compiling rand_xorshift v0.4.0
+macOS workspace	Test	2026-09-22T02:14:25.4034290Z    Compiling rand v0.9.5
+macOS workspace	Test	2026-09-22T02:14:26.2615970Z    Compiling equivalent v1.0.2
+macOS workspace	Test	2026-09-22T02:14:26.3151650Z    Compiling regex-syntax v0.8.11
+macOS workspace	Test	2026-09-22T02:14:27.1857010Z    Compiling unarray v0.1.4
+macOS workspace	Test	2026-09-22T02:14:27.2399670Z    Compiling scopeguard v1.2.0
+macOS workspace	Test	2026-09-22T02:14:27.2780020Z    Compiling lock_api v0.4.14
+macOS workspace	Test	2026-09-22T02:14:27.4513620Z    Compiling indexmap v2.14.2
+macOS workspace	Test	2026-09-22T02:14:27.9971930Z    Compiling proptest v1.11.0
+macOS workspace	Test	2026-09-22T02:14:29.1166890Z    Compiling parking_lot_core v0.9.12
+macOS workspace	Test	2026-09-22T02:14:29.3215570Z    Compiling rustc-hash v1.1.0
+macOS workspace	Test	2026-09-22T02:14:29.3608690Z    Compiling naga-types v30.0.1
+macOS workspace	Test	2026-09-22T02:14:29.4860840Z    Compiling parking_lot v0.12.5
+macOS workspace	Test	2026-09-22T02:14:29.8290870Z    Compiling unicode-width v0.2.2
+macOS workspace	Test	2026-09-22T02:14:29.9924050Z    Compiling bit-vec v0.9.1
+macOS workspace	Test	2026-09-22T02:14:30.2334930Z    Compiling profiling v1.0.18
+macOS workspace	Test	2026-09-22T02:14:30.2880710Z    Compiling bit-set v0.10.0
+macOS workspace	Test	2026-09-22T02:14:30.4378320Z    Compiling codespan-reporting v0.13.1
+macOS workspace	Test	2026-09-22T02:14:30.8972670Z    Compiling objc2-metal v0.3.2
+macOS workspace	Test	2026-09-22T02:14:32.2824810Z    Compiling static_assertions v1.1.0
+macOS workspace	Test	2026-09-22T02:14:32.3243490Z    Compiling wgpu-types v30.0.1
+macOS workspace	Test	2026-09-22T02:14:34.6099790Z    Compiling objc2-quartz-core v0.3.2
+macOS workspace	Test	2026-09-22T02:14:34.6877710Z    Compiling naga v30.0.1
+macOS workspace	Test	2026-09-22T02:14:35.1995630Z    Compiling raw-window-metal v1.1.0
+macOS workspace	Test	2026-09-22T02:14:35.4097610Z    Compiling objc-sys v0.3.5
+macOS workspace	Test	2026-09-22T02:14:35.4328950Z    Compiling libloading v0.8.9
+macOS workspace	Test	2026-09-22T02:14:35.4907500Z    Compiling simd-adler32 v0.3.10
+macOS workspace	Test	2026-09-22T02:14:35.5589300Z    Compiling objc2 v0.5.2
+macOS workspace	Test	2026-09-22T02:14:35.5876470Z    Compiling polycool v0.4.0
+macOS workspace	Test	2026-09-22T02:14:35.8677730Z    Compiling adler2 v2.0.1
+macOS workspace	Test	2026-09-22T02:14:35.9188340Z    Compiling kurbo v0.13.1
+macOS workspace	Test	2026-09-22T02:14:36.3976690Z    Compiling block2 v0.5.1
+macOS workspace	Test	2026-09-22T02:14:36.6030050Z    Compiling deadpan-cli v0.1.0 (/Users/runner/work/deadpan/deadpan/crates/deadpan-cli)
+macOS workspace	Test	2026-09-22T02:14:37.5592000Z    Compiling color v0.3.3
+macOS workspace	Test	2026-09-22T02:14:38.0998600Z    Compiling font-types v0.12.5
+macOS workspace	Test	2026-09-22T02:14:38.4064860Z    Compiling euclid v0.22.14
+macOS workspace	Test	2026-09-22T02:14:38.8591260Z    Compiling linebender_resource_handle v0.1.1
+macOS workspace	Test	2026-09-22T02:14:38.9219640Z    Compiling core-foundation-sys v0.8.7
+macOS workspace	Test	2026-09-22T02:14:39.0686940Z    Compiling dispatch v0.2.0
+macOS workspace	Test	2026-09-22T02:14:39.1415740Z    Compiling core-foundation v0.9.4
+macOS workspace	Test	2026-09-22T02:14:39.1746540Z    Compiling objc2-foundation v0.2.2
+macOS workspace	Test	2026-09-22T02:14:39.3892880Z    Compiling peniko v0.6.1
+macOS workspace	Test	2026-09-22T02:14:39.5641810Z    Compiling guillotiere v0.7.0
+macOS workspace	Test	2026-09-22T02:14:39.8042750Z    Compiling read-fonts v0.41.0
+macOS workspace	Test	2026-09-22T02:14:43.0897960Z    Compiling wgpu-naga-bridge v30.0.1
+macOS workspace	Test	2026-09-22T02:14:43.1703400Z    Compiling wgpu-hal v30.0.1
+macOS workspace	Test	2026-09-22T02:14:45.8525220Z    Compiling wgpu-core-deps-apple v30.0.1
+macOS workspace	Test	2026-09-22T02:14:45.8776440Z    Compiling wgpu-core v30.0.1
+macOS workspace	Test	2026-09-22T02:14:46.1512710Z    Compiling crc32fast v1.5.2
+macOS workspace	Test	2026-09-22T02:14:46.2785070Z    Compiling miniz_oxide v0.9.1
+macOS workspace	Test	2026-09-22T02:14:46.8096820Z    Compiling objc2-core-audio-types v0.3.2
+macOS workspace	Test	2026-09-22T02:14:46.9842090Z    Compiling accesskit v0.24.1
+macOS workspace	Test	2026-09-22T02:14:47.2491980Z    Compiling foreign-types-macros v0.2.4
+macOS workspace	Test	2026-09-22T02:14:47.6544540Z    Compiling bitflags v1.3.2
+macOS workspace	Test	2026-09-22T02:14:47.7071970Z    Compiling foreign-types-shared v0.3.1
+macOS workspace	Test	2026-09-22T02:14:47.7530180Z    Compiling fearless_simd v0.4.1
+macOS workspace	Test	2026-09-22T02:14:48.0181360Z    Compiling foreign-types v0.5.0
+macOS workspace	Test	2026-09-22T02:14:48.0694730Z    Compiling core-graphics-types v0.1.3
+macOS workspace	Test	2026-09-22T02:14:48.1298990Z    Compiling objc2-core-audio v0.3.2
+macOS workspace	Test	2026-09-22T02:14:48.3306080Z    Compiling flate2 v1.1.10
+macOS workspace	Test	2026-09-22T02:14:48.7654540Z    Compiling objc2-app-kit v0.2.2
+macOS workspace	Test	2026-09-22T02:14:50.1544470Z    Compiling vello_common v0.1.0
+macOS workspace	Test	2026-09-22T02:14:51.6384190Z    Compiling wgpu v30.0.1
+macOS workspace	Test	2026-09-22T02:14:52.7927730Z    Compiling emath v0.36.2
+macOS workspace	Test	2026-09-22T02:14:53.0692120Z    Compiling pin-project-lite v0.2.17
+macOS workspace	Test	2026-09-22T02:14:53.1093200Z    Compiling tracing-core v0.1.36
+macOS workspace	Test	2026-09-22T02:14:53.4479440Z    Compiling zune-core v0.5.3
+macOS workspace	Test	2026-09-22T02:14:53.6157390Z    Compiling zune-jpeg v0.5.15
+macOS workspace	Test	2026-09-22T02:14:54.3075780Z    Compiling tracing v0.1.44
+macOS workspace	Test	2026-09-22T02:14:54.4522730Z    Compiling ecolor v0.36.2
+macOS workspace	Test	2026-09-22T02:14:54.6205790Z    Compiling ahash v0.8.12
+macOS workspace	Test	2026-09-22T02:14:54.7411470Z    Compiling vello_cpu v0.1.0
+macOS workspace	Test	2026-09-22T02:14:54.9352360Z    Compiling objc2-audio-toolbox v0.3.2
+macOS workspace	Test	2026-09-22T02:14:55.3745520Z    Compiling core-graphics v0.23.2
+macOS workspace	Test	2026-09-22T02:14:55.7178130Z    Compiling unicode-general-category v1.1.0
+macOS workspace	Test	2026-09-22T02:14:56.1583670Z    Compiling harfrust v0.12.0
+macOS workspace	Test	2026-09-22T02:14:56.8772890Z    Compiling skrifa v0.44.0
+macOS workspace	Test	2026-09-22T02:15:00.2175150Z    Compiling miniz_oxide v0.8.9
+macOS workspace	Test	2026-09-22T02:15:00.8090710Z    Compiling fdeflate v0.3.7
+macOS workspace	Test	2026-09-22T02:15:00.8574010Z    Compiling deadpan-models v0.1.0 (/Users/runner/work/deadpan/deadpan/crates/deadpan-models)
+macOS workspace	Test	2026-09-22T02:15:01.2264020Z    Compiling hashbrown v0.16.1
+macOS workspace	Test	2026-09-22T02:15:01.6062500Z    Compiling either v1.18.0
+macOS workspace	Test	2026-09-22T02:15:01.7197410Z    Compiling nohash-hasher v0.2.0
+macOS workspace	Test	2026-09-22T02:15:01.7442450Z    Compiling quick-error v2.0.1
+macOS workspace	Test	2026-09-22T02:15:01.7686090Z    Compiling fax v0.2.7
+macOS workspace	Test	2026-09-22T02:15:01.7880360Z    Compiling smol_str v0.2.2
+macOS workspace	Test	2026-09-22T02:15:01.9444270Z    Compiling weezl v0.1.12
+macOS workspace	Test	2026-09-22T02:15:01.9765770Z    Compiling cursor-icon v1.2.0
+macOS workspace	Test	2026-09-22T02:15:02.0434600Z    Compiling self_cell v1.3.0
+macOS workspace	Test	2026-09-22T02:15:02.0982340Z    Compiling pxfm v0.1.30
+macOS workspace	Test	2026-09-22T02:15:02.3262840Z    Compiling unicode-segmentation v1.13.3
+macOS workspace	Test	2026-09-22T02:15:02.6996900Z    Compiling dpi v0.1.2
+macOS workspace	Test	2026-09-22T02:15:02.8108490Z    Compiling epaint_default_fonts v0.36.2
+macOS workspace	Test	2026-09-22T02:15:02.8197540Z    Compiling winit v0.30.13
+macOS workspace	Test	2026-09-22T02:15:02.8710640Z    Compiling epaint v0.36.2
+macOS workspace	Test	2026-09-22T02:15:04.9322020Z    Compiling moxcms v0.8.1
+macOS workspace	Test	2026-09-22T02:15:05.0137360Z    Compiling tiff v0.11.3
+macOS workspace	Test	2026-09-22T02:15:05.5707180Z    Compiling itertools v0.15.0
+macOS workspace	Test	2026-09-22T02:15:06.4312690Z    Compiling accesskit_consumer v0.38.0
+macOS workspace	Test	2026-09-22T02:15:06.6500320Z    Compiling png v0.18.1
+macOS workspace	Test	2026-09-22T02:15:07.3141340Z    Compiling coreaudio-rs v0.14.2
+macOS workspace	Test	2026-09-22T02:15:07.6664070Z    Compiling objc2-app-kit v0.3.2
+macOS workspace	Test	2026-09-22T02:15:08.0519370Z    Compiling mach2 v0.6.0
+macOS workspace	Test	2026-09-22T02:15:08.4955960Z    Compiling byteorder-lite v0.1.0
+macOS workspace	Test	2026-09-22T02:15:08.6891700Z    Compiling dasp_sample v0.11.0
+macOS workspace	Test	2026-09-22T02:15:08.8510680Z    Compiling pollster v1.0.1
+macOS workspace	Test	2026-09-22T02:15:08.9127130Z    Compiling cpal v0.18.2
+macOS workspace	Test	2026-09-22T02:15:09.7643980Z    Compiling image v0.25.10
+macOS workspace	Test	2026-09-22T02:15:10.4600340Z    Compiling accesskit_macos v0.26.3
+macOS workspace	Test	2026-09-22T02:15:10.6965440Z    Compiling egui v0.36.2
+macOS workspace	Test	2026-09-22T02:15:11.4807210Z    Compiling deadpan-media-worker v0.1.0 (/Users/runner/work/deadpan/deadpan/native/deadpan-media-worker)
+macOS workspace	Test	2026-09-22T02:15:11.7553010Z    Compiling rtrb v0.4.0
+macOS workspace	Test	2026-09-22T02:15:11.8661040Z    Compiling rustc-hash v2.1.3
+macOS workspace	Test	2026-09-22T02:15:11.9203160Z    Compiling web-time v1.1.0
+macOS workspace	Test	2026-09-22T02:15:11.9486320Z    Compiling type-map v0.5.1
+macOS workspace	Test	2026-09-22T02:15:12.3908010Z    Compiling arboard v3.6.1
+macOS workspace	Test	2026-09-22T02:15:12.6133140Z    Compiling accesskit_winit v0.32.2
+macOS workspace	Test	2026-09-22T02:15:12.6898150Z    Compiling deadpan-render v0.1.0 (/Users/runner/work/deadpan/deadpan/crates/deadpan-render)
+macOS workspace	Test	2026-09-22T02:15:13.5415300Z    Compiling deadpan-output v0.1.0 (/Users/runner/work/deadpan/deadpan/native/deadpan-output)
+macOS workspace	Test	2026-09-22T02:15:14.0116000Z    Compiling egui-winit v0.36.2
+macOS workspace	Test	2026-09-22T02:15:14.6844170Z    Compiling egui-wgpu v0.36.2
+macOS workspace	Test	2026-09-22T02:15:14.9998380Z    Compiling rfd v0.17.2
+macOS workspace	Test	2026-09-22T02:15:15.7711340Z    Compiling eframe v0.36.2
+macOS workspace	Test	2026-09-22T02:15:19.1206680Z    Compiling deadpan-app v0.1.0 (/Users/runner/work/deadpan/deadpan/crates/deadpan-app)
+macOS workspace	Test	2026-09-22T02:16:21.2098240Z     Finished `test` profile [unoptimized + debuginfo] target(s) in 2m 28s
+macOS workspace	Test	2026-09-22T02:16:21.2950130Z      Running unittests src/main.rs (target/debug/deps/deadpan_app-ae8544d301ab4ebd)
+macOS workspace	Test	2026-09-22T02:16:21.3188730Z 
+macOS workspace	Test	2026-09-22T02:16:21.3189200Z running 51 tests
+macOS workspace	Test	2026-09-22T02:16:21.3269880Z test dialogs::tests::project_names_preserve_authored_suffixes_and_end_in_deadpan ... ok
+macOS workspace	Test	2026-09-22T02:16:21.3271430Z test navigation::tests::boundaries_include_the_end_and_saturate_without_wrapping ... ok
+macOS workspace	Test	2026-09-22T02:16:21.3271890Z test navigation::tests::control_r_is_redo_only_outside_text_and_composition ... ok
+macOS workspace	Test	2026-09-22T02:16:21.3272470Z test navigation::tests::counts_saturate_and_zero_never_creates_a_zero_distance_motion ... ok
+macOS workspace	Test	2026-09-22T02:16:21.3277890Z test navigation::tests::endpoint_search_history_and_pane_actions_clear_counts ... ok
+macOS workspace	Test	2026-09-22T02:16:21.3278550Z test navigation::tests::enter_and_escape_belong_to_composition_until_it_finishes ... ok
+macOS workspace	Test	2026-09-22T02:16:21.3279020Z test navigation::tests::frame_and_beat_bindings_use_one_accumulated_count ... ok
+macOS workspace	Test	2026-09-22T02:16:21.3288700Z test navigation::tests::g_prefix_survives_idle_observation_without_a_clock_or_timeout ... ok
+macOS workspace	Test	2026-09-22T02:16:21.3289380Z test navigation::tests::invalid_prefixes_escape_and_explicit_reset_discard_pending_input ... ok
+macOS workspace	Test	2026-09-22T02:16:21.3289930Z test navigation::tests::logical_symbols_and_digits_do_not_assume_a_us_layout ... ok
+macOS workspace	Test	2026-09-22T02:16:21.3290490Z test navigation::tests::modified_navigation_and_reserved_shortcuts_do_not_edit ... ok
+macOS workspace	Test	2026-09-22T02:16:21.3293500Z test navigation::tests::native_command_shortcuts_preserve_text_editing_history ... ok
+macOS workspace	Test	2026-09-22T02:16:21.3294730Z test navigation::tests::pane_order_cycles_both_directions_and_reverses_exactly ... ok
+macOS workspace	Test	2026-09-22T02:16:21.3295340Z test navigation::tests::text_and_ime_discard_pending_normal_mode_bindings ... ok
+macOS workspace	Test	2026-09-22T02:16:21.3320260Z test presentation::tests::accepted_picture_waiting_for_gpu_survives_a_new_request ... ok
+macOS workspace	Test	2026-09-22T02:16:21.3326740Z test presentation::tests::background_and_empty_sequence_do_not_invent_source_frame_identity ... ok
+macOS workspace	Test	2026-09-22T02:16:21.3327530Z test presentation::tests::clearing_rejects_old_success_and_failure_even_after_reopening ... ok
+macOS workspace	Test	2026-09-22T02:16:21.3328610Z test presentation::tests::current_decode_failure_removes_the_old_picture_and_label ... ok
+macOS workspace	Test	2026-09-22T02:16:21.3329350Z test presentation::tests::late_decode_and_error_cannot_replace_the_newest_request ... ok
+macOS workspace	Test	2026-09-22T02:16:21.3330330Z test presentation::tests::render_failure_preserves_the_last_displayed_identity_until_a_new_request ... ok
+macOS workspace	Test	2026-09-22T02:16:21.3331050Z test presentation::tests::repeated_original_picture_has_distinct_sequence_and_revision_identity ... ok
+macOS workspace	Test	2026-09-22T02:16:21.3344840Z test presentation::tests::source_caption_uses_the_source_view_even_inside_a_project ... ok
+macOS workspace	Test	2026-09-22T02:16:21.3352350Z test presentation::tests::successful_decode_clears_an_older_gpu_failure_while_waiting ... ok
+macOS workspace	Test	2026-09-22T02:16:21.3395560Z test dialogs::tests::pending_dialog_rejects_another_and_cancellation_releases_it ... ok
+macOS workspace	Test	2026-09-22T02:16:21.3396530Z test dialogs::tests::chosen_project_path_is_returned_once_with_its_extension ... ok
+macOS workspace	Test	2026-09-22T02:16:21.3397030Z test preview::tests::preview_target_bounds_retina_and_preserves_canvas_geometry ... ok
+macOS workspace	Test	2026-09-22T02:16:21.3734720Z test preview::tests::pane_focus_survives_egui_arrow_routing_and_cycles_explicitly ... ok
+macOS workspace	Test	2026-09-22T02:16:21.3786630Z test preview::tests::text_exit_keeps_final_text_and_returns_to_a_real_pane ... ok
+macOS workspace	Test	2026-09-22T02:16:21.5141130Z test project::tests::cancel_and_switch_reject_late_prepared_results_and_release_writer_lock ... ok
+macOS workspace	Test	2026-09-22T02:16:21.6576510Z test project::tests::consecutive_cached_insertions_report_distinct_committed_nodes ... ok
+macOS workspace	Test	2026-09-22T02:16:21.6884200Z test project::tests::explicit_audio_import_is_measured_and_invalid_selected_stream_fails ... ok
+macOS workspace	Test	2026-09-22T02:16:21.7128810Z test project::tests::lost_import_worker_reports_failure_without_closing_project ... ok
+macOS workspace	Test	2026-09-22T02:16:21.8892690Z test project::tests::insertion_completion_survives_import_progress_and_replaced_mailbox_updates ... ok
+macOS workspace	Test	2026-09-22T02:16:22.1058970Z test project::tests::prepared_insertion_retains_captured_revision_and_never_retargets_after_undo ... ok
+macOS workspace	Test	2026-09-22T02:16:22.1231040Z test project::tests::project_commands_and_undo_continue_during_preparation_and_errors_survive_progress ... ok
+macOS workspace	Test	2026-09-22T02:16:22.1343150Z test project::tests::shutdown_finishes_an_admitted_command_before_releasing_the_store ... ok
+macOS workspace	Test	2026-09-22T02:16:22.1473800Z test project::tests::shutdown_does_not_wait_for_import_and_rejects_new_commands ... ok
+macOS workspace	Test	2026-09-22T02:16:22.2694980Z test project::tests::real_import_registers_without_inserting_and_round_trips_entire_history ... ok
+macOS workspace	Test	2026-09-22T02:16:22.2803410Z test worker::project_tests::actual_decoded_freeze_keeps_sequence_position_and_rejects_old_revision_reply ... ok
+macOS workspace	Test	2026-09-22T02:16:22.3231200Z test project::tests::unavailable_linked_original_invalidates_cached_insertion_without_losing_registration ... ok
+macOS workspace	Test	2026-09-22T02:16:22.3267230Z test worker::project_tests::index_validation_observes_cancellation_between_bounded_chunks ... ok
+macOS workspace	Test	2026-09-22T02:16:22.3509360Z test worker::project_tests::cancelled_open_does_not_leave_a_later_project_request_without_a_source ... ok
+macOS workspace	Test	2026-09-22T02:16:22.3784370Z test worker::project_tests::freeze_background_and_empty_sequence_follow_the_plan ... ok
+macOS workspace	Test	2026-09-22T02:16:22.4492070Z test worker::project_tests::registered_source_and_sequence_decode_the_same_original_frame ... ok
+macOS workspace	Test	2026-09-22T02:16:22.4825090Z test worker::project_tests::sequence_samples_exact_mapping_and_endpoint_policy_after_a_revision_change ... ok
+macOS workspace	Test	2026-09-22T02:16:22.4826390Z test worker::tests::nonregular_input_is_rejected_before_hashing ... ok
+macOS workspace	Test	2026-09-22T02:16:22.4827170Z test worker::tests::opening_another_source_invalidates_even_completed_old_reply ... ok
+macOS workspace	Test	2026-09-22T02:16:22.4827820Z test worker::tests::rapid_navigation_keeps_only_latest_work_and_cancels_inflight_decode ... ok
+macOS workspace	Test	2026-09-22T02:16:22.4828520Z test worker::tests::shutdown_cancels_active_and_pending_and_prevents_publication ... ok
+macOS workspace	Test	2026-09-22T02:16:22.5020530Z test worker::tests::actual_preview_worker_opens_then_coalesces_source_frame_requests ... ok
+macOS workspace	Test	2026-09-22T02:16:22.5531730Z test worker::project_tests::revision_receipt_index_and_session_identity_are_checked ... ok
+macOS workspace	Test	2026-09-22T02:16:22.5532170Z 
+macOS workspace	Test	2026-09-22T02:16:22.5536100Z test result: ok. 51 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.24s
+macOS workspace	Test	2026-09-22T02:16:22.5536610Z 
+macOS workspace	Test	2026-09-22T02:16:22.5542830Z      Running tests/headless.rs (target/debug/deps/headless-c1c212124fd1e5c4)
+macOS workspace	Test	2026-09-22T02:16:22.5648900Z 
+macOS workspace	Test	2026-09-22T02:16:22.5649790Z running 2 tests
+macOS workspace	Test	2026-09-22T02:16:22.5995990Z test headless_errors_keep_the_same_structured_protocol ... ok
+macOS workspace	Test	2026-09-22T02:16:22.6017880Z test native_binary_runs_headless_without_initializing_a_window ... ok
+macOS workspace	Test	2026-09-22T02:16:22.6018200Z 
+macOS workspace	Test	2026-09-22T02:16:22.6022310Z test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+macOS workspace	Test	2026-09-22T02:16:22.6022750Z 
+macOS workspace	Test	2026-09-22T02:16:22.6028660Z      Running unittests src/lib.rs (target/debug/deps/deadpan_audio-1f4e573307aefe9c)
+macOS workspace	Test	2026-09-22T02:16:22.6250530Z 
+macOS workspace	Test	2026-09-22T02:16:22.6251260Z running 16 tests
+macOS workspace	Test	2026-09-22T02:16:22.6260760Z test loudness::tests::full_day_capacity_and_window_edges_are_exact ... ok
+macOS workspace	Test	2026-09-22T02:16:22.6261470Z test loudness::tests::both_gates_are_strict_and_the_absolute_gate_remains_in_force ... ok
+macOS workspace	Test	2026-09-22T02:16:22.6262140Z test matrix::tests::ambiguous_invalid_and_unsupported_layouts_fail_explicitly ... ok
+macOS workspace	Test	2026-09-22T02:16:22.6262770Z test matrix::tests::every_supported_non_lfe_speaker_can_be_interpreted ... ok
+macOS workspace	Test	2026-09-22T02:16:22.6263350Z test matrix::tests::fixed_matrix_preserves_dynamics_without_normalizing_or_clipping ... ok
+macOS workspace	Test	2026-09-22T02:16:22.6263900Z test matrix::tests::malformed_pcm_and_invalid_omitted_lfe_are_rejected ... ok
+macOS workspace	Test	2026-09-22T02:16:22.6335170Z test matrix::tests::mono_and_stereo_retain_unity_gain_and_channel_separation ... ok
+macOS workspace	Test	2026-09-22T02:16:22.6335920Z test matrix::tests::native_channel_impulses_follow_speaker_bits_with_holes ... ok
+macOS workspace	Test	2026-09-22T02:16:22.6336480Z test matrix::tests::sparse_surround_layout_uses_native_interleaved_order ... ok
+macOS workspace	Test	2026-09-22T02:16:22.6340500Z test room_tone::tests::phase_modulo_remains_exact_beyond_float_integer_precision ... ok
+macOS workspace	Test	2026-09-22T02:16:22.6341090Z test room_tone::tests::rejects_invalid_extents_allocations_pcm_and_reads_and_cancels ... ok
+macOS workspace	Test	2026-09-22T02:16:22.6341670Z test room_tone::tests::integer_seam_follows_complementary_linear_overlap ... ok
+macOS workspace	Test	2026-09-22T02:16:22.6342230Z test room_tone::tests::unity_weights_preserve_dc_and_levels_without_normalizing ... ok
+macOS workspace	Test	2026-09-22T02:16:22.6343420Z test session::tests::index_comparison_checks_cancellation_through_raw_and_derived_chunks ... ok
+macOS workspace	Test	2026-09-22T02:16:22.7942870Z test room_tone::tests::tiny_fragments_shorten_fades_and_skip_unobserved_cycles ... ok
+macOS workspace	Test	2026-09-22T02:16:22.8549920Z test room_tone::tests::fractional_44100_extent_keeps_exact_period_and_partition_identity ... ok
+macOS workspace	Test	2026-09-22T02:16:22.8553100Z      Running tests/loudness.rs (target/debug/deps/loudness-0b80df0c22e223d3)
+macOS workspace	Test	2026-09-22T02:16:22.8553450Z 
+macOS workspace	Test	2026-09-22T02:16:22.8553820Z test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.23s
+macOS workspace	Test	2026-09-22T02:16:22.8554260Z 
+macOS workspace	Test	2026-09-22T02:16:22.8817940Z 
+macOS workspace	Test	2026-09-22T02:16:22.8818450Z running 9 tests
+macOS workspace	Test	2026-09-22T02:16:22.8919010Z test admission_is_bounded_and_preserves_full_scale_pcm ... ok
+macOS workspace	Test	2026-09-22T02:16:22.9520280Z test arbitrary_chunk_partitions_are_bit_identical ... ok
+macOS workspace	Test	2026-09-22T02:16:22.9622580Z test incomplete_final_hop_neither_pads_nor_changes_existing_blocks ... ok
+macOS workspace	Test	2026-09-22T02:16:23.0276170Z test itu_997_hz_single_channel_reference_and_channel_energy ... ok
+macOS workspace	Test	2026-09-22T02:16:23.0988450Z test a_long_silent_gap_does_not_dilute_the_gated_programme ... ok
+macOS workspace	Test	2026-09-22T02:16:23.1189570Z test no_complete_or_audible_window_has_no_numeric_loudness ... ok
+macOS workspace	Test	2026-09-22T02:16:23.1291150Z test rejected_blocks_and_cancellation_leave_all_state_unchanged ... ok
+macOS workspace	Test	2026-09-22T02:16:23.2458480Z test low_and_high_frequency_weighting_matches_analytic_filter_gain ... ok
+macOS workspace	Test	2026-09-22T02:16:24.4981090Z      Running tests/resample.rs (target/debug/deps/resample-a73e6a7872dfcb25)
+macOS workspace	Test	2026-09-22T02:16:24.4981660Z test ebu_published_stereo_tone_and_gating_cases ... ok
+macOS workspace	Test	2026-09-22T02:16:24.4982060Z 
+macOS workspace	Test	2026-09-22T02:16:24.4982270Z test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.61s
+macOS workspace	Test	2026-09-22T02:16:24.4982670Z 
+macOS workspace	Test	2026-09-22T02:16:24.5195410Z 
+macOS workspace	Test	2026-09-22T02:16:24.5196090Z running 7 tests
+macOS workspace	Test	2026-09-22T02:16:24.5249000Z test integer_unity_is_exact_and_zero_extension_never_reads_outside_authored_trim ... ok
+macOS workspace	Test	2026-09-22T02:16:24.5367890Z test invalid_recipes_and_arithmetic_overflow_fail_without_clamping ... ok
+macOS workspace	Test	2026-09-22T02:16:24.5669730Z test dc_calibration_is_independent_of_level_and_does_not_renormalize_trim_edges ... ok
+macOS workspace	Test	2026-09-22T02:16:24.5730130Z test source_halo_is_bounded_and_missing_or_invalid_pcm_is_never_substituted ... ok
+macOS workspace	Test	2026-09-22T02:16:24.5731010Z test translating_huge_signed_source_and_output_clocks_preserves_fractional_phase ... ok
+macOS workspace	Test	2026-09-22T02:16:24.5818890Z test partitions_and_isolated_seeks_are_bit_equal_for_fractional_negative_and_large_origins ... ok
+macOS workspace	Test	2026-09-22T02:16:25.2146060Z test actual_tones_preserve_passband_phase_and_reject_aliases_and_images ... ok
+macOS workspace	Test	2026-09-22T02:16:25.2146870Z 
+macOS workspace	Test	2026-09-22T02:16:25.2147690Z test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.70s
+macOS workspace	Test	2026-09-22T02:16:25.2148930Z 
+macOS workspace	Test	2026-09-22T02:16:25.2149870Z      Running tests/sequence.rs (target/debug/deps/sequence-99caa46806a5b09e)
+macOS workspace	Test	2026-09-22T02:16:25.2375030Z 
+macOS workspace	Test	2026-09-22T02:16:25.2375800Z running 10 tests
+macOS workspace	Test	2026-09-22T02:16:25.2637710Z test billion_play_repeat_seeks_the_last_play_without_a_trailing_gap ... ok
+macOS workspace	Test	2026-09-22T02:16:25.2740710Z test cancellation_and_invalid_block_budgets_do_not_touch_the_provider ... ok
+macOS workspace	Test	2026-09-22T02:16:25.2868860Z test inserted_silence_resumes_untouched_speech_and_repeat_has_three_total_plays ... ok
+macOS workspace	Test	2026-09-22T02:16:25.2970970Z test nested_follow_speed_retimes_keep_the_exact_composed_mapping ... ok
+macOS workspace	Test	2026-09-22T02:16:25.2973880Z test source_placement_and_sequence_order_preserve_original_samples_and_revision_identity ... ok
+macOS workspace	Test	2026-09-22T02:16:25.2974590Z test original_44100_clock_is_resampled_to_the_mix_clock_and_mono_stays_centered ... ok
+macOS workspace	Test	2026-09-22T02:16:25.2975270Z test unity_preserve_and_retimed_silence_need_no_unimplemented_dsp ... ok
+macOS workspace	Test	2026-09-22T02:16:25.2975890Z test structural_crops_exclude_filter_context_and_use_half_open_discrete_samples ... ok
+macOS workspace	Test	2026-09-22T02:16:25.2991970Z test unsupported_audio_policies_fail_before_any_source_is_requested ... ok
+macOS workspace	Test	2026-09-22T02:16:25.3975740Z test ntsc_boundaries_keep_exact_fractional_phase_across_partitions_and_seeks ... ok
+macOS workspace	Test	2026-09-22T02:16:25.3977110Z 
+macOS workspace	Test	2026-09-22T02:16:25.3980250Z test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s
+macOS workspace	Test	2026-09-22T02:16:25.3980680Z 
+macOS workspace	Test	2026-09-22T02:16:25.3984150Z      Running tests/session.rs (target/debug/deps/session-8aa8d37e32c47a71)
+macOS workspace	Test	2026-09-22T02:16:25.4181510Z 
+macOS workspace	Test	2026-09-22T02:16:25.4182010Z running 8 tests
+macOS workspace	Test	2026-09-22T02:16:25.4419530Z test cancellation_prevents_admission_and_block_preparation_without_poisoning_the_source ... ok
+macOS workspace	Test	2026-09-22T02:16:25.4532010Z test filter_context_reads_only_the_authored_trim_and_unavailable_selected_samples_fail ... ok
+macOS workspace	Test	2026-09-22T02:16:25.4537560Z test admission_rechecks_identity_stream_and_raw_observations_before_exposing_pcm ... ok
+macOS workspace	Test	2026-09-22T02:16:25.4635940Z test private_media_read_limits_and_preparation_limits_are_not_silently_relaxed ... ok
+macOS workspace	Test	2026-09-22T02:16:25.4784390Z test mono_44100_to_mix_rate_keeps_fractional_origin_across_partitions_and_random_seeks ... ok
+macOS workspace	Test	2026-09-22T02:16:25.4796520Z test verified_stereo_unity_preserves_actual_fixture_amplitudes_and_terminal_samples ... ok
+macOS workspace	Test	2026-09-22T02:16:25.5005740Z test actual_native_aac_layout_cannot_be_reinterpreted_as_different_speakers ... ok
+macOS workspace	Test	2026-09-22T02:16:25.5006530Z test unspecified_original_layouts_require_explicit_consistent_host_interpretation ... ok
+macOS workspace	Test	2026-09-22T02:16:25.5006900Z 
+macOS workspace	Test	2026-09-22T02:16:25.5007160Z test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.08s
+macOS workspace	Test	2026-09-22T02:16:25.5007440Z 
+macOS workspace	Test	2026-09-22T02:16:25.5009730Z      Running tests/stages.rs (target/debug/deps/stages-d0f0a9fd97136d64)
+macOS workspace	Test	2026-09-22T02:16:25.5178800Z 
+macOS workspace	Test	2026-09-22T02:16:25.5179640Z running 17 tests
+macOS workspace	Test	2026-09-22T02:16:25.5583700Z test cancellation_during_source_access_leaves_no_partial_stage_and_retry_replays_exactly ... ok
+macOS workspace	Test	2026-09-22T02:16:25.5684490Z test nested_depth_and_native_long_input_limits_fail_without_decoding_originals ... ok
+macOS workspace	Test	2026-09-22T02:16:25.5805230Z test a_subsample_room_tone_hold_renders_through_preserve_without_becoming_silence ... ok
+macOS workspace	Test	2026-09-22T02:16:25.6231440Z test nested_preserve_retains_inner_history_and_outer_crop_matches_full_render ... ok
+macOS workspace	Test	2026-09-22T02:16:25.6584030Z test mixed_pitch_policies_keep_their_order_even_when_overall_speed_is_unity ... ok
+macOS workspace	Test	2026-09-22T02:16:25.7149800Z test preserve_processes_both_source_cuts_continuously_and_query_partitions_cannot_restart_it ... ok
+macOS workspace	Test	2026-09-22T02:16:25.7383400Z test prepared_cache_rechecks_explicit_source_layout_including_nested_dependencies ... ok
+macOS workspace	Test	2026-09-22T02:16:25.7611630Z test repeated_room_tone_and_override_restart_locally_with_two_distinct_gap_caches ... ok
+macOS workspace	Test	2026-09-22T02:16:25.7906500Z test repeat_and_override_occurrences_do_not_alias_prepared_history ... ok
+macOS workspace	Test	2026-09-22T02:16:25.8363180Z test room_tone_cache_layout_changes_invalidate_both_holds_and_dependent_preserve_stages ... ok
+macOS workspace	Test	2026-09-22T02:16:25.8684140Z test ntsc_fractional_input_and_output_origins_preserve_exact_three_over_two_speed ... ok
+macOS workspace	Test	2026-09-22T02:16:25.9528820Z test room_tone_keeps_fractional_44100_source_extent_and_long_hold_duration_across_loops ... ok
+macOS workspace	Test	2026-09-22T02:16:25.9831650Z test silent_hold_is_suppressed_even_when_its_input_interval_owns_no_grid_sample ... ok
+macOS workspace	Test	2026-09-22T02:16:26.0308050Z test stage_budget_failures_and_initial_cancellation_do_not_decode_or_publish_cache_entries ... ok
+macOS workspace	Test	2026-09-22T02:16:26.0399770Z test unsupported_effect_tails_cannot_hide_between_input_grid_samples ... ok
+macOS workspace	Test	2026-09-22T02:16:26.0727290Z test shared_per_read_work_limits_bound_repeated_stage_preparation_and_allow_warm_retry ... ok
+macOS workspace	Test	2026-09-22T02:16:26.1361120Z test room_tone_retimes_keep_pitch_order_and_outer_crop_keeps_the_intrinsic_loop_history ... ok
+macOS workspace	Test	2026-09-22T02:16:26.1361800Z 
+macOS workspace	Test	2026-09-22T02:16:26.1362250Z test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.62s
+macOS workspace	Test	2026-09-22T02:16:26.1362700Z 
+macOS workspace	Test	2026-09-22T02:16:26.1364820Z      Running tests/true_peak.rs (target/debug/deps/true_peak-fe6fab92dbd61d73)
+macOS workspace	Test	2026-09-22T02:16:26.1522820Z 
+macOS workspace	Test	2026-09-22T02:16:26.1523580Z running 7 tests
+macOS workspace	Test	2026-09-22T02:16:26.1565540Z test final_flush_catches_intersample_peak_after_the_last_input_block ... ok
+macOS workspace	Test	2026-09-22T02:16:26.3041360Z test generated_ebu_3341_peak_cases_15_through_19_meet_published_tolerances ... ok
+macOS workspace	Test	2026-09-22T02:16:26.3141360Z test chunk_partition_and_zero_context_do_not_reset_fir_history ... ok
+macOS workspace	Test	2026-09-22T02:16:26.3248590Z test rejected_admissions_preserve_counts_peaks_and_history ... ok
+macOS workspace	Test	2026-09-22T02:16:26.3314170Z test sample_peak_is_a_floor_and_channels_are_measured_independently ... ok
+macOS workspace	Test	2026-09-22T02:16:26.3314980Z test silence_and_empty_input_have_no_fabricated_db_value ... ok
+macOS workspace	Test	2026-09-22T02:16:26.5045130Z test generated_ebu_3341_peak_cases_20_through_23_cover_all_decimation_offsets ... ok
+macOS workspace	Test	2026-09-22T02:16:26.5045570Z 
+macOS workspace	Test	2026-09-22T02:16:26.5045830Z test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.35s
+macOS workspace	Test	2026-09-22T02:16:26.5046170Z 
+macOS workspace	Test	2026-09-22T02:16:26.5047750Z      Running unittests src/lib.rs (target/debug/deps/deadpan_cli-9213699cbaff65c2)
+macOS workspace	Test	2026-09-22T02:16:26.5175340Z 
+macOS workspace	Test	2026-09-22T02:16:26.5175830Z running 0 tests
+macOS workspace	Test	2026-09-22T02:16:26.5176090Z 
+macOS workspace	Test	2026-09-22T02:16:26.5176410Z test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+macOS workspace	Test	2026-09-22T02:16:26.5177060Z 
+macOS workspace	Test	2026-09-22T02:16:26.5177560Z      Running unittests src/main.rs (target/debug/deps/deadpan_cli-105b32cad8ae0360)
+macOS workspace	Test	2026-09-22T02:16:26.5299150Z 
+macOS workspace	Test	2026-09-22T02:16:26.5299620Z running 0 tests
+macOS workspace	Test	2026-09-22T02:16:26.5299780Z 
+macOS workspace	Test	2026-09-22T02:16:26.5302810Z test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+macOS workspace	Test	2026-09-22T02:16:26.5303170Z 
+macOS workspace	Test	2026-09-22T02:16:26.5304750Z      Running tests/audio_inspection.rs (target/debug/deps/audio_inspection-28cdc5fac3cf3acd)
+macOS workspace	Test	2026-09-22T02:16:26.5460820Z 
+macOS workspace	Test	2026-09-22T02:16:26.5461410Z running 8 tests
+macOS workspace	Test	2026-09-22T02:16:26.7820310Z test frozen_session_resolves_historical_receipt_after_undo_and_asset_alias_reuse ... ok
+macOS workspace	Test	2026-09-22T02:16:26.8238520Z test actual_aac_pcm_inspection_is_read_only_beside_writer_and_matches_original_impulse ... ok
+macOS workspace	Test	2026-09-22T02:16:26.8296280Z test invalid_ranges_and_cancellation_fail_without_returning_partial_pcm ... ok
+macOS workspace	Test	2026-09-22T02:16:26.9780540Z test missing_and_corrupt_linked_originals_fail_before_pcm_is_exposed ... ok
+macOS workspace	Test	2026-09-22T02:16:27.0057220Z test room_tone_inspection_loops_an_explicit_aac_range_and_retains_silent_time ... ok
+macOS workspace	Test	2026-09-22T02:16:27.0621120Z test unspecified_layout_and_legacy_unqualified_assets_are_not_guessed ... ok
+macOS workspace	Test	2026-09-22T02:16:27.0791010Z test source_repeat_gaps_and_silent_hold_boundaries_follow_exact_sequence_allocation ... ok
+macOS workspace	Test	2026-09-22T02:16:27.3794580Z test mapped_inspection_prepares_preserve_from_historical_aac_without_writing ... ok
+macOS workspace	Test	2026-09-22T02:16:27.3795180Z 
+macOS workspace	Test	2026-09-22T02:16:27.3795490Z test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.83s
+macOS workspace	Test	2026-09-22T02:16:27.3795960Z 
+macOS workspace	Test	2026-09-22T02:16:27.3799020Z      Running tests/doctor.rs (target/debug/deps/doctor-0934434df23f3198)
+macOS workspace	Test	2026-09-22T02:16:27.3929480Z 
+macOS workspace	Test	2026-09-22T02:16:27.3929860Z running 2 tests
+macOS workspace	Test	2026-09-22T02:16:27.3998640Z test unsupported_command_fails_without_success_output ... ok
+macOS workspace	Test	2026-09-22T02:16:27.3999200Z test doctor_reports_real_timing_probe_and_missing_capabilities ... ok
+macOS workspace	Test	2026-09-22T02:16:27.3999550Z 
+macOS workspace	Test	2026-09-22T02:16:27.3999750Z test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+macOS workspace	Test	2026-09-22T02:16:27.4000100Z 
+macOS workspace	Test	2026-09-22T02:16:27.4000930Z      Running tests/original_commands.rs (target/debug/deps/original_commands-f44b1e53b825bdeb)
+macOS workspace	Test	2026-09-22T02:16:27.4172150Z 
+macOS workspace	Test	2026-09-22T02:16:27.4172550Z running 2 tests
+macOS workspace	Test	2026-09-22T02:16:27.5111300Z test original_mutations_respect_writer_lock_and_validate_arguments ... ok
+macOS workspace	Test	2026-09-22T02:16:27.5575350Z test original_commands_retain_verify_list_and_relink_without_an_authored_edit ... ok
+macOS workspace	Test	2026-09-22T02:16:27.5576180Z 
+macOS workspace	Test	2026-09-22T02:16:27.5576420Z      Running tests/project_commands.rs (target/debug/deps/project_commands-71988a7b3619d781)
+macOS workspace	Test	2026-09-22T02:16:27.5577410Z test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s
+macOS workspace	Test	2026-09-22T02:16:27.5577810Z 
+macOS workspace	Test	2026-09-22T02:16:27.5748480Z 
+macOS workspace	Test	2026-09-22T02:16:27.5749340Z running 13 tests
+macOS workspace	Test	2026-09-22T02:16:27.6192590Z test failed_migration_returns_retained_backup_and_preserves_original ... ok
+macOS workspace	Test	2026-09-22T02:16:27.6992900Z test current_generation_requires_host_reconciliation_but_allows_cli_preview ... ok
+macOS workspace	Test	2026-09-22T02:16:27.7415380Z test dry_run_and_commit_preserve_actionable_domain_errors ... ok
+macOS workspace	Test	2026-09-22T02:16:27.7657990Z test headless_edit_dry_run_conflict_and_durable_history ... ok
+macOS workspace	Test	2026-09-22T02:16:27.8658070Z test history_dry_runs_work_with_a_writer_and_preserve_the_redo_path ... ok
+macOS workspace	Test	2026-09-22T02:16:27.8814860Z test headless_migration_and_plan_inspection_are_explicit_and_read_only ... ok
+macOS workspace	Test	2026-09-22T02:16:27.9024260Z test malformed_or_future_protocol_is_rejected_before_mutation ... ok
+macOS workspace	Test	2026-09-22T02:16:28.0853640Z test nested_occurrence_command_is_atomic_and_uses_the_same_headless_plan ... ok
+macOS workspace	Test	2026-09-22T02:16:28.1342280Z test persistent_mark_queries_and_loss_states_share_the_headless_command_path ... ok
+macOS workspace	Test	2026-09-22T02:16:28.1589220Z test selection_resolution_is_revision_checked_exact_and_read_only ... ok
+macOS workspace	Test	2026-09-22T02:16:28.2003250Z test writer_lock_is_enforced_between_processes_but_readers_and_dry_run_work ... ok
+macOS workspace	Test	2026-09-22T02:16:28.2076350Z test independent_stream_mappings_use_headless_commands_and_durable_undo ... ok
+macOS workspace	Test	2026-09-22T02:16:28.2686870Z test sparse_override_commands_and_inspection_share_revision_and_dry_run_guards ... ok
+macOS workspace	Test	2026-09-22T02:16:28.2687330Z 
+macOS workspace	Test	2026-09-22T02:16:28.2687650Z test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.69s
+macOS workspace	Test	2026-09-22T02:16:28.2687980Z 
+macOS workspace	Test	2026-09-22T02:16:28.2690010Z      Running tests/source_registration.rs (target/debug/deps/source_registration-389e5d03e1e01905)
+macOS workspace	Test	2026-09-22T02:16:28.2887630Z 
+macOS workspace	Test	2026-09-22T02:16:28.2888010Z running 8 tests
+macOS workspace	Test	2026-09-22T02:16:28.5022750Z test explicit_geometry_cli_previews_then_changes_only_canvas_and_keeps_version_guards ... ok
+macOS workspace	Test	2026-09-22T02:16:28.6695980Z test cfr_registration_previews_beside_writer_commits_once_and_preserves_undo_receipt ... ok
+macOS workspace	Test	2026-09-22T02:16:28.6724950Z test automatic_creation_adopts_first_inserted_picture_and_secondary_preserves_the_clock ... ok
+macOS workspace	Test	2026-09-22T02:16:28.7003770Z test offset_av_and_audio_only_register_exact_measured_placements ... ok
+macOS workspace	Test	2026-09-22T02:16:28.7599380Z test stale_revision_is_checked_before_unavailable_original_bytes ... ok
+macOS workspace	Test	2026-09-22T02:16:28.7617780Z test protocol_is_required_and_rejected_before_opening_the_project ... ok
+macOS workspace	Test	2026-09-22T02:16:28.8769930Z test stream_selection_is_required_and_failed_audio_never_becomes_video_only ... ok
+macOS workspace	Test	2026-09-22T02:16:29.1212840Z test pending_generation_allows_preview_but_requires_real_relevance_on_commit ... ok
+macOS workspace	Test	2026-09-22T02:16:29.1213200Z 
+macOS workspace	Test	2026-09-22T02:16:29.1213420Z test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.83s
+macOS workspace	Test	2026-09-22T02:16:29.1213750Z 
+macOS workspace	Test	2026-09-22T02:16:29.1216070Z      Running unittests src/lib.rs (target/debug/deps/deadpan_core-3422ccd3139ffb12)
+macOS workspace	Test	2026-09-22T02:16:29.1248130Z 
+macOS workspace	Test	2026-09-22T02:16:29.1250330Z running 42 tests
+macOS workspace	Test	2026-09-22T02:16:29.1257810Z test exact::tests::exact_mapping_and_negative_boundaries_do_not_round_intermediate_frames ... ok
+macOS workspace	Test	2026-09-22T02:16:29.1265300Z test exact::tests::cross_cancellation_and_wire_format_preserve_wide_values ... ok
+macOS workspace	Test	2026-09-22T02:16:29.1278330Z test document::serialization_tests::canonical_json_limit_counts_escaping_utf8_and_terminal_newline ... ok
+macOS workspace	Test	2026-09-22T02:16:29.1283390Z test legacy_v3::tests::legacy_document_projection_rejects_even_empty_override_entries ... ok
+macOS workspace	Test	2026-09-22T02:16:29.1306240Z test legacy_v5::tests::every_legacy_command_rejects_audio_mapping_edits ... ok
+macOS workspace	Test	2026-09-22T02:16:29.1408620Z test legacy_v5::tests::every_legacy_source_upgrades_to_fit_beat_and_projection_rejects_new_mapping ... ok
+macOS workspace	Test	2026-09-22T02:16:29.1527790Z test legacy_v6::tests::every_legacy_command_rejects_direct_and_occurrence_video_mapping_edits ... ok
+macOS workspace	Test	2026-09-22T02:16:29.1629230Z test legacy_v5::tests::every_legacy_document_and_subtree_rejects_mapping_even_null ... ok
+macOS workspace	Test	2026-09-22T02:16:29.1631760Z test legacy_v5::tests::every_legacy_patch_rejects_mapping_and_cannot_hide_non_fit_beat_output ... ok
+macOS workspace	Test	2026-09-22T02:16:29.1662020Z test legacy_v6::tests::every_legacy_document_and_subtree_rejects_video_mapping_even_null ... ok
+macOS workspace	Test	2026-09-22T02:16:29.1763020Z test legacy_v6::tests::every_legacy_source_preserves_audio_and_projects_only_fit_beat_video ... ok
+macOS workspace	Test	2026-09-22T02:16:29.1864110Z test legacy_v6::tests::schema_six_requires_audio_mapping_and_preserves_audio_commands ... ok
+macOS workspace	Test	2026-09-22T02:16:29.1969650Z test legacy_v6::tests::every_legacy_patch_rejects_video_mapping_and_cannot_hide_new_intent ... ok
+macOS workspace	Test	2026-09-22T02:16:29.2070830Z test legacy_v7::tests::schema_seven_preserves_both_extent_commands_and_requires_strict_mapping_fields ... ok
+macOS workspace	Test	2026-09-22T02:16:29.2197990Z test legacy_v7::tests::all_legacy_documents_subtrees_and_commands_reject_placements ... ok
+macOS workspace	Test	2026-09-22T02:16:29.2298990Z test legacy_v8::tests::every_pre_nine_document_and_asset_command_rejects_even_null_qualification ... ok
+macOS workspace	Test	2026-09-22T02:16:29.2399770Z test legacy_v8::tests::generated_acceptance_asset_maps_use_frozen_vocabulary_in_commands_and_occurrences ... ok
+macOS workspace	Test	2026-09-22T02:16:29.2500480Z test legacy_v8::tests::schema_eight_retains_placements_offsets_generated_hashes_and_no_receipt ... ok
+macOS workspace	Test	2026-09-22T02:16:29.2601150Z test legacy_v8::tests::pre_nine_patches_reject_qualification_and_cannot_hide_current_bindings ... ok
+macOS workspace	Test	2026-09-22T02:16:29.2705460Z test occurrence::tests::billions_of_plays_stay_compact_and_removed_ids_do_not_return ... ok
+macOS workspace	Test	2026-09-22T02:16:29.2819980Z test legacy_v7::tests::all_legacy_patches_reject_placements_and_projection_cannot_hide_them ... ok
+macOS workspace	Test	2026-09-22T02:16:29.2921070Z test occurrence::tests::high_ordinals_after_small_prefix_do_not_overflow_position ... ok
+macOS workspace	Test	2026-09-22T02:16:29.3022380Z test occurrence::tests::reorder_and_insertion_preserve_identity_and_round_trip ... ok
+macOS workspace	Test	2026-09-22T02:16:29.3123530Z test marks::tests::mark_count_limit_applies_to_retained_unresolved_records_too ... ok
+macOS workspace	Test	2026-09-22T02:16:29.3225160Z test repeat_layout::tests::bounded_lookup_enforces_exact_comparison_allowance_on_sparse_runs ... ok
+macOS workspace	Test	2026-09-22T02:16:29.3326460Z test source_index::tests::malformed_presentation_and_seek_metadata_are_rejected ... ok
+macOS workspace	Test	2026-09-22T02:16:29.3427930Z test source_index::tests::selected_span_endpoints_hold_only_intersecting_presentation_intervals ... ok
+macOS workspace	Test	2026-09-22T02:16:29.3530230Z test source_index::tests::selected_span_requires_matching_clocks_and_complete_measured_coverage ... ok
+macOS workspace	Test	2026-09-22T02:16:29.3545850Z test source_index::tests::vfr_lookup_uses_pts_preserves_negative_origin_and_has_explicit_endpoints ... ok
+macOS workspace	Test	2026-09-22T02:16:29.3547700Z test source_mapping::tests::placement_wire_requires_every_field_and_rejects_unknown_even_null_fields ... ok
+macOS workspace	Test	2026-09-22T02:16:29.3549160Z test time::tests::boundaries_are_monotonic_and_symmetric ... ok
+macOS workspace	Test	2026-09-22T02:16:29.3550310Z test time::tests::duration_arithmetic_checks_each_overflow_path ... ok
+macOS workspace	Test	2026-09-22T02:16:29.3551560Z test time::tests::equivalent_rational_rates_produce_identical_boundaries ... ok
+macOS workspace	Test	2026-09-22T02:16:29.3552850Z test time::tests::half_open_ranges_reject_reversal_and_duration_overflow ... ok
+macOS workspace	Test	2026-09-22T02:16:29.3563140Z test time::tests::partition_boundaries_telescope ... ok
+macOS workspace	Test	2026-09-22T02:16:29.3563740Z test time::tests::rates_and_time_bases_are_positive_and_normalized ... ok
+macOS workspace	Test	2026-09-22T02:16:29.3564260Z test time::tests::repeats_count_total_plays_and_have_no_trailing_gap ... ok
+macOS workspace	Test	2026-09-22T02:16:29.3564820Z test time::tests::sample_boundaries_report_overflow_without_restricting_signed_positions ... ok
+macOS workspace	Test	2026-09-22T02:16:29.3565390Z test time::tests::ten_thousand_single_frame_edits_have_no_fractional_rate_drift ... ok
+macOS workspace	Test	2026-09-22T02:16:29.3565870Z test time::tests::ties_round_to_even_on_both_sides_of_zero ... ok
+macOS workspace	Test	2026-09-22T02:16:30.1532580Z test occurrence::tests::compact_moves_match_an_expanded_identity_model ... ok
+macOS workspace	Test	2026-09-22T02:16:30.3596140Z      Running tests/anchors.rs (target/debug/deps/anchors-67d89700a75e680d)
+macOS workspace	Test	2026-09-22T02:16:30.3596700Z test occurrence_edit::tests::isolation_rejects_mark_and_node_growth_at_document_limits ... ok
+macOS workspace	Test	2026-09-22T02:16:30.3614480Z 
+macOS workspace	Test	2026-09-22T02:16:30.3626560Z test result: ok. 42 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.23s
+macOS workspace	Test	2026-09-22T02:16:30.3627130Z 
+macOS workspace	Test	2026-09-22T02:16:30.3796570Z 
+macOS workspace	Test	2026-09-22T02:16:30.3797100Z running 25 tests
+macOS workspace	Test	2026-09-22T02:16:30.4005510Z test audio_offsets_use_mix_clock_and_are_not_silently_clamped ... ok
+macOS workspace	Test	2026-09-22T02:16:30.4023730Z test audio_mapping_edits_keep_source_marks_fixed_and_isolate_one_repeat_play ... ok
+macOS workspace	Test	2026-09-22T02:16:30.4024390Z test audio_placement_isolates_one_play_and_retains_source_marks_through_retimes ... ok
+macOS workspace	Test	2026-09-22T02:16:30.4024930Z test billions_of_plays_and_unused_overflowing_gap_do_not_expand ... ok
+macOS workspace	Test	2026-09-22T02:16:30.4025400Z test endpoint_holding_does_not_rebind_video_anchors_outside_the_beat ... ok
+macOS workspace	Test	2026-09-22T02:16:30.4026160Z test exact_audio_duration_composes_through_repeat_and_retime_without_rounding ... ok
+macOS workspace	Test	2026-09-22T02:16:30.4026900Z test independent_stream_placements_preserve_exact_anchors_offsets_and_inverse_history ... ok
+macOS workspace	Test	2026-09-22T02:16:30.4027760Z test invalid_audio_extents_and_missing_selections_reject_atomically ... ok
+macOS workspace	Test	2026-09-22T02:16:30.4029560Z test natural_audio_duration_is_independent_of_picture_and_preserves_alignment ... ok
+macOS workspace	Test	2026-09-22T02:16:30.4030050Z test natural_video_mapping_keeps_exact_source_time_and_independent_audio ... ok
+macOS workspace	Test	2026-09-22T02:16:30.4030750Z test invalid_video_mapping_and_non_stream_targets_reject_atomically ... ok
+macOS workspace	Test	2026-09-22T02:16:30.4033760Z test nested_occurrences_require_exact_complete_order_and_scope ... ok
+macOS workspace	Test	2026-09-22T02:16:30.4037320Z test nested_retime_boundaries_round_once_and_reject_cropped_content ... ok
+macOS workspace	Test	2026-09-22T02:16:30.4387000Z test nested_retimes_map_exactly_without_intermediate_rounding ... ok
+macOS workspace	Test	2026-09-22T02:16:30.4387700Z test occurrences_follow_stable_plays_and_groups_but_never_choose_a_play ... ok
+macOS workspace	Test	2026-09-22T02:16:30.4388680Z test placement_boundaries_and_combined_audio_arithmetic_reject_atomically ... ok
+macOS workspace	Test	2026-09-22T02:16:30.4389190Z test revision_guards_pinned_boundaries_and_quantized_ranges_are_explicit ... ok
+macOS workspace	Test	2026-09-22T02:16:30.4865100Z test natural_video_mapping_preserves_exact_elapsed_time ... ok
+macOS workspace	Test	2026-09-22T02:16:30.4916940Z test signed_audio_offsets_keep_excluded_boundaries_unavailable ... ok
+macOS workspace	Test	2026-09-22T02:16:30.4917460Z test natural_audio_mapping_preserves_fractional_sample_positions ... ok
+macOS workspace	Test	2026-09-22T02:16:30.4917960Z test source_pts_and_original_samples_preserve_negative_origin_and_clock_conversion ... ok
+macOS workspace	Test	2026-09-22T02:16:30.4918460Z test strict_wire_and_bias_round_trip_do_not_imply_edit_transforms ... ok
+macOS workspace	Test	2026-09-22T02:16:30.4918940Z test video_mapping_keeps_source_marks_and_composes_isolated_retimed_occurrences ... ok
+macOS workspace	Test	2026-09-22T02:16:30.5254800Z test signed_fractional_placements_map_independent_source_midpoints_exactly ... ok
+macOS workspace	Test	2026-09-22T02:16:30.7110230Z test sequence_prefix_index_matches_expanded_boundary_sum ... ok
+macOS workspace	Test	2026-09-22T02:16:30.7110530Z 
+macOS workspace	Test	2026-09-22T02:16:30.7110730Z test result: ok. 25 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.33s
+macOS workspace	Test	2026-09-22T02:16:30.7111010Z 
+macOS workspace	Test	2026-09-22T02:16:30.7212030Z      Running tests/document.rs (target/debug/deps/document-70139e77b79db99c)
+macOS workspace	Test	2026-09-22T02:16:30.7284940Z 
+macOS workspace	Test	2026-09-22T02:16:30.7397910Z running 17 tests
+macOS workspace	Test	2026-09-22T02:16:30.7498820Z test deserialization_preserves_timing_invariants ... ok
+macOS workspace	Test	2026-09-22T02:16:30.7599620Z test failed_edits_do_not_mutate_input_and_conflicts_identify_revision ... ok
+macOS workspace	Test	2026-09-22T02:16:30.7700660Z test dump_is_deterministic_and_unknown_schemas_are_rejected ... ok
+macOS workspace	Test	2026-09-22T02:16:30.7801610Z test hold_provider_changes_are_explicit_and_duration_checked ... ok
+macOS workspace	Test	2026-09-22T02:16:30.7902650Z test inserted_repeat_cannot_reserve_a_future_revision_and_revive_retired_plays ... ok
+macOS workspace	Test	2026-09-22T02:16:30.8004200Z test instance_paths_require_exact_ordered_repeat_ancestry ... ok
+macOS workspace	Test	2026-09-22T02:16:30.8106710Z test patch_preconditions_and_fresh_undo_revisions_prevent_stale_edits ... ok
+macOS workspace	Test	2026-09-22T02:16:30.8213410Z test rejected_edits_preserve_specific_error_codes_and_input ... ok
+macOS workspace	Test	2026-09-22T02:16:30.8320850Z test repeat_identity_survives_move_insert_group_and_exact_inverse ... ok
+macOS workspace	Test	2026-09-22T02:16:30.8425140Z test repeat_setter_is_not_a_wrapper_and_gaps_are_between_plays ... ok
+macOS workspace	Test	2026-09-22T02:16:30.8444370Z test retime_range_is_in_child_clock_and_overflow_is_rejected ... ok
+macOS workspace	Test	2026-09-22T02:16:30.8545310Z test source_streams_retain_timestamps_and_validate_bounds_independently ... ok
+macOS workspace	Test	2026-09-22T02:16:30.8663150Z test structural_depth_is_bounded_without_recursive_documents ... ok
+macOS workspace	Test	2026-09-22T02:16:30.8764110Z test structural_operations_preserve_identity_and_atomic_inverse ... ok
+macOS workspace	Test	2026-09-22T02:16:30.8764560Z test tree_rejects_missing_orphans_cycles_and_multiple_parents ... ok
+macOS workspace	Test	2026-09-22T02:16:30.8764920Z test malformed_random_json_never_panics ... ok
+macOS workspace	Test	2026-09-22T02:16:31.1409020Z test arbitrary_grouping_and_repeat_edits_round_trip ... ok
+macOS workspace	Test	2026-09-22T02:16:31.1409530Z 
+macOS workspace	Test	2026-09-22T02:16:31.1409920Z test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.42s
+macOS workspace	Test	2026-09-22T02:16:31.1410610Z 
+macOS workspace	Test	2026-09-22T02:16:31.1411210Z      Running tests/generated_holds.rs (target/debug/deps/generated_holds-bd66b5999f6e64e7)
+macOS workspace	Test	2026-09-22T02:16:31.1532620Z 
+macOS workspace	Test	2026-09-22T02:16:31.1532950Z running 6 tests
+macOS workspace	Test	2026-09-22T02:16:31.1699560Z test acceptance_is_atomic_reversible_and_resize_preserves_or_restores_fallback ... ok
+macOS workspace	Test	2026-09-22T02:16:31.1706560Z test acceptance_rejects_missing_unrelated_or_incompatible_assets_and_legacy_provider ... ok
+macOS workspace	Test	2026-09-22T02:16:31.1717790Z test occurrence_acceptance_isolates_only_the_selected_play ... ok
+macOS workspace	Test	2026-09-22T02:16:31.1718690Z test sampling_map_is_exact_strict_and_never_samples_an_endpoint ... ok
+macOS workspace	Test	2026-09-22T02:16:31.1757360Z test every_legacy_adapter_rejects_only_the_new_asset_hash_vocabulary ... ok
+macOS workspace	Test	2026-09-22T02:16:31.1757910Z test every_legacy_adapter_rejects_generated_documents_and_commands ... ok
+macOS workspace	Test	2026-09-22T02:16:31.1758580Z 
+macOS workspace	Test	2026-09-22T02:16:31.1762270Z test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+macOS workspace	Test	2026-09-22T02:16:31.1765700Z      Running tests/marks.rs (target/debug/deps/marks-92675f3519173b57)
+macOS workspace	Test	2026-09-22T02:16:31.1765960Z 
+macOS workspace	Test	2026-09-22T02:16:31.1912020Z 
+macOS workspace	Test	2026-09-22T02:16:31.1912320Z running 18 tests
+macOS workspace	Test	2026-09-22T02:16:31.2131710Z test billions_of_plays_keep_marks_compact_and_seek_the_last_stable_iteration ... ok
+macOS workspace	Test	2026-09-22T02:16:31.2235860Z test empty_hosts_retain_biased_edges_and_zero_children_do_not_capture_time ... ok
+macOS workspace	Test	2026-09-22T02:16:31.2291900Z test grouping_preserves_content_but_removed_host_has_explicit_loss ... ok
+macOS workspace	Test	2026-09-22T02:16:31.2346210Z test mark_queries_share_revision_and_exact_range_validation_and_refuse_unresolved ... ok
+macOS workspace	Test	2026-09-22T02:16:31.2381260Z test biased_insertions_and_outside_edges_follow_original_content ... ok
+macOS workspace	Test	2026-09-22T02:16:31.2385540Z test named_source_and_authored_local_marks_require_explicit_repeat_scope ... ok
+macOS workspace	Test	2026-09-22T02:16:31.2419790Z test nested_retimes_preserve_exact_fractions_and_report_crop_loss ... ok
+macOS workspace	Test	2026-09-22T02:16:31.2424220Z test parent_local_follows_moves_within_host_and_child_local_follows_global_moves ... ok
+macOS workspace	Test	2026-09-22T02:16:31.2460310Z test occurrence_marks_preserve_ids_without_cloning_on_growth_or_reviving_after_shrink ... ok
+macOS workspace	Test	2026-09-22T02:16:31.2468270Z test ownership_loss_is_independent_and_unresolved_requires_explicit_reattachment ... ok
+macOS workspace	Test	2026-09-22T02:16:31.2520630Z test pinned_sequence_time_stays_fixed_and_trimmed_hold_points_do_not_retarget ... ok
+macOS workspace	Test	2026-09-22T02:16:31.2526350Z test source_marks_use_original_clock_independent_of_owner_and_timeline_usage ... ok
+macOS workspace	Test	2026-09-22T02:16:31.2541030Z test repeat_gap_belongs_to_preceding_stable_play_and_disappears_when_last ... ok
+macOS workspace	Test	2026-09-22T02:16:31.2541610Z test strict_mark_ingress_limits_and_patch_preconditions_are_atomic ... ok
+macOS workspace	Test	2026-09-22T02:16:31.2542080Z test unrepresentable_exact_mark_transform_rejects_the_whole_edit ... ok
+macOS workspace	Test	2026-09-22T02:16:31.2543030Z test trimming_at_a_mark_preserves_only_the_surviving_content_side ... ok
+macOS workspace	Test	2026-09-22T02:16:31.2543580Z test wrap_policy_inserts_occurrence_step_in_ancestry_and_keeps_authored_local_scope ... ok
+macOS workspace	Test	2026-09-22T02:16:31.6056660Z test repeat_reorders_preserve_marked_play_offset_without_expansion ... ok
+macOS workspace	Test	2026-09-22T02:16:31.6157960Z      Running tests/occurrence_edits.rs (target/debug/deps/occurrence_edits-daa8c05f1dd42aac)
+macOS workspace	Test	2026-09-22T02:16:31.6158310Z 
+macOS workspace	Test	2026-09-22T02:16:31.6259490Z test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.42s
+macOS workspace	Test	2026-09-22T02:16:31.6334350Z 
+macOS workspace	Test	2026-09-22T02:16:31.6342980Z 
+macOS workspace	Test	2026-09-22T02:16:31.6360210Z running 7 tests
+macOS workspace	Test	2026-09-22T02:16:31.6550750Z test copied_repeat_keeps_compact_reordered_allocations_and_normalizes_new_insertions ... ok
+macOS workspace	Test	2026-09-22T02:16:31.6644920Z test failures_after_partial_isolation_leave_original_and_history_patch_unmodified ... ok
+macOS workspace	Test	2026-09-22T02:16:31.6651670Z test owned_marks_copy_but_external_hosts_and_pinned_or_unresolved_coordinates_keep_scope ... ok
+macOS workspace	Test	2026-09-22T02:16:31.6675780Z test concrete_gap_marks_follow_selected_owners_and_respect_boundary_bias ... ok
+macOS workspace	Test	2026-09-22T02:16:31.6676330Z test nested_edit_isolates_one_play_and_preserves_ancestor_boundaries_and_gaps ... ok
+macOS workspace	Test	2026-09-22T02:16:31.6676880Z test source_owned_marks_copy_without_changing_source_time_and_concrete_ancestor_marks_follow_once ... ok
+macOS workspace	Test	2026-09-22T02:16:32.4126990Z test variable_counts_change_exactly_one_nested_duration ... ok
+macOS workspace	Test	2026-09-22T02:16:32.4168630Z      Running tests/play_overrides.rs (target/debug/deps/play_overrides-e0407e9505562f6e)
+macOS workspace	Test	2026-09-22T02:16:32.4227750Z 
+macOS workspace	Test	2026-09-22T02:16:32.4328730Z test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.79s
+macOS workspace	Test	2026-09-22T02:16:32.4366800Z 
+macOS workspace	Test	2026-09-22T02:16:32.4367070Z 
+macOS workspace	Test	2026-09-22T02:16:32.4367420Z running 8 tests
+macOS workspace	Test	2026-09-22T02:16:32.4586720Z test billion_play_sparse_layout_and_unused_huge_default_stay_bounded ... ok
+macOS workspace	Test	2026-09-22T02:16:32.4614730Z test clear_replace_and_delete_remove_owned_subtrees_without_reattaching_marks ... ok
+macOS workspace	Test	2026-09-22T02:16:32.4616050Z test invalid_override_graphs_and_wire_shapes_fail_without_mutation ... ok
+macOS workspace	Test	2026-09-22T02:16:32.4616590Z test override_duration_overflow_and_empty_content_reject_the_whole_edit ... ok
+macOS workspace	Test	2026-09-22T02:16:32.4617130Z test nested_override_insertion_remaps_ids_and_wrapping_preserves_actual_ancestry ... ok
+macOS workspace	Test	2026-09-22T02:16:32.4623810Z test one_play_override_changes_only_its_content_and_exact_neighbor_offsets ... ok
+macOS workspace	Test	2026-09-22T02:16:32.4633500Z test reorder_insert_shrink_and_regrow_preserve_only_surviving_overrides ... ok
+macOS workspace	Test	2026-09-22T02:16:32.5179740Z test sparse_layout_matches_expanded_durations_and_boundary_sides ... ok
+macOS workspace	Test	2026-09-22T02:16:32.5180150Z 
+macOS workspace	Test	2026-09-22T02:16:32.5180580Z test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.09s
+macOS workspace	Test	2026-09-22T02:16:32.5181020Z 
+macOS workspace	Test	2026-09-22T02:16:32.5181760Z      Running tests/presentation_basis.rs (target/debug/deps/presentation_basis-ed062227139d9564)
+macOS workspace	Test	2026-09-22T02:16:32.5327890Z 
+macOS workspace	Test	2026-09-22T02:16:32.5328400Z running 14 tests
+macOS workspace	Test	2026-09-22T02:16:32.5654870Z test automatic_registration_and_source_marks_remain_eligible_for_atomic_primary_adoption ... ok
+macOS workspace	Test	2026-09-22T02:16:32.5656660Z test canvas_choice_locks_provisional_rate_and_requires_even_bounded_geometry ... ok
+macOS workspace	Test	2026-09-22T02:16:32.5657200Z test all_project_clock_mark_spaces_lock_even_at_zero ... ok
+macOS workspace	Test	2026-09-22T02:16:32.5676210Z test audio_secondary_picture_and_hold_insertions_lock_the_rate_and_delete_all_cannot_unlock ... ok
+macOS workspace	Test	2026-09-22T02:16:32.5677850Z test default_geometry_and_timed_rate_origins_require_their_actual_default_values ... ok
+macOS workspace	Test	2026-09-22T02:16:32.5684900Z test labels_asset_registration_empty_structure_and_noops_do_not_lock_rate ... ok
+macOS workspace	Test	2026-09-22T02:16:32.5762610Z test locked_primary_recording_and_explicit_geometry_changes_preserve_all_time_and_media ... ok
+macOS workspace	Test	2026-09-22T02:16:32.5766210Z test malformed_serialized_policy_cannot_smuggle_authored_time_or_unqualified_primary ... ok
+macOS workspace	Test	2026-09-22T02:16:32.5778410Z test occurrence_edits_use_the_same_timed_lock_and_inverse ... ok
+macOS workspace	Test	2026-09-22T02:16:32.5779000Z test presentation_patch_guards_the_complete_pair_and_cannot_omit_timed_lock ... ok
+macOS workspace	Test	2026-09-22T02:16:32.5779520Z test primary_intent_requires_first_qualified_picture_insertion_and_compatible_policy ... ok
+macOS workspace	Test	2026-09-22T02:16:32.5801240Z test legacy_document_projection_cannot_hide_provisional_policy ... ok
+macOS workspace	Test	2026-09-22T02:16:32.5822320Z test every_legacy_adapter_defaults_explicit_and_rejects_all_new_wire_vocabulary_even_null ... ok
+macOS workspace	Test	2026-09-22T02:16:32.5823880Z test schema_nine_preserves_qualified_imports_without_inventing_a_primary ... ok
+macOS workspace	Test	2026-09-22T02:16:32.5824170Z 
+macOS workspace	Test	2026-09-22T02:16:32.5824390Z test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+macOS workspace	Test	2026-09-22T02:16:32.5824670Z 
+macOS workspace	Test	2026-09-22T02:16:32.5826490Z      Running tests/source_import.rs (target/debug/deps/source_import-6456b171eee8d176)
+macOS workspace	Test	2026-09-22T02:16:32.5963990Z 
+macOS workspace	Test	2026-09-22T02:16:32.5964510Z running 7 tests
+macOS workspace	Test	2026-09-22T02:16:32.6148430Z test import_registers_and_inserts_in_one_reversible_edit_without_changing_basis ... ok
+macOS workspace	Test	2026-09-22T02:16:32.6151300Z test import_cannot_substitute_another_registered_asset_or_inject_a_subtree ... ok
+macOS workspace	Test	2026-09-22T02:16:32.6151890Z test imported_audio_only_and_still_sources_use_the_supplied_asset ... ok
+macOS workspace	Test	2026-09-22T02:16:32.6152450Z test qualification_identity_is_exact_lowercase_hex_and_optional_wire_omits_absence ... ok
+macOS workspace	Test	2026-09-22T02:16:32.6153110Z test invalid_import_insertion_or_missing_qualification_leaves_no_registered_asset_or_node ... ok
+macOS workspace	Test	2026-09-22T02:16:32.6165970Z test matching_assets_can_be_registered_once_and_inserted_repeatedly ... ok
+macOS workspace	Test	2026-09-22T02:16:32.6182020Z test source_import_applies_normal_biased_marks_and_keeps_source_coordinates ... ok
+macOS workspace	Test	2026-09-22T02:16:32.6182410Z 
+macOS workspace	Test	2026-09-22T02:16:32.6182740Z test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+macOS workspace	Test	2026-09-22T02:16:32.6183130Z 
+macOS workspace	Test	2026-09-22T02:16:32.6184500Z      Running unittests src/lib.rs (target/debug/deps/deadpan_dsp-e20d9a32cd90d551)
+macOS workspace	Test	2026-09-22T02:16:32.6303490Z 
+macOS workspace	Test	2026-09-22T02:16:32.6303840Z running 0 tests
+macOS workspace	Test	2026-09-22T02:16:32.6304010Z 
+macOS workspace	Test	2026-09-22T02:16:32.6304230Z test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+macOS workspace	Test	2026-09-22T02:16:32.6304510Z 
+macOS workspace	Test	2026-09-22T02:16:32.6305670Z      Running tests/canonical.rs (target/debug/deps/canonical-09f4240a9e3764a6)
+macOS workspace	Test	2026-09-22T02:16:32.6480030Z 
+macOS workspace	Test	2026-09-22T02:16:32.6480600Z running 11 tests
+macOS workspace	Test	2026-09-22T02:16:32.6615820Z test exact_rate_admission_reduces_identity_and_bounds_work_independently_of_counts ... ok
+macOS workspace	Test	2026-09-22T02:16:32.6868670Z test cancellation_and_invalid_requests_preserve_completed_progress ... ok
+macOS workspace	Test	2026-09-22T02:16:32.7086590Z test exact_rate_is_independent_of_output_allocation_and_zero_padded_input_storage ... ok
+macOS workspace	Test	2026-09-22T02:16:32.7523700Z test explicit_recipe_replay_matches_irregular_reads_and_keeps_completed_progress ... ok
+macOS workspace	Test	2026-09-22T02:16:32.7623710Z test owns_input_across_moves_and_can_be_constructed_on_a_preparation_worker ... ok
+macOS workspace	Test	2026-09-22T02:16:32.8327750Z test partition_and_exact_replay_preserve_samples_at_unaligned_positions ... ok
+macOS workspace	Test	2026-09-22T02:16:32.8550280Z test rational_boundary_schedule_distinguishes_rates_that_round_to_the_same_float ... ok
+macOS workspace	Test	2026-09-22T02:16:32.8751890Z test validates_bounds_before_native_work_without_changing_levels ... ok
+macOS workspace	Test	2026-09-22T02:16:32.8852290Z test vendored_headers_and_notices_match_the_qualified_sources ... ok
+macOS workspace	Test	2026-09-22T02:16:35.2810940Z test explicit_rates_preserve_all_fifty_historical_canonical_hashes ... ok
+macOS workspace	Test	2026-09-22T02:16:35.3595120Z      Running unittests src/lib.rs (target/debug/deps/deadpan_fileclone-6887af3b803d82c1)
+macOS workspace	Test	2026-09-22T02:16:35.3595650Z test matches_all_fifty_previously_measured_canonical_output_hashes ... ok
+macOS workspace	Test	2026-09-22T02:16:35.3672130Z 
+macOS workspace	Test	2026-09-22T02:16:35.3673880Z test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.70s
+macOS workspace	Test	2026-09-22T02:16:35.3693850Z 
+macOS workspace	Test	2026-09-22T02:16:35.3713280Z 
+macOS workspace	Test	2026-09-22T02:16:35.3715180Z running 4 tests
+macOS workspace	Test	2026-09-22T02:16:35.3737960Z test tests::supported_platforms_report_their_native_capability ... ok
+macOS workspace	Test	2026-09-22T02:16:35.3739380Z test tests::clone_is_exclusive_and_independent_after_both_sides_change ... ok
+macOS workspace	Test	2026-09-22T02:16:35.3741160Z test tests::existing_destination_and_symlink_are_not_replaced ... ok
+macOS workspace	Test	2026-09-22T02:16:35.3742200Z test tests::validates_names_and_open_handle_types ... ok
+macOS workspace	Test	2026-09-22T02:16:35.3742700Z 
+macOS workspace	Test	2026-09-22T02:16:35.3743220Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+macOS workspace	Test	2026-09-22T02:16:35.3743950Z 
+macOS workspace	Test	2026-09-22T02:16:35.3744710Z      Running unittests src/lib.rs (target/debug/deps/deadpan_jobs-59d723767f85c275)
+macOS workspace	Test	2026-09-22T02:16:35.3906760Z 
+macOS workspace	Test	2026-09-22T02:16:35.3907870Z running 4 tests
+macOS workspace	Test	2026-09-22T02:16:35.3924640Z test artifact::tests::contained_metadata_classifies_device_and_owner_changes ... ok
+macOS workspace	Test	2026-09-22T02:16:35.3933330Z test artifact::tests::growth_after_open_stops_at_the_declared_length ... ok
+macOS workspace	Test	2026-09-22T02:16:35.3938620Z test artifact::tests::mutation_after_open_is_rejected_deterministically ... ok
+macOS workspace	Test	2026-09-22T02:16:35.4115010Z test artifact::tests::cancellation_and_deadline_abort_between_copy_chunks ... ok
+macOS workspace	Test	2026-09-22T02:16:35.4115340Z 
+macOS workspace	Test	2026-09-22T02:16:35.4115590Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+macOS workspace	Test	2026-09-22T02:16:35.4115970Z 
+macOS workspace	Test	2026-09-22T02:16:35.4119600Z      Running tests/artifact.rs (target/debug/deps/artifact-a6766cd6d45d1d1b)
+macOS workspace	Test	2026-09-22T02:16:35.4255460Z 
+macOS workspace	Test	2026-09-22T02:16:35.4256450Z running 9 tests
+macOS workspace	Test	2026-09-22T02:16:35.4282700Z test controlled_snapshot_reports_typed_interruption_before_filesystem_access ... ok
+macOS workspace	Test	2026-09-22T02:16:35.4288330Z test final_and_intermediate_symlinks_are_rejected ... ok
+macOS workspace	Test	2026-09-22T02:16:35.4298980Z test hardlinks_inside_or_outside_the_workspace_are_rejected ... ok
+macOS workspace	Test	2026-09-22T02:16:35.4316630Z test output_scope_is_component_aware_and_strict ... ok
+macOS workspace	Test	2026-09-22T02:16:35.4326460Z test hash_length_and_budget_failures_are_distinct ... ok
+macOS workspace	Test	2026-09-22T02:16:35.4331730Z test retained_workspace_descriptor_ignores_later_root_path_replacement ... ok
+macOS workspace	Test	2026-09-22T02:16:35.4334530Z test sha256_matches_the_standard_abc_known_answer ... ok
+macOS workspace	Test	2026-09-22T02:16:35.4342800Z test valid_artifact_is_frozen_and_later_source_changes_do_not_reach_snapshot ... ok
+macOS workspace	Test	2026-09-22T02:16:35.4350720Z test directories_fifos_and_sockets_are_rejected_without_blocking ... ok
+macOS workspace	Test	2026-09-22T02:16:35.4350990Z 
+macOS workspace	Test	2026-09-22T02:16:35.4357820Z test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+macOS workspace	Test	2026-09-22T02:16:35.4358870Z 
+macOS workspace	Test	2026-09-22T02:16:35.4361930Z      Running tests/generation_plan.rs (target/debug/deps/generation_plan-fb8998ad080b805e)
+macOS workspace	Test	2026-09-22T02:16:35.4497930Z 
+macOS workspace	Test	2026-09-22T02:16:35.4498250Z running 10 tests
+macOS workspace	Test	2026-09-22T02:16:35.4509090Z test formula_and_dimension_limits_reject_invalid_bounds ... ok
+macOS workspace	Test	2026-09-22T02:16:35.4509550Z test fractional_rates_choose_nearest_legal_count_and_report_exact_timing ... ok
+macOS workspace	Test	2026-09-22T02:16:35.4510020Z test huge_requests_fail_boundedly_without_sample_allocation ... ok
+macOS workspace	Test	2026-09-22T02:16:35.4510430Z test legal_rounding_uses_distance_and_breaks_exact_ties_upward ... ok
+macOS workspace	Test	2026-09-22T02:16:35.4510930Z test one_frame_maps_to_strict_native_midpoint ... ok
+macOS workspace	Test	2026-09-22T02:16:35.4511430Z test rejects_unsupported_bridge_dimensions_and_out_of_capability_duration ... ok
+macOS workspace	Test	2026-09-22T02:16:35.4511900Z test samples_are_lazy_exact_and_exclude_both_conditioning_endpoints ... ok
+macOS workspace	Test	2026-09-22T02:16:35.4512290Z test sampling_map_preserves_exact_plan_contract ... ok
+macOS workspace	Test	2026-09-22T02:16:35.4512620Z test deserialized_plan_can_be_checked_against_selected_capability ... ok
+macOS workspace	Test	2026-09-22T02:16:35.4513000Z test serialization_is_strict_and_revalidates_derived_fields ... ok
+macOS workspace	Test	2026-09-22T02:16:35.4513230Z 
+macOS workspace	Test	2026-09-22T02:16:35.4513470Z test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+macOS workspace	Test	2026-09-22T02:16:35.4513810Z 
+macOS workspace	Test	2026-09-22T02:16:35.4515320Z      Running tests/lifecycle.rs (target/debug/deps/lifecycle-2bbe547c63f88e0c)
+macOS workspace	Test	2026-09-22T02:16:35.4629050Z 
+macOS workspace	Test	2026-09-22T02:16:35.4629560Z running 15 tests
+macOS workspace	Test	2026-09-22T02:16:35.4638070Z test buffered_stage_and_progress_are_ignored_during_cancellation ... ok
+macOS workspace	Test	2026-09-22T02:16:35.4639490Z test completion_during_cancellation_waits_for_host_reap_without_candidate ... ok
+macOS workspace	Test	2026-09-22T02:16:35.4640060Z test completion_requires_explicit_host_validation_before_ready ... ok
+macOS workspace	Test	2026-09-22T02:16:35.4641540Z test context_hash_changes_stale_a_job_but_unrelated_revision_is_not_a_binding ... ok
+macOS workspace	Test	2026-09-22T02:16:35.4642170Z test durable_checkpoint_rejects_impossible_state_payload_combinations ... ok
+macOS workspace	Test	2026-09-22T02:16:35.4642680Z test host_can_finalize_killed_worker_or_record_process_failure ... ok
+macOS workspace	Test	2026-09-22T02:16:35.4643070Z test host_failure_and_cancellation_remain_available_during_validation ... ok
+macOS workspace	Test	2026-09-22T02:16:35.4643430Z test progress_is_monotonic_within_the_announced_stage ... ok
+macOS workspace	Test	2026-09-22T02:16:35.4643820Z test lifecycle_rejects_message_and_checkpoint_protocol_crossovers ... ok
+macOS workspace	Test	2026-09-22T02:16:35.4644250Z test native_bridge_completion_requires_exact_bundle_validation ... ok
+macOS workspace	Test	2026-09-22T02:16:35.4644630Z test rejects_wrong_identity_regressions_and_post_terminal_messages ... ok
+macOS workspace	Test	2026-09-22T02:16:35.4645020Z test v2_late_completion_during_cancellation_is_discarded_until_reap ... ok
+macOS workspace	Test	2026-09-22T02:16:35.4645420Z test stale_or_detached_binding_never_silently_revives_or_authorizes_edit ... ok
+macOS workspace	Test	2026-09-22T02:16:35.4645910Z test worker_cancellation_acknowledgement_is_durable_but_not_reaped ... ok
+macOS workspace	Test	2026-09-22T02:16:35.4652040Z test worker_messages_after_completion_cannot_bypass_host_validation ... ok
+macOS workspace	Test	2026-09-22T02:16:35.4652360Z 
+macOS workspace	Test	2026-09-22T02:16:35.4652600Z test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+macOS workspace	Test	2026-09-22T02:16:35.4652920Z 
+macOS workspace	Test	2026-09-22T02:16:35.4653110Z      Running tests/protocol.rs (target/debug/deps/protocol-3c88ac8920dc91bd)
+macOS workspace	Test	2026-09-22T02:16:35.4767680Z 
+macOS workspace	Test	2026-09-22T02:16:35.4768200Z running 11 tests
+macOS workspace	Test	2026-09-22T02:16:35.4798660Z test distinguishes_truncated_header_and_body ... ok
+macOS workspace	Test	2026-09-22T02:16:35.4810990Z test legacy_v1_wire_shape_is_unchanged ... ok
+macOS workspace	Test	2026-09-22T02:16:35.4811880Z test native_manifest_rejects_duplicate_references_and_unknown_fields ... ok
+macOS workspace	Test	2026-09-22T02:16:35.4812750Z test progress_is_stage_local_exact_units ... ok
+macOS workspace	Test	2026-09-22T02:16:35.4816050Z test rejects_oversized_length_before_body_allocation_or_read ... ok
+macOS workspace	Test	2026-09-22T02:16:35.4816510Z test rejects_protocol_operation_crossovers_and_plan_mismatch ... ok
+macOS workspace	Test	2026-09-22T02:16:35.4816910Z test rejects_malformed_unknown_and_wrong_protocol_payloads ... ok
+macOS workspace	Test	2026-09-22T02:16:35.4817320Z test bridge_v2_round_trips_strict_plan_and_native_declaration ... ok
+macOS workspace	Test	2026-09-22T02:16:35.4817840Z test request_round_trip_preserves_exact_typed_contract ... ok
+macOS workspace	Test	2026-09-22T02:16:35.4818220Z test round_trips_fragmented_frames_and_clean_eof ... ok
+macOS workspace	Test	2026-09-22T02:16:35.4818660Z test validates_paths_ids_hashes_dimensions_and_progress_during_deserialization ... ok
+macOS workspace	Test	2026-09-22T02:16:35.4819020Z 
+macOS workspace	Test	2026-09-22T02:16:35.4819780Z test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+macOS workspace	Test	2026-09-22T02:16:35.4820440Z      Running tests/supervisor.rs (target/debug/deps/supervisor-514bf9d60085cfb9)
+macOS workspace	Test	2026-09-22T02:16:35.4820700Z 
+macOS workspace	Test	2026-09-22T02:16:35.5012590Z 
+macOS workspace	Test	2026-09-22T02:16:35.5013060Z running 12 tests
+macOS workspace	Test	2026-09-22T02:16:35.7465380Z test dropping_a_flooding_worker_releases_pipe_backpressure ... ok
+macOS workspace	Test	2026-09-22T02:16:35.7950610Z test cooperative_cancel_preserves_identity_and_does_not_escalate ... ok
+macOS workspace	Test	2026-09-22T02:16:35.8643370Z test late_poll_observes_exit_before_applying_a_timeout ... ok
+macOS workspace	Test	2026-09-22T02:16:35.9181740Z test orphaned_descendant_cannot_keep_worker_pipes_open ... ok
+macOS workspace	Test	2026-09-22T02:16:36.1504330Z test private_environment_and_fragmented_messages_finish_before_exit ... ok
+macOS workspace	Test	2026-09-22T02:16:36.1884110Z test response_protocol_must_match_initial_request ... ok
+macOS workspace	Test	2026-09-22T02:16:36.2461550Z test stderr_is_drained_but_retained_tail_is_bounded ... ok
+macOS workspace	Test	2026-09-22T02:16:36.6420760Z test unresponsive_worker_is_killed_after_grace_and_deadline ... ok
+macOS workspace	Test	2026-09-22T02:16:36.6521480Z test workspace_symlinks_relative_executables_and_unbounded_deadlines_are_rejected ... ok
+macOS workspace	Test	2026-09-22T02:16:36.7358850Z test wrong_attempt_and_messages_after_completion_are_rejected ... ok
+macOS workspace	Test	2026-09-22T02:16:37.7525970Z test escaped_descendant_cannot_hang_pipe_cleanup ... ok
+macOS workspace	Test	2026-09-22T02:16:38.0075710Z test invalid_protocol_missing_completion_and_bad_exit_never_pass ... ok
+macOS workspace	Test	2026-09-22T02:16:38.0076440Z 
+macOS workspace	Test	2026-09-22T02:16:38.0077340Z test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.51s
+macOS workspace	Test	2026-09-22T02:16:38.0078330Z 
+macOS workspace	Test	2026-09-22T02:16:38.0079620Z      Running unittests examples/qualify_model_worker.rs (target/debug/examples/qualify_model_worker-e1c19700d00842d8)
+macOS workspace	Test	2026-09-22T02:16:38.0216180Z 
+macOS workspace	Test	2026-09-22T02:16:38.0216660Z running 3 tests
+macOS workspace	Test	2026-09-22T02:16:38.0224700Z test supported::tests::supervisor_faults_fail_and_keep_the_first_terminal_reason ... ok
+macOS workspace	Test	2026-09-22T02:16:38.0226060Z test supported::tests::clean_exit_without_candidate_is_not_success ... ok
+macOS workspace	Test	2026-09-22T02:16:38.0227370Z test supported::tests::reaping_finishes_cancel_when_completion_was_suppressed ... ok
+macOS workspace	Test	2026-09-22T02:16:38.0230220Z      Running unittests src/lib.rs (target/debug/deps/deadpan_media-184050c8214188b8)
+macOS workspace	Test	2026-09-22T02:16:38.0230490Z 
+macOS workspace	Test	2026-09-22T02:16:38.0231250Z test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+macOS workspace	Test	2026-09-22T02:16:38.0231570Z 
+macOS workspace	Test	2026-09-22T02:16:38.0409730Z 
+macOS workspace	Test	2026-09-22T02:16:38.0410120Z running 15 tests
+macOS workspace	Test	2026-09-22T02:16:38.0439970Z test audio_index::tests::exact_index_rejects_coordinate_overflow_and_preserves_interior_exclusions ... ok
+macOS workspace	Test	2026-09-22T02:16:38.0441170Z test audio_index::tests::controlled_index_stops_between_observations_before_publishing ... ok
+macOS workspace	Test	2026-09-22T02:16:38.0447170Z test audio_session::tests::range_scan_checks_cancellation_between_segments_and_preserves_deadline_errors ... ok
+macOS workspace	Test	2026-09-22T02:16:38.0468430Z test audio_index::tests::derived_coverage_uses_measured_duration_and_explicit_skip_not_container_claims ... ok
+macOS workspace	Test	2026-09-22T02:16:38.0470930Z      Running tests/audio_session.rs (target/debug/deps/audio_session-1cc125603b44e185)
+macOS workspace	Test	2026-09-22T02:16:38.0471950Z test protocol::tests::bridge_validates_native_mapping_and_only_native_scratch ... ok
+macOS workspace	Test	2026-09-22T02:16:38.0472430Z test protocol::tests::exact_clock_rounds_each_origin_based_position_once ... ok
+macOS workspace	Test	2026-09-22T02:16:38.0473180Z test protocol::tests::report_span_uses_measured_final_duration_instead_of_next_rounded_boundary ... ok
+macOS workspace	Test	2026-09-22T02:16:38.0473720Z test protocol::tests::report_wire_and_validation_require_measured_duration_and_version_two ... ok
+macOS workspace	Test	2026-09-22T02:16:38.0474220Z test protocol::tests::versioned_requests_reject_ambiguous_or_mismatched_wire_fields ... ok
+macOS workspace	Test	2026-09-22T02:16:38.0474640Z test protocol::tests::wire_rejects_unknown_and_duplicate_fields ... ok
+macOS workspace	Test	2026-09-22T02:16:38.0475440Z test source_index::tests::cache_json_cannot_bypass_core_index_invariants_or_versioning ... ok
+macOS workspace	Test	2026-09-22T02:16:38.0476070Z test source_index::tests::final_native_stream_slot_is_representable ... ok
+macOS workspace	Test	2026-09-22T02:16:38.0476540Z test source_index::tests::roundtrip_preserves_original_clock_identity_and_terminal_evidence ... ok
+macOS workspace	Test	2026-09-22T02:16:38.0477040Z test audio_index::tests::malformed_cache_cannot_forge_timing_layout_or_derived_offsets ... ok
+macOS workspace	Test	2026-09-22T02:16:38.0477590Z test source_qualification::tests::metadata_writer_enforces_the_same_bound_with_and_without_retaining_bytes ... ok
+macOS workspace	Test	2026-09-22T02:16:38.0477940Z 
+macOS workspace	Test	2026-09-22T02:16:38.0478130Z test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+macOS workspace	Test	2026-09-22T02:16:38.0478410Z 
+macOS workspace	Test	2026-09-22T02:16:38.0653430Z 
+macOS workspace	Test	2026-09-22T02:16:38.0654360Z running 4 tests
+macOS workspace	Test	2026-09-22T02:16:38.0899010Z test limits_identity_and_cancellation_never_publish_partial_audio ... ok
+macOS workspace	Test	2026-09-22T02:16:38.1060060Z test audio_and_video_share_one_verified_input_and_remain_independent ... ok
+macOS workspace	Test	2026-09-22T02:16:38.1071300Z test pcm_ranges_preserve_exact_amplitudes_channel_order_original_rate_and_terminal_samples ... ok
+macOS workspace	Test	2026-09-22T02:16:38.1692950Z test aac_index_separates_raw_decode_skip_duration_padding_and_unknown_offset_priming ... ok
+macOS workspace	Test	2026-09-22T02:16:38.1693570Z 
+macOS workspace	Test	2026-09-22T02:16:38.1693900Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+macOS workspace	Test	2026-09-22T02:16:38.1694290Z 
+macOS workspace	Test	2026-09-22T02:16:38.1696780Z      Running tests/host_boundary.rs (target/debug/deps/host_boundary-c1d8bbfd9be6012d)
+macOS workspace	Test	2026-09-22T02:16:38.1855530Z 
+macOS workspace	Test	2026-09-22T02:16:38.1856100Z running 9 tests
+macOS workspace	Test	2026-09-22T02:16:38.4564330Z test bridge_pair_retains_mapping_and_checks_consistent_native_pixels ... ok
+macOS workspace	Test	2026-09-22T02:16:38.4566080Z test cancellation_during_snapshot_prevents_codec_start ... ok
+macOS workspace	Test	2026-09-22T02:16:38.5245250Z test failure_diagnostic_and_output_budget_are_preserved ... ok
+macOS workspace	Test	2026-09-22T02:16:38.5250510Z test bridge_pair_uses_one_hard_deadline_for_both_conversions ... ok
+macOS workspace	Test	2026-09-22T02:16:38.5268950Z test input_identity_is_checked_before_executing_any_codec ... ok
+macOS workspace	Test	2026-09-22T02:16:38.5448890Z test output_is_hashed_only_after_clean_exit_and_complete_report ... ok
+macOS workspace	Test	2026-09-22T02:16:38.8507890Z test false_success_and_malformed_or_unbounded_replies_never_return_bytes ... ok
+macOS workspace	Test	2026-09-22T02:16:38.8608760Z test successful_leader_exit_cleans_up_descendants_with_inherited_pipes ... FAILED
+macOS workspace	Test	2026-09-22T02:16:39.5910450Z test cancellation_and_hard_deadline_stop_the_process_group ... ok
+macOS workspace	Test	2026-09-22T02:16:39.5910760Z 
+macOS workspace	Test	2026-09-22T02:16:39.5910820Z failures:
+macOS workspace	Test	2026-09-22T02:16:39.5910920Z 
+macOS workspace	Test	2026-09-22T02:16:39.5911120Z ---- successful_leader_exit_cleans_up_descendants_with_inherited_pipes stdout ----
+macOS workspace	Test	2026-09-22T02:16:39.5911400Z 
+macOS workspace	Test	2026-09-22T02:16:39.5911760Z thread 'successful_leader_exit_cleans_up_descendants_with_inherited_pipes' (118975) panicked at crates/deadpan-media/tests/host_boundary.rs:382:29:
+macOS workspace	Test	2026-09-22T02:16:39.5912590Z successful worker cleanup failed: Protocol("control pipe stayed open after worker exit"): invalid converter response: control pipe stayed open after worker exit
+macOS workspace	Test	2026-09-22T02:16:39.5913240Z note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+macOS workspace	Test	2026-09-22T02:16:39.5913750Z 
+macOS workspace	Test	2026-09-22T02:16:39.5913750Z 
+macOS workspace	Test	2026-09-22T02:16:39.5913800Z failures:
+macOS workspace	Test	2026-09-22T02:16:39.5914020Z     successful_leader_exit_cleans_up_descendants_with_inherited_pipes
+macOS workspace	Test	2026-09-22T02:16:39.5914240Z 
+macOS workspace	Test	2026-09-22T02:16:39.5914460Z test result: FAILED. 8 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.41s
+macOS workspace	Test	2026-09-22T02:16:39.5914750Z 
+macOS workspace	Test	2026-09-22T02:16:39.5914910Z error: test failed, to rerun pass `-p deadpan-media --test host_boundary`
+macOS workspace	Test	2026-09-22T02:16:39.5963220Z ##[error]Process completed with exit code 101.

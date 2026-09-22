@@ -1,0 +1,170 @@
+{
+  "conditioner_support": [
+    -127,
+    127
+  ],
+  "input_magnitude_bound": 16,
+  "ceiling_linear": 0.8912509381337456,
+  "families": [
+    {
+      "name": "raw_output",
+      "phases": [
+        {
+          "phase": 0.0,
+          "raw_nonzero_support": [
+            0,
+            0
+          ],
+          "arbitrary_mask_l1_bound": 2.4938660232001224,
+          "arbitrary_mask_integer_origin_distance_bound": 15.791573144141793
+        }
+      ],
+      "max_arbitrary_mask_l1_bound": 2.4938660232001224,
+      "max_arbitrary_mask_integer_origin_distance_bound": 15.791573144141793
+    },
+    {
+      "name": "bs1770_rows_k_minus_6",
+      "phases": [
+        {
+          "phase": -0.125,
+          "raw_nonzero_support": [
+            -6,
+            5
+          ],
+          "arbitrary_mask_l1_bound": 3.576712879220976,
+          "arbitrary_mask_integer_origin_distance_bound": 23.580488412011487
+        },
+        {
+          "phase": -0.375,
+          "raw_nonzero_support": [
+            -6,
+            5
+          ],
+          "arbitrary_mask_l1_bound": 5.044659896295072,
+          "arbitrary_mask_integer_origin_distance_bound": 34.52690744566347
+        },
+        {
+          "phase": -0.625,
+          "raw_nonzero_support": [
+            -6,
+            5
+          ],
+          "arbitrary_mask_l1_bound": 5.044659896295072,
+          "arbitrary_mask_integer_origin_distance_bound": 34.85459840933363
+        },
+        {
+          "phase": -0.875,
+          "raw_nonzero_support": [
+            -6,
+            5
+          ],
+          "arbitrary_mask_l1_bound": 3.576712879220976,
+          "arbitrary_mask_integer_origin_distance_bound": 24.407521817914386
+        }
+      ],
+      "max_arbitrary_mask_l1_bound": 5.044659896295072,
+      "max_arbitrary_mask_integer_origin_distance_bound": 34.85459840933363
+    },
+    {
+      "name": "kaiser256",
+      "phases": [
+        {
+          "phase": 0.0,
+          "raw_nonzero_support": [
+            0,
+            0
+          ],
+          "arbitrary_mask_l1_bound": 2.4938660232001224,
+          "arbitrary_mask_integer_origin_distance_bound": 15.791573144141793
+        },
+        {
+          "phase": 0.125,
+          "raw_nonzero_support": [
+            -255,
+            256
+          ],
+          "arbitrary_mask_l1_bound": 5.49731636766745,
+          "arbitrary_mask_integer_origin_distance_bound": 85.47953265688088
+        },
+        {
+          "phase": 0.25,
+          "raw_nonzero_support": [
+            -255,
+            256
+          ],
+          "arbitrary_mask_l1_bound": 7.980255219353422,
+          "arbitrary_mask_integer_origin_distance_bound": 144.19489000335633
+        },
+        {
+          "phase": 0.375,
+          "raw_nonzero_support": [
+            -255,
+            256
+          ],
+          "arbitrary_mask_l1_bound": 9.615123149542766,
+          "arbitrary_mask_integer_origin_distance_bound": 183.34879636705284
+        },
+        {
+          "phase": 0.5,
+          "raw_nonzero_support": [
+            -255,
+            256
+          ],
+          "arbitrary_mask_l1_bound": 10.185311301086747,
+          "arbitrary_mask_integer_origin_distance_bound": 197.20315173080198
+        },
+        {
+          "phase": 0.625,
+          "raw_nonzero_support": [
+            -255,
+            256
+          ],
+          "arbitrary_mask_l1_bound": 9.615123149542754,
+          "arbitrary_mask_integer_origin_distance_bound": 183.7215873556167
+        },
+        {
+          "phase": 0.75,
+          "raw_nonzero_support": [
+            -255,
+            256
+          ],
+          "arbitrary_mask_l1_bound": 7.9802552193534195,
+          "arbitrary_mask_integer_origin_distance_bound": 144.8720640157709
+        },
+        {
+          "phase": 0.875,
+          "raw_nonzero_support": [
+            -255,
+            256
+          ],
+          "arbitrary_mask_l1_bound": 5.497316367667443,
+          "arbitrary_mask_integer_origin_distance_bound": 86.33591179568651
+        }
+      ],
+      "max_arbitrary_mask_l1_bound": 10.185311301086747,
+      "max_arbitrary_mask_integer_origin_distance_bound": 197.20315173080198
+    }
+  ],
+  "worst_arbitrary_mask_distance_bound": 197.20315173080198,
+  "worst_W_bound": 3155.2504276928316,
+  "slope_candidates": [
+    {
+      "L": "1/4096",
+      "lookahead": 4096,
+      "lookahead_ms": 85.33333333333333,
+      "strict_margin": 0.12092612668530034
+    },
+    {
+      "L": "1/8192",
+      "lookahead": 8192,
+      "lookahead_ms": 170.66666666666666,
+      "strict_margin": 0.506088532409523
+    },
+    {
+      "L": "1/16384",
+      "lookahead": 16384,
+      "lookahead_ms": 341.3333333333333,
+      "strict_margin": 0.6986697352716342
+    }
+  ]
+}

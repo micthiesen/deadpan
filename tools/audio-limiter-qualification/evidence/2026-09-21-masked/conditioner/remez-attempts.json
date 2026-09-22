@@ -1,0 +1,32 @@
+[
+  {
+    "taps": 255,
+    "stopband_weight": 1,
+    "outcome": "Failure to converge at iteration 3, try reducing transition band width."
+  },
+  {
+    "taps": 255,
+    "stopband_weight": 30,
+    "outcome": "Failure to converge at iteration 3, try reducing transition band width."
+  },
+  {
+    "taps": 255,
+    "stopband_weight": 300,
+    "outcome": "Failure to converge at iteration 3, try reducing transition band width."
+  },
+  {
+    "taps": 511,
+    "stopband_weight": 1,
+    "outcome": "Failure to converge at iteration 3, try reducing transition band width."
+  },
+  {
+    "taps": 511,
+    "stopband_weight": 30,
+    "outcome": "Failure to converge at iteration 3, try reducing transition band width."
+  },
+  {
+    "taps": 511,
+    "stopband_weight": 300,
+    "outcome": "Failure to converge at iteration 3, try reducing transition band width."
+  }
+]

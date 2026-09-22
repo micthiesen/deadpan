@@ -20,8 +20,6 @@ rustix.workspace = true
 sha2.workspace = true
 blake3.workspace = true
 tempfile.workspace = true
-
-[target.'cfg(target_os = "macos")'.dependencies]
 deadpan-native-process.workspace = true
 
 [dev-dependencies]

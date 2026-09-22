@@ -22,8 +22,6 @@ thiserror.workspace = true
 rustix.workspace = true
 sha2.workspace = true
 tempfile.workspace = true
-
-[target.'cfg(target_os = "macos")'.dependencies]
 deadpan-native-process.workspace = true
 
 [lints]

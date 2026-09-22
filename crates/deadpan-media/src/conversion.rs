@@ -8,7 +8,7 @@ use std::time::{Duration, Instant};
 
 use deadpan_core::{BridgeSamplingMap, GeneratedContentId, GeneratedObjectRef};
 use rustix::fs::{OFlags, fcntl_getfl, fcntl_setfl};
-use rustix::process::{Pid, Signal, WaitId, WaitIdOptions, kill_process_group, waitid};
+use rustix::process::{Pid, WaitId, WaitIdOptions, waitid};
 use sha2::{Digest, Sha256};
 use thiserror::Error;
 
@@ -360,7 +360,7 @@ struct OwnedProcess {
     child: Child,
     pid: Pid,
     stopped: bool,
-    reaped: bool,
+    reap_attempted: bool,
 }
 
 impl OwnedProcess {
@@ -370,7 +370,7 @@ impl OwnedProcess {
             child,
             pid,
             stopped: false,
-            reaped: false,
+            reap_attempted: false,
         }
     }
 
@@ -381,39 +381,29 @@ impl OwnedProcess {
         if self.pid == Pid::INIT {
             return Err(io::Error::other("invalid codec process-group identity"));
         }
-        match kill_process_group(self.pid, Signal::KILL) {
-            Ok(()) | Err(rustix::io::Errno::SRCH) => {}
-            #[cfg(target_os = "macos")]
-            Err(rustix::io::Errno::PERM) => {
-                self.finish_darwin_group_cleanup()?;
-            }
-            Err(error) => return Err(error.into()),
+        #[cfg(target_os = "macos")]
+        deadpan_native_process::terminate_owned_group(
+            &self.child,
+            Instant::now() + GROUP_CLEANUP_GRACE,
+        )?;
+        #[cfg(target_os = "linux")]
+        {
+            deadpan_native_process::signal_owned_group(&self.child)?;
+            deadpan_native_process::terminate_owned_leader(
+                &self.child,
+                Instant::now() + GROUP_CLEANUP_GRACE,
+            )?;
         }
         self.stopped = true;
         Ok(())
     }
 
-    #[cfg(target_os = "macos")]
-    fn finish_darwin_group_cleanup(&self) -> io::Result<()> {
-        // Darwin reports EPERM for a group if any member cannot be signalled,
-        // including its already-exited leader. The same kill can still have
-        // delivered SIGKILL to live descendants. Give those members a bounded
-        // chance to disappear before deciding an inaccessible process survived.
-        let end = Instant::now() + GROUP_CLEANUP_GRACE;
-        loop {
-            if deadpan_native_process::exited_leader_has_no_other_members(&self.child)? {
-                return Ok(());
-            }
-            if Instant::now() >= end {
-                return Err(rustix::io::Errno::PERM.into());
-            }
-            std::thread::park_timeout(Duration::from_millis(2));
-            match kill_process_group(self.pid, Signal::KILL) {
-                Ok(()) | Err(rustix::io::Errno::SRCH) => return Ok(()),
-                Err(rustix::io::Errno::PERM) => {}
-                Err(error) => return Err(error.into()),
-            }
+    fn reap_leader(&mut self) -> io::Result<ExitStatus> {
+        if self.reap_attempted {
+            return Err(io::Error::other("codec reaping was already attempted"));
         }
+        self.reap_attempted = true;
+        self.child.wait()
     }
 
     fn collect(
@@ -430,30 +420,13 @@ impl OwnedProcess {
         let flags = fcntl_getfl(&pipe).map_err(io::Error::from)?;
         fcntl_setfl(&pipe, flags | OFlags::NONBLOCK).map_err(io::Error::from)?;
         let mut bytes = Vec::with_capacity(MAX_REPLY_BYTES);
-        let mut buffer = [0u8; 4096];
         let mut eof = false;
         let mut exit = None;
         let mut exited_at = None;
         loop {
             deadline.check()?;
             if !eof {
-                match pipe.read(&mut buffer) {
-                    Ok(0) => eof = true,
-                    Ok(count) => {
-                        if bytes.len() + count > MAX_REPLY_BYTES {
-                            return Err(ConversionError::Protocol(
-                                "control reply exceeded byte budget".into(),
-                            ));
-                        }
-                        bytes.extend_from_slice(&buffer[..count]);
-                    }
-                    Err(error)
-                        if matches!(
-                            error.kind(),
-                            io::ErrorKind::WouldBlock | io::ErrorKind::Interrupted
-                        ) => {}
-                    Err(error) => return Err(error.into()),
-                }
+                eof = drain_control(&mut pipe, &mut bytes, deadline, exited_at)?;
             }
             if output.metadata()?.len() > max_output_bytes {
                 return Err(ConversionError::Protocol(
@@ -473,32 +446,180 @@ impl OwnedProcess {
                 let cleanup = self.stop_group();
                 deadline.check()?;
                 cleanup?;
-                exit = Some(self.child.wait()?);
-                self.reaped = true;
+                // A failed wait may mean ownership was lost. Never retry it
+                // from Drop using only the cached successful group cleanup.
+                exit = Some(self.reap_leader()?);
                 exited_at = Some(Instant::now());
             }
-            if let Some(status) = exit {
-                if eof {
-                    return Ok((status, bytes));
-                }
-                if exited_at.is_some_and(|at| at.elapsed() > Duration::from_millis(250)) {
-                    return Err(ConversionError::Protocol(
-                        "control pipe stayed open after worker exit".into(),
-                    ));
-                }
+            if let Some(status) = exit
+                && eof
+            {
+                return Ok((status, bytes));
             }
             std::thread::park_timeout(Duration::from_millis(2));
         }
     }
 }
 
+fn drain_control(
+    pipe: &mut impl Read,
+    bytes: &mut Vec<u8>,
+    deadline: &Deadline<'_>,
+    exited_at: Option<Instant>,
+) -> Result<bool, ConversionError> {
+    let mut buffer = [0u8; 4096];
+    loop {
+        deadline.check()?;
+        match pipe.read(&mut buffer) {
+            Ok(0) => return Ok(true),
+            Ok(count) => {
+                if count > MAX_REPLY_BYTES.saturating_sub(bytes.len()) {
+                    return Err(ConversionError::Protocol(
+                        "control reply exceeded byte budget".into(),
+                    ));
+                }
+                bytes.extend_from_slice(&buffer[..count]);
+            }
+            Err(error) if error.kind() == io::ErrorKind::Interrupted => continue,
+            Err(error) if error.kind() == io::ErrorKind::WouldBlock => {
+                // Drain all available bytes and observe EOF before judging pipe
+                // liveness. Host scheduling delay is not a surviving writer.
+                if exited_at.is_some_and(|at| at.elapsed() > GROUP_CLEANUP_GRACE) {
+                    return Err(ConversionError::Protocol(
+                        "control pipe stayed open after worker exit".into(),
+                    ));
+                }
+                return Ok(false);
+            }
+            Err(error) => return Err(error.into()),
+        }
+    }
+}
+
 impl Drop for OwnedProcess {
     fn drop(&mut self) {
-        if !self.reaped {
-            if self.stop_group().is_err() {
-                let _ = self.child.kill();
-            }
-            let _ = self.child.wait();
+        if self.reap_attempted {
+            return;
         }
+        let can_reap = self.stop_group().is_ok();
+        // A failed group inspection must not strand an owned leader. The
+        // fallback independently checks ownership and never signals on ECHILD.
+        let can_reap = can_reap
+            || deadpan_native_process::terminate_owned_leader(
+                &self.child,
+                Instant::now() + GROUP_CLEANUP_GRACE,
+            )
+            .is_ok();
+        if can_reap {
+            let _ = self.reap_leader();
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::Cursor;
+
+    struct PendingPipe;
+
+    #[test]
+    fn failed_reap_is_terminal_even_after_confirmed_group_cleanup() {
+        let child = Command::new("/bin/sh")
+            .args(["-c", "exit 0"])
+            .process_group(0)
+            .spawn()
+            .unwrap();
+        let mut process = OwnedProcess::new(child);
+        process.stop_group().unwrap();
+        // Simulate a competing reaper after group confirmation. Child's cached
+        // status stays empty, so its next wait really receives ECHILD.
+        waitid(WaitId::Pid(process.pid), WaitIdOptions::EXITED).unwrap();
+        assert_eq!(
+            process.reap_leader().unwrap_err().raw_os_error(),
+            Some(rustix::io::Errno::CHILD.raw_os_error())
+        );
+        assert!(process.reap_attempted);
+        assert_eq!(
+            process.reap_leader().unwrap_err().to_string(),
+            "codec reaping was already attempted"
+        );
+        drop(process);
+    }
+
+    impl Read for PendingPipe {
+        fn read(&mut self, _: &mut [u8]) -> io::Result<usize> {
+            Err(io::ErrorKind::WouldBlock.into())
+        }
+    }
+
+    #[test]
+    fn buffered_reply_reaches_eof_before_expired_pipe_grace_is_judged() {
+        let cancelled = AtomicBool::new(false);
+        let deadline = Deadline {
+            end: Instant::now() + Duration::from_secs(1),
+            cancelled: &cancelled,
+        };
+        let reply = vec![b'x'; MAX_REPLY_BYTES];
+        let mut bytes = Vec::new();
+        assert!(
+            drain_control(
+                &mut Cursor::new(&reply),
+                &mut bytes,
+                &deadline,
+                Some(Instant::now() - Duration::from_secs(1)),
+            )
+            .unwrap()
+        );
+        assert_eq!(bytes, reply);
+    }
+
+    #[test]
+    fn actually_open_pipe_still_fails_after_grace() {
+        let cancelled = AtomicBool::new(false);
+        let deadline = Deadline {
+            end: Instant::now() + Duration::from_secs(1),
+            cancelled: &cancelled,
+        };
+        assert!(!drain_control(&mut PendingPipe, &mut Vec::new(), &deadline, None).unwrap());
+        assert!(matches!(
+            drain_control(
+                &mut PendingPipe,
+                &mut Vec::new(),
+                &deadline,
+                Some(Instant::now() - Duration::from_secs(1)),
+            ),
+            Err(ConversionError::Protocol(message)) if message == "control pipe stayed open after worker exit"
+        ));
+    }
+
+    #[test]
+    fn draining_keeps_reply_budget_and_hard_deadline() {
+        let cancelled = AtomicBool::new(false);
+        let mut deadline = Deadline {
+            end: Instant::now() + Duration::from_secs(1),
+            cancelled: &cancelled,
+        };
+        let mut bytes = Vec::new();
+        assert!(matches!(
+            drain_control(
+                &mut Cursor::new(vec![0; MAX_REPLY_BYTES + 1]),
+                &mut bytes,
+                &deadline,
+                None,
+            ),
+            Err(ConversionError::Protocol(message)) if message == "control reply exceeded byte budget"
+        ));
+        assert_eq!(bytes.len(), MAX_REPLY_BYTES);
+        deadline.end = Instant::now();
+        assert!(matches!(
+            drain_control(&mut Cursor::new([]), &mut bytes, &deadline, None),
+            Err(ConversionError::Deadline)
+        ));
+        cancelled.store(true, Ordering::Release);
+        assert!(matches!(
+            drain_control(&mut Cursor::new([]), &mut bytes, &deadline, None),
+            Err(ConversionError::Cancelled)
+        ));
     }
 }

@@ -1,0 +1,10 @@
+{
+  "base_revision": "64ee95f1e03e3be780a88c4eb2e2b004518ff44f",
+  "files": {
+    "native/deadpan-process/src/lib.rs": "d1594cb759d9f2962ad38f7dc3cce37d95701d11256623edd2dd48004ad96090",
+    "crates/deadpan-media/src/conversion.rs": "e8fb2c29097e73ab33f64f8b29be3df4828ebe7a6c6ed2d41aa8c431b1461965",
+    "crates/deadpan-media/tests/host_boundary.rs": "cc5e50bfad62141256de17d15eaf92b5ada51f47fff7e188fcc848817c3d16d9",
+    "crates/deadpan-jobs/src/supervisor.rs": "a21e4bd16a8113d264fee73d02b1537a483a0b9c619947a0ee47eca32571ed33",
+    "crates/deadpan-jobs/tests/supervisor.rs": "f521bd8e92acd12dd3408aff9100e8da1b4de43b3d4e2e0ff140c4465f089728"
+  }
+}

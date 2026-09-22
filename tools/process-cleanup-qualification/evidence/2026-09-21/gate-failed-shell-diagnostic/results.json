@@ -1,0 +1,52 @@
+{
+  "created_utc": "2026-09-22T02:39:30.574425+00:00",
+  "ffmpeg_prefix": "/tmp/deadpan-media-compatible-xyhilms4/prefix",
+  "results": [
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 1.4908756660297513,
+      "log": "01-fmt.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 46.388690332882106,
+      "log": "02-clippy.log",
+      "sha256": "db8d82176f6a1b19b1026fd52f22dd3a38f38782f59bf717a9b8cb7aa86cc682"
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked"
+      ],
+      "exit_code": 101,
+      "elapsed_seconds": 99.30732158292085,
+      "log": "03-test.log",
+      "sha256": "78d2495184903f4c71dc95f46e48be64bcfaee87effca204f45972171b01f8f3",
+      "test_totals": {
+        "passed": 406,
+        "failed": 0,
+        "ignored": 0
+      }
+    }
+  ]
+}

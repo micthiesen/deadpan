@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "input_format": "f32le_interleaved_stereo_48000_hz",
+  "input_sha256": "13f8440d2ab7d54846e57955d7953435e09d5939e507038aa3393cfef9baf423",
+  "loudness_algorithm": "deadpan-bs1770-5-stereo-48k-integrated-v1",
+  "loudness": {
+    "measured_frames": 8192,
+    "complete_blocks": 0,
+    "gated_blocks": 0,
+    "integrated_lufs": null,
+    "relative_gate_lufs": null
+  },
+  "peaks": {
+    "algorithm": "deadpan-bs1770-5-48k-4x-48tap-v1",
+    "measured_frames": 8192,
+    "sample_peak": [
+      0.07148222625255585,
+      0.017870556563138962
+    ],
+    "true_peak": [
+      0.1010370766498454,
+      0.02525926916246135
+    ],
+    "true_peak_dbtp": [
+      -19.91038455808213,
+      -31.951584384641375
+    ]
+  },
+  "processing_seconds": 0.000628458,
+  "elapsed_seconds": 0.000823375
+}

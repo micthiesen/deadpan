@@ -1,0 +1,17 @@
+{
+  "python": "3.12.13 (main, Mar 25 2026, 03:16:06) [Clang 22.1.1 ]",
+  "platform": "macOS-26.5.2-arm64-arm-64bit",
+  "numpy": "2.5.3",
+  "mpmath": "1.3.0",
+  "argv": [
+    "/tmp/deadpan-mask-audit-20260921/audit.py"
+  ],
+  "script_sha256": "813301deeb0cfbc8e11a570f111f134ca856b8407a172e8f327547f07c50eb63",
+  "sinc_helper_sha256": "d5e8166bdf9b2e71d6b7a9c4fa3e3cb5dcafdc304ebe93a563bae82d2ece209e",
+  "parent_results_sha256": "a23fa4f2266455794a287cc1bceaa71a58babeea1f0a149673cd25835aebfbae",
+  "verified_wav_hashes": 3,
+  "reconstruction": "Complete finite zero-extended sinc; no window or fixed radius",
+  "phases": 128,
+  "refinements_per_channel": 16,
+  "limits": "Fixed output witnesses and ordinary numerical bounds, not interval-certified maxima or universal limiter qualification"
+}

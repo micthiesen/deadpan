@@ -18,7 +18,7 @@ use std::thread::{self, JoinHandle};
 use std::time::{Duration, Instant};
 
 use rustix::fs::{OFlags, fcntl_getfl, fcntl_setfl};
-use rustix::process::{Pid, Signal, WaitId, WaitIdOptions, kill_process_group, waitid};
+use rustix::process::{Pid, WaitId, WaitIdOptions, waitid};
 use thiserror::Error;
 
 use crate::protocol::{
@@ -193,6 +193,7 @@ pub struct WorkerProcess {
     terminal_received: Option<Instant>,
     completed: Option<Box<WorkerMessage>>,
     group_stopped: bool,
+    reap_attempted: bool,
     faulted: bool,
     exit: Option<ExitStatus>,
     exited_at: Option<Instant>,
@@ -275,6 +276,7 @@ impl WorkerProcess {
             terminal_received: None,
             completed: None,
             group_stopped: false,
+            reap_attempted: false,
             faulted: false,
             exit: None,
             exited_at: None,
@@ -366,7 +368,7 @@ impl WorkerProcess {
 
     /// Queues one cooperative cancellation without touching a pipe on this thread.
     pub fn request_cancel(&mut self, now: Instant) -> Result<bool, SupervisorError> {
-        if self.cancel_started.is_some() || self.exit.is_some() {
+        if self.cancel_started.is_some() || self.reap_attempted {
             return Ok(false);
         }
         self.cancel_started = Some(now);
@@ -402,6 +404,11 @@ impl WorkerProcess {
     /// A bounded batch of events. The host must also apply its job lifecycle and
     /// validate completed media after `Exited`, before any durable promotion.
     pub fn poll(&mut self, now: Instant) -> Result<Vec<ProcessEvent>, SupervisorError> {
+        if self.reap_attempted && self.exit.is_none() {
+            return Err(SupervisorError::ObserveExit(io::Error::other(
+                "worker reaping failed; ownership is no longer available",
+            )));
+        }
         let mut output = Vec::new();
         for _ in 0..POLL_EVENT_LIMIT {
             let event = self
@@ -423,10 +430,12 @@ impl WorkerProcess {
         {
             // Observe exit before applying deadlines: a delayed host poll must
             // not report a finished worker as timed out or force-cancelled.
-            // Keep the leader unreaped until its group is signalled, preventing
-            // PID reuse during cleanup.
+            // Keep the leader unreaped until group cleanup completes, preventing
+            // PID reuse during every cleanup signal.
             self.stop_group()?;
-            self.exit = Some(self.child.wait()?);
+            // Any wait error may mean lost ownership. Drop must not retry that
+            // PID using the cached successful group cleanup alone.
+            self.exit = Some(reap_child_once(&mut self.child, &mut self.reap_attempted)?);
             self.exited_at = Some(now);
             self.control = None;
         }
@@ -596,21 +605,21 @@ impl WorkerProcess {
                     "invalid worker group identity",
                 ));
             }
-            match kill_process_group(self.pid, Signal::KILL) {
-                Ok(()) => {}
-                Err(rustix::io::Errno::SRCH) => {}
-                // Darwin can return EPERM for a zombie-only group. Exit of
-                // the leader alone is insufficient: another member could
-                // have changed credentials and still be running.
-                #[cfg(target_os = "macos")]
-                Err(rustix::io::Errno::PERM) => {
-                    if !deadpan_native_process::exited_leader_has_no_other_members(&self.child)
-                        .map_err(SupervisorError::SignalGroup)?
-                    {
-                        return Err(SupervisorError::SignalGroup(rustix::io::Errno::PERM.into()));
-                    }
-                }
-                Err(error) => return Err(SupervisorError::SignalGroup(error.into())),
+            #[cfg(target_os = "macos")]
+            deadpan_native_process::terminate_owned_group(
+                &self.child,
+                Instant::now() + Duration::from_millis(250),
+            )
+            .map_err(SupervisorError::SignalGroup)?;
+            #[cfg(target_os = "linux")]
+            {
+                deadpan_native_process::signal_owned_group(&self.child)
+                    .map_err(SupervisorError::SignalGroup)?;
+                deadpan_native_process::terminate_owned_leader(
+                    &self.child,
+                    Instant::now() + Duration::from_millis(250),
+                )
+                .map_err(SupervisorError::SignalGroup)?;
             }
             self.group_stopped = true;
             self.control = None;
@@ -622,17 +631,62 @@ impl WorkerProcess {
 impl Drop for WorkerProcess {
     fn drop(&mut self) {
         self.stop_io.store(true, Ordering::Release);
-        if self.stop_group().is_err() {
-            let _ = self.child.kill();
-        }
+        let can_reap = !self.reap_attempted && self.stop_group().is_ok();
+        // A membership-query failure still permits a separately ownership-
+        // checked attempt to stop the leader, but never a retry after wait.
+        let can_reap = can_reap
+            || (!self.reap_attempted
+                && deadpan_native_process::terminate_owned_leader(
+                    &self.child,
+                    Instant::now() + Duration::from_millis(250),
+                )
+                .is_ok());
         self.control = None;
         // Release backpressure before joining any pipe reader.
         self.events = None;
-        if self.exit.is_none() {
-            let _ = self.child.wait();
+        if can_reap {
+            let _ = reap_child_once(&mut self.child, &mut self.reap_attempted);
         }
         for reader in self.readers.drain(..) {
             let _ = reader.join();
         }
+    }
+}
+
+fn reap_child_once(child: &mut Child, attempted: &mut bool) -> io::Result<ExitStatus> {
+    if *attempted {
+        return Err(io::Error::other("worker reaping was already attempted"));
+    }
+    *attempted = true;
+    child.wait()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn failed_reap_prevents_a_second_pid_wait() {
+        let mut child = Command::new("/bin/sh")
+            .args(["-c", "exit 0"])
+            .process_group(0)
+            .spawn()
+            .unwrap();
+        // Reap outside Child so its own wait encounters a real ownership error.
+        waitid(WaitId::Pid(Pid::from_child(&child)), WaitIdOptions::EXITED).unwrap();
+        let mut attempted = false;
+        assert_eq!(
+            reap_child_once(&mut child, &mut attempted)
+                .unwrap_err()
+                .raw_os_error(),
+            Some(rustix::io::Errno::CHILD.raw_os_error())
+        );
+        assert!(attempted);
+        assert_eq!(
+            reap_child_once(&mut child, &mut attempted)
+                .unwrap_err()
+                .to_string(),
+            "worker reaping was already attempted"
+        );
     }
 }

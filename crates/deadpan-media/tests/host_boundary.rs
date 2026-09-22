@@ -364,8 +364,16 @@ fn cancellation_and_hard_deadline_stop_the_process_group() {
 fn successful_leader_exit_cleans_up_descendants_with_inherited_pipes() {
     let directory = tempfile::tempdir().unwrap();
     let marker = directory.path().join("survived");
+    // Keep the control pipe inherited on fd 3, but prevent a subshell's
+    // asynchronous "Killed: 9 sleep" diagnostic from corrupting the leader's
+    // JSON reply. Descendants must still be killed for that pipe to reach EOF.
     let descendants = (0..32)
-        .map(|_| format!("(sleep 1; printf alive > '{}') &\n", marker.display()))
+        .map(|_| {
+            format!(
+                "(exec 3>&2 2>/dev/null; sleep 1; printf alive > '{}') &\n",
+                marker.display()
+            )
+        })
         .collect::<String>();
     let executable = helper(
         directory.path(),

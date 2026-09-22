@@ -1,0 +1,74 @@
+[
+  {
+    "trial": 0,
+    "eof": true,
+    "stderr_hex": "7b226f6b223a747275657d",
+    "stderr_text": "{\"ok\":true}"
+  },
+  {
+    "trial": 1,
+    "eof": true,
+    "stderr_hex": "7b226f6b223a747275657d",
+    "stderr_text": "{\"ok\":true}"
+  },
+  {
+    "trial": 2,
+    "eof": true,
+    "stderr_hex": "7b226f6b223a747275657d",
+    "stderr_text": "{\"ok\":true}"
+  },
+  {
+    "trial": 3,
+    "eof": true,
+    "stderr_hex": "7b226f6b223a747275657d",
+    "stderr_text": "{\"ok\":true}"
+  },
+  {
+    "trial": 4,
+    "eof": true,
+    "stderr_hex": "7b226f6b223a747275657d",
+    "stderr_text": "{\"ok\":true}"
+  },
+  {
+    "trial": 5,
+    "eof": true,
+    "stderr_hex": "7b226f6b223a747275657d",
+    "stderr_text": "{\"ok\":true}"
+  },
+  {
+    "trial": 6,
+    "eof": true,
+    "stderr_hex": "7b226f6b223a747275657d",
+    "stderr_text": "{\"ok\":true}"
+  },
+  {
+    "trial": 7,
+    "eof": true,
+    "stderr_hex": "7b226f6b223a747275657d",
+    "stderr_text": "{\"ok\":true}"
+  },
+  {
+    "trial": 8,
+    "eof": true,
+    "stderr_hex": "7b226f6b223a747275657d",
+    "stderr_text": "{\"ok\":true}"
+  },
+  {
+    "trial": 9,
+    "eof": true,
+    "stderr_hex": "7b226f6b223a747275657d",
+    "stderr_text": "{\"ok\":true}"
+  },
+  {
+    "trial": 10,
+    "eof": true,
+    "stderr_hex": "7b226f6b223a747275657d",
+    "stderr_text": "{\"ok\":true}"
+  },
+  {
+    "trial": 11,
+    "eof": true,
+    "stderr_hex": "7b226f6b223a747275657d2f7661722f666f6c646572732f33372f3779317a346b786e356d7639626b62636b7178726e7a793430303030676e2f542f6465616470616e2d7368656c6c2d646961676e6f73746963732d6c68387a776b335f2f666978747572652e73683a206c696e652031383a203238303339204b696c6c65643a2039202020202020202020202020202020736c65657020310a",
+    "stderr_text": "{\"ok\":true}/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-shell-diagnostics-lh8zwk3_/fixture.sh: line 18: 28039 Killed: 9               sleep 1\n"
+  }
+]

@@ -1,0 +1,14 @@
+{
+  "base_revision": "64ee95f1e03e3be780a88c4eb2e2b004518ff44f",
+  "files": {
+    "native/deadpan-process/src/lib.rs": "b4fa0f038250b07aae0152d69939c238282dc1ceb9379f62af25e47ed27d2d62",
+    "native/deadpan-process/Cargo.toml": "2e45e9744a3cafb4303e828d45b135dac10fd7495aa0b0421d7bc90cb2bfe376",
+    "native/deadpan-process/tests/linux_ownership.rs": "269a46a7d207e8ede14e0cd4166afe31653ba31be0bb402372402fa784f3b1a2",
+    "crates/deadpan-media/src/conversion.rs": "2e4d3c016c489861960c2683d95390505d518453b23d7ef0eb33adcda99456ab",
+    "crates/deadpan-media/tests/host_boundary.rs": "cc5e50bfad62141256de17d15eaf92b5ada51f47fff7e188fcc848817c3d16d9",
+    "crates/deadpan-media/Cargo.toml": "446863fd7c443acb000026d8fa52f5981096c6f924c7ea18d1490adac52fa7f2",
+    "crates/deadpan-jobs/src/supervisor.rs": "99e25dcd7011117bf27bd59b95ec8d82ac7446b6003d2a4c7b2a0b1f3185a00b",
+    "crates/deadpan-jobs/tests/supervisor.rs": "f521bd8e92acd12dd3408aff9100e8da1b4de43b3d4e2e0ff140c4465f089728",
+    "crates/deadpan-jobs/Cargo.toml": "d15bf0bc889ebdcda5216736919b285e48883c714a0baf616092c8fa0ee0161b"
+  }
+}

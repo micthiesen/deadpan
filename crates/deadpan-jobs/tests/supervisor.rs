@@ -456,6 +456,35 @@ fn orphaned_descendant_cannot_keep_worker_pipes_open() {
 }
 
 #[test]
+fn successful_worker_cleans_up_many_forking_descendants_before_delivering_candidate() {
+    let workspace = tempfile::tempdir().unwrap();
+    responses(workspace.path(), &[completed()]);
+    let mut specification = spec(workspace.path(), "messages");
+    let worker = specification.executable.clone();
+    let descendants = "(sleep 1; printf alive > survived) &\n".repeat(32);
+    specification.executable = "/bin/sh".into();
+    specification.arguments = vec![
+        "-c".into(),
+        format!("{descendants}exec \"$1\" messages").into(),
+        "deadpan-descendant-fixture".into(),
+        worker.into_os_string(),
+    ];
+    let mut process = WorkerProcess::spawn(specification, request()).unwrap();
+    let events = finish(&mut process);
+    assert!(faults(&events).is_empty(), "{:?}", faults(&events));
+    assert!(matches!(
+        events.as_slice(),
+        [ProcessEvent::Message(message), ProcessEvent::Exited { status, cancellation_escalated: false }]
+            if message.as_ref() == &completed() && status.success()
+    ));
+    thread::sleep(Duration::from_millis(1100));
+    assert!(
+        !workspace.path().join("survived").exists(),
+        "a descendant continued after successful worker teardown"
+    );
+}
+
+#[test]
 fn dropping_a_flooding_worker_releases_pipe_backpressure() {
     let workspace = tempfile::tempdir().unwrap();
     responses(

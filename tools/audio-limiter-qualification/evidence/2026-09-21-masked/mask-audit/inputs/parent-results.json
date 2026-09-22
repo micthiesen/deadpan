@@ -1,0 +1,29 @@
+{
+  "results": [
+    {
+      "case": "alternating-mask-dc-0.1",
+      "output_sha256": "d525f929a1e30c731df329776f27157a99acf88372b7778124800123871cda85",
+      "sample_peak": 0.10592534393072128,
+      "gain_min": 1.0,
+      "gain_max": 1.0,
+      "margin_min": 0.8655630702827928
+    },
+    {
+      "case": "alternating-mask-dc-0.8",
+      "output_sha256": "2637722460d26695ea52b9d052e0f4afc2afc607124523b7b6398a690ec0cb7b",
+      "sample_peak": 0.8000003695487976,
+      "gain_min": 0.7531497053507021,
+      "gain_max": 1.0,
+      "margin_min": 0.862761298741885
+    },
+    {
+      "case": "alternating-mask-dc-16",
+      "output_sha256": "d2b008125c8c00a3a0cc9094e9258d785df1a4296c250cea6ef5e49797440125",
+      "sample_peak": 0.8361789584159851,
+      "gain_min": 0.03641353690770341,
+      "gain_max": 0.052317124832864145,
+      "margin_min": 0.8019228319507358
+    }
+  ],
+  "seconds": 8.635740958852693
+}

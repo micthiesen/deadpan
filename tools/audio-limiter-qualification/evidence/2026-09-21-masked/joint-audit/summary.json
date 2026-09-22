@@ -1,0 +1,18 @@
+{
+  "fixtures": 42,
+  "channels": 84,
+  "hash_verified": 42,
+  "ceiling_linear": 0.8912509381337456,
+  "failing_fixtures": [],
+  "fully_silent_fixtures": [
+    "masked-silent-random16",
+    "masked-silent-23990"
+  ],
+  "worst_fixture": "tone-23000-4",
+  "worst_refined_peak": 0.8704911618730317,
+  "worst_refined_dbtp": -1.204712678624168,
+  "all_qualified_numerical_global_upper_bounds_below_ceiling": true,
+  "largest_qualified_numerical_global_upper": 0.8709127039726899,
+  "max_observed_fft_direct_difference": 5.551115123125783e-16,
+  "seconds": 16.738215750083327
+}

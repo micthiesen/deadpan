@@ -149,6 +149,14 @@ preserve PCM; the failed limiter prototypes remain evidence rather than a
 production mastering implementation. Limiting, reduction reporting and final
 mix integration remain open.
 
+[Worker cleanup verification](qualification/worker-cleanup-2026-09-21.md) records
+a failed macOS CI run and the shared membership-confirmed teardown for media
+and model workers. Deterministic signal/ownership/pipe regressions and actual
+forking descendants cover these fixes; process-group cleanup is not a sandbox.
+[Conditioned limiter research](qualification/audio-limiter-masks-2026-09-21.md)
+retains a 42-fixture pass and two subsequent suppression-mask counterexamples.
+The prototype remains unadopted; this does not advance mastering acceptance.
+
 ## Product requirements
 
 | ID | Requirement | Status | Implementation / tests now | Required acceptance evidence still outstanding |

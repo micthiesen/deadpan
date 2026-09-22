@@ -64,24 +64,33 @@ complete pipe/event draining, then emits it immediately before `Exited` in the
 same batch. A later protocol error, exit failure, stuck pipe, or cancellation
 discards it. Stage/progress messages remain available while the worker runs.
 
-The supervisor observes exit without reaping the leader before signalling its
+The supervisor observes exit without reaping the leader before stopping its
 group, preventing that PID from being reused during cleanup. Nonblocking,
 cancellable pipe pumps also bound shutdown if a descendant escapes the group
 while retaining a pipe. Escaped processes are outside this supervisor's authority;
 it is not an operating-system sandbox. An inherited pipe that remains open is a
-failure, not a reason to accept output. Dropping the owner terminates and reaps
-the owned process group and joins its pumps on the job service.
+failure, not a reason to accept output. Dropping the owner attempts bounded
+group cleanup, reaps a confirmed exited leader once, and joins its pumps on the
+job service. A failed wait is terminal: later polling and destruction never
+retry that PID. Cleanup failure is not unconditional termination evidence.
 
-On this Darwin host, signalling a zombie-only group returns `EPERM`. The
-[`deadpan-process` adapter](../native/deadpan-process/src/lib.rs) handles only
-this qualified case: `waitid` must prove the leader exited without reaping it,
-then a bounded two-PID libproc query must contain no other group member. The
-query includes other UIDs and zombies. Unknown membership, inaccessible lists,
-invalid lengths, and full buffers fail closed. Thread-local errno is cleared
-and captured because libproc returns zero for both errors and empty results.
-This prevents an exited leader from disguising an unkillable live descendant.
-Other signalling errors are returned to the host. Membership is a snapshot;
-processes that escape the group are outside its cleanup guarantee.
+On Darwin, even successful SIGKILL delivery is not completed group teardown.
+The [`deadpan-process` adapter](../native/deadpan-process/src/lib.rs) checks
+`waitid` ownership before each signal, retries within a real 250 ms deadline,
+and requires an exited unreaped leader with no other group member before
+success. Its bounded two-PID libproc query includes other UIDs and zombies.
+Unknown membership, inaccessible lists, invalid lengths, and full buffers fail
+closed. Thread-local errno distinguishes an empty list from a libproc failure.
+ESRCH and Darwin EPERM also require confirmation, rather than implying success.
+
+If group cleanup fails during destruction, a separate bounded fallback checks
+ownership and attempts to stop the leader without depending on group inspection.
+It may then reap that confirmed leader once. This fallback cannot turn a group
+cleanup error into a successful worker result or prove descendant termination.
+Lost ownership, including ECHILD, prevents signalling or reaping. A failed
+fallback leaves cleanup incomplete. Processes that leave the group remain
+outside the supervisor's authority. [Cleanup verification](qualification/worker-cleanup-2026-09-21.md)
+records the regression tests, original CI failure and later shell-fixture fix.
 
 The host must wait for process cleanup, validate artifact paths/symlinks, hashes,
 media dimensions/duration/color, and provenance, then promote atomically. None of

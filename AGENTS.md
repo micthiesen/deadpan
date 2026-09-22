@@ -39,13 +39,23 @@ Current crates:
 - `native/deadpan-fileclone`: bounded safe descriptor-clone interface around the macOS system call. The store owns copying, checksums, publication and durability.
 - `crates/deadpan-render`: bounded shared SDR picture pipeline, linear Rec.2020 working textures, explicit sRGB display transform, aspect and rotation. No decoding, document mutation or encoding.
 - `native/deadpan-media-worker`: process-isolated FFmpeg conversion and independent decode verification through bounded descriptor-only AVIO. Only the documented FFI call permits unsafe Rust. Requires the explicitly selected pinned LGPL FFmpeg development prefix.
-- `native/deadpan-process`: narrow Darwin group-membership adapter; unsafe is denied except for its documented bounded libproc call. Higher layers continue to forbid unsafe.
+- `native/deadpan-process`: checked worker/leader teardown and Darwin group-membership adapter; unsafe is denied except for its documented bounded libproc call. Higher layers continue to forbid unsafe.
 - `crates/deadpan-app`: native `egui`/`eframe` project workspace using Metal. One service owns the writable store, one import worker prepares media, and a separate bounded preview worker consumes immutable workspaces. Native dialogs, source registration, explicit insertion and history are implemented; full editing, playback and export remain open.
 - `crates/deadpan-cli`: versioned headless project/command API, reused by `deadpan-app --headless`.
 
 [Architecture](docs/ARCHITECTURE.md) records Section 24's full boundary map. Add crates only when an implemented responsibility needs isolation. Do not create empty crates or feature controls that pretend to work.
 
 Use Rust 1.97.1 as pinned in `rust-toolchain.toml`, Cargo, rustfmt, Clippy, strong types, and meaningful unit/property tests. Keep platform-specific unsafe code inside qualified adapters and out of core. Avoid debug leftovers, broad suppressions, unchecked conversions, and unrelated dependency additions. Commit `Cargo.lock` and test locked dependencies.
+
+Owned macOS worker groups use `deadpan_native_process::terminate_owned_group`
+before reaping their leaders. A successful signal does not prove descendant
+cleanup. Retain sole reaping ownership across membership checks and retries;
+use a real monotonic cleanup deadline rather than an injected lifecycle clock.
+Do not bypass an ownership or teardown failure with unchecked PID operations
+in a destructor. Use the checked leader fallback when group cleanup fails, and
+mark each reap attempted before waiting so an error can never retry a stale PID.
+Drain bounded available control bytes through EOF or WouldBlock before judging
+an exit-to-pipe grace period. Group cleanup does not contain escaped processes.
 
 Source preview owns one persistent service thread, one replaceable pending request
 and one reply. Keep hashing, snapshot copying, indexing and decoding off the UI;
