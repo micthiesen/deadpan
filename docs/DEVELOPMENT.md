@@ -152,6 +152,10 @@ continuous/nested retimes against independently composed DSP and resampling,
 including output-only Hold policies, provenance changes and bounded retries.
 Use `inspect-audio ... --time-mapped` for the pre-effects Preserve path; see
 [stage preparation](AUDIO_STAGE_PREPARATION.md).
+Room-tone tests add scalar overlap references and a 44.1 kHz source whose exact
+loop period differs from rounded storage. The host integration verifies an
+explicit AAC loop, separate silence and following speech without history writes.
+See [room-tone audio](ROOM_TONE_AUDIO.md).
 
 Run `cargo test --locked -p deadpan-source -p deadpan-media` for native audio
 decode, measured indexes, exact PCM ranges, AAC padding, shared video/audio

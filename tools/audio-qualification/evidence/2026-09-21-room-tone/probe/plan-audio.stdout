@@ -1,0 +1,195 @@
+{
+  "audio": {
+    "lookup": {
+      "iteration_run_comparisons": 0,
+      "sequence_comparisons": 10,
+      "visited_nodes": 8
+    },
+    "project_id": "f3bdfa0b-5faf-461b-a08b-690d62cf8186",
+    "revision_id": "room-tone-inserted",
+    "samples": {
+      "end": 6407,
+      "start": 0
+    },
+    "spans": [
+      {
+        "allocated_samples": {
+          "end": 4805,
+          "start": 0
+        },
+        "content": {
+          "duration": 3,
+          "source": {
+            "asset": "fixture-audio",
+            "span": {
+              "end": {
+                "ticks": 256,
+                "time_base": {
+                  "denominator": 48000,
+                  "numerator": 1
+                }
+              },
+              "start": {
+                "ticks": 0,
+                "time_base": {
+                  "denominator": 48000,
+                  "numerator": 1
+                }
+              }
+            }
+          },
+          "type": "room_tone"
+        },
+        "gap_after": null,
+        "instance": {
+          "node": "room-tone",
+          "repeats": []
+        },
+        "project_extent": {
+          "end": {
+            "denominator": "1",
+            "numerator": "3"
+          },
+          "start": {
+            "denominator": "1",
+            "numerator": "0"
+          }
+        },
+        "retimes": [],
+        "samples": {
+          "end": 4805,
+          "start": 0
+        },
+        "transform": {
+          "project_frames_per_local_frame": {
+            "denominator": "1",
+            "numerator": "1"
+          },
+          "project_frames_per_sample": {
+            "denominator": "8008",
+            "numerator": "5"
+          },
+          "project_origin": {
+            "denominator": "1",
+            "numerator": "0"
+          }
+        }
+      },
+      {
+        "allocated_samples": {
+          "end": 6406,
+          "start": 4805
+        },
+        "content": {
+          "reason": "silent_hold",
+          "type": "silence"
+        },
+        "gap_after": null,
+        "instance": {
+          "node": "silent-hold",
+          "repeats": []
+        },
+        "project_extent": {
+          "end": {
+            "denominator": "1",
+            "numerator": "4"
+          },
+          "start": {
+            "denominator": "1",
+            "numerator": "3"
+          }
+        },
+        "retimes": [],
+        "samples": {
+          "end": 6406,
+          "start": 4805
+        },
+        "transform": {
+          "project_frames_per_local_frame": {
+            "denominator": "1",
+            "numerator": "1"
+          },
+          "project_frames_per_sample": {
+            "denominator": "8008",
+            "numerator": "5"
+          },
+          "project_origin": {
+            "denominator": "1",
+            "numerator": "3"
+          }
+        }
+      },
+      {
+        "allocated_samples": {
+          "end": 198598,
+          "start": 6406
+        },
+        "content": {
+          "duration": {
+            "denominator": "1",
+            "numerator": "120"
+          },
+          "source": {
+            "asset": "fixture-audio",
+            "span": {
+              "end": {
+                "ticks": 192192,
+                "time_base": {
+                  "denominator": 48000,
+                  "numerator": 1
+                }
+              },
+              "start": {
+                "ticks": 0,
+                "time_base": {
+                  "denominator": 48000,
+                  "numerator": 1
+                }
+              }
+            }
+          },
+          "start": {
+            "denominator": "1",
+            "numerator": "0"
+          },
+          "type": "source"
+        },
+        "gap_after": null,
+        "instance": {
+          "node": "fixture-source",
+          "repeats": []
+        },
+        "project_extent": {
+          "end": {
+            "denominator": "1",
+            "numerator": "124"
+          },
+          "start": {
+            "denominator": "1",
+            "numerator": "4"
+          }
+        },
+        "retimes": [],
+        "samples": {
+          "end": 6407,
+          "start": 6406
+        },
+        "transform": {
+          "project_frames_per_local_frame": {
+            "denominator": "1",
+            "numerator": "1"
+          },
+          "project_frames_per_sample": {
+            "denominator": "8008",
+            "numerator": "5"
+          },
+          "project_origin": {
+            "denominator": "1",
+            "numerator": "4"
+          }
+        }
+      }
+    ]
+  },
+  "protocol": 1
+}

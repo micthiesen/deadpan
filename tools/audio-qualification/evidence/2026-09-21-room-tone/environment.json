@@ -1,0 +1,16 @@
+{
+  "captured_utc": "2026-09-22T00:14:11.793759+00:00",
+  "hardware": "Apple M5 Max",
+  "memory_bytes": 137438953472,
+  "os": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "clang": "Apple clang version 21.0.0 (clang-2100.1.1.101)\nTarget: arm64-apple-darwin25.5.0\nThread model: posix\nInstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin",
+  "ffmpeg": "8.0.3 pinned LGPL compatible build",
+  "ffmpeg_prefix": "/tmp/deadpan-media-compatible-xyhilms4/prefix",
+  "profile": "workspace development/test; existing native DSP optimized adapter",
+  "power_cache": "Not controlled for performance qualification; process tests use fresh sessions, OS file cache may be warm.",
+  "limitations": [
+    "No new listening, device-output, latency or total-memory qualification.",
+    "Deadlines remain cooperative across provider/native calls."
+  ]
+}

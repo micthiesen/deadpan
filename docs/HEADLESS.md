@@ -230,7 +230,9 @@ Add `--time-mapped` after the sample endpoints to prepare continuous Preserve
 stages as well. The result identifies `time_mapped_pcm_before_effects` and
 retains silent-Hold suppression ranges. Nested retimes preserve order and full
 intrinsic history; admission and shared work limits fail explicitly. This still
-precedes fades, effects and mastering. See [stage preparation](AUDIO_STAGE_PREPARATION.md).
+precedes fades, effects and mastering. Authored room-tone Holds and repeat gaps
+loop their explicit selected source with short exact crossfades. See
+[stage preparation](AUDIO_STAGE_PREPARATION.md) and [room tone](ROOM_TONE_AUDIO.md).
 
 ## Picture and audio plan inspection
 

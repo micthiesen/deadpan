@@ -12,7 +12,8 @@ use deadpan_cli::audio::ProjectAudioSession;
 use deadpan_core::{
     AssetId, AudioSample, BeatNode, ColorPolicy, Command, CommandRequest, FrameDuration,
     FrameRange, FrameRate, HoldAudio, HoldRecipe, HoldVideo, NodeId, NodeKind, PitchPolicy,
-    PresentationBasis, ProjectDocument, ProjectFrame, ProjectId, RevisionId, Subtree,
+    PresentationBasis, ProjectDocument, ProjectFrame, ProjectId, RevisionId, SourceAudio,
+    SourceSpan, SourceTimeBase, SourceTimestamp, Subtree,
 };
 use deadpan_media::audio_session::{AudioSession, AudioSessionLimits, SourceAudioSample};
 use deadpan_media::source_index::SourceContentIdentity;
@@ -171,6 +172,119 @@ fn counts(path: &Path) -> Result<(i64, i64, i64)> {
         [],
         |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
     )?)
+}
+
+#[test]
+fn room_tone_inspection_loops_an_explicit_aac_range_and_retains_silent_time() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let (path, mut store) = project(scratch.path())?;
+    let original = register(
+        &mut store,
+        &fixture("cfr-bframes.mp4"),
+        1,
+        OriginalOwnership::Managed,
+        "import",
+    )?;
+    let clock = SourceTimeBase::new(1, 48_000)?;
+    let selected = SourceAudio {
+        asset: asset(),
+        span: SourceSpan::new(
+            SourceTimestamp {
+                ticks: 0,
+                time_base: clock,
+            },
+            SourceTimestamp {
+                ticks: 256,
+                time_base: clock,
+            },
+        )?,
+    };
+    for (name, index, frames, audio) in [
+        ("ambience", 0, 2, HoldAudio::RoomTone { source: selected }),
+        ("silence", 1, 1, HoldAudio::Silence),
+    ] {
+        commit(
+            &mut store,
+            name,
+            Command::Insert {
+                parent: node("root"),
+                index,
+                subtree: Subtree {
+                    root: node(name),
+                    nodes: BTreeMap::from([(
+                        node(name),
+                        BeatNode::hold(
+                            name,
+                            HoldRecipe {
+                                duration: FrameDuration::new(frames)?,
+                                video: HoldVideo::Background,
+                                audio,
+                            },
+                        ),
+                    )]),
+                    overrides: BTreeMap::new(),
+                },
+            },
+        )?;
+    }
+    let before = store.snapshot()?;
+    let before_counts = counts(&path)?;
+    let mut session = ProjectAudioSession::open(&path)?;
+    let block = session.read_time_mapped(AudioSample(0), 256, &active())?;
+    assert!(block.suppressed.is_empty());
+    for (at, actual) in block.samples.iter().enumerate() {
+        let phase = at % 160;
+        let expected = if at < 160 || phase >= 96 {
+            original[phase]
+        } else {
+            let weight = phase as f64 / 96.0;
+            std::array::from_fn(|channel| {
+                (f64::from(original[160 + phase][channel]) * (1.0 - weight)
+                    + f64::from(original[phase][channel]) * weight) as f32
+            })
+        };
+        assert_eq!(*actual, expected, "crossfade sample {at}");
+    }
+    let silent = session.read_time_mapped(AudioSample(3200), 256, &active())?;
+    assert_eq!(silent.samples, vec![[0.0; 2]; 256]);
+    assert_eq!(
+        silent.suppressed,
+        vec![AudioSample(3200)..AudioSample(3456)]
+    );
+    assert_eq!(
+        session
+            .read_time_mapped(AudioSample(4800), 256, &active())?
+            .samples,
+        original
+    );
+    let output = ProcessCommand::new(env!("CARGO_BIN_EXE_deadpan-cli"))
+        .args([
+            "inspect-audio",
+            path.to_str().unwrap(),
+            "--samples",
+            "0",
+            "256",
+            "--time-mapped",
+        ])
+        .output()?;
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert!(output.stderr.is_empty());
+    let wire: Value = serde_json::from_slice(&output.stdout)?;
+    let pcm: Vec<[f32; 2]> = serde_json::from_value(wire["audio"]["samples"].clone())?;
+    assert_eq!(pcm, block.samples);
+    assert_eq!(wire["audio"]["revision_id"], "silence");
+    assert_eq!(wire["audio"]["stage"], "time_mapped_pcm_before_effects");
+    assert_eq!(
+        inspect(&path, "0", "256", false)?["error"]["code"],
+        "AudioOperationUnsupported"
+    );
+    assert_eq!(store.snapshot()?, before);
+    assert_eq!(counts(&path)?, before_counts);
+    Ok(())
 }
 
 #[test]

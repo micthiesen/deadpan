@@ -1,0 +1,37 @@
+{
+  "table_counts": {
+    "generation_attempt_heads": 0,
+    "generation_attempts": 0,
+    "generation_bundle_receipts": 0,
+    "generation_candidate_receipts": 0,
+    "generation_requests": 0,
+    "history": 2,
+    "hold_request_clocks": 0,
+    "original_media": 1,
+    "redo": 0,
+    "revisions": 3,
+    "source_qualifications": 1,
+    "state": 1
+  },
+  "state": [
+    [
+      1,
+      "room-tone-inserted",
+      2
+    ]
+  ],
+  "history": [
+    [
+      1,
+      null,
+      "source-import"
+    ],
+    [
+      2,
+      1,
+      "room-tone-inserted"
+    ]
+  ],
+  "logical_dump_sha256": "399b71ca9b928439f0ae7094503b2a4f2b24df1c8147f6dbb35a37464ee5ec5a",
+  "user_version": 15
+}

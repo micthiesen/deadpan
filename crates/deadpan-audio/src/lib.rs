@@ -5,6 +5,7 @@
 
 mod matrix;
 mod resample;
+mod room_tone;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 mod sequence;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
@@ -14,6 +15,7 @@ mod stages;
 
 pub use matrix::StereoMatrix;
 pub use resample::{PcmWindow, ResampleRecipe, Resampler, StereoBlock};
+pub use room_tone::{ROOM_TONE_ID, RoomTone, RoomToneRecipe};
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub use sequence::{AudioSourceProvider, SequenceAudio, SequenceAudioError, SourceStageBlock};
 #[cfg(any(target_os = "macos", target_os = "linux"))]

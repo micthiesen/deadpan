@@ -465,7 +465,13 @@ impl<'plan> AudioSignal<'plan> {
                     break (AudioSignalContent::Leaf(content), None);
                 }
                 CompiledKind::Hold { audio, .. } => {
-                    break (AudioSignalContent::Leaf(audio.into()), None);
+                    break (
+                        AudioSignalContent::Leaf(AudioContent::from_hold(
+                            audio,
+                            node.inspection.duration,
+                        )),
+                        None,
+                    );
                 }
                 CompiledKind::Sequence { entries } => {
                     let mut left = 0;
@@ -571,7 +577,10 @@ impl<'plan> AudioSignal<'plan> {
                                 ))?,
                         )?;
                         break (
-                            AudioSignalContent::Leaf(audio.into()),
+                            AudioSignalContent::Leaf(AudioContent::from_hold(
+                                audio,
+                                location.play.gap_after,
+                            )),
                             Some(location.play.iteration),
                         );
                     }

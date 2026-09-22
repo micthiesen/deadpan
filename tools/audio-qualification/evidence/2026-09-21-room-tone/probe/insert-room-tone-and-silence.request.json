@@ -1,0 +1,76 @@
+{
+  "protocol": 1,
+  "project_id": "f3bdfa0b-5faf-461b-a08b-690d62cf8186",
+  "expected_revision": "source-import",
+  "new_revision": "room-tone-inserted",
+  "command": {
+    "command": "insert",
+    "parent": "cf9be769-e4eb-4a71-865a-8925040317db",
+    "index": 0,
+    "subtree": {
+      "root": "inserted-time",
+      "overrides": {},
+      "nodes": {
+        "inserted-time": {
+          "label": "Room tone then silence",
+          "kind": {
+            "type": "sequence",
+            "children": [
+              "room-tone",
+              "silent-hold"
+            ]
+          }
+        },
+        "room-tone": {
+          "label": "Explicit synthetic room-tone selection",
+          "kind": {
+            "type": "hold",
+            "recipe": {
+              "duration": 3,
+              "video": {
+                "type": "background"
+              },
+              "audio": {
+                "type": "room_tone",
+                "source": {
+                  "asset": "fixture-audio",
+                  "span": {
+                    "start": {
+                      "ticks": 0,
+                      "time_base": {
+                        "numerator": 1,
+                        "denominator": 48000
+                      }
+                    },
+                    "end": {
+                      "ticks": 256,
+                      "time_base": {
+                        "numerator": 1,
+                        "denominator": 48000
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "silent-hold": {
+          "label": "One silent frame",
+          "kind": {
+            "type": "hold",
+            "recipe": {
+              "duration": 1,
+              "video": {
+                "type": "background"
+              },
+              "audio": {
+                "type": "silence"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

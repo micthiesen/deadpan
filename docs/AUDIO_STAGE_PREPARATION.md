@@ -73,11 +73,12 @@ The renderer validates each complete stage output before decoding its input.
 This matters when a Hold owns no input-grid point but acquires output samples
 after slowing, including through nested stages. Silent Holds suppress incoming
 DSP energy at intermediate and final output coordinates. Final blocks retain
-`suppressed` ranges for downstream effects. Room tone, effect tails and implicit
-Source speed changes still fail explicitly. No normalization or clipping hides
+`suppressed` ranges for downstream effects. [Room-tone Holds](ROOM_TONE_AUDIO.md)
+prepare an explicit selected source loop with exact overlap timing. Effect tails
+and implicit Source speed changes still fail explicitly. No normalization or clipping hides
 nonfinite or excessive PCM.
 
-Each prepared occurrence keeps its full intrinsic output and transitive source
+Each prepared Preserve or room-tone occurrence keeps its full intrinsic output and transitive source
 dependencies. `PreparedSource` streams the complete validated index, byte
 identity, selected speaker layout and preparation engine IDs into SHA-256.
 Cache hits revalidate those fingerprints through the revision-aware provider.
@@ -118,5 +119,5 @@ rounding and indexed billion-play queries. See
 and real process evidence.
 
 Long-input preparation, fractional pitch, variable rates/reverse, full voice
-effects, gain/fades, room tone/tails, true-peak mastering, listening, background
+effects, gain/fades, tails, room-tone selection/audition, true-peak mastering, listening, background
 cache scheduling, device timing and preview/export equivalence remain open.

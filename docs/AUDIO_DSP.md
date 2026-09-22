@@ -59,16 +59,15 @@ Current Rust tests compare prior measured PCM hashes and test consumer partition
 and replay equivalence. The focused C++ harness exercises the actual adapter
 under ASan/UBSan. See the crate README for commands and fixture provenance.
 
-This adapter does not connect plans to PCM, decode media, infer speaker layouts,
-resample, implement room tone/tails/fades/gain/limiting, manage prepared caches,
-open output devices, or implement native playback/export. Binding exact source
-phase and fractional plan extents to the preparation recipe remains open;
-integration must not derive an unintended rate from rounded beat durations.
-The new exact rate does not provide fractional phase: callers must prepare an
-explicit sampling grid through the qualified resampler. See
-[stage preparation](AUDIO_STAGE_PREPARATION.md) for the integration contract and
+This native adapter delegates media access, resampling and cache ownership to
+`deadpan-audio`. Its [stage preparation](AUDIO_STAGE_PREPARATION.md) now binds
+exact fractional source grids and ordered nested retimes to this canonical
+schedule. [Room-tone preparation](ROOM_TONE_AUDIO.md) supplies explicit looped
+signals through that same stage path. The exact-rate native API itself does not
+provide fractional input phase; callers prepare that grid with the qualified
+resampler, without deriving speed from rounded beat durations. See
 [exact-rate qualification](qualification/audio-exact-rate-2026-09-21.md) for
-the current evidence. Fractional pitch, mixed nested pitch-stage processing,
-reverse and variable-rate operations remain required. The admitted parameter
+the native-boundary evidence. Fractional pitch, reverse, variable rate, tails,
+fades/gain/limiting, devices and native playback/export remain required. The admitted parameter
 range exceeds the original measured listening and quality corpus; full
 speech/music review and device qualification remain open.

@@ -1,0 +1,45 @@
+{
+  "base_revision": "320ea14b9c416ffc963d0d6501f8ff66901e39e0",
+  "files": [
+    {
+      "path": "crates/deadpan-audio/src/lib.rs",
+      "sha256": "6963201937f7282579342e5e4af3eadb4006ec2c20f86707e8fee8195540cdc8"
+    },
+    {
+      "path": "crates/deadpan-audio/src/room_tone.rs",
+      "sha256": "7bb3dceec185c90d06b7f7961d3348d4d916858c42e0a538066270c09b1ba593"
+    },
+    {
+      "path": "crates/deadpan-audio/src/stages.rs",
+      "sha256": "b783930478c7c72575148126ed105d94e6b56a5e750df40e0f88a70d290bb449"
+    },
+    {
+      "path": "crates/deadpan-audio/tests/stages.rs",
+      "sha256": "e510895f0e4443041d5d613f837ec87ae661b2dc9e9fce398bc01f3d8fcefcaa"
+    },
+    {
+      "path": "crates/deadpan-cli/src/doctor.rs",
+      "sha256": "6231719a4f25049ab77a88d7a521752d06471836ae02de4ef8cc2f1e679e79be"
+    },
+    {
+      "path": "crates/deadpan-cli/tests/audio_inspection.rs",
+      "sha256": "3880e12cfb357d4bd10d421aac53daad1d3101f74afbccd84117f271d69e5813"
+    },
+    {
+      "path": "crates/deadpan-plan/src/audio.rs",
+      "sha256": "c9869f023d7c215ba00741c28966576fd296fd94572949fe945db45fc5202b15"
+    },
+    {
+      "path": "crates/deadpan-plan/src/audio_signal.rs",
+      "sha256": "4163b72172ddbe348377fa1d2ba357a253a018571ea3a8b90e82dd031989482c"
+    },
+    {
+      "path": "crates/deadpan-plan/tests/audio_plan.rs",
+      "sha256": "f86efe3a736878c633440fb7aca856b1c6180185b43dfb169666a582c95b0b71"
+    },
+    {
+      "path": "crates/deadpan-plan/tests/audio_signal.rs",
+      "sha256": "6d5f6dece1d0ef066cf2ee82353ae61b7348dceb4d1bebb0fdbf1cbbb43af769"
+    }
+  ]
+}

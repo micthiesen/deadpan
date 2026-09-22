@@ -1,0 +1,215 @@
+{
+  "committed": true,
+  "outcome": {
+    "edit": {
+      "changed_ids": [
+        "cf9be769-e4eb-4a71-865a-8925040317db",
+        "inserted-time",
+        "room-tone",
+        "silent-hold"
+      ],
+      "description": "Insert beats",
+      "duration_delta": 4,
+      "forward": {
+        "assets": {},
+        "from_revision": "source-import",
+        "marks": {},
+        "nodes": {
+          "cf9be769-e4eb-4a71-865a-8925040317db": {
+            "after": {
+              "kind": {
+                "children": [
+                  "inserted-time",
+                  "fixture-source"
+                ],
+                "type": "sequence"
+              },
+              "label": "Sequence"
+            },
+            "before": {
+              "kind": {
+                "children": [
+                  "fixture-source"
+                ],
+                "type": "sequence"
+              },
+              "label": "Sequence"
+            }
+          },
+          "inserted-time": {
+            "after": {
+              "kind": {
+                "children": [
+                  "room-tone",
+                  "silent-hold"
+                ],
+                "type": "sequence"
+              },
+              "label": "Room tone then silence"
+            },
+            "before": null
+          },
+          "room-tone": {
+            "after": {
+              "kind": {
+                "recipe": {
+                  "audio": {
+                    "source": {
+                      "asset": "fixture-audio",
+                      "span": {
+                        "end": {
+                          "ticks": 256,
+                          "time_base": {
+                            "denominator": 48000,
+                            "numerator": 1
+                          }
+                        },
+                        "start": {
+                          "ticks": 0,
+                          "time_base": {
+                            "denominator": 48000,
+                            "numerator": 1
+                          }
+                        }
+                      }
+                    },
+                    "type": "room_tone"
+                  },
+                  "duration": 3,
+                  "video": {
+                    "type": "background"
+                  }
+                },
+                "type": "hold"
+              },
+              "label": "Explicit synthetic room-tone selection"
+            },
+            "before": null
+          },
+          "silent-hold": {
+            "after": {
+              "kind": {
+                "recipe": {
+                  "audio": {
+                    "type": "silence"
+                  },
+                  "duration": 1,
+                  "video": {
+                    "type": "background"
+                  }
+                },
+                "type": "hold"
+              },
+              "label": "One silent frame"
+            },
+            "before": null
+          }
+        },
+        "overrides": {},
+        "project_id": "f3bdfa0b-5faf-461b-a08b-690d62cf8186",
+        "to_revision": "room-tone-inserted"
+      },
+      "inverse": {
+        "assets": {},
+        "from_revision": "room-tone-inserted",
+        "marks": {},
+        "nodes": {
+          "cf9be769-e4eb-4a71-865a-8925040317db": {
+            "after": {
+              "kind": {
+                "children": [
+                  "fixture-source"
+                ],
+                "type": "sequence"
+              },
+              "label": "Sequence"
+            },
+            "before": {
+              "kind": {
+                "children": [
+                  "inserted-time",
+                  "fixture-source"
+                ],
+                "type": "sequence"
+              },
+              "label": "Sequence"
+            }
+          },
+          "inserted-time": {
+            "after": null,
+            "before": {
+              "kind": {
+                "children": [
+                  "room-tone",
+                  "silent-hold"
+                ],
+                "type": "sequence"
+              },
+              "label": "Room tone then silence"
+            }
+          },
+          "room-tone": {
+            "after": null,
+            "before": {
+              "kind": {
+                "recipe": {
+                  "audio": {
+                    "source": {
+                      "asset": "fixture-audio",
+                      "span": {
+                        "end": {
+                          "ticks": 256,
+                          "time_base": {
+                            "denominator": 48000,
+                            "numerator": 1
+                          }
+                        },
+                        "start": {
+                          "ticks": 0,
+                          "time_base": {
+                            "denominator": 48000,
+                            "numerator": 1
+                          }
+                        }
+                      }
+                    },
+                    "type": "room_tone"
+                  },
+                  "duration": 3,
+                  "video": {
+                    "type": "background"
+                  }
+                },
+                "type": "hold"
+              },
+              "label": "Explicit synthetic room-tone selection"
+            }
+          },
+          "silent-hold": {
+            "after": null,
+            "before": {
+              "kind": {
+                "recipe": {
+                  "audio": {
+                    "type": "silence"
+                  },
+                  "duration": 1,
+                  "video": {
+                    "type": "background"
+                  }
+                },
+                "type": "hold"
+              },
+              "label": "One silent frame"
+            }
+          }
+        },
+        "overrides": {},
+        "project_id": "f3bdfa0b-5faf-461b-a08b-690d62cf8186",
+        "to_revision": "source-import"
+      }
+    },
+    "revision_id": "room-tone-inserted"
+  },
+  "protocol": 1
+}

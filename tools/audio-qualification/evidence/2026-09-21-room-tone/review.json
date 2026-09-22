@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "base_revision": "320ea14b9c416ffc963d0d6501f8ff66901e39e0",
+  "subject": "Dirty tracked and untracked room-tone loop and plan/host integration changes",
+  "focused_numerical_review": {
+    "result": "No actionable findings.",
+    "scope": [
+      "Exact fractional period and first-pass/crossfade phase",
+      "Tiny loops, large coordinates and modular arithmetic",
+      "Sinc sampling bounds and source extent",
+      "Full intrinsic Hold history through nested retimes and crops",
+      "Occurrence/gap/source-range/duration/layout provenance",
+      "Reservation cleanup on errors"
+    ],
+    "ownership": "Reviewer authored plan duration change; reviewed separately authored DSP primitive and stage integration, excluding self-review of plan."
+  },
+  "general_review": {
+    "result": "No actionable findings.",
+    "scope": [
+      "Loop primitive exact extent/phase/crossfades and PCM admission",
+      "Stage cache keys, source/layout fingerprints, nesting and resource limits",
+      "Intrinsic Hold/gap duration through crops in both plan walkers",
+      "Tail rejection and source-only compatibility",
+      "CLI and real-PCM integration tests"
+    ],
+    "focused_checks": "Five filtered room-tone integration tests passed. First reviewer invocation omitted the required FFmpeg prefix and failed setup; corrected invocation passed."
+  },
+  "test_authorship": "Real-PCM stage tests authored separately from production renderer and loop primitive.",
+  "development_failure": "Initial host test used unavailable Subtree::single; corrected to actual typed construction before passing focused tests and full gate."
+}

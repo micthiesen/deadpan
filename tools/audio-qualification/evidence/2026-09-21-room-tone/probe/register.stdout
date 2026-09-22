@@ -1,0 +1,231 @@
+{
+  "committed": true,
+  "outcome": {
+    "asset_id": "fixture-audio",
+    "commit": {
+      "edit": {
+        "changed_ids": [
+          "cf9be769-e4eb-4a71-865a-8925040317db",
+          "fixture-source"
+        ],
+        "description": "Import source media",
+        "duration_delta": 120,
+        "forward": {
+          "assets": {
+            "fixture-audio": {
+              "after": {
+                "audio": {
+                  "end": {
+                    "ticks": 192192,
+                    "time_base": {
+                      "denominator": 48000,
+                      "numerator": 1
+                    }
+                  },
+                  "start": {
+                    "ticks": 0,
+                    "time_base": {
+                      "denominator": 48000,
+                      "numerator": 1
+                    }
+                  }
+                },
+                "content_hash": "blake3:16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+                "frame_count": null,
+                "label": "Own synthetic AAC fixture",
+                "source_qualification": "e9a6894438eac3e069888a424dfc42dfbe42adc877f6ab6ad7501c8d134c114d",
+                "still_image": false,
+                "video": null
+              },
+              "before": null
+            }
+          },
+          "from_revision": "2fcdbf72-0ed2-4f0c-93b5-a6c65a5c610c",
+          "marks": {},
+          "nodes": {
+            "cf9be769-e4eb-4a71-865a-8925040317db": {
+              "after": {
+                "kind": {
+                  "children": [
+                    "fixture-source"
+                  ],
+                  "type": "sequence"
+                },
+                "label": "Sequence"
+              },
+              "before": {
+                "kind": {
+                  "children": [],
+                  "type": "sequence"
+                },
+                "label": "Sequence"
+              }
+            },
+            "fixture-source": {
+              "after": {
+                "kind": {
+                  "source": {
+                    "audio": {
+                      "asset": "fixture-audio",
+                      "span": {
+                        "end": {
+                          "ticks": 192192,
+                          "time_base": {
+                            "denominator": 48000,
+                            "numerator": 1
+                          }
+                        },
+                        "start": {
+                          "ticks": 0,
+                          "time_base": {
+                            "denominator": 48000,
+                            "numerator": 1
+                          }
+                        }
+                      }
+                    },
+                    "audio_mapping": {
+                      "frames": {
+                        "denominator": "1",
+                        "numerator": "120"
+                      },
+                      "start": {
+                        "denominator": "1",
+                        "numerator": "0"
+                      },
+                      "type": "placement"
+                    },
+                    "audio_offset": 0,
+                    "duration": 120,
+                    "link": "independent",
+                    "video": {
+                      "type": "blank"
+                    },
+                    "video_mapping": {
+                      "type": "fit_beat"
+                    }
+                  },
+                  "type": "source"
+                },
+                "label": "Source"
+              },
+              "before": null
+            }
+          },
+          "overrides": {},
+          "project_id": "f3bdfa0b-5faf-461b-a08b-690d62cf8186",
+          "to_revision": "source-import"
+        },
+        "inverse": {
+          "assets": {
+            "fixture-audio": {
+              "after": null,
+              "before": {
+                "audio": {
+                  "end": {
+                    "ticks": 192192,
+                    "time_base": {
+                      "denominator": 48000,
+                      "numerator": 1
+                    }
+                  },
+                  "start": {
+                    "ticks": 0,
+                    "time_base": {
+                      "denominator": 48000,
+                      "numerator": 1
+                    }
+                  }
+                },
+                "content_hash": "blake3:16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+                "frame_count": null,
+                "label": "Own synthetic AAC fixture",
+                "source_qualification": "e9a6894438eac3e069888a424dfc42dfbe42adc877f6ab6ad7501c8d134c114d",
+                "still_image": false,
+                "video": null
+              }
+            }
+          },
+          "from_revision": "source-import",
+          "marks": {},
+          "nodes": {
+            "cf9be769-e4eb-4a71-865a-8925040317db": {
+              "after": {
+                "kind": {
+                  "children": [],
+                  "type": "sequence"
+                },
+                "label": "Sequence"
+              },
+              "before": {
+                "kind": {
+                  "children": [
+                    "fixture-source"
+                  ],
+                  "type": "sequence"
+                },
+                "label": "Sequence"
+              }
+            },
+            "fixture-source": {
+              "after": null,
+              "before": {
+                "kind": {
+                  "source": {
+                    "audio": {
+                      "asset": "fixture-audio",
+                      "span": {
+                        "end": {
+                          "ticks": 192192,
+                          "time_base": {
+                            "denominator": 48000,
+                            "numerator": 1
+                          }
+                        },
+                        "start": {
+                          "ticks": 0,
+                          "time_base": {
+                            "denominator": 48000,
+                            "numerator": 1
+                          }
+                        }
+                      }
+                    },
+                    "audio_mapping": {
+                      "frames": {
+                        "denominator": "1",
+                        "numerator": "120"
+                      },
+                      "start": {
+                        "denominator": "1",
+                        "numerator": "0"
+                      },
+                      "type": "placement"
+                    },
+                    "audio_offset": 0,
+                    "duration": 120,
+                    "link": "independent",
+                    "video": {
+                      "type": "blank"
+                    },
+                    "video_mapping": {
+                      "type": "fit_beat"
+                    }
+                  },
+                  "type": "source"
+                },
+                "label": "Source"
+              }
+            }
+          },
+          "overrides": {},
+          "project_id": "f3bdfa0b-5faf-461b-a08b-690d62cf8186",
+          "to_revision": "2fcdbf72-0ed2-4f0c-93b5-a6c65a5c610c"
+        }
+      },
+      "revision_id": "source-import"
+    },
+    "qualification": "e9a6894438eac3e069888a424dfc42dfbe42adc877f6ab6ad7501c8d134c114d"
+  },
+  "protocol": 1
+}

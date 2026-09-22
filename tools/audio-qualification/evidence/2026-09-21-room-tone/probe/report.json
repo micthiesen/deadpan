@@ -1,0 +1,1797 @@
+{
+  "schema_version": 1,
+  "started_utc": "2026-09-22T00:14:26.103735+00:00",
+  "expected_base_revision_prefix": "320ea14",
+  "scratch": "/tmp/deadpan-room-tone-process-6qswtbq2",
+  "package": "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+  "ffmpeg_prefix": "/tmp/deadpan-media-compatible-xyhilms4/prefix",
+  "commands": [
+    {
+      "name": "git-head",
+      "arguments": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.017774916952475905,
+      "stdout": "git-head.stdout",
+      "stderr": "git-head.stderr"
+    },
+    {
+      "name": "hardware-model",
+      "arguments": [
+        "sysctl",
+        "-n",
+        "hw.model"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.008620499866083264,
+      "stdout": "hardware-model.stdout",
+      "stderr": "hardware-model.stderr"
+    },
+    {
+      "name": "hardware-processor",
+      "arguments": [
+        "sysctl",
+        "-n",
+        "machdep.cpu.brand_string"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.0075369582045823336,
+      "stdout": "hardware-processor.stdout",
+      "stderr": "hardware-processor.stderr"
+    },
+    {
+      "name": "hardware-memory",
+      "arguments": [
+        "sysctl",
+        "-n",
+        "hw.memsize"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.0070020840503275394,
+      "stdout": "hardware-memory.stdout",
+      "stderr": "hardware-memory.stderr"
+    },
+    {
+      "name": "operating-system",
+      "arguments": [
+        "sw_vers"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.02312054205685854,
+      "stdout": "operating-system.stdout",
+      "stderr": "operating-system.stderr"
+    },
+    {
+      "name": "rustc",
+      "arguments": [
+        "rustc",
+        "--version"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.07343929097987711,
+      "stdout": "rustc.stdout",
+      "stderr": "rustc.stderr"
+    },
+    {
+      "name": "create",
+      "arguments": [
+        "deadpan-cli",
+        "project",
+        "create",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--fps",
+        "30000/1001",
+        "--size",
+        "320x180"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.051524417009204626,
+      "stdout": "create.stdout",
+      "stderr": "create.stderr"
+    },
+    {
+      "name": "retain",
+      "arguments": [
+        "deadpan-cli",
+        "project",
+        "retain-original",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "/Users/michael/Code/deadpan/native/deadpan-source/tests/fixtures/cfr-bframes.mp4"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.05511266691610217,
+      "stdout": "retain.stdout",
+      "stderr": "retain.stderr"
+    },
+    {
+      "name": "register",
+      "arguments": [
+        "deadpan-cli",
+        "project",
+        "register-source",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--request-json",
+        "/tmp/deadpan-room-tone-20260921/probe/registration.request.json"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.08793658297508955,
+      "stdout": "register.stdout",
+      "stderr": "register.stderr"
+    },
+    {
+      "name": "registered-document",
+      "arguments": [
+        "deadpan-cli",
+        "project",
+        "dump",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--json"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.040208958089351654,
+      "stdout": "registered-document.stdout",
+      "stderr": "registered-document.stderr"
+    },
+    {
+      "name": "original-selection",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "0",
+        "256"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.10075199999846518,
+      "stdout": "original-selection.stdout",
+      "stderr": "original-selection.stderr"
+    },
+    {
+      "name": "insert-room-tone-and-silence",
+      "arguments": [
+        "deadpan-cli",
+        "command",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--json",
+        "/tmp/deadpan-room-tone-20260921/probe/insert-room-tone-and-silence.request.json"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.04560900013893843,
+      "stdout": "insert-room-tone-and-silence.stdout",
+      "stderr": "insert-room-tone-and-silence.stderr"
+    },
+    {
+      "name": "before-inspection",
+      "arguments": [
+        "deadpan-cli",
+        "project",
+        "dump",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--json"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.03956995904445648,
+      "stdout": "before-inspection.stdout",
+      "stderr": "before-inspection.stderr"
+    },
+    {
+      "name": "validate",
+      "arguments": [
+        "deadpan-cli",
+        "project",
+        "validate",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.05719958292320371,
+      "stdout": "validate.stdout",
+      "stderr": "validate.stderr"
+    },
+    {
+      "name": "plan-audio",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-plan",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--audio-samples",
+        "0",
+        "6407"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.0403802499640733,
+      "stdout": "plan-audio.stdout",
+      "stderr": "plan-audio.stderr"
+    },
+    {
+      "name": "source-only-rejection",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "0",
+        "256"
+      ],
+      "expected_exit_code": 1,
+      "exit_code": 1,
+      "elapsed_seconds": 0.038252083817496896,
+      "stdout": "source-only-rejection.stdout",
+      "stderr": "source-only-rejection.stderr"
+    },
+    {
+      "name": "room-first-cli",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "0",
+        "256",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.11175120808184147,
+      "stdout": "room-first-cli.stdout",
+      "stderr": "room-first-cli.stderr"
+    },
+    {
+      "name": "room-first-app",
+      "arguments": [
+        "deadpan-app",
+        "--headless",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "0",
+        "256",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.15110725001432002,
+      "stdout": "room-first-app.stdout",
+      "stderr": "room-first-app.stderr"
+    },
+    {
+      "name": "room-full-256",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "256",
+        "512",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.1303653339855373,
+      "stdout": "room-full-256.stdout",
+      "stderr": "room-full-256.stderr"
+    },
+    {
+      "name": "room-full-512",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "512",
+        "768",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.1352789169177413,
+      "stdout": "room-full-512.stdout",
+      "stderr": "room-full-512.stderr"
+    },
+    {
+      "name": "room-full-768",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "768",
+        "1024",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.12558162491768599,
+      "stdout": "room-full-768.stdout",
+      "stderr": "room-full-768.stderr"
+    },
+    {
+      "name": "room-full-1024",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "1024",
+        "1280",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.12806762498803437,
+      "stdout": "room-full-1024.stdout",
+      "stderr": "room-full-1024.stderr"
+    },
+    {
+      "name": "room-full-1280",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "1280",
+        "1536",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.1251198328100145,
+      "stdout": "room-full-1280.stdout",
+      "stderr": "room-full-1280.stderr"
+    },
+    {
+      "name": "room-full-1536",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "1536",
+        "1792",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.1276258749421686,
+      "stdout": "room-full-1536.stdout",
+      "stderr": "room-full-1536.stderr"
+    },
+    {
+      "name": "room-full-1792",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "1792",
+        "2048",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.1161279168445617,
+      "stdout": "room-full-1792.stdout",
+      "stderr": "room-full-1792.stderr"
+    },
+    {
+      "name": "room-full-2048",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "2048",
+        "2304",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.11063662497326732,
+      "stdout": "room-full-2048.stdout",
+      "stderr": "room-full-2048.stderr"
+    },
+    {
+      "name": "room-full-2304",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "2304",
+        "2560",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.12752720806747675,
+      "stdout": "room-full-2304.stdout",
+      "stderr": "room-full-2304.stderr"
+    },
+    {
+      "name": "room-full-2560",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "2560",
+        "2816",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.12626845808699727,
+      "stdout": "room-full-2560.stdout",
+      "stderr": "room-full-2560.stderr"
+    },
+    {
+      "name": "room-full-2816",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "2816",
+        "3072",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.1273093328345567,
+      "stdout": "room-full-2816.stdout",
+      "stderr": "room-full-2816.stderr"
+    },
+    {
+      "name": "room-full-3072",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "3072",
+        "3328",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.12464812491089106,
+      "stdout": "room-full-3072.stdout",
+      "stderr": "room-full-3072.stderr"
+    },
+    {
+      "name": "room-full-3328",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "3328",
+        "3584",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.11884841602295637,
+      "stdout": "room-full-3328.stdout",
+      "stderr": "room-full-3328.stderr"
+    },
+    {
+      "name": "room-full-3584",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "3584",
+        "3840",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.12848279112949967,
+      "stdout": "room-full-3584.stdout",
+      "stderr": "room-full-3584.stderr"
+    },
+    {
+      "name": "room-full-3840",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "3840",
+        "4096",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.12522537494078279,
+      "stdout": "room-full-3840.stdout",
+      "stderr": "room-full-3840.stderr"
+    },
+    {
+      "name": "room-full-4096",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "4096",
+        "4352",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.12731695803813636,
+      "stdout": "room-full-4096.stdout",
+      "stderr": "room-full-4096.stderr"
+    },
+    {
+      "name": "room-full-4352",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "4352",
+        "4608",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.11837966600432992,
+      "stdout": "room-full-4352.stdout",
+      "stderr": "room-full-4352.stderr"
+    },
+    {
+      "name": "room-full-4608",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "4608",
+        "4805",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.12708879192359746,
+      "stdout": "room-full-4608.stdout",
+      "stderr": "room-full-4608.stderr"
+    },
+    {
+      "name": "room-part-0",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "0",
+        "1",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.12529574986547232,
+      "stdout": "room-part-0.stdout",
+      "stderr": "room-part-0.stderr"
+    },
+    {
+      "name": "room-part-1",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "1",
+        "74",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.12433058302849531,
+      "stdout": "room-part-1.stdout",
+      "stderr": "room-part-1.stderr"
+    },
+    {
+      "name": "room-part-2",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "74",
+        "330",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.12603474990464747,
+      "stdout": "room-part-2.stdout",
+      "stderr": "room-part-2.stderr"
+    },
+    {
+      "name": "room-part-3",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "330",
+        "347",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.12304929201491177,
+      "stdout": "room-part-3.stdout",
+      "stderr": "room-part-3.stderr"
+    },
+    {
+      "name": "room-part-4",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "347",
+        "474",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.12355541693978012,
+      "stdout": "room-part-4.stdout",
+      "stderr": "room-part-4.stderr"
+    },
+    {
+      "name": "room-part-5",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "474",
+        "475",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.12415962480008602,
+      "stdout": "room-part-5.stdout",
+      "stderr": "room-part-5.stderr"
+    },
+    {
+      "name": "room-part-6",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "475",
+        "548",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.11687049991451204,
+      "stdout": "room-part-6.stdout",
+      "stderr": "room-part-6.stderr"
+    },
+    {
+      "name": "room-part-7",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "548",
+        "804",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.1277498749550432,
+      "stdout": "room-part-7.stdout",
+      "stderr": "room-part-7.stderr"
+    },
+    {
+      "name": "room-part-8",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "804",
+        "821",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.12760470900684595,
+      "stdout": "room-part-8.stdout",
+      "stderr": "room-part-8.stderr"
+    },
+    {
+      "name": "room-part-9",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "821",
+        "948",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.12449366692453623,
+      "stdout": "room-part-9.stdout",
+      "stderr": "room-part-9.stderr"
+    },
+    {
+      "name": "room-part-10",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "948",
+        "949",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.12141450005583465,
+      "stdout": "room-part-10.stdout",
+      "stderr": "room-part-10.stderr"
+    },
+    {
+      "name": "room-part-11",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "949",
+        "1022",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.12182795908302069,
+      "stdout": "room-part-11.stdout",
+      "stderr": "room-part-11.stderr"
+    },
+    {
+      "name": "room-part-12",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "1022",
+        "1278",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.12553404201753438,
+      "stdout": "room-part-12.stdout",
+      "stderr": "room-part-12.stderr"
+    },
+    {
+      "name": "room-part-13",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "1278",
+        "1295",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.1259502919856459,
+      "stdout": "room-part-13.stdout",
+      "stderr": "room-part-13.stderr"
+    },
+    {
+      "name": "room-part-14",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "1295",
+        "1422",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.12466912507079542,
+      "stdout": "room-part-14.stdout",
+      "stderr": "room-part-14.stderr"
+    },
+    {
+      "name": "room-part-15",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "1422",
+        "1423",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.12411299999803305,
+      "stdout": "room-part-15.stdout",
+      "stderr": "room-part-15.stderr"
+    },
+    {
+      "name": "room-part-16",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "1423",
+        "1496",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.1235775409732014,
+      "stdout": "room-part-16.stdout",
+      "stderr": "room-part-16.stderr"
+    },
+    {
+      "name": "room-part-17",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "1496",
+        "1752",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.1247893339022994,
+      "stdout": "room-part-17.stdout",
+      "stderr": "room-part-17.stderr"
+    },
+    {
+      "name": "room-part-18",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "1752",
+        "1769",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.1284903329797089,
+      "stdout": "room-part-18.stdout",
+      "stderr": "room-part-18.stderr"
+    },
+    {
+      "name": "room-part-19",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "1769",
+        "1896",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.12470837496221066,
+      "stdout": "room-part-19.stdout",
+      "stderr": "room-part-19.stderr"
+    },
+    {
+      "name": "room-part-20",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "1896",
+        "1897",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.12687987508252263,
+      "stdout": "room-part-20.stdout",
+      "stderr": "room-part-20.stderr"
+    },
+    {
+      "name": "room-part-21",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "1897",
+        "1970",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.12388712516985834,
+      "stdout": "room-part-21.stdout",
+      "stderr": "room-part-21.stderr"
+    },
+    {
+      "name": "room-part-22",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "1970",
+        "2226",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.12658412498421967,
+      "stdout": "room-part-22.stdout",
+      "stderr": "room-part-22.stderr"
+    },
+    {
+      "name": "room-part-23",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "2226",
+        "2243",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.1280495000537485,
+      "stdout": "room-part-23.stdout",
+      "stderr": "room-part-23.stderr"
+    },
+    {
+      "name": "room-part-24",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "2243",
+        "2370",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.12436833302490413,
+      "stdout": "room-part-24.stdout",
+      "stderr": "room-part-24.stderr"
+    },
+    {
+      "name": "room-part-25",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "2370",
+        "2371",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.12334570800885558,
+      "stdout": "room-part-25.stdout",
+      "stderr": "room-part-25.stderr"
+    },
+    {
+      "name": "room-part-26",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "2371",
+        "2444",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.12698995787650347,
+      "stdout": "room-part-26.stdout",
+      "stderr": "room-part-26.stderr"
+    },
+    {
+      "name": "room-part-27",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "2444",
+        "2700",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.12512970808893442,
+      "stdout": "room-part-27.stdout",
+      "stderr": "room-part-27.stderr"
+    },
+    {
+      "name": "room-part-28",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "2700",
+        "2717",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.12425720784813166,
+      "stdout": "room-part-28.stdout",
+      "stderr": "room-part-28.stderr"
+    },
+    {
+      "name": "room-part-29",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "2717",
+        "2844",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.12433783314190805,
+      "stdout": "room-part-29.stdout",
+      "stderr": "room-part-29.stderr"
+    },
+    {
+      "name": "room-part-30",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "2844",
+        "2845",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.12406987487338483,
+      "stdout": "room-part-30.stdout",
+      "stderr": "room-part-30.stderr"
+    },
+    {
+      "name": "room-part-31",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "2845",
+        "2918",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.12312650005333126,
+      "stdout": "room-part-31.stdout",
+      "stderr": "room-part-31.stderr"
+    },
+    {
+      "name": "room-part-32",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "2918",
+        "3174",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.11837712512351573,
+      "stdout": "room-part-32.stdout",
+      "stderr": "room-part-32.stderr"
+    },
+    {
+      "name": "room-part-33",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "3174",
+        "3191",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.12328987498767674,
+      "stdout": "room-part-33.stdout",
+      "stderr": "room-part-33.stderr"
+    },
+    {
+      "name": "room-part-34",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "3191",
+        "3318",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.11652033380232751,
+      "stdout": "room-part-34.stdout",
+      "stderr": "room-part-34.stderr"
+    },
+    {
+      "name": "room-part-35",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "3318",
+        "3319",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.12413491704501212,
+      "stdout": "room-part-35.stdout",
+      "stderr": "room-part-35.stderr"
+    },
+    {
+      "name": "room-part-36",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "3319",
+        "3392",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.12320787506178021,
+      "stdout": "room-part-36.stdout",
+      "stderr": "room-part-36.stderr"
+    },
+    {
+      "name": "room-part-37",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "3392",
+        "3648",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.12699791695922613,
+      "stdout": "room-part-37.stdout",
+      "stderr": "room-part-37.stderr"
+    },
+    {
+      "name": "room-part-38",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "3648",
+        "3665",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.1154880418907851,
+      "stdout": "room-part-38.stdout",
+      "stderr": "room-part-38.stderr"
+    },
+    {
+      "name": "room-part-39",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "3665",
+        "3792",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.12704825005494058,
+      "stdout": "room-part-39.stdout",
+      "stderr": "room-part-39.stderr"
+    },
+    {
+      "name": "room-part-40",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "3792",
+        "3793",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.12427533301524818,
+      "stdout": "room-part-40.stdout",
+      "stderr": "room-part-40.stderr"
+    },
+    {
+      "name": "room-part-41",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "3793",
+        "3866",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.12710137479007244,
+      "stdout": "room-part-41.stdout",
+      "stderr": "room-part-41.stderr"
+    },
+    {
+      "name": "room-part-42",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "3866",
+        "4122",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.12600929103791714,
+      "stdout": "room-part-42.stdout",
+      "stderr": "room-part-42.stderr"
+    },
+    {
+      "name": "room-part-43",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "4122",
+        "4139",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.1266858340241015,
+      "stdout": "room-part-43.stdout",
+      "stderr": "room-part-43.stderr"
+    },
+    {
+      "name": "room-part-44",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "4139",
+        "4266",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.12539295805618167,
+      "stdout": "room-part-44.stdout",
+      "stderr": "room-part-44.stderr"
+    },
+    {
+      "name": "room-part-45",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "4266",
+        "4267",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.12353258393704891,
+      "stdout": "room-part-45.stdout",
+      "stderr": "room-part-45.stderr"
+    },
+    {
+      "name": "room-part-46",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "4267",
+        "4340",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.11597220902331173,
+      "stdout": "room-part-46.stdout",
+      "stderr": "room-part-46.stderr"
+    },
+    {
+      "name": "room-part-47",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "4340",
+        "4596",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.1253456671256572,
+      "stdout": "room-part-47.stdout",
+      "stderr": "room-part-47.stderr"
+    },
+    {
+      "name": "room-part-48",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "4596",
+        "4613",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.12637724983505905,
+      "stdout": "room-part-48.stdout",
+      "stderr": "room-part-48.stderr"
+    },
+    {
+      "name": "room-part-49",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "4613",
+        "4740",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.1264470419846475,
+      "stdout": "room-part-49.stdout",
+      "stderr": "room-part-49.stderr"
+    },
+    {
+      "name": "room-part-50",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "4740",
+        "4741",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.1277069579809904,
+      "stdout": "room-part-50.stdout",
+      "stderr": "room-part-50.stderr"
+    },
+    {
+      "name": "room-part-51",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "4741",
+        "4805",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.12367583299055696,
+      "stdout": "room-part-51.stdout",
+      "stderr": "room-part-51.stderr"
+    },
+    {
+      "name": "room-seam-cli",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "147",
+        "366",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.12676466698758304,
+      "stdout": "room-seam-cli.stdout",
+      "stderr": "room-seam-cli.stderr"
+    },
+    {
+      "name": "room-seam-app",
+      "arguments": [
+        "deadpan-app",
+        "--headless",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "147",
+        "366",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.1321432909462601,
+      "stdout": "room-seam-app.stdout",
+      "stderr": "room-seam-app.stderr"
+    },
+    {
+      "name": "room-near-end-cli",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "4628",
+        "4805",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.11792270909063518,
+      "stdout": "room-near-end-cli.stdout",
+      "stderr": "room-near-end-cli.stderr"
+    },
+    {
+      "name": "room-near-end-app",
+      "arguments": [
+        "deadpan-app",
+        "--headless",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "4628",
+        "4805",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.13072383287362754,
+      "stdout": "room-near-end-app.stdout",
+      "stderr": "room-near-end-app.stderr"
+    },
+    {
+      "name": "silence-cli",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "4805",
+        "5061",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.042846249882131815,
+      "stdout": "silence-cli.stdout",
+      "stderr": "silence-cli.stderr"
+    },
+    {
+      "name": "silence-app",
+      "arguments": [
+        "deadpan-app",
+        "--headless",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "4805",
+        "5061",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.047604541992768645,
+      "stdout": "silence-app.stdout",
+      "stderr": "silence-app.stderr"
+    },
+    {
+      "name": "room-to-silence-boundary",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "4792",
+        "4831",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.12185866595245898,
+      "stdout": "room-to-silence-boundary.stdout",
+      "stderr": "room-to-silence-boundary.stderr"
+    },
+    {
+      "name": "resumed-speech-cli",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "6406",
+        "6662",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.12350208288989961,
+      "stdout": "resumed-speech-cli.stdout",
+      "stderr": "resumed-speech-cli.stderr"
+    },
+    {
+      "name": "resumed-speech-app",
+      "arguments": [
+        "deadpan-app",
+        "--headless",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "6406",
+        "6662",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.12747225002385676,
+      "stdout": "resumed-speech-app.stdout",
+      "stderr": "resumed-speech-app.stderr"
+    },
+    {
+      "name": "resumed-speech-source-only",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "6406",
+        "6662"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.12417191709391773,
+      "stdout": "resumed-speech-source-only.stdout",
+      "stderr": "resumed-speech-source-only.stderr"
+    },
+    {
+      "name": "silence-to-speech-boundary",
+      "arguments": [
+        "deadpan-cli",
+        "inspect-audio",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--samples",
+        "6399",
+        "6430",
+        "--time-mapped"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.1112627920228988,
+      "stdout": "silence-to-speech-boundary.stdout",
+      "stderr": "silence-to-speech-boundary.stderr"
+    },
+    {
+      "name": "after-inspection",
+      "arguments": [
+        "deadpan-cli",
+        "project",
+        "dump",
+        "/tmp/deadpan-room-tone-process-6qswtbq2/Room tone.deadpan",
+        "--json"
+      ],
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "elapsed_seconds": 0.041846875101327896,
+      "stdout": "after-inspection.stdout",
+      "stderr": "after-inspection.stderr"
+    }
+  ],
+  "checks": [
+    "Three room-tone frames allocate samples 0..4805, one silent frame 4805..6406, then unchanged original Source resumes at exact frame 4 with sample phase -2/5",
+    "Source-only inspection explicitly rejects room-tone processing",
+    "All 4805 emitted room-tone samples exactly match an independent scalar 96-sample overlap loop of the actual qualified 256-sample AAC selection",
+    "CLI and native-app headless processes emit identical first, loop-seam and near-end room-tone PCM",
+    "Complete room-tone PCM is identical under canonical-size and irregular fresh-process partitions",
+    "Silent Hold emits exact zeros and explicit suppression through both boundaries",
+    "Original speech remains authored identically and time-mapped output equals source-only sampling at its exact shifted project origin",
+    "Authored snapshot, every SQLite table count, history rows and complete logical database dump remain unchanged"
+  ],
+  "status": "passed",
+  "base_revision": "320ea14b9c416ffc963d0d6501f8ff66901e39e0",
+  "hardware": {
+    "model": "Mac17,7",
+    "processor": "Apple M5 Max",
+    "memory_bytes": 137438953472,
+    "macos": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84",
+    "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)"
+  },
+  "source_sha256": {
+    "Cargo.lock": "b143d965fde2d66db79bc70a738bfe7c9e576e2cf090314257e69c35933bc98c",
+    "crates/deadpan-audio/src/stages.rs": "b783930478c7c72575148126ed105d94e6b56a5e750df40e0f88a70d290bb449",
+    "crates/deadpan-audio/src/room_tone.rs": "7bb3dceec185c90d06b7f7961d3348d4d916858c42e0a538066270c09b1ba593",
+    "crates/deadpan-audio/src/resample.rs": "cf630ce0f30050e2da6cd4fe00f6672468c7310add617058d6aa0c7ec5ed22c1",
+    "crates/deadpan-audio/src/session.rs": "f2e7aff7b7383796117ab8b03d1c69a3762c4920f1ac1ed20639bb00f49b8d79",
+    "crates/deadpan-plan/src/audio_signal.rs": "4163b72172ddbe348377fa1d2ba357a253a018571ea3a8b90e82dd031989482c",
+    "crates/deadpan-plan/src/audio.rs": "c9869f023d7c215ba00741c28966576fd296fd94572949fe945db45fc5202b15",
+    "crates/deadpan-cli/src/audio.rs": "ad7e8af9add8cc2dad92f5bf6e49cdd24adc77c575a8e5f22beb5ef927462b41",
+    "crates/deadpan-cli/src/lib.rs": "ab09a364844e49ff7b947b81150cd5d72693daf391c4f0d78195adf801b396eb",
+    "native/deadpan-dsp/src/lib.rs": "039ab9209a04c5f76c9fb37677a302a440a492ff37bcdc63b8e47b5dd263cf20"
+  },
+  "binary_sha256": {
+    "deadpan-cli": "02cd648104bc9932b2898bbc15521177afc431b0bab67f99487e65b56d7dfd4f",
+    "deadpan-app": "332ecf79ff1a64eb5e24f251a752bdf52621e2387317c7a44a4a1b387f2e6558"
+  },
+  "script_sha256": "c6dcf9dbe2a7d14b83045112a474fe82e73ca04fd8b0f7dcbd8146ed724240d4",
+  "fixture": "native/deadpan-source/tests/fixtures/cfr-bframes.mp4",
+  "fixture_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+  "room_duration_frames": 3,
+  "room_duration_samples": 4805,
+  "silent_sample_range": [
+    4805,
+    6406
+  ],
+  "speech_start_sample_phase": {
+    "numerator": -2,
+    "denominator": 5
+  },
+  "total_duration_frames": 124,
+  "total_duration_samples": 198598,
+  "complete_pcm_sha256": "73e7ca3fe0ca787e108f4812d922709406db44e80dc30b42e2a97f025d528eef",
+  "database_before": {
+    "table_counts": {
+      "generation_attempt_heads": 0,
+      "generation_attempts": 0,
+      "generation_bundle_receipts": 0,
+      "generation_candidate_receipts": 0,
+      "generation_requests": 0,
+      "history": 2,
+      "hold_request_clocks": 0,
+      "original_media": 1,
+      "redo": 0,
+      "revisions": 3,
+      "source_qualifications": 1,
+      "state": 1
+    },
+    "state": [
+      [
+        1,
+        "room-tone-inserted",
+        2
+      ]
+    ],
+    "history": [
+      [
+        1,
+        null,
+        "source-import"
+      ],
+      [
+        2,
+        1,
+        "room-tone-inserted"
+      ]
+    ],
+    "logical_dump_sha256": "399b71ca9b928439f0ae7094503b2a4f2b24df1c8147f6dbb35a37464ee5ec5a",
+    "user_version": 15
+  },
+  "database_after": {
+    "table_counts": {
+      "generation_attempt_heads": 0,
+      "generation_attempts": 0,
+      "generation_bundle_receipts": 0,
+      "generation_candidate_receipts": 0,
+      "generation_requests": 0,
+      "history": 2,
+      "hold_request_clocks": 0,
+      "original_media": 1,
+      "redo": 0,
+      "revisions": 3,
+      "source_qualifications": 1,
+      "state": 1
+    },
+    "state": [
+      [
+        1,
+        "room-tone-inserted",
+        2
+      ]
+    ],
+    "history": [
+      [
+        1,
+        null,
+        "source-import"
+      ],
+      [
+        2,
+        1,
+        "room-tone-inserted"
+      ]
+    ],
+    "logical_dump_sha256": "399b71ca9b928439f0ae7094503b2a4f2b24df1c8147f6dbb35a37464ee5ec5a",
+    "user_version": 15
+  },
+  "completed_utc": "2026-09-22T00:14:37.558969+00:00"
+}

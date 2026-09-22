@@ -337,6 +337,14 @@ including full qualified index and chosen matrix layout; verify them on hits.
 Share preparation work, residency and cancellation/deadline budgets across all
 nested stages. Never reset an inner history to satisfy an outer crop or budget.
 
+Room tone uses an explicitly authored source range, never an inferred replacement
+for silence. Preserve its exact 48 kHz extent separately from ceil storage.
+The overlap period and short linear crossfade remain rational; derive each phase
+from the absolute Hold origin without accumulating loop rounding. Full intrinsic
+Hold/gap duration and gap-after identity survive plan crops. Room-tone and
+Preserve preparation share cache provenance and work/residency admission. See
+[room-tone audio](docs/ROOM_TONE_AUDIO.md); selection UI and audition remain open.
+
 Source resampling evaluates each original coordinate from its exact affine
 origin, splitting the integer floor before float conversion. Keep fixed filter
 order and versioned kernel/matrix/trim-context policies. Never reset phase at a

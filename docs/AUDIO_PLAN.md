@@ -57,8 +57,10 @@ The same command is available through `deadpan-app --headless`. It opens SQLite
 read-only and reports protocol 1, the pinned project/revision, spans and measured
 lookup counters. It neither renders audio nor changes history.
 
-This API establishes structural planning only. A separate source-stage reader
-now connects supported spans to [actual source preparation](AUDIO_PREPARATION.md).
-Attachment voices, effect routing, incremental fragment reuse, mixed-policy DSP
-composition, room-tone crossfades, tails, gain/fades/limiting, prepared cache
-lifecycle, native devices and preview/export playback remain required work.
+This API establishes structural planning only. Separate readers connect these
+spans to [source preparation](AUDIO_PREPARATION.md), [continuous retime stages](AUDIO_STAGE_PREPARATION.md)
+and [room-tone loops](ROOM_TONE_AUDIO.md). Room-tone records retain full intrinsic
+Hold duration, including repeat-gap duration, independently of query or ancestor
+crops. Attachment voices, effect routing, incremental fragment reuse, tails,
+gain/fades/limiting, background cache scheduling, native devices and full
+preview/export playback remain required work.

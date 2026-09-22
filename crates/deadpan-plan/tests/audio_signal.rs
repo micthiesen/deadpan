@@ -851,7 +851,8 @@ fn hold_policies_and_repeat_gap_metadata_remain_explicit_in_signal_queries() {
     assert_eq!(
         query.spans[2].content,
         AudioSignalContent::Leaf(AudioContent::RoomTone {
-            source: audio(100, 200)
+            source: audio(100, 200),
+            duration: duration(3)
         })
     );
     assert_eq!(
@@ -861,7 +862,13 @@ fn hold_policies_and_repeat_gap_metadata_remain_explicit_in_signal_queries() {
             maximum: duration(2)
         })
     );
-    assert_eq!(query.spans[5].content, query.spans[2].content);
+    assert_eq!(
+        query.spans[5].content,
+        AudioSignalContent::Leaf(AudioContent::RoomTone {
+            source: audio(100, 200),
+            duration: duration(1)
+        })
+    );
     assert_eq!(query.spans[5].allocated_samples, points(12, 13));
     assert_eq!(query.spans[5].gap_after, Some(iteration(0)));
     assert_eq!(query.spans[5].instance.node, id("repeat"));
@@ -872,6 +879,107 @@ fn hold_policies_and_repeat_gap_metadata_remain_explicit_in_signal_queries() {
         query.spans[2].source_point(SignalSample(3)),
         Err(PlanError::NoSourceAudio)
     ));
+}
+
+#[test]
+fn room_tone_retains_intrinsic_duration_through_hold_and_repeat_gap_crops() {
+    let mut repeated = repeat("silence", 3, 5);
+    if let NodeKind::Repeat { gap, .. } = &mut repeated.kind {
+        *gap = Some(hold_recipe(
+            5,
+            HoldAudio::RoomTone {
+                source: audio(100, 200),
+            },
+        ));
+    }
+    let plan = RenderPlan::compile(&document(
+        rate(),
+        &["cropped-room", "cropped-repeat"],
+        [
+            (
+                "room",
+                BeatNode::hold(
+                    "Room",
+                    hold_recipe(
+                        12,
+                        HoldAudio::RoomTone {
+                            source: audio(100, 200),
+                        },
+                    ),
+                ),
+            ),
+            (
+                "cropped-room",
+                retime("room", 3, 4, 7, PitchPolicy::FollowSpeed),
+            ),
+            ("silence", hold(2)),
+            ("repeat", repeated),
+            (
+                "cropped-repeat",
+                retime("repeat", 9, 3, 12, PitchPolicy::FollowSpeed),
+            ),
+        ],
+        BTreeMap::new(),
+    ))
+    .unwrap();
+    // The root owns only three frames of the twelve-frame Hold. Its Repeat
+    // selection starts inside gap 0 and ends inside gap 1. Query paging then
+    // removes one more frame from either side without changing any identity.
+    let root = plan
+        .audio(samples(1, 11), AudioQueryLimits::default())
+        .unwrap();
+    let processing = plan
+        .audio_processing(samples(1, 11), AudioQueryLimits::default())
+        .unwrap();
+    let signal = plan
+        .audio_signal()
+        .query(points(1, 11), AudioQueryLimits::default())
+        .unwrap();
+    assert_eq!(root.spans.len(), 4);
+    assert_eq!(processing.spans.len(), 4);
+    assert_eq!(signal.spans.len(), 4);
+    for (index, intrinsic_duration, expected_node, gap, allocated, local_start) in [
+        (0, 12, "room", None, 0..3, 5),
+        (1, 5, "repeat", Some(iteration(0)), 3..7, 1),
+        (3, 5, "repeat", Some(iteration(1)), 9..12, 0),
+    ] {
+        let expected = AudioContent::RoomTone {
+            source: audio(100, 200),
+            duration: duration(intrinsic_duration),
+        };
+        let root = &root.spans[index];
+        let processing = &processing.spans[index];
+        let signal = &signal.spans[index];
+        assert_eq!(root.content, expected);
+        assert_eq!(
+            processing.content,
+            AudioSignalContent::Leaf(expected.clone())
+        );
+        assert_eq!(signal.content, AudioSignalContent::Leaf(expected));
+        assert_eq!(
+            root.allocated_samples,
+            samples(allocated.start, allocated.end)
+        );
+        assert_eq!(processing.allocated_samples, root.allocated_samples);
+        assert_eq!(
+            signal.allocated_samples,
+            points(allocated.start, allocated.end)
+        );
+        assert_eq!(root.instance.node, id(expected_node));
+        assert_eq!(processing.instance, root.instance);
+        assert_eq!(signal.instance, root.instance);
+        assert_eq!(root.gap_after, gap);
+        assert_eq!(processing.gap_after, gap);
+        assert_eq!(signal.gap_after, gap);
+        assert_eq!(
+            root.transform.local_at(root.samples.start).unwrap(),
+            ratio(local_start, 1)
+        );
+        assert_eq!(
+            signal.transform.local_at(signal.samples.start).unwrap(),
+            ratio(local_start, 1)
+        );
+    }
 }
 
 #[test]

@@ -1,0 +1,17 @@
+{
+  "audio": {
+    "project_id": "f3bdfa0b-5faf-461b-a08b-690d62cf8186",
+    "revision_id": "room-tone-inserted",
+    "samples": [
+      [
+        0.004168117418885231,
+        -0.02074749767780304
+      ]
+    ],
+    "schema_version": 1,
+    "stage": "time_mapped_pcm_before_effects",
+    "start": 3318,
+    "suppressed": []
+  },
+  "protocol": 1
+}

@@ -8,8 +8,8 @@ use std::sync::atomic::AtomicBool;
 use std::time::{Duration, Instant};
 
 use deadpan_core::{
-    AssetId, AudioSample, ExactRatio, FrameRate, ProjectId, RevisionId, SourceAudio,
-    SourceAudioMapping, SourcePoint, TimeError,
+    AssetId, AudioSample, ExactRatio, FrameDuration, FrameRate, InstancePath, IterationId,
+    ProjectId, RevisionId, SourceAudio, SourceAudioMapping, SourcePoint, TimeError,
 };
 use deadpan_dsp::{CanonicalRecipe, CanonicalStretch, StereoPcm, StretchRate};
 use deadpan_media::audio_index::AudioChannelLayout;
@@ -23,7 +23,7 @@ use serde::Serialize;
 use crate::sequence::{original_sample, source_samples};
 use crate::{
     AudioSourceProvider, MAX_OUTPUT_FRAMES, PcmWindow, PreparationError, ResampleRecipe, Resampler,
-    StereoMatrix, check_cancel,
+    RoomTone, RoomToneRecipe, StereoMatrix, check_cancel,
 };
 
 /// PCM residency limits, not a claim about total process memory or latency.
@@ -98,8 +98,19 @@ pub struct TimeMappedBlock {
     pub suppressed: Vec<Range<AudioSample>>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum PreparedKey {
+    Preserve(AudioStageDescriptor),
+    RoomTone {
+        instance: InstancePath,
+        gap_after: Option<IterationId>,
+        source: SourceAudio,
+        duration: FrameDuration,
+    },
+}
+
 struct PreparedStage {
-    descriptor: AudioStageDescriptor,
+    key: PreparedKey,
     block: SignalBlock,
 }
 
@@ -279,6 +290,35 @@ impl StageAudio {
                         cancelled,
                     )?
                 }
+                AudioSignalContent::Leaf(AudioContent::RoomTone { source, duration }) => {
+                    let prepared = self.prepare_room_tone(
+                        PreparedKey::RoomTone {
+                            instance: span.instance.clone(),
+                            gap_after: span.gap_after.clone(),
+                            source: source.clone(),
+                            duration: *duration,
+                        },
+                        provider,
+                        control,
+                        1,
+                    )?;
+                    let recipe = stage_recipe(
+                        prepared.block.samples.len(),
+                        span.allocated_samples.clone(),
+                        span.transform.local_at(span.allocated_samples.start)?,
+                        span.transform
+                            .project_frames_per_sample
+                            .checked_div(span.transform.project_frames_per_local_frame)?,
+                        plan.metadata().presentation_basis.frame_rate,
+                    )?;
+                    sample_prepared(
+                        &prepared.block.samples,
+                        recipe,
+                        span.samples.start,
+                        count(&span.samples)?,
+                        cancelled,
+                    )?
+                }
                 AudioSignalContent::Leaf(_) => vec![[0.0; 2]; count(&span.samples)? as usize],
                 AudioSignalContent::Stage(stage) => {
                     let prepared = self.prepare_stage(stage, provider, control, 1)?;
@@ -332,29 +372,10 @@ impl StageAudio {
         control: WorkControl<'_>,
         depth: usize,
     ) -> Result<Arc<PreparedStage>, StageAudioError> {
-        let WorkControl { cancelled, .. } = control;
         control.check()?;
-        if let Some(index) = self
-            .cache
-            .iter()
-            .position(|entry| entry.descriptor == *stage.descriptor())
-        {
-            let entry = self.cache.remove(index);
-            let mut valid = true;
-            for (asset, fingerprint) in &entry.block.dependencies {
-                control.check()?;
-                let source = provider.source(
-                    &self.plan.metadata().project_id,
-                    &self.plan.metadata().revision_id,
-                    asset,
-                    cancelled,
-                )?;
-                valid &= control.observe(asset, source)? == *fingerprint;
-            }
-            if valid {
-                self.cache.push(Arc::clone(&entry));
-                return Ok(entry);
-            }
+        let key = PreparedKey::Preserve(stage.descriptor().clone());
+        if let Some(entry) = self.cached(&key, provider, control)? {
+            return Ok(entry);
         }
         if depth > self.limits.maximum_depth {
             return Err(StageAudioError::Limit("nested stage depth"));
@@ -365,6 +386,64 @@ impl StageAudio {
             .map_err(|_| StageAudioError::Limit("input frames"))?;
         let output_frames = u32::try_from(output_signal.sample_count()?.0)
             .map_err(|_| StageAudioError::Limit("output frames"))?;
+        let rate = stage.descriptor().rate;
+        let recipe = CanonicalRecipe::with_rate(
+            input_frames,
+            output_frames,
+            StretchRate::new(
+                u64::try_from(rate.numerator()).map_err(|_| TimeError::Overflow)?,
+                u64::try_from(rate.denominator()).map_err(|_| TimeError::Overflow)?,
+            )?,
+            0,
+        );
+        let reservation = self.reserve(input_frames, output_frames, control)?;
+        let result = recipe.map_err(StageAudioError::from).and_then(|recipe| {
+            self.build_stage(
+                &input_signal,
+                &output_signal,
+                recipe,
+                provider,
+                control,
+                depth,
+            )
+        });
+        self.active_frames -= reservation;
+        self.publish(key, result?)
+    }
+
+    fn cached(
+        &mut self,
+        key: &PreparedKey,
+        provider: &mut impl AudioSourceProvider,
+        control: WorkControl<'_>,
+    ) -> Result<Option<Arc<PreparedStage>>, StageAudioError> {
+        if let Some(index) = self.cache.iter().position(|entry| entry.key == *key) {
+            let entry = self.cache.remove(index);
+            let mut valid = true;
+            for (asset, fingerprint) in &entry.block.dependencies {
+                control.check()?;
+                let source = provider.source(
+                    &self.plan.metadata().project_id,
+                    &self.plan.metadata().revision_id,
+                    asset,
+                    control.cancelled,
+                )?;
+                valid &= control.observe(asset, source)? == *fingerprint;
+            }
+            if valid {
+                self.cache.push(Arc::clone(&entry));
+                return Ok(Some(entry));
+            }
+        }
+        Ok(None)
+    }
+
+    fn reserve(
+        &mut self,
+        input_frames: u32,
+        output_frames: u32,
+        control: WorkControl<'_>,
+    ) -> Result<u64, StageAudioError> {
         if input_frames == 0 || input_frames > self.limits.maximum_input_frames {
             return Err(StageAudioError::Limit("input frames"));
         }
@@ -382,38 +461,79 @@ impl StageAudio {
                 return Err(StageAudioError::Limit("prepared frames per read"));
             }
         }
-        let rate = stage.descriptor().rate;
-        let recipe = CanonicalRecipe::with_rate(
-            input_frames,
-            output_frames,
-            StretchRate::new(
-                u64::try_from(rate.numerator()).map_err(|_| TimeError::Overflow)?,
-                u64::try_from(rate.denominator()).map_err(|_| TimeError::Overflow)?,
-            )?,
-            0,
-        )?;
         // Account for interleaved input and its planar conversion simultaneously,
         // plus output. Recursive preparations share the same residency budget.
         let reservation = u64::from(input_frames) * 2 + u64::from(output_frames);
         self.make_room(reservation, false)?;
         self.active_frames += reservation;
-        let result = self.build_stage(
-            &input_signal,
-            &output_signal,
-            recipe,
-            provider,
-            control,
-            depth,
-        );
-        self.active_frames -= reservation;
-        let block = result?;
+        Ok(reservation)
+    }
+
+    fn publish(
+        &mut self,
+        key: PreparedKey,
+        block: SignalBlock,
+    ) -> Result<Arc<PreparedStage>, StageAudioError> {
         self.make_room(block.samples.len() as u64, true)?;
-        let entry = Arc::new(PreparedStage {
-            descriptor: stage.descriptor().clone(),
-            block,
-        });
+        let entry = Arc::new(PreparedStage { key, block });
         self.cache.push(Arc::clone(&entry));
         Ok(entry)
+    }
+
+    fn prepare_room_tone(
+        &mut self,
+        key: PreparedKey,
+        provider: &mut impl AudioSourceProvider,
+        control: WorkControl<'_>,
+        depth: usize,
+    ) -> Result<Arc<PreparedStage>, StageAudioError> {
+        control.check()?;
+        if let Some(entry) = self.cached(&key, provider, control)? {
+            return Ok(entry);
+        }
+        if depth > self.limits.maximum_depth {
+            return Err(StageAudioError::Limit("nested stage depth"));
+        }
+        let PreparedKey::RoomTone {
+            source, duration, ..
+        } = &key
+        else {
+            return Err(PlanError::InvalidPlan("room tone preparation key").into());
+        };
+        let source_extent = source_samples(
+            SourcePoint {
+                ticks: ExactRatio::integer(source.span.end().ticks)
+                    .checked_sub(ExactRatio::integer(source.span.start().ticks))?,
+                time_base: source.span.start().time_base,
+            },
+            48_000,
+        )?;
+        let input_frames = u32::try_from(source_extent.ceil()?)
+            .map_err(|_| StageAudioError::Limit("input frames"))?;
+        let output_frames = u32::try_from(
+            samples_per_frame(self.plan.metadata().presentation_basis.frame_rate)?
+                .checked_mul(ExactRatio::integer(duration.frames()))?
+                .ceil()?,
+        )
+        .map_err(|_| StageAudioError::Limit("output frames"))?;
+        let reservation = self.reserve(input_frames, output_frames, control)?;
+        let result = (|| {
+            let recipe = RoomToneRecipe::new(source_extent, output_frames)?;
+            let prepared = provider.source(
+                &self.plan.metadata().project_id,
+                &self.plan.metadata().revision_id,
+                &source.asset,
+                control.cancelled,
+            )?;
+            let fingerprint = control.observe(&source.asset, prepared)?;
+            let samples = build_room_tone(source, prepared, recipe, input_frames, control)?;
+            Ok::<_, StageAudioError>(SignalBlock {
+                samples,
+                dependencies: BTreeMap::from([(source.asset.clone(), fingerprint)]),
+            })
+        })();
+        self.active_frames -= reservation;
+        self.publish(key, result?)
     }
 
     fn make_room(&mut self, additional: u64, new_entry: bool) -> Result<(), StageAudioError> {
@@ -563,6 +683,31 @@ impl StageAudio {
                         cancelled,
                     )?
                 }
+                AudioSignalContent::Leaf(AudioContent::RoomTone { source, duration }) => {
+                    let prepared = self.prepare_room_tone(
+                        PreparedKey::RoomTone {
+                            instance: span.instance.clone(),
+                            gap_after: span.gap_after.clone(),
+                            source: source.clone(),
+                            duration: *duration,
+                        },
+                        provider,
+                        control,
+                        depth + 1,
+                    )?;
+                    dependencies.extend(prepared.block.dependencies.clone());
+                    let recipe = stage_recipe(
+                        prepared.block.samples.len(),
+                        AudioSample(span.allocated_samples.start.0)
+                            ..AudioSample(span.allocated_samples.end.0),
+                        span.transform.local_at(span.allocated_samples.start)?,
+                        span.transform
+                            .signal_frames_per_sample
+                            .checked_div(span.transform.signal_frames_per_local_frame)?,
+                        self.plan.metadata().presentation_basis.frame_rate,
+                    )?;
+                    sample_prepared(&prepared.block.samples, recipe, start, count, cancelled)?
+                }
                 AudioSignalContent::Leaf(_) => vec![[0.0; 2]; count as usize],
                 AudioSignalContent::Stage(stage) => {
                     let prepared = self.prepare_stage(stage, provider, control, depth + 1)?;
@@ -590,6 +735,54 @@ impl StageAudio {
     }
 }
 
+fn build_room_tone(
+    source: &SourceAudio,
+    prepared: &crate::PreparedSource,
+    recipe: RoomToneRecipe,
+    input_frames: u32,
+    control: WorkControl<'_>,
+) -> Result<Vec<[f32; 2]>, StageAudioError> {
+    let rate = prepared.index().stream().sample_rate;
+    let selection =
+        original_sample(source.span.start(), rate)?..original_sample(source.span.end(), rate)?;
+    let source_recipe = ResampleRecipe::new(
+        selection.clone(),
+        ExactRatio::integer(selection.start),
+        AudioSample(0),
+        ExactRatio::new(i128::from(rate), 48_000)?,
+        AudioSample(0)..AudioSample(i64::from(input_frames)),
+    )?;
+    let mut input = Vec::with_capacity(input_frames as usize);
+    while input.len() < input_frames as usize {
+        let frames = (input_frames - input.len() as u32).min(MAX_OUTPUT_FRAMES);
+        input.extend(
+            prepared
+                .prepare(
+                    source_recipe.clone(),
+                    AudioSample(input.len() as i64),
+                    frames,
+                    control.check()?,
+                    control.cancelled,
+                )?
+                .samples,
+        );
+    }
+    let output_frames = recipe.output_frames();
+    let renderer = RoomTone::new(recipe, &input, control.cancelled)?;
+    let mut output = Vec::with_capacity(output_frames as usize);
+    while output.len() < output_frames as usize {
+        control.check()?;
+        let frames = (output_frames - output.len() as u32).min(MAX_OUTPUT_FRAMES);
+        output.extend(
+            renderer
+                .render(AudioSample(output.len() as i64), frames, control.cancelled)?
+                .samples,
+        );
+    }
+    control.check()?;
+    Ok(output)
+}
+
 fn query_limits() -> AudioQueryLimits {
     AudioQueryLimits {
         maximum_spans: MAX_OUTPUT_FRAMES as usize,
@@ -604,7 +797,7 @@ fn count(samples: &Range<AudioSample>) -> Result<u32, StageAudioError> {
 fn preflight(content: &AudioContent, plan: &RenderPlan) -> Result<(), StageAudioError> {
     match content {
         AudioContent::Silence { .. } => Ok(()),
-        AudioContent::RoomTone { .. } => Err(StageAudioError::Unsupported("room tone")),
+        AudioContent::RoomTone { .. } => Ok(()),
         AudioContent::Tail { .. } => Err(StageAudioError::Unsupported("effect tails")),
         AudioContent::Source {
             source, duration, ..

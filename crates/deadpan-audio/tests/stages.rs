@@ -10,7 +10,8 @@ use std::time::Duration;
 
 use deadpan_audio::{
     AudioSourceProvider, PcmWindow, PreparationError, PreparedSource, ResampleRecipe, Resampler,
-    StageAudio, StageAudioError, StageLimits, StereoMatrix, TimeMappedBlock,
+    SequenceAudio, SequenceAudioError, StageAudio, StageAudioError, StageLimits, StereoMatrix,
+    TimeMappedBlock,
 };
 use deadpan_core::*;
 use deadpan_dsp::{CanonicalRecipe, CanonicalStretch, StereoPcm, StretchRate};
@@ -35,7 +36,11 @@ fn duration(frames: i64) -> FrameDuration {
 }
 
 fn audio(start: i64, end: i64) -> SourceAudio {
-    let clock = SourceTimeBase::new(1, 48_000).unwrap();
+    audio_at_rate(start, end, 48_000)
+}
+
+fn audio_at_rate(start: i64, end: i64, sample_rate: u32) -> SourceAudio {
+    let clock = SourceTimeBase::new(1, sample_rate).unwrap();
     SourceAudio {
         asset: AssetId::new("media").unwrap(),
         span: SourceSpan::new(
@@ -81,6 +86,17 @@ fn hold(frames: i64) -> BeatNode {
     )
 }
 
+fn room_tone(frames: i64, source: SourceAudio) -> BeatNode {
+    BeatNode::hold(
+        "Chosen room tone",
+        HoldRecipe {
+            duration: duration(frames),
+            video: HoldVideo::Background,
+            audio: HoldAudio::RoomTone { source },
+        },
+    )
+}
+
 fn retime(child: &str, frames: i64, selected: Range<i64>, pitch: PitchPolicy) -> BeatNode {
     BeatNode {
         label: "Explicit retime".into(),
@@ -107,6 +123,16 @@ fn plan_with_overrides(
     children: &[&str],
     nodes: impl IntoIterator<Item = (&'static str, BeatNode)>,
     overrides: BTreeMap<NodeId, PlayOverrides>,
+) -> Arc<RenderPlan> {
+    plan_with_asset(rate, children, nodes, overrides, audio(0, 8197).span)
+}
+
+fn plan_with_asset(
+    rate: FrameRate,
+    children: &[&str],
+    nodes: impl IntoIterator<Item = (&'static str, BeatNode)>,
+    overrides: BTreeMap<NodeId, PlayOverrides>,
+    asset_span: SourceSpan,
 ) -> Arc<RenderPlan> {
     let empty = ProjectDocument::new(
         ProjectId::new("stage-project").unwrap(),
@@ -137,7 +163,7 @@ fn plan_with_overrides(
             label: "Known PCM fixture".into(),
             content_hash: "a".repeat(64),
             video: None,
-            audio: Some(audio(0, 8197).span),
+            audio: Some(asset_span),
             still_image: true,
             frame_count: None,
             source_qualification: None,
@@ -160,9 +186,14 @@ impl FixtureProvider {
     }
 
     fn with_layout(layout: AudioChannelLayout) -> Self {
+        Self::from_fixture("pcm-stereo-48000.wav", layout)
+    }
+
+    fn from_fixture(name: &str, layout: AudioChannelLayout) -> Self {
         let bytes = std::fs::read(
             PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-                .join("../../native/deadpan-source/tests/audio-fixtures/pcm-stereo-48000.wav"),
+                .join("../../native/deadpan-source/tests/audio-fixtures")
+                .join(name),
         )
         .unwrap();
         let cancelled = AtomicBool::new(false);
@@ -879,75 +910,69 @@ fn nested_depth_and_native_long_input_limits_fail_without_decoding_originals() {
 }
 
 #[test]
-fn unsupported_hold_policies_cannot_hide_between_input_grid_samples() {
+fn unsupported_effect_tails_cannot_hide_between_input_grid_samples() {
     let rate = FrameRate::new(192_000, 1).unwrap();
-    for policy in [
-        HoldAudio::RoomTone {
-            source: audio(0, 1),
-        },
-        HoldAudio::Tail {
-            source: audio(0, 1),
-            maximum: duration(1),
-        },
-    ] {
-        for nested in [false, true] {
-            let mut nodes = vec![
-                ("before", source(rate, 1, 0..1)),
-                (
-                    "policy",
-                    BeatNode::hold(
-                        "Unsupported policy",
-                        HoldRecipe {
-                            duration: duration(1),
-                            video: HoldVideo::Background,
-                            audio: policy.clone(),
-                        },
-                    ),
+    let policy = HoldAudio::Tail {
+        source: audio(0, 1),
+        maximum: duration(1),
+    };
+    for nested in [false, true] {
+        let mut nodes = vec![
+            ("before", source(rate, 1, 0..1)),
+            (
+                "policy",
+                BeatNode::hold(
+                    "Unsupported policy",
+                    HoldRecipe {
+                        duration: duration(1),
+                        video: HoldVideo::Background,
+                        audio: policy.clone(),
+                    },
                 ),
-                ("after", source(rate, 1, 1..2)),
-                (
+            ),
+            ("after", source(rate, 1, 1..2)),
+            (
+                "cuts",
+                BeatNode::sequence(
+                    "Subsample policy",
+                    vec![id("before"), id("policy"), id("after")],
+                ),
+            ),
+            (
+                "inner",
+                retime(
                     "cuts",
-                    BeatNode::sequence(
-                        "Subsample policy",
-                        vec![id("before"), id("policy"), id("after")],
-                    ),
+                    if nested { 2 } else { 24 },
+                    0..3,
+                    PitchPolicy::Preserve,
                 ),
-                (
-                    "inner",
-                    retime(
-                        "cuts",
-                        if nested { 2 } else { 24 },
-                        0..3,
-                        PitchPolicy::Preserve,
-                    ),
-                ),
-            ];
-            let root = if nested {
-                nodes.push(("outer", retime("inner", 16, 0..2, PitchPolicy::Preserve)));
-                "outer"
-            } else {
-                "inner"
-            };
-            let planned = plan(rate, &[root], nodes);
-            let mut provider = FixtureProvider::new();
-            let mut renderer = StageAudio::new(planned);
-            // The unsupported Hold is [0.25,0.5) on the input grid. Its
-            // final output interval is [2,4), or [4/3,8/3) when nested.
-            // In the nested case it owns no inner-output grid point either.
-            // A first-sample read still requires admission before any PCM.
-            assert!(matches!(
-                renderer.read(
-                    &mut provider,
-                    AudioSample(0),
-                    1,
-                    TIMEOUT,
-                    &AtomicBool::new(false)
-                ),
-                Err(StageAudioError::Unsupported(_))
-            ));
-            assert_eq!(provider.calls, 0);
-            assert_eq!(renderer.cached_stage_count(), 0);
-        }
+            ),
+        ];
+        let root = if nested {
+            nodes.push(("outer", retime("inner", 16, 0..2, PitchPolicy::Preserve)));
+            "outer"
+        } else {
+            "inner"
+        };
+        let planned = plan(rate, &[root], nodes);
+        let mut provider = FixtureProvider::new();
+        let mut renderer = StageAudio::new(planned);
+        // The unsupported Hold is [0.25,0.5) on the input grid. Its
+        // final output interval is [2,4), or [4/3,8/3) when nested.
+        // In the nested case it owns no inner-output grid point either.
+        // A first-sample read still requires admission before any PCM.
+        assert!(matches!(
+            renderer.read(
+                &mut provider,
+                AudioSample(0),
+                1,
+                TIMEOUT,
+                &AtomicBool::new(false)
+            ),
+            Err(StageAudioError::Unsupported(_))
+        ));
+        assert_eq!(provider.calls, 0);
+        assert_eq!(renderer.cached_stage_count(), 0);
     }
 }
 
@@ -1081,4 +1106,329 @@ fn prepared_cache_rechecks_explicit_source_layout_including_nested_dependencies(
             original
         );
     }
+}
+
+fn room_reference(input: &[[f32; 2]], extent: ExactRatio, frames: u32) -> Vec<[f32; 2]> {
+    let half = extent.checked_div(ExactRatio::integer(2)).unwrap();
+    let fade = if half.compare_integer(96).is_gt() {
+        ExactRatio::integer(96)
+    } else {
+        half
+    };
+    let period = extent.checked_sub(fade).unwrap();
+    let sample = |position| {
+        sample_reference(0..input.len() as i64, position, ExactRatio::ONE, 1, |at| {
+            input[at as usize]
+        })[0]
+    };
+    (0..frames)
+        .map(|frame| {
+            let position = ExactRatio::integer(i64::from(frame));
+            let cycle = position.checked_div(period).unwrap().floor();
+            let local = position
+                .checked_sub(period.checked_mul(ratio(cycle, 1)).unwrap())
+                .unwrap();
+            let head = sample(local);
+            if cycle == 0 || local.checked_sub(fade).unwrap().compare_integer(0).is_ge() {
+                head
+            } else {
+                let tail = sample(period.checked_add(local).unwrap());
+                let weight = local.checked_div(fade).unwrap();
+                let weight = weight.numerator() as f64 / weight.denominator() as f64;
+                std::array::from_fn(|channel| {
+                    (f64::from(tail[channel]) * (1.0 - weight) + f64::from(head[channel]) * weight)
+                        as f32
+                })
+            }
+        })
+        .collect()
+}
+
+fn assert_pcm_close(actual: &[[f32; 2]], expected: &[[f32; 2]]) {
+    assert_eq!(actual.len(), expected.len());
+    for (frame, (actual, expected)) in actual.iter().zip(expected).enumerate() {
+        for channel in 0..2 {
+            assert!(
+                (actual[channel] - expected[channel]).abs() <= 2e-6,
+                "frame {frame} channel {channel}: {} != {}",
+                actual[channel],
+                expected[channel]
+            );
+        }
+    }
+}
+
+#[test]
+fn room_tone_keeps_fractional_44100_source_extent_and_long_hold_duration_across_loops() {
+    let rate = FrameRate::new(48_000, 1).unwrap();
+    let planned = plan_with_asset(
+        rate,
+        &["room"],
+        [("room", room_tone(1000, audio_at_rate(100, 321, 44_100)))],
+        BTreeMap::new(),
+        audio_at_rate(0, 44_117, 44_100).span,
+    );
+    let mut provider = FixtureProvider::from_fixture(
+        "pcm-mono-44100.wav",
+        AudioChannelLayout::Native {
+            channels: 1,
+            mask: 4,
+        },
+    );
+    // 221 original samples span exactly 35360/147 mix samples. Rounding the
+    // loop to 241 frames would drift at every seam. Its period is 21248/147.
+    let original = |at: i64| [(((at * 73) % 65_536 - 32_768) as f32) / 32_768.0; 2];
+    let input = sample_reference(
+        100..321,
+        ExactRatio::integer(100),
+        ratio(147, 160),
+        241,
+        original,
+    );
+    let expected = room_reference(&input, ratio(35360, 147), 1000);
+    let rounded = room_reference(&input, ExactRatio::integer(241), 1000);
+    assert_ne!(
+        expected, rounded,
+        "fixture must expose rounded loop-period drift"
+    );
+    let mut renderer = StageAudio::new(Arc::clone(&planned));
+    assert_eq!(renderer.plan().audio_duration().unwrap(), AudioSample(1000));
+    let actual = read_all(&mut renderer, &mut provider, &[1, 73, 256, 17, 91]);
+    assert_pcm_close(&actual, &expected);
+    assert!(actual.iter().all(|frame| frame[0] == frame[1]));
+    assert_eq!(renderer.cached_stage_count(), 1);
+    for (start, count) in [(143, 21), (280, 33), (720, 127), (981, 19)] {
+        let block = read_block(&mut renderer, &mut provider, start, count);
+        assert_eq!(
+            block.samples,
+            actual[start as usize..start as usize + count as usize]
+        );
+        assert!(block.suppressed.is_empty());
+    }
+    let mut fresh = StageAudio::new(planned);
+    assert_eq!(
+        read_block(&mut fresh, &mut provider, 720, 127).samples,
+        actual[720..847]
+    );
+}
+
+#[test]
+fn repeated_room_tone_and_override_restart_locally_with_two_distinct_gap_caches() {
+    let rate = FrameRate::new(48_000, 1).unwrap();
+    let repeated = BeatNode {
+        label: "Three room-tone plays".into(),
+        kind: NodeKind::Repeat {
+            child: id("default"),
+            iterations: IterationOrder::new(RevisionId::new("plays").unwrap(), 3).unwrap(),
+            gap: Some(HoldRecipe {
+                duration: duration(181),
+                video: HoldVideo::Background,
+                audio: HoldAudio::RoomTone {
+                    source: audio(512, 611),
+                },
+            }),
+        },
+    };
+    let planned = plan_with_overrides(
+        rate,
+        &["repeat"],
+        [
+            ("default", room_tone(289, audio(0, 223))),
+            ("alternate", room_tone(317, audio(4096, 4353))),
+            ("repeat", repeated),
+        ],
+        BTreeMap::from([(
+            id("repeat"),
+            PlayOverrides::try_from(vec![PlayOverride {
+                iteration: IterationId {
+                    allocation: RevisionId::new("plays").unwrap(),
+                    ordinal: 1,
+                },
+                root: id("alternate"),
+            }])
+            .unwrap(),
+        )]),
+    );
+    let default = room_reference(
+        &(0..223).map(fixture_sample).collect::<Vec<_>>(),
+        ExactRatio::integer(223),
+        289,
+    );
+    let alternate = room_reference(
+        &(4096..4353).map(fixture_sample).collect::<Vec<_>>(),
+        ExactRatio::integer(257),
+        317,
+    );
+    let gap = room_reference(
+        &(512..611).map(fixture_sample).collect::<Vec<_>>(),
+        ExactRatio::integer(99),
+        181,
+    );
+    let expected: Vec<_> = default
+        .iter()
+        .chain(&gap)
+        .chain(&alternate)
+        .chain(&gap)
+        .chain(&default)
+        .copied()
+        .collect();
+    let mut renderer = StageAudio::new(planned);
+    let mut provider = FixtureProvider::new();
+    assert_eq!(renderer.plan().audio_duration().unwrap(), AudioSample(1257));
+    let actual = read_all(&mut renderer, &mut provider, &[251, 17, 103]);
+    assert_pcm_close(&actual, &expected);
+    assert_eq!(
+        renderer.cached_stage_count(),
+        5,
+        "three occurrence identities and two gap_after identities must remain distinct"
+    );
+    assert_eq!(actual[289..470], actual[787..968]);
+    assert_eq!(actual[..289], actual[968..1257]);
+    for (start, count) in [(280, 37), (787, 181), (980, 200)] {
+        let block = read_block(&mut renderer, &mut provider, start, count);
+        assert_eq!(
+            block.samples,
+            actual[start as usize..start as usize + count as usize]
+        );
+        assert!(block.suppressed.is_empty());
+    }
+}
+
+#[test]
+fn room_tone_retimes_keep_pitch_order_and_outer_crop_keeps_the_intrinsic_loop_history() {
+    let rate = FrameRate::new(48_000, 1).unwrap();
+    let input: Vec<_> = (512..833).map(fixture_sample).collect();
+    let room = room_reference(&input, ExactRatio::integer(321), 2048);
+    let preserved = stretch_reference(&room, 3072, 2, 3);
+    let preserve_then_follow =
+        sample_reference(0..3072, ExactRatio::ZERO, ratio(3, 2), 2048, |at| {
+            preserved[at as usize]
+        });
+    let followed = sample_reference(0..2048, ExactRatio::ZERO, ratio(2, 3), 3072, |at| {
+        room[at as usize]
+    });
+    let follow_then_preserve = stretch_reference(&followed, 2048, 3, 2);
+    assert_ne!(preserve_then_follow, follow_then_preserve);
+    let mut provider = FixtureProvider::new();
+    for (inner, outer, expected) in [
+        (
+            PitchPolicy::Preserve,
+            PitchPolicy::FollowSpeed,
+            preserve_then_follow,
+        ),
+        (
+            PitchPolicy::FollowSpeed,
+            PitchPolicy::Preserve,
+            follow_then_preserve,
+        ),
+    ] {
+        let mut renderer = StageAudio::new(plan(
+            rate,
+            &["outer"],
+            [
+                ("room", room_tone(2048, audio(512, 833))),
+                ("inner", retime("room", 3072, 0..2048, inner)),
+                ("outer", retime("inner", 2048, 0..3072, outer)),
+            ],
+        ));
+        assert_pcm_close(
+            &read_all(&mut renderer, &mut provider, &[117, 256, 3]),
+            &expected,
+        );
+    }
+    let mut cropped = StageAudio::new(plan(
+        rate,
+        &["crop"],
+        [
+            ("room", room_tone(2048, audio(512, 833))),
+            (
+                "inner",
+                retime("room", 3072, 0..2048, PitchPolicy::Preserve),
+            ),
+            (
+                "crop",
+                retime("inner", 512, 1001..1513, PitchPolicy::FollowSpeed),
+            ),
+        ],
+    ));
+    assert_pcm_close(
+        &read_block(&mut cropped, &mut provider, 181, 127).samples,
+        &preserved[1182..1309],
+    );
+    assert_pcm_close(
+        &read_all(&mut cropped, &mut provider, &[31, 256, 79]),
+        &preserved[1001..1513],
+    );
+}
+
+#[test]
+fn room_tone_cache_layout_changes_invalidate_both_holds_and_dependent_preserve_stages() {
+    let rate = FrameRate::new(48_000, 1).unwrap();
+    for nested in [false, true] {
+        let mut nodes = vec![("room", room_tone(1024, audio(512, 769)))];
+        let root = if nested {
+            nodes.push((
+                "preserve",
+                retime("room", 1536, 0..1024, PitchPolicy::Preserve),
+            ));
+            "preserve"
+        } else {
+            "room"
+        };
+        let planned = plan(rate, &[root], nodes);
+        let mut renderer = StageAudio::new(Arc::clone(&planned));
+        let mut provider = FixtureProvider::new();
+        let before = read_block(&mut renderer, &mut provider, 151, 200).samples;
+        let before_index = provider.source.index().clone();
+        provider = FixtureProvider::with_layout(AudioChannelLayout::Native {
+            channels: 2,
+            mask: 5,
+        });
+        assert_eq!(provider.source.index(), &before_index);
+        let changed = read_block(&mut renderer, &mut provider, 151, 200).samples;
+        let mut fresh = StageAudio::new(planned);
+        assert_eq!(
+            changed,
+            read_block(&mut fresh, &mut provider, 151, 200).samples
+        );
+        assert_ne!(before, changed);
+        provider = FixtureProvider::new();
+        assert_eq!(
+            before,
+            read_block(&mut renderer, &mut provider, 151, 200).samples
+        );
+    }
+}
+
+#[test]
+fn a_subsample_room_tone_hold_renders_through_preserve_without_becoming_silence() {
+    let rate = FrameRate::new(192_000, 1).unwrap();
+    let planned = plan(
+        rate,
+        &["preserve"],
+        [
+            ("room", room_tone(1, audio(0, 1))),
+            ("preserve", retime("room", 8, 0..1, PitchPolicy::Preserve)),
+        ],
+    );
+    let mut provider = FixtureProvider::new();
+    let source_only = SequenceAudio::new(Arc::clone(&planned));
+    assert!(matches!(
+        source_only.read_sources(
+            &mut provider,
+            AudioSample(0),
+            2,
+            TIMEOUT,
+            &AtomicBool::new(false)
+        ),
+        Err(SequenceAudioError::Unsupported { .. })
+    ));
+    assert_eq!(provider.calls, 0);
+    let mut renderer = StageAudio::new(planned);
+    let expected = stretch_reference(&[fixture_sample(0)], 2, 1, 8);
+    let block = read_block(&mut renderer, &mut provider, 0, 2);
+    assert_pcm_close(&block.samples, &expected);
+    assert!(block.samples.iter().flatten().any(|sample| *sample != 0.0));
+    assert!(block.suppressed.is_empty());
+    assert_eq!(renderer.cached_stage_count(), 2);
 }

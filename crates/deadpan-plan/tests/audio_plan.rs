@@ -515,7 +515,8 @@ fn hold_policies_and_absent_source_audio_remain_distinct() {
                 reason: SilenceReason::NoSourceAudio
             },
             AudioContent::RoomTone {
-                source: source_audio()
+                source: source_audio(),
+                duration: duration(5)
             },
             AudioContent::Tail {
                 source: source_audio(),

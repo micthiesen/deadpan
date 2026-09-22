@@ -52,6 +52,8 @@ pub enum AudioContent {
     /// Retained user-selected source range; looping/crossfades belong to DSP.
     RoomTone {
         source: SourceAudio,
+        /// Full intrinsic Hold duration in its local clock, before any crop.
+        duration: FrameDuration,
     },
     /// Retain the policy and maximum in the Hold's local clock. A renderer must
     /// implement this explicitly, never substitute ordinary speech or silence.
@@ -61,14 +63,15 @@ pub enum AudioContent {
     },
 }
 
-impl From<&HoldAudio> for AudioContent {
-    fn from(value: &HoldAudio) -> Self {
+impl AudioContent {
+    pub(super) fn from_hold(value: &HoldAudio, duration: FrameDuration) -> Self {
         match value {
             HoldAudio::Silence => Self::Silence {
                 reason: SilenceReason::SilentHold,
             },
             HoldAudio::RoomTone { source } => Self::RoomTone {
                 source: source.clone(),
+                duration,
             },
             HoldAudio::Tail { source, maximum } => Self::Tail {
                 source: source.clone(),
@@ -338,7 +341,12 @@ impl RenderPlan {
                     };
                     break (content, None);
                 }
-                CompiledKind::Hold { audio, .. } => break (audio.into(), None),
+                CompiledKind::Hold { audio, .. } => {
+                    break (
+                        AudioContent::from_hold(audio, node.inspection.duration),
+                        None,
+                    );
+                }
                 CompiledKind::Sequence { entries } => {
                     let mut left = 0;
                     let mut right = entries.len();
@@ -413,7 +421,10 @@ impl RenderPlan {
                                     location.play.gap_after.frames(),
                                 ))?,
                         )?;
-                        break (audio.into(), Some(location.play.iteration));
+                        break (
+                            AudioContent::from_hold(audio, location.play.gap_after),
+                            Some(location.play.iteration),
+                        );
                     }
                     transform = transform.child(
                         ExactRatio::integer(location.play.start),
