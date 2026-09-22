@@ -57,6 +57,16 @@ metadata and convert only the selected frame. Native limits are cooperative,
 not a preemptive wall-time guarantee. Never invent missing terminal duration or
 accept an unqualified color interpretation silently.
 
+Keep requested, decoded and displayed picture identities separate. Presentation
+captures project session/revision and Source/Sequence coordinates, not just the
+original source ordinal: a freeze or repeat can show that image at many sequence
+positions. Admit only the latest stopped-frame reply; preserve an already accepted
+picture while a newer request prepares. Advance the displayed caption and
+accessibility label only with successful GPU submission or an explicit background
+transition. Retain the old target until a resized replacement renders successfully.
+Picture errors belong to presentation and clear on successful recovery. These
+state transitions must remain testable without a native window.
+
 The shared picture baseline accepts owned, bounded, full-range straight RGBA8
 with explicit transfer, primaries, SAR, rotation and source PTS. Decode transfer
 before filtering into linear Rec.2020 `Rgba16Float`; preserve negative working

@@ -1,0 +1,17 @@
+    Checking deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+error: field assignment outside of initializer for an instance created with Default::default()
+   --> crates/deadpan-app/src/presentation/tests.rs:225:5
+    |
+225 |     state.requested = Some(project_request(20, 1, "r1", false));
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+note: consider initializing the variable with `presentation::Presentation { requested: Some(project_request(20, 1, "r1", false)), ..Default::default() }` and removing relevant reassignments
+   --> crates/deadpan-app/src/presentation/tests.rs:224:5
+    |
+224 |     let mut state = Presentation::default();
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#field_reassign_with_default
+    = note: `-D clippy::field-reassign-with-default` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::field_reassign_with_default)]`
+
+error: could not compile `deadpan-app` (bin "deadpan-app" test) due to 1 previous error

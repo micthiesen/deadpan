@@ -2,6 +2,7 @@
 
 mod dialogs;
 mod navigation;
+mod presentation;
 mod preview;
 mod project;
 mod worker;

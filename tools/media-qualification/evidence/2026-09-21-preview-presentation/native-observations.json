@@ -1,0 +1,21 @@
+{
+  "method": "CUA native macOS app interaction with disposable development wrapper and test-only project",
+  "interactive_binary_sha256": "f1659f9a94fcc9ba3a6f8a1c71b1899e2ec655a2eacbf394f01a69b65c97dd30",
+  "scope": "Source/Sequence captions, normal-size visual hierarchy, keyboard navigation and text focus",
+  "observed": [
+    "12l: Source boundary 12/120, fixture 012, caption and AX Showing source frame 13",
+    ":sequence Return G: boundary 120/120, fixture 119, caption and AX Showing sequence frame 120",
+    "Tab/Tab/ShiftTab then slash: source search; cfr and Left preserve Sequence boundary and displayed frame",
+    "Escape Tab h h: Sequence boundary 118/120, fixture 118, caption and AX Showing sequence frame 119",
+    "1234x768 screenshot: dominant picture, readable caption directly beneath, controls visible, bottom requested boundary separate",
+    "Command-Q exits, subsequent pgrep -x deadpan-app reports no process"
+  ],
+  "unsuccessful_attempts": [
+    "Corner drag and exposed window zoom did not change observed dimensions; no resize or small-window success claimed"
+  ],
+  "limits": [
+    "Interactive binary predates final picture-error ownership change; final error recovery tested headlessly and final startup/shutdown smoked",
+    "No forced GPU/device loss, physical display timing, audio/video playback, VoiceOver, CJK IME, non-US physical keyboard or light appearance qualification"
+  ],
+  "authored_edits_during_native_review": false
+}

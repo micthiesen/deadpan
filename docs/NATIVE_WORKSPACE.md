@@ -63,6 +63,26 @@ has an explicit empty state. Unsupported still/generated providers report an
 error rather than silently substituting footage. Project canvas aspect and the
 shared SDR renderer determine displayed geometry. No audio is played.
 
+Presentation keeps the requested position, accepted decoded picture and displayed
+picture separate. Each identity retains the project session/revision and explicit
+Source or Sequence coordinate. An accepted picture waiting for the GPU remains
+available when a newer request starts; a late reply for an older request is still
+rejected. The caption below the viewer and its accessibility name describe the
+submitted picture, while the bottom status bar describes the requested boundary
+and any pending update. Identical original pixels at two sequence positions have
+different presentation identities. This is submission ordering, not a measured
+physical display timestamp.
+
+A replacement render target is promoted only after successful submission, keeping
+the prior picture and caption intact on allocation/render failure. Current decode
+failure clears the old image and says it is unavailable. Picture errors are scoped
+to presentation; a later successful decode clears an earlier render failure
+without erasing unrelated project/action errors. Render failure stops automatic
+retries until a fresh request or decode arrives. Backgrounds explicitly replace
+textures, and an empty sequence has no invented source frame. The
+[presentation qualification](qualification/preview-presentation-2026-09-21.md)
+records regression, native appearance and keyboard evidence.
+
 The cursor is a boundary in `[0, duration]`; the frame to its right is displayed,
 with the final preceding frame shown at the end. Sources appear on the left,
 sequence beats below the picture, and mode/context/boundary status beneath them.

@@ -1,0 +1,14 @@
+{
+  "base_commit": "21d760e46a3bb2815a6b4bb60f08431639158cc3",
+  "reviewer": "independent audio_prepared_source agent, read-only general review",
+  "passes": [
+    "presentation identity, stale replies, GPU pending work, captions, backgrounds, target retention and renderer behavior",
+    "follow-up picture-error ownership, stale error rejection and successful recovery"
+  ],
+  "findings": [],
+  "parent_corrections": [
+    "Scoped picture errors to Presentation so later successful decode clears older render failure",
+    "Test initializer corrected for strict Clippy"
+  ],
+  "repeated_gate_by_reviewer": false
+}

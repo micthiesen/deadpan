@@ -269,6 +269,93 @@ fn await_reply(worker: &PreviewWorker) -> Reply {
 }
 
 #[test]
+fn actual_decoded_freeze_keeps_sequence_position_and_rejects_old_revision_reply() {
+    let mut fixture = Fixture::source("cfr-bframes.mp4");
+    let before = fixture.workspace(1);
+    let time_base = before.sources[&asset()]
+        .video_index
+        .as_ref()
+        .unwrap()
+        .time_base();
+    let worker = PreviewWorker::new(egui::Context::default()).unwrap();
+    let mut presentation = crate::presentation::Presentation::default();
+    let first = request(&before, sequence(20), 1);
+    presentation.request(first.ticket, &first.work);
+    worker.submit(first.ticket, first.work);
+    let old_reply = await_reply(&worker);
+
+    fixture.append_hold(
+        "freeze",
+        1,
+        HoldVideo::Freeze {
+            asset: asset(),
+            timestamp: SourceTimestamp {
+                ticks: 20 * 1001,
+                time_base,
+            },
+        },
+    );
+    let after = fixture.workspace(1);
+    assert_ne!(before.document.revision_id(), after.document.revision_id());
+    presentation.clear();
+    let next = request(&after, sequence(121), 2);
+    presentation.request(next.ticket, &next.work);
+    assert!(presentation.receive(old_reply).is_none());
+    assert!(presentation.loading());
+    assert!(!presentation.has_displayed());
+    worker.submit(next.ticket, next.work);
+    assert!(presentation.receive(await_reply(&worker)).unwrap().is_ok());
+    let frozen_bytes = presentation
+        .picture()
+        .unwrap()
+        .frame
+        .as_ref()
+        .unwrap()
+        .bytes()
+        .to_vec();
+    assert_eq!(presentation.picture().unwrap().id, SourceFrameId(20));
+    assert_eq!(presentation.displayed_label(), None);
+    presentation.presented();
+    assert_eq!(
+        presentation.displayed_label().as_deref(),
+        Some("Showing sequence frame 122")
+    );
+    assert_eq!(
+        presentation.displayed_source_frame(),
+        Some(SourceFrameId(20))
+    );
+
+    let next = request(&after, sequence(122), 3);
+    presentation.request(next.ticket, &next.work);
+    worker.submit(next.ticket, next.work);
+    assert!(presentation.receive(await_reply(&worker)).unwrap().is_ok());
+    assert_eq!(
+        presentation
+            .picture()
+            .unwrap()
+            .frame
+            .as_ref()
+            .unwrap()
+            .bytes(),
+        frozen_bytes
+    );
+    assert!(
+        presentation.needs_render(),
+        "identical decoded pixels still occupy a new sequence frame"
+    );
+    assert_eq!(
+        presentation.displayed_label().as_deref(),
+        Some("Showing sequence frame 122")
+    );
+    presentation.presented();
+    assert_eq!(
+        presentation.displayed_label().as_deref(),
+        Some("Showing sequence frame 123")
+    );
+    worker.shutdown();
+}
+
+#[test]
 fn registered_source_and_sequence_decode_the_same_original_frame() {
     let fixture = Fixture::source("cfr-bframes.mp4");
     let workspace = fixture.workspace(1);

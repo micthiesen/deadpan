@@ -82,7 +82,12 @@ Native text editing and IME events suppress editing bindings. Escape/Return leav
 text entry after its final input is applied. `:help` lists the implemented keys.
 Run `cargo test -p deadpan-app --locked` for actual-media service/preview tests,
 deterministic worker interleavings, binding transitions, dialog polling, headless
-egui focus and final-text routing, and canvas geometry.
+egui focus and final-text routing, canvas geometry, and requested/decoded/displayed
+picture transitions. The viewer caption identifies the submitted picture;
+the bottom boundary can advance while the next picture is preparing. Tests cover
+GPU-delay state, stale replies, picture-error recovery and actual decoded freezes
+at distinct sequence positions. See the
+[presentation evidence](qualification/preview-presentation-2026-09-21.md).
 
 Headless source evidence uses `cargo run -p deadpan-media --example inspect_source -- /absolute/video.mp4 /tmp/new-source-report.json`.
 The report preserves original clocks, observed terminal duration, content identity,

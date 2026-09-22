@@ -11,10 +11,11 @@ use eframe::{egui, egui_wgpu};
 
 use crate::dialogs::{DialogKind, Dialogs};
 use crate::navigation::{self, Action, Bindings, Pane, TextAction};
+use crate::presentation::Presentation;
 use crate::project::{
     ImportMedia, ImportStage, ImportStatus, ProjectRequest, ProjectService, Workspace,
 };
-use crate::worker::{Picture, PreviewWorker, ProjectView, SourceSummary, Ticket, Work};
+use crate::worker::{PreviewWorker, ProjectView, SourceSummary, Ticket, Work};
 
 const SEARCH_ID: &str = "source-search";
 const COMMAND_ID: &str = "command-input";
@@ -74,11 +75,7 @@ pub struct DeadpanApp {
     summary: Option<SourceSummary>,
     serial: u64,
     preview_source: u64,
-    latest: Option<Ticket>,
-    picture: Option<Picture>,
-    shown: Option<(u64, i64)>,
-    dirty: bool,
-    loading: bool,
+    presentation: Presentation,
     error: Option<String>,
     project_error: Option<String>,
     message: Option<String>,
@@ -146,11 +143,7 @@ impl DeadpanApp {
             summary: None,
             serial: 0,
             preview_source: 0,
-            latest: None,
-            picture: None,
-            shown: None,
-            dirty: false,
-            loading: false,
+            presentation: Presentation::default(),
             error: None,
             project_error: None,
             message: None,
@@ -200,14 +193,10 @@ impl DeadpanApp {
     /// Clear presentation while a self-contained request replaces the picture.
     /// The worker keeps its verified decoder until the session/asset key changes.
     fn reset_picture(&mut self) {
-        self.latest = None;
-        self.picture = None;
-        self.shown = None;
+        self.presentation.clear();
         if self.raw_source.is_none() {
             self.summary = None;
         }
-        self.dirty = false;
-        self.loading = false;
         self.forget_target();
     }
 
@@ -225,10 +214,10 @@ impl DeadpanApp {
             source: serial,
             request: serial,
         };
-        self.latest = Some(ticket);
-        self.loading = true;
+        let work = Work::Open(path);
+        self.presentation.request(ticket, &work);
         self.error = None;
-        self.worker.submit(ticket, Work::Open(path));
+        self.worker.submit(ticket, work);
     }
 
     fn source_length(&self) -> u64 {
@@ -309,9 +298,7 @@ impl DeadpanApp {
             source: self.preview_source,
             request: serial,
         };
-        self.latest = Some(ticket);
-        self.loading = true;
-        self.dirty = false;
+        self.presentation.request(ticket, &work);
         self.worker.submit(ticket, work);
     }
 
@@ -401,26 +388,19 @@ impl DeadpanApp {
                 self.request_picture(true);
             }
         }
-        if let Some(reply) = self.worker.take_reply()
-            && self.latest == Some(reply.ticket)
+        if let Some(result) = self
+            .worker
+            .take_reply()
+            .and_then(|reply| self.presentation.receive(reply))
         {
-            self.loading = false;
-            match reply.picture {
-                Ok(mut picture) => {
-                    if let Some(summary) = picture.summary.take() {
-                        self.summary = Some(summary);
+            match result {
+                Ok(summary) => {
+                    if summary.is_some() {
+                        self.summary = summary;
                     }
-                    if picture.frame.is_none() {
-                        self.forget_target();
-                        self.shown = Some((0, 0));
-                    }
-                    self.picture = Some(picture);
-                    self.dirty = true;
                 }
-                Err(error) => {
-                    self.picture = None;
-                    self.shown = None;
-                    self.error = Some(error);
+                Err(_) => {
+                    self.forget_target();
                 }
             }
         }
@@ -911,11 +891,10 @@ impl DeadpanApp {
                     ui.separator();
                     let (cursor, length) = if self.view == View::Source { (self.source_cursor, self.source_length()) } else { (self.sequence_cursor, self.sequence_length()) };
                     ui.monospace(format!("Boundary {cursor} / {length}"));
-                    if self.loading { ui.spinner(); ui.weak("Updating picture…"); }
-                    else if length > 0 { ui.weak(format!("Showing frame {}", cursor.min(length - 1) + 1)); }
+                    if self.presentation.loading() || self.presentation.needs_render() { ui.spinner(); ui.weak("Updating picture…"); }
                     let pending = self.bindings.pending(); if !pending.is_empty() { ui.monospace(format!("Pending: {pending}")); }
                 });
-                if let Some(error) = self.error.as_ref().or(self.project_error.as_ref()) { ui.colored_label(ui.visuals().error_fg_color, format!("Could not complete action: {error}")); }
+                if let Some(error) = self.error.as_deref().or(self.project_error.as_deref()).or(self.presentation.error()) { ui.colored_label(ui.visuals().error_fg_color, format!("Could not complete action: {error}")); }
                 else if let Some(message) = &self.message { ui.weak(message); }
                 else { ui.weak("h / l: frame · j / k: source or beat · gg / G: start / end · Tab: pane · :help"); }
             }
@@ -1100,24 +1079,31 @@ impl DeadpanApp {
                     summary.info.time_base_num, summary.info.time_base_den
                 ));
             }
-            let available = egui::vec2(ui.available_width().max(1.0), (ui.available_height() - 52.0).max(80.0));
+            let available = egui::vec2(ui.available_width().max(1.0), (ui.available_height() - 76.0).max(80.0));
             let (_, rect) = ui.allocate_space(available);
             let response = pane_focus(ui, Pane::Viewer, rect, "Picture viewer pane");
-            response.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Image, true, if self.view == View::Source { "Original source picture" } else { "Sequence picture at current boundary" }));
             if response.has_focus() { self.pane = Pane::Viewer; }
             ui.painter().rect_filled(rect, 4.0, egui::Color32::from_rgb(13, 15, 18));
-            let aspect = self.picture.as_ref().and_then(|p| p.canvas).map(|(w,h)| w as f32 / h as f32);
+            let aspect = self.presentation.picture().and_then(|p| p.canvas).map(|(w,h)| w as f32 / h as f32);
             let canvas = aspect.map_or(rect, |aspect| fit_rect(rect, aspect));
             self.render_picture(ui.ctx(), canvas.size());
-            if self.shown.is_some() && !(self.view == View::Sequence && self.sequence_length() == 0) {
+            let displayed_label = self.presentation.displayed_label();
+            response.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Image, true, displayed_label.as_deref().unwrap_or("No picture displayed")));
+            if self.presentation.has_displayed() && !(self.view == View::Sequence && self.sequence_length() == 0) {
                 if let Some(target) = &self.target { ui.painter().image(target.texture, canvas, egui::Rect::from_min_max(egui::Pos2::ZERO, egui::pos2(1.0, 1.0)), egui::Color32::WHITE); }
                 else { ui.painter().rect_filled(canvas, 0.0, egui::Color32::BLACK); }
             } else {
-                let message = if self.loading { "Preparing picture…" } else if self.workspace.is_none() && self.raw_source.is_none() { "Create a project to begin" } else if self.view == View::Sequence { "Your sequence is empty" } else if self.selected_source.is_some() && self.source_length() == 0 { "Audio source · no picture" } else { "Choose a source to preview" };
+                let message = if self.presentation.loading() { "Preparing picture…" } else if self.presentation.error().is_some() { "Picture unavailable" } else if self.workspace.is_none() && self.raw_source.is_none() { "Create a project to begin" } else if self.view == View::Sequence { "Your sequence is empty" } else if self.selected_source.is_some() && self.source_length() == 0 { "Audio source · no picture" } else { "Choose a source to preview" };
                 ui.painter().text(rect.center(), egui::Align2::CENTER_CENTER, message, egui::FontId::proportional(20.0), egui::Color32::from_gray(180));
             }
             if self.pane == Pane::Viewer { ui.painter().rect_stroke(rect, 4.0, ui.visuals().selection.stroke, egui::StrokeKind::Inside); }
             ui.add_space(8.0);
+            if let Some(label) = displayed_label {
+                let label = ui.weak(label);
+                if let Some(source_frame) = self.presentation.displayed_source_frame() {
+                    label.on_hover_text(format!("Original source frame {}", u128::from(source_frame.0) + 1));
+                }
+            }
             ui.horizontal_wrapped(|ui| {
                 if self.workspace.is_none() && self.raw_source.is_none() {
                     if ui.button("New project…").clicked() { self.begin_dialog(DialogKind::CreateProject, ui.ctx(), false); }
@@ -1143,7 +1129,18 @@ impl DeadpanApp {
     }
 
     fn render_picture(&mut self, context: &egui::Context, size: egui::Vec2) {
-        if self.picture.as_ref().is_none_or(|p| p.frame.is_none()) {
+        if !self.presentation.can_render() {
+            return;
+        }
+        let Some(picture) = self.presentation.picture() else {
+            return;
+        };
+        if picture.frame.is_none() {
+            if self.presentation.needs_render() {
+                self.forget_target();
+                self.presentation.presented();
+                context.request_repaint();
+            }
             return;
         }
         match self.renderer.is_idle() {
@@ -1152,8 +1149,8 @@ impl DeadpanApp {
                 return;
             }
             Err(error) => {
-                self.error = Some(format!("Preview renderer: {error}"));
-                self.dirty = false;
+                self.presentation
+                    .render_failed(format!("Preview renderer: {error}"));
                 return;
             }
             Ok(true) => {}
@@ -1163,38 +1160,50 @@ impl DeadpanApp {
             .target
             .as_ref()
             .is_none_or(|t| t.target.width() != width || t.target.height() != height);
-        if !self.dirty && !resize {
+        if !self.presentation.needs_render() && !resize {
             return;
         }
-        if resize {
-            self.forget_target();
-            let target = match self.renderer.create_target(width, height) {
+        // Keep the visible texture and its identity until its replacement is
+        // successfully rendered. A failed resize must not label a blank target
+        // as the previous picture.
+        let replacement = if resize {
+            Some(match self.renderer.create_target(width, height) {
                 Ok(target) => target,
                 Err(error) => {
-                    self.error = Some(error.to_string());
+                    self.presentation
+                        .render_failed(format!("Preview renderer: {error}"));
                     return;
                 }
-            };
-            let texture = self.render_state.renderer.write().register_native_texture(
-                &self.render_state.device,
-                target.display_view(),
-                eframe::wgpu::FilterMode::Linear,
-            );
-            self.target = Some(RegisteredTarget { target, texture });
-        }
-        let picture = self.picture.as_ref().expect("picture checked");
+            })
+        } else {
+            None
+        };
+        let picture = self.presentation.picture().expect("picture checked");
         let frame = picture.frame.as_ref().expect("frame checked");
         match self.renderer.render(
             frame,
-            &self.target.as_ref().expect("target created").target,
+            replacement
+                .as_ref()
+                .unwrap_or_else(|| &self.target.as_ref().expect("target exists").target),
             FitMode::Fit,
         ) {
             Ok(_) => {
-                self.shown = Some((picture.id.0, frame.metadata().pts.ticks));
-                self.dirty = false;
+                if let Some(target) = replacement {
+                    let texture = self.render_state.renderer.write().register_native_texture(
+                        &self.render_state.device,
+                        target.display_view(),
+                        eframe::wgpu::FilterMode::Linear,
+                    );
+                    self.forget_target();
+                    self.target = Some(RegisteredTarget { target, texture });
+                }
+                self.presentation.presented();
                 context.request_repaint_after(Duration::from_millis(16));
             }
-            Err(error) => self.error = Some(format!("Preview renderer: {error}")),
+            Err(error) => {
+                self.presentation
+                    .render_failed(format!("Preview renderer: {error}"));
+            }
         }
     }
 

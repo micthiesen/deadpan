@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "base_revision": "21d760e46a3bb2815a6b4bb60f08431639158cc3",
+  "started_utc": "2026-09-22T01:13:11.662550+00:00",
+  "checks": [
+    {
+      "name": "format",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 1.498,
+      "log": "format.log"
+    },
+    {
+      "name": "clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 101,
+      "seconds": 3.93,
+      "log": "clippy.log"
+    }
+  ],
+  "status": "failed",
+  "completed_utc": "2026-09-22T01:13:17.092923+00:00"
+}

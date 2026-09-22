@@ -1,0 +1,20 @@
+{
+  "base_commit": "21d760e46a3bb2815a6b4bb60f08431639158cc3",
+  "source_sha256": {
+    "AGENTS.md": "90820663eec12779e66e4a2d601c12f99a9e8bb7ef870ca7c07d81f0209d49ff",
+    "Cargo.lock": "e6d5a0ab2e11c0e4544b8d32d7dda50a1d136bc73a9ef79607731edccce1791f",
+    "crates/deadpan-app/Cargo.toml": "b9822e07171b6d07aae04fcc557cf0ffc744ce9e996403fc0e8331204ad23306",
+    "crates/deadpan-app/src/main.rs": "43b7051d7b3da0e9f900acf71a80e385b8b7aeba3ad15dcadf195c5a1c99c9be",
+    "crates/deadpan-app/src/preview.rs": "a073d2ef6578854870ae81e662b9f311e539d2454c89267653a10654fc15d0a5",
+    "crates/deadpan-app/src/presentation.rs": "46a9cd08e71d1f0389ccfad0e2653aa7ab054fc78bc657de0b37971a77fab3bc",
+    "crates/deadpan-app/src/presentation/tests.rs": "12dd5a5573cf6aac5eedd77a369e6537cbec12778e9225a5bcf330ecb940da41",
+    "crates/deadpan-app/src/worker.rs": "c3c4cee9c8bd2e3797fc8dc3e8937fda56e9ea60ef8492d5879978b67ab48f45",
+    "crates/deadpan-app/src/worker/project_tests.rs": "55322a7c5d20e4e823dd03aa0ac250e828487d78fc201cec0d16ac73628c4496",
+    "crates/deadpan-render/src/gpu.rs": "77a698483178ba89295553c125554b727e9ea99aa72d545f95d230672ef835ce",
+    "docs/NATIVE_WORKSPACE.md": "ea2c332178d595ae61d26c54b8da96c6568f19e8ed1ea7a2eb543083328d3edb",
+    "docs/DEVELOPMENT.md": "8c024d47e38732d9c9b5e7f471c5ed3421972dcbc073917b0b075701b8da814e",
+    "docs/REQUIREMENTS.md": "0c067d7357d09a9d4a8a945e0af773f1545e2b3ec15d43a79b68d6cc27a53655",
+    "docs/qualification/preview-presentation-2026-09-21.md": "f1a203099473250e8688d774d81e061c55fcd4a6c6d5ada6e8d3971777dee960"
+  },
+  "final_app_binary_sha256": "badcb89389b58b1aa90f01cc0c2db0100ddecf650a825d80089c26f8ccf94db1"
+}
