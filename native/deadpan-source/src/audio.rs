@@ -225,6 +225,23 @@ mod opening_budget_tests {
             .err()
             .unwrap();
         assert!(matches!(error, SourceDecodeError::Native{code,..} if code=="resource_limit"));
+        let first_error = AudioDecoder::open_first(file.try_clone().unwrap(), limits, control)
+            .err()
+            .unwrap();
+        assert!(
+            matches!(first_error, SourceDecodeError::Native{code,..} if code=="resource_limit")
+        );
+        let mut first = AudioDecoder::open_first(
+            file.try_clone().unwrap(),
+            AudioDecodeLimits {
+                max_io_bytes_per_call: low + used,
+                ..defaults
+            },
+            control,
+        )
+        .unwrap();
+        assert_eq!(first.info().stream_index, 0);
+        assert!(first.next_metadata(control).unwrap().is_some());
         let mut decoder = AudioDecoder::open(
             file,
             0,
@@ -246,15 +263,30 @@ impl AudioDecoder {
         limits: AudioDecodeLimits,
         control: DecodeControl<'_>,
     ) -> Result<Self, SourceDecodeError> {
+        Self::open_selection(file, Some(selected_stream), limits, control)
+    }
+
+    /// Select the first audio track in the fully admitted MP4/WAVE inventory.
+    /// A container without audio fails; metadata reports the actual stream ID.
+    pub fn open_first(
+        file: File,
+        limits: AudioDecodeLimits,
+        control: DecodeControl<'_>,
+    ) -> Result<Self, SourceDecodeError> {
+        Self::open_selection(file, None, limits, control)
+    }
+
+    fn open_selection(
+        file: File,
+        selected_stream: Option<u32>,
+        limits: AudioDecodeLimits,
+        control: DecodeControl<'_>,
+    ) -> Result<Self, SourceDecodeError> {
         let started = Instant::now();
         ffi::preflight(control)?;
         limits.validate()?;
-        let preflight_io_bytes = input::validate(
-            &file,
-            input::Selection::Audio(selected_stream),
-            limits.into(),
-            control,
-        )?;
+        let (selected_stream, preflight_io_bytes) =
+            input::validate_audio(&file, selected_stream, limits.into(), control)?;
         let timeout = control
             .timeout
             .checked_sub(started.elapsed())

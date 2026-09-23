@@ -41,6 +41,87 @@ fn open(bytes: &[u8], stream: u32) -> AudioSession {
     .unwrap()
 }
 
+fn verified_input(bytes: &[u8]) -> VerifiedSourceInput {
+    VerifiedSourceInput::copy_verified(
+        &mut Cursor::new(bytes),
+        identity(bytes),
+        bytes.len() as u64,
+        Duration::from_secs(10),
+        &AtomicBool::new(false),
+    )
+    .unwrap()
+}
+
+#[test]
+fn automatic_audio_selection_retains_exact_index_and_samples() {
+    for (folder, name, stream, start) in [
+        ("audio-fixtures", "pcm-stereo-48000.wav", 0, 0),
+        ("fixtures", "cfr-bframes.mp4", 1, 0),
+        ("fixtures", "offset-bframes.mp4", 1, 95072),
+    ] {
+        let bytes = fixture(folder, name);
+        let automatic = AudioSession::open_first_input(
+            verified_input(&bytes),
+            AudioSessionLimits::default(),
+            &AtomicBool::new(false),
+        )
+        .unwrap();
+        let explicit = open(&bytes, stream);
+        assert_eq!(automatic.index().stream().stream_index, stream);
+        assert_eq!(automatic.index(), explicit.index());
+        assert_eq!(
+            automatic
+                .read_samples(
+                    SourceAudioSample(start),
+                    100,
+                    Duration::from_secs(2),
+                    &AtomicBool::new(false)
+                )
+                .unwrap(),
+            explicit
+                .read_samples(
+                    SourceAudioSample(start),
+                    100,
+                    Duration::from_secs(2),
+                    &AtomicBool::new(false)
+                )
+                .unwrap()
+        );
+    }
+}
+
+#[test]
+fn automatic_audio_selection_preserves_absence_cancellation_and_cache_limits() {
+    let no_audio = fixture("fixtures", "rotated90.mp4");
+    assert!(
+        matches!(AudioSession::open_first_input(verified_input(&no_audio), AudioSessionLimits::default(), &AtomicBool::new(false)), Err(AudioSessionError::Native(deadpan_source::SourceDecodeError::Native { code, .. })) if code == "unsupported_streams")
+    );
+    let wav = fixture("audio-fixtures", "pcm-stereo-48000.wav");
+    assert!(matches!(
+        AudioSession::open_first_input(
+            verified_input(&wav),
+            AudioSessionLimits::default(),
+            &AtomicBool::new(true)
+        ),
+        Err(AudioSessionError::Snapshot(ConversionError::Cancelled))
+    ));
+    assert!(matches!(
+        AudioSession::open_first_input(
+            verified_input(&wav),
+            AudioSessionLimits {
+                maximum_cache_bytes: 1,
+                ..Default::default()
+            },
+            &AtomicBool::new(false)
+        ),
+        Err(AudioSessionError::Limits(_))
+    ));
+    let mp4 = fixture("fixtures", "cfr-bframes.mp4");
+    assert!(
+        matches!(AudioSession::open_input(verified_input(&mp4), 0, AudioSessionLimits::default(), &AtomicBool::new(false)), Err(AudioSessionError::Native(deadpan_source::SourceDecodeError::Native { code, .. })) if code == "unsupported_streams")
+    );
+}
+
 fn stereo_sample(index: usize) -> [f32; 2] {
     let left = match index % 2048 {
         0 => 24576,

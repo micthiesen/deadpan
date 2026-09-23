@@ -3,7 +3,9 @@
 
 **A keyboard-native editor for making a moment last considerably too long.**
 
-Version 1.0 · 20 September 2026 · macOS / Apple Silicon · Rust-first
+Version 1.1 · 23 September 2026 · macOS / Apple Silicon · Rust-first
+
+**Product-owner revision:** V1 reshapes one original video into a YTP. The full original is the starting edit; subsequent operations are non-destructive changes to it. External sound effects and accepted AI extensions are allowed, but additional source videos are not part of V1. This integrated revision supersedes the imported 1.0 design; the complete original remains in `archive/1.0/`. See `../SPEC_PROVENANCE.md` for the revision record.
 
 **Document status:** complete product design, not a prototype or minimum viable product plan. Performance figures labelled *targets* are requirements to measure, not benchmark results. Repository assessments are based on published source and documentation; none of the candidate editors or inference engines was built or benchmarked for this document.
 
@@ -16,6 +18,12 @@ Version 1.0 · 20 September 2026 · macOS / Apple Silicon · Rust-first
 # 1. Product decision
 
 Build **a structural editor for timing and attention**, not a conventional multitrack editor with keyboard shortcuts added afterward.
+
+Each V1 project has exactly one **Original**: a local video or one video obtained from a supported YouTube URL. Start with that entire video, untrimmed and at its qualified natural timing, already on the timeline. The editor gradually massages this original into something weird through cuts, pauses, repeats, extensions, reframing and sound. It must feel like changing one thing that already exists, rather than assembling a project from a bin of unrelated clips.
+
+The original bytes and source clock stay intact. **Your edit** is a reversible structural interpretation of that original. The user may reuse any of its moments elsewhere, including picture-only reaction cutaways, and add audio-only sound effects from other media. Explicitly accepted AI Hold footage is a generated extension of this edit, not another imported source video. Additional video and still-image imports are outside V1's creative interface. Preserve useful general backend primitives and legacy projects; a focused product interface does not justify deleting capable infrastructure or existing content.
+
+“Changes on top of the original” describes the user's mental model. The beat tree, immutable revisions and reversible typed commands remain authoritative; do not add a competing mutable delta list or flatten effects into the source. A persistent project profile binds the original and initial full-video baseline. Undo returns through editorial changes to that baseline and cannot remove or replace the original identity.
 
 The main document is a sequence of **beats**. A beat can play source footage, hold a moment, repeat another beat, retime it, or contain a group. Camera moves, audio treatments, cutaways, captions, and sound events attach to these structures. Most jokes are combinations of a few ordinary operations, not special-purpose effects that flatten the edit.
 
@@ -37,8 +45,8 @@ Examples: repeat a word three times; insert 1.5 seconds of silence after a sente
 | Rendering | One render-plan implementation, GPU compositor, and audio DSP graph shared by preview and final rendering. |
 | Audio | 48 kHz internal mix, floating-point DSP, native audio output; sample-accurate audio-only edits. |
 | AI | Local worker protocol with replaceable backends; benchmark small LTX-Video and current LTX MLX implementations before selecting shipped defaults. |
-| Project storage | SQLite is authoritative inside a `.deadpan` directory package. Original and accepted generated media remain separate from evictable caches. |
-| Import | Bundled yt-dlp, its required JavaScript support, and FFmpeg. Local import is equally first-class. |
+| Project storage | SQLite is authoritative inside a `.deadpan` directory package. New native projects live in the user's Documents/Deadpan library, independent of the launch directory. Original and accepted generated media remain separate from evictable caches. |
+| Import | Choose one original through bundled yt-dlp and its required JavaScript support, or local video import. Separately import audio-only sound effects; never add a second source video to a V1 project. |
 | Output | One Render action; automatic YouTube-oriented encoding from project and source characteristics. |
 | Distribution | Signed, notarized, self-contained application; app-managed model downloads, with an offline pack distribution path. |
 
@@ -46,7 +54,7 @@ The UI stack is a design choice supported by egui's native winit/wgpu integratio
 
 ## 1.2 What “complete” means
 
-The finished product includes the editing language, all operations in this document, source organization, transcription and analysis, tracking, AI holds, packaging, offline use after assets are installed, recovery, migration, performance instrumentation, accessible keyboard navigation, export verification, documentation, and automated tests.
+The finished V1 product includes the editing language, all operations in this document applied to one Original, organization and reuse of its moments, external sound effects, transcription and analysis, tracking, AI holds, packaging, offline use after assets are installed, recovery, migration, performance instrumentation, accessible keyboard navigation, export verification, documentation, and automated tests. The single-original scope is a deliberate product boundary, not permission to omit these capabilities.
 
 Implementation workstreams are ordered by dependencies. They are **not** permission to ship the first few workstreams as the completed product. AI hold generation, reliable export, and clean-machine installation are release gates, not decorative integrations.
 
@@ -56,10 +64,10 @@ Deliberately outside the product identity: cloud accounts, collaboration servers
 
 ## 2.1 Primary session
 
-1. Create a project or open an existing `.deadpan` package.
-2. Paste a YouTube URL or import a local file. Start browsing as soon as local media is available; background analysis must not block editing.
-3. Search the transcript, step through words and shots, mark interesting reactions, and insert selected footage into the sequence.
-4. Apply pauses, repeats, reframing, sound manipulation, and cutaways through composable commands.
+1. Choose one local video or paste one supported YouTube URL to start a project, or reopen an existing project. New projects are automatically stored in Documents/Deadpan; no working-directory-dependent save location or empty-timeline assembly step is required.
+2. Retain and qualify the Original, then atomically establish the full unedited source as the initial timeline and protected undo baseline. Show preparation and failures honestly; background analysis must not block subsequent editing.
+3. Navigate this existing edit, search the Original's transcript, step through words and shots, and mark interesting moments. Reuse a moment from the same Original at another location when desired.
+4. Apply cuts, pauses, repeats, reframing, sound manipulation and same-original cutaways through composable commands. Add external audio effects as explicit sound events while preserving the intended original sound.
 5. Generate live holds locally while continuing to edit. Audition and explicitly accept a generated candidate.
 6. Render the current committed revision to an automatically configured MP4.
 
@@ -74,6 +82,10 @@ A successful session needs no Terminal, Homebrew, Python installation, model-ser
 **Live stare.** An AI hold replaces only the inserted hold's visual provider after acceptance. Rejecting it, regenerating it, or using a freeze instead cannot move downstream content or alter the audio.
 
 **Reaction.** A marked reaction can replace the picture for a selected interval while the original audio continues. It remains attached to the host beat when that beat moves.
+
+**One original, many changes.** Choosing a 240-frame Original opens an unchanged 240-frame edit without an insertion command. Adding an 11-frame Hold and repeating a 24-frame moment three times yields 299 frames. Undoing those edits returns to the full 240-frame baseline. Removing every current beat, undoing edits or reopening the project never makes a different source video eligible to replace its Original.
+
+**External sound.** An imported audio effect can be placed at a selected edit anchor without adding blank picture or lengthening the sequence merely because a sound was imported. Its offset, gain and sound policy remain editable and undoable. Audio-only extraction from another video container does not make that container an additional picture source.
 
 **Portable project.** A project containing accepted generated clips opens and renders offline on another supported Mac without downloading the generation model again.
 
@@ -91,6 +103,7 @@ Use the same terms in the UI, command language, code, schema, and help.
 |---|---|---|
 | Measurement | Frame, sample, source timestamp | Distinct typed coordinates; never interchangeable floating-point seconds. |
 | Reference | Asset | Immutable original or generated media plus stream metadata and content identity. |
+| Product | Original | The project's one immutable primary video identity and source clock; the full source establishes its initial edit. |
 | Reference | Span | A half-open interval in a specified coordinate system. |
 | Reference | Anchor | A stable attachment to a source moment, beat location, occurrence, or explicit sequence time. |
 | Editing | Beat | A contiguous structural unit with a duration and an audiovisual recipe. |
@@ -191,7 +204,7 @@ ProjectDocument
 
 `BeatNode` variants are `Source`, `Sequence`, `Hold`, `Repeat`, and `Retime`. Each carries a label, typed effects, and editorial metadata. A generated hold is a Hold whose visual provider refers to an accepted artifact; it is not a different kind of timeline clip.
 
-The source node describes video and audio selections independently, with a link relation and synchronization offset. Splitting linked media preserves this relation. Audio-only and still-image sources are valid; audio-only insertion uses an explicit blank/held picture policy.
+The source node describes video and audio selections independently, with a link relation and synchronization offset. Splitting linked media preserves this relation. Audio-only and still-image sources remain valid backend primitives and legacy content. Generic sequential audio-only insertion uses an explicit blank/held picture policy; V1 external sound effects instead attach as sound events, without adding blank picture time. New V1 projects do not expose additional still-image or video imports.
 
 ## 5.2 Occurrences and repeat overrides
 
@@ -299,7 +312,7 @@ Linked edits are the default. A linked delete removes time; an audio-only delete
 
 An audio-only repeat creates an attached, sample-timed event with the calculated repeated duration and mutes the underlying host audio over that event. It does not insert picture time. If the event exceeds available host duration, require an explicit `extend=hold` or `overflow=trim` policy; do not silently discard repeats. A video-only repeat similarly maps repeated picture over a fixed host interval, with an explicit fit/trim/hold policy. Linked Repeat remains the structural duration-changing operation.
 
-At project start, freeze insertion uses the first available picture; at project end, it uses the final one. In an audio-only project it uses the project background. A zero-duration time insertion is a no-op with a message; a negative duration is invalid. Inserted time inherits the surrounding group's ownership but does not capture unrelated sequence-pinned events. When an insertion lies inside a source beat, split that beat at the boundary and preserve its exact source mapping on both sides.
+At project start, freeze insertion uses the first available picture; at project end, it uses the final one. In a generic or legacy audio-only project it uses the project background. A zero-duration time insertion is a no-op with a message; a negative duration is invalid. Inserted time inherits the surrounding group's ownership but does not capture unrelated sequence-pinned events. When an insertion lies inside a source beat, split that beat at the boundary and preserve its exact source mapping on both sides.
 
 # 7. Keyboard design
 
@@ -310,6 +323,8 @@ Modes: **Normal**, **Visual**, **Operator pending**, **Command/text entry**, **C
 Normal-mode bindings apply only when no text field or IME composition has focus. Standard macOS text editing, copy/paste, accessibility navigation, and Command-key menu shortcuts remain intact. Escape leaves a transient mode or cancels an uncommitted parameter preview; it does not discard already committed edits.
 
 Use a declarative binding trie. Prefixes have no execution timeout; a help popup may appear after a delay, but typing slowly cannot change a command's meaning. Reject ambiguous bindings at configuration load with the conflicting paths shown.
+
+Teach the language in the interface. Put concise keycaps beside common actions, show the exact pending prefix and valid next keys, and identify both selected content and focused pane. A selected beat's highlight does not establish keyboard focus. Contextual searchable help is the secondary reference, not the only way to discover ordinary editing. The visible labels **Original** and **Your edit** correspond to Source and Sequence contexts; their clocks and positions must remain distinct.
 
 ## 7.2 Navigation and transport
 
@@ -434,8 +449,8 @@ The catalogue below defines the complete creative surface. Every operation must 
 | Smash zoom | Step change in scale/center on an anchored target. |
 | Slow creep | Framing envelope over a beat, hold, or entire repeated group. |
 | Escalating crop | Per-play framing increment without duplicating authored clips. |
-| Reaction cutaway | Picture-only replacement from another source/register; original audio continues. |
-| Reaction ping-pong | Alternating picture attachments, preserving or switching sound explicitly. |
+| Reaction cutaway | Picture-only replacement from another moment of the same Original, directly or through a register; original audio continues. |
+| Reaction ping-pong | Alternating picture moments from the same Original, preserving or switching sound explicitly. |
 | Off-center stare | Deliberately awkward framing retained as a reusable target preset. |
 | Freeze a detail | Hold/reframe a hand, eyes, object, or other region; no face-only assumption. |
 | Black-frame punctuation | Hold with black picture and chosen silence/sound policy. |
@@ -463,7 +478,7 @@ A user supplies copyrighted sound clips they are entitled to use. Bundle only or
 
 ## 8.4 Starter recipes
 
-Ship parameterized recipes including **The Long Answer** (sentence + silent live/freeze hold + creep), **One More Time** (three plays with a shorter gap each time), **Are We Done?** (reaction cutaway while the previous audio tails off), **The Escalator** (repeat with increasing gain/scale), **The Non-Sequitur** (hard cut to registered detail and immediate return), and **Nothing Happens** (room tone cut to true silence while the picture keeps holding).
+Ship parameterized recipes including **The Long Answer** (sentence + silent live/freeze hold + creep), **One More Time** (three plays with a shorter gap each time), **Are We Done?** (same-original reaction cutaway while the previous audio tails off), **The Escalator** (repeat with increasing gain/scale), **The Non-Sequitur** (hard cut to a registered detail from the Original and immediate return), and **Nothing Happens** (room tone cut to true silence while the picture keeps holding).
 
 Each recipe expands to ordinary nodes and attachments with named exposed parameters. The recipe definition is versioned. An inserted gag pins that version and stores its parameters; upgrading a recipe never mutates existing projects. Users can save a modified group as a new local recipe, inspect its expansion, or detach it from its template.
 
@@ -473,14 +488,14 @@ Seeded variation is allowed for intentionally irregular pauses or slight framing
 
 ## 9.1 Single-window layout
 
-The default workspace has a large preview, a compact structural timeline beneath it, a transcript/source browser on the left, and an inspector on the right that appears only when useful. A thin bottom command/status bar is always visible.
+The default workspace has a large preview, a compact structural timeline beneath it, the single Original and its transcript/moments on the left, and an inspector on the right that appears only when useful. Sound effects have a separate audio-only collection. A thin bottom command/status bar is always visible. The initial timeline is already the whole Original. Empty project UI invites choosing that one video; it does not teach the user to assemble a timeline or add more videos.
 
 ```text
-Project / source name                         Jobs     Render
+Project / Original name                       Jobs     Render
 +----------------+-----------------------------------------+
-| Sources /      |                                         |
+| Original /     |              Original | Your edit       |
 | transcript /   |              Video preview              |
-| named moments  |                                         |
+| moments/sounds |                                         |
 +----------------+----------------------------+------------+
 | Current sequence: beat blocks + waveform   | Parameters |
 | Attached picture / sound / caption events  | or targets |
@@ -500,9 +515,11 @@ Repeat groups display one bracketed object with iteration ticks and count. Expan
 
 Waveforms use a multiresolution min/max pyramid. Thumbnail strips are virtualized. A long timeline must not create one UI widget, texture, or decoder per frame or repeat occurrence.
 
-## 9.3 Source browser and transcript
+## 9.3 Original, moments, sound effects and transcript
 
-Sources support fuzzy search, tags, thumbnails, media status, and named moments. The transcript follows source timing; the Sequence transcript shows words through the edit, including repeated occurrences. Both panes support keyboard search and selection.
+The Original supports fuzzy search, tags, thumbnails, media status and named moments within its one source clock. Do not present a multi-video bin or Add video action. A separate sound-effects collection admits audio-only media and keeps source import separate from placement as a sound event. Browsing a moment does not alter the original or automatically insert it. Reuse and picture cutaways refer to intervals from this same Original.
+
+The Original transcript follows source timing; the Your edit transcript shows words through the edit, including repeated occurrences. Both contexts support keyboard search and selection. Show original and edited durations and cursor coordinates with explicit labels. An unchanged region should remain easy to recognize; a changed region shows its operation, scope and adjustable parameters. Equal-width story cards need explicit duration/boundary values and must not be topped by a misleading proportional time ruler.
 
 Transcript correction edits text/annotation, not audio. An explicit replace/transcript-edit mode may delete the corresponding timed ranges, but normal typing in a transcript never unexpectedly cuts video. Low-confidence words are visibly approximate. The user can drag or keyboard-adjust their boundaries without waiting for retranscription.
 
@@ -512,7 +529,7 @@ Allow filtering named moments by tags such as `reaction`, `breath`, `detail`, or
 
 The inspector exposes only parameters relevant to the selected node or attachment: repeat count and gaps; hold duration/provider; framing target; gain; retime policy; tail duration. Every field shows units and supports direct entry, arrows, fine/coarse adjustment, reset, and reference to its command name.
 
-A prefix popup teaches commands while leaving the frame visible. A searchable palette lists all actions, their shortcuts, current scope, and whether the required analysis is available. The UI must not hide disabled actions without explaining why.
+A prefix popup teaches commands while leaving the frame visible. Common actions display their keybindings directly, including navigation, repeat, cut, undo and parameter entry. A searchable palette lists all actions, their shortcuts, current scope, and whether the required analysis is available. The UI must not hide disabled actions without explaining why. Pending input shows its exact prefix, valid next keys and selected scope without timing out.
 
 ## 9.5 Audition and variants
 
@@ -771,7 +788,9 @@ The pack qualification report must identify redistribution permission, required 
 
 Import progresses through `discovered`, `downloading/copying`, `probing`, `indexed`, and `ready`, with independent analysis/proxy states. Failed imports can be retried without duplicating existing assets. Files are promoted into the asset store only after completeness and integrity checks.
 
-Local video, audio, and still-image imports are first-class. Drag-and-drop is optional; native file dialogs and path-entry commands cover keyboard use. Use content hashes to deduplicate, not filenames.
+V1 creation chooses exactly one local video or supported remote video as the Original. Retain the complete container, qualify its selected picture and original sound, and atomically establish the full untrimmed source as the timeline baseline. Cancellation before choosing a source creates no project. A failed or interrupted preparation after package creation remains an explicit recoverable Awaiting Source project; it never claims a ready original or usable baseline.
+
+Later imports are audio-only sound effects. They may come from a supported audio file or an explicitly selected audio stream of another supported container, but no picture stream from that container becomes a V1 source. Sound import does not itself add time or replace the original sound. V1 does not offer additional video/still imports, playlist assembly or replacement of its Original. Same-original ranges and accepted AI extensions remain ordinary supported edits. Drag-and-drop is optional; native dialogs and commands cover keyboard use. Use content hashes and qualified stream identities, not filenames, for deduplication.
 
 ## 15.2 Downloader bundle
 
@@ -783,7 +802,7 @@ Store updated signed helpers in a controlled versioned Application Support locat
 
 ## 15.3 URL behavior
 
-Accept HTTPS YouTube watch/short/share URLs, normalize the video ID, and show a title/thumbnail before expensive transfer where available. A playlist URL defaults to the indicated single video; importing a playlist requires an explicit batch action. Do not accidentally download hundreds of items.
+Accept HTTPS YouTube watch/short/share URLs, normalize the video ID, and show a title/thumbnail before expensive transfer where available. A playlist URL may resolve only its explicitly indicated single video; a playlist without a single indicated video needs a specific video choice. V1 has no multi-video batch import. Never accidentally download a playlist or silently add another picture source to an existing project.
 
 Import the best useful original picture/audio quality, preserving source metadata; proxy decisions happen afterward. Do not transcode an original down to the current preview size. Preserve author/title/source URL, retrieval date, source identifiers, and selected stream details as private provenance metadata.
 
@@ -813,7 +832,7 @@ A native bridge may wrap CVPixelBuffer/IOSurface-backed planes in Metal textures
 
 ## 16.3 Source formats
 
-Support common H.264, HEVC, VP9, AV1, ProRes, AAC, PCM, MP3, Opus, PNG, and JPEG through the qualified FFmpeg build and platform codecs. Report unsupported profiles clearly. Handle VFR, interlaced sources, anamorphic pixels, rotated phone footage, mono/multichannel audio, and missing duration metadata.
+Support common H.264, HEVC, VP9, AV1, ProRes, AAC, PCM, MP3 and Opus through the qualified FFmpeg build and platform codecs. PNG and JPEG support remains useful for prepared images, generated conditioning and legacy content; it does not add a still-image import action to V1. Report unsupported profiles clearly. Handle VFR, interlaced sources, anamorphic pixels, rotated phone footage, mono/multichannel audio, and missing duration metadata.
 
 Deinterlace interlaced sources before progressive presentation using a qualified deterministic path, preserving effective motion cadence when selecting the project frame rate. Avoid silently weaving combed frames. Color-range conversion distinguishes limited and full range; a missing tag triggers a documented heuristic and a correctable source interpretation, not an arbitrary global relabel.
 
@@ -964,6 +983,8 @@ Keep caches transparent in diagnostics: key, size, origin, validity, and why a n
 
 A `.deadpan` project is a macOS directory package, not a zip file edited in place.
 
+Every new native project is created under the user's system-resolved Documents directory in a `Deadpan` folder, normally `~/Documents/Deadpan`. This location is independent of the current working directory, where the app was launched, and the Original's location. Source-derived names are bounded display names plus collision-safe unique suffixes; untrusted titles never control path traversal. Canceling the initial source picker creates nothing. Filesystem and media preparation stay off the UI. Existing packages can still be opened at their current locations; do not silently move user assets or rewrite legacy projects. Headless developer APIs may continue accepting explicit package paths.
+
 ```text
 Example.deadpan/
   manifest.json                 # identity and lightweight discovery only
@@ -987,6 +1008,10 @@ Use SQLite with one writer, foreign-key checks, a tested journaling strategy, sc
 Commit a semantic edit durably before showing it as saved. Interactive parameter scrubbing is transient until committed and then becomes one history entry. Autosave does not mean serializing a huge file after every video frame. Batch only within a user-understandable transaction; do not silently lose a long burst of edits on crash.
 
 Avoid two persistence models such as an event log that disagrees with a mutable JSON file. History supports undo/redo and named branches/takes, but no networked CRDT is needed. If the database uses WAL, portable snapshots/copies must include or checkpoint the WAL consistently; copying only the main file while it is open is not a valid backup procedure.
+
+New V1 projects retain an optional strict SQLite workflow profile. Awaiting Source has no ready Original. Initialization atomically binds the qualified primary identity, full-source baseline revision and history entry with the original registration/insertion. Ready persists independently of undoable presentation state. History remains intact, but preview/commit undo and history availability cannot cross the baseline. Deleting all current beats never unlocks the Original or permits a replacement video. Reopen validates profile, source receipt, baseline and chronology together. Sources, sounds and generated objects keep their existing ownership and admission guarantees.
+
+Legacy and generic projects without this profile remain valid and retain their full assets, edits, history and backend capabilities. Open them in an explicitly labeled compatibility workspace rather than silently discarding extra videos, choosing a different Original, or asserting a new baseline. The focused V1 creation flow always creates a profiled project; old file formats gain no invented identity by migration.
 
 ## 20.3 Import ownership and relinking
 
@@ -1079,15 +1104,15 @@ This policy makes the export match what the editor has committed. If the user is
 
 ## 22.2 Geometry and frame rate
 
-The first primary source establishes a presentation basis: display orientation/aspect, practical native raster, and rational frame rate. Choose this automatically; inserting a sound, tiny still, or reaction later must not unexpectedly rotate or resize the whole project. The initial choice is recorded and visible.
+The Original establishes a presentation basis at initialization: display orientation/aspect, practical native raster and rational frame rate. Choose it automatically before deriving the full-source baseline. Reusing an Original moment, importing a sound or accepting generated Hold footage must not rotate, resize or retime the project. The initial choice is recorded and visible.
 
-Default raster matches the primary source's display geometry without unnecessary upscale. Normalize to square pixels and codec-legal even dimensions, keeping display aspect within a defined rounding tolerance. Letterbox/pillarbox mixed-aspect sources unless an authored framing operation fills the canvas. Do not bake player-shaped black bars around an already correct aspect ratio.
+Default raster matches the Original's display geometry without unnecessary upscale. Normalize to square pixels and codec-legal even dimensions, keeping display aspect within a defined rounding tolerance. Fit generated footage or authored crops according to their explicit composition policy unless an authored framing operation fills the canvas. Do not bake player-shaped black bars around an already correct aspect ratio. Generic legacy mixed-source fitting remains supported by the backend.
 
-Preserve normal fractional/source frame rates. For variable-frame-rate footage, derive a stable presentation rate from analyzed timestamp cadence and keep the mapping to original PTS. For sources above 60 fps, use a supported ≤60 fps presentation rate chosen as an exact useful divisor where possible. Interlaced sources use the qualified deinterlace cadence. An audio-only initial project uses a 1920×1080, 30 fps black canvas. This basis is provisional only until the first time-based edit; a first primary picture can establish it beforehand. Once timed edits exist, importing picture cannot silently rebase their frame rate. Geometry can adopt the first primary picture through an explicit, previewed document transaction.
+Preserve normal fractional/source frame rates. For variable-frame-rate footage, derive a stable presentation rate from analyzed timestamp cadence and keep the mapping to original PTS. For sources above 60 fps, use a supported ≤60 fps presentation rate chosen as an exact useful divisor where possible. Interlaced sources use the qualified deinterlace cadence. V1 has no audio-only starting project: preparation may retain a provisional basis internally, but the one Original establishes the final basis before its baseline is Ready. Generic/legacy audio-only projects retain their existing explicit 1920×1080, 30 fps provisional behavior; do not reinterpret historical timing to impose the new creation policy.
 
 A creative `canvas` command may intentionally change framing/aspect as a document edit. It is not an export-quality dropdown. Such a change re-evaluates framing through a previewed document transaction and leaves timeline times/frame rate fixed; it never happens because a user added an unrelated source.
 
-YouTube recommends preserving recorded frame rate and documents its upload encoding preferences. The automatic policy interprets that guidance for mixed-source edits rather than assuming every project has one unambiguous input format. [S22]
+YouTube recommends preserving recorded frame rate and documents its upload encoding preferences. The automatic policy starts from the Original's qualified characteristics and handles generated extensions without silently changing the project basis. [S22]
 
 ## 22.3 SDR output
 
@@ -1321,6 +1346,8 @@ Test every shipped binding, including slow prefix input, counts, Visual selectio
 
 Run a keyboard-only end-to-end acceptance session on a clean user account. Include model-pack acceptance/install, target selection, failed-job retry, project relink, and render destination entry. Use accessibility inspection to ensure the user can identify the selected beat and active mode without relying on color alone.
 
+Include one-source onboarding into Documents/Deadpan from different launch directories, the automatically populated full-source timeline, undo to the protected baseline, same-original moment reuse, external audio-only effect placement, and rejection of a second video. Test interrupted initial preparation, recovery/retry and legacy multi-video compatibility without data loss. Review visible shortcut teaching and distinguish focused pane, selected content, Original position and edited position in both the image and accessibility representation.
+
 ## 26.6 Clean-machine release test
 
 Install the signed/notarized distribution on a supported Mac with no Homebrew, system Python setup, FFmpeg, yt-dlp, Deno, Xcode command-line tools, or preexisting model cache. Import local media, import a permitted YouTube source, download the approved model through the app, generate/accept a hold, save, restart, disconnect networking, reopen, and render.
@@ -1384,7 +1411,7 @@ The implementation tracker must map every requirement to code, tests, and a demo
 
 | ID | Requirement | Primary evidence |
 |---|---|---|
-| DP-01 | Project creation, reopen, autosave, undo/redo, migration, recovery. | Persistence/crash/migration suite. |
+| DP-01 | Documents project library, one-Original initialization/baseline, reopen, autosave, undo/redo, migration and recovery. | Persistence/crash/migration and creation/undo-floor suite. |
 | DP-02 | Exact frame/sample/source-time model including VFR. | Property tests and encoded sync fixtures. |
 | DP-03 | Structural Source/Sequence/Hold/Repeat/Retime primitives. | Golden render-plan and duration tests. |
 | DP-04 | Stable anchors, attachments, nested occurrences, single-play overrides. | Structural edit property tests. |
@@ -1397,13 +1424,13 @@ The implementation tracker must map every requirement to code, tests, and a demo
 | DP-11 | Selected target tracking with manual correction and loss handling. | Occlusion/shot-change fixtures. |
 | DP-12 | Local AI hold generation, exact seams/duration, variants, acceptance. | Actual qualified model corpus, not mocks. |
 | DP-13 | Model/runtime manager, safe downloads, offline pack installation. | Clean-machine and interrupted-install tests. |
-| DP-14 | YouTube URL import with bundled JavaScript support. | Clean-machine permitted-source import. |
-| DP-15 | Local media import, managed/linked assets, relinking. | Ownership/relink/failure tests. |
+| DP-14 | One Original from a YouTube URL with bundled JavaScript support. | Clean-machine single-video import and baseline creation. |
+| DP-15 | One local Original, external audio-only effects, managed/linked assets and relinking. | Original identity, ownership/relink/failure and sound-placement tests. |
 | DP-16 | Shared realtime/offline renderer, bounded decode and proxy paths. | Preview/export comparison and stress benchmarks. |
 | DP-17 | One-action automatic SDR/HDR YouTube-oriented output. | Encoded-file metadata/pixel/sync verification. |
 | DP-18 | Nonblocking worker lifecycle, cancellation, stale result handling. | Worker chaos and concurrency tests. |
 | DP-19 | Cache integrity and accepted-media portability. | Eviction/reference/offline-project tests. |
-| DP-20 | Accessible, native-behaving, simple UI. | Accessibility inspection and keyboard acceptance. |
+| DP-20 | Focused single-Original native UI with visible keyboard teaching and accessibility. | Design-target comparison, accessibility inspection and keyboard acceptance. |
 | DP-21 | CLI/JSON API with revision checks and dry-run. | Headless/GUI parity and conflict tests. |
 | DP-22 | Signed/notarized zero-manual-setup distribution. | Clean-machine online and offline acceptance. |
 | DP-23 | License/SBOM/privacy/security requirements. | Release audit and malicious-input tests. |
@@ -1429,6 +1456,8 @@ Exit criterion: representative nested edits render through a test backend with e
 
 Implement actual decode/index/proxy paths, audio playback, GPU preview, basic panes, keyboard grammar, frame/word selection integration points, inspector previews, and durable history. Include native focus/IME handling and accessibility state now, not after shortcuts have become inseparable from widgets.
 
+Use the single-Original creation and editing flow: automatic Documents library placement, full-source baseline, immutable Original identity, useful Original/moments and sound sections, visible keybindings, and explicit compatibility handling for older generic projects.
+
 Exit criterion: edit and audition real footage through keyboard commands with measurable latency and no drift. This is an integration checkpoint, not the finished product.
 
 ## Gate D — Complete the creative operation surface
@@ -1445,7 +1474,7 @@ Exit criterion: actual local generations meet documented duration/seam contracts
 
 ## Gate F — Complete import, export, and distribution
 
-Integrate yt-dlp/EJS/Deno, source provenance, safe updates, automatic render policy, HDR/SDR color tests, codec/mux verification, licensing notices, signed runtime bundles, notarization, and clean-machine installation. Finish migration/recovery and disk-full/permission flows.
+Integrate single-video yt-dlp/EJS/Deno acquisition, Original provenance and baseline initialization, external audio-only import, safe updates, automatic render policy, HDR/SDR color tests, codec/mux verification, licensing notices, signed runtime bundles, notarization, and clean-machine installation. Finish Documents library creation, migration/recovery and disk-full/permission flows while preserving generic legacy projects.
 
 Exit criterion: the full keyboard-only source-URL-to-final-MP4 workflow runs from the distributed application with no external setup.
 
@@ -1459,13 +1488,13 @@ The project may not be declared complete while required operations are stubs, AI
 
 This example uses a generic interview clip. It specifies expected semantics, not a particular person's behavior.
 
-1. Import the clip, insert a source range into the sequence, and let transcription analyze it locally.
+1. Choose the interview as the project's one Original. Deadpan creates the project in Documents/Deadpan and opens the full unedited video on the timeline. Local transcription can proceed independently; no insertion step is needed to start editing.
 2. Search for an ordinary word such as “absolutely.” Navigate to its occurrence and type `3riw`. The selected word's enclosing frame range becomes a Repeat with three total plays and no trailing gap.
 3. With the Repeat selected, enter `:repeat 3 gap=120ms gain-step=3dB zoom-step=0.08`. The existing repeat's parameters are updated, not nested into another three-by-three repeat. An explicit `wrap-repeat` command is used for intentional nesting of an already selected Repeat.
 4. Navigate to the end of the sentence and insert `3,h`. A 1.5-second freeze with silence is added at the cursor boundary. The next sentence shifts later but retains its source timing.
 5. Select the Hold, enter Camera mode, choose a numbered face/region, and set a slow creep from 1.0× to 1.35×. The Hold remains 1.5 seconds long.
 6. Convert its visual request to AI using `:hold-provider ai`. This requests a candidate for the existing Hold without inserting another hold. Audition it and explicitly accept. The creep is applied after the generated source picture.
-7. Yank a reaction into register `r` from the source browser. Select a portion of the hold and use `:cutaway register=r audio=keep`. That picture replaces the chosen interval while the selected silence/tail policy remains unchanged.
+7. Yank another reaction from this same Original into register `r`. Select a portion of the hold and use `:cutaway register=r audio=keep`. That picture replaces the chosen interval while the selected silence/tail policy remains unchanged. An external audio effect may be attached separately without importing its container's picture.
 8. Group the result as “the long answer,” save it as a local gag recipe, and adjust the overall hold duration by frames. No effect is baked into a new monolithic source clip.
 9. Render. The output uses the current committed version, automatic source-derived geometry/frame rate, and the appropriate SDR/HDR branch. The report identifies the accepted generated interval.
 
@@ -1477,9 +1506,9 @@ This avoids a common usability failure: a user intending to change three plays t
 
 ## 31.2 Source-context behavior
 
-Source browsing is non-destructive. Navigation, marking, searching, and yanking work directly against the source. An editing operator such as `r` or `d` in Source context does not alter the original or silently create a new timeline. It offers the already-defined action **Insert selected range into sequence**; the user can invoke that with `:insert` or its visible palette binding. Once inserted, editing takes place in Sequence context.
+Original browsing is non-destructive. Navigation, marking, searching and yanking work directly against the pinned Original. An editing operator such as `r` or `d` in Source context does not alter its bytes, remove its identity or create a new timeline. The edit already contains the full original baseline. Teach **Return to your edit** for editing there and **Reuse selected original moment** for deliberately copying a range elsewhere; `:insert` may remain a command alias for explicit reuse, never a prerequisite to starting a new project.
 
-The source browser can preview trims, create named ranges, and set register contents without committing them to the sequence. Make the current context prominent so the same letter cannot appear to delete an original file.
+The Original browser can preview trims, create named ranges and set register contents without committing them to the sequence. Reuse and picture cutaway commands resolve to this project's pinned Original, while external media contributes only explicitly selected sound. Make context, selected scope and focused pane prominent so the same letter cannot appear to delete an original file. In legacy compatibility projects, retain the older broader source inventory explicitly rather than disguising it as a one-Original project.
 
 # 32. Resolved choices and remaining empirical questions
 

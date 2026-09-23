@@ -142,11 +142,20 @@ fn qualify(
                 .map(|stream| stream.stream_index)
         }),
         Streams::Import(ImportMedia::Audio { stream }) => Some(stream),
+        Streams::Import(ImportMedia::FirstAudio) => None,
         Streams::Exact { audio, .. } => audio,
     };
-    let audio = audio_stream
-        .map(|stream| AudioSession::open_input(input, stream, audio_limits, &job.cancelled))
-        .transpose()?;
+    let audio = if matches!(streams, Streams::Import(ImportMedia::FirstAudio)) {
+        Some(AudioSession::open_first_input(
+            input,
+            audio_limits,
+            &job.cancelled,
+        )?)
+    } else {
+        audio_stream
+            .map(|stream| AudioSession::open_input(input, stream, audio_limits, &job.cancelled))
+            .transpose()?
+    };
     let decoded = DecodedSourceQualification::from_sessions(video.as_ref(), audio.as_ref())?;
     Ok(PreparedSourceRegistration::from_decoded(
         original,

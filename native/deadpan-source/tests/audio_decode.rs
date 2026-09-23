@@ -48,6 +48,131 @@ fn assert_code(error: SourceDecodeError, expected: &str) {
 }
 
 #[test]
+fn first_audio_selects_actual_stream_and_preserves_decoded_evidence() {
+    for (name, selected) in [
+        ("pcm-stereo-48000.wav", 0),
+        ("cfr-bframes.mp4", 1),
+        ("offset-bframes.mp4", 1),
+    ] {
+        let mut first = AudioDecoder::open_first(
+            File::open(fixture(name)).unwrap(),
+            AudioDecodeLimits::default(),
+            control(),
+        )
+        .unwrap();
+        let mut explicit = AudioDecoder::open(
+            File::open(fixture(name)).unwrap(),
+            selected,
+            AudioDecodeLimits::default(),
+            control(),
+        )
+        .unwrap();
+        assert_eq!(first.info().stream_index, selected);
+        assert_eq!(first.info(), explicit.info());
+        let mut frames = 0;
+        loop {
+            let next = first.next_metadata(control()).unwrap();
+            assert_eq!(next, explicit.next_metadata(control()).unwrap());
+            if next.is_none() {
+                break;
+            }
+            assert_eq!(
+                first.copy_current_interleaved_f32(control()).unwrap(),
+                explicit.copy_current_interleaved_f32(control()).unwrap()
+            );
+            frames += 1;
+        }
+        assert!(frames > 0);
+    }
+}
+
+#[test]
+fn first_audio_does_not_fall_back_to_video_or_relax_admission() {
+    assert_code(
+        AudioDecoder::open_first(
+            File::open(fixture("rotated90.mp4")).unwrap(),
+            AudioDecodeLimits::default(),
+            control(),
+        )
+        .err()
+        .unwrap(),
+        "unsupported_streams",
+    );
+    assert_code(
+        AudioDecoder::open(
+            File::open(fixture("cfr-bframes.mp4")).unwrap(),
+            0,
+            AudioDecodeLimits::default(),
+            control(),
+        )
+        .err()
+        .unwrap(),
+        "unsupported_streams",
+    );
+    assert_code(
+        AudioDecoder::open(
+            File::open(fixture("pcm-stereo-48000.wav")).unwrap(),
+            1,
+            AudioDecodeLimits::default(),
+            control(),
+        )
+        .err()
+        .unwrap(),
+        "unsupported_streams",
+    );
+    assert_code(
+        AudioDecoder::open_first(
+            File::open(fixture("limited709.mkv")).unwrap(),
+            AudioDecodeLimits::default(),
+            control(),
+        )
+        .err()
+        .unwrap(),
+        "unsupported_container",
+    );
+    let cancelled = AtomicBool::new(true);
+    assert_code(
+        AudioDecoder::open_first(
+            File::open(fixture("cfr-bframes.mp4")).unwrap(),
+            AudioDecodeLimits::default(),
+            DecodeControl {
+                cancelled: &cancelled,
+                ..control()
+            },
+        )
+        .err()
+        .unwrap(),
+        "cancelled",
+    );
+    assert_code(
+        AudioDecoder::open_first(
+            File::open(fixture("cfr-bframes.mp4")).unwrap(),
+            AudioDecodeLimits {
+                max_io_bytes_per_call: 1,
+                ..Default::default()
+            },
+            control(),
+        )
+        .err()
+        .unwrap(),
+        "resource_limit",
+    );
+    assert_code(
+        AudioDecoder::open_first(
+            File::open(fixture("cfr-bframes.mp4")).unwrap(),
+            AudioDecodeLimits::default(),
+            DecodeControl {
+                timeout: Duration::ZERO,
+                ..control()
+            },
+        )
+        .err()
+        .unwrap(),
+        "invalid_configuration",
+    );
+}
+
+#[test]
 fn pcm_exact_samples_keep_rate_channel_slots_and_non_aligned_endpoint() {
     for (name, rate, channels, count) in [
         ("pcm-stereo-48000.wav", 48_000, 2, 8197_u32),

@@ -1,9 +1,12 @@
 # Native project workspace
 
 The application now connects the existing storage, measured import and picture
-plan boundaries to a native project workflow. It creates and opens `.deadpan`
-packages, registers managed or linked originals, inserts an entire source by
-explicit command, saves undo/redo, and inspects exact source or sequence frames.
+plan boundaries to a native project workflow. New chooses one video, creates a
+`.deadpan` package in Documents/Deadpan and initializes the complete original
+timeline automatically. Your edit evolves through reversible changes; Original
+stays pinned for browsing and deliberate reuse. A separate sound catalog admits
+external audio without changing picture or duration. Generic/legacy packages
+retain their broader register/insert workflow. See [the profile contract](SINGLE_ORIGINAL.md).
 It also wraps or updates root-beat Repeats, deletes root beats and changes an
 existing root Hold's duration. Playback, range operators, generated-provider
 rendering and export remain open.
@@ -14,7 +17,12 @@ rendering and export remain open.
 The UI uses a bounded command mailbox and takes immutable `Arc<Workspace>` updates
 without blocking on a mutex. Each workspace contains the committed document,
 compiled picture plan, qualified source catalog and history availability.
-Failed create/open operations preserve the prior project. Reopening the same
+Failed create/open operations preserve the prior project. Supported older schemas
+upgrade through the store's consistent-backup, validated migration on the service
+thread. Only a successfully opened and validated candidate replaces the current
+session; failed migration retains the old active project and import. Generic
+projects stay generic and the original database backup remains available.
+Reopening the same
 package reuses its writer session. Closing or switching cancels the old import
 and revokes its original handle before releasing the writer. Quit waits for an admitted project command to finish;
 background preparation does not block shutdown. New commands are rejected once
@@ -22,17 +30,30 @@ shutdown starts.
 
 A separate persistent import thread performs original retention, private
 snapshot creation, selected-stream decoding and receipt preparation. There is
-one active preparation and one cached complete-file token. Video import retains
+one active preparation and one cached complete-file token. Original preparation retains
 its measured available audio; failure to qualify selected audio fails the import.
-The current audio-file option selects stream zero. The complete stream picker,
+Sound import selects the first actual audio stream through bounded container
+admission, including an audio track after a video track. Explicit stream selection
+remains available in the backend. The complete stream picker,
 format matrix, relink dialog and security-scoped bookmarks are not implemented.
 Linked media therefore must remain reachable at its recorded path.
 
-Import registers the source without changing the sequence. Explicit insertion
+Initialization commits the qualified Original, measured presentation basis and
+full-source beat with a durable baseline in one transaction. Undo cannot cross
+that baseline; deleting every current beat does not unlock another video. An
+incomplete package stays Awaiting Source and can retry. New resolves the system
+Documents directory on the service thread, never cwd. Initial picker cancellation
+creates no package. Bounded names and exclusive creation prevent overwrite.
+
+Sound import registers audio without changing the sequence or stealing the
+Original selection and cursor. This is catalog registration; sound-event placement
+and mixing remain open. Legacy import also retains registration-only semantics.
+Explicit whole-original reuse (or generic source insertion)
 uses the caller's current revision, parent and insertion index, and the shared
 store transaction path. The first primary video insertion may select measured
 presentation cadence and geometry under the existing automatic-basis policy.
-Undo restores that policy along with the source beat.
+Generic insertion undo restores that policy along with the source beat. A V1
+baseline is fixed after initialization and retains its Original identity.
 
 A cached source can be inserted while another import prepares. An uncached source
 requires the import lane; its captured revision and target are preserved through
@@ -97,13 +118,19 @@ textures, and an empty sequence has no invented source frame. The
 records regression, native appearance and keyboard evidence.
 
 The cursor is a boundary in `[0, duration]`; the frame to its right is displayed,
-with the final preceding frame shown at the end. Sources appear on the left,
-sequence beats below the picture, and mode/context/boundary status beneath them.
+with the final preceding frame shown at the end. One Original and the separate
+sound catalog appear on the left, editable beat cards below the picture, and
+mode/context/focus/boundary plus contextual keycaps beneath them. Your edit and
+Original label the internal Sequence and Source contexts. Original/edit duration
+comparisons use project frames; Original browsing counts measured video frames.
+These counts can differ for VFR or offset media and are labeled separately.
 Source and beat widgets are virtualized; their derived lists are rebuilt when
 the document or search changes, not every redraw. Keyboard selection reveals the
 selected row. Sequence cursor motion selects the root beat to its right, or the
-last beat at the final boundary. The current strip presents root beats, not a
-complete nested editor.
+last beat at the final boundary. Compact cards have explicit half-open frame
+boundaries and a local yellow cursor; equal widths do not imply equal durations.
+The current strip presents root beats, not a complete nested editor. A conditional
+inspector describes the selected beat and offers real command-based parameters.
 
 Normal bindings include counts, `h/l`, `j/k`, `gg/G`, native arrows/Home/End,
 `u`/Ctrl-R and native Command shortcuts. Prefixes do not time out. Logical
@@ -118,14 +145,17 @@ Pointer-button input batches defer shortcut and command submission routing until
 widgets resolve their focus changes. Text still reaches the widgets; ordinary
 key-only navigation and hovering are unaffected.
 
-`⌘N` creates, `⌘O` opens, `⌘I` imports, and `⌘Return` inserts after the selected
-root beat or at sequence end. `/` searches; `:` opens command entry with
+`⌘N` chooses a new Original, `⌘O` opens an existing project, and `⌘I` adds sound
+in a Ready V1 project or chooses the Original for an incomplete project. Legacy
+projects retain generic import. `⌘Return` reuses the whole Original after the
+selected root beat or at sequence end. `/` searches; `?` opens keyboard help;
+`:` opens command entry with
 `insert`, `undo`, `redo`, `new`, `open`, `import`, `source`, `sequence`, `help`.
 Native panels are constructed on the main app thread and polled through a retained
 future/waker. One panel may be open at a time, and an active import disables another import
-chooser. Create always adds the `.deadpan` suffix while preserving an authored
-name or earlier suffix. Import captures its project session
-before opening the panel and rejects a result for a different session.
+chooser. Import captures its project session and revision before opening the
+panel and rejects a result for a different session or stale authored context.
+The File menu and contextual footer show only the current action's meaning.
 
 In Sequence context, `rr` wraps the current root beat in two total plays;
 `3rr` makes three total plays and `1rr` retains one. `dd` deletes one root beat.
@@ -133,7 +163,7 @@ Operator prefixes remain pending without a timer. Unsupported deletion counts,
 zero/overflow counts and conflicting post-operator counts fail explicitly.
 Held-key autorepeat cannot complete an edit operator. Changing context, pane or
 selection cancels the pending operator. Source context remains non-destructive
-and points to explicit insertion instead.
+and teaches browsing, returning to Your edit and explicit reuse instead.
 
 Command entry accepts `:repeat N`, `:wrap-repeat N`, `:delete`, and
 `:hold-duration Nf`. Repeat updates an existing selected Repeat or wraps another
@@ -152,3 +182,6 @@ resume, retained DSP/envelope domain and mark-lineage work still required.
 service, decoder, keyboard/focus and native interaction checks and their limits.
 The [root editing qualification](qualification/native-editing-2026-09-23.md)
 records Repeat, Delete, Hold-duration, completion-selection and focus evidence.
+The [single-Original qualification](qualification/single-original-2026-09-23.md)
+records the revised creation flow, protected baseline, separate sound catalog,
+design comparison and current verification limits.

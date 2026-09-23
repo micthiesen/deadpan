@@ -181,6 +181,8 @@ impl Fixture {
             originals: self.store.original_import_handle().unwrap(),
             can_undo: false,
             can_redo: false,
+            single_source: None,
+            original_duration: None,
         })
     }
 

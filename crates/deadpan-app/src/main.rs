@@ -1,6 +1,7 @@
 //! Native source preview and the shared headless command entrypoint.
 
 mod dialogs;
+mod library;
 mod navigation;
 mod presentation;
 mod preview;
@@ -48,8 +49,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let exit_observer = Rc::clone(&exited);
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
-            .with_inner_size([1100.0, 760.0])
-            .with_min_inner_size([640.0, 420.0])
+            .with_inner_size([1280.0, 820.0])
+            .with_min_inner_size([960.0, 640.0])
             .with_icon(egui::IconData::default()),
         renderer: eframe::Renderer::Wgpu,
         ..Default::default()

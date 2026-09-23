@@ -375,7 +375,14 @@ fn shutdown_finishes_an_admitted_command_before_releasing_the_store() {
     assert!(service.submit(ProjectRequest::Close).is_err());
     let (jobs, _receive_jobs) = mpsc::sync_channel(1);
     let (_replies, results) = mpsc::sync_channel(1);
-    service::run(shared, receive, jobs, results, std::thread::spawn(|| {}));
+    service::run(
+        shared,
+        receive,
+        jobs,
+        results,
+        std::thread::spawn(|| {}),
+        None,
+    );
     assert!(!service.is_busy());
     let update = service
         .take_update()
@@ -394,6 +401,126 @@ fn fixture(name: &str) -> PathBuf {
         .join(name)
         .canonicalize()
         .unwrap()
+}
+
+fn previous_native_project(path: &Path) -> rusqlite::Connection {
+    std::fs::create_dir(path).unwrap();
+    std::fs::create_dir(path.join("Snapshots")).unwrap();
+    let connection = rusqlite::Connection::open(path.join("project.sqlite")).unwrap();
+    connection
+        .pragma_update(None, "foreign_keys", false)
+        .unwrap();
+    connection
+        .execute_batch(include_str!(
+            "../../../deadpan-store/tests/fixtures/v16-history.sql"
+        ))
+        .unwrap();
+    connection
+}
+
+fn schema_version(connection: &rusqlite::Connection) -> u32 {
+    connection
+        .pragma_query_value(None, "user_version", |row| row.get(0))
+        .unwrap()
+}
+
+#[test]
+fn native_open_migrates_authentic_schema16_with_a_backup_and_keeps_it_generic() {
+    let scratch = tempfile::tempdir().unwrap();
+    let path = scratch.path().join("previous-native.deadpan");
+    let database = previous_native_project(&path);
+    let original_json: String = database.query_row("SELECT document FROM revisions WHERE id=(SELECT head_revision FROM state WHERE singleton=1)", [], |row| row.get(0)).unwrap();
+    let original = ProjectDocument::from_json(&original_json).unwrap();
+    let history_count: i64 = database
+        .query_row("SELECT count(*) FROM history", [], |row| row.get(0))
+        .unwrap();
+    assert_eq!(schema_version(&database), 16);
+    let service = ProjectService::new(Arc::new(|| {})).unwrap();
+    let opened = command(&service, ProjectRequest::Open(path.clone()));
+    assert!(opened.error.is_none(), "{:?}", opened.error);
+    assert!(opened.message.unwrap().contains("original database backup"));
+    let workspace = opened.workspace.unwrap();
+    assert_eq!(*workspace.document, original);
+    assert!(workspace.single_source.is_none());
+    assert!(workspace.original_duration.is_none());
+    assert_eq!(
+        schema_version(&database),
+        deadpan_store::DATABASE_SCHEMA_VERSION
+    );
+    let backups = std::fs::read_dir(path.join("Snapshots"))
+        .unwrap()
+        .map(|entry| entry.unwrap().path())
+        .collect::<Vec<_>>();
+    assert_eq!(backups.len(), 1);
+    let backup = rusqlite::Connection::open(&backups[0]).unwrap();
+    assert_eq!(schema_version(&backup), 16);
+    let saved_json: String = backup.query_row("SELECT document FROM revisions WHERE id=(SELECT head_revision FROM state WHERE singleton=1)", [], |row| row.get(0)).unwrap();
+    assert_eq!(saved_json, original_json);
+    assert_eq!(
+        database
+            .query_row("SELECT count(*) FROM history", [], |row| row
+                .get::<_, i64>(0))
+            .unwrap(),
+        history_count
+    );
+    command(&service, ProjectRequest::Close);
+    let reopened = command(&service, ProjectRequest::Open(path.clone()));
+    assert_eq!(reopened.message.as_deref(), Some("Project opened"));
+    assert_eq!(*reopened.workspace.unwrap().document, original);
+    assert_eq!(
+        std::fs::read_dir(path.join("Snapshots")).unwrap().count(),
+        1
+    );
+}
+
+#[test]
+fn failed_native_migration_retains_the_current_project_and_its_active_preparation() {
+    let scratch = tempfile::tempdir().unwrap();
+    let path = scratch.path().join("invalid-previous.deadpan");
+    let database = previous_native_project(&path);
+    database.execute("UPDATE history SET request=json_set(request,'$.command.type','unrecognized_command') WHERE id=(SELECT min(id) FROM history)", []).unwrap();
+    let invalid_request: String = database
+        .query_row(
+            "SELECT request FROM history ORDER BY id LIMIT 1",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap();
+    let harness = Harness::new();
+    let current = create(&harness.service, &scratch.path().join("current.deadpan"));
+    import(&harness.service, "cfr-bframes.mp4");
+    let active = harness.job();
+    let failed = command(&harness.service, ProjectRequest::Open(path.clone()));
+    assert!(
+        failed
+            .error
+            .unwrap()
+            .contains("Migration failed; retained backup")
+    );
+    let retained = failed.workspace.unwrap();
+    assert_eq!(retained.session, current.session);
+    assert_eq!(*retained.document, *current.document);
+    assert!(!active.cancelled.load(Ordering::Acquire));
+    assert_eq!(schema_version(&database), 16);
+    assert_eq!(
+        database
+            .query_row(
+                "SELECT request FROM history ORDER BY id LIMIT 1",
+                [],
+                |row| row.get::<_, String>(0)
+            )
+            .unwrap(),
+        invalid_request
+    );
+    assert_eq!(
+        std::fs::read_dir(path.join("Snapshots")).unwrap().count(),
+        1
+    );
+    harness.finish(active);
+    harness.finish(harness.job());
+    let ready = complete(&harness.service);
+    assert_eq!(ready.session, current.session);
+    assert_eq!(ready.sources.len(), 1);
 }
 
 fn wait(service: &ProjectService, predicate: impl Fn(&ProjectUpdate) -> bool) -> ProjectUpdate {
@@ -479,6 +606,10 @@ struct Harness {
 
 impl Harness {
     fn new() -> Self {
+        Self::with_library(None)
+    }
+
+    fn with_library(library: Option<ProjectLibrary>) -> Self {
         let shared = Arc::new(Shared {
             busy: AtomicBool::new(false),
             stopping: AtomicBool::new(false),
@@ -490,7 +621,7 @@ impl Harness {
         let (replies, results) = mpsc::sync_channel(1);
         let state = shared.clone();
         let worker = std::thread::spawn(|| {});
-        std::thread::spawn(move || service::run(state, receive, sender, results, worker));
+        std::thread::spawn(move || service::run(state, receive, sender, results, worker, library));
         Self {
             service: ProjectService { requests, shared },
             jobs,
@@ -520,6 +651,347 @@ impl Harness {
         self.finish(self.job());
         complete(&self.service)
     }
+}
+
+#[test]
+fn native_new_starts_with_the_full_original_and_history_stops_at_that_baseline() {
+    let scratch = tempfile::tempdir().unwrap();
+    let service = ProjectService::start(
+        Arc::new(|| {}),
+        Some(ProjectLibrary::from_documents(scratch.path().join("Documents")).unwrap()),
+    )
+    .unwrap();
+    service
+        .submit(ProjectRequest::CreateFromSource {
+            path: fixture("cfr-bframes.mp4"),
+        })
+        .unwrap();
+    let initialized = wait(&service, |update| {
+        update.import.as_ref().is_some_and(|status| {
+            matches!(status.stage, ImportStage::Complete | ImportStage::Failed)
+        })
+    });
+    assert!(initialized.error.is_none(), "{:?}", initialized.error);
+    assert_eq!(
+        initialized.import.as_ref().unwrap().stage,
+        ImportStage::Complete,
+        "{:?}",
+        initialized.import
+    );
+    let before = initialized.workspace.unwrap();
+    let Some(SingleSourceState::Ready { asset, node, .. }) = &before.single_source else {
+        panic!("original not initialized")
+    };
+    assert_eq!(
+        before.path,
+        scratch
+            .path()
+            .join("Documents/Deadpan/cfr-bframes.deadpan")
+            .canonicalize()
+            .unwrap()
+    );
+    assert_eq!(before.document.nodes().len(), 2);
+    assert_eq!(before.document.duration().unwrap().frames(), 120);
+    assert_eq!(before.sources.len(), 1);
+    assert_eq!(&initialized.committed.unwrap().selected_node.unwrap(), node);
+    assert!(!before.can_undo);
+    let asset = asset.clone();
+    let node = node.clone();
+    let rejected = command(
+        &service,
+        ProjectRequest::Import {
+            path: fixture("offset-bframes.mp4"),
+            media: ImportMedia::Video,
+            ownership: OriginalOwnership::Managed,
+        },
+    );
+    assert!(rejected.error.unwrap().contains("one Original"));
+    assert_eq!(*rejected.workspace.unwrap().document, *before.document);
+    let repeated = edited(
+        &service,
+        &before,
+        ProjectEdit::WrapRepeat { node, plays: 3 },
+    )
+    .workspace
+    .unwrap();
+    assert_eq!(repeated.document.duration().unwrap().frames(), 360);
+    let undone = command(
+        &service,
+        ProjectRequest::Undo {
+            expected_revision: repeated.document.revision_id().clone(),
+        },
+    )
+    .workspace
+    .unwrap();
+    assert_eq!(undone.document.nodes(), before.document.nodes());
+    assert!(!undone.can_undo);
+    let reused = insert(&service, &undone, &asset);
+    assert!(reused.error.is_none(), "{:?}", reused.error);
+    assert_eq!(
+        reused
+            .workspace
+            .unwrap()
+            .document
+            .duration()
+            .unwrap()
+            .frames(),
+        240
+    );
+    command(&service, ProjectRequest::Close);
+    let reopened = command(&service, ProjectRequest::Open(before.path.clone()))
+        .workspace
+        .unwrap();
+    assert_eq!(reopened.single_source, before.single_source);
+    assert_eq!(reopened.document.duration().unwrap().frames(), 240);
+}
+
+#[test]
+fn interrupted_initialization_is_recoverable_and_never_overlaps_after_project_switch() {
+    let scratch = tempfile::tempdir().unwrap();
+    let library = ProjectLibrary::from_documents(scratch.path().join("Documents")).unwrap();
+    let harness = Harness::with_library(Some(library.clone()));
+    let created = command(
+        &harness.service,
+        ProjectRequest::CreateFromSource {
+            path: fixture("cfr-bframes.mp4"),
+        },
+    )
+    .workspace
+    .unwrap();
+    assert!(matches!(
+        created.single_source,
+        Some(SingleSourceState::AwaitingSource { .. })
+    ));
+    let active = harness.job();
+    let other = create(&harness.service, &scratch.path().join("legacy.deadpan"));
+    assert!(active.cancelled.load(Ordering::Acquire));
+    let rejected = command(
+        &harness.service,
+        ProjectRequest::CreateFromSource {
+            path: fixture("offset-bframes.mp4"),
+        },
+    );
+    assert!(rejected.error.unwrap().contains("current import"));
+    assert_eq!(rejected.workspace.unwrap().session, other.session);
+    assert_eq!(std::fs::read_dir(library.root()).unwrap().count(), 1);
+    harness
+        .replies
+        .send(worker::Reply {
+            id: active.id,
+            result: Err("cancelled".into()),
+        })
+        .unwrap();
+    // Wait until the reply has drained by reopening, then retrying initialization.
+    let reopened = command(&harness.service, ProjectRequest::Open(created.path.clone()))
+        .workspace
+        .unwrap();
+    assert!(matches!(
+        reopened.single_source,
+        Some(SingleSourceState::AwaitingSource { .. })
+    ));
+    let stale = command(
+        &harness.service,
+        ProjectRequest::InitializeSource {
+            expected_session: created.session,
+            expected_revision: created.document.revision_id().clone(),
+            path: fixture("cfr-bframes.mp4"),
+        },
+    );
+    assert!(stale.error.unwrap().contains("session changed"));
+    let retry = command(
+        &harness.service,
+        ProjectRequest::InitializeSource {
+            expected_session: reopened.session,
+            expected_revision: reopened.document.revision_id().clone(),
+            path: fixture("cfr-bframes.mp4"),
+        },
+    );
+    assert!(retry.error.is_none(), "{:?}", retry.error);
+    harness.finish(harness.job());
+    harness.finish(harness.job());
+    let ready = complete(&harness.service);
+    assert!(matches!(
+        ready.single_source,
+        Some(SingleSourceState::Ready { .. })
+    ));
+    assert_eq!(ready.document.duration().unwrap().frames(), 120);
+}
+
+#[test]
+fn sounds_are_audio_only_catalog_entries_and_bad_streams_leave_the_edit_intact() {
+    let scratch = tempfile::tempdir().unwrap();
+    let harness = Harness::with_library(Some(
+        ProjectLibrary::from_documents(scratch.path().join("Documents")).unwrap(),
+    ));
+    command(
+        &harness.service,
+        ProjectRequest::CreateFromSource {
+            path: fixture("cfr-bframes.mp4"),
+        },
+    );
+    harness.finish(harness.job());
+    harness.finish(harness.job());
+    let ready = complete(&harness.service);
+    let source = fixture("../audio-fixtures/pcm-stereo-48000.wav");
+    let request = |stream| ProjectRequest::ImportSound {
+        expected_session: ready.session,
+        expected_revision: ready.document.revision_id().clone(),
+        path: source.clone(),
+        stream,
+        ownership: OriginalOwnership::Managed,
+    };
+    assert!(command(&harness.service, request(None)).error.is_none());
+    harness.finish(harness.job());
+    harness.finish(harness.job());
+    let sound = wait(&harness.service, |update| {
+        update
+            .import
+            .as_ref()
+            .is_some_and(|status| status.stage == ImportStage::Complete)
+    });
+    assert_eq!(sound.message.as_deref(), Some("Sound added to the catalog"));
+    let sound = sound.workspace.unwrap();
+    assert_eq!(
+        sound.document.duration().unwrap(),
+        ready.document.duration().unwrap()
+    );
+    assert_eq!(sound.document.nodes(), ready.document.nodes());
+    assert_eq!(sound.sources.len(), 2);
+    assert_eq!(
+        sound
+            .sources
+            .values()
+            .filter(|source| source.receipt.snapshot().video().is_none()
+                && source.receipt.snapshot().audio().is_some())
+            .count(),
+        1
+    );
+    let stale = command(&harness.service, request(Some(1)));
+    assert!(stale.error.unwrap().contains("Project changed"));
+    let failed = command(
+        &harness.service,
+        ProjectRequest::ImportSound {
+            expected_session: sound.session,
+            expected_revision: sound.document.revision_id().clone(),
+            path: source,
+            stream: Some(1),
+            ownership: OriginalOwnership::Managed,
+        },
+    );
+    assert!(failed.error.is_none());
+    harness.finish(harness.job());
+    let job = harness.job();
+    let result = worker::prepare(&job);
+    assert!(result.is_err());
+    harness
+        .replies
+        .send(worker::Reply { id: job.id, result })
+        .unwrap();
+    let failed = wait(&harness.service, |update| {
+        update
+            .import
+            .as_ref()
+            .is_some_and(|status| status.stage == ImportStage::Failed)
+    });
+    assert_eq!(*failed.workspace.unwrap().document, *sound.document);
+    assert!(
+        command(
+            &harness.service,
+            ProjectRequest::ImportSound {
+                expected_session: sound.session,
+                expected_revision: sound.document.revision_id().clone(),
+                path: fixture("cfr-bframes.mp4"),
+                stream: None,
+                ownership: OriginalOwnership::Managed,
+            }
+        )
+        .error
+        .is_none()
+    );
+    harness.finish(harness.job());
+    harness.finish(harness.job());
+    let mp4_sound = complete(&harness.service);
+    assert_eq!(mp4_sound.document.nodes(), sound.document.nodes());
+    assert!(mp4_sound.sources.values().any(|source| {
+        source.receipt.snapshot().video().is_none()
+            && source
+                .receipt
+                .snapshot()
+                .audio()
+                .is_some_and(|audio| audio.stream().stream_index == 1)
+    }));
+}
+
+#[test]
+fn failed_original_qualification_reopens_as_an_incomplete_project_for_retry() {
+    let scratch = tempfile::tempdir().unwrap();
+    let harness = Harness::with_library(Some(
+        ProjectLibrary::from_documents(scratch.path().join("Documents")).unwrap(),
+    ));
+    let created = command(
+        &harness.service,
+        ProjectRequest::CreateFromSource {
+            path: fixture("../audio-fixtures/pcm-stereo-48000.wav"),
+        },
+    )
+    .workspace
+    .unwrap();
+    harness.finish(harness.job());
+    let job = harness.job();
+    let result = worker::prepare(&job);
+    assert!(
+        result.is_err(),
+        "audio alone cannot establish an Original video"
+    );
+    harness
+        .replies
+        .send(worker::Reply { id: job.id, result })
+        .unwrap();
+    let failed = wait(&harness.service, |update| {
+        update
+            .import
+            .as_ref()
+            .is_some_and(|status| status.stage == ImportStage::Failed)
+    });
+    let workspace = failed.workspace.unwrap();
+    assert!(matches!(
+        workspace.single_source,
+        Some(SingleSourceState::AwaitingSource { .. })
+    ));
+    assert_eq!(*workspace.document, *created.document);
+    command(&harness.service, ProjectRequest::Close);
+    let reopened = command(
+        &harness.service,
+        ProjectRequest::Open(workspace.path.clone()),
+    )
+    .workspace
+    .unwrap();
+    assert!(matches!(
+        reopened.single_source,
+        Some(SingleSourceState::AwaitingSource { .. })
+    ));
+    assert!(
+        command(
+            &harness.service,
+            ProjectRequest::InitializeSource {
+                expected_session: reopened.session,
+                expected_revision: reopened.document.revision_id().clone(),
+                path: fixture("cfr-bframes.mp4")
+            }
+        )
+        .error
+        .is_none()
+    );
+    harness.finish(harness.job());
+    harness.finish(harness.job());
+    assert_eq!(
+        complete(&harness.service)
+            .document
+            .duration()
+            .unwrap()
+            .frames(),
+        120
+    );
 }
 
 #[test]

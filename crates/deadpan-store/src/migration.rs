@@ -45,7 +45,7 @@ impl ProjectStore {
                 backup: None,
             });
         }
-        if !matches!(version, 1..=15) {
+        if !matches!(version, 1..=16) {
             return Err(StoreError::UnsupportedSchema(version));
         }
         let lock = acquire_lock(&package)?;
@@ -151,6 +151,9 @@ fn migrate_candidate(
     if source_version < 14 {
         crate::source_registration::create_tables(&transaction)?;
     }
+    transaction.execute_batch("ALTER TABLE state ADD COLUMN workflow TEXT NOT NULL DEFAULT 'generic' CHECK(workflow IN ('generic','single_source_v1'));")?;
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    crate::single_source::create_tables(&transaction)?;
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     crate::source_registration::check_stored_sizes(&transaction)?;
     validation::check_stored_sizes(&transaction, schema::MAX_DOCUMENT_BYTES)?;
@@ -196,6 +199,8 @@ fn migrate_candidate(
     crate::original_media::validate_store(&transaction)?;
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     crate::source_registration::validate_store(&transaction)?;
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    crate::single_source::validate_store(&transaction)?;
     transaction.commit()?;
     candidate_file.as_file().sync_all()?;
     // One step copies all pages in one destination transaction. SQLITE_BUSY

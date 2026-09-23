@@ -14,6 +14,7 @@ const EXTRA_BYTES: u64 = 64 * 1024;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Selection {
     Audio(u32),
+    FirstAudio,
     Video,
 }
 
@@ -377,6 +378,33 @@ pub(crate) fn validate(
     limits: InputLimits,
     control: DecodeControl<'_>,
 ) -> Result<u64> {
+    Ok(validate_selection(file, policy, limits, control)?.io_bytes)
+}
+
+/// Resolve the first audio stream from the same bounded grammar pass that
+/// admits its allocation. Never probe or repeatedly open guessed stream IDs.
+pub(crate) fn validate_audio(
+    file: &File,
+    selected: Option<u32>,
+    limits: InputLimits,
+    control: DecodeControl<'_>,
+) -> Result<(u32, u64)> {
+    let policy = selected.map_or(Selection::FirstAudio, Selection::Audio);
+    let admitted = validate_selection(file, policy, limits, control)?;
+    Ok((admitted.audio.ok_or_else(selection)?, admitted.io_bytes))
+}
+
+struct Admission {
+    io_bytes: u64,
+    audio: Option<u32>,
+}
+
+fn validate_selection(
+    file: &File,
+    policy: Selection,
+    limits: InputLimits,
+    control: DecodeControl<'_>,
+) -> Result<Admission> {
     if control.timeout.is_zero() || control.timeout > std::time::Duration::from_secs(60) {
         return Err(SourceDecodeError::InvalidConfiguration(
             "timeout must be positive and at most 60 seconds",
@@ -434,24 +462,33 @@ pub(crate) fn validate(
             },
             DecodeControl { timeout, ..control },
         )?;
-        return Ok(reader.read_bytes + charged);
+        return Ok(Admission {
+            io_bytes: reader.read_bytes + charged,
+            audio: None,
+        });
     }
-    if magic == *b"RIFF" {
-        let Selection::Audio(selected_stream) = policy else {
-            return Err(selection());
+    let audio = if magic == *b"RIFF" {
+        let selected_stream = match policy {
+            Selection::Audio(index) => index,
+            Selection::FirstAudio => 0,
+            Selection::Video => return Err(selection()),
         };
         wave(&mut reader, selected_stream)?;
+        Some(selected_stream)
     } else if reader.length >= 8 && reader.bytes::<4>(4)? == *b"ftyp" {
-        mp4(&mut reader, policy)?;
+        mp4(&mut reader, policy)?
     } else {
         return Err(SourceDecodeError::Native {
             code: "unsupported_container".into(),
             message: "only strict MP4, finite FFV1 Matroska, and PCM16 RIFF/WAVE are admitted"
                 .into(),
         });
-    }
+    };
     reader.check()?;
-    Ok(reader.read_bytes)
+    Ok(Admission {
+        io_bytes: reader.read_bytes,
+        audio,
+    })
 }
 
 fn wave(r: &mut Reader<'_>, selected: u32) -> Result<()> {
@@ -545,7 +582,7 @@ fn wave(r: &mut Reader<'_>, selected: u32) -> Result<()> {
     require(data && align.is_some(), "WAVE has no complete PCM stream")
 }
 
-fn mp4(r: &mut Reader<'_>, policy: Selection) -> Result<()> {
+fn mp4(r: &mut Reader<'_>, policy: Selection) -> Result<Option<u32>> {
     let mut cursor = 0;
     let mut brands = false;
     let mut movie = false;
@@ -618,22 +655,34 @@ fn mp4(r: &mut Reader<'_>, policy: Selection) -> Result<()> {
     for track in &tracks {
         validate_track(r, track, media)?;
     }
-    let selected = match policy {
+    match policy {
         Selection::Audio(index) => {
-            tracks.get(index as usize).and_then(|track| track.codec) == Some(Kind::Audio)
+            if tracks.get(index as usize).and_then(|track| track.codec) != Some(Kind::Audio) {
+                return Err(selection());
+            }
+            Ok(Some(index))
+        }
+        Selection::FirstAudio => {
+            let index = tracks
+                .iter()
+                .position(|track| track.codec == Some(Kind::Audio))
+                .ok_or_else(selection)?;
+            Ok(Some(
+                u32::try_from(index).map_err(|_| limit("audio stream index overflow"))?,
+            ))
         }
         Selection::Video => {
-            tracks
+            if tracks
                 .iter()
                 .filter(|track| track.codec == Some(Kind::Video))
                 .count()
-                == 1
+                != 1
+            {
+                return Err(selection());
+            }
+            Ok(None)
         }
-    };
-    if !selected {
-        return Err(selection());
     }
-    Ok(())
 }
 
 fn movie_box(r: &mut Reader<'_>, span: Span, tracks: &mut Vec<Track>) -> Result<()> {
@@ -1616,6 +1665,28 @@ mod tests {
     }
 
     #[test]
+    fn first_audio_uses_complete_admitted_inventory_without_extra_header_reads() {
+        for (videos, audio, expected) in [(0, 2, 0), (1, 2, 1), (2, 1, 2)] {
+            let input = file(&with_tracks(videos, audio));
+            let limits = AudioDecodeLimits::default();
+            let (selected, first_bytes) =
+                super::validate_audio(&input, None, limits.into(), control()).unwrap();
+            let (exact, exact_bytes) =
+                super::validate_audio(&input, Some(expected), limits.into(), control()).unwrap();
+            assert_eq!((selected, exact), (expected, expected));
+            assert_eq!(first_bytes, exact_bytes);
+        }
+        let error = super::validate_audio(
+            &file(&with_tracks(1, 0)),
+            None,
+            AudioDecodeLimits::default().into(),
+            control(),
+        )
+        .unwrap_err();
+        assert_eq!(code(error), "unsupported_streams");
+    }
+
+    #[test]
     fn every_committed_mp4_passes_video_allocation_admission() {
         use std::io::{Seek, SeekFrom};
         let fixtures = [
@@ -1867,6 +1938,18 @@ mod tests {
             let at = tag(&bytes, name);
             set32(&mut bytes, at + relative, value);
             reject(&bytes, expected);
+            assert_eq!(
+                code(
+                    super::validate_audio(
+                        &file(&bytes),
+                        None,
+                        AudioDecodeLimits::default().into(),
+                        control()
+                    )
+                    .unwrap_err()
+                ),
+                expected
+            );
         }
     }
     #[test]

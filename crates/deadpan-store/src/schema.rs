@@ -3,7 +3,7 @@ use rusqlite::{Connection, limits::Limit};
 use crate::StoreError;
 
 // Storage has operational tables beyond the independently versioned core JSON.
-pub const VERSION: u32 = 16;
+pub const VERSION: u32 = 17;
 pub const APPLICATION_ID: u32 = 0x4450_4e31;
 pub const MAX_DOCUMENT_BYTES: usize = deadpan_core::MAX_DOCUMENT_JSON_BYTES;
 
@@ -17,7 +17,7 @@ pub fn configure(connection: &Connection) -> Result<(), StoreError> {
 
 pub fn check_version(connection: &Connection) -> Result<(), StoreError> {
     let version = read_version(connection)?;
-    if matches!(version, 1..=15) {
+    if matches!(version, 1..=16) {
         return Err(StoreError::MigrationRequired(version));
     }
     if version != VERSION {
@@ -57,7 +57,8 @@ pub fn create(connection: &mut Connection) -> Result<(), StoreError> {
         CREATE TABLE state (
             singleton INTEGER PRIMARY KEY CHECK (singleton=1),
             head_revision TEXT NOT NULL REFERENCES revisions(id),
-            cursor INTEGER REFERENCES history(id)
+            cursor INTEGER REFERENCES history(id),
+            workflow TEXT NOT NULL DEFAULT 'generic' CHECK(workflow IN ('generic','single_source_v1'))
         ) STRICT;
         CREATE TABLE redo (
             position INTEGER PRIMARY KEY,
@@ -72,6 +73,8 @@ pub fn create(connection: &mut Connection) -> Result<(), StoreError> {
     crate::original_media::create_tables(&transaction)?;
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     crate::source_registration::create_tables(&transaction)?;
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    crate::single_source::create_tables(&transaction)?;
     transaction.pragma_update(None, "application_id", APPLICATION_ID)?;
     transaction.pragma_update(None, "user_version", VERSION)?;
     transaction.commit()?;

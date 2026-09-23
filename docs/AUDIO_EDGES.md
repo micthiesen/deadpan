@@ -24,13 +24,13 @@ Direct policy changes preserve temporal coordinates, marks and presentation
 basis. Occurrence edits preserve timing while copying or relocating owned marks
 under the existing isolation rules; their mark inventory may grow. Edge choices
 do not lock an empty provisional project's frame rate. Core schema 11 and
-database schema 16 persist the new intent. Database schemas 1 through 15 replay
+database schema 16 introduced this intent, retained in database schema 17. Database schemas 1 through 15 replay
 their complete history through strict frozen adapters and gain automatic edges.
 Legacy snapshots, command subtrees and forward/inverse patches reject the new
 fields, including null values, and legacy commands reject both direct and
 occurrence edge edits. Migration retains its consistent pre-upgrade backup.
 Database 15 uses frozen core schema 10 and keeps its existing basis state and
-presentation transactions. Operational media/generation rows are unchanged.
+presentation transactions. Database 16 already uses core schema 11 and keeps its authored edges. Database 17 adds the optional single-Original profile without inventing one for legacy projects. Operational media/generation rows are unchanged.
 
 ## Exact ownership and precedence
 

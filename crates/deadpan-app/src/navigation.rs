@@ -16,9 +16,34 @@ pub enum Pane {
     #[default]
     Viewer,
     Sequence,
+    Inspector,
 }
 
 impl Pane {
+    pub fn visible(self, inspector: bool) -> Self {
+        if self == Self::Inspector && !inspector {
+            Self::Viewer
+        } else {
+            self
+        }
+    }
+
+    pub fn cycle_visible(self, reverse: bool, inspector: bool) -> Self {
+        if !inspector {
+            return if self == Self::Inspector {
+                Self::Viewer
+            } else {
+                self.cycle(reverse)
+            };
+        }
+        match (self, reverse) {
+            (Self::Sources, false) | (Self::Inspector, true) => Self::Viewer,
+            (Self::Viewer, false) | (Self::Sequence, true) => Self::Inspector,
+            (Self::Inspector, false) | (Self::Sources, true) => Self::Sequence,
+            _ => Self::Sources,
+        }
+    }
+
     pub fn cycle(self, reverse: bool) -> Self {
         match (self, reverse) {
             (Self::Sources, false) | (Self::Sequence, true) => Self::Viewer,
@@ -43,6 +68,7 @@ pub enum Action {
     Pane { reverse: bool },
     Search,
     Command,
+    Help,
     Escape,
     OfferInsert,
     Edit(BeatEdit),
@@ -99,6 +125,19 @@ impl Bindings {
         )
     }
 
+    pub fn pending_hint(&self) -> Option<&'static str> {
+        if self.count_overflow {
+            return Some("Count is too large. Esc clears it.");
+        }
+        match self.operator {
+            Some(Key::R) => Some("r completes the Repeat · Esc cancels"),
+            Some(Key::D) => Some("d cuts this whole beat · Esc cancels"),
+            _ if self.g => Some("g goes to the start · Esc cancels"),
+            _ if self.count.is_some() => Some("Then h/l to move or rr to repeat · Esc cancels"),
+            _ => None,
+        }
+    }
+
     pub fn key(&mut self, key: Key, modifiers: Modifiers, text: bool, ime: bool) -> Option<Action> {
         if ime {
             self.clear();
@@ -147,12 +186,12 @@ impl Bindings {
         // These are logical symbols: layouts may need Shift or Option to type
         // them. Never infer a colon from the physical US semicolon position.
         if !modifiers.ctrl && !modifiers.command && !modifiers.mac_cmd {
-            if key == Key::Colon || key == Key::Slash {
+            if matches!(key, Key::Colon | Key::Slash | Key::Questionmark) {
                 self.clear();
-                return Some(if key == Key::Colon {
-                    Action::Command
-                } else {
-                    Action::Search
+                return Some(match key {
+                    Key::Colon => Action::Command,
+                    Key::Questionmark => Action::Help,
+                    _ => Action::Search,
                 });
             }
             if !self.g
@@ -259,6 +298,16 @@ pub fn allows_key_repeat(key: Key, modifiers: Modifiers) -> bool {
                 | Key::ArrowUp
                 | Key::ArrowDown
         )
+}
+
+pub fn inspector_parameter_key(
+    key: Key,
+    modifiers: Modifiers,
+    pane: Pane,
+    text: bool,
+    ime: bool,
+) -> bool {
+    key == Key::Enter && modifiers == Modifiers::NONE && pane == Pane::Inspector && !text && !ime
 }
 
 pub fn boundary_step(current: u64, length: u64, forward: bool, count: u32) -> u64 {
@@ -716,6 +765,90 @@ mod tests {
             assert_eq!(pane.cycle(false).cycle(true), pane);
             assert_eq!(pane.cycle(true).cycle(false), pane);
             assert_eq!(pane.cycle(false).cycle(false).cycle(false), pane);
+        }
+    }
+
+    #[test]
+    fn inspector_participates_only_while_visible() {
+        let visible = [Pane::Sources, Pane::Viewer, Pane::Inspector, Pane::Sequence];
+        for (index, pane) in visible.into_iter().enumerate() {
+            assert_eq!(
+                pane.cycle_visible(false, true),
+                visible[(index + 1) % visible.len()]
+            );
+            assert_eq!(
+                pane.cycle_visible(false, true).cycle_visible(true, true),
+                pane
+            );
+        }
+        for pane in [Pane::Sources, Pane::Viewer, Pane::Sequence] {
+            for reverse in [false, true] {
+                assert_ne!(pane.cycle_visible(reverse, false), Pane::Inspector);
+                assert_eq!(pane.cycle_visible(reverse, false), pane.cycle(reverse));
+            }
+        }
+        assert_eq!(Pane::Inspector.cycle_visible(false, false), Pane::Viewer);
+        assert_eq!(Pane::Inspector.visible(false), Pane::Viewer);
+        assert_eq!(Pane::Inspector.visible(true), Pane::Inspector);
+        assert_eq!(Pane::Sequence.visible(false), Pane::Sequence);
+    }
+
+    #[test]
+    fn inspector_enter_is_distinct_from_native_text_and_composition() {
+        assert!(inspector_parameter_key(
+            Key::Enter,
+            Modifiers::NONE,
+            Pane::Inspector,
+            false,
+            false
+        ));
+        for (pane, text, ime) in [
+            (Pane::Viewer, false, false),
+            (Pane::Sequence, false, false),
+            (Pane::Inspector, true, false),
+            (Pane::Inspector, false, true),
+        ] {
+            assert!(!inspector_parameter_key(
+                Key::Enter,
+                Modifiers::NONE,
+                pane,
+                text,
+                ime
+            ));
+        }
+        assert!(!inspector_parameter_key(
+            Key::Enter,
+            Modifiers::COMMAND,
+            Pane::Inspector,
+            false,
+            false
+        ));
+        assert!(!inspector_parameter_key(
+            Key::Escape,
+            Modifiers::NONE,
+            Pane::Inspector,
+            false,
+            false
+        ));
+    }
+
+    #[test]
+    fn logical_question_mark_opens_help_and_remains_text_during_editing() {
+        for modifiers in [Modifiers::NONE, Modifiers::SHIFT, Modifiers::ALT] {
+            let mut bindings = Bindings::default();
+            assert_eq!(
+                bindings.key(Key::Questionmark, modifiers, false, false),
+                Some(Action::Help)
+            );
+            assert_eq!(
+                bindings.key(Key::Questionmark, modifiers, true, false),
+                None
+            );
+            assert_eq!(
+                bindings.key(Key::Questionmark, modifiers, false, true),
+                None
+            );
+            assert!(bindings.pending().is_empty());
         }
     }
 }

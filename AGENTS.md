@@ -1,14 +1,25 @@
 # Deadpan
 
-Deadpan is a native macOS structural video editor for timing and attention, built around editable beats and a keyboard-first workflow.
+Deadpan is a native macOS structural editor for massaging one original video into a weird YTP, built around editable beats and a keyboard-first workflow.
 
 ## Product authority and current scope
 
 Read [the full specification](docs/spec/DEADPAN_SPEC.md) and [agent handoff](docs/spec/AGENT_HANDOFF.md) before feature work. The Markdown specification is normative; summaries here do not reduce its scope. [Requirements](docs/REQUIREMENTS.md) tracks DP-01 through DP-24 and Gates A through G. Keep code, tests, evidence, and remaining work current there.
 
-The current foundation includes validated beat documents, reversible structural commands, persistent marks with edit transforms, sparse per-play overrides and automatic nested occurrence isolation, stable repeat identities, exact indexed picture plans and boundary queries, SQLite project/history storage with schema migration, and a shared headless command entrypoint. The native UI creates/opens projects, registers local managed/linked media, explicitly inserts whole sources, wraps/updates root-beat Repeats, deletes root beats, changes existing root Hold durations, navigates durable undo/redo, and inspects exact Source/Sequence frames through a persistent decoder and shared SDR GPU pipeline. It is not yet a usable video editor or release candidate. All product requirements remain open or partial. A button, mock worker, downloaded model, ignored test, or proposed target does not prove implementation.
+The current foundation includes validated beat documents, reversible structural commands, persistent marks with edit transforms, sparse per-play overrides and automatic nested occurrence isolation, stable repeat identities, exact indexed picture plans and boundary queries, SQLite project/history storage with schema migration, and a shared headless command entrypoint. The native UI creates one-Original projects in system Documents/Deadpan with an automatically initialized full-source baseline, opens legacy projects without changing their profile, registers audio into a separate sound catalog, reuses the whole Original, wraps/updates root-beat Repeats, deletes root beats, changes existing root Hold durations, navigates durable undo/redo, and inspects exact Source/Sequence frames through a persistent decoder and shared SDR GPU pipeline. It is not yet a usable video editor or release candidate. All product requirements remain open or partial. A button, mock worker, downloaded model, ignored test, or proposed target does not prove implementation.
 
 ## Design philosophy
+
+- Center V1 on one immutable Original. A new project starts with the entire video already on the timeline; cuts, repeats, holds, reframing and effects are reversible changes to that starting point. Reuse regions of the same video, allow external audio-only sound effects and accepted AI Hold extensions, and offer no additional source-video import in the V1 workspace. Preserve capable generic backend primitives and existing multi-video projects in an explicit compatibility view.
+- Keep the original identity and full-source undo baseline in the authoritative SQLite workflow profile. Undoing edits or deleting every beat must never unlock a different Original. Create new native projects under the system Documents/Deadpan directory, independent of cwd and media location; preserve existing packages where they are. Initial picker cancellation creates nothing; interrupted preparation remains explicitly recoverable.
+- Teach keys where actions live. Show ordinary action keycaps, exact pending prefixes and valid next keys, selection scope and a distinct focused-pane cue. Contextual searchable help is the secondary reference. Keep Original and edited clocks visibly separate.
+
+Use the [imagegen interface boards and interaction contract](docs/design/README.md)
+as visual targets for native UI work, especially the enlarged workspace target.
+Keep the exact prompts and generated assets in the repository. Match hierarchy,
+spacing, color, selection and keyboard discoverability while preserving normative
+behavior. Review the coded GUI against the targets; generated labels, sample
+measurements and pictured controls do not authorize invented capabilities.
 
 - Preserve the editor's timing decisions. Use exact typed frame, sample, and source coordinates, half-open ranges, rational frame rates, checked arithmetic, and origin-based sample boundaries. Never accumulate rounded durations. Three plays means three total plays, with gaps only between them; a Hold inserts exactly its authored frames and preserves subsequent original speech.
 - Build composable structures. Source, Sequence, Hold, Repeat, and Retime form the small primitive set; attention, sound, captions, and cutaways attach to it. Gags expand to ordinary editable primitives. Keep repeats structural and occurrence identities stable.
@@ -88,13 +99,21 @@ display color, editorial effects, playback or an encoded export path.
 
 Every persisted edit, undo, and redo gets a never-reused revision ID. Core inverse patches can restore exact fixture identity; the store rebases them onto fresh revisions to prevent stale commands becoming valid after undo. Store writes use one transaction for the revision, history, and cursor. Keep `.writer.lock` held for the writable store lifetime; read-only inspection and dry runs may coexist. Take live database snapshots through SQLite's backup API, never copy only an open main database file.
 
-Repeat play IDs are scoped by Repeat node and allocation revision, with an ordinal inside that allocation. Preserve surviving IDs through resizing and reorder; allocate fresh IDs for growth and inserted subtrees. Imported initial snapshots reserve their allocation names even after plays are removed. Keep compact runs bounded and never expand a repeat merely to seek. Core schema 11 retains these runs, marks, sparse overrides, generated Hold metadata, independent source mappings and audio edge policies, and binds qualified assets to immutable source receipts. Database schemas 1 through 15 replay the complete chronology directly into the current schema on a consistent copy, compare every legacy snapshot/transaction, and promote through SQLite's backup transaction only after validation. Strict legacy adapters freeze nested provider vocabulary and reject new fields, commands, and unexpected mark or override changes. Preserve the pre-migration backup.
+Repeat play IDs are scoped by Repeat node and allocation revision, with an ordinal inside that allocation. Preserve surviving IDs through resizing and reorder; allocate fresh IDs for growth and inserted subtrees. Imported initial snapshots reserve their allocation names even after plays are removed. Keep compact runs bounded and never expand a repeat merely to seek. Core schema 11 retains these runs, marks, sparse overrides, generated Hold metadata, independent source mappings and audio edge policies, and binds qualified assets to immutable source receipts. Database schemas 1 through 16 replay the complete chronology directly into the current schema on a consistent copy, compare every legacy snapshot/transaction, and promote through SQLite's backup transaction only after validation. Strict legacy adapters freeze nested provider vocabulary and reject new fields, commands, and unexpected mark or override changes. Preserve the pre-migration backup.
 
-Database schema 16 stores core schema 11 and retains operational generation requests,
+Database schema 17 stores core schema 11 and retains operational generation requests,
+plus an optional validated single-Original workflow profile. Use the dedicated
+`create_single_source` / `initialize_prepared_source` path to bind the full measured
+Original, basis and protected baseline atomically. Undo never crosses that baseline;
+deleting all current beats does not unlock a replacement video. Generic migrations
+gain no profile. Native Open uses backed-up migration before replacing its current
+session. See [the single-Original contract](docs/SINGLE_ORIGINAL.md).
+
+The database also retains operational generation
 attempts, validation receipts, and candidate selection. Modern bundle receipts add
 optional measured spans and retained-input admission evidence; legacy receipts
 gain none. Legacy requests retain no plan and remain protocol 1. Schema-7/8/9/10
-history uses the frozen core schema-5 adapter; schema-11 history uses core schema 6; schema-12 uses frozen core schema 7; schema-13 uses frozen core schema 8; schema-14 uses frozen core schema 9; schema-15 uses frozen core schema 10 and retains presentation policy. All older nodes gain automatic audio edges.
+history uses the frozen core schema-5 adapter; schema-11 history uses core schema 6; schema-12 uses frozen core schema 7; schema-13 uses frozen core schema 8; schema-14 uses frozen core schema 9; schema-15 uses frozen core schema 10 and retains presentation policy. All older nodes gain automatic audio edges. Schema-16 history uses core schema 11; migration adds no invented single-source profile.
 Migration upgrades authored
 JSON through strict replay, preserves existing operational rows and clocks, and
 adds only missing operational tables. Request versions belong
@@ -166,7 +185,7 @@ Ready bundles alone do not authorize an edit. See [acceptance](docs/GENERATION_A
 See [generated Hold semantics](docs/GENERATED_HOLDS.md).
 
 Original byte ownership is operational and separate from stream readiness.
-Database schema 16 retains content-keyed original records with monotonic location
+Database schema 17 retains content-keyed original records with monotonic location
 versions introduced in schema 10; earlier schemas gain an empty inventory. Use the
 shared descriptor-relative object engine for `Media/Originals` and
 `Media/Generated`. Managed originals try APFS clone, then verified copy; retain
@@ -459,4 +478,4 @@ For native startup or lifecycle changes, also run `cargo run -p deadpan-app -- -
 
 For authorized scoped work in this personal project, implement, review, verify, commit, and push to `main` using `git push`. Preserve concurrent changes and do not include unrelated files. Release publishing, signing, notarization, and external service actions need their applicable authorization; pushing source is not product release qualification.
 
-Update these living instructions when implementation establishes a durable convention. Keep detailed procedures in the relevant documentation and keep the original specification intact; document any necessary product deviation explicitly.
+Update these living instructions when implementation establishes a durable convention. Keep detailed procedures in the relevant documentation. Preserve the imported 1.0 package in docs/spec/archive/1.0 byte-for-byte; integrate explicitly authorized product revisions into the current normative docs/spec/DEADPAN_SPEC.md and update docs/SPEC_PROVENANCE.md. Current user direction and the current specification take precedence over archived designs.

@@ -89,13 +89,13 @@ impl AudioSession {
         limits: AudioSessionLimits,
         cancelled: &AtomicBool,
     ) -> Result<Self, AudioSessionError> {
-        Self::validate_limits(identity, selected_stream, limits)?;
+        Self::validate_limits(identity, Some(selected_stream), limits)?;
         let deadline = Deadline {
             end: Instant::now() + limits.opening_timeout,
             cancelled,
         };
         let input = VerifiedSourceInput::copy_with_deadline(source, identity, &deadline)?;
-        Self::open_with_deadline(input, selected_stream, limits, &deadline)
+        Self::open_with_deadline(input, Some(selected_stream), limits, &deadline)
     }
 
     /// Reuses already verified source bytes. The opening deadline starts here;
@@ -103,6 +103,25 @@ impl AudioSession {
     pub fn open_input(
         input: VerifiedSourceInput,
         selected_stream: u32,
+        limits: AudioSessionLimits,
+        cancelled: &AtomicBool,
+    ) -> Result<Self, AudioSessionError> {
+        Self::open_selected_input(input, Some(selected_stream), limits, cancelled)
+    }
+
+    /// Select the actual first audio stream during one guarded container open.
+    /// The measured index retains its actual absolute stream index.
+    pub fn open_first_input(
+        input: VerifiedSourceInput,
+        limits: AudioSessionLimits,
+        cancelled: &AtomicBool,
+    ) -> Result<Self, AudioSessionError> {
+        Self::open_selected_input(input, None, limits, cancelled)
+    }
+
+    fn open_selected_input(
+        input: VerifiedSourceInput,
+        selected_stream: Option<u32>,
         limits: AudioSessionLimits,
         cancelled: &AtomicBool,
     ) -> Result<Self, AudioSessionError> {
@@ -116,12 +135,12 @@ impl AudioSession {
 
     fn validate_limits(
         identity: SourceContentIdentity,
-        stream: u32,
+        stream: Option<u32>,
         limits: AudioSessionLimits,
     ) -> Result<(), AudioSessionError> {
         limits.decode.validate()?;
         if identity.byte_length() > limits.decode.max_input_bytes
-            || stream >= 33
+            || stream.is_some_and(|index| index >= 33)
             || !(1..=MAX_AUDIO_INDEX_FRAMES).contains(&limits.maximum_index_frames)
             || !(1..=16 * 1024 * 1024 * 1024).contains(&limits.maximum_cache_bytes)
             || !(1..=65_536).contains(&limits.maximum_read_frames)
@@ -137,16 +156,21 @@ impl AudioSession {
 
     fn open_with_deadline(
         input: VerifiedSourceInput,
-        selected_stream: u32,
+        selected_stream: Option<u32>,
         limits: AudioSessionLimits,
         deadline: &Deadline<'_>,
     ) -> Result<Self, AudioSessionError> {
-        let mut decoder = AudioDecoder::open(
-            input.decoder_file()?,
-            selected_stream,
-            limits.decode,
-            control(deadline)?,
-        )?;
+        let mut decoder = match selected_stream {
+            Some(stream) => AudioDecoder::open(
+                input.decoder_file()?,
+                stream,
+                limits.decode,
+                control(deadline)?,
+            )?,
+            None => {
+                AudioDecoder::open_first(input.decoder_file()?, limits.decode, control(deadline)?)?
+            }
+        };
         let info = decoder.info().clone();
         let stream = AudioStreamDescriptor {
             stream_index: info.stream_index,

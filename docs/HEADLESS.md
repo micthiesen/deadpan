@@ -564,19 +564,22 @@ future-schema read-only inspection still needs a compatibility implementation.
 
 ## Schema migration
 
-Database schemas 1 through 15 return `MigrationRequired` when opened. Upgrade explicitly:
+Database schemas 1 through 16 return `MigrationRequired` when opened. Upgrade explicitly:
 
 ```sh
 cargo run --locked -p deadpan-cli -- project migrate /tmp/example.deadpan
 ```
 
 Migration holds the project writer lock, keeps a consistent SQLite backup under
-`Snapshots/before-schema-16-*.sqlite`, and upgrades a separate candidate. It
+`Snapshots/before-schema-17-*.sqlite`, and upgrades a separate candidate. It
 replays all commands, undo/redo revisions, and abandoned branches with their
 original revision IDs. Every snapshot and forward/inverse transaction is checked
 against its strict original schema meaning. Migration goes directly to database
-schema 16 and core document schema 11. All legacy nodes gain automatic audio
-edges. Database-15 histories use frozen core 10 and retain their presentation
+schema 17 and core document schema 11. Database-16 histories retain their existing
+core-11 audio edges; older nodes gain automatic audio edges. Migrated projects
+remain generic, without an invented single-Original profile. Native writable Open
+performs this same backed-up migration on its service thread; headless opening
+remains explicit. Database-15 histories use frozen core 10 and retain their presentation
 basis policy, primary adoption and geometry commands. Database-14 histories use frozen core 9,
 retain qualified sources and their complete receipt inventory, and gain explicit
 basis state. All older projects also remain explicit, even when empty.

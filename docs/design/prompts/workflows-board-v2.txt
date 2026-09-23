@@ -1,0 +1,9 @@
+Use case: text-localization.
+Asset type: corrected Deadpan workflow and interaction design board.
+Input image: edit target, the supplied DEADPAN / WORKFLOWS board.
+Primary request: preserve the six-artboard layout, native charcoal/lavender visual system, interview imagery, all panel positions, and overall beautiful composition. Make only these precise information-design corrections:
+1. In the RECOVERY artboard, replace project filenames ending .dp with "Interview.deadpan" and "Recovered.deadpan". Replace the upper-right absolute promise "Your work is never lost." with "Recover with context." Keep the non-destructive original/copy distinction.
+2. In LOCAL MODELS, replace the explanatory sentence under the uninstalled Video bridge row with "Generates candidate footage for holds." Remove the fabricated "3.2 GB / 7 GB" numeric disk size. Use the concise label "Installed locally" there, without any numerical measurement.
+3. In the bottom INTERACTION CONTRACT strip, rebuild only the PENDING cell's example so it shows a compact focused command token "3r" beside the visible scope "Pause / Root beat", with the small explanation "Awaiting object or r". Remove the 132–143 / 11 frames arithmetic-form controls from PENDING. This is a persistent Vim-style operator prefix, not a parameter form.
+4. Distinguish focused pane from selected content. In the VISUAL SELECTION artboard, add a restrained focused-pane outline or small "Focus: Beats" badge by the beats/selection area, while retaining the separate lavender time-range selection. Add "Focus: Beats" to the NORMAL example in the bottom strip. Focus is not the same as selected beat.
+Keep all other details unchanged. No new shortcuts, numeric measurements, decorative controls, screens, or marketing claims. Preserve readable, crisp compact system typography and generous board spacing.

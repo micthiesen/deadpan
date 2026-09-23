@@ -65,6 +65,22 @@ pub(super) fn at_boundary(rows: &[BeatRow], cursor: u64) -> Option<usize> {
     })
 }
 
+/// Visual placement only. Exact frame values remain the source of the label;
+/// this fraction never participates in authored timing or picture resolution.
+pub(super) fn cursor_marker(rows: &[BeatRow], cursor: u64) -> Option<(usize, f32)> {
+    let last = rows.last()?;
+    if cursor > last.start.checked_add(last.frames)? {
+        return None;
+    }
+    let index = at_boundary(rows, cursor)?;
+    let row = &rows[index];
+    if row.frames == 0 {
+        return None;
+    }
+    let local = cursor.checked_sub(row.start)?.min(row.frames);
+    Some((index, (local as f64 / row.frames as f64) as f32))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -168,5 +184,23 @@ mod tests {
             completion(None, Some(&revision), true),
             Completion::Registration
         );
+    }
+
+    #[test]
+    fn cursor_marker_maps_only_within_its_own_structural_card() {
+        let rows = rows(&[132, 11, 72]);
+        let (index, fraction) = cursor_marker(&rows, 137).unwrap();
+        assert_eq!(index, 1);
+        assert!((fraction - 5.0 / 11.0).abs() < 0.00001);
+        assert_eq!(cursor_marker(&rows, 132), Some((1, 0.0)));
+        assert_eq!(cursor_marker(&rows, 215), Some((2, 1.0)));
+        assert_eq!(cursor_marker(&rows, 216), None);
+        assert_eq!(cursor_marker(&[], 0), None);
+    }
+
+    #[test]
+    fn empty_beat_has_no_invented_cursor_progress() {
+        assert_eq!(cursor_marker(&rows(&[0, 0]), 0), None);
+        assert_eq!(cursor_marker(&rows(&[3, 0, 4]), 3), Some((2, 0.0)));
     }
 }

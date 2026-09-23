@@ -156,7 +156,7 @@ impl SourceQualificationReceipt {
         &self.snapshot
     }
 
-    fn asset_record(&self, label: String) -> Result<AssetRecord, StoreError> {
+    pub(crate) fn asset_record(&self, label: String) -> Result<AssetRecord, StoreError> {
         // Asset extents stay in original clocks. One fps avoids attaching the
         // metadata to any project's presentation basis.
         let timing = self
@@ -346,6 +346,17 @@ impl ProjectStore {
         relevance: Option<&RelevancePlan>,
         cancelled: &AtomicBool,
     ) -> Result<SourceRegistrationOutcome, StoreError> {
+        self.register_prepared_source_inner(input, source, relevance, cancelled, false)
+    }
+
+    pub(crate) fn register_prepared_source_inner(
+        &mut self,
+        input: &SourceRegistration,
+        source: &PreparedSourceRegistration,
+        relevance: Option<&RelevancePlan>,
+        cancelled: &AtomicBool,
+        initialize: bool,
+    ) -> Result<SourceRegistrationOutcome, StoreError> {
         self.require_writer()?;
         check_revision(&self.snapshot()?, input)?;
         source.validate_for(self, input, cancelled)?;
@@ -353,12 +364,16 @@ impl ProjectStore {
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
         check_original_binding(&transaction, &source.receipt)?;
-        let prepared = prepare_registration(&transaction, input, &source.receipt)?;
+        let prepared =
+            prepare_registration_inner(&transaction, input, &source.receipt, initialize)?;
         write_receipt(&transaction, &source.receipt, &source.bytes)?;
         let commit = prepared
             .plan
             .map(|plan| crate::write_command_plan(&transaction, plan, relevance))
             .transpose()?;
+        if initialize {
+            crate::single_source::finish_initialization(&transaction, input, &source.receipt)?;
+        }
         source.original.recheck(cancelled)?;
         transaction.commit()?;
         Ok(SourceRegistrationOutcome {
@@ -414,6 +429,16 @@ fn prepare_registration(
     input: &SourceRegistration,
     receipt: &SourceQualificationReceipt,
 ) -> Result<PreparedRegistration, StoreError> {
+    prepare_registration_inner(connection, input, receipt, false)
+}
+
+fn prepare_registration_inner(
+    connection: &Connection,
+    input: &SourceRegistration,
+    receipt: &SourceQualificationReceipt,
+    initialize: bool,
+) -> Result<PreparedRegistration, StoreError> {
+    crate::single_source::check_registration(connection, receipt, initialize)?;
     let current = crate::read_snapshot(connection)?;
     check_revision(&current, input)?;
     let existing = current
@@ -612,7 +637,7 @@ fn write_receipt(
     Ok(())
 }
 
-fn read_receipt(
+pub(crate) fn read_receipt(
     connection: &Connection,
     id: &SourceQualificationId,
 ) -> Result<Option<SourceQualificationReceipt>, StoreError> {

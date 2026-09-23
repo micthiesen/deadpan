@@ -11,10 +11,13 @@ use deadpan_core::{
 };
 use deadpan_plan::RenderPlan;
 use deadpan_store::original_media::{OriginalMediaRecord, OriginalOwnership};
+use deadpan_store::single_source::{SingleSourceInitialization, SingleSourceState};
 use deadpan_store::source_registration::{
     PreparedSourceRegistration, SourceInsertionPurpose, SourceInsertionRequest, SourceRegistration,
 };
 use deadpan_store::{AccessMode, ProjectStore, StoreError};
+
+use crate::library::ProjectLibrary;
 
 use super::worker::{Job, Prepared, Reply, Streams, Work};
 use super::{
@@ -30,6 +33,7 @@ struct Pending {
     cancelled: Arc<AtomicBool>,
     streams: Streams,
     insertion: Option<SourceRegistration>,
+    initialization: Option<SingleSourceInitialization>,
 }
 
 struct Service {
@@ -46,6 +50,7 @@ struct Service {
     session: u64,
     serial: u64,
     jobs: SyncSender<Job>,
+    library: Option<ProjectLibrary>,
 }
 
 pub(super) fn run(
@@ -54,6 +59,7 @@ pub(super) fn run(
     jobs: SyncSender<Job>,
     results: Receiver<Reply>,
     worker: JoinHandle<()>,
+    library: Option<ProjectLibrary>,
 ) {
     let mut service = Service {
         shared,
@@ -68,6 +74,7 @@ pub(super) fn run(
         session: 0,
         serial: 0,
         jobs,
+        library,
     };
     while !service.shared.stopping.load(Ordering::Acquire)
         || service.shared.busy.load(Ordering::Acquire)
@@ -146,6 +153,29 @@ impl Service {
     fn command(&mut self, request: ProjectRequest) -> Result<()> {
         self.committed = None;
         match request {
+            ProjectRequest::CreateFromSource { path } => self.create_from_source(path),
+            ProjectRequest::InitializeSource {
+                expected_session,
+                expected_revision,
+                path,
+            } => self.initialize_source(expected_session, expected_revision, path),
+            ProjectRequest::ImportSound {
+                expected_session,
+                expected_revision,
+                path,
+                stream,
+                ownership,
+            } => {
+                self.check_context(expected_session, &expected_revision)?;
+                self.import(
+                    path,
+                    stream.map_or(ImportMedia::FirstAudio, |stream| ImportMedia::Audio {
+                        stream,
+                    }),
+                    ownership,
+                )
+            }
+            #[cfg(test)]
             ProjectRequest::Create(path) => self.open(path, true),
             ProjectRequest::Open(path) => self.open(path, false),
             ProjectRequest::Close => {
@@ -201,6 +231,80 @@ impl Service {
         self.store
             .as_mut()
             .ok_or_else(|| "Open or create a project first".into())
+    }
+
+    fn check_context(&self, expected_session: u64, expected_revision: &RevisionId) -> Result<()> {
+        let workspace = self
+            .workspace
+            .as_ref()
+            .ok_or("Open or create a project first")?;
+        if workspace.session != expected_session {
+            return Err("Project session changed before the request".into());
+        }
+        if workspace.document.revision_id() != expected_revision {
+            return Err("Project changed before the request".into());
+        }
+        Ok(())
+    }
+
+    fn create_from_source(&mut self, path: PathBuf) -> Result<()> {
+        // A cancelled preparation retains its single worker slot until its reply.
+        // Never allocate a package that cannot immediately start initialization.
+        if self.active.is_some() {
+            return Err("Wait for the current import to stop before creating a project".into());
+        }
+        let library = match &self.library {
+            Some(library) => library.clone(),
+            None => ProjectLibrary::documents()?,
+        };
+        let document = new_document()?;
+        let (package, store) = library.create(&path, &document)?;
+        let next = self
+            .session
+            .checked_add(1)
+            .ok_or("Project session identities exhausted")?;
+        let workspace = snapshot(&store, next, package.canonicalize().map_err(display)?, None)?;
+        self.cancel();
+        self.store = Some(store);
+        self.workspace = Some(Arc::new(workspace));
+        self.session = next;
+        self.cached = None;
+        self.import = None;
+        self.initialize_source(next, document.revision_id().clone(), path)
+    }
+
+    fn initialize_source(
+        &mut self,
+        expected_session: u64,
+        expected_revision: RevisionId,
+        path: PathBuf,
+    ) -> Result<()> {
+        self.check_context(expected_session, &expected_revision)?;
+        if !matches!(
+            self.workspace
+                .as_ref()
+                .and_then(|workspace| workspace.single_source.as_ref()),
+            Some(SingleSourceState::AwaitingSource { .. })
+        ) {
+            return Err("This project already has an Original or is a legacy project".into());
+        }
+        let initialization = SingleSourceInitialization {
+            expected_revision,
+            new_revision: revision(),
+            new_asset_id: AssetId::new(uuid::Uuid::new_v4().to_string()).map_err(display)?,
+            node: node(),
+            label: source_label(&path),
+        };
+        self.begin(
+            path.clone(),
+            Streams::Import(ImportMedia::Video),
+            None,
+            Some(initialization),
+            Work::Retain {
+                path,
+                ownership: OriginalOwnership::Managed,
+            },
+        )
     }
 
     fn edit(
@@ -326,16 +430,20 @@ impl Service {
             return Ok(());
         }
         // Keep the previous session and its work alive until the candidate is valid.
+        // Native writable Open owns this backed-up migration. Read-only/headless
+        // inspection keeps its explicit, non-writing migration contract.
+        let mut migration = None;
         let store = if create {
-            let document = ProjectDocument::new_automatic(
-                ProjectId::new(uuid::Uuid::new_v4().to_string()).map_err(display)?,
-                revision(),
-                node(),
-            )
-            .map_err(display)?;
+            let document = new_document()?;
             ProjectStore::create(&path, &document)
         } else {
-            ProjectStore::open(&path, AccessMode::ReadWrite)
+            match ProjectStore::open(&path, AccessMode::ReadWrite) {
+                Err(StoreError::MigrationRequired(_)) => {
+                    migration = Some(ProjectStore::migrate(&path).map_err(display)?);
+                    ProjectStore::open(&path, AccessMode::ReadWrite)
+                }
+                result => result,
+            }
         }
         .map_err(display)?;
         let next = self
@@ -349,14 +457,16 @@ impl Service {
         self.session = next;
         self.cached = None;
         self.import = None;
-        self.message = Some(
-            if create {
-                "Project created"
-            } else {
-                "Project opened"
-            }
-            .into(),
-        );
+        self.message = Some(match migration {
+            Some(migration) if migration.backup.is_some() => format!(
+                "Project opened. Upgraded schema {} to {}; original database backup: {}",
+                migration.from_schema,
+                migration.to_schema,
+                migration.backup.as_ref().expect("backup checked").display(),
+            ),
+            _ if create => "Project created".into(),
+            _ => "Project opened".into(),
+        });
         Ok(())
     }
 
@@ -389,6 +499,7 @@ impl Service {
         path: PathBuf,
         streams: Streams,
         insertion: Option<SourceRegistration>,
+        initialization: Option<SingleSourceInitialization>,
         work: Work,
     ) -> Result<()> {
         if self.active.is_some() {
@@ -424,6 +535,7 @@ impl Service {
             cancelled,
             streams,
             insertion,
+            initialization,
         });
         self.serial = id;
         self.import = Some(ImportStatus {
@@ -442,9 +554,24 @@ impl Service {
         media: ImportMedia,
         ownership: OriginalOwnership,
     ) -> Result<()> {
+        if let Some(state) = self
+            .workspace
+            .as_ref()
+            .and_then(|workspace| workspace.single_source.as_ref())
+        {
+            if matches!(state, SingleSourceState::AwaitingSource { .. }) {
+                return Err("Choose the Original to finish creating this project first".into());
+            }
+            if matches!(media, ImportMedia::Video) {
+                return Err(
+                    "V1 projects use one Original video; add a sound or reuse the Original".into(),
+                );
+            }
+        }
         self.begin(
             path.clone(),
             Streams::Import(media),
+            None,
             None,
             Work::Retain { path, ownership },
         )
@@ -547,6 +674,7 @@ impl Service {
             PathBuf::from(&source.label),
             streams,
             Some(registration),
+            None,
             Work::Qualify { record, streams },
         )
     }
@@ -615,11 +743,40 @@ impl Service {
     }
 
     fn register(&mut self, active: Pending, prepared: PreparedSourceRegistration) -> Result<()> {
+        if let Some(initialization) = active.initialization {
+            if let Some(status) = &mut self.import {
+                status.stage = ImportStage::Registering;
+            }
+            self.publish();
+            let outcome = self
+                .writer()?
+                .initialize_prepared_source(&initialization, &prepared, &active.cancelled)
+                .map_err(display)?;
+            self.cached = Some((outcome.asset_id.clone(), prepared));
+            self.refresh()?;
+            self.committed = outcome.commit.map(|commit| CommittedEdit {
+                revision: commit.revision_id,
+                selected_node: Some(initialization.node),
+            });
+            if let Some(status) = &mut self.import {
+                status.stage = ImportStage::Complete;
+                status.asset = Some(outcome.asset_id);
+            }
+            self.message = Some("Original ready. The full video is on Your edit.".into());
+            return Ok(());
+        }
         let workspace = self
             .workspace
             .as_ref()
             .ok_or("Project closed during import")?;
         let is_insertion = active.insertion.is_some();
+        let is_sound_catalog = !is_insertion
+            && matches!(
+                workspace.single_source,
+                Some(SingleSourceState::Ready { .. })
+            )
+            && prepared.receipt().snapshot().video().is_none()
+            && prepared.receipt().snapshot().audio().is_some();
         let registration = if let Some(registration) = active.insertion {
             let source = workspace
                 .sources
@@ -633,8 +790,7 @@ impl Service {
             let label = self
                 .import
                 .as_ref()
-                .and_then(|status| status.path.file_name())
-                .map(|name| name.to_string_lossy().into_owned())
+                .map(|status| source_label(&status.path))
                 .unwrap_or_else(|| "Source".into());
             SourceRegistration {
                 expected_revision: workspace.document.revision_id().clone(),
@@ -669,6 +825,8 @@ impl Service {
         self.message = Some(
             if is_insertion {
                 "Source inserted and saved"
+            } else if is_sound_catalog {
+                "Sound added to the catalog"
             } else {
                 "Source registered; ready for explicit insertion"
             }
@@ -732,6 +890,20 @@ fn snapshot(
         );
     }
     let (can_undo, can_redo) = store.history_availability().map_err(display)?;
+    let single_source = store.single_source_state().map_err(display)?;
+    let original_duration = match &single_source {
+        Some(SingleSourceState::Ready { asset, .. }) => Some(
+            sources
+                .get(asset)
+                .ok_or("Original qualification is missing")?
+                .receipt
+                .snapshot()
+                .derive_timing(document.presentation_basis().frame_rate)
+                .map_err(display)?
+                .duration,
+        ),
+        _ => None,
+    };
     Ok(Workspace {
         session,
         path,
@@ -741,7 +913,24 @@ fn snapshot(
         originals: store.original_import_handle().map_err(display)?,
         can_undo,
         can_redo,
+        single_source,
+        original_duration,
     })
+}
+
+fn new_document() -> Result<ProjectDocument> {
+    ProjectDocument::new_automatic(
+        ProjectId::new(uuid::Uuid::new_v4().to_string()).map_err(display)?,
+        revision(),
+        node(),
+    )
+    .map_err(display)
+}
+
+fn source_label(path: &std::path::Path) -> String {
+    path.file_name()
+        .map(|name| name.to_string_lossy().into_owned())
+        .unwrap_or_else(|| "Original".into())
 }
 
 fn revision() -> RevisionId {

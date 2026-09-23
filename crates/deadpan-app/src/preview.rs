@@ -4,9 +4,10 @@ use std::rc::Rc;
 use std::sync::Arc;
 use std::time::Duration;
 
-use deadpan_core::{AssetId, NodeId, NodeKind, ProjectFrame, SourceFrameId};
+use deadpan_core::{AssetId, NodeId, NodeKind, ProjectFrame, RevisionId, SourceFrameId};
 use deadpan_render::{FitMode, PictureRenderer, RenderTarget};
 use deadpan_store::original_media::OriginalOwnership;
+use deadpan_store::single_source::SingleSourceState;
 use eframe::{egui, egui_wgpu};
 
 use crate::dialogs::{DialogKind, Dialogs};
@@ -17,13 +18,15 @@ use crate::project::{
 };
 use crate::worker::{PreviewWorker, ProjectView, SourceSummary, Ticket, Work};
 
+mod cards;
+mod inspector;
 mod selection;
+mod style;
 
 const SEARCH_ID: &str = "source-search";
 const COMMAND_ID: &str = "command-input";
 const MAX_TARGET_PIXELS: f64 = 1920.0 * 1080.0;
-const BEAT_WIDTH: f32 = 172.0;
-const SOURCE_INSERT_HINT: &str = "Source browsing preserves the original. Use Insert source (⌘Return or :insert) to begin editing it in the sequence.";
+const SOURCE_INSERT_HINT: &str = "The Original stays intact. Switch to Your edit (:sequence) to reshape it, or reuse the full Original with ⌘Return (:insert).";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum View {
@@ -32,6 +35,13 @@ enum View {
 }
 
 impl View {
+    fn on_open(profile: Option<&SingleSourceState>) -> Self {
+        if matches!(profile, Some(SingleSourceState::Ready { .. })) {
+            Self::Sequence
+        } else {
+            Self::Source
+        }
+    }
     fn after_completion(self, completion: &selection::Completion) -> Self {
         if *completion == selection::Completion::Edit {
             Self::Sequence
@@ -54,6 +64,7 @@ struct RegisteredTarget {
 }
 struct DialogIntent {
     session: Option<u64>,
+    revision: Option<RevisionId>,
     media: ImportMedia,
     linked: bool,
     preview_only: bool,
@@ -86,9 +97,11 @@ pub struct DeadpanApp {
     help_open: bool,
     linked_import: bool,
     audio_import: bool,
+    sound_stream: Option<u32>,
     last_committed: Option<deadpan_core::RevisionId>,
     beat_rows: Arc<Vec<BeatRow>>,
     source_rows: Arc<Vec<SourceRow>>,
+    sound_rows: Arc<Vec<SourceRow>>,
     reveal_beat: bool,
     reveal_source: bool,
     raw_source: Option<PathBuf>,
@@ -110,19 +123,7 @@ impl DeadpanApp {
         initial_path: Option<String>,
         initial_project: Option<String>,
     ) -> Result<Self, std::io::Error> {
-        context.egui_ctx.all_styles_mut(|style| {
-            style.visuals.weak_text_color = Some(if style.visuals.dark_mode {
-                egui::Color32::from_gray(170)
-            } else {
-                egui::Color32::from_gray(85)
-            });
-            for text in [egui::TextStyle::Body, egui::TextStyle::Button] {
-                style
-                    .text_styles
-                    .insert(text, egui::FontId::proportional(14.0));
-            }
-            style.spacing.button_padding = egui::vec2(10.0, 6.0);
-        });
+        style::apply(&context.egui_ctx);
         let repaint = context.egui_ctx.clone();
         let service = ProjectService::new(Arc::new(move || repaint.request_repaint()))?;
         let worker = PreviewWorker::new(context.egui_ctx.clone())?;
@@ -154,9 +155,11 @@ impl DeadpanApp {
             help_open: false,
             linked_import: false,
             audio_import: false,
+            sound_stream: None,
             last_committed: None,
             beat_rows: Arc::new(Vec::new()),
             source_rows: Arc::new(Vec::new()),
+            sound_rows: Arc::new(Vec::new()),
             reveal_beat: false,
             reveal_source: false,
             raw_source: None,
@@ -361,7 +364,14 @@ impl DeadpanApp {
                 self.sequence_cursor = 0;
                 self.last_committed = None;
                 self.source_search.clear();
-                self.view.set(View::Source, &mut self.message);
+                self.view.set(
+                    View::on_open(
+                        self.workspace
+                            .as_ref()
+                            .and_then(|workspace| workspace.single_source.as_ref()),
+                    ),
+                    &mut self.message,
+                );
                 self.summary = None;
                 self.error = None;
             }
@@ -371,7 +381,9 @@ impl DeadpanApp {
                     .as_ref()
                     .is_none_or(|id| !workspace.sources.contains_key(id))
                 {
-                    self.selected_source = workspace.sources.keys().next().cloned();
+                    self.selected_source = original_asset(workspace)
+                        .cloned()
+                        .or_else(|| workspace.sources.keys().next().cloned());
                     self.source_cursor = 0;
                 }
                 if self
@@ -411,6 +423,12 @@ impl DeadpanApp {
                 }
             } else if completion == selection::Completion::Registration
                 && let Some(asset) = self.import.as_ref().and_then(|i| i.asset.clone())
+                && let Some(asset) = registration_selection(
+                    self.workspace
+                        .as_ref()
+                        .and_then(|workspace| workspace.single_source.as_ref()),
+                    asset,
+                )
             {
                 self.bindings.clear();
                 self.selected_source = Some(asset);
@@ -450,12 +468,25 @@ impl DeadpanApp {
         if self.dialogs.is_open() || self.service.is_busy() {
             return;
         }
-        if kind == DialogKind::ImportMedia && !preview_only && self.importing() {
+        if matches!(
+            kind,
+            DialogKind::CreateProject
+                | DialogKind::InitializeSource
+                | DialogKind::ImportSound
+                | DialogKind::ImportMedia
+        ) && !preview_only
+            && self.importing()
+        {
             self.message =
                 Some("Finish or cancel the current import before choosing another source.".into());
             return;
         }
-        if kind == DialogKind::ImportMedia && !preview_only && self.workspace.is_none() {
+        if matches!(
+            kind,
+            DialogKind::InitializeSource | DialogKind::ImportSound | DialogKind::ImportMedia
+        ) && !preview_only
+            && self.workspace.is_none()
+        {
             self.message = Some("Create or open a project before importing media.".into());
             return;
         }
@@ -463,8 +494,14 @@ impl DeadpanApp {
             Ok(()) => {
                 self.dialog_intent = Some(DialogIntent {
                     session: self.workspace.as_ref().map(|w| w.session),
-                    media: if self.audio_import {
-                        ImportMedia::Audio { stream: 0 }
+                    revision: self
+                        .workspace
+                        .as_ref()
+                        .map(|w| w.document.revision_id().clone()),
+                    media: if kind == DialogKind::ImportSound || self.audio_import {
+                        self.sound_stream.map_or(ImportMedia::FirstAudio, |stream| {
+                            ImportMedia::Audio { stream }
+                        })
                     } else {
                         ImportMedia::Video
                     },
@@ -499,10 +536,43 @@ impl DeadpanApp {
         };
         match result.kind {
             DialogKind::CreateProject => {
-                self.submit(ProjectRequest::Create(path));
+                self.submit(ProjectRequest::CreateFromSource { path });
             }
             DialogKind::OpenProject => {
                 self.submit(ProjectRequest::Open(path));
+            }
+            DialogKind::InitializeSource | DialogKind::ImportSound => {
+                let Some(intent) = intent else {
+                    return;
+                };
+                let (Some(expected_session), Some(expected_revision)) =
+                    (intent.session, intent.revision)
+                else {
+                    return;
+                };
+                self.submit(if result.kind == DialogKind::InitializeSource {
+                    ProjectRequest::InitializeSource {
+                        expected_session,
+                        expected_revision,
+                        path,
+                    }
+                } else {
+                    ProjectRequest::ImportSound {
+                        expected_session,
+                        expected_revision,
+                        path,
+                        stream: match intent.media {
+                            ImportMedia::Audio { stream } => Some(stream),
+                            ImportMedia::FirstAudio => None,
+                            ImportMedia::Video => None,
+                        },
+                        ownership: if intent.linked {
+                            OriginalOwnership::Linked { bookmark: None }
+                        } else {
+                            OriginalOwnership::Managed
+                        },
+                    }
+                });
             }
             DialogKind::ImportMedia => {
                 let Some(intent) = intent else {
@@ -530,8 +600,11 @@ impl DeadpanApp {
     }
 
     fn insert(&mut self) {
-        let (Some(workspace), Some(asset)) = (&self.workspace, &self.selected_source) else {
+        let Some(workspace) = &self.workspace else {
             self.message = Some("Choose a source to insert.".into());
+            return;
+        };
+        let Some(asset) = original_asset(workspace).or(self.selected_source.as_ref()) else {
             return;
         };
         let children = root_children(workspace);
@@ -547,6 +620,12 @@ impl DeadpanApp {
             index,
         };
         self.submit(request);
+    }
+
+    fn focused_workflow(&self) -> bool {
+        self.workspace
+            .as_ref()
+            .is_none_or(|workspace| workspace.single_source.is_some())
     }
 
     fn history(&mut self, redo: bool) {
@@ -631,6 +710,14 @@ impl DeadpanApp {
     }
 
     fn select_source(&mut self, id: AssetId) {
+        if self
+            .workspace
+            .as_ref()
+            .and_then(|workspace| original_asset(workspace))
+            .is_some_and(|original| original != &id)
+        {
+            return;
+        }
         self.bindings.clear();
         self.selected_source = Some(id);
         self.raw_source = None;
@@ -645,6 +732,7 @@ impl DeadpanApp {
         let Some(workspace) = &self.workspace else {
             self.beat_rows = Arc::new(Vec::new());
             self.source_rows = Arc::new(Vec::new());
+            self.sound_rows = Arc::new(Vec::new());
             return;
         };
         let mut start = 0_u64;
@@ -657,7 +745,13 @@ impl DeadpanApp {
                         .plan
                         .node_duration(id)
                         .map_or(0, |d| d.frames() as u64);
-                    let kind = beat_kind(&node.kind);
+                    let kind = if original_asset(workspace).is_some()
+                        && matches!(node.kind, NodeKind::Source { .. })
+                    {
+                        "Original".into()
+                    } else {
+                        beat_kind(&node.kind)
+                    };
                     let result = BeatRow {
                         id: id.clone(),
                         label: node.label.clone(),
@@ -675,10 +769,23 @@ impl DeadpanApp {
 
     fn filter_sources(&mut self) {
         let query = self.source_search.to_lowercase();
+        self.sound_rows = Arc::new(self.workspace.as_ref().map_or_else(Vec::new, |workspace| {
+            workspace
+                .sources
+                .values()
+                .filter(|source| {
+                    source.receipt.snapshot().video().is_none()
+                        && source.receipt.snapshot().audio().is_some()
+                        && source.label.to_lowercase().contains(&query)
+                })
+                .map(|source| (source.asset.clone(), source.label.clone(), false))
+                .collect()
+        }));
         self.source_rows = Arc::new(self.workspace.as_ref().map_or_else(Vec::new, |w| {
             w.sources
                 .values()
-                .filter(|s| s.label.to_lowercase().contains(&query))
+                .filter(|source| original_asset(w).is_none_or(|original| original == &source.asset))
+                .filter(|s| original_asset(w).is_some() || s.label.to_lowercase().contains(&query))
                 .map(|s| (s.asset.clone(), s.label.clone(), s.video_index.is_some()))
                 .collect()
         }));
@@ -688,14 +795,14 @@ impl DeadpanApp {
         match action {
             Action::New => self.begin_dialog(DialogKind::CreateProject, context, false),
             Action::Open => self.begin_dialog(DialogKind::OpenProject, context, false),
-            Action::Import => self.begin_dialog(DialogKind::ImportMedia, context, false),
+            Action::Import => self.begin_dialog(self.import_dialog_kind(), context, false),
             Action::Insert => self.insert(),
             Action::Undo => self.history(false),
             Action::Redo => self.history(true),
             Action::Edit(edit) => self.edit(edit),
             Action::Invalid(error) => self.error = Some(error.into()),
             Action::Pane { reverse } => {
-                self.pane = self.pane.cycle(reverse);
+                self.pane = self.pane.cycle_visible(reverse, self.inspector_visible());
                 self.bindings.clear();
                 context.memory_mut(|m| m.request_focus(pane_id(self.pane)));
             }
@@ -737,7 +844,7 @@ impl DeadpanApp {
                 self.request_picture(false);
             }
             Action::Beat { forward, count } => {
-                if self.pane == Pane::Sources {
+                if self.pane == Pane::Sources && !self.focused_workflow() {
                     let sources = Arc::clone(&self.source_rows);
                     if !sources.is_empty() {
                         let index = self
@@ -771,6 +878,14 @@ impl DeadpanApp {
                 }
             }
             Action::Search => {
+                if self.workspace.as_ref().is_some_and(|workspace| {
+                    matches!(
+                        workspace.single_source,
+                        Some(SingleSourceState::AwaitingSource { .. })
+                    )
+                }) {
+                    return;
+                }
                 self.pane = Pane::Sources;
                 context.memory_mut(|m| m.request_focus(egui::Id::new(SEARCH_ID)));
                 context.input_mut(|input| {
@@ -786,6 +901,10 @@ impl DeadpanApp {
                         .events
                         .retain(|event| !matches!(event, egui::Event::Text(text) if text == ":"))
                 });
+            }
+            Action::Help => {
+                self.help_open = true;
+                self.bindings.clear();
             }
             Action::Escape => {
                 self.command_open = false;
@@ -862,6 +981,19 @@ impl DeadpanApp {
                 if repeat && !navigation::allows_key_repeat(key, modifiers) {
                     continue;
                 }
+                if navigation::inspector_parameter_key(
+                    key,
+                    modifiers,
+                    self.pane,
+                    text_input_active(context, self.command_open),
+                    ime,
+                ) && self.open_inspector_parameter(context)
+                {
+                    context.input_mut(|input| {
+                        input.consume_key(modifiers, key);
+                    });
+                    continue;
+                }
                 let before = self.bindings.pending();
                 // Command mode remains text-only until the end-of-frame blur
                 // handling closes it, even if a click has already moved focus.
@@ -915,318 +1047,548 @@ impl DeadpanApp {
     fn header(&mut self, ui: &mut egui::Ui) {
         egui::Panel::top("workspace-header")
             .resizable(false)
+            .frame(style::panel())
             .show(ui, |ui| {
-                ui.horizontal(|ui| {
-                    ui.strong("DEADPAN");
-                    ui.separator();
-                    let ready = !self.service.is_busy() && !self.dialogs.is_open();
-                    ui.add_enabled_ui(ready, |ui| {
-                        ui.menu_button("File", |ui| {
-                            for (label, action) in [
-                                ("New project…  ⌘N", Action::New),
-                                ("Open project…  ⌘O", Action::Open),
-                                ("Import media…  ⌘I", Action::Import),
-                            ] {
-                                let enabled = action != Action::Import
-                                    || (self.workspace.is_some() && !self.importing());
-                                if ui.add_enabled(enabled, egui::Button::new(label)).clicked() {
-                                    self.action(action, ui.ctx());
+                let title = self
+                    .workspace
+                    .as_ref()
+                    .and_then(|w| w.path.file_stem())
+                    .map_or_else(
+                        || "No project".into(),
+                        |name| name.to_string_lossy().into_owned(),
+                    );
+                ui.columns(3, |columns| {
+                    columns[0].horizontal(|ui| {
+                        ui.spacing_mut().button_padding.x = 6.0;
+                        ui.label(egui::RichText::new("DEADPAN").size(14.0).strong());
+                        let ready = !self.service.is_busy() && !self.dialogs.is_open();
+                        ui.add_enabled_ui(ready, |ui| {
+                            ui.menu_button("File", |ui| {
+                                for (label, action) in [
+                                    ("New project…  ⌘N", Action::New),
+                                    ("Open project…  ⌘O", Action::Open),
+                                    (
+                                        match self.import_dialog_kind() {
+                                            DialogKind::InitializeSource => "Choose Original…  ⌘I",
+                                            DialogKind::ImportSound => "Add sound…  ⌘I",
+                                            _ => "Import media…  ⌘I",
+                                        },
+                                        Action::Import,
+                                    ),
+                                ] {
+                                    let enabled = action != Action::Import
+                                        || (self.workspace.is_some() && !self.importing());
+                                    if ui.add_enabled(enabled, egui::Button::new(label)).clicked() {
+                                        self.action(action, ui.ctx());
+                                        ui.close();
+                                    }
+                                }
+                                if ui
+                                    .add_enabled(
+                                        self.workspace.is_some(),
+                                        egui::Button::new("Close project"),
+                                    )
+                                    .clicked()
+                                {
+                                    self.submit(ProjectRequest::Close);
                                     ui.close();
                                 }
+                            });
+                        });
+                    });
+                    columns[1].with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
+                        ui.add_space(6.0);
+                        ui.add(
+                            egui::Label::new(egui::RichText::new(&title).color(style::MUTED))
+                                .truncate(),
+                        )
+                        .on_hover_text(&title);
+                    });
+                    columns[2].with_layout(
+                        egui::Layout::right_to_left(egui::Align::Center),
+                        |ui| {
+                            if ui
+                                .button("Keys  ?")
+                                .on_hover_text("Keyboard reference · ? or :help")
+                                .clicked()
+                            {
+                                self.help_open = !self.help_open;
+                            }
+                            let ready = !self.service.is_busy() && !self.dialogs.is_open();
+                            if ui
+                                .add_enabled(
+                                    ready && self.workspace.as_ref().is_some_and(|w| w.can_redo),
+                                    egui::Button::new("Redo  Ctrl R"),
+                                )
+                                .on_hover_text("Redo · ⌘Shift Z or Ctrl R")
+                                .clicked()
+                            {
+                                self.history(true);
                             }
                             if ui
                                 .add_enabled(
-                                    self.workspace.is_some(),
-                                    egui::Button::new("Close project"),
+                                    ready && self.workspace.as_ref().is_some_and(|w| w.can_undo),
+                                    egui::Button::new("Undo  u"),
                                 )
+                                .on_hover_text("Undo · ⌘Z or u")
                                 .clicked()
                             {
-                                self.submit(ProjectRequest::Close);
-                                ui.close();
+                                self.history(false);
                             }
-                        });
-                        let undo = self.workspace.as_ref().is_some_and(|w| w.can_undo);
-                        let redo = self.workspace.as_ref().is_some_and(|w| w.can_redo);
-                        if ui
-                            .add_enabled(undo, egui::Button::new("Undo"))
-                            .on_hover_text("Undo · ⌘Z or u")
-                            .clicked()
-                        {
-                            self.history(false);
-                        }
-                        if ui
-                            .add_enabled(redo, egui::Button::new("Redo"))
-                            .on_hover_text("Redo · ⌘Shift Z or Ctrl R")
-                            .clicked()
-                        {
-                            self.history(true);
-                        }
-                    });
-                    if self.service.is_busy() {
-                        ui.spinner();
-                    }
-                    ui.separator();
-                    ui.label(
-                        self.workspace
-                            .as_ref()
-                            .and_then(|w| w.path.file_stem())
-                            .map_or_else(
-                                || "No project".into(),
-                                |name| name.to_string_lossy().into_owned(),
-                            ),
+                            if self.service.is_busy() {
+                                ui.spinner();
+                                ui.weak("Working");
+                            } else if self.workspace.is_some() {
+                                ui.colored_label(style::SAVED, "Saved")
+                                    .on_hover_text("Current committed revision is saved locally");
+                            }
+                        },
                     );
-                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                        if ui.button("Keys").clicked() {
-                            self.help_open = !self.help_open;
-                        }
-                        if self.workspace.is_some() {
-                            ui.weak("Saved locally");
-                        }
-                    });
                 });
             });
     }
 
     fn footer(&mut self, ui: &mut egui::Ui) {
-        egui::Panel::bottom("workspace-status").resizable(false).show(ui, |ui| {
+        egui::Panel::bottom("workspace-status").resizable(false).frame(style::panel()).show(ui, |ui| {
+            let pending = self.bindings.pending();
+            let mode = if self.command_open { "COMMAND" } else if text_input_active(ui.ctx(), false) { "TEXT" } else if pending.is_empty() { "NORMAL" } else { "PENDING" };
+            ui.horizontal_wrapped(|ui| {
+                ui.label(egui::RichText::new(mode).monospace().strong());
+                ui.separator();
+                ui.label(egui::RichText::new(match (self.focused_workflow(), self.view) { (true, View::Source) => "ORIGINAL", (true, View::Sequence) => "YOUR EDIT", (false, View::Source) => "SOURCE", (false, View::Sequence) => "SEQUENCE" }).monospace());
+                ui.separator();
+                if self.view == View::Sequence {
+                    if let Some(beat) = self.beat_rows.iter().find(|beat| Some(&beat.id) == self.selected_beat.as_ref()) {
+                        ui.add(egui::Label::new(format!("{} · Root beat", beat.label)).truncate()).on_hover_text(format!("{} · {} · {} frames · Root beat", beat.label, beat.kind, beat.frames));
+                    } else { ui.weak("No beat selected"); }
+                } else { ui.weak("Unchanged source"); }
+                ui.colored_label(style::LAVENDER, format!("Focus: {}", if self.pane == Pane::Sources && self.focused_workflow() { "Original / sounds" } else { pane_name(self.pane) }));
+                if !pending.is_empty() { style::keycap(ui, &pending); }
+                if let Some(hint) = self.bindings.pending_hint() { ui.label(egui::RichText::new(hint).size(11.0).color(style::LAVENDER)); }
+            });
             if self.command_open {
-                ui.horizontal(|ui| { ui.strong(":"); ui.add(egui::TextEdit::singleline(&mut self.command).id(egui::Id::new(COMMAND_ID)).desired_width(f32::INFINITY).hint_text("repeat 3 · wrap-repeat 2 · hold-duration 11f · delete · help")); retain_text_escape(ui, COMMAND_ID); });
+                egui::Frame::new().fill(style::PANEL).stroke(egui::Stroke::new(1.0, style::LAVENDER)).corner_radius(4).inner_margin(egui::Margin::symmetric(10, 6)).show(ui, |ui| {
+                    ui.horizontal(|ui| {
+                        ui.label(egui::RichText::new(":").monospace().color(style::LAVENDER));
+                        ui.add(egui::TextEdit::singleline(&mut self.command).id(egui::Id::new(COMMAND_ID)).font(egui::TextStyle::Monospace).frame(egui::Frame::NONE).desired_width(f32::INFINITY).hint_text("repeat 3 · wrap-repeat 2 · hold-duration 11f · delete · help"));
+                        retain_text_escape(ui, COMMAND_ID);
+                    });
+                });
+                ui.horizontal_wrapped(|ui| {
+                    style::key_hint(ui, "Enter", "apply command");
+                    style::key_hint(ui, "Esc", "cancel entry");
+                    ui.weak("Whole project frames: 11f · repeat count: total plays");
+                });
             } else {
                 ui.horizontal_wrapped(|ui| {
-                    let text = ui.memory(|m| m.has_focus(egui::Id::new(SEARCH_ID)));
-                    let pending = self.bindings.pending();
-                    ui.strong(format!("{} · {}", if text { "TEXT" } else if !pending.is_empty() { "PENDING" } else { "NORMAL" }, if self.view == View::Source { "Source" } else { "Sequence" }));
-                    ui.separator();
                     let (cursor, length) = if self.view == View::Source { (self.source_cursor, self.source_length()) } else { (self.sequence_cursor, self.sequence_length()) };
-                    ui.monospace(format!("Boundary {cursor} / {length}"));
-                    if self.presentation.loading() || self.presentation.needs_render() { ui.spinner(); ui.weak("Updating picture…"); }
-                    if self.view == View::Sequence && let Some(beat) = self.beat_rows.iter().find(|beat| Some(&beat.id) == self.selected_beat.as_ref()) { ui.label(format!("Root beat: {} · {} · {}f", beat.label, beat.kind, beat.frames)); }
-                    if !pending.is_empty() { ui.monospace(format!("Pending: {pending}")); }
+                    ui.label(egui::RichText::new(format!("{} {cursor} / {length}", if self.view == View::Source { "Original video boundary" } else { "Edit boundary" })).monospace().color(style::CURSOR));
+                    if self.presentation.loading() || self.presentation.needs_render() { ui.spinner(); ui.weak("Updating picture"); }
+                    style::key_hint(ui, "h l", "frame");
+                    if self.view == View::Sequence {
+                        style::key_hint(ui, "j k", "beat");
+                        style::key_hint(ui, "rr", "repeat");
+                        style::key_hint(ui, "dd", "cut beat");
+                        style::key_hint(ui, "u", "undo");
+                    } else {
+                        if self.focused_workflow() && !self.beat_rows.is_empty() { style::key_hint(ui, "j k", "edit beat"); }
+                        style::key_hint(ui, ":sequence", if self.focused_workflow() { "Your edit" } else { "Sequence" });
+                        if self.workspace.is_some() && self.selected_source.is_some() { style::key_hint(ui, "⌘↩", if self.focused_workflow() { "reuse Original" } else { "insert source" }); }
+                    }
+                    style::key_hint(ui, "Tab", "pane");
+                    style::key_hint(ui, ":", "command");
+                    style::key_hint(ui, "?", "keys");
                 });
                 if let Some(error) = self.error.as_deref().or(self.project_error.as_deref()).or(self.presentation.error()) { ui.colored_label(ui.visuals().error_fg_color, format!("Could not complete action: {error}")); }
-                else if let Some(message) = &self.message { ui.weak(message); }
-                else { ui.weak("h / l: frame · j / k: source or root beat · rr: repeat · dd: delete · Tab: pane · :help"); }
+                else if let Some(message) = &self.message { ui.label(egui::RichText::new(message).color(style::MUTED).size(12.0)); }
             }
         });
     }
 
+    fn import_dialog_kind(&self) -> DialogKind {
+        match self
+            .workspace
+            .as_ref()
+            .and_then(|workspace| workspace.single_source.as_ref())
+        {
+            Some(SingleSourceState::AwaitingSource { .. }) => DialogKind::InitializeSource,
+            Some(SingleSourceState::Ready { .. }) => DialogKind::ImportSound,
+            None => DialogKind::ImportMedia,
+        }
+    }
+
     fn sources(&mut self, ui: &mut egui::Ui) {
+        let layout = self.workspace_layout(ui);
+        let profile = self
+            .workspace
+            .as_ref()
+            .and_then(|workspace| workspace.single_source.clone());
+        let focused = self.focused_workflow();
         egui::Panel::left("workspace-sources")
-            .default_size(224.0)
-            .min_size(170.0)
-            .max_size(340.0)
+            .resizable(false)
+            .default_size(layout.sources)
+            .min_size(layout.sources)
+            .max_size(layout.sources)
+            .frame(style::panel())
             .show(ui, |ui| {
-                let heading = ui.strong(if self.pane == Pane::Sources {
-                    "Sources · focused"
-                } else {
-                    "Sources"
-                });
-                if pane_focus(ui, Pane::Sources, heading.rect, "Sources pane").has_focus() {
+                let heading = pane_heading(ui, if focused { "ORIGINAL" } else { "SOURCES" }, self.pane == Pane::Sources);
+                if pane_focus(ui, Pane::Sources, heading.rect, if focused { "Original and sounds pane" } else { "Legacy sources pane" }).has_focus() {
                     self.pane = Pane::Sources;
                 }
-                ui.add_space(6.0);
-                let search = ui.add(
-                    egui::TextEdit::singleline(&mut self.source_search)
-                        .id(egui::Id::new(SEARCH_ID))
-                        .hint_text("Find a source  /")
-                        .desired_width(f32::INFINITY),
-                );
-                if search.has_focus() {
-                    self.pane = Pane::Sources;
-                }
-                retain_text_escape(ui, SEARCH_ID);
-                if search.changed() {
-                    self.filter_sources();
-                }
-                ui.add_space(8.0);
-                let sources = Arc::clone(&self.source_rows);
-                let height = (ui.available_height() - 180.0).max(44.0);
-                let mut scroll = egui::ScrollArea::vertical()
-                    .id_salt("source-list")
-                    .max_height(height);
-                if std::mem::take(&mut self.reveal_source)
-                    && let Some(index) = sources
-                        .iter()
-                        .position(|s| Some(&s.0) == self.selected_source.as_ref())
-                {
-                    scroll = scroll.vertical_scroll_offset(
-                        index as f32 * (48.0 + ui.spacing().item_spacing.y),
-                    );
-                }
-                scroll.show_rows(ui, 48.0, sources.len(), |ui, range| {
-                    for index in range {
-                        let (asset, label, video) = &sources[index];
-                        let response = ui.add_sized(
-                            [ui.available_width(), 44.0],
-                            egui::Button::new(format!(
-                                "{}\n{}",
-                                label,
-                                if *video {
-                                    "Video source"
-                                } else {
-                                    "Audio source"
-                                }
-                            ))
-                            .selected(self.selected_source.as_ref() == Some(asset)),
-                        );
-                        if response.clicked() {
-                            self.select_source(asset.clone());
-                            ui.memory_mut(|m| m.request_focus(pane_id(Pane::Sources)));
+                ui.separator();
+                egui::ScrollArea::vertical().id_salt("original-rail").show(ui, |ui| {
+                    if matches!(profile, Some(SingleSourceState::AwaitingSource { .. })) {
+                        ui.label("Project created. Original not ready.");
+                        ui.weak("Choose a video to start with its full picture and sound.");
+                        if ui.add_enabled(!self.importing() && !self.service.is_busy(), egui::Button::new("Choose Original…  ⌘I")).clicked() {
+                            self.begin_dialog(DialogKind::InitializeSource, ui.ctx(), false);
+                        }
+                    } else if matches!(profile, Some(SingleSourceState::Ready { .. })) {
+                        let sources = Arc::clone(&self.source_rows);
+                        if let Some((asset, label, _)) = sources.first() {
+                            let detail = format!("{} decoded video frames", self.source_length());
+                            let response = cards::original(ui, label, &detail, self.selected_source.as_ref() == Some(asset));
+                            if response.clicked() { self.select_source(asset.clone()); }
+                        }
+                        ui.label(egui::RichText::new("Your starting point stays intact.").size(12.0).color(style::MUTED));
+                        ui.add_space(8.0);
+                        ui.separator();
+                        ui.label("Reuse from original");
+                        if ui.add_sized([ui.available_width(), 30.0], egui::Button::new("Browse  :source")).clicked()
+                            && let Some(asset) = self.workspace.as_ref().and_then(|workspace| original_asset(workspace)).cloned() { self.select_source(asset); }
+                        if ui.add_enabled(!self.service.is_busy(), egui::Button::new("Reuse full Original  ⌘↩")).on_hover_text("Append the entire Original after the selected root beat. Range reuse is not available yet.").clicked() { self.insert(); }
+                    } else {
+                        let search = ui.add(egui::TextEdit::singleline(&mut self.source_search).id(egui::Id::new(SEARCH_ID)).hint_text("Find source  /").desired_width(f32::INFINITY));
+                        if search.has_focus() { self.pane = Pane::Sources; }
+                        retain_text_escape(ui, SEARCH_ID);
+                        if search.changed() { self.filter_sources(); }
+                        let sources = Arc::clone(&self.source_rows);
+                        let mut scroll = egui::ScrollArea::vertical().id_salt("legacy-source-list").max_height(190.0);
+                        if std::mem::take(&mut self.reveal_source) && let Some(index) = sources.iter().position(|source| Some(&source.0) == self.selected_source.as_ref()) { scroll = scroll.vertical_scroll_offset(index as f32 * (34.0 + ui.spacing().item_spacing.y)); }
+                        scroll.show_rows(ui, 34.0, sources.len(), |ui, range| {
+                            for index in range {
+                                let (asset, label, video) = &sources[index];
+                                if ui.selectable_label(self.selected_source.as_ref() == Some(asset), format!("{}  {label}", if *video { "Video" } else { "Audio" })).clicked() { self.select_source(asset.clone()); }
+                            }
+                        });
+                        if self.workspace.is_none() {
+                            ui.weak("One video. Start intact, then make it strange.");
+                            ui.add_space(8.0);
+                            ui.small("Projects live in Documents/Deadpan.");
+                        } else {
+                            ui.weak("Legacy project. Existing sources remain available.");
                         }
                     }
-                });
-                if sources.is_empty() {
-                    ui.weak(if self.source_search.is_empty() {
-                        "Imported sources appear here."
-                    } else {
-                        "No matching sources."
-                    });
-                }
-                ui.add_space(12.0);
-                ui.separator();
-                let available = self.workspace.is_some()
-                    && !self.service.is_busy()
-                    && !self.dialogs.is_open()
-                    && !self.importing();
-                if ui
-                    .add_enabled(available, egui::Button::new("Import media…  ⌘I"))
-                    .clicked()
-                {
-                    self.begin_dialog(DialogKind::ImportMedia, ui.ctx(), false);
-                }
-                ui.collapsing("Import options", |ui| {
-                    ui.checkbox(&mut self.audio_import, "Audio file (first track)");
-                    ui.checkbox(&mut self.linked_import, "Link to original location");
-                    ui.weak(if self.linked_import {
-                        "Keep the original at its current location."
-                    } else {
-                        "Retain a copy inside the project."
-                    });
-                });
-                if let Some(import) = &self.import {
-                    ui.add_space(8.0);
-                    let label = match import.stage {
-                        ImportStage::Retaining => "Retaining original…",
-                        ImportStage::Decoding => "Reading picture and audio…",
-                        ImportStage::PreparingInsertion => "Preparing insertion…",
-                        ImportStage::Registering => "Adding source…",
-                        ImportStage::Complete => "Source ready",
-                        ImportStage::Cancelled => "Import cancelled",
-                        ImportStage::Failed => "Import failed",
-                    };
-                    ui.label(label);
-                    if let Some(error) = &import.error {
-                        ui.colored_label(ui.visuals().error_fg_color, error);
+                    if matches!(profile, Some(SingleSourceState::Ready { .. })) {
+                        ui.add_space(8.0);
+                        ui.separator();
+                        ui.label(egui::RichText::new("SOUND EFFECTS").size(12.0).strong());
+                        let search = ui.add(egui::TextEdit::singleline(&mut self.source_search).id(egui::Id::new(SEARCH_ID)).hint_text("Find sound  /").desired_width(f32::INFINITY));
+                        if search.has_focus() { self.pane = Pane::Sources; }
+                        retain_text_escape(ui, SEARCH_ID);
+                        if search.changed() { self.filter_sources(); }
+                        let sounds = Arc::clone(&self.sound_rows);
+                        if sounds.is_empty() { ui.weak(if self.source_search.is_empty() { "No sounds added." } else { "No matching sounds." }); }
+                        egui::ScrollArea::vertical().id_salt("sound-catalog").max_height(120.0).show_rows(ui, 32.0, sounds.len(), |ui, range| {
+                            for index in range {
+                                let (_, label, _) = &sounds[index];
+                                egui::Frame::new().fill(style::PANEL).corner_radius(4).inner_margin(6).show(ui, |ui| {
+                                    ui.add(egui::Label::new(label).truncate()).on_hover_text("Retained audio-only source. Sound placement and audition are not available yet.");
+                                });
+                            }
+                        });
+                        ui.label(egui::RichText::new("Retained sounds. Placement is not available yet.").size(11.0).color(style::MUTED));
                     }
-                    if matches!(
-                        import.stage,
-                        ImportStage::Retaining
-                            | ImportStage::Decoding
-                            | ImportStage::PreparingInsertion
-                            | ImportStage::Registering
-                    ) && ui.button("Cancel import").clicked()
-                    {
-                        self.submit(ProjectRequest::CancelImport);
+                    let available = self.workspace.is_some() && !matches!(profile, Some(SingleSourceState::AwaitingSource { .. })) && !self.service.is_busy() && !self.dialogs.is_open() && !self.importing();
+                    if self.workspace.is_some() && !matches!(profile, Some(SingleSourceState::AwaitingSource { .. })) {
+                        if ui.add_enabled(available, egui::Button::new(if focused { "Add sound…  ⌘I" } else { "Import media…  ⌘I" })).clicked() {
+                            self.begin_dialog(self.import_dialog_kind(), ui.ctx(), false);
+                        }
+                        ui.collapsing(if focused { "Sound import options" } else { "Import options" }, |ui| {
+                            if !focused { ui.checkbox(&mut self.audio_import, "Import audio only"); }
+                            if focused || self.audio_import {
+                                ui.label("Audio stream");
+                                egui::ComboBox::from_id_salt("sound-stream").selected_text(self.sound_stream.map_or_else(|| "Automatic".into(), |stream| format!("Index {stream}"))).show_ui(ui, |ui| {
+                                    ui.selectable_value(&mut self.sound_stream, None, "Automatic: first audio");
+                                    for stream in 0..=32 { ui.selectable_value(&mut self.sound_stream, Some(stream), format!("Index {stream}")); }
+                                });
+                                ui.small("Automatic selects the first actual audio stream. Advanced indices refer to the container, not the audio-track order.");
+                                ui.small("Admitted: PCM16 WAV or qualified MP4 audio.");
+                            }
+                            ui.checkbox(&mut self.linked_import, "Link to original location");
+                        });
                     }
-                }
+                    if let Some(import) = &self.import {
+                        let completed_sound = matches!(profile, Some(SingleSourceState::Ready { .. }))
+                            && import.asset.as_ref().and_then(|asset| self.workspace.as_ref()?.sources.get(asset)).is_some_and(|source| {
+                                source.receipt.snapshot().video().is_none() && source.receipt.snapshot().audio().is_some()
+                            });
+                        ui.separator();
+                        ui.label(egui::RichText::new(match import.stage {
+                            ImportStage::Retaining => "Retaining original…", ImportStage::Decoding => "Qualifying media…", ImportStage::PreparingInsertion => "Preparing reuse…", ImportStage::Registering => "Saving source…", ImportStage::Complete if completed_sound => "Sound added", ImportStage::Complete => "Source ready", ImportStage::Cancelled => "Import cancelled", ImportStage::Failed => "Import failed",
+                        }).size(12.0));
+                        if let Some(error) = &import.error { ui.colored_label(ui.visuals().error_fg_color, error); }
+                        if self.importing() && ui.button("Cancel import").clicked() { self.submit(ProjectRequest::CancelImport); }
+                    }
+                });
             });
     }
 
     fn timeline(&mut self, ui: &mut egui::Ui) {
         let beats = Arc::clone(&self.beat_rows);
-        egui::Panel::bottom("workspace-sequence").default_size(174.0).min_size(154.0).max_size(270.0).show(ui, |ui| {
-            ui.horizontal(|ui| {
-                let heading = ui.strong(if self.pane == Pane::Sequence { "Sequence · focused" } else { "Sequence" });
-                if pane_focus(ui, Pane::Sequence, heading.rect, "Sequence pane").has_focus() { self.pane = Pane::Sequence; }
-                ui.weak(format!("{} root beats · {} frames", beats.len(), self.sequence_length()));
-                if let Some(w) = &self.workspace { let basis = w.document.presentation_basis(); ui.weak(format!("{} × {} · {}/{} fps", basis.width, basis.height, basis.frame_rate.numerator(), basis.frame_rate.denominator())); }
-            });
-            ui.add_space(6.0);
-            if beats.is_empty() { ui.weak("Choose a source, then insert it into this sequence. Browsing never changes the edit."); return; }
-            self.edit_controls(ui);
+        let layout = self.workspace_layout(ui);
+        style::beat_panel(layout).show(ui, |ui| {
+            let heading = cards::heading(
+                ui,
+                if self.focused_workflow() {
+                    "YOUR EDIT"
+                } else {
+                    "BEATS"
+                },
+                self.pane == Pane::Sequence,
+                beats.len(),
+                self.sequence_length(),
+                self.workspace
+                    .as_ref()
+                    .map(|workspace| workspace.document.presentation_basis().frame_rate),
+            );
+            if pane_focus(
+                ui,
+                Pane::Sequence,
+                heading.rect,
+                "Root sequence beat outline pane",
+            )
+            .has_focus()
+            {
+                self.pane = Pane::Sequence;
+            }
+            if beats.is_empty() {
+                ui.add_space(16.0);
+                ui.weak(
+                    match self
+                        .workspace
+                        .as_ref()
+                        .and_then(|workspace| workspace.single_source.as_ref())
+                    {
+                        Some(SingleSourceState::AwaitingSource { .. }) => {
+                            "Your full video will appear here when its Original is ready."
+                        }
+                        Some(SingleSourceState::Ready { .. }) => {
+                            "Your edit is empty. Undo the cut or reuse the full Original."
+                        }
+                        None if self.workspace.is_none() => {
+                            "Choose one video to begin. Its full length becomes your starting edit."
+                        }
+                        None => "Choose a source, then insert it into this legacy sequence.",
+                    },
+                );
+                return;
+            }
             let selected = self.selected_beat.clone();
-            let mut scroll = egui::ScrollArea::horizontal().id_salt("beat-strip");
-            if std::mem::take(&mut self.reveal_beat) && let Some(index) = beats.iter().position(|b| Some(&b.id) == selected.as_ref()) { scroll = scroll.horizontal_scroll_offset(index as f32 * BEAT_WIDTH); }
-            scroll.show_viewport(ui, |ui, viewport| {
-                ui.set_min_width(beats.len() as f32 * BEAT_WIDTH);
-                let start = (viewport.min.x / BEAT_WIDTH).floor().max(0.0) as usize;
-                let end = ((viewport.max.x / BEAT_WIDTH).ceil() as usize + 1).min(beats.len());
-                let origin = ui.min_rect().min;
-                for (index, beat) in beats.iter().enumerate().take(end).skip(start) {
-                    let rect = egui::Rect::from_min_size(origin + egui::vec2(index as f32 * BEAT_WIDTH, 0.0), egui::vec2(BEAT_WIDTH - 8.0, 66.0));
-                    let response = ui.put(rect, egui::Button::new(format!("{}\n{} · {} frames", beat.label, beat.kind, beat.frames)).selected(selected.as_ref() == Some(&beat.id)));
-                    response.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, true, format!("Beat {}: {}, {}, {} frames, starts at frame {}", index + 1, beat.label, beat.kind, beat.frames, beat.start)));
-                    if response.clicked() { self.bindings.clear(); self.selected_beat = Some(beat.id.clone()); self.sequence_cursor = beat.start; self.view.set(View::Sequence, &mut self.message); self.pane = Pane::Sequence; self.request_picture(true); ui.memory_mut(|m| m.request_focus(pane_id(Pane::Sequence))); }
-                }
-                ui.allocate_space(egui::vec2(1.0, 68.0));
-            });
+            let marker = if self.view == View::Sequence {
+                selection::cursor_marker(&beats, self.sequence_cursor)
+            } else {
+                None
+            };
+            if let Some(index) = cards::strip(
+                ui,
+                layout,
+                &beats,
+                selected.as_ref(),
+                marker,
+                self.sequence_cursor,
+                std::mem::take(&mut self.reveal_beat),
+            ) {
+                let beat = &beats[index];
+                self.bindings.clear();
+                self.selected_beat = Some(beat.id.clone());
+                self.sequence_cursor = beat.start;
+                self.view.set(View::Sequence, &mut self.message);
+                self.pane = Pane::Sequence;
+                self.request_picture(true);
+                ui.memory_mut(|m| m.request_focus(pane_id(Pane::Sequence)));
+            }
         });
     }
 
-    fn edit_controls(&mut self, ui: &mut egui::Ui) {
-        let selected = self.workspace.as_ref().and_then(|workspace| {
-            self.selected_beat
-                .as_ref()
-                .and_then(|node| workspace.document.nodes().get(node))
-        });
-        let parameter = selected.and_then(|node| match &node.kind {
-            NodeKind::Repeat { iterations, .. } => Some((
-                "Set repeat parameters…",
-                format!("repeat {}", iterations.len()),
-            )),
-            NodeKind::Hold { recipe } => Some((
-                "Change hold duration…",
-                format!("hold-duration {}f", recipe.duration.frames()),
-            )),
-            _ => None,
-        });
-        let ready = self.view == View::Sequence
-            && selected.is_some()
-            && !self.service.is_busy()
-            && !self.dialogs.is_open();
-        ui.horizontal(|ui| {
-            ui.add_enabled_ui(ready, |ui| {
-                if ui.button("Repeat twice").on_hover_text("Wrap the selected root beat in a two-play Repeat · rr. An existing Repeat is nested.").clicked() { self.edit(BeatEdit::WrapRepeat(2)); }
-                if ui.button("Delete beat").on_hover_text("Ripple-delete the selected root beat · dd. Undo is available.").clicked() { self.edit(BeatEdit::Delete); }
-                if let Some((label, command)) = parameter && ui.button(label).clicked() { self.open_command(command, ui.ctx()); }
+    fn workspace_layout(&self, ui: &egui::Ui) -> style::Layout {
+        let size = ui.ctx().input(|input| input.content_rect().size());
+        style::Layout::for_size(size.x, size.y)
+    }
+
+    fn inspector_visible(&self) -> bool {
+        self.view == View::Sequence
+            && self.workspace.as_ref().is_some_and(|workspace| {
+                self.selected_beat
+                    .as_ref()
+                    .is_some_and(|node| root_children(workspace).contains(node))
+            })
+    }
+
+    fn ensure_visible_pane(&mut self, context: &egui::Context) {
+        let pane = self.pane.visible(self.inspector_visible());
+        if pane != self.pane {
+            self.pane = pane;
+            self.bindings.clear();
+            context.memory_mut(|memory| memory.request_focus(pane_id(pane)));
+        }
+    }
+
+    fn inspector_description(&self) -> Option<inspector::Inspector> {
+        if !self.inspector_visible() {
+            return None;
+        }
+        let workspace = self.workspace.as_ref()?;
+        let row = self
+            .beat_rows
+            .iter()
+            .find(|row| Some(&row.id) == self.selected_beat.as_ref())?;
+        let node = workspace.document.nodes().get(&row.id)?;
+        Some(inspector::Inspector::describe(node, row.start, row.frames))
+    }
+
+    fn open_inspector_parameter(&mut self, context: &egui::Context) -> bool {
+        let Some((_, command)) = self.inspector_description().and_then(|data| data.parameter)
+        else {
+            return false;
+        };
+        self.open_command(command, context);
+        true
+    }
+
+    fn inspector(&mut self, ui: &mut egui::Ui) {
+        let Some(data) = self.inspector_description() else {
+            return;
+        };
+        let Some(workspace) = &self.workspace else {
+            return;
+        };
+        let frame_rate = frame_rate_label(workspace.document.presentation_basis().frame_rate);
+        let layout = self.workspace_layout(ui);
+        egui::Panel::right("workspace-inspector")
+            .resizable(false)
+            .default_size(layout.inspector)
+            .min_size(layout.inspector)
+            .max_size(layout.inspector)
+            .frame(style::panel())
+            .show(ui, |ui| {
+                let heading = pane_heading(ui, "INSPECTOR", self.pane == Pane::Inspector);
+                if pane_focus(
+                    ui,
+                    Pane::Inspector,
+                    heading.rect,
+                    "Selected root beat inspector pane",
+                )
+                .has_focus()
+                {
+                    self.pane = Pane::Inspector;
+                }
+                ui.separator();
+                egui::ScrollArea::vertical()
+                    .id_salt("inspector-details")
+                    .show(ui, |ui| {
+                        ui.horizontal(|ui| {
+                            egui::Frame::new()
+                                .fill(style::SELECTED)
+                                .corner_radius(6)
+                                .inner_margin(10)
+                                .show(ui, |ui| {
+                                    ui.label(
+                                        egui::RichText::new(data.glyph)
+                                            .size(24.0)
+                                            .color(style::LAVENDER),
+                                    );
+                                });
+                            ui.vertical(|ui| {
+                                ui.add(
+                                    egui::Label::new(egui::RichText::new(&data.label).size(17.0))
+                                        .truncate(),
+                                )
+                                .on_hover_text(&data.label);
+                                ui.label(egui::RichText::new(data.kind).color(style::MUTED));
+                            });
+                        });
+                        ui.add_space(12.0);
+                        inspector_value(ui, "Duration", &data.duration);
+                        for (label, value) in &data.fields {
+                            inspector_value(ui, label, value);
+                        }
+                        ui.add_space(8.0);
+                        if data.parameter.is_some() {
+                            style::key_hint(ui, "Enter", "change parameter");
+                        }
+                        ui.separator();
+                        inspector_value(ui, "Scope", "Root beat");
+                        inspector_value(ui, "Boundaries", &data.range);
+                        ui.label(
+                            egui::RichText::new(format!("{} at {frame_rate}", data.duration))
+                                .size(12.0)
+                                .color(style::MUTED),
+                        );
+                        ui.label(
+                            egui::RichText::new(data.note)
+                                .size(12.0)
+                                .color(style::MUTED),
+                        );
+                        ui.add_space(8.0);
+                        let ready = !self.service.is_busy() && !self.dialogs.is_open();
+                        ui.add_enabled_ui(ready, |ui| {
+                            if let Some((label, command)) = data.parameter
+                                && ui
+                                    .add_sized(
+                                        [ui.available_width(), 30.0],
+                                        egui::Button::new(label).fill(style::SELECTED),
+                                    )
+                                    .clicked()
+                            {
+                                self.pane = Pane::Inspector;
+                                self.open_command(command, ui.ctx());
+                            }
+                            if ui
+                                .add_sized(
+                                    [ui.available_width(), 28.0],
+                                    egui::Button::new("Wrap repeat  ·  rr"),
+                                )
+                                .on_hover_text("Two total plays. An existing Repeat is nested.")
+                                .clicked()
+                            {
+                                self.edit(BeatEdit::WrapRepeat(2));
+                            }
+                            if ui
+                                .add_sized(
+                                    [ui.available_width(), 28.0],
+                                    egui::Button::new("Delete beat  ·  dd"),
+                                )
+                                .on_hover_text("Ripple-delete this root beat. Undo is available.")
+                                .clicked()
+                            {
+                                self.edit(BeatEdit::Delete);
+                            }
+                        });
+                    });
             });
-            ui.weak("Root level · linked picture and sound");
-        });
-        ui.add_space(5.0);
     }
 
     fn viewer(&mut self, ui: &mut egui::Ui) {
-        egui::CentralPanel::default().show(ui, |ui| {
+        egui::CentralPanel::default().frame(style::panel()).show(ui, |ui| {
             ui.horizontal(|ui| {
-                for (label, view) in [("Source", View::Source), ("Sequence", View::Sequence)] {
-                    if ui.add_enabled(view == View::Source || self.workspace.is_some(), egui::Button::new(label).selected(self.view == view)).clicked() { self.bindings.clear(); if self.view != view { self.view.set(view, &mut self.message); if view == View::Sequence { self.reconcile_beat_selection(); } self.request_picture(true); } self.pane = Pane::Viewer; ui.memory_mut(|m| m.request_focus(pane_id(Pane::Viewer))); }
+                for (label, view) in [(if self.focused_workflow() { "Original" } else { "Source" }, View::Source), (if self.focused_workflow() { "Your edit" } else { "Sequence" }, View::Sequence)] {
+                    if ui.add_enabled(view == View::Source || self.workspace.is_some(), egui::Button::new(label).min_size(egui::vec2(88.0, 28.0)).selected(self.view == view)).clicked() {
+                        self.bindings.clear();
+                        if self.view != view { self.view.set(view, &mut self.message); if view == View::Sequence { self.reconcile_beat_selection(); } self.request_picture(true); }
+                        self.pane = Pane::Viewer;
+                        ui.memory_mut(|m| m.request_focus(pane_id(Pane::Viewer)));
+                    }
                 }
-                if self.view == View::Source {
-                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                        if ui.add_enabled(self.workspace.is_some() && self.selected_source.is_some() && !self.service.is_busy(), egui::Button::new("Insert source  ⌘↩")).on_hover_text("Insert the whole source after the selected beat, or at sequence end. This creates an undoable edit.").clicked() { self.insert(); }
-                    });
-                }
+                if self.view == View::Sequence { ui.add(egui::Label::new(egui::RichText::new(if self.focused_workflow() { "Same original. Your changes." } else { "Current sequence" }).color(style::MUTED).size(12.0)).truncate()); }
+                else if let Some(source) = self.workspace.as_ref().and_then(|w| self.selected_source.as_ref().and_then(|id| w.sources.get(id))) { ui.add(egui::Label::new(egui::RichText::new(&source.label).color(style::MUTED).size(12.0)).truncate()).on_hover_text(&source.label); }
             });
-            ui.add_space(6.0);
-            let title = if self.view == View::Sequence { "Current sequence".to_owned() } else {
-                self.workspace.as_ref().and_then(|w| self.selected_source.as_ref().and_then(|id| w.sources.get(id))).map(|s| s.label.clone())
-                    .or_else(|| self.raw_source.as_ref().and_then(|p| p.file_name()).map(|p| p.to_string_lossy().into_owned())).unwrap_or_else(|| "Source viewer".into())
-            };
-            let title = ui.strong(title);
-            if let Some(summary) = &self.summary {
-                title.on_hover_text(format!(
-                    "{} × {} · {}\n{} measured frames\nOriginal timestamp interval: {}..{} in {}/{} s units",
-                    summary.info.width, summary.info.height, summary.info.codec,
-                    summary.frame_count, summary.first_pts, summary.terminal_pts,
-                    summary.info.time_base_num, summary.info.time_base_den
-                ));
-            }
-            let available = egui::vec2(ui.available_width().max(1.0), (ui.available_height() - 76.0).max(80.0));
+            let available = egui::vec2(ui.available_width().max(1.0), (ui.available_height() - 98.0).max(50.0));
             let (_, rect) = ui.allocate_space(available);
             let response = pane_focus(ui, Pane::Viewer, rect, "Picture viewer pane");
             if response.has_focus() { self.pane = Pane::Viewer; }
-            ui.painter().rect_filled(rect, 4.0, egui::Color32::from_rgb(13, 15, 18));
-            let aspect = self.presentation.picture().and_then(|p| p.canvas).map(|(w,h)| w as f32 / h as f32);
+            ui.painter().rect_filled(rect, 2.0, egui::Color32::BLACK);
+            let aspect = self.presentation.picture().and_then(|p| p.canvas).map(|(w, h)| w as f32 / h as f32);
             let canvas = aspect.map_or(rect, |aspect| fit_rect(rect, aspect));
             self.render_picture(ui.ctx(), canvas.size());
             let displayed_label = self.presentation.displayed_label();
@@ -1235,27 +1597,35 @@ impl DeadpanApp {
                 if let Some(target) = &self.target { ui.painter().image(target.texture, canvas, egui::Rect::from_min_max(egui::Pos2::ZERO, egui::pos2(1.0, 1.0)), egui::Color32::WHITE); }
                 else { ui.painter().rect_filled(canvas, 0.0, egui::Color32::BLACK); }
             } else {
-                let message = if self.presentation.loading() { "Preparing picture…" } else if self.presentation.error().is_some() { "Picture unavailable" } else if self.workspace.is_none() && self.raw_source.is_none() { "Create a project to begin" } else if self.view == View::Sequence { "Your sequence is empty" } else if self.selected_source.is_some() && self.source_length() == 0 { "Audio source · no picture" } else { "Choose a source to preview" };
-                ui.painter().text(rect.center(), egui::Align2::CENTER_CENTER, message, egui::FontId::proportional(20.0), egui::Color32::from_gray(180));
+                let message = if self.presentation.loading() { "Preparing picture…" } else if self.presentation.error().is_some() { "Picture unavailable" } else if self.workspace.is_none() && self.raw_source.is_none() { "Start with one video. Make it strange." } else if self.view == View::Sequence { "Your edit is empty" } else if self.selected_source.is_some() && self.source_length() == 0 { "Audio source · no picture" } else { "Choose the Original to begin" };
+                ui.painter().text(rect.center(), egui::Align2::CENTER_CENTER, message, egui::FontId::proportional(18.0), style::MUTED);
             }
-            if self.pane == Pane::Viewer { ui.painter().rect_stroke(rect, 4.0, ui.visuals().selection.stroke, egui::StrokeKind::Inside); }
-            ui.add_space(8.0);
+            ui.painter().rect_stroke(rect, 2.0, egui::Stroke::new(1.0, if self.pane == Pane::Viewer { style::LAVENDER } else { style::BORDER }), egui::StrokeKind::Inside);
             if let Some(label) = displayed_label {
-                let label = ui.weak(label);
-                if let Some(source_frame) = self.presentation.displayed_source_frame() {
-                    label.on_hover_text(format!("Original source frame {}", u128::from(source_frame.0) + 1));
-                }
+                let mut response = ui.add(egui::Label::new(egui::RichText::new(&label).size(11.5).color(style::MUTED)).truncate()).on_hover_text(&label);
+                if let Some(summary) = &self.summary { response = response.on_hover_text(format!("Measured source: {} × {} pixels; original PTS [{}, {}), clock {}/{} seconds per tick.", summary.info.width, summary.info.height, summary.first_pts, summary.terminal_pts, summary.info.time_base_num, summary.info.time_base_den)); }
+                if let Some(source_frame) = self.presentation.displayed_source_frame() { response.on_hover_text(format!("Original source frame {}", u128::from(source_frame.0) + 1)); }
+            } else { ui.label(egui::RichText::new("Stopped-frame inspection").size(11.5).color(style::MUTED)); }
+            if let Some(workspace) = &self.workspace && let Some(original) = workspace.original_duration {
+                ui.horizontal_wrapped(|ui| {
+                    let edit = workspace.plan.duration();
+                    ui.label(egui::RichText::new(format!("Original {} f", original.frames())).monospace()).widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Label, true, format!("Full Original duration: {} project frames", original.frames())));
+                    ui.separator();
+                    ui.label(egui::RichText::new(format!("Your edit {} f", edit.frames())).monospace()).widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Label, true, format!("Your edit duration: {} project frames", edit.frames())));
+                    ui.colored_label(style::LAVENDER, format!("{:+} f", edit.frames() - original.frames()));
+                    ui.label(egui::RichText::new(format!("project clock · {}", frame_rate_label(workspace.document.presentation_basis().frame_rate))).size(10.0).color(style::MUTED));
+                }).response.on_hover_text("Both durations use the same project-frame clock. Original includes the measured picture/audio stream union; source browsing counts decoded picture frames separately.");
             }
             ui.horizontal_wrapped(|ui| {
                 if self.workspace.is_none() && self.raw_source.is_none() {
-                    if ui.button("New project…").clicked() { self.begin_dialog(DialogKind::CreateProject, ui.ctx(), false); }
-                    if ui.button("Open project…").clicked() { self.begin_dialog(DialogKind::OpenProject, ui.ctx(), false); }
-                    if ui.button("Preview a source…").clicked() { self.begin_dialog(DialogKind::ImportMedia, ui.ctx(), true); }
+                    if ui.button("New project  ⌘N").clicked() { self.begin_dialog(DialogKind::CreateProject, ui.ctx(), false); }
+                    if ui.button("Open project  ⌘O").clicked() { self.begin_dialog(DialogKind::OpenProject, ui.ctx(), false); }
+                    ui.weak("Saved in Documents/Deadpan");
                 } else {
-                    for (label, action) in [("Start", Action::First), ("Previous", Action::Step { forward: false, count: 1 }), ("Next", Action::Step { forward: true, count: 1 }), ("End", Action::Last)] {
-                        if ui.button(label).clicked() { self.action(action, ui.ctx()); }
+                    for (label, action) in [("Start  gg", Action::First), ("Previous  h", Action::Step { forward: false, count: 1 }), ("Next  l", Action::Step { forward: true, count: 1 }), ("End  G", Action::Last)] {
+                        if ui.small_button(label).clicked() { self.action(action, ui.ctx()); }
                     }
-                    ui.weak("Frame inspection · playback is not yet available");
+                    if self.view == View::Source && ui.add_enabled(self.workspace.is_some() && self.selected_source.is_some() && !self.service.is_busy(), egui::Button::new(if self.focused_workflow() { "Reuse full Original  ⌘↩" } else { "Insert source  ⌘↩" }).fill(style::SELECTED)).on_hover_text("Insert the whole source after the selected root beat. This creates an undoable edit.").clicked() { self.insert(); }
                 }
             });
         });
@@ -1350,14 +1720,47 @@ impl DeadpanApp {
     }
 
     fn help(&mut self, context: &egui::Context) {
-        egui::Window::new("Keyboard and context").open(&mut self.help_open).collapsible(false).resizable(false).show(context, |ui| {
-            for (key, description) in [("⌘N / ⌘O / ⌘I", "New project / open project / import"), ("h / l · Left / Right", "Previous / next frame; a count such as 12l works"), ("j / k", "Next / previous source or root sequence beat"), ("gg / G · Home / End", "Start / end boundary"), ("rr · 3rr", "Wrap the selected root beat: two / three total plays"), ("dd · :delete", "Ripple-delete one selected root beat"), (":repeat 3", "Set three total plays on a Repeat; otherwise wrap the root beat"), (":wrap-repeat 3", "Always wrap, including nesting an existing Repeat"), (":hold-duration 11f", "Change a selected root Hold to exactly 11 project frames"), ("Tab / Shift Tab", "Cycle Sources, Viewer and Sequence panes"), ("/ · Escape", "Find a source / leave text entry"), ("⌘Return · :insert", "Insert the whole source after the selected root beat"), ("⌘Z / ⌘Shift Z · u / Ctrl R", "Undo / redo"), (":source / :sequence", "Change the viewer context")] {
-                ui.horizontal(|ui| { ui.monospace(key); ui.label(description); });
-            }
-            ui.separator();
-            ui.label("Source editing keys offer explicit insertion and preserve original media. Sequence edits affect the selected root beat and its linked picture and sound. Frame motions select the beat to the right of the boundary, or the final beat at sequence end.");
-            ui.weak("Nested navigation, range/text-object operators, hold insertion, playback and export are not available yet. Hold duration currently accepts whole project frames only; repeat parameters currently accept total plays only.");
-        });
+        egui::Window::new("Keys · reshape one Original")
+            .open(&mut self.help_open)
+            .collapsible(false)
+            .resizable(true)
+            .default_width(680.0)
+            .show(context, |ui| {
+                egui::ScrollArea::vertical().max_height((context.input(|input| input.content_rect().height()) - 140.0).max(240.0)).show(ui, |ui| {
+                    ui.label("New starts with your full video. Its Original stays intact while Your edit changes.");
+                    ui.label(egui::RichText::new("START & MOVE").strong().color(style::LAVENDER));
+                    for (key, description) in [
+                        ("⌘N / ⌘O", "Choose one Original / open a project. New projects live in Documents/Deadpan."),
+                        ("h l · Left Right", "Move one frame in the current clock. Prefix a count: 12l."),
+                        ("j k", "V1: select the next / previous root beat and return to Your edit. In a legacy Sources pane, choose a source."),
+                        ("gg / G", "First / final boundary."),
+                        (":source / :sequence", "Browse unchanged Original / work on Your edit."),
+                        ("Tab / Shift Tab", "Cycle Original, Viewer, visible Inspector, and Beats focus."),
+                        ("/", "Find a sound in V1, or a source in a legacy project."),
+                    ] { help_binding(ui, key, description); }
+                    ui.separator();
+                    ui.label(egui::RichText::new("RESHAPE THE SELECTED BEAT").strong().color(style::LAVENDER));
+                    for (key, description) in [
+                        ("rr / 3rr", "Wrap the selected root beat in two / three total plays."),
+                        ("dd / :delete", "Cut one whole root beat and close its time. Undo restores it."),
+                        (":repeat 3", "Set total plays on a Repeat; wrap a different root beat."),
+                        (":wrap-repeat 3", "Always add an enclosing Repeat, including nesting."),
+                        ("Enter in Inspector", "Edit the selected Repeat count or existing Hold duration."),
+                        (":hold-duration 11f", "Set a selected root Hold to exactly 11 project frames."),
+                        ("⌘Return / :insert", "Reuse the full Original after the selected root beat. Legacy projects insert their selected source."),
+                        ("u / Ctrl R", "Undo / redo. Native ⌘Z / ⌘Shift Z also work."),
+                    ] { help_binding(ui, key, description); }
+                    ui.separator();
+                    for (key, description) in [
+                        ("⌘I", "Add an audio-only sound, or retry an incomplete Original. Audio selection is automatic; advanced stream choices are in import options."),
+                        (": / Enter / Esc", "Enter a command / apply / cancel. Text fields keep native editing and IME."),
+                        ("? / :help / Esc", "Open this reference / close it."),
+                    ] { help_binding(ui, key, description); }
+                    ui.separator();
+                    ui.weak("Original browsing never changes it. Your edit commands affect the selected root beat and its linked picture and sound. Counts precede operators, such as 3rr; the visible PENDING badge waits without a timer.");
+                    ui.weak("Current limits: range cuts/reuse, nested navigation, new Holds, sound placement/audition, playback, effects, AI generation in the app, and export are not available yet. Registered sounds are retained catalog entries only.");
+                });
+            });
     }
 }
 
@@ -1367,6 +1770,7 @@ impl eframe::App for DeadpanApp {
         self.close_pending |= context.input(|i| i.viewport().close_requested());
         let previous_pane = self.pane;
         self.receive();
+        self.ensure_visible_pane(&context);
         if self.close_pending {
             if self.service.is_busy() {
                 context.send_viewport_cmd(egui::ViewportCommand::CancelClose);
@@ -1398,6 +1802,7 @@ impl eframe::App for DeadpanApp {
         self.footer(ui);
         self.sources(ui);
         self.timeline(ui);
+        self.inspector(ui);
         self.viewer(ui);
         self.help(&context);
         if input_scope
@@ -1420,6 +1825,7 @@ impl eframe::App for DeadpanApp {
             self.command_open = false;
             context.memory_mut(|m| m.request_focus(pane_id(self.pane)));
         }
+        self.ensure_visible_pane(&context);
         if close_command_on_blur(&context, &mut self.command_open) {
             self.bindings.clear();
         }
@@ -1472,6 +1878,84 @@ fn beat_kind(kind: &NodeKind) -> String {
         NodeKind::Sequence { .. } => "Sequence".into(),
     }
 }
+
+fn frame_rate_label(rate: deadpan_core::FrameRate) -> String {
+    if rate.denominator() == 1 {
+        format!("{} fps", rate.numerator())
+    } else {
+        format!("{}/{} fps", rate.numerator(), rate.denominator())
+    }
+}
+
+fn pane_name(pane: Pane) -> &'static str {
+    match pane {
+        Pane::Sources => "Sources",
+        Pane::Viewer => "Viewer",
+        Pane::Sequence => "Beats",
+        Pane::Inspector => "Inspector",
+    }
+}
+
+fn pane_heading(ui: &mut egui::Ui, title: &str, focused: bool) -> egui::Response {
+    ui.horizontal(|ui| {
+        ui.label(egui::RichText::new(title).size(13.0).strong());
+        if focused {
+            ui.label(
+                egui::RichText::new("FOCUS")
+                    .size(9.0)
+                    .color(style::LAVENDER),
+            );
+        }
+    })
+    .response
+}
+
+fn paint_cursor(ui: &egui::Ui, rect: egui::Rect, fraction: f32, cursor: u64) {
+    let x = egui::lerp(rect.left()..=rect.right(), fraction);
+    ui.painter().line_segment(
+        [
+            egui::pos2(x, rect.top() - 3.0),
+            egui::pos2(x, rect.bottom()),
+        ],
+        egui::Stroke::new(1.0, style::CURSOR),
+    );
+    let text = ui.painter().layout_no_wrap(
+        cursor.to_string(),
+        egui::FontId::monospace(10.0),
+        style::CANVAS,
+    );
+    let size = text.size() + egui::vec2(8.0, 4.0);
+    let center_x = x.clamp(rect.left() + size.x / 2.0, rect.right() - size.x / 2.0);
+    let badge = egui::Rect::from_center_size(egui::pos2(center_x, rect.top() - 10.0), size);
+    ui.painter().rect_filled(badge, 3.0, style::CURSOR);
+    ui.painter()
+        .galley(badge.min + egui::vec2(4.0, 2.0), text, style::CANVAS);
+}
+
+fn inspector_value(ui: &mut egui::Ui, label: &str, value: &str) {
+    ui.horizontal(|ui| {
+        ui.allocate_ui_with_layout(
+            egui::vec2(72.0, 24.0),
+            egui::Layout::left_to_right(egui::Align::Center),
+            |ui| {
+                ui.label(egui::RichText::new(label).size(12.0));
+            },
+        );
+        egui::Frame::new()
+            .fill(style::PANEL)
+            .stroke(egui::Stroke::new(1.0, style::BORDER))
+            .corner_radius(4)
+            .inner_margin(egui::Margin::symmetric(7, 5))
+            .show(ui, |ui| {
+                ui.set_min_width((ui.available_width() - 14.0).max(24.0));
+                ui.add(
+                    egui::Label::new(egui::RichText::new(value).monospace().size(11.5)).truncate(),
+                )
+                .on_hover_text(format!("{label}: {value}"));
+            });
+    });
+}
+
 type SourceRow = (AssetId, String, bool);
 fn retain_text_escape(ui: &egui::Ui, id: &str) {
     // Keep focus through the input pass so the application can leave text mode
@@ -1494,11 +1978,38 @@ fn root_children(workspace: &Workspace) -> &[NodeId] {
         _ => &[],
     }
 }
+
+fn original_asset(workspace: &Workspace) -> Option<&AssetId> {
+    match &workspace.single_source {
+        Some(SingleSourceState::Ready { asset, .. }) => Some(asset),
+        _ => None,
+    }
+}
+
+/// A sound arriving in the catalog cannot move the Original cursor or selection.
+fn registration_selection(
+    profile: Option<&SingleSourceState>,
+    imported: AssetId,
+) -> Option<AssetId> {
+    match profile {
+        Some(SingleSourceState::Ready { asset, .. }) if asset == &imported => Some(imported),
+        Some(_) => None,
+        None => Some(imported),
+    }
+}
+
+fn help_binding(ui: &mut egui::Ui, key: &str, description: &str) {
+    ui.horizontal_wrapped(|ui| {
+        style::keycap(ui, key);
+        ui.label(description);
+    });
+}
 fn pane_id(pane: Pane) -> egui::Id {
     egui::Id::new(match pane {
         Pane::Sources => "sources-pane",
         Pane::Viewer => "viewer-pane",
         Pane::Sequence => "sequence-pane",
+        Pane::Inspector => "inspector-pane",
     })
 }
 fn close_command_on_blur(context: &egui::Context, open: &mut bool) -> bool {
@@ -1561,6 +2072,32 @@ fn target_size(size: egui::Vec2, pixels_per_point: f32) -> (u32, u32) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn v1_open_and_sound_completion_preserve_original_identity_and_cursor() {
+        let original = AssetId::new("original").unwrap();
+        let sound = AssetId::new("sound").unwrap();
+        let ready = SingleSourceState::Ready {
+            initial_revision: RevisionId::new("initial").unwrap(),
+            asset: original.clone(),
+            qualification: deadpan_core::SourceQualificationId::new("a".repeat(64)).unwrap(),
+            node: NodeId::new("original-beat").unwrap(),
+            baseline_revision: RevisionId::new("baseline").unwrap(),
+        };
+        let awaiting = SingleSourceState::AwaitingSource {
+            initial_revision: RevisionId::new("initial").unwrap(),
+        };
+        assert_eq!(View::on_open(Some(&ready)), View::Sequence);
+        assert_eq!(View::on_open(Some(&awaiting)), View::Source);
+        assert_eq!(View::on_open(None), View::Source);
+        assert_eq!(registration_selection(Some(&ready), sound.clone()), None);
+        assert_eq!(
+            registration_selection(Some(&ready), original.clone()),
+            Some(original)
+        );
+        assert_eq!(registration_selection(Some(&awaiting), sound.clone()), None);
+        assert_eq!(registration_selection(None, sound.clone()), Some(sound));
+    }
 
     #[test]
     fn pointer_focus_batches_defer_shortcuts_and_old_command_submission() {

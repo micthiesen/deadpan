@@ -9,7 +9,10 @@ use std::sync::{Arc, Mutex, mpsc};
 use deadpan_core::{AssetId, FrameDuration, NodeId, ProjectDocument, RevisionId, SourceFrameIndex};
 use deadpan_plan::RenderPlan;
 use deadpan_store::original_media::{OriginalImportHandle, OriginalMediaRecord, OriginalOwnership};
+use deadpan_store::single_source::SingleSourceState;
 use deadpan_store::source_registration::SourceQualificationReceipt;
+
+use crate::library::ProjectLibrary;
 
 mod service;
 #[cfg(test)]
@@ -33,11 +36,17 @@ pub struct Workspace {
     pub originals: OriginalImportHandle,
     pub can_undo: bool,
     pub can_redo: bool,
+    /// None identifies a preserved generic/legacy project.
+    pub single_source: Option<SingleSourceState>,
+    /// Full measured Original stream union in the current project-frame clock.
+    /// This is not the video's decoded presentation-frame count.
+    pub original_duration: Option<FrameDuration>,
 }
 
 #[derive(Clone, Copy, Debug)]
 pub enum ImportMedia {
     Video,
+    FirstAudio,
     Audio { stream: u32 },
 }
 
@@ -99,6 +108,28 @@ pub enum ProjectEdit {
 }
 
 pub enum ProjectRequest {
+    /// Source first: native projects are always allocated in Documents/Deadpan.
+    CreateFromSource {
+        path: PathBuf,
+    },
+    InitializeSource {
+        expected_session: u64,
+        expected_revision: RevisionId,
+        path: PathBuf,
+    },
+    /// Register an audio-only catalog entry, not a timeline or overlay insertion.
+    /// None selects the first actual audio stream through guarded admission.
+    /// Some selects an explicit absolute container stream index.
+    ImportSound {
+        expected_session: u64,
+        expected_revision: RevisionId,
+        path: PathBuf,
+        stream: Option<u32>,
+        ownership: OriginalOwnership,
+    },
+    /// Retained for generic host fixtures and compatibility; native New uses
+    /// CreateFromSource and never asks for an arbitrary package location.
+    #[cfg(test)]
     Create(PathBuf),
     Open(PathBuf),
     Close,
@@ -141,6 +172,13 @@ pub struct ProjectService {
 
 impl ProjectService {
     pub fn new(wake: Arc<dyn Fn() + Send + Sync>) -> io::Result<Self> {
+        Self::start(wake, None)
+    }
+
+    fn start(
+        wake: Arc<dyn Fn() + Send + Sync>,
+        library: Option<ProjectLibrary>,
+    ) -> io::Result<Self> {
         let shared = Arc::new(Shared {
             busy: AtomicBool::new(false),
             stopping: AtomicBool::new(false),
@@ -152,7 +190,7 @@ impl ProjectService {
         let state = shared.clone();
         std::thread::Builder::new()
             .name("deadpan-project".into())
-            .spawn(move || service::run(state, receive, jobs, results, worker))?;
+            .spawn(move || service::run(state, receive, jobs, results, worker, library))?;
         Ok(Self { requests, shared })
     }
 

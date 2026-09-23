@@ -2,6 +2,13 @@
 
 This is the specified default keymap, not a claim that an application has been implemented. Full scope and edge semantics are in `DEADPAN_SPEC.md`.
 
+V1 starts with one full Original video already on the timeline. **Original** is
+the non-destructive Source context; **Your edit** is Sequence context. Reuse
+moments from that same video and add external audio-only effects. New native
+projects live in Documents/Deadpan. Undo stops at the full-original baseline.
+Common actions show their keys in the UI; pending input shows exact prefix and
+valid next keys, with focused pane distinct from selected content.
+
 ## Navigate
 
 | Key | Action |
@@ -19,6 +26,7 @@ This is the specified default keymap, not a claim that an application has been i
 | `Space` | Play/pause. |
 | `Shift-Space` | Audition-loop selection with context. |
 | `Enter/Backspace` | Drill into group / return to parent. |
+| `Tab/Shift-Tab` | Cycle visible panes; focus remains distinct from selection. |
 
 ## Select and edit
 
@@ -27,6 +35,11 @@ This is the specified default keymap, not a claim that an application has been i
 Objects: `iw/aw` word; `is/as` sentence; `ip/ap` pause; `ib/ab` beat; `ig/ag` group; `iS/aS` shot. `i` is tight; `a` includes defined handles or owned attachments. Audio-only sample edits are explicitly selected through `:select role=audio`.
 
 `p/P` paste after/before a beat; replace a Visual selection. `s` splits. `x` deletes one frame. `u` undoes; `Ctrl-r` redoes. `.` repeats the last semantic edit. `"` plus a letter selects a register. `q` plus a letter records a macro; `q` stops; `@` plus a letter runs it.
+
+In Original context, mark or yank a moment for reuse; `d` and `r` never change
+original bytes or create a replacement timeline. Return to Your edit to change
+the existing sequence. Picture registers and cutaways refer to the same Original;
+external media contributes sound only.
 
 ## Shape the moment
 
@@ -38,7 +51,7 @@ Objects: `iw/aw` word; `is/as` sentence; `ip/ap` pause; `ib/ab` beat; `ig/ag` gr
 | `,z` | 1.35× punch-in. |
 | `,c` | Creep toward 1.35× over selection. |
 | `,m` | Mute selected sound. |
-| `,r` | Reaction cutaway picker. |
+| `,r` | Reaction cutaway picker using moments from the Original. |
 | `,e` | Escalating-repeat recipe. |
 | `,b` | Bleep selected interval. |
 | `,t` | Reverb tail. |

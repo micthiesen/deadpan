@@ -17,11 +17,14 @@ pub(crate) struct NavigationPlan {
 impl ProjectStore {
     /// Availability at the current durable cursor without building inverse edits.
     pub fn history_availability(&self) -> Result<(bool, bool), StoreError> {
-        Ok(self.connection.query_row(
+        let (undo, redo) = self.connection.query_row(
             "SELECT cursor IS NOT NULL, EXISTS(SELECT 1 FROM redo) FROM state WHERE singleton=1",
             [],
             |row| Ok((row.get(0)?, row.get(1)?)),
-        )?)
+        )?;
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        let undo = undo && !crate::single_source::at_baseline(&self.connection)?;
+        Ok((undo, redo))
     }
 
     pub fn undo(
@@ -162,6 +165,10 @@ fn prepare_navigation(
             .optional()?
             .ok_or(StoreError::NothingToRedo)?
     } else {
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        if crate::single_source::at_baseline(connection)? {
+            return Err(StoreError::NothingToUndo);
+        }
         cursor.ok_or(StoreError::NothingToUndo)?
     };
     ensure_unused_revision(connection, &next_revision)?;

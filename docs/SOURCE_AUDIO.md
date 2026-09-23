@@ -1,7 +1,13 @@
 # Original audio decoding and indexing
 
 `deadpan-source::audio::AudioDecoder` opens one explicitly selected audio stream
-from a private file descriptor. Its persistent software decoder retains raw
+or the first actual admitted audio stream with `open_first`, from a private file
+descriptor. `AudioSession::open_first_input` exposes the same choice above the
+verified-input boundary. Automatic selection comes from the complete bounded
+container guard, including MP4 video at stream 0 and audio at stream 1. It never
+guesses indices or repeatedly opens decoders. Explicit selection remains unchanged.
+Both paths share header/opening byte and deadline budgets; absence of admitted
+audio fails explicitly. Its persistent software decoder retains raw
 frame PTS/DTS, reported duration, original sample rate, channel interpretation,
 sample format/count, discard flag and manual skip side data. It returns owned
 interleaved f32 samples without resampling, downmixing, gain, clipping or automatic

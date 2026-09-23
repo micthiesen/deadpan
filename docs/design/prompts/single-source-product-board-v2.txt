@@ -1,0 +1,8 @@
+Use case: precise-object-edit.
+Asset type: corrected single-original Deadpan product design board.
+Input image: edit target, supplied "DEADPAN / ONE ORIGINAL, MADE WEIRD" board.
+Preserve the entire six-artboard composition, style, colors, interview imagery, spacing and all unrelated details. Make only these information-design corrections:
+1. In artboard04 "REUSE YOUR OWN MOMENTS", remove the lavender rectangle around the person's face. A source time-range selection is not a spatial crop. Keep the full interview image unobstructed, and place a compact horizontal ORIGINAL filmstrip/time bar just beneath it with a lavender selected interval bounded132 and156, labelled "132–156 · 24 frames". Show selection handles on this time bar only. Keep the same single Original and Selected moment card. Bottom mode must read "VISUAL · ORIGINAL · Focus: Original". The instruction under Paste must read "Paste after the selected beat." Do not say at playhead when the action is p paste-after-beat.
+2. In artboard06 Keys, the rr explanation must read "Repeat current beat", and the dd explanation must read "Cut current beat". These double operators are whole-beat actions, not arbitrary selection operators.
+3. In artboard03, retain the exact four-card arithmetic. It is Answer132f0–132; Pause11f132–143; AgainRepeat3totalplays72f143–215; Carryon84f215–299. Preserve Original240f / Your edit299f / +59f.
+Do not add other changes, controls, media sources or invented shortcuts. Keep typography readable and the board visually polished.

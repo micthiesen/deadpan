@@ -4,6 +4,8 @@ use std::path::PathBuf;
 pub enum StoreError {
     #[error("Project package must have a .deadpan extension")]
     PackageExtension,
+    #[error("A project package already exists at {0}")]
+    PackageAlreadyExists(PathBuf),
     #[error("Project storage entry is missing, has the wrong type, or is a symbolic link: {0}")]
     UnsafePath(PathBuf),
     #[error("Another process owns this project; close its writable session before editing")]
@@ -68,6 +70,8 @@ pub enum StoreError {
     SourceBasisAdmissionUnavailable,
     #[error("Source registration is invalid: {0}")]
     SourceRegistration(String),
+    #[error("Single-source project workflow is invalid: {0}")]
+    SingleSource(String),
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     #[error(transparent)]
     SourceQualification(#[from] deadpan_media::source_qualification::SourceQualificationError),
@@ -97,6 +101,7 @@ impl StoreError {
     /// Stable protocol codes shared by GUI and headless callers.
     pub fn code(&self) -> &'static str {
         match self {
+            Self::PackageAlreadyExists(_) => "PackageAlreadyExists",
             Self::AlreadyOpen => "ProjectAlreadyOpen",
             Self::ReadOnly => "ProjectReadOnly",
             Self::UnsupportedSchema(_) => "SchemaUnsupported",
@@ -111,6 +116,7 @@ impl StoreError {
             Self::RevisionConflict { .. } => "RevisionConflict",
             Self::NothingToUndo => "NothingToUndo",
             Self::NothingToRedo => "NothingToRedo",
+            Self::SingleSource(_) => "SingleSourceInvalid",
             Self::GenerationRequestReused(_) => "GenerationRequestReused",
             Self::GenerationTarget(_) => "GenerationTargetInvalid",
             Self::GenerationRelevanceRequired => "GenerationRelevanceRequired",

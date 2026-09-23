@@ -23,8 +23,11 @@ uuid.workspace = true
 
 [target.'cfg(target_os = "macos")'.dependencies]
 rfd = { version = "=0.17.2", default-features = false }
+objc2 = { version = "=0.6.4", default-features = false, features = ["std"] }
+objc2-foundation = { version = "=0.3.2", default-features = false, features = ["std", "NSFileManager", "NSArray", "NSURL", "NSString", "NSPathUtilities"] }
 
 [dev-dependencies]
+rusqlite.workspace = true
 serde_json.workspace = true
 tempfile.workspace = true
 

@@ -10,8 +10,12 @@ use eframe::egui;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum DialogKind {
+    /// Choose the original video; the project package location is automatic.
     CreateProject,
+    InitializeSource,
     OpenProject,
+    ImportSound,
+    /// Generic/legacy host media registration.
     ImportMedia,
 }
 
@@ -71,27 +75,11 @@ impl Dialogs {
         };
         let kind = pending.kind;
         self.pending = None;
-        Some(DialogResult {
-            kind,
-            path: path.map(|path| match kind {
-                DialogKind::CreateProject => project_path(path),
-                DialogKind::OpenProject | DialogKind::ImportMedia => path,
-            }),
-        })
+        Some(DialogResult { kind, path })
     }
 
     pub fn is_open(&self) -> bool {
         self.pending.is_some()
-    }
-}
-
-fn project_path(path: PathBuf) -> PathBuf {
-    if path.extension() == Some(std::ffi::OsStr::new("deadpan")) {
-        path
-    } else {
-        let mut name = path.into_os_string();
-        name.push(".deadpan");
-        PathBuf::from(name)
     }
 }
 
@@ -101,18 +89,24 @@ fn native_dialog(kind: DialogKind) -> Result<DialogFuture, String> {
     // running NSApplication. Moving construction into an async block would defer
     // that requirement to whoever first polls it.
     let future: Pin<Box<dyn Future<Output = Option<rfd::FileHandle>> + Send>> = match kind {
-        DialogKind::CreateProject => Box::pin(
+        DialogKind::CreateProject | DialogKind::InitializeSource => Box::pin(
             rfd::AsyncFileDialog::new()
-                .set_title("Create Deadpan project (.deadpan)")
-                .set_file_name("Untitled.deadpan")
-                .set_can_create_directories(true)
-                .save_file(),
+                .set_title("Choose the Original video")
+                .add_filter("Qualified video containers", &["mp4", "m4v", "mkv"])
+                .pick_file(),
         ),
         DialogKind::OpenProject => Box::pin(
             rfd::AsyncFileDialog::new()
                 .set_title("Open a Deadpan project (.deadpan)")
+                .set_directory(crate::library::ProjectLibrary::documents()?.root())
                 .set_can_create_directories(false)
                 .pick_folder(),
+        ),
+        DialogKind::ImportSound => Box::pin(
+            rfd::AsyncFileDialog::new()
+                .set_title("Add a sound (audio stream only)")
+                .add_filter("Qualified audio containers", &["wav", "mp4", "m4a", "m4v"])
+                .pick_file(),
         ),
         DialogKind::ImportMedia => Box::pin(
             rfd::AsyncFileDialog::new()
@@ -142,28 +136,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn project_names_preserve_authored_suffixes_and_end_in_deadpan() {
-        assert_eq!(
-            project_path(PathBuf::from("/projects/Untitled")),
-            PathBuf::from("/projects/Untitled.deadpan")
-        );
-        for name in ["A.deadpan", "with spaces.deadpan"] {
-            let path = PathBuf::from("/projects").join(name);
-            assert_eq!(project_path(path.clone()), path);
-        }
-        for name in ["A.custom", "A.", "A.DEADPAN", "with spaces.edit"] {
-            assert_eq!(
-                project_path(PathBuf::from(name)),
-                PathBuf::from(format!("{name}.deadpan"))
-            );
-        }
-        assert_eq!(
-            project_path(PathBuf::from("/projects/.hidden")),
-            PathBuf::from("/projects/.hidden.deadpan")
-        );
-    }
-
-    #[test]
     fn pending_dialog_rejects_another_and_cancellation_releases_it() {
         let context = egui::Context::default();
         let mut dialogs = Dialogs {
@@ -186,17 +158,19 @@ mod tests {
     }
 
     #[test]
-    fn chosen_project_path_is_returned_once_with_its_extension() {
+    fn new_project_returns_the_selected_original_once_without_changing_its_path() {
         let mut dialogs = Dialogs {
             pending: Some(PendingDialog {
                 kind: DialogKind::CreateProject,
-                future: Box::pin(std::future::ready(Some(PathBuf::from("/projects/My cut")))),
+                future: Box::pin(std::future::ready(Some(PathBuf::from(
+                    "/clips/My interview.mp4",
+                )))),
                 waker: Waker::from(Arc::new(Repaint(egui::Context::default()))),
             }),
         };
         let result = dialogs.take_result().unwrap();
         assert_eq!(result.kind, DialogKind::CreateProject);
-        assert_eq!(result.path, Some(PathBuf::from("/projects/My cut.deadpan")));
+        assert_eq!(result.path, Some(PathBuf::from("/clips/My interview.mp4")));
         assert!(!dialogs.is_open());
         assert!(dialogs.take_result().is_none());
     }

@@ -18,6 +18,72 @@ use rusqlite::Connection;
 type Result<T = ()> = std::result::Result<T, Box<dyn Error>>;
 
 #[test]
+fn schema_sixteen_retains_exact_core_eleven_history_and_stays_generic() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let path = fixture_version(scratch.path(), 16)?;
+    let database = Connection::open(path.join("project.sqlite"))?;
+    let before = contents(&database)?;
+    let before_docs = docs(&database)?;
+    let before_history = history_json(&database)?;
+    let before_metadata = metadata(&database)?;
+    let before_operational = operational_metadata(&database)?;
+    let before_qualifications = qualification_metadata(&database)?;
+    assert_eq!((before_docs.len(), before_history.len()), (14, 8));
+    assert!(matches!(
+        ProjectStore::open(&path, AccessMode::ReadOnly),
+        Err(StoreError::MigrationRequired(16))
+    ));
+    let migrated = ProjectStore::migrate(&path)?;
+    assert_eq!(
+        (migrated.from_schema, migrated.to_schema),
+        (16, DATABASE_SCHEMA_VERSION)
+    );
+    let backup = Connection::open(migrated.backup.unwrap())?;
+    assert_eq!(contents(&backup)?, before);
+    assert_eq!(docs(&database)?, before_docs);
+    assert_eq!(history_json(&database)?, before_history);
+    assert_eq!(metadata(&database)?, before_metadata);
+    assert_eq!(operational_metadata(&database)?, before_operational);
+    assert_eq!(qualification_metadata(&database)?, before_qualifications);
+    let mut store = ProjectStore::open(&path, AccessMode::ReadWrite)?;
+    assert_eq!(store.single_source_state()?, None);
+    // A legacy project gains no artificial floor, even if it happened to use
+    // just one source. Every admitted historical edit remains undoable.
+    let mut count = 0;
+    while store.history_availability()?.0 {
+        let before = store.snapshot()?;
+        store.undo(
+            before.revision_id(),
+            RevisionId::new(format!("schema17-undo-{count}"))?,
+        )?;
+        count += 1;
+    }
+    assert!(count >= 3);
+    store.validate()?;
+    drop(store);
+    assert_eq!(
+        ProjectStore::open(&path, AccessMode::ReadOnly)?.single_source_state()?,
+        None
+    );
+    Ok(())
+}
+
+#[test]
+fn schema_sixteen_rejects_premature_profile_vocabulary_without_touching_original() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let path = fixture_version(scratch.path(), 16)?;
+    let database = Connection::open(path.join("project.sqlite"))?;
+    database.execute_batch("CREATE TABLE single_source(value TEXT);")?;
+    let before = contents(&database)?;
+    assert!(matches!(
+        ProjectStore::migrate(&path),
+        Err(StoreError::MigrationFailed { .. })
+    ));
+    assert_eq!(contents(&database)?, before);
+    Ok(())
+}
+
+#[test]
 fn schema_fourteen_preserves_explicit_basis_and_qualified_source_branches() -> Result {
     use deadpan_core::{AssetId, BasisState, CommandRequest, EditTransaction};
     let scratch = tempfile::tempdir()?;
@@ -1262,6 +1328,7 @@ fn fixture_version(scratch: &Path, version: u32) -> Result<PathBuf> {
         13 => include_str!("fixtures/v13-history.sql"),
         14 => include_str!("fixtures/v14-history.sql"),
         15 => include_str!("fixtures/v15-history.sql"),
+        16 => include_str!("fixtures/v16-history.sql"),
         _ => panic!("unsupported fixture"),
     })?;
     Ok(package)

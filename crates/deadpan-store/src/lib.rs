@@ -18,6 +18,8 @@ mod object_storage;
 pub mod original_media;
 mod schema;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+pub mod single_source;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod source_registration;
 mod validation;
 
@@ -86,13 +88,27 @@ impl ProjectStore {
     /// Creates a new package exclusively. An existing path is never overwritten.
     /// If setup fails, an incomplete new package may remain for inspection.
     pub fn create(path: &Path, document: &ProjectDocument) -> Result<Self, StoreError> {
+        Self::create_inner(path, document, false)
+    }
+
+    fn create_inner(
+        path: &Path,
+        document: &ProjectDocument,
+        single_source: bool,
+    ) -> Result<Self, StoreError> {
         validate_extension(path)?;
         document.validate()?;
         let json = document.to_json()?;
         check_document_size(&json)?;
         ensure_generated_admission(None, document)?;
         ensure_source_admission(None, document, None)?;
-        fs::create_dir(path)?;
+        fs::create_dir(path).map_err(|error| {
+            if error.kind() == std::io::ErrorKind::AlreadyExists {
+                StoreError::PackageAlreadyExists(path.into())
+            } else {
+                StoreError::Io(error)
+            }
+        })?;
         let package = fs::canonicalize(path)?;
         let lock = acquire_lock(&package)?;
         for directory in [
@@ -117,6 +133,12 @@ impl ProjectStore {
             "INSERT INTO state(singleton,head_revision,cursor) VALUES (1,?1,NULL)",
             [document.revision_id().as_str()],
         )?;
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        if single_source {
+            single_source::create_profile(&transaction, document)?;
+        }
+        #[cfg(not(any(target_os = "macos", target_os = "linux")))]
+        let _ = single_source;
         transaction.commit()?;
         #[derive(Serialize)]
         struct Manifest<'a> {
@@ -228,6 +250,8 @@ impl ProjectStore {
         original_media::check_stored_sizes(&transaction)?;
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         source_registration::check_stored_sizes(&transaction)?;
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        single_source::check_stored_sizes(&transaction)?;
         let integrity: String =
             transaction.query_row("PRAGMA quick_check", [], |row| row.get(0))?;
         if integrity != "ok" {
@@ -247,6 +271,8 @@ impl ProjectStore {
         original_media::validate_store(&transaction)?;
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         source_registration::validate_store(&transaction)?;
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        single_source::validate_store(&transaction)?;
         Ok(())
     }
 
@@ -426,6 +452,8 @@ fn prepare_command_with_admission(
     check_document_size(&next.to_json()?)?;
     ensure_generated_admission_with(Some(&current), &next, generated)?;
     ensure_source_admission(Some(&current), &next, source)?;
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    single_source::check_transition(connection, &current, &next, source.is_some())?;
     match &request.command {
         deadpan_core::Command::ImportSource {
             primary: Some(_), ..

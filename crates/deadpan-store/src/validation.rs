@@ -171,6 +171,7 @@ pub(crate) fn migrate_history(connection: &Connection, version: u32) -> Result<(
         13 => ReplaySchema::V8,
         14 => ReplaySchema::V9,
         15 => ReplaySchema::V10,
+        16 => ReplaySchema::Current,
         _ => return Err(StoreError::UnsupportedSchema(version)),
     };
     replay(connection, schema)

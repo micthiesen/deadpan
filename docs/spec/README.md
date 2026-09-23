@@ -1,14 +1,26 @@
-# Deadpan design package
+# Deadpan product specification
 
-**Deadpan** is the proposed keyboard-native macOS editor for awkward timing, pauses, repeats, reactions, selective sound emphasis, reframing, and local AI-generated holds.
+**Deadpan** is a keyboard-native macOS editor for gradually reshaping one original
+video into a YTP through cuts, pauses, repeats, reframing, external sound effects
+and explicitly accepted local AI extensions. Each new project starts with the
+full original already on the timeline and lives in Documents/Deadpan.
 
 ## Files
 
-- `DEADPAN_SPEC.md`: normative, agent-readable full-product specification; 33 sections, 24 tracked requirements, and 32 primary-source references.
-- `DEADPAN_SPEC.pdf`: the same design in a 55-page reading edition, with linked contents, PDF bookmarks, and source links.
-- `AGENT_HANDOFF.md`: implementation-agent starting instructions and completion criteria.
-- `KEYBOARD_REFERENCE.md`: proposed default keyboard language and editing examples.
+- [DEADPAN_SPEC.md](DEADPAN_SPEC.md): current normative specification, version 1.1
+  of 23 September 2026. Its single-Original V1 policy supersedes the imported 1.0
+  multi-source workflow without removing useful backend or legacy capabilities.
+- [AGENT_HANDOFF.md](AGENT_HANDOFF.md): current agent instructions and completion criteria.
+- [KEYBOARD_REFERENCE.md](KEYBOARD_REFERENCE.md): specified default language and examples.
+- [archive/1.0](archive/1.0/): the complete byte-for-byte imported design package,
+  including the original 55-page PDF. The root `DEADPAN_SPEC.pdf` remains a
+  compatibility copy of that **historical 1.0 reading edition**, not the current spec.
+- [Interface targets](../design/README.md): generated design boards and exact prompts.
 
-Start an implementation agent with `AGENT_HANDOFF.md` and `DEADPAN_SPEC.md`. The PDF is for reading and review; Markdown is the source of truth.
+Start with the current Markdown handoff and specification. There is one current
+product authority: `DEADPAN_SPEC.md`. Archived originals and historical PDF copies
+do not override the user's revised single-original direction.
 
-Version 1.0, 20 September 2026. This package contains a project design, not application source or an executable. Performance targets are not measured results; upstream repositories were assessed through published source/documentation rather than built in this research environment.
+The documents specify the full V1 product; they do not prove implementation.
+[Requirements](../REQUIREMENTS.md) records capability and evidence separately.
+[Provenance](../SPEC_PROVENANCE.md) records the imported files and deliberate revision.

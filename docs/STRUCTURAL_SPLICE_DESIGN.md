@@ -6,6 +6,14 @@ the normative specification. Sections 4.2, 6.3, 6.5 and 12.2 of the
 Repeat/delete/Hold-duration commands do not implement arbitrary-boundary Hold
 insertion or pure Split.
 
+Under specification 1.1, these operations reshape the already populated full
+Original baseline. Range reuse resolves moments from the project's pinned
+Original; it does not add another video source. Splits, cuts and inserted Holds
+must retain that profile and its protected undo floor. External sound effects
+remain anchored audio events rather than sequential blank-picture inserts.
+The general structural representation and legacy projects keep their existing
+capabilities. See [the single-Original contract](SINGLE_ORIGINAL.md).
+
 ## Separate allocation, sampling and envelopes
 
 The current core inserts at a Sequence child index. It has no semantic split or
