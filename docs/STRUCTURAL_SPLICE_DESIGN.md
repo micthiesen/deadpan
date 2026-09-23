@@ -1,7 +1,8 @@
 # Structural splice prerequisites
 
 This is an implementation design record. The [transparent audio partition
-layer](AUDIO_PARTITIONS.md) is implemented in core 12/database 18; the complete
+layer](AUDIO_PARTITIONS.md) was introduced in core 12/database 18. The
+[mark binding lifecycle](MARK_FRAGMENTS.md) follows in core 13/database 19; the complete
 splice commands below remain open. Sections 4.2, 6.3, 6.5 and 12.2 of the
 [specification](spec/DEADPAN_SPEC.md) remain authoritative. Native root-beat
 Repeat/delete/Hold-duration commands do not implement arbitrary-boundary Hold
@@ -127,6 +128,16 @@ project-facing boundary. Owned subtree copies must remain bounded; authored node
 cannot gain two parents. This also avoids pretending generated Holds can sample
 arbitrary suffixes using their current retained-prefix representation.
 
+The single-Original profile permits the old target ID to become a Sequence;
+its full-source node requirement belongs to the immutable baseline. Current
+edits retain the pinned asset, qualification and basis identity. Exact accepted
+generated artifacts already present in the current document may be copied into
+fresh retained Hold contexts without changing their ingress trust. An artifact
+present only in past history is not admitted that way. Operational generation
+requests do not follow copied nodes: a request for Hold T becomes stale if T
+remains as a Sequence. Commit still needs complete relevance observations, and
+new acceptance beneath Retime ancestors remains unsupported.
+
 Marks require explicit old-occurrence-to-fragment lineage. The current generic
 transform cannot move points beyond a shortened leaf into a newly created right
 fragment. Preserve bias, owner/coordinate-host distinction, source coordinates,
@@ -155,16 +166,22 @@ Retaining only the split target's node ID solves target-local marks, not this
 descendant case. Rejecting all such marked splits would leave the full operator
 contract incomplete.
 
-The next mark representation should retain bounded physical bindings under one
-logical MarkId. Plain owner/coordinate pairs are insufficient when splitting
-`Repeat(Sequence[A,B])` between A and B inside one play: a mark owned by A and
-anchored to B crosses physical copies for that play, while later plays use a
-different owner copy. Keep compact stable-play correspondence or equivalent
-visibility constraints. Do not enumerate plays or freeze ordinary Local marks
-out of future repeat growth. Owner and coordinate destinations must be resolved
-independently; apply seam bias before deduplicating exact coordinates. Rounded
-frame equality cannot merge distinct exact positions. Deletion, real copying,
-isolation and unresolved state must consume the same binding semantics.
+[Logical mark bindings](MARK_FRAGMENTS.md) now retain bounded physical bindings
+under one MarkId. Ownership means authored node lifetime, not visible same-play
+correspondence. In `Repeat(Sequence[A,B])`, an A-owned Local mark on B does not
+require A to contribute output at B's position. Pair each retained copy's owner
+and coordinate mapping independently; references outside the copied subtree stay
+outside. Do not impose a new owner-visibility filter or enumerate plays. Hidden
+Local bindings stay bound and can become visible through subsequent editing.
+This preserves the existing external-host and occurrence-copy semantics tested
+in `marks.rs` and `occurrence_edits.rs`.
+
+The binding lifecycle and biased query visibility are implemented. Split still
+must construct the right bindings, retain target-local wrapper coordinates, and
+relocate concrete occurrence coordinates to the selected visible branch. Apply
+seam bias before deduplicating exact coordinates; rounded frame equality cannot
+merge distinct positions. Actual moved-fragment and Split construction tests
+remain required.
 
 Individual Repeat gaps need a representation that does not modify every shared
 gap. Resolve Freeze fallback from the immutable measured picture plan before the
@@ -182,13 +199,8 @@ silence suppression, irregular-seek parity, compact billion-play queries, all
 mark spaces/biases and atomic identity exhaustion. Durable undo/redo must retain
 domain/anchor/envelope metadata as well as picture structure.
 
-Core 12's frozen core-schema-11 adapter replays database schemas 16 and 17,
-preserving the latter's single-Original profile and rejecting partition purpose
-in all legacy wires. Subsequent mark or command vocabulary will need its own
-strict migration boundary. Legacy history cannot acquire fabricated continuity
-or mark scope evidence.
-
-Several existing legacy adapters currently reuse the modern `Mark` wire type.
-Before extending marks, freeze that vocabulary throughout the old adapters as
-well as the immediately preceding document schema. A defaulted new binding
-field must not become legal in old snapshots, requests or inverse patches.
+Core 13/database 19 freeze the old mark grammar throughout all legacy adapters.
+Database 18 replays through frozen core 12, retaining Partition purpose; database
+16/17 replay through frozen core 11 and reject purpose. Every old mark gains only
+its original binding. New Split command vocabulary will need its own strict
+migration boundary. Legacy history cannot acquire fabricated lineage evidence.

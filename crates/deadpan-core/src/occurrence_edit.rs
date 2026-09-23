@@ -439,6 +439,7 @@ mod tests {
             },
         };
         let owned = Mark {
+            fragments: Vec::new(),
             owner: hold.clone(),
             label: "owned".into(),
             boundary: BoundaryAnchor {
@@ -455,7 +456,10 @@ mod tests {
             .map(|index| (MarkId::new(format!("mark-{index}")).unwrap(), owned.clone()))
             .collect();
         let error = crate::apply(&document, &request).unwrap_err();
-        assert!(error.message.contains("exceeds mark limit"), "{error}");
+        assert!(
+            error.message.contains("exceeds mark binding limit"),
+            "{error}"
+        );
         assert_eq!(document.marks.len(), MAX_DOCUMENT_MARKS);
         assert!(document.overrides.is_empty());
 

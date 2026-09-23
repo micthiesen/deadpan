@@ -824,3 +824,94 @@ fn transparent_partition_intent_is_durable_atomic_and_undoable() -> Result {
     assert_eq!(reopened.snapshot()?.nodes(), inserted.nodes());
     Ok(())
 }
+
+#[test]
+fn logical_mark_fragments_survive_partial_loss_reopen_and_durable_history() -> Result {
+    use deadpan_core::{
+        Anchor, AnchorLossPolicy, BoundaryAnchor, ExactRatio, InsertionBias, Mark, MarkFragment,
+        MarkId, MarkState,
+    };
+    let scratch = tempfile::tempdir()?;
+    let path = scratch.path().join("fragments.deadpan");
+    let mut initial = document()?;
+    for id in ["a", "b"] {
+        initial = deadpan_core::apply(&initial, &insert(&initial, id, id)?)?
+            .forward
+            .apply(&initial)?;
+    }
+    let coordinate = |id| {
+        Ok::<_, Box<dyn Error>>(Anchor::Local {
+            node: NodeId::new(id)?,
+            position: ExactRatio::integer(4),
+        })
+    };
+    let mark = Mark {
+        owner: NodeId::new("a")?,
+        label: "Cue".into(),
+        boundary: BoundaryAnchor {
+            coordinate: coordinate("a")?,
+            bias: InsertionBias::Right,
+        },
+        loss_policy: AnchorLossPolicy::DeleteOwned,
+        state: MarkState::Bound,
+        fragments: vec![MarkFragment {
+            owner: NodeId::new("b")?,
+            coordinate: coordinate("b")?,
+            state: MarkState::Bound,
+        }],
+    };
+    let mut wire = serde_json::to_value(&initial)?;
+    wire["marks"]["cue"] = serde_json::to_value(&mark)?;
+    let initial = ProjectDocument::from_json(&wire.to_string())?;
+    let id = MarkId::new("cue")?;
+    let mut store = ProjectStore::create(&path, &initial)?;
+    let delete = CommandRequest {
+        project_id: initial.project_id().clone(),
+        expected_revision: initial.revision_id().clone(),
+        new_revision: RevisionId::new("delete-a")?,
+        command: Command::Delete {
+            node: NodeId::new("a")?,
+        },
+    };
+    store.commit(&delete)?;
+    let removed = store.snapshot()?;
+    assert_eq!(removed.marks()[&id].owner, NodeId::new("b")?);
+    assert_eq!(removed.marks()[&id].binding_count(), 1);
+    drop(store);
+    let mut store = ProjectStore::open(&path, AccessMode::ReadWrite)?;
+    assert_eq!(store.snapshot()?, removed);
+    store.undo(
+        removed.revision_id(),
+        RevisionId::new("undo-fragment-loss")?,
+    )?;
+    assert_eq!(store.snapshot()?.marks()[&id], mark);
+    store.redo(
+        &RevisionId::new("undo-fragment-loss")?,
+        RevisionId::new("redo-fragment-loss")?,
+    )?;
+    assert_eq!(store.snapshot()?.marks(), removed.marks());
+    let before = store.snapshot()?;
+    let count = revision_count(&path)?;
+    let invalid = CommandRequest {
+        project_id: before.project_id().clone(),
+        expected_revision: before.revision_id().clone(),
+        new_revision: RevisionId::new("invalid-owner")?,
+        command: Command::SetMark {
+            id,
+            owner: NodeId::new("missing")?,
+            label: "Invalid".into(),
+            boundary: mark.boundary,
+            loss_policy: AnchorLossPolicy::DeleteOwned,
+        },
+    };
+    assert!(store.commit(&invalid).is_err());
+    assert_eq!(revision_count(&path)?, count);
+    assert_eq!(store.snapshot()?, before);
+    store.validate()?;
+    drop(store);
+    assert_eq!(
+        ProjectStore::open(&path, AccessMode::ReadOnly)?.snapshot()?,
+        before
+    );
+    Ok(())
+}

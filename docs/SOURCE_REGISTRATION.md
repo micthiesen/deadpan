@@ -37,8 +37,8 @@ current revision/target/basis intent and recheck the retained original's namespa
 and inventory version. Tokens cannot cross open project sessions. Synchronous
 registration delegates to this path; independent read-only preview stays available.
 
-Database schema 18 stores immutable receipts in `source_qualifications`, separate
-from authored undo history. Core schema 12 assets bind `source_qualification` to
+Database schema 19 stores immutable receipts in `source_qualifications`, separate
+from authored undo history. Core schema 13 assets bind `source_qualification` to
 the receipt ID. The store commits a new receipt, derived asset, optional Source,
 mark transforms, history and generation relevance in one SQLite transaction.
 A later database failure preserves the already retained original and commits no

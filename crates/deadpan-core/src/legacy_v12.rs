@@ -1,5 +1,5 @@
-//! Frozen schema-11 document and history adapter. Transparent partition purpose
-//! cannot enter schema-11 documents, subtrees, or history patches.
+//! Frozen schema-12 document and history adapter. Retimes retain their explicit
+//! Edit or Partition purpose; marks cannot contain later fragment bindings.
 
 use std::collections::BTreeMap;
 
@@ -7,11 +7,51 @@ use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
 use crate::document::unique_map;
 use crate::legacy_mark::{LegacyMark, project_mark_changes, project_marks, upgrade_marks};
-use crate::legacy_v8::{LegacyNodeKind, LegacySourceNode};
+use crate::legacy_v8::LegacySourceNode;
 use crate::*;
 use crate::{SourceAudioMapping as AudioMapping, SourceVideoMapping as VideoMapping};
 
-/// Core 11 added authored audio edges to the frozen core-8 node vocabulary.
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+enum LegacyRetimePurpose {
+    #[default]
+    Edit,
+    Partition,
+}
+
+impl LegacyRetimePurpose {
+    fn is_edit(&self) -> bool {
+        matches!(self, Self::Edit)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
+enum LegacyNodeKind {
+    Source {
+        source: LegacySourceNode,
+    },
+    Sequence {
+        children: Vec<NodeId>,
+    },
+    Hold {
+        recipe: HoldRecipe,
+    },
+    Repeat {
+        child: NodeId,
+        iterations: IterationOrder,
+        gap: Option<HoldRecipe>,
+    },
+    Retime {
+        child: NodeId,
+        duration: FrameDuration,
+        mapping: FrameRange,
+        pitch: PitchPolicy,
+        #[serde(default, skip_serializing_if = "LegacyRetimePurpose::is_edit")]
+        purpose: LegacyRetimePurpose,
+    },
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct LegacyBeatNode {
@@ -23,25 +63,84 @@ struct LegacyBeatNode {
 
 impl LegacyBeatNode {
     fn upgrade(self) -> BeatNode {
-        let mut node = crate::legacy_v8::LegacyBeatNode {
+        BeatNode {
             label: self.label,
-            kind: self.kind,
+            audio_edges: self.audio_edges,
+            kind: match self.kind {
+                LegacyNodeKind::Source { source } => NodeKind::Source {
+                    source: source.upgrade(),
+                },
+                LegacyNodeKind::Sequence { children } => NodeKind::Sequence { children },
+                LegacyNodeKind::Hold { recipe } => NodeKind::Hold { recipe },
+                LegacyNodeKind::Repeat {
+                    child,
+                    iterations,
+                    gap,
+                } => NodeKind::Repeat {
+                    child,
+                    iterations,
+                    gap,
+                },
+                LegacyNodeKind::Retime {
+                    child,
+                    duration,
+                    mapping,
+                    pitch,
+                    purpose,
+                } => NodeKind::Retime {
+                    child,
+                    duration,
+                    mapping,
+                    pitch,
+                    purpose: match purpose {
+                        LegacyRetimePurpose::Edit => RetimePurpose::Edit,
+                        LegacyRetimePurpose::Partition => RetimePurpose::Partition,
+                    },
+                },
+            },
         }
-        .upgrade();
-        node.audio_edges = self.audio_edges;
-        node
     }
 
     fn project(node: &BeatNode) -> Option<Self> {
-        let old = crate::legacy_v8::LegacyBeatNode::project(&BeatNode {
-            label: node.label.clone(),
-            kind: node.kind.clone(),
-            audio_edges: AudioEdgePolicies::default(),
-        })?;
         Some(Self {
-            label: old.label,
-            kind: old.kind,
+            label: node.label.clone(),
             audio_edges: node.audio_edges,
+            kind: match &node.kind {
+                NodeKind::Source { source } => LegacyNodeKind::Source {
+                    source: LegacySourceNode::project(source)?,
+                },
+                NodeKind::Sequence { children } => LegacyNodeKind::Sequence {
+                    children: children.clone(),
+                },
+                NodeKind::Hold { recipe } => LegacyNodeKind::Hold {
+                    recipe: recipe.clone(),
+                },
+                NodeKind::Repeat {
+                    child,
+                    iterations,
+                    gap,
+                } => LegacyNodeKind::Repeat {
+                    child: child.clone(),
+                    iterations: iterations.clone(),
+                    gap: gap.clone(),
+                },
+                NodeKind::Retime {
+                    child,
+                    duration,
+                    mapping,
+                    pitch,
+                    purpose,
+                } => LegacyNodeKind::Retime {
+                    child: child.clone(),
+                    duration: *duration,
+                    mapping: *mapping,
+                    pitch: *pitch,
+                    purpose: match purpose {
+                        RetimePurpose::Edit => LegacyRetimePurpose::Edit,
+                        RetimePurpose::Partition => LegacyRetimePurpose::Partition,
+                    },
+                },
+            },
         })
     }
 }
@@ -82,8 +181,8 @@ pub struct Document {
 impl Document {
     pub fn from_json(json: &str) -> Result<Self, DocumentError> {
         let old: Self = parse(json)?;
-        if old.schema_version != 11 {
-            return Err(invalid("migration requires document schema 11"));
+        if old.schema_version != 12 {
+            return Err(invalid("migration requires document schema 12"));
         }
         old.clone().upgrade()?;
         Ok(old)
@@ -128,7 +227,7 @@ impl Document {
         };
         let assets = document.assets.clone();
         self == &Self {
-            schema_version: 11,
+            schema_version: 12,
             project_id: document.project_id.clone(),
             revision_id: document.revision_id.clone(),
             presentation_basis: document.presentation_basis.clone(),

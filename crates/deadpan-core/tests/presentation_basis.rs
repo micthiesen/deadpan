@@ -153,6 +153,59 @@ fn mark(coordinate: Anchor) -> Command {
 }
 
 #[test]
+fn provisional_basis_rejects_timed_secondary_bindings_behind_a_source_primary() {
+    let (registered, _) = edit(&automatic(), import(None, None));
+    let coordinate = Anchor::Source {
+        asset: asset_id(),
+        moment: SourceMoment::Timestamp {
+            stream: SourceStream::Video,
+            timestamp: span().start(),
+        },
+    };
+    let (marked, _) = edit(&registered, mark(coordinate.clone()));
+    let mut wire = serde_json::to_value(&marked).unwrap();
+    wire["marks"]["mark"]["fragments"] = json!([MarkFragment {
+        owner: node("root"),
+        coordinate,
+        state: MarkState::Bound
+    }]);
+    assert_eq!(
+        ProjectDocument::from_json(&wire.to_string())
+            .unwrap()
+            .basis_state(),
+        &BasisState::provisional()
+    );
+    for coordinate in [
+        Anchor::Sequence {
+            frame: ProjectFrame(0),
+        },
+        Anchor::Local {
+            node: node("root"),
+            position: ExactRatio::ZERO,
+        },
+    ] {
+        for state in [
+            MarkState::Bound,
+            MarkState::Unresolved {
+                reason: MarkLossReason::OwnerMissing,
+            },
+        ] {
+            wire["marks"]["mark"]["fragments"] = json!([MarkFragment {
+                owner: node("root"),
+                coordinate: coordinate.clone(),
+                state
+            }]);
+            assert_eq!(
+                ProjectDocument::from_json(&wire.to_string())
+                    .unwrap_err()
+                    .code,
+                DocumentErrorCode::InvalidPresentation
+            );
+        }
+    }
+}
+
+#[test]
 fn automatic_registration_and_source_marks_remain_eligible_for_atomic_primary_adoption() {
     let before = automatic();
     assert_eq!(before.basis_state(), &BasisState::provisional());

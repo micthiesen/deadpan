@@ -47,13 +47,15 @@ envelope, not each fragment's newly shortened allocation.
 
 ## Compatibility and persistence
 
-Database schema 18 stores core 12. Schemas 16 and 17 replay their complete
+Database schema 19 stores core 13 and its [logical mark bindings](MARK_FRAGMENTS.md).
+Schema 18 replays through frozen core 12, retaining Partition purpose and one
+binding per old mark. Schemas 16 and 17 replay their complete
 core-11 history through the frozen `legacy_v11` adapter. Schema 17's workflow
 profile and protected Original baseline are preserved. Earlier databases gain
 only the operational tables they did not yet have.
 
-Every old Retime remains an ordinary Edit. All legacy document, subtree, command
-and patch adapters reject `purpose`, even if its value is `null` or `"edit"`.
+Every Retime predating core 12 remains an ordinary Edit. Those legacy document,
+subtree, command and patch adapters reject `purpose`, even if its value is `null` or `"edit"`.
 Projection cannot hide a modern partition as an old crop. Default purpose is
 omitted, avoiding growth of every old node during bounded JSON migration.
 

@@ -797,6 +797,7 @@ pub(crate) fn reduce(
             document.marks.insert(
                 id.clone(),
                 Mark {
+                    fragments: Vec::new(),
                     owner: owner.clone(),
                     label: label.clone(),
                     boundary: boundary.clone(),

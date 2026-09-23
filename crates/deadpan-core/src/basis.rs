@@ -161,10 +161,10 @@ impl ProjectDocument {
                 || durations
                     .values()
                     .any(|duration| *duration != FrameDuration::ZERO)
-                || self
-                    .marks
-                    .values()
-                    .any(|mark| !matches!(mark.boundary.coordinate, Anchor::Source { .. })))
+                || self.marks.values().any(|mark| {
+                    mark.bindings()
+                        .any(|binding| !matches!(binding.coordinate, Anchor::Source { .. }))
+                }))
         {
             return Err(invalid(
                 "provisional basis requires the default empty untimed presentation",
@@ -192,7 +192,9 @@ impl ProjectDocument {
         });
         let changed_marks = self.marks.iter().any(|(id, mark)| {
             before.marks.get(id) != Some(mark)
-                && !matches!(mark.boundary.coordinate, Anchor::Source { .. })
+                && mark
+                    .bindings()
+                    .any(|binding| !matches!(binding.coordinate, Anchor::Source { .. }))
         });
         if changed_structure || changed_marks {
             self.basis_state.rate_origin = FrameRateOrigin::TimedEdit;

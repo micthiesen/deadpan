@@ -75,10 +75,14 @@ three total plays and only two gaps. These are structural edits, not rendered
 media. Editing through range/text selectors, registers, macros, and effects
 remain required future work.
 
-Documents use schema 12. Retime `purpose` defaults to ordinary `edit` and is
+Documents use schema 13. Retime `purpose` defaults to ordinary `edit` and is
 omitted from canonical JSON. `partition` retains child audio context at unity
 speed and requires automatic edges; see [the partition contract](AUDIO_PARTITIONS.md).
 This primitive does not implement Split or inserted-time resume semantics.
+Marks may retain multiple physical bindings under one logical ID. Named queries
+return every matching binding ordinal, require explicit ambiguous occurrence
+scope and reject distinct exact positions with `MarkAmbiguous`. See
+[mark fragments](MARK_FRAGMENTS.md) for ownership, limits and query metadata.
 [Audio edge choices](AUDIO_EDGES.md) default to automatic
 when the JSON object is absent and are editable through direct or isolated
 occurrence commands. Explicit policy objects retain all six typed fields.
@@ -356,11 +360,13 @@ A mark command uses the same protocol/revision envelope as every other edit:
 }
 ```
 
-`set_mark` creates or replaces the named mark, including deliberately rebinding
-an unresolved mark. `delete_mark` takes `id`. The owner controls lifecycle and
+`set_mark` creates or replaces the entire named mark with one binding, including
+deliberately rebinding an unresolved mark. `delete_mark` takes `id` and removes
+all bindings. The owner controls lifecycle and
 is separate from the anchor coordinate. Labels accept Unicode; IDs use the
-existing 1–128 byte ASCII identity rule. Documents permit up to 100,000 marks
-within the shared 64 MiB JSON limit.
+existing 1–128 byte ASCII identity rule. Documents permit up to 1,024 physical
+bindings per mark and 100,000 in total, including primaries, within the shared
+64 MiB JSON limit. See [logical mark semantics](MARK_FRAGMENTS.md).
 
 Local and occurrence marks follow retained content through edits, using exact
 fractions. At an internal boundary, left bias follows preceding content and right
@@ -373,8 +379,9 @@ or whether a timeline occurrence currently uses that moment. Sequence-pinned
 coordinates stay fixed through ripple edits.
 
 When an owner, host, play, gap, or targeted content disappears, `delete_owned`
-removes the mark or `keep_unresolved` preserves its original coordinate and a
-typed reason. Unresolved marks never attach automatically to a replacement at
+removes that binding or `keep_unresolved` preserves its original coordinate and a
+typed reason. The logical mark survives while any binding remains. Unresolved
+bindings never attach automatically to a replacement at
 the same timestamp or ID. `wrap_repeat` accepts `anchor_policy: "first"` or
 `"unresolved"`; omission defaults to `first` for compatibility. A concrete old
 occurrence can follow the first new play, while an authored Local child mark
@@ -394,8 +401,10 @@ revision, and media role:
 ```
 
 Each named target may supply `occurrence` when its stored Local/Source coordinate
-needs explicit scope. Missing and unresolved marks return `MarkMissing` and
-`MarkUnresolved`; the retained coordinate is not used as a fallback.
+needs explicit scope. Missing marks return `MarkMissing`; marks with no bound
+bindings return `MarkUnresolved`. Unresolved coordinates are not fallback targets.
+Equal exact results retain all matching ordinals in `mark.bindings`; different
+exact results return `MarkAmbiguous`, even when rounded frames coincide.
 
 ## Original media ownership
 
@@ -568,20 +577,22 @@ future-schema read-only inspection still needs a compatibility implementation.
 
 ## Schema migration
 
-Database schemas 1 through 17 return `MigrationRequired` when opened. Upgrade explicitly:
+Database schemas 1 through 18 return `MigrationRequired` when opened. Upgrade explicitly:
 
 ```sh
 cargo run --locked -p deadpan-cli -- project migrate /tmp/example.deadpan
 ```
 
 Migration holds the project writer lock, keeps a consistent SQLite backup under
-`Snapshots/before-schema-18-*.sqlite`, and upgrades a separate candidate. It
+`Snapshots/before-schema-19-*.sqlite`, and upgrades a separate candidate. It
 replays all commands, undo/redo revisions, and abandoned branches with their
 original revision IDs. Every snapshot and forward/inverse transaction is checked
 against its strict original schema meaning. Migration goes directly to database
-schema 18 and core document schema 12. Database-16/17 histories replay through
+schema 19 and core document schema 13. Database-16/17 histories replay through
 frozen core 11, retaining existing audio edges; older nodes gain automatic edges.
-All old Retimes gain ordinary `edit` purpose, with no invented partition intent.
+Database-18 histories replay through frozen core 12, retaining Partition intent.
+Earlier Retimes gain ordinary `edit` purpose. All previous mark grammars reject
+`fragments`, including `[]` and `null`; old marks retain their one original binding.
 Database-17 workflow profiles and protected baselines are preserved; earlier
 projects remain generic, without an invented single-Original profile. Native writable Open
 performs this same backed-up migration on its service thread; headless opening

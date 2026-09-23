@@ -86,7 +86,7 @@ document the developer entrypoints and preview protocol.
 
 ## Compatibility and remaining work
 
-Database schema 18 migrates schemas 1 through 17 into core schema 12. Schema 15
+Database schema 19 migrates schemas 1 through 18 into core schema 13. Schema 15
 retains its existing basis state and presentation transactions through frozen
 core 10. Projects predating schema 15 become explicit, including empty projects
 whose dimensions match the default. Nothing proves they were provisional. Frozen core-9 history preserves

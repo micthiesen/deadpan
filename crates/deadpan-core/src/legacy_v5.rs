@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
 use crate::document::unique_map;
 use crate::legacy_asset::{Asset, project_assets, project_changes, upgrade_assets};
+use crate::legacy_mark::{LegacyMark, project_mark_changes, project_marks, upgrade_marks};
 use crate::*;
 
 /// Source wire shared by schemas 1 through 5. In particular, even a null
@@ -191,7 +192,7 @@ pub struct Document {
     #[serde(deserialize_with = "unique_map")]
     assets: BTreeMap<AssetId, Asset>,
     #[serde(deserialize_with = "unique_map")]
-    marks: BTreeMap<MarkId, Mark>,
+    marks: BTreeMap<MarkId, LegacyMark>,
     #[serde(deserialize_with = "unique_map")]
     overrides: BTreeMap<NodeId, PlayOverrides>,
 }
@@ -224,7 +225,7 @@ impl Document {
                 .map(|(id, node)| (id, node.upgrade()))
                 .collect(),
             assets: upgrade_assets(self.assets),
-            marks: self.marks,
+            marks: upgrade_marks(self.marks),
             overrides: self.overrides,
         };
         document.validate()?;
@@ -232,6 +233,9 @@ impl Document {
     }
 
     pub fn matches(&self, document: &ProjectDocument) -> bool {
+        let Some(marks) = project_marks(&document.marks) else {
+            return false;
+        };
         if document.basis_state != BasisState::explicit() {
             return false;
         }
@@ -254,7 +258,7 @@ impl Document {
             root: document.root.clone(),
             nodes,
             assets,
-            marks: document.marks.clone(),
+            marks,
             overrides: document.overrides.clone(),
         }
     }
@@ -652,7 +656,7 @@ struct Patch {
     #[serde(deserialize_with = "unique_map")]
     assets: BTreeMap<AssetId, ValueChange<Asset>>,
     #[serde(deserialize_with = "unique_map")]
-    marks: BTreeMap<MarkId, ValueChange<Mark>>,
+    marks: BTreeMap<MarkId, ValueChange<LegacyMark>>,
     #[serde(deserialize_with = "unique_map")]
     overrides: BTreeMap<NodeId, ValueChange<PlayOverrides>>,
 }
@@ -688,7 +692,7 @@ impl Patch {
                 })
                 .collect::<Option<_>>()?,
             assets: project_changes(&patch.assets)?,
-            marks: patch.marks.clone(),
+            marks: project_mark_changes(&patch.marks)?,
             overrides: patch.overrides.clone(),
         })
     }

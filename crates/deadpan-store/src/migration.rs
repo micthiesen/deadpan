@@ -45,7 +45,7 @@ impl ProjectStore {
                 backup: None,
             });
         }
-        if !matches!(version, 1..=17) {
+        if !matches!(version, 1..=18) {
             return Err(StoreError::UnsupportedSchema(version));
         }
         let lock = acquire_lock(&package)?;
@@ -189,6 +189,8 @@ fn migrate_candidate(
     // Schema 15 uses core schema 10 with authored presentation basis policy.
     // Schemas 16 and 17 use core schema 11 with authored audio edges. Their
     // Retimes gain Edit purpose; no old crop becomes a transparent partition.
+    // Schema 18 uses core schema 12, including transparent partitions. Every
+    // old mark retains one binding; legacy JSON cannot introduce fragments.
     // Replay all authored history, preserving operational rows and identities
     // while assigning FitBeat only to mappings absent in that legacy schema.
     // Schemas before 15 gain an explicit basis; schema 15 retains its policy.

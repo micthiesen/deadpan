@@ -99,9 +99,9 @@ display color, editorial effects, playback or an encoded export path.
 
 Every persisted edit, undo, and redo gets a never-reused revision ID. Core inverse patches can restore exact fixture identity; the store rebases them onto fresh revisions to prevent stale commands becoming valid after undo. Store writes use one transaction for the revision, history, and cursor. Keep `.writer.lock` held for the writable store lifetime; read-only inspection and dry runs may coexist. Take live database snapshots through SQLite's backup API, never copy only an open main database file.
 
-Repeat play IDs are scoped by Repeat node and allocation revision, with an ordinal inside that allocation. Preserve surviving IDs through resizing and reorder; allocate fresh IDs for growth and inserted subtrees. Imported initial snapshots reserve their allocation names even after plays are removed. Keep compact runs bounded and never expand a repeat merely to seek. Core schema 12 retains these runs, marks, sparse overrides, generated Hold metadata, independent source mappings, audio edge policies and transparent Retime partition intent, and binds qualified assets to immutable source receipts. Database schemas 1 through 17 replay the complete chronology directly into the current schema on a consistent copy, compare every legacy snapshot/transaction, and promote through SQLite's backup transaction only after validation. Strict legacy adapters freeze nested provider vocabulary and reject new fields, commands, and unexpected mark or override changes. Preserve the pre-migration backup.
+Repeat play IDs are scoped by Repeat node and allocation revision, with an ordinal inside that allocation. Preserve surviving IDs through resizing and reorder; allocate fresh IDs for growth and inserted subtrees. Imported initial snapshots reserve their allocation names even after plays are removed. Keep compact runs bounded and never expand a repeat merely to seek. Core schema 13 retains these runs, marks, sparse overrides, generated Hold metadata, independent source mappings, audio edge policies and transparent Retime partition intent, and binds qualified assets to immutable source receipts. Database schemas 1 through 18 replay the complete chronology directly into the current schema on a consistent copy, compare every legacy snapshot/transaction, and promote through SQLite's backup transaction only after validation. Strict legacy adapters freeze nested provider vocabulary and reject new fields, commands, and unexpected mark or override changes. Preserve the pre-migration backup.
 
-Database schema 18 stores core schema 12 and retains operational generation requests,
+Database schema 19 stores core schema 13 and retains operational generation requests,
 plus an optional validated single-Original workflow profile. Use the dedicated
 `create_single_source` / `initialize_prepared_source` path to bind the full measured
 Original, basis and protected baseline atomically. Undo never crosses that baseline;
@@ -185,7 +185,7 @@ Ready bundles alone do not authorize an edit. See [acceptance](docs/GENERATION_A
 See [generated Hold semantics](docs/GENERATED_HOLDS.md).
 
 Original byte ownership is operational and separate from stream readiness.
-Database schema 18 retains content-keyed original records with monotonic location
+Database schema 19 retains content-keyed original records with monotonic location
 versions introduced in schema 10; earlier schemas gain an empty inventory. Use the
 shared descriptor-relative object engine for `Media/Originals` and
 `Media/Generated`. Managed originals try APFS clone, then verified copy; retain
@@ -328,6 +328,17 @@ the retained host, apply explicit loss policy, and never automatically reattach
 an unresolved mark. Original source coordinates and sequence-pinned coordinates
 stay fixed in their respective clocks. Named-mark queries still require explicit
 occurrence scope when the stored coordinate is ambiguous.
+
+Logical marks retain one primary binding plus bounded `MarkFragment` bindings.
+Owner lifetime is independent of coordinate visibility. Transform loss per
+binding; preserve surviving bindings and never reattach unresolved ones. Actual
+occurrence copying collects eligible owned Local/Source bindings under one fresh
+logical ID; pure Split must retain its existing logical ID. Apply Partition seam
+bias before exact-coordinate deduplication. Named results retain every matching
+binding ordinal within the resolved revision; do not use the representative
+target to discard other attachment owners. See [mark bindings](docs/MARK_FRAGMENTS.md).
+Database-18 history uses frozen core 12; all earlier mark wires reject fragments,
+including empty arrays and null. Current schema 19 stores core 13.
 
 Build the pinned FFmpeg developer prefix and export `DEADPAN_FFMPEG_PREFIX` as
 described in [Development](docs/DEVELOPMENT.md). Run the exact repository gate

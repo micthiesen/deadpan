@@ -45,7 +45,7 @@ Use this inside the normal revision-checked [headless command](HEADLESS.md)
 envelope. Preview, commit, undo and redo use the same store transaction path.
 This is an authored mapping operation; no UI control or audio renderer is added.
 
-Database schema 18 migrates schemas 1 through 17 directly to core schema 12 JSON.
+Database schema 19 migrates schemas 1 through 18 directly to core schema 13 JSON.
 Frozen source wires preserve pre-schema-11 audio mappings as `fit_beat`, including
 offsets, historical snapshots and forward/inverse patches. They reject
 `audio_mapping` fields and commands in history predating that vocabulary, even

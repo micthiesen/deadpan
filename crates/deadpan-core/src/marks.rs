@@ -42,6 +42,20 @@ pub enum MarkState {
     Unresolved { reason: MarkLossReason },
 }
 
+/// One physical binding of a logical mark. Ownership is the lifetime of an
+/// authored node, independent of the coordinate's host or rendered visibility.
+/// Bias, label and loss policy belong to the containing logical mark.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct MarkFragment {
+    pub owner: NodeId,
+    pub coordinate: Anchor,
+    pub state: MarkState,
+}
+
+pub const MAX_MARK_BINDINGS: usize = 1024;
+pub const MAX_DOCUMENT_MARK_BINDINGS: usize = 100_000;
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Mark {
@@ -50,6 +64,53 @@ pub struct Mark {
     pub boundary: BoundaryAnchor,
     pub loss_policy: AnchorLossPolicy,
     pub state: MarkState,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub fragments: Vec<MarkFragment>,
+}
+
+impl Mark {
+    /// Primary binding first, followed by retained physical fragments. Copies
+    /// are bounded by document validation; no Repeat plays are enumerated.
+    pub fn bindings(&self) -> impl Iterator<Item = MarkFragment> + '_ {
+        std::iter::once(MarkFragment {
+            owner: self.owner.clone(),
+            coordinate: self.boundary.coordinate.clone(),
+            state: self.state.clone(),
+        })
+        .chain(self.fragments.iter().cloned())
+    }
+
+    pub fn binding_count(&self) -> usize {
+        1 + self.fragments.len()
+    }
+
+    /// Retain logical policies and deterministic binding order. Callers admit
+    /// growth before constructing bindings; lifecycle transforms only remove
+    /// entries or relocate them. Complete duplicate bindings collapse here.
+    pub(crate) fn with_bindings(
+        &self,
+        bindings: impl IntoIterator<Item = MarkFragment>,
+    ) -> Option<Self> {
+        let mut distinct = Vec::new();
+        for binding in bindings {
+            if !distinct.contains(&binding) {
+                distinct.push(binding);
+            }
+        }
+        let mut bindings = distinct.into_iter();
+        let primary = bindings.next()?;
+        Some(Self {
+            owner: primary.owner,
+            label: self.label.clone(),
+            boundary: BoundaryAnchor {
+                coordinate: primary.coordinate,
+                bias: self.boundary.bias,
+            },
+            loss_policy: self.loss_policy,
+            state: primary.state,
+            fragments: bindings.collect(),
+        })
+    }
 }
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -419,16 +480,16 @@ impl<'a> Index<'a> {
         })
     }
 
-    fn validate_bound(&self, mark: &Mark) -> Result<()> {
-        if !self.anchors.document.nodes().contains_key(&mark.owner) {
+    fn validate_bound(&self, binding: &MarkFragment, bias: InsertionBias) -> Result<()> {
+        if !self.anchors.document.nodes().contains_key(&binding.owner) {
             return lost(MarkLossReason::OwnerMissing);
         }
-        match &mark.boundary.coordinate {
+        match &binding.coordinate {
             Anchor::Local { node, position } => {
-                self.decompose(node, *position, mark.boundary.bias)?;
+                self.decompose(node, *position, bias)?;
             }
             Anchor::Occurrence { instance, position } => {
-                self.decompose(&instance.node, *position, mark.boundary.bias)?;
+                self.decompose(&instance.node, *position, bias)?;
                 self.anchors.to_project(instance, *position, false)?;
             }
             Anchor::Sequence { frame } => within(
@@ -472,49 +533,89 @@ pub(crate) fn validate_marks(
     document: &ProjectDocument,
     durations: &BTreeMap<NodeId, FrameDuration>,
 ) -> std::result::Result<(), DocumentError> {
-    if document.marks().len() > MAX_DOCUMENT_MARKS {
-        return Err(DocumentError::new(
-            DocumentErrorCode::LimitExceeded,
-            "document exceeds 100,000 marks",
-        ));
-    }
+    check_binding_limits(document.marks())?;
     if document.marks().is_empty() {
         return Ok(());
     }
     let index = Index::new(document, durations.clone())?;
     for mark in document.marks().values() {
         crate::document::validate_label(&mark.label)?;
-        match &mark.boundary.coordinate {
-            Anchor::Occurrence { instance, position } => {
-                instance.validate_depth()?;
-                if position.compare_integer(0).is_lt() {
-                    return Err(Failure::Lost(MarkLossReason::OutOfRange).document());
-                }
-            }
-            Anchor::Local { position, .. } if position.compare_integer(0).is_lt() => {
+        for binding in mark.bindings() {
+            validate_binding(&index, &binding, mark.boundary.bias, mark.loss_policy)?;
+        }
+    }
+    Ok(())
+}
+
+fn check_binding_limits(
+    marks: &BTreeMap<MarkId, Mark>,
+) -> std::result::Result<usize, DocumentError> {
+    if marks.len() > MAX_DOCUMENT_MARKS {
+        return Err(DocumentError::new(
+            DocumentErrorCode::LimitExceeded,
+            "document exceeds 100,000 marks",
+        ));
+    }
+    let mut total = 0_usize;
+    for mark in marks.values() {
+        if mark.binding_count() > MAX_MARK_BINDINGS {
+            return Err(DocumentError::new(
+                DocumentErrorCode::LimitExceeded,
+                "logical mark exceeds 1,024 physical bindings",
+            ));
+        }
+        total = total.checked_add(mark.binding_count()).ok_or_else(|| {
+            DocumentError::new(
+                DocumentErrorCode::LimitExceeded,
+                "mark binding count overflow",
+            )
+        })?;
+        if total > MAX_DOCUMENT_MARK_BINDINGS {
+            return Err(DocumentError::new(
+                DocumentErrorCode::LimitExceeded,
+                "document exceeds 100,000 physical mark bindings",
+            ));
+        }
+    }
+    Ok(total)
+}
+
+fn validate_binding(
+    index: &Index<'_>,
+    binding: &MarkFragment,
+    bias: InsertionBias,
+    loss_policy: AnchorLossPolicy,
+) -> std::result::Result<(), DocumentError> {
+    match &binding.coordinate {
+        Anchor::Occurrence { instance, position } => {
+            instance.validate_depth()?;
+            if position.compare_integer(0).is_lt() {
                 return Err(Failure::Lost(MarkLossReason::OutOfRange).document());
             }
-            Anchor::Sequence { frame } if frame.0 < 0 => {
-                return Err(Failure::Lost(MarkLossReason::OutOfRange).document());
-            }
-            Anchor::Source {
-                moment: SourceMoment::AudioSample { sample_rate: 0, .. },
-                ..
-            } => return Err(Failure::Lost(MarkLossReason::SourceUnavailable).document()),
-            _ => {}
         }
-        match mark.state {
-            MarkState::Bound => index.validate_bound(mark).map_err(Failure::document)?,
-            MarkState::Unresolved { .. }
-                if mark.loss_policy != AnchorLossPolicy::KeepUnresolved =>
-            {
-                return Err(DocumentError::new(
-                    DocumentErrorCode::InvalidAnchor,
-                    "only keep_unresolved marks can retain unresolved state",
-                ));
-            }
-            MarkState::Unresolved { .. } => {}
+        Anchor::Local { position, .. } if position.compare_integer(0).is_lt() => {
+            return Err(Failure::Lost(MarkLossReason::OutOfRange).document());
         }
+        Anchor::Sequence { frame } if frame.0 < 0 => {
+            return Err(Failure::Lost(MarkLossReason::OutOfRange).document());
+        }
+        Anchor::Source {
+            moment: SourceMoment::AudioSample { sample_rate: 0, .. },
+            ..
+        } => return Err(Failure::Lost(MarkLossReason::SourceUnavailable).document()),
+        _ => {}
+    }
+    match binding.state {
+        MarkState::Bound => index
+            .validate_bound(binding, bias)
+            .map_err(Failure::document)?,
+        MarkState::Unresolved { .. } if loss_policy != AnchorLossPolicy::KeepUnresolved => {
+            return Err(DocumentError::new(
+                DocumentErrorCode::InvalidAnchor,
+                "only keep_unresolved marks can retain unresolved state",
+            ));
+        }
+        MarkState::Unresolved { .. } => {}
     }
     Ok(())
 }
@@ -533,45 +634,51 @@ pub(crate) fn transform_marks(
     let old = Index::new(before, before.structural_durations()?)?;
     let new = Index::new(after, new_durations)?;
     let mut output = BTreeMap::new();
-    for (id, original) in before.marks() {
-        let mut mark = original.clone();
-        if matches!(mark.state, MarkState::Unresolved { .. }) {
-            output.insert(id.clone(), mark);
-            continue;
+    for (id, mark) in before.marks() {
+        let mut bindings = Vec::with_capacity(mark.binding_count());
+        for original in mark.bindings() {
+            let mut binding = original.clone();
+            if matches!(binding.state, MarkState::Unresolved { .. }) {
+                bindings.push(binding);
+                continue;
+            }
+            let transformed = (|| -> Result<()> {
+                if !after.nodes().contains_key(&binding.owner) {
+                    return lost(MarkLossReason::OwnerMissing);
+                }
+                match &mut binding.coordinate {
+                    Anchor::Local { node, position } => {
+                        let point = old.decompose(node, *position, mark.boundary.bias)?;
+                        *position = new.reconstruct(node, point, mark.boundary.bias, command)?;
+                    }
+                    Anchor::Occurrence { instance, position } => {
+                        let point = old.decompose(&instance.node, *position, mark.boundary.bias)?;
+                        *position =
+                            new.reconstruct(&instance.node, point, mark.boundary.bias, command)?;
+                        *instance = new.occurrence(instance, command)?;
+                    }
+                    Anchor::Source { .. } | Anchor::Sequence { .. } => {}
+                }
+                new.validate_bound(&binding, mark.boundary.bias)
+            })();
+            match transformed {
+                Ok(()) => {
+                    bindings.push(binding);
+                }
+                Err(Failure::Arithmetic(error)) => return Err(error.into()),
+                Err(Failure::Lost(reason)) => {
+                    if mark.loss_policy == AnchorLossPolicy::KeepUnresolved {
+                        // Preserve the last bound coordinate, even if intermediate
+                        // calculations succeeded before a later ancestor was lost.
+                        let mut unresolved = original.clone();
+                        unresolved.state = MarkState::Unresolved { reason };
+                        bindings.push(unresolved);
+                    }
+                }
+            }
         }
-        let transformed = (|| -> Result<()> {
-            if !after.nodes().contains_key(&mark.owner) {
-                return lost(MarkLossReason::OwnerMissing);
-            }
-            match &mut mark.boundary.coordinate {
-                Anchor::Local { node, position } => {
-                    let point = old.decompose(node, *position, mark.boundary.bias)?;
-                    *position = new.reconstruct(node, point, mark.boundary.bias, command)?;
-                }
-                Anchor::Occurrence { instance, position } => {
-                    let point = old.decompose(&instance.node, *position, mark.boundary.bias)?;
-                    *position =
-                        new.reconstruct(&instance.node, point, mark.boundary.bias, command)?;
-                    *instance = new.occurrence(instance, command)?;
-                }
-                Anchor::Source { .. } | Anchor::Sequence { .. } => {}
-            }
-            new.validate_bound(&mark)
-        })();
-        match transformed {
-            Ok(()) => {
-                output.insert(id.clone(), mark);
-            }
-            Err(Failure::Arithmetic(error)) => return Err(error.into()),
-            Err(Failure::Lost(reason)) => {
-                if original.loss_policy == AnchorLossPolicy::KeepUnresolved {
-                    // Preserve the last bound coordinate, even if intermediate
-                    // calculations succeeded before a later ancestor was lost.
-                    let mut unresolved = original.clone();
-                    unresolved.state = MarkState::Unresolved { reason };
-                    output.insert(id.clone(), unresolved);
-                }
-            }
+        if let Some(mark) = mark.with_bindings(bindings) {
+            output.insert(id.clone(), mark);
         }
     }
     Ok(output)
@@ -589,17 +696,33 @@ pub(crate) fn clone_occurrence_marks(
     if before.marks().is_empty() {
         return Ok(BTreeMap::new());
     }
-    let copies = before
-        .marks()
-        .values()
-        .filter(|mark| {
-            mapping.contains_key(&mark.owner)
-                && matches!(
-                    mark.boundary.coordinate,
-                    Anchor::Local { .. } | Anchor::Source { .. }
-                )
-        })
-        .count();
+    let mut total_bindings = check_binding_limits(before.marks())?;
+    let mut copies = 0_usize;
+    for mark in before.marks().values() {
+        let owned = mark
+            .bindings()
+            .filter(|binding| {
+                mapping.contains_key(&binding.owner)
+                    && matches!(
+                        binding.coordinate,
+                        Anchor::Local { .. } | Anchor::Source { .. }
+                    )
+            })
+            .count();
+        copies += usize::from(owned > 0);
+        total_bindings = total_bindings.checked_add(owned).ok_or_else(|| {
+            DocumentError::new(
+                DocumentErrorCode::LimitExceeded,
+                "occurrence isolation exceeds mark binding limit",
+            )
+        })?;
+        if total_bindings > MAX_DOCUMENT_MARK_BINDINGS {
+            return Err(DocumentError::new(
+                DocumentErrorCode::LimitExceeded,
+                "occurrence isolation exceeds mark binding limit",
+            ));
+        }
+    }
     if before
         .marks()
         .len()
@@ -614,49 +737,60 @@ pub(crate) fn clone_occurrence_marks(
     let index = Index::new(before, before.structural_durations()?)?;
     let mut output = BTreeMap::new();
     for (id, original) in before.marks() {
-        let mut mark = original.clone();
-        if mark.state == MarkState::Bound
-            && let Anchor::Occurrence { instance, position } = &mut mark.boundary.coordinate
-        {
-            let enters = instance.repeats.contains(selected);
-            if let Some(owner) = mapping.get(&mark.owner) {
-                let point_enters = match index
-                    .decompose(&instance.node, *position, mark.boundary.bias)
-                    .map_err(Failure::document)?
-                {
-                    ContentPoint::Content {
-                        node, repeats, gap, ..
-                    } => {
-                        repeats.get(&selected.node) == Some(&selected.iteration)
-                            || (node == selected.node && gap.as_ref() == Some(&selected.iteration))
+        let mut retained = Vec::with_capacity(original.binding_count());
+        let mut copied = Vec::new();
+        for original_binding in original.bindings() {
+            let mut binding = original_binding.clone();
+            if binding.state == MarkState::Bound
+                && let Anchor::Occurrence { instance, position } = &mut binding.coordinate
+            {
+                let enters = instance.repeats.contains(selected);
+                if let Some(owner) = mapping.get(&binding.owner) {
+                    let point_enters = match index
+                        .decompose(&instance.node, *position, original.boundary.bias)
+                        .map_err(Failure::document)?
+                    {
+                        ContentPoint::Content {
+                            node, repeats, gap, ..
+                        } => {
+                            repeats.get(&selected.node) == Some(&selected.iteration)
+                                || (node == selected.node
+                                    && gap.as_ref() == Some(&selected.iteration))
+                        }
+                        _ => false,
+                    };
+                    if enters || point_enters {
+                        binding.owner = owner.clone();
                     }
-                    _ => false,
-                };
-                if enters || point_enters {
-                    mark.owner = owner.clone();
+                }
+                if enters {
+                    crate::occurrence_edit::remap_instance(instance, mapping);
                 }
             }
-            if enters {
-                crate::occurrence_edit::remap_instance(instance, mapping);
+            retained.push(binding);
+            if matches!(
+                original_binding.coordinate,
+                Anchor::Local { .. } | Anchor::Source { .. }
+            ) && let Some(owner) = mapping.get(&original_binding.owner)
+            {
+                let mut copy = original_binding;
+                copy.owner = owner.clone();
+                // Unresolved records retain their last coordinate and never bind as
+                // a side effect of cloning, even when a matching host now exists.
+                if copy.state == MarkState::Bound
+                    && let Anchor::Local { node, .. } = &mut copy.coordinate
+                    && let Some(host) = mapping.get(node)
+                {
+                    *node = host.clone();
+                }
+                copied.push(copy);
             }
         }
-        output.insert(id.clone(), mark);
-        if matches!(
-            original.boundary.coordinate,
-            Anchor::Local { .. } | Anchor::Source { .. }
-        ) && let Some(owner) = mapping.get(&original.owner)
-        {
-            let mut copy = original.clone();
-            copy.owner = owner.clone();
-            // Unresolved records retain their last coordinate and never bind as
-            // a side effect of cloning, even when a matching host now exists.
-            if copy.state == MarkState::Bound
-                && let Anchor::Local { node, .. } = &mut copy.boundary.coordinate
-                && let Some(host) = mapping.get(node)
-            {
-                *node = host.clone();
-            }
-            output.insert(fresh_mark()?, copy);
+        if let Some(mark) = original.with_bindings(retained) {
+            output.insert(id.clone(), mark);
+        }
+        if let Some(mark) = original.with_bindings(copied) {
+            output.insert(fresh_mark()?, mark);
         }
     }
     Ok(output)
@@ -666,6 +800,56 @@ pub(crate) fn clone_occurrence_marks(
 mod tests {
     use super::*;
     use crate::{ColorPolicy, FrameRate, PresentationBasis, ProjectId, RevisionId};
+
+    #[test]
+    fn binding_rebuild_deduplicates_complete_identity_and_keeps_first_primary() {
+        let primary = MarkFragment {
+            owner: NodeId::new("owner").unwrap(),
+            coordinate: Anchor::Local {
+                node: NodeId::new("host").unwrap(),
+                position: ExactRatio::ONE,
+            },
+            state: MarkState::Bound,
+        };
+        let mark = Mark {
+            owner: primary.owner.clone(),
+            label: "Logical".into(),
+            boundary: BoundaryAnchor {
+                coordinate: primary.coordinate.clone(),
+                bias: InsertionBias::Left,
+            },
+            loss_policy: AnchorLossPolicy::KeepUnresolved,
+            state: MarkState::Bound,
+            fragments: vec![],
+        };
+        let other = MarkFragment {
+            owner: NodeId::new("other").unwrap(),
+            ..primary.clone()
+        };
+        let unresolved = MarkFragment {
+            state: MarkState::Unresolved {
+                reason: MarkLossReason::HostMissing,
+            },
+            ..primary.clone()
+        };
+        let rebuilt = mark
+            .with_bindings([
+                other.clone(),
+                primary.clone(),
+                other.clone(),
+                unresolved.clone(),
+                primary.clone(),
+            ])
+            .unwrap();
+        assert_eq!(
+            rebuilt.bindings().collect::<Vec<_>>(),
+            [other, primary, unresolved]
+        );
+        assert_eq!(rebuilt.label, mark.label);
+        assert_eq!(rebuilt.boundary.bias, mark.boundary.bias);
+        assert_eq!(rebuilt.loss_policy, mark.loss_policy);
+        assert!(mark.with_bindings([]).is_none());
+    }
 
     #[test]
     fn mark_count_limit_applies_to_retained_unresolved_records_too() {
@@ -683,6 +867,7 @@ mod tests {
         )
         .unwrap();
         let mark = Mark {
+            fragments: Vec::new(),
             owner: root.clone(),
             label: String::new(),
             boundary: BoundaryAnchor {

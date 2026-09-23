@@ -125,10 +125,22 @@ pub struct SelectionRequest {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct ResolvedBoundary {
+    /// First matching physical target. Named results retain every matching
+    /// binding below; this representative does not select an attachment owner.
     pub target: AnchorTarget,
     /// Exact project-frame boundary before the single ties-to-even rounding.
     pub exact_frame: ExactRatio,
     pub frame: ProjectFrame,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub mark: Option<Box<ResolvedMark>>,
+}
+
+/// Binding ordinals belong to the immutable revision in `ResolvedSelection`.
+/// Ordinal zero is the primary binding; later ordinals index `fragments + 1`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct ResolvedMark {
+    pub id: MarkId,
+    pub bindings: Vec<usize>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -167,6 +179,7 @@ pub enum AnchorErrorCode {
     InvalidDocument,
     MarkMissing,
     MarkUnresolved,
+    MarkAmbiguous,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -198,6 +211,7 @@ impl AnchorError {
             AnchorErrorCode::InvalidDocument => "InvalidDocument",
             AnchorErrorCode::MarkMissing => "MarkMissing",
             AnchorErrorCode::MarkUnresolved => "MarkUnresolved",
+            AnchorErrorCode::MarkAmbiguous => "MarkAmbiguous",
         }
     }
 }
@@ -319,16 +333,95 @@ impl<'a> AnchorIndex<'a> {
                 format!("mark {} does not exist", target.id),
             )
         })?;
-        if let MarkState::Unresolved { reason } = mark.state {
+        let mut resolved: Option<ResolvedBoundary> = None;
+        let mut bindings = Vec::new();
+        let mut first_error = None;
+        let mut required_scope = None;
+        let mut bound = false;
+        let mut ambiguous = false;
+        for (ordinal, binding) in mark.bindings().enumerate() {
+            if binding.state != MarkState::Bound {
+                continue;
+            }
+            bound = true;
+            // Scope chooses a physical Local host, or the actual Source using
+            // an original clock. It cannot add scope to a fully scoped anchor.
+            // Keep the original single-binding errors unchanged.
+            if mark.binding_count() > 1
+                && let Some(scope) = &target.occurrence
+            {
+                match &binding.coordinate {
+                    Anchor::Local { node, .. } if node != &scope.node => continue,
+                    Anchor::Sequence { .. } | Anchor::Occurrence { .. } => continue,
+                    _ => {}
+                }
+            }
+            let candidate = self.resolve_target(&AnchorTarget {
+                boundary: BoundaryAnchor {
+                    coordinate: binding.coordinate,
+                    bias: mark.boundary.bias,
+                },
+                occurrence: target.occurrence.clone(),
+            });
+            match candidate {
+                Ok(candidate) => {
+                    if let Some(previous) = &resolved {
+                        // Equal rounded frames are insufficient: two exact
+                        // boundaries must never become one by quantization.
+                        ambiguous |= previous.exact_frame != candidate.exact_frame;
+                    } else {
+                        resolved = Some(candidate);
+                    }
+                    bindings.push(ordinal);
+                }
+                Err(error) if error.code == AnchorErrorCode::OccurrenceRequired => {
+                    required_scope.get_or_insert(error);
+                }
+                Err(error)
+                    if matches!(
+                        error.code,
+                        AnchorErrorCode::TimingOverflow | AnchorErrorCode::InvalidDocument
+                    ) =>
+                {
+                    return Err(error);
+                }
+                Err(error) => {
+                    first_error.get_or_insert(error);
+                }
+            }
+        }
+        // A candidate requiring an occurrence cannot be inferred away merely
+        // because another binding happened to resolve without one.
+        if let Some(error) = required_scope {
+            return Err(error);
+        }
+        if ambiguous {
             return Err(AnchorError::new(
-                AnchorErrorCode::MarkUnresolved,
-                format!("mark {} is unresolved: {reason:?}", target.id),
+                AnchorErrorCode::MarkAmbiguous,
+                "mark resolves to distinct exact boundaries; select a physical anchor or Local occurrence",
             ));
         }
-        self.resolve_target(&AnchorTarget {
-            boundary: mark.boundary.clone(),
-            occurrence: target.occurrence.clone(),
-        })
+        if let Some(mut resolved) = resolved {
+            resolved.mark = Some(Box::new(ResolvedMark {
+                id: target.id.clone(),
+                bindings,
+            }));
+            return Ok(resolved);
+        }
+        Err(first_error.unwrap_or_else(|| {
+            AnchorError::new(
+                if bound {
+                    AnchorErrorCode::OccurrenceInvalid
+                } else {
+                    AnchorErrorCode::MarkUnresolved
+                },
+                if bound {
+                    "no bound mark fragment matches the requested occurrence"
+                } else {
+                    "mark has no bound fragments"
+                },
+            )
+        }))
     }
 
     fn range(
@@ -377,11 +470,16 @@ impl<'a> AnchorIndex<'a> {
                         "occurrence target differs from local anchor host",
                     ));
                 }
-                self.to_project(&path, *position, target.occurrence.is_none())?
+                self.project_boundary(
+                    &path,
+                    *position,
+                    target.occurrence.is_none(),
+                    Some(target.boundary.bias),
+                )?
             }
             Anchor::Occurrence { instance, position } => {
                 reject_scope(target)?;
-                self.to_project(instance, *position, false)?
+                self.project_boundary(instance, *position, false, Some(target.boundary.bias))?
             }
             Anchor::Source { asset, moment } => {
                 let path = target.occurrence.as_ref().ok_or_else(|| {
@@ -392,7 +490,7 @@ impl<'a> AnchorIndex<'a> {
                 })?;
                 self.validate_path(path, false)?;
                 let local = self.source_position(asset, *moment, &path.node)?;
-                self.to_project(path, local, false)?
+                self.project_boundary(path, local, false, Some(target.boundary.bias))?
             }
         };
         within(
@@ -407,6 +505,7 @@ impl<'a> AnchorIndex<'a> {
             target: target.clone(),
             exact_frame,
             frame,
+            mark: None,
         })
     }
 
@@ -460,8 +559,18 @@ impl<'a> AnchorIndex<'a> {
     pub(crate) fn to_project(
         &self,
         path: &InstancePath,
+        position: ExactRatio,
+        implicit: bool,
+    ) -> Result<ExactRatio, AnchorError> {
+        self.project_boundary(path, position, implicit, None)
+    }
+
+    fn project_boundary(
+        &self,
+        path: &InstancePath,
         mut position: ExactRatio,
         implicit: bool,
+        bias: Option<InsertionBias>,
     ) -> Result<ExactRatio, AnchorError> {
         self.validate_path(path, implicit)?;
         within(
@@ -487,7 +596,11 @@ impl<'a> AnchorIndex<'a> {
                     position.checked_add(ExactRatio::integer(play.start))?
                 }
                 NodeKind::Retime {
-                    mapping, duration, ..
+                    child,
+                    mapping,
+                    duration,
+                    purpose,
+                    ..
                 } => {
                     let selected = position.checked_sub(ExactRatio::integer(mapping.start().0))?;
                     within(
@@ -495,6 +608,24 @@ impl<'a> AnchorIndex<'a> {
                         mapping.duration().frames(),
                         AnchorErrorCode::OutsideMapping,
                     )?;
+                    // Internal partition seams belong to the side chosen by
+                    // insertion bias. External endpoints remain legal, as do
+                    // both endpoints of an ordinary authored Retime crop.
+                    if *purpose == crate::RetimePurpose::Partition
+                        && ((bias == Some(InsertionBias::Left)
+                            && selected == ExactRatio::ZERO
+                            && mapping.start().0 > 0)
+                            || (bias == Some(InsertionBias::Right)
+                                && selected
+                                    .compare_integer(mapping.duration().frames())
+                                    .is_eq()
+                                && mapping.end().0 < self.durations[child].frames()))
+                    {
+                        return Err(AnchorError::new(
+                            AnchorErrorCode::OutsideMapping,
+                            "boundary bias selects the other side of a partition seam",
+                        ));
+                    }
                     selected.checked_mul(ExactRatio::new(
                         i128::from(duration.frames()),
                         i128::from(mapping.duration().frames()),

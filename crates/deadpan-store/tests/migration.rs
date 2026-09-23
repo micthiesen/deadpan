@@ -7,6 +7,7 @@ use std::{
 use deadpan_core::{
     IterationOrder, NodeId, NodeKind, ProjectDocument, RevisionId, legacy_v1, legacy_v2, legacy_v3,
     legacy_v4, legacy_v5, legacy_v6, legacy_v7, legacy_v8, legacy_v9, legacy_v10, legacy_v11,
+    legacy_v12,
 };
 use deadpan_jobs::{Relevance, RequestId};
 use deadpan_store::generation::{
@@ -1329,6 +1330,7 @@ fn fixture_version(scratch: &Path, version: u32) -> Result<PathBuf> {
         15 => include_str!("fixtures/v15-history.sql"),
         16 => include_str!("fixtures/v16-history.sql"),
         17 => include_str!("fixtures/v17-history.sql"),
+        18 => include_str!("fixtures/v18-history.sql"),
         _ => panic!("unsupported fixture"),
     })?;
     Ok(package)
@@ -2998,6 +3000,156 @@ fn schema_seventeen_rejects_new_purpose_everywhere_and_missing_profile_without_p
             database.pragma_query_value(None, "user_version", |row| row.get::<_, u32>(0))?,
             17
         );
+    }
+    Ok(())
+}
+
+#[test]
+fn schema_eighteen_replays_partitions_marks_branches_and_pending_redo() -> Result {
+    use deadpan_core::{CommandRequest, EditTransaction, MarkId, MarkState, RetimePurpose};
+    let scratch = tempfile::tempdir()?;
+    let path = fixture_version(scratch.path(), 18)?;
+    let database = Connection::open(path.join("project.sqlite"))?;
+    let before = contents(&database)?;
+    let old_docs = docs(&database)?;
+    let old_history = history_json(&database)?;
+    let old_metadata = metadata(&database)?;
+    let old_operational = operational_metadata(&database)?;
+    assert_eq!((old_docs.len(), old_history.len()), (10, 5));
+    assert!(matches!(
+        ProjectStore::open(&path, AccessMode::ReadOnly),
+        Err(StoreError::MigrationRequired(18))
+    ));
+    let migration = ProjectStore::migrate(&path)?;
+    assert_eq!(
+        (migration.from_schema, migration.to_schema),
+        (18, DATABASE_SCHEMA_VERSION)
+    );
+    assert_eq!(
+        contents(&Connection::open(migration.backup.unwrap())?)?,
+        before
+    );
+    assert_eq!(metadata(&database)?, old_metadata);
+    assert_eq!(operational_metadata(&database)?, old_operational);
+    for ((old_id, old_json), (new_id, new_json)) in old_docs.iter().zip(docs(&database)?) {
+        assert_eq!(old_id, &new_id);
+        let current = ProjectDocument::from_json(&new_json)?;
+        assert!(legacy_v12::Document::from_json(old_json)?.matches(&current));
+        let mut expected: serde_json::Value = serde_json::from_str(old_json)?;
+        expected["schema_version"] = serde_json::json!(deadpan_core::DOCUMENT_SCHEMA_VERSION);
+        assert_eq!(serde_json::to_value(current)?, expected);
+    }
+    for ((old_request, old_edit), (new_request, new_edit)) in
+        old_history.iter().zip(history_json(&database)?)
+    {
+        let request: CommandRequest = serde_json::from_str(&new_request)?;
+        let edit: EditTransaction = serde_json::from_str(&new_edit)?;
+        assert_eq!(legacy_v12::upgrade_request(old_request)?, request);
+        assert!(legacy_v12::matches_edit(old_edit, &edit)?);
+        let before = snapshot(&database, request.expected_revision.as_str())?;
+        let after = snapshot(&database, request.new_revision.as_str())?;
+        assert_eq!(edit.forward.apply(&before)?, after);
+        assert_eq!(edit.inverse.apply(&after)?, before);
+    }
+    let mut store = ProjectStore::open(&path, AccessMode::ReadWrite)?;
+    assert_eq!(store.single_source_state()?, None);
+    let baseline = store.snapshot()?;
+    assert!(matches!(
+        baseline.nodes()[&NodeId::new("partition")?].kind,
+        NodeKind::Retime {
+            purpose: RetimePurpose::Partition,
+            ..
+        }
+    ));
+    assert_eq!(
+        baseline.marks()[&MarkId::new("edge")?].state,
+        MarkState::Bound
+    );
+    let redo = RevisionId::new("fragment-schema-redo")?;
+    store.redo(baseline.revision_id(), redo.clone())?;
+    assert!(matches!(
+        store.snapshot()?.marks()[&MarkId::new("cue")?].state,
+        MarkState::Unresolved { .. }
+    ));
+    assert!(
+        !store
+            .snapshot()?
+            .marks()
+            .contains_key(&MarkId::new("edge")?)
+    );
+    store.undo(&redo, RevisionId::new("fragment-schema-undo")?)?;
+    assert_eq!(store.snapshot()?.marks(), baseline.marks());
+    assert_eq!(store.snapshot()?.nodes(), baseline.nodes());
+    store.validate()?;
+    drop(store);
+    assert_eq!(
+        ProjectStore::open(&path, AccessMode::ReadOnly)?
+            .snapshot()?
+            .marks(),
+        baseline.marks()
+    );
+    Ok(())
+}
+
+#[test]
+fn schema_eighteen_rejects_fragment_vocabulary_without_promotion() -> Result {
+    for direction in ["snapshot", "forward", "inverse", "command"] {
+        for fragments in ["null", "[]"] {
+            let scratch = tempfile::tempdir()?;
+            let path = fixture_version(scratch.path(), 18)?;
+            let database = Connection::open(path.join("project.sqlite"))?;
+            if direction == "snapshot" {
+                database.execute("UPDATE revisions SET document=json_set(document,'$.marks.cue.fragments',json(?1)) WHERE id='mark-local'", [fragments])?;
+            } else if direction == "command" {
+                database.execute("UPDATE history SET request=json_set(request,'$.command.fragments',json(?1)) WHERE revision_id='mark-local'", [fragments])?;
+            } else {
+                let pointer = if direction == "forward" {
+                    "$.forward.marks.cue.after.fragments"
+                } else {
+                    "$.inverse.marks.cue.before.fragments"
+                };
+                database.execute("UPDATE history SET edit=json_set(edit,?1,json(?2)) WHERE revision_id='mark-local'", [pointer, fragments])?;
+            }
+            let before = contents(&database)?;
+            let StoreError::MigrationFailed { backup, .. } =
+                ProjectStore::migrate(&path).unwrap_err()
+            else {
+                panic!("expected retained failed migration");
+            };
+            assert_eq!(contents(&database)?, before);
+            assert_eq!(contents(&Connection::open(backup)?)?, before);
+            assert_eq!(
+                database.pragma_query_value(None, "user_version", |row| row.get::<_, u32>(0))?,
+                18
+            );
+        }
+    }
+    Ok(())
+}
+
+#[test]
+fn every_legacy_database_retains_single_binding_marks_without_default_json_growth() -> Result {
+    for version in 1..=18 {
+        let scratch = tempfile::tempdir()?;
+        let path = fixture_version(scratch.path(), version)?;
+        ProjectStore::migrate(&path)?;
+        let database = Connection::open(path.join("project.sqlite"))?;
+        for (revision, wire) in docs(&database)? {
+            let document = ProjectDocument::from_json(&wire)?;
+            for mark in document.marks().values() {
+                assert_eq!(
+                    mark.binding_count(),
+                    1,
+                    "schema {version}, revision {revision}"
+                );
+                assert!(
+                    !serde_json::to_value(mark)?
+                        .as_object()
+                        .unwrap()
+                        .contains_key("fragments")
+                );
+            }
+        }
     }
     Ok(())
 }

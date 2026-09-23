@@ -4,6 +4,7 @@
 //! command, and patch wires explicitly exclude every play-override field.
 
 use crate::document::unique_map;
+use crate::legacy_mark::{LegacyMark, project_mark_changes, project_marks, upgrade_marks};
 use crate::legacy_v4::{LegacyAssetRecord, LegacyBeatNode, LegacyHoldRecipe, LegacyHoldVideo};
 use crate::*;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
@@ -22,7 +23,7 @@ pub struct Document {
     #[serde(deserialize_with = "unique_map")]
     assets: BTreeMap<AssetId, LegacyAssetRecord>,
     #[serde(deserialize_with = "unique_map")]
-    marks: BTreeMap<MarkId, Mark>,
+    marks: BTreeMap<MarkId, LegacyMark>,
 }
 impl Document {
     pub fn from_json(json: &str) -> Result<Self, DocumentError> {
@@ -54,13 +55,16 @@ impl Document {
                 .into_iter()
                 .map(|(id, asset)| (id, asset.upgrade()))
                 .collect(),
-            marks: self.marks,
+            marks: upgrade_marks(self.marks),
             overrides: BTreeMap::new(),
         };
         document.validate()?;
         Ok(document)
     }
     pub fn matches(&self, document: &ProjectDocument) -> bool {
+        let Some(marks) = project_marks(&document.marks) else {
+            return false;
+        };
         if document.basis_state != BasisState::explicit() {
             return false;
         }
@@ -86,7 +90,7 @@ impl Document {
                     root: document.root.clone(),
                     nodes,
                     assets,
-                    marks: document.marks.clone(),
+                    marks,
                 }
             })
     }
@@ -307,7 +311,7 @@ struct Patch {
     #[serde(deserialize_with = "unique_map")]
     assets: BTreeMap<AssetId, ValueChange<LegacyAssetRecord>>,
     #[serde(deserialize_with = "unique_map")]
-    marks: BTreeMap<MarkId, ValueChange<Mark>>,
+    marks: BTreeMap<MarkId, ValueChange<LegacyMark>>,
 }
 impl Patch {
     fn project(patch: &DocumentPatch) -> Option<Self> {
@@ -342,7 +346,7 @@ impl Patch {
                 .iter()
                 .map(|(id, change)| Some((id.clone(), project_asset_change(change)?)))
                 .collect::<Option<_>>()?,
-            marks: patch.marks.clone(),
+            marks: project_mark_changes(&patch.marks)?,
         })
     }
 }

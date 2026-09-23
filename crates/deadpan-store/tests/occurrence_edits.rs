@@ -67,6 +67,7 @@ fn initial() -> Result<ProjectDocument> {
         })
     };
     let mark = |owner: &str, coordinate| Mark {
+        fragments: Vec::new(),
         owner: id(owner),
         label: owner.into(),
         boundary: BoundaryAnchor {

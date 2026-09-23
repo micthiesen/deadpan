@@ -24,7 +24,7 @@ Direct policy changes preserve temporal coordinates, marks and presentation
 basis. Occurrence edits preserve timing while copying or relocating owned marks
 under the existing isolation rules; their mark inventory may grow. Edge choices
 do not lock an empty provisional project's frame rate. Core schema 11 and
-database schema 16 introduced this intent, retained in database schema 18. Database schemas 1 through 15 replay
+database schema 16 introduced this intent, retained in database schema 19. Database schemas 1 through 15 replay
 their complete history through strict frozen adapters and gain automatic edges.
 Legacy snapshots, command subtrees and forward/inverse patches reject the new
 fields, including null values, and legacy commands reject both direct and
