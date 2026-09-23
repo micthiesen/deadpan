@@ -10,9 +10,9 @@ mod plan;
 
 pub use picture::{Picture, PictureSample};
 pub use plan::{
-    AudioContent, AudioQuery, AudioQueryLimits, AudioRetimeStage, AudioSpan, AudioTransform,
-    LookupStats, NodeInspection, NodeType, PlanInspection, PlanMetadata, RenderPlan, SilenceReason,
-    StorageStats,
+    AudioBoundaries, AudioBoundaryKind, AudioBoundaryOrigin, AudioContent, AudioQuery,
+    AudioQueryLimits, AudioRetimeStage, AudioSpan, AudioTransform, LookupStats, NodeInspection,
+    NodeType, PlanInspection, PlanMetadata, RenderPlan, SilenceReason, StorageStats,
 };
 pub use plan::{
     AudioProcessingQuery, AudioProcessingSpan, AudioSignal, AudioSignalContent, AudioSignalQuery,

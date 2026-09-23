@@ -332,6 +332,12 @@ audio policy, clip placement to structural hosts, and enforce both output-span
 and traversal budgets. Query partitioning must not change allocated boundaries
 or DSP origins. See [audio planning](docs/AUDIO_PLAN.md).
 
+Root audio boundary metadata retains every coincident exact constraint, including
+each ancestor's own occurrence path and stable Repeat gap identity. Never infer
+an edge owner from a rounded sample, the leaf alone, or a query crop. Capture
+boundary paths against the query work budget before cloning them. This metadata
+does not choose precedence between authored policies or apply a fade.
+
 Keep the qualification harness and `deadpan-dsp` on one canonical DSP header.
 Vendored upstream headers remain byte-identical to their pins with full notices.
 The Rust wrapper retains boxed input until after native destruction, bounds each

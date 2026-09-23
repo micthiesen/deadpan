@@ -162,6 +162,12 @@ outputs still fail the broader reconstruction check despite passing both finite
 meters. Fixed fades that excessively quiet tiny fragments are rejected as a
 default; production limiting and per-voice fades remain open.
 
+[Audio boundary provenance](AUDIO_PLAN.md) now retains exact structural,
+placement and Repeat-gap edge owners, including coincident constraints and each
+owner's own occurrence path. Root query crops preserve this metadata, and copy
+work is bounded. This supports editable fades; authored edge policy and actual
+edge DSP remain open.
+
 ## Product requirements
 
 | ID | Requirement | Status | Implementation / tests now | Required acceptance evidence still outstanding |

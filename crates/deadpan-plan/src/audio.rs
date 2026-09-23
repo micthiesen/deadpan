@@ -7,6 +7,8 @@ use deadpan_core::{
 };
 use serde::Serialize;
 
+use super::audio_boundary::{AudioExtent, BoundaryOwner};
+use super::{AudioBoundaries, AudioBoundaryKind};
 use super::{CompiledKind, LookupStats, RenderPlan};
 use crate::PlanError;
 
@@ -141,6 +143,8 @@ pub struct AudioSpan {
     /// partitioning. Both endpoints are rounded once from the project origin.
     pub allocated_samples: Range<AudioSample>,
     pub project_extent: Range<ExactRatio>,
+    /// Original owners of each full extent edge, never of a query crop.
+    pub boundaries: AudioBoundaries,
     pub instance: InstancePath,
     pub gap_after: Option<IterationId>,
     pub transform: AudioTransform,
@@ -290,7 +294,8 @@ impl RenderPlan {
         } else {
             InsertionBias::Left
         };
-        let mut extent = ExactRatio::ZERO..ExactRatio::integer(self.duration().frames());
+        let mut extent =
+            AudioExtent::new(ExactRatio::ZERO..ExactRatio::integer(self.duration().frames()));
         let mut current = self.root;
         let mut repeats = Vec::new();
         let mut retimes = Vec::new();
@@ -298,11 +303,18 @@ impl RenderPlan {
             budget.spend(1)?;
             budget.lookup.visited_nodes += 1;
             let node = &self.nodes[current];
-            extent = intersect(
-                extent,
+            let owner = BoundaryOwner {
+                node: &node.inspection.id,
+                repeats: &repeats,
+                gap_after: None,
+            };
+            extent.intersect(
                 transform.project_origin
                     ..transform
                         .project_at(ExactRatio::integer(node.inspection.duration.frames()))?,
+                owner,
+                (AudioBoundaryKind::NodeStart, AudioBoundaryKind::NodeEnd),
+                budget,
             )?;
             let local = probe
                 .checked_sub(transform.project_origin)?
@@ -322,17 +334,35 @@ impl RenderPlan {
                     let start = transform.project_at(audio.start)?;
                     let end = transform.project_at(audio.start.checked_add(audio.duration)?)?;
                     let content = if sample < transform.sample_boundary(start)? {
-                        extent.end = minimum(extent.end, start)?;
+                        extent.clip_end(
+                            start,
+                            owner,
+                            AudioBoundaryKind::SourcePlacementStart,
+                            budget,
+                        )?;
                         AudioContent::Silence {
                             reason: SilenceReason::OutsideSourcePlacement,
                         }
                     } else if sample >= transform.sample_boundary(end)? {
-                        extent.start = maximum(extent.start, end)?;
+                        extent.clip_start(
+                            end,
+                            owner,
+                            AudioBoundaryKind::SourcePlacementEnd,
+                            budget,
+                        )?;
                         AudioContent::Silence {
                             reason: SilenceReason::OutsideSourcePlacement,
                         }
                     } else {
-                        extent = intersect(extent, start..end)?;
+                        extent.intersect(
+                            start..end,
+                            owner,
+                            (
+                                AudioBoundaryKind::SourcePlacementStart,
+                                AudioBoundaryKind::SourcePlacementEnd,
+                            ),
+                            budget,
+                        )?;
                         AudioContent::Source {
                             source: audio.source.clone(),
                             start: audio.start,
@@ -414,12 +444,20 @@ impl RenderPlan {
                             .ok_or(TimeError::Overflow)?;
                         transform =
                             transform.child(ExactRatio::integer(start), ExactRatio::integer(1))?;
-                        extent = intersect(
-                            extent,
+                        extent.intersect(
                             transform.project_origin
                                 ..transform.project_at(ExactRatio::integer(
                                     location.play.gap_after.frames(),
                                 ))?,
+                            BoundaryOwner {
+                                gap_after: Some(&location.play.iteration),
+                                ..owner
+                            },
+                            (
+                                AudioBoundaryKind::RepeatGapStart,
+                                AudioBoundaryKind::RepeatGapEnd,
+                            ),
+                            budget,
                         )?;
                         break (
                             AudioContent::from_hold(audio, location.play.gap_after),
@@ -438,15 +476,16 @@ impl RenderPlan {
                 }
             }
         };
-        let allocated_samples =
-            transform.sample_boundary(extent.start)?..transform.sample_boundary(extent.end)?;
+        let allocated_samples = transform.sample_boundary(extent.range.start)?
+            ..transform.sample_boundary(extent.range.end)?;
         if !allocated_samples.contains(&sample) {
             return Err(PlanError::InvalidPlan("audio interval did not advance"));
         }
         Ok(AudioSpan {
             samples: allocated_samples.clone(),
             allocated_samples,
-            project_extent: extent,
+            project_extent: extent.range,
+            boundaries: extent.boundaries,
             instance: InstancePath {
                 node: self.nodes[current].inspection.id.clone(),
                 repeats,

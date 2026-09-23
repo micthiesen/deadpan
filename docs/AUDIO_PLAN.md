@@ -23,6 +23,23 @@ retain the entire structurally clipped span; `samples` intersects it with the
 query. Query chunk size cannot change the origin, source mapping, occurrence,
 pitch policies, or allocated boundaries.
 
+`boundaries.start` and `boundaries.end` retain the constraints that formed those
+full extent edges: structural node boundaries, Source placement boundaries and
+Repeat gap boundaries. Each origin has its own complete occurrence path; an
+outer Retime trim does not acquire a descendant play identity. Gap origins also
+retain the preceding stable play ID. All constraints meeting at exactly the
+same project coordinate remain in outer-to-inner descent order. Coordinates
+that merely round to the same sample are not coincident. A query crop changes
+neither the full edge coordinates nor their owners.
+
+For example, trimming into the middle of a Source through a Retime retains the
+Retime boundary rather than attributing that new cut to the Source's original
+start. A placement start also names the end of the preceding out-of-placement
+silence; the origin kind describes the original constraint's side, not the side
+of that silent span. These records support future editable edge treatments.
+They do not choose precedence among coincident policies, persist hard-edge
+intent, or apply fades to PCM.
+
 The structural search uses the exact point `(n + 1/2)` in sample units when
 resolving sample `n`. At an exact structural tie it chooses the right side for
 even `n`, and the left side for odd `n`. This is the inverse of ties-to-even
@@ -41,7 +58,11 @@ Sequences use prefix binary search. Repeats use the shared compact
 `RepeatLayout`, including sparse overrides, variable play durations and gaps
 only between plays. Each next span starts with another indexed descent rather
 than expanding intervening plays. Queries cap returned spans at 4,096 and
-combined node/comparison work at 65,536; callers can set lower limits. Exhaustion
+combined node/comparison and boundary-copy work at 65,536; callers can set lower
+limits. Each captured origin costs one unit plus its repeated-ancestor count,
+charged before cloning even if a tighter constraint later replaces it. This
+bounds coincident path storage through nested structures. The existing lookup
+counters describe traversal; they do not include boundary-copy work. Exhaustion
 fails the whole query explicitly. Empty in-range queries return no spans;
 negative, reversed and out-of-plan ranges fail. Arithmetic overflow fails
 instead of rounding an intermediate. Compilation storage remains proportional
@@ -56,6 +77,17 @@ cargo run --locked -p deadpan-cli -- inspect-plan /tmp/example.deadpan --audio-s
 The same command is available through `deadpan-app --headless`. It opens SQLite
 read-only and reports protocol 1, the pinned project/revision, spans and measured
 lookup counters. It neither renders audio nor changes history.
+
+Tests cover original placement sides, coincident constraints, nested trim/gap
+ownership, exact versus rounded coincidence, boundary-copy admission and stable
+override identities at a billion-play seek. Existing partition/property tests
+also compare the complete origin metadata across query boundaries.
+
+Boundary provenance was independently reviewed with no findings. On 2026-09-23,
+the repository format/Clippy/test/build/doctor gate passed, including all 798
+tests. The tested plan sources remained unchanged throughout the gate. This is
+headless planning evidence; no GUI, listening or fade-processing qualification
+is implied.
 
 This API establishes structural planning only. Separate readers connect these
 spans to [source preparation](AUDIO_PREPARATION.md), [continuous retime stages](AUDIO_STAGE_PREPARATION.md)

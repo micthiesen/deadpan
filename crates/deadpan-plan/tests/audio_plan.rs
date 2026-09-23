@@ -3,7 +3,8 @@ use std::ops::Range;
 
 use deadpan_core::*;
 use deadpan_plan::{
-    AudioContent, AudioQuery, AudioQueryLimits, AudioSpan, PlanError, RenderPlan, SilenceReason,
+    AudioBoundaryKind, AudioBoundaryOrigin, AudioContent, AudioQuery, AudioQueryLimits, AudioSpan,
+    PlanError, RenderPlan, SilenceReason,
 };
 use proptest::prelude::*;
 use proptest::test_runner::RngSeed;
@@ -175,6 +176,203 @@ fn per_sample(query: AudioQuery) -> Vec<AudioSpan> {
             })
         })
         .collect()
+}
+
+fn boundary(
+    node: &str,
+    repeats: &[(&str, u32)],
+    gap: Option<u32>,
+    kind: AudioBoundaryKind,
+) -> AudioBoundaryOrigin {
+    AudioBoundaryOrigin {
+        instance: InstancePath {
+            node: id(node),
+            repeats: repeats
+                .iter()
+                .map(|(node, play)| RepeatInstance {
+                    node: id(node),
+                    iteration: iteration(*play),
+                })
+                .collect(),
+        },
+        gap_after: gap.map(iteration),
+        kind,
+    }
+}
+
+#[test]
+fn placement_edges_keep_their_original_side_in_adjacent_silence_and_query_crops() {
+    use AudioBoundaryKind::*;
+    let doc = document(
+        one_sample_per_frame(),
+        vec![id("source")],
+        BTreeMap::from([(
+            id("source"),
+            source(
+                10,
+                SourceAudioMapping::Placement {
+                    start: ratio(2, 1),
+                    frames: ratio(6, 1),
+                },
+                0,
+            ),
+        )]),
+        BTreeMap::new(),
+    );
+    let plan = RenderPlan::compile(&doc).unwrap();
+    let full = query(&plan, 0, 10);
+    assert_eq!(full.spans.len(), 3);
+    let placement_start = vec![boundary("source", &[], None, SourcePlacementStart)];
+    let placement_end = vec![boundary("source", &[], None, SourcePlacementEnd)];
+    assert_eq!(full.spans[0].boundaries.end, placement_start);
+    assert_eq!(full.spans[1].boundaries.start, placement_start);
+    assert_eq!(full.spans[1].boundaries.end, placement_end);
+    assert_eq!(full.spans[2].boundaries.start, placement_end);
+    assert_eq!(
+        full.spans[0].boundaries.start,
+        vec![
+            boundary("root", &[], None, NodeStart),
+            boundary("source", &[], None, NodeStart),
+        ]
+    );
+    assert_eq!(
+        full.spans[2].boundaries.end,
+        vec![
+            boundary("root", &[], None, NodeEnd),
+            boundary("source", &[], None, NodeEnd),
+        ]
+    );
+    for (start, end, index) in [(4, 5, 1), (9, 10, 2), (0, 1, 0), (2, 3, 1)] {
+        let cropped = query(&plan, start, end);
+        assert_eq!(cropped.spans[0].boundaries, full.spans[index].boundaries);
+        assert_eq!(
+            cropped.spans[0].allocated_samples,
+            full.spans[index].allocated_samples
+        );
+    }
+}
+
+#[test]
+fn nested_repeat_trim_and_gap_boundaries_keep_each_owners_own_occurrence() {
+    use AudioBoundaryKind::*;
+    let doc = document(
+        one_sample_per_frame(),
+        vec![id("outer")],
+        BTreeMap::from([
+            (id("source"), source(4, SourceAudioMapping::FitBeat, 0)),
+            (id("inner"), repeat("source", 3, 1)),
+            (id("cut"), retime("inner", 6, 6, 12, PitchPolicy::Preserve)),
+            (id("outer"), repeat("cut", 2, 0)),
+        ]),
+        BTreeMap::new(),
+    );
+    let plan = RenderPlan::compile(&doc).unwrap();
+    let result = query(&plan, 6, 12);
+    assert_eq!(result.spans.len(), 3);
+    assert_eq!(result.spans[0].allocated_samples, samples(6, 9));
+    assert_eq!(result.spans[1].allocated_samples, samples(9, 10));
+    assert_eq!(result.spans[2].allocated_samples, samples(10, 12));
+    assert_eq!(
+        result.spans[0].boundaries.start,
+        vec![boundary("cut", &[("outer", 1)], None, NodeStart)]
+    );
+    assert_eq!(
+        result.spans[0].boundaries.end,
+        vec![
+            boundary("source", &[("outer", 1), ("inner", 1)], None, NodeEnd),
+            boundary(
+                "source",
+                &[("outer", 1), ("inner", 1)],
+                None,
+                SourcePlacementEnd
+            ),
+        ]
+    );
+    assert_eq!(
+        result.spans[1].boundaries.start,
+        vec![boundary("inner", &[("outer", 1)], Some(1), RepeatGapStart)]
+    );
+    assert_eq!(
+        result.spans[1].boundaries.end,
+        vec![boundary("inner", &[("outer", 1)], Some(1), RepeatGapEnd)]
+    );
+    assert_eq!(
+        result.spans[2].boundaries.end,
+        vec![
+            boundary("root", &[], None, NodeEnd),
+            boundary("outer", &[], None, NodeEnd),
+            boundary("cut", &[("outer", 1)], None, NodeEnd),
+        ]
+    );
+    for span in &result.spans {
+        for origin in span.boundaries.start.iter().chain(&span.boundaries.end) {
+            origin.instance.validate(&doc).unwrap();
+        }
+    }
+    assert_eq!(
+        per_sample(result),
+        (6..12)
+            .flat_map(|at| per_sample(query(&plan, at, at + 1)))
+            .collect::<Vec<_>>()
+    );
+}
+
+#[test]
+fn rounded_sample_equality_does_not_merge_different_exact_boundary_origins() {
+    use AudioBoundaryKind::*;
+    let doc = document(
+        one_sample_per_frame(),
+        vec![id("source")],
+        BTreeMap::from([(
+            id("source"),
+            source(
+                2,
+                SourceAudioMapping::Placement {
+                    start: ratio(1, 4),
+                    frames: ratio(3, 2),
+                },
+                0,
+            ),
+        )]),
+        BTreeMap::new(),
+    );
+    let plan = RenderPlan::compile(&doc).unwrap();
+    let result = query(&plan, 0, 2);
+    assert_eq!(result.spans.len(), 1);
+    let span = &result.spans[0];
+    assert_eq!(span.allocated_samples, samples(0, 2));
+    assert_eq!(span.project_extent, ratio(1, 4)..ratio(7, 4));
+    assert_eq!(
+        span.boundaries.start,
+        vec![boundary("source", &[], None, SourcePlacementStart)]
+    );
+    assert_eq!(
+        span.boundaries.end,
+        vec![boundary("source", &[], None, SourcePlacementEnd)]
+    );
+}
+
+#[test]
+fn coincident_boundary_capture_is_charged_before_returning_metadata() {
+    let doc = document(
+        one_sample_per_frame(),
+        vec![id("source")],
+        BTreeMap::from([(id("source"), source(4, SourceAudioMapping::FitBeat, 0))]),
+        BTreeMap::new(),
+    );
+    let plan = RenderPlan::compile(&doc).unwrap();
+    let limits = |maximum_work| AudioQueryLimits {
+        maximum_spans: 1,
+        maximum_work,
+    };
+    assert!(matches!(
+        plan.audio(samples(1, 2), limits(8)),
+        Err(PlanError::AudioQueryLimit("structural work"))
+    ));
+    let result = plan.audio(samples(1, 2), limits(9)).unwrap();
+    assert_eq!(result.spans[0].boundaries.start.len(), 3);
+    assert_eq!(result.spans[0].boundaries.end.len(), 3);
+    assert_eq!(result.lookup.visited_nodes, 2);
 }
 
 #[test]
@@ -578,7 +776,8 @@ fn billion_play_override_and_final_seek_stay_bounded() {
                 samples(start, end),
                 AudioQueryLimits {
                     maximum_spans: 1,
-                    maximum_work: 12,
+                    // Includes copying each retained boundary's occurrence path.
+                    maximum_work: 32,
                 },
             )
             .unwrap();
@@ -587,6 +786,16 @@ fn billion_play_override_and_final_seek_stay_bounded() {
         assert_eq!(span.instance.node, id(node));
         assert_eq!(span.instance.repeats[0].iteration, iteration(play));
         span.instance.validate(&doc).unwrap();
+        let origins = span.boundaries.start.iter().chain(&span.boundaries.end);
+        let mut leaf_origins = 0;
+        for origin in origins {
+            origin.instance.validate(&doc).unwrap();
+            if origin.instance.node == id(node) {
+                assert_eq!(origin.instance, span.instance);
+                leaf_origins += 1;
+            }
+        }
+        assert_eq!(leaf_origins, 4);
         assert_eq!(span.allocated_samples, samples(start, end));
         assert!(span.gap_after.is_none());
         assert_eq!(result.lookup.visited_nodes, 3);
