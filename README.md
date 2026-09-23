@@ -21,7 +21,7 @@ This repository currently contains an **editing foundation**, not a working vide
 - [Original media ownership](docs/ORIGINAL_MEDIA.md): durable managed originals, APFS clone/copy, linked locations, identity-checked relinking and private snapshots. [Background import preparation](docs/IMPORT_PREPARATION.md) separates file verification and measured receipts from writer commits, with session and freshness checks at admission.
 - `deadpan-render`: shared SDR GPU picture baseline, linear Rec.2020 composition, source aspect/rotation and explicit sRGB display conversion.
 - `deadpan-models`: [native bridge bundles](docs/GENERATION_BUNDLES.md), retained conditioning inputs, provenance binding, and measured media identities/spans. Admission-bearing schema-9 receipts require all six objects before Ready and explicit acceptance.
-- `deadpan-app`: an `egui`/`eframe` [native project workspace](docs/NATIVE_WORKSPACE.md) using Metal, with background media import, source browsing, explicit whole-source insertion, durable undo/redo, and exact Source/Sequence frame inspection.
+- `deadpan-app`: an `egui`/`eframe` [native project workspace](docs/NATIVE_WORKSPACE.md) using Metal, with background media import, source browsing, explicit whole-source insertion, root-beat repeat/delete/Hold-duration commands, durable undo/redo, and exact Source/Sequence frame inspection.
 - `deadpan-cli`: headless project/command/history operations, migration, picture/audio-plan and source-PCM inspection, and exact boundary selection, also available through `deadpan-app --headless`.
 
 The app implements a first create/import/insert/reopen workflow. Full structural keyboard editing, playback, AI generation, and export remain unimplemented in the app. All 24 full-product requirements remain open or partial in the [requirement tracker](docs/REQUIREMENTS.md). [Compatible native media qualification](docs/qualification/media-compatible-2026-09-20.md), [canonical audio qualification](docs/qualification/audio-canonical-2026-09-20.md), and a [real local model smoke](docs/qualification/model-smoke-2026-09-20.md) record actual tests, failed configurations, and measured limits separately from the application.
@@ -35,7 +35,17 @@ cargo run -p deadpan-cli -- doctor
 cargo run -p deadpan-app
 ```
 
-The application opens a non-destructive source preview on macOS. Use `⌘O` to focus the video path, Enter to open it, and Left/Right or Home/End to inspect original frames. `--preview-source PATH` opens a source at launch. The current decoder admits explicitly tagged progressive 8-bit SDR H.264/FFV1 in MP4/Matroska; unsupported interpretations fail visibly. See [source preview qualification](docs/qualification/source-preview-2026-09-21.md) for measured scope and [Headless commands](docs/HEADLESS.md) for project operations. `doctor` reports the foundation, not release qualification. No credentials or model downloads are required.
+Use `⌘N` to create a project, `⌘O` to open one, `⌘I` to register local media,
+and `⌘Return` to insert a registered source. In Sequence context, `3rr` wraps the
+current root beat in three total plays, `dd` deletes it, and `u` undoes the edit.
+Use `:help` for the implemented keyboard vocabulary. `--project PATH` opens a
+project at launch; `--preview-source PATH` opens a non-destructive source preview.
+The current decoder admits explicitly tagged progressive 8-bit SDR H.264/FFV1 in
+MP4/Matroska; unsupported interpretations fail visibly. See
+[source preview qualification](docs/qualification/source-preview-2026-09-21.md)
+for measured scope and [Headless commands](docs/HEADLESS.md) for project operations.
+`doctor` reports the foundation, not release qualification. No credentials or
+model downloads are required.
 
 Before running the app or complete workspace gate, build the pinned FFmpeg developer dependency
 as described in [Development](docs/DEVELOPMENT.md). That document also covers native

@@ -6,7 +6,7 @@ use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, mpsc};
 
-use deadpan_core::{AssetId, NodeId, ProjectDocument, RevisionId, SourceFrameIndex};
+use deadpan_core::{AssetId, FrameDuration, NodeId, ProjectDocument, RevisionId, SourceFrameIndex};
 use deadpan_plan::RenderPlan;
 use deadpan_store::original_media::{OriginalImportHandle, OriginalMediaRecord, OriginalOwnership};
 use deadpan_store::source_registration::SourceQualificationReceipt;
@@ -65,9 +65,37 @@ pub struct ProjectUpdate {
     pub import: Option<ImportStatus>,
     pub error: Option<String>,
     pub message: Option<String>,
-    /// Last committed explicit insertion, retained through background progress.
-    /// Cleared by the next user command; consumers deduplicate by revision/node.
-    pub inserted: Option<(RevisionId, NodeId)>,
+    /// Last selection-changing commit, retained through background progress.
+    /// Cleared by the next user command; consumers deduplicate by revision.
+    pub committed: Option<CommittedEdit>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CommittedEdit {
+    pub revision: RevisionId,
+    /// None explicitly clears selection when deletion leaves an empty Sequence.
+    pub selected_node: Option<NodeId>,
+}
+
+/// Authored root-beat operations. Nested occurrence editing requires a separate
+/// concrete occurrence scope; the service rejects hidden or nested targets.
+#[derive(Clone, Debug)]
+pub enum ProjectEdit {
+    Repeat {
+        node: NodeId,
+        plays: u32,
+    },
+    WrapRepeat {
+        node: NodeId,
+        plays: u32,
+    },
+    Delete {
+        node: NodeId,
+    },
+    HoldDuration {
+        node: NodeId,
+        duration: FrameDuration,
+    },
 }
 
 pub enum ProjectRequest {
@@ -85,6 +113,11 @@ pub enum ProjectRequest {
         asset: AssetId,
         parent: NodeId,
         index: usize,
+    },
+    Edit {
+        expected_session: u64,
+        expected_revision: RevisionId,
+        edit: ProjectEdit,
     },
     Undo {
         expected_revision: RevisionId,

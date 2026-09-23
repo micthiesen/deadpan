@@ -4,7 +4,9 @@ The application now connects the existing storage, measured import and picture
 plan boundaries to a native project workflow. It creates and opens `.deadpan`
 packages, registers managed or linked originals, inserts an entire source by
 explicit command, saves undo/redo, and inspects exact source or sequence frames.
-Playback, range operators, generated-provider rendering and export remain open.
+It also wraps or updates root-beat Repeats, deletes root beats and changes an
+existing root Hold's duration. Playback, range operators, generated-provider
+rendering and export remain open.
 
 ## Project and media ownership
 
@@ -39,12 +41,23 @@ Undo/redo remain available during preparation. Active-generation edits that need
 unimplemented source-context resolution fail explicitly through the store's
 relevance guard. They are not admitted with invented context hashes.
 
-Every successful insertion reports its actual committed revision and node ID.
+Root-beat edits capture both writer session and revision. The service resolves
+the typed intent against that immutable document, allocates identities and commits
+through the same core/store command path. Hidden descendants and root-node targets
+are rejected until concrete nested occurrence selection is implemented. Repeat
+setters preserve an existing gap; explicit wrapping creates a new Repeat even
+when the selected beat is already one. Deletion selects the next sibling, otherwise
+the previous sibling, otherwise explicitly clears selection.
+
+Every successful insertion or root edit reports its actual committed revision
+and resulting selected node, including an explicit empty selection.
 The completion marker survives coalesced background progress, registration and
 stale worker replies until the next user command. UI selection follows this
 marker, not a progress label or an assumed index. Errors survive unrelated
 background progress. User assets and accepted objects retain their existing
 storage policies; cancellation never treats originals as disposable caches.
+Registration updates the available source without switching the active viewer
+away from Sequence, including after history commands clear a completion marker.
 
 ## Picture and keyboard behavior
 
@@ -88,7 +101,9 @@ with the final preceding frame shown at the end. Sources appear on the left,
 sequence beats below the picture, and mode/context/boundary status beneath them.
 Source and beat widgets are virtualized; their derived lists are rebuilt when
 the document or search changes, not every redraw. Keyboard selection reveals the
-selected row. The current strip presents root beats, not a complete nested editor.
+selected row. Sequence cursor motion selects the root beat to its right, or the
+last beat at the final boundary. The current strip presents root beats, not a
+complete nested editor.
 
 Normal bindings include counts, `h/l`, `j/k`, `gg/G`, native arrows/Home/End,
 `u`/Ctrl-R and native Command shortcuts. Prefixes do not time out. Logical
@@ -97,6 +112,11 @@ used. Text editing retains native shortcuts, and composition suppresses editing
 bindings. Real pane focus targets intercept Tab and arrows; text Escape is
 handled after the text widget processes same-frame input. The partial binding
 vocabulary is not the full declarative operator/visual/camera/trim grammar.
+Clicking away cancels command entry after widget processing. Visible command
+mode suppresses normal edit keys even if focus has already moved in that frame.
+Pointer-button input batches defer shortcut and command submission routing until
+widgets resolve their focus changes. Text still reaches the widgets; ordinary
+key-only navigation and hovering are unaffected.
 
 `⌘N` creates, `⌘O` opens, `⌘I` imports, and `⌘Return` inserts after the selected
 root beat or at sequence end. `/` searches; `:` opens command entry with
@@ -107,5 +127,28 @@ chooser. Create always adds the `.deadpan` suffix while preserving an authored
 name or earlier suffix. Import captures its project session
 before opening the panel and rejects a result for a different session.
 
+In Sequence context, `rr` wraps the current root beat in two total plays;
+`3rr` makes three total plays and `1rr` retains one. `dd` deletes one root beat.
+Operator prefixes remain pending without a timer. Unsupported deletion counts,
+zero/overflow counts and conflicting post-operator counts fail explicitly.
+Held-key autorepeat cannot complete an edit operator. Changing context, pane or
+selection cancels the pending operator. Source context remains non-destructive
+and points to explicit insertion instead.
+
+Command entry accepts `:repeat N`, `:wrap-repeat N`, `:delete`, and
+`:hold-duration Nf`. Repeat updates an existing selected Repeat or wraps another
+beat; wrap-repeat always wraps. Hold duration requires a selected existing Hold
+and an explicit positive integer frame unit. Arguments and unsupported options
+are rejected, not silently ignored. This command subset does not yet implement
+the specification's full typed-unit, selector and completion grammar.
+
+Hold insertion at an arbitrary cursor, pure split, nested occurrence navigation,
+range edits, gain controls, semantic dot-repeat and macros remain open. Existing
+child-index insertion is not a substitute for the exact Hold splice contract.
+[Splice design prerequisites](STRUCTURAL_SPLICE_DESIGN.md) record the exact
+resume, retained DSP/envelope domain and mark-lineage work still required.
+
 [Qualification](qualification/native-workspace-2026-09-21.md) records the actual
 service, decoder, keyboard/focus and native interaction checks and their limits.
+The [root editing qualification](qualification/native-editing-2026-09-23.md)
+records Repeat, Delete, Hold-duration, completion-selection and focus evidence.

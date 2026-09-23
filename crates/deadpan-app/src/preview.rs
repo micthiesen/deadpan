@@ -10,22 +10,42 @@ use deadpan_store::original_media::OriginalOwnership;
 use eframe::{egui, egui_wgpu};
 
 use crate::dialogs::{DialogKind, Dialogs};
-use crate::navigation::{self, Action, Bindings, Pane, TextAction};
+use crate::navigation::{self, Action, BeatEdit, Bindings, Pane, TextAction};
 use crate::presentation::Presentation;
 use crate::project::{
-    ImportMedia, ImportStage, ImportStatus, ProjectRequest, ProjectService, Workspace,
+    ImportMedia, ImportStage, ImportStatus, ProjectEdit, ProjectRequest, ProjectService, Workspace,
 };
 use crate::worker::{PreviewWorker, ProjectView, SourceSummary, Ticket, Work};
+
+mod selection;
 
 const SEARCH_ID: &str = "source-search";
 const COMMAND_ID: &str = "command-input";
 const MAX_TARGET_PIXELS: f64 = 1920.0 * 1080.0;
 const BEAT_WIDTH: f32 = 172.0;
+const SOURCE_INSERT_HINT: &str = "Source browsing preserves the original. Use Insert source (⌘Return or :insert) to begin editing it in the sequence.";
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum View {
     Source,
     Sequence,
+}
+
+impl View {
+    fn after_completion(self, completion: &selection::Completion) -> Self {
+        if *completion == selection::Completion::Edit {
+            Self::Sequence
+        } else {
+            self
+        }
+    }
+
+    fn set(&mut self, next: Self, message: &mut Option<String>) {
+        if *self != next && message.as_deref() == Some(SOURCE_INSERT_HINT) {
+            *message = None;
+        }
+        *self = next;
+    }
 }
 
 struct RegisteredTarget {
@@ -66,7 +86,7 @@ pub struct DeadpanApp {
     help_open: bool,
     linked_import: bool,
     audio_import: bool,
-    last_inserted: Option<deadpan_core::RevisionId>,
+    last_committed: Option<deadpan_core::RevisionId>,
     beat_rows: Arc<Vec<BeatRow>>,
     source_rows: Arc<Vec<SourceRow>>,
     reveal_beat: bool,
@@ -134,7 +154,7 @@ impl DeadpanApp {
             help_open: false,
             linked_import: false,
             audio_import: false,
-            last_inserted: None,
+            last_committed: None,
             beat_rows: Arc::new(Vec::new()),
             source_rows: Arc::new(Vec::new()),
             reveal_beat: false,
@@ -160,6 +180,7 @@ impl DeadpanApp {
     }
 
     fn submit(&mut self, request: ProjectRequest) -> bool {
+        self.bindings.clear();
         match self.service.submit(request) {
             Ok(()) => {
                 self.error = None;
@@ -201,10 +222,11 @@ impl DeadpanApp {
     }
 
     fn open_raw(&mut self, path: PathBuf) {
+        self.bindings.clear();
         self.clear_picture();
         self.summary = None;
         self.raw_source = Some(path.clone());
-        self.view = View::Source;
+        self.view.set(View::Source, &mut self.message);
         self.source_cursor = 0;
         let Some(serial) = self.next_serial() else {
             return;
@@ -330,15 +352,16 @@ impl DeadpanApp {
             self.project_error = update.error;
             self.message = update.message;
             if old_session != new_session {
+                self.bindings.clear();
                 self.clear_picture();
                 self.raw_source = None;
                 self.selected_source = None;
                 self.selected_beat = None;
                 self.source_cursor = 0;
                 self.sequence_cursor = 0;
-                self.last_inserted = None;
+                self.last_committed = None;
                 self.source_search.clear();
-                self.view = View::Source;
+                self.view.set(View::Source, &mut self.message);
                 self.summary = None;
                 self.error = None;
             }
@@ -360,30 +383,47 @@ impl DeadpanApp {
                 }
             }
             if old_revision != new_revision || old_session != new_session {
+                self.bindings.clear();
                 self.rebuild_rows();
             }
-            let inserted = update
-                .inserted
-                .filter(|(revision, _)| self.last_inserted.as_ref() != Some(revision));
-            if let Some((revision, node)) = inserted {
-                self.last_inserted = Some(revision);
-                self.view = View::Sequence;
+            let completion = selection::completion(
+                update.committed.as_ref().map(|commit| &commit.revision),
+                self.last_committed.as_ref(),
+                completed,
+            );
+            let committed_selection = completion == selection::Completion::Edit;
+            self.view
+                .set(self.view.after_completion(&completion), &mut self.message);
+            if let Some(commit) = update.committed.filter(|_| committed_selection) {
+                self.last_committed = Some(commit.revision);
+                self.bindings.clear();
                 self.pane = Pane::Sequence;
-                if let Some(beat) = self.beat_rows.iter().find(|b| b.id == node) {
-                    self.selected_beat = Some(node);
+                self.selected_beat = commit.selected_node;
+                if let Some(beat) = self
+                    .beat_rows
+                    .iter()
+                    .find(|b| Some(&b.id) == self.selected_beat.as_ref())
+                {
                     self.sequence_cursor = beat.start;
                     self.reveal_beat = true;
+                } else {
+                    self.selected_beat = None;
                 }
-            } else if completed
+            } else if completion == selection::Completion::Registration
                 && let Some(asset) = self.import.as_ref().and_then(|i| i.asset.clone())
             {
+                self.bindings.clear();
                 self.selected_source = Some(asset);
                 self.source_cursor = 0;
-                self.view = View::Source;
+                // Registration makes this source available without stealing
+                // Sequence context after edits, history or navigation.
                 self.reveal_source = true;
             }
             self.sequence_cursor = self.sequence_cursor.min(self.sequence_length());
             self.source_cursor = self.source_cursor.min(self.source_length());
+            if self.view == View::Sequence && !committed_selection {
+                self.reconcile_beat_selection();
+            }
             if old_revision != new_revision || old_session != new_session || completed {
                 self.request_picture(true);
             }
@@ -524,11 +564,78 @@ impl DeadpanApp {
         });
     }
 
+    fn offer_insert(&mut self) {
+        self.bindings.clear();
+        self.error = None;
+        self.message = Some(SOURCE_INSERT_HINT.into());
+    }
+
+    fn edit(&mut self, edit: BeatEdit) {
+        self.bindings.clear();
+        if self.view == View::Source {
+            self.offer_insert();
+            return;
+        }
+        let (Some(workspace), Some(node)) = (&self.workspace, &self.selected_beat) else {
+            self.error = Some("Select a root beat in the sequence before editing.".into());
+            return;
+        };
+        let node = node.clone();
+        let edit = match edit {
+            BeatEdit::Repeat(plays) => ProjectEdit::Repeat { node, plays },
+            BeatEdit::WrapRepeat(plays) => ProjectEdit::WrapRepeat { node, plays },
+            BeatEdit::Delete => ProjectEdit::Delete { node },
+            BeatEdit::HoldDuration(duration) => ProjectEdit::HoldDuration { node, duration },
+        };
+        self.submit(ProjectRequest::Edit {
+            expected_session: workspace.session,
+            expected_revision: workspace.document.revision_id().clone(),
+            edit,
+        });
+    }
+
+    fn select_at_cursor(&mut self) {
+        let selected = selection::at_boundary(&self.beat_rows, self.sequence_cursor)
+            .map(|index| self.beat_rows[index].id.clone());
+        if selected != self.selected_beat {
+            self.selected_beat = selected;
+            self.reveal_beat = true;
+        }
+    }
+
+    fn reconcile_beat_selection(&mut self) {
+        let selected = selection::after_refresh(
+            &self.beat_rows,
+            self.selected_beat.as_ref(),
+            self.sequence_cursor,
+        );
+        let node = selected.map(|index| self.beat_rows[index].id.clone());
+        if node != self.selected_beat {
+            self.selected_beat = node;
+            self.reveal_beat = true;
+        }
+        if let Some(index) = selected {
+            let beat = &self.beat_rows[index];
+            if self.sequence_cursor < beat.start || self.sequence_cursor > beat.start + beat.frames
+            {
+                self.sequence_cursor = beat.start;
+            }
+        }
+    }
+
+    fn open_command(&mut self, command: String, context: &egui::Context) {
+        self.bindings.clear();
+        self.command_open = true;
+        self.command = command;
+        context.memory_mut(|m| m.request_focus(egui::Id::new(COMMAND_ID)));
+    }
+
     fn select_source(&mut self, id: AssetId) {
+        self.bindings.clear();
         self.selected_source = Some(id);
         self.raw_source = None;
         self.source_cursor = 0;
-        self.view = View::Source;
+        self.view.set(View::Source, &mut self.message);
         self.pane = Pane::Sources;
         self.reveal_source = true;
         self.request_picture(true);
@@ -550,13 +657,7 @@ impl DeadpanApp {
                         .plan
                         .node_duration(id)
                         .map_or(0, |d| d.frames() as u64);
-                    let kind = match &node.kind {
-                        NodeKind::Source { .. } => "Source",
-                        NodeKind::Hold { .. } => "Hold",
-                        NodeKind::Repeat { .. } => "Repeat",
-                        NodeKind::Retime { .. } => "Retime",
-                        NodeKind::Sequence { .. } => "Sequence",
-                    };
+                    let kind = beat_kind(&node.kind);
                     let result = BeatRow {
                         id: id.clone(),
                         label: node.label.clone(),
@@ -591,6 +692,8 @@ impl DeadpanApp {
             Action::Insert => self.insert(),
             Action::Undo => self.history(false),
             Action::Redo => self.history(true),
+            Action::Edit(edit) => self.edit(edit),
+            Action::Invalid(error) => self.error = Some(error.into()),
             Action::Pane { reverse } => {
                 self.pane = self.pane.cycle(reverse);
                 self.bindings.clear();
@@ -615,6 +718,9 @@ impl DeadpanApp {
                         )
                     }
                 }
+                if self.view == View::Sequence {
+                    self.select_at_cursor();
+                }
                 self.request_picture(false);
             }
             Action::First | Action::Last => {
@@ -624,6 +730,9 @@ impl DeadpanApp {
                     View::Sequence => {
                         self.sequence_cursor = if end { self.sequence_length() } else { 0 }
                     }
+                }
+                if self.view == View::Sequence {
+                    self.select_at_cursor();
                 }
                 self.request_picture(false);
             }
@@ -646,21 +755,16 @@ impl DeadpanApp {
                     }
                 } else {
                     let beats = Arc::clone(&self.beat_rows);
-                    if !beats.is_empty() {
-                        let index = self
-                            .selected_beat
-                            .as_ref()
-                            .and_then(|id| beats.iter().position(|beat| &beat.id == id))
-                            .unwrap_or(0);
-                        let next = navigation::boundary_step(
-                            index as u64,
-                            beats.len().saturating_sub(1) as u64,
-                            forward,
-                            count,
-                        ) as usize;
+                    if let Some(next) = selection::step(
+                        &beats,
+                        self.selected_beat.as_ref(),
+                        self.sequence_cursor,
+                        forward,
+                        count,
+                    ) {
                         self.selected_beat = Some(beats[next].id.clone());
                         self.sequence_cursor = beats[next].start;
-                        self.view = View::Sequence;
+                        self.view.set(View::Sequence, &mut self.message);
                         self.reveal_beat = true;
                         self.request_picture(true);
                     }
@@ -676,9 +780,7 @@ impl DeadpanApp {
                 });
             }
             Action::Command => {
-                self.command_open = true;
-                self.command.clear();
-                context.memory_mut(|m| m.request_focus(egui::Id::new(COMMAND_ID)));
+                self.open_command(String::new(), context);
                 context.input_mut(|input| {
                     input
                         .events
@@ -692,7 +794,7 @@ impl DeadpanApp {
             }
             Action::OfferInsert => {
                 if self.view == View::Source {
-                    self.message = Some("Source browsing preserves the original. Use Insert source (⌘Return) to begin editing it in the sequence.".into());
+                    self.offer_insert();
                 }
             }
         }
@@ -713,6 +815,13 @@ impl DeadpanApp {
                 }
                 _ => {}
             }
+        }
+        // Widgets resolve pointer-driven focus later in this frame. Do not
+        // dispatch a destructive shortcut or submit the formerly focused
+        // command against that old focus. Text events still reach the widgets.
+        if pointer_focus_transition(&events) {
+            self.bindings.clear();
+            return None;
         }
         if self.dialogs.is_open() || context.any_popup_open() {
             self.bindings.clear();
@@ -735,9 +844,7 @@ impl DeadpanApp {
                 ..
             } = event
             {
-                let focused = context.memory(|m| {
-                    m.has_focus(egui::Id::new(SEARCH_ID)) || m.has_focus(egui::Id::new(COMMAND_ID))
-                });
+                let focused = text_input_active(context, false);
                 let ime = self.ime_composing || ime_event;
                 if let Some(text_action) = navigation::text_action(key, modifiers, focused, ime) {
                     text_result = Some((
@@ -752,11 +859,18 @@ impl DeadpanApp {
                 if text_result.is_some() {
                     continue;
                 }
-                if repeat && (modifiers.command || key == egui::Key::U) {
+                if repeat && !navigation::allows_key_repeat(key, modifiers) {
                     continue;
                 }
                 let before = self.bindings.pending();
-                if let Some(action) = self.bindings.key(key, modifiers, focused, ime) {
+                // Command mode remains text-only until the end-of-frame blur
+                // handling closes it, even if a click has already moved focus.
+                if let Some(action) = self.bindings.key(
+                    key,
+                    modifiers,
+                    text_input_active(context, self.command_open),
+                    ime,
+                ) {
                     self.action(action, context);
                     context.input_mut(|i| {
                         i.consume_key(modifiers, key);
@@ -772,36 +886,29 @@ impl DeadpanApp {
     }
 
     fn run_command(&mut self, context: &egui::Context) {
-        let command = self.command.trim().trim_start_matches(':').to_lowercase();
+        let command = navigation::command::parse(&self.command);
+        self.bindings.clear();
         self.command_open = false;
-        match command.as_str() {
-            "insert" => self.insert(),
-            "undo" => self.history(false),
-            "redo" => self.history(true),
-            "new" => self.begin_dialog(DialogKind::CreateProject, context, false),
-            "open" => self.begin_dialog(DialogKind::OpenProject, context, false),
-            "import" => self.begin_dialog(DialogKind::ImportMedia, context, false),
-            "source" => {
+        match command {
+            Ok(navigation::command::Entry::Action(action)) => self.action(action, context),
+            Ok(navigation::command::Entry::Source) => {
                 if self.view != View::Source {
-                    self.view = View::Source;
+                    self.view.set(View::Source, &mut self.message);
                     self.request_picture(true);
                 }
             }
-            "sequence" => {
+            Ok(navigation::command::Entry::Sequence) => {
                 if self.workspace.is_none() {
                     self.error = Some("Create or open a project to inspect its sequence.".into());
                 } else if self.view != View::Sequence {
-                    self.view = View::Sequence;
+                    self.view.set(View::Sequence, &mut self.message);
+                    self.reconcile_beat_selection();
                     self.request_picture(true);
                 }
             }
-            "help" => self.help_open = true,
-            "" => {}
-            _ => {
-                self.error = Some(format!(
-                    "Unknown command: {command}. Available: insert, undo, redo, new, open, import, source, sequence, help."
-                ))
-            }
+            Ok(navigation::command::Entry::Help) => self.help_open = true,
+            Ok(navigation::command::Entry::Empty) => {}
+            Err(error) => self.error = Some(error),
         }
     }
 
@@ -883,20 +990,22 @@ impl DeadpanApp {
     fn footer(&mut self, ui: &mut egui::Ui) {
         egui::Panel::bottom("workspace-status").resizable(false).show(ui, |ui| {
             if self.command_open {
-                ui.horizontal(|ui| { ui.strong(":"); ui.add(egui::TextEdit::singleline(&mut self.command).id(egui::Id::new(COMMAND_ID)).desired_width(f32::INFINITY).hint_text("insert · undo · redo · source · sequence · help")); retain_text_escape(ui, COMMAND_ID); });
+                ui.horizontal(|ui| { ui.strong(":"); ui.add(egui::TextEdit::singleline(&mut self.command).id(egui::Id::new(COMMAND_ID)).desired_width(f32::INFINITY).hint_text("repeat 3 · wrap-repeat 2 · hold-duration 11f · delete · help")); retain_text_escape(ui, COMMAND_ID); });
             } else {
                 ui.horizontal_wrapped(|ui| {
                     let text = ui.memory(|m| m.has_focus(egui::Id::new(SEARCH_ID)));
-                    ui.strong(format!("{} · {}", if text { "TEXT" } else { "NORMAL" }, if self.view == View::Source { "Source" } else { "Sequence" }));
+                    let pending = self.bindings.pending();
+                    ui.strong(format!("{} · {}", if text { "TEXT" } else if !pending.is_empty() { "PENDING" } else { "NORMAL" }, if self.view == View::Source { "Source" } else { "Sequence" }));
                     ui.separator();
                     let (cursor, length) = if self.view == View::Source { (self.source_cursor, self.source_length()) } else { (self.sequence_cursor, self.sequence_length()) };
                     ui.monospace(format!("Boundary {cursor} / {length}"));
                     if self.presentation.loading() || self.presentation.needs_render() { ui.spinner(); ui.weak("Updating picture…"); }
-                    let pending = self.bindings.pending(); if !pending.is_empty() { ui.monospace(format!("Pending: {pending}")); }
+                    if self.view == View::Sequence && let Some(beat) = self.beat_rows.iter().find(|beat| Some(&beat.id) == self.selected_beat.as_ref()) { ui.label(format!("Root beat: {} · {} · {}f", beat.label, beat.kind, beat.frames)); }
+                    if !pending.is_empty() { ui.monospace(format!("Pending: {pending}")); }
                 });
                 if let Some(error) = self.error.as_deref().or(self.project_error.as_deref()).or(self.presentation.error()) { ui.colored_label(ui.visuals().error_fg_color, format!("Could not complete action: {error}")); }
                 else if let Some(message) = &self.message { ui.weak(message); }
-                else { ui.weak("h / l: frame · j / k: source or beat · gg / G: start / end · Tab: pane · :help"); }
+                else { ui.weak("h / l: frame · j / k: source or root beat · rr: repeat · dd: delete · Tab: pane · :help"); }
             }
         });
     }
@@ -1025,15 +1134,16 @@ impl DeadpanApp {
 
     fn timeline(&mut self, ui: &mut egui::Ui) {
         let beats = Arc::clone(&self.beat_rows);
-        egui::Panel::bottom("workspace-sequence").default_size(140.0).min_size(118.0).max_size(230.0).show(ui, |ui| {
+        egui::Panel::bottom("workspace-sequence").default_size(174.0).min_size(154.0).max_size(270.0).show(ui, |ui| {
             ui.horizontal(|ui| {
                 let heading = ui.strong(if self.pane == Pane::Sequence { "Sequence · focused" } else { "Sequence" });
                 if pane_focus(ui, Pane::Sequence, heading.rect, "Sequence pane").has_focus() { self.pane = Pane::Sequence; }
-                ui.weak(format!("{} beats · {} frames", beats.len(), self.sequence_length()));
+                ui.weak(format!("{} root beats · {} frames", beats.len(), self.sequence_length()));
                 if let Some(w) = &self.workspace { let basis = w.document.presentation_basis(); ui.weak(format!("{} × {} · {}/{} fps", basis.width, basis.height, basis.frame_rate.numerator(), basis.frame_rate.denominator())); }
             });
             ui.add_space(6.0);
             if beats.is_empty() { ui.weak("Choose a source, then insert it into this sequence. Browsing never changes the edit."); return; }
+            self.edit_controls(ui);
             let selected = self.selected_beat.clone();
             let mut scroll = egui::ScrollArea::horizontal().id_salt("beat-strip");
             if std::mem::take(&mut self.reveal_beat) && let Some(index) = beats.iter().position(|b| Some(&b.id) == selected.as_ref()) { scroll = scroll.horizontal_scroll_offset(index as f32 * BEAT_WIDTH); }
@@ -1046,18 +1156,50 @@ impl DeadpanApp {
                     let rect = egui::Rect::from_min_size(origin + egui::vec2(index as f32 * BEAT_WIDTH, 0.0), egui::vec2(BEAT_WIDTH - 8.0, 66.0));
                     let response = ui.put(rect, egui::Button::new(format!("{}\n{} · {} frames", beat.label, beat.kind, beat.frames)).selected(selected.as_ref() == Some(&beat.id)));
                     response.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, true, format!("Beat {}: {}, {}, {} frames, starts at frame {}", index + 1, beat.label, beat.kind, beat.frames, beat.start)));
-                    if response.clicked() { self.selected_beat = Some(beat.id.clone()); self.sequence_cursor = beat.start; self.view = View::Sequence; self.pane = Pane::Sequence; self.request_picture(true); ui.memory_mut(|m| m.request_focus(pane_id(Pane::Sequence))); }
+                    if response.clicked() { self.bindings.clear(); self.selected_beat = Some(beat.id.clone()); self.sequence_cursor = beat.start; self.view.set(View::Sequence, &mut self.message); self.pane = Pane::Sequence; self.request_picture(true); ui.memory_mut(|m| m.request_focus(pane_id(Pane::Sequence))); }
                 }
                 ui.allocate_space(egui::vec2(1.0, 68.0));
             });
         });
     }
 
+    fn edit_controls(&mut self, ui: &mut egui::Ui) {
+        let selected = self.workspace.as_ref().and_then(|workspace| {
+            self.selected_beat
+                .as_ref()
+                .and_then(|node| workspace.document.nodes().get(node))
+        });
+        let parameter = selected.and_then(|node| match &node.kind {
+            NodeKind::Repeat { iterations, .. } => Some((
+                "Set repeat parameters…",
+                format!("repeat {}", iterations.len()),
+            )),
+            NodeKind::Hold { recipe } => Some((
+                "Change hold duration…",
+                format!("hold-duration {}f", recipe.duration.frames()),
+            )),
+            _ => None,
+        });
+        let ready = self.view == View::Sequence
+            && selected.is_some()
+            && !self.service.is_busy()
+            && !self.dialogs.is_open();
+        ui.horizontal(|ui| {
+            ui.add_enabled_ui(ready, |ui| {
+                if ui.button("Repeat twice").on_hover_text("Wrap the selected root beat in a two-play Repeat · rr. An existing Repeat is nested.").clicked() { self.edit(BeatEdit::WrapRepeat(2)); }
+                if ui.button("Delete beat").on_hover_text("Ripple-delete the selected root beat · dd. Undo is available.").clicked() { self.edit(BeatEdit::Delete); }
+                if let Some((label, command)) = parameter && ui.button(label).clicked() { self.open_command(command, ui.ctx()); }
+            });
+            ui.weak("Root level · linked picture and sound");
+        });
+        ui.add_space(5.0);
+    }
+
     fn viewer(&mut self, ui: &mut egui::Ui) {
         egui::CentralPanel::default().show(ui, |ui| {
             ui.horizontal(|ui| {
                 for (label, view) in [("Source", View::Source), ("Sequence", View::Sequence)] {
-                    if ui.add_enabled(view == View::Source || self.workspace.is_some(), egui::Button::new(label).selected(self.view == view)).clicked() { if self.view != view { self.view = view; self.request_picture(true); } self.pane = Pane::Viewer; ui.memory_mut(|m| m.request_focus(pane_id(Pane::Viewer))); }
+                    if ui.add_enabled(view == View::Source || self.workspace.is_some(), egui::Button::new(label).selected(self.view == view)).clicked() { self.bindings.clear(); if self.view != view { self.view.set(view, &mut self.message); if view == View::Sequence { self.reconcile_beat_selection(); } self.request_picture(true); } self.pane = Pane::Viewer; ui.memory_mut(|m| m.request_focus(pane_id(Pane::Viewer))); }
                 }
                 if self.view == View::Source {
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
@@ -1209,12 +1351,12 @@ impl DeadpanApp {
 
     fn help(&mut self, context: &egui::Context) {
         egui::Window::new("Keyboard and context").open(&mut self.help_open).collapsible(false).resizable(false).show(context, |ui| {
-            for (key, description) in [("⌘N / ⌘O / ⌘I", "New project / open project / import"), ("h / l · Left / Right", "Previous / next frame; a count such as 12l works"), ("j / k", "Next / previous source or sequence beat"), ("gg / G · Home / End", "Start / end boundary"), ("Tab / Shift Tab", "Cycle Sources, Viewer and Sequence panes"), ("/ · Escape", "Find a source / leave text entry"), ("⌘Return · :insert", "Insert the whole source after the selected beat"), ("⌘Z / ⌘Shift Z · u / Ctrl R", "Undo / redo"), (":source / :sequence", "Change the viewer context")] {
+            for (key, description) in [("⌘N / ⌘O / ⌘I", "New project / open project / import"), ("h / l · Left / Right", "Previous / next frame; a count such as 12l works"), ("j / k", "Next / previous source or root sequence beat"), ("gg / G · Home / End", "Start / end boundary"), ("rr · 3rr", "Wrap the selected root beat: two / three total plays"), ("dd · :delete", "Ripple-delete one selected root beat"), (":repeat 3", "Set three total plays on a Repeat; otherwise wrap the root beat"), (":wrap-repeat 3", "Always wrap, including nesting an existing Repeat"), (":hold-duration 11f", "Change a selected root Hold to exactly 11 project frames"), ("Tab / Shift Tab", "Cycle Sources, Viewer and Sequence panes"), ("/ · Escape", "Find a source / leave text entry"), ("⌘Return · :insert", "Insert the whole source after the selected root beat"), ("⌘Z / ⌘Shift Z · u / Ctrl R", "Undo / redo"), (":source / :sequence", "Change the viewer context")] {
                 ui.horizontal(|ui| { ui.monospace(key); ui.label(description); });
             }
             ui.separator();
-            ui.label("Source browsing preserves original media. Every insertion is a reversible sequence edit. The cursor is a boundary; at the end, the viewer shows the preceding final frame.");
-            ui.weak("Playback, range trimming and the remaining editing operators are still in development.");
+            ui.label("Source editing keys offer explicit insertion and preserve original media. Sequence edits affect the selected root beat and its linked picture and sound. Frame motions select the beat to the right of the boundary, or the final beat at sequence end.");
+            ui.weak("Nested navigation, range/text-object operators, hold insertion, playback and export are not available yet. Hold duration currently accepts whole project frames only; repeat parameters currently accept total plays only.");
         });
     }
 }
@@ -1246,18 +1388,40 @@ impl eframe::App for DeadpanApp {
         } else {
             self.keyboard(&context)
         };
+        let input_scope = (
+            self.pane,
+            self.view,
+            self.selected_beat.clone(),
+            self.selected_source.clone(),
+        );
         self.header(ui);
         self.footer(ui);
         self.sources(ui);
         self.timeline(ui);
         self.viewer(ui);
         self.help(&context);
+        if input_scope
+            != (
+                self.pane,
+                self.view,
+                self.selected_beat.clone(),
+                self.selected_source.clone(),
+            )
+            || context.memory(|m| {
+                m.has_focus(egui::Id::new(SEARCH_ID)) || m.has_focus(egui::Id::new(COMMAND_ID))
+            })
+        {
+            self.bindings.clear();
+        }
         if let Some((action, command)) = text_result {
             if command && action == TextAction::Open {
                 self.run_command(&context);
             }
             self.command_open = false;
             context.memory_mut(|m| m.request_focus(pane_id(self.pane)));
+        }
+        if close_command_on_blur(&context, &mut self.command_open) {
+            self.bindings.clear();
         }
         if let Some(frames) = self.smoke_frames.as_mut() {
             *frames += 1;
@@ -1286,9 +1450,27 @@ impl Drop for DeadpanApp {
 struct BeatRow {
     id: NodeId,
     label: String,
-    kind: &'static str,
+    kind: String,
     start: u64,
     frames: u64,
+}
+
+fn beat_kind(kind: &NodeKind) -> String {
+    match kind {
+        NodeKind::Source { .. } => "Source".into(),
+        NodeKind::Hold { .. } => "Hold".into(),
+        NodeKind::Repeat { iterations, .. } => format!(
+            "Repeat · {} total {}",
+            iterations.len(),
+            if iterations.len() == 1 {
+                "play"
+            } else {
+                "plays"
+            }
+        ),
+        NodeKind::Retime { .. } => "Retime".into(),
+        NodeKind::Sequence { .. } => "Sequence".into(),
+    }
 }
 type SourceRow = (AssetId, String, bool);
 fn retain_text_escape(ui: &egui::Ui, id: &str) {
@@ -1318,6 +1500,26 @@ fn pane_id(pane: Pane) -> egui::Id {
         Pane::Viewer => "viewer-pane",
         Pane::Sequence => "sequence-pane",
     })
+}
+fn close_command_on_blur(context: &egui::Context, open: &mut bool) -> bool {
+    if *open && !context.memory(|m| m.has_focus(egui::Id::new(COMMAND_ID))) {
+        *open = false;
+        context.request_repaint();
+        true
+    } else {
+        false
+    }
+}
+fn text_input_active(context: &egui::Context, command_open: bool) -> bool {
+    command_open
+        || context.memory(|m| {
+            m.has_focus(egui::Id::new(SEARCH_ID)) || m.has_focus(egui::Id::new(COMMAND_ID))
+        })
+}
+fn pointer_focus_transition(events: &[egui::Event]) -> bool {
+    events
+        .iter()
+        .any(|event| matches!(event, egui::Event::PointerButton { .. }))
 }
 fn pane_focus(ui: &egui::Ui, pane: Pane, rect: egui::Rect, label: &str) -> egui::Response {
     let response = ui.interact(rect, pane_id(pane), egui::Sense::click());
@@ -1359,6 +1561,171 @@ fn target_size(size: egui::Vec2, pixels_per_point: f32) -> (u32, u32) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn pointer_focus_batches_defer_shortcuts_and_old_command_submission() {
+        for pressed in [true, false] {
+            let pointer = egui::Event::PointerButton {
+                pos: egui::pos2(30.0, 50.0),
+                button: egui::PointerButton::Primary,
+                pressed,
+                modifiers: egui::Modifiers::NONE,
+            };
+            for events in [
+                vec![
+                    pointer.clone(),
+                    key_event(egui::Key::D),
+                    key_event(egui::Key::D),
+                ],
+                vec![key_event(egui::Key::Enter), pointer],
+            ] {
+                assert!(pointer_focus_transition(&events));
+            }
+        }
+        assert!(!pointer_focus_transition(&[
+            key_event(egui::Key::D),
+            key_event(egui::Key::D)
+        ]));
+        assert!(!pointer_focus_transition(&[egui::Event::PointerMoved(
+            egui::pos2(30.0, 50.0)
+        )]));
+    }
+
+    #[test]
+    fn clicking_away_closes_command_mode_before_normal_edit_keys_resume() {
+        let context = egui::Context::default();
+        let mut command = "hold-duration 45f".to_owned();
+        let mut open = true;
+        let mut target = egui::Pos2::ZERO;
+        let mut draw = |ui: &mut egui::Ui| {
+            ui.add(egui::TextEdit::singleline(&mut command).id(egui::Id::new(COMMAND_ID)));
+            retain_text_escape(ui, COMMAND_ID);
+            let button = ui.button("Another root beat");
+            target = button.rect.center();
+            if button.clicked() {
+                ui.memory_mut(|m| m.request_focus(pane_id(Pane::Sequence)));
+            }
+            let heading = ui.label("Sequence");
+            pane_focus(ui, Pane::Sequence, heading.rect, "Sequence pane");
+        };
+        run_ui(&context, egui::RawInput::default(), |ui| {
+            ui.memory_mut(|m| m.request_focus(egui::Id::new(COMMAND_ID)));
+            draw(ui);
+        });
+        run_ui(&context, egui::RawInput::default(), &mut draw);
+        let click = target;
+        run_ui(
+            &context,
+            egui::RawInput {
+                events: vec![
+                    egui::Event::PointerMoved(click),
+                    egui::Event::PointerButton {
+                        pos: click,
+                        button: egui::PointerButton::Primary,
+                        pressed: true,
+                        modifiers: egui::Modifiers::NONE,
+                    },
+                    egui::Event::PointerButton {
+                        pos: click,
+                        button: egui::PointerButton::Primary,
+                        pressed: false,
+                        modifiers: egui::Modifiers::NONE,
+                    },
+                ],
+                ..Default::default()
+            },
+            |ui| {
+                ui.add(egui::TextEdit::singleline(&mut command).id(egui::Id::new(COMMAND_ID)));
+                retain_text_escape(ui, COMMAND_ID);
+                let button = ui.button("Another root beat");
+                assert!(button.clicked());
+                ui.memory_mut(|m| m.request_focus(pane_id(Pane::Sequence)));
+                let heading = ui.label("Sequence");
+                pane_focus(ui, Pane::Sequence, heading.rect, "Sequence pane");
+                let focused = ui.memory(|m| m.has_focus(egui::Id::new(COMMAND_ID)));
+                assert!(!focused);
+                let mut bindings = Bindings::default();
+                for _ in 0..2 {
+                    assert!(
+                        bindings
+                            .key(
+                                egui::Key::D,
+                                egui::Modifiers::NONE,
+                                text_input_active(ui.ctx(), open),
+                                false
+                            )
+                            .is_none()
+                    );
+                }
+                assert!(close_command_on_blur(ui.ctx(), &mut open));
+            },
+        );
+        assert!(!open, "the old command is no longer displayed as active");
+        assert_eq!(
+            command, "hold-duration 45f",
+            "blur never submits or rewrites it"
+        );
+        assert!(!context.memory(|m| m.has_focus(egui::Id::new(COMMAND_ID))));
+    }
+
+    #[test]
+    fn import_completion_after_history_preserves_the_current_view() {
+        let revision = deadpan_core::RevisionId::new("edited").unwrap();
+        let edit = selection::completion(Some(&revision), None, false);
+        let mut view = View::Source.after_completion(&edit);
+        assert_eq!(view, View::Sequence);
+        // An Undo/Redo command clears the service marker. Registration still
+        // finishes later, after the user has resumed Sequence work.
+        let registration = selection::completion(None, Some(&revision), true);
+        assert_eq!(registration, selection::Completion::Registration);
+        view = view.after_completion(&registration);
+        assert_eq!(view, View::Sequence);
+        assert_eq!(View::Source.after_completion(&registration), View::Source);
+        // Coalesced commit+registration and a separately delivered registration
+        // agree about context even after a marker-clearing command.
+        let coalesced = selection::completion(Some(&revision), None, true);
+        assert_eq!(View::Source.after_completion(&coalesced), view);
+    }
+
+    #[test]
+    fn repeat_description_exposes_current_total_plays_without_expanding_them() {
+        for (plays, expected) in [
+            (1, "Repeat · 1 total play"),
+            (3, "Repeat · 3 total plays"),
+            (u32::MAX, "Repeat · 4294967295 total plays"),
+        ] {
+            let kind = NodeKind::Repeat {
+                child: NodeId::new("child").unwrap(),
+                iterations: deadpan_core::IterationOrder::new(
+                    deadpan_core::RevisionId::new("allocation").unwrap(),
+                    plays,
+                )
+                .unwrap(),
+                gap: None,
+            };
+            assert_eq!(beat_kind(&kind), expected);
+        }
+        assert_eq!(
+            beat_kind(&NodeKind::Sequence {
+                children: Vec::new()
+            }),
+            "Sequence"
+        );
+    }
+
+    #[test]
+    fn source_hint_clears_on_context_change_without_clearing_project_feedback() {
+        let mut view = View::Source;
+        let mut message = Some(SOURCE_INSERT_HINT.to_owned());
+        view.set(View::Source, &mut message);
+        assert_eq!(message.as_deref(), Some(SOURCE_INSERT_HINT));
+        view.set(View::Sequence, &mut message);
+        assert!(message.is_none());
+        message = Some("Source inserted and saved".into());
+        view.set(View::Source, &mut message);
+        view.set(View::Sequence, &mut message);
+        assert_eq!(message.as_deref(), Some("Source inserted and saved"));
+    }
 
     fn run_ui(context: &egui::Context, input: egui::RawInput, draw: impl FnMut(&mut egui::Ui)) {
         let mut output = context.run_ui(input, draw);
@@ -1431,6 +1798,31 @@ mod tests {
             );
             assert!(context.memory(|m| m.has_focus(pane_id(Pane::Sources))));
         }
+    }
+
+    #[test]
+    fn parameter_entry_opened_after_footer_draw_receives_next_frame_text() {
+        let context = egui::Context::default();
+        let mut command = "repeat ".to_owned();
+        run_ui(&context, egui::RawInput::default(), |ui| {
+            // The toolbar opens the command after this frame's footer was drawn.
+            let heading = ui.label("Sequence");
+            pane_focus(ui, Pane::Sequence, heading.rect, "Sequence pane");
+            ui.memory_mut(|m| m.request_focus(egui::Id::new(COMMAND_ID)));
+        });
+        run_ui(
+            &context,
+            egui::RawInput {
+                events: vec![egui::Event::Text("4".into())],
+                ..Default::default()
+            },
+            |ui| {
+                assert!(ui.memory(|m| m.has_focus(egui::Id::new(COMMAND_ID))));
+                ui.add(egui::TextEdit::singleline(&mut command).id(egui::Id::new(COMMAND_ID)));
+                retain_text_escape(ui, COMMAND_ID);
+            },
+        );
+        assert_eq!(command, "repeat 4");
     }
 
     #[test]

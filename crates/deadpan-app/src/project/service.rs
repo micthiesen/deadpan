@@ -6,7 +6,9 @@ use std::sync::mpsc::{Receiver, RecvTimeoutError, SyncSender, TryRecvError};
 use std::thread::JoinHandle;
 use std::time::Duration;
 
-use deadpan_core::{AssetId, NodeId, ProjectDocument, ProjectId, RevisionId};
+use deadpan_core::{
+    AssetId, Command, CommandRequest, NodeId, NodeKind, ProjectDocument, ProjectId, RevisionId,
+};
 use deadpan_plan::RenderPlan;
 use deadpan_store::original_media::{OriginalMediaRecord, OriginalOwnership};
 use deadpan_store::source_registration::{
@@ -16,8 +18,8 @@ use deadpan_store::{AccessMode, ProjectStore, StoreError};
 
 use super::worker::{Job, Prepared, Reply, Streams, Work};
 use super::{
-    ImportMedia, ImportStage, ImportStatus, ProjectRequest, ProjectUpdate, RegisteredSource,
-    Shared, Workspace,
+    CommittedEdit, ImportMedia, ImportStage, ImportStatus, ProjectEdit, ProjectRequest,
+    ProjectUpdate, RegisteredSource, Shared, Workspace,
 };
 
 type Result<T> = std::result::Result<T, String>;
@@ -37,7 +39,7 @@ struct Service {
     import: Option<ImportStatus>,
     error: Option<String>,
     message: Option<String>,
-    inserted: Option<(RevisionId, NodeId)>,
+    committed: Option<CommittedEdit>,
     active: Option<Pending>,
     // Exactly one complete-file token, never one per catalog asset.
     cached: Option<(AssetId, PreparedSourceRegistration)>,
@@ -60,7 +62,7 @@ pub(super) fn run(
         import: None,
         error: None,
         message: None,
-        inserted: None,
+        committed: None,
         active: None,
         cached: None,
         session: 0,
@@ -131,7 +133,7 @@ impl Service {
             import: self.import.clone(),
             error: self.error.clone(),
             message: self.message.clone(),
-            inserted: self.inserted.clone(),
+            committed: self.committed.clone(),
         };
         *self
             .shared
@@ -142,7 +144,7 @@ impl Service {
     }
 
     fn command(&mut self, request: ProjectRequest) -> Result<()> {
-        self.inserted = None;
+        self.committed = None;
         match request {
             ProjectRequest::Create(path) => self.open(path, true),
             ProjectRequest::Open(path) => self.open(path, false),
@@ -171,6 +173,11 @@ impl Service {
                 parent,
                 index,
             } => self.insert(expected_revision, asset, parent, index),
+            ProjectRequest::Edit {
+                expected_session,
+                expected_revision,
+                edit,
+            } => self.edit(expected_session, expected_revision, edit),
             ProjectRequest::Undo { expected_revision } => {
                 self.writer()?
                     .undo(&expected_revision, revision())
@@ -194,6 +201,120 @@ impl Service {
         self.store
             .as_mut()
             .ok_or_else(|| "Open or create a project first".into())
+    }
+
+    fn edit(
+        &mut self,
+        expected_session: u64,
+        expected_revision: RevisionId,
+        edit: ProjectEdit,
+    ) -> Result<()> {
+        let workspace = self
+            .workspace
+            .as_ref()
+            .ok_or("Open or create a project first")?;
+        if workspace.session != expected_session {
+            return Err("Project session changed before the edit".into());
+        }
+        let document = &workspace.document;
+        if document.revision_id() != &expected_revision {
+            return Err("Project changed before the edit".into());
+        }
+        let target = match &edit {
+            ProjectEdit::Repeat { node, .. }
+            | ProjectEdit::WrapRepeat { node, .. }
+            | ProjectEdit::Delete { node }
+            | ProjectEdit::HoldDuration { node, .. } => node,
+        };
+        let NodeKind::Sequence { children } = &document.nodes()[document.root()].kind else {
+            return Err("Editing requires a root Sequence".into());
+        };
+        let position = children
+            .iter()
+            .position(|child| child == target)
+            .ok_or("Select a root beat; nested occurrence editing is not available yet")?;
+        let selected = Some(target.clone());
+        let (command, selected_node, message) = match edit {
+            ProjectEdit::Repeat {
+                node: target,
+                plays,
+            } => {
+                if let NodeKind::Repeat { gap, .. } = &document.nodes()[&target].kind {
+                    (
+                        Command::SetRepeat {
+                            node: target,
+                            plays,
+                            gap: gap.clone(),
+                        },
+                        selected,
+                        "Repeat updated and saved",
+                    )
+                } else {
+                    let id = node();
+                    (
+                        Command::WrapRepeat {
+                            node: target,
+                            id: id.clone(),
+                            plays,
+                            gap: None,
+                            anchor_policy: Default::default(),
+                        },
+                        Some(id),
+                        "Repeat created and saved",
+                    )
+                }
+            }
+            ProjectEdit::WrapRepeat {
+                node: target,
+                plays,
+            } => {
+                let id = node();
+                (
+                    Command::WrapRepeat {
+                        node: target,
+                        id: id.clone(),
+                        plays,
+                        gap: None,
+                        anchor_policy: Default::default(),
+                    },
+                    Some(id),
+                    "Repeat created and saved",
+                )
+            }
+            ProjectEdit::Delete { node } => {
+                let selected = children
+                    .get(position + 1)
+                    .or_else(|| {
+                        position
+                            .checked_sub(1)
+                            .and_then(|index| children.get(index))
+                    })
+                    .cloned();
+                (Command::Delete { node }, selected, "Beat deleted and saved")
+            }
+            ProjectEdit::HoldDuration { node, duration } => (
+                Command::SetHoldDuration { node, duration },
+                selected,
+                "Hold duration updated and saved",
+            ),
+        };
+        let request = CommandRequest {
+            project_id: document.project_id().clone(),
+            expected_revision,
+            new_revision: revision(),
+            command,
+        };
+        // Generic commit deliberately preserves the store's relevance guard.
+        // An unresolved active generation request must fail rather than receive
+        // invented observations from a widget or this service.
+        let outcome = self.writer()?.commit(&request).map_err(display)?;
+        self.refresh()?;
+        self.committed = Some(CommittedEdit {
+            revision: outcome.revision_id,
+            selected_node,
+        });
+        self.message = Some(message.into());
+        Ok(())
     }
 
     fn open(&mut self, path: PathBuf, create: bool) -> Result<()> {
@@ -375,11 +496,14 @@ impl Service {
                     Ok(outcome) => {
                         self.cached = Some((cached_asset, token));
                         self.refresh()?;
-                        self.inserted = outcome.commit.and_then(|commit| {
+                        self.committed = outcome.commit.and_then(|commit| {
                             registration
                                 .insertion
                                 .as_ref()
-                                .map(|insertion| (commit.revision_id, insertion.node.clone()))
+                                .map(|insertion| CommittedEdit {
+                                    revision: commit.revision_id,
+                                    selected_node: Some(insertion.node.clone()),
+                                })
                         });
                         if self.active.is_none() {
                             self.import = Some(ImportStatus {
@@ -533,7 +657,10 @@ impl Service {
         self.cached = Some((outcome.asset_id.clone(), prepared));
         self.refresh()?;
         if let (Some(insertion), Some(commit)) = (&registration.insertion, &outcome.commit) {
-            self.inserted = Some((commit.revision_id.clone(), insertion.node.clone()));
+            self.committed = Some(CommittedEdit {
+                revision: commit.revision_id.clone(),
+                selected_node: Some(insertion.node.clone()),
+            });
         }
         if let Some(status) = &mut self.import {
             status.stage = ImportStage::Complete;

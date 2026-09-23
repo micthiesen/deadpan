@@ -1,5 +1,15 @@
 use eframe::egui::{Key, Modifiers};
 
+pub mod command;
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum BeatEdit {
+    Repeat(u32),
+    WrapRepeat(u32),
+    Delete,
+    HoldDuration(deadpan_core::FrameDuration),
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 pub enum Pane {
     Sources,
@@ -35,6 +45,8 @@ pub enum Action {
     Command,
     Escape,
     OfferInsert,
+    Edit(BeatEdit),
+    Invalid(&'static str),
 }
 
 /// The implemented navigation vocabulary. Prefixes have no timing dependency.
@@ -60,7 +72,9 @@ const DIGITS: &[(Key, u32)] = &[
 #[derive(Default)]
 pub struct Bindings {
     count: Option<u32>,
+    count_overflow: bool,
     g: bool,
+    operator: Option<Key>,
 }
 
 impl Bindings {
@@ -71,8 +85,17 @@ impl Bindings {
     pub fn pending(&self) -> String {
         format!(
             "{}{}",
-            self.count.map_or_else(String::new, |n| n.to_string()),
-            if self.g { "g" } else { "" }
+            if self.count_overflow {
+                "count overflow".into()
+            } else {
+                self.count.map_or_else(String::new, |n| n.to_string())
+            },
+            match self.operator {
+                Some(Key::R) => "r",
+                Some(Key::D) => "d",
+                _ if self.g => "g",
+                _ => "",
+            }
         )
     }
 
@@ -135,13 +158,22 @@ impl Bindings {
             if !self.g
                 && let Some((_, digit)) = DIGITS.iter().find(|(bound, _)| *bound == key)
             {
-                self.count = Some(
-                    self.count
-                        .unwrap_or(0)
-                        .saturating_mul(10)
-                        .saturating_add(*digit)
-                        .min(1_000_000),
-                );
+                if self.operator.is_some() {
+                    self.clear();
+                    return Some(Action::Invalid(
+                        "Put one count before the operator, for example 3rr. Counts after r or d are not supported.",
+                    ));
+                }
+                if let Some(count) = self
+                    .count
+                    .unwrap_or(0)
+                    .checked_mul(10)
+                    .and_then(|n| n.checked_add(*digit))
+                {
+                    self.count = Some(count);
+                } else {
+                    self.count_overflow = true;
+                }
                 return None;
             }
         }
@@ -152,6 +184,33 @@ impl Bindings {
         if modifiers != Modifiers::NONE {
             self.clear();
             return None;
+        }
+        if self.count_overflow {
+            self.clear();
+            return Some(Action::Invalid(
+                "Count exceeds 4294967295; no edit was made.",
+            ));
+        }
+        if let Some(operator) = self.operator {
+            let action = if key != operator {
+                Action::Invalid(
+                    "Only rr (repeat root beat) and dd (delete root beat) are available. Range and text-object operators are not ready.",
+                )
+            } else if self.count == Some(0) {
+                Action::Invalid("An edit count must be positive; no edit was made.")
+            } else if operator == Key::R {
+                Action::Edit(BeatEdit::WrapRepeat(self.count.unwrap_or(2)))
+            } else if self.count.is_some_and(|count| count != 1) {
+                Action::Invalid("dd deletes one root beat. Counted deletion is not available.")
+            } else {
+                Action::Edit(BeatEdit::Delete)
+            };
+            self.clear();
+            return Some(action);
+        }
+        if !self.g && matches!(key, Key::R | Key::D) {
+            self.operator = Some(key);
+            return Some(Action::OfferInsert);
         }
         if key == Key::G && !self.g {
             self.g = true;
@@ -178,13 +237,28 @@ impl Bindings {
                 Key::Home => Some(Action::First),
                 Key::End => Some(Action::Last),
                 Key::U => Some(Action::Undo),
-                Key::R | Key::D => Some(Action::OfferInsert),
                 _ => None,
             }
         };
         self.clear();
         action
     }
+}
+
+/// A held key may navigate, but cannot finish an operator or repeat an edit.
+pub fn allows_key_repeat(key: Key, modifiers: Modifiers) -> bool {
+    modifiers == Modifiers::NONE
+        && matches!(
+            key,
+            Key::H
+                | Key::J
+                | Key::K
+                | Key::L
+                | Key::ArrowLeft
+                | Key::ArrowRight
+                | Key::ArrowUp
+                | Key::ArrowDown
+        )
 }
 
 pub fn boundary_step(current: u64, length: u64, forward: bool, count: u32) -> u64 {
@@ -220,6 +294,99 @@ pub fn text_action(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn keys(bindings: &mut Bindings, keys: &[Key]) -> Option<Action> {
+        keys.iter().fold(None, |_, key| {
+            bindings.key(*key, Modifiers::NONE, false, false)
+        })
+    }
+
+    #[test]
+    fn repeat_and_delete_operators_keep_counts_and_wait_without_a_timeout() {
+        for (prefix, pending, result) in [
+            (vec![Key::R], "r", BeatEdit::WrapRepeat(2)),
+            (vec![Key::Num1, Key::R], "1r", BeatEdit::WrapRepeat(1)),
+            (vec![Key::Num3, Key::R], "3r", BeatEdit::WrapRepeat(3)),
+            (vec![Key::D], "d", BeatEdit::Delete),
+            (vec![Key::Num1, Key::D], "1d", BeatEdit::Delete),
+        ] {
+            let mut bindings = Bindings::default();
+            assert_eq!(keys(&mut bindings, &prefix), Some(Action::OfferInsert));
+            for _ in 0..1_000 {
+                assert_eq!(bindings.pending(), pending);
+            }
+            assert_eq!(
+                keys(&mut bindings, &[*prefix.last().unwrap()]),
+                Some(Action::Edit(result))
+            );
+            assert!(bindings.pending().is_empty());
+        }
+    }
+
+    #[test]
+    fn invalid_operator_counts_and_unimplemented_selectors_never_commit() {
+        for sequence in [
+            vec![Key::Num0, Key::R, Key::R],
+            vec![Key::Num0, Key::D, Key::D],
+            vec![Key::Num2, Key::D, Key::D],
+            vec![Key::Num3, Key::R, Key::Num2],
+            vec![Key::R, Key::I],
+            vec![Key::D, Key::W],
+            vec![Key::R, Key::D],
+        ] {
+            let mut bindings = Bindings::default();
+            assert!(
+                matches!(keys(&mut bindings, &sequence), Some(Action::Invalid(_))),
+                "{sequence:?}"
+            );
+            assert!(bindings.pending().is_empty());
+        }
+        let mut bindings = Bindings::default();
+        keys(&mut bindings, &[Key::Num9; 30]);
+        assert!(matches!(
+            keys(&mut bindings, &[Key::R]),
+            Some(Action::Invalid(_))
+        ));
+    }
+
+    #[test]
+    fn pending_edits_cancel_for_text_ime_context_reset_and_escape() {
+        for operator in [Key::R, Key::D] {
+            for (text, ime) in [(true, false), (false, true), (true, true)] {
+                let mut bindings = Bindings::default();
+                keys(&mut bindings, &[Key::Num3, operator]);
+                assert!(bindings.key(operator, Modifiers::NONE, text, ime).is_none());
+                assert!(bindings.pending().is_empty());
+            }
+            let mut bindings = Bindings::default();
+            keys(&mut bindings, &[operator]);
+            assert_eq!(keys(&mut bindings, &[Key::Escape]), Some(Action::Escape));
+            keys(&mut bindings, &[operator]);
+            bindings.clear();
+            assert_eq!(keys(&mut bindings, &[operator]), Some(Action::OfferInsert));
+        }
+    }
+
+    #[test]
+    fn held_keys_cannot_finish_an_operator_or_repeat_an_edit() {
+        for key in [Key::R, Key::D, Key::U, Key::Enter, Key::Num3, Key::G] {
+            assert!(!allows_key_repeat(key, Modifiers::NONE));
+        }
+        assert!(!allows_key_repeat(Key::R, Modifiers::CTRL));
+        assert!(!allows_key_repeat(Key::Z, Modifiers::COMMAND));
+        for key in [Key::H, Key::J, Key::K, Key::L, Key::ArrowDown] {
+            assert!(allows_key_repeat(key, Modifiers::NONE));
+            assert!(!allows_key_repeat(key, Modifiers::ALT));
+        }
+        let mut bindings = Bindings::default();
+        keys(&mut bindings, &[Key::R]);
+        assert!(!allows_key_repeat(Key::R, Modifiers::NONE));
+        assert_eq!(bindings.pending(), "r");
+        assert_eq!(
+            keys(&mut bindings, &[Key::R]),
+            Some(Action::Edit(BeatEdit::WrapRepeat(2)))
+        );
+    }
 
     #[test]
     fn enter_and_escape_belong_to_composition_until_it_finishes() {
@@ -277,19 +444,17 @@ mod tests {
     }
 
     #[test]
-    fn counts_saturate_and_zero_never_creates_a_zero_distance_motion() {
+    fn counts_reject_overflow_and_zero_never_creates_a_zero_distance_motion() {
         let mut bindings = Bindings::default();
         for _ in 0..100 {
             bindings.key(Key::Num9, Modifiers::NONE, false, false);
         }
-        assert_eq!(bindings.pending(), "1000000");
-        assert_eq!(
+        assert!(bindings.pending().contains("overflow"));
+        assert!(matches!(
             bindings.key(Key::H, Modifiers::NONE, false, false),
-            Some(Action::Step {
-                forward: false,
-                count: 1_000_000
-            })
-        );
+            Some(Action::Invalid(_))
+        ));
+        assert!(bindings.pending().is_empty());
         bindings.key(Key::Num0, Modifiers::NONE, false, false);
         assert_eq!(
             bindings.key(Key::L, Modifiers::NONE, false, false),
@@ -360,8 +525,6 @@ mod tests {
             (Key::Slash, Modifiers::NONE, Action::Search),
             (Key::Colon, Modifiers::NONE, Action::Command),
             (Key::U, Modifiers::NONE, Action::Undo),
-            (Key::R, Modifiers::NONE, Action::OfferInsert),
-            (Key::D, Modifiers::NONE, Action::OfferInsert),
             (Key::Tab, Modifiers::NONE, Action::Pane { reverse: false }),
             (Key::Tab, Modifiers::SHIFT, Action::Pane { reverse: true }),
         ] {

@@ -1,0 +1,4 @@
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.33s
+     Running `target/debug/deadpan-app --smoke-test`
+Native GPU initialized: Apple M5 Max (Metal)
+Native window smoke test passed; shutdown callback completed.
