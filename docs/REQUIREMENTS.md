@@ -26,6 +26,15 @@ Core 14/database 20 freeze prior history, including multi-binding marks.
 history and native review. Arbitrary Hold insertion, shifted-fragment sample
 resume, minimal nested range planning and the full editing workflow remain open.
 
+[Audio sampling clocks](AUDIO_SAMPLING.md) now separate allocation grids, exact
+sample maps and retained envelope progress in all source/stage readers. Contract
+tests exercise fractional-rate resume composition and envelope exhaustion without
+changing filter support or rate. These are derived plan values, not persisted
+Hold edits. Stable reference domains, retained silence masks, genuine seam fades
+and arbitrary-boundary insertion remain open.
+[Qualification](qualification/audio-sampling-2026-09-23.md) records 985 passing
+tests, the full gate and the reviewed wide-envelope compatibility fix.
+
 Current measured evidence: [editing foundation verification](FOUNDATION_VERIFICATION.md), [picture plan and migration verification](PLAN_MIGRATION_VERIFICATION.md), [exact boundary verification](ANCHOR_VERIFICATION.md), [persistent mark verification](MARK_VERIFICATION.md), [sparse override verification](OVERRIDE_VERIFICATION.md), [nested occurrence verification](OCCURRENCE_VERIFICATION.md), [native media qualification](qualification/media-2026-09-20.md), [compatible FFmpeg/Rust qualification](qualification/media-compatible-2026-09-20.md), [audio candidate qualification](qualification/audio-2026-09-20.md), and [canonical audio qualification](qualification/audio-canonical-2026-09-20.md).
 
 The [native host conversion qualification](qualification/media-host-conversion-2026-09-21.md)

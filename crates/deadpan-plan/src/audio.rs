@@ -10,7 +10,7 @@ use serde::Serialize;
 use super::audio_boundary::{AudioExtent, BoundaryOwner};
 use super::{AudioBoundaries, AudioBoundaryKind};
 use super::{CompiledKind, LookupStats, RenderPlan};
-use crate::PlanError;
+use crate::{AudioBoundaryRule, AudioEnvelope, AudioSampleGrid, AudioSampleMap, PlanError};
 
 /// Hard caps bound both returned occurrence paths and structural search work.
 /// A caller needing more material pages through contiguous sample ranges.
@@ -145,15 +145,6 @@ impl AudioTransform {
             .checked_div(self.project_frames_per_local_frame)
     }
 
-    fn sample_boundary(self, project: ExactRatio) -> Result<AudioSample, TimeError> {
-        let value = project
-            .checked_div(self.project_frames_per_sample)?
-            .round_even()?;
-        Ok(AudioSample(
-            i64::try_from(value).map_err(|_| TimeError::Overflow)?,
-        ))
-    }
-
     fn child(self, start: ExactRatio, scale: ExactRatio) -> Result<Self, TimeError> {
         Ok(Self {
             project_origin: self.project_at(start)?,
@@ -187,11 +178,16 @@ pub struct AudioSpan {
     /// partition's allocation. Its original length determines fade width.
     pub envelope_extent: Range<ExactRatio>,
     pub envelope_samples: Range<AudioSample>,
+    /// Meaningful fade progress, independent of current allocation. A resumed
+    /// fragment can exhaust this retained envelope before its new allocation ends.
+    pub envelope: AudioEnvelope,
     /// Owners of the envelope edges, never of a query or transparent partition.
     pub boundaries: AudioBoundaries,
     pub instance: InstancePath,
     pub gap_after: Option<IterationId>,
     pub transform: AudioTransform,
+    pub grid: AudioSampleGrid<AudioSample>,
+    pub sampling: AudioSampleMap<AudioSample>,
     pub retimes: Vec<AudioRetimeStage>,
     pub content: AudioContent,
 }
@@ -201,7 +197,7 @@ impl AudioSpan {
     /// can place an edge sample slightly outside the authored source interval;
     /// this method does not clamp it or authorize reading excluded source PCM.
     pub fn source_point(&self, sample: AudioSample) -> Result<SourcePoint, PlanError> {
-        self.source_point_from_local(self.transform.local_at(sample)?)
+        self.source_point_from_local(self.sampling.local_at(sample)?)
     }
 
     /// Exact source coordinate at a project-frame coordinate, including a
@@ -331,17 +327,13 @@ impl RenderPlan {
                 i128::from(MIX_SAMPLE_RATE) * i128::from(rate.denominator()),
             )?,
         };
-        // round_even(edge) > n iff edge > n+1/2, or edge == n+1/2
-        // and n is odd. This selects the allocated half-open sample interval,
-        // including ties, even when a retime compresses millions of leaves below
-        // one sample. Sampling at n itself would choose the wrong leaf.
-        let probe = ExactRatio::new(i128::from(sample.0) * 2 + 1, 2)?
-            .checked_mul(transform.project_frames_per_sample)?;
-        let bias = if sample.0 % 2 == 0 {
-            InsertionBias::Right
-        } else {
-            InsertionBias::Left
-        };
+        let grid = AudioSampleGrid::<AudioSample>::new(
+            ExactRatio::ZERO,
+            transform.project_frames_per_sample,
+            AudioBoundaryRule::RoundEven,
+        )?;
+        // Search the allocated interval, not the PCM sample's coordinate.
+        let (probe, bias) = grid.probe(sample)?;
         let mut extent = ExactRatio::ZERO..ExactRatio::integer(self.duration().frames());
         let mut envelope: Option<Range<ExactRatio>> = None;
         let mut constraints = Vec::new();
@@ -409,7 +401,7 @@ impl RenderPlan {
                             AudioBoundaryKind::SourcePlacementEnd,
                         ),
                     };
-                    let content = if sample < transform.sample_boundary(start)? {
+                    let content = if sample < grid.boundary(start)? {
                         extent.end = minimum(extent.end, start)?;
                         envelope.end = minimum(envelope.end, start)?;
                         // Before placement, its incoming edge is this silence's
@@ -419,7 +411,7 @@ impl RenderPlan {
                         AudioContent::Silence {
                             reason: SilenceReason::OutsideSourcePlacement,
                         }
-                    } else if sample >= transform.sample_boundary(end)? {
+                    } else if sample >= grid.boundary(end)? {
                         extent.start = maximum(extent.start, end)?;
                         envelope.start = maximum(envelope.start, end)?;
                         placement_constraint.range.start = end;
@@ -564,8 +556,7 @@ impl RenderPlan {
                 }
             }
         };
-        let allocated_samples =
-            transform.sample_boundary(extent.start)?..transform.sample_boundary(extent.end)?;
+        let allocated_samples = grid.boundary(extent.start)?..grid.boundary(extent.end)?;
         if !allocated_samples.contains(&sample) {
             return Err(PlanError::InvalidPlan("audio interval did not advance"));
         }
@@ -587,13 +578,21 @@ impl RenderPlan {
                 envelope.clip_end(constraint.range.end, owner, constraint.kinds.1, budget)?;
             }
         }
-        let envelope_samples = transform.sample_boundary(envelope.range.start)?
-            ..transform.sample_boundary(envelope.range.end)?;
+        let envelope_samples =
+            grid.boundary(envelope.range.start)?..grid.boundary(envelope.range.end)?;
+        let sampling = AudioSampleMap::new(
+            allocated_samples.start,
+            transform.local_at(allocated_samples.start)?,
+            transform
+                .project_frames_per_sample
+                .checked_div(transform.project_frames_per_local_frame)?,
+        )?;
         Ok(AudioSpan {
             samples: allocated_samples.clone(),
             allocated_samples,
             project_extent: extent,
             envelope_extent: envelope.range,
+            envelope: AudioEnvelope::from_samples(envelope_samples.clone())?,
             envelope_samples,
             boundaries: envelope.boundaries,
             instance: InstancePath {
@@ -602,6 +601,8 @@ impl RenderPlan {
             },
             gap_after,
             transform,
+            grid,
+            sampling,
             retimes,
             content,
         })

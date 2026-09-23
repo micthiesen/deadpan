@@ -3,8 +3,8 @@ use std::ops::Range;
 
 use deadpan_core::*;
 use deadpan_plan::{
-    AudioContent, AudioQueryLimits, AudioSignalContent, PlanError, RenderPlan, SignalSample,
-    SilenceReason,
+    AudioBoundaryRule, AudioContent, AudioQueryLimits, AudioSignalContent, PlanError, RenderPlan,
+    SignalSample, SilenceReason,
 };
 
 fn id(value: &str) -> NodeId {
@@ -196,6 +196,25 @@ fn partition_support_is_shared_while_root_and_signal_grids_keep_different_alloca
     assert_eq!(signal.spans[0].instance.node, id("source-left"));
     assert_eq!(root.spans[0].allocated_samples, samples(3203, 6406));
     assert_eq!(signal.spans[0].allocated_samples, points(0, 3204));
+    assert_eq!(
+        root.spans[0].grid.boundary_rule(),
+        AudioBoundaryRule::RoundEven
+    );
+    assert_eq!(
+        signal.spans[0].grid.boundary_rule(),
+        AudioBoundaryRule::PointCeil
+    );
+    assert_eq!(
+        root.spans[0].grid.boundary(ExactRatio::integer(2)).unwrap(),
+        AudioSample(3203)
+    );
+    assert_eq!(
+        signal.spans[0]
+            .grid
+            .boundary(ExactRatio::integer(2))
+            .unwrap(),
+        SignalSample(3204)
+    );
     assert!(root.spans[0].retimes.is_empty());
     assert!(signal.spans[0].retimes.is_empty());
     let support = |content: &AudioSignalContent<'_>| {
@@ -212,6 +231,76 @@ fn partition_support_is_shared_while_root_and_signal_grids_keep_different_alloca
         root.spans[0].source_point(AudioSample(3203)).unwrap(),
         signal.spans[0].source_point(SignalSample(3203)).unwrap()
     );
+}
+
+#[test]
+fn sampling_maps_change_pcm_coordinates_without_rewriting_picture_or_filter_support() {
+    let plan = RenderPlan::compile(&document(
+        FrameRate::new(30_000, 1001).unwrap(),
+        &["source"],
+        [("source", source(4, 0, 6406, SourceAudioMapping::FitBeat))],
+        BTreeMap::new(),
+    ))
+    .unwrap();
+    let mut flat = plan
+        .audio(samples(1602, 1603), AudioQueryLimits::default())
+        .unwrap()
+        .spans
+        .remove(0);
+    let mut processing = plan
+        .audio_processing(samples(1602, 1603), AudioQueryLimits::default())
+        .unwrap()
+        .spans
+        .remove(0);
+    let mut signal = plan
+        .audio_signal()
+        .query(points(1602, 1603), AudioQueryLimits::default())
+        .unwrap()
+        .spans
+        .remove(0);
+    let old = flat.source_point(AudioSample(1602)).unwrap();
+    let structural = flat.source_point_at_project_frame(ratio(2, 1)).unwrap();
+    let content = flat.content.clone();
+    let envelope = flat.envelope;
+    flat.sampling = flat
+        .sampling
+        .resume(AudioSample(1602), AudioSample(3203))
+        .unwrap();
+    processing.sampling = processing
+        .sampling
+        .resume(AudioSample(1602), AudioSample(3203))
+        .unwrap();
+    signal.sampling = signal
+        .sampling
+        .resume(SignalSample(1602), SignalSample(3203))
+        .unwrap();
+    assert_eq!(flat.source_point(AudioSample(3203)).unwrap(), old);
+    assert_eq!(processing.source_point(AudioSample(3203)).unwrap(), old);
+    assert_eq!(signal.source_point(SignalSample(3203)).unwrap(), old);
+    assert_eq!(
+        flat.source_point_at_project_frame(ratio(2, 1)).unwrap(),
+        structural
+    );
+    assert_eq!(
+        processing
+            .source_point_at_project_frame(ratio(2, 1))
+            .unwrap(),
+        structural
+    );
+    assert_eq!(
+        signal.source_point_at_signal_frame(ratio(2, 1)).unwrap(),
+        structural
+    );
+    assert_ne!(structural, old);
+    assert_eq!(flat.content, content);
+    assert_eq!(flat.envelope, envelope);
+    // Returned span values demonstrate the contract. They do not modify or
+    // rebind the admitted immutable plan or author an inserted Hold.
+    let fresh = plan
+        .audio(samples(1602, 1603), AudioQueryLimits::default())
+        .unwrap();
+    assert_eq!(fresh.spans[0].source_point(AudioSample(1602)).unwrap(), old);
+    assert_ne!(fresh.spans[0].sampling, flat.sampling);
 }
 
 #[test]

@@ -5,8 +5,13 @@
 //! exact affine retimes without rounding intermediate coordinates. This crate
 //! performs no decoding, GPU work, effects, audio processing, or external I/O.
 
+mod audio_envelope;
+mod audio_sampling;
 mod picture;
 mod plan;
+
+pub use audio_envelope::{AudioEnvelope, AudioEnvelopeEndpoint};
+pub use audio_sampling::{AudioBoundaryRule, AudioSampleGrid, AudioSampleMap};
 
 pub use picture::{Picture, PictureSample};
 pub use plan::{

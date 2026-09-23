@@ -27,7 +27,10 @@ pitch policies, or allocated boundaries.
 `envelope_extent` and `envelope_samples` retain the meaningful audio domain;
 transparent partitions may allocate only part of it. `SourceSamplingSupport`
 retains the exact source-clock filter interval. Ordinary crops still limit that
-support. See [transparent partitions](AUDIO_PARTITIONS.md).
+support. `grid` makes root round-even versus preparation point-ceil allocation
+explicit. `sampling` independently maps sample positions to local PCM coordinates;
+`envelope` retains meaningful length/progress and an explicit silence endpoint.
+See [sampling clocks](AUDIO_SAMPLING.md) and [transparent partitions](AUDIO_PARTITIONS.md).
 
 `boundaries.start` and `boundaries.end` retain the constraints that formed the
 full envelope edges: structural node boundaries, Source placement boundaries and
@@ -59,7 +62,8 @@ resampling, fades and DSP context remain explicit renderer responsibilities.
 `source_point_at_project_frame` also maps exact fractional structural edges,
 without replacing them with rounded sample allocations. The
 [source-stage reader](SOURCE_STAGE_AUDIO.md) uses explicit sampling support to
-constrain filter context and the full allocated span as its phase origin.
+constrain filter context and the explicit sample map to retain phase independently
+of the current query or structural placement.
 
 Sequences use prefix binary search. Repeats use the shared compact
 `RepeatLayout`, including sparse overrides, variable play durations and gaps

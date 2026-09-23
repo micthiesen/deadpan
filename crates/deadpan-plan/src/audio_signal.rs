@@ -15,7 +15,7 @@ use super::{
     AudioContent, AudioQueryLimits, AudioRetimeStage, AudioTransform, CompiledKind, LookupStats,
     RenderPlan, SilenceReason, SourceSamplingSupport,
 };
-use crate::PlanError;
+use crate::{AudioBoundaryRule, AudioSampleGrid, AudioSampleMap, PlanError};
 
 /// Index in a temporary signal grid, never a project-output sample coordinate.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize)]
@@ -32,6 +32,10 @@ pub struct SignalTransform {
 }
 
 impl SignalTransform {
+    fn grid(self, rule: AudioBoundaryRule) -> Result<AudioSampleGrid<SignalSample>, PlanError> {
+        AudioSampleGrid::new(self.grid_origin, self.signal_frames_per_sample, rule)
+    }
+
     pub fn signal_at(self, sample: SignalSample) -> Result<ExactRatio, TimeError> {
         self.grid_origin
             .checked_add(ExactRatio::integer(sample.0).checked_mul(self.signal_frames_per_sample)?)
@@ -143,6 +147,8 @@ pub struct AudioSignalSpan<'plan> {
     pub instance: InstancePath,
     pub gap_after: Option<IterationId>,
     pub transform: SignalTransform,
+    pub grid: AudioSampleGrid<SignalSample>,
+    pub sampling: AudioSampleMap<SignalSample>,
     /// Traversed transparent stages, outer to inner; an opaque Stage carries
     /// its own processing policy in its descriptor instead of this list.
     pub retimes: Vec<AudioRetimeStage>,
@@ -151,7 +157,7 @@ pub struct AudioSignalSpan<'plan> {
 
 impl AudioSignalSpan<'_> {
     pub fn source_point(&self, sample: SignalSample) -> Result<SourcePoint, PlanError> {
-        source_point(&self.content, self.transform.local_at(sample)?)
+        source_point(&self.content, self.sampling.local_at(sample)?)
     }
 
     pub fn source_point_at_signal_frame(
@@ -182,13 +188,15 @@ pub struct AudioProcessingSpan<'plan> {
     pub instance: InstancePath,
     pub gap_after: Option<IterationId>,
     pub transform: AudioTransform,
+    pub grid: AudioSampleGrid<AudioSample>,
+    pub sampling: AudioSampleMap<AudioSample>,
     pub retimes: Vec<AudioRetimeStage>,
     pub content: AudioSignalContent<'plan>,
 }
 
 impl AudioProcessingSpan<'_> {
     pub fn source_point(&self, sample: AudioSample) -> Result<SourcePoint, PlanError> {
-        source_point(&self.content, self.transform.local_at(sample)?)
+        source_point(&self.content, self.sampling.local_at(sample)?)
     }
 
     pub fn source_point_at_project_frame(
@@ -224,57 +232,6 @@ pub struct AudioSignal<'plan> {
     repeats: Vec<RepeatInstance>,
 }
 
-// Two purposes share structural traversal, not allocation semantics. The root
-// is the normative rounded output clock; virtual input samples are points.
-#[derive(Clone, Copy)]
-enum SamplingRule {
-    Root,
-    Point,
-}
-
-impl SamplingRule {
-    fn boundary(
-        self,
-        frame: ExactRatio,
-        transform: SignalTransform,
-    ) -> Result<SignalSample, TimeError> {
-        let position = frame
-            .checked_sub(transform.grid_origin)?
-            .checked_div(transform.signal_frames_per_sample)?;
-        let index = match self {
-            Self::Root => position.round_even()?,
-            Self::Point => position.ceil()?,
-        };
-        Ok(SignalSample(
-            i64::try_from(index).map_err(|_| TimeError::Overflow)?,
-        ))
-    }
-
-    fn probe(
-        self,
-        sample: SignalSample,
-        transform: SignalTransform,
-    ) -> Result<(ExactRatio, InsertionBias), TimeError> {
-        let (index, bias) = match self {
-            Self::Point => (ExactRatio::integer(sample.0), InsertionBias::Right),
-            Self::Root => (
-                ExactRatio::new(i128::from(sample.0) * 2 + 1, 2)?,
-                if sample.0 % 2 == 0 {
-                    InsertionBias::Right
-                } else {
-                    InsertionBias::Left
-                },
-            ),
-        };
-        Ok((
-            transform
-                .grid_origin
-                .checked_add(index.checked_mul(transform.signal_frames_per_sample)?)?,
-            bias,
-        ))
-    }
-}
-
 impl RenderPlan {
     /// Virtual root signal support, including samples that own no final root
     /// allocation. Its point-grid count must never set an exported duration.
@@ -296,7 +253,7 @@ impl RenderPlan {
         let query = self.audio_signal().query_inner(
             SignalSample(samples.start.0)..SignalSample(samples.end.0),
             limits,
-            SamplingRule::Root,
+            AudioBoundaryRule::RoundEven,
             true,
         )?;
         Ok(AudioProcessingQuery {
@@ -306,24 +263,36 @@ impl RenderPlan {
             spans: query
                 .spans
                 .into_iter()
-                .map(|span| AudioProcessingSpan {
-                    samples: AudioSample(span.samples.start.0)..AudioSample(span.samples.end.0),
-                    allocated_samples: AudioSample(span.allocated_samples.start.0)
-                        ..AudioSample(span.allocated_samples.end.0),
-                    project_extent: span.signal_extent,
-                    instance: span.instance,
-                    gap_after: span.gap_after,
-                    transform: AudioTransform {
-                        project_origin: span.transform.signal_origin,
-                        project_frames_per_local_frame: span
-                            .transform
-                            .signal_frames_per_local_frame,
-                        project_frames_per_sample: span.transform.signal_frames_per_sample,
-                    },
-                    retimes: span.retimes,
-                    content: span.content,
+                .map(|span| {
+                    Ok(AudioProcessingSpan {
+                        samples: AudioSample(span.samples.start.0)..AudioSample(span.samples.end.0),
+                        allocated_samples: AudioSample(span.allocated_samples.start.0)
+                            ..AudioSample(span.allocated_samples.end.0),
+                        project_extent: span.signal_extent,
+                        instance: span.instance,
+                        gap_after: span.gap_after,
+                        transform: AudioTransform {
+                            project_origin: span.transform.signal_origin,
+                            project_frames_per_local_frame: span
+                                .transform
+                                .signal_frames_per_local_frame,
+                            project_frames_per_sample: span.transform.signal_frames_per_sample,
+                        },
+                        grid: AudioSampleGrid::new(
+                            span.grid.frame_origin(),
+                            span.grid.frames_per_sample(),
+                            span.grid.boundary_rule(),
+                        )?,
+                        sampling: AudioSampleMap::new(
+                            AudioSample(span.sampling.anchor().0),
+                            span.sampling.local_at_anchor(),
+                            span.sampling.local_frames_per_sample(),
+                        )?,
+                        retimes: span.retimes,
+                        content: span.content,
+                    })
                 })
-                .collect(),
+                .collect::<Result<_, PlanError>>()?,
             lookup: query.lookup,
         })
     }
@@ -335,7 +304,10 @@ impl<'plan> AudioSignal<'plan> {
     }
 
     pub fn sample_count(&self) -> Result<SignalSample, PlanError> {
-        Ok(SamplingRule::Point.boundary(self.support.end, self.transform()?)?)
+        Ok(self
+            .transform()?
+            .grid(AudioBoundaryRule::PointCeil)?
+            .boundary(self.support.end)?)
     }
 
     pub fn query(
@@ -343,7 +315,7 @@ impl<'plan> AudioSignal<'plan> {
         samples: Range<SignalSample>,
         limits: AudioQueryLimits,
     ) -> Result<AudioSignalQuery<'plan>, PlanError> {
-        self.query_inner(samples, limits, SamplingRule::Point, true)
+        self.query_inner(samples, limits, AudioBoundaryRule::PointCeil, true)
     }
 
     /// Resolve structural policies through all retimes on the same point grid.
@@ -353,7 +325,7 @@ impl<'plan> AudioSignal<'plan> {
         samples: Range<SignalSample>,
         limits: AudioQueryLimits,
     ) -> Result<AudioSignalQuery<'plan>, PlanError> {
-        self.query_inner(samples, limits, SamplingRule::Point, false)
+        self.query_inner(samples, limits, AudioBoundaryRule::PointCeil, false)
     }
 
     fn transform(&self) -> Result<SignalTransform, TimeError> {
@@ -373,7 +345,7 @@ impl<'plan> AudioSignal<'plan> {
         &self,
         samples: Range<SignalSample>,
         limits: AudioQueryLimits,
-        rule: SamplingRule,
+        rule: AudioBoundaryRule,
         stop_at_preserve: bool,
     ) -> Result<AudioSignalQuery<'plan>, PlanError> {
         if limits.maximum_spans == 0
@@ -383,7 +355,8 @@ impl<'plan> AudioSignal<'plan> {
         {
             return Err(PlanError::InvalidAudioLimits);
         }
-        let count = rule.boundary(self.support.end, self.transform()?)?;
+        let grid = self.transform()?.grid(rule)?;
+        let count = grid.boundary(self.support.end)?;
         if samples.start.0 < 0 || samples.end < samples.start || samples.end > count {
             return Err(PlanError::AudioRangeOutOfRange);
         }
@@ -397,7 +370,7 @@ impl<'plan> AudioSignal<'plan> {
             if spans.len() == limits.maximum_spans {
                 return Err(PlanError::AudioQueryLimit("span count"));
             }
-            let mut span = self.span(cursor, rule, stop_at_preserve, &mut budget)?;
+            let mut span = self.span(cursor, grid, stop_at_preserve, &mut budget)?;
             span.samples = cursor..span.allocated_samples.end.min(samples.end);
             cursor = span.samples.end;
             spans.push(span);
@@ -414,12 +387,12 @@ impl<'plan> AudioSignal<'plan> {
     fn span(
         &self,
         sample: SignalSample,
-        rule: SamplingRule,
+        grid: AudioSampleGrid<SignalSample>,
         stop_at_preserve: bool,
         budget: &mut Budget,
     ) -> Result<AudioSignalSpan<'plan>, PlanError> {
         let mut transform = self.transform()?;
-        let (probe, bias) = rule.probe(sample, transform)?;
+        let (probe, bias) = grid.probe(sample)?;
         let mut extent = self.support.clone();
         let mut sampling_extent = self.constrain_support.then(|| self.support.clone());
         let mut current = self.root;
@@ -462,12 +435,12 @@ impl<'plan> AudioSignal<'plan> {
                     let start = transform.signal_from_local(audio.start)?;
                     let end =
                         transform.signal_from_local(audio.start.checked_add(audio.duration)?)?;
-                    let content = if sample < rule.boundary(start, transform)? {
+                    let content = if sample < grid.boundary(start)? {
                         extent.end = minimum(extent.end, start)?;
                         AudioContent::Silence {
                             reason: SilenceReason::OutsideSourcePlacement,
                         }
-                    } else if sample >= rule.boundary(end, transform)? {
+                    } else if sample >= grid.boundary(end)? {
                         extent.start = maximum(extent.start, end)?;
                         AudioContent::Silence {
                             reason: SilenceReason::OutsideSourcePlacement,
@@ -628,13 +601,19 @@ impl<'plan> AudioSignal<'plan> {
                 }
             }
         };
-        let allocated_samples =
-            rule.boundary(extent.start, transform)?..rule.boundary(extent.end, transform)?;
+        let allocated_samples = grid.boundary(extent.start)?..grid.boundary(extent.end)?;
         if !allocated_samples.contains(&sample) {
             return Err(PlanError::InvalidPlan(
                 "audio signal interval did not advance",
             ));
         }
+        let sampling = AudioSampleMap::new(
+            allocated_samples.start,
+            transform.local_at(allocated_samples.start)?,
+            transform
+                .signal_frames_per_sample
+                .checked_div(transform.signal_frames_per_local_frame)?,
+        )?;
         Ok(AudioSignalSpan {
             samples: allocated_samples.clone(),
             allocated_samples,
@@ -645,6 +624,8 @@ impl<'plan> AudioSignal<'plan> {
             },
             gap_after,
             transform,
+            grid,
+            sampling,
             retimes,
             content,
         })

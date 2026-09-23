@@ -221,6 +221,42 @@ fn standalone_partition_retains_signed_envelope_and_meaningful_parent_crop_still
 }
 
 #[test]
+fn short_partition_keeps_a_retained_envelope_wider_than_the_signed_sample_clock() {
+    let plan = RenderPlan::compile(&document(
+        FrameRate::new(24, 1).unwrap(),
+        vec![id("partition")],
+        BTreeMap::from([
+            (id("hold"), hold(6_000_000_000_000_000)),
+            (
+                id("partition"),
+                partition("hold", 3_000_000_000_000_000, 3_000_000_000_000_001),
+            ),
+        ]),
+        BTreeMap::new(),
+    ))
+    .unwrap();
+    assert_eq!(plan.audio_duration().unwrap(), AudioSample(2000));
+
+    // Each retained endpoint fits the signed clock, even though their distance
+    // does not. Inspect only the one-frame allocation, never expand the domain.
+    let result = query(&plan, 0, 2000);
+    assert_eq!(result.spans.len(), 1);
+    let span = &result.spans[0];
+    assert_eq!(span.samples, samples(0, 2000));
+    assert_eq!(span.allocated_samples, samples(0, 2000));
+    assert_eq!(
+        span.envelope_samples,
+        samples(-6_000_000_000_000_000_000, 6_000_000_000_000_000_000)
+    );
+    assert_eq!(span.envelope.length(), 12_000_000_000_000_000_000);
+    assert_eq!(
+        span.envelope.progress_at(AudioSample(0)).unwrap(),
+        6_000_000_000_000_000_000
+    );
+    assert!(matches!(span.content, AudioContent::Silence { .. }));
+}
+
+#[test]
 fn partitioning_a_billion_play_repeat_keeps_compact_storage_and_bounded_last_seek() {
     let plays = 1_000_000_000;
     let plan = RenderPlan::compile(&document(

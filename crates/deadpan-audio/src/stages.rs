@@ -369,13 +369,9 @@ impl StageAudio {
                         control,
                         1,
                     )?;
-                    let recipe = stage_recipe(
+                    let recipe = root_stage_recipe(
+                        &span,
                         prepared.block.samples.len(),
-                        span.allocated_samples.clone(),
-                        span.transform.local_at(span.allocated_samples.start)?,
-                        span.transform
-                            .project_frames_per_sample
-                            .checked_div(span.transform.project_frames_per_local_frame)?,
                         plan.metadata().presentation_basis.frame_rate,
                     )?;
                     sample_prepared(
@@ -389,13 +385,9 @@ impl StageAudio {
                 AudioSignalContent::Leaf(_) => vec![[0.0; 2]; count(&span.samples)? as usize],
                 AudioSignalContent::Stage(stage) => {
                     let prepared = self.prepare_stage(stage, provider, control, 1)?;
-                    let recipe = stage_recipe(
+                    let recipe = root_stage_recipe(
+                        &span,
                         prepared.block.samples.len(),
-                        span.allocated_samples.clone(),
-                        span.transform.local_at(span.allocated_samples.start)?,
-                        span.transform
-                            .project_frames_per_sample
-                            .checked_div(span.transform.project_frames_per_local_frame)?,
                         plan.metadata().presentation_basis.frame_rate,
                     )?;
                     sample_prepared(
@@ -419,8 +411,12 @@ impl StageAudio {
             if is_silent_hold(&span.content) {
                 samples[left..right].fill([0.0; 2]);
                 suppressed.push(span.samples);
-            } else if edge_fades {
-                crate::edges::apply_edge_fades(&span, &mut samples[left..right])?;
+            } else {
+                crate::edges::apply_retained_envelope(
+                    &span,
+                    &mut samples[left..right],
+                    edge_fades,
+                )?;
             }
         }
         control.check()?;
@@ -762,14 +758,9 @@ impl StageAudio {
                         depth + 1,
                     )?;
                     dependencies.extend(prepared.block.dependencies.clone());
-                    let recipe = stage_recipe(
+                    let recipe = signal_stage_recipe(
+                        &span,
                         prepared.block.samples.len(),
-                        AudioSample(span.allocated_samples.start.0)
-                            ..AudioSample(span.allocated_samples.end.0),
-                        span.transform.local_at(span.allocated_samples.start)?,
-                        span.transform
-                            .signal_frames_per_sample
-                            .checked_div(span.transform.signal_frames_per_local_frame)?,
                         self.plan.metadata().presentation_basis.frame_rate,
                     )?;
                     sample_prepared(&prepared.block.samples, recipe, start, count, cancelled)?
@@ -778,14 +769,9 @@ impl StageAudio {
                 AudioSignalContent::Stage(stage) => {
                     let prepared = self.prepare_stage(stage, provider, control, depth + 1)?;
                     dependencies.extend(prepared.block.dependencies.clone());
-                    let recipe = stage_recipe(
+                    let recipe = signal_stage_recipe(
+                        &span,
                         prepared.block.samples.len(),
-                        AudioSample(span.allocated_samples.start.0)
-                            ..AudioSample(span.allocated_samples.end.0),
-                        span.transform.local_at(span.allocated_samples.start)?,
-                        span.transform
-                            .signal_frames_per_sample
-                            .checked_div(span.transform.signal_frames_per_local_frame)?,
                         self.plan.metadata().presentation_basis.frame_rate,
                     )?;
                     sample_prepared(&prepared.block.samples, recipe, start, count, cancelled)?
@@ -1027,6 +1013,34 @@ fn samples_per_frame(rate: FrameRate) -> Result<ExactRatio, TimeError> {
     )
 }
 
+fn root_stage_recipe(
+    span: &AudioProcessingSpan<'_>,
+    length: usize,
+    rate: FrameRate,
+) -> Result<ResampleRecipe, StageAudioError> {
+    stage_recipe(
+        length,
+        span.allocated_samples.clone(),
+        span.sampling.local_at(span.allocated_samples.start)?,
+        span.sampling.local_frames_per_sample(),
+        rate,
+    )
+}
+
+fn signal_stage_recipe(
+    span: &AudioSignalSpan<'_>,
+    length: usize,
+    rate: FrameRate,
+) -> Result<ResampleRecipe, StageAudioError> {
+    stage_recipe(
+        length,
+        AudioSample(span.allocated_samples.start.0)..AudioSample(span.allocated_samples.end.0),
+        span.sampling.local_at(span.allocated_samples.start)?,
+        span.sampling.local_frames_per_sample(),
+        rate,
+    )
+}
+
 fn stage_recipe(
     length: usize,
     output: Range<AudioSample>,
@@ -1071,4 +1085,295 @@ fn sample_prepared(
         })
         .transpose()?;
     Ok(sampler.render(start, frames, window, cancelled)?.samples)
+}
+
+#[cfg(test)]
+mod sampling_recipes {
+    use super::*;
+    use crate::sequence::sampling_recipes::{
+        assert_resumed_pcm, fixture_plan, generated_pcm, ratio, render,
+    };
+    use deadpan_plan::AudioSampleMap;
+
+    #[test]
+    fn processing_source_recipes_use_resumed_root_and_signal_maps() {
+        let plan = fixture_plan(false);
+        let mut root = plan
+            .audio_processing(AudioSample(0)..AudioSample(1), Default::default())
+            .unwrap()
+            .spans
+            .remove(0);
+        let mut signal = plan
+            .audio_signal()
+            .query(SignalSample(0)..SignalSample(1), Default::default())
+            .unwrap()
+            .spans
+            .remove(0);
+        let root_transform = root.transform;
+        let signal_transform = signal.transform;
+        let root_recipe = root_source_recipe(&root, 44_100).unwrap().unwrap();
+        let signal_recipe = signal_source_recipe(&signal, 44_100).unwrap().unwrap();
+        assert_eq!(root_recipe.source_step(), ratio(147, 160));
+        assert_eq!(signal_recipe.source_step(), ratio(147, 160));
+        let input = generated_pcm(44_100);
+        // Root round-even and signal ceil grids have different insertion sizes.
+        for (cut, root_anchor, signal_anchor, root_old, signal_old) in [
+            (1602, 3203, 3204, 1602, 1602),
+            (4805, 6406, 6407, 3204, 3203),
+        ] {
+            root.sampling = root
+                .sampling
+                .resume(AudioSample(cut), AudioSample(root_anchor))
+                .unwrap();
+            root.allocated_samples.start = AudioSample(root_anchor);
+            root.samples = AudioSample(root_anchor)..AudioSample(root_anchor + 256);
+            signal.sampling = signal
+                .sampling
+                .resume(SignalSample(cut), SignalSample(signal_anchor))
+                .unwrap();
+            signal.allocated_samples.start = SignalSample(signal_anchor);
+            signal.samples = SignalSample(signal_anchor)..SignalSample(signal_anchor + 256);
+            assert_eq!(root.transform, root_transform);
+            assert_eq!(signal.transform, signal_transform);
+            let resumed_root = root_source_recipe(&root, 44_100).unwrap().unwrap();
+            let resumed_signal = signal_source_recipe(&signal, 44_100).unwrap().unwrap();
+            assert_resumed_pcm(&input, &root_recipe, &resumed_root, root_old, root_anchor);
+            assert_resumed_pcm(
+                &input,
+                &signal_recipe,
+                &resumed_signal,
+                signal_old,
+                signal_anchor,
+            );
+            root.samples.start = AudioSample(root_anchor + 173);
+            signal.samples.start = SignalSample(signal_anchor + 173);
+            assert_eq!(
+                root_source_recipe(&root, 44_100).unwrap().unwrap(),
+                resumed_root
+            );
+            assert_eq!(
+                signal_source_recipe(&signal, 44_100).unwrap().unwrap(),
+                resumed_signal
+            );
+        }
+    }
+
+    fn prepared_pcm(stage: &AudioStage<'_>) -> Vec<[f32; 2]> {
+        let input = generated_pcm(stage.input_signal().sample_count().unwrap().0 as usize);
+        let output_count = stage.output_signal().sample_count().unwrap().0 as u32;
+        let rate = stage.descriptor().rate;
+        let recipe = CanonicalRecipe::with_rate(
+            input.len() as u32,
+            output_count,
+            StretchRate::new(rate.numerator() as u64, rate.denominator() as u64).unwrap(),
+            0,
+        )
+        .unwrap();
+        let pcm = StereoPcm::new(
+            input.iter().map(|sample| sample[0]).collect(),
+            input.iter().map(|sample| sample[1]).collect(),
+        )
+        .unwrap();
+        let mut dsp = CanonicalStretch::new(recipe, pcm).unwrap();
+        let mut output = Vec::new();
+        while output.len() < output_count as usize {
+            let count = (output_count as usize - output.len()).min(256);
+            let mut left = vec![0.0; count];
+            let mut right = vec![0.0; count];
+            assert_eq!(
+                dsp.read(&mut left, &mut right, &AtomicBool::new(false))
+                    .unwrap(),
+                count
+            );
+            output.extend(
+                left.into_iter()
+                    .zip(right)
+                    .map(|(left, right)| [left, right]),
+            );
+        }
+        output
+    }
+
+    #[test]
+    fn prepared_stage_recipes_resume_full_canonical_pcm_without_repreparation() {
+        let plan = fixture_plan(true);
+        let rate = plan.metadata().presentation_basis.frame_rate;
+        let mut root = plan
+            .audio_processing(AudioSample(0)..AudioSample(1), Default::default())
+            .unwrap()
+            .spans
+            .remove(0);
+        let mut signal = plan
+            .audio_signal()
+            .query(SignalSample(0)..SignalSample(1), Default::default())
+            .unwrap()
+            .spans
+            .remove(0);
+        let AudioSignalContent::Stage(stage) = &root.content else {
+            panic!("expected Preserve stage")
+        };
+        let descriptor = stage.descriptor().clone();
+        let input_count = stage.input_signal().sample_count().unwrap();
+        let input_query = serde_json::to_value(
+            stage
+                .input_signal()
+                .query(SignalSample(0)..SignalSample(256), Default::default())
+                .unwrap(),
+        )
+        .unwrap();
+        let prepared = prepared_pcm(stage);
+        let root_transform = root.transform;
+        let signal_transform = signal.transform;
+        let original_root = root_stage_recipe(&root, prepared.len(), rate).unwrap();
+        let original_signal = signal_stage_recipe(&signal, prepared.len(), rate).unwrap();
+        assert_eq!(original_root.selection(), 0..96_096);
+        assert_eq!(original_root.source_step(), ExactRatio::ONE);
+        for (cut, root_anchor, signal_anchor, root_old, signal_old) in [
+            (1602, 3203, 3204, 1602, 1602),
+            (4805, 6406, 6407, 3204, 3203),
+        ] {
+            root.sampling = root
+                .sampling
+                .resume(AudioSample(cut), AudioSample(root_anchor))
+                .unwrap();
+            root.allocated_samples.start = AudioSample(root_anchor);
+            root.samples = AudioSample(root_anchor)..AudioSample(root_anchor + 256);
+            signal.sampling = signal
+                .sampling
+                .resume(SignalSample(cut), SignalSample(signal_anchor))
+                .unwrap();
+            signal.allocated_samples.start = SignalSample(signal_anchor);
+            signal.samples = SignalSample(signal_anchor)..SignalSample(signal_anchor + 256);
+            assert_eq!(root.transform, root_transform);
+            assert_eq!(signal.transform, signal_transform);
+            for (recipe, original, old, anchor) in [
+                (
+                    root_stage_recipe(&root, prepared.len(), rate).unwrap(),
+                    &original_root,
+                    root_old,
+                    root_anchor,
+                ),
+                (
+                    signal_stage_recipe(&signal, prepared.len(), rate).unwrap(),
+                    &original_signal,
+                    signal_old,
+                    signal_anchor,
+                ),
+            ] {
+                assert_resumed_pcm(&prepared, original, &recipe, old, anchor);
+                // The actual prepared-buffer consumer must share this phase,
+                // including a suffix read before any earlier output is requested.
+                assert_eq!(
+                    sample_prepared(
+                        &prepared,
+                        recipe.clone(),
+                        AudioSample(anchor + 173),
+                        83,
+                        &AtomicBool::new(false)
+                    )
+                    .unwrap(),
+                    render(&prepared, original, old + 173, 83)
+                );
+                assert_eq!(
+                    sample_prepared(
+                        &prepared,
+                        recipe,
+                        AudioSample(anchor),
+                        256,
+                        &AtomicBool::new(false)
+                    )
+                    .unwrap(),
+                    render(&prepared, original, old, 256)
+                );
+            }
+        }
+        let AudioSignalContent::Stage(retained) = &root.content else {
+            unreachable!()
+        };
+        assert_eq!(retained.descriptor(), &descriptor);
+        assert_eq!(retained.input_signal().sample_count().unwrap(), input_count);
+        assert_eq!(
+            serde_json::to_value(
+                retained
+                    .input_signal()
+                    .query(SignalSample(0)..SignalSample(256), Default::default())
+                    .unwrap()
+            )
+            .unwrap(),
+            input_query
+        );
+    }
+
+    #[test]
+    fn prepared_and_source_recipe_steps_come_from_sampling_not_structure() {
+        let plan = fixture_plan(false);
+        let rate = plan.metadata().presentation_basis.frame_rate;
+        let mut root = plan
+            .audio_processing(AudioSample(0)..AudioSample(1), Default::default())
+            .unwrap()
+            .spans
+            .remove(0);
+        let mut signal = plan
+            .audio_signal()
+            .query(SignalSample(0)..SignalSample(1), Default::default())
+            .unwrap()
+            .spans
+            .remove(0);
+        let step = ratio(15, 16016); // 3/2 prepared samples per output sample.
+        root.sampling = AudioSampleMap::new(AudioSample(0), ExactRatio::ZERO, step)
+            .unwrap()
+            .resume(AudioSample(1602), AudioSample(3203))
+            .unwrap();
+        signal.sampling = AudioSampleMap::new(SignalSample(0), ExactRatio::ZERO, step)
+            .unwrap()
+            .resume(SignalSample(1602), SignalSample(3204))
+            .unwrap();
+        root.allocated_samples.start = AudioSample(3203);
+        signal.allocated_samples.start = SignalSample(3204);
+        assert_eq!(
+            root_source_recipe(&root, 44_100)
+                .unwrap()
+                .unwrap()
+                .source_step(),
+            ratio(441, 320)
+        );
+        assert_eq!(
+            signal_source_recipe(&signal, 44_100)
+                .unwrap()
+                .unwrap()
+                .source_step(),
+            ratio(441, 320)
+        );
+        let input = generated_pcm(48_000);
+        for (recipe, anchor) in [
+            (root_stage_recipe(&root, input.len(), rate).unwrap(), 3203),
+            (
+                signal_stage_recipe(&signal, input.len(), rate).unwrap(),
+                3204,
+            ),
+        ] {
+            assert_eq!(recipe.source_origin(), ExactRatio::integer(2403));
+            assert_eq!(recipe.source_step(), ratio(3, 2));
+            assert_eq!(recipe.selection(), 0..48_000);
+            let expected = ResampleRecipe::new(
+                0..48_000,
+                ExactRatio::integer(2403),
+                AudioSample(anchor),
+                ratio(3, 2),
+                recipe.output_range(),
+            )
+            .unwrap();
+            assert_eq!(
+                sample_prepared(
+                    &input,
+                    recipe,
+                    AudioSample(anchor),
+                    256,
+                    &AtomicBool::new(false)
+                )
+                .unwrap(),
+                render(&input, &expected, anchor, 256)
+            );
+        }
+    }
 }

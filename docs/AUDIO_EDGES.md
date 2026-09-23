@@ -56,8 +56,8 @@ Internal loop crossfades receive no additional fade. Explicit silent Holds
 remain numeric zero and retain their suppression ranges for later effects.
 Unsupported tails and other unimplemented audio recipes still fail explicitly.
 
-The engine is `deadpan-voice-edge-sample-centered-linear-2ms-v1`. For allocation
-length `N`, sample offset `i`, and width `F = min(96, N/2)` at 48 kHz:
+The engine is `deadpan-voice-edge-sample-centered-linear-2ms-v1`. For retained
+envelope length `N`, progress `i`, and width `F = min(96, N/2)` at 48 kHz:
 
 ```text
 start gain = automatic ? min(1, (i + 0.5) / F) : 1
@@ -74,7 +74,11 @@ It is a specified short-fragment compromise, not a guarantee that every possible
 one-sample event is click-free. Fades allocate no extra samples, introduce no
 latency and do not change source level away from the edges.
 
-Envelopes use full `envelope_samples`, never the requested chunk endpoints.
+Envelopes use full `AudioEnvelope` length/progress, never the requested chunk endpoints.
+Ordinary plans derive this from `envelope_samples`. Raw source/time-mapped reads
+also enforce its explicit silence endpoint without applying fades; outside-domain
+samples are zero even for Hard edges. [Sampling clocks](AUDIO_SAMPLING.md) describes
+the separation and the remaining persisted resume/policy work.
 For ordinary edits this equals `allocated_samples`. A [transparent partition](AUDIO_PARTITIONS.md)
 retains the original envelope range and offset while shortening allocation;
 it does not create a fade or change the width of an existing short fade.

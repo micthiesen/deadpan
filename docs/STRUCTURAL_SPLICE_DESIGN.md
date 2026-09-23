@@ -115,6 +115,12 @@ speed. Qualify the behavior at shortened/extended endpoints explicitly. These
 mathematical constraints are not proof that the proposed representation meets
 the complete media contract.
 
+[Sampling clocks and retained envelopes](AUDIO_SAMPLING.md) now implement the
+separate derived grid/map/progress values and consume them in both audio readers.
+This does not persist the retained reference domain or author an insertion. That
+contract also records the nested Preserve/silent-Hold rounding counterexample
+which requires both old reference-policy and current structural suppression.
+
 ## Structural and mark requirements
 
 Resolve boundary coordinates through `RepeatLayout`, using the right-hand object

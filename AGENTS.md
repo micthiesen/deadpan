@@ -303,6 +303,15 @@ support. Preserve full short-envelope width, Preserve history and RoomTone phase
 Only matching meaningful edges inherit Sequence/Repeat edge policy. Exact Hold
 resume anchors remain separate from pure Split. See [audio partitions](docs/AUDIO_PARTITIONS.md).
 
+Consume `span.sampling` for PCM phase/rate, including prepared Preserve and
+RoomTone output; structural transforms remain for frame coordinates and allocation.
+Retain the owning grid's origin and round-even/point-ceil rule. Keep envelope
+length/progress independent of allocation and gate exhausted envelopes in raw
+reads as well as faded reads. These derived plan values do not persist Hold
+resume intent. Future insertion must compose the current map and retain old
+reference audibility alongside current silence; compact Repeat phase follows
+stable play identity, not live ordinal. See [sampling clocks](docs/AUDIO_SAMPLING.md).
+
 `Split` retains full contexts and inserts sibling Partitions; refining a Partition
 reuses its child domain and keeps repeated cuts shallow. Keep logical mark IDs,
 map owner and host independently, and relocate concrete events once using their

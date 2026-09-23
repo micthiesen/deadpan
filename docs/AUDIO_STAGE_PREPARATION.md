@@ -34,11 +34,14 @@ input phase survives. Preserve consumes this PCM with native boundary
 At 30000/1001 fps, three frames into two has exact speed 3/2; rounded buffer
 counts 4805/3203 must not redefine that speed.
 
-If the stage transform is `project_frame=O+T*local_frame`, project sample `n`
-requests stage sample coordinate `m=(n-C*O)/T`. Reconstruct the prepared stage
-at that exact coordinate. Fractional phase belongs in this sampling operation,
-not an offset rounded to an integer native input boundary. Final allocation
-still uses the absolute project-frame endpoints rounded once.
+For ordinary derived placement `project_frame=O+T*local_frame`, project sample
+`n` requests stage sample coordinate `m=(n-C*O)/T`. The plan retains this in an
+explicit [sampling map](AUDIO_SAMPLING.md); root and signal stage recipes consume
+its local origin and step. A resumed map can differ from the structural transform.
+Reconstruct the full prepared stage at that exact coordinate. Fractional phase
+belongs in this sampling operation, not an offset rounded to an integer native
+input boundary. Final allocation still uses the absolute project-frame endpoints
+rounded once. Persisted Hold resume and retained reference-policy masks remain open.
 
 ## Plan boundary
 

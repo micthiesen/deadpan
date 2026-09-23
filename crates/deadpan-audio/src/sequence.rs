@@ -66,9 +66,9 @@ impl SequenceAudio {
         &self.plan
     }
 
-    /// Stage a complete source block atomically. Every leaf keeps its full
-    /// allocated interval as the phase origin, independent of this query's
-    /// partition. File reads and filtering belong on preparation workers.
+    /// Stage a complete source block atomically. Every leaf retains its exact
+    /// sampling phase independently of allocation and this query's partition.
+    /// File reads and filtering belong on preparation workers.
     pub fn read_sources(
         &self,
         provider: &mut impl AudioSourceProvider,
@@ -109,6 +109,7 @@ impl SequenceAudio {
         let mut samples = Vec::with_capacity(frames as usize);
         for span in query.spans {
             check_cancel(cancelled)?;
+            let left = samples.len();
             let count = u32::try_from(span.samples.end.0 - span.samples.start.0)
                 .map_err(|_| SequenceAudioError::Range)?;
             if let AudioContent::Source { source, .. } = &span.content {
@@ -133,6 +134,8 @@ impl SequenceAudio {
                 // Preflight admitted only explicit plan silence here.
                 samples.resize(samples.len() + count as usize, [0.0; 2]);
             }
+            crate::edges::apply_retained_envelope(&span, &mut samples[left..], false)
+                .map_err(|_| SequenceAudioError::Range)?;
         }
         check_cancel(cancelled)?;
         Ok(SourceStageBlock {
@@ -245,3 +248,7 @@ pub(crate) fn original_sample(point: SourceTimestamp, rate: u32) -> Result<i64, 
     }
     Ok(i64::try_from(samples.numerator()).map_err(|_| TimeError::Overflow)?)
 }
+
+#[cfg(test)]
+#[path = "sampling_recipes.rs"]
+pub(crate) mod sampling_recipes;
