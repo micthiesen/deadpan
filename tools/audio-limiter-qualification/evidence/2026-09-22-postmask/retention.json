@@ -1,0 +1,207 @@
+{
+  "schema_version": 1,
+  "byte_identical_copies": {
+    "producer/prototype.py": {
+      "source": "/tmp/deadpan-postmask-limiter-20260921/prototype.py",
+      "sha256": "ad26773a9c93ee4780ab86c2067610ade2cca23272d7cd611bdeeb339a8bfdfe"
+    },
+    "producer/shortened_edge.py": {
+      "source": "/tmp/deadpan-postmask-limiter-20260921/shortened_edge.py",
+      "sha256": "082f47d7f3f403514b2c6b4df4313c8a5c7d70965e8daedbeb61ad7a9fa03e23"
+    },
+    "producer/pre-run-manifest.json": {
+      "source": "/tmp/deadpan-postmask-limiter-20260921/pre-run-manifest.json",
+      "sha256": "d2c0d8d8977940bba6f32a95ef5c31d1f1dc4c34c1ea12aa01dd5877771be462"
+    },
+    "producer/shortened-edge-pre-run-manifest.json": {
+      "source": "/tmp/deadpan-postmask-limiter-20260921/shortened-edge-pre-run-manifest.json",
+      "sha256": "5579fee1fa154a4e82fc9a39c22010c649c7b04c4a322f19451eb6f5bbdf5d0f"
+    },
+    "producer/results.json": {
+      "source": "/tmp/deadpan-postmask-limiter-20260921/results.json",
+      "sha256": "38860b462f975fe64d0de7aae88a7aafcdb99e549aeec7a012b297059e784dcc"
+    },
+    "producer/shortened-edge-results.json": {
+      "source": "/tmp/deadpan-postmask-limiter-20260921/shortened-edge-results.json",
+      "sha256": "fe1a3a5500202d38aa46d7399e2726a33ca50ef9f64caac1e1dacce6a0e70015"
+    },
+    "producer/README.md": {
+      "source": "/tmp/deadpan-postmask-limiter-20260921/README.md",
+      "sha256": "c15183439a38fd9d05cdcd15a0272d1c07ff506c7c4dc90585d1e47bfc351e36"
+    },
+    "producer/source/combined-kernels.json": {
+      "source": "/tmp/deadpan-postmask-limiter-20260921/source/combined-kernels.json",
+      "sha256": "d23aefef908c935ad13d438d73580ba431ad3af7fbb59a2825e54fd7468f8b7a"
+    },
+    "producer/source/kaiser255-beta16.f64le": {
+      "source": "/tmp/deadpan-postmask-limiter-20260921/source/kaiser255-beta16.f64le",
+      "sha256": "8b4418568c73525050f7541cd4b8c8f8f4be8318e0f314260b63575d4aa3ce12"
+    },
+    "producer/outputs/mask-alternating-dc-0.1-default96.wav": {
+      "source": "/tmp/deadpan-postmask-limiter-20260921/outputs/mask-alternating-dc-0.1-default96.wav",
+      "sha256": "38805bcaba22ae5a710c0051656a56a8e87cc1a9603054dec95feeb54bf6a472"
+    },
+    "producer/meters/mask-alternating-dc-0.1-default96.json": {
+      "source": "/tmp/deadpan-postmask-limiter-20260921/meters/mask-alternating-dc-0.1-default96.json",
+      "sha256": "734150f271805225e9ae6b03f1225b80730431cae31c42c8b605733587cc9b12"
+    },
+    "producer/outputs/mask-alternating-dc-0.1-hard.wav": {
+      "source": "/tmp/deadpan-postmask-limiter-20260921/outputs/mask-alternating-dc-0.1-hard.wav",
+      "sha256": "d525f929a1e30c731df329776f27157a99acf88372b7778124800123871cda85"
+    },
+    "producer/meters/mask-alternating-dc-0.1-hard.json": {
+      "source": "/tmp/deadpan-postmask-limiter-20260921/meters/mask-alternating-dc-0.1-hard.json",
+      "sha256": "b4143507772f1b592f13e9c8642329e62fe45c2179e692da716109eb4b045e28"
+    },
+    "producer/outputs/mask-alternating-dc-0.8-default96.wav": {
+      "source": "/tmp/deadpan-postmask-limiter-20260921/outputs/mask-alternating-dc-0.8-default96.wav",
+      "sha256": "1c56ecba338254b7a1735df35b730d8b66341d5eb4ee3426572d6d46e328a678"
+    },
+    "producer/meters/mask-alternating-dc-0.8-default96.json": {
+      "source": "/tmp/deadpan-postmask-limiter-20260921/meters/mask-alternating-dc-0.8-default96.json",
+      "sha256": "7c3634c3af1cfae2c921046011464a3d1803edef25534ff12c646ca5fcaeecb9"
+    },
+    "producer/outputs/mask-alternating-dc-0.8-hard.wav": {
+      "source": "/tmp/deadpan-postmask-limiter-20260921/outputs/mask-alternating-dc-0.8-hard.wav",
+      "sha256": "f546e8ddb8c07bc005130134f21be6cfa86baa04e9910f00db4ebeea7904b40e"
+    },
+    "producer/meters/mask-alternating-dc-0.8-hard.json": {
+      "source": "/tmp/deadpan-postmask-limiter-20260921/meters/mask-alternating-dc-0.8-hard.json",
+      "sha256": "0eb013acafcf9df1ee771700cf09af0ebe9200924cd716eba8a0393767a16168"
+    },
+    "producer/outputs/mask-alternating-dc-16-default96.wav": {
+      "source": "/tmp/deadpan-postmask-limiter-20260921/outputs/mask-alternating-dc-16-default96.wav",
+      "sha256": "1eba0613db3fa6ae4732a4bae5877522c1efebdd6d1529dffbc4e59e6d0b859f"
+    },
+    "producer/meters/mask-alternating-dc-16-default96.json": {
+      "source": "/tmp/deadpan-postmask-limiter-20260921/meters/mask-alternating-dc-16-default96.json",
+      "sha256": "f75377f4c4d3c062d047bb24ee67b63eb0c79dae0b2e7f0b0218ecd7fa7a378d"
+    },
+    "producer/outputs/mask-alternating-dc-16-hard.wav": {
+      "source": "/tmp/deadpan-postmask-limiter-20260921/outputs/mask-alternating-dc-16-hard.wav",
+      "sha256": "904373539e3384f59c2622be4a8ada7d837ab1f9d497376033bfa4a0e95661e9"
+    },
+    "producer/meters/mask-alternating-dc-16-hard.json": {
+      "source": "/tmp/deadpan-postmask-limiter-20260921/meters/mask-alternating-dc-16-hard.json",
+      "sha256": "8939adc93568ffc1e3aee054451237ab1ad8a8995d12c0dd39ad9d7449b2aed2"
+    },
+    "producer/outputs/hot-alternating-16-hard.wav": {
+      "source": "/tmp/deadpan-postmask-limiter-20260921/outputs/hot-alternating-16-hard.wav",
+      "sha256": "a13fbcb7f135a2399f3e4ae19f88346b957f82fd11b27e690caa3f7d06e8cd97"
+    },
+    "producer/meters/hot-alternating-16-hard.json": {
+      "source": "/tmp/deadpan-postmask-limiter-20260921/meters/hot-alternating-16-hard.json",
+      "sha256": "a34295a1dac38efd2f5888de119c0268d895c54a06ed9012550a8c3afe85d830"
+    },
+    "producer/outputs/hot-tone-23990-16-hard.wav": {
+      "source": "/tmp/deadpan-postmask-limiter-20260921/outputs/hot-tone-23990-16-hard.wav",
+      "sha256": "07c73c176dd6a3bab70de423f758d5c5344d8ec1e10b2d1587c8d5d45ab0ee79"
+    },
+    "producer/meters/hot-tone-23990-16-hard.json": {
+      "source": "/tmp/deadpan-postmask-limiter-20260921/meters/hot-tone-23990-16-hard.json",
+      "sha256": "f43544d504b9aab683805daf2672fbae3b171ea001d812a7512aa335b8200ed3"
+    },
+    "producer/outputs/quiet-tone-1000-0.1-hard.wav": {
+      "source": "/tmp/deadpan-postmask-limiter-20260921/outputs/quiet-tone-1000-0.1-hard.wav",
+      "sha256": "31a8979c0f09996692b0f8fdcbe167c24aa218ac7e8b1c0e229ebded2fdce393"
+    },
+    "producer/meters/quiet-tone-1000-0.1-hard.json": {
+      "source": "/tmp/deadpan-postmask-limiter-20260921/meters/quiet-tone-1000-0.1-hard.json",
+      "sha256": "22a6fed3e5ae3b8b91bef71c1d0c8582f7f6f24ea39c2878ccb3a0d4d2a27d6a"
+    },
+    "producer/outputs/quiet-dc-0.1-hard.wav": {
+      "source": "/tmp/deadpan-postmask-limiter-20260921/outputs/quiet-dc-0.1-hard.wav",
+      "sha256": "f2db825cdd268a48fff478af9966048e635d080722502d4024e7623f57310311"
+    },
+    "producer/meters/quiet-dc-0.1-hard.json": {
+      "source": "/tmp/deadpan-postmask-limiter-20260921/meters/quiet-dc-0.1-hard.json",
+      "sha256": "02aa029ea951e8456432a7eb516223fd96b71c2c5442310d594b0c5900d69abc"
+    },
+    "producer/outputs/ordinary-silent-gap-default96.wav": {
+      "source": "/tmp/deadpan-postmask-limiter-20260921/outputs/ordinary-silent-gap-default96.wav",
+      "sha256": "dd847fc383443515e2e6a027f281165dba7d49acc2dcbbeb49bb4ffdb3ce0b8e"
+    },
+    "producer/meters/ordinary-silent-gap-default96.json": {
+      "source": "/tmp/deadpan-postmask-limiter-20260921/meters/ordinary-silent-gap-default96.json",
+      "sha256": "fbbd6eb14443259c07a8fee8de61b3a8fcccc96e954096614462acbbb668616a"
+    },
+    "producer/outputs/permitted-tail-default96.wav": {
+      "source": "/tmp/deadpan-postmask-limiter-20260921/outputs/permitted-tail-default96.wav",
+      "sha256": "22bfc60e99aa8999bae1d89136b21b4a75f0541b062058215d040eb90c4d5bb5"
+    },
+    "producer/meters/permitted-tail-default96.json": {
+      "source": "/tmp/deadpan-postmask-limiter-20260921/meters/permitted-tail-default96.json",
+      "sha256": "8ed68f7622af0165135dce457bdd33a2076c1c7888c17c98d595956eb358e0fa"
+    },
+    "producer/outputs/stereo-opposed-peaks-hard.wav": {
+      "source": "/tmp/deadpan-postmask-limiter-20260921/outputs/stereo-opposed-peaks-hard.wav",
+      "sha256": "5839deebcaf603ed91c9367221a409bc1e13a0fc418397bde365324f13ae52a1"
+    },
+    "producer/meters/stereo-opposed-peaks-hard.json": {
+      "source": "/tmp/deadpan-postmask-limiter-20260921/meters/stereo-opposed-peaks-hard.json",
+      "sha256": "7ee9aaa72a8291571dd472316bd581d16ef6f1d5e7614622b0ef8b3e9cdfafc3"
+    },
+    "producer/outputs/mask-alternating-dc-0.1-shortened-edge.wav": {
+      "source": "/tmp/deadpan-postmask-limiter-20260921/outputs/mask-alternating-dc-0.1-shortened-edge.wav",
+      "sha256": "d525f929a1e30c731df329776f27157a99acf88372b7778124800123871cda85"
+    },
+    "producer/meters/mask-alternating-dc-0.1-shortened-edge.json": {
+      "source": "/tmp/deadpan-postmask-limiter-20260921/meters/mask-alternating-dc-0.1-shortened-edge.json",
+      "sha256": "dbf9b25171ea3d2dc4e0edc3f8c73a8bac5c9d57e72a31e13cc54d9859a01c16"
+    },
+    "producer/outputs/mask-alternating-dc-0.8-shortened-edge.wav": {
+      "source": "/tmp/deadpan-postmask-limiter-20260921/outputs/mask-alternating-dc-0.8-shortened-edge.wav",
+      "sha256": "f546e8ddb8c07bc005130134f21be6cfa86baa04e9910f00db4ebeea7904b40e"
+    },
+    "producer/meters/mask-alternating-dc-0.8-shortened-edge.json": {
+      "source": "/tmp/deadpan-postmask-limiter-20260921/meters/mask-alternating-dc-0.8-shortened-edge.json",
+      "sha256": "098f6da3b762e996841009a0d0e320f56ff336bc087d50263ae633aa7c826d92"
+    },
+    "producer/outputs/mask-alternating-dc-16-shortened-edge.wav": {
+      "source": "/tmp/deadpan-postmask-limiter-20260921/outputs/mask-alternating-dc-16-shortened-edge.wav",
+      "sha256": "904373539e3384f59c2622be4a8ada7d837ab1f9d497376033bfa4a0e95661e9"
+    },
+    "producer/meters/mask-alternating-dc-16-shortened-edge.json": {
+      "source": "/tmp/deadpan-postmask-limiter-20260921/meters/mask-alternating-dc-16-shortened-edge.json",
+      "sha256": "b4a08475e2bedb1067301bf76e35fb506c23a83a5c6e60d8b196f9b9a00075af"
+    },
+    "audit/audit.py": {
+      "source": "/tmp/deadpan-postmask-audit-20260922/audit.py",
+      "sha256": "00fbf6ec05a329ef83909dc71b19cec335fcc6c81c721cd633f07b4efacf1709"
+    },
+    "audit/finite_sinc.py": {
+      "source": "/tmp/deadpan-postmask-audit-20260922/finite_sinc.py",
+      "sha256": "d5e8166bdf9b2e71d6b7a9c4fa3e3cb5dcafdc304ebe93a563bae82d2ece209e"
+    },
+    "audit/environment.json": {
+      "source": "/tmp/deadpan-postmask-audit-20260922/environment.json",
+      "sha256": "0a95a0d6500b34baa32807a783784f05eec2d8d3a0974a27d2be49536a96b27d"
+    },
+    "audit/results.json": {
+      "source": "/tmp/deadpan-postmask-audit-20260922/results.json",
+      "sha256": "33793a11a21907830086e995552e4bc64239c86151842d4fa1cc9ccc7206a12d"
+    },
+    "audit/high-precision.json": {
+      "source": "/tmp/deadpan-postmask-audit-20260922/high-precision.json",
+      "sha256": "213fbc527c4be6a110d52a03597d2c5dda46fec86d4ab0c8d7ed99274cba5175"
+    },
+    "audit/summary.json": {
+      "source": "/tmp/deadpan-postmask-audit-20260922/summary.json",
+      "sha256": "1736500a67bb7201c3c979c988b0879541ad50c5c8828e8b45aa0965142aa108"
+    },
+    "audit/retain.py": {
+      "source": "/tmp/deadpan-postmask-audit-20260922/retain.py",
+      "sha256": "1405d051d985e0b074c5bbd0471f0803ecb6a9d1c3440999168b276c84078ec4"
+    }
+  },
+  "producer_pre_run_hashes_rechecked": {
+    "prototype.py": true,
+    "kaiser255-beta16.f64le": true,
+    "combined-kernels.json": true,
+    "measure_pcm": true,
+    "shortened_edge.py": true
+  },
+  "raw_pcm_excluded_as_identical_to_retained_wav_payload": 16,
+  "audit_input_copies_excluded_as_identical_to_producer_wavs": 16,
+  "binary_not_archived": "measure_pcm; pre-run and retention hashes bind observed executable, not a reproducible build"
+}

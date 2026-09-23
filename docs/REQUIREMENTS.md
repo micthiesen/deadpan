@@ -156,6 +156,11 @@ forking descendants cover these fixes; process-group cleanup is not a sandbox.
 [Conditioned limiter research](qualification/audio-limiter-masks-2026-09-21.md)
 retains a 42-fixture pass and two subsequent suppression-mask counterexamples.
 The prototype remains unadopted; this does not advance mastering acceptance.
+[Post-mask gain research](qualification/audio-limiter-postmask-2026-09-22.md)
+retains 16 further outputs and a complete-sinc audit. Two distinct rapid-mask
+outputs still fail the broader reconstruction check despite passing both finite
+meters. Fixed fades that excessively quiet tiny fragments are rejected as a
+default; production limiting and per-voice fades remain open.
 
 ## Product requirements
 

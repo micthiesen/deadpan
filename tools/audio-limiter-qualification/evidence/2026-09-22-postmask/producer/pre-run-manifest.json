@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "captured_before_case_outputs": true,
+  "utc_epoch_seconds": 1790047191.264406,
+  "python": "3.12.13 (main, Mar 25 2026, 03:16:06) [Clang 22.1.1 ]",
+  "platform": "macOS-26.5.2-arm64-arm-64bit",
+  "numpy": "2.5.3",
+  "hashes": {
+    "prototype.py": "ad26773a9c93ee4780ab86c2067610ade2cca23272d7cd611bdeeb339a8bfdfe",
+    "kaiser255-beta16.f64le": "8b4418568c73525050f7541cd4b8c8f8f4be8318e0f314260b63575d4aa3ce12",
+    "combined-kernels.json": "d23aefef908c935ad13d438d73580ba431ad3af7fbb59a2825e54fd7468f8b7a",
+    "measure_pcm": "97216bd091c1f54b769ccfa0c709590fd03ae7e095b94e7fd12a2dc3ba78eaae"
+  },
+  "paths": {
+    "prototype.py": "/tmp/deadpan-postmask-limiter-20260921/prototype.py",
+    "kaiser255-beta16.f64le": "/private/tmp/deadpan-postmask-limiter-20260921/source/kaiser255-beta16.f64le",
+    "combined-kernels.json": "/private/tmp/deadpan-postmask-limiter-20260921/source/combined-kernels.json",
+    "measure_pcm": "/Users/michael/Code/deadpan/target/release/examples/measure_pcm"
+  }
+}

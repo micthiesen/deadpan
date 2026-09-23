@@ -1,0 +1,1526 @@
+{
+  "schema_version": 1,
+  "status": "complete",
+  "claim": "bounded scratch evidence only; not production qualification and not an ideal-sinc ceiling proof",
+  "signal_order": [
+    "255-tap beta16 conditioner",
+    "explicit default96 boundary envelope or hard mode",
+    "exact authored silence mask",
+    "shared stereo-linked quantized finite-row safety gain",
+    "float32 output"
+  ],
+  "configuration": {
+    "rate_hz": 48000,
+    "frames": 8192,
+    "conditioner_taps": 255,
+    "conditioner_l1": 2.4938660232001224,
+    "conditioned_magnitude_cap_for_abs_input_le_16": 39.90185637120196,
+    "target_dbtp": -1.25,
+    "numeric_guard_linear": 1e-06,
+    "effective_internal_ceiling_linear": 0.8659633233600653,
+    "L": 0.000244140625,
+    "R": 0.0001220703125,
+    "gain_quantum": 2.3283064365386963e-10,
+    "control_anchor_domain_inclusive": [
+      -256,
+      8446
+    ],
+    "k8_offsets_inclusive": [
+      -255,
+      256
+    ],
+    "bs1770_offsets_inclusive": [
+      -6,
+      5
+    ],
+    "lookahead_samples": 4479,
+    "lookahead_ms": 93.3125,
+    "default_boundary_frames": 96,
+    "default_one_sample_fragment_factor": 0.010416666666666666,
+    "default_one_sample_fragments_erased": false
+  },
+  "worst_case_cap_context": {
+    "arbitrary_input_absolute_bound": 16,
+    "conditioned_absolute_bound": 39.90185637120196,
+    "k8_max_integer_origin_distance_moment": 63.74500638865622,
+    "Wmax_product": 2543.544089301512,
+    "minimum_margin_from_global_caps": 0.24498087968293836,
+    "scope": "finite K8/radius256 and smaller retained rows; mask/envelope cannot increase canonical sample magnitude"
+  },
+  "pre_run_manifest": "/private/tmp/deadpan-postmask-limiter-20260921/pre-run-manifest.json",
+  "results": [
+    {
+      "case": "mask-alternating-dc-0.1-default96",
+      "policy": "one-sample active islands alternating with authored silence",
+      "boundary_mode": "default96",
+      "input_peak": 0.10000000149011612,
+      "conditioned_peak": 0.105925344960027,
+      "canonical_peak_before_gain": 0.0011033890100002812,
+      "sample_peak": 0.0011033889604732394,
+      "gain_min": 1.0,
+      "gain_max": 1.0,
+      "gain_all_unity": true,
+      "shared_gain_channels": true,
+      "maximum_gain_down_step": 0.0,
+      "maximum_gain_up_step": 0.0,
+      "minimum_boundary_envelope_on_active": 0.010416666666666666,
+      "active_output_frames": 4096,
+      "exact_silence_span_is_zero": null,
+      "permitted_tail_nonzero_frames": null,
+      "official_bs1770_meter": {
+        "peak": 0.0011403593889554031,
+        "dbtp": -58.85916514795693,
+        "passes_minus_1_dbtp": true,
+        "report": "/private/tmp/deadpan-postmask-limiter-20260921/meters/mask-alternating-dc-0.1-default96.json"
+      },
+      "independent_finite_detector": {
+        "peak": 0.0014945228317827595,
+        "anchor": 8190,
+        "phase": 3,
+        "channel": 0,
+        "dbtp": -56.50994891739166,
+        "passes_minus_1_dbtp": true,
+        "algorithm": "separate post-output 8-phase Kaiser beta10 radius256 finite scan"
+      },
+      "finite_proof_rows": {
+        "raw-sample": {
+          "minimum_margin": 0.8659633233600653,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 0.0
+        },
+        "bs1770-phase-0": {
+          "minimum_margin": 0.865963190397082,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 0.0005446163795186324
+        },
+        "bs1770-phase-1": {
+          "minimum_margin": 0.8659629764655152,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 0.0014208800771772587
+        },
+        "bs1770-phase-2": {
+          "minimum_margin": 0.8659628821154718,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 0.001807337854878194
+        },
+        "bs1770-phase-3": {
+          "minimum_margin": 0.865962983373812,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 0.001392583693928271
+        },
+        "kaiser8-radius256-phase-1": {
+          "minimum_margin": 0.8659602202716097,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 0.012710250314165413
+        },
+        "kaiser8-radius256-phase-2": {
+          "minimum_margin": 0.8659575825242372,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 0.023514463552291826
+        },
+        "kaiser8-radius256-phase-3": {
+          "minimum_margin": 0.8659558053252202,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 0.03079387072571742
+        },
+        "kaiser8-radius256-phase-4": {
+          "minimum_margin": 0.8659551541806808,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 0.03346095875906199
+        },
+        "kaiser8-radius256-phase-5": {
+          "minimum_margin": 0.8659557248758315,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 0.031123391421807235
+        },
+        "kaiser8-radius256-phase-6": {
+          "minimum_margin": 0.8659574290333938,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 0.02414316204658807
+        },
+        "kaiser8-radius256-phase-7": {
+          "minimum_margin": 0.8659600074274076,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 0.013582060165704365
+        }
+      },
+      "recurrence": {
+        "cap_quantum": 2.3283064365386963e-10,
+        "l_step_quanta": 1048576,
+        "r_step_quanta": 524288,
+        "partition_check": "bit-identical integer recurrence with carried state",
+        "partition_check_scope": "future-cone and release recurrences only; not preparation, crop, or random-seek qualification"
+      },
+      "artifacts": {
+        "wav": "/private/tmp/deadpan-postmask-limiter-20260921/outputs/mask-alternating-dc-0.1-default96.wav",
+        "wav_sha256": "38805bcaba22ae5a710c0051656a56a8e87cc1a9603054dec95feeb54bf6a472",
+        "f32le": "/private/tmp/deadpan-postmask-limiter-20260921/outputs/mask-alternating-dc-0.1-default96.f32le",
+        "f32le_sha256": "c8938777ccc675afbba82618d9de774a7ff4ae0dbc5d7efabe7f8f3d5a43a916",
+        "meter": "/private/tmp/deadpan-postmask-limiter-20260921/meters/mask-alternating-dc-0.1-default96.json",
+        "meter_sha256": "734150f271805225e9ae6b03f1225b80730431cae31c42c8b605733587cc9b12"
+      },
+      "elapsed_seconds": 0.8853730000555515,
+      "passes_both_retained_finite_detectors": true
+    },
+    {
+      "case": "mask-alternating-dc-0.1-hard",
+      "policy": "one-sample active islands alternating with authored silence",
+      "boundary_mode": "hard",
+      "input_peak": 0.10000000149011612,
+      "conditioned_peak": 0.105925344960027,
+      "canonical_peak_before_gain": 0.105925344960027,
+      "sample_peak": 0.10592534393072128,
+      "gain_min": 1.0,
+      "gain_max": 1.0,
+      "gain_all_unity": true,
+      "shared_gain_channels": true,
+      "maximum_gain_down_step": 0.0,
+      "maximum_gain_up_step": 0.0,
+      "minimum_boundary_envelope_on_active": 1.0,
+      "active_output_frames": 4096,
+      "exact_silence_span_is_zero": null,
+      "permitted_tail_nonzero_frames": null,
+      "official_bs1770_meter": {
+        "peak": 0.10947450449566531,
+        "dbtp": -19.213740236767492,
+        "passes_minus_1_dbtp": true,
+        "report": "/private/tmp/deadpan-postmask-limiter-20260921/meters/mask-alternating-dc-0.1-hard.json"
+      },
+      "independent_finite_detector": {
+        "peak": 0.1434741930204254,
+        "anchor": 8190,
+        "phase": 3,
+        "channel": 0,
+        "dbtp": -16.86452418581236,
+        "passes_minus_1_dbtp": true,
+        "algorithm": "separate post-output 8-phase Kaiser beta10 radius256 finite scan"
+      },
+      "finite_proof_rows": {
+        "raw-sample": {
+          "minimum_margin": 0.8659633233600653,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 0.0
+        },
+        "bs1770-phase-0": {
+          "minimum_margin": 0.8659505589136703,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 0.05228317243378872
+        },
+        "bs1770-phase-1": {
+          "minimum_margin": 0.8659300214832565,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 0.1364044874090168
+        },
+        "bs1770-phase-2": {
+          "minimum_margin": 0.8659209638790916,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 0.17350443406830665
+        },
+        "bs1770-phase-3": {
+          "minimum_margin": 0.8659306846797389,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 0.13368803461711398
+        },
+        "kaiser8-radius256-phase-1": {
+          "minimum_margin": 0.865665426868327,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 1.2201840301598794
+        },
+        "kaiser8-radius256-phase-2": {
+          "minimum_margin": 0.8654122031205584,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 2.2573885010200145
+        },
+        "kaiser8-radius256-phase-3": {
+          "minimum_margin": 0.8652415920149313,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 2.9562115896688708
+        },
+        "kaiser8-radius256-phase-4": {
+          "minimum_margin": 0.8651790821391498,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 3.2122520408699566
+        },
+        "kaiser8-radius256-phase-5": {
+          "minimum_margin": 0.8652338688736168,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 2.9878455764934944
+        },
+        "kaiser8-radius256-phase-6": {
+          "minimum_margin": 0.8653974679995984,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 2.3177435564724536
+        },
+        "kaiser8-radius256-phase-7": {
+          "minimum_margin": 0.8656449938249317,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 1.303877775907619
+        }
+      },
+      "recurrence": {
+        "cap_quantum": 2.3283064365386963e-10,
+        "l_step_quanta": 1048576,
+        "r_step_quanta": 524288,
+        "partition_check": "bit-identical integer recurrence with carried state",
+        "partition_check_scope": "future-cone and release recurrences only; not preparation, crop, or random-seek qualification"
+      },
+      "artifacts": {
+        "wav": "/private/tmp/deadpan-postmask-limiter-20260921/outputs/mask-alternating-dc-0.1-hard.wav",
+        "wav_sha256": "d525f929a1e30c731df329776f27157a99acf88372b7778124800123871cda85",
+        "f32le": "/private/tmp/deadpan-postmask-limiter-20260921/outputs/mask-alternating-dc-0.1-hard.f32le",
+        "f32le_sha256": "3f76520db0acafe4ae129440e63f87e3ab88e256dabd9e077d5205a11336bb9d",
+        "meter": "/private/tmp/deadpan-postmask-limiter-20260921/meters/mask-alternating-dc-0.1-hard.json",
+        "meter_sha256": "b4143507772f1b592f13e9c8642329e62fe45c2179e692da716109eb4b045e28"
+      },
+      "elapsed_seconds": 0.8513027920853347,
+      "passes_both_retained_finite_detectors": true
+    },
+    {
+      "case": "mask-alternating-dc-0.8-default96",
+      "policy": "one-sample active islands alternating with authored silence",
+      "boundary_mode": "default96",
+      "input_peak": 0.800000011920929,
+      "conditioned_peak": 0.847402759680216,
+      "canonical_peak_before_gain": 0.00882711208000225,
+      "sample_peak": 0.008827111683785915,
+      "gain_min": 1.0,
+      "gain_max": 1.0,
+      "gain_all_unity": true,
+      "shared_gain_channels": true,
+      "maximum_gain_down_step": 0.0,
+      "maximum_gain_up_step": 0.0,
+      "minimum_boundary_envelope_on_active": 0.010416666666666666,
+      "active_output_frames": 4096,
+      "exact_silence_span_is_zero": null,
+      "permitted_tail_nonzero_frames": null,
+      "official_bs1770_meter": {
+        "peak": 0.009122875111643225,
+        "dbtp": -40.797365408118054,
+        "passes_minus_1_dbtp": true,
+        "report": "/private/tmp/deadpan-postmask-limiter-20260921/meters/mask-alternating-dc-0.8-default96.json"
+      },
+      "independent_finite_detector": {
+        "peak": 0.011956182654262076,
+        "anchor": 8190,
+        "phase": 3,
+        "channel": 0,
+        "dbtp": -38.448149177552786,
+        "passes_minus_1_dbtp": true,
+        "algorithm": "separate post-output 8-phase Kaiser beta10 radius256 finite scan"
+      },
+      "finite_proof_rows": {
+        "raw-sample": {
+          "minimum_margin": 0.8659633233600653,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 0.0
+        },
+        "bs1770-phase-0": {
+          "minimum_margin": 0.8659622596561991,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 0.004356931036149059
+        },
+        "bs1770-phase-1": {
+          "minimum_margin": 0.8659605482036645,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 0.01136704061741807
+        },
+        "bs1770-phase-2": {
+          "minimum_margin": 0.8659597934033175,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 0.014458702839025553
+        },
+        "bs1770-phase-3": {
+          "minimum_margin": 0.8659606034700381,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 0.011140669551426167
+        },
+        "kaiser8-radius256-phase-1": {
+          "minimum_margin": 0.8659384986524205,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 0.10168200251332331
+        },
+        "kaiser8-radius256-phase-2": {
+          "minimum_margin": 0.8659173966734397,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 0.1881157084183346
+        },
+        "kaiser8-radius256-phase-3": {
+          "minimum_margin": 0.8659031790813041,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 0.24635096580573937
+        },
+        "kaiser8-radius256-phase-4": {
+          "minimum_margin": 0.865897969924989,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 0.26768767007249594
+        },
+        "kaiser8-radius256-phase-5": {
+          "minimum_margin": 0.8659025354861946,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 0.24898713137445788
+        },
+        "kaiser8-radius256-phase-6": {
+          "minimum_margin": 0.8659161687466931,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 0.19314529637270456
+        },
+        "kaiser8-radius256-phase-7": {
+          "minimum_margin": 0.8659367958988041,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 0.10865648132563492
+        }
+      },
+      "recurrence": {
+        "cap_quantum": 2.3283064365386963e-10,
+        "l_step_quanta": 1048576,
+        "r_step_quanta": 524288,
+        "partition_check": "bit-identical integer recurrence with carried state",
+        "partition_check_scope": "future-cone and release recurrences only; not preparation, crop, or random-seek qualification"
+      },
+      "artifacts": {
+        "wav": "/private/tmp/deadpan-postmask-limiter-20260921/outputs/mask-alternating-dc-0.8-default96.wav",
+        "wav_sha256": "1c56ecba338254b7a1735df35b730d8b66341d5eb4ee3426572d6d46e328a678",
+        "f32le": "/private/tmp/deadpan-postmask-limiter-20260921/outputs/mask-alternating-dc-0.8-default96.f32le",
+        "f32le_sha256": "0e37e4b5bcfb52751f84df11eaef0abc7afc19c03dff22be72a5f2367a8a0973",
+        "meter": "/private/tmp/deadpan-postmask-limiter-20260921/meters/mask-alternating-dc-0.8-default96.json",
+        "meter_sha256": "7c3634c3af1cfae2c921046011464a3d1803edef25534ff12c646ca5fcaeecb9"
+      },
+      "elapsed_seconds": 0.8564661249984056,
+      "passes_both_retained_finite_detectors": true
+    },
+    {
+      "case": "mask-alternating-dc-0.8-hard",
+      "policy": "one-sample active islands alternating with authored silence",
+      "boundary_mode": "hard",
+      "input_peak": 0.800000011920929,
+      "conditioned_peak": 0.847402759680216,
+      "canonical_peak_before_gain": 0.847402759680216,
+      "sample_peak": 0.800000011920929,
+      "gain_min": 0.7520242347382009,
+      "gain_max": 1.0,
+      "gain_all_unity": false,
+      "shared_gain_channels": true,
+      "maximum_gain_down_step": 0.000244140625,
+      "maximum_gain_up_step": 0.0001220703125,
+      "minimum_boundary_envelope_on_active": 1.0,
+      "active_output_frames": 4096,
+      "exact_silence_span_is_zero": null,
+      "permitted_tail_nonzero_frames": null,
+      "official_bs1770_meter": {
+        "peak": 0.800000011920929,
+        "dbtp": -1.9382001307312877,
+        "passes_minus_1_dbtp": true,
+        "report": "/private/tmp/deadpan-postmask-limiter-20260921/meters/mask-alternating-dc-0.8-hard.json"
+      },
+      "independent_finite_detector": {
+        "peak": 0.8659633214512613,
+        "anchor": 8190,
+        "phase": 3,
+        "channel": 0,
+        "dbtp": -1.2500100494605826,
+        "passes_minus_1_dbtp": true,
+        "algorithm": "separate post-output 8-phase Kaiser beta10 radius256 finite scan"
+      },
+      "finite_proof_rows": {
+        "raw-sample": {
+          "minimum_margin": 0.8659633233600653,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 0.0
+        },
+        "bs1770-phase-0": {
+          "minimum_margin": 0.8658612077889056,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 0.4182653794703098
+        },
+        "bs1770-phase-1": {
+          "minimum_margin": 0.8656969083455945,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 1.0912358992721345
+        },
+        "bs1770-phase-2": {
+          "minimum_margin": 0.8656244475122756,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 1.3880354725464532
+        },
+        "bs1770-phase-3": {
+          "minimum_margin": 0.8657022139174537,
+          "minimum_bound": 0.9884928975746549,
+          "maximum_distance_moment_observed": 1.0695042769369119
+        },
+        "kaiser8-radius256-phase-1": {
+          "minimum_margin": 0.8635801514261593,
+          "minimum_bound": 0.8358110928173529,
+          "maximum_distance_moment_observed": 9.761472241279035
+        },
+        "kaiser8-radius256-phase-2": {
+          "minimum_margin": 0.8615543614440107,
+          "minimum_bound": 0.7573811552474626,
+          "maximum_distance_moment_observed": 18.059108008160116
+        },
+        "kaiser8-radius256-phase-3": {
+          "minimum_margin": 0.8601894725989933,
+          "minimum_bound": 0.7520242349242555,
+          "maximum_distance_moment_observed": 23.649692717350966
+        },
+        "kaiser8-radius256-phase-4": {
+          "minimum_margin": 0.8596893935927412,
+          "minimum_bound": 0.8199949963953772,
+          "maximum_distance_moment_observed": 25.698016326959653
+        },
+        "kaiser8-radius256-phase-5": {
+          "minimum_margin": 0.8601276874684765,
+          "minimum_bound": 0.8147342738660169,
+          "maximum_distance_moment_observed": 23.902764611947955
+        },
+        "kaiser8-radius256-phase-6": {
+          "minimum_margin": 0.86143648047633,
+          "minimum_bound": 0.82799185689762,
+          "maximum_distance_moment_observed": 18.54194845177963
+        },
+        "kaiser8-radius256-phase-7": {
+          "minimum_margin": 0.8634166870789958,
+          "minimum_bound": 0.9255367057830339,
+          "maximum_distance_moment_observed": 10.431022207260952
+        }
+      },
+      "recurrence": {
+        "cap_quantum": 2.3283064365386963e-10,
+        "l_step_quanta": 1048576,
+        "r_step_quanta": 524288,
+        "partition_check": "bit-identical integer recurrence with carried state",
+        "partition_check_scope": "future-cone and release recurrences only; not preparation, crop, or random-seek qualification"
+      },
+      "artifacts": {
+        "wav": "/private/tmp/deadpan-postmask-limiter-20260921/outputs/mask-alternating-dc-0.8-hard.wav",
+        "wav_sha256": "f546e8ddb8c07bc005130134f21be6cfa86baa04e9910f00db4ebeea7904b40e",
+        "f32le": "/private/tmp/deadpan-postmask-limiter-20260921/outputs/mask-alternating-dc-0.8-hard.f32le",
+        "f32le_sha256": "d4f39286bb5a24fc934674b9cfcec141f6d2706829b84f5f355bc939d7e8a3ff",
+        "meter": "/private/tmp/deadpan-postmask-limiter-20260921/meters/mask-alternating-dc-0.8-hard.json",
+        "meter_sha256": "0eb013acafcf9df1ee771700cf09af0ebe9200924cd716eba8a0393767a16168"
+      },
+      "elapsed_seconds": 0.8333422078285366,
+      "passes_both_retained_finite_detectors": true
+    },
+    {
+      "case": "mask-alternating-dc-16-default96",
+      "policy": "one-sample active islands alternating with authored silence",
+      "boundary_mode": "default96",
+      "input_peak": 16.0,
+      "conditioned_peak": 16.948054941058622,
+      "canonical_peak_before_gain": 0.17654223896936064,
+      "sample_peak": 0.1765422374010086,
+      "gain_min": 1.0,
+      "gain_max": 1.0,
+      "gain_all_unity": true,
+      "shared_gain_channels": true,
+      "maximum_gain_down_step": 0.0,
+      "maximum_gain_up_step": 0.0,
+      "minimum_boundary_envelope_on_active": 0.010416666666666666,
+      "active_output_frames": 4096,
+      "exact_silence_span_is_zero": null,
+      "permitted_tail_nonzero_frames": null,
+      "official_bs1770_meter": {
+        "peak": 0.18245750527785276,
+        "dbtp": -14.776765349881764,
+        "passes_minus_1_dbtp": true,
+        "report": "/private/tmp/deadpan-postmask-limiter-20260921/meters/mask-alternating-dc-16-default96.json"
+      },
+      "independent_finite_detector": {
+        "peak": 0.2391236534558111,
+        "anchor": 8190,
+        "phase": 3,
+        "channel": 0,
+        "dbtp": -12.427549250812655,
+        "passes_minus_1_dbtp": true,
+        "algorithm": "separate post-output 8-phase Kaiser beta10 radius256 finite scan"
+      },
+      "finite_proof_rows": {
+        "raw-sample": {
+          "minimum_margin": 0.8659633233600653,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 0.0
+        },
+        "bs1770-phase-0": {
+          "minimum_margin": 0.8659420492830574,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 0.08713861942451458
+        },
+        "bs1770-phase-1": {
+          "minimum_margin": 0.8659078202328776,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 0.2273408089607193
+        },
+        "bs1770-phase-2": {
+          "minimum_margin": 0.8658927242261611,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 0.2891740524714818
+        },
+        "bs1770-phase-3": {
+          "minimum_margin": 0.8659089255603318,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 0.22281338770834508
+        },
+        "kaiser8-radius256-phase-1": {
+          "minimum_margin": 0.8654668292145665,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 2.033640019962867
+        },
+        "kaiser8-radius256-phase-2": {
+          "minimum_margin": 0.8650447896412411,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 3.7623141123038457
+        },
+        "kaiser8-radius256-phase-3": {
+          "minimum_margin": 0.8647604378027663,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 4.927019242696479
+        },
+        "kaiser8-radius256-phase-4": {
+          "minimum_margin": 0.8646562546780163,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 5.353753321672782
+        },
+        "kaiser8-radius256-phase-5": {
+          "minimum_margin": 0.8647475659007672,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 4.979742553285215
+        },
+        "kaiser8-radius256-phase-6": {
+          "minimum_margin": 0.8650202311066736,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 3.8629058698923044
+        },
+        "kaiser8-radius256-phase-7": {
+          "minimum_margin": 0.8654327741427483,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 2.173129594130542
+        }
+      },
+      "recurrence": {
+        "cap_quantum": 2.3283064365386963e-10,
+        "l_step_quanta": 1048576,
+        "r_step_quanta": 524288,
+        "partition_check": "bit-identical integer recurrence with carried state",
+        "partition_check_scope": "future-cone and release recurrences only; not preparation, crop, or random-seek qualification"
+      },
+      "artifacts": {
+        "wav": "/private/tmp/deadpan-postmask-limiter-20260921/outputs/mask-alternating-dc-16-default96.wav",
+        "wav_sha256": "1eba0613db3fa6ae4732a4bae5877522c1efebdd6d1529dffbc4e59e6d0b859f",
+        "f32le": "/private/tmp/deadpan-postmask-limiter-20260921/outputs/mask-alternating-dc-16-default96.f32le",
+        "f32le_sha256": "5363289129d7d4f106b5a7d91565b018a7e01c9c32bb4789b3779c2bb864e712",
+        "meter": "/private/tmp/deadpan-postmask-limiter-20260921/meters/mask-alternating-dc-16-default96.json",
+        "meter_sha256": "f75377f4c4d3c062d047bb24ee67b63eb0c79dae0b2e7f0b0218ecd7fa7a378d"
+      },
+      "elapsed_seconds": 0.8473051670007408,
+      "passes_both_retained_finite_detectors": true
+    },
+    {
+      "case": "mask-alternating-dc-16-hard",
+      "policy": "one-sample active islands alternating with authored silence",
+      "boundary_mode": "hard",
+      "input_peak": 16.0,
+      "conditioned_peak": 16.948054941058622,
+      "canonical_peak_before_gain": 16.948054941058622,
+      "sample_peak": 0.8510008454322815,
+      "gain_min": 0.03528806637041271,
+      "gain_max": 0.05327149969525635,
+      "gain_all_unity": false,
+      "shared_gain_channels": true,
+      "maximum_gain_down_step": 0.000244140625,
+      "maximum_gain_up_step": 0.0001220703125,
+      "minimum_boundary_envelope_on_active": 1.0,
+      "active_output_frames": 4096,
+      "exact_silence_span_is_zero": null,
+      "permitted_tail_nonzero_frames": null,
+      "official_bs1770_meter": {
+        "peak": 0.8510008454322815,
+        "dbtp": -1.4014001692508442,
+        "passes_minus_1_dbtp": true,
+        "report": "/private/tmp/deadpan-postmask-limiter-20260921/meters/mask-alternating-dc-16-hard.json"
+      },
+      "independent_finite_detector": {
+        "peak": 0.8596469841010249,
+        "anchor": 8190,
+        "phase": 3,
+        "channel": 0,
+        "dbtp": -1.3135971223791,
+        "passes_minus_1_dbtp": true,
+        "algorithm": "separate post-output 8-phase Kaiser beta10 radius256 finite scan"
+      },
+      "finite_proof_rows": {
+        "raw-sample": {
+          "minimum_margin": 0.8659633233600653,
+          "minimum_bound": 0.05109514492203876,
+          "maximum_distance_moment_observed": 0.0
+        },
+        "bs1770-phase-0": {
+          "minimum_margin": 0.8639210119673033,
+          "minimum_bound": 0.054758498979098125,
+          "maximum_distance_moment_observed": 8.365307464753398
+        },
+        "bs1770-phase-1": {
+          "minimum_margin": 0.8606350231500485,
+          "minimum_bound": 0.06290372167550452,
+          "maximum_distance_moment_observed": 21.824717660229055
+        },
+        "bs1770-phase-2": {
+          "minimum_margin": 0.859185806505265,
+          "minimum_bound": 0.05569912726624351,
+          "maximum_distance_moment_observed": 27.76070903726226
+        },
+        "bs1770-phase-3": {
+          "minimum_margin": 0.8607411345856509,
+          "minimum_bound": 0.04915872191497617,
+          "maximum_distance_moment_observed": 21.390085220001126
+        },
+        "kaiser8-radius256-phase-1": {
+          "minimum_margin": 0.8182998853921856,
+          "minimum_bound": 0.04071396307069926,
+          "maximum_distance_moment_observed": 195.22944191643526
+        },
+        "kaiser8-radius256-phase-2": {
+          "minimum_margin": 0.777784086352944,
+          "minimum_bound": 0.0360760712091367,
+          "maximum_distance_moment_observed": 361.1821547811687
+        },
+        "kaiser8-radius256-phase-3": {
+          "minimum_margin": 0.7504863098593666,
+          "minimum_bound": 0.03528806648125644,
+          "maximum_distance_moment_observed": 472.99384729886185
+        },
+        "kaiser8-radius256-phase-4": {
+          "minimum_margin": 0.7404847298833596,
+          "minimum_bound": 0.03828585107409032,
+          "maximum_distance_moment_observed": 513.9603188805869
+        },
+        "kaiser8-radius256-phase-5": {
+          "minimum_margin": 0.7492506072674433,
+          "minimum_bound": 0.03800361377062094,
+          "maximum_distance_moment_observed": 478.05528511537995
+        },
+        "kaiser8-radius256-phase-6": {
+          "minimum_margin": 0.7754264670344645,
+          "minimum_bound": 0.039211533830441424,
+          "maximum_distance_moment_observed": 370.838963509661
+        },
+        "kaiser8-radius256-phase-7": {
+          "minimum_margin": 0.8150305984976307,
+          "minimum_bound": 0.044855355076848,
+          "maximum_distance_moment_observed": 208.6204410365323
+        }
+      },
+      "recurrence": {
+        "cap_quantum": 2.3283064365386963e-10,
+        "l_step_quanta": 1048576,
+        "r_step_quanta": 524288,
+        "partition_check": "bit-identical integer recurrence with carried state",
+        "partition_check_scope": "future-cone and release recurrences only; not preparation, crop, or random-seek qualification"
+      },
+      "artifacts": {
+        "wav": "/private/tmp/deadpan-postmask-limiter-20260921/outputs/mask-alternating-dc-16-hard.wav",
+        "wav_sha256": "904373539e3384f59c2622be4a8ada7d837ab1f9d497376033bfa4a0e95661e9",
+        "f32le": "/private/tmp/deadpan-postmask-limiter-20260921/outputs/mask-alternating-dc-16-hard.f32le",
+        "f32le_sha256": "1e0c17c2630a31f57c2f8c3928fb57795d795c5e8c953ead1bbb67672f0a9cfa",
+        "meter": "/private/tmp/deadpan-postmask-limiter-20260921/meters/mask-alternating-dc-16-hard.json",
+        "meter_sha256": "8939adc93568ffc1e3aee054451237ab1ad8a8995d12c0dd39ad9d7449b2aed2"
+      },
+      "elapsed_seconds": 0.8433149999473244,
+      "passes_both_retained_finite_detectors": true
+    },
+    {
+      "case": "hot-alternating-16-hard",
+      "policy": "unmasked hot alternating control",
+      "boundary_mode": "hard",
+      "input_peak": 16.0,
+      "conditioned_peak": 7.000000054446357,
+      "canonical_peak_before_gain": 7.000000054446357,
+      "sample_peak": 0.8026489019393921,
+      "gain_min": 0.11453436315059662,
+      "gain_max": 0.7811603397130966,
+      "gain_all_unity": false,
+      "shared_gain_channels": true,
+      "maximum_gain_down_step": 0.000244140625,
+      "maximum_gain_up_step": 0.0001220703125,
+      "minimum_boundary_envelope_on_active": 1.0,
+      "active_output_frames": 8192,
+      "exact_silence_span_is_zero": null,
+      "permitted_tail_nonzero_frames": null,
+      "official_bs1770_meter": {
+        "peak": 0.8629938016847518,
+        "dbtp": -1.2798464704878454,
+        "passes_minus_1_dbtp": true,
+        "report": "/private/tmp/deadpan-postmask-limiter-20260921/meters/hot-alternating-16-hard.json"
+      },
+      "independent_finite_detector": {
+        "peak": 0.8654077298876295,
+        "anchor": 8191,
+        "phase": 1,
+        "channel": 0,
+        "dbtp": -1.255584599372873,
+        "passes_minus_1_dbtp": true,
+        "algorithm": "separate post-output 8-phase Kaiser beta10 radius256 finite scan"
+      },
+      "finite_proof_rows": {
+        "raw-sample": {
+          "minimum_margin": 0.8659633233600653,
+          "minimum_bound": 0.12370904523207979,
+          "maximum_distance_moment_observed": 0.0
+        },
+        "bs1770-phase-0": {
+          "minimum_margin": 0.8654589930635274,
+          "minimum_bound": 0.11505744239824796,
+          "maximum_distance_moment_observed": 2.0657368946194063
+        },
+        "bs1770-phase-1": {
+          "minimum_margin": 0.8644230203637336,
+          "minimum_bound": 0.12534893444642412,
+          "maximum_distance_moment_observed": 6.309081072974505
+        },
+        "bs1770-phase-2": {
+          "minimum_margin": 0.8637669471924944,
+          "minimum_bound": 0.12510412449950217,
+          "maximum_distance_moment_observed": 8.996356782370535
+        },
+        "bs1770-phase-3": {
+          "minimum_margin": 0.8638781836608799,
+          "minimum_bound": 0.1148130323246686,
+          "maximum_distance_moment_observed": 8.540732207863456
+        },
+        "kaiser8-radius256-phase-1": {
+          "minimum_margin": 0.8649679507100775,
+          "minimum_bound": 0.11466412466547002,
+          "maximum_distance_moment_observed": 4.077046374350211
+        },
+        "kaiser8-radius256-phase-2": {
+          "minimum_margin": 0.8640090861542234,
+          "minimum_bound": 0.11501196744149818,
+          "maximum_distance_moment_observed": 8.004555595128178
+        },
+        "kaiser8-radius256-phase-3": {
+          "minimum_margin": 0.8632154882897869,
+          "minimum_bound": 0.12445410105570448,
+          "maximum_distance_moment_observed": 11.255132447860397
+        },
+        "kaiser8-radius256-phase-4": {
+          "minimum_margin": 0.8626982516565797,
+          "minimum_bound": 0.145969034118333,
+          "maximum_distance_moment_observed": 13.373733697477245
+        },
+        "kaiser8-radius256-phase-5": {
+          "minimum_margin": 0.8625351910116765,
+          "minimum_bound": 0.12419041358100093,
+          "maximum_distance_moment_observed": 14.041630099000372
+        },
+        "kaiser8-radius256-phase-6": {
+          "minimum_margin": 0.8627595065997771,
+          "minimum_bound": 0.11475378888375794,
+          "maximum_distance_moment_observed": 13.122833450140707
+        },
+        "kaiser8-radius256-phase-7": {
+          "minimum_margin": 0.8633543801983304,
+          "minimum_bound": 0.11441229307039398,
+          "maximum_distance_moment_observed": 10.686231190466113
+        }
+      },
+      "recurrence": {
+        "cap_quantum": 2.3283064365386963e-10,
+        "l_step_quanta": 1048576,
+        "r_step_quanta": 524288,
+        "partition_check": "bit-identical integer recurrence with carried state",
+        "partition_check_scope": "future-cone and release recurrences only; not preparation, crop, or random-seek qualification"
+      },
+      "artifacts": {
+        "wav": "/private/tmp/deadpan-postmask-limiter-20260921/outputs/hot-alternating-16-hard.wav",
+        "wav_sha256": "a13fbcb7f135a2399f3e4ae19f88346b957f82fd11b27e690caa3f7d06e8cd97",
+        "f32le": "/private/tmp/deadpan-postmask-limiter-20260921/outputs/hot-alternating-16-hard.f32le",
+        "f32le_sha256": "0daf90617b2e6597e3998cacc0f2183940fade8574ed3ac817875d47ef7d08e8",
+        "meter": "/private/tmp/deadpan-postmask-limiter-20260921/meters/hot-alternating-16-hard.json",
+        "meter_sha256": "a34295a1dac38efd2f5888de119c0268d895c54a06ed9012550a8c3afe85d830"
+      },
+      "elapsed_seconds": 0.8305099590215832,
+      "passes_both_retained_finite_detectors": true
+    },
+    {
+      "case": "hot-tone-23990-16-hard",
+      "policy": "unmasked near-Nyquist stereo-opposed tone",
+      "boundary_mode": "hard",
+      "input_peak": 15.999996185302734,
+      "conditioned_peak": 7.000009203826544,
+      "canonical_peak_before_gain": 7.000009203826544,
+      "sample_peak": 0.8026003837585449,
+      "gain_min": 0.11453416617587209,
+      "gain_max": 0.8858964708633721,
+      "gain_all_unity": false,
+      "shared_gain_channels": true,
+      "maximum_gain_down_step": 0.000244140625,
+      "maximum_gain_up_step": 0.0001220703125,
+      "minimum_boundary_envelope_on_active": 1.0,
+      "active_output_frames": 8192,
+      "exact_silence_span_is_zero": null,
+      "permitted_tail_nonzero_frames": null,
+      "official_bs1770_meter": {
+        "peak": 0.8632268846631632,
+        "dbtp": -1.277500845672539,
+        "passes_minus_1_dbtp": true,
+        "report": "/private/tmp/deadpan-postmask-limiter-20260921/meters/hot-tone-23990-16-hard.json"
+      },
+      "independent_finite_detector": {
+        "peak": 0.8658145531262603,
+        "anchor": 8191,
+        "phase": 1,
+        "channel": 0,
+        "dbtp": -1.2515023716281612,
+        "passes_minus_1_dbtp": true,
+        "algorithm": "separate post-output 8-phase Kaiser beta10 radius256 finite scan"
+      },
+      "finite_proof_rows": {
+        "raw-sample": {
+          "minimum_margin": 0.8659633233600653,
+          "minimum_bound": 0.12370888353785134,
+          "maximum_distance_moment_observed": 0.0
+        },
+        "bs1770-phase-0": {
+          "minimum_margin": 0.8654589907474923,
+          "minimum_bound": 0.11505724815342386,
+          "maximum_distance_moment_observed": 2.065746381099093
+        },
+        "bs1770-phase-1": {
+          "minimum_margin": 0.8645583834298981,
+          "minimum_bound": 0.12534866327951244,
+          "maximum_distance_moment_observed": 5.754633953964797
+        },
+        "bs1770-phase-2": {
+          "minimum_margin": 0.8641306854102753,
+          "minimum_bound": 0.1935227611649704,
+          "maximum_distance_moment_observed": 7.506485042339876
+        },
+        "bs1770-phase-3": {
+          "minimum_margin": 0.8642133873914251,
+          "minimum_bound": 0.14755517303112942,
+          "maximum_distance_moment_observed": 7.167737727550446
+        },
+        "kaiser8-radius256-phase-1": {
+          "minimum_margin": 0.8649679445066818,
+          "minimum_bound": 0.14632829308600587,
+          "maximum_distance_moment_observed": 4.077071783459054
+        },
+        "kaiser8-radius256-phase-2": {
+          "minimum_margin": 0.8640090743443075,
+          "minimum_bound": 0.18070798534215762,
+          "maximum_distance_moment_observed": 8.004603968543869
+        },
+        "kaiser8-radius256-phase-3": {
+          "minimum_margin": 0.8632154723252992,
+          "minimum_bound": 0.19012419798808997,
+          "maximum_distance_moment_observed": 11.255197838401998
+        },
+        "kaiser8-radius256-phase-4": {
+          "minimum_margin": 0.8626982336651156,
+          "minimum_bound": 0.14596868180664538,
+          "maximum_distance_moment_observed": 13.373807390514166
+        },
+        "kaiser8-radius256-phase-5": {
+          "minimum_margin": 0.862535173513656,
+          "minimum_bound": 0.12419013538610701,
+          "maximum_distance_moment_observed": 14.041701770892425
+        },
+        "kaiser8-radius256-phase-6": {
+          "minimum_margin": 0.8627594921604972,
+          "minimum_bound": 0.11475355735226513,
+          "maximum_distance_moment_observed": 13.122892593431217
+        },
+        "kaiser8-radius256-phase-7": {
+          "minimum_margin": 0.8633543710634264,
+          "minimum_bound": 0.11441209598564021,
+          "maximum_distance_moment_observed": 10.686268607032947
+        }
+      },
+      "recurrence": {
+        "cap_quantum": 2.3283064365386963e-10,
+        "l_step_quanta": 1048576,
+        "r_step_quanta": 524288,
+        "partition_check": "bit-identical integer recurrence with carried state",
+        "partition_check_scope": "future-cone and release recurrences only; not preparation, crop, or random-seek qualification"
+      },
+      "artifacts": {
+        "wav": "/private/tmp/deadpan-postmask-limiter-20260921/outputs/hot-tone-23990-16-hard.wav",
+        "wav_sha256": "07c73c176dd6a3bab70de423f758d5c5344d8ec1e10b2d1587c8d5d45ab0ee79",
+        "f32le": "/private/tmp/deadpan-postmask-limiter-20260921/outputs/hot-tone-23990-16-hard.f32le",
+        "f32le_sha256": "e8a78d45ded6d78b07314bdb3add6799653718ab3dcafcb1d0d486db5c2ad036",
+        "meter": "/private/tmp/deadpan-postmask-limiter-20260921/meters/hot-tone-23990-16-hard.json",
+        "meter_sha256": "f43544d504b9aab683805daf2672fbae3b171ea001d812a7512aa335b8200ed3"
+      },
+      "elapsed_seconds": 0.856449665967375,
+      "passes_both_retained_finite_detectors": true
+    },
+    {
+      "case": "quiet-tone-1000-0.1-hard",
+      "policy": "ordinary quiet unity-gain control",
+      "boundary_mode": "hard",
+      "input_peak": 0.09978589415550232,
+      "conditioned_peak": 0.10033631356257036,
+      "canonical_peak_before_gain": 0.10033631356257036,
+      "sample_peak": 0.10033631324768066,
+      "gain_min": 1.0,
+      "gain_max": 1.0,
+      "gain_all_unity": true,
+      "shared_gain_channels": true,
+      "maximum_gain_down_step": 0.0,
+      "maximum_gain_up_step": 0.0,
+      "minimum_boundary_envelope_on_active": 1.0,
+      "active_output_frames": 8192,
+      "exact_silence_span_is_zero": null,
+      "permitted_tail_nonzero_frames": null,
+      "official_bs1770_meter": {
+        "peak": 0.10047190708610287,
+        "dbtp": -19.959107083880692,
+        "passes_minus_1_dbtp": true,
+        "report": "/private/tmp/deadpan-postmask-limiter-20260921/meters/quiet-tone-1000-0.1-hard.json"
+      },
+      "independent_finite_detector": {
+        "peak": 0.10052280037244667,
+        "anchor": 8171,
+        "phase": 2,
+        "channel": 0,
+        "dbtp": -19.95470842599027,
+        "passes_minus_1_dbtp": true,
+        "algorithm": "separate post-output 8-phase Kaiser beta10 radius256 finite scan"
+      },
+      "finite_proof_rows": {
+        "raw-sample": {
+          "minimum_margin": 0.8659633233600653,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 0.0
+        },
+        "bs1770-phase-0": {
+          "minimum_margin": 0.8659434187624224,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 0.08152923194543013
+        },
+        "bs1770-phase-1": {
+          "minimum_margin": 0.8659093247880462,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 0.22117815099050311
+        },
+        "bs1770-phase-2": {
+          "minimum_margin": 0.8659005066179841,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 0.2572973755647575
+        },
+        "bs1770-phase-3": {
+          "minimum_margin": 0.8659211637905924,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 0.17268559656102792
+        },
+        "kaiser8-radius256-phase-1": {
+          "minimum_margin": 0.8655839475695751,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 1.5539232378478158
+        },
+        "kaiser8-radius256-phase-2": {
+          "minimum_margin": 0.8652618797700632,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 2.8731129446488293
+        },
+        "kaiser8-radius256-phase-3": {
+          "minimum_margin": 0.8650453445349273,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 3.760041267765217
+        },
+        "kaiser8-radius256-phase-4": {
+          "minimum_margin": 0.8649667511187922,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 4.081959900254675
+        },
+        "kaiser8-radius256-phase-5": {
+          "minimum_margin": 0.8650376043141503,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 3.7917452120675956
+        },
+        "kaiser8-radius256-phase-6": {
+          "minimum_margin": 0.8652471172603241,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 2.933580184540142
+        },
+        "kaiser8-radius256-phase-7": {
+          "minimum_margin": 0.8655635271512024,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 1.6375652715025264
+        }
+      },
+      "recurrence": {
+        "cap_quantum": 2.3283064365386963e-10,
+        "l_step_quanta": 1048576,
+        "r_step_quanta": 524288,
+        "partition_check": "bit-identical integer recurrence with carried state",
+        "partition_check_scope": "future-cone and release recurrences only; not preparation, crop, or random-seek qualification"
+      },
+      "artifacts": {
+        "wav": "/private/tmp/deadpan-postmask-limiter-20260921/outputs/quiet-tone-1000-0.1-hard.wav",
+        "wav_sha256": "31a8979c0f09996692b0f8fdcbe167c24aa218ac7e8b1c0e229ebded2fdce393",
+        "f32le": "/private/tmp/deadpan-postmask-limiter-20260921/outputs/quiet-tone-1000-0.1-hard.f32le",
+        "f32le_sha256": "f65bbef64a2d61df67f182805b6be994c74a12c2dd2cb40fe6ff6917f44f2c2e",
+        "meter": "/private/tmp/deadpan-postmask-limiter-20260921/meters/quiet-tone-1000-0.1-hard.json",
+        "meter_sha256": "22a6fed3e5ae3b8b91bef71c1d0c8582f7f6f24ea39c2878ccb3a0d4d2a27d6a"
+      },
+      "elapsed_seconds": 0.8287862921133637,
+      "passes_both_retained_finite_detectors": true
+    },
+    {
+      "case": "quiet-dc-0.1-hard",
+      "policy": "quiet DC unity-gain control",
+      "boundary_mode": "hard",
+      "input_peak": 0.10000000149011612,
+      "conditioned_peak": 0.105925344960027,
+      "canonical_peak_before_gain": 0.105925344960027,
+      "sample_peak": 0.10592534393072128,
+      "gain_min": 1.0,
+      "gain_max": 1.0,
+      "gain_all_unity": true,
+      "shared_gain_channels": true,
+      "maximum_gain_down_step": 0.0,
+      "maximum_gain_up_step": 0.0,
+      "minimum_boundary_envelope_on_active": 1.0,
+      "active_output_frames": 8192,
+      "exact_silence_span_is_zero": null,
+      "permitted_tail_nonzero_frames": null,
+      "official_bs1770_meter": {
+        "peak": 0.11373795049712498,
+        "dbtp": -18.881892035798476,
+        "passes_minus_1_dbtp": true,
+        "report": "/private/tmp/deadpan-postmask-limiter-20260921/meters/quiet-dc-0.1-hard.json"
+      },
+      "independent_finite_detector": {
+        "peak": 0.11556158350610632,
+        "anchor": 0,
+        "phase": 4,
+        "channel": 0,
+        "dbtp": -18.743730315571646,
+        "passes_minus_1_dbtp": true,
+        "algorithm": "separate post-output 8-phase Kaiser beta10 radius256 finite scan"
+      },
+      "finite_proof_rows": {
+        "raw-sample": {
+          "minimum_margin": 0.8659633233600653,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 0.0
+        },
+        "bs1770-phase-0": {
+          "minimum_margin": 0.8659418273674342,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 0.08804758581698555
+        },
+        "bs1770-phase-1": {
+          "minimum_margin": 0.8659045488263046,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 0.24074049028379108
+        },
+        "bs1770-phase-2": {
+          "minimum_margin": 0.8658956749213652,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 0.27708800491554153
+        },
+        "bs1770-phase-3": {
+          "minimum_margin": 0.8659192328672786,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 0.18059465845440556
+        },
+        "kaiser8-radius256-phase-1": {
+          "minimum_margin": 0.8653705824695628,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 2.4278666874984647
+        },
+        "kaiser8-radius256-phase-2": {
+          "minimum_margin": 0.864867186982028,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 4.489774604440619
+        },
+        "kaiser8-radius256-phase-3": {
+          "minimum_margin": 0.8645290166638634,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 5.874920227643048
+        },
+        "kaiser8-radius256-phase-4": {
+          "minimum_margin": 0.8644070486815456,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 6.374501083216625
+        },
+        "kaiser8-radius256-phase-5": {
+          "minimum_margin": 0.8645196738048592,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 5.913188578124315
+        },
+        "kaiser8-radius256-phase-6": {
+          "minimum_margin": 0.8648499236308026,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 4.560485291060056
+        },
+        "kaiser8-radius256-phase-7": {
+          "minimum_margin": 0.8653480268157262,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 2.5202546456131514
+        }
+      },
+      "recurrence": {
+        "cap_quantum": 2.3283064365386963e-10,
+        "l_step_quanta": 1048576,
+        "r_step_quanta": 524288,
+        "partition_check": "bit-identical integer recurrence with carried state",
+        "partition_check_scope": "future-cone and release recurrences only; not preparation, crop, or random-seek qualification"
+      },
+      "artifacts": {
+        "wav": "/private/tmp/deadpan-postmask-limiter-20260921/outputs/quiet-dc-0.1-hard.wav",
+        "wav_sha256": "f2db825cdd268a48fff478af9966048e635d080722502d4024e7623f57310311",
+        "f32le": "/private/tmp/deadpan-postmask-limiter-20260921/outputs/quiet-dc-0.1-hard.f32le",
+        "f32le_sha256": "54580287045be502e83f98ec0c77312952ab39aca087a22e59e2f9c9ed18414a",
+        "meter": "/private/tmp/deadpan-postmask-limiter-20260921/meters/quiet-dc-0.1-hard.json",
+        "meter_sha256": "02aa029ea951e8456432a7eb516223fd96b71c2c5442310d594b0c5900d69abc"
+      },
+      "elapsed_seconds": 0.8405075410846621,
+      "passes_both_retained_finite_detectors": true
+    },
+    {
+      "case": "ordinary-silent-gap-default96",
+      "policy": "authored silent gap; direct signal and tails suppressed exactly",
+      "boundary_mode": "default96",
+      "input_peak": 0.800000011920929,
+      "conditioned_peak": 0.8000000044583933,
+      "canonical_peak_before_gain": 0.8000000044583933,
+      "sample_peak": 0.800000011920929,
+      "gain_min": 1.0,
+      "gain_max": 1.0,
+      "gain_all_unity": true,
+      "shared_gain_channels": true,
+      "maximum_gain_down_step": 0.0,
+      "maximum_gain_up_step": 0.0,
+      "minimum_boundary_envelope_on_active": 0.010416666666666666,
+      "active_output_frames": 7680,
+      "exact_silence_span_is_zero": true,
+      "permitted_tail_nonzero_frames": null,
+      "official_bs1770_meter": {
+        "peak": 0.8008154132767231,
+        "dbtp": -1.929351531838247,
+        "passes_minus_1_dbtp": true,
+        "report": "/private/tmp/deadpan-postmask-limiter-20260921/meters/ordinary-silent-gap-default96.json"
+      },
+      "independent_finite_detector": {
+        "peak": 0.8000122600234814,
+        "anchor": 2948,
+        "phase": 3,
+        "channel": 0,
+        "dbtp": -1.9380671496674378,
+        "passes_minus_1_dbtp": true,
+        "algorithm": "separate post-output 8-phase Kaiser beta10 radius256 finite scan"
+      },
+      "finite_proof_rows": {
+        "raw-sample": {
+          "minimum_margin": 0.8659633233600653,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 0.0
+        },
+        "bs1770-phase-0": {
+          "minimum_margin": 0.8658041203188788,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 0.6520956566999797
+        },
+        "bs1770-phase-1": {
+          "minimum_margin": 0.8655305357120511,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 1.7726982062663335
+        },
+        "bs1770-phase-2": {
+          "minimum_margin": 0.8654600124065078,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 2.0615616657714173
+        },
+        "bs1770-phase-3": {
+          "minimum_margin": 0.865625867865831,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 1.382217704384153
+        },
+        "kaiser8-radius256-phase-1": {
+          "minimum_margin": 0.8629295936133057,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 12.42615704272735
+        },
+        "kaiser8-radius256-phase-2": {
+          "minimum_margin": 0.8603541702507475,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 22.975091135765947
+        },
+        "kaiser8-radius256-phase-3": {
+          "minimum_margin": 0.858622642318533,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 30.067429546116102
+        },
+        "kaiser8-radius256-phase-4": {
+          "minimum_margin": 0.8579941308093145,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 32.64181268787525
+        },
+        "kaiser8-radius256-phase-5": {
+          "minimum_margin": 0.8585606983717833,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 30.32115195200334
+        },
+        "kaiser8-radius256-phase-6": {
+          "minimum_margin": 0.8602360635157629,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 23.458856322263017
+        },
+        "kaiser8-radius256-phase-7": {
+          "minimum_margin": 0.8627662413110645,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 13.095248072707504
+        }
+      },
+      "recurrence": {
+        "cap_quantum": 2.3283064365386963e-10,
+        "l_step_quanta": 1048576,
+        "r_step_quanta": 524288,
+        "partition_check": "bit-identical integer recurrence with carried state",
+        "partition_check_scope": "future-cone and release recurrences only; not preparation, crop, or random-seek qualification"
+      },
+      "artifacts": {
+        "wav": "/private/tmp/deadpan-postmask-limiter-20260921/outputs/ordinary-silent-gap-default96.wav",
+        "wav_sha256": "dd847fc383443515e2e6a027f281165dba7d49acc2dcbbeb49bb4ffdb3ce0b8e",
+        "f32le": "/private/tmp/deadpan-postmask-limiter-20260921/outputs/ordinary-silent-gap-default96.f32le",
+        "f32le_sha256": "5dd1ae9b9e3eb1f8d039a708c3d97006a97d92b1b2222cfde26dcbc9de7c195e",
+        "meter": "/private/tmp/deadpan-postmask-limiter-20260921/meters/ordinary-silent-gap-default96.json",
+        "meter_sha256": "fbbd6eb14443259c07a8fee8de61b3a8fcccc96e954096614462acbbb668616a"
+      },
+      "elapsed_seconds": 0.8303030829411,
+      "passes_both_retained_finite_detectors": true
+    },
+    {
+      "case": "permitted-tail-default96",
+      "policy": "selected tail remains canonical signal through nominal hold; no silence mask there",
+      "boundary_mode": "default96",
+      "input_peak": 0.4999999701976776,
+      "conditioned_peak": 0.4999999716992726,
+      "canonical_peak_before_gain": 0.4999999716992726,
+      "sample_peak": 0.4999999701976776,
+      "gain_min": 1.0,
+      "gain_max": 1.0,
+      "gain_all_unity": true,
+      "shared_gain_channels": true,
+      "maximum_gain_down_step": 0.0,
+      "maximum_gain_up_step": 0.0,
+      "minimum_boundary_envelope_on_active": 0.010416666666666666,
+      "active_output_frames": 8192,
+      "exact_silence_span_is_zero": null,
+      "permitted_tail_nonzero_frames": 512,
+      "official_bs1770_meter": {
+        "peak": 0.5005096355125715,
+        "dbtp": -6.011751146524032,
+        "passes_minus_1_dbtp": true,
+        "report": "/private/tmp/deadpan-postmask-limiter-20260921/meters/permitted-tail-default96.json"
+      },
+      "independent_finite_detector": {
+        "peak": 0.5000008734669259,
+        "anchor": 3068,
+        "phase": 6,
+        "channel": 0,
+        "dbtp": -6.0205847396182355,
+        "passes_minus_1_dbtp": true,
+        "algorithm": "separate post-output 8-phase Kaiser beta10 radius256 finite scan"
+      },
+      "finite_proof_rows": {
+        "raw-sample": {
+          "minimum_margin": 0.8659633233600653,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 0.0
+        },
+        "bs1770-phase-0": {
+          "minimum_margin": 0.8658638214676682,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 0.407559751258773
+        },
+        "bs1770-phase-1": {
+          "minimum_margin": 0.8656928310803489,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 1.1079363777184257
+        },
+        "bs1770-phase-2": {
+          "minimum_margin": 0.8656487540136608,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 1.2884760428730562
+        },
+        "bs1770-phase-3": {
+          "minimum_margin": 0.8657524136776547,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 0.8638860591542827
+        },
+        "kaiser8-radius256-phase-1": {
+          "minimum_margin": 0.8640672422943734,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 7.766348045074141
+        },
+        "kaiser8-radius256-phase-2": {
+          "minimum_margin": 0.8624576026514518,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 14.359432022481123
+        },
+        "kaiser8-radius256-phase-3": {
+          "minimum_margin": 0.861375397722397,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 18.79214341188939
+        },
+        "kaiser8-radius256-phase-4": {
+          "minimum_margin": 0.860982578084699,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 20.40113264790034
+        },
+        "kaiser8-radius256-phase-5": {
+          "minimum_margin": 0.8613366828052803,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 18.950719712399607
+        },
+        "kaiser8-radius256-phase-6": {
+          "minimum_margin": 0.8623837859670022,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 14.661785161986813
+        },
+        "kaiser8-radius256-phase-7": {
+          "minimum_margin": 0.8639651471504067,
+          "minimum_bound": 1.0,
+          "maximum_distance_moment_observed": 8.184529754761789
+        }
+      },
+      "recurrence": {
+        "cap_quantum": 2.3283064365386963e-10,
+        "l_step_quanta": 1048576,
+        "r_step_quanta": 524288,
+        "partition_check": "bit-identical integer recurrence with carried state",
+        "partition_check_scope": "future-cone and release recurrences only; not preparation, crop, or random-seek qualification"
+      },
+      "artifacts": {
+        "wav": "/private/tmp/deadpan-postmask-limiter-20260921/outputs/permitted-tail-default96.wav",
+        "wav_sha256": "22bfc60e99aa8999bae1d89136b21b4a75f0541b062058215d040eb90c4d5bb5",
+        "f32le": "/private/tmp/deadpan-postmask-limiter-20260921/outputs/permitted-tail-default96.f32le",
+        "f32le_sha256": "1a55baf357cca0c473878eff55ef4c172734c02c7aa7365e6f682700da0f5435",
+        "meter": "/private/tmp/deadpan-postmask-limiter-20260921/meters/permitted-tail-default96.json",
+        "meter_sha256": "8ed68f7622af0165135dce457bdd33a2076c1c7888c17c98d595956eb358e0fa"
+      },
+      "elapsed_seconds": 0.8598257079720497,
+      "passes_both_retained_finite_detectors": true
+    },
+    {
+      "case": "stereo-opposed-peaks-hard",
+      "policy": "opposed stereo impulses require one shared gain trajectory",
+      "boundary_mode": "hard",
+      "input_peak": 16.0,
+      "conditioned_peak": 12.051945222280448,
+      "canonical_peak_before_gain": 12.051945222280448,
+      "sample_peak": 0.7371874451637268,
+      "gain_min": 0.06096132006496191,
+      "gain_max": 1.0,
+      "gain_all_unity": false,
+      "shared_gain_channels": true,
+      "maximum_gain_down_step": 0.000244140625,
+      "maximum_gain_up_step": 0.0001220703125,
+      "minimum_boundary_envelope_on_active": 1.0,
+      "active_output_frames": 8192,
+      "exact_silence_span_is_zero": null,
+      "permitted_tail_nonzero_frames": null,
+      "official_bs1770_meter": {
+        "peak": 0.8467550003138058,
+        "dbtp": -1.4448446010234375,
+        "passes_minus_1_dbtp": true,
+        "report": "/private/tmp/deadpan-postmask-limiter-20260921/meters/stereo-opposed-peaks-hard.json"
+      },
+      "independent_finite_detector": {
+        "peak": 0.8629927021155495,
+        "anchor": 4097,
+        "phase": 2,
+        "channel": 0,
+        "dbtp": -1.2798575374767474,
+        "passes_minus_1_dbtp": true,
+        "algorithm": "separate post-output 8-phase Kaiser beta10 radius256 finite scan"
+      },
+      "finite_proof_rows": {
+        "raw-sample": {
+          "minimum_margin": 0.8659633233600653,
+          "minimum_bound": 0.07185257710590633,
+          "maximum_distance_moment_observed": 0.0
+        },
+        "bs1770-phase-0": {
+          "minimum_margin": 0.864787347298637,
+          "minimum_bound": 0.06413992975979452,
+          "maximum_distance_moment_observed": 4.816797947610251
+        },
+        "bs1770-phase-1": {
+          "minimum_margin": 0.862539139734919,
+          "minimum_bound": 0.06242681106142011,
+          "maximum_distance_moment_observed": 14.025456128599403
+        },
+        "bs1770-phase-2": {
+          "minimum_margin": 0.8614288439038158,
+          "minimum_bound": 0.06225413270432902,
+          "maximum_distance_moment_observed": 18.573227852798247
+        },
+        "bs1770-phase-3": {
+          "minimum_margin": 0.8620607319596487,
+          "minimum_bound": 0.0639153256962977,
+          "maximum_distance_moment_observed": 15.985014376106209
+        },
+        "kaiser8-radius256-phase-1": {
+          "minimum_margin": 0.8638331023777783,
+          "minimum_bound": 0.06399803541493546,
+          "maximum_distance_moment_observed": 8.725385143447545
+        },
+        "kaiser8-radius256-phase-2": {
+          "minimum_margin": 0.8619644553043811,
+          "minimum_bound": 0.06116750722447876,
+          "maximum_distance_moment_observed": 16.37936355608225
+        },
+        "kaiser8-radius256-phase-3": {
+          "minimum_margin": 0.860437425771505,
+          "minimum_bound": 0.062210808078416356,
+          "maximum_distance_moment_observed": 22.634076522743108
+        },
+        "kaiser8-radius256-phase-4": {
+          "minimum_margin": 0.8595055849897978,
+          "minimum_bound": 0.0671014435930795,
+          "maximum_distance_moment_observed": 26.450896364616
+        },
+        "kaiser8-radius256-phase-5": {
+          "minimum_margin": 0.8593032071979737,
+          "minimum_bound": 0.06203158904518201,
+          "maximum_distance_moment_observed": 27.279835799927316
+        },
+        "kaiser8-radius256-phase-6": {
+          "minimum_margin": 0.8598721942230764,
+          "minimum_bound": 0.060961320225747045,
+          "maximum_distance_moment_observed": 24.949264945106563
+        },
+        "kaiser8-radius256-phase-7": {
+          "minimum_margin": 0.8611589744325076,
+          "minimum_bound": 0.06377052211205542,
+          "maximum_distance_moment_observed": 19.6786132072764
+        }
+      },
+      "recurrence": {
+        "cap_quantum": 2.3283064365386963e-10,
+        "l_step_quanta": 1048576,
+        "r_step_quanta": 524288,
+        "partition_check": "bit-identical integer recurrence with carried state",
+        "partition_check_scope": "future-cone and release recurrences only; not preparation, crop, or random-seek qualification"
+      },
+      "artifacts": {
+        "wav": "/private/tmp/deadpan-postmask-limiter-20260921/outputs/stereo-opposed-peaks-hard.wav",
+        "wav_sha256": "5839deebcaf603ed91c9367221a409bc1e13a0fc418397bde365324f13ae52a1",
+        "f32le": "/private/tmp/deadpan-postmask-limiter-20260921/outputs/stereo-opposed-peaks-hard.f32le",
+        "f32le_sha256": "eb19f0a3162cc0cdea7b07459ce7d8df9d38735ef5a390991603a66a2a49ddec",
+        "meter": "/private/tmp/deadpan-postmask-limiter-20260921/meters/stereo-opposed-peaks-hard.json",
+        "meter_sha256": "7ee9aaa72a8291571dd472316bd581d16ef6f1d5e7614622b0ef8b3e9cdfafc3"
+      },
+      "elapsed_seconds": 0.8361147497780621,
+      "passes_both_retained_finite_detectors": true
+    }
+  ],
+  "failures": [],
+  "elapsed_seconds": 11.034670958062634,
+  "all_cases_pass_both_retained_finite_detectors": true,
+  "all_default_alternating_one_sample_fragments_nonzero": true
+}

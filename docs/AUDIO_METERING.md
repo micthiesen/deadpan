@@ -60,6 +60,9 @@ true-peak amplitudes, and dBTP. Digital silence has a zero amplitude and `None`
 for dBTP. This finite standardized reconstruction is not an exact continuous-time
 oracle. Passing it alone does not qualify a limiter against other reconstruction
 filters, difficult near-Nyquist signals, or the final encoded file.
+The [post-mask limiter experiment](qualification/audio-limiter-postmask-2026-09-22.md)
+retains concrete outputs that pass this meter while exceeding the intended
+ceiling under a broader complete-sinc reconstruction. The limiter is unadopted.
 
 ## Qualification
 

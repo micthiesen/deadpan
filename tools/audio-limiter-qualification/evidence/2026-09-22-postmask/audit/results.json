@@ -1,0 +1,2575 @@
+{
+  "environment": {
+    "python": "3.12.13 (main, Mar 25 2026, 03:16:06) [Clang 22.1.1 ]",
+    "platform": "macOS-26.5.2-arm64-arm-64bit",
+    "numpy": "2.5.3",
+    "mpmath": "1.3.0",
+    "argv": [
+      "/tmp/deadpan-postmask-audit-20260922/audit.py"
+    ],
+    "started_epoch_seconds": 1790125530.100831,
+    "script_sha256": "00fbf6ec05a329ef83909dc71b19cec335fcc6c81c721cd633f07b4efacf1709",
+    "oracle_sha256": "d5e8166bdf9b2e71d6b7a9c4fa3e3cb5dcafdc304ebe93a563bae82d2ece209e",
+    "report_hashes": {
+      "results.json": "38860b462f975fe64d0de7aae88a7aafcdb99e549aeec7a012b297059e784dcc",
+      "shortened-edge-results.json": "fe1a3a5500202d38aa46d7399e2726a33ca50ef9f64caac1e1dacce6a0e70015"
+    },
+    "wav_hashes_verified_before_audit": {
+      "mask-alternating-dc-0.1-default96.wav": "38805bcaba22ae5a710c0051656a56a8e87cc1a9603054dec95feeb54bf6a472",
+      "mask-alternating-dc-0.1-hard.wav": "d525f929a1e30c731df329776f27157a99acf88372b7778124800123871cda85",
+      "mask-alternating-dc-0.8-default96.wav": "1c56ecba338254b7a1735df35b730d8b66341d5eb4ee3426572d6d46e328a678",
+      "mask-alternating-dc-0.8-hard.wav": "f546e8ddb8c07bc005130134f21be6cfa86baa04e9910f00db4ebeea7904b40e",
+      "mask-alternating-dc-16-default96.wav": "1eba0613db3fa6ae4732a4bae5877522c1efebdd6d1529dffbc4e59e6d0b859f",
+      "mask-alternating-dc-16-hard.wav": "904373539e3384f59c2622be4a8ada7d837ab1f9d497376033bfa4a0e95661e9",
+      "hot-alternating-16-hard.wav": "a13fbcb7f135a2399f3e4ae19f88346b957f82fd11b27e690caa3f7d06e8cd97",
+      "hot-tone-23990-16-hard.wav": "07c73c176dd6a3bab70de423f758d5c5344d8ec1e10b2d1587c8d5d45ab0ee79",
+      "quiet-tone-1000-0.1-hard.wav": "31a8979c0f09996692b0f8fdcbe167c24aa218ac7e8b1c0e229ebded2fdce393",
+      "quiet-dc-0.1-hard.wav": "f2db825cdd268a48fff478af9966048e635d080722502d4024e7623f57310311",
+      "ordinary-silent-gap-default96.wav": "dd847fc383443515e2e6a027f281165dba7d49acc2dcbbeb49bb4ffdb3ce0b8e",
+      "permitted-tail-default96.wav": "22bfc60e99aa8999bae1d89136b21b4a75f0541b062058215d040eb90c4d5bb5",
+      "stereo-opposed-peaks-hard.wav": "5839deebcaf603ed91c9367221a409bc1e13a0fc418397bde365324f13ae52a1",
+      "mask-alternating-dc-0.1-shortened-edge.wav": "d525f929a1e30c731df329776f27157a99acf88372b7778124800123871cda85",
+      "mask-alternating-dc-0.8-shortened-edge.wav": "f546e8ddb8c07bc005130134f21be6cfa86baa04e9910f00db4ebeea7904b40e",
+      "mask-alternating-dc-16-shortened-edge.wav": "904373539e3384f59c2622be4a8ada7d837ab1f9d497376033bfa4a0e95661e9"
+    },
+    "hard_shortened_byte_identity": {
+      "mask-alternating-dc-0.1": true,
+      "mask-alternating-dc-0.8": true,
+      "mask-alternating-dc-16": true
+    },
+    "review_provenance": "Parent reran earlier independently authored oracle after new reviewer agents hit usage limit. No fresh independent-agent review completed.",
+    "reconstruction": "Complete finite zero-extended sinc. All samples included, no window or fixed radius.",
+    "limits": "Numerical FFT grid, analytic tail/curvature bounds evaluated in float64, and 80-digit witnesses. Not an interval certificate or universal qualification."
+  },
+  "results": [
+    {
+      "case": "mask-alternating-dc-0.1-default96",
+      "wav_sha256": "38805bcaba22ae5a710c0051656a56a8e87cc1a9603054dec95feeb54bf6a472",
+      "frames": 8192,
+      "masked_odd_frames_verified_zero": 4096,
+      "active_even_frames_nonzero": 4096,
+      "channels": [
+        {
+          "sample_peak": 0.0011033889604732394,
+          "sample_l1": 4.266633899183944,
+          "grid_peak": 0.0021990833735571285,
+          "grid_coordinate": 8190.40625,
+          "direct_at_grid_peak": 0.0021990833735571285,
+          "refined_peak": 0.0021991441457334068,
+          "refined_dbtp": -53.15492606630934,
+          "refined_coordinate": 8190.403466767513,
+          "refined_signed_value": 0.0021991441457334068,
+          "exceeds_minus_1_dbtp": false,
+          "top_refined": [
+            {
+              "magnitude": 0.0021991441457334068,
+              "coordinate": 8190.403466767513,
+              "value": 0.0021991441457334068
+            },
+            {
+              "magnitude": 0.002087909827396592,
+              "coordinate": -0.4121612626061865,
+              "value": 0.002087909827396592
+            },
+            {
+              "magnitude": 0.00197677252221318,
+              "coordinate": 8188.380307991992,
+              "value": 0.00197677252221318
+            },
+            {
+              "magnitude": 0.0019147763957255207,
+              "coordinate": 1.6090503078443015,
+              "value": 0.0019147763957255207
+            },
+            {
+              "magnitude": 0.0018696126921949685,
+              "coordinate": 8186.3718393962745,
+              "value": 0.0018696126921949685
+            },
+            {
+              "magnitude": 0.0018513772481642448,
+              "coordinate": 3.6192596945021727,
+              "value": 0.0018513772481642448
+            },
+            {
+              "magnitude": 0.0018154700599458688,
+              "coordinate": 5.627298560083875,
+              "value": 0.0018154700599458688
+            },
+            {
+              "magnitude": 0.0017997473310705334,
+              "coordinate": 8184.367331012244,
+              "value": 0.0017997473310705334
+            }
+          ],
+          "scan_start": -4,
+          "scan_end": 8195.9921875,
+          "outside_distance": 4,
+          "outside_tail_upper": 0.3395279377092861,
+          "sinc_second_derivative_bound": 0.07718997669019033,
+          "between_grid_points_allowance": 5.889127860274531e-07,
+          "analytic_global_upper_before_numeric_error": 0.3395279377092861,
+          "numerical_allowance_not_a_rigorous_error_certificate": 4.266633899183944e-10,
+          "qualified_numerical_global_upper": 0.33952793813594945,
+          "fft_direct_max_observed_difference": 5.421010862427522e-19,
+          "fft_length": 32768,
+          "fractional_phases": 128,
+          "grid_points": 1049600,
+          "local_maxima": 8070,
+          "local_maxima_refined": 16,
+          "channel": 0,
+          "identical_channel_reused": false,
+          "original_case": "mask-alternating-dc-0.1-default96",
+          "original_channel": 0
+        },
+        {
+          "sample_peak": 0.0011033889604732394,
+          "sample_l1": 4.266633899183944,
+          "grid_peak": 0.0021990833735571285,
+          "grid_coordinate": 8190.40625,
+          "direct_at_grid_peak": 0.0021990833735571285,
+          "refined_peak": 0.0021991441457334068,
+          "refined_dbtp": -53.15492606630934,
+          "refined_coordinate": 8190.403466767513,
+          "refined_signed_value": 0.0021991441457334068,
+          "exceeds_minus_1_dbtp": false,
+          "top_refined": [
+            {
+              "magnitude": 0.0021991441457334068,
+              "coordinate": 8190.403466767513,
+              "value": 0.0021991441457334068
+            },
+            {
+              "magnitude": 0.002087909827396592,
+              "coordinate": -0.4121612626061865,
+              "value": 0.002087909827396592
+            },
+            {
+              "magnitude": 0.00197677252221318,
+              "coordinate": 8188.380307991992,
+              "value": 0.00197677252221318
+            },
+            {
+              "magnitude": 0.0019147763957255207,
+              "coordinate": 1.6090503078443015,
+              "value": 0.0019147763957255207
+            },
+            {
+              "magnitude": 0.0018696126921949685,
+              "coordinate": 8186.3718393962745,
+              "value": 0.0018696126921949685
+            },
+            {
+              "magnitude": 0.0018513772481642448,
+              "coordinate": 3.6192596945021727,
+              "value": 0.0018513772481642448
+            },
+            {
+              "magnitude": 0.0018154700599458688,
+              "coordinate": 5.627298560083875,
+              "value": 0.0018154700599458688
+            },
+            {
+              "magnitude": 0.0017997473310705334,
+              "coordinate": 8184.367331012244,
+              "value": 0.0017997473310705334
+            }
+          ],
+          "scan_start": -4,
+          "scan_end": 8195.9921875,
+          "outside_distance": 4,
+          "outside_tail_upper": 0.3395279377092861,
+          "sinc_second_derivative_bound": 0.07718997669019033,
+          "between_grid_points_allowance": 5.889127860274531e-07,
+          "analytic_global_upper_before_numeric_error": 0.3395279377092861,
+          "numerical_allowance_not_a_rigorous_error_certificate": 4.266633899183944e-10,
+          "qualified_numerical_global_upper": 0.33952793813594945,
+          "fft_direct_max_observed_difference": 5.421010862427522e-19,
+          "fft_length": 32768,
+          "fractional_phases": 128,
+          "grid_points": 1049600,
+          "local_maxima": 8070,
+          "local_maxima_refined": 16,
+          "channel": 1,
+          "identical_channel_reused": true,
+          "original_case": "mask-alternating-dc-0.1-default96",
+          "original_channel": 0
+        }
+      ],
+      "worst_refined_dbtp": -53.15492606630934,
+      "exceeds_minus_1_dbtp": false,
+      "qualified_numerical_global_upper": 0.33952793813594945
+    },
+    {
+      "case": "mask-alternating-dc-0.1-hard",
+      "wav_sha256": "d525f929a1e30c731df329776f27157a99acf88372b7778124800123871cda85",
+      "frames": 8192,
+      "masked_odd_frames_verified_zero": 4096,
+      "active_even_frames_nonzero": 4096,
+      "channels": [
+        {
+          "sample_peak": 0.10592534393072128,
+          "sample_l1": 409.59683952480555,
+          "grid_peak": 0.2111120025785437,
+          "grid_coordinate": 8190.40625,
+          "direct_at_grid_peak": 0.21111200257854368,
+          "refined_peak": 0.21111783672851303,
+          "refined_dbtp": -13.509501457435299,
+          "refined_coordinate": 8190.403466763836,
+          "refined_signed_value": 0.21111783672851303,
+          "exceeds_minus_1_dbtp": false,
+          "top_refined": [
+            {
+              "magnitude": 0.21111783672851303,
+              "coordinate": 8190.403466763836,
+              "value": 0.21111783672851303
+            },
+            {
+              "magnitude": 0.20043934088524937,
+              "coordinate": -0.41216126274519777,
+              "value": 0.20043934088524937
+            },
+            {
+              "magnitude": 0.18977015196759903,
+              "coordinate": 8188.380307991518,
+              "value": 0.18977015196759903
+            },
+            {
+              "magnitude": 0.18381853376097185,
+              "coordinate": 1.6090503259766582,
+              "value": 0.18381853376097185
+            },
+            {
+              "magnitude": 0.17948281036285624,
+              "coordinate": 8186.3718393975,
+              "value": 0.17948281036285624
+            },
+            {
+              "magnitude": 0.17773221187777938,
+              "coordinate": 3.61925970290035,
+              "value": 0.17773221187777938
+            },
+            {
+              "magnitude": 0.17428512172666136,
+              "coordinate": 5.627298565052443,
+              "value": 0.17428512172666136
+            },
+            {
+              "magnitude": 0.17277573695102166,
+              "coordinate": 8184.367331018429,
+              "value": 0.17277573695102166
+            }
+          ],
+          "scan_start": -256,
+          "scan_end": 8447.9921875,
+          "outside_distance": 256,
+          "outside_tail_upper": 0.5092918881655517,
+          "sinc_second_derivative_bound": 7.4102380228690645,
+          "between_grid_points_allowance": 5.653562944693805e-05,
+          "analytic_global_upper_before_numeric_error": 0.5092918881655517,
+          "numerical_allowance_not_a_rigorous_error_certificate": 4.0959683952480554e-08,
+          "qualified_numerical_global_upper": 0.5092919291252357,
+          "fft_direct_max_observed_difference": 4.163336342344337e-17,
+          "fft_length": 32768,
+          "fractional_phases": 128,
+          "grid_points": 1114112,
+          "local_maxima": 8574,
+          "local_maxima_refined": 16,
+          "channel": 0,
+          "identical_channel_reused": false,
+          "original_case": "mask-alternating-dc-0.1-hard",
+          "original_channel": 0
+        },
+        {
+          "sample_peak": 0.10592534393072128,
+          "sample_l1": 409.59683952480555,
+          "grid_peak": 0.2111120025785437,
+          "grid_coordinate": 8190.40625,
+          "direct_at_grid_peak": 0.21111200257854368,
+          "refined_peak": 0.21111783672851303,
+          "refined_dbtp": -13.509501457435299,
+          "refined_coordinate": 8190.403466763836,
+          "refined_signed_value": 0.21111783672851303,
+          "exceeds_minus_1_dbtp": false,
+          "top_refined": [
+            {
+              "magnitude": 0.21111783672851303,
+              "coordinate": 8190.403466763836,
+              "value": 0.21111783672851303
+            },
+            {
+              "magnitude": 0.20043934088524937,
+              "coordinate": -0.41216126274519777,
+              "value": 0.20043934088524937
+            },
+            {
+              "magnitude": 0.18977015196759903,
+              "coordinate": 8188.380307991518,
+              "value": 0.18977015196759903
+            },
+            {
+              "magnitude": 0.18381853376097185,
+              "coordinate": 1.6090503259766582,
+              "value": 0.18381853376097185
+            },
+            {
+              "magnitude": 0.17948281036285624,
+              "coordinate": 8186.3718393975,
+              "value": 0.17948281036285624
+            },
+            {
+              "magnitude": 0.17773221187777938,
+              "coordinate": 3.61925970290035,
+              "value": 0.17773221187777938
+            },
+            {
+              "magnitude": 0.17428512172666136,
+              "coordinate": 5.627298565052443,
+              "value": 0.17428512172666136
+            },
+            {
+              "magnitude": 0.17277573695102166,
+              "coordinate": 8184.367331018429,
+              "value": 0.17277573695102166
+            }
+          ],
+          "scan_start": -256,
+          "scan_end": 8447.9921875,
+          "outside_distance": 256,
+          "outside_tail_upper": 0.5092918881655517,
+          "sinc_second_derivative_bound": 7.4102380228690645,
+          "between_grid_points_allowance": 5.653562944693805e-05,
+          "analytic_global_upper_before_numeric_error": 0.5092918881655517,
+          "numerical_allowance_not_a_rigorous_error_certificate": 4.0959683952480554e-08,
+          "qualified_numerical_global_upper": 0.5092919291252357,
+          "fft_direct_max_observed_difference": 4.163336342344337e-17,
+          "fft_length": 32768,
+          "fractional_phases": 128,
+          "grid_points": 1114112,
+          "local_maxima": 8574,
+          "local_maxima_refined": 16,
+          "channel": 1,
+          "identical_channel_reused": true,
+          "original_case": "mask-alternating-dc-0.1-hard",
+          "original_channel": 0
+        }
+      ],
+      "worst_refined_dbtp": -13.509501457435299,
+      "exceeds_minus_1_dbtp": false,
+      "qualified_numerical_global_upper": 0.5092919291252357
+    },
+    {
+      "case": "mask-alternating-dc-0.8-default96",
+      "wav_sha256": "1c56ecba338254b7a1735df35b730d8b66341d5eb4ee3426572d6d46e328a678",
+      "frames": 8192,
+      "masked_odd_frames_verified_zero": 4096,
+      "active_even_frames_nonzero": 4096,
+      "channels": [
+        {
+          "sample_peak": 0.008827111683785915,
+          "sample_l1": 34.13307119347155,
+          "grid_peak": 0.017592666988457028,
+          "grid_coordinate": 8190.40625,
+          "direct_at_grid_peak": 0.017592666988457028,
+          "refined_peak": 0.017593153165867254,
+          "refined_dbtp": -35.093126326470475,
+          "refined_coordinate": 8190.403466767513,
+          "refined_signed_value": 0.017593153165867254,
+          "exceeds_minus_1_dbtp": false,
+          "top_refined": [
+            {
+              "magnitude": 0.017593153165867254,
+              "coordinate": 8190.403466767513,
+              "value": 0.017593153165867254
+            },
+            {
+              "magnitude": 0.016703278619172736,
+              "coordinate": -0.4121612626061865,
+              "value": 0.016703278619172736
+            },
+            {
+              "magnitude": 0.01581418017770544,
+              "coordinate": 8188.380307991992,
+              "value": 0.01581418017770544
+            },
+            {
+              "magnitude": 0.015318211165804166,
+              "coordinate": 1.6090503078443015,
+              "value": 0.015318211165804166
+            },
+            {
+              "magnitude": 0.014956901537559748,
+              "coordinate": 8186.3718393962745,
+              "value": 0.014956901537559748
+            },
+            {
+              "magnitude": 0.014811017985313958,
+              "coordinate": 3.6192596945021727,
+              "value": 0.014811017985313958
+            },
+            {
+              "magnitude": 0.01452376047956695,
+              "coordinate": 5.627298560083875,
+              "value": 0.01452376047956695
+            },
+            {
+              "magnitude": 0.014397978648564267,
+              "coordinate": 8184.367331012244,
+              "value": 0.014397978648564267
+            }
+          ],
+          "scan_start": -16,
+          "scan_end": 8207.9921875,
+          "outside_distance": 16,
+          "outside_tail_upper": 0.6790558754185722,
+          "sinc_second_derivative_bound": 0.6175198135215226,
+          "between_grid_points_allowance": 4.7113022882196246e-06,
+          "analytic_global_upper_before_numeric_error": 0.6790558754185722,
+          "numerical_allowance_not_a_rigorous_error_certificate": 3.4133071193471552e-09,
+          "qualified_numerical_global_upper": 0.6790558788318792,
+          "fft_direct_max_observed_difference": 2.6020852139652106e-18,
+          "fft_length": 32768,
+          "fractional_phases": 128,
+          "grid_points": 1052672,
+          "local_maxima": 8094,
+          "local_maxima_refined": 16,
+          "channel": 0,
+          "identical_channel_reused": false,
+          "original_case": "mask-alternating-dc-0.8-default96",
+          "original_channel": 0
+        },
+        {
+          "sample_peak": 0.008827111683785915,
+          "sample_l1": 34.13307119347155,
+          "grid_peak": 0.017592666988457028,
+          "grid_coordinate": 8190.40625,
+          "direct_at_grid_peak": 0.017592666988457028,
+          "refined_peak": 0.017593153165867254,
+          "refined_dbtp": -35.093126326470475,
+          "refined_coordinate": 8190.403466767513,
+          "refined_signed_value": 0.017593153165867254,
+          "exceeds_minus_1_dbtp": false,
+          "top_refined": [
+            {
+              "magnitude": 0.017593153165867254,
+              "coordinate": 8190.403466767513,
+              "value": 0.017593153165867254
+            },
+            {
+              "magnitude": 0.016703278619172736,
+              "coordinate": -0.4121612626061865,
+              "value": 0.016703278619172736
+            },
+            {
+              "magnitude": 0.01581418017770544,
+              "coordinate": 8188.380307991992,
+              "value": 0.01581418017770544
+            },
+            {
+              "magnitude": 0.015318211165804166,
+              "coordinate": 1.6090503078443015,
+              "value": 0.015318211165804166
+            },
+            {
+              "magnitude": 0.014956901537559748,
+              "coordinate": 8186.3718393962745,
+              "value": 0.014956901537559748
+            },
+            {
+              "magnitude": 0.014811017985313958,
+              "coordinate": 3.6192596945021727,
+              "value": 0.014811017985313958
+            },
+            {
+              "magnitude": 0.01452376047956695,
+              "coordinate": 5.627298560083875,
+              "value": 0.01452376047956695
+            },
+            {
+              "magnitude": 0.014397978648564267,
+              "coordinate": 8184.367331012244,
+              "value": 0.014397978648564267
+            }
+          ],
+          "scan_start": -16,
+          "scan_end": 8207.9921875,
+          "outside_distance": 16,
+          "outside_tail_upper": 0.6790558754185722,
+          "sinc_second_derivative_bound": 0.6175198135215226,
+          "between_grid_points_allowance": 4.7113022882196246e-06,
+          "analytic_global_upper_before_numeric_error": 0.6790558754185722,
+          "numerical_allowance_not_a_rigorous_error_certificate": 3.4133071193471552e-09,
+          "qualified_numerical_global_upper": 0.6790558788318792,
+          "fft_direct_max_observed_difference": 2.6020852139652106e-18,
+          "fft_length": 32768,
+          "fractional_phases": 128,
+          "grid_points": 1052672,
+          "local_maxima": 8094,
+          "local_maxima_refined": 16,
+          "channel": 1,
+          "identical_channel_reused": true,
+          "original_case": "mask-alternating-dc-0.8-default96",
+          "original_channel": 0
+        }
+      ],
+      "worst_refined_dbtp": -35.093126326470475,
+      "exceeds_minus_1_dbtp": false,
+      "qualified_numerical_global_upper": 0.6790558788318792
+    },
+    {
+      "case": "mask-alternating-dc-0.8-hard",
+      "wav_sha256": "f546e8ddb8c07bc005130134f21be6cfa86baa04e9910f00db4ebeea7904b40e",
+      "frames": 8192,
+      "masked_odd_frames_verified_zero": 4096,
+      "active_even_frames_nonzero": 4096,
+      "channels": [
+        {
+          "sample_peak": 0.800000011920929,
+          "sample_l1": 3170.0650283694267,
+          "grid_peak": 1.3656134471119301,
+          "grid_coordinate": -0.4140625,
+          "direct_at_grid_peak": 1.36561344711193,
+          "refined_peak": 1.3656668487382038,
+          "refined_dbtp": 2.706895342677778,
+          "refined_coordinate": -0.4173027597384198,
+          "refined_signed_value": 1.3656668487382038,
+          "exceeds_minus_1_dbtp": true,
+          "top_refined": [
+            {
+              "magnitude": 1.3656668487382038,
+              "coordinate": -0.4173027597384198,
+              "value": 1.3656668487382038
+            },
+            {
+              "magnitude": 1.3612114127368498,
+              "coordinate": 8190.412390775567,
+              "value": 1.3612114127368498
+            },
+            {
+              "magnitude": 1.2565084413134715,
+              "coordinate": 1.6020918391709413,
+              "value": 1.2565084413134715
+            },
+            {
+              "magnitude": 1.2314392551055708,
+              "coordinate": 8188.392523456678,
+              "value": 1.2314392551055708
+            },
+            {
+              "magnitude": 1.2165109959532405,
+              "coordinate": 3.6113155646048174,
+              "value": 1.2165109959532405
+            },
+            {
+              "magnitude": 1.1938068607438737,
+              "coordinate": 5.6185690767658825,
+              "value": 1.1938068607438737
+            },
+            {
+              "magnitude": 1.1755143472829483,
+              "coordinate": 7.624683904916496,
+              "value": 1.1755143472829483
+            },
+            {
+              "magnitude": 1.1693271382277517,
+              "coordinate": 8186.38565435987,
+              "value": 1.1693271382277517
+            }
+          ],
+          "scan_start": -2048,
+          "scan_end": 10239.9921875,
+          "outside_distance": 2048,
+          "outside_tail_upper": 0.49270656170678095,
+          "sinc_second_derivative_bound": 55.96574234877545,
+          "between_grid_points_allowance": 0.00042698472861309395,
+          "analytic_global_upper_before_numeric_error": 1.3660404318405432,
+          "numerical_allowance_not_a_rigorous_error_certificate": 3.170065028369427e-07,
+          "qualified_numerical_global_upper": 1.366040748847046,
+          "fft_direct_max_observed_difference": 2.7755575615628914e-16,
+          "fft_length": 32768,
+          "fractional_phases": 128,
+          "grid_points": 1572864,
+          "local_maxima": 12162,
+          "local_maxima_refined": 16,
+          "channel": 0,
+          "identical_channel_reused": false,
+          "original_case": "mask-alternating-dc-0.8-hard",
+          "original_channel": 0
+        },
+        {
+          "sample_peak": 0.800000011920929,
+          "sample_l1": 3170.0650283694267,
+          "grid_peak": 1.3656134471119301,
+          "grid_coordinate": -0.4140625,
+          "direct_at_grid_peak": 1.36561344711193,
+          "refined_peak": 1.3656668487382038,
+          "refined_dbtp": 2.706895342677778,
+          "refined_coordinate": -0.4173027597384198,
+          "refined_signed_value": 1.3656668487382038,
+          "exceeds_minus_1_dbtp": true,
+          "top_refined": [
+            {
+              "magnitude": 1.3656668487382038,
+              "coordinate": -0.4173027597384198,
+              "value": 1.3656668487382038
+            },
+            {
+              "magnitude": 1.3612114127368498,
+              "coordinate": 8190.412390775567,
+              "value": 1.3612114127368498
+            },
+            {
+              "magnitude": 1.2565084413134715,
+              "coordinate": 1.6020918391709413,
+              "value": 1.2565084413134715
+            },
+            {
+              "magnitude": 1.2314392551055708,
+              "coordinate": 8188.392523456678,
+              "value": 1.2314392551055708
+            },
+            {
+              "magnitude": 1.2165109959532405,
+              "coordinate": 3.6113155646048174,
+              "value": 1.2165109959532405
+            },
+            {
+              "magnitude": 1.1938068607438737,
+              "coordinate": 5.6185690767658825,
+              "value": 1.1938068607438737
+            },
+            {
+              "magnitude": 1.1755143472829483,
+              "coordinate": 7.624683904916496,
+              "value": 1.1755143472829483
+            },
+            {
+              "magnitude": 1.1693271382277517,
+              "coordinate": 8186.38565435987,
+              "value": 1.1693271382277517
+            }
+          ],
+          "scan_start": -2048,
+          "scan_end": 10239.9921875,
+          "outside_distance": 2048,
+          "outside_tail_upper": 0.49270656170678095,
+          "sinc_second_derivative_bound": 55.96574234877545,
+          "between_grid_points_allowance": 0.00042698472861309395,
+          "analytic_global_upper_before_numeric_error": 1.3660404318405432,
+          "numerical_allowance_not_a_rigorous_error_certificate": 3.170065028369427e-07,
+          "qualified_numerical_global_upper": 1.366040748847046,
+          "fft_direct_max_observed_difference": 2.7755575615628914e-16,
+          "fft_length": 32768,
+          "fractional_phases": 128,
+          "grid_points": 1572864,
+          "local_maxima": 12162,
+          "local_maxima_refined": 16,
+          "channel": 1,
+          "identical_channel_reused": true,
+          "original_case": "mask-alternating-dc-0.8-hard",
+          "original_channel": 0
+        }
+      ],
+      "worst_refined_dbtp": 2.706895342677778,
+      "exceeds_minus_1_dbtp": true,
+      "qualified_numerical_global_upper": 1.366040748847046
+    },
+    {
+      "case": "mask-alternating-dc-16-default96",
+      "wav_sha256": "1eba0613db3fa6ae4732a4bae5877522c1efebdd6d1529dffbc4e59e6d0b859f",
+      "frames": 8192,
+      "masked_odd_frames_verified_zero": 4096,
+      "active_even_frames_nonzero": 4096,
+      "channels": [
+        {
+          "sample_peak": 0.1765422374010086,
+          "sample_l1": 682.6614088714123,
+          "grid_peak": 0.3518533376359776,
+          "grid_coordinate": 8190.40625,
+          "direct_at_grid_peak": 0.35185333763597765,
+          "refined_peak": 0.35186306120717975,
+          "refined_dbtp": -9.072526465281182,
+          "refined_coordinate": 8190.403466767537,
+          "refined_signed_value": 0.35186306120717975,
+          "exceeds_minus_1_dbtp": false,
+          "top_refined": [
+            {
+              "magnitude": 0.35186306120717975,
+              "coordinate": 8190.403466767537,
+              "value": 0.35186306120717975
+            },
+            {
+              "magnitude": 0.33406556704331664,
+              "coordinate": -0.41216125966621175,
+              "value": 0.33406556704331664
+            },
+            {
+              "magnitude": 0.31628359213129026,
+              "coordinate": 8188.380307995666,
+              "value": 0.31628359213129026
+            },
+            {
+              "magnitude": 0.306364214893275,
+              "coordinate": 1.609050324735376,
+              "value": 0.306364214893275
+            },
+            {
+              "magnitude": 0.299138016475115,
+              "coordinate": 8186.371839398699,
+              "value": 0.299138016475115
+            },
+            {
+              "magnitude": 0.29622034926588564,
+              "coordinate": 3.6192596885542665,
+              "value": 0.29622034926588564
+            },
+            {
+              "magnitude": 0.2904752003565799,
+              "coordinate": 5.627298554935656,
+              "value": 0.2904752003565799
+            },
+            {
+              "magnitude": 0.2879595671970297,
+              "coordinate": 8184.367331011792,
+              "value": 0.2879595671970297
+            }
+          ],
+          "scan_start": -256,
+          "scan_end": 8447.9921875,
+          "outside_distance": 256,
+          "outside_tail_upper": 0.8488198256247087,
+          "sinc_second_derivative_bound": 12.350396531041245,
+          "between_grid_points_allowance": 9.422604775269504e-05,
+          "analytic_global_upper_before_numeric_error": 0.8488198256247087,
+          "numerical_allowance_not_a_rigorous_error_certificate": 6.826614088714123e-08,
+          "qualified_numerical_global_upper": 0.8488198938908496,
+          "fft_direct_max_observed_difference": 8.326672684688674e-17,
+          "fft_length": 32768,
+          "fractional_phases": 128,
+          "grid_points": 1114112,
+          "local_maxima": 8574,
+          "local_maxima_refined": 16,
+          "channel": 0,
+          "identical_channel_reused": false,
+          "original_case": "mask-alternating-dc-16-default96",
+          "original_channel": 0
+        },
+        {
+          "sample_peak": 0.1765422374010086,
+          "sample_l1": 682.6614088714123,
+          "grid_peak": 0.3518533376359776,
+          "grid_coordinate": 8190.40625,
+          "direct_at_grid_peak": 0.35185333763597765,
+          "refined_peak": 0.35186306120717975,
+          "refined_dbtp": -9.072526465281182,
+          "refined_coordinate": 8190.403466767537,
+          "refined_signed_value": 0.35186306120717975,
+          "exceeds_minus_1_dbtp": false,
+          "top_refined": [
+            {
+              "magnitude": 0.35186306120717975,
+              "coordinate": 8190.403466767537,
+              "value": 0.35186306120717975
+            },
+            {
+              "magnitude": 0.33406556704331664,
+              "coordinate": -0.41216125966621175,
+              "value": 0.33406556704331664
+            },
+            {
+              "magnitude": 0.31628359213129026,
+              "coordinate": 8188.380307995666,
+              "value": 0.31628359213129026
+            },
+            {
+              "magnitude": 0.306364214893275,
+              "coordinate": 1.609050324735376,
+              "value": 0.306364214893275
+            },
+            {
+              "magnitude": 0.299138016475115,
+              "coordinate": 8186.371839398699,
+              "value": 0.299138016475115
+            },
+            {
+              "magnitude": 0.29622034926588564,
+              "coordinate": 3.6192596885542665,
+              "value": 0.29622034926588564
+            },
+            {
+              "magnitude": 0.2904752003565799,
+              "coordinate": 5.627298554935656,
+              "value": 0.2904752003565799
+            },
+            {
+              "magnitude": 0.2879595671970297,
+              "coordinate": 8184.367331011792,
+              "value": 0.2879595671970297
+            }
+          ],
+          "scan_start": -256,
+          "scan_end": 8447.9921875,
+          "outside_distance": 256,
+          "outside_tail_upper": 0.8488198256247087,
+          "sinc_second_derivative_bound": 12.350396531041245,
+          "between_grid_points_allowance": 9.422604775269504e-05,
+          "analytic_global_upper_before_numeric_error": 0.8488198256247087,
+          "numerical_allowance_not_a_rigorous_error_certificate": 6.826614088714123e-08,
+          "qualified_numerical_global_upper": 0.8488198938908496,
+          "fft_direct_max_observed_difference": 8.326672684688674e-17,
+          "fft_length": 32768,
+          "fractional_phases": 128,
+          "grid_points": 1114112,
+          "local_maxima": 8574,
+          "local_maxima_refined": 16,
+          "channel": 1,
+          "identical_channel_reused": true,
+          "original_case": "mask-alternating-dc-16-default96",
+          "original_channel": 0
+        }
+      ],
+      "worst_refined_dbtp": -9.072526465281182,
+      "exceeds_minus_1_dbtp": false,
+      "qualified_numerical_global_upper": 0.8488198938908496
+    },
+    {
+      "case": "mask-alternating-dc-16-hard",
+      "wav_sha256": "904373539e3384f59c2622be4a8ada7d837ab1f9d497376033bfa4a0e95661e9",
+      "frames": 8192,
+      "masked_odd_frames_verified_zero": 4096,
+      "active_even_frames_nonzero": 4096,
+      "channels": [
+        {
+          "sample_peak": 0.8510008454322815,
+          "sample_l1": 3465.6301815509796,
+          "grid_peak": 1.4397923050878871,
+          "grid_coordinate": 8190.421875,
+          "direct_at_grid_peak": 1.439792305087887,
+          "refined_peak": 1.4398533310099881,
+          "refined_dbtp": 3.1663651088889377,
+          "refined_coordinate": 8190.425207844905,
+          "refined_signed_value": 1.4398533310099881,
+          "exceeds_minus_1_dbtp": true,
+          "top_refined": [
+            {
+              "magnitude": 1.4398533310099881,
+              "coordinate": 8190.425207844905,
+              "value": 1.4398533310099881
+            },
+            {
+              "magnitude": 1.4133503818987154,
+              "coordinate": -0.42753526755643984,
+              "value": 1.4133503818987154
+            },
+            {
+              "magnitude": 1.3255604314288063,
+              "coordinate": 8188.409183715467,
+              "value": 1.3255604314288063
+            },
+            {
+              "magnitude": 1.3142271952284816,
+              "coordinate": 1.588622605519345,
+              "value": 1.3142271952284816
+            },
+            {
+              "magnitude": 1.2802358202532025,
+              "coordinate": 3.5963212033684098,
+              "value": 1.2802358202532025
+            },
+            {
+              "magnitude": 1.2746341978089837,
+              "coordinate": 8186.403560763337,
+              "value": 1.2746341978089837
+            },
+            {
+              "magnitude": 1.2624286534002125,
+              "coordinate": 5.602479418862554,
+              "value": 1.2624286534002125
+            },
+            {
+              "magnitude": 1.2486991967324865,
+              "coordinate": 7.607725280499779,
+              "value": 1.2486991967324865
+            }
+          ],
+          "scan_start": -2048,
+          "scan_end": 10239.9921875,
+          "outside_distance": 2048,
+          "outside_tail_upper": 0.5386447014866221,
+          "sinc_second_derivative_bound": 59.533616680446414,
+          "between_grid_points_allowance": 0.00045420544952733165,
+          "analytic_global_upper_before_numeric_error": 1.4402465105374145,
+          "numerical_allowance_not_a_rigorous_error_certificate": 3.4656301815509797e-07,
+          "qualified_numerical_global_upper": 1.4402468571004325,
+          "fft_direct_max_observed_difference": 3.885780586188048e-16,
+          "fft_length": 32768,
+          "fractional_phases": 128,
+          "grid_points": 1572864,
+          "local_maxima": 12158,
+          "local_maxima_refined": 16,
+          "channel": 0,
+          "identical_channel_reused": false,
+          "original_case": "mask-alternating-dc-16-hard",
+          "original_channel": 0
+        },
+        {
+          "sample_peak": 0.8510008454322815,
+          "sample_l1": 3465.6301815509796,
+          "grid_peak": 1.4397923050878871,
+          "grid_coordinate": 8190.421875,
+          "direct_at_grid_peak": 1.439792305087887,
+          "refined_peak": 1.4398533310099881,
+          "refined_dbtp": 3.1663651088889377,
+          "refined_coordinate": 8190.425207844905,
+          "refined_signed_value": 1.4398533310099881,
+          "exceeds_minus_1_dbtp": true,
+          "top_refined": [
+            {
+              "magnitude": 1.4398533310099881,
+              "coordinate": 8190.425207844905,
+              "value": 1.4398533310099881
+            },
+            {
+              "magnitude": 1.4133503818987154,
+              "coordinate": -0.42753526755643984,
+              "value": 1.4133503818987154
+            },
+            {
+              "magnitude": 1.3255604314288063,
+              "coordinate": 8188.409183715467,
+              "value": 1.3255604314288063
+            },
+            {
+              "magnitude": 1.3142271952284816,
+              "coordinate": 1.588622605519345,
+              "value": 1.3142271952284816
+            },
+            {
+              "magnitude": 1.2802358202532025,
+              "coordinate": 3.5963212033684098,
+              "value": 1.2802358202532025
+            },
+            {
+              "magnitude": 1.2746341978089837,
+              "coordinate": 8186.403560763337,
+              "value": 1.2746341978089837
+            },
+            {
+              "magnitude": 1.2624286534002125,
+              "coordinate": 5.602479418862554,
+              "value": 1.2624286534002125
+            },
+            {
+              "magnitude": 1.2486991967324865,
+              "coordinate": 7.607725280499779,
+              "value": 1.2486991967324865
+            }
+          ],
+          "scan_start": -2048,
+          "scan_end": 10239.9921875,
+          "outside_distance": 2048,
+          "outside_tail_upper": 0.5386447014866221,
+          "sinc_second_derivative_bound": 59.533616680446414,
+          "between_grid_points_allowance": 0.00045420544952733165,
+          "analytic_global_upper_before_numeric_error": 1.4402465105374145,
+          "numerical_allowance_not_a_rigorous_error_certificate": 3.4656301815509797e-07,
+          "qualified_numerical_global_upper": 1.4402468571004325,
+          "fft_direct_max_observed_difference": 3.885780586188048e-16,
+          "fft_length": 32768,
+          "fractional_phases": 128,
+          "grid_points": 1572864,
+          "local_maxima": 12158,
+          "local_maxima_refined": 16,
+          "channel": 1,
+          "identical_channel_reused": true,
+          "original_case": "mask-alternating-dc-16-hard",
+          "original_channel": 0
+        }
+      ],
+      "worst_refined_dbtp": 3.1663651088889377,
+      "exceeds_minus_1_dbtp": true,
+      "qualified_numerical_global_upper": 1.4402468571004325
+    },
+    {
+      "case": "hot-alternating-16-hard",
+      "wav_sha256": "a13fbcb7f135a2399f3e4ae19f88346b957f82fd11b27e690caa3f7d06e8cd97",
+      "frames": 8192,
+      "masked_odd_frames_verified_zero": null,
+      "active_even_frames_nonzero": null,
+      "channels": [
+        {
+          "sample_peak": 0.8026489019393921,
+          "sample_l1": 7.5168663620352705,
+          "grid_peak": 0.8721544057989551,
+          "grid_coordinate": 8191.1796875,
+          "direct_at_grid_peak": -0.8721544057989551,
+          "refined_peak": 0.8721607691702883,
+          "refined_dbtp": -1.1880690461215397,
+          "refined_coordinate": 8191.181425913439,
+          "refined_signed_value": -0.8721607691702883,
+          "exceeds_minus_1_dbtp": false,
+          "top_refined": [
+            {
+              "magnitude": 0.8721607691702883,
+              "coordinate": 8191.181425913439,
+              "value": -0.8721607691702883
+            },
+            {
+              "magnitude": 0.8710722946737822,
+              "coordinate": -0.18133195843704802,
+              "value": 0.8710722946737822
+            },
+            {
+              "magnitude": 0.6001797722645288,
+              "coordinate": 8189.905142305693,
+              "value": 0.6001797722645288
+            },
+            {
+              "magnitude": 0.5989505538836031,
+              "coordinate": 1.0950558218734652,
+              "value": -0.5989505538836031
+            },
+            {
+              "magnitude": 0.4867662840069213,
+              "coordinate": 8188.7538891412905,
+              "value": -0.4867662840069213
+            },
+            {
+              "magnitude": 0.4854067003901325,
+              "coordinate": 2.246272269388228,
+              "value": 0.4854067003901325
+            },
+            {
+              "magnitude": 0.4052885371964311,
+              "coordinate": 8187.627764151885,
+              "value": 0.4052885371964311
+            },
+            {
+              "magnitude": 0.4038447714581299,
+              "coordinate": 3.372293191925883,
+              "value": -0.4038447714581299
+            }
+          ],
+          "scan_start": -4,
+          "scan_end": 8195.9921875,
+          "outside_distance": 4,
+          "outside_tail_upper": 0.5981732190395529,
+          "sinc_second_derivative_bound": 56.151051216368565,
+          "between_grid_points_allowance": 0.000428398523074101,
+          "analytic_global_upper_before_numeric_error": 0.8725828043220292,
+          "numerical_allowance_not_a_rigorous_error_certificate": 7.51686636203527e-10,
+          "qualified_numerical_global_upper": 0.8725828050737158,
+          "fft_direct_max_observed_difference": 6.952446431063297e-18,
+          "fft_length": 32768,
+          "fractional_phases": 128,
+          "grid_points": 1049600,
+          "local_maxima": 8189,
+          "local_maxima_refined": 16,
+          "channel": 0,
+          "identical_channel_reused": false,
+          "original_case": "hot-alternating-16-hard",
+          "original_channel": 0
+        },
+        {
+          "sample_peak": 0.8026489019393921,
+          "sample_l1": 7.5168663620352705,
+          "grid_peak": 0.8721544057989551,
+          "grid_coordinate": 8191.1796875,
+          "direct_at_grid_peak": -0.8721544057989551,
+          "refined_peak": 0.8721607691702883,
+          "refined_dbtp": -1.1880690461215397,
+          "refined_coordinate": 8191.181425913439,
+          "refined_signed_value": -0.8721607691702883,
+          "exceeds_minus_1_dbtp": false,
+          "top_refined": [
+            {
+              "magnitude": 0.8721607691702883,
+              "coordinate": 8191.181425913439,
+              "value": -0.8721607691702883
+            },
+            {
+              "magnitude": 0.8710722946737822,
+              "coordinate": -0.18133195843704802,
+              "value": 0.8710722946737822
+            },
+            {
+              "magnitude": 0.6001797722645288,
+              "coordinate": 8189.905142305693,
+              "value": 0.6001797722645288
+            },
+            {
+              "magnitude": 0.5989505538836031,
+              "coordinate": 1.0950558218734652,
+              "value": -0.5989505538836031
+            },
+            {
+              "magnitude": 0.4867662840069213,
+              "coordinate": 8188.7538891412905,
+              "value": -0.4867662840069213
+            },
+            {
+              "magnitude": 0.4854067003901325,
+              "coordinate": 2.246272269388228,
+              "value": 0.4854067003901325
+            },
+            {
+              "magnitude": 0.4052885371964311,
+              "coordinate": 8187.627764151885,
+              "value": 0.4052885371964311
+            },
+            {
+              "magnitude": 0.4038447714581299,
+              "coordinate": 3.372293191925883,
+              "value": -0.4038447714581299
+            }
+          ],
+          "scan_start": -4,
+          "scan_end": 8195.9921875,
+          "outside_distance": 4,
+          "outside_tail_upper": 0.5981732190395529,
+          "sinc_second_derivative_bound": 56.151051216368565,
+          "between_grid_points_allowance": 0.000428398523074101,
+          "analytic_global_upper_before_numeric_error": 0.8725828043220292,
+          "numerical_allowance_not_a_rigorous_error_certificate": 7.51686636203527e-10,
+          "qualified_numerical_global_upper": 0.8725828050737158,
+          "fft_direct_max_observed_difference": 6.952446431063297e-18,
+          "fft_length": 32768,
+          "fractional_phases": 128,
+          "grid_points": 1049600,
+          "local_maxima": 8189,
+          "local_maxima_refined": 16,
+          "channel": 1,
+          "identical_channel_reused": true,
+          "original_case": "hot-alternating-16-hard",
+          "original_channel": 0
+        }
+      ],
+      "worst_refined_dbtp": -1.1880690461215397,
+      "exceeds_minus_1_dbtp": false,
+      "qualified_numerical_global_upper": 0.8725828050737158
+    },
+    {
+      "case": "hot-tone-23990-16-hard",
+      "wav_sha256": "07c73c176dd6a3bab70de423f758d5c5344d8ec1e10b2d1587c8d5d45ab0ee79",
+      "frames": 8192,
+      "masked_odd_frames_verified_zero": null,
+      "active_even_frames_nonzero": null,
+      "channels": [
+        {
+          "sample_peak": 0.8026003837585449,
+          "sample_l1": 7.479948533997801,
+          "grid_peak": 0.8726676519745357,
+          "grid_coordinate": 8191.1796875,
+          "direct_at_grid_peak": 0.8726676519745356,
+          "refined_peak": 0.8726791855156169,
+          "refined_dbtp": -1.1829076474700466,
+          "refined_coordinate": 8191.18202592801,
+          "refined_signed_value": 0.8726791855156169,
+          "exceeds_minus_1_dbtp": false,
+          "top_refined": [
+            {
+              "magnitude": 0.8726791855156169,
+              "coordinate": 8191.18202592801,
+              "value": 0.8726791855156169
+            },
+            {
+              "magnitude": 0.8710103806629644,
+              "coordinate": -0.1812600076644186,
+              "value": 0.8710103806629644
+            },
+            {
+              "magnitude": 0.6006516467346862,
+              "coordinate": 8189.906277459748,
+              "value": -0.6006516467346862
+            },
+            {
+              "magnitude": 0.5989854775841544,
+              "coordinate": 1.0951344655904667,
+              "value": -0.5989854775841544
+            },
+            {
+              "magnitude": 0.48717099236008843,
+              "coordinate": 8188.755447194505,
+              "value": 0.48717099236008843
+            },
+            {
+              "magnitude": 0.4854884659647502,
+              "coordinate": 2.246340438426579,
+              "value": 0.4854884659647502
+            },
+            {
+              "magnitude": 0.4055994117344186,
+              "coordinate": 8187.629779085152,
+              "value": -0.4055994117344186
+            },
+            {
+              "magnitude": 0.40395224724561474,
+              "coordinate": 3.3723365288438103,
+              "value": -0.40395224724561474
+            }
+          ],
+          "scan_start": -4,
+          "scan_end": 8195.9921875,
+          "outside_distance": 4,
+          "outside_tail_upper": 0.595235391629363,
+          "sinc_second_derivative_bound": 56.14765702140849,
+          "between_grid_points_allowance": 0.0004283726274216346,
+          "analytic_global_upper_before_numeric_error": 0.8730960246019573,
+          "numerical_allowance_not_a_rigorous_error_certificate": 7.479948533997802e-10,
+          "qualified_numerical_global_upper": 0.8730960253499522,
+          "fft_direct_max_observed_difference": 1.1102230246251565e-16,
+          "fft_length": 32768,
+          "fractional_phases": 128,
+          "grid_points": 1049600,
+          "local_maxima": 8188,
+          "local_maxima_refined": 16,
+          "channel": 0,
+          "identical_channel_reused": false,
+          "original_case": "hot-tone-23990-16-hard",
+          "original_channel": 0
+        },
+        {
+          "sample_peak": 0.8026003837585449,
+          "sample_l1": 7.479948533997801,
+          "grid_peak": 0.8726676519745357,
+          "grid_coordinate": 8191.1796875,
+          "direct_at_grid_peak": -0.8726676519745356,
+          "refined_peak": 0.8726791855156169,
+          "refined_dbtp": -1.1829076474700466,
+          "refined_coordinate": 8191.18202592801,
+          "refined_signed_value": -0.8726791855156169,
+          "exceeds_minus_1_dbtp": false,
+          "top_refined": [
+            {
+              "magnitude": 0.8726791855156169,
+              "coordinate": 8191.18202592801,
+              "value": -0.8726791855156169
+            },
+            {
+              "magnitude": 0.8710103806629644,
+              "coordinate": -0.1812600076644186,
+              "value": -0.8710103806629644
+            },
+            {
+              "magnitude": 0.6006516467346862,
+              "coordinate": 8189.906277459748,
+              "value": 0.6006516467346862
+            },
+            {
+              "magnitude": 0.5989854775841544,
+              "coordinate": 1.0951344655904667,
+              "value": 0.5989854775841544
+            },
+            {
+              "magnitude": 0.48717099236008843,
+              "coordinate": 8188.755447194505,
+              "value": -0.48717099236008843
+            },
+            {
+              "magnitude": 0.4854884659647502,
+              "coordinate": 2.246340438426579,
+              "value": -0.4854884659647502
+            },
+            {
+              "magnitude": 0.4055994117344186,
+              "coordinate": 8187.629779085152,
+              "value": 0.4055994117344186
+            },
+            {
+              "magnitude": 0.40395224724561474,
+              "coordinate": 3.3723365288438103,
+              "value": 0.40395224724561474
+            }
+          ],
+          "scan_start": -4,
+          "scan_end": 8195.9921875,
+          "outside_distance": 4,
+          "outside_tail_upper": 0.595235391629363,
+          "sinc_second_derivative_bound": 56.14765702140849,
+          "between_grid_points_allowance": 0.0004283726274216346,
+          "analytic_global_upper_before_numeric_error": 0.8730960246019573,
+          "numerical_allowance_not_a_rigorous_error_certificate": 7.479948533997802e-10,
+          "qualified_numerical_global_upper": 0.8730960253499522,
+          "fft_direct_max_observed_difference": 1.1102230246251565e-16,
+          "fft_length": 32768,
+          "fractional_phases": 128,
+          "grid_points": 1049600,
+          "local_maxima": 8188,
+          "local_maxima_refined": 16,
+          "channel": 1,
+          "identical_channel_reused": false,
+          "original_case": "hot-tone-23990-16-hard",
+          "original_channel": 1
+        }
+      ],
+      "worst_refined_dbtp": -1.1829076474700466,
+      "exceeds_minus_1_dbtp": false,
+      "qualified_numerical_global_upper": 0.8730960253499522
+    },
+    {
+      "case": "quiet-tone-1000-0.1-hard",
+      "wav_sha256": "31a8979c0f09996692b0f8fdcbe167c24aa218ac7e8b1c0e229ebded2fdce393",
+      "frames": 8192,
+      "masked_odd_frames_verified_zero": null,
+      "active_even_frames_nonzero": null,
+      "channels": [
+        {
+          "sample_peak": 0.10033631324768066,
+          "sample_l1": 521.7612357344478,
+          "grid_peak": 0.10053053618597024,
+          "grid_coordinate": 8171.2421875,
+          "direct_at_grid_peak": 0.10053053618597023,
+          "refined_peak": 0.10053053623456695,
+          "refined_dbtp": -19.954040017837496,
+          "refined_coordinate": 8171.242067475073,
+          "refined_signed_value": 0.10053053623456695,
+          "exceeds_minus_1_dbtp": false,
+          "top_refined": [
+            {
+              "magnitude": 0.10053053623456695,
+              "coordinate": 8171.242067475073,
+              "value": 0.10053053623456695
+            },
+            {
+              "magnitude": 0.1000991341449572,
+              "coordinate": 8123.481387479378,
+              "value": 0.1000991341449572
+            },
+            {
+              "magnitude": 0.1000584326365823,
+              "coordinate": 8075.500199154863,
+              "value": 0.1000584326365823
+            },
+            {
+              "magnitude": 0.10004149635248695,
+              "coordinate": 8027.500118006238,
+              "value": 0.10004149635248695
+            },
+            {
+              "magnitude": 0.10003217139687928,
+              "coordinate": 7979.500074229019,
+              "value": 0.10003217139687928
+            },
+            {
+              "magnitude": 0.10002626791373363,
+              "coordinate": 7931.500050817207,
+              "value": 0.10002626791373363
+            },
+            {
+              "magnitude": 0.10002219476569443,
+              "coordinate": 7883.500037016676,
+              "value": 0.10002219476569443
+            },
+            {
+              "magnitude": 0.10001921498517996,
+              "coordinate": 7835.500028229569,
+              "value": 0.10001921498517996
+            }
+          ],
+          "scan_start": -256,
+          "scan_end": 8447.9921875,
+          "outside_distance": 256,
+          "outside_tail_upper": 0.6487568732880706,
+          "sinc_second_derivative_bound": 7.019245214712246,
+          "between_grid_points_allowance": 5.355259105462834e-05,
+          "analytic_global_upper_before_numeric_error": 0.6487568732880706,
+          "numerical_allowance_not_a_rigorous_error_certificate": 5.2176123573444786e-08,
+          "qualified_numerical_global_upper": 0.6487569254641942,
+          "fft_direct_max_observed_difference": 4.5875304423292906e-17,
+          "fft_length": 32768,
+          "fractional_phases": 128,
+          "grid_points": 1114112,
+          "local_maxima": 857,
+          "local_maxima_refined": 16,
+          "channel": 0,
+          "identical_channel_reused": false,
+          "original_case": "quiet-tone-1000-0.1-hard",
+          "original_channel": 0
+        },
+        {
+          "sample_peak": 0.025084078311920166,
+          "sample_l1": 130.44030893361196,
+          "grid_peak": 0.02513263404649256,
+          "grid_coordinate": 8171.2421875,
+          "direct_at_grid_peak": 0.025132634046492557,
+          "refined_peak": 0.025132634058641738,
+          "refined_dbtp": -31.995239844396743,
+          "refined_coordinate": 8171.242067475073,
+          "refined_signed_value": 0.025132634058641738,
+          "exceeds_minus_1_dbtp": false,
+          "top_refined": [
+            {
+              "magnitude": 0.025132634058641738,
+              "coordinate": 8171.242067475073,
+              "value": 0.025132634058641738
+            },
+            {
+              "magnitude": 0.0250247835362393,
+              "coordinate": 8123.481387479378,
+              "value": 0.0250247835362393
+            },
+            {
+              "magnitude": 0.025014608159145576,
+              "coordinate": 8075.500199154863,
+              "value": 0.025014608159145576
+            },
+            {
+              "magnitude": 0.025010374088121737,
+              "coordinate": 8027.500118006238,
+              "value": 0.025010374088121737
+            },
+            {
+              "magnitude": 0.02500804284921982,
+              "coordinate": 7979.500074229019,
+              "value": 0.02500804284921982
+            },
+            {
+              "magnitude": 0.025006566978433408,
+              "coordinate": 7931.500050817207,
+              "value": 0.025006566978433408
+            },
+            {
+              "magnitude": 0.02500554869142361,
+              "coordinate": 7883.500037016676,
+              "value": 0.02500554869142361
+            },
+            {
+              "magnitude": 0.02500480374629499,
+              "coordinate": 7835.500028229569,
+              "value": 0.02500480374629499
+            }
+          ],
+          "scan_start": -64,
+          "scan_end": 8255.9921875,
+          "outside_distance": 64,
+          "outside_tail_upper": 0.6487568732880706,
+          "sinc_second_derivative_bound": 1.7548113036780615,
+          "between_grid_points_allowance": 1.3388147763657085e-05,
+          "analytic_global_upper_before_numeric_error": 0.6487568732880706,
+          "numerical_allowance_not_a_rigorous_error_certificate": 1.3044030893361196e-08,
+          "qualified_numerical_global_upper": 0.6487568863321015,
+          "fft_direct_max_observed_difference": 1.0408340855860843e-17,
+          "fft_length": 32768,
+          "fractional_phases": 128,
+          "grid_points": 1064960,
+          "local_maxima": 473,
+          "local_maxima_refined": 16,
+          "channel": 1,
+          "identical_channel_reused": false,
+          "original_case": "quiet-tone-1000-0.1-hard",
+          "original_channel": 1
+        }
+      ],
+      "worst_refined_dbtp": -19.954040017837496,
+      "exceeds_minus_1_dbtp": false,
+      "qualified_numerical_global_upper": 0.6487569254641942
+    },
+    {
+      "case": "quiet-dc-0.1-hard",
+      "wav_sha256": "f2db825cdd268a48fff478af9966048e635d080722502d4024e7623f57310311",
+      "frames": 8192,
+      "masked_odd_frames_verified_zero": null,
+      "active_even_frames_nonzero": null,
+      "channels": [
+        {
+          "sample_peak": 0.10592534393072128,
+          "sample_l1": 819.1936790496111,
+          "grid_peak": 0.11569200966495176,
+          "grid_coordinate": 8190.453125,
+          "direct_at_grid_peak": 0.11569200966495176,
+          "refined_peak": 0.11569256400105857,
+          "refined_dbtp": -18.733891078024435,
+          "refined_coordinate": 8190.45604370378,
+          "refined_signed_value": 0.11569256400105857,
+          "exceeds_minus_1_dbtp": false,
+          "top_refined": [
+            {
+              "magnitude": 0.11569256400105857,
+              "coordinate": 8190.45604370378,
+              "value": 0.11569256400105857
+            },
+            {
+              "magnitude": 0.11569256400105855,
+              "coordinate": 0.5439562841558838,
+              "value": 0.11569256400105855
+            },
+            {
+              "magnitude": 0.1053780132173273,
+              "coordinate": 2.785740209366274,
+              "value": 0.1053780132173273
+            },
+            {
+              "magnitude": 0.10537801321732725,
+              "coordinate": 8188.214259809393,
+              "value": 0.10537801321732725
+            },
+            {
+              "magnitude": 0.10237895466061338,
+              "coordinate": 8185.9652068453,
+              "value": 0.10237895466061338
+            },
+            {
+              "magnitude": 0.10237895466061323,
+              "coordinate": 5.034793056370389,
+              "value": 0.10237895466061323
+            },
+            {
+              "magnitude": 0.1014370162617516,
+              "coordinate": 8178.784043778337,
+              "value": 0.1014370162617516
+            },
+            {
+              "magnitude": 0.10143701626175157,
+              "coordinate": 12.21595620829553,
+              "value": 0.10143701626175157
+            }
+          ],
+          "scan_start": -512,
+          "scan_end": 8703.9921875,
+          "outside_distance": 512,
+          "outside_tail_upper": 0.5092918881655517,
+          "sinc_second_derivative_bound": 7.4102380228690645,
+          "between_grid_points_allowance": 5.653562944693805e-05,
+          "analytic_global_upper_before_numeric_error": 0.5092918881655517,
+          "numerical_allowance_not_a_rigorous_error_certificate": 8.191936790496111e-08,
+          "qualified_numerical_global_upper": 0.5092919700849197,
+          "fft_direct_max_observed_difference": 5.551115123125783e-17,
+          "fft_length": 32768,
+          "fractional_phases": 128,
+          "grid_points": 1179648,
+          "local_maxima": 5117,
+          "local_maxima_refined": 16,
+          "channel": 0,
+          "identical_channel_reused": false,
+          "original_case": "quiet-dc-0.1-hard",
+          "original_channel": 0
+        },
+        {
+          "sample_peak": 0.10592534393072128,
+          "sample_l1": 819.1936790496111,
+          "grid_peak": 0.11569200966495176,
+          "grid_coordinate": 8190.453125,
+          "direct_at_grid_peak": 0.11569200966495176,
+          "refined_peak": 0.11569256400105857,
+          "refined_dbtp": -18.733891078024435,
+          "refined_coordinate": 8190.45604370378,
+          "refined_signed_value": 0.11569256400105857,
+          "exceeds_minus_1_dbtp": false,
+          "top_refined": [
+            {
+              "magnitude": 0.11569256400105857,
+              "coordinate": 8190.45604370378,
+              "value": 0.11569256400105857
+            },
+            {
+              "magnitude": 0.11569256400105855,
+              "coordinate": 0.5439562841558838,
+              "value": 0.11569256400105855
+            },
+            {
+              "magnitude": 0.1053780132173273,
+              "coordinate": 2.785740209366274,
+              "value": 0.1053780132173273
+            },
+            {
+              "magnitude": 0.10537801321732725,
+              "coordinate": 8188.214259809393,
+              "value": 0.10537801321732725
+            },
+            {
+              "magnitude": 0.10237895466061338,
+              "coordinate": 8185.9652068453,
+              "value": 0.10237895466061338
+            },
+            {
+              "magnitude": 0.10237895466061323,
+              "coordinate": 5.034793056370389,
+              "value": 0.10237895466061323
+            },
+            {
+              "magnitude": 0.1014370162617516,
+              "coordinate": 8178.784043778337,
+              "value": 0.1014370162617516
+            },
+            {
+              "magnitude": 0.10143701626175157,
+              "coordinate": 12.21595620829553,
+              "value": 0.10143701626175157
+            }
+          ],
+          "scan_start": -512,
+          "scan_end": 8703.9921875,
+          "outside_distance": 512,
+          "outside_tail_upper": 0.5092918881655517,
+          "sinc_second_derivative_bound": 7.4102380228690645,
+          "between_grid_points_allowance": 5.653562944693805e-05,
+          "analytic_global_upper_before_numeric_error": 0.5092918881655517,
+          "numerical_allowance_not_a_rigorous_error_certificate": 8.191936790496111e-08,
+          "qualified_numerical_global_upper": 0.5092919700849197,
+          "fft_direct_max_observed_difference": 5.551115123125783e-17,
+          "fft_length": 32768,
+          "fractional_phases": 128,
+          "grid_points": 1179648,
+          "local_maxima": 5117,
+          "local_maxima_refined": 16,
+          "channel": 1,
+          "identical_channel_reused": true,
+          "original_case": "quiet-dc-0.1-hard",
+          "original_channel": 0
+        }
+      ],
+      "worst_refined_dbtp": -18.733891078024435,
+      "exceeds_minus_1_dbtp": false,
+      "qualified_numerical_global_upper": 0.5092919700849197
+    },
+    {
+      "case": "ordinary-silent-gap-default96",
+      "wav_sha256": "dd847fc383443515e2e6a027f281165dba7d49acc2dcbbeb49bb4ffdb3ce0b8e",
+      "frames": 8192,
+      "masked_odd_frames_verified_zero": null,
+      "active_even_frames_nonzero": null,
+      "channels": [
+        {
+          "sample_peak": 0.800000011920929,
+          "sample_l1": 3814.6431854701004,
+          "grid_peak": 0.8000162093660842,
+          "grid_coordinate": 3694.5859375,
+          "direct_at_grid_peak": -0.8000162093660842,
+          "refined_peak": 0.8000162313220397,
+          "refined_dbtp": -1.9380240326089802,
+          "refined_coordinate": 3694.584152565096,
+          "refined_signed_value": -0.8000162313220397,
+          "exceeds_minus_1_dbtp": false,
+          "top_refined": [
+            {
+              "magnitude": 0.8000162313220397,
+              "coordinate": 3694.584152565096,
+              "value": -0.8000162313220397
+            },
+            {
+              "magnitude": 0.8000154592610961,
+              "coordinate": 8051.654605577039,
+              "value": 0.8000154592610961
+            },
+            {
+              "magnitude": 0.8000144966114642,
+              "coordinate": 2948.3483142647065,
+              "value": 0.8000144966114642
+            },
+            {
+              "magnitude": 0.8000095407264984,
+              "coordinate": 8003.511956568065,
+              "value": 0.8000095407264984
+            },
+            {
+              "magnitude": 0.8000061114433654,
+              "coordinate": 7955.368226116539,
+              "value": 0.8000061114433654
+            },
+            {
+              "magnitude": 0.8000034027522747,
+              "coordinate": 7907.224088422781,
+              "value": 0.8000034027522747
+            },
+            {
+              "magnitude": 0.8000025271022233,
+              "coordinate": 7690.573083195092,
+              "value": -0.8000025271022233
+            },
+            {
+              "magnitude": 0.800002412528405,
+              "coordinate": 2900.202867486595,
+              "value": 0.800002412528405
+            }
+          ],
+          "scan_start": -2048,
+          "scan_end": 10239.9921875,
+          "outside_distance": 2048,
+          "outside_tail_upper": 0.5928899600579884,
+          "sinc_second_derivative_bound": 55.96574234877545,
+          "between_grid_points_allowance": 0.00042698472861309395,
+          "analytic_global_upper_before_numeric_error": 0.8004431940946973,
+          "numerical_allowance_not_a_rigorous_error_certificate": 3.8146431854701004e-07,
+          "qualified_numerical_global_upper": 0.8004435755590159,
+          "fft_direct_max_observed_difference": 3.6752939575865383e-16,
+          "fft_length": 32768,
+          "fractional_phases": 128,
+          "grid_points": 1572864,
+          "local_maxima": 4933,
+          "local_maxima_refined": 16,
+          "channel": 0,
+          "identical_channel_reused": false,
+          "original_case": "ordinary-silent-gap-default96",
+          "original_channel": 0
+        },
+        {
+          "sample_peak": 0.5999999642372131,
+          "sample_l1": 2860.982387710632,
+          "grid_peak": 0.6000121707285665,
+          "grid_coordinate": 3694.5859375,
+          "direct_at_grid_peak": 0.6000121707285666,
+          "refined_peak": 0.6000121872298745,
+          "refined_dbtp": -4.436798565896106,
+          "refined_coordinate": 3694.58415065957,
+          "refined_signed_value": 0.6000121872298745,
+          "exceeds_minus_1_dbtp": false,
+          "top_refined": [
+            {
+              "magnitude": 0.6000121872298745,
+              "coordinate": 3694.58415065957,
+              "value": 0.6000121872298745
+            },
+            {
+              "magnitude": 0.6000116272284978,
+              "coordinate": 8051.654606261475,
+              "value": -0.6000116272284978
+            },
+            {
+              "magnitude": 0.6000108787188453,
+              "coordinate": 2948.3483108341525,
+              "value": -0.6000108787188453
+            },
+            {
+              "magnitude": 0.600007156346102,
+              "coordinate": 8003.51196631704,
+              "value": -0.600007156346102
+            },
+            {
+              "magnitude": 0.6000046178071136,
+              "coordinate": 7955.368224120619,
+              "value": -0.6000046178071136
+            },
+            {
+              "magnitude": 0.6000025131864628,
+              "coordinate": 7907.2240915790235,
+              "value": -0.6000025131864628
+            },
+            {
+              "magnitude": 0.6000019506986461,
+              "coordinate": 7690.5730852020215,
+              "value": 0.6000019506986461
+            },
+            {
+              "magnitude": 0.6000018125048711,
+              "coordinate": 2900.2028681383936,
+              "value": -0.6000018125048711
+            }
+          ],
+          "scan_start": -1024,
+          "scan_end": 9215.9921875,
+          "outside_distance": 1024,
+          "outside_tail_upper": 0.8893349396542978,
+          "sinc_second_derivative_bound": 41.974303634252074,
+          "between_grid_points_allowance": 0.00032023852260018977,
+          "analytic_global_upper_before_numeric_error": 0.8893349396542978,
+          "numerical_allowance_not_a_rigorous_error_certificate": 2.860982387710632e-07,
+          "qualified_numerical_global_upper": 0.8893352257525365,
+          "fft_direct_max_observed_difference": 3.3306690738754696e-16,
+          "fft_length": 32768,
+          "fractional_phases": 128,
+          "grid_points": 1310720,
+          "local_maxima": 2886,
+          "local_maxima_refined": 16,
+          "channel": 1,
+          "identical_channel_reused": false,
+          "original_case": "ordinary-silent-gap-default96",
+          "original_channel": 1
+        }
+      ],
+      "worst_refined_dbtp": -1.9380240326089802,
+      "exceeds_minus_1_dbtp": false,
+      "qualified_numerical_global_upper": 0.8893352257525365
+    },
+    {
+      "case": "permitted-tail-default96",
+      "wav_sha256": "22bfc60e99aa8999bae1d89136b21b4a75f0541b062058215d040eb90c4d5bb5",
+      "frames": 8192,
+      "masked_odd_frames_verified_zero": null,
+      "active_even_frames_nonzero": null,
+      "channels": [
+        {
+          "sample_peak": 0.4999999701976776,
+          "sample_l1": 1185.540149160191,
+          "grid_peak": 0.5000066994521353,
+          "grid_coordinate": 3068.7109375,
+          "direct_at_grid_peak": -0.500006699452135,
+          "refined_peak": 0.5000067082044105,
+          "refined_dbtp": -6.020483380614988,
+          "refined_coordinate": 3068.7123686021846,
+          "refined_signed_value": -0.5000067082044105,
+          "exceeds_minus_1_dbtp": false,
+          "top_refined": [
+            {
+              "magnitude": 0.5000067082044105,
+              "coordinate": 3068.7123686021846,
+              "value": -0.5000067082044105
+            },
+            {
+              "magnitude": 0.5000003483685744,
+              "coordinate": 131.8968109402535,
+              "value": -0.5000003483685744
+            },
+            {
+              "magnitude": 0.5000002769300337,
+              "coordinate": 3044.635839328716,
+              "value": 0.5000002769300337
+            },
+            {
+              "magnitude": 0.5000001714741437,
+              "coordinate": 300.4027262393287,
+              "value": 0.5000001714741437
+            },
+            {
+              "magnitude": 0.5000001601734422,
+              "coordinate": 252.2583348534948,
+              "value": 0.5000001601734422
+            },
+            {
+              "magnitude": 0.5000001369468428,
+              "coordinate": 348.54713830061445,
+              "value": 0.5000001369468428
+            },
+            {
+              "magnitude": 0.5000001120678398,
+              "coordinate": 396.6915488748237,
+              "value": 0.5000001120678398
+            },
+            {
+              "magnitude": 0.5000001038464967,
+              "coordinate": 204.11395525139545,
+              "value": 0.5000001038464967
+            }
+          ],
+          "scan_start": -512,
+          "scan_end": 8703.9921875,
+          "outside_distance": 512,
+          "outside_tail_upper": 0.7370491209872942,
+          "sinc_second_derivative_bound": 34.97858636187673,
+          "between_grid_points_allowance": 0.00026686543550015815,
+          "analytic_global_upper_before_numeric_error": 0.7370491209872942,
+          "numerical_allowance_not_a_rigorous_error_certificate": 1.1855401491601911e-07,
+          "qualified_numerical_global_upper": 0.7370492395413092,
+          "fft_direct_max_observed_difference": 2.220446049250313e-16,
+          "fft_length": 32768,
+          "fractional_phases": 128,
+          "grid_points": 1179648,
+          "local_maxima": 1370,
+          "local_maxima_refined": 16,
+          "channel": 0,
+          "identical_channel_reused": false,
+          "original_case": "permitted-tail-default96",
+          "original_channel": 0
+        },
+        {
+          "sample_peak": 0.2499999850988388,
+          "sample_l1": 592.7700745800955,
+          "grid_peak": 0.2500033497260676,
+          "grid_coordinate": 3068.7109375,
+          "direct_at_grid_peak": -0.2500033497260675,
+          "refined_peak": 0.25000335410220526,
+          "refined_dbtp": -12.041083293894612,
+          "refined_coordinate": 3068.7123686021846,
+          "refined_signed_value": -0.25000335410220526,
+          "exceeds_minus_1_dbtp": false,
+          "top_refined": [
+            {
+              "magnitude": 0.25000335410220526,
+              "coordinate": 3068.7123686021846,
+              "value": -0.25000335410220526
+            },
+            {
+              "magnitude": 0.2500001741842872,
+              "coordinate": 131.8968109402535,
+              "value": -0.2500001741842872
+            },
+            {
+              "magnitude": 0.25000013846501684,
+              "coordinate": 3044.635839328716,
+              "value": 0.25000013846501684
+            },
+            {
+              "magnitude": 0.25000008573707183,
+              "coordinate": 300.4027262393287,
+              "value": 0.25000008573707183
+            },
+            {
+              "magnitude": 0.2500000800867211,
+              "coordinate": 252.2583348534948,
+              "value": 0.2500000800867211
+            },
+            {
+              "magnitude": 0.2500000684734214,
+              "coordinate": 348.54713830061445,
+              "value": 0.2500000684734214
+            },
+            {
+              "magnitude": 0.2500000560339199,
+              "coordinate": 396.6915488748237,
+              "value": 0.2500000560339199
+            },
+            {
+              "magnitude": 0.25000005192324837,
+              "coordinate": 204.11395525139545,
+              "value": 0.25000005192324837
+            }
+          ],
+          "scan_start": -256,
+          "scan_end": 8447.9921875,
+          "outside_distance": 256,
+          "outside_tail_upper": 0.7370491209872942,
+          "sinc_second_derivative_bound": 17.489293180938365,
+          "between_grid_points_allowance": 0.00013343271775007908,
+          "analytic_global_upper_before_numeric_error": 0.7370491209872942,
+          "numerical_allowance_not_a_rigorous_error_certificate": 5.9277007458009555e-08,
+          "qualified_numerical_global_upper": 0.7370491802643017,
+          "fft_direct_max_observed_difference": 8.326672684688674e-17,
+          "fft_length": 32768,
+          "fractional_phases": 128,
+          "grid_points": 1114112,
+          "local_maxima": 858,
+          "local_maxima_refined": 16,
+          "channel": 1,
+          "identical_channel_reused": false,
+          "original_case": "permitted-tail-default96",
+          "original_channel": 1
+        }
+      ],
+      "worst_refined_dbtp": -6.020483380614988,
+      "exceeds_minus_1_dbtp": false,
+      "qualified_numerical_global_upper": 0.7370492395413092
+    },
+    {
+      "case": "stereo-opposed-peaks-hard",
+      "wav_sha256": "5839deebcaf603ed91c9367221a409bc1e13a0fc418397bde365324f13ae52a1",
+      "frames": 8192,
+      "masked_odd_frames_verified_zero": null,
+      "active_even_frames_nonzero": null,
+      "channels": [
+        {
+          "sample_peak": 0.7371874451637268,
+          "sample_l1": 4.480748698558777,
+          "grid_peak": 0.8640374752378566,
+          "grid_coordinate": 4097.2734375,
+          "direct_at_grid_peak": -0.8640374752378566,
+          "refined_peak": 0.8640418103741934,
+          "refined_dbtp": -1.2693048361752677,
+          "refined_coordinate": 4097.2750500759685,
+          "refined_signed_value": -0.8640418103741934,
+          "exceeds_minus_1_dbtp": false,
+          "top_refined": [
+            {
+              "magnitude": 0.8640418103741934,
+              "coordinate": 4097.2750500759685,
+              "value": -0.8640418103741934
+            },
+            {
+              "magnitude": 0.8625819022176789,
+              "coordinate": 4095.7253632341963,
+              "value": 0.8625819022176789
+            },
+            {
+              "magnitude": 0.288056876238661,
+              "coordinate": 4098.702962914465,
+              "value": 0.288056876238661
+            },
+            {
+              "magnitude": 0.2876387021895673,
+              "coordinate": 4094.297792806742,
+              "value": -0.2876387021895673
+            },
+            {
+              "magnitude": 0.1839237376799181,
+              "coordinate": 4099.877064726163,
+              "value": -0.1839237376799181
+            },
+            {
+              "magnitude": 0.18379829788183494,
+              "coordinate": 4093.123685302923,
+              "value": 0.18379829788183494
+            },
+            {
+              "magnitude": 0.13587266779960888,
+              "coordinate": 4091.967008271132,
+              "value": -0.13587266779960888
+            },
+            {
+              "magnitude": 0.1358091357086203,
+              "coordinate": 4101.033567741938,
+              "value": 0.1358091357086203
+            }
+          ],
+          "scan_start": -4,
+          "scan_end": 8195.9921875,
+          "outside_distance": 4,
+          "outside_tail_upper": 0.35656665206410315,
+          "sinc_second_derivative_bound": 51.571552505005435,
+          "between_grid_points_allowance": 0.0003934597206497607,
+          "analytic_global_upper_before_numeric_error": 0.8644309349585063,
+          "numerical_allowance_not_a_rigorous_error_certificate": 4.4807486985587775e-10,
+          "qualified_numerical_global_upper": 0.8644309354065812,
+          "fft_direct_max_observed_difference": 5.018246696008102e-18,
+          "fft_length": 32768,
+          "fractional_phases": 128,
+          "grid_points": 1049600,
+          "local_maxima": 8175,
+          "local_maxima_refined": 16,
+          "channel": 0,
+          "identical_channel_reused": false,
+          "original_case": "stereo-opposed-peaks-hard",
+          "original_channel": 0
+        },
+        {
+          "sample_peak": 0.7371874451637268,
+          "sample_l1": 4.480748698558777,
+          "grid_peak": 0.8640374752378566,
+          "grid_coordinate": 4097.2734375,
+          "direct_at_grid_peak": 0.8640374752378566,
+          "refined_peak": 0.8640418103741934,
+          "refined_dbtp": -1.2693048361752677,
+          "refined_coordinate": 4097.2750500759685,
+          "refined_signed_value": 0.8640418103741934,
+          "exceeds_minus_1_dbtp": false,
+          "top_refined": [
+            {
+              "magnitude": 0.8640418103741934,
+              "coordinate": 4097.2750500759685,
+              "value": 0.8640418103741934
+            },
+            {
+              "magnitude": 0.8625819022176789,
+              "coordinate": 4095.7253632341963,
+              "value": -0.8625819022176789
+            },
+            {
+              "magnitude": 0.288056876238661,
+              "coordinate": 4098.702962914465,
+              "value": -0.288056876238661
+            },
+            {
+              "magnitude": 0.2876387021895673,
+              "coordinate": 4094.297792806742,
+              "value": 0.2876387021895673
+            },
+            {
+              "magnitude": 0.1839237376799181,
+              "coordinate": 4099.877064726163,
+              "value": 0.1839237376799181
+            },
+            {
+              "magnitude": 0.18379829788183494,
+              "coordinate": 4093.123685302923,
+              "value": -0.18379829788183494
+            },
+            {
+              "magnitude": 0.13587266779960888,
+              "coordinate": 4091.967008271132,
+              "value": 0.13587266779960888
+            },
+            {
+              "magnitude": 0.1358091357086203,
+              "coordinate": 4101.033567741938,
+              "value": -0.1358091357086203
+            }
+          ],
+          "scan_start": -4,
+          "scan_end": 8195.9921875,
+          "outside_distance": 4,
+          "outside_tail_upper": 0.35656665206410315,
+          "sinc_second_derivative_bound": 51.571552505005435,
+          "between_grid_points_allowance": 0.0003934597206497607,
+          "analytic_global_upper_before_numeric_error": 0.8644309349585063,
+          "numerical_allowance_not_a_rigorous_error_certificate": 4.4807486985587775e-10,
+          "qualified_numerical_global_upper": 0.8644309354065812,
+          "fft_direct_max_observed_difference": 5.018246696008102e-18,
+          "fft_length": 32768,
+          "fractional_phases": 128,
+          "grid_points": 1049600,
+          "local_maxima": 8175,
+          "local_maxima_refined": 16,
+          "channel": 1,
+          "identical_channel_reused": false,
+          "original_case": "stereo-opposed-peaks-hard",
+          "original_channel": 1
+        }
+      ],
+      "worst_refined_dbtp": -1.2693048361752677,
+      "exceeds_minus_1_dbtp": false,
+      "qualified_numerical_global_upper": 0.8644309354065812
+    },
+    {
+      "case": "mask-alternating-dc-0.1-shortened-edge",
+      "wav_sha256": "d525f929a1e30c731df329776f27157a99acf88372b7778124800123871cda85",
+      "frames": 8192,
+      "masked_odd_frames_verified_zero": 4096,
+      "active_even_frames_nonzero": 4096,
+      "channels": [
+        {
+          "sample_peak": 0.10592534393072128,
+          "sample_l1": 409.59683952480555,
+          "grid_peak": 0.2111120025785437,
+          "grid_coordinate": 8190.40625,
+          "direct_at_grid_peak": 0.21111200257854368,
+          "refined_peak": 0.21111783672851303,
+          "refined_dbtp": -13.509501457435299,
+          "refined_coordinate": 8190.403466763836,
+          "refined_signed_value": 0.21111783672851303,
+          "exceeds_minus_1_dbtp": false,
+          "top_refined": [
+            {
+              "magnitude": 0.21111783672851303,
+              "coordinate": 8190.403466763836,
+              "value": 0.21111783672851303
+            },
+            {
+              "magnitude": 0.20043934088524937,
+              "coordinate": -0.41216126274519777,
+              "value": 0.20043934088524937
+            },
+            {
+              "magnitude": 0.18977015196759903,
+              "coordinate": 8188.380307991518,
+              "value": 0.18977015196759903
+            },
+            {
+              "magnitude": 0.18381853376097185,
+              "coordinate": 1.6090503259766582,
+              "value": 0.18381853376097185
+            },
+            {
+              "magnitude": 0.17948281036285624,
+              "coordinate": 8186.3718393975,
+              "value": 0.17948281036285624
+            },
+            {
+              "magnitude": 0.17773221187777938,
+              "coordinate": 3.61925970290035,
+              "value": 0.17773221187777938
+            },
+            {
+              "magnitude": 0.17428512172666136,
+              "coordinate": 5.627298565052443,
+              "value": 0.17428512172666136
+            },
+            {
+              "magnitude": 0.17277573695102166,
+              "coordinate": 8184.367331018429,
+              "value": 0.17277573695102166
+            }
+          ],
+          "scan_start": -256,
+          "scan_end": 8447.9921875,
+          "outside_distance": 256,
+          "outside_tail_upper": 0.5092918881655517,
+          "sinc_second_derivative_bound": 7.4102380228690645,
+          "between_grid_points_allowance": 5.653562944693805e-05,
+          "analytic_global_upper_before_numeric_error": 0.5092918881655517,
+          "numerical_allowance_not_a_rigorous_error_certificate": 4.0959683952480554e-08,
+          "qualified_numerical_global_upper": 0.5092919291252357,
+          "fft_direct_max_observed_difference": 4.163336342344337e-17,
+          "fft_length": 32768,
+          "fractional_phases": 128,
+          "grid_points": 1114112,
+          "local_maxima": 8574,
+          "local_maxima_refined": 16,
+          "channel": 0,
+          "identical_channel_reused": true,
+          "original_case": "mask-alternating-dc-0.1-hard",
+          "original_channel": 0
+        },
+        {
+          "sample_peak": 0.10592534393072128,
+          "sample_l1": 409.59683952480555,
+          "grid_peak": 0.2111120025785437,
+          "grid_coordinate": 8190.40625,
+          "direct_at_grid_peak": 0.21111200257854368,
+          "refined_peak": 0.21111783672851303,
+          "refined_dbtp": -13.509501457435299,
+          "refined_coordinate": 8190.403466763836,
+          "refined_signed_value": 0.21111783672851303,
+          "exceeds_minus_1_dbtp": false,
+          "top_refined": [
+            {
+              "magnitude": 0.21111783672851303,
+              "coordinate": 8190.403466763836,
+              "value": 0.21111783672851303
+            },
+            {
+              "magnitude": 0.20043934088524937,
+              "coordinate": -0.41216126274519777,
+              "value": 0.20043934088524937
+            },
+            {
+              "magnitude": 0.18977015196759903,
+              "coordinate": 8188.380307991518,
+              "value": 0.18977015196759903
+            },
+            {
+              "magnitude": 0.18381853376097185,
+              "coordinate": 1.6090503259766582,
+              "value": 0.18381853376097185
+            },
+            {
+              "magnitude": 0.17948281036285624,
+              "coordinate": 8186.3718393975,
+              "value": 0.17948281036285624
+            },
+            {
+              "magnitude": 0.17773221187777938,
+              "coordinate": 3.61925970290035,
+              "value": 0.17773221187777938
+            },
+            {
+              "magnitude": 0.17428512172666136,
+              "coordinate": 5.627298565052443,
+              "value": 0.17428512172666136
+            },
+            {
+              "magnitude": 0.17277573695102166,
+              "coordinate": 8184.367331018429,
+              "value": 0.17277573695102166
+            }
+          ],
+          "scan_start": -256,
+          "scan_end": 8447.9921875,
+          "outside_distance": 256,
+          "outside_tail_upper": 0.5092918881655517,
+          "sinc_second_derivative_bound": 7.4102380228690645,
+          "between_grid_points_allowance": 5.653562944693805e-05,
+          "analytic_global_upper_before_numeric_error": 0.5092918881655517,
+          "numerical_allowance_not_a_rigorous_error_certificate": 4.0959683952480554e-08,
+          "qualified_numerical_global_upper": 0.5092919291252357,
+          "fft_direct_max_observed_difference": 4.163336342344337e-17,
+          "fft_length": 32768,
+          "fractional_phases": 128,
+          "grid_points": 1114112,
+          "local_maxima": 8574,
+          "local_maxima_refined": 16,
+          "channel": 1,
+          "identical_channel_reused": true,
+          "original_case": "mask-alternating-dc-0.1-hard",
+          "original_channel": 0
+        }
+      ],
+      "worst_refined_dbtp": -13.509501457435299,
+      "exceeds_minus_1_dbtp": false,
+      "qualified_numerical_global_upper": 0.5092919291252357
+    },
+    {
+      "case": "mask-alternating-dc-0.8-shortened-edge",
+      "wav_sha256": "f546e8ddb8c07bc005130134f21be6cfa86baa04e9910f00db4ebeea7904b40e",
+      "frames": 8192,
+      "masked_odd_frames_verified_zero": 4096,
+      "active_even_frames_nonzero": 4096,
+      "channels": [
+        {
+          "sample_peak": 0.800000011920929,
+          "sample_l1": 3170.0650283694267,
+          "grid_peak": 1.3656134471119301,
+          "grid_coordinate": -0.4140625,
+          "direct_at_grid_peak": 1.36561344711193,
+          "refined_peak": 1.3656668487382038,
+          "refined_dbtp": 2.706895342677778,
+          "refined_coordinate": -0.4173027597384198,
+          "refined_signed_value": 1.3656668487382038,
+          "exceeds_minus_1_dbtp": true,
+          "top_refined": [
+            {
+              "magnitude": 1.3656668487382038,
+              "coordinate": -0.4173027597384198,
+              "value": 1.3656668487382038
+            },
+            {
+              "magnitude": 1.3612114127368498,
+              "coordinate": 8190.412390775567,
+              "value": 1.3612114127368498
+            },
+            {
+              "magnitude": 1.2565084413134715,
+              "coordinate": 1.6020918391709413,
+              "value": 1.2565084413134715
+            },
+            {
+              "magnitude": 1.2314392551055708,
+              "coordinate": 8188.392523456678,
+              "value": 1.2314392551055708
+            },
+            {
+              "magnitude": 1.2165109959532405,
+              "coordinate": 3.6113155646048174,
+              "value": 1.2165109959532405
+            },
+            {
+              "magnitude": 1.1938068607438737,
+              "coordinate": 5.6185690767658825,
+              "value": 1.1938068607438737
+            },
+            {
+              "magnitude": 1.1755143472829483,
+              "coordinate": 7.624683904916496,
+              "value": 1.1755143472829483
+            },
+            {
+              "magnitude": 1.1693271382277517,
+              "coordinate": 8186.38565435987,
+              "value": 1.1693271382277517
+            }
+          ],
+          "scan_start": -2048,
+          "scan_end": 10239.9921875,
+          "outside_distance": 2048,
+          "outside_tail_upper": 0.49270656170678095,
+          "sinc_second_derivative_bound": 55.96574234877545,
+          "between_grid_points_allowance": 0.00042698472861309395,
+          "analytic_global_upper_before_numeric_error": 1.3660404318405432,
+          "numerical_allowance_not_a_rigorous_error_certificate": 3.170065028369427e-07,
+          "qualified_numerical_global_upper": 1.366040748847046,
+          "fft_direct_max_observed_difference": 2.7755575615628914e-16,
+          "fft_length": 32768,
+          "fractional_phases": 128,
+          "grid_points": 1572864,
+          "local_maxima": 12162,
+          "local_maxima_refined": 16,
+          "channel": 0,
+          "identical_channel_reused": true,
+          "original_case": "mask-alternating-dc-0.8-hard",
+          "original_channel": 0
+        },
+        {
+          "sample_peak": 0.800000011920929,
+          "sample_l1": 3170.0650283694267,
+          "grid_peak": 1.3656134471119301,
+          "grid_coordinate": -0.4140625,
+          "direct_at_grid_peak": 1.36561344711193,
+          "refined_peak": 1.3656668487382038,
+          "refined_dbtp": 2.706895342677778,
+          "refined_coordinate": -0.4173027597384198,
+          "refined_signed_value": 1.3656668487382038,
+          "exceeds_minus_1_dbtp": true,
+          "top_refined": [
+            {
+              "magnitude": 1.3656668487382038,
+              "coordinate": -0.4173027597384198,
+              "value": 1.3656668487382038
+            },
+            {
+              "magnitude": 1.3612114127368498,
+              "coordinate": 8190.412390775567,
+              "value": 1.3612114127368498
+            },
+            {
+              "magnitude": 1.2565084413134715,
+              "coordinate": 1.6020918391709413,
+              "value": 1.2565084413134715
+            },
+            {
+              "magnitude": 1.2314392551055708,
+              "coordinate": 8188.392523456678,
+              "value": 1.2314392551055708
+            },
+            {
+              "magnitude": 1.2165109959532405,
+              "coordinate": 3.6113155646048174,
+              "value": 1.2165109959532405
+            },
+            {
+              "magnitude": 1.1938068607438737,
+              "coordinate": 5.6185690767658825,
+              "value": 1.1938068607438737
+            },
+            {
+              "magnitude": 1.1755143472829483,
+              "coordinate": 7.624683904916496,
+              "value": 1.1755143472829483
+            },
+            {
+              "magnitude": 1.1693271382277517,
+              "coordinate": 8186.38565435987,
+              "value": 1.1693271382277517
+            }
+          ],
+          "scan_start": -2048,
+          "scan_end": 10239.9921875,
+          "outside_distance": 2048,
+          "outside_tail_upper": 0.49270656170678095,
+          "sinc_second_derivative_bound": 55.96574234877545,
+          "between_grid_points_allowance": 0.00042698472861309395,
+          "analytic_global_upper_before_numeric_error": 1.3660404318405432,
+          "numerical_allowance_not_a_rigorous_error_certificate": 3.170065028369427e-07,
+          "qualified_numerical_global_upper": 1.366040748847046,
+          "fft_direct_max_observed_difference": 2.7755575615628914e-16,
+          "fft_length": 32768,
+          "fractional_phases": 128,
+          "grid_points": 1572864,
+          "local_maxima": 12162,
+          "local_maxima_refined": 16,
+          "channel": 1,
+          "identical_channel_reused": true,
+          "original_case": "mask-alternating-dc-0.8-hard",
+          "original_channel": 0
+        }
+      ],
+      "worst_refined_dbtp": 2.706895342677778,
+      "exceeds_minus_1_dbtp": true,
+      "qualified_numerical_global_upper": 1.366040748847046
+    },
+    {
+      "case": "mask-alternating-dc-16-shortened-edge",
+      "wav_sha256": "904373539e3384f59c2622be4a8ada7d837ab1f9d497376033bfa4a0e95661e9",
+      "frames": 8192,
+      "masked_odd_frames_verified_zero": 4096,
+      "active_even_frames_nonzero": 4096,
+      "channels": [
+        {
+          "sample_peak": 0.8510008454322815,
+          "sample_l1": 3465.6301815509796,
+          "grid_peak": 1.4397923050878871,
+          "grid_coordinate": 8190.421875,
+          "direct_at_grid_peak": 1.439792305087887,
+          "refined_peak": 1.4398533310099881,
+          "refined_dbtp": 3.1663651088889377,
+          "refined_coordinate": 8190.425207844905,
+          "refined_signed_value": 1.4398533310099881,
+          "exceeds_minus_1_dbtp": true,
+          "top_refined": [
+            {
+              "magnitude": 1.4398533310099881,
+              "coordinate": 8190.425207844905,
+              "value": 1.4398533310099881
+            },
+            {
+              "magnitude": 1.4133503818987154,
+              "coordinate": -0.42753526755643984,
+              "value": 1.4133503818987154
+            },
+            {
+              "magnitude": 1.3255604314288063,
+              "coordinate": 8188.409183715467,
+              "value": 1.3255604314288063
+            },
+            {
+              "magnitude": 1.3142271952284816,
+              "coordinate": 1.588622605519345,
+              "value": 1.3142271952284816
+            },
+            {
+              "magnitude": 1.2802358202532025,
+              "coordinate": 3.5963212033684098,
+              "value": 1.2802358202532025
+            },
+            {
+              "magnitude": 1.2746341978089837,
+              "coordinate": 8186.403560763337,
+              "value": 1.2746341978089837
+            },
+            {
+              "magnitude": 1.2624286534002125,
+              "coordinate": 5.602479418862554,
+              "value": 1.2624286534002125
+            },
+            {
+              "magnitude": 1.2486991967324865,
+              "coordinate": 7.607725280499779,
+              "value": 1.2486991967324865
+            }
+          ],
+          "scan_start": -2048,
+          "scan_end": 10239.9921875,
+          "outside_distance": 2048,
+          "outside_tail_upper": 0.5386447014866221,
+          "sinc_second_derivative_bound": 59.533616680446414,
+          "between_grid_points_allowance": 0.00045420544952733165,
+          "analytic_global_upper_before_numeric_error": 1.4402465105374145,
+          "numerical_allowance_not_a_rigorous_error_certificate": 3.4656301815509797e-07,
+          "qualified_numerical_global_upper": 1.4402468571004325,
+          "fft_direct_max_observed_difference": 3.885780586188048e-16,
+          "fft_length": 32768,
+          "fractional_phases": 128,
+          "grid_points": 1572864,
+          "local_maxima": 12158,
+          "local_maxima_refined": 16,
+          "channel": 0,
+          "identical_channel_reused": true,
+          "original_case": "mask-alternating-dc-16-hard",
+          "original_channel": 0
+        },
+        {
+          "sample_peak": 0.8510008454322815,
+          "sample_l1": 3465.6301815509796,
+          "grid_peak": 1.4397923050878871,
+          "grid_coordinate": 8190.421875,
+          "direct_at_grid_peak": 1.439792305087887,
+          "refined_peak": 1.4398533310099881,
+          "refined_dbtp": 3.1663651088889377,
+          "refined_coordinate": 8190.425207844905,
+          "refined_signed_value": 1.4398533310099881,
+          "exceeds_minus_1_dbtp": true,
+          "top_refined": [
+            {
+              "magnitude": 1.4398533310099881,
+              "coordinate": 8190.425207844905,
+              "value": 1.4398533310099881
+            },
+            {
+              "magnitude": 1.4133503818987154,
+              "coordinate": -0.42753526755643984,
+              "value": 1.4133503818987154
+            },
+            {
+              "magnitude": 1.3255604314288063,
+              "coordinate": 8188.409183715467,
+              "value": 1.3255604314288063
+            },
+            {
+              "magnitude": 1.3142271952284816,
+              "coordinate": 1.588622605519345,
+              "value": 1.3142271952284816
+            },
+            {
+              "magnitude": 1.2802358202532025,
+              "coordinate": 3.5963212033684098,
+              "value": 1.2802358202532025
+            },
+            {
+              "magnitude": 1.2746341978089837,
+              "coordinate": 8186.403560763337,
+              "value": 1.2746341978089837
+            },
+            {
+              "magnitude": 1.2624286534002125,
+              "coordinate": 5.602479418862554,
+              "value": 1.2624286534002125
+            },
+            {
+              "magnitude": 1.2486991967324865,
+              "coordinate": 7.607725280499779,
+              "value": 1.2486991967324865
+            }
+          ],
+          "scan_start": -2048,
+          "scan_end": 10239.9921875,
+          "outside_distance": 2048,
+          "outside_tail_upper": 0.5386447014866221,
+          "sinc_second_derivative_bound": 59.533616680446414,
+          "between_grid_points_allowance": 0.00045420544952733165,
+          "analytic_global_upper_before_numeric_error": 1.4402465105374145,
+          "numerical_allowance_not_a_rigorous_error_certificate": 3.4656301815509797e-07,
+          "qualified_numerical_global_upper": 1.4402468571004325,
+          "fft_direct_max_observed_difference": 3.885780586188048e-16,
+          "fft_length": 32768,
+          "fractional_phases": 128,
+          "grid_points": 1572864,
+          "local_maxima": 12158,
+          "local_maxima_refined": 16,
+          "channel": 1,
+          "identical_channel_reused": true,
+          "original_case": "mask-alternating-dc-16-hard",
+          "original_channel": 0
+        }
+      ],
+      "worst_refined_dbtp": 3.1663651088889377,
+      "exceeds_minus_1_dbtp": true,
+      "qualified_numerical_global_upper": 1.4402468571004325
+    }
+  ],
+  "seconds": 5.056476542027667
+}

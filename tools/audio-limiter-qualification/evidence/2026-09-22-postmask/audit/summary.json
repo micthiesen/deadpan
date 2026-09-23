@@ -1,0 +1,11 @@
+{
+  "case_count": 16,
+  "unique_channels": 18,
+  "failures": [
+    "mask-alternating-dc-0.8-hard",
+    "mask-alternating-dc-16-hard",
+    "mask-alternating-dc-0.8-shortened-edge",
+    "mask-alternating-dc-16-shortened-edge"
+  ],
+  "all_input_hashes_verified_after_audit": true
+}

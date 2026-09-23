@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "captured_before_shortened_edge_outputs": true,
+  "utc_epoch_seconds": 1790047341.7072902,
+  "hashes": {
+    "shortened_edge.py": "082f47d7f3f403514b2c6b4df4313c8a5c7d70965e8daedbeb61ad7a9fa03e23",
+    "retained_prototype.py": "ad26773a9c93ee4780ab86c2067610ade2cca23272d7cd611bdeeb339a8bfdfe",
+    "kaiser255-beta16.f64le": "8b4418568c73525050f7541cd4b8c8f8f4be8318e0f314260b63575d4aa3ce12",
+    "combined-kernels.json": "d23aefef908c935ad13d438d73580ba431ad3af7fbb59a2825e54fd7468f8b7a",
+    "measure_pcm": "97216bd091c1f54b769ccfa0c709590fd03ae7e095b94e7fd12a2dc3ba78eaae"
+  }
+}
