@@ -417,6 +417,10 @@ mod tests {
         )
         .unwrap();
         let mut wire = serde_json::to_value(&current).unwrap();
+        wire["nodes"]["root"]
+            .as_object_mut()
+            .unwrap()
+            .remove("audio_edges");
         wire.as_object_mut().unwrap().remove("basis_state");
         wire.as_object_mut().unwrap().remove("overrides");
         wire["schema_version"] = serde_json::json!(3);

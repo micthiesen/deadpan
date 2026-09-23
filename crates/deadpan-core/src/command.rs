@@ -122,6 +122,12 @@ pub enum Command {
         node: NodeId,
         label: String,
     },
+    /// Changes one boundary exception without changing any temporal coordinate.
+    SetAudioEdge {
+        node: NodeId,
+        edge: crate::AudioBoundaryKind,
+        policy: crate::AudioEdgePolicy,
+    },
     AddAsset {
         id: AssetId,
         asset: AssetRecord,
@@ -450,7 +456,8 @@ pub(crate) fn reduce(
         }
         Command::Ungroup { node } => {
             let parent = sequence_parent(document, node)?;
-            let children = match &document.nodes.get(node).ok_or_else(|| missing(node))?.kind {
+            let beat = document.nodes.get(node).ok_or_else(|| missing(node))?;
+            let children = match &beat.kind {
                 NodeKind::Sequence { children } => children.clone(),
                 _ => {
                     return Err(EditError::new(
@@ -459,6 +466,12 @@ pub(crate) fn reduce(
                     ));
                 }
             };
+            if beat.audio_edges != crate::AudioEdgePolicies::default() {
+                return Err(EditError::new(
+                    EditErrorCode::InvalidCommand,
+                    "reset this Sequence's explicit audio edge choices before ungrouping",
+                ));
+            }
             let siblings = children_mut(document, &parent)?;
             let position = siblings
                 .iter()
@@ -485,6 +498,7 @@ pub(crate) fn reduce(
             document.nodes.insert(
                 id.clone(),
                 BeatNode {
+                    audio_edges: Default::default(),
                     label: "Repeat".into(),
                     kind: NodeKind::Repeat {
                         child: node.clone(),
@@ -702,6 +716,7 @@ pub(crate) fn reduce(
                 document.nodes.insert(
                     insertion.node.clone(),
                     BeatNode {
+                        audio_edges: Default::default(),
                         label: insertion.label.clone(),
                         kind: NodeKind::Source {
                             source: insertion.source.clone(),
@@ -709,6 +724,16 @@ pub(crate) fn reduce(
                     },
                 );
             }
+        }
+        Command::SetAudioEdge { node, edge, policy } => {
+            let beat = node_mut(document, node)?;
+            if !edge.supports(&beat.kind) {
+                return Err(EditError::new(
+                    EditErrorCode::WrongNodeKind,
+                    "selected audio boundary does not belong to this node kind",
+                ));
+            }
+            beat.audio_edges.set(*edge, *policy);
         }
         Command::SetCanvas { width, height } => {
             crate::basis::validate_canvas(*width, *height)?;
@@ -1200,6 +1225,7 @@ fn description(command: &Command) -> &'static str {
         Command::AcceptGeneratedHold { .. } => "Accept generated hold",
         Command::RevertGeneratedHold { .. } => "Revert generated hold",
         Command::Rename { .. } => "Rename beat",
+        Command::SetAudioEdge { .. } => "Change audio edge policy",
         Command::AddAsset { .. } => "Register media asset",
         Command::ImportSource { .. } => "Import source media",
         Command::SetCanvas { .. } => "Change canvas geometry",

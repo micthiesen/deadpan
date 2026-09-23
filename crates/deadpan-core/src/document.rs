@@ -9,7 +9,7 @@ use crate::{
     TimeError,
 };
 
-pub const DOCUMENT_SCHEMA_VERSION: u32 = 10;
+pub const DOCUMENT_SCHEMA_VERSION: u32 = 11;
 /// Bounds apply before traversal. Structure is walked iteratively, never recursively.
 pub const MAX_DOCUMENT_NODES: usize = 100_000;
 pub const MAX_DOCUMENT_ASSETS: usize = 100_000;
@@ -344,6 +344,11 @@ impl NodeKind {
 pub struct BeatNode {
     pub label: String,
     pub kind: NodeKind,
+    #[serde(
+        default,
+        skip_serializing_if = "crate::AudioEdgePolicies::is_automatic"
+    )]
+    pub audio_edges: crate::AudioEdgePolicies,
 }
 
 impl BeatNode {
@@ -351,12 +356,14 @@ impl BeatNode {
         Self {
             label: label.into(),
             kind: NodeKind::Sequence { children },
+            audio_edges: crate::AudioEdgePolicies::default(),
         }
     }
     pub fn hold(label: impl Into<String>, recipe: HoldRecipe) -> Self {
         Self {
             label: label.into(),
             kind: NodeKind::Hold { recipe },
+            audio_edges: crate::AudioEdgePolicies::default(),
         }
     }
 }
@@ -654,6 +661,7 @@ impl ProjectDocument {
                     ));
                 }
                 validate_label(&node.label)?;
+                node.audio_edges.validate(&node.kind)?;
                 stack.push((id.clone(), depth, true));
                 for child in self.children(&id).rev() {
                     stack.push((child.clone(), depth + 1, false));

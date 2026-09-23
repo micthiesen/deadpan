@@ -36,9 +36,10 @@ For example, trimming into the middle of a Source through a Retime retains the
 Retime boundary rather than attributing that new cut to the Source's original
 start. A placement start also names the end of the preceding out-of-placement
 silence; the origin kind describes the original constraint's side, not the side
-of that silent span. These records support future editable edge treatments.
-They do not choose precedence among coincident policies, persist hard-edge
-intent, or apply fades to PCM.
+of that silent span. Each origin captures its owner's authored policy in this
+revision. Any exact coincident `hard` suppresses that edge's one fade; defaults
+do not override an explicit exception. [Shared edge processing](AUDIO_EDGES.md)
+applies these choices after time mapping. The plan itself performs no DSP.
 
 The structural search uses the exact point `(n + 1/2)` in sample units when
 resolving sample `n`. At an exact structural tie it chooses the right side for
@@ -83,16 +84,17 @@ ownership, exact versus rounded coincidence, boundary-copy admission and stable
 override identities at a billion-play seek. Existing partition/property tests
 also compare the complete origin metadata across query boundaries.
 
-Boundary provenance was independently reviewed with no findings. On 2026-09-23,
+Initial boundary provenance at `d1348a5` was independently reviewed with no findings. On 2026-09-23,
 the repository format/Clippy/test/build/doctor gate passed, including all 798
 tests. The tested plan sources remained unchanged throughout the gate. This is
-headless planning evidence; no GUI, listening or fade-processing qualification
-is implied.
+headless planning evidence. The subsequent [edge stage](AUDIO_EDGES.md) records
+its separate implementation and checks; neither establishes GUI or listening
+qualification.
 
 This API establishes structural planning only. Separate readers connect these
 spans to [source preparation](AUDIO_PREPARATION.md), [continuous retime stages](AUDIO_STAGE_PREPARATION.md)
 and [room-tone loops](ROOM_TONE_AUDIO.md). Room-tone records retain full intrinsic
 Hold duration, including repeat-gap duration, independently of query or ancestor
 crops. Attachment voices, effect routing, incremental fragment reuse, tails,
-gain/fades/limiting, background cache scheduling, native devices and full
+gain/limiting, background cache scheduling, native device integration and full
 preview/export playback remain required work.

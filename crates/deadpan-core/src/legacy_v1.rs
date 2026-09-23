@@ -47,6 +47,7 @@ impl Beat {
     fn upgrade(self, allocation: &RevisionId) -> Result<BeatNode, DocumentError> {
         Ok(BeatNode {
             label: self.label,
+            audio_edges: AudioEdgePolicies::default(),
             kind: match self.kind {
                 Kind::Source { source } => NodeKind::Source {
                     source: source.upgrade(),
@@ -75,6 +76,9 @@ impl Beat {
         })
     }
     fn project(node: &BeatNode) -> Option<Self> {
+        if node.audio_edges != AudioEdgePolicies::default() {
+            return None;
+        }
         Some(Self {
             label: node.label.clone(),
             kind: match &node.kind {

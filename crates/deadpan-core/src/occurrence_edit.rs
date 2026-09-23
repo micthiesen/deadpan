@@ -81,6 +81,10 @@ pub enum OccurrenceEdit {
     Rename {
         label: String,
     },
+    SetAudioEdge {
+        edge: crate::AudioBoundaryKind,
+        policy: crate::AudioEdgePolicy,
+    },
     SetPlayOverride {
         iteration: IterationId,
         subtree: Subtree,
@@ -170,6 +174,11 @@ impl OccurrenceEdit {
             Self::Rename { label } => Command::Rename {
                 node,
                 label: label.clone(),
+            },
+            Self::SetAudioEdge { edge, policy } => Command::SetAudioEdge {
+                node,
+                edge: *edge,
+                policy: *policy,
             },
             Self::SetPlayOverride { iteration, subtree } => Command::SetPlayOverride {
                 node,
@@ -388,6 +397,7 @@ mod tests {
         document.nodes.insert(
             repeat.clone(),
             BeatNode {
+                audio_edges: Default::default(),
                 label: "repeat".into(),
                 kind: NodeKind::Repeat {
                     child: hold.clone(),

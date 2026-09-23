@@ -278,6 +278,51 @@ fn room_tone_inspection_loops_an_explicit_aac_range_and_retains_silent_time() ->
     assert_eq!(pcm, block.samples);
     assert_eq!(wire["audio"]["revision_id"], "silence");
     assert_eq!(wire["audio"]["stage"], "time_mapped_pcm_before_effects");
+    let faded = session.read_edge_faded(AudioSample(0), 256, &active())?;
+    let expected_faded: Vec<_> = block
+        .samples
+        .iter()
+        .enumerate()
+        .map(|(at, sample)| {
+            let gain = 1.0_f32.min((at as f32 + 0.5) / 96.0);
+            sample.map(|value| value * gain)
+        })
+        .collect();
+    assert_eq!(faded.samples, expected_faded);
+    assert!(faded.suppressed.is_empty());
+    let faded_silence = session.read_edge_faded(AudioSample(3200), 256, &active())?;
+    assert_eq!(faded_silence.samples, silent.samples);
+    assert_eq!(faded_silence.suppressed, silent.suppressed);
+    let faded_output = ProcessCommand::new(env!("CARGO_BIN_EXE_deadpan-cli"))
+        .args([
+            "inspect-audio",
+            path.to_str().unwrap(),
+            "--samples",
+            "0",
+            "256",
+            "--edge-faded",
+        ])
+        .output()?;
+    assert!(
+        faded_output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&faded_output.stderr)
+    );
+    assert!(faded_output.stderr.is_empty());
+    let faded_wire: Value = serde_json::from_slice(&faded_output.stdout)?;
+    assert_eq!(faded_wire["protocol"], 1);
+    assert_eq!(
+        faded_wire["audio"]["stage"],
+        "edge_faded_pcm_before_voice_effects"
+    );
+    assert_eq!(faded_wire["audio"]["engine"], deadpan_audio::EDGE_FADE_ID);
+    assert_eq!(
+        faded_wire["audio"]["processing_order"],
+        json!(["time_pitch_mapping", "edge_fades"])
+    );
+    assert_eq!(faded_wire["audio"]["revision_id"], "silence");
+    let faded_pcm: Vec<[f32; 2]> = serde_json::from_value(faded_wire["audio"]["samples"].clone())?;
+    assert_eq!(faded_pcm, faded.samples);
     assert_eq!(
         inspect(&path, "0", "256", false)?["error"]["code"],
         "AudioOperationUnsupported"
@@ -315,6 +360,7 @@ fn mapped_inspection_prepares_preserve_from_historical_aac_without_writing() -> 
                     (
                         node("slow"),
                         BeatNode {
+                            audio_edges: Default::default(),
                             label: "Preserve speech pitch".into(),
                             kind: NodeKind::Retime {
                                 child: node("copy"),
@@ -380,7 +426,12 @@ fn mapped_inspection_prepares_preserve_from_historical_aac_without_writing() -> 
             );
         }
     }
-    for (start, end) in [("0", "257"), ("-1", "1")] {
+    for (start, end, mode) in [
+        ("0", "257", "--time-mapped"),
+        ("-1", "1", "--time-mapped"),
+        ("0", "257", "--edge-faded"),
+        ("-1", "1", "--edge-faded"),
+    ] {
         let invalid = ProcessCommand::new(env!("CARGO_BIN_EXE_deadpan-cli"))
             .args([
                 "inspect-audio",
@@ -388,7 +439,7 @@ fn mapped_inspection_prepares_preserve_from_historical_aac_without_writing() -> 
                 "--samples",
                 start,
                 end,
-                "--time-mapped",
+                mode,
             ])
             .output()?;
         assert!(!invalid.status.success());

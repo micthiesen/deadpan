@@ -263,6 +263,7 @@ fn independent_stream_mappings_use_headless_commands_and_durable_undo() -> Resul
                 nodes: BTreeMap::from([(
                     source.clone(),
                     BeatNode {
+                        audio_edges: Default::default(),
                         label: "Two-second picture, one-second audio".into(),
                         kind: NodeKind::Source {
                             source: SourceNode {

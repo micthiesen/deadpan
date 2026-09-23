@@ -307,6 +307,7 @@ impl RenderPlan {
                 node: &node.inspection.id,
                 repeats: &repeats,
                 gap_after: None,
+                policies: node.audio_edges,
             };
             extent.intersect(
                 transform.project_origin

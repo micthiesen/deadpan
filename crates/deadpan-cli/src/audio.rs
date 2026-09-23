@@ -7,8 +7,8 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
 use deadpan_audio::{
-    AudioSourceProvider, PreparationError, PreparedSource, SequenceAudio, SequenceAudioError,
-    SourceStageBlock, StageAudio, StageAudioError, TimeMappedBlock,
+    AudioSourceProvider, EdgeFadedBlock, PreparationError, PreparedSource, SequenceAudio,
+    SequenceAudioError, SourceStageBlock, StageAudio, StageAudioError, TimeMappedBlock,
 };
 use deadpan_core::{AssetId, AudioSample, ProjectDocument, ProjectId, RevisionId};
 use deadpan_media::audio_session::{AudioSession, AudioSessionLimits};
@@ -84,6 +84,21 @@ impl ProjectAudioSession {
         cancelled: &AtomicBool,
     ) -> Result<TimeMappedBlock, ProjectAudioError> {
         Ok(self.stages.read(
+            &mut self.sources,
+            start,
+            frames,
+            Duration::from_secs(10),
+            cancelled,
+        )?)
+    }
+
+    pub fn read_edge_faded(
+        &mut self,
+        start: AudioSample,
+        frames: u32,
+        cancelled: &AtomicBool,
+    ) -> Result<EdgeFadedBlock, ProjectAudioError> {
+        Ok(self.stages.read_edge_faded(
             &mut self.sources,
             start,
             frames,

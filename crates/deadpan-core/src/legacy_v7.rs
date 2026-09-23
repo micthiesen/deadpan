@@ -85,6 +85,7 @@ impl LegacyBeatNode {
     pub(crate) fn upgrade(self) -> BeatNode {
         BeatNode {
             label: self.label,
+            audio_edges: AudioEdgePolicies::default(),
             kind: match self.kind {
                 LegacyNodeKind::Source { source } => NodeKind::Source {
                     source: source.upgrade(),
@@ -116,6 +117,9 @@ impl LegacyBeatNode {
     }
 
     pub(crate) fn project(value: &BeatNode) -> Option<Self> {
+        if value.audio_edges != AudioEdgePolicies::default() {
+            return None;
+        }
         Some(Self {
             label: value.label.clone(),
             kind: match &value.kind {
@@ -1008,6 +1012,10 @@ mod tests {
                     old[direction].as_object_mut().unwrap().remove("overrides");
                 }
                 for side in ["before", "after"] {
+                    old[direction]["nodes"]["source"][side]
+                        .as_object_mut()
+                        .unwrap()
+                        .remove("audio_edges");
                     let source = old[direction]["nodes"]["source"][side]["kind"]["source"]
                         .as_object_mut()
                         .unwrap();

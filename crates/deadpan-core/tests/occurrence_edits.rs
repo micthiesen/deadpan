@@ -176,6 +176,73 @@ fn at(document: &ProjectDocument, name: &str) -> ExactRatio {
 }
 
 #[test]
+fn isolated_audio_edge_edit_copies_existing_intent_without_changing_other_plays() {
+    let document = fixture(3, 2, 2, 1);
+    let document = edit(
+        &document,
+        Command::SetAudioEdge {
+            node: node("a"),
+            edge: AudioBoundaryKind::NodeEnd,
+            policy: AudioEdgePolicy::Hard,
+        },
+    );
+    let selected = path(&document, "a", 1, 0);
+    let command = occurrence(
+        selected,
+        OccurrenceEdit::SetAudioEdge {
+            edge: AudioBoundaryKind::NodeStart,
+            policy: AudioEdgePolicy::Hard,
+        },
+        identities("edge", 10, 0),
+    );
+    let next = edit(&document, command);
+    assert_eq!(next.duration().unwrap(), document.duration().unwrap());
+    assert_eq!(next.nodes()[&node("a")], document.nodes()[&node("a")]);
+    assert_eq!(
+        next.nodes()[&node("edge-n4")].audio_edges,
+        document.nodes()[&node("a")].audio_edges
+    );
+    let selected_edges = next.nodes()[&node("edge-n8")].audio_edges;
+    assert_eq!(selected_edges.node_start, AudioEdgePolicy::Hard);
+    assert_eq!(selected_edges.node_end, AudioEdgePolicy::Hard);
+    assert_eq!(
+        next.nodes()
+            .values()
+            .filter(|beat| beat.audio_edges.node_start == AudioEdgePolicy::Hard)
+            .count(),
+        1
+    );
+    path(&document, "a", 0, 0).validate(&next).unwrap();
+    path(&document, "a", 2, 1).validate(&next).unwrap();
+    let mut exhausted = request(
+        &document,
+        occurrence(
+            path(&document, "a", 1, 0),
+            OccurrenceEdit::SetAudioEdge {
+                edge: AudioBoundaryKind::NodeStart,
+                policy: AudioEdgePolicy::Hard,
+            },
+            OccurrenceIdentities::default(),
+        ),
+    );
+    assert!(apply(&document, &exhausted).is_err());
+    // A failed isolated command cannot leave behind copies or edge choices.
+    exhausted.command = Command::SetAudioEdge {
+        node: node("a"),
+        edge: AudioBoundaryKind::SourcePlacementStart,
+        policy: AudioEdgePolicy::Hard,
+    };
+    assert_eq!(
+        apply(&document, &exhausted).unwrap_err().code,
+        EditErrorCode::WrongNodeKind
+    );
+    assert_eq!(
+        document.nodes()[&node("a")].audio_edges.node_start,
+        AudioEdgePolicy::Automatic
+    );
+}
+
+#[test]
 fn concrete_gap_marks_follow_selected_owners_and_respect_boundary_bias() {
     let mut document = fixture(3, 2, 2, 1);
     // The second outer play starts at 20. Its first inner play ends at 29,

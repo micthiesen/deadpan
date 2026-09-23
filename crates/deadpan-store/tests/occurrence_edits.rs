@@ -57,6 +57,7 @@ fn initial() -> Result<ProjectDocument> {
     )?;
     let repeat = |child: &str, name: &str, count, gap| -> Result<BeatNode> {
         Ok(BeatNode {
+            audio_edges: Default::default(),
             label: name.into(),
             kind: NodeKind::Repeat {
                 child: id(child),

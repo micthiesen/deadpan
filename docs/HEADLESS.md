@@ -68,14 +68,17 @@ revision fails with `RevisionConflict` and the current revision, without writing
 
 Supported commands are `insert`, `delete`, `move`, `group`,
 `ungroup`, `wrap_repeat`, `set_repeat`, `insert_plays`, `move_plays`, `set_hold_duration`, `set_hold_provider`, `set_source_audio_mapping`, `set_source_video_mapping`,
-`rename`, `add_asset`, `set_canvas`, `set_mark`, `delete_mark`, `set_play_override`, `clear_play_override`, and `edit_occurrence`. Their exact typed parameters are defined in
+`rename`, `set_audio_edge`, `add_asset`, `set_canvas`, `set_mark`, `delete_mark`, `set_play_override`, `clear_play_override`, and `edit_occurrence`. Their exact typed parameters are defined in
 [`Command`](../crates/deadpan-core/src/command.rs). `set_repeat` changes an existing
 Repeat; `wrap_repeat` deliberately adds nesting. A three-play repeat includes
 three total plays and only two gaps. These are structural edits, not rendered
 media. Editing through range/text selectors, registers, macros, and effects
 remain required future work.
 
-Documents use schema 10. [Source audio mappings](SOURCE_AUDIO_MAPPING.md) and
+Documents use schema 11. [Audio edge choices](AUDIO_EDGES.md) default to automatic
+when the JSON object is absent and are editable through direct or isolated
+occurrence commands. Explicit policy objects retain all six typed fields.
+[Source audio mappings](SOURCE_AUDIO_MAPPING.md) and
 [picture mappings](SOURCE_VIDEO_MAPPING.md) independently choose the beat duration
 or an exact stream duration and start with `placement`.
 [Measured import timing](SOURCE_IMPORT_TIMING.md) describes the candidate policy.
@@ -233,6 +236,13 @@ intrinsic history; admission and shared work limits fail explicitly. This still
 precedes fades, effects and mastering. Authored room-tone Holds and repeat gaps
 loop their explicit selected source with short exact crossfades. See
 [stage preparation](AUDIO_STAGE_PREPARATION.md) and [room tone](ROOM_TONE_AUDIO.md).
+
+Use `--edge-faded` instead to apply authored automatic/hard choices after time
+mapping. It returns `edge_faded_pcm_before_voice_effects` with the engine and
+fixed implemented stage order. Fades remain inside each full allocation and
+shorten for tiny fragments; read chunks cannot create new fades. See
+[audio edges](AUDIO_EDGES.md). Gain, effects, mastering and final mix integration
+remain open.
 
 ## Picture and audio plan inspection
 
@@ -554,18 +564,20 @@ future-schema read-only inspection still needs a compatibility implementation.
 
 ## Schema migration
 
-Database schemas 1 through 14 return `MigrationRequired` when opened. Upgrade explicitly:
+Database schemas 1 through 15 return `MigrationRequired` when opened. Upgrade explicitly:
 
 ```sh
 cargo run --locked -p deadpan-cli -- project migrate /tmp/example.deadpan
 ```
 
 Migration holds the project writer lock, keeps a consistent SQLite backup under
-`Snapshots/before-schema-15-*.sqlite`, and upgrades a separate candidate. It
+`Snapshots/before-schema-16-*.sqlite`, and upgrades a separate candidate. It
 replays all commands, undo/redo revisions, and abandoned branches with their
 original revision IDs. Every snapshot and forward/inverse transaction is checked
 against its strict original schema meaning. Migration goes directly to database
-schema 15 and core document schema 10. Database-14 histories use frozen core 9,
+schema 16 and core document schema 11. All legacy nodes gain automatic audio
+edges. Database-15 histories use frozen core 10 and retain their presentation
+basis policy, primary adoption and geometry commands. Database-14 histories use frozen core 9,
 retain qualified sources and their complete receipt inventory, and gain explicit
 basis state. All older projects also remain explicit, even when empty.
 Database-13 histories use the frozen core-8 adapter, retaining independent

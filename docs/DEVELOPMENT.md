@@ -157,6 +157,10 @@ continuous/nested retimes against independently composed DSP and resampling,
 including output-only Hold policies, provenance changes and bounded retries.
 Use `inspect-audio ... --time-mapped` for the pre-effects Preserve path; see
 [stage preparation](AUDIO_STAGE_PREPARATION.md).
+Use `--edge-faded` instead for the shared post-mapping edge stage. Core/plan
+policy tests, the audio `stages` suite and headless `audio_inspection` cover
+authored hard choices, shortened fragments and identical chunked/cropped output.
+See [audio edges](AUDIO_EDGES.md) for the fixed envelope and remaining scope.
 Room-tone tests add scalar overlap references and a 44.1 kHz source whose exact
 loop period differs from rounded storage. The host integration verifies an
 explicit AAC loop, separate silence and following speech without history writes.

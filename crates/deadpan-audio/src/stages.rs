@@ -98,6 +98,27 @@ pub struct TimeMappedBlock {
     pub suppressed: Vec<Range<AudioSample>>,
 }
 
+/// Per-voice edge treatment after continuous time/pitch mapping. This is still
+/// before gain, voice effects, sends, mixing and mastering.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct EdgeFadedBlock {
+    pub schema_version: u32,
+    pub stage: &'static str,
+    pub engine: &'static str,
+    pub processing_order: [&'static str; 2],
+    pub project_id: ProjectId,
+    pub revision_id: RevisionId,
+    pub start: AudioSample,
+    pub samples: Vec<[f32; 2]>,
+    pub suppressed: Vec<Range<AudioSample>>,
+}
+
+struct ReadBlock {
+    start: AudioSample,
+    samples: Vec<[f32; 2]>,
+    suppressed: Vec<Range<AudioSample>>,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum PreparedKey {
     Preserve(AudioStageDescriptor),
@@ -234,6 +255,52 @@ impl StageAudio {
         timeout: Duration,
         cancelled: &AtomicBool,
     ) -> Result<TimeMappedBlock, StageAudioError> {
+        let block = self.read_inner(provider, start, frames, timeout, cancelled, false)?;
+        Ok(TimeMappedBlock {
+            schema_version: 1,
+            stage: "time_mapped_pcm_before_effects",
+            project_id: self.plan.metadata().project_id.clone(),
+            revision_id: self.plan.metadata().revision_id.clone(),
+            start: block.start,
+            samples: block.samples,
+            suppressed: block.suppressed,
+        })
+    }
+
+    /// Applies one envelope per flattened voice allocation after every mapping
+    /// stage. Full allocated endpoints determine gains, so read crops add no
+    /// fades and prepared Preserve/room-tone cache history stays untouched.
+    pub fn read_edge_faded(
+        &mut self,
+        provider: &mut impl AudioSourceProvider,
+        start: AudioSample,
+        frames: u32,
+        timeout: Duration,
+        cancelled: &AtomicBool,
+    ) -> Result<EdgeFadedBlock, StageAudioError> {
+        let block = self.read_inner(provider, start, frames, timeout, cancelled, true)?;
+        Ok(EdgeFadedBlock {
+            schema_version: 1,
+            stage: "edge_faded_pcm_before_voice_effects",
+            engine: crate::EDGE_FADE_ID,
+            processing_order: ["time_pitch_mapping", "edge_fades"],
+            project_id: self.plan.metadata().project_id.clone(),
+            revision_id: self.plan.metadata().revision_id.clone(),
+            start: block.start,
+            samples: block.samples,
+            suppressed: block.suppressed,
+        })
+    }
+
+    fn read_inner(
+        &mut self,
+        provider: &mut impl AudioSourceProvider,
+        start: AudioSample,
+        frames: u32,
+        timeout: Duration,
+        cancelled: &AtomicBool,
+        edge_fades: bool,
+    ) -> Result<ReadBlock, StageAudioError> {
         check_cancel(cancelled)?;
         let end = start
             .0
@@ -344,21 +411,20 @@ impl StageAudio {
         }
         let mut suppressed = Vec::new();
         for span in flattened.spans {
+            control.check()?;
+            let left = usize::try_from(span.samples.start.0 - start.0)
+                .map_err(|_| StageAudioError::Range)?;
+            let right = usize::try_from(span.samples.end.0 - start.0)
+                .map_err(|_| StageAudioError::Range)?;
             if is_silent_hold(&span.content) {
-                let left = usize::try_from(span.samples.start.0 - start.0)
-                    .map_err(|_| StageAudioError::Range)?;
-                let right = usize::try_from(span.samples.end.0 - start.0)
-                    .map_err(|_| StageAudioError::Range)?;
                 samples[left..right].fill([0.0; 2]);
                 suppressed.push(span.samples);
+            } else if edge_fades {
+                crate::edges::apply_edge_fades(&span, &mut samples[left..right])?;
             }
         }
         control.check()?;
-        Ok(TimeMappedBlock {
-            schema_version: 1,
-            stage: "time_mapped_pcm_before_effects",
-            project_id: plan.metadata().project_id.clone(),
-            revision_id: plan.metadata().revision_id.clone(),
+        Ok(ReadBlock {
             start,
             samples,
             suppressed,

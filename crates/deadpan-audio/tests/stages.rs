@@ -60,6 +60,7 @@ fn audio_at_rate(start: i64, end: i64, sample_rate: u32) -> SourceAudio {
 fn source(rate: FrameRate, frames: i64, selected: Range<i64>) -> BeatNode {
     let audio = audio(selected.start, selected.end);
     BeatNode {
+        audio_edges: Default::default(),
         label: "Original speech".into(),
         kind: NodeKind::Source {
             source: SourceNode {
@@ -99,6 +100,7 @@ fn room_tone(frames: i64, source: SourceAudio) -> BeatNode {
 
 fn retime(child: &str, frames: i64, selected: Range<i64>, pitch: PitchPolicy) -> BeatNode {
     BeatNode {
+        audio_edges: Default::default(),
         label: "Explicit retime".into(),
         kind: NodeKind::Retime {
             child: id(child),
@@ -619,6 +621,7 @@ fn silent_hold_is_suppressed_even_when_its_input_interval_owns_no_grid_sample() 
 fn repeat_and_override_occurrences_do_not_alias_prepared_history() {
     let rate = FrameRate::new(48_000, 1).unwrap();
     let repeated = BeatNode {
+        audio_edges: Default::default(),
         label: "Three plays".into(),
         kind: NodeKind::Repeat {
             child: id("default-stage"),
@@ -874,6 +877,7 @@ fn nested_depth_and_native_long_input_limits_fail_without_decoding_originals() {
     assert_eq!(renderer.cached_stage_count(), 0);
 
     let repeated = BeatNode {
+        audio_edges: Default::default(),
         label: "Long speech".into(),
         kind: NodeKind::Repeat {
             child: id("source"),
@@ -987,6 +991,7 @@ fn repeated_stage_plan() -> Arc<RenderPlan> {
             (
                 "repeat",
                 BeatNode {
+                    audio_edges: Default::default(),
                     label: "Nine stage occurrences".into(),
                     kind: NodeKind::Repeat {
                         child: id("inner"),
@@ -1216,6 +1221,7 @@ fn room_tone_keeps_fractional_44100_source_extent_and_long_hold_duration_across_
 fn repeated_room_tone_and_override_restart_locally_with_two_distinct_gap_caches() {
     let rate = FrameRate::new(48_000, 1).unwrap();
     let repeated = BeatNode {
+        audio_edges: Default::default(),
         label: "Three room-tone plays".into(),
         kind: NodeKind::Repeat {
             child: id("default"),
@@ -1431,4 +1437,283 @@ fn a_subsample_room_tone_hold_renders_through_preserve_without_becoming_silence(
     assert!(block.samples.iter().flatten().any(|sample| *sample != 0.0));
     assert!(block.suppressed.is_empty());
     assert_eq!(renderer.cached_stage_count(), 2);
+    let faded = renderer
+        .read_edge_faded(
+            &mut provider,
+            AudioSample(0),
+            2,
+            TIMEOUT,
+            &AtomicBool::new(false),
+        )
+        .unwrap();
+    assert_eq!(
+        faded.samples,
+        block
+            .samples
+            .iter()
+            .map(|sample| sample.map(|value| value * 0.5))
+            .collect::<Vec<_>>()
+    );
+}
+
+fn faded_all(
+    renderer: &mut StageAudio,
+    provider: &mut FixtureProvider,
+    pieces: &[u32],
+) -> Vec<[f32; 2]> {
+    let frames = renderer.plan().audio_duration().unwrap().0 as usize;
+    let mut output = Vec::new();
+    for requested in pieces.iter().copied().cycle() {
+        if output.len() == frames {
+            return output;
+        }
+        let count = requested.min((frames - output.len()) as u32);
+        let block = renderer
+            .read_edge_faded(
+                provider,
+                AudioSample(output.len() as i64),
+                count,
+                TIMEOUT,
+                &AtomicBool::new(false),
+            )
+            .unwrap();
+        assert_eq!(block.stage, "edge_faded_pcm_before_voice_effects");
+        assert_eq!(block.engine, deadpan_audio::EDGE_FADE_ID);
+        assert_eq!(block.processing_order, ["time_pitch_mapping", "edge_fades"]);
+        output.extend(block.samples);
+    }
+    unreachable!()
+}
+
+fn reference_edges(samples: &mut [[f32; 2]], start: bool, end: bool) {
+    let length = samples.len() as f32;
+    let width = 96.0_f32.min(length / 2.0);
+    for (at, sample) in samples.iter_mut().enumerate() {
+        let left = if start {
+            (at as f32 + 0.5) / width
+        } else {
+            1.0
+        };
+        let right = if end {
+            (length - at as f32 - 0.5) / width
+        } else {
+            1.0
+        };
+        let gain = 1.0_f32.min(left).min(right);
+        *sample = sample.map(|value| value * gain);
+    }
+}
+
+#[test]
+fn edge_fades_follow_continuous_preserve_and_inner_cuts_without_query_edges() {
+    let planned = cut_stage_plan();
+    let input: Vec<_> = (512..2560).chain(4096..6144).map(fixture_sample).collect();
+    let raw = stretch_reference(&input, 6144, 2, 3);
+    let mut expected = raw.clone();
+    reference_edges(&mut expected[..3072], true, true);
+    reference_edges(&mut expected[3072..], true, true);
+    let mut provider = FixtureProvider::new();
+    let mut renderer = StageAudio::new(Arc::clone(&planned));
+    assert_eq!(faded_all(&mut renderer, &mut provider, &[256]), expected);
+    assert_eq!(
+        faded_all(&mut renderer, &mut provider, &[1, 73, 17, 251]),
+        expected
+    );
+    assert_eq!(read_all(&mut renderer, &mut provider, &[137, 256]), raw);
+    for (start, count) in [(0, 97), (2971, 203), (3072, 127), (6000, 144)] {
+        let mut fresh = StageAudio::new(Arc::clone(&planned));
+        let block = fresh
+            .read_edge_faded(
+                &mut provider,
+                AudioSample(start),
+                count,
+                TIMEOUT,
+                &AtomicBool::new(false),
+            )
+            .unwrap();
+        assert_eq!(
+            block.samples,
+            expected[start as usize..start as usize + count as usize]
+        );
+    }
+    assert_eq!(renderer.cached_stage_count(), 1);
+}
+
+#[test]
+fn edge_fades_follow_nested_mixed_room_tone_retimes_and_authored_crops() {
+    let rate = FrameRate::new(48_000, 1).unwrap();
+    let mut provider = FixtureProvider::new();
+    for (inner, outer) in [
+        (PitchPolicy::Preserve, PitchPolicy::FollowSpeed),
+        (PitchPolicy::FollowSpeed, PitchPolicy::Preserve),
+    ] {
+        let planned = plan(
+            rate,
+            &["outer"],
+            [
+                ("room", room_tone(2048, audio(512, 833))),
+                ("inner", retime("room", 3072, 0..2048, inner)),
+                ("outer", retime("inner", 2048, 0..3072, outer)),
+            ],
+        );
+        let mut renderer = StageAudio::new(planned);
+        let raw = read_all(&mut renderer, &mut provider, &[256]);
+        let mut expected = raw.clone();
+        reference_edges(&mut expected, true, true);
+        assert_eq!(
+            faded_all(&mut renderer, &mut provider, &[19, 256, 7]),
+            expected
+        );
+        assert_eq!(
+            expected[96..1952],
+            raw[96..1952],
+            "loop seams gain no extra edge fade"
+        );
+    }
+    let planned = plan(
+        rate,
+        &["crop"],
+        [
+            ("room", room_tone(2048, audio(512, 833))),
+            (
+                "inner",
+                retime("room", 3072, 0..2048, PitchPolicy::Preserve),
+            ),
+            (
+                "crop",
+                retime("inner", 512, 1001..1513, PitchPolicy::FollowSpeed),
+            ),
+        ],
+    );
+    let mut renderer = StageAudio::new(planned);
+    let mut expected = read_all(&mut renderer, &mut provider, &[256]);
+    reference_edges(&mut expected, true, true);
+    assert_eq!(
+        faded_all(&mut renderer, &mut provider, &[31, 256, 79]),
+        expected
+    );
+    let cropped = renderer
+        .read_edge_faded(
+            &mut provider,
+            AudioSample(181),
+            127,
+            TIMEOUT,
+            &AtomicBool::new(false),
+        )
+        .unwrap();
+    assert_eq!(cropped.samples, expected[181..308]);
+}
+
+#[test]
+fn placement_hard_end_does_not_mistake_the_host_start_for_its_later_onset() {
+    let rate = FrameRate::new(48_000, 1).unwrap();
+    for offset in [0_usize, 64] {
+        let mut placed = source(rate, 512, 512..640);
+        placed.audio_edges.node_start = AudioEdgePolicy::Hard;
+        placed.audio_edges.source_placement_end = AudioEdgePolicy::Hard;
+        let NodeKind::Source { source } = &mut placed.kind else {
+            unreachable!()
+        };
+        source.audio_offset = AudioSample(offset as i64);
+        let planned = plan(rate, &["source"], [("source", placed)]);
+        let mut provider = FixtureProvider::new();
+        let mut renderer = StageAudio::new(planned);
+        let raw = read_all(&mut renderer, &mut provider, &[256]);
+        let mut expected = raw.clone();
+        reference_edges(&mut expected[offset..offset + 128], offset != 0, false);
+        let actual = faded_all(&mut renderer, &mut provider, &[73, 17, 256]);
+        assert_eq!(actual, expected);
+        assert_eq!(actual[offset + 127], raw[offset + 127]);
+        if offset == 0 {
+            assert_eq!(
+                actual[0], raw[0],
+                "coincident placement Automatic does not cancel node Hard"
+            );
+        } else {
+            assert_ne!(actual[offset], raw[offset]);
+        }
+        assert!(
+            actual[..offset]
+                .iter()
+                .chain(&actual[offset + 128..])
+                .all(|sample| *sample == [0.0; 2])
+        );
+    }
+}
+
+#[test]
+fn one_hard_repeat_override_and_room_tone_gap_edges_preserve_silence_masks() {
+    let rate = FrameRate::new(48_000, 1).unwrap();
+    let mut alternate = room_tone(128, audio(512, 611));
+    alternate.audio_edges.node_start = AudioEdgePolicy::Hard;
+    alternate.audio_edges.node_end = AudioEdgePolicy::Hard;
+    let repeated = BeatNode {
+        audio_edges: AudioEdgePolicies {
+            repeat_gap_start: AudioEdgePolicy::Hard,
+            ..Default::default()
+        },
+        label: "Three room tone plays".into(),
+        kind: NodeKind::Repeat {
+            child: id("default"),
+            iterations: IterationOrder::new(RevisionId::new("plays").unwrap(), 3).unwrap(),
+            gap: Some(HoldRecipe {
+                duration: duration(24),
+                video: HoldVideo::Background,
+                audio: HoldAudio::RoomTone {
+                    source: audio(512, 611),
+                },
+            }),
+        },
+    };
+    let planned = plan_with_overrides(
+        rate,
+        &["repeat", "silence"],
+        [
+            ("default", room_tone(128, audio(512, 611))),
+            ("alternate", alternate),
+            ("repeat", repeated),
+            ("silence", hold(16)),
+        ],
+        BTreeMap::from([(
+            id("repeat"),
+            PlayOverrides::try_from(vec![PlayOverride {
+                iteration: IterationId {
+                    allocation: RevisionId::new("plays").unwrap(),
+                    ordinal: 1,
+                },
+                root: id("alternate"),
+            }])
+            .unwrap(),
+        )]),
+    );
+    let mut provider = FixtureProvider::new();
+    let mut renderer = StageAudio::new(planned);
+    let raw = read_all(&mut renderer, &mut provider, &[256]);
+    let mut expected = raw.clone();
+    for (range, start, end) in [
+        (0..128, true, true),
+        (128..152, false, true),
+        (152..280, false, false),
+        (280..304, false, true),
+        (304..432, true, true),
+    ] {
+        reference_edges(&mut expected[range], start, end);
+    }
+    assert_eq!(
+        faded_all(&mut renderer, &mut provider, &[13, 117, 256]),
+        expected
+    );
+    assert_eq!(expected[152..280], raw[152..280]);
+    assert_eq!(expected[0..128], expected[304..432]);
+    let block = renderer
+        .read_edge_faded(
+            &mut provider,
+            AudioSample(425),
+            23,
+            TIMEOUT,
+            &AtomicBool::new(false),
+        )
+        .unwrap();
+    assert_eq!(block.suppressed, vec![AudioSample(432)..AudioSample(448)]);
+    assert_eq!(block.samples[7..], [[0.0; 2]; 16]);
 }

@@ -45,7 +45,7 @@ impl ProjectStore {
                 backup: None,
             });
         }
-        if !matches!(version, 1..=14) {
+        if !matches!(version, 1..=15) {
             return Err(StoreError::UnsupportedSchema(version));
         }
         let lock = acquire_lock(&package)?;
@@ -181,9 +181,11 @@ fn migrate_candidate(
     // 12 uses core schema 7 with independent picture durations, and 13 uses
     // core schema 8 with signed stream placements and no source qualification.
     // Schema 14 uses core schema 9 with immutable source qualifications.
+    // Schema 15 uses core schema 10 with authored presentation basis policy.
     // Replay all authored history, preserving operational rows and identities
     // while assigning FitBeat only to mappings absent in that legacy schema.
-    // Every legacy presentation basis remains explicitly authored.
+    // Schemas before 15 gain an explicit basis; schema 15 retains its policy.
+    // All legacy audio edges gain Automatic, without changing allocated time.
     validation::migrate_history(&transaction, source_version)?;
     crate::generation::validate_store(&transaction)?;
     transaction.pragma_update(None, "user_version", schema::VERSION)?;

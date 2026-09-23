@@ -74,7 +74,7 @@ Use the [headless command envelope](HEADLESS.md) for preview and commit. Duratio
 must be positive and at most `i64::MAX` project frames. Missing mapping or
 endpoint fields, unknown fields and unsupported policies fail parsing.
 
-Database schema 15 replays schemas 1 through 14 through frozen core schemas. Sources
+Database schema 16 replays schemas 1 through 15 through frozen core schemas. Sources
 predating database schema 12 gain `video_mapping: fit_beat`, preserving prior
 timing. Schema-11 audio and schema-12 picture mappings remain intact. Fields,
 variants and commands absent from each historical vocabulary are rejected inside

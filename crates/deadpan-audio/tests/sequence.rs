@@ -58,6 +58,7 @@ fn audio(start: i64, end: i64) -> SourceAudio {
 fn source(rate: FrameRate, frames: i64, selected: Range<i64>, offset: i64) -> BeatNode {
     let audio = audio(selected.start, selected.end);
     BeatNode {
+        audio_edges: Default::default(),
         label: "Original speech".into(),
         kind: NodeKind::Source {
             source: SourceNode {
@@ -87,6 +88,7 @@ fn hold(frames: i64) -> BeatNode {
 
 fn retime(child: &str, frames: i64, selected: Range<i64>, pitch: PitchPolicy) -> BeatNode {
     BeatNode {
+        audio_edges: Default::default(),
         label: "Explicit retime".into(),
         kind: NodeKind::Retime {
             child: id(child),
@@ -100,6 +102,7 @@ fn retime(child: &str, frames: i64, selected: Range<i64>, pitch: PitchPolicy) ->
 
 fn repeat(child: &str, plays: u32, gap: i64) -> BeatNode {
     BeatNode {
+        audio_edges: Default::default(),
         label: "Repeated speech".into(),
         kind: NodeKind::Repeat {
             child: id(child),

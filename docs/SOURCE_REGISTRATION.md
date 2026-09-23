@@ -37,8 +37,8 @@ current revision/target/basis intent and recheck the retained original's namespa
 and inventory version. Tokens cannot cross open project sessions. Synchronous
 registration delegates to this path; independent read-only preview stays available.
 
-Database schema 15 stores immutable receipts in `source_qualifications`, separate
-from authored undo history. Core schema 10 assets bind `source_qualification` to
+Database schema 16 stores immutable receipts in `source_qualifications`, separate
+from authored undo history. Core schema 11 assets bind `source_qualification` to
 the receipt ID. The store commits a new receipt, derived asset, optional Source,
 mark transforms, history and generation relevance in one SQLite transaction.
 A later database failure preserves the already retained original and commits no
@@ -73,7 +73,8 @@ returning payloads. Validation processes one receipt at a time and retains only
 compact asset metadata while checking history. These are defensive limits, not
 measured large-project capacity or performance claims.
 
-Schema 1 through 14 migration replays complete history using frozen core wires.
+Schema 1 through 15 migration replays complete history using frozen core wires.
+Schema 15 uses core 10 and retains its presentation policy.
 Schema 14 uses core 9 and retains its source qualifications. Schema 13 uses core 8,
 including signed independent stream placements. Projects before schema 14 gain
 an empty qualification table; their assets remain unqualified.

@@ -1,0 +1,40 @@
+{
+  "source_revision": "d1348a5dbf2a4979a54af823b4a4f5ca82ed44e1",
+  "scratch": "/tmp/deadpan-schema15-reproduce-_z5asl9_",
+  "archive_sha256": "3604d8fe30d5bcaf9123dafb3733c49cd32115714734098ac54348c7454e5971",
+  "cli": "/tmp/deadpan-audio-edge-migration/old-target/debug/deadpan-cli",
+  "cli_sha256": "d85d733f8292be3d8144cc54e6ae82ed8bd8c26e2c1f1a6c0fbdc0618d25780d",
+  "generator_sha256": "07e67c5bf07cf2cb966f08d57e4db49e15dfe6bbd1770cd136294f5717ba31ba",
+  "harness_sha256": "559ff9e8242c8c2ce8207eee14df4d1dd86ba1113dea84146e588c193272a190",
+  "ffmpeg_prefix": "/tmp/deadpan-media-compatible-xyhilms4/prefix",
+  "seed_fixture": "crates/deadpan-store/tests/fixtures/v14-history.sql",
+  "seed_sha256": "b1f91bcd279877ddd5c6b33d656ddd0faa55ed11e1bdc9e155191f40b4b3d112",
+  "sql_fixture": "crates/deadpan-store/tests/fixtures/v15-history.sql",
+  "sql_sha256": "c888b5fd201eacbb3f45a9f01ca50e5ee4dbb3e62b52a15d1f03109a0c48757b",
+  "sql_byte_reproduction": true,
+  "reproduced_sql_sha256": [
+    "c888b5fd201eacbb3f45a9f01ca50e5ee4dbb3e62b52a15d1f03109a0c48757b",
+    "c888b5fd201eacbb3f45a9f01ca50e5ee4dbb3e62b52a15d1f03109a0c48757b"
+  ],
+  "source_fixture_sha256": {
+    "cfr-bframes.mp4": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+    "vfr.mp4": "3fd07d00aa604554dc5389530cd261ac8961aded6361426fb00bf5519ac64884"
+  },
+  "counts": {
+    "revisions": 61,
+    "history": 31,
+    "original_media": 3,
+    "source_qualifications": 2,
+    "redo": 1,
+    "generation_requests": 1,
+    "generation_attempts": 1,
+    "generation_bundle_receipts": 1
+  },
+  "log": "generation-deadpan-schema15-reproduce-_z5asl9_.txt.gz",
+  "evidence_sha256": {
+    "old-binary-doctor.json": "c273afb68481b5b7f0598c5541a917eba2d762160ba6ace0544831c481a3c8e8",
+    "old-binary-validation-0.json": "34dd3e327ba9571328bed268299a46a00eee065166652b1e3a08d27f91c63610",
+    "old-binary-validation-1.json": "34dd3e327ba9571328bed268299a46a00eee065166652b1e3a08d27f91c63610",
+    "generation-deadpan-schema15-reproduce-_z5asl9_.txt.gz": "68c77b716b10ba11fc1b5387e0a628ed0b3175de9e560115dcf7d3937ff9aca7"
+  }
+}

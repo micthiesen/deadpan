@@ -8,6 +8,7 @@
 //! persistence, identity generation, media decoding, and external jobs.
 
 mod anchor;
+mod audio_edges;
 mod audio_mapping;
 mod basis;
 mod command;
@@ -17,6 +18,7 @@ mod generated;
 mod legacy_asset;
 mod legacy_source_mapping;
 pub mod legacy_v1;
+pub mod legacy_v10;
 pub mod legacy_v2;
 pub mod legacy_v3;
 pub mod legacy_v4;
@@ -35,6 +37,7 @@ mod time;
 mod video_mapping;
 
 pub use anchor::*;
+pub use audio_edges::*;
 pub use audio_mapping::SourceAudioMapping;
 pub use basis::*;
 pub use command::*;

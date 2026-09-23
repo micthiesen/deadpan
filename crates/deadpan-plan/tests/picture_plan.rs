@@ -37,6 +37,7 @@ fn span(start: i64, end: i64) -> SourceSpan {
 }
 fn node(kind: NodeKind) -> BeatNode {
     BeatNode {
+        audio_edges: Default::default(),
         label: "Fixture".into(),
         kind,
     }

@@ -88,13 +88,13 @@ display color, editorial effects, playback or an encoded export path.
 
 Every persisted edit, undo, and redo gets a never-reused revision ID. Core inverse patches can restore exact fixture identity; the store rebases them onto fresh revisions to prevent stale commands becoming valid after undo. Store writes use one transaction for the revision, history, and cursor. Keep `.writer.lock` held for the writable store lifetime; read-only inspection and dry runs may coexist. Take live database snapshots through SQLite's backup API, never copy only an open main database file.
 
-Repeat play IDs are scoped by Repeat node and allocation revision, with an ordinal inside that allocation. Preserve surviving IDs through resizing and reorder; allocate fresh IDs for growth and inserted subtrees. Imported initial snapshots reserve their allocation names even after plays are removed. Keep compact runs bounded and never expand a repeat merely to seek. Core schema 10 retains these runs, marks, sparse overrides, generated Hold metadata and independent source mappings, and binds qualified assets to immutable source receipts. Database schemas 1 through 14 replay the complete chronology directly into the current schema on a consistent copy, compare every legacy snapshot/transaction, and promote through SQLite's backup transaction only after validation. Strict legacy adapters freeze nested provider vocabulary and reject new fields, commands, and unexpected mark or override changes. Preserve the pre-migration backup.
+Repeat play IDs are scoped by Repeat node and allocation revision, with an ordinal inside that allocation. Preserve surviving IDs through resizing and reorder; allocate fresh IDs for growth and inserted subtrees. Imported initial snapshots reserve their allocation names even after plays are removed. Keep compact runs bounded and never expand a repeat merely to seek. Core schema 11 retains these runs, marks, sparse overrides, generated Hold metadata, independent source mappings and audio edge policies, and binds qualified assets to immutable source receipts. Database schemas 1 through 15 replay the complete chronology directly into the current schema on a consistent copy, compare every legacy snapshot/transaction, and promote through SQLite's backup transaction only after validation. Strict legacy adapters freeze nested provider vocabulary and reject new fields, commands, and unexpected mark or override changes. Preserve the pre-migration backup.
 
-Database schema 15 stores core schema 10 and retains operational generation requests,
+Database schema 16 stores core schema 11 and retains operational generation requests,
 attempts, validation receipts, and candidate selection. Modern bundle receipts add
 optional measured spans and retained-input admission evidence; legacy receipts
 gain none. Legacy requests retain no plan and remain protocol 1. Schema-7/8/9/10
-history uses the frozen core schema-5 adapter; schema-11 history uses core schema 6; schema-12 uses frozen core schema 7; schema-13 uses frozen core schema 8; schema-14 uses frozen core schema 9.
+history uses the frozen core schema-5 adapter; schema-11 history uses core schema 6; schema-12 uses frozen core schema 7; schema-13 uses frozen core schema 8; schema-14 uses frozen core schema 9; schema-15 uses frozen core schema 10 and retains presentation policy. All older nodes gain automatic audio edges.
 Migration upgrades authored
 JSON through strict replay, preserves existing operational rows and clocks, and
 adds only missing operational tables. Request versions belong
@@ -166,7 +166,7 @@ Ready bundles alone do not authorize an edit. See [acceptance](docs/GENERATION_A
 See [generated Hold semantics](docs/GENERATED_HOLDS.md).
 
 Original byte ownership is operational and separate from stream readiness.
-Database schema 15 retains content-keyed original records with monotonic location
+Database schema 16 retains content-keyed original records with monotonic location
 versions introduced in schema 10; earlier schemas gain an empty inventory. Use the
 shared descriptor-relative object engine for `Media/Originals` and
 `Media/Generated`. Managed originals try APFS clone, then verified copy; retain
@@ -402,6 +402,19 @@ identify `source_pcm_before_effects`; they cannot stand in for the final mix.
 The host currently retains one bounded decoded session and reopens on source
 switches. Full prepared-cache scheduling remains open. See
 [source-stage audio](docs/SOURCE_STAGE_AUDIO.md).
+
+Store hard-edge exceptions on their exact node/placement/gap owner. Any explicit
+policy object retains all six fields; omit all-automatic objects so default
+migration does not grow snapshot, request or patch JSON beyond its byte limit.
+Legacy wires still reject the field even when its value is automatic or null.
+Any explicit Hard at an exactly coincident boundary suppresses its one fade; Automatic is the
+default, not a veto of another owner. Capture policies in the immutable plan.
+Apply shared fades once after all time mapping, on flattened root allocations,
+never inside a Preserve cache or at query chunk boundaries. Use sample-centered
+linear edges with F=min(96,N/2), independent of enabled sides; one sample retains
+unity. Preserve silent-Hold suppression metadata. Ungroup must not discard an
+explicit wrapper choice silently. Keep raw and edge-faded PCM stages distinct;
+neither is the final mix. See [audio edges](docs/AUDIO_EDGES.md).
 
 Worker stdout contains only versioned, bounded, length-framed control messages;
 stderr is drained into a bounded diagnostic tail. A completed manifest enters

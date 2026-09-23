@@ -268,6 +268,7 @@ fn inserted_repeat_cannot_reserve_a_future_revision_and_revive_retired_plays() {
                     (
                         id("repeat"),
                         BeatNode {
+                            audio_edges: Default::default(),
                             label: "Imported".into(),
                             kind: NodeKind::Repeat {
                                 child: id("child"),
@@ -678,6 +679,7 @@ fn source_streams_retain_timestamps_and_validate_bounds_independently() {
             nodes: BTreeMap::from([(
                 id("source"),
                 BeatNode {
+                    audio_edges: Default::default(),
                     label: "Source".into(),
                     kind: NodeKind::Source { source },
                 },
@@ -824,6 +826,7 @@ fn retime_range_is_in_child_clock_and_overflow_is_rejected() {
     nodes.insert(
         id("retime"),
         BeatNode {
+            audio_edges: Default::default(),
             label: "Slow".into(),
             kind: NodeKind::Retime {
                 child: id("hold"),

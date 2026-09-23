@@ -87,6 +87,7 @@ pub struct RenderPlan {
 struct PlanNode {
     inspection: NodeInspection,
     kind: CompiledKind,
+    audio_edges: deadpan_core::AudioEdgePolicies,
 }
 
 #[derive(Debug, Clone)]
@@ -342,6 +343,7 @@ impl RenderPlan {
                     duration,
                 },
                 kind,
+                audio_edges: node.audio_edges,
             });
         }
         let root = by_id[document.root()];

@@ -1,24 +1,15 @@
 //! Exact provenance of the intersections that form a root audio allocation.
 use std::ops::Range;
 
-use deadpan_core::{ExactRatio, InstancePath, IterationId, NodeId, RepeatInstance};
+pub use deadpan_core::AudioBoundaryKind;
+use deadpan_core::{
+    AudioEdgePolicies, AudioEdgePolicy, ExactRatio, InstancePath, IterationId, NodeId,
+    RepeatInstance,
+};
 use serde::Serialize;
 
 use super::audio::Budget;
 use crate::PlanError;
-
-/// Which original constraint meets an allocated edge. This names the side of
-/// the constraint, which can differ from the side of a silent output span.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "snake_case")]
-pub enum AudioBoundaryKind {
-    NodeStart,
-    NodeEnd,
-    SourcePlacementStart,
-    SourcePlacementEnd,
-    RepeatGapStart,
-    RepeatGapEnd,
-}
 
 /// One constraint at an exact project boundary. Ancestor owners retain their
 /// own occurrence path, excluding any descendant Repeat plays traversed later.
@@ -27,12 +18,15 @@ pub struct AudioBoundaryOrigin {
     pub instance: InstancePath,
     pub gap_after: Option<IterationId>,
     pub kind: AudioBoundaryKind,
+    /// The owning node's choice for this original constraint in this revision.
+    pub policy: AudioEdgePolicy,
 }
 
 /// Owners of `AudioSpan::project_extent` and its rounded `allocated_samples`.
 /// Coincident exact constraints are retained in outer-to-inner descent order;
 /// equal rounded samples alone never make different constraints coincident.
-/// These are facts about one immutable plan, not a fade or precedence policy.
+/// Any explicit Hard among coincident origins suppresses this edge's fade.
+/// Interior boundaries do not inherit policies from noncoincident ancestors.
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize)]
 pub struct AudioBoundaries {
     pub start: Vec<AudioBoundaryOrigin>,
@@ -44,6 +38,7 @@ pub(super) struct BoundaryOwner<'a> {
     pub node: &'a NodeId,
     pub repeats: &'a [RepeatInstance],
     pub gap_after: Option<&'a IterationId>,
+    pub policies: AudioEdgePolicies,
 }
 
 impl BoundaryOwner<'_> {
@@ -62,6 +57,7 @@ impl BoundaryOwner<'_> {
             },
             gap_after: self.gap_after.cloned(),
             kind,
+            policy: self.policies.get(kind),
         })
     }
 }

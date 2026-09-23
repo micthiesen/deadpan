@@ -52,6 +52,7 @@ fn source_audio() -> SourceAudio {
 
 fn source(frames: i64, mapping: SourceAudioMapping, offset: i64) -> BeatNode {
     BeatNode {
+        audio_edges: Default::default(),
         label: "Original audio".into(),
         kind: NodeKind::Source {
             source: SourceNode {
@@ -81,6 +82,7 @@ fn hold(frames: i64) -> BeatNode {
 
 fn retime(child: &str, frames: i64, start: i64, end: i64, pitch: PitchPolicy) -> BeatNode {
     BeatNode {
+        audio_edges: Default::default(),
         label: "Retime".into(),
         kind: NodeKind::Retime {
             child: id(child),
@@ -93,6 +95,7 @@ fn retime(child: &str, frames: i64, start: i64, end: i64, pitch: PitchPolicy) ->
 
 fn repeat(child: &str, plays: u32, gap: i64) -> BeatNode {
     BeatNode {
+        audio_edges: Default::default(),
         label: "Repeat".into(),
         kind: NodeKind::Repeat {
             child: id(child),
@@ -197,7 +200,93 @@ fn boundary(
         },
         gap_after: gap.map(iteration),
         kind,
+        policy: Default::default(),
     }
+}
+
+#[test]
+fn boundary_policy_is_captured_from_its_exact_owner_in_one_immutable_revision() {
+    let mut original = source(
+        4,
+        SourceAudioMapping::Placement {
+            start: ratio(5, 4),
+            frames: ratio(7, 4),
+        },
+        0,
+    );
+    original.audio_edges.source_placement_start = AudioEdgePolicy::Hard;
+    original.audio_edges.node_end = AudioEdgePolicy::Hard;
+    let mut repeated = repeat("source", 2, 2);
+    repeated.audio_edges.repeat_gap_start = AudioEdgePolicy::Hard;
+    let document = document(
+        one_sample_per_frame(),
+        vec![id("repeat")],
+        BTreeMap::from([(id("source"), original), (id("repeat"), repeated)]),
+        BTreeMap::new(),
+    );
+    let request = CommandRequest {
+        project_id: document.project_id().clone(),
+        expected_revision: document.revision_id().clone(),
+        new_revision: RevisionId::new("root-hard").unwrap(),
+        command: Command::SetAudioEdge {
+            node: id("root"),
+            edge: AudioBoundaryKind::NodeStart,
+            policy: AudioEdgePolicy::Hard,
+        },
+    };
+    let document = apply(&document, &request)
+        .unwrap()
+        .forward
+        .apply(&document)
+        .unwrap();
+    let plan = RenderPlan::compile(&document).unwrap();
+    let first = query(&plan, 1, 3).spans.remove(0);
+    assert_eq!(first.allocated_samples, samples(1, 3));
+    assert_eq!(first.boundaries.start.len(), 1);
+    assert_eq!(first.boundaries.start[0].instance.node, id("source"));
+    assert_eq!(
+        first.boundaries.start[0].kind,
+        AudioBoundaryKind::SourcePlacementStart
+    );
+    assert_eq!(first.boundaries.start[0].policy, AudioEdgePolicy::Hard);
+    assert!(
+        first
+            .boundaries
+            .end
+            .iter()
+            .all(|origin| origin.policy == AudioEdgePolicy::Automatic)
+    );
+    let gap = query(&plan, 4, 6).spans.remove(0);
+    assert_eq!(gap.boundaries.start.len(), 1);
+    assert_eq!(
+        gap.boundaries.start[0].kind,
+        AudioBoundaryKind::RepeatGapStart
+    );
+    assert_eq!(gap.boundaries.start[0].policy, AudioEdgePolicy::Hard);
+    assert_eq!(gap.boundaries.start[0].gap_after, Some(iteration(0)));
+    assert!(gap.boundaries.start[0].instance.repeats.is_empty());
+    let request = CommandRequest {
+        project_id: document.project_id().clone(),
+        expected_revision: document.revision_id().clone(),
+        new_revision: RevisionId::new("source-auto").unwrap(),
+        command: Command::SetAudioEdge {
+            node: id("source"),
+            edge: AudioBoundaryKind::SourcePlacementStart,
+            policy: AudioEdgePolicy::Automatic,
+        },
+    };
+    let next = apply(&document, &request)
+        .unwrap()
+        .forward
+        .apply(&document)
+        .unwrap();
+    let updated = RenderPlan::compile(&next).unwrap();
+    let crop = query(&updated, 2, 3).spans.remove(0);
+    assert_eq!(crop.allocated_samples, first.allocated_samples);
+    assert_eq!(crop.project_extent, first.project_extent);
+    assert_eq!(crop.content, first.content);
+    assert_eq!(crop.boundaries.start[0].policy, AudioEdgePolicy::Automatic);
+    assert_eq!(query(&plan, 1, 3).spans[0], first);
 }
 
 #[test]
@@ -651,6 +740,7 @@ fn half_sample_repeat_gaps_are_assigned_once_and_have_no_trailing_gap() {
 #[test]
 fn hold_policies_and_absent_source_audio_remain_distinct() {
     let still = BeatNode {
+        audio_edges: Default::default(),
         label: "Still".into(),
         kind: NodeKind::Source {
             source: SourceNode {

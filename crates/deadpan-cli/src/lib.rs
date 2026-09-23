@@ -37,7 +37,7 @@ const HELP: &str = "Deadpan headless commands:
   project relink-original <project.deadpan> <blake3-digest> <absolute-source> --expected-version <N>
   inspect-plan <project.deadpan> [--frame <N>]
   inspect-plan <project.deadpan> --audio-samples <START> <END>
-  inspect-audio <project.deadpan> --samples <START> <END> [--time-mapped]
+  inspect-audio <project.deadpan> --samples <START> <END> [--time-mapped | --edge-faded]
   resolve-selection <project.deadpan> --json <selection.json>
   command <project.deadpan> --json <request.json> [--dry-run]
 
@@ -241,6 +241,14 @@ fn run(arguments: &[String]) -> Result<(), CliError> {
             start,
             end,
             "--time-mapped",
+        ]
+        | [
+            "inspect-audio",
+            path,
+            "--samples",
+            start,
+            end,
+            "--edge-faded",
         ] => {
             let start = start
                 .parse::<i64>()
@@ -256,7 +264,13 @@ fn run(arguments: &[String]) -> Result<(), CliError> {
                 ))?;
             let mut session = audio::ProjectAudioSession::open(Path::new(path))?;
             let cancelled = std::sync::atomic::AtomicBool::new(false);
-            let block = if arguments.len() == 6 {
+            let block = if arguments.last() == Some(&"--edge-faded") {
+                serde_json::to_value(session.read_edge_faded(
+                    deadpan_core::AudioSample(start),
+                    frames,
+                    &cancelled,
+                )?)?
+            } else if arguments.last() == Some(&"--time-mapped") {
                 serde_json::to_value(session.read_time_mapped(
                     deadpan_core::AudioSample(start),
                     frames,
