@@ -768,3 +768,59 @@ fn play_overrides_retire_with_identity_and_survive_durable_undo_redo() -> Result
     );
     Ok(())
 }
+
+#[test]
+fn transparent_partition_intent_is_durable_atomic_and_undoable() -> Result {
+    use deadpan_core::{FrameRange, NodeKind, PitchPolicy, ProjectFrame, RetimePurpose};
+    let scratch = tempfile::tempdir()?;
+    let path = scratch.path().join("partition.deadpan");
+    let initial = document()?;
+    let mut request = insert(&initial, "partition-insert", "context")?;
+    let Command::Insert { subtree, .. } = &mut request.command else {
+        unreachable!();
+    };
+    subtree.root = NodeId::new("partition")?;
+    subtree.nodes.insert(
+        subtree.root.clone(),
+        BeatNode {
+            label: "Transparent output interval".into(),
+            kind: NodeKind::Retime {
+                child: NodeId::new("context")?,
+                duration: FrameDuration::new(4)?,
+                mapping: FrameRange::new(ProjectFrame(3), ProjectFrame(7))?,
+                pitch: PitchPolicy::Preserve,
+                purpose: RetimePurpose::Partition,
+            },
+            audio_edges: Default::default(),
+        },
+    );
+    let mut store = ProjectStore::create(&path, &initial)?;
+    let mut invalid = request.clone();
+    let Command::Insert { subtree, .. } = &mut invalid.command else {
+        unreachable!();
+    };
+    let NodeKind::Retime { duration, .. } = &mut subtree.nodes.get_mut(&subtree.root).unwrap().kind
+    else {
+        unreachable!();
+    };
+    *duration = FrameDuration::new(5)?;
+    assert!(store.commit(&invalid).is_err());
+    assert_eq!(revision_count(&path)?, 1);
+    assert_eq!(store.snapshot()?, initial);
+    store.commit(&request)?;
+    let inserted = store.snapshot()?;
+    assert_eq!(inserted.duration()?.frames(), 4);
+    drop(store);
+    let mut store = ProjectStore::open(&path, AccessMode::ReadWrite)?;
+    assert_eq!(store.snapshot()?, inserted);
+    let undo = RevisionId::new("partition-undo")?;
+    store.undo(inserted.revision_id(), undo.clone())?;
+    assert_eq!(store.snapshot()?.nodes(), initial.nodes());
+    store.redo(&undo, RevisionId::new("partition-redo")?)?;
+    assert_eq!(store.snapshot()?.nodes(), inserted.nodes());
+    store.validate()?;
+    drop(store);
+    let reopened = ProjectStore::open(&path, AccessMode::ReadOnly)?;
+    assert_eq!(reopened.snapshot()?.nodes(), inserted.nodes());
+    Ok(())
+}

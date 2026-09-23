@@ -324,7 +324,11 @@ fn migrating_automatic_edges_does_not_grow_legacy_document_request_or_patch_json
     for document in [&initial, &after] {
         let current_json = document.to_json().unwrap();
         assert!(!current_json.contains("audio_edges"));
-        let old_json = current_json.replacen("\"schema_version\": 11", "\"schema_version\": 10", 1);
+        let old_json = current_json.replacen(
+            &format!("\"schema_version\": {DOCUMENT_SCHEMA_VERSION}"),
+            "\"schema_version\": 10",
+            1,
+        );
         assert_ne!(old_json, current_json);
         let upgraded = legacy_v10::Document::from_json(&old_json)
             .unwrap()

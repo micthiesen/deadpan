@@ -24,7 +24,7 @@ Direct policy changes preserve temporal coordinates, marks and presentation
 basis. Occurrence edits preserve timing while copying or relocating owned marks
 under the existing isolation rules; their mark inventory may grow. Edge choices
 do not lock an empty provisional project's frame rate. Core schema 11 and
-database schema 16 introduced this intent, retained in database schema 17. Database schemas 1 through 15 replay
+database schema 16 introduced this intent, retained in database schema 18. Database schemas 1 through 15 replay
 their complete history through strict frozen adapters and gain automatic edges.
 Legacy snapshots, command subtrees and forward/inverse patches reject the new
 fields, including null values, and legacy commands reject both direct and
@@ -74,7 +74,10 @@ It is a specified short-fragment compromise, not a guarantee that every possible
 one-sample event is click-free. Fades allocate no extra samples, introduce no
 latency and do not change source level away from the edges.
 
-Envelopes use full `allocated_samples`, never the requested chunk endpoints.
+Envelopes use full `envelope_samples`, never the requested chunk endpoints.
+For ordinary edits this equals `allocated_samples`. A [transparent partition](AUDIO_PARTITIONS.md)
+retains the original envelope range and offset while shortening allocation;
+it does not create a fade or change the width of an existing short fade.
 Partitioned reads and fresh cropped reads therefore match the same full render.
 An authored trim is different: it creates a new structural edge and a fade at
 that new edge. Continuous time-mapping history remains unchanged beneath it.

@@ -99,9 +99,9 @@ display color, editorial effects, playback or an encoded export path.
 
 Every persisted edit, undo, and redo gets a never-reused revision ID. Core inverse patches can restore exact fixture identity; the store rebases them onto fresh revisions to prevent stale commands becoming valid after undo. Store writes use one transaction for the revision, history, and cursor. Keep `.writer.lock` held for the writable store lifetime; read-only inspection and dry runs may coexist. Take live database snapshots through SQLite's backup API, never copy only an open main database file.
 
-Repeat play IDs are scoped by Repeat node and allocation revision, with an ordinal inside that allocation. Preserve surviving IDs through resizing and reorder; allocate fresh IDs for growth and inserted subtrees. Imported initial snapshots reserve their allocation names even after plays are removed. Keep compact runs bounded and never expand a repeat merely to seek. Core schema 11 retains these runs, marks, sparse overrides, generated Hold metadata, independent source mappings and audio edge policies, and binds qualified assets to immutable source receipts. Database schemas 1 through 16 replay the complete chronology directly into the current schema on a consistent copy, compare every legacy snapshot/transaction, and promote through SQLite's backup transaction only after validation. Strict legacy adapters freeze nested provider vocabulary and reject new fields, commands, and unexpected mark or override changes. Preserve the pre-migration backup.
+Repeat play IDs are scoped by Repeat node and allocation revision, with an ordinal inside that allocation. Preserve surviving IDs through resizing and reorder; allocate fresh IDs for growth and inserted subtrees. Imported initial snapshots reserve their allocation names even after plays are removed. Keep compact runs bounded and never expand a repeat merely to seek. Core schema 12 retains these runs, marks, sparse overrides, generated Hold metadata, independent source mappings, audio edge policies and transparent Retime partition intent, and binds qualified assets to immutable source receipts. Database schemas 1 through 17 replay the complete chronology directly into the current schema on a consistent copy, compare every legacy snapshot/transaction, and promote through SQLite's backup transaction only after validation. Strict legacy adapters freeze nested provider vocabulary and reject new fields, commands, and unexpected mark or override changes. Preserve the pre-migration backup.
 
-Database schema 17 stores core schema 11 and retains operational generation requests,
+Database schema 18 stores core schema 12 and retains operational generation requests,
 plus an optional validated single-Original workflow profile. Use the dedicated
 `create_single_source` / `initialize_prepared_source` path to bind the full measured
 Original, basis and protected baseline atomically. Undo never crosses that baseline;
@@ -113,7 +113,7 @@ The database also retains operational generation
 attempts, validation receipts, and candidate selection. Modern bundle receipts add
 optional measured spans and retained-input admission evidence; legacy receipts
 gain none. Legacy requests retain no plan and remain protocol 1. Schema-7/8/9/10
-history uses the frozen core schema-5 adapter; schema-11 history uses core schema 6; schema-12 uses frozen core schema 7; schema-13 uses frozen core schema 8; schema-14 uses frozen core schema 9; schema-15 uses frozen core schema 10 and retains presentation policy. All older nodes gain automatic audio edges. Schema-16 history uses core schema 11; migration adds no invented single-source profile.
+history uses the frozen core schema-5 adapter; schema-11 history uses core schema 6; schema-12 uses frozen core schema 7; schema-13 uses frozen core schema 8; schema-14 uses frozen core schema 9; schema-15 uses frozen core schema 10 and retains presentation policy. All older nodes gain automatic audio edges. Schema-16/17 history uses frozen core schema 11; only ordinary Edit purpose is admitted. Migration preserves schema-17 workflow profiles and adds no invented single-source profile to older projects.
 Migration upgrades authored
 JSON through strict replay, preserves existing operational rows and clocks, and
 adds only missing operational tables. Request versions belong
@@ -185,7 +185,7 @@ Ready bundles alone do not authorize an edit. See [acceptance](docs/GENERATION_A
 See [generated Hold semantics](docs/GENERATED_HOLDS.md).
 
 Original byte ownership is operational and separate from stream readiness.
-Database schema 17 retains content-keyed original records with monotonic location
+Database schema 18 retains content-keyed original records with monotonic location
 versions introduced in schema 10; earlier schemas gain an empty inventory. Use the
 shared descriptor-relative object engine for `Media/Originals` and
 `Media/Generated`. Managed originals try APFS clone, then verified copy; retain
@@ -288,6 +288,15 @@ The setup workflow's TypeScript/Bun/mitools/Biome defaults do not apply to this 
 The native UI submits typed project requests through one bounded service mailbox. Import preparation never owns SQLite. Cached insertion, root editing and history may proceed while a new import prepares; an uncached insertion preserves its captured revision/target and fails if stale. Root edits capture session and revision, reject hidden descendants, and resolve through core/store commands. Consume explicit committed revisions and resulting selection, including an explicit clear, never infer completion from progress text. Preserve these markers across background updates and deduplicate them by revision. Repeat setters retain omitted gap parameters; explicit wrap-repeat always nests. Cancel pending keyboard operators when context, pane, selection or revision changes. Keep Source context non-destructive. Preview requests carry their immutable workspace, so cancellation of an earlier open cannot strand a later frame. Construct native dialogs on the main application thread, poll without blocking, and retain text focus until same-frame text and IME events are processed.
 
 ## Validation and delivery
+
+Transparent Retime partitions are unity output selections over retained child
+domains, not ordinary authored trims. Keep allocation, source sampling support
+and envelope extent separate in every audio reader. Partition boundaries add no
+DSP stage or fade; Source/placement and ordinary Edit crops still constrain
+support. Preserve full short-envelope width, Preserve history and RoomTone phase.
+Only matching meaningful edges inherit Sequence/Repeat edge policy. This
+representation alone does not implement Split, mark fragment lineage or exact
+Hold resume anchors. See [audio partitions](docs/AUDIO_PARTITIONS.md).
 
 Sparse play overrides are owned subtrees keyed by Repeat node and stable play
 identity. Use `ProjectDocument::children()` for structural traversal; the

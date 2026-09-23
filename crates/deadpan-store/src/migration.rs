@@ -45,7 +45,7 @@ impl ProjectStore {
                 backup: None,
             });
         }
-        if !matches!(version, 1..=16) {
+        if !matches!(version, 1..=17) {
             return Err(StoreError::UnsupportedSchema(version));
         }
         let lock = acquire_lock(&package)?;
@@ -151,9 +151,11 @@ fn migrate_candidate(
     if source_version < 14 {
         crate::source_registration::create_tables(&transaction)?;
     }
-    transaction.execute_batch("ALTER TABLE state ADD COLUMN workflow TEXT NOT NULL DEFAULT 'generic' CHECK(workflow IN ('generic','single_source_v1'));")?;
-    #[cfg(any(target_os = "macos", target_os = "linux"))]
-    crate::single_source::create_tables(&transaction)?;
+    if source_version < 17 {
+        transaction.execute_batch("ALTER TABLE state ADD COLUMN workflow TEXT NOT NULL DEFAULT 'generic' CHECK(workflow IN ('generic','single_source_v1'));")?;
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        crate::single_source::create_tables(&transaction)?;
+    }
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     crate::source_registration::check_stored_sizes(&transaction)?;
     validation::check_stored_sizes(&transaction, schema::MAX_DOCUMENT_BYTES)?;
@@ -185,10 +187,13 @@ fn migrate_candidate(
     // core schema 8 with signed stream placements and no source qualification.
     // Schema 14 uses core schema 9 with immutable source qualifications.
     // Schema 15 uses core schema 10 with authored presentation basis policy.
+    // Schemas 16 and 17 use core schema 11 with authored audio edges. Their
+    // Retimes gain Edit purpose; no old crop becomes a transparent partition.
     // Replay all authored history, preserving operational rows and identities
     // while assigning FitBeat only to mappings absent in that legacy schema.
     // Schemas before 15 gain an explicit basis; schema 15 retains its policy.
-    // All legacy audio edges gain Automatic, without changing allocated time.
+    // Pre-16 audio edges gain Automatic without changing allocated time;
+    // schemas 16 and 17 retain their authored edge choices.
     validation::migrate_history(&transaction, source_version)?;
     crate::generation::validate_store(&transaction)?;
     transaction.pragma_update(None, "user_version", schema::VERSION)?;

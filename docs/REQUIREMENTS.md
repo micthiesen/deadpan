@@ -93,7 +93,7 @@ complete import/relink/format acceptance remains open.
 and geometry on the first primary picture insertion in an untimed project.
 Audio or other timed editing locks the existing clock; later primary geometry
 adoption is a separate previewable, undoable transaction that preserves timing.
-Core schema 11/database schema 17 retain this policy and migrate older histories
+Core schema 12/database schema 18 retain this policy and migrate older histories
 as explicit choices. [Qualification](qualification/presentation-basis-2026-09-21.md)
 records real-media insertion, unchanged sample/mark coordinates, rollback,
 headless previews and authentic schema-14 history migration. Native canvas
@@ -132,6 +132,16 @@ the actual native workflow, imagegen comparison and verification limits.
 Generic projects migrate without invented profiles. Full SFX placement/mixing,
 range reuse, local YouTube acquisition and the remaining editorial session are
 still required; audio-only sequential insertion is not a sound overlay.
+
+[Transparent partitions](AUDIO_PARTITIONS.md) add a retained audio-context
+building block for splices. Core 12/database 18 separate allocation, exact source
+filter support and full envelope width; ordinary authored trims retain their
+old meaning. Real PCM tests compare retained partitions against the original,
+including fractional rates, short fades, nested pitch stages and RoomTone.
+The [qualification report](qualification/audio-partitions-2026-09-23.md) records
+tests and review. This does not implement the Split command or Hold resume:
+mark fragment scope, occurrence-aware splicing, exact resume anchors and native
+editing integration remain open.
 
 [Preview presentation](qualification/preview-presentation-2026-09-21.md) separates
 requested, decoded and displayed identities, retains pending GPU work, rejects
@@ -203,7 +213,7 @@ downstream effects/mastering, playback and export remain open.
 
 | ID | Requirement | Status | Implementation / tests now | Required acceptance evidence still outstanding |
 | --- | --- | --- | --- | --- |
-| DP-01 | Documents library, one-Original initialization/baseline, reopen, autosave, undo/redo, migration, recovery. | Partial | [`deadpan-store`](../crates/deadpan-store/): durable packages/history, atomic mark transforms and generation relevance, writer ownership, WAL checkpoints, interrupted-attempt recovery, and [schema-1-through-16-to-17 migration tests](../crates/deadpan-store/tests/migration.rs) using old-binary-validated fixtures with requests, attempts, admission, source placements, branches and redo. | Native create/open/history now have [workspace evidence](qualification/native-workspace-2026-09-21.md); full media lifecycle, restore/recovery UI, history limits and full failure/chaos suite remain open. |
+| DP-01 | Documents library, one-Original initialization/baseline, reopen, autosave, undo/redo, migration, recovery. | Partial | [`deadpan-store`](../crates/deadpan-store/): durable packages/history, atomic mark transforms and generation relevance, writer ownership, WAL checkpoints, interrupted-attempt recovery, and [schema-1-through-17-to-18 migration tests](../crates/deadpan-store/tests/migration.rs) using old-binary-validated fixtures with requests, attempts, admission, source placements, branches and redo. | Native create/open/history now have [workspace evidence](qualification/native-workspace-2026-09-21.md); full media lifecycle, restore/recovery UI, history limits and full failure/chaos suite remain open. |
 | DP-02 | Exact frame/sample/source-time model including VFR. | Partial | Typed rational clocks, VFR intervals, [independent picture mappings](SOURCE_VIDEO_MAPPING.md) and explicit selected-span endpoints in core and plan. [`SourceSession`](../crates/deadpan-media/src/source_session.rs) builds original-PTS indexes from private verified media and performs persistent exact seeks. [Registration](SOURCE_REGISTRATION.md) retains validated indexes and exact common origin by historical revision. [Native source evidence](qualification/source-preview-2026-09-21.md) retains measured VFR terminal-duration loss. | Complete source policies and actual shared playback/export, including 10,000 fractional-rate edits. |
 | DP-03 | Structural Source/Sequence/Hold/Repeat/Retime primitives. | Partial | Validated tree, reversible commands, and [`deadpan-plan`](../crates/deadpan-plan/) picture mapping and [bounded structural audio queries](AUDIO_PLAN.md) through nested primitives, sparse overrides and compact repeat indexes. Audio keeps absolute sample allocation, original source coordinates, pitch stages and distinct Hold policies. | Semantic range selectors, incremental fragment reuse, actual golden picture/audio renders, and full preview/export integration. |
 | DP-04 | Stable anchors, attachments, nested occurrences, single-play overrides. | Partial | Compact stable play IDs and exact revision-aware boundary/range queries. [`marks.rs`](../crates/deadpan-core/src/marks.rs) adds persistent marks, ownership/loss policies, biased structural transforms, and named-mark selection with [integration/property tests](../crates/deadpan-core/tests/marks.rs). [Sparse overrides](OVERRIDE_VERIFICATION.md) and [automatic nested occurrence edits](OCCURRENCE_VERIFICATION.md) preserve variable durations, owned marks, exact picture mappings, and atomic history. | Temporal attachments, partial-range and multi-target occurrence operations, explode/duplicate transforms, and complete structural edit property tests. |

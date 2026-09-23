@@ -9,7 +9,7 @@ use crate::{
     TimeError,
 };
 
-pub const DOCUMENT_SCHEMA_VERSION: u32 = 11;
+pub const DOCUMENT_SCHEMA_VERSION: u32 = 12;
 /// Bounds apply before traversal. Structure is walked iteratively, never recursively.
 pub const MAX_DOCUMENT_NODES: usize = 100_000;
 pub const MAX_DOCUMENT_ASSETS: usize = 100_000;
@@ -304,6 +304,24 @@ pub enum PitchPolicy {
     FollowSpeed,
 }
 
+/// An ordinary authored crop constrains audio filtering and introduces edit
+/// edges. A transparent partition retains its child's complete processing and
+/// envelope domains, exposing only the selected unity-rate output interval.
+/// This is a splice building block, not a Split command or a resume anchor.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RetimePurpose {
+    #[default]
+    Edit,
+    Partition,
+}
+
+impl RetimePurpose {
+    pub fn is_edit(&self) -> bool {
+        *self == Self::Edit
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
 pub enum NodeKind {
@@ -326,6 +344,8 @@ pub enum NodeKind {
         duration: FrameDuration,
         mapping: FrameRange,
         pitch: PitchPolicy,
+        #[serde(default, skip_serializing_if = "RetimePurpose::is_edit")]
+        purpose: RetimePurpose,
     },
 }
 
@@ -769,9 +789,18 @@ impl ProjectDocument {
                     child,
                     duration,
                     mapping,
+                    purpose,
                     ..
                 } => {
                     positive(*duration, "retime")?;
+                    if *purpose == RetimePurpose::Partition
+                        && (*duration != mapping.duration() || !node.audio_edges.is_automatic())
+                    {
+                        return Err(DocumentError::new(
+                            DocumentErrorCode::InvalidTree,
+                            "a transparent partition requires unity timing and automatic audio edges",
+                        ));
+                    }
                     let child_frames = child_duration(child)?.frames();
                     if mapping.start().0 < 0
                         || mapping.duration() == FrameDuration::ZERO

@@ -1,7 +1,8 @@
 # Structural splice prerequisites
 
-This is an implementation design record, not implemented behavior or a change to
-the normative specification. Sections 4.2, 6.3, 6.5 and 12.2 of the
+This is an implementation design record. The [transparent audio partition
+layer](AUDIO_PARTITIONS.md) is implemented in core 12/database 18; the complete
+splice commands below remain open. Sections 4.2, 6.3, 6.5 and 12.2 of the
 [specification](spec/DEADPAN_SPEC.md) remain authoritative. Native root-beat
 Repeat/delete/Hold-duration commands do not implement arbitrary-boundary Hold
 insertion or pure Split.
@@ -31,8 +32,8 @@ Three distinct domains are needed:
 - The envelope retains its original meaningful edges, width and sample offset.
   A transparent structural partition must not create a new fade.
 
-Today `StageAudio::source_recipe` clips sinc support to each structural extent,
-and edge fades derive width from each allocated span. Pure Split would change
+Before core 12, `StageAudio::source_recipe` clipped sinc support to each structural
+extent, and edge fades derived width from each allocated span. Pure Split would change
 both. A two-sample automatic envelope has gains `[0.5, 0.5]`; dividing it into
 two one-sample spans changes them to `[1, 1]`. Marking the seam Hard does not fix
 the original envelope width, and Hard can suppress a legitimate coincident
@@ -43,6 +44,33 @@ Retain full intrinsic Preserve/RoomTone processing domains beneath crops.
 Restarting shortened domains changes DSP history or loop phase. A genuine Hold
 insertion can establish new outgoing/incoming fades after mapping while retaining
 the underlying source/filter context. Its silence remains explicitly suppressed.
+
+### Existing trim behavior must remain explicit
+
+Review of `9af4a29` found that ordinary authored Retime crops deliberately limit
+the source filter's support. The
+[`structural_crops_exclude_filter_context_and_use_half_open_discrete_samples` test](../crates/deadpan-audio/tests/sequence.rs)
+slows an 8,197-sample source by ten, then crops output samples `[5119,5121)`.
+Its recipe admits only source samples `[512,513)`, with origin `5119/10` and
+step `1/10`. A full-render slice instead retains support `[0,8197)`. The next
+one-sample crop has no discrete selected source sample and returns zero.
+These are intentionally different operations. Do not widen every existing
+unity crop's support to implement transparent Split.
+
+An explicit transparent partition needs a separate sampling-support descriptor,
+derived from the full retained Source host intersected with its audio placement
+and all meaningful authored crop constraints. Keep actual root/signal allocation
+unchanged. Root, signal and processing spans must carry the same distinction;
+both `SequenceAudio` and `StageAudio` must consume it. The existing resampler's
+separate selection, origin, output origin and step already support this boundary.
+Its zero-extension and bounded read rules still apply at the retained support's
+real edges.
+
+Core 12 now implements this distinction using `RetimePurpose::Partition`,
+`SourceSamplingSupport`, and separate envelope extent/sample ranges. Current
+tests compare paired retained partitions with the original PCM. This does not
+yet establish complete Split semantics for marks, copied occurrences or subsequent
+time insertion.
 
 ## Exact resume at fractional frame rates
 
@@ -105,6 +133,39 @@ fragment. Preserve bias, owner/coordinate-host distinction, source coordinates,
 sequence-pinned coordinates, unresolved marks and occurrence isolation's copying
 rules. The insertion and transforms must form one reversible transaction.
 
+### A copied tree is not complete mark lineage
+
+The current Source anchor resolver requires an actual Source occurrence. Turning
+an old Source node into a Sequence wrapper preserves an ownership identity, but
+does not make that wrapper a valid source-to-project scope.
+
+A more general counterexample is a root-owned Local mark on a Repeat's default
+child. Splitting the Repeat after play two leaves appearances of that one authored
+mark in both physical subtree copies. Remapping its one host to either child
+loses the other half. Duplicating the mark as an ordinary copy changes its
+externally owned identity. Conversely, a descendant-owned mark may be anchored
+outside the split subtree; blindly copying it produces duplicate external points.
+
+The representation must preserve one logical mark while resolving its physical
+fragment scopes, either through consumed logical lineage or explicit fragment
+bindings. Its lifecycle must cover later delete, move, copy, occurrence isolation
+and undo. Owner loss and coordinate loss remain separate. Unresolved bindings
+must never become resolved merely because an identifier acquires a new meaning.
+Retaining only the split target's node ID solves target-local marks, not this
+descendant case. Rejecting all such marked splits would leave the full operator
+contract incomplete.
+
+The next mark representation should retain bounded physical bindings under one
+logical MarkId. Plain owner/coordinate pairs are insufficient when splitting
+`Repeat(Sequence[A,B])` between A and B inside one play: a mark owned by A and
+anchored to B crosses physical copies for that play, while later plays use a
+different owner copy. Keep compact stable-play correspondence or equivalent
+visibility constraints. Do not enumerate plays or freeze ordinary Local marks
+out of future repeat growth. Owner and coordinate destinations must be resolved
+independently; apply seam bias before deduplicating exact coordinates. Rounded
+frame equality cannot merge distinct exact positions. Deletion, real copying,
+isolation and unresolved state must consume the same binding semantics.
+
 Individual Repeat gaps need a representation that does not modify every shared
 gap. Resolve Freeze fallback from the immutable measured picture plan before the
 edit, including project start/end. Audio-only content uses Background. Still
@@ -120,3 +181,14 @@ Assert exact resume anchors, original sampling steps, absolute later boundaries,
 silence suppression, irregular-seek parity, compact billion-play queries, all
 mark spaces/biases and atomic identity exhaustion. Durable undo/redo must retain
 domain/anchor/envelope metadata as well as picture structure.
+
+Core 12's frozen core-schema-11 adapter replays database schemas 16 and 17,
+preserving the latter's single-Original profile and rejecting partition purpose
+in all legacy wires. Subsequent mark or command vocabulary will need its own
+strict migration boundary. Legacy history cannot acquire fabricated continuity
+or mark scope evidence.
+
+Several existing legacy adapters currently reuse the modern `Mark` wire type.
+Before extending marks, freeze that vocabulary throughout the old adapters as
+well as the immediately preceding document schema. A defaulted new binding
+field must not become legal in old snapshots, requests or inverse patches.

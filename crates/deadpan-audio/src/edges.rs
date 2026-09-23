@@ -12,17 +12,17 @@ pub(crate) fn apply_edge_fades(
     samples: &mut [[f32; 2]],
 ) -> Result<(), StageAudioError> {
     let length = span
-        .allocated_samples
+        .envelope_samples
         .end
         .0
-        .checked_sub(span.allocated_samples.start.0)
+        .checked_sub(span.envelope_samples.start.0)
         .filter(|length| *length > 0)
         .ok_or(StageAudioError::Range)?;
     let offset = span
         .samples
         .start
         .0
-        .checked_sub(span.allocated_samples.start.0)
+        .checked_sub(span.envelope_samples.start.0)
         .filter(|offset| *offset >= 0)
         .ok_or(StageAudioError::Range)?;
     let count = span
@@ -34,6 +34,9 @@ pub(crate) fn apply_edge_fades(
         .ok_or(StageAudioError::Range)?;
     if count != samples.len()
         || span.samples.end > span.allocated_samples.end
+        || span.samples.start < span.allocated_samples.start
+        || span.allocated_samples.start < span.envelope_samples.start
+        || span.allocated_samples.end > span.envelope_samples.end
         || span.boundaries.start.is_empty()
         || span.boundaries.end.is_empty()
     {

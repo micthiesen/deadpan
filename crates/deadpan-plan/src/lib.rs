@@ -12,7 +12,8 @@ pub use picture::{Picture, PictureSample};
 pub use plan::{
     AudioBoundaries, AudioBoundaryKind, AudioBoundaryOrigin, AudioContent, AudioQuery,
     AudioQueryLimits, AudioRetimeStage, AudioSpan, AudioTransform, LookupStats, NodeInspection,
-    NodeType, PlanInspection, PlanMetadata, RenderPlan, SilenceReason, StorageStats,
+    NodeType, PlanInspection, PlanMetadata, RenderPlan, SilenceReason, SourceSamplingSupport,
+    StorageStats,
 };
 pub use plan::{
     AudioProcessingQuery, AudioProcessingSpan, AudioSignal, AudioSignalContent, AudioSignalQuery,

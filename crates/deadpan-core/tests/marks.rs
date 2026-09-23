@@ -607,6 +607,7 @@ fn nested_retimes_preserve_exact_fractions_and_report_crop_loss() {
         audio_edges: Default::default(),
         label: "Retime".into(),
         kind: NodeKind::Retime {
+            purpose: deadpan_core::RetimePurpose::Edit,
             child: node(child),
             duration: duration(frames),
             mapping: FrameRange::new(ProjectFrame(start), ProjectFrame(end)).unwrap(),

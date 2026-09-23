@@ -83,6 +83,7 @@ fn retime(child: &str, frames: i64, start: i64, end: i64) -> BeatNode {
         audio_edges: Default::default(),
         label: "Exact retime".into(),
         kind: NodeKind::Retime {
+            purpose: deadpan_core::RetimePurpose::Edit,
             child: id(child),
             duration: duration(frames),
             mapping: FrameRange::new(ProjectFrame(start), ProjectFrame(end)).unwrap(),

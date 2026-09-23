@@ -363,6 +363,7 @@ fn mapped_inspection_prepares_preserve_from_historical_aac_without_writing() -> 
                             audio_edges: Default::default(),
                             label: "Preserve speech pitch".into(),
                             kind: NodeKind::Retime {
+                                purpose: deadpan_core::RetimePurpose::Edit,
                                 child: node("copy"),
                                 duration: FrameDuration::new(length * 2)?,
                                 mapping: FrameRange::new(ProjectFrame(0), ProjectFrame(length))?,

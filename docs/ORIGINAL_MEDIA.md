@@ -53,7 +53,7 @@ explicit versioned relink operation, preserving newer locator decisions.
 
 ## Database and failure boundaries
 
-Database schema 17 retains the `original_media` table introduced in schema 10. Content identity is its key;
+Database schema 18 retains the `original_media` table introduced in schema 10. Content identity is its key;
 location versions and bounded records are operational, outside document undo.
 An authored `AssetId` is unsuitable as a location key because it can be reused
 after its registration is undone. Original retention does not change project
@@ -66,8 +66,8 @@ written only by the project writer; read-only inventory and snapshots may coexis
 Inventory uses bounded keyset pages. All retained originals are currently kept;
 history-based reference collection and eviction policy are not implemented.
 
-Schemas 1 through 16 migrate on a consistent backup/copy into schema 17.
-Schema-10-through-16 original records are preserved. For schemas 1 through 9, the new
+Schemas 1 through 17 migrate on a consistent backup/copy into schema 18.
+Schema-10-through-17 original records are preserved. For schemas 1 through 9, the new
 table is created without `IF NOT EXISTS`, so legacy files containing unexpected
 modern tables fail rather than acquire implied trust. Existing document history,
 generation requests, attempts and admission receipts retain their prior meaning.

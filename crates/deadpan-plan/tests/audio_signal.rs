@@ -80,6 +80,7 @@ fn retime(child: &str, frames: i64, start: i64, end: i64, pitch: PitchPolicy) ->
         audio_edges: Default::default(),
         label: "Retime".into(),
         kind: NodeKind::Retime {
+            purpose: deadpan_core::RetimePurpose::Edit,
             child: id(child),
             duration: duration(frames),
             mapping: FrameRange::new(ProjectFrame(start), ProjectFrame(end)).unwrap(),
@@ -154,6 +155,63 @@ fn document(
 
 fn rate() -> FrameRate {
     FrameRate::new(48_000, 1).unwrap()
+}
+
+#[test]
+fn partition_support_is_shared_while_root_and_signal_grids_keep_different_allocations() {
+    let mut left = retime("source-left", 2, 0, 2, PitchPolicy::FollowSpeed);
+    let mut right = retime("source-right", 2, 2, 4, PitchPolicy::FollowSpeed);
+    for node in [&mut left, &mut right] {
+        let NodeKind::Retime { purpose, .. } = &mut node.kind else {
+            unreachable!()
+        };
+        *purpose = RetimePurpose::Partition;
+    }
+    let document = document(
+        FrameRate::new(30_000, 1001).unwrap(),
+        &["left", "right"],
+        [
+            ("left", left),
+            ("right", right),
+            (
+                "source-left",
+                source(4, 0, 6406, SourceAudioMapping::FitBeat),
+            ),
+            (
+                "source-right",
+                source(4, 0, 6406, SourceAudioMapping::FitBeat),
+            ),
+        ],
+        BTreeMap::new(),
+    );
+    let plan = RenderPlan::compile(&document).unwrap();
+    let root = plan
+        .audio_processing(samples(3203, 3204), AudioQueryLimits::default())
+        .unwrap();
+    let signal = plan
+        .audio_signal()
+        .query(points(3203, 3204), AudioQueryLimits::default())
+        .unwrap();
+    assert_eq!(root.spans[0].instance.node, id("source-right"));
+    assert_eq!(signal.spans[0].instance.node, id("source-left"));
+    assert_eq!(root.spans[0].allocated_samples, samples(3203, 6406));
+    assert_eq!(signal.spans[0].allocated_samples, points(0, 3204));
+    assert!(root.spans[0].retimes.is_empty());
+    assert!(signal.spans[0].retimes.is_empty());
+    let support = |content: &AudioSignalContent<'_>| {
+        let AudioSignalContent::Leaf(AudioContent::Source { support, .. }) = content else {
+            panic!("source")
+        };
+        *support
+    };
+    let expected = support(&root.spans[0].content);
+    assert_eq!(support(&signal.spans[0].content), expected);
+    assert_eq!(expected.start.ticks, ExactRatio::ZERO);
+    assert_eq!(expected.end.ticks, ExactRatio::integer(6406));
+    assert_eq!(
+        root.spans[0].source_point(AudioSample(3203)).unwrap(),
+        signal.spans[0].source_point(SignalSample(3203)).unwrap()
+    );
 }
 
 #[test]

@@ -86,7 +86,7 @@ of cadence, so ambiguous VFR cadence need not block explicit later geometry adop
 
 ## Persistence and evidence
 
-Database schema 17 migrates schemas 1 through 16 into core schema 11 by replaying
+Database schema 18 migrates schemas 1 through 17 into core schema 12 by replaying
 their complete history against frozen core wires. Schema-12 picture and audio durations remain
 unchanged. Older history rejects placement variants and fields, including null
 fields in snapshots, commands and patches. Migration preserves all operational

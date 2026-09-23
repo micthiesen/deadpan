@@ -925,7 +925,10 @@ fn root_source_recipe(
     span: &AudioProcessingSpan<'_>,
     rate: u32,
 ) -> Result<Option<ResampleRecipe>, StageAudioError> {
-    let AudioSignalContent::Leaf(AudioContent::Source { source, .. }) = &span.content else {
+    let AudioSignalContent::Leaf(AudioContent::Source {
+        source, support, ..
+    }) = &span.content
+    else {
         return Err(PlanError::NoSourceAudio.into());
     };
     source_recipe(
@@ -940,8 +943,8 @@ fn root_source_recipe(
                 .checked_add(1)
                 .ok_or(TimeError::Overflow)?,
         ))?,
-        span.source_point_at_project_frame(span.project_extent.start)?,
-        span.source_point_at_project_frame(span.project_extent.end)?,
+        support.start,
+        support.end,
     )
 }
 
@@ -949,7 +952,10 @@ fn signal_source_recipe(
     span: &AudioSignalSpan<'_>,
     rate: u32,
 ) -> Result<Option<ResampleRecipe>, StageAudioError> {
-    let AudioSignalContent::Leaf(AudioContent::Source { source, .. }) = &span.content else {
+    let AudioSignalContent::Leaf(AudioContent::Source {
+        source, support, ..
+    }) = &span.content
+    else {
         return Err(PlanError::NoSourceAudio.into());
     };
     source_recipe(
@@ -964,8 +970,8 @@ fn signal_source_recipe(
                 .checked_add(1)
                 .ok_or(TimeError::Overflow)?,
         ))?,
-        span.source_point_at_signal_frame(span.signal_extent.start)?,
-        span.source_point_at_signal_frame(span.signal_extent.end)?,
+        support.start,
+        support.end,
     )
 }
 

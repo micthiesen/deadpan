@@ -2,8 +2,8 @@ use std::ops::Range;
 
 use deadpan_core::{
     AudioSample, ExactRatio, FrameDuration, HoldAudio, InsertionBias, InstancePath, IterationId,
-    MIX_SAMPLE_RATE, NodeId, PitchPolicy, ProjectFrame, ProjectId, RepeatInstance, RevisionId,
-    SourceAudio, SourcePoint, TimeError,
+    MIX_SAMPLE_RATE, NodeId, PitchPolicy, ProjectFrame, ProjectId, RepeatInstance, RetimePurpose,
+    RevisionId, SourceAudio, SourcePoint, TimeError,
 };
 use serde::Serialize;
 
@@ -38,6 +38,45 @@ pub enum SilenceReason {
     SilentHold,
 }
 
+/// Exact source-clock filter support. Transparent partitions crop allocation,
+/// not this domain; ordinary authored crops continue to exclude outside taps.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+pub struct SourceSamplingSupport {
+    pub start: SourcePoint,
+    pub end: SourcePoint,
+}
+
+impl SourceSamplingSupport {
+    pub(super) fn from_local(
+        source: &SourceAudio,
+        start: ExactRatio,
+        duration: ExactRatio,
+        support: Range<ExactRatio>,
+    ) -> Result<Self, TimeError> {
+        Ok(Self {
+            start: source_point_from_local(source, start, duration, support.start)?,
+            end: source_point_from_local(source, start, duration, support.end)?,
+        })
+    }
+}
+
+pub(super) fn source_point_from_local(
+    source: &SourceAudio,
+    start: ExactRatio,
+    duration: ExactRatio,
+    local: ExactRatio,
+) -> Result<SourcePoint, TimeError> {
+    let fraction = local.checked_sub(start)?.checked_div(duration)?;
+    let ticks =
+        ExactRatio::integer(source.span.start().ticks).checked_add(fraction.checked_mul(
+            ExactRatio::integer(source.span.end().ticks - source.span.start().ticks),
+        )?)?;
+    Ok(SourcePoint {
+        ticks,
+        time_base: source.span.start().time_base,
+    })
+}
+
 /// Authored instructions, not decoded PCM or a claim of supported DSP effects.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
@@ -50,6 +89,7 @@ pub enum AudioContent {
         /// Exact local-frame placement after the independent 48 kHz offset.
         start: ExactRatio,
         duration: ExactRatio,
+        support: SourceSamplingSupport,
     },
     /// Retained user-selected source range; looping/crossfades belong to DSP.
     RoomTone {
@@ -143,7 +183,11 @@ pub struct AudioSpan {
     /// partitioning. Both endpoints are rounded once from the project origin.
     pub allocated_samples: Range<AudioSample>,
     pub project_extent: Range<ExactRatio>,
-    /// Original owners of each full extent edge, never of a query crop.
+    /// Meaningful envelope domain, which can extend beyond a transparent
+    /// partition's allocation. Its original length determines fade width.
+    pub envelope_extent: Range<ExactRatio>,
+    pub envelope_samples: Range<AudioSample>,
+    /// Owners of the envelope edges, never of a query or transparent partition.
     pub boundaries: AudioBoundaries,
     pub instance: InstancePath,
     pub gap_after: Option<IterationId>,
@@ -179,19 +223,12 @@ impl AudioSpan {
             source,
             start,
             duration,
+            ..
         } = &self.content
         else {
             return Err(PlanError::NoSourceAudio);
         };
-        let fraction = local.checked_sub(*start)?.checked_div(*duration)?;
-        let ticks =
-            ExactRatio::integer(source.span.start().ticks).checked_add(fraction.checked_mul(
-                ExactRatio::integer(source.span.end().ticks - source.span.start().ticks),
-            )?)?;
-        Ok(SourcePoint {
-            ticks,
-            time_base: source.span.start().time_base,
-        })
+        Ok(source_point_from_local(source, *start, *duration, local)?)
     }
 }
 
@@ -207,6 +244,17 @@ pub struct AudioQuery {
 pub(super) struct Budget {
     pub(super) remaining: usize,
     pub(super) lookup: LookupStats,
+}
+
+// Sequence/Repeat bounds describe derived allocation, not a new crop of a
+// retained partition. Keep their policies only when a real envelope edge is
+// exactly coincident. Capture paths after descent to avoid cloning every prefix.
+struct EnvelopeConstraint {
+    range: Range<ExactRatio>,
+    node: usize,
+    repeat_count: usize,
+    gap_after: Option<IterationId>,
+    kinds: (AudioBoundaryKind, AudioBoundaryKind),
 }
 
 impl Budget {
@@ -294,8 +342,9 @@ impl RenderPlan {
         } else {
             InsertionBias::Left
         };
-        let mut extent =
-            AudioExtent::new(ExactRatio::ZERO..ExactRatio::integer(self.duration().frames()));
+        let mut extent = ExactRatio::ZERO..ExactRatio::integer(self.duration().frames());
+        let mut envelope: Option<Range<ExactRatio>> = None;
+        let mut constraints = Vec::new();
         let mut current = self.root;
         let mut repeats = Vec::new();
         let mut retimes = Vec::new();
@@ -303,20 +352,33 @@ impl RenderPlan {
             budget.spend(1)?;
             budget.lookup.visited_nodes += 1;
             let node = &self.nodes[current];
-            let owner = BoundaryOwner {
-                node: &node.inspection.id,
-                repeats: &repeats,
-                gap_after: None,
-                policies: node.audio_edges,
-            };
-            extent.intersect(
-                transform.project_origin
-                    ..transform
-                        .project_at(ExactRatio::integer(node.inspection.duration.frames()))?,
-                owner,
-                (AudioBoundaryKind::NodeStart, AudioBoundaryKind::NodeEnd),
-                budget,
-            )?;
+            let node_extent = transform.project_origin
+                ..transform.project_at(ExactRatio::integer(node.inspection.duration.frames()))?;
+            extent = intersect(extent, node_extent.clone())?;
+            if !matches!(
+                node.kind,
+                CompiledKind::Retime {
+                    purpose: RetimePurpose::Partition,
+                    ..
+                }
+            ) {
+                constraints.push(EnvelopeConstraint {
+                    range: node_extent.clone(),
+                    node: current,
+                    repeat_count: repeats.len(),
+                    gap_after: None,
+                    kinds: (AudioBoundaryKind::NodeStart, AudioBoundaryKind::NodeEnd),
+                });
+                if !matches!(
+                    node.kind,
+                    CompiledKind::Sequence { .. } | CompiledKind::Repeat { .. }
+                ) {
+                    envelope = Some(match envelope {
+                        Some(previous) => intersect(previous, node_extent)?,
+                        None => node_extent,
+                    });
+                }
+            }
             let local = probe
                 .checked_sub(transform.project_origin)?
                 .checked_div(transform.project_frames_per_local_frame)?;
@@ -334,42 +396,60 @@ impl RenderPlan {
                 } => {
                     let start = transform.project_at(audio.start)?;
                     let end = transform.project_at(audio.start.checked_add(audio.duration)?)?;
-                    let content = if sample < transform.sample_boundary(start)? {
-                        extent.clip_end(
-                            start,
-                            owner,
+                    let envelope = envelope
+                        .as_mut()
+                        .ok_or(PlanError::InvalidPlan("source has no envelope domain"))?;
+                    let mut placement_constraint = EnvelopeConstraint {
+                        range: start..end,
+                        node: current,
+                        repeat_count: repeats.len(),
+                        gap_after: None,
+                        kinds: (
                             AudioBoundaryKind::SourcePlacementStart,
-                            budget,
-                        )?;
+                            AudioBoundaryKind::SourcePlacementEnd,
+                        ),
+                    };
+                    let content = if sample < transform.sample_boundary(start)? {
+                        extent.end = minimum(extent.end, start)?;
+                        envelope.end = minimum(envelope.end, start)?;
+                        // Before placement, its incoming edge is this silence's
+                        // outgoing edge, as in the original allocation model.
+                        placement_constraint.range.end = start;
+                        placement_constraint.kinds.1 = AudioBoundaryKind::SourcePlacementStart;
                         AudioContent::Silence {
                             reason: SilenceReason::OutsideSourcePlacement,
                         }
                     } else if sample >= transform.sample_boundary(end)? {
-                        extent.clip_start(
-                            end,
-                            owner,
-                            AudioBoundaryKind::SourcePlacementEnd,
-                            budget,
-                        )?;
+                        extent.start = maximum(extent.start, end)?;
+                        envelope.start = maximum(envelope.start, end)?;
+                        placement_constraint.range.start = end;
+                        placement_constraint.kinds.0 = AudioBoundaryKind::SourcePlacementEnd;
                         AudioContent::Silence {
                             reason: SilenceReason::OutsideSourcePlacement,
                         }
                     } else {
-                        extent.intersect(
-                            start..end,
-                            owner,
-                            (
-                                AudioBoundaryKind::SourcePlacementStart,
-                                AudioBoundaryKind::SourcePlacementEnd,
-                            ),
-                            budget,
-                        )?;
+                        extent = intersect(extent, start..end)?;
+                        *envelope = intersect(envelope.clone(), start..end)?;
                         AudioContent::Source {
                             source: audio.source.clone(),
                             start: audio.start,
                             duration: audio.duration,
+                            support: SourceSamplingSupport::from_local(
+                                &audio.source,
+                                audio.start,
+                                audio.duration,
+                                envelope
+                                    .start
+                                    .checked_sub(transform.project_origin)?
+                                    .checked_div(transform.project_frames_per_local_frame)?
+                                    ..envelope
+                                        .end
+                                        .checked_sub(transform.project_origin)?
+                                        .checked_div(transform.project_frames_per_local_frame)?,
+                            )?,
                         }
                     };
+                    constraints.push(placement_constraint);
                     break (content, None);
                 }
                 CompiledKind::Hold { audio, .. } => {
@@ -406,13 +486,16 @@ impl RenderPlan {
                     start,
                     scale,
                     pitch,
+                    purpose,
                 } => {
-                    retimes.push(AudioRetimeStage {
-                        node: node.inspection.id.clone(),
-                        child_start: *start,
-                        child_frames_per_local_frame: *scale,
-                        pitch: *pitch,
-                    });
+                    if *purpose != RetimePurpose::Partition {
+                        retimes.push(AudioRetimeStage {
+                            node: node.inspection.id.clone(),
+                            child_start: *start,
+                            child_frames_per_local_frame: *scale,
+                            pitch: *pitch,
+                        });
+                    }
                     let inverse = ExactRatio::integer(1).checked_div(*scale)?;
                     transform = transform.child(
                         ExactRatio::ZERO.checked_sub(start.checked_mul(inverse)?)?,
@@ -445,21 +528,25 @@ impl RenderPlan {
                             .ok_or(TimeError::Overflow)?;
                         transform =
                             transform.child(ExactRatio::integer(start), ExactRatio::integer(1))?;
-                        extent.intersect(
-                            transform.project_origin
-                                ..transform.project_at(ExactRatio::integer(
-                                    location.play.gap_after.frames(),
-                                ))?,
-                            BoundaryOwner {
-                                gap_after: Some(&location.play.iteration),
-                                ..owner
-                            },
-                            (
+                        let gap_extent = transform.project_origin
+                            ..transform.project_at(ExactRatio::integer(
+                                location.play.gap_after.frames(),
+                            ))?;
+                        extent = intersect(extent, gap_extent.clone())?;
+                        envelope = Some(match envelope {
+                            Some(previous) => intersect(previous, gap_extent.clone())?,
+                            None => gap_extent.clone(),
+                        });
+                        constraints.push(EnvelopeConstraint {
+                            range: gap_extent,
+                            node: current,
+                            repeat_count: repeats.len(),
+                            gap_after: Some(location.play.iteration.clone()),
+                            kinds: (
                                 AudioBoundaryKind::RepeatGapStart,
                                 AudioBoundaryKind::RepeatGapEnd,
                             ),
-                            budget,
-                        )?;
+                        });
                         break (
                             AudioContent::from_hold(audio, location.play.gap_after),
                             Some(location.play.iteration),
@@ -477,16 +564,38 @@ impl RenderPlan {
                 }
             }
         };
-        let allocated_samples = transform.sample_boundary(extent.range.start)?
-            ..transform.sample_boundary(extent.range.end)?;
+        let allocated_samples =
+            transform.sample_boundary(extent.start)?..transform.sample_boundary(extent.end)?;
         if !allocated_samples.contains(&sample) {
             return Err(PlanError::InvalidPlan("audio interval did not advance"));
         }
+        let mut envelope = AudioExtent::new(
+            envelope.ok_or(PlanError::InvalidPlan("audio has no envelope domain"))?,
+        );
+        for constraint in constraints {
+            let node = &self.nodes[constraint.node];
+            let owner = BoundaryOwner {
+                node: &node.inspection.id,
+                repeats: &repeats[..constraint.repeat_count],
+                gap_after: constraint.gap_after.as_ref(),
+                policies: node.audio_edges,
+            };
+            if constraint.range.start == envelope.range.start {
+                envelope.clip_start(constraint.range.start, owner, constraint.kinds.0, budget)?;
+            }
+            if constraint.range.end == envelope.range.end {
+                envelope.clip_end(constraint.range.end, owner, constraint.kinds.1, budget)?;
+            }
+        }
+        let envelope_samples = transform.sample_boundary(envelope.range.start)?
+            ..transform.sample_boundary(envelope.range.end)?;
         Ok(AudioSpan {
             samples: allocated_samples.clone(),
             allocated_samples,
-            project_extent: extent.range,
-            boundaries: extent.boundaries,
+            project_extent: extent,
+            envelope_extent: envelope.range,
+            envelope_samples,
+            boundaries: envelope.boundaries,
             instance: InstancePath {
                 node: self.nodes[current].inspection.id.clone(),
                 repeats,

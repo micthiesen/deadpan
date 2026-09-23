@@ -23,7 +23,9 @@ placements can therefore give successive plays different fractional source
 phases without changing total duration or restarting phase at read boundaries.
 
 `AudioSpan::source_point_at_project_frame` exposes exact source coordinates at
-the span's structurally clipped `project_extent` edges. The allowed source PCM
+arbitrary project positions. `AudioContent::Source::support` retains the filter
+interval independently of allocation: ordinary crops clip it, while explicit
+[partitions](AUDIO_PARTITIONS.md) retain their child's context. The allowed source PCM
 selection is the half-open discrete interval `[ceil(start), ceil(end))`,
 intersected with the authored original trim. The filter never reads context
 outside that selection. An exact crop containing no original sample positions

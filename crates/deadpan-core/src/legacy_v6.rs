@@ -113,6 +113,7 @@ impl LegacyBeatNode {
                     duration,
                     mapping,
                     pitch,
+                    purpose: RetimePurpose::Edit,
                 },
             },
         }
@@ -144,10 +145,15 @@ impl LegacyBeatNode {
                     gap: gap.clone(),
                 },
                 NodeKind::Retime {
+                    purpose: RetimePurpose::Partition,
+                    ..
+                } => return None,
+                NodeKind::Retime {
                     child,
                     duration,
                     mapping,
                     pitch,
+                    purpose: RetimePurpose::Edit,
                 } => LegacyNodeKind::Retime {
                     child: child.clone(),
                     duration: *duration,

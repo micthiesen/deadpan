@@ -80,6 +80,7 @@ fn source_with_mapping(
 }
 fn retime(child: &str, frames: i64, start: i64, end: i64) -> BeatNode {
     node(NodeKind::Retime {
+        purpose: deadpan_core::RetimePurpose::Edit,
         child: id(child),
         duration: duration(frames),
         mapping: range(start, end),
@@ -190,6 +191,54 @@ fn fractional_source_centers_and_vfr_selection_preserve_original_pts() {
         plan.metadata().presentation_basis.frame_rate,
         FrameRate::new(30000, 1001).unwrap()
     );
+}
+
+#[test]
+fn retained_partitions_preserve_exact_vfr_picture_mapping_through_fractional_retime() {
+    let original = document(
+        &["retime"],
+        vec![
+            ("source", source(6, -2002, 5005)),
+            ("retime", retime("source", 9, 0, 6)),
+        ],
+    );
+    let partition = |child: &str, start, end| {
+        let mut node = retime(child, end - start, start, end);
+        let NodeKind::Retime { purpose, .. } = &mut node.kind else {
+            unreachable!()
+        };
+        *purpose = RetimePurpose::Partition;
+        node
+    };
+    let divided = document(
+        &["left", "right"],
+        vec![
+            ("left", partition("retime-left", 0, 4)),
+            ("right", partition("retime-right", 4, 9)),
+            ("source-left", source(6, -2002, 5005)),
+            ("source-right", source(6, -2002, 5005)),
+            ("retime-left", retime("source-left", 9, 0, 6)),
+            ("retime-right", retime("source-right", 9, 0, 6)),
+        ],
+    );
+    let original = RenderPlan::compile(&original).unwrap();
+    let plan = RenderPlan::compile(&divided).unwrap();
+    let index = index("video", clock(), &[-2002, -1001, 1001, 4004], 5005);
+    assert_eq!(plan.duration(), original.duration());
+    for frame in [8, 0, 3, 4, 7, 1, 5, 2, 6] {
+        let before = original.picture(ProjectFrame(frame)).unwrap();
+        let after = plan.picture(ProjectFrame(frame)).unwrap();
+        assert_eq!(after.picture, before.picture);
+        assert_eq!(
+            after.picture.select_source_frame(&index).unwrap(),
+            before.picture.select_source_frame(&index).unwrap()
+        );
+        assert_eq!(
+            ticks(&after.picture),
+            ExactRatio::new(-2002 * 18 + (2 * i128::from(frame) + 1) * 7007, 18).unwrap()
+        );
+        after.instance.validate(&divided).unwrap();
+    }
 }
 
 #[test]

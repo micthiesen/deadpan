@@ -187,23 +187,18 @@ fn source_recipe(
     span: &AudioSpan,
     sample_rate: u32,
 ) -> Result<Option<ResampleRecipe>, SequenceAudioError> {
-    let AudioContent::Source { source, .. } = &span.content else {
+    let AudioContent::Source {
+        source, support, ..
+    } = &span.content
+    else {
         return Err(PlanError::NoSourceAudio.into());
     };
     let original_start = original_sample(source.span.start(), sample_rate)?;
     let original_end = original_sample(source.span.end(), sample_rate)?;
     // A structural crop can start/end between original samples. Keep only
     // sample positions inside that exact half-open interval, before filter I/O.
-    let clipped_start = source_samples(
-        span.source_point_at_project_frame(span.project_extent.start)?,
-        sample_rate,
-    )?
-    .ceil()?;
-    let clipped_end = source_samples(
-        span.source_point_at_project_frame(span.project_extent.end)?,
-        sample_rate,
-    )?
-    .ceil()?;
+    let clipped_start = source_samples(support.start, sample_rate)?.ceil()?;
+    let clipped_end = source_samples(support.end, sample_rate)?.ceil()?;
     let left = clipped_start.max(i128::from(original_start));
     let right = clipped_end.min(i128::from(original_end));
     if left >= right {

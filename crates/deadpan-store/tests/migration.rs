@@ -6,7 +6,7 @@ use std::{
 
 use deadpan_core::{
     IterationOrder, NodeId, NodeKind, ProjectDocument, RevisionId, legacy_v1, legacy_v2, legacy_v3,
-    legacy_v4, legacy_v5, legacy_v6, legacy_v7, legacy_v8, legacy_v9, legacy_v10,
+    legacy_v4, legacy_v5, legacy_v6, legacy_v7, legacy_v8, legacy_v9, legacy_v10, legacy_v11,
 };
 use deadpan_jobs::{Relevance, RequestId};
 use deadpan_store::generation::{
@@ -40,8 +40,7 @@ fn schema_sixteen_retains_exact_core_eleven_history_and_stays_generic() -> Resul
     );
     let backup = Connection::open(migrated.backup.unwrap())?;
     assert_eq!(contents(&backup)?, before);
-    assert_eq!(docs(&database)?, before_docs);
-    assert_eq!(history_json(&database)?, before_history);
+    assert_core_eleven_replay(&before_docs, &before_history, &database)?;
     assert_eq!(metadata(&database)?, before_metadata);
     assert_eq!(operational_metadata(&database)?, before_operational);
     assert_eq!(qualification_metadata(&database)?, before_qualifications);
@@ -1329,6 +1328,7 @@ fn fixture_version(scratch: &Path, version: u32) -> Result<PathBuf> {
         14 => include_str!("fixtures/v14-history.sql"),
         15 => include_str!("fixtures/v15-history.sql"),
         16 => include_str!("fixtures/v16-history.sql"),
+        17 => include_str!("fixtures/v17-history.sql"),
         _ => panic!("unsupported fixture"),
     })?;
     Ok(package)
@@ -2834,6 +2834,170 @@ fn every_legacy_schema_rejects_audio_edge_vocabulary_without_promotion() -> Resu
                 }
             }
         }
+    }
+    Ok(())
+}
+
+fn assert_core_eleven_replay(
+    originals: &[(String, String)],
+    original_history: &[(String, String)],
+    database: &Connection,
+) -> Result {
+    use deadpan_core::{CommandRequest, EditTransaction, RetimePurpose};
+    let migrated = docs(database)?;
+    assert_eq!(migrated.len(), originals.len());
+    for ((old_id, old_json), (new_id, new_json)) in originals.iter().zip(migrated) {
+        assert_eq!(old_id, &new_id);
+        let current = ProjectDocument::from_json(&new_json)?;
+        assert!(legacy_v11::Document::from_json(old_json)?.matches(&current));
+        for node in current.nodes().values() {
+            if let NodeKind::Retime { purpose, .. } = node.kind {
+                assert_eq!(purpose, RetimePurpose::Edit);
+            }
+        }
+        // Default purpose must not grow every old node and exceed old caps.
+        let mut old: serde_json::Value = serde_json::from_str(old_json)?;
+        old["schema_version"] = serde_json::json!(deadpan_core::DOCUMENT_SCHEMA_VERSION);
+        assert_eq!(serde_json::to_value(current)?, old);
+    }
+    let migrated_history = history_json(database)?;
+    assert_eq!(original_history.len(), migrated_history.len());
+    for ((old_request, old_edit), (new_request, new_edit)) in
+        original_history.iter().zip(migrated_history)
+    {
+        let request: CommandRequest = serde_json::from_str(&new_request)?;
+        let edit: EditTransaction = serde_json::from_str(&new_edit)?;
+        assert_eq!(legacy_v11::upgrade_request(old_request)?, request);
+        assert!(legacy_v11::matches_edit(old_edit, &edit)?);
+        let before = snapshot(database, request.expected_revision.as_str())?;
+        let after = snapshot(database, request.new_revision.as_str())?;
+        assert_eq!(edit.forward.apply(&before)?, after);
+        assert_eq!(edit.inverse.apply(&after)?, before);
+    }
+    Ok(())
+}
+
+#[test]
+fn schema_seventeen_preserves_single_original_floor_and_authored_crop_history() -> Result {
+    use deadpan_core::AudioEdgePolicy;
+    use deadpan_store::single_source::SingleSourceState;
+    let scratch = tempfile::tempdir()?;
+    let path = fixture_version(scratch.path(), 17)?;
+    let database = Connection::open(path.join("project.sqlite"))?;
+    let before = contents(&database)?;
+    let old_docs = docs(&database)?;
+    let old_history = history_json(&database)?;
+    let old_metadata = metadata(&database)?;
+    let old_operational = operational_metadata(&database)?;
+    let old_qualifications = qualification_metadata(&database)?;
+    let old_profile: (String, i64) = database.query_row(
+        "SELECT profile,baseline_history FROM single_source",
+        [],
+        |row| Ok((row.get(0)?, row.get(1)?)),
+    )?;
+    let profile: SingleSourceState = serde_json::from_str(&old_profile.0)?;
+    assert_eq!((old_docs.len(), old_history.len()), (21, 12));
+    assert!(matches!(
+        ProjectStore::open(&path, AccessMode::ReadOnly),
+        Err(StoreError::MigrationRequired(17))
+    ));
+    let migration = ProjectStore::migrate(&path)?;
+    assert_eq!(
+        (migration.from_schema, migration.to_schema),
+        (17, DATABASE_SCHEMA_VERSION)
+    );
+    let backup = Connection::open(migration.backup.unwrap())?;
+    assert_eq!(contents(&backup)?, before);
+    assert_core_eleven_replay(&old_docs, &old_history, &database)?;
+    assert_eq!(metadata(&database)?, old_metadata);
+    assert_eq!(operational_metadata(&database)?, old_operational);
+    assert_eq!(qualification_metadata(&database)?, old_qualifications);
+    let new_profile: (String, i64) = database.query_row(
+        "SELECT profile,baseline_history FROM single_source",
+        [],
+        |row| Ok((row.get(0)?, row.get(1)?)),
+    )?;
+    assert_eq!(new_profile, old_profile);
+    let workflow: String =
+        database.query_row("SELECT workflow FROM state", [], |row| row.get(0))?;
+    assert_eq!(workflow, "single_source_v1");
+    let mut store = ProjectStore::open(&path, AccessMode::ReadWrite)?;
+    assert_eq!(store.single_source_state()?, Some(profile.clone()));
+    let crop = NodeId::new("schema17-retime")?;
+    assert_eq!(
+        store.snapshot()?.nodes()[&crop].audio_edges.node_start,
+        AudioEdgePolicy::Automatic
+    );
+    let initial_head = store.snapshot()?.revision_id().clone();
+    let redo = RevisionId::new("schema18-redo-edge")?;
+    store.redo(&initial_head, redo.clone())?;
+    assert_eq!(
+        store.snapshot()?.nodes()[&crop].audio_edges.node_start,
+        AudioEdgePolicy::Hard
+    );
+    let mut count = 0;
+    while store.history_availability()?.0 {
+        let head = store.snapshot()?.revision_id().clone();
+        store.undo(&head, RevisionId::new(format!("schema18-undo-{count}"))?)?;
+        count += 1;
+    }
+    assert!(count >= 4);
+    let SingleSourceState::Ready {
+        node,
+        baseline_revision,
+        ..
+    } = &profile
+    else {
+        panic!("fixture must be initialized");
+    };
+    let baseline = snapshot(&database, baseline_revision.as_str())?;
+    let head = store.snapshot()?;
+    assert_eq!(head.nodes(), baseline.nodes());
+    assert_eq!(head.assets(), baseline.assets());
+    assert!(matches!(head.nodes()[node].kind, NodeKind::Source { .. }));
+    assert!(
+        store
+            .undo(head.revision_id(), RevisionId::new("below-floor")?)
+            .is_err()
+    );
+    assert_eq!(store.snapshot()?, head);
+    store.validate()?;
+    drop(store);
+    let reopened = ProjectStore::open(&path, AccessMode::ReadOnly)?;
+    assert_eq!(reopened.single_source_state()?, Some(profile));
+    assert!(!reopened.history_availability()?.0);
+    assert_eq!(reopened.snapshot()?, head);
+    Ok(())
+}
+
+#[test]
+fn schema_seventeen_rejects_new_purpose_everywhere_and_missing_profile_without_promotion() -> Result
+{
+    for tamper in [
+        "UPDATE revisions SET document=json_set(document,'$.nodes.\"schema17-retime\".kind.purpose',NULL) WHERE id='schema17-crop'",
+        "UPDATE revisions SET document=json_set(document,'$.nodes.\"schema17-retime\".kind.purpose','partition') WHERE id='schema17-hard-edge'",
+        "UPDATE history SET request=json_set(request,'$.command.subtree.nodes.\"schema17-retime\".kind.purpose','edit') WHERE revision_id='schema17-crop'",
+        "UPDATE history SET edit=json_set(edit,'$.forward.nodes.\"schema17-retime\".after.kind.purpose','partition') WHERE revision_id='schema17-crop'",
+        "UPDATE history SET edit=json_set(edit,'$.inverse.nodes.\"schema17-retime\".before.kind.purpose',NULL) WHERE revision_id='schema17-crop'",
+        "DROP TABLE single_source",
+        "DELETE FROM single_source",
+        "ALTER TABLE state DROP COLUMN workflow",
+    ] {
+        let scratch = tempfile::tempdir()?;
+        let path = fixture_version(scratch.path(), 17)?;
+        let database = Connection::open(path.join("project.sqlite"))?;
+        database.execute_batch(tamper)?;
+        let before = contents(&database)?;
+        let error = ProjectStore::migrate(&path).unwrap_err();
+        let StoreError::MigrationFailed { backup, .. } = error else {
+            panic!("{error}");
+        };
+        assert_eq!(contents(&database)?, before, "{tamper}");
+        assert_eq!(contents(&Connection::open(backup)?)?, before);
+        assert_eq!(
+            database.pragma_query_value(None, "user_version", |row| row.get::<_, u32>(0))?,
+            17
+        );
     }
     Ok(())
 }

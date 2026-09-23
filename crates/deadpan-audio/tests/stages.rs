@@ -103,6 +103,7 @@ fn retime(child: &str, frames: i64, selected: Range<i64>, pitch: PitchPolicy) ->
         audio_edges: Default::default(),
         label: "Explicit retime".into(),
         kind: NodeKind::Retime {
+            purpose: deadpan_core::RetimePurpose::Edit,
             child: id(child),
             duration: duration(frames),
             mapping: FrameRange::new(ProjectFrame(selected.start), ProjectFrame(selected.end))
@@ -110,6 +111,19 @@ fn retime(child: &str, frames: i64, selected: Range<i64>, pitch: PitchPolicy) ->
             pitch,
         },
     }
+}
+
+fn partition(child: &str, selected: Range<i64>) -> BeatNode {
+    let mut node = retime(
+        child,
+        selected.end - selected.start,
+        selected,
+        PitchPolicy::FollowSpeed,
+    );
+    if let NodeKind::Retime { purpose, .. } = &mut node.kind {
+        *purpose = RetimePurpose::Partition;
+    }
+    node
 }
 
 fn plan(
@@ -1483,6 +1497,313 @@ fn faded_all(
         output.extend(block.samples);
     }
     unreachable!()
+}
+
+#[test]
+fn pure_partition_preserves_a_two_sample_envelope_and_standalone_fragment_offset() {
+    let rate = FrameRate::new(48_000, 1).unwrap();
+    let original = source(rate, 2, 0..2);
+    let mut whole = StageAudio::new(plan(rate, &["source"], [("source", original.clone())]));
+    let mut split = StageAudio::new(plan(
+        rate,
+        &["left", "right"],
+        [
+            ("left", partition("source-left", 0..1)),
+            ("right", partition("source-right", 1..2)),
+            ("source-left", original.clone()),
+            ("source-right", original.clone()),
+        ],
+    ));
+    let mut provider = FixtureProvider::new();
+    let expected: Vec<_> = (0..2)
+        .map(|at| fixture_sample(at).map(|value| value * 0.5))
+        .collect();
+    assert_eq!(faded_all(&mut whole, &mut provider, &[2]), expected);
+    assert_eq!(faded_all(&mut split, &mut provider, &[1]), expected);
+    let mut suffix = StageAudio::new(plan(
+        rate,
+        &["right"],
+        [("right", partition("source", 1..2)), ("source", original)],
+    ));
+    assert_eq!(faded_all(&mut suffix, &mut provider, &[1]), expected[1..]);
+}
+
+#[test]
+fn ntsc_partition_keeps_44100_filter_phase_placement_and_original_fades_in_both_readers() {
+    let rate = FrameRate::new(30_000, 1001).unwrap();
+    let selected = audio_at_rate(100, 6100, 44_100);
+    let mut original = source(rate, 4, 100..6100);
+    let NodeKind::Source { source } = &mut original.kind else {
+        unreachable!()
+    };
+    source.audio = Some(selected.clone());
+    source.audio_mapping = SourceAudioMapping::Placement {
+        start: ratio(-1, 7),
+        frames: SourceAudioMapping::natural_rate(selected.span, rate)
+            .unwrap()
+            .duration_frames(duration(4))
+            .unwrap(),
+    };
+    source.audio_offset = AudioSample(3);
+    let asset_span = audio_at_rate(0, 44_117, 44_100).span;
+    let whole = plan_with_asset(
+        rate,
+        &["source"],
+        [("source", original.clone())],
+        BTreeMap::new(),
+        asset_span,
+    );
+    let split = plan_with_asset(
+        rate,
+        &["left", "right"],
+        [
+            ("left", partition("source-left", 0..1)),
+            ("right", partition("source-right", 1..4)),
+            ("source-left", original.clone()),
+            ("source-right", original),
+        ],
+        BTreeMap::new(),
+        asset_span,
+    );
+    let mut provider = FixtureProvider::from_fixture(
+        "pcm-mono-44100.wav",
+        AudioChannelLayout::Native {
+            channels: 1,
+            mask: 4,
+        },
+    );
+    let whole_sources = SequenceAudio::new(Arc::clone(&whole));
+    let split_sources = SequenceAudio::new(Arc::clone(&split));
+    let mut whole_stage = StageAudio::new(whole);
+    let mut split_stage = StageAudio::new(split);
+    let expected = faded_all(&mut whole_stage, &mut provider, &[256, 3, 129]);
+    assert_eq!(
+        faded_all(&mut split_stage, &mut provider, &[1, 199, 37]),
+        expected
+    );
+    for (start, count) in [
+        (1601, 3),
+        (0, 129),
+        (6389, 17),
+        (1594, 200),
+        (1602, 1),
+        (1601, 1),
+    ] {
+        let before = whole_sources
+            .read_sources(
+                &mut provider,
+                AudioSample(start),
+                count,
+                TIMEOUT,
+                &AtomicBool::new(false),
+            )
+            .unwrap();
+        let after = split_sources
+            .read_sources(
+                &mut provider,
+                AudioSample(start),
+                count,
+                TIMEOUT,
+                &AtomicBool::new(false),
+            )
+            .unwrap();
+        assert_eq!(before.samples, after.samples);
+        assert_eq!(
+            read_block(&mut split_stage, &mut provider, start, count).samples,
+            before.samples
+        );
+        let faded = split_stage
+            .read_edge_faded(
+                &mut provider,
+                AudioSample(start),
+                count,
+                TIMEOUT,
+                &AtomicBool::new(false),
+            )
+            .unwrap();
+        assert_eq!(
+            faded.samples,
+            expected[start as usize..start as usize + count as usize]
+        );
+    }
+}
+
+#[test]
+fn partitions_of_mixed_retimes_retain_full_preserve_and_room_tone_histories() {
+    let rate = FrameRate::new(48_000, 1).unwrap();
+    for room in [false, true] {
+        for (inner, outer) in [
+            (PitchPolicy::Preserve, PitchPolicy::FollowSpeed),
+            (PitchPolicy::FollowSpeed, PitchPolicy::Preserve),
+        ] {
+            let leaf = if room {
+                room_tone(2048, audio(512, 833))
+            } else {
+                source(rate, 2048, 512..2560)
+            };
+            let whole = plan(
+                rate,
+                &["outer"],
+                [
+                    ("leaf", leaf.clone()),
+                    ("inner", retime("leaf", 3072, 0..2048, inner)),
+                    ("outer", retime("inner", 2048, 0..3072, outer)),
+                ],
+            );
+            let split = plan(
+                rate,
+                &["left", "right"],
+                [
+                    ("left", partition("outer-left", 0..1001)),
+                    ("right", partition("outer-right", 1001..2048)),
+                    ("leaf-left", leaf.clone()),
+                    ("inner-left", retime("leaf-left", 3072, 0..2048, inner)),
+                    ("outer-left", retime("inner-left", 2048, 0..3072, outer)),
+                    ("leaf-right", leaf),
+                    ("inner-right", retime("leaf-right", 3072, 0..2048, inner)),
+                    ("outer-right", retime("inner-right", 2048, 0..3072, outer)),
+                ],
+            );
+            let mut provider = FixtureProvider::new();
+            let mut whole = StageAudio::new(whole);
+            let mut split = StageAudio::new(split);
+            let expected = faded_all(&mut whole, &mut provider, &[127, 256, 3]);
+            // Visit the suffix first, forcing its preparation from retained
+            // history rather than the preceding fragment's live decoder state.
+            for (start, count) in [(1001, 127), (987, 41), (0, 193), (1987, 61)] {
+                let actual = split
+                    .read_edge_faded(
+                        &mut provider,
+                        AudioSample(start),
+                        count,
+                        TIMEOUT,
+                        &AtomicBool::new(false),
+                    )
+                    .unwrap();
+                assert_eq!(
+                    actual.samples,
+                    expected[start as usize..start as usize + count as usize],
+                    "room {room}, inner {inner:?}, outer {outer:?}"
+                );
+            }
+            assert_eq!(
+                faded_all(&mut split, &mut provider, &[1, 53, 256]),
+                expected
+            );
+        }
+    }
+}
+
+#[test]
+fn partition_inside_preserve_input_retains_full_source_filter_context() {
+    let rate = FrameRate::new(48_000, 1).unwrap();
+    let whole = plan(
+        rate,
+        &["preserve"],
+        [
+            ("source", source(rate, 1024, 512..1536)),
+            (
+                "slow",
+                retime("source", 2048, 0..1024, PitchPolicy::FollowSpeed),
+            ),
+            (
+                "preserve",
+                retime("slow", 3072, 0..2048, PitchPolicy::Preserve),
+            ),
+        ],
+    );
+    let split = plan(
+        rate,
+        &["preserve"],
+        [
+            ("source-left", source(rate, 1024, 512..1536)),
+            (
+                "slow-left",
+                retime("source-left", 2048, 0..1024, PitchPolicy::FollowSpeed),
+            ),
+            ("source-right", source(rate, 1024, 512..1536)),
+            (
+                "slow-right",
+                retime("source-right", 2048, 0..1024, PitchPolicy::FollowSpeed),
+            ),
+            ("left", partition("slow-left", 0..1001)),
+            ("right", partition("slow-right", 1001..2048)),
+            (
+                "joined",
+                BeatNode::sequence("Partitioned signal", vec![id("left"), id("right")]),
+            ),
+            (
+                "preserve",
+                retime("joined", 3072, 0..2048, PitchPolicy::Preserve),
+            ),
+        ],
+    );
+    let mut provider = FixtureProvider::new();
+    let mut whole = StageAudio::new(whole);
+    let mut split = StageAudio::new(split);
+    let expected = faded_all(&mut whole, &mut provider, &[256]);
+    assert_eq!(
+        faded_all(&mut split, &mut provider, &[3, 211, 71]),
+        expected
+    );
+}
+
+#[test]
+fn partition_inside_a_repeat_gap_keeps_its_full_room_tone_origin() {
+    let rate = FrameRate::new(48_000, 1).unwrap();
+    let repeated = |child: &str| BeatNode {
+        label: "Repeated room tone".into(),
+        audio_edges: Default::default(),
+        kind: NodeKind::Repeat {
+            child: id(child),
+            iterations: IterationOrder::new(RevisionId::new("plays").unwrap(), 3).unwrap(),
+            gap: Some(HoldRecipe {
+                duration: duration(181),
+                video: HoldVideo::Background,
+                audio: HoldAudio::RoomTone {
+                    source: audio(512, 611),
+                },
+            }),
+        },
+    };
+    let whole = plan(
+        rate,
+        &["repeat"],
+        [
+            ("source", source(rate, 128, 0..128)),
+            ("repeat", repeated("source")),
+        ],
+    );
+    let split = plan(
+        rate,
+        &["left", "right"],
+        [
+            ("source-left", source(rate, 128, 0..128)),
+            ("source-right", source(rate, 128, 0..128)),
+            ("repeat-left", repeated("source-left")),
+            ("repeat-right", repeated("source-right")),
+            ("left", partition("repeat-left", 0..199)),
+            ("right", partition("repeat-right", 199..746)),
+        ],
+    );
+    let mut provider = FixtureProvider::new();
+    let mut whole = StageAudio::new(whole);
+    let mut split = StageAudio::new(split);
+    let expected = faded_all(&mut whole, &mut provider, &[211, 67]);
+    let suffix = split
+        .read_edge_faded(
+            &mut provider,
+            AudioSample(199),
+            110,
+            TIMEOUT,
+            &AtomicBool::new(false),
+        )
+        .unwrap();
+    assert_eq!(suffix.samples, expected[199..309]);
+    assert_eq!(
+        faded_all(&mut split, &mut provider, &[1, 199, 3, 256]),
+        expected
+    );
 }
 
 fn reference_edges(samples: &mut [[f32; 2]], start: bool, end: bool) {

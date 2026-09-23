@@ -22,7 +22,7 @@ pub struct AudioBoundaryOrigin {
     pub policy: AudioEdgePolicy,
 }
 
-/// Owners of `AudioSpan::project_extent` and its rounded `allocated_samples`.
+/// Owners of `AudioSpan::envelope_extent` and its rounded `envelope_samples`.
 /// Coincident exact constraints are retained in outer-to-inner descent order;
 /// equal rounded samples alone never make different constraints coincident.
 /// Any explicit Hard among coincident origins suppresses this edge's fade.
@@ -73,17 +73,6 @@ impl AudioExtent {
             range,
             boundaries: AudioBoundaries::default(),
         }
-    }
-
-    pub fn intersect(
-        &mut self,
-        range: Range<ExactRatio>,
-        owner: BoundaryOwner<'_>,
-        kinds: (AudioBoundaryKind, AudioBoundaryKind),
-        budget: &mut Budget,
-    ) -> Result<(), PlanError> {
-        self.clip_start(range.start, owner, kinds.0, budget)?;
-        self.clip_end(range.end, owner, kinds.1, budget)
     }
 
     pub fn clip_start(

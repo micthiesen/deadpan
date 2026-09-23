@@ -75,7 +75,11 @@ three total plays and only two gaps. These are structural edits, not rendered
 media. Editing through range/text selectors, registers, macros, and effects
 remain required future work.
 
-Documents use schema 11. [Audio edge choices](AUDIO_EDGES.md) default to automatic
+Documents use schema 12. Retime `purpose` defaults to ordinary `edit` and is
+omitted from canonical JSON. `partition` retains child audio context at unity
+speed and requires automatic edges; see [the partition contract](AUDIO_PARTITIONS.md).
+This primitive does not implement Split or inserted-time resume semantics.
+[Audio edge choices](AUDIO_EDGES.md) default to automatic
 when the JSON object is absent and are editable through direct or isolated
 occurrence commands. Explicit policy objects retain all six typed fields.
 [Source audio mappings](SOURCE_AUDIO_MAPPING.md) and
@@ -564,20 +568,22 @@ future-schema read-only inspection still needs a compatibility implementation.
 
 ## Schema migration
 
-Database schemas 1 through 16 return `MigrationRequired` when opened. Upgrade explicitly:
+Database schemas 1 through 17 return `MigrationRequired` when opened. Upgrade explicitly:
 
 ```sh
 cargo run --locked -p deadpan-cli -- project migrate /tmp/example.deadpan
 ```
 
 Migration holds the project writer lock, keeps a consistent SQLite backup under
-`Snapshots/before-schema-17-*.sqlite`, and upgrades a separate candidate. It
+`Snapshots/before-schema-18-*.sqlite`, and upgrades a separate candidate. It
 replays all commands, undo/redo revisions, and abandoned branches with their
 original revision IDs. Every snapshot and forward/inverse transaction is checked
 against its strict original schema meaning. Migration goes directly to database
-schema 17 and core document schema 11. Database-16 histories retain their existing
-core-11 audio edges; older nodes gain automatic audio edges. Migrated projects
-remain generic, without an invented single-Original profile. Native writable Open
+schema 18 and core document schema 12. Database-16/17 histories replay through
+frozen core 11, retaining existing audio edges; older nodes gain automatic edges.
+All old Retimes gain ordinary `edit` purpose, with no invented partition intent.
+Database-17 workflow profiles and protected baselines are preserved; earlier
+projects remain generic, without an invented single-Original profile. Native writable Open
 performs this same backed-up migration on its service thread; headless opening
 remains explicit. Database-15 histories use frozen core 10 and retain their presentation
 basis policy, primary adoption and geometry commands. Database-14 histories use frozen core 9,

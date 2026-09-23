@@ -1,273 +1,46 @@
-//! Frozen schema-4 document and history adapter. Current generated Hold fields
-//! and commands must never enter old history through today's serde vocabulary.
+//! Frozen schema-11 document and history adapter. Transparent partition purpose
+//! cannot enter schema-11 documents, subtrees, or history patches.
 
 use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
 use crate::document::unique_map;
-use crate::legacy_v5::LegacySourceNode;
+use crate::legacy_v8::{LegacyNodeKind, LegacySourceNode};
 use crate::*;
+use crate::{SourceAudioMapping as AudioMapping, SourceVideoMapping as VideoMapping};
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-pub(crate) struct LegacyAssetRecord {
-    pub(crate) label: String,
-    pub(crate) content_hash: String,
-    pub(crate) video: Option<SourceSpan>,
-    pub(crate) audio: Option<SourceSpan>,
-    pub(crate) still_image: bool,
-    pub(crate) frame_count: Option<FrameDuration>,
-}
-
-#[derive(Deserialize)]
+/// Core 11 added authored audio edges to the frozen core-8 node vocabulary.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-struct LegacyAssetRecordWire {
+struct LegacyBeatNode {
     label: String,
-    content_hash: String,
-    video: Option<SourceSpan>,
-    audio: Option<SourceSpan>,
-    still_image: bool,
-    frame_count: Option<FrameDuration>,
-}
-
-impl<'de> Deserialize<'de> for LegacyAssetRecord {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        let wire = LegacyAssetRecordWire::deserialize(deserializer)?;
-        if wire.content_hash.len() != 64
-            || !wire
-                .content_hash
-                .bytes()
-                .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
-        {
-            return Err(serde::de::Error::custom(
-                "legacy assets require a lowercase SHA-256 content hash",
-            ));
-        }
-        Ok(Self {
-            label: wire.label,
-            content_hash: wire.content_hash,
-            video: wire.video,
-            audio: wire.audio,
-            still_image: wire.still_image,
-            frame_count: wire.frame_count,
-        })
-    }
-}
-
-impl LegacyAssetRecord {
-    pub(crate) fn upgrade(self) -> AssetRecord {
-        AssetRecord {
-            label: self.label,
-            content_hash: self.content_hash,
-            video: self.video,
-            audio: self.audio,
-            still_image: self.still_image,
-            frame_count: self.frame_count,
-            source_qualification: None,
-        }
-    }
-
-    pub(crate) fn project(value: &AssetRecord) -> Option<Self> {
-        if value.source_qualification.is_some()
-            || value.content_hash.len() != 64
-            || !value
-                .content_hash
-                .bytes()
-                .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
-        {
-            return None;
-        }
-        Some(Self {
-            label: value.label.clone(),
-            content_hash: value.content_hash.clone(),
-            video: value.video,
-            audio: value.audio,
-            still_image: value.still_image,
-            frame_count: value.frame_count,
-        })
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
-pub(crate) enum LegacyHoldVideo {
-    Background,
-    Freeze {
-        asset: AssetId,
-        timestamp: SourceTimestamp,
-    },
-    Accepted {
-        asset: AssetId,
-        frames: FrameRange,
-    },
-}
-
-impl LegacyHoldVideo {
-    pub(crate) fn upgrade(self) -> HoldVideo {
-        match self {
-            Self::Background => HoldVideo::Background,
-            Self::Freeze { asset, timestamp } => HoldVideo::Freeze { asset, timestamp },
-            Self::Accepted { asset, frames } => HoldVideo::Accepted { asset, frames },
-        }
-    }
-
-    pub(crate) fn project(value: &HoldVideo) -> Option<Self> {
-        match value {
-            HoldVideo::Background => Some(Self::Background),
-            HoldVideo::Freeze { asset, timestamp } => Some(Self::Freeze {
-                asset: asset.clone(),
-                timestamp: *timestamp,
-            }),
-            HoldVideo::Accepted { asset, frames } => Some(Self::Accepted {
-                asset: asset.clone(),
-                frames: *frames,
-            }),
-            HoldVideo::Generated { .. } => None,
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub(crate) struct LegacyHoldRecipe {
-    pub(crate) duration: FrameDuration,
-    pub(crate) video: LegacyHoldVideo,
-    pub(crate) audio: HoldAudio,
-}
-
-impl LegacyHoldRecipe {
-    pub(crate) fn upgrade(self) -> HoldRecipe {
-        HoldRecipe {
-            duration: self.duration,
-            video: self.video.upgrade(),
-            audio: self.audio,
-        }
-    }
-
-    pub(crate) fn project(value: &HoldRecipe) -> Option<Self> {
-        Some(Self {
-            duration: value.duration,
-            video: LegacyHoldVideo::project(&value.video)?,
-            audio: value.audio.clone(),
-        })
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
-pub(crate) enum LegacyNodeKind {
-    Source {
-        source: LegacySourceNode,
-    },
-    Sequence {
-        children: Vec<NodeId>,
-    },
-    Hold {
-        recipe: LegacyHoldRecipe,
-    },
-    Repeat {
-        child: NodeId,
-        iterations: IterationOrder,
-        gap: Option<LegacyHoldRecipe>,
-    },
-    Retime {
-        child: NodeId,
-        duration: FrameDuration,
-        mapping: FrameRange,
-        pitch: PitchPolicy,
-    },
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub(crate) struct LegacyBeatNode {
-    pub(crate) label: String,
-    pub(crate) kind: LegacyNodeKind,
+    kind: LegacyNodeKind,
+    #[serde(default, skip_serializing_if = "AudioEdgePolicies::is_automatic")]
+    audio_edges: AudioEdgePolicies,
 }
 
 impl LegacyBeatNode {
-    pub(crate) fn upgrade(self) -> BeatNode {
-        BeatNode {
+    fn upgrade(self) -> BeatNode {
+        let mut node = crate::legacy_v8::LegacyBeatNode {
             label: self.label,
-            audio_edges: AudioEdgePolicies::default(),
-            kind: match self.kind {
-                LegacyNodeKind::Source { source } => NodeKind::Source {
-                    source: source.upgrade(),
-                },
-                LegacyNodeKind::Sequence { children } => NodeKind::Sequence { children },
-                LegacyNodeKind::Hold { recipe } => NodeKind::Hold {
-                    recipe: recipe.upgrade(),
-                },
-                LegacyNodeKind::Repeat {
-                    child,
-                    iterations,
-                    gap,
-                } => NodeKind::Repeat {
-                    child,
-                    iterations,
-                    gap: gap.map(LegacyHoldRecipe::upgrade),
-                },
-                LegacyNodeKind::Retime {
-                    child,
-                    duration,
-                    mapping,
-                    pitch,
-                } => NodeKind::Retime {
-                    child,
-                    duration,
-                    mapping,
-                    pitch,
-                    purpose: RetimePurpose::Edit,
-                },
-            },
+            kind: self.kind,
         }
+        .upgrade();
+        node.audio_edges = self.audio_edges;
+        node
     }
 
-    pub(crate) fn project(value: &BeatNode) -> Option<Self> {
-        if value.audio_edges != AudioEdgePolicies::default() {
-            return None;
-        }
+    fn project(node: &BeatNode) -> Option<Self> {
+        let old = crate::legacy_v8::LegacyBeatNode::project(&BeatNode {
+            label: node.label.clone(),
+            kind: node.kind.clone(),
+            audio_edges: AudioEdgePolicies::default(),
+        })?;
         Some(Self {
-            label: value.label.clone(),
-            kind: match &value.kind {
-                NodeKind::Source { source } => LegacyNodeKind::Source {
-                    source: LegacySourceNode::project(source)?,
-                },
-                NodeKind::Sequence { children } => LegacyNodeKind::Sequence {
-                    children: children.clone(),
-                },
-                NodeKind::Hold { recipe } => LegacyNodeKind::Hold {
-                    recipe: LegacyHoldRecipe::project(recipe)?,
-                },
-                NodeKind::Repeat {
-                    child,
-                    iterations,
-                    gap,
-                } => LegacyNodeKind::Repeat {
-                    child: child.clone(),
-                    iterations: iterations.clone(),
-                    gap: gap.as_ref().map(LegacyHoldRecipe::project).transpose()?,
-                },
-                NodeKind::Retime {
-                    purpose: RetimePurpose::Partition,
-                    ..
-                } => return None,
-                NodeKind::Retime {
-                    child,
-                    duration,
-                    mapping,
-                    pitch,
-                    purpose: RetimePurpose::Edit,
-                } => LegacyNodeKind::Retime {
-                    child: child.clone(),
-                    duration: *duration,
-                    mapping: *mapping,
-                    pitch: *pitch,
-                },
-            },
+            label: old.label,
+            kind: old.kind,
+            audio_edges: node.audio_edges,
         })
     }
 }
@@ -293,11 +66,12 @@ pub struct Document {
     project_id: ProjectId,
     revision_id: RevisionId,
     presentation_basis: PresentationBasis,
+    basis_state: BasisState,
     root: NodeId,
     #[serde(deserialize_with = "unique_map")]
     nodes: BTreeMap<NodeId, LegacyBeatNode>,
     #[serde(deserialize_with = "unique_map")]
-    assets: BTreeMap<AssetId, LegacyAssetRecord>,
+    assets: BTreeMap<AssetId, AssetRecord>,
     #[serde(deserialize_with = "unique_map")]
     marks: BTreeMap<MarkId, Mark>,
     #[serde(deserialize_with = "unique_map")]
@@ -307,8 +81,8 @@ pub struct Document {
 impl Document {
     pub fn from_json(json: &str) -> Result<Self, DocumentError> {
         let old: Self = parse(json)?;
-        if old.schema_version != 4 {
-            return Err(invalid("migration requires document schema 4"));
+        if old.schema_version != 11 {
+            return Err(invalid("migration requires document schema 11"));
         }
         old.clone().upgrade()?;
         Ok(old)
@@ -324,18 +98,14 @@ impl Document {
             project_id: self.project_id,
             revision_id: self.revision_id,
             presentation_basis: self.presentation_basis,
-            basis_state: BasisState::explicit(),
+            basis_state: self.basis_state,
             root: self.root,
             nodes: self
                 .nodes
                 .into_iter()
                 .map(|(id, node)| (id, node.upgrade()))
                 .collect(),
-            assets: self
-                .assets
-                .into_iter()
-                .map(|(id, asset)| (id, asset.upgrade()))
-                .collect(),
+            assets: self.assets,
             marks: self.marks,
             overrides: self.overrides,
         };
@@ -344,9 +114,6 @@ impl Document {
     }
 
     pub fn matches(&self, document: &ProjectDocument) -> bool {
-        if document.basis_state != BasisState::explicit() {
-            return false;
-        }
         let Some(nodes) = document
             .nodes
             .iter()
@@ -355,19 +122,13 @@ impl Document {
         else {
             return false;
         };
-        let Some(assets) = document
-            .assets
-            .iter()
-            .map(|(id, asset)| Some((id.clone(), LegacyAssetRecord::project(asset)?)))
-            .collect::<Option<BTreeMap<_, _>>>()
-        else {
-            return false;
-        };
+        let assets = document.assets.clone();
         self == &Self {
-            schema_version: 4,
+            schema_version: 11,
             project_id: document.project_id.clone(),
             revision_id: document.revision_id.clone(),
             presentation_basis: document.presentation_basis.clone(),
+            basis_state: document.basis_state.clone(),
             root: document.root.clone(),
             nodes,
             assets,
@@ -383,7 +144,7 @@ struct OldSubtree {
     root: NodeId,
     #[serde(deserialize_with = "unique_map")]
     nodes: BTreeMap<NodeId, LegacyBeatNode>,
-    #[serde(deserialize_with = "unique_map")]
+    #[serde(default, deserialize_with = "unique_map")]
     overrides: BTreeMap<NodeId, PlayOverrides>,
 }
 
@@ -419,13 +180,13 @@ enum OldOccurrenceEdit {
     WrapRepeat {
         id: NodeId,
         plays: u32,
-        gap: Option<LegacyHoldRecipe>,
+        gap: Option<HoldRecipe>,
         #[serde(default)]
         anchor_policy: WrapAnchorPolicy,
     },
     SetRepeat {
         plays: u32,
-        gap: Option<LegacyHoldRecipe>,
+        gap: Option<HoldRecipe>,
     },
     InsertPlays {
         index: u32,
@@ -436,14 +197,31 @@ enum OldOccurrenceEdit {
         end: u32,
         destination: u32,
     },
+    SetSourceVideoMapping {
+        mapping: VideoMapping,
+    },
+    SetSourceAudioMapping {
+        mapping: AudioMapping,
+        offset: AudioSample,
+    },
     SetHoldDuration {
         duration: FrameDuration,
     },
     SetHoldProvider {
-        video: LegacyHoldVideo,
+        video: HoldVideo,
     },
+    AcceptGeneratedHold {
+        artifact: GeneratedArtifact,
+        #[serde(deserialize_with = "unique_map")]
+        assets: BTreeMap<AssetId, AssetRecord>,
+    },
+    RevertGeneratedHold,
     Rename {
         label: String,
+    },
+    SetAudioEdge {
+        edge: AudioBoundaryKind,
+        policy: AudioEdgePolicy,
     },
     SetPlayOverride {
         iteration: IterationId,
@@ -482,13 +260,10 @@ impl OldOccurrenceEdit {
             } => OccurrenceEdit::WrapRepeat {
                 id,
                 plays,
-                gap: gap.map(LegacyHoldRecipe::upgrade),
+                gap,
                 anchor_policy,
             },
-            Self::SetRepeat { plays, gap } => OccurrenceEdit::SetRepeat {
-                plays,
-                gap: gap.map(LegacyHoldRecipe::upgrade),
-            },
+            Self::SetRepeat { plays, gap } => OccurrenceEdit::SetRepeat { plays, gap },
             Self::InsertPlays { index, count } => OccurrenceEdit::InsertPlays { index, count },
             Self::MovePlays {
                 start,
@@ -499,11 +274,20 @@ impl OldOccurrenceEdit {
                 end,
                 destination,
             },
+            Self::SetSourceVideoMapping { mapping } => {
+                OccurrenceEdit::SetSourceVideoMapping { mapping }
+            }
+            Self::SetSourceAudioMapping { mapping, offset } => {
+                OccurrenceEdit::SetSourceAudioMapping { mapping, offset }
+            }
             Self::SetHoldDuration { duration } => OccurrenceEdit::SetHoldDuration { duration },
-            Self::SetHoldProvider { video } => OccurrenceEdit::SetHoldProvider {
-                video: video.upgrade(),
-            },
+            Self::SetHoldProvider { video } => OccurrenceEdit::SetHoldProvider { video },
+            Self::AcceptGeneratedHold { artifact, assets } => {
+                OccurrenceEdit::AcceptGeneratedHold { artifact, assets }
+            }
+            Self::RevertGeneratedHold => OccurrenceEdit::RevertGeneratedHold,
             Self::Rename { label } => OccurrenceEdit::Rename { label },
+            Self::SetAudioEdge { edge, policy } => OccurrenceEdit::SetAudioEdge { edge, policy },
             Self::SetPlayOverride { iteration, subtree } => OccurrenceEdit::SetPlayOverride {
                 iteration,
                 subtree: subtree.upgrade(),
@@ -545,14 +329,14 @@ enum OldCommand {
         node: NodeId,
         id: NodeId,
         plays: u32,
-        gap: Option<LegacyHoldRecipe>,
+        gap: Option<HoldRecipe>,
         #[serde(default)]
         anchor_policy: WrapAnchorPolicy,
     },
     SetRepeat {
         node: NodeId,
         plays: u32,
-        gap: Option<LegacyHoldRecipe>,
+        gap: Option<HoldRecipe>,
     },
     InsertPlays {
         node: NodeId,
@@ -565,21 +349,59 @@ enum OldCommand {
         end: u32,
         destination: u32,
     },
+    SetSourceVideoMapping {
+        node: NodeId,
+        mapping: VideoMapping,
+    },
+    SetSourceAudioMapping {
+        node: NodeId,
+        mapping: AudioMapping,
+        offset: AudioSample,
+    },
     SetHoldDuration {
         node: NodeId,
         duration: FrameDuration,
     },
     SetHoldProvider {
         node: NodeId,
-        video: LegacyHoldVideo,
+        video: HoldVideo,
+    },
+    AcceptGeneratedHold {
+        node: NodeId,
+        artifact: GeneratedArtifact,
+        #[serde(deserialize_with = "unique_map")]
+        assets: BTreeMap<AssetId, AssetRecord>,
+    },
+    RevertGeneratedHold {
+        node: NodeId,
     },
     Rename {
         node: NodeId,
         label: String,
     },
+    SetAudioEdge {
+        node: NodeId,
+        edge: AudioBoundaryKind,
+        policy: AudioEdgePolicy,
+    },
     AddAsset {
         id: AssetId,
-        asset: LegacyAssetRecord,
+        asset: AssetRecord,
+    },
+    ImportSource {
+        id: AssetId,
+        asset: AssetRecord,
+        insertion: Option<Box<OldSourceInsertion>>,
+        #[serde(default)]
+        primary: Option<PrimarySourceImport>,
+    },
+    SetCanvas {
+        width: u32,
+        height: u32,
+    },
+    AdoptPrimaryGeometry {
+        width: u32,
+        height: u32,
     },
     SetMark {
         id: MarkId,
@@ -605,6 +427,28 @@ enum OldCommand {
         edit: OldOccurrenceEdit,
         identities: OccurrenceIdentities,
     },
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct OldSourceInsertion {
+    parent: NodeId,
+    index: usize,
+    node: NodeId,
+    label: String,
+    source: LegacySourceNode,
+}
+
+impl OldSourceInsertion {
+    fn upgrade(self) -> SourceInsertion {
+        SourceInsertion {
+            parent: self.parent,
+            index: self.index,
+            node: self.node,
+            label: self.label,
+            source: self.source.upgrade(),
+        }
+    }
 }
 
 #[derive(Deserialize)]
@@ -662,14 +506,10 @@ pub fn upgrade_request(json: &str) -> Result<CommandRequest, DocumentError> {
             node,
             id,
             plays,
-            gap: gap.map(LegacyHoldRecipe::upgrade),
+            gap,
             anchor_policy,
         },
-        OldCommand::SetRepeat { node, plays, gap } => Command::SetRepeat {
-            node,
-            plays,
-            gap: gap.map(LegacyHoldRecipe::upgrade),
-        },
+        OldCommand::SetRepeat { node, plays, gap } => Command::SetRepeat { node, plays, gap },
         OldCommand::InsertPlays { node, index, count } => {
             Command::InsertPlays { node, index, count }
         }
@@ -684,18 +524,52 @@ pub fn upgrade_request(json: &str) -> Result<CommandRequest, DocumentError> {
             end,
             destination,
         },
+        OldCommand::SetSourceVideoMapping { node, mapping } => {
+            Command::SetSourceVideoMapping { node, mapping }
+        }
+        OldCommand::SetSourceAudioMapping {
+            node,
+            mapping,
+            offset,
+        } => Command::SetSourceAudioMapping {
+            node,
+            mapping,
+            offset,
+        },
         OldCommand::SetHoldDuration { node, duration } => {
             Command::SetHoldDuration { node, duration }
         }
-        OldCommand::SetHoldProvider { node, video } => Command::SetHoldProvider {
+        OldCommand::SetHoldProvider { node, video } => Command::SetHoldProvider { node, video },
+        OldCommand::AcceptGeneratedHold {
             node,
-            video: video.upgrade(),
+            artifact,
+            assets,
+        } => Command::AcceptGeneratedHold {
+            node,
+            artifact,
+            assets,
         },
+        OldCommand::RevertGeneratedHold { node } => Command::RevertGeneratedHold { node },
         OldCommand::Rename { node, label } => Command::Rename { node, label },
-        OldCommand::AddAsset { id, asset } => Command::AddAsset {
+        OldCommand::SetAudioEdge { node, edge, policy } => {
+            Command::SetAudioEdge { node, edge, policy }
+        }
+        OldCommand::AddAsset { id, asset } => Command::AddAsset { id, asset },
+        OldCommand::ImportSource {
             id,
-            asset: asset.upgrade(),
+            asset,
+            insertion,
+            primary,
+        } => Command::ImportSource {
+            id,
+            asset,
+            insertion: insertion.map(|insertion| Box::new(insertion.upgrade())),
+            primary,
         },
+        OldCommand::SetCanvas { width, height } => Command::SetCanvas { width, height },
+        OldCommand::AdoptPrimaryGeometry { width, height } => {
+            Command::AdoptPrimaryGeometry { width, height }
+        }
         OldCommand::SetMark {
             id,
             owner,
@@ -746,10 +620,12 @@ struct Patch {
     project_id: ProjectId,
     from_revision: RevisionId,
     to_revision: RevisionId,
+    #[serde(default)]
+    presentation: Option<PresentationChange>,
     #[serde(deserialize_with = "unique_map")]
     nodes: BTreeMap<NodeId, ValueChange<LegacyBeatNode>>,
     #[serde(deserialize_with = "unique_map")]
-    assets: BTreeMap<AssetId, ValueChange<LegacyAssetRecord>>,
+    assets: BTreeMap<AssetId, ValueChange<AssetRecord>>,
     #[serde(deserialize_with = "unique_map")]
     marks: BTreeMap<MarkId, ValueChange<Mark>>,
     #[serde(deserialize_with = "unique_map")]
@@ -758,13 +634,11 @@ struct Patch {
 
 impl Patch {
     fn project(patch: &DocumentPatch) -> Option<Self> {
-        if patch.presentation.is_some() {
-            return None;
-        }
         Some(Self {
             project_id: patch.project_id.clone(),
             from_revision: patch.from_revision.clone(),
             to_revision: patch.to_revision.clone(),
+            presentation: patch.presentation.clone(),
             nodes: patch
                 .nodes
                 .iter()
@@ -786,30 +660,11 @@ impl Patch {
                     ))
                 })
                 .collect::<Option<_>>()?,
-            assets: patch
-                .assets
-                .iter()
-                .map(|(id, change)| Some((id.clone(), project_asset_change(change)?)))
-                .collect::<Option<_>>()?,
+            assets: patch.assets.clone(),
             marks: patch.marks.clone(),
             overrides: patch.overrides.clone(),
         })
     }
-}
-
-fn project_asset_change(
-    change: &ValueChange<AssetRecord>,
-) -> Option<ValueChange<LegacyAssetRecord>> {
-    Some(ValueChange {
-        before: match &change.before {
-            Some(asset) => Some(LegacyAssetRecord::project(asset)?),
-            None => None,
-        },
-        after: match &change.after {
-            Some(asset) => Some(LegacyAssetRecord::project(asset)?),
-            None => None,
-        },
-    })
 }
 
 #[derive(Debug, PartialEq, Eq, Deserialize)]

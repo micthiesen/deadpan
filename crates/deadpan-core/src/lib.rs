@@ -19,6 +19,7 @@ mod legacy_asset;
 mod legacy_source_mapping;
 pub mod legacy_v1;
 pub mod legacy_v10;
+pub mod legacy_v11;
 pub mod legacy_v2;
 pub mod legacy_v3;
 pub mod legacy_v4;

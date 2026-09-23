@@ -5,15 +5,15 @@ use std::ops::Range;
 
 use deadpan_core::{
     AudioSample, ExactRatio, FrameDuration, InsertionBias, InstancePath, IterationId,
-    MIX_SAMPLE_RATE, NodeId, PitchPolicy, ProjectId, RepeatInstance, RevisionId, SourcePoint,
-    TimeError,
+    MIX_SAMPLE_RATE, NodeId, PitchPolicy, ProjectId, RepeatInstance, RetimePurpose, RevisionId,
+    SourcePoint, TimeError,
 };
 use serde::Serialize;
 
-use super::audio::{Budget, intersect, maximum, minimum};
+use super::audio::{Budget, intersect, maximum, minimum, source_point_from_local};
 use super::{
     AudioContent, AudioQueryLimits, AudioRetimeStage, AudioTransform, CompiledKind, LookupStats,
-    RenderPlan, SilenceReason,
+    RenderPlan, SilenceReason, SourceSamplingSupport,
 };
 use crate::PlanError;
 
@@ -108,6 +108,7 @@ impl<'plan> AudioStage<'plan> {
             plan: self.plan,
             root: self.child,
             support: self.descriptor.selection.clone(),
+            constrain_support: true,
             repeats: self.descriptor.instance.repeats.clone(),
         }
     }
@@ -119,6 +120,7 @@ impl<'plan> AudioStage<'plan> {
             plan: self.plan,
             root: self.node,
             support: ExactRatio::ZERO..ExactRatio::integer(self.descriptor.duration.frames()),
+            constrain_support: false,
             repeats: self.descriptor.instance.repeats.clone(),
         }
     }
@@ -135,7 +137,8 @@ pub enum AudioSignalContent<'plan> {
 pub struct AudioSignalSpan<'plan> {
     pub samples: Range<SignalSample>,
     pub allocated_samples: Range<SignalSample>,
-    /// Exact support in this signal's root frame clock, before grid allocation.
+    /// Exact structural extent in this signal's root frame clock, before grid
+    /// allocation. Source filter support is retained separately in the content.
     pub signal_extent: Range<ExactRatio>,
     pub instance: InstancePath,
     pub gap_after: Option<IterationId>,
@@ -215,6 +218,9 @@ pub struct AudioSignal<'plan> {
     plan: &'plan RenderPlan,
     root: usize,
     support: Range<ExactRatio>,
+    // An authored stage input selection trims filter support. Root allocation
+    // itself does not: a root Partition retains its complete child's support.
+    constrain_support: bool,
     repeats: Vec<RepeatInstance>,
 }
 
@@ -277,6 +283,7 @@ impl RenderPlan {
             plan: self,
             root: self.root,
             support: ExactRatio::ZERO..ExactRatio::integer(self.duration().frames()),
+            constrain_support: false,
             repeats: Vec::new(),
         }
     }
@@ -414,6 +421,7 @@ impl<'plan> AudioSignal<'plan> {
         let mut transform = self.transform()?;
         let (probe, bias) = rule.probe(sample, transform)?;
         let mut extent = self.support.clone();
+        let mut sampling_extent = self.constrain_support.then(|| self.support.clone());
         let mut current = self.root;
         let mut repeats = self.repeats.clone();
         let mut retimes = Vec::new();
@@ -421,13 +429,23 @@ impl<'plan> AudioSignal<'plan> {
             budget.spend(1)?;
             budget.lookup.visited_nodes += 1;
             let node = &self.plan.nodes[current];
-            extent = intersect(
-                extent,
-                transform.signal_origin
-                    ..transform.signal_from_local(ExactRatio::integer(
-                        node.inspection.duration.frames(),
-                    ))?,
-            )?;
+            let node_extent = transform.signal_origin
+                ..transform
+                    .signal_from_local(ExactRatio::integer(node.inspection.duration.frames()))?;
+            extent = intersect(extent, node_extent.clone())?;
+            if !matches!(
+                node.kind,
+                CompiledKind::Retime {
+                    purpose: RetimePurpose::Partition,
+                    ..
+                } | CompiledKind::Sequence { .. }
+                    | CompiledKind::Repeat { .. }
+            ) {
+                sampling_extent = Some(match sampling_extent {
+                    Some(previous) => intersect(previous, node_extent)?,
+                    None => node_extent,
+                });
+            }
             let local = transform.local_at_signal_frame(probe)?;
             match &node.kind {
                 CompiledKind::Source { audio: None, .. } => {
@@ -456,10 +474,23 @@ impl<'plan> AudioSignal<'plan> {
                         }
                     } else {
                         extent = intersect(extent, start..end)?;
+                        let support = intersect(
+                            sampling_extent
+                                .clone()
+                                .ok_or(PlanError::InvalidPlan("source has no sampling domain"))?,
+                            start..end,
+                        )?;
                         AudioContent::Source {
                             source: audio.source.clone(),
                             start: audio.start,
                             duration: audio.duration,
+                            support: SourceSamplingSupport::from_local(
+                                &audio.source,
+                                audio.start,
+                                audio.duration,
+                                transform.local_at_signal_frame(support.start)?
+                                    ..transform.local_at_signal_frame(support.end)?,
+                            )?,
                         }
                     };
                     break (AudioSignalContent::Leaf(content), None);
@@ -501,6 +532,7 @@ impl<'plan> AudioSignal<'plan> {
                     start,
                     scale,
                     pitch,
+                    purpose,
                 } => {
                     if stop_at_preserve
                         && *pitch == PitchPolicy::Preserve
@@ -532,12 +564,14 @@ impl<'plan> AudioSignal<'plan> {
                             None,
                         );
                     }
-                    retimes.push(AudioRetimeStage {
-                        node: node.inspection.id.clone(),
-                        child_start: *start,
-                        child_frames_per_local_frame: *scale,
-                        pitch: *pitch,
-                    });
+                    if *purpose != RetimePurpose::Partition {
+                        retimes.push(AudioRetimeStage {
+                            node: node.inspection.id.clone(),
+                            child_start: *start,
+                            child_frames_per_local_frame: *scale,
+                            pitch: *pitch,
+                        });
+                    }
                     let inverse = ExactRatio::ONE.checked_div(*scale)?;
                     transform = transform.child(
                         ExactRatio::ZERO.checked_sub(start.checked_mul(inverse)?)?,
@@ -625,17 +659,10 @@ fn source_point(
         source,
         start,
         duration,
+        ..
     }) = content
     else {
         return Err(PlanError::NoSourceAudio);
     };
-    let fraction = local.checked_sub(*start)?.checked_div(*duration)?;
-    let ticks =
-        ExactRatio::integer(source.span.start().ticks).checked_add(fraction.checked_mul(
-            ExactRatio::integer(source.span.end().ticks - source.span.start().ticks),
-        )?)?;
-    Ok(SourcePoint {
-        ticks,
-        time_base: source.span.start().time_base,
-    })
+    Ok(source_point_from_local(source, *start, *duration, local)?)
 }

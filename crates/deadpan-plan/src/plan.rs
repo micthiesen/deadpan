@@ -3,8 +3,8 @@ use std::collections::BTreeMap;
 use deadpan_core::{
     AssetId, EndpointPolicy, ExactRatio, FrameDuration, FrameRange, HoldAudio, HoldRecipe,
     HoldVideo, InsertionBias, InstancePath, NodeId, NodeKind, PitchPolicy, PresentationBasis,
-    ProjectDocument, ProjectFrame, ProjectId, RepeatInstance, RepeatLayout, RevisionId,
-    SourceAudio, SourceFrameId, SourcePoint, SourceTimeBase, SourceVideo, TimeError,
+    ProjectDocument, ProjectFrame, ProjectId, RepeatInstance, RepeatLayout, RetimePurpose,
+    RevisionId, SourceAudio, SourceFrameId, SourcePoint, SourceTimeBase, SourceVideo, TimeError,
 };
 use serde::Serialize;
 
@@ -116,6 +116,7 @@ enum CompiledKind {
         start: ExactRatio,
         scale: ExactRatio,
         pitch: PitchPolicy,
+        purpose: RetimePurpose,
     },
 }
 
@@ -322,10 +323,12 @@ impl RenderPlan {
                     duration,
                     mapping,
                     pitch,
+                    purpose,
                 } => (
                     CompiledKind::Retime {
                         child: by_id[child],
                         pitch: *pitch,
+                        purpose: *purpose,
                         start: ExactRatio::integer(mapping.start().0),
                         scale: ExactRatio::new(
                             i128::from(mapping.duration().frames()),

@@ -91,6 +91,7 @@ fn retime(child: &str, frames: i64, selected: Range<i64>, pitch: PitchPolicy) ->
         audio_edges: Default::default(),
         label: "Explicit retime".into(),
         kind: NodeKind::Retime {
+            purpose: deadpan_core::RetimePurpose::Edit,
             child: id(child),
             duration: duration(frames),
             mapping: FrameRange::new(ProjectFrame(selected.start), ProjectFrame(selected.end))
@@ -98,6 +99,19 @@ fn retime(child: &str, frames: i64, selected: Range<i64>, pitch: PitchPolicy) ->
             pitch,
         },
     }
+}
+
+fn partition(child: &str, selected: Range<i64>) -> BeatNode {
+    let mut node = retime(
+        child,
+        selected.end - selected.start,
+        selected,
+        PitchPolicy::FollowSpeed,
+    );
+    if let NodeKind::Retime { purpose, .. } = &mut node.kind {
+        *purpose = RetimePurpose::Partition;
+    }
+    node
 }
 
 fn repeat(child: &str, plays: u32, gap: i64) -> BeatNode {
@@ -601,6 +615,75 @@ fn structural_crops_exclude_filter_context_and_use_half_open_discrete_samples() 
         ],
     );
     assert_eq!(read(&empty, &mut provider, 0, 1), [[0.0; 2]]);
+}
+
+#[test]
+fn transparent_partition_retains_full_filter_support_while_an_authored_crop_excludes_it() {
+    let rate = FrameRate::new(48_000, 1).unwrap();
+    let mut provider = FixtureProvider::new(65_536);
+    for selected in [5119..5121, 5121..5122] {
+        let transparent = renderer(
+            rate,
+            &["partition"],
+            [
+                ("source", source(rate, 8197, 0..8197, 0)),
+                (
+                    "slow",
+                    retime("source", 81_970, 0..8197, PitchPolicy::FollowSpeed),
+                ),
+                ("partition", partition("slow", selected.clone())),
+            ],
+        );
+        let count = u32::try_from(selected.end - selected.start).unwrap();
+        let expected = reference(
+            ResampleRecipe::new(
+                0..8197,
+                ratio(i128::from(selected.start), 10),
+                AudioSample(0),
+                ratio(1, 10),
+                samples(0, i64::from(count)),
+            )
+            .unwrap(),
+            0,
+            count,
+        );
+        assert_eq!(read(&transparent, &mut provider, 0, count), expected);
+        assert!(expected.iter().any(|frame| *frame != [0.0; 2]));
+    }
+}
+
+#[test]
+fn pure_partition_keeps_ntsc_sampling_phase_and_signed_source_placement() {
+    let rate = FrameRate::new(30_000, 1001).unwrap();
+    for offset in [-3, 0, 3] {
+        let original = source(rate, 4, 0..6406, offset);
+        let whole = renderer(rate, &["source"], [("source", original.clone())]);
+        let split = renderer(
+            rate,
+            &["left", "right"],
+            [
+                ("left", partition("source-left", 0..1)),
+                ("right", partition("source-right", 1..4)),
+                ("source-left", original.clone()),
+                ("source-right", original),
+            ],
+        );
+        let mut provider = FixtureProvider::new(65_536);
+        for (start, count) in [
+            (1601, 3),
+            (0, 129),
+            (6389, 17),
+            (1594, 200),
+            (1602, 1),
+            (1601, 1),
+        ] {
+            assert_eq!(
+                read(&split, &mut provider, start, count),
+                read(&whole, &mut provider, start, count),
+                "offset {offset}, query {start}+{count}"
+            );
+        }
+    }
 }
 
 #[test]

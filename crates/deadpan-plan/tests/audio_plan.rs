@@ -85,6 +85,7 @@ fn retime(child: &str, frames: i64, start: i64, end: i64, pitch: PitchPolicy) ->
         audio_edges: Default::default(),
         label: "Retime".into(),
         kind: NodeKind::Retime {
+            purpose: deadpan_core::RetimePurpose::Edit,
             child: id(child),
             duration: duration(frames),
             mapping: FrameRange::new(ProjectFrame(start), ProjectFrame(end)).unwrap(),
@@ -103,6 +104,159 @@ fn repeat(child: &str, plays: u32, gap: i64) -> BeatNode {
             gap: (gap > 0).then(|| hold_recipe(gap, HoldAudio::Silence)),
         },
     }
+}
+
+fn partition(child: &str, start: i64, end: i64) -> BeatNode {
+    let mut node = retime(child, end - start, start, end, PitchPolicy::FollowSpeed);
+    if let NodeKind::Retime { purpose, .. } = &mut node.kind {
+        *purpose = RetimePurpose::Partition;
+    }
+    node
+}
+
+#[test]
+fn transparent_partitions_retain_filter_and_envelope_domains_at_ntsc_boundaries() {
+    let rate = FrameRate::new(30_000, 1001).unwrap();
+    let original = source(4, SourceAudioMapping::FitBeat, 0);
+    let document = document(
+        rate,
+        vec![id("left"), id("right")],
+        BTreeMap::from([
+            (id("left"), partition("left-source", 0, 1)),
+            (id("right"), partition("right-source", 1, 4)),
+            (id("left-source"), original.clone()),
+            (id("right-source"), original),
+        ]),
+        BTreeMap::new(),
+    );
+    let plan = RenderPlan::compile(&document).unwrap();
+    let result = query(&plan, 1601, 1603);
+    assert_eq!(result.spans.len(), 2);
+    assert_eq!(result.spans[0].allocated_samples, samples(0, 1602));
+    assert_eq!(result.spans[1].allocated_samples, samples(1602, 6406));
+    for span in &result.spans {
+        assert_eq!(span.envelope_samples, samples(0, 6406));
+        assert_eq!(
+            span.envelope_extent,
+            ExactRatio::ZERO..ExactRatio::integer(4)
+        );
+        assert!(span.retimes.is_empty());
+        let AudioContent::Source { support, .. } = &span.content else {
+            panic!("source")
+        };
+        assert_eq!(support.start.ticks, ExactRatio::integer(-48_000));
+        assert_eq!(support.end.ticks, ExactRatio::ZERO);
+        assert!(
+            span.boundaries
+                .start
+                .iter()
+                .all(|edge| edge.instance.node != id("left") && edge.instance.node != id("right"))
+        );
+        assert!(
+            span.boundaries
+                .end
+                .iter()
+                .all(|edge| edge.instance.node != id("left") && edge.instance.node != id("right"))
+        );
+    }
+    assert_eq!(
+        result.spans[0].source_point(AudioSample(1602)).unwrap(),
+        result.spans[1].source_point(AudioSample(1602)).unwrap()
+    );
+}
+
+#[test]
+fn standalone_partition_retains_signed_envelope_and_meaningful_parent_crop_still_trims() {
+    for (with_crop, expected) in [(false, -24_000..24_000), (true, -6_000..6_000)] {
+        let mut nodes = BTreeMap::from([
+            (id("source"), source(8, SourceAudioMapping::FitBeat, 0)),
+            (id("partition"), partition("source", 2, 6)),
+        ]);
+        let selected = if with_crop {
+            nodes.insert(
+                id("crop"),
+                retime("partition", 2, 1, 3, PitchPolicy::FollowSpeed),
+            );
+            "crop"
+        } else {
+            "partition"
+        };
+        let plan = RenderPlan::compile(&document(
+            one_sample_per_frame(),
+            vec![id(selected)],
+            nodes,
+            BTreeMap::new(),
+        ))
+        .unwrap();
+        let span = query(&plan, 0, 1).spans.remove(0);
+        let AudioContent::Source { support, .. } = span.content else {
+            panic!("source")
+        };
+        // Source clock is [-48000,0); the crop selects [3/8,5/8).
+        assert_eq!(
+            support.start.ticks,
+            ExactRatio::integer(expected.start - 24_000)
+        );
+        assert_eq!(
+            support.end.ticks,
+            ExactRatio::integer(expected.end - 24_000)
+        );
+        assert_eq!(
+            span.envelope_samples,
+            if with_crop {
+                samples(0, 2)
+            } else {
+                samples(-2, 6)
+            }
+        );
+        assert_eq!(
+            span.allocated_samples,
+            if with_crop {
+                samples(0, 2)
+            } else {
+                samples(0, 4)
+            }
+        );
+    }
+}
+
+#[test]
+fn partitioning_a_billion_play_repeat_keeps_compact_storage_and_bounded_last_seek() {
+    let plays = 1_000_000_000;
+    let plan = RenderPlan::compile(&document(
+        one_sample_per_frame(),
+        vec![id("left"), id("right")],
+        BTreeMap::from([
+            (id("left"), partition("repeat-left", 0, 17)),
+            (id("right"), partition("repeat-right", 17, i64::from(plays))),
+            (id("repeat-left"), repeat("source-left", plays, 0)),
+            (id("repeat-right"), repeat("source-right", plays, 0)),
+            (id("source-left"), source(1, SourceAudioMapping::FitBeat, 0)),
+            (
+                id("source-right"),
+                source(1, SourceAudioMapping::FitBeat, 0),
+            ),
+        ]),
+        BTreeMap::new(),
+    ))
+    .unwrap();
+    assert_eq!(plan.metadata().storage.authored_nodes, 7);
+    assert_eq!(plan.metadata().storage.iteration_run_entries, 2);
+    let span = plan
+        .audio(
+            samples(999_999_999, 1_000_000_000),
+            AudioQueryLimits {
+                maximum_spans: 1,
+                maximum_work: 40,
+            },
+        )
+        .unwrap()
+        .spans
+        .remove(0);
+    assert_eq!(span.allocated_samples, samples(999_999_999, 1_000_000_000));
+    assert_eq!(span.envelope_samples, span.allocated_samples);
+    assert_eq!(span.instance.repeats[0].iteration.ordinal, plays - 1);
+    assert!(span.retimes.is_empty());
 }
 
 fn document(

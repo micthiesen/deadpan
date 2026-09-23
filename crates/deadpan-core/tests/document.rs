@@ -829,6 +829,7 @@ fn retime_range_is_in_child_clock_and_overflow_is_rejected() {
             audio_edges: Default::default(),
             label: "Slow".into(),
             kind: NodeKind::Retime {
+                purpose: deadpan_core::RetimePurpose::Edit,
                 child: id("hold"),
                 duration: duration(15),
                 mapping: FrameRange::new(ProjectFrame(2), ProjectFrame(9)).unwrap(),

@@ -8,7 +8,8 @@ recipe explicitly or reject it; these records do not make effects playable.
 
 Every returned span retains its complete stable occurrence path, preceding play
 identity for a gap, exact leaf-to-project affine transform, and outer-to-inner
-Retime stages including each pitch policy. Source mappings retain the selected
+authored Retime stages including each pitch policy. Transparent partitions add
+no processing stage. Source mappings retain the selected
 original span, independent exact placement/duration, and signed audio offset.
 An offset is applied in the Source's local clock before enclosing retimes.
 Placement is clipped to the Source and all enclosing selection windows; it does
@@ -23,8 +24,13 @@ retain the entire structurally clipped span; `samples` intersects it with the
 query. Query chunk size cannot change the origin, source mapping, occurrence,
 pitch policies, or allocated boundaries.
 
-`boundaries.start` and `boundaries.end` retain the constraints that formed those
-full extent edges: structural node boundaries, Source placement boundaries and
+`envelope_extent` and `envelope_samples` retain the meaningful audio domain;
+transparent partitions may allocate only part of it. `SourceSamplingSupport`
+retains the exact source-clock filter interval. Ordinary crops still limit that
+support. See [transparent partitions](AUDIO_PARTITIONS.md).
+
+`boundaries.start` and `boundaries.end` retain the constraints that formed the
+full envelope edges: structural node boundaries, Source placement boundaries and
 Repeat gap boundaries. Each origin has its own complete occurrence path; an
 outer Retime trim does not acquire a descendant play identity. Gap origins also
 retain the preceding stable play ID. All constraints meeting at exactly the
@@ -52,8 +58,8 @@ or permitting a decoder read outside measured availability. Edge extension,
 resampling, fades and DSP context remain explicit renderer responsibilities.
 `source_point_at_project_frame` also maps exact fractional structural edges,
 without replacing them with rounded sample allocations. The
-[source-stage reader](SOURCE_STAGE_AUDIO.md) uses these edges to constrain
-filter context and uses the full allocated span as its phase origin.
+[source-stage reader](SOURCE_STAGE_AUDIO.md) uses explicit sampling support to
+constrain filter context and the full allocated span as its phase origin.
 
 Sequences use prefix binary search. Repeats use the shared compact
 `RepeatLayout`, including sparse overrides, variable play durations and gaps
@@ -61,7 +67,7 @@ only between plays. Each next span starts with another indexed descent rather
 than expanding intervening plays. Queries cap returned spans at 4,096 and
 combined node/comparison and boundary-copy work at 65,536; callers can set lower
 limits. Each captured origin costs one unit plus its repeated-ancestor count,
-charged before cloning even if a tighter constraint later replaces it. This
+charged before cloning after the final coincident constraints are known. This
 bounds coincident path storage through nested structures. The existing lookup
 counters describe traversal; they do not include boundary-copy work. Exhaustion
 fails the whole query explicitly. Empty in-range queries return no spans;

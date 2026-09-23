@@ -430,7 +430,10 @@ fn native_open_migrates_authentic_schema16_with_a_backup_and_keeps_it_generic() 
     let path = scratch.path().join("previous-native.deadpan");
     let database = previous_native_project(&path);
     let original_json: String = database.query_row("SELECT document FROM revisions WHERE id=(SELECT head_revision FROM state WHERE singleton=1)", [], |row| row.get(0)).unwrap();
-    let original = ProjectDocument::from_json(&original_json).unwrap();
+    let original = deadpan_core::legacy_v11::Document::from_json(&original_json)
+        .unwrap()
+        .upgrade()
+        .unwrap();
     let history_count: i64 = database
         .query_row("SELECT count(*) FROM history", [], |row| row.get(0))
         .unwrap();

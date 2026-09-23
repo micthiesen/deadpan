@@ -1,0 +1,82 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+   Compiling deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+   Compiling deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 28.55s
+     Running `target/debug/deadpan-cli doctor`
+{
+  "application": "deadpan",
+  "architecture": "aarch64",
+  "database_schema": 18,
+  "device_output": "standalone-macos-prepared-pcm-qualification-boundary",
+  "document_schema": 12,
+  "edge_faded_pcm": "authored-boundary-exceptions-after-time-mapping-before-voice-effects",
+  "internal_audio_sample_rate": 48000,
+  "os": "macos",
+  "partial": [
+    "structural-editing-commands",
+    "sqlite-project-history",
+    "schema-1-through-17-migration",
+    "single-original-project-baseline",
+    "native-documents-project-library",
+    "indexed-picture-plan",
+    "indexed-audio-plan",
+    "worker-dsp-adapter",
+    "source-audio-preparation",
+    "plan-driven-source-pcm",
+    "transparent-audio-partitions",
+    "exact-boundary-selectors",
+    "persistent-marks",
+    "sparse-play-overrides",
+    "nested-occurrence-edits",
+    "persistent-generation-requests",
+    "persistent-generation-attempts",
+    "authored-generated-hold-semantics",
+    "generated-media-conversion",
+    "native-bridge-bundle-qualification",
+    "durable-generated-bundle-acceptance",
+    "durable-original-byte-ownership",
+    "identity-checked-relinking",
+    "persistent-source-decoding",
+    "measured-source-audio-indexes",
+    "independent-source-audio-mapping",
+    "independent-source-video-mapping",
+    "exact-source-stream-placement",
+    "measured-import-timing-candidates",
+    "durable-source-qualification",
+    "atomic-source-registration-and-insertion",
+    "background-import-preparation",
+    "automatic-presentation-basis",
+    "timed-basis-locking",
+    "explicit-canvas-geometry",
+    "shared-sdr-picture-pipeline",
+    "native-source-preview",
+    "native-project-workspace"
+  ],
+  "room_tone_pcm": "explicit-source-range-exact-overlap-before-effects",
+  "schema_version": 1,
+  "sqlite_version": "3.53.2",
+  "stage": "development-foundation",
+  "time_mapped_pcm": "bounded-continuous-preserve-before-effects",
+  "timing_probe": {
+    "frame": 1,
+    "frame_rate_denominator": 1001,
+    "frame_rate_numerator": 30000,
+    "sample_boundary": 1602
+  },
+  "unimplemented": [
+    "app-playback",
+    "app-audio-output",
+    "full-keyboard-editor",
+    "timeline-playback",
+    "analysis",
+    "ai-generation",
+    "youtube-import",
+    "export",
+    "distribution"
+  ],
+  "version": "0.1.0"
+}
