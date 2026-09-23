@@ -242,6 +242,60 @@ fn retained_partitions_preserve_exact_vfr_picture_mapping_through_fractional_ret
 }
 
 #[test]
+fn actual_split_and_refinement_keep_every_vfr_picture_and_exact_source_coordinate() {
+    let original = document(
+        &["retime"],
+        vec![
+            ("source", source(6, -2002, 5005)),
+            ("retime", retime("source", 9, 0, 6)),
+        ],
+    );
+    let expected = RenderPlan::compile(&original).unwrap();
+    let source_index = index("video", clock(), &[-2002, -1001, 1001, 4004], 5005);
+    let mut divided = original;
+    let mut target = id("retime");
+    for (cut, boundary) in [("first", 4), ("second", 2)] {
+        let transaction = apply(
+            &divided,
+            &CommandRequest {
+                project_id: divided.project_id().clone(),
+                expected_revision: divided.revision_id().clone(),
+                new_revision: revision(cut),
+                command: Command::Split {
+                    node: target,
+                    at: duration(boundary),
+                    identities: SplitIdentities {
+                        nodes: (0..10)
+                            .map(|number| id(&format!("{cut}-{number}")))
+                            .collect(),
+                    },
+                },
+            },
+        )
+        .unwrap();
+        let next = transaction.forward.apply(&divided).unwrap();
+        assert_eq!(transaction.duration_delta, 0);
+        assert_eq!(transaction.inverse.apply(&next).unwrap(), divided);
+        divided = next;
+        let NodeKind::Sequence { children } = &divided.nodes()[divided.root()].kind else {
+            unreachable!()
+        };
+        target = children.last().unwrap().clone();
+        let plan = RenderPlan::compile(&divided).unwrap();
+        for frame in [8, 0, 3, 4, 7, 1, 5, 2, 6] {
+            let before = expected.picture(ProjectFrame(frame)).unwrap();
+            let after = plan.picture(ProjectFrame(frame)).unwrap();
+            assert_eq!(after.picture, before.picture);
+            assert_eq!(
+                after.picture.select_source_frame(&source_index).unwrap(),
+                before.picture.select_source_frame(&source_index).unwrap()
+            );
+            after.instance.validate(&divided).unwrap();
+        }
+    }
+}
+
+#[test]
 fn natural_video_duration_preserves_vfr_selection_after_beat_rounding() {
     let mapping = SourceVideoMapping::natural_rate(
         span(0, 30_000),

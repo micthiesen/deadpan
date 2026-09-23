@@ -58,6 +58,79 @@ fn request(document: &ProjectDocument) -> Result<Value> {
 }
 
 #[test]
+fn headless_split_preview_commit_and_history_share_one_exact_command() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let package = create(scratch.path())?;
+    let path = package.to_str().unwrap();
+    let input = scratch.path().join("split.json");
+    let empty = ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?;
+    fs::write(&input, request(&empty)?.to_string())?;
+    success(&["command", path, "--json", input.to_str().unwrap()])?;
+    let before = ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?;
+    fs::write(
+        &input,
+        json!({
+            "protocol":1, "project_id":before.project_id(),
+            "expected_revision":before.revision_id(), "new_revision":"split-hold",
+            "command":{"command":"split","node":"hold","at":17,
+            "identities":{"nodes":["left","right","context"]}}
+        })
+        .to_string(),
+    )?;
+    let preview = success(&[
+        "command",
+        path,
+        "--json",
+        input.to_str().unwrap(),
+        "--dry-run",
+    ])?;
+    assert_eq!(preview["edit"]["duration_delta"], 0);
+    assert_eq!(
+        ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?,
+        before
+    );
+    let committed = success(&["command", path, "--json", input.to_str().unwrap()])?;
+    assert_eq!(committed["outcome"]["edit"], preview["edit"]);
+    let divided = ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?;
+    assert_eq!(divided.duration()?, before.duration()?);
+    let plan = deadpan_plan::RenderPlan::compile(&divided)?;
+    assert_eq!(
+        plan.node_duration(&NodeId::new("left")?).unwrap().frames(),
+        17
+    );
+    assert_eq!(
+        plan.node_duration(&NodeId::new("right")?).unwrap().frames(),
+        28
+    );
+    let stale = cli(&["command", path, "--json", input.to_str().unwrap()])?;
+    assert_eq!(
+        serde_json::from_slice::<Value>(&stale.stderr)?["error"]["code"],
+        "RevisionConflict"
+    );
+    let undone = success(&["project", "undo", path, "--expected", "split-hold"])?;
+    assert_eq!(
+        ProjectStore::open(&package, AccessMode::ReadOnly)?
+            .snapshot()?
+            .nodes(),
+        before.nodes()
+    );
+    success(&[
+        "project",
+        "redo",
+        path,
+        "--expected",
+        undone["outcome"]["revision_id"].as_str().unwrap(),
+    ])?;
+    assert_eq!(
+        ProjectStore::open(&package, AccessMode::ReadOnly)?
+            .snapshot()?
+            .nodes(),
+        divided.nodes()
+    );
+    Ok(())
+}
+
+#[test]
 fn headless_migration_and_plan_inspection_are_explicit_and_read_only() -> Result {
     let scratch = tempfile::tempdir()?;
     let package = scratch.path().join("legacy.deadpan");

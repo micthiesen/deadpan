@@ -117,6 +117,22 @@ impl Inspector {
                     "This group is selected as one root beat. Nested navigation is not available yet.",
                 )
             }
+            NodeKind::Retime {
+                purpose: deadpan_core::RetimePurpose::Partition,
+                mapping,
+                ..
+            } => {
+                fields.push((
+                    "From full beat",
+                    format!("{}–{} f", mapping.start().0, mapping.end().0),
+                ));
+                (
+                    "Fragment",
+                    "F",
+                    None,
+                    "This fragment keeps the full beat's original picture and sound timing. Split again to make a smaller cut.",
+                )
+            }
             NodeKind::Retime { pitch, .. } => {
                 fields.push((
                     "Pitch",

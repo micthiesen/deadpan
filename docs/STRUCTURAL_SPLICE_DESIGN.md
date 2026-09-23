@@ -2,11 +2,12 @@
 
 This is an implementation design record. The [transparent audio partition
 layer](AUDIO_PARTITIONS.md) was introduced in core 12/database 18. The
-[mark binding lifecycle](MARK_FRAGMENTS.md) follows in core 13/database 19; the complete
-splice commands below remain open. Sections 4.2, 6.3, 6.5 and 12.2 of the
+[mark binding lifecycle](MARK_FRAGMENTS.md) follows in core 13/database 19.
+[Pure Split](STRUCTURAL_SPLIT.md) is implemented in core 14/database 20; the
+inserted-time and automatic range planning work below remains open. Sections 4.2, 6.3, 6.5 and 12.2 of the
 [specification](spec/DEADPAN_SPEC.md) remain authoritative. Native root-beat
-Repeat/delete/Hold-duration commands do not implement arbitrary-boundary Hold
-insertion or pure Split.
+Split/Repeat/delete/Hold-duration commands do not implement arbitrary-boundary Hold
+insertion.
 
 Under specification 1.1, these operations reshape the already populated full
 Original baseline. Range reuse resolves moments from the project's pinned
@@ -18,8 +19,8 @@ capabilities. See [the single-Original contract](SINGLE_ORIGINAL.md).
 
 ## Separate allocation, sampling and envelopes
 
-The current core inserts at a Sequence child index. It has no semantic split or
-insert-at-project-boundary command. A source can retain its exact original spans
+The core inserts at a Sequence child index and splits an explicit beat or
+occurrence. It has no insert-at-project-boundary command. A source can retain its exact original spans
 when divided by materializing FitBeat against its original duration and shifting
 the right fragment's Placement start by the negative cut position. This retains
 picture coordinates but is insufficient for complete audio semantics.
@@ -69,9 +70,9 @@ real edges.
 
 Core 12 now implements this distinction using `RetimePurpose::Partition`,
 `SourceSamplingSupport`, and separate envelope extent/sample ranges. Current
-tests compare paired retained partitions with the original PCM. This does not
-yet establish complete Split semantics for marks, copied occurrences or subsequent
-time insertion.
+tests compare paired retained partitions with the original PCM. Later actual
+Split tests cover marks, copied occurrences and output parity. Subsequent time
+insertion still needs the resume semantics below.
 
 ## Exact resume at fractional frame rates
 
@@ -176,12 +177,11 @@ Local bindings stay bound and can become visible through subsequent editing.
 This preserves the existing external-host and occurrence-copy semantics tested
 in `marks.rs` and `occurrence_edits.rs`.
 
-The binding lifecycle and biased query visibility are implemented. Split still
-must construct the right bindings, retain target-local wrapper coordinates, and
-relocate concrete occurrence coordinates to the selected visible branch. Apply
-seam bias before deduplicating exact coordinates; rounded frame equality cannot
-merge distinct positions. Actual moved-fragment and Split construction tests
-remain required.
+The binding lifecycle, biased query visibility and Split construction are
+implemented. Split retains target-local full-context coordinates and relocates
+concrete events once using their exact old target position, independent of outer
+visibility. Apply seam bias before deduplicating exact coordinates; rounded frame
+equality cannot merge distinct positions. Shifted-fragment resume remains required.
 
 Individual Repeat gaps need a representation that does not modify every shared
 gap. Resolve Freeze fallback from the immutable measured picture plan before the
@@ -202,5 +202,6 @@ domain/anchor/envelope metadata as well as picture structure.
 Core 13/database 19 freeze the old mark grammar throughout all legacy adapters.
 Database 18 replays through frozen core 12, retaining Partition purpose; database
 16/17 replay through frozen core 11 and reject purpose. Every old mark gains only
-its original binding. New Split command vocabulary will need its own strict
-migration boundary. Legacy history cannot acquire fabricated lineage evidence.
+its original binding. Core 14/database 20 freeze the schema-13 multi-binding
+grammar and reject Split in old requests. Legacy history cannot acquire
+fabricated lineage evidence.

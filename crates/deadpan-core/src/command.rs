@@ -40,6 +40,12 @@ pub struct SourceInsertion {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "command", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Command {
+    /// Split an interior local output boundary without changing rendered time.
+    Split {
+        node: NodeId,
+        at: FrameDuration,
+        identities: crate::SplitIdentities,
+    },
     Insert {
         parent: NodeId,
         index: usize,
@@ -310,6 +316,11 @@ pub fn apply(
     )?;
     let before_duration = document.duration()?.frames();
     let mut result = match &request.command {
+        Command::Split {
+            node,
+            at,
+            identities,
+        } => crate::split::apply(document, node, *at, identities)?,
         Command::EditOccurrence {
             instance,
             edit,
@@ -405,6 +416,12 @@ pub(crate) fn reduce(
     allocation: &RevisionId,
 ) -> Result<(), EditError> {
     match command {
+        Command::Split { .. } => {
+            return Err(EditError::new(
+                EditErrorCode::InvalidCommand,
+                "splits require the retained-context entrypoint",
+            ));
+        }
         Command::EditOccurrence { .. } => {
             return Err(EditError::new(
                 EditErrorCode::InvalidCommand,
@@ -1106,7 +1123,7 @@ fn insert_child(
     Ok(())
 }
 
-fn replace_child(
+pub(crate) fn replace_child(
     document: &mut ProjectDocument,
     parent: &NodeId,
     old: &NodeId,
@@ -1210,6 +1227,7 @@ fn apply_changes<K: Ord + Clone, V: Eq + Clone>(
 
 fn description(command: &Command) -> &'static str {
     match command {
+        Command::Split { .. } => "Split beat",
         Command::Insert { .. } => "Insert beats",
         Command::Delete { .. } => "Delete beat",
         Command::Move { .. } => "Move beat",

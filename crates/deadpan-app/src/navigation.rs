@@ -4,6 +4,7 @@ pub mod command;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum BeatEdit {
+    Split,
     Repeat(u32),
     WrapRepeat(u32),
     Delete,
@@ -276,6 +277,10 @@ impl Bindings {
                 Key::Home => Some(Action::First),
                 Key::End => Some(Action::Last),
                 Key::U => Some(Action::Undo),
+                Key::S if self.count.is_none() => Some(Action::Edit(BeatEdit::Split)),
+                Key::S => Some(Action::Invalid(
+                    "Split uses the current boundary. Move with a count first, for example 12l then s.",
+                )),
                 _ => None,
             }
         };
@@ -348,6 +353,35 @@ mod tests {
         keys.iter().fold(None, |_, key| {
             bindings.key(*key, Modifiers::NONE, false, false)
         })
+    }
+
+    #[test]
+    fn split_uses_a_single_unmodified_key_and_respects_native_text_entry() {
+        let mut bindings = Bindings::default();
+        assert_eq!(
+            keys(&mut bindings, &[Key::S]),
+            Some(Action::Edit(BeatEdit::Split))
+        );
+        assert!(!allows_key_repeat(Key::S, Modifiers::NONE));
+        assert!(matches!(
+            keys(&mut bindings, &[Key::Num3, Key::S]),
+            Some(Action::Invalid(_))
+        ));
+        assert!(bindings.pending().is_empty());
+        for (modifiers, text, ime) in [
+            (Modifiers::NONE, true, false),
+            (Modifiers::NONE, false, true),
+            (Modifiers::SHIFT, false, false),
+            (Modifiers::ALT, false, false),
+            (Modifiers::COMMAND, false, false),
+        ] {
+            assert_eq!(bindings.key(Key::S, modifiers, text, ime), None);
+        }
+        assert!(matches!(
+            keys(&mut bindings, &[Key::R, Key::S]),
+            Some(Action::Invalid(_))
+        ));
+        assert!(bindings.pending().is_empty());
     }
 
     #[test]

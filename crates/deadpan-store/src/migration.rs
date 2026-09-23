@@ -45,7 +45,7 @@ impl ProjectStore {
                 backup: None,
             });
         }
-        if !matches!(version, 1..=18) {
+        if !matches!(version, 1..=19) {
             return Err(StoreError::UnsupportedSchema(version));
         }
         let lock = acquire_lock(&package)?;
@@ -189,8 +189,10 @@ fn migrate_candidate(
     // Schema 15 uses core schema 10 with authored presentation basis policy.
     // Schemas 16 and 17 use core schema 11 with authored audio edges. Their
     // Retimes gain Edit purpose; no old crop becomes a transparent partition.
-    // Schema 18 uses core schema 12, including transparent partitions. Every
-    // old mark retains one binding; legacy JSON cannot introduce fragments.
+    // Schema 18 uses core schema 12, including transparent partitions. Through
+    // schema 18, every mark retains one binding; old JSON cannot add fragments.
+    // Schema 19 uses core schema 13 with multiple bindings per logical mark;
+    // its frozen command grammar does not admit Split.
     // Replay all authored history, preserving operational rows and identities
     // while assigning FitBeat only to mappings absent in that legacy schema.
     // Schemas before 15 gain an explicit basis; schema 15 retains its policy.

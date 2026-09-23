@@ -19,6 +19,7 @@ use crate::project::{
 use crate::worker::{PreviewWorker, ProjectView, SourceSummary, Ticket, Work};
 
 mod cards;
+mod help_scroll;
 mod inspector;
 mod selection;
 mod style;
@@ -95,6 +96,7 @@ pub struct DeadpanApp {
     bindings: Bindings,
     ime_composing: bool,
     help_open: bool,
+    help_scroll: help_scroll::HelpScroll,
     linked_import: bool,
     audio_import: bool,
     sound_stream: Option<u32>,
@@ -153,6 +155,7 @@ impl DeadpanApp {
             bindings: Bindings::default(),
             ime_composing: false,
             help_open: false,
+            help_scroll: help_scroll::HelpScroll::default(),
             linked_import: false,
             audio_import: false,
             sound_stream: None,
@@ -661,6 +664,15 @@ impl DeadpanApp {
         };
         let node = node.clone();
         let edit = match edit {
+            BeatEdit::Split => {
+                let Some(at) =
+                    selection::split_boundary(&self.beat_rows, &node, self.sequence_cursor)
+                else {
+                    self.error = Some("Move inside the selected beat with h/l, then press s to split. Existing boundaries need no split.".into());
+                    return;
+                };
+                ProjectEdit::Split { node, at }
+            }
             BeatEdit::Repeat(plays) => ProjectEdit::Repeat { node, plays },
             BeatEdit::WrapRepeat(plays) => ProjectEdit::WrapRepeat { node, plays },
             BeatEdit::Delete => ProjectEdit::Delete { node },
@@ -920,20 +932,32 @@ impl DeadpanApp {
     }
 
     fn keyboard(&mut self, context: &egui::Context) -> Option<(TextAction, bool)> {
-        let events = context.input(|input| input.events.clone());
-        let ime_event = events.iter().any(|e| matches!(e, egui::Event::Ime(_)));
-        for event in &events {
-            match event {
-                egui::Event::Ime(egui::ImeEvent::Preedit { text, .. }) => {
-                    self.ime_composing = !text.is_empty()
-                }
-                egui::Event::Ime(egui::ImeEvent::Commit(_)) => self.ime_composing = false,
-                egui::Event::WindowFocused(false) => {
-                    self.ime_composing = false;
-                    self.bindings.clear();
-                }
-                _ => {}
+        if help_scroll::defer_popup_input(
+            context,
+            self.dialogs.is_open(),
+            &mut self.ime_composing,
+            &mut self.bindings,
+        ) {
+            return None;
+        }
+        let mut events = context.input(|input| input.events.clone());
+        if self.help_open {
+            let closed =
+                context.input_mut(|input| self.help_scroll.route_events(&mut input.events));
+            self.help_open = !closed;
+            self.ime_composing = false;
+            self.bindings.clear();
+            if self.help_open {
+                return None;
             }
+            // Escape may precede a command in the same native input batch.
+            // Only the suffix survives; help's consumed keys and IME events
+            // never reach the editor or its composition gate.
+            events = context.input(|input| input.events.clone());
+        }
+        let mut ime_event = events.iter().any(|e| matches!(e, egui::Event::Ime(_)));
+        if help_scroll::observe_composition(&events, &mut self.ime_composing) {
+            self.bindings.clear();
         }
         // Widgets resolve pointer-driven focus later in this frame. Do not
         // dispatch a destructive shortcut or submit the formerly focused
@@ -942,19 +966,31 @@ impl DeadpanApp {
             self.bindings.clear();
             return None;
         }
-        if self.dialogs.is_open() || context.any_popup_open() {
-            self.bindings.clear();
-            return None;
-        }
-        if self.help_open {
-            if context.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Escape)) {
-                self.help_open = false;
-            }
-            self.bindings.clear();
-            return None;
-        }
         let mut text_result = None;
-        for event in events {
+        let mut events = events.into_iter();
+        loop {
+            let event = match self
+                .help_scroll
+                .next_event(&mut self.help_open, &mut events)
+            {
+                help_scroll::RoutedInput::Editor(event) => event,
+                help_scroll::RoutedInput::Done => break,
+                help_scroll::RoutedInput::Help(remaining) => {
+                    // Help may have opened earlier in this very batch. Give it the
+                    // ordered suffix immediately, including a possible next Escape.
+                    self.bindings.clear();
+                    self.ime_composing = false;
+                    context.input_mut(|input| input.events.clone_from(&remaining));
+                    if self.help_open {
+                        return text_result;
+                    }
+                    ime_event = remaining
+                        .iter()
+                        .any(|event| matches!(event, egui::Event::Ime(_)));
+                    help_scroll::observe_composition(&remaining, &mut self.ime_composing);
+                    continue;
+                }
+            };
             if let egui::Event::Key {
                 key,
                 modifiers,
@@ -1170,7 +1206,7 @@ impl DeadpanApp {
                 egui::Frame::new().fill(style::PANEL).stroke(egui::Stroke::new(1.0, style::LAVENDER)).corner_radius(4).inner_margin(egui::Margin::symmetric(10, 6)).show(ui, |ui| {
                     ui.horizontal(|ui| {
                         ui.label(egui::RichText::new(":").monospace().color(style::LAVENDER));
-                        ui.add(egui::TextEdit::singleline(&mut self.command).id(egui::Id::new(COMMAND_ID)).font(egui::TextStyle::Monospace).frame(egui::Frame::NONE).desired_width(f32::INFINITY).hint_text("repeat 3 · wrap-repeat 2 · hold-duration 11f · delete · help"));
+                        ui.add(egui::TextEdit::singleline(&mut self.command).id(egui::Id::new(COMMAND_ID)).font(egui::TextStyle::Monospace).frame(egui::Frame::NONE).desired_width(f32::INFINITY).hint_text("split · repeat 3 · wrap-repeat 2 · hold-duration 11f · delete · help"));
                         retain_text_escape(ui, COMMAND_ID);
                     });
                 });
@@ -1187,6 +1223,7 @@ impl DeadpanApp {
                     style::key_hint(ui, "h l", "frame");
                     if self.view == View::Sequence {
                         style::key_hint(ui, "j k", "beat");
+                        style::key_hint(ui, "s", "split");
                         style::key_hint(ui, "rr", "repeat");
                         style::key_hint(ui, "dd", "cut beat");
                         style::key_hint(ui, "u", "undo");
@@ -1533,6 +1570,15 @@ impl DeadpanApp {
                         ui.add_space(8.0);
                         let ready = !self.service.is_busy() && !self.dialogs.is_open();
                         ui.add_enabled_ui(ready, |ui| {
+                            let can_split = self.selected_beat.as_ref().is_some_and(|node| {
+                                selection::split_boundary(&self.beat_rows, node, self.sequence_cursor).is_some()
+                            });
+                            if ui.add_enabled(can_split, egui::Button::new("Split at cursor  ·  s").min_size(egui::vec2(ui.available_width(), 28.0)))
+                                .on_hover_text("Move inside this beat with h/l. Split keeps its picture, sound and total duration unchanged.")
+                                .clicked()
+                            {
+                                self.edit(BeatEdit::Split);
+                            }
                             if let Some((label, command)) = data.parameter
                                 && ui
                                     .add_sized(
@@ -1720,13 +1766,7 @@ impl DeadpanApp {
     }
 
     fn help(&mut self, context: &egui::Context) {
-        egui::Window::new("Keys · reshape one Original")
-            .open(&mut self.help_open)
-            .collapsible(false)
-            .resizable(true)
-            .default_width(680.0)
-            .show(context, |ui| {
-                egui::ScrollArea::vertical().max_height((context.input(|input| input.content_rect().height()) - 140.0).max(240.0)).show(ui, |ui| {
+        self.help_scroll.show(context, &mut self.help_open, |ui| {
                     ui.label("New starts with your full video. Its Original stays intact while Your edit changes.");
                     ui.label(egui::RichText::new("START & MOVE").strong().color(style::LAVENDER));
                     for (key, description) in [
@@ -1741,6 +1781,7 @@ impl DeadpanApp {
                     ui.separator();
                     ui.label(egui::RichText::new("RESHAPE THE SELECTED BEAT").strong().color(style::LAVENDER));
                     for (key, description) in [
+                        ("s / :split", "Split linked picture and sound at the cursor inside the selected root beat. The right fragment stays selected; duration and output stay unchanged."),
                         ("rr / 3rr", "Wrap the selected root beat in two / three total plays."),
                         ("dd / :delete", "Cut one whole root beat and close its time. Undo restores it."),
                         (":repeat 3", "Set total plays on a Repeat; wrap a different root beat."),
@@ -1759,7 +1800,6 @@ impl DeadpanApp {
                     ui.separator();
                     ui.weak("Original browsing never changes it. Your edit commands affect the selected root beat and its linked picture and sound. Counts precede operators, such as 3rr; the visible PENDING badge waits without a timer.");
                     ui.weak("Current limits: range cuts/reuse, nested navigation, new Holds, sound placement/audition, playback, effects, AI generation in the app, and export are not available yet. Registered sounds are retained catalog entries only.");
-                });
             });
     }
 }
@@ -1874,6 +1914,10 @@ fn beat_kind(kind: &NodeKind) -> String {
                 "plays"
             }
         ),
+        NodeKind::Retime {
+            purpose: deadpan_core::RetimePurpose::Partition,
+            ..
+        } => "Fragment".into(),
         NodeKind::Retime { .. } => "Retime".into(),
         NodeKind::Sequence { .. } => "Sequence".into(),
     }

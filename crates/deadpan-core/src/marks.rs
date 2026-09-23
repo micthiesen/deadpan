@@ -35,11 +35,31 @@ pub enum MarkLossReason {
     WrapAmbiguous,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
 pub enum MarkState {
     Bound,
     Unresolved { reason: MarkLossReason },
+}
+
+impl<'de> Deserialize<'de> for MarkState {
+    fn deserialize<D: serde::Deserializer<'de>>(
+        deserializer: D,
+    ) -> std::result::Result<Self, D::Error> {
+        // Serde's internally tagged unit variant ignores extra payload fields.
+        // An empty struct keeps the wire closed without changing the public
+        // Bound variant or its canonical serialized form.
+        #[derive(Deserialize)]
+        #[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
+        enum Wire {
+            Bound {},
+            Unresolved { reason: MarkLossReason },
+        }
+        Ok(match Wire::deserialize(deserializer)? {
+            Wire::Bound {} => Self::Bound,
+            Wire::Unresolved { reason } => Self::Unresolved { reason },
+        })
+    }
 }
 
 /// One physical binding of a logical mark. Ownership is the lifetime of an

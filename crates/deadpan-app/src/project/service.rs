@@ -325,7 +325,8 @@ impl Service {
             return Err("Project changed before the edit".into());
         }
         let target = match &edit {
-            ProjectEdit::Repeat { node, .. }
+            ProjectEdit::Split { node, .. }
+            | ProjectEdit::Repeat { node, .. }
             | ProjectEdit::WrapRepeat { node, .. }
             | ProjectEdit::Delete { node }
             | ProjectEdit::HoldDuration { node, .. } => node,
@@ -338,7 +339,30 @@ impl Service {
             .position(|child| child == target)
             .ok_or("Select a root beat; nested occurrence editing is not available yet")?;
         let selected = Some(target.clone());
+        let split_position = matches!(edit, ProjectEdit::Split { .. }).then_some(position);
         let (command, selected_node, message) = match edit {
+            ProjectEdit::Split { node: target, at } => {
+                let mut pending = vec![target.clone()];
+                let mut count = 3_usize;
+                while let Some(id) = pending.pop() {
+                    count = count.checked_add(1).ok_or("Split node budget exhausted")?;
+                    if count > deadpan_core::MAX_DOCUMENT_NODES {
+                        return Err("Split exceeds the document node limit".into());
+                    }
+                    pending.extend(document.children(&id).cloned());
+                }
+                (
+                    Command::Split {
+                        node: target,
+                        at,
+                        identities: deadpan_core::SplitIdentities {
+                            nodes: (0..count).map(|_| node()).collect(),
+                        },
+                    },
+                    None,
+                    "Beat split at the cursor and saved",
+                )
+            }
             ProjectEdit::Repeat {
                 node: target,
                 plays,
@@ -413,6 +437,20 @@ impl Service {
         // invented observations from a widget or this service.
         let outcome = self.writer()?.commit(&request).map_err(display)?;
         self.refresh()?;
+        // Resolve the right fragment from the committed structure, never from
+        // progress text or an identity-pool ordering. Its start is the cut.
+        let selected_node = if let Some(position) = split_position {
+            self.workspace.as_ref().and_then(|workspace| {
+                let document = &workspace.document;
+                let NodeKind::Sequence { children } = &document.nodes()[document.root()].kind
+                else {
+                    return None;
+                };
+                children.get(position + 1).cloned()
+            })
+        } else {
+            selected_node
+        };
         self.committed = Some(CommittedEdit {
             revision: outcome.revision_id,
             selected_node,

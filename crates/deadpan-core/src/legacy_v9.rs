@@ -139,14 +139,14 @@ enum OldOccurrenceEdit {
         index: usize,
         subtree: OldSubtree,
     },
-    Delete,
+    Delete {},
     Group {
         start: usize,
         end: usize,
         id: NodeId,
         label: String,
     },
-    Ungroup,
+    Ungroup {},
     WrapRepeat {
         id: NodeId,
         plays: u32,
@@ -185,7 +185,7 @@ enum OldOccurrenceEdit {
         #[serde(deserialize_with = "unique_map")]
         assets: BTreeMap<AssetId, AssetRecord>,
     },
-    RevertGeneratedHold,
+    RevertGeneratedHold {},
     Rename {
         label: String,
     },
@@ -205,7 +205,7 @@ impl OldOccurrenceEdit {
                 index,
                 subtree: subtree.upgrade(),
             },
-            Self::Delete => OccurrenceEdit::Delete,
+            Self::Delete {} => OccurrenceEdit::Delete,
             Self::Group {
                 start,
                 end,
@@ -217,7 +217,7 @@ impl OldOccurrenceEdit {
                 id,
                 label,
             },
-            Self::Ungroup => OccurrenceEdit::Ungroup,
+            Self::Ungroup {} => OccurrenceEdit::Ungroup,
             Self::WrapRepeat {
                 id,
                 plays,
@@ -251,7 +251,7 @@ impl OldOccurrenceEdit {
             Self::AcceptGeneratedHold { artifact, assets } => {
                 OccurrenceEdit::AcceptGeneratedHold { artifact, assets }
             }
-            Self::RevertGeneratedHold => OccurrenceEdit::RevertGeneratedHold,
+            Self::RevertGeneratedHold {} => OccurrenceEdit::RevertGeneratedHold,
             Self::Rename { label } => OccurrenceEdit::Rename { label },
             Self::SetPlayOverride { iteration, subtree } => OccurrenceEdit::SetPlayOverride {
                 iteration,

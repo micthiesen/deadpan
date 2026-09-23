@@ -27,6 +27,10 @@ pub struct OccurrenceIdentities {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
 pub enum OccurrenceEdit {
+    Split {
+        at: FrameDuration,
+        identities: crate::SplitIdentities,
+    },
     Insert {
         index: usize,
         subtree: Subtree,
@@ -97,6 +101,11 @@ pub enum OccurrenceEdit {
 impl OccurrenceEdit {
     fn command(&self, node: NodeId) -> Command {
         match self {
+            Self::Split { at, identities } => Command::Split {
+                node,
+                at: *at,
+                identities: identities.clone(),
+            },
             Self::Insert { index, subtree } => Command::Insert {
                 parent: node,
                 index: *index,
@@ -293,13 +302,24 @@ pub(crate) fn apply(
     target.validate(&result)?;
     result.validate()?;
     let command = edit.command(target.node);
+    if let Command::Split {
+        node,
+        at,
+        identities,
+    } = &command
+    {
+        return crate::split::apply(&result, node, *at, identities);
+    }
     let isolated = result.clone();
     crate::command::reduce(&mut result, &command, allocation)?;
     result.marks = crate::marks::transform_marks(&isolated, &result, &command)?;
     Ok(result)
 }
 
-fn subtree_order(document: &ProjectDocument, root: &NodeId) -> Result<Vec<NodeId>, EditError> {
+pub(crate) fn subtree_order(
+    document: &ProjectDocument,
+    root: &NodeId,
+) -> Result<Vec<NodeId>, EditError> {
     let mut output = Vec::new();
     let mut pending = vec![root.clone()];
     while let Some(node) = pending.pop() {
@@ -312,7 +332,7 @@ fn subtree_order(document: &ProjectDocument, root: &NodeId) -> Result<Vec<NodeId
     Ok(output)
 }
 
-fn clone_nodes(
+pub(crate) fn clone_nodes(
     document: &mut ProjectDocument,
     mapping: &BTreeMap<NodeId, NodeId>,
 ) -> Result<(), EditError> {

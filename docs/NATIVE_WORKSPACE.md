@@ -7,7 +7,7 @@ timeline automatically. Your edit evolves through reversible changes; Original
 stays pinned for browsing and deliberate reuse. A separate sound catalog admits
 external audio without changing picture or duration. Generic/legacy packages
 retain their broader register/insert workflow. See [the profile contract](SINGLE_ORIGINAL.md).
-It also wraps or updates root-beat Repeats, deletes root beats and changes an
+It also splits root beats at the cursor, wraps or updates Repeats, deletes beats and changes an
 existing root Hold's duration. Playback, range operators, generated-provider
 rendering and export remain open.
 
@@ -150,12 +150,19 @@ in a Ready V1 project or chooses the Original for an incomplete project. Legacy
 projects retain generic import. `⌘Return` reuses the whole Original after the
 selected root beat or at sequence end. `/` searches; `?` opens keyboard help;
 `:` opens command entry with
-`insert`, `undo`, `redo`, `new`, `open`, `import`, `source`, `sequence`, `help`.
+`insert`, `split`, `undo`, `redo`, `new`, `open`, `import`, `source`, `sequence`, `help`.
 Native panels are constructed on the main app thread and polled through a retained
 future/waker. One panel may be open at a time, and an active import disables another import
 chooser. Import captures its project session and revision before opening the
 panel and rejects a result for a different session or stale authored context.
 The File menu and contextual footer show only the current action's meaning.
+
+The Keys window keeps its scrolling instructions visible above the reference.
+`j/k`, arrows, Page Up/Down and Home/End scroll from its measured position,
+including after wheel input. Help owns keys and text until Escape; a command
+that follows Escape in the same input batch reaches command entry in order.
+Opening help mid-batch immediately transfers ownership to it. Native dialogs
+and popup menus retain priority, including their Escape and IME handling.
 
 In Sequence context, `rr` wraps the current root beat in two total plays;
 `3rr` makes three total plays and `1rr` retains one. `dd` deletes one root beat.
@@ -165,6 +172,14 @@ Held-key autorepeat cannot complete an edit operator. Changing context, pane or
 selection cancels the pending operator. Source context remains non-destructive
 and teaches browsing, returning to Your edit and explicit reuse instead.
 
+`s` and `:split` cut inside the selected root beat at the current project-frame
+boundary. Both linked roles retain their original timing and full processing
+context. The right fragment is selected from the committed structure, keeping
+the cursor at the cut. The footer, inspector button and help teach the binding;
+the inspector button is disabled at existing boundaries. Counted Split and extra
+command arguments fail explicitly. Repeated cuts refine sibling fragments rather
+than building a deeper tree. See [Split](STRUCTURAL_SPLIT.md).
+
 Command entry accepts `:repeat N`, `:wrap-repeat N`, `:delete`, and
 `:hold-duration Nf`. Repeat updates an existing selected Repeat or wraps another
 beat; wrap-repeat always wraps. Hold duration requires a selected existing Hold
@@ -172,7 +187,7 @@ and an explicit positive integer frame unit. Arguments and unsupported options
 are rejected, not silently ignored. This command subset does not yet implement
 the specification's full typed-unit, selector and completion grammar.
 
-Hold insertion at an arbitrary cursor, pure split, nested occurrence navigation,
+Hold insertion at an arbitrary cursor, nested occurrence navigation,
 range edits, gain controls, semantic dot-repeat and macros remain open. Existing
 child-index insertion is not a substitute for the exact Hold splice contract.
 [Splice design prerequisites](STRUCTURAL_SPLICE_DESIGN.md) record the exact

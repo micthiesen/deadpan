@@ -90,6 +90,11 @@ pub struct CommittedEdit {
 /// concrete occurrence scope; the service rejects hidden or nested targets.
 #[derive(Clone, Debug)]
 pub enum ProjectEdit {
+    Split {
+        node: NodeId,
+        /// Interior boundary in this root beat's project-frame clock.
+        at: FrameDuration,
+    },
     Repeat {
         node: NodeId,
         plays: u32,

@@ -17,11 +17,13 @@ mod exact;
 mod generated;
 mod legacy_asset;
 mod legacy_mark;
+mod legacy_mark_v13;
 mod legacy_source_mapping;
 pub mod legacy_v1;
 pub mod legacy_v10;
 pub mod legacy_v11;
 pub mod legacy_v12;
+pub mod legacy_v13;
 pub mod legacy_v2;
 pub mod legacy_v3;
 pub mod legacy_v4;
@@ -36,6 +38,7 @@ mod occurrence_edit;
 mod repeat_layout;
 mod source_index;
 mod source_mapping;
+mod split;
 mod time;
 mod video_mapping;
 
@@ -52,6 +55,7 @@ pub use occurrence::*;
 pub use occurrence_edit::{OccurrenceEdit, OccurrenceIdentities};
 pub use repeat_layout::*;
 pub use source_index::*;
+pub use split::SplitIdentities;
 pub use video_mapping::SourceVideoMapping;
 
 pub use time::{

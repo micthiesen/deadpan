@@ -1,8 +1,8 @@
 # Logical marks and physical fragments
 
 Core schema 13 keeps one logical `MarkId` with bounded physical bindings. This
-supports retaining a named mark through future structural Split operations.
-The Split command and native mark editing are still open; admitting bindings
+supports retaining a named mark through [structural Split](STRUCTURAL_SPLIT.md).
+Native mark editing is still open; admitting bindings
 does not prove that a splice has produced the correct lineage.
 
 A mark retains its primary `owner`, `boundary` and `state`, plus an optional
@@ -73,7 +73,8 @@ Stored binding validation remains independent of this query visibility test.
 
 ## Persistence and evidence
 
-Database schema 19 stores core 13. Schemas 1 through 18 replay every revision and
+Database schema 19 introduced core 13; current database 20 stores core 14 and
+replays database 19 through its frozen multi-binding grammar. Schemas 1 through 18 replay every revision and
 forward/inverse patch through strict frozen adapters. Core schemas 3 through 12
 use a shared frozen mark grammar that rejects `fragments`, including `[]` and
 `null`. Old marks gain one binding without JSON growth. The core-12 adapter

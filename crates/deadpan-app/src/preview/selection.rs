@@ -65,6 +65,19 @@ pub(super) fn at_boundary(rows: &[BeatRow], cursor: u64) -> Option<usize> {
     })
 }
 
+pub(super) fn split_boundary(
+    rows: &[BeatRow],
+    selected: &deadpan_core::NodeId,
+    cursor: u64,
+) -> Option<deadpan_core::FrameDuration> {
+    let row = rows.iter().find(|row| &row.id == selected)?;
+    let local = cursor.checked_sub(row.start)?;
+    if local == 0 || local >= row.frames {
+        return None;
+    }
+    deadpan_core::FrameDuration::new(i64::try_from(local).ok()?).ok()
+}
+
 /// Visual placement only. Exact frame values remain the source of the label;
 /// this fraction never participates in authored timing or picture resolution.
 pub(super) fn cursor_marker(rows: &[BeatRow], cursor: u64) -> Option<(usize, f32)> {
@@ -103,6 +116,33 @@ mod tests {
                 row
             })
             .collect()
+    }
+
+    #[test]
+    fn split_captures_only_an_interior_boundary_of_the_selected_beat() {
+        assert_eq!(
+            split_boundary(&rows(&[u64::MAX]), &NodeId::new("0").unwrap(), u64::MAX - 1),
+            None
+        );
+        let rows = rows(&[3, 4, 0, 2]);
+        for (cursor, expected) in [
+            (0, None),
+            (3, None),
+            (4, Some(1)),
+            (6, Some(3)),
+            (7, None),
+            (100, None),
+        ] {
+            assert_eq!(
+                split_boundary(&rows, &rows[1].id, cursor).map(|at| at.frames()),
+                expected
+            );
+        }
+        assert_eq!(split_boundary(&rows, &rows[2].id, 7), None);
+        assert_eq!(
+            split_boundary(&rows, &NodeId::new("missing").unwrap(), 4),
+            None
+        );
     }
 
     #[test]

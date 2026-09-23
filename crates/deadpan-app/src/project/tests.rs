@@ -81,6 +81,146 @@ fn edited(service: &ProjectService, workspace: &Workspace, edit: ProjectEdit) ->
 }
 
 #[test]
+fn native_split_refines_the_original_and_restores_it_through_durable_history() {
+    let scratch = tempfile::tempdir().unwrap();
+    let service = ProjectService::start(
+        Arc::new(|| {}),
+        Some(ProjectLibrary::from_documents(scratch.path().join("Documents")).unwrap()),
+    )
+    .unwrap();
+    service
+        .submit(ProjectRequest::CreateFromSource {
+            path: fixture("cfr-bframes.mp4"),
+        })
+        .unwrap();
+    let initialized = wait(&service, |update| {
+        update.import.as_ref().is_some_and(|status| {
+            matches!(status.stage, ImportStage::Complete | ImportStage::Failed)
+        })
+    });
+    assert!(initialized.error.is_none(), "{:?}", initialized.error);
+    let original = initialized.committed.unwrap().selected_node.unwrap();
+    let before = initialized.workspace.unwrap();
+    let first = edited(
+        &service,
+        &before,
+        ProjectEdit::Split {
+            node: original.clone(),
+            at: FrameDuration::new(37).unwrap(),
+        },
+    );
+    let right = first.committed.unwrap().selected_node.unwrap();
+    let first = first.workspace.unwrap();
+    let NodeKind::Sequence { children } = &first.document.nodes()[first.document.root()].kind
+    else {
+        panic!("root")
+    };
+    assert_eq!(children.len(), 2);
+    assert_eq!(children[1], right);
+    assert_eq!(first.plan.node_duration(&children[0]).unwrap().frames(), 37);
+    let stale = command(
+        &service,
+        edit_request(
+            &before,
+            ProjectEdit::Split {
+                node: original.clone(),
+                at: FrameDuration::new(20).unwrap(),
+            },
+        ),
+    );
+    assert!(stale.error.unwrap().contains("changed"));
+    assert_eq!(*stale.workspace.unwrap().document, *first.document);
+    for at in [0, 83, 84] {
+        let invalid = command(
+            &service,
+            edit_request(
+                &first,
+                ProjectEdit::Split {
+                    node: right.clone(),
+                    at: FrameDuration::new(at).unwrap(),
+                },
+            ),
+        );
+        assert!(invalid.error.is_some());
+        assert!(invalid.committed.is_none());
+        assert_eq!(*invalid.workspace.unwrap().document, *first.document);
+    }
+    let refined = edited(
+        &service,
+        &first,
+        ProjectEdit::Split {
+            node: right,
+            at: FrameDuration::new(29).unwrap(),
+        },
+    );
+    let selected = refined.committed.unwrap().selected_node.unwrap();
+    let refined = refined.workspace.unwrap();
+    let NodeKind::Sequence { children } = &refined.document.nodes()[refined.document.root()].kind
+    else {
+        panic!("root")
+    };
+    assert_eq!(children.len(), 3);
+    assert_eq!(children[2], selected);
+    assert_eq!(refined.document.nodes().len(), 7);
+    for workspace in [&first, &refined] {
+        assert_eq!(workspace.single_source, before.single_source);
+        assert_eq!(workspace.document.assets(), before.document.assets());
+        assert_eq!(
+            workspace.document.duration().unwrap(),
+            before.document.duration().unwrap()
+        );
+        for frame in 0..120 {
+            assert_eq!(
+                workspace
+                    .plan
+                    .picture(deadpan_core::ProjectFrame(frame))
+                    .unwrap()
+                    .picture,
+                before
+                    .plan
+                    .picture(deadpan_core::ProjectFrame(frame))
+                    .unwrap()
+                    .picture
+            );
+        }
+    }
+    command(&service, ProjectRequest::Close);
+    let reopened = command(&service, ProjectRequest::Open(before.path.clone()))
+        .workspace
+        .unwrap();
+    assert_eq!(*reopened.document, *refined.document);
+    let undone = command(
+        &service,
+        ProjectRequest::Undo {
+            expected_revision: reopened.document.revision_id().clone(),
+        },
+    )
+    .workspace
+    .unwrap();
+    assert_eq!(undone.document.nodes(), first.document.nodes());
+    let baseline = command(
+        &service,
+        ProjectRequest::Undo {
+            expected_revision: undone.document.revision_id().clone(),
+        },
+    )
+    .workspace
+    .unwrap();
+    assert_eq!(baseline.document.nodes(), before.document.nodes());
+    assert_eq!(baseline.single_source, before.single_source);
+    assert!(!baseline.can_undo);
+    let redone = command(
+        &service,
+        ProjectRequest::Redo {
+            expected_revision: baseline.document.revision_id().clone(),
+        },
+    )
+    .workspace
+    .unwrap();
+    assert_eq!(redone.document.nodes(), first.document.nodes());
+}
+
+#[test]
 fn repeat_setter_preserves_gap_and_operator_wrap_is_distinct_and_durable() {
     let scratch = tempfile::tempdir().unwrap();
     let path = scratch.path().join("repeat.deadpan");

@@ -6,7 +6,7 @@ Deadpan is a native macOS structural editor for massaging one original video int
 
 Read [the full specification](docs/spec/DEADPAN_SPEC.md) and [agent handoff](docs/spec/AGENT_HANDOFF.md) before feature work. The Markdown specification is normative; summaries here do not reduce its scope. [Requirements](docs/REQUIREMENTS.md) tracks DP-01 through DP-24 and Gates A through G. Keep code, tests, evidence, and remaining work current there.
 
-The current foundation includes validated beat documents, reversible structural commands, persistent marks with edit transforms, sparse per-play overrides and automatic nested occurrence isolation, stable repeat identities, exact indexed picture plans and boundary queries, SQLite project/history storage with schema migration, and a shared headless command entrypoint. The native UI creates one-Original projects in system Documents/Deadpan with an automatically initialized full-source baseline, opens legacy projects without changing their profile, registers audio into a separate sound catalog, reuses the whole Original, wraps/updates root-beat Repeats, deletes root beats, changes existing root Hold durations, navigates durable undo/redo, and inspects exact Source/Sequence frames through a persistent decoder and shared SDR GPU pipeline. It is not yet a usable video editor or release candidate. All product requirements remain open or partial. A button, mock worker, downloaded model, ignored test, or proposed target does not prove implementation.
+The current foundation includes validated beat documents, reversible structural commands, persistent marks with edit transforms, sparse per-play overrides and automatic nested occurrence isolation, stable repeat identities, exact indexed picture plans and boundary queries, SQLite project/history storage with schema migration, and a shared headless command entrypoint. The native UI creates one-Original projects in system Documents/Deadpan with an automatically initialized full-source baseline, opens legacy projects without changing their profile, registers audio into a separate sound catalog, reuses the whole Original, splits root beats at the cursor, wraps/updates root-beat Repeats, deletes root beats, changes existing root Hold durations, navigates durable undo/redo, and inspects exact Source/Sequence frames through a persistent decoder and shared SDR GPU pipeline. It is not yet a usable video editor or release candidate. All product requirements remain open or partial. A button, mock worker, downloaded model, ignored test, or proposed target does not prove implementation.
 
 ## Design philosophy
 
@@ -99,9 +99,9 @@ display color, editorial effects, playback or an encoded export path.
 
 Every persisted edit, undo, and redo gets a never-reused revision ID. Core inverse patches can restore exact fixture identity; the store rebases them onto fresh revisions to prevent stale commands becoming valid after undo. Store writes use one transaction for the revision, history, and cursor. Keep `.writer.lock` held for the writable store lifetime; read-only inspection and dry runs may coexist. Take live database snapshots through SQLite's backup API, never copy only an open main database file.
 
-Repeat play IDs are scoped by Repeat node and allocation revision, with an ordinal inside that allocation. Preserve surviving IDs through resizing and reorder; allocate fresh IDs for growth and inserted subtrees. Imported initial snapshots reserve their allocation names even after plays are removed. Keep compact runs bounded and never expand a repeat merely to seek. Core schema 13 retains these runs, marks, sparse overrides, generated Hold metadata, independent source mappings, audio edge policies and transparent Retime partition intent, and binds qualified assets to immutable source receipts. Database schemas 1 through 18 replay the complete chronology directly into the current schema on a consistent copy, compare every legacy snapshot/transaction, and promote through SQLite's backup transaction only after validation. Strict legacy adapters freeze nested provider vocabulary and reject new fields, commands, and unexpected mark or override changes. Preserve the pre-migration backup.
+Repeat play IDs are scoped by Repeat node and allocation revision, with an ordinal inside that allocation. Preserve surviving IDs through resizing and reorder; allocate fresh IDs for growth and inserted subtrees. Imported initial snapshots reserve their allocation names even after plays are removed. Keep compact runs bounded and never expand a repeat merely to seek. Core schema 14 retains these runs, marks, sparse overrides, generated Hold metadata, independent source mappings, audio edge policies and transparent Retime partition intent, and binds qualified assets to immutable source receipts. Database schemas 1 through 19 replay the complete chronology directly into the current schema on a consistent copy, compare every legacy snapshot/transaction, and promote through SQLite's backup transaction only after validation. Strict legacy adapters freeze nested provider vocabulary and reject new fields, commands, and unexpected mark or override changes. Preserve the pre-migration backup.
 
-Database schema 19 stores core schema 13 and retains operational generation requests,
+Database schema 20 stores core schema 14 and retains operational generation requests,
 plus an optional validated single-Original workflow profile. Use the dedicated
 `create_single_source` / `initialize_prepared_source` path to bind the full measured
 Original, basis and protected baseline atomically. Undo never crosses that baseline;
@@ -185,7 +185,7 @@ Ready bundles alone do not authorize an edit. See [acceptance](docs/GENERATION_A
 See [generated Hold semantics](docs/GENERATED_HOLDS.md).
 
 Original byte ownership is operational and separate from stream readiness.
-Database schema 19 retains content-keyed original records with monotonic location
+Database schema 20 retains content-keyed original records with monotonic location
 versions introduced in schema 10; earlier schemas gain an empty inventory. Use the
 shared descriptor-relative object engine for `Media/Originals` and
 `Media/Generated`. Managed originals try APFS clone, then verified copy; retain
@@ -287,6 +287,12 @@ The setup workflow's TypeScript/Bun/mitools/Biome defaults do not apply to this 
 
 The native UI submits typed project requests through one bounded service mailbox. Import preparation never owns SQLite. Cached insertion, root editing and history may proceed while a new import prepares; an uncached insertion preserves its captured revision/target and fails if stale. Root edits capture session and revision, reject hidden descendants, and resolve through core/store commands. Consume explicit committed revisions and resulting selection, including an explicit clear, never infer completion from progress text. Preserve these markers across background updates and deduplicate them by revision. Repeat setters retain omitted gap parameters; explicit wrap-repeat always nests. Cancel pending keyboard operators when context, pane, selection or revision changes. Keep Source context non-destructive. Preview requests carry their immutable workspace, so cancellation of an earlier open cannot strand a later frame. Construct native dialogs on the main application thread, poll without blocking, and retain text focus until same-frame text and IME events are processed.
 
+Keyboard routing precedes widget drawing. Use persistent `egui::Popup` state for
+menu ownership; the current-pass `Context::any_popup_open` is empty at that point.
+Help owns ordered input until Escape, including when it opens within one batch.
+Discard its pointer/IME prefix on closing, preserve the command suffix, and keep
+popup/dialog composition observation without consuming their input.
+
 ## Validation and delivery
 
 Transparent Retime partitions are unity output selections over retained child
@@ -294,9 +300,19 @@ domains, not ordinary authored trims. Keep allocation, source sampling support
 and envelope extent separate in every audio reader. Partition boundaries add no
 DSP stage or fade; Source/placement and ordinary Edit crops still constrain
 support. Preserve full short-envelope width, Preserve history and RoomTone phase.
-Only matching meaningful edges inherit Sequence/Repeat edge policy. This
-representation alone does not implement Split, mark fragment lineage or exact
-Hold resume anchors. See [audio partitions](docs/AUDIO_PARTITIONS.md).
+Only matching meaningful edges inherit Sequence/Repeat edge policy. Exact Hold
+resume anchors remain separate from pure Split. See [audio partitions](docs/AUDIO_PARTITIONS.md).
+
+`Split` retains full contexts and inserts sibling Partitions; refining a Partition
+reuses its child domain and keeps repeated cuts shallow. Keep logical mark IDs,
+map owner and host independently, and relocate concrete events once using their
+exact position in the old target clock and seam bias. Never use outer query
+visibility to choose their side. Preserve compact Repeat orders, override trees,
+accepted artifact identities and unresolved coordinates. Caller identity and
+binding budgets fail atomically. Native `s`/`:split` captures an interior local
+boundary and selects the committed right fragment. These zero-delta checks do
+not qualify shifted-fragment sample resume or automatic nested range planning.
+See [Split](docs/STRUCTURAL_SPLIT.md).
 
 Sparse play overrides are owned subtrees keyed by Repeat node and stable play
 identity. Use `ProjectDocument::children()` for structural traversal; the
@@ -338,7 +354,8 @@ bias before exact-coordinate deduplication. Named results retain every matching
 binding ordinal within the resolved revision; do not use the representative
 target to discard other attachment owners. See [mark bindings](docs/MARK_FRAGMENTS.md).
 Database-18 history uses frozen core 12; all earlier mark wires reject fragments,
-including empty arrays and null. Current schema 19 stores core 13.
+including empty arrays and null. Database 19 uses frozen core 13, including its
+multi-binding mark vocabulary but excluding Split. Current schema 20 stores core 14.
 
 Build the pinned FFmpeg developer prefix and export `DEADPAN_FFMPEG_PREFIX` as
 described in [Development](docs/DEVELOPMENT.md). Run the exact repository gate

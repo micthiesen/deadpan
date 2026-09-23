@@ -412,14 +412,14 @@ enum OldOccurrenceEdit {
         index: usize,
         subtree: OldSubtree,
     },
-    Delete,
+    Delete {},
     Group {
         start: usize,
         end: usize,
         id: NodeId,
         label: String,
     },
-    Ungroup,
+    Ungroup {},
     WrapRepeat {
         id: NodeId,
         plays: u32,
@@ -465,7 +465,7 @@ impl OldOccurrenceEdit {
                 index,
                 subtree: subtree.upgrade(),
             },
-            Self::Delete => OccurrenceEdit::Delete,
+            Self::Delete {} => OccurrenceEdit::Delete,
             Self::Group {
                 start,
                 end,
@@ -477,7 +477,7 @@ impl OldOccurrenceEdit {
                 id,
                 label,
             },
-            Self::Ungroup => OccurrenceEdit::Ungroup,
+            Self::Ungroup {} => OccurrenceEdit::Ungroup,
             Self::WrapRepeat {
                 id,
                 plays,

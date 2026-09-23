@@ -60,6 +60,7 @@ pub fn parse(input: &str) -> Result<Entry, String> {
             ))));
         }
         "insert" => Action::Insert,
+        "split" => Action::Edit(BeatEdit::Split),
         "delete" => Action::Edit(BeatEdit::Delete),
         "undo" => Action::Undo,
         "redo" => Action::Redo,
@@ -122,6 +123,7 @@ mod tests {
             "repeat 3 gap=120ms",
             "wrap-repeat 2 gain-step=3dB",
             "delete 2",
+            "split 12f",
             "undo anything",
             "help extra",
             "source extra",
@@ -160,6 +162,7 @@ mod tests {
     fn existing_commands_keep_their_explicit_actions() {
         for (input, expected) in [
             ("insert", Entry::Action(Action::Insert)),
+            ("split", Entry::Action(Action::Edit(BeatEdit::Split))),
             ("undo", Entry::Action(Action::Undo)),
             ("redo", Entry::Action(Action::Redo)),
             ("new", Entry::Action(Action::New)),

@@ -1,6 +1,6 @@
 #![cfg(any(target_os = "macos", target_os = "linux"))]
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::io::Cursor;
 use std::ops::Range;
 use std::path::PathBuf;
@@ -150,6 +150,21 @@ fn plan_with_asset(
     overrides: BTreeMap<NodeId, PlayOverrides>,
     asset_span: SourceSpan,
 ) -> Arc<RenderPlan> {
+    Arc::new(
+        RenderPlan::compile(&document_with_asset(
+            rate, children, nodes, overrides, asset_span,
+        ))
+        .unwrap(),
+    )
+}
+
+fn document_with_asset(
+    rate: FrameRate,
+    children: &[&str],
+    nodes: impl IntoIterator<Item = (&'static str, BeatNode)>,
+    overrides: BTreeMap<NodeId, PlayOverrides>,
+    asset_span: SourceSpan,
+) -> ProjectDocument {
     let empty = ProjectDocument::new(
         ProjectId::new("stage-project").unwrap(),
         RevisionId::new("stage-revision").unwrap(),
@@ -186,14 +201,219 @@ fn plan_with_asset(
         },
     )]))
     .unwrap();
-    let document = ProjectDocument::from_json(&wire.to_string()).unwrap();
-    Arc::new(RenderPlan::compile(&document).unwrap())
+    ProjectDocument::from_json(&wire.to_string()).unwrap()
 }
 
 struct FixtureProvider {
     source: PreparedSource,
+    revisions: BTreeSet<RevisionId>,
     calls: usize,
     cancel_on_call: bool,
+}
+
+fn split_command(
+    document: &ProjectDocument,
+    target: &NodeId,
+    at: i64,
+    name: &str,
+) -> ProjectDocument {
+    let request = CommandRequest {
+        project_id: document.project_id().clone(),
+        expected_revision: document.revision_id().clone(),
+        new_revision: RevisionId::new(name).unwrap(),
+        command: Command::Split {
+            node: target.clone(),
+            at: duration(at),
+            identities: SplitIdentities {
+                nodes: (0..document.nodes().len() + 4)
+                    .map(|index| id(&format!("{name}-{index}")))
+                    .collect(),
+            },
+        },
+    };
+    let transaction = apply(document, &request).unwrap();
+    assert_eq!(transaction.duration_delta, 0);
+    let divided = transaction.forward.apply(document).unwrap();
+    assert_eq!(transaction.inverse.apply(&divided).unwrap(), *document);
+    divided
+}
+
+#[test]
+fn actual_split_and_refinement_preserve_ntsc_44100_pcm_and_two_sample_envelopes() {
+    for tiny in [false, true] {
+        let rate = if tiny {
+            FrameRate::new(48_000, 1).unwrap()
+        } else {
+            FrameRate::new(30_000, 1001).unwrap()
+        };
+        let mut leaf = source(rate, if tiny { 2 } else { 4 }, 0..2);
+        let span = if tiny {
+            audio(0, 8197).span
+        } else {
+            let selected = audio_at_rate(100, 6100, 44_100);
+            let NodeKind::Source { source } = &mut leaf.kind else {
+                unreachable!()
+            };
+            source.audio = Some(selected.clone());
+            source.audio_mapping = SourceAudioMapping::Placement {
+                start: ratio(-1, 7),
+                frames: SourceAudioMapping::natural_rate(selected.span, rate)
+                    .unwrap()
+                    .duration_frames(duration(4))
+                    .unwrap(),
+            };
+            source.audio_offset = AudioSample(3);
+            audio_at_rate(0, 44_117, 44_100).span
+        };
+        let original =
+            document_with_asset(rate, &["source"], [("source", leaf)], BTreeMap::new(), span);
+        let first = split_command(&original, &id("source"), 1, "cut-one");
+        let divided = if tiny {
+            first
+        } else {
+            let NodeKind::Sequence { children } = &first.nodes()[first.root()].kind else {
+                unreachable!()
+            };
+            split_command(&first, &children[1], 1, "cut-two")
+        };
+        let whole_plan = Arc::new(RenderPlan::compile(&original).unwrap());
+        let divided_plan = Arc::new(RenderPlan::compile(&divided).unwrap());
+        let mut whole = StageAudio::new(Arc::clone(&whole_plan));
+        let mut split = StageAudio::new(Arc::clone(&divided_plan));
+        let mut provider = if tiny {
+            FixtureProvider::new()
+        } else {
+            FixtureProvider::from_fixture(
+                "pcm-mono-44100.wav",
+                AudioChannelLayout::Native {
+                    channels: 1,
+                    mask: 4,
+                },
+            )
+        };
+        provider.revisions.insert(divided.revision_id().clone());
+        let expected = faded_all(&mut whole, &mut provider, &[256, 3, 129]);
+        if tiny {
+            assert_eq!(
+                expected,
+                (0..2)
+                    .map(|at| fixture_sample(at).map(|value| value * 0.5))
+                    .collect::<Vec<_>>()
+            );
+        }
+        let visits = if tiny {
+            vec![(1, 1), (0, 1)]
+        } else {
+            vec![
+                (3203, 11),
+                (1601, 3),
+                (0, 129),
+                (6389, 17),
+                (1594, 200),
+                (3197, 17),
+            ]
+        };
+        let whole_sources = SequenceAudio::new(whole_plan);
+        let split_sources = SequenceAudio::new(divided_plan);
+        for (start, count) in visits {
+            let actual = split
+                .read_edge_faded(
+                    &mut provider,
+                    AudioSample(start),
+                    count,
+                    TIMEOUT,
+                    &AtomicBool::new(false),
+                )
+                .unwrap();
+            assert_eq!(
+                actual.samples,
+                expected[start as usize..start as usize + count as usize]
+            );
+            let before = whole_sources
+                .read_sources(
+                    &mut provider,
+                    AudioSample(start),
+                    count,
+                    TIMEOUT,
+                    &AtomicBool::new(false),
+                )
+                .unwrap();
+            let after = split_sources
+                .read_sources(
+                    &mut provider,
+                    AudioSample(start),
+                    count,
+                    TIMEOUT,
+                    &AtomicBool::new(false),
+                )
+                .unwrap();
+            assert_eq!(after.samples, before.samples);
+        }
+        assert_eq!(
+            faded_all(&mut split, &mut provider, &[1, 199, 37]),
+            expected
+        );
+    }
+}
+
+#[test]
+fn actual_split_preserves_mixed_retime_and_room_tone_history_when_suffix_is_read_first() {
+    let rate = FrameRate::new(48_000, 1).unwrap();
+    for room in [false, true] {
+        for (inner, outer) in [
+            (PitchPolicy::Preserve, PitchPolicy::FollowSpeed),
+            (PitchPolicy::FollowSpeed, PitchPolicy::Preserve),
+        ] {
+            let original = document_with_asset(
+                rate,
+                &["outer"],
+                [
+                    (
+                        "leaf",
+                        if room {
+                            room_tone(2048, audio(512, 833))
+                        } else {
+                            source(rate, 2048, 512..2560)
+                        },
+                    ),
+                    ("inner", retime("leaf", 3072, 0..2048, inner)),
+                    ("outer", retime("inner", 2048, 0..3072, outer)),
+                ],
+                BTreeMap::new(),
+                audio(0, 8197).span,
+            );
+            let first = split_command(&original, &id("outer"), 1001, "mixed-one");
+            let NodeKind::Sequence { children } = &first.nodes()[first.root()].kind else {
+                unreachable!()
+            };
+            let divided = split_command(&first, &children[1], 333, "mixed-two");
+            let mut whole = StageAudio::new(Arc::new(RenderPlan::compile(&original).unwrap()));
+            let mut split = StageAudio::new(Arc::new(RenderPlan::compile(&divided).unwrap()));
+            let mut provider = FixtureProvider::new();
+            provider.revisions.insert(divided.revision_id().clone());
+            let expected = faded_all(&mut whole, &mut provider, &[127, 256, 3]);
+            for (start, count) in [(1334, 127), (1001, 127), (987, 41), (0, 193), (1987, 61)] {
+                let actual = split
+                    .read_edge_faded(
+                        &mut provider,
+                        AudioSample(start),
+                        count,
+                        TIMEOUT,
+                        &AtomicBool::new(false),
+                    )
+                    .unwrap();
+                assert_eq!(
+                    actual.samples,
+                    expected[start as usize..start as usize + count as usize],
+                    "room {room}, inner {inner:?}, outer {outer:?}"
+                );
+            }
+            assert_eq!(
+                faded_all(&mut split, &mut provider, &[1, 53, 256]),
+                expected
+            );
+        }
+    }
 }
 
 impl FixtureProvider {
@@ -227,6 +447,7 @@ impl FixtureProvider {
         let source = PreparedSource::with_layout(session, &expected, layout, &cancelled).unwrap();
         Self {
             source,
+            revisions: BTreeSet::from([RevisionId::new("stage-revision").unwrap()]),
             calls: 0,
             cancel_on_call: false,
         }
@@ -242,7 +463,10 @@ impl AudioSourceProvider for FixtureProvider {
         cancelled: &AtomicBool,
     ) -> Result<&PreparedSource, PreparationError> {
         assert_eq!(*project, ProjectId::new("stage-project").unwrap());
-        assert_eq!(*revision, RevisionId::new("stage-revision").unwrap());
+        assert!(
+            self.revisions.contains(revision),
+            "unqualified fixture revision: {revision:?}"
+        );
         assert_eq!(*asset, AssetId::new("media").unwrap());
         assert!(!cancelled.load(Ordering::Relaxed));
         self.calls += 1;

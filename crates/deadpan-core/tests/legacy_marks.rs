@@ -117,6 +117,54 @@ fn edit_wire(version: u32, edit: &EditTransaction) -> Value {
 }
 
 #[test]
+fn bound_mark_state_rejects_unrecognized_payloads_in_documents_and_history() {
+    assert_eq!(
+        serde_json::to_value(MarkState::Bound).unwrap(),
+        json!({"type":"bound"})
+    );
+    for adapter in ADAPTERS
+        .into_iter()
+        .chain(std::iter::once(adapter!(13, legacy_v13)))
+    {
+        let old = wire(adapter.version);
+        let document = (adapter.upgrade)(&old.to_string()).unwrap();
+        let edit = apply(&document, &mark_request(&document)).unwrap();
+        for field in ["future", "reason", "fragments"] {
+            let mut forged = old.clone();
+            forged["marks"]["cue"]["state"][field] = Value::Null;
+            assert!(
+                (adapter.upgrade)(&forged.to_string()).is_err(),
+                "schema {}: {field}",
+                adapter.version
+            );
+            for direction in ["forward", "inverse"] {
+                for side in ["before", "after"] {
+                    let mut patch = edit_wire(adapter.version, &edit);
+                    patch[direction]["marks"]["cue"][side]["state"][field] = Value::Null;
+                    assert!(
+                        (adapter.matches_edit)(&patch.to_string(), &edit).is_err(),
+                        "schema {}: {direction}.{side}.{field}",
+                        adapter.version
+                    );
+                }
+            }
+        }
+    }
+    let mut modern = wire(DOCUMENT_SCHEMA_VERSION);
+    modern["marks"]["cue"]["fragments"] = json!([fragment()]);
+    let before = ProjectDocument::from_json(&modern.to_string()).unwrap();
+    for state in ["/marks/cue/state", "/marks/cue/fragments/0/state"] {
+        let mut forged = modern.clone();
+        forged.pointer_mut(state).unwrap()["future"] = Value::Null;
+        assert!(ProjectDocument::from_json(&forged.to_string()).is_err());
+    }
+    assert_eq!(
+        ProjectDocument::from_json(&before.to_json().unwrap()).unwrap(),
+        before
+    );
+}
+
+#[test]
 fn every_old_mark_document_rejects_fragments_even_empty_or_null() {
     for adapter in ADAPTERS {
         let old = wire(adapter.version);

@@ -3,9 +3,9 @@
 Core schema 12 adds `RetimePurpose::Partition`. It exposes a selected interval of
 its retained child at unity speed while preserving the child's audio processing
 and envelope context. This is an implemented building block for structural
-splices. It is not the Split command, arbitrary-boundary Hold insertion, or an
-application editing control. Those still require mark fragment scope, occurrence
-handling, exact resume anchors, and host integration.
+splices. The later [Split command](STRUCTURAL_SPLIT.md) adds mark binding and
+occurrence handling plus native entry. Arbitrary-boundary Hold insertion still
+requires exact resume anchors and host integration.
 
 ## Authored intent
 
@@ -47,7 +47,9 @@ envelope, not each fragment's newly shortened allocation.
 
 ## Compatibility and persistence
 
-Database schema 19 stores core 13 and its [logical mark bindings](MARK_FRAGMENTS.md).
+Database schema 19 introduced core 13 and its [logical mark bindings](MARK_FRAGMENTS.md).
+Current core 14/database 20 add [Split](STRUCTURAL_SPLIT.md), using this retained
+context boundary without changing the old Partition representation.
 Schema 18 replays through frozen core 12, retaining Partition purpose and one
 binding per old mark. Schemas 16 and 17 replay their complete
 core-11 history through the frozen `legacy_v11` adapter. Schema 17's workflow

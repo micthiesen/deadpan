@@ -146,3 +146,10 @@ visible-pane cycling and command routing testable headlessly. Use live native
 review for visual comparison, focus/IME, keyboard navigation and accessibility.
 Record the build identity, window size, fixture, observed deviations and actual
 checks; a screenshot alone does not establish interaction correctness.
+
+[The Split review](../qualification/structural-split-2026-09-23.md) extends this
+workspace with visible `s` hints, an inspector action and truthful Fragment cards.
+The key reference supports `j/k`, arrows, page keys and Home/End, with a persistent
+scrolling hint. Preserve these discoverable actions as the larger editing grammar
+arrives. The saved image boards remain the composition target; this small command
+addition does not replace their single-Original layout.
