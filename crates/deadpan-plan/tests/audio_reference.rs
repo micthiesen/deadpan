@@ -3,8 +3,8 @@ use std::collections::BTreeMap;
 use deadpan_core::*;
 use deadpan_plan::{
     AudioBoundaryRule, AudioContent, AudioQueryLimits, AudioReferencePlan, AudioSignalContent,
-    PlanError, ReferenceAudioContent, ReferenceAudioSpan, ReferenceSample, RenderPlan,
-    SignalSample, SilenceReason,
+    PlanError, ReferenceAudioContent, ReferenceAudioSpan, ReferenceProcessingKind, ReferenceSample,
+    RenderPlan, SignalSample, SilenceReason,
 };
 
 fn id(name: &str) -> NodeId {
@@ -384,6 +384,25 @@ fn tiny_zero_allocated_leaves_and_source_placement_remain_explicit() {
             ),
         ]
     );
+    let before = plan
+        .root_clock()
+        .processing_domain_at(ReferenceSample(1), Default::default())
+        .unwrap();
+    let audible = plan
+        .root_clock()
+        .processing_domain_at(ReferenceSample(2), Default::default())
+        .unwrap();
+    let after = plan
+        .root_clock()
+        .processing_domain_at(ReferenceSample(5), Default::default())
+        .unwrap();
+    assert_eq!(before.instance(), audible.instance());
+    assert_eq!(before.kind(), after.kind());
+    assert_eq!(before.meaningful_samples(), samples(0, 2));
+    assert_eq!(audible.meaningful_samples(), samples(2, 5));
+    assert_eq!(after.meaningful_samples(), samples(5, 10));
+    assert!(!before.same_domain(&audible));
+    assert!(!before.same_domain(&after));
 }
 
 fn edit(doc: &ProjectDocument, revision: &str, command: Command) -> ProjectDocument {
@@ -400,6 +419,296 @@ fn edit(doc: &ProjectDocument, revision: &str, command: Command) -> ProjectDocum
     .forward
     .apply(doc)
     .unwrap()
+}
+
+#[test]
+fn ntsc_resume_keeps_later_domains_first_sample_and_composes_active_phase() {
+    let rate = FrameRate::new(30_000, 1001).unwrap();
+    let doc = document(rate, &["a", "b"], vec![("a", source(2)), ("b", source(2))]);
+    let plan = compile(&doc);
+    let clock = plan.root_clock();
+    let a = clock
+        .processing_domain_at(ReferenceSample(1602), Default::default())
+        .unwrap();
+    let b = clock
+        .processing_domain_at(ReferenceSample(3203), Default::default())
+        .unwrap();
+    assert_eq!(a.instance(), &instance("a"));
+    assert_eq!(a.meaningful_samples(), samples(0, 3203));
+    assert_eq!(b.instance(), &instance("b"));
+    assert_eq!(b.meaningful_samples(), samples(3203, 6406));
+    assert!(!a.same_domain(&b));
+
+    // Insert one frame at frame one. Round absolute endpoints once: the cut
+    // moves 1602 -> 3203, but the next genuine domain moves 3203 -> 4805.
+    let resumed_a = a
+        .place_root(AudioSample(0))
+        .unwrap()
+        .resume(AudioSample(1602), AudioSample(3203))
+        .unwrap();
+    let placed_b = b.place_root(AudioSample(4805)).unwrap();
+    assert_eq!(
+        resumed_a.reference_position(AudioSample(3203)).unwrap(),
+        ratio(1602, 1)
+    );
+    assert_eq!(
+        placed_b.reference_position(AudioSample(4805)).unwrap(),
+        ratio(3203, 1)
+    );
+    // A blanket shift would lose B's first sample. A's continued map is
+    // intentionally unclamped, so the discrepancy is observable here.
+    assert_eq!(
+        resumed_a.reference_position(AudioSample(4805)).unwrap(),
+        ratio(3204, 1)
+    );
+    assert!(resumed_a.domain().same_domain(&a));
+    assert!(placed_b.domain().same_domain(&b));
+
+    let long = document(rate, &["a"], vec![("a", source(8))]);
+    let long_plan = compile(&long);
+    let long_a = long_plan
+        .root_clock()
+        .processing_domain_at(ReferenceSample(1602), Default::default())
+        .unwrap();
+    let first = long_a
+        .place_root(AudioSample(0))
+        .unwrap()
+        .resume(AudioSample(1602), AudioSample(3203))
+        .unwrap();
+    let second = first.resume(AudioSample(4805), AudioSample(6406)).unwrap();
+    assert_eq!(second.output_anchor(), AudioSample(6406));
+    assert_eq!(second.reference_at_anchor(), ratio(3204, 1));
+    for (current, old) in [(6405, 3203), (6406, 3204), (7000, 3798)] {
+        assert_eq!(
+            second.reference_position(AudioSample(current)).unwrap(),
+            ratio(old, 1)
+        );
+    }
+    // Resuming the current mapping must not recompute phase from frame two.
+    assert_ne!(second.reference_at_anchor(), ratio(3203, 1));
+}
+
+#[test]
+fn processing_domains_keep_preserve_opaque_and_preparation_clocks_distinct() {
+    let doc = document(
+        FrameRate::new(30_000, 1001).unwrap(),
+        &["preserve"],
+        vec![
+            (
+                "preserve",
+                retime("sequence", 6, 0, 12, PitchPolicy::Preserve),
+            ),
+            (
+                "sequence",
+                BeatNode::sequence("Context", vec![id("a"), id("quiet"), id("tone"), id("b")]),
+            ),
+            ("a", source(4)),
+            ("quiet", hold(2, HoldAudio::Silence)),
+            ("tone", hold(2, HoldAudio::RoomTone { source: audio() })),
+            ("b", source(4)),
+        ],
+    );
+    let plan = compile(&doc);
+    let root = plan.root_clock();
+    let first = root
+        .processing_domain_at(
+            ReferenceSample(0),
+            AudioQueryLimits {
+                maximum_spans: 1,
+                maximum_work: 3,
+            },
+        )
+        .unwrap();
+    assert_eq!(first.lookup().visited_nodes, 2);
+    assert_eq!(first.instance(), &instance("preserve"));
+    assert_eq!(
+        first.kind(),
+        &ReferenceProcessingKind::Preserve {
+            selection: ratio(0, 1)..ratio(12, 1),
+            duration: duration(6),
+            rate: ratio(2, 1),
+        }
+    );
+    assert_eq!(first.meaningful_samples(), samples(0, 9610));
+    for sample in [3203, 4805, 6406, 9609] {
+        let domain = root
+            .processing_domain_at(ReferenceSample(sample), Default::default())
+            .unwrap();
+        assert!(first.same_domain(&domain));
+        assert_eq!(domain.allocated_samples(), samples(0, 9610));
+    }
+    let policy = root.query(samples(3203, 3204), Default::default()).unwrap();
+    assert_eq!(
+        policy.spans[0].content,
+        ReferenceAudioContent::Silence {
+            reason: SilenceReason::SilentHold
+        }
+    );
+
+    let input = plan
+        .preserve_input_clock(&instance("preserve"))
+        .unwrap()
+        .processing_domain_at(ReferenceSample(6407), Default::default())
+        .unwrap();
+    assert_eq!(input.instance(), &instance("quiet"));
+    assert_eq!(
+        input.kind(),
+        &ReferenceProcessingKind::Leaf {
+            content: ReferenceAudioContent::Silence {
+                reason: SilenceReason::SilentHold
+            },
+        }
+    );
+    let output = plan
+        .preserve_output_clock(&instance("preserve"))
+        .unwrap()
+        .processing_domain_at(ReferenceSample(0), Default::default())
+        .unwrap();
+    assert_eq!(output.instance(), first.instance());
+    assert!(!output.same_domain(&first));
+    assert!(!input.same_domain(&output));
+    for domain in [&input, &output] {
+        assert!(matches!(
+            domain.place_root(AudioSample(0)),
+            Err(PlanError::InvalidPlan(_))
+        ));
+    }
+
+    // Even equal serialized layouts compiled twice have separate ownership.
+    let foreign = compile(&doc);
+    let foreign_domain = foreign
+        .root_clock()
+        .processing_domain_at(ReferenceSample(0), Default::default())
+        .unwrap();
+    assert_eq!(foreign_domain.kind(), first.kind());
+    assert_eq!(
+        foreign_domain.meaningful_samples(),
+        first.meaningful_samples()
+    );
+    assert!(!foreign_domain.same_domain(&first));
+}
+
+#[test]
+fn partition_allocation_keeps_full_context_but_edit_crops_are_meaningful() {
+    for purpose in [RetimePurpose::Partition, RetimePurpose::Edit] {
+        let mut selection = retime("a", 2, 2, 4, PitchPolicy::Preserve);
+        let NodeKind::Retime {
+            purpose: selected_purpose,
+            ..
+        } = &mut selection.kind
+        else {
+            unreachable!()
+        };
+        *selected_purpose = purpose;
+        let doc = document(
+            FrameRate::new(48_000, 1).unwrap(),
+            &["selection"],
+            vec![("selection", selection), ("a", source(6))],
+        );
+        let plan = compile(&doc);
+        let domain = plan
+            .root_clock()
+            .processing_domain_at(ReferenceSample(1), Default::default())
+            .unwrap();
+        assert_eq!(domain.instance(), &instance("a"));
+        assert_eq!(domain.extent(), ratio(0, 1)..ratio(2, 1));
+        assert_eq!(domain.allocated_samples(), samples(0, 2));
+        assert_eq!(domain.local_at(ReferenceSample(1)).unwrap(), ratio(3, 1));
+        assert_eq!(domain.local_at(ReferenceSample(-3)).unwrap(), ratio(-1, 1));
+        let meaningful = if purpose == RetimePurpose::Partition {
+            samples(-2, 4)
+        } else {
+            samples(0, 2)
+        };
+        assert_eq!(domain.meaningful_samples(), meaningful);
+        assert_eq!(
+            domain.meaningful_extent(),
+            ratio(meaningful.start.0.into(), 1)..ratio(meaningful.end.0.into(), 1)
+        );
+        let placed = domain.place_root(AudioSample(10)).unwrap();
+        assert_eq!(
+            placed.reference_position(AudioSample(10)).unwrap(),
+            ratio(meaningful.start.0.into(), 1)
+        );
+    }
+
+    let doc = document(
+        FrameRate::new(48_000, 1).unwrap(),
+        &["a"],
+        vec![("a", source(6))],
+    );
+    let split = edit(
+        &doc,
+        "split",
+        Command::Split {
+            node: id("a"),
+            at: duration(2),
+            identities: SplitIdentities {
+                nodes: (0..8).map(|n| id(&format!("split-{n}"))).collect(),
+            },
+        },
+    );
+    let plan = compile(&split);
+    let left = plan
+        .root_clock()
+        .processing_domain_at(ReferenceSample(1), Default::default())
+        .unwrap();
+    let right = plan
+        .root_clock()
+        .processing_domain_at(ReferenceSample(2), Default::default())
+        .unwrap();
+    assert_eq!(left.allocated_samples(), samples(0, 2));
+    assert_eq!(right.allocated_samples(), samples(2, 6));
+    assert_eq!(left.meaningful_samples(), samples(0, 6));
+    assert_eq!(right.meaningful_samples(), samples(0, 6));
+    assert_eq!(
+        left.local_at(ReferenceSample(2)).unwrap(),
+        right.local_at(ReferenceSample(2)).unwrap()
+    );
+    // Split lineage is a separate future binding responsibility. Similar PCM
+    // clocks do not make copied physical contexts interchangeable.
+    assert_ne!(left.instance(), right.instance());
+    assert!(!left.same_domain(&right));
+}
+
+#[test]
+fn retained_root_maps_keep_wide_exhausted_coordinates_and_fractional_phase() {
+    let doc = document(
+        FrameRate::new(48_000, 1).unwrap(),
+        &["a"],
+        vec![("a", source(2))],
+    );
+    let plan = compile(&doc);
+    let domain = plan
+        .root_clock()
+        .processing_domain_at(ReferenceSample(0), Default::default())
+        .unwrap();
+    let map = domain.place_root(AudioSample(i64::MIN)).unwrap();
+    let width = i128::from(i64::MAX) - i128::from(i64::MIN);
+    assert_eq!(
+        map.reference_position(AudioSample(i64::MAX)).unwrap(),
+        ratio(width, 1)
+    );
+    let resumed = map
+        .resume(AudioSample(i64::MAX), AudioSample(i64::MIN))
+        .unwrap();
+    assert_eq!(
+        resumed.reference_position(AudioSample(i64::MAX)).unwrap(),
+        ratio(width * 2, 1)
+    );
+    assert_eq!(
+        domain.local_at(ReferenceSample(i64::MIN)).unwrap(),
+        ratio(i128::from(i64::MIN), 1)
+    );
+    let normal = domain.place_root(AudioSample(7)).unwrap();
+    assert_eq!(
+        normal.reference_position_at(ratio(15, 2)).unwrap(),
+        ratio(1, 2)
+    );
+    assert_eq!(
+        normal.reference_position_at(ratio(13, 2)).unwrap(),
+        ratio(-1, 2)
+    );
 }
 
 #[test]
@@ -557,6 +866,38 @@ fn billion_play_reference_keeps_old_order_gap_identity_after_current_edits() {
     assert!(expected.lookup.iteration_run_comparisons <= 5);
     assert_eq!(expected.spans[1].content, ReferenceAudioContent::RoomTone);
     assert_eq!(expected.spans[1].gap_after, iterations.at(999_999_997));
+    let domains = [1_999_999_994, 1_999_999_995, 1_999_999_996].map(|sample| {
+        clock
+            .processing_domain_at(
+                ReferenceSample(sample),
+                AudioQueryLimits {
+                    maximum_spans: 1,
+                    maximum_work: 20,
+                },
+            )
+            .unwrap()
+    });
+    assert_eq!(
+        domains[0].instance().repeats[0].iteration,
+        iterations.at(999_999_997).unwrap()
+    );
+    assert_eq!(domains[1].gap_after(), iterations.at(999_999_997).as_ref());
+    assert_eq!(domains[1].instance(), &instance("repeat"));
+    assert_eq!(
+        domains[1].kind(),
+        &ReferenceProcessingKind::Leaf {
+            content: ReferenceAudioContent::RoomTone
+        }
+    );
+    assert_eq!(
+        domains[1].meaningful_samples(),
+        samples(1_999_999_995, 1_999_999_996)
+    );
+    assert!(!domains[0].same_domain(&domains[2]));
+    for domain in &domains {
+        assert!(domain.lookup().visited_nodes <= 3);
+        assert!(domain.lookup().iteration_run_comparisons <= 1);
+    }
     let split = edit(
         &doc,
         "split",
@@ -586,6 +927,24 @@ fn billion_play_reference_keeps_old_order_gap_identity_after_current_edits() {
             destination: 0,
         },
     );
+    let moved_plan = compile(&moved);
+    let moved_first = moved_plan
+        .root_clock()
+        .processing_domain_at(ReferenceSample(0), Default::default())
+        .unwrap();
+    assert_eq!(
+        moved_first.instance().repeats[0].iteration,
+        iterations.at(999_999_999).unwrap()
+    );
+    let old_last = clock
+        .processing_domain_at(ReferenceSample(1_999_999_998), Default::default())
+        .unwrap();
+    assert_eq!(old_last.instance().repeats, moved_first.instance().repeats);
+    assert_eq!(
+        old_last.meaningful_samples(),
+        samples(1_999_999_998, 1_999_999_999)
+    );
+    assert!(!old_last.same_domain(&moved_first));
     let shrunk = edit(
         &moved,
         "shrink",
@@ -665,6 +1024,33 @@ fn sparse_override_clock_validates_its_effective_play_and_retains_partition_allo
     let query = clock.query(samples(0, 1), Default::default()).unwrap();
     assert_eq!(query.spans[0].instance.node, id("quiet"));
     assert_eq!(query.spans[0].instance.repeats, path.repeats);
+    let root = frozen.root_clock();
+    let overridden_domain = root
+        .processing_domain_at(ReferenceSample(4000), Default::default())
+        .unwrap();
+    assert_eq!(overridden_domain.instance(), &path);
+    assert_eq!(overridden_domain.meaningful_samples(), samples(4000, 10000));
+    assert!(matches!(
+        overridden_domain.kind(),
+        ReferenceProcessingKind::Preserve { .. }
+    ));
+    assert_eq!(
+        overridden_domain.local_at(ReferenceSample(4000)).unwrap(),
+        ExactRatio::ZERO
+    );
+    let first_default = root
+        .processing_domain_at(ReferenceSample(0), Default::default())
+        .unwrap();
+    let last_default = root
+        .processing_domain_at(ReferenceSample(10000), Default::default())
+        .unwrap();
+    assert_eq!(first_default.instance().node, last_default.instance().node);
+    assert_ne!(
+        first_default.instance().repeats,
+        last_default.instance().repeats
+    );
+    assert!(!first_default.same_domain(&last_default));
+    assert!(!first_default.same_domain(&overridden_domain));
     let wrong = InstancePath {
         node: id("default"),
         ..path
@@ -743,6 +1129,22 @@ fn invalid_owner_paths_ranges_and_budgets_fail_before_results() {
     selected.repeats[0].iteration.ordinal = 2;
     assert!(plan.preserve_input_clock(&selected).is_err());
     let root = plan.root_clock();
+    for sample in [-1, 8000, i64::MAX] {
+        assert!(matches!(
+            root.processing_domain_at(ReferenceSample(sample), Default::default()),
+            Err(PlanError::AudioRangeOutOfRange)
+        ));
+    }
+    assert!(matches!(
+        root.processing_domain_at(
+            ReferenceSample(0),
+            AudioQueryLimits {
+                maximum_spans: 1,
+                maximum_work: 1
+            }
+        ),
+        Err(PlanError::AudioQueryLimit("structural work"))
+    ));
     for range in [samples(-1, 0), samples(2, 1), samples(0, 8001)] {
         assert!(matches!(
             root.query(range, Default::default()),
@@ -785,6 +1187,10 @@ fn invalid_owner_paths_ranges_and_budgets_fail_before_results() {
             maximum_work: 65_537,
         },
     ] {
+        assert!(matches!(
+            root.processing_domain_at(ReferenceSample(0), limits),
+            Err(PlanError::InvalidAudioLimits)
+        ));
         assert!(matches!(
             root.query(samples(0, 1), limits),
             Err(PlanError::InvalidAudioLimits)

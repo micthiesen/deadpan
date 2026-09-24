@@ -865,3 +865,86 @@ fn old_no_input_regions_keep_real_preserve_decay_after_root_to_signal_transfer()
         assert!(actual.suppressed.is_empty());
     }
 }
+
+#[test]
+fn retained_domain_resume_drives_fractional_transfer_into_another_real_preserve() {
+    let reference = reference(InputGap::SilentHold);
+    let domain = reference
+        .root_clock()
+        .processing_domain_at(ReferenceSample(1602), Default::default())
+        .unwrap();
+    assert!(matches!(
+        domain.kind(),
+        deadpan_plan::ReferenceProcessingKind::Preserve { .. }
+    ));
+    let resumed = domain
+        .place_root(AudioSample(0))
+        .unwrap()
+        .resume(boundary(1), boundary(2))
+        .unwrap()
+        .resume(boundary(3), boundary(4))
+        .unwrap();
+    assert_eq!(
+        resumed.reference_position(boundary(4)).unwrap(),
+        ExactRatio::integer(3204)
+    );
+
+    // Full intrinsic DSP history is retained. The old root's explicit silent
+    // interval differs from its prepared-point interval at sample 3203.
+    let carrier = Carrier {
+        start: 0,
+        samples: first_preserve(&reference),
+        suppressed: vec![roots(3203, 4805)],
+    };
+    assert!(carrier.samples[3203].iter().any(|v| v.abs() > 1e-5));
+    let mapping = Mapping {
+        root_at_anchor: resumed
+            .reference_position_at(ExactRatio::integer(6406).checked_add(ratio(1, 3)).unwrap())
+            .unwrap(),
+        anchor: SignalSample(10_000),
+        step: ratio(147, 160),
+        output: signals(10_000, 13_000),
+    };
+    // Independent expected anchor, not reconstructed from the current picture
+    // frame or obtained from the domain map under test.
+    let expected_mapping = Mapping {
+        root_at_anchor: ratio(9613, 3),
+        ..mapping.clone()
+    };
+    assert_eq!(mapping.root_at_anchor, expected_mapping.root_at_anchor);
+    let transfer = mapping.transfer(&carrier);
+    let mut actual = vec![[0.0; 2]; 3000];
+    let mut expected = actual.clone();
+    let mut wrong = actual.clone();
+    let wrong_mapping = Mapping {
+        root_at_anchor: ratio(9610, 3),
+        ..mapping.clone()
+    };
+    // Suffix-first reads force the map to be independent of request order.
+    for offset in (0..3000).step_by(173).collect::<Vec<_>>().into_iter().rev() {
+        let frames = (3000 - offset).min(173) as u32;
+        let start = SignalSample(10_000 + offset as i64);
+        let block = transfer
+            .render(start, frames, &AtomicBool::new(false), |at, count| {
+                Ok::<_, SignalTransferError>(carrier.read(at, count))
+            })
+            .unwrap();
+        let oracle = oracle(&carrier, &expected_mapping, start, frames, true);
+        assert_eq!(block.samples, oracle.0);
+        assert_eq!(block.suppressed, oracle.1);
+        actual[offset..offset + frames as usize].copy_from_slice(&block.samples);
+        expected[offset..offset + frames as usize].copy_from_slice(&oracle.0);
+        wrong[offset..offset + frames as usize]
+            .copy_from_slice(&self::oracle(&carrier, &wrong_mapping, start, frames, true).0);
+    }
+    let rate = StretchRate::new(6, 5).unwrap();
+    let after = stretch(&actual, 2500, rate);
+    assert_eq!(after, stretch(&expected, 2500, rate));
+    let wrong = stretch(&wrong, 2500, rate);
+    assert!(
+        after
+            .iter()
+            .zip(wrong)
+            .any(|(a, b)| (a[0] - b[0]).abs() > 1e-6)
+    );
+}

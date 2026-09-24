@@ -134,6 +134,16 @@ The StageAudio entrypoint shares preparation work, provenance observations and
 one deadline across the complete halo. This supplies the conversion operation,
 not the authored binding or lifecycle rules that select its retained signal.
 
+The reference plan now provides borrowed physical processing-domain lookup,
+separate visible/meaningful extents and unit-rate root resume maps. Lookup stops
+at opaque Preserve and remains bounded for compact repeats. Tests distinguish
+the active resumed domain from later domains' independent starts and exercise
+composed phase through another real DSP stage. This still needs logical audio
+lineage: pure Split copies currently have distinct aliases and no persisted
+relationship joining their continuous signal. A physical alias match cannot
+carry a resume across those copies, and media/timing equality cannot invent that
+relationship. See [the reference contract](AUDIO_REFERENCE.md).
+
 ## Structural and mark requirements
 
 Resolve boundary coordinates through `RepeatLayout`, using the right-hand object

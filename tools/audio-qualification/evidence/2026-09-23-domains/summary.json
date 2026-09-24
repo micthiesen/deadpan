@@ -1,0 +1,16 @@
+{
+  "passed": 1026,
+  "failed": 0,
+  "ignored": 0,
+  "source_and_fixture_hash_count": 335,
+  "sources_unchanged_through_gate": true,
+  "reviews": {
+    "general": "no findings",
+    "clock_and_domain_semantics": "no findings"
+  },
+  "document_verification": {
+    "design_images_and_prompts": 8,
+    "unchanged_original_spec_files": 5,
+    "changed_markdown_links": "pass"
+  }
+}

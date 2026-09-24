@@ -55,6 +55,16 @@ records 1,021 passing tests, the full gate and independent review. Authored live
 compact Repeat lifecycle, atomic Hold insertion and application playback remain
 open. This conversion does not change core 14/database 20 or complete a gate.
 
+[Physical reference-domain lookup](AUDIO_REFERENCE.md#physical-processing-domains-and-root-maps)
+now retains opaque Preserve and meaningful context independently of visible
+Partition allocation. Borrowed root maps compose the active cut and independently
+anchor later domains. Tests cover NTSC phase, compact repeats, clock ownership,
+real canonical DSP and fractional transfer. This does not author an insertion:
+logical audio lineage across Split copies, persisted bindings and live edit
+lifecycle remain required. [Qualification](qualification/audio-domains-2026-09-23.md)
+records 1,026 passing tests, the full gate and independent review; no requirement
+or gate changes status.
+
 Current measured evidence: [editing foundation verification](FOUNDATION_VERIFICATION.md), [picture plan and migration verification](PLAN_MIGRATION_VERIFICATION.md), [exact boundary verification](ANCHOR_VERIFICATION.md), [persistent mark verification](MARK_VERIFICATION.md), [sparse override verification](OVERRIDE_VERIFICATION.md), [nested occurrence verification](OCCURRENCE_VERIFICATION.md), [native media qualification](qualification/media-2026-09-20.md), [compatible FFmpeg/Rust qualification](qualification/media-compatible-2026-09-20.md), [audio candidate qualification](qualification/audio-2026-09-20.md), and [canonical audio qualification](qualification/audio-canonical-2026-09-20.md).
 
 The [native host conversion qualification](qualification/media-host-conversion-2026-09-21.md)

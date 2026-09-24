@@ -326,6 +326,15 @@ These APIs do not yet persist a Hold binding. Future bindings must transform
 live ownership separately from frozen placement and replace an edited policy's
 retained contribution. See [audio references](docs/AUDIO_REFERENCE.md).
 
+Reference processing lookup stops at the first nonunity Preserve and retains
+meaningful context separately from visible allocation. Borrowed physical-domain
+identity includes its plan and clock; equal aliases across plans are not equal
+domains. Root maps compose the current sample at a cut, while later domains keep
+their own meaningful-start anchors. Preparation-clock handles cannot enter this
+unit-rate root API. Physical Split copies still need authored logical audio
+lineage before insertion can carry phase through their transparent seams; do not
+infer that lineage from matching media or timing.
+
 `RootSignalTransfer` consumes already mapped raw root PCM. Apply explicit silence
 and retained-envelope exhaustion to input taps before interpolation, then reapply
 their exact point-grid audibility. Numeric zero or missing input never creates a

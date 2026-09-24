@@ -84,6 +84,47 @@ The separate [sampled-root transfer](AUDIO_SIGNAL_TRANSFER.md) now implements
 bounded conversion of already masked root PCM into a point grid. Authored
 bindings must still supply the correct retained context and active map.
 
+## Physical processing domains and root maps
+
+`ReferenceAudioClock::processing_domain_at` resolves one allocated sample to a
+borrowed `ReferenceProcessingDomain`. It shares the bounded Sequence/Repeat
+descent with policy queries, but stops at the first nonunity Preserve. The
+descriptor retains the full intrinsic selection, duration and authored rate;
+an inner silent Hold is still available through the separate flattened policy
+query. FollowSpeed and unity retimes remain transparent to processing lookup.
+
+Visible allocation and meaningful processing extent stay separate. Partition,
+Sequence and Repeat allocation do not shorten the retained context. Source
+placement, Hold/gap duration, ordinary Edit crops and an explicit Preserve input
+selection still constrain it. Both extents use the owning clock's boundary rule;
+the local sample coordinate remains exact. No PCM, source identity or decoder
+admission is derived from this timing information.
+
+Handles can only be obtained from an admitted plan. Their physical identity
+includes that plan, the clock owner, full occurrence, gap identity and meaningful
+domain. Equal node names or equal grid values across two plans do not establish
+identity. A root-only `place_root` rejects preparation-clock handles. It accepts
+the domain's new meaningful-start sample, which the eventual host must resolve;
+passing a query or transparent Partition start would establish the wrong phase.
+
+`RetainedRootMap` preserves one old root sample per current root sample. Its
+`resume` evaluates the current map at the cut before setting a new anchor. Each
+later genuine domain uses its own old and new meaningful starts. At NTSC:
+
+| Domain / edit | Current sample | Retained sample |
+| --- | --- | --- |
+| A 2f, insert 1f at f1 | 3203 | 1602 |
+| Following B 2f, now starts at f3 | 4805 | 3203 |
+| Second insertion inside a longer A, current f3 to f4 | 6406 | 3204 |
+
+The map uses wide exact arithmetic for coordinates outside retained support.
+It does not clamp, authorize reads, change rate or apply fades/policy masks.
+`reference_position_at` also accepts an explicitly calculated fractional current
+root position for a subsequent `RootSignalTransfer`; a `SignalSample` cannot be
+passed as a root sample. The transfer still requires its explicit carrier grid
+and admitted, masked PCM. Tests feed these composed coordinates through the
+existing resampler and another real canonical Preserve operation.
+
 ## Remaining authored work
 
 An insertion must bind live owned domains to frozen aliases atomically, compose
@@ -95,6 +136,13 @@ changing a silence policy must replace its retained contribution rather than
 mute that location forever. Cross-grid conversion must consume the correctly
 bound context through the sampled-root adapter. Migration must freeze the previous grammar and give
 legacy projects no invented bindings.
+
+Split currently copies retained contexts without persisting shared audio-domain
+lineage. Those physical copies have different frozen aliases. Before authored
+insertion can carry an active resume across a previously transparent Split,
+the binding layer must retain their logical relationship through creation,
+copying and edits. Matching timing or media is not sufficient evidence of that
+relationship. The physical-domain query intentionally does not infer it.
 
 The [sampling contract](AUDIO_SAMPLING.md) and
 [splice design](STRUCTURAL_SPLICE_DESIGN.md) describe the remaining composition.

@@ -14,7 +14,8 @@ mod plan;
 pub use audio_envelope::{AudioEnvelope, AudioEnvelopeEndpoint};
 pub use audio_reference::{
     AudioReferencePlan, ReferenceAudioClock, ReferenceAudioContent, ReferenceAudioQuery,
-    ReferenceAudioSpan, ReferenceClockOwner, ReferenceSample,
+    ReferenceAudioSpan, ReferenceClockOwner, ReferenceProcessingDomain, ReferenceProcessingKind,
+    ReferenceSample, RetainedRootMap,
 };
 pub use audio_sampling::{AudioBoundaryRule, AudioSampleGrid, AudioSampleMap};
 

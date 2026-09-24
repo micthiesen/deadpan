@@ -5,9 +5,9 @@ use std::collections::BTreeMap;
 use std::ops::Range;
 
 use deadpan_core::{
-    ExactRatio, FrameDuration, FrozenAudioKind, FrozenAudioLayout, InsertionBias, InstancePath,
-    IterationId, MIX_SAMPLE_RATE, NodeId, PitchPolicy, ReferenceAudibility, RepeatInstance,
-    RepeatLayout, TimeError,
+    AudioSample, ExactRatio, FrameDuration, FrozenAudioKind, FrozenAudioLayout, InsertionBias,
+    InstancePath, IterationId, MIX_SAMPLE_RATE, NodeId, PitchPolicy, ReferenceAudibility,
+    RepeatInstance, RepeatLayout, RetimePurpose, TimeError,
 };
 use serde::Serialize;
 
@@ -61,6 +61,155 @@ pub struct ReferenceAudioQuery<'plan> {
     pub samples: Range<ReferenceSample>,
     pub spans: Vec<ReferenceAudioSpan>,
     pub lookup: LookupStats,
+}
+
+/// An opaque Preserve output owns one processing domain even when its input
+/// contains several sources and Holds. Leaf policies remain explicit; absent
+/// input and an authored silent Hold are not interchangeable.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum ReferenceProcessingKind {
+    Leaf {
+        content: ReferenceAudioContent,
+    },
+    Preserve {
+        selection: Range<ExactRatio>,
+        duration: FrameDuration,
+        rate: ExactRatio,
+    },
+}
+
+/// A physical processing domain borrowed from one admitted timing layout.
+/// Neither matching node names nor matching numeric grids establish identity.
+/// This is not logical lineage between contexts copied by structural Split.
+#[derive(Debug, Clone)]
+pub struct ReferenceProcessingDomain<'plan> {
+    clock: ReferenceAudioClock<'plan>,
+    instance: InstancePath,
+    gap_after: Option<IterationId>,
+    kind: ReferenceProcessingKind,
+    allocated_samples: Range<ReferenceSample>,
+    extent: Range<ExactRatio>,
+    meaningful_extent: Range<ExactRatio>,
+    meaningful_samples: Range<ReferenceSample>,
+    transform: Transform,
+    lookup: LookupStats,
+}
+
+impl<'plan> ReferenceProcessingDomain<'plan> {
+    pub fn clock(&self) -> &ReferenceAudioClock<'plan> {
+        &self.clock
+    }
+    pub fn instance(&self) -> &InstancePath {
+        &self.instance
+    }
+    pub fn gap_after(&self) -> Option<&IterationId> {
+        self.gap_after.as_ref()
+    }
+    pub fn kind(&self) -> &ReferenceProcessingKind {
+        &self.kind
+    }
+    pub fn allocated_samples(&self) -> Range<ReferenceSample> {
+        self.allocated_samples.clone()
+    }
+    pub fn extent(&self) -> Range<ExactRatio> {
+        self.extent.clone()
+    }
+    pub fn meaningful_extent(&self) -> Range<ExactRatio> {
+        self.meaningful_extent.clone()
+    }
+    pub fn meaningful_samples(&self) -> Range<ReferenceSample> {
+        self.meaningful_samples.clone()
+    }
+    pub fn lookup(&self) -> LookupStats {
+        self.lookup
+    }
+
+    /// Exact local coordinate on this domain's source/Hold or intrinsic Preserve
+    /// output clock. Out-of-allocation positions are continued, never clamped.
+    pub fn local_at(&self, sample: ReferenceSample) -> Result<ExactRatio, PlanError> {
+        Ok(self
+            .clock
+            .grid
+            .at(sample)?
+            .checked_sub(self.transform.origin)?
+            .checked_div(self.transform.scale)?)
+    }
+
+    /// Identity deliberately excludes the visible Partition crop and lookup
+    /// budget. A copied physical context is still a different domain.
+    pub fn same_domain(&self, other: &Self) -> bool {
+        std::ptr::eq(self.clock.plan, other.clock.plan)
+            && self.clock.owner == other.clock.owner
+            && self.instance == other.instance
+            && self.gap_after == other.gap_after
+            && self.meaningful_extent == other.meaningful_extent
+            && self.kind == other.kind
+    }
+
+    /// Place this old domain on a new root grid without changing its rate.
+    /// The caller supplies the new *meaningful* start, not a query/Partition
+    /// start. Later genuine domains each need their own placement.
+    pub fn place_root(
+        &self,
+        meaningful_start: AudioSample,
+    ) -> Result<RetainedRootMap<'plan>, PlanError> {
+        if self.clock.owner != ReferenceClockOwner::ProjectRoot {
+            return Err(PlanError::InvalidPlan(
+                "root resume requires a project-root reference domain",
+            ));
+        }
+        Ok(RetainedRootMap {
+            domain: self.clone(),
+            output_anchor: meaningful_start,
+            reference_at_anchor: ExactRatio::integer(self.meaningful_samples.start.0),
+        })
+    }
+}
+
+/// Unit-rate root-sample continuation for one physical processing domain. It
+/// retains a borrowed reference identity and composes successive insertion
+/// anchors. It neither selects a live target nor authorizes reading old media.
+#[derive(Debug, Clone)]
+pub struct RetainedRootMap<'plan> {
+    domain: ReferenceProcessingDomain<'plan>,
+    output_anchor: AudioSample,
+    reference_at_anchor: ExactRatio,
+}
+
+impl<'plan> RetainedRootMap<'plan> {
+    pub fn domain(&self) -> &ReferenceProcessingDomain<'plan> {
+        &self.domain
+    }
+    pub fn output_anchor(&self) -> AudioSample {
+        self.output_anchor
+    }
+    pub fn reference_at_anchor(&self) -> ExactRatio {
+        self.reference_at_anchor
+    }
+
+    /// Wide exact arithmetic permits exhausted coordinates outside i64 support.
+    /// Consumers still apply the retained support and explicit policy masks.
+    pub fn reference_position(&self, output: AudioSample) -> Result<ExactRatio, PlanError> {
+        self.reference_position_at(ExactRatio::integer(output.0))
+    }
+
+    /// Evaluate at an exact position measured in current root samples, for an
+    /// explicit subsequent root-to-point-grid transfer. This does not reinterpret
+    /// a SignalSample as a root sample or choose the carrier grid's origin.
+    pub fn reference_position_at(&self, output: ExactRatio) -> Result<ExactRatio, PlanError> {
+        Ok(self
+            .reference_at_anchor
+            .checked_add(output.checked_sub(ExactRatio::integer(self.output_anchor.0))?)?)
+    }
+
+    pub fn resume(&self, old_cut: AudioSample, new_anchor: AudioSample) -> Result<Self, PlanError> {
+        Ok(Self {
+            domain: self.domain.clone(),
+            output_anchor: new_anchor,
+            reference_at_anchor: self.reference_position(old_cut)?,
+        })
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -260,6 +409,48 @@ impl<'plan> ReferenceAudioClock<'plan> {
         Ok(self.grid.boundary(self.support.end)?)
     }
 
+    /// Resolve the raw processing owner of one allocated sample. This stops at
+    /// the first nonunity Preserve; `query` continues to flatten all policies.
+    /// The sample is an allocation probe, not a source/DSP sampling coordinate.
+    pub fn processing_domain_at(
+        &self,
+        sample: ReferenceSample,
+        limits: AudioQueryLimits,
+    ) -> Result<ReferenceProcessingDomain<'plan>, PlanError> {
+        limits.validate()?;
+        if sample.0 < 0 || sample >= self.sample_count()? {
+            return Err(PlanError::AudioRangeOutOfRange);
+        }
+        let mut work = Work {
+            remaining: limits.maximum_work,
+            lookup: LookupStats::default(),
+        };
+        work.spend(
+            self.repeats
+                .len()
+                .checked_mul(2)
+                .ok_or(TimeError::Overflow)?,
+        )?;
+        let located = self.locate(sample, true, &mut work)?;
+        let meaningful_extent = located.meaningful_extent.ok_or(PlanError::InvalidPlan(
+            "reference processing domain has no meaningful extent",
+        ))?;
+        let meaningful_samples = self.grid.boundary(meaningful_extent.start)?
+            ..self.grid.boundary(meaningful_extent.end)?;
+        Ok(ReferenceProcessingDomain {
+            clock: self.clone(),
+            instance: located.instance,
+            gap_after: located.gap_after,
+            kind: located.kind,
+            allocated_samples: located.allocated_samples,
+            extent: located.extent,
+            meaningful_extent,
+            meaningful_samples,
+            transform: located.transform,
+            lookup: work.lookup,
+        })
+    }
+
     pub fn query(
         &self,
         samples: Range<ReferenceSample>,
@@ -307,32 +498,76 @@ impl<'plan> ReferenceAudioClock<'plan> {
         sample: ReferenceSample,
         work: &mut Work,
     ) -> Result<ReferenceAudioSpan, PlanError> {
+        let located = self.locate(sample, false, work)?;
+        let ReferenceProcessingKind::Leaf { content } = located.kind else {
+            return Err(PlanError::InvalidPlan(
+                "reference policy query stopped at Preserve",
+            ));
+        };
+        Ok(ReferenceAudioSpan {
+            samples: located.allocated_samples.clone(),
+            allocated_samples: located.allocated_samples,
+            extent: located.extent,
+            instance: located.instance,
+            gap_after: located.gap_after,
+            grid: self.grid,
+            content,
+        })
+    }
+
+    fn locate(
+        &self,
+        sample: ReferenceSample,
+        stop_at_preserve: bool,
+        work: &mut Work,
+    ) -> Result<Located, PlanError> {
         let (probe, bias) = self.grid.probe(sample)?;
         let mut transform = Transform {
             origin: ExactRatio::ZERO,
             scale: ExactRatio::ONE,
         };
         let mut extent = self.support.clone();
+        // An input selection is a real preparation crop. The root and an
+        // intrinsic output grid only bound allocation; transparent partitions
+        // can retain processing context outside those visible bounds.
+        let mut meaningful_extent = (stop_at_preserve
+            && matches!(self.owner, ReferenceClockOwner::PreserveInput(_)))
+        .then(|| self.support.clone());
         let mut current = &self.root;
         work.spend(self.repeats.len())?;
         let mut repeats = self.repeats.clone();
-        let (content, gap_after) = loop {
+        let (kind, gap_after) = loop {
             work.spend(1)?;
             work.lookup.visited_nodes += 1;
             let node = &self.plan.layout.nodes()[current];
-            extent = intersect(
-                extent,
-                transform.origin..transform.at(ExactRatio::integer(node.duration.frames()))?,
-            )?;
+            let node_extent =
+                transform.origin..transform.at(ExactRatio::integer(node.duration.frames()))?;
+            extent = intersect(extent, node_extent.clone())?;
+            if stop_at_preserve
+                && !matches!(
+                    node.kind,
+                    FrozenAudioKind::Sequence { .. }
+                        | FrozenAudioKind::Repeat { .. }
+                        | FrozenAudioKind::Retime {
+                            purpose: RetimePurpose::Partition,
+                            ..
+                        }
+                )
+            {
+                meaningful_extent = Some(match meaningful_extent {
+                    Some(previous) => intersect(previous, node_extent)?,
+                    None => node_extent,
+                });
+            }
             let local = probe
                 .checked_sub(transform.origin)?
                 .checked_div(transform.scale)?;
             match &node.kind {
                 FrozenAudioKind::Source { placement: None } => {
                     break (
-                        ReferenceAudioContent::Silence {
+                        leaf(ReferenceAudioContent::Silence {
                             reason: SilenceReason::NoSourceAudio,
-                        },
+                        }),
                         None,
                     );
                 }
@@ -343,21 +578,30 @@ impl<'plan> ReferenceAudioClock<'plan> {
                     let end = transform.at(placement.end)?;
                     let content = if sample < self.grid.boundary(start)? {
                         extent.end = minimum(extent.end, start)?;
+                        if let Some(domain) = &mut meaningful_extent {
+                            domain.end = minimum(domain.end, start)?;
+                        }
                         ReferenceAudioContent::Silence {
                             reason: SilenceReason::OutsideSourcePlacement,
                         }
                     } else if sample >= self.grid.boundary(end)? {
                         extent.start = maximum(extent.start, end)?;
+                        if let Some(domain) = &mut meaningful_extent {
+                            domain.start = maximum(domain.start, end)?;
+                        }
                         ReferenceAudioContent::Silence {
                             reason: SilenceReason::OutsideSourcePlacement,
                         }
                     } else {
                         extent = intersect(extent, start..end)?;
+                        if let Some(domain) = meaningful_extent {
+                            meaningful_extent = Some(intersect(domain, start..end)?);
+                        }
                         ReferenceAudioContent::Source
                     };
-                    break (content, None);
+                    break (leaf(content), None);
                 }
-                FrozenAudioKind::Hold { audio } => break (content(*audio), None),
+                FrozenAudioKind::Hold { audio } => break (leaf(content(*audio)), None),
                 FrozenAudioKind::Sequence { .. } => {
                     let entries = &self.plan.sequences[current];
                     let (mut left, mut right) = (0, entries.len());
@@ -380,6 +624,24 @@ impl<'plan> ReferenceAudioClock<'plan> {
                     transform =
                         transform.child(ExactRatio::integer(entry.start), ExactRatio::ONE)?;
                     current = &entry.child;
+                }
+                FrozenAudioKind::Retime {
+                    mapping,
+                    pitch: PitchPolicy::Preserve,
+                    ..
+                } if stop_at_preserve && mapping.duration() != node.duration => {
+                    break (
+                        ReferenceProcessingKind::Preserve {
+                            selection: ExactRatio::integer(mapping.start().0)
+                                ..ExactRatio::integer(mapping.end().0),
+                            duration: node.duration,
+                            rate: ExactRatio::new(
+                                i128::from(mapping.duration().frames()),
+                                i128::from(node.duration.frames()),
+                            )?,
+                        },
+                        None,
+                    );
                 }
                 FrozenAudioKind::Retime { child, mapping, .. } => {
                     let inverse = ExactRatio::new(
@@ -413,13 +675,17 @@ impl<'plan> ReferenceAudioClock<'plan> {
                             .checked_add(location.play.duration.frames())
                             .ok_or(TimeError::Overflow)?;
                         transform = transform.child(ExactRatio::integer(start), ExactRatio::ONE)?;
-                        extent = intersect(
-                            extent,
-                            transform.origin
-                                ..transform
-                                    .at(ExactRatio::integer(location.play.gap_after.frames()))?,
-                        )?;
-                        break (content(*gap_audio), Some(location.play.iteration));
+                        let gap_extent = transform.origin
+                            ..transform
+                                .at(ExactRatio::integer(location.play.gap_after.frames()))?;
+                        extent = intersect(extent, gap_extent.clone())?;
+                        if stop_at_preserve {
+                            meaningful_extent = Some(match meaningful_extent {
+                                Some(previous) => intersect(previous, gap_extent)?,
+                                None => gap_extent,
+                            });
+                        }
+                        break (leaf(content(*gap_audio)), Some(location.play.iteration));
                     }
                     transform = transform
                         .child(ExactRatio::integer(location.play.start), ExactRatio::ONE)?;
@@ -443,8 +709,7 @@ impl<'plan> ReferenceAudioClock<'plan> {
         if !allocated_samples.contains(&sample) {
             return Err(PlanError::InvalidPlan("reference interval did not advance"));
         }
-        Ok(ReferenceAudioSpan {
-            samples: allocated_samples.clone(),
+        Ok(Located {
             allocated_samples,
             extent,
             instance: InstancePath {
@@ -452,10 +717,25 @@ impl<'plan> ReferenceAudioClock<'plan> {
                 repeats,
             },
             gap_after,
-            grid: self.grid,
-            content,
+            kind,
+            meaningful_extent,
+            transform,
         })
     }
+}
+
+struct Located {
+    allocated_samples: Range<ReferenceSample>,
+    extent: Range<ExactRatio>,
+    instance: InstancePath,
+    gap_after: Option<IterationId>,
+    kind: ReferenceProcessingKind,
+    meaningful_extent: Option<Range<ExactRatio>>,
+    transform: Transform,
+}
+
+fn leaf(content: ReferenceAudioContent) -> ReferenceProcessingKind {
+    ReferenceProcessingKind::Leaf { content }
 }
 
 fn content(audio: ReferenceAudibility) -> ReferenceAudioContent {
@@ -482,7 +762,7 @@ impl Work {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 struct Transform {
     origin: ExactRatio,
     scale: ExactRatio,
