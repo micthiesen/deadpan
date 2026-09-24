@@ -18,6 +18,9 @@ use rusqlite::Connection;
 
 type Result<T = ()> = std::result::Result<T, Box<dyn Error>>;
 
+#[path = "migration/insert_time.rs"]
+mod insert_time;
+
 #[test]
 fn schema_twenty_one_retains_exact_lineage_and_does_not_invent_audio_bindings() -> Result {
     use deadpan_core::{CommandRequest, EditTransaction};

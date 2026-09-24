@@ -1,0 +1,41 @@
+{
+  "binary_sha256": "5b99c54bc1cc82ef690060f0880b08686acb24e28f722b6cae17896a94dc447f",
+  "preview_sha256": "9730605b857edae3762aef958a363e3b228404e2f7984139f7a188886c52309d",
+  "observations": [
+    "AX duration activation opens focused field",
+    "Escape returns to Inspector",
+    "Return reopens duration field",
+    "Second Escape keeps187frame project unchanged",
+    "Process quit exit0"
+  ],
+  "earlier_accessibility_failure": {
+    "binary_sha256": "e61ff1c75b7bdb6be93dca70f4db67e24ee41ca841f97a889a81baa4d13d96f6",
+    "exit_code": 101,
+    "error": "accesskit_consumer-0.38.0/src/tree.rs:75: Focused ID #7268153943099013575 is not in the node list",
+    "fix": "Defer command-field focus to its emitted frame, retaining the actual originating pane."
+  },
+  "visual_review": {
+    "target": "docs/design/boards/single-source-workspace-v1.png",
+    "observed": "Picture dominance, pinned Original, muted panes, lavender selection, yellow boundary, visible key hints. Duration action moved beside its value above inspector fold.",
+    "capture": "Live native screenshots reviewed in the conversation; no screenshot file archived."
+  },
+  "keyboard_review": {
+    "observed": [
+      "37l then ,h inserts15f at37 with source036 freeze",
+      "3,h inserts45f",
+      "hold 250ms resolves7f",
+      "u and CtrlR each change one insertion",
+      "hold 0f does not add history",
+      "Original view rejects pause edits",
+      "Inspector Return opens duration; Escape cancels",
+      "AX button opens field; native text editing/apply/undo works",
+      "Final Escape returns to Inspector; Return reopens field"
+    ],
+    "not_qualified": [
+      "physical non-US keyboard",
+      "physical IME composition",
+      "VoiceOver",
+      "playback or listening"
+    ]
+  }
+}

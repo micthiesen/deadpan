@@ -93,6 +93,7 @@ pub struct DeadpanApp {
     source_search: String,
     command: String,
     command_open: bool,
+    command_focus_pending: bool,
     bindings: Bindings,
     ime_composing: bool,
     help_open: bool,
@@ -152,6 +153,7 @@ impl DeadpanApp {
             source_search: String::new(),
             command: String::new(),
             command_open: false,
+            command_focus_pending: false,
             bindings: Bindings::default(),
             ime_composing: false,
             help_open: false,
@@ -658,12 +660,40 @@ impl DeadpanApp {
             self.offer_insert();
             return;
         }
+        if let BeatEdit::InsertHold(input) = edit {
+            let Some(workspace) = &self.workspace else {
+                self.error = Some("Open a project before inserting a pause.".into());
+                return;
+            };
+            let duration = match input.resolve(workspace.document.presentation_basis().frame_rate) {
+                Ok(duration) => duration,
+                Err(error) => {
+                    self.error = Some(error);
+                    return;
+                }
+            };
+            if duration == deadpan_core::FrameDuration::ZERO {
+                self.error = None;
+                self.message = Some("Pause resolves to 0 frames; no edit was made.".into());
+                return;
+            }
+            self.submit(ProjectRequest::Edit {
+                expected_session: workspace.session,
+                expected_revision: workspace.document.revision_id().clone(),
+                edit: ProjectEdit::InsertTime {
+                    at: ProjectFrame(self.sequence_cursor as i64),
+                    duration,
+                },
+            });
+            return;
+        }
         let (Some(workspace), Some(node)) = (&self.workspace, &self.selected_beat) else {
             self.error = Some("Select a root beat in the sequence before editing.".into());
             return;
         };
         let node = node.clone();
         let edit = match edit {
+            BeatEdit::InsertHold(_) => unreachable!("pause handled above"),
             BeatEdit::Split => {
                 let Some(at) =
                     selection::split_boundary(&self.beat_rows, &node, self.sequence_cursor)
@@ -718,7 +748,13 @@ impl DeadpanApp {
         self.bindings.clear();
         self.command_open = true;
         self.command = command;
-        context.memory_mut(|m| m.request_focus(egui::Id::new(COMMAND_ID)));
+        // Inspector actions run after the footer. Focusing its absent field
+        // would publish an invalid accessibility tree for this frame.
+        // Keep the real origin pane focused until the field is drawn, so later
+        // pane observers do not restore the previously focused pane.
+        context.memory_mut(|m| m.request_focus(pane_id(self.pane)));
+        self.command_focus_pending = true;
+        context.request_repaint();
     }
 
     fn select_source(&mut self, id: AssetId) {
@@ -920,6 +956,7 @@ impl DeadpanApp {
             }
             Action::Escape => {
                 self.command_open = false;
+                self.command_focus_pending = false;
                 self.help_open = false;
                 self.bindings.clear();
             }
@@ -999,13 +1036,10 @@ impl DeadpanApp {
                 ..
             } = event
             {
-                let focused = text_input_active(context, false);
+                let focused = text_input_active(context, self.command_open);
                 let ime = self.ime_composing || ime_event;
                 if let Some(text_action) = navigation::text_action(key, modifiers, focused, ime) {
-                    text_result = Some((
-                        text_action,
-                        context.memory(|m| m.has_focus(egui::Id::new(COMMAND_ID))),
-                    ));
+                    text_result = Some((text_action, self.command_open));
                     context.input_mut(|i| {
                         i.consume_key(modifiers, key);
                     });
@@ -1057,6 +1091,7 @@ impl DeadpanApp {
         let command = navigation::command::parse(&self.command);
         self.bindings.clear();
         self.command_open = false;
+        self.command_focus_pending = false;
         match command {
             Ok(navigation::command::Entry::Action(action)) => self.action(action, context),
             Ok(navigation::command::Entry::Source) => {
@@ -1203,10 +1238,11 @@ impl DeadpanApp {
                 if let Some(hint) = self.bindings.pending_hint() { ui.label(egui::RichText::new(hint).size(11.0).color(style::LAVENDER)); }
             });
             if self.command_open {
+                focus_command_for_frame(ui.ctx(), &mut self.command_focus_pending);
                 egui::Frame::new().fill(style::PANEL).stroke(egui::Stroke::new(1.0, style::LAVENDER)).corner_radius(4).inner_margin(egui::Margin::symmetric(10, 6)).show(ui, |ui| {
                     ui.horizontal(|ui| {
                         ui.label(egui::RichText::new(":").monospace().color(style::LAVENDER));
-                        ui.add(egui::TextEdit::singleline(&mut self.command).id(egui::Id::new(COMMAND_ID)).font(egui::TextStyle::Monospace).frame(egui::Frame::NONE).desired_width(f32::INFINITY).hint_text("split · repeat 3 · wrap-repeat 2 · hold-duration 11f · delete · help"));
+                        ui.add(egui::TextEdit::singleline(&mut self.command).id(egui::Id::new(COMMAND_ID)).font(egui::TextStyle::Monospace).frame(egui::Frame::NONE).desired_width(f32::INFINITY).hint_text("hold 0.5s · split · repeat 3 · hold-duration 11f · delete · help"));
                         retain_text_escape(ui, COMMAND_ID);
                     });
                 });
@@ -1214,6 +1250,11 @@ impl DeadpanApp {
                     style::key_hint(ui, "Enter", "apply command");
                     style::key_hint(ui, "Esc", "cancel entry");
                     ui.weak("Whole project frames: 11f · repeat count: total plays");
+                    if let (Ok(navigation::command::Entry::Action(Action::Edit(BeatEdit::InsertHold(input)))), Some(workspace)) = (navigation::command::parse(&self.command), &self.workspace)
+                        && let Ok(duration) = input.resolve(workspace.document.presentation_basis().frame_rate)
+                    {
+                        ui.colored_label(style::LAVENDER, format!("{} frames · freeze + silence · at boundary {}", duration.frames(), self.sequence_cursor));
+                    }
                 });
             } else {
                 ui.horizontal_wrapped(|ui| {
@@ -1224,6 +1265,7 @@ impl DeadpanApp {
                     if self.view == View::Sequence {
                         style::key_hint(ui, "j k", "beat");
                         style::key_hint(ui, "s", "split");
+                        style::key_hint(ui, ",h", "pause");
                         style::key_hint(ui, "rr", "repeat");
                         style::key_hint(ui, "dd", "cut beat");
                         style::key_hint(ui, "u", "undo");
@@ -1546,14 +1588,20 @@ impl DeadpanApp {
                             });
                         });
                         ui.add_space(12.0);
+                        let ready = !self.service.is_busy() && !self.dialogs.is_open();
                         inspector_value(ui, "Duration", &data.duration);
+                        if let Some((label, command)) = &data.parameter
+                            && ui.add_enabled(ready, egui::Button::new(format!("{label}  ·  Enter"))
+                                .fill(style::SELECTED)
+                                .min_size(egui::vec2(ui.available_width(), 30.0))).clicked()
+                        {
+                            self.pane = Pane::Inspector;
+                            self.open_command(command.clone(), ui.ctx());
+                        }
                         for (label, value) in &data.fields {
                             inspector_value(ui, label, value);
                         }
                         ui.add_space(8.0);
-                        if data.parameter.is_some() {
-                            style::key_hint(ui, "Enter", "change parameter");
-                        }
                         ui.separator();
                         inspector_value(ui, "Scope", "Root beat");
                         inspector_value(ui, "Boundaries", &data.range);
@@ -1568,8 +1616,17 @@ impl DeadpanApp {
                                 .color(style::MUTED),
                         );
                         ui.add_space(8.0);
-                        let ready = !self.service.is_busy() && !self.dialogs.is_open();
                         ui.add_enabled_ui(ready, |ui| {
+                            if ui.add_sized([ui.available_width(), 28.0], egui::Button::new("Insert pause  ·  ,h"))
+                                .on_hover_text("Insert 0.5 s of frozen picture and silence at the cursor. A count scales the duration: 3,h adds 1.5 s.")
+                                .clicked()
+                            {
+                                self.edit(BeatEdit::InsertHold(navigation::duration::DurationInput::half_seconds(1)));
+                            }
+                            if ui.link("Choose pause duration…  :hold").clicked() {
+                                self.pane = Pane::Inspector;
+                                self.open_command("hold 0.5s".into(), ui.ctx());
+                            }
                             let can_split = self.selected_beat.as_ref().is_some_and(|node| {
                                 selection::split_boundary(&self.beat_rows, node, self.sequence_cursor).is_some()
                             });
@@ -1578,17 +1635,6 @@ impl DeadpanApp {
                                 .clicked()
                             {
                                 self.edit(BeatEdit::Split);
-                            }
-                            if let Some((label, command)) = data.parameter
-                                && ui
-                                    .add_sized(
-                                        [ui.available_width(), 30.0],
-                                        egui::Button::new(label).fill(style::SELECTED),
-                                    )
-                                    .clicked()
-                            {
-                                self.pane = Pane::Inspector;
-                                self.open_command(command, ui.ctx());
                             }
                             if ui
                                 .add_sized(
@@ -1782,6 +1828,8 @@ impl DeadpanApp {
                     ui.label(egui::RichText::new("RESHAPE THE SELECTED BEAT").strong().color(style::LAVENDER));
                     for (key, description) in [
                         ("s / :split", "Split linked picture and sound at the cursor inside the selected root beat. The right fragment stays selected; duration and output stay unchanged."),
+                        (",h / 3,h", "Insert a silent freeze at the cursor: 0.5 s per count. Keeps the following original speech. The new pause stays selected; u undoes it."),
+                        (":hold 1.5s", "Choose an exact pause duration: 12f, 250ms, 1.5s, or 01:02.500. Seconds round once to project frames. Zero makes no edit. Source and existing pause fragments are supported; nested structures remain unavailable."),
                         ("rr / 3rr", "Wrap the selected root beat in two / three total plays."),
                         ("dd / :delete", "Cut one whole root beat and close its time. Undo restores it."),
                         (":repeat 3", "Set total plays on a Repeat; wrap a different root beat."),
@@ -1799,7 +1847,7 @@ impl DeadpanApp {
                     ] { help_binding(ui, key, description); }
                     ui.separator();
                     ui.weak("Original browsing never changes it. Your edit commands affect the selected root beat and its linked picture and sound. Counts precede operators, such as 3rr; the visible PENDING badge waits without a timer.");
-                    ui.weak("Current limits: range cuts/reuse, nested navigation, new Holds, sound placement/audition, playback, effects, AI generation in the app, and export are not available yet. Registered sounds are retained catalog entries only.");
+                    ui.weak("Current limits: range cuts/reuse, navigation and insertion within nested structures, sound placement/audition, playback, effects, AI generation in the app, and export are not available yet. Registered sounds are retained catalog entries only.");
             });
     }
 }
@@ -1826,6 +1874,11 @@ impl eframe::App for DeadpanApp {
         }
         if self.pane != previous_pane {
             context.memory_mut(|m| m.request_focus(pane_id(self.pane)));
+        }
+        // A command opened after last frame's footer receives this batch's text
+        // and Enter/Escape events. Its widget will be emitted below this frame.
+        if self.command_open {
+            focus_command_for_frame(&context, &mut self.command_focus_pending);
         }
         let text_result = if self.close_pending {
             None
@@ -1863,10 +1916,11 @@ impl eframe::App for DeadpanApp {
                 self.run_command(&context);
             }
             self.command_open = false;
+            self.command_focus_pending = false;
             context.memory_mut(|m| m.request_focus(pane_id(self.pane)));
         }
         self.ensure_visible_pane(&context);
-        if close_command_on_blur(&context, &mut self.command_open) {
+        if !self.command_focus_pending && close_command_on_blur(&context, &mut self.command_open) {
             self.bindings.clear();
         }
         if let Some(frames) = self.smoke_frames.as_mut() {
@@ -2063,6 +2117,11 @@ fn close_command_on_blur(context: &egui::Context, open: &mut bool) -> bool {
         true
     } else {
         false
+    }
+}
+fn focus_command_for_frame(context: &egui::Context, pending: &mut bool) {
+    if std::mem::take(pending) {
+        context.memory_mut(|m| m.request_focus(egui::Id::new(COMMAND_ID)));
     }
 }
 fn text_input_active(context: &egui::Context, command_open: bool) -> bool {
@@ -2309,7 +2368,13 @@ mod tests {
     }
 
     fn run_ui(context: &egui::Context, input: egui::RawInput, draw: impl FnMut(&mut egui::Ui)) {
+        context.enable_accesskit();
         let mut output = context.run_ui(input, draw);
+        let tree = output.platform_output.accesskit_update.as_ref().unwrap();
+        assert!(
+            tree.nodes.iter().any(|(id, _)| *id == tree.focus),
+            "Accessibility focus must name a node emitted in this frame"
+        );
         output.textures_delta.clear();
     }
 
@@ -2385,11 +2450,13 @@ mod tests {
     fn parameter_entry_opened_after_footer_draw_receives_next_frame_text() {
         let context = egui::Context::default();
         let mut command = "repeat ".to_owned();
+        let mut pending = false;
         run_ui(&context, egui::RawInput::default(), |ui| {
             // The toolbar opens the command after this frame's footer was drawn.
             let heading = ui.label("Sequence");
-            pane_focus(ui, Pane::Sequence, heading.rect, "Sequence pane");
-            ui.memory_mut(|m| m.request_focus(egui::Id::new(COMMAND_ID)));
+            pane_focus(ui, Pane::Sequence, heading.rect, "Sequence pane").request_focus();
+            pending = true;
+            assert!(!ui.memory(|m| m.has_focus(egui::Id::new(COMMAND_ID))));
         });
         run_ui(
             &context,
@@ -2398,12 +2465,14 @@ mod tests {
                 ..Default::default()
             },
             |ui| {
+                focus_command_for_frame(ui.ctx(), &mut pending);
                 assert!(ui.memory(|m| m.has_focus(egui::Id::new(COMMAND_ID))));
                 ui.add(egui::TextEdit::singleline(&mut command).id(egui::Id::new(COMMAND_ID)));
                 retain_text_escape(ui, COMMAND_ID);
             },
         );
         assert_eq!(command, "repeat 4");
+        assert!(!pending);
     }
 
     #[test]

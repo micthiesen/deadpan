@@ -10,6 +10,8 @@ use deadpan_store::{AccessMode, ProjectStore};
 
 use super::*;
 
+mod pause;
+
 const TIMEOUT: Duration = Duration::from_secs(20);
 
 fn node(name: &str) -> NodeId {

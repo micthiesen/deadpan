@@ -1,0 +1,108 @@
+{
+  "added_scratch_example_sha256": "1264cdc401600c2b71d741fc0582f61c694ef39c28feba21b3244133db9d512c",
+  "additional_matching_raw_and_faded_sample_windows": [
+    [
+      1580,
+      1644
+    ],
+    [
+      3180,
+      3244
+    ],
+    [
+      9536,
+      9600
+    ]
+  ],
+  "all_documents_history_state_redo_and_tables_preserved": true,
+  "audio_fixture_limit": "SilentHold PCM; verifies compatibility and binding admission, not nonzero DSP behavior.",
+  "baseline_build": {
+    "argv": [
+      "cargo",
+      "build",
+      "-p",
+      "deadpan-cli",
+      "-p",
+      "deadpan-store",
+      "--bin",
+      "deadpan-cli",
+      "--example",
+      "create_v22_fixture",
+      "--locked",
+      "--offline"
+    ],
+    "cwd": "/tmp/deadpan-db22-binary-20260924/baseline",
+    "env": {
+      "CARGO_TARGET_DIR": "/tmp/deadpan-db22-binary-20260924/target",
+      "DEADPAN_FFMPEG_PREFIX": "/tmp/deadpan-media-compatible-xyhilms4/prefix",
+      "PATH_prefix": "/Users/michael/.cargo/bin",
+      "RUSTUP_TOOLCHAIN": "1.97.1"
+    },
+    "exit_code": 0
+  },
+  "baseline_cli_sha256": "de7d7fa27793ee894cadc4bda1d61de5f5b0db18ea9e09c3eff87e5cfd1dfe46",
+  "baseline_database_sha256": "745ac6f6d651d491bc44f47d6212fbc91100108f15579f4f663a00c442273c84",
+  "baseline_qualified": true,
+  "baseline_sql_sha256": "1ab5d0cbb78f676316eb32da1c9aae54e7c7c02b36672f53eb3ab803035ad5cd",
+  "binding_fixture_assertions": {
+    "phase_constant": "1/7",
+    "resume_boundary": "1",
+    "term_from_local": "0",
+    "term_to_local": "1"
+  },
+  "cargo_version": "cargo 1.97.1 (c980f4866 2026-06-30)\n",
+  "current_cli_sha256": "05ebab80b77f190db00458c90701cb7517c907525dc6104a9fa9fc90a083f4cb",
+  "current_cli_source_path": "/Users/michael/Code/deadpan/target/debug/deadpan-cli",
+  "current_qualified": true,
+  "discarded_initial_build": {
+    "build": {
+      "argv": [
+        "cargo",
+        "build",
+        "-p",
+        "deadpan-cli",
+        "-p",
+        "deadpan-store",
+        "--bin",
+        "deadpan-cli",
+        "--example",
+        "create_v22_fixture",
+        "--locked",
+        "--offline"
+      ],
+      "cwd": "/tmp/deadpan-db22-binary-20260924/baseline",
+      "env": {
+        "CARGO_TARGET_DIR": "/tmp/deadpan-db22-binary-20260924/target",
+        "DEADPAN_FFMPEG_PREFIX": "/tmp/deadpan-media-compatible-xyhilms4/prefix"
+      }
+    },
+    "cargo_version": "cargo 1.98.0 (797e8a9bc 2026-08-05) (Homebrew)\n",
+    "reason": "Login shell resolved bare Cargo/rustc to Homebrew 1.98.0. Discarded initial build; qualified rebuild explicitly prefixed rustup shims in PATH and selected RUSTUP_TOOLCHAIN=1.97.1.",
+    "rustc_version": "rustc 1.98.0 (88d9e12ae 2026-08-18) (Homebrew)\nbinary: rustc\ncommit-hash: 88d9e12ae178fab0fb5cc050a94da85685d449ea\ncommit-date: 2026-08-18\nhost: aarch64-apple-darwin\nrelease: 1.98.0\nLLVM version: 22.1.8\n"
+  },
+  "git_archive_sha256": "1b6d47ae9935a20c198d94d4dce95de9e25cf191bcd6b93b2477603c044d6b65",
+  "migrated_database_sha256": "db59fe422345230b3737f9a6583ee1012fca3fc04ed9735b8aa2244d40b57d40",
+  "migration": {
+    "migration": {
+      "backup": "/private/tmp/deadpan-db22-binary-20260924/migrated-v23.deadpan/Snapshots/before-schema-23-J6dDKH.sqlite",
+      "from_schema": 22,
+      "to_schema": 23
+    },
+    "protocol": 1
+  },
+  "native_prefix": "/tmp/deadpan-media-compatible-xyhilms4/prefix",
+  "only_schema_tags_changed": [
+    "database22_to23",
+    "core16_to17"
+  ],
+  "producer_binary_sha256": "31d65a55be2a766040d1a8365df8e657a2b1e322ab8d2af474d8d67b09e7f806",
+  "raw_and_faded_audio_equal": true,
+  "retained_backup_database_schema": 22,
+  "retained_backup_dump_identical": true,
+  "revision": "7277f29fe1ae96df5900d8871435f9961f697869",
+  "rustc_version": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: aarch64-apple-darwin\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+  "source": "/tmp/deadpan-db22-binary-20260924/baseline",
+  "target": "/tmp/deadpan-db22-binary-20260924/target",
+  "tracked_files_verified_against_git_archive": 2127,
+  "tracked_source_changes": "none; only added scratch fixture-producer example"
+}

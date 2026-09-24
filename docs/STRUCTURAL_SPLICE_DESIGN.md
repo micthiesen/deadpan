@@ -3,8 +3,10 @@
 This is an implementation design record. The [transparent audio partition
 layer](AUDIO_PARTITIONS.md) was introduced in core 12/database 18. The
 [mark binding lifecycle](MARK_FRAGMENTS.md) follows in core 13/database 19.
-[Pure Split](STRUCTURAL_SPLIT.md) is implemented in core 14/database 20; the
-inserted-time and automatic range planning work below remains open. Sections 4.2, 6.3, 6.5 and 12.2 of the
+[Pure Split](STRUCTURAL_SPLIT.md) was introduced in core 14/database 20.
+[Insert Time](INSERT_TIME.md) adds atomic root Source/Hold insertion in core
+17/database 23. Arbitrary nested insertion and automatic range planning below
+remain open. Sections 4.2, 6.3, 6.5 and 12.2 of the
 [specification](spec/DEADPAN_SPEC.md) remain authoritative. Native root-beat
 Split/Repeat/delete/Hold-duration commands do not implement arbitrary-boundary Hold
 insertion.
@@ -186,7 +188,7 @@ instead of substituting an old raw body. This makes editing the retained recipe
 observable without a second historical recipe graph. Explicit historical reads
 still authenticate their complete capture against the committed revision.
 
-Core 16/database 22 now retain the [owned binding representation](OWNED_AUDIO_BINDINGS.md):
+Core 16/database 22 introduced the [owned binding representation](OWNED_AUDIO_BINDINGS.md):
 bounded timing-only records, lexical arguments, ordered default-birth clauses
 and symbolic local phase terms. Each term retains its own clock, so rounding at
 a shared-definition cut can differ across existing plays without expanding them.

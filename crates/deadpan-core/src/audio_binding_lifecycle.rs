@@ -26,6 +26,23 @@ pub fn capture_unbound_audio_bindings(
     document: &ProjectDocument,
     timing: AudioTimingId,
 ) -> Result<AudioBindingState, DocumentError> {
+    capture(document, timing, false).map(|(bindings, _)| bindings)
+}
+
+/// Insertion also needs the current clock for composed resume terms when all
+/// physical recipes already have an older lattice.
+pub(crate) fn capture_for_insertion(
+    document: &ProjectDocument,
+    timing: AudioTimingId,
+) -> Result<(AudioBindingState, Option<FrozenAudioLayout>), DocumentError> {
+    capture(document, timing, true)
+}
+
+fn capture(
+    document: &ProjectDocument,
+    timing: AudioTimingId,
+    retain_timing: bool,
+) -> Result<(AudioBindingState, Option<FrozenAudioLayout>), DocumentError> {
     document.validate()?;
     let mut capture = Capture {
         document,
@@ -51,8 +68,8 @@ pub fn capture_unbound_audio_bindings(
         }
     }
     capture.walk()?;
-    if capture.bindings.is_empty() {
-        return Ok(document.audio_bindings().clone());
+    if capture.bindings.is_empty() && (!retain_timing || document.audio_bindings().is_empty()) {
+        return Ok((document.audio_bindings().clone(), None));
     }
     if document.audio_bindings().timings().contains_key(&timing) {
         return Err(DocumentError::new(
@@ -86,11 +103,17 @@ pub fn capture_unbound_audio_bindings(
     let layout = FrozenAudioLayout::capture(document)?;
     let bindings = capture.bindings;
     let mut result = document.audio_bindings().clone();
+    if bindings.is_empty() {
+        // A phase-only layout has no reference yet. Keep it outside the valid
+        // state through intermediate Split validation; insertion installs it
+        // only while composing resume terms, then prunes any unused table.
+        return Ok((result, Some(layout)));
+    }
     result.timings.insert(timing, layout);
     result.bindings.extend(bindings);
     result.validate_for(document)?;
     result.to_json()?;
-    Ok(result)
+    Ok((result, None))
 }
 
 struct Capture<'a> {

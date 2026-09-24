@@ -11,6 +11,16 @@ multi-video workspace; concept screens do not establish completed capabilities.
 
 **Open** means required behavior has no qualifying implementation. **Partial** identifies concrete groundwork while acceptance remains unmet. **Complete** requires linked code, passing relevant tests, and a demonstrable acceptance result. No requirement or delivery gate is complete. Baseline checks are described in [Development](DEVELOPMENT.md); they are not substitutes for full acceptance evidence.
 
+[Pause insertion](INSERT_TIME.md) adds atomic root Source/Hold splices with
+sample-preserving resume for every shifted fragment, including earlier splits
+and repeated pauses. Native `,h`, counts and exact `:hold` duration entry resolve
+a measured freeze frame, retain the Original baseline and select the committed
+pause. Core 17/database 23 freeze prior command history. Arbitrary nested scope,
+compact Repeat-gap ownership, active generation context resolution, playback and
+export remain required. [Qualification](qualification/insert-time-2026-09-24.md)
+records exact timing, native interaction and actual baseline migration evidence.
+No requirement or gate changes status.
+
 [Logical mark bindings](MARK_FRAGMENTS.md) preserve one named mark across physical
 bindings, with atomic loss/copy transforms, biased Partition seam visibility and
 exact named resolution. Core 13/database 19 introduced frozen mark grammars.
@@ -118,8 +128,8 @@ this evaluation boundary.
 representation for timing lattices, stable Repeat scope, explicit births and
 bounded symbolic phase. Split/isolation copy live arguments while retaining old
 aliases; removal and inverse patches retain atomic ownership. PointCeil owned
-evaluation preserves selected origins and nested preparation budgets. Existing
-commands do not create bindings in empty projects. Normal StageAudio rendering
+evaluation preserves selected origins and nested preparation budgets. InsertTime
+now captures bindings for supported root splices. Normal StageAudio rendering
 now consumes root/point bindings, current and retained-placement policies, exact
 resume phase and virtual post-mapping fades. A pure capture helper retains
 compact birth scope and existing bindings, rejecting nonempty Repeat gaps.
@@ -136,7 +146,8 @@ records 1,172 passing tests and the full gate for retained PCM,
 post-mapping fades, compact capture, independent grid policies and shared
 preparation admission. Review fixed tiny-clip fade changes, crop leakage,
 dense policy inventory rejection and unintended muting of Preserve decay.
-This remains an engine milestone; native pause insertion is still open.
+That qualification covers the engine milestone. The subsequent
+[pause insertion](INSERT_TIME.md) command connects it to native authoring.
 
 Current measured evidence: [editing foundation verification](FOUNDATION_VERIFICATION.md), [picture plan and migration verification](PLAN_MIGRATION_VERIFICATION.md), [exact boundary verification](ANCHOR_VERIFICATION.md), [persistent mark verification](MARK_VERIFICATION.md), [sparse override verification](OVERRIDE_VERIFICATION.md), [nested occurrence verification](OCCURRENCE_VERIFICATION.md), [native media qualification](qualification/media-2026-09-20.md), [compatible FFmpeg/Rust qualification](qualification/media-compatible-2026-09-20.md), [audio candidate qualification](qualification/audio-2026-09-20.md), and [canonical audio qualification](qualification/audio-canonical-2026-09-20.md).
 
@@ -267,7 +278,8 @@ old meaning. Real PCM tests compare retained partitions against the original,
 including fractional rates, short fades, nested pitch stages and RoomTone.
 The [qualification report](qualification/audio-partitions-2026-09-23.md) records
 tests and review for that layer. The later Split implementation uses these
-retained contexts. Exact inserted-time resume anchors remain open.
+retained contexts. InsertTime now applies exact resume anchors to supported root
+Source/Hold splices; arbitrary nested insertion remains open.
 
 [Preview presentation](qualification/preview-presentation-2026-09-21.md) separates
 requested, decoded and displayed identities, retains pending GPU work, rejects
@@ -339,13 +351,13 @@ downstream effects/mastering, playback and export remain open.
 
 | ID | Requirement | Status | Implementation / tests now | Required acceptance evidence still outstanding |
 | --- | --- | --- | --- | --- |
-| DP-01 | Documents library, one-Original initialization/baseline, reopen, autosave, undo/redo, migration, recovery. | Partial | [`deadpan-store`](../crates/deadpan-store/): durable packages/history, atomic mark transforms and generation relevance, writer ownership, WAL checkpoints, interrupted-attempt recovery, and [schema-1-through-21-to-22 migration tests](../crates/deadpan-store/tests/migration.rs) using old-binary-validated fixtures with requests, attempts, admission, source placements, branches and redo. | Native create/open/history now have [workspace evidence](qualification/native-workspace-2026-09-21.md); full media lifecycle, restore/recovery UI, history limits and full failure/chaos suite remain open. |
+| DP-01 | Documents library, one-Original initialization/baseline, reopen, autosave, undo/redo, migration, recovery. | Partial | [`deadpan-store`](../crates/deadpan-store/): durable packages/history, atomic mark transforms and generation relevance, writer ownership, WAL checkpoints, interrupted-attempt recovery, and [schema-1-through-22-to-23 migration tests](../crates/deadpan-store/tests/migration.rs) using old-binary-validated fixtures with requests, attempts, admission, source placements, branches and redo. | Native create/open/history now have [workspace evidence](qualification/native-workspace-2026-09-21.md); full media lifecycle, restore/recovery UI, history limits and full failure/chaos suite remain open. |
 | DP-02 | Exact frame/sample/source-time model including VFR. | Partial | Typed rational clocks, VFR intervals, [independent picture mappings](SOURCE_VIDEO_MAPPING.md) and explicit selected-span endpoints in core and plan. [`SourceSession`](../crates/deadpan-media/src/source_session.rs) builds original-PTS indexes from private verified media and performs persistent exact seeks. [Registration](SOURCE_REGISTRATION.md) retains validated indexes and exact common origin by historical revision. [Native source evidence](qualification/source-preview-2026-09-21.md) retains measured VFR terminal-duration loss. | Complete source policies and actual shared playback/export, including 10,000 fractional-rate edits. |
 | DP-03 | Structural Source/Sequence/Hold/Repeat/Retime primitives. | Partial | Validated tree, reversible commands, and [`deadpan-plan`](../crates/deadpan-plan/) picture mapping and [bounded structural audio queries](AUDIO_PLAN.md) through nested primitives, sparse overrides and compact repeat indexes. Audio keeps absolute sample allocation, original source coordinates, pitch stages and distinct Hold policies. | Semantic range selectors, incremental fragment reuse, actual golden picture/audio renders, and full preview/export integration. |
 | DP-04 | Stable anchors, attachments, nested occurrences, single-play overrides. | Partial | Compact stable play IDs and exact revision-aware boundary/range queries. [`marks.rs`](../crates/deadpan-core/src/marks.rs) adds persistent marks, ownership/loss policies, biased structural transforms, and named-mark selection with [integration/property tests](../crates/deadpan-core/tests/marks.rs). [Sparse overrides](OVERRIDE_VERIFICATION.md) and [automatic nested occurrence edits](OCCURRENCE_VERIFICATION.md) preserve variable durations, owned marks, exact picture mappings, and atomic history. | Temporal attachments, partial-range and multi-target occurrence operations, explode/duplicate transforms, and complete structural edit property tests. |
-| DP-05 | Complete normal/visual/operator/command/camera/trim keyboard flow. | Partial | [Native workspace](NATIVE_WORKSPACE.md) adds counted frame/beat navigation, persistent prefixes, pane focus, source search, command entry, explicit insertion/history shortcuts, text/IME suppression, and root-beat `s`/`rr`/`dd` plus typed Split/Repeat/Hold-duration commands. | Full editing grammar, nested occurrence navigation, binding matrix, native IME/layout coverage and keyboard-only editorial session. |
+| DP-05 | Complete normal/visual/operator/command/camera/trim keyboard flow. | Partial | [Native workspace](NATIVE_WORKSPACE.md) adds counted frame/beat navigation, persistent prefixes, pane focus, source search, command entry, explicit insertion/history shortcuts, text/IME suppression, and root-beat `s`/`rr`/`dd` plus typed Split/Repeat/Hold-duration commands, counted `,h` pauses and exact `:hold` units. | Full editing grammar, nested occurrence navigation, binding matrix, native IME/layout coverage and keyboard-only editorial session. |
 | DP-06 | Registers, macros, semantic dot-repeat, configurable bindings. | Open | None. | Parser/transaction/replay tests. |
-| DP-07 | All time/delivery operations in Section 8. | Partial | Core commands insert/delete/move/group/ungroup nodes, wrap/update structural repeats, and change Hold duration/provider. Pure Split retains complete contexts and logical marks. Native root-beat Split/Repeat/delete/Hold-duration edits use that path and refresh the stopped-frame picture plan. | Exact arbitrary-boundary Hold insertion and sample resume, nested range planning, remaining operations, semantic targeting, recipe fixture renders, and editable inspector demos. |
+| DP-07 | All time/delivery operations in Section 8. | Partial | Core commands insert/delete/move/group/ungroup nodes, wrap/update structural repeats, and change Hold duration/provider. Pure Split retains complete contexts and logical marks. Native root-beat Split/Repeat/delete/Hold-duration edits use that path and refresh the stopped-frame picture plan. Atomic InsertTime retains sample phase through Source/Hold fragments and freezes a measured original picture. | Arbitrary nested/gapped Hold insertion, compact occurrence resume dispatch, nested range planning, remaining operations, semantic targeting, recipe fixture renders, and editable inspector demos. |
 | DP-08 | All framing/picture operations and keyboard target selection. | Partial | [Canvas geometry transactions](PRESENTATION_BASIS.md) preserve frame rate, nodes and marks; source-derived geometry uses qualified receipt metadata. | Framing/camera operations, keyboard target selection, effect reevaluation, and tracking/geometry/interaction tests. |
 | DP-09 | All audio operations with preserved intentional dynamics. | Partial | No app audio operations. [Raw DSP qualification](qualification/audio-2026-09-20.md) retains failed targets. The [canonical worker prototype](qualification/audio-canonical-2026-09-20.md) supplies the single schedule now used by the bounded [production DSP adapter](AUDIO_DSP.md). [Source preparation](AUDIO_PREPARATION.md) implements exact-phase resampling and explicit matrices without loudness normalization. [Plan-driven source PCM](SOURCE_STAGE_AUDIO.md) binds exact spans to historical qualified media, including repeats, silent Holds and FollowSpeed retimes. [Continuous Preserve stages](AUDIO_STAGE_PREPARATION.md) retain exact fractional grids and nested history with bounded preparation and source/layout-aware caches. [Room-tone loops](ROOM_TONE_AUDIO.md) use explicit ranges and exact crossfades, with [qualification](qualification/room-tone-audio-2026-09-21.md). [Authored edges](AUDIO_EDGES.md) add reversible hard exceptions and shared post-mapping fades. | Room-tone selection/editing/audition UI, full voice processing, authored layout choice, full signal/format/listening corpus, remaining fade integration, gain/tails/limiting, all remaining audio operations, preview/export equivalence, devices, long-clip preparation and cache lifecycle. |
 | DP-10 | Local transcript, timing refinement, shot/silence proposals. | Open | None. | Analysis accuracy and correction tests. |

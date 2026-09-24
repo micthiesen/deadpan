@@ -204,7 +204,7 @@ fn opaque_preserve_uses_output_geometry_and_does_not_transport_input_fades() {
 }
 
 #[test]
-fn selected_origin_point_clock_retains_ceil_width_after_exposure_at_root() {
+fn selected_origin_point_clock_uses_current_support_without_resetting_phase() {
     let reference = document(
         32_000,
         &["preserve"],
@@ -224,13 +224,56 @@ fn selected_origin_point_clock_retains_ceil_width_after_exposure_at_root() {
         None,
     ))
     .unwrap();
+    // Removing the Preserve exposes the current complete Hold [0,3), not
+    // its former selected input [1,2). The retained point origin is still 1:
+    // ceil((0-1)*1.5)=-1 and ceil((3-1)*1.5)=3 give four fade samples.
+    // The original anchor maps root sample s to q=s-2. Thus s=0 is before
+    // support and s=1 begins its fade; the clock did not reset to local zero.
     assert_eq!(
-        samples(query(&plan, 2, 4)),
-        vec![(2, ExactRatio::ZERO), (2, ExactRatio::ONE)]
+        samples(query(&plan, 0, 4)),
+        vec![
+            (0, ExactRatio::ZERO),
+            (4, ExactRatio::ZERO),
+            (4, ExactRatio::ONE),
+            (4, ExactRatio::integer(2)),
+        ]
     );
-    let outside = query(&plan, 0, 2);
+    let outside = query(&plan, 0, 1);
     assert_eq!(outside.spans[0].length, 0);
     assert!(outside.spans[0].boundaries.start.is_empty());
+
+    // A still-owned meaningful crop must constrain that same retained clock.
+    // Selecting [1,2) gives ceil(1.5)-ceil(0)=2, even though its child is 3f.
+    let cropped = document(
+        32_000,
+        &["crop"],
+        vec![
+            ("voice", hold(3)),
+            ("crop", retime("voice", 1, 1, 2, PitchPolicy::FollowSpeed)),
+        ],
+    );
+    let cropped = RenderPlan::compile(&bind(
+        &cropped,
+        &reference,
+        "voice",
+        AudioClockRoot::PreserveInputPointCeil {
+            stage: id("preserve"),
+        },
+        None,
+    ))
+    .unwrap();
+    let cropped = query(&cropped, 0, 2);
+    assert!(
+        cropped.spans[0]
+            .boundaries
+            .start
+            .iter()
+            .any(|origin| origin.instance.node == id("crop"))
+    );
+    assert_eq!(
+        samples(cropped),
+        vec![(2, ExactRatio::ZERO), (2, ExactRatio::ONE)]
+    );
 
     // A canonical birth clock is independently point-ceil: ceil(4.5) is
     // five, while the visible project root rounds the same end to four.

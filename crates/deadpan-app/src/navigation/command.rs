@@ -2,7 +2,7 @@
 
 use deadpan_core::FrameDuration;
 
-use super::{Action, BeatEdit};
+use super::{Action, BeatEdit, duration::DurationInput};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Entry {
@@ -25,6 +25,13 @@ pub fn parse(input: &str) -> Result<Entry, String> {
         return Err("Extra arguments are not supported by this command.".into());
     }
     let action = match verb.as_str() {
+        "hold" => {
+            let duration =
+                DurationInput::parse(argument.ok_or(
+                    "Use :hold 0.5s or :hold 12f to insert a silent freeze at the cursor.",
+                )?)?;
+            return Ok(Entry::Action(Action::Edit(BeatEdit::InsertHold(duration))));
+        }
         "repeat" | "wrap-repeat" => {
             let count = argument
                 .ok_or("Use :repeat N or :wrap-repeat N with a positive total play count.")?;
@@ -92,6 +99,27 @@ mod tests {
     use super::*;
 
     #[test]
+    fn pause_command_keeps_exact_units_and_zero_without_committing() {
+        for input in ["12f", "0f", "250ms", "1.5s", "01:02.500"] {
+            assert_eq!(
+                parse(&format!("hold {input}")),
+                Ok(Entry::Action(Action::Edit(BeatEdit::InsertHold(
+                    DurationInput::parse(input).unwrap()
+                ))))
+            );
+        }
+        for input in [
+            "hold",
+            "hold -1f",
+            "hold 12",
+            "hold 12f extra",
+            "hold 1s video=ai",
+        ] {
+            assert!(parse(input).is_err(), "{input}");
+        }
+    }
+
+    #[test]
     fn repeat_setter_and_explicit_wrapper_remain_distinct() {
         assert_eq!(
             parse(" :RePeAt 3 "),
@@ -127,7 +155,6 @@ mod tests {
             "undo anything",
             "help extra",
             "source extra",
-            "hold 11f",
             "::delete",
         ] {
             assert!(parse(input).is_err(), "{input}");

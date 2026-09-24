@@ -1396,7 +1396,7 @@ fn bound_reads_share_cancellation_work_and_complete_cached_dependencies() {
 }
 
 #[test]
-fn empty_retained_physical_support_zero_extends_and_source_only_reader_rejects_bindings() {
+fn expanded_edit_reveals_current_source_without_reclocking_its_binding() {
     let rate = FrameRate::new(48_000, 1).unwrap();
     let mut crop = preserve("sequence", 128, 128);
     let NodeKind::Retime { mapping, .. } = &mut crop.kind else {
@@ -1435,10 +1435,17 @@ fn empty_retained_physical_support_zero_extends_and_source_only_reader_rejects_b
     let AudioSignalContent::Bound(bound) = &query.spans[0].content else {
         panic!("expected bound Source")
     };
-    assert!(matches!(
-        bound.raw_domain().unwrap(),
-        AudioBoundDomain::Empty
-    ));
+    // The current Edit exposes the complete owned Source, so its physical
+    // support is current. Its historical physical origin stays negative: the
+    // old enclosing crop must not freeze an empty body after being expanded.
+    let AudioBoundDomain::Root(domain) = bound.raw_domain().unwrap() else {
+        panic!("current owned Source has a physical root domain")
+    };
+    assert_eq!(domain.root_samples(), AudioSample(-128)..AudioSample(0));
+    assert_eq!(
+        bound.reference_at_offset(0).unwrap(),
+        ExactRatio::integer(-128)
+    );
     let source_only = crate::SequenceAudio::new(Arc::clone(&plan));
     assert!(matches!(
         source_only.read_sources(
@@ -1451,11 +1458,12 @@ fn empty_retained_physical_support_zero_extends_and_source_only_reader_rejects_b
         Err(crate::SequenceAudioError::Unsupported { .. })
     ));
     assert_eq!(provider.calls, 0);
+    let expected = decoded(&provider, 0..64);
     let mut renderer = StageAudio::new(Arc::clone(&plan));
     let block = render(&mut renderer, &mut provider, 0, 64);
-    assert_eq!(block.samples, vec![[0.; 2]; 64]);
-    assert_eq!(block.suppressed, vec![AudioSample(0)..AudioSample(64)]);
-    assert_eq!(provider.calls, 0);
+    assert_eq!(block.samples, expected);
+    assert!(block.suppressed.is_empty());
+    assert!(provider.calls > 0);
 }
 
 fn changed_wav() -> crate::PreparedSource {

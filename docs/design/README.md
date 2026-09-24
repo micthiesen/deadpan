@@ -67,6 +67,13 @@ with a total-play count, never an expanded widget per occurrence.
 
 ## Interaction contract
 
+Pause insertion adds a visible `,h` action and Choose pause duration entry to the
+selection inspector. Keep the picture dominant and reuse the existing command
+field for exact duration input; show the resolved frame count, freeze/silence
+policy and insertion boundary there. A committed pause selects its own card and
+shows its duration and policies. Prefix `3,` teaches `h` and the half-second count
+unit. The interaction keeps one Original and one reversible edit in view.
+
 | State | Visible information | Behavior |
 | --- | --- | --- |
 | Normal | Mode, Original/Your edit context, pane, selected beat and scope | `h/l` move frames; `j/k` move the focused list; counts precede motions; `Tab`/`Shift-Tab` cycle visible panes. In Your edit, beat actions require an editable selection. |

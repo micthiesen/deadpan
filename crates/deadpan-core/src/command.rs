@@ -40,6 +40,15 @@ pub struct SourceInsertion {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "command", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Command {
+    /// Insert deterministic time at a project boundary while retaining the
+    /// sampled phase of each shifted physical allocation.
+    InsertTime {
+        at: crate::ProjectFrame,
+        hold: HoldRecipe,
+        id: NodeId,
+        identities: crate::SplitIdentities,
+        timing: crate::AudioTimingId,
+    },
     /// Split an interior local output boundary without changing rendered time.
     Split {
         node: NodeId,
@@ -347,6 +356,21 @@ pub fn apply(
     )?;
     let before_duration = document.duration()?.frames();
     let mut result = match &request.command {
+        Command::InsertTime {
+            at,
+            hold,
+            id,
+            identities,
+            timing,
+        } => crate::insert_time::apply(
+            document,
+            *at,
+            hold,
+            id,
+            identities,
+            timing,
+            &request.new_revision,
+        )?,
         Command::Split {
             node,
             at,
@@ -499,6 +523,12 @@ pub(crate) fn reduce(
     allocation: &RevisionId,
 ) -> Result<(), EditError> {
     match command {
+        Command::InsertTime { .. } => {
+            return Err(EditError::new(
+                EditErrorCode::InvalidCommand,
+                "time insertion requires the retained-clock entrypoint",
+            ));
+        }
         Command::Split { .. } => {
             return Err(EditError::new(
                 EditErrorCode::InvalidCommand,
@@ -1310,6 +1340,7 @@ fn apply_changes<K: Ord + Clone, V: Eq + Clone>(
 
 fn description(command: &Command) -> &'static str {
     match command {
+        Command::InsertTime { .. } => "Insert pause",
         Command::Split { .. } => "Split beat",
         Command::Insert { .. } => "Insert beats",
         Command::Delete { .. } => "Delete beat",

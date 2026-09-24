@@ -178,7 +178,8 @@ fade clocks without media. `cargo test --locked -p deadpan-audio --lib bound_rea
 compares actual decoded PCM through moved/resumed bindings, stable Repeat scope,
 current Edit support, Preserve input/output policies and shared preparation
 limits. See [owned audio bindings](OWNED_AUDIO_BINDINGS.md). These are engine
-tests; native pause insertion, playback and listening remain separate work.
+tests. [Pause insertion](INSERT_TIME.md) connects retained clocks to a native
+command; playback and listening remain separate work.
 
 Run `cargo test --locked -p deadpan-audio --test loudness --test true_peak` for
 informational metering, generated standard cases, channel/EOF behavior and

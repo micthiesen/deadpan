@@ -66,7 +66,7 @@ or change undo history. It checks the same reducer, serialized size limits, and
 never-reused revision rule as commit. A stale expected
 revision fails with `RevisionConflict` and the current revision, without writing.
 
-Supported commands are `insert`, `delete`, `move`, `group`,
+Supported commands are `insert`, `insert_time`, `split`, `delete`, `move`, `group`,
 `ungroup`, `wrap_repeat`, `set_repeat`, `insert_plays`, `move_plays`, `set_hold_duration`, `set_hold_provider`, `set_source_audio_mapping`, `set_source_video_mapping`,
 `rename`, `set_audio_edge`, `add_asset`, `set_canvas`, `set_mark`, `delete_mark`, `set_play_override`, `clear_play_override`, and `edit_occurrence`. Their exact typed parameters are defined in
 [`Command`](../crates/deadpan-core/src/command.rs). `set_repeat` changes an existing
@@ -75,10 +75,14 @@ three total plays and only two gaps. These are structural edits, not rendered
 media. Editing through range/text selectors, registers, macros, and effects
 remain required future work.
 
-Documents use schema 16. Retime `purpose` defaults to ordinary `edit` and is
+Documents use schema 17. Retime `purpose` defaults to ordinary `edit` and is
 omitted from canonical JSON. `partition` retains child audio context at unity
 speed and requires automatic edges; see [the partition contract](AUDIO_PARTITIONS.md).
-This primitive does not implement Split or inserted-time resume semantics.
+`split` retains editable child context through transparent partitions.
+`insert_time` atomically inserts a positive Background or Freeze Hold into the
+supported root sequence and preserves downstream audio clocks. Its current scope,
+identity parameters, zero-duration refusal and migration contract are documented
+in [Insert Time](INSERT_TIME.md). Arbitrary nested insertion remains open.
 Marks may retain multiple physical bindings under one logical ID. Named queries
 return every matching binding ordinal, require explicit ambiguous occurrence
 scope and reject distinct exact positions with `MarkAmbiguous`. See

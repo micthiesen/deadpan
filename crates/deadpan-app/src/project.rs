@@ -6,7 +6,9 @@ use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, mpsc};
 
-use deadpan_core::{AssetId, FrameDuration, NodeId, ProjectDocument, RevisionId, SourceFrameIndex};
+use deadpan_core::{
+    AssetId, FrameDuration, NodeId, ProjectDocument, ProjectFrame, RevisionId, SourceFrameIndex,
+};
 use deadpan_plan::RenderPlan;
 use deadpan_store::original_media::{OriginalImportHandle, OriginalMediaRecord, OriginalOwnership};
 use deadpan_store::single_source::SingleSourceState;
@@ -14,6 +16,7 @@ use deadpan_store::source_registration::SourceQualificationReceipt;
 
 use crate::library::ProjectLibrary;
 
+mod pause;
 mod service;
 #[cfg(test)]
 mod tests;
@@ -90,6 +93,10 @@ pub struct CommittedEdit {
 /// concrete occurrence scope; the service rejects hidden or nested targets.
 #[derive(Clone, Debug)]
 pub enum ProjectEdit {
+    InsertTime {
+        at: ProjectFrame,
+        duration: FrameDuration,
+    },
     Split {
         node: NodeId,
         /// Interior boundary in this root beat's project-frame clock.

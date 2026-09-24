@@ -7,11 +7,11 @@ supplies coordinates only. It is not a frozen raw body, an authored binding,
 or permission to read media.
 
 This provides a tested evaluation boundary for the owned-tree approach to
-inserted-time audio. Split already retains full editable child contexts. A future
-binding can preserve their evaluation clocks without adding a second graph of
-historical raw recipes. Core 16/database 22 now retain the separate
-[binding representation](OWNED_AUDIO_BINDINGS.md). Its renderer, complete edit
-lifecycle and arbitrary Hold insertion remain open.
+inserted-time audio. Split retains full editable child contexts. The separate
+[binding representation and renderer](OWNED_AUDIO_BINDINGS.md) preserve their
+evaluation clocks without adding a second graph of historical raw recipes.
+Core 17/database 23 add [atomic root-sequence insertion](INSERT_TIME.md).
+The complete edit lifecycle and arbitrary nested Hold insertion remain open.
 
 ## Placement and support
 
@@ -116,9 +116,9 @@ their old policy and invalidate affected opaque preparations.
 Historical timing layouts may supply bounded placement indexes. Historical raw
 bodies remain useful for explicit revision inspection, but are not required by
 this owned-recipe reader. Neither this API nor the timing-only proposal proves
-the complete binding lifecycle. The separate persisted representation keeps
-rendering explicitly unavailable until its policy and PCM consumers honor the
-authored clocks.
+the complete binding lifecycle. The separate persisted representation now has
+[policy and PCM consumers](OWNED_AUDIO_BINDINGS.md) that honor authored clocks;
+its remaining lifecycle and insertion limits are recorded there.
 
 [Qualification](qualification/owned-audio-clock-2026-09-23.md) records the actual
 PCM/current-recipe tests, independent review and full 1,108-test repository gate.

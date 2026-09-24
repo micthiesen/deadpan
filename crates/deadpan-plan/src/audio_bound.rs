@@ -154,12 +154,17 @@ impl RenderPlan {
             1,
         )?;
         let local = |point| transform.local_at_signal_frame(point);
+        // The retained layout fixes the sampling clock, including its original
+        // reference anchor above. It does not freeze the current raw recipe's
+        // duration. For example, lengthening a moved RoomTone Hold must expose
+        // its new tail without resetting the loop phase or other Repeat plays'
+        // historical origins. The raw Source walker separately applies current
+        // source placement; current meaningful ancestors constrain this extent.
+        let intrinsic =
+            ExactRatio::ZERO..ExactRatio::integer(self.nodes[node].inspection.duration.frames());
         let support = match support {
-            Some(current) => intersect(
-                lattice.local_support.clone(),
-                local(current.start)?..local(current.end)?,
-            )?,
-            None => lattice.local_support.clone(),
+            Some(current) => intersect(intrinsic, local(current.start)?..local(current.end)?)?,
+            None => intrinsic,
         };
         budget.spend(constraints.len())?;
         let project = |point| {

@@ -7,9 +7,11 @@ timeline automatically. Your edit evolves through reversible changes; Original
 stays pinned for browsing and deliberate reuse. A separate sound catalog admits
 external audio without changing picture or duration. Generic/legacy packages
 retain their broader register/insert workflow. See [the profile contract](SINGLE_ORIGINAL.md).
-It also splits root beats at the cursor, wraps or updates Repeats, deletes beats and changes an
-existing root Hold's duration. Playback, range operators, generated-provider
-rendering and export remain open.
+It also splits root beats at the cursor, inserts silent freezes through
+[Insert Time](INSERT_TIME.md), wraps or updates Repeats, deletes beats and changes
+an existing root Hold's duration. [Pause qualification](qualification/insert-time-2026-09-24.md)
+records exact input, measured frame selection and native focus review. Playback,
+range operators, generated-provider rendering and export remain open.
 
 ## Project and media ownership
 
@@ -187,11 +189,21 @@ and an explicit positive integer frame unit. Arguments and unsupported options
 are rejected, not silently ignored. This command subset does not yet implement
 the specification's full typed-unit, selector and completion grammar.
 
-Hold insertion at an arbitrary cursor, nested occurrence navigation,
-range edits, gain controls, semantic dot-repeat and macros remain open. Existing
-child-index insertion is not a substitute for the exact Hold splice contract.
-[Splice design prerequisites](STRUCTURAL_SPLICE_DESIGN.md) record the exact
-resume, retained DSP/envelope domain and mark-lineage work still required.
+`,h` inserts a 0.5-second frozen silent pause at the cursor. Counts multiply that
+duration: `3,h` inserts 1.5 seconds. `:hold 12f`, `:hold 250ms`, `:hold 1.5s` and
+`:hold 01:02.500` use exact time input and show the resolved frame count. Seconds
+round once with ties-to-even; zero creates no history. The inspector and footer
+teach the shortcut, and Choose pause duration opens the command entry. The new
+pause stays selected at its start; Enter edits its existing frame duration.
+The service freezes a measured original frame and commits one atomic splice.
+See [pause insertion](INSERT_TIME.md) for resume semantics and supported scope.
+
+Arbitrary nested insertion, Repeat gaps, nested occurrence navigation, range
+edits, gain controls, semantic dot-repeat and macros remain open. The current
+pause command supports root Source and ordinary Hold beats and their fragments;
+unsupported shifted structures fail without an edit. Existing child-index Insert
+retains its distinct semantics. [Splice design prerequisites](STRUCTURAL_SPLICE_DESIGN.md)
+record the wider scope still required.
 
 [Qualification](qualification/native-workspace-2026-09-21.md) records the actual
 service, decoder, keyboard/focus and native interaction checks and their limits.

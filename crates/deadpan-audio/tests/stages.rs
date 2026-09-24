@@ -23,6 +23,9 @@ use sha2::{Digest, Sha256};
 
 const TIMEOUT: Duration = Duration::from_secs(10);
 
+#[path = "stages/insert_time.rs"]
+mod insert_time;
+
 fn id(value: &str) -> NodeId {
     NodeId::new(value).unwrap()
 }

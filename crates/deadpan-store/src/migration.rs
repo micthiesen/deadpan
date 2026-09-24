@@ -45,7 +45,7 @@ impl ProjectStore {
                 backup: None,
             });
         }
-        if !matches!(version, 1..=21) {
+        if !matches!(version, 1..=22) {
             return Err(StoreError::UnsupportedSchema(version));
         }
         let lock = acquire_lock(&package)?;
@@ -198,6 +198,8 @@ fn migrate_candidate(
     // frozen comparisons omit only that new metadata and retain old summaries.
     // Schema 21 uses core schema 15 with audio lineage. Its closed snapshots
     // and history cannot contain authored timing bindings, even empty fields.
+    // Schema 22 uses core schema 16 with owned timing bindings. It preserves
+    // those values exactly but does not admit the new InsertTime command.
     // Replay all authored history, preserving operational rows and identities
     // while assigning FitBeat only to mappings absent in that legacy schema.
     // Schemas before 15 gain an explicit basis; schema 15 retains its policy.

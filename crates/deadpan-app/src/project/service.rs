@@ -324,7 +324,31 @@ impl Service {
         if document.revision_id() != &expected_revision {
             return Err("Project changed before the edit".into());
         }
+        if let ProjectEdit::InsertTime { at, duration } = edit {
+            if duration == deadpan_core::FrameDuration::ZERO {
+                self.message = Some("Pause resolves to 0 frames; no edit was made.".into());
+                return Ok(());
+            }
+            let id = node();
+            let request =
+                super::pause::prepare(workspace, at, duration, revision(), id.clone(), node)?;
+            // As for every native edit, current generation requests require the
+            // real host relevance resolver. Never invent observations here.
+            let outcome = self.writer()?.commit(&request).map_err(display)?;
+            self.refresh()?;
+            self.committed = Some(CommittedEdit {
+                revision: outcome.revision_id,
+                selected_node: Some(id),
+            });
+            self.message = Some(format!(
+                "Inserted a {} frame silent pause at boundary {} and saved",
+                duration.frames(),
+                at.0
+            ));
+            return Ok(());
+        }
         let target = match &edit {
+            ProjectEdit::InsertTime { .. } => unreachable!("pause handled above"),
             ProjectEdit::Split { node, .. }
             | ProjectEdit::Repeat { node, .. }
             | ProjectEdit::WrapRepeat { node, .. }
@@ -341,6 +365,7 @@ impl Service {
         let selected = Some(target.clone());
         let split_position = matches!(edit, ProjectEdit::Split { .. }).then_some(position);
         let (command, selected_node, message) = match edit {
+            ProjectEdit::InsertTime { .. } => unreachable!("pause handled above"),
             ProjectEdit::Split { node: target, at } => {
                 let mut pending = vec![target.clone()];
                 let mut count = 3_usize;

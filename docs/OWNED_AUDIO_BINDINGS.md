@@ -1,11 +1,12 @@
 # Owned audio timing bindings
 
-Core 16/database 22 store bounded timing bindings separately from the raw owned
+Core 17/database 23 store bounded timing bindings separately from the raw owned
 tree. The normal plan and `StageAudio` paths evaluate these bindings with retained
 sampling, current owned policies and post-mapping fades. A pure capture helper
 can capture previously unbound physical owners without expanding Repeat plays.
-No editor command creates bindings in an empty project yet. Arbitrary Hold
-insertion and the complete authoring lifecycle remain open.
+[Pause insertion](INSERT_TIME.md) authors these bindings and composes resume
+phases for root Source/Hold fragments. An empty project needs no retained clock.
+Arbitrary nested insertion and the complete authoring lifecycle remain open.
 
 The [single-Original workflow](SINGLE_ORIGINAL.md) remains the product model:
 reshape the full source with reversible changes. Timing records are internal
@@ -14,7 +15,10 @@ authored state, not another source, media bin, or interface mode.
 ## One recipe, explicit clocks
 
 The current owned Source, Hold or nonunity Preserve supplies the raw recipe.
-Its binding supplies the sampling lattice. A flat table stores immutable
+Its current intrinsic extent and current meaningful crop constraints govern raw
+support and fade length. Its binding supplies the sampling lattice and retained
+reference anchor, so editing a Hold duration does not reset RoomTone phase.
+A flat table stores immutable
 `FrozenAudioLayout` records under allocation-revision/ordinal identities. A
 record contains timing geometry and stable play placement, not another binding
 or a historical media body. Several bindings and phase terms can share it.

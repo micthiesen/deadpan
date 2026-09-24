@@ -1,10 +1,12 @@
 use eframe::egui::{Key, Modifiers};
 
 pub mod command;
+pub mod duration;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum BeatEdit {
     Split,
+    InsertHold(duration::DurationInput),
     Repeat(u32),
     WrapRepeat(u32),
     Delete,
@@ -101,6 +103,7 @@ pub struct Bindings {
     count: Option<u32>,
     count_overflow: bool,
     g: bool,
+    comma: bool,
     operator: Option<Key>,
 }
 
@@ -120,6 +123,7 @@ impl Bindings {
             match self.operator {
                 Some(Key::R) => "r",
                 Some(Key::D) => "d",
+                _ if self.comma => ",",
                 _ if self.g => "g",
                 _ => "",
             }
@@ -133,8 +137,13 @@ impl Bindings {
         match self.operator {
             Some(Key::R) => Some("r completes the Repeat · Esc cancels"),
             Some(Key::D) => Some("d cuts this whole beat · Esc cancels"),
+            _ if self.comma => {
+                Some("h inserts a silent freeze · each count adds 0.5 s · Esc cancels")
+            }
             _ if self.g => Some("g goes to the start · Esc cancels"),
-            _ if self.count.is_some() => Some("Then h/l to move or rr to repeat · Esc cancels"),
+            _ if self.count.is_some() => {
+                Some("Then h/l to move, rr to repeat, or ,h to pause · Esc cancels")
+            }
             _ => None,
         }
     }
@@ -187,6 +196,10 @@ impl Bindings {
         // These are logical symbols: layouts may need Shift or Option to type
         // them. Never infer a colon from the physical US semicolon position.
         if !modifiers.ctrl && !modifiers.command && !modifiers.mac_cmd {
+            if key == Key::Comma && !self.g && !self.comma && self.operator.is_none() {
+                self.comma = true;
+                return Some(Action::OfferInsert);
+            }
             if matches!(key, Key::Colon | Key::Slash | Key::Questionmark) {
                 self.clear();
                 return Some(match key {
@@ -198,10 +211,10 @@ impl Bindings {
             if !self.g
                 && let Some((_, digit)) = DIGITS.iter().find(|(bound, _)| *bound == key)
             {
-                if self.operator.is_some() {
+                if self.operator.is_some() || self.comma {
                     self.clear();
                     return Some(Action::Invalid(
-                        "Put one count before the operator, for example 3rr. Counts after r or d are not supported.",
+                        "Put one count before the operator, for example 3rr or 3,h.",
                     ));
                 }
                 if let Some(count) = self
@@ -230,6 +243,19 @@ impl Bindings {
             return Some(Action::Invalid(
                 "Count exceeds 4294967295; no edit was made.",
             ));
+        }
+        if self.comma {
+            let action = if key == Key::H {
+                Action::Edit(BeatEdit::InsertHold(duration::DurationInput::half_seconds(
+                    self.count.unwrap_or(1),
+                )))
+            } else {
+                Action::Invalid(
+                    "After comma, h inserts a silent freeze. Other leader actions are not ready.",
+                )
+            };
+            self.clear();
+            return Some(action);
         }
         if let Some(operator) = self.operator {
             let action = if key != operator {
@@ -348,6 +374,84 @@ pub fn text_action(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn pause_leader_preserves_counts_and_cannot_fire_from_text_or_repeat() {
+        let mut bindings = Bindings::default();
+        assert_eq!(bindings.key(Key::Num3, Modifiers::NONE, false, false), None);
+        assert_eq!(
+            bindings.key(Key::Comma, Modifiers::NONE, false, false),
+            Some(Action::OfferInsert)
+        );
+        assert_eq!(bindings.pending(), "3,");
+        assert!(bindings.pending_hint().unwrap().contains("silent freeze"));
+        assert_eq!(
+            bindings.key(Key::H, Modifiers::NONE, false, false),
+            Some(Action::Edit(BeatEdit::InsertHold(
+                duration::DurationInput::half_seconds(3)
+            )))
+        );
+        assert!(bindings.pending().is_empty());
+        assert!(!allows_key_repeat(Key::Comma, Modifiers::NONE));
+        // h may repeat as a motion, but the pause prefix is consumed once.
+        assert_eq!(
+            bindings.key(Key::H, Modifiers::NONE, false, false),
+            Some(Action::Step {
+                forward: false,
+                count: 1
+            })
+        );
+        for (text, ime) in [(true, false), (false, true)] {
+            bindings.key(Key::Comma, Modifiers::NONE, false, false);
+            assert_eq!(bindings.key(Key::H, Modifiers::NONE, text, ime), None);
+            assert!(bindings.pending().is_empty());
+        }
+        bindings.key(Key::Comma, Modifiers::NONE, false, false);
+        assert_eq!(
+            bindings.key(Key::Escape, Modifiers::NONE, false, false),
+            Some(Action::Escape)
+        );
+        assert!(bindings.pending().is_empty());
+        bindings.key(Key::Comma, Modifiers::NONE, false, false);
+        assert!(matches!(
+            bindings.key(Key::Num2, Modifiers::NONE, false, false),
+            Some(Action::Invalid(_))
+        ));
+        bindings.key(Key::Comma, Modifiers::NONE, false, false);
+        assert!(matches!(
+            bindings.key(Key::A, Modifiers::NONE, false, false),
+            Some(Action::Invalid(_))
+        ));
+        assert!(bindings.pending().is_empty());
+    }
+
+    #[test]
+    fn logical_comma_accepts_layout_modifiers_but_never_command_or_control() {
+        for modifiers in [
+            Modifiers::SHIFT,
+            Modifiers::ALT,
+            Modifiers::ALT | Modifiers::SHIFT,
+        ] {
+            let mut bindings = Bindings::default();
+            bindings.key(Key::Num3, Modifiers::NONE, false, false);
+            assert_eq!(
+                bindings.key(Key::Comma, modifiers, false, false),
+                Some(Action::OfferInsert)
+            );
+            assert_eq!(bindings.pending(), "3,");
+            assert_eq!(
+                bindings.key(Key::H, Modifiers::NONE, false, false),
+                Some(Action::Edit(BeatEdit::InsertHold(
+                    duration::DurationInput::half_seconds(3)
+                )))
+            );
+        }
+        for modifiers in [Modifiers::CTRL, Modifiers::COMMAND, Modifiers::MAC_CMD] {
+            let mut bindings = Bindings::default();
+            assert_eq!(bindings.key(Key::Comma, modifiers, false, false), None);
+            assert!(bindings.pending().is_empty());
+        }
+    }
 
     fn keys(bindings: &mut Bindings, keys: &[Key]) -> Option<Action> {
         keys.iter().fold(None, |_, key| {
