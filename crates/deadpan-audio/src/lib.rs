@@ -15,6 +15,7 @@ mod room_tone;
 mod sequence;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 mod session;
+mod signal_transfer;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 mod stages;
 mod true_peak;
@@ -32,8 +33,13 @@ pub use room_tone::{ROOM_TONE_ID, RoomTone, RoomToneRecipe};
 pub use sequence::{AudioSourceProvider, SequenceAudio, SequenceAudioError, SourceStageBlock};
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub use session::PreparedSource;
+pub use signal_transfer::{
+    RootSignalBlock, RootSignalTransfer, SignalTransferError, TransferredSignalBlock,
+};
 #[cfg(any(target_os = "macos", target_os = "linux"))]
-pub use stages::{EdgeFadedBlock, StageAudio, StageAudioError, StageLimits, TimeMappedBlock};
+pub use stages::{
+    EdgeFadedBlock, StageAudio, StageAudioError, StageLimits, TimeMappedBlock, TransferredRootBlock,
+};
 pub use true_peak::{
     MAX_TRUE_PEAK_FRAMES, TRUE_PEAK_ID, TruePeakError, TruePeakMeter, TruePeakReport,
 };

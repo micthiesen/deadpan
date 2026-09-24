@@ -80,6 +80,9 @@ PCM and do not qualify listening or recorded-speech continuity.
 This consumer does not resample PCM, apply fades, mutate authored state, or
 transfer a root clock into a newly introduced Preserve input grid. It is not yet
 connected to an authored Hold command or the application transport.
+The separate [sampled-root transfer](AUDIO_SIGNAL_TRANSFER.md) now implements
+bounded conversion of already masked root PCM into a point grid. Authored
+bindings must still supply the correct retained context and active map.
 
 ## Remaining authored work
 
@@ -89,8 +92,8 @@ and preserve full processing contexts. Split/refinement and occurrence isolation
 must transform live bindings without rewriting frozen facts. Repeat growth,
 copying, deletion, policy changes and pruning need explicit lifecycle rules;
 changing a silence policy must replace its retained contribution rather than
-mute that location forever. Cross-grid transfer requires preparation semantics,
-not a renamed sample type. Migration must freeze the previous grammar and give
+mute that location forever. Cross-grid conversion must consume the correctly
+bound context through the sampled-root adapter. Migration must freeze the previous grammar and give
 legacy projects no invented bindings.
 
 The [sampling contract](AUDIO_SAMPLING.md) and

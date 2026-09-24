@@ -45,6 +45,16 @@ change. [Qualification](qualification/audio-reference-2026-09-23.md) records
 1,011 passing tests, the full gate and independent review; schema versions
 remain unchanged.
 
+[Sampled-root transfer](AUDIO_SIGNAL_TRANSFER.md) converts admitted raw root PCM
+onto an explicit point grid, retaining old silent samples before interpolation
+and exact output suppression afterwards. StageAudio keeps full preparation
+contexts and shares work, provenance checks and one deadline across all halo
+reads. Creative fades remain after time mapping. Tests include real decoder and
+canonical DSP paths. [Qualification](qualification/audio-transfer-2026-09-23.md)
+records 1,021 passing tests, the full gate and independent review. Authored live-to-frozen bindings, policy replacement,
+compact Repeat lifecycle, atomic Hold insertion and application playback remain
+open. This conversion does not change core 14/database 20 or complete a gate.
+
 Current measured evidence: [editing foundation verification](FOUNDATION_VERIFICATION.md), [picture plan and migration verification](PLAN_MIGRATION_VERIFICATION.md), [exact boundary verification](ANCHOR_VERIFICATION.md), [persistent mark verification](MARK_VERIFICATION.md), [sparse override verification](OVERRIDE_VERIFICATION.md), [nested occurrence verification](OCCURRENCE_VERIFICATION.md), [native media qualification](qualification/media-2026-09-20.md), [compatible FFmpeg/Rust qualification](qualification/media-compatible-2026-09-20.md), [audio candidate qualification](qualification/audio-2026-09-20.md), and [canonical audio qualification](qualification/audio-canonical-2026-09-20.md).
 
 The [native host conversion qualification](qualification/media-host-conversion-2026-09-21.md)

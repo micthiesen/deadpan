@@ -1,0 +1,41 @@
+{
+  "cases": [
+    {
+      "killed_delay": true,
+      "host_returned": true,
+      "guarded": false,
+      "delay_status": 137,
+      "marker": true,
+      "script": "sleep 10 &\nchild=$!\nkill -KILL \"$child\"\nwait \"$child\"\nstatus=$?\nprintf '%s' \"$status\" > delay-status\nprintf alive > survived\nexit 0\n",
+      "stderr": "/bin/sh: line 3: 81274 Killed: 9               sleep 10\n"
+    },
+    {
+      "killed_delay": true,
+      "host_returned": true,
+      "guarded": true,
+      "delay_status": 137,
+      "marker": false,
+      "script": "sleep 10 &\nchild=$!\nkill -KILL \"$child\"\nwait \"$child\"\nstatus=$?\nprintf '%s' \"$status\" > delay-status\n[ \"$status\" -eq 0 ] && [ -f cleanup-returned ] && printf alive > survived\nexit 0\n",
+      "stderr": "/bin/sh: line 3: 81276 Killed: 9               sleep 10\n"
+    },
+    {
+      "killed_delay": false,
+      "host_returned": false,
+      "guarded": true,
+      "delay_status": 0,
+      "marker": false,
+      "script": "sleep 0.02\nstatus=$?\nprintf '%s' \"$status\" > delay-status\n[ \"$status\" -eq 0 ] && [ -f cleanup-returned ] && printf alive > survived\nexit 0\n",
+      "stderr": ""
+    },
+    {
+      "killed_delay": false,
+      "host_returned": true,
+      "guarded": true,
+      "delay_status": 0,
+      "marker": true,
+      "script": "sleep 0.02\nstatus=$?\nprintf '%s' \"$status\" > delay-status\n[ \"$status\" -eq 0 ] && [ -f cleanup-returned ] && printf alive > survived\nexit 0\n",
+      "stderr": ""
+    }
+  ],
+  "result": "pass"
+}

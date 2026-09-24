@@ -126,6 +126,14 @@ bounded root-resume PCM consumer proves both rounding phases with canonical DSP.
 Persisted live-to-frozen bindings, lifecycle transforms, cross-grid composition
 and the atomic insertion command remain to be implemented.
 
+[Sampled-root transfer](AUDIO_SIGNAL_TRANSFER.md) now converts already mapped,
+explicitly suppressed root PCM to a new point grid with bounded halo reads.
+Old silence and envelope exhaustion affect input taps before interpolation and
+are reapplied at exact destination points; creative fades remain separate.
+The StageAudio entrypoint shares preparation work, provenance observations and
+one deadline across the complete halo. This supplies the conversion operation,
+not the authored binding or lifecycle rules that select its retained signal.
+
 ## Structural and mark requirements
 
 Resolve boundary coordinates through `RepeatLayout`, using the right-hand object

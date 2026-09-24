@@ -1,0 +1,131 @@
+{
+  "changes": [
+    [
+      "(exec 3>&2 2>/dev/null; sleep 1; printf alive > '{}'",
+      "(exec 3>&2 2>/dev/null; sleep 1; status=$?; printf '%s' \\\"$status\\\" > '{}'"
+    ],
+    [
+      "assert!(start.elapsed() < Duration::from_secs(2));",
+      "let cleanup = start.elapsed();\n    eprintln!(\"cleanup={cleanup:?}; immediate_marker={:?}\", fs::read_to_string(&marker));\n    assert!(cleanup < Duration::from_secs(2));"
+    ],
+    [
+      "assert!(!marker.exists());",
+      "assert!(!marker.exists(), \"sleep exit status: {:?}; cleanup={cleanup:?}\", fs::read_to_string(&marker));"
+    ]
+  ],
+  "command": [
+    "cargo",
+    "test",
+    "-p",
+    "deadpan-media",
+    "--locked",
+    "--test",
+    "host_boundary",
+    "successful_leader_exit_cleans_up_descendants_with_inherited_pipes",
+    "--",
+    "--exact",
+    "--nocapture"
+  ],
+  "attempts": [
+    {
+      "attempt": 1,
+      "exit_code": 0,
+      "tail": "   Compiling deadpan-media v0.1.0 (/private/tmp/deadpan-transfer-20260923/mutant/crates/deadpan-media)\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.05s\n     Running tests/host_boundary.rs (/tmp/deadpan-transfer-20260923/mutation-target/debug/deps/host_boundary-4104f95c17c72b46)\n\nrunning 1 test\ncleanup=315.07175ms; immediate_marker=Err(Os { code: 2, kind: NotFound, message: \"No such file or directory\" })\ntest successful_leader_exit_cleans_up_descendants_with_inherited_pipes ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 1.62s\n\n"
+    },
+    {
+      "attempt": 2,
+      "exit_code": 0,
+      "tail": "    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.18s\n     Running tests/host_boundary.rs (/tmp/deadpan-transfer-20260923/mutation-target/debug/deps/host_boundary-4104f95c17c72b46)\n\nrunning 1 test\ncleanup=268.354708ms; immediate_marker=Err(Os { code: 2, kind: NotFound, message: \"No such file or directory\" })\ntest successful_leader_exit_cleans_up_descendants_with_inherited_pipes ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 1.57s\n\n"
+    },
+    {
+      "attempt": 3,
+      "exit_code": 0,
+      "tail": "    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s\n     Running tests/host_boundary.rs (/tmp/deadpan-transfer-20260923/mutation-target/debug/deps/host_boundary-4104f95c17c72b46)\n\nrunning 1 test\ncleanup=163.658875ms; immediate_marker=Err(Os { code: 2, kind: NotFound, message: \"No such file or directory\" })\ntest successful_leader_exit_cleans_up_descendants_with_inherited_pipes ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 1.46s\n\n"
+    },
+    {
+      "attempt": 4,
+      "exit_code": 0,
+      "tail": "    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s\n     Running tests/host_boundary.rs (/tmp/deadpan-transfer-20260923/mutation-target/debug/deps/host_boundary-4104f95c17c72b46)\n\nrunning 1 test\ncleanup=300.994042ms; immediate_marker=Err(Os { code: 2, kind: NotFound, message: \"No such file or directory\" })\ntest successful_leader_exit_cleans_up_descendants_with_inherited_pipes ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 1.41s\n\n"
+    },
+    {
+      "attempt": 5,
+      "exit_code": 0,
+      "tail": "    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.16s\n     Running tests/host_boundary.rs (/tmp/deadpan-transfer-20260923/mutation-target/debug/deps/host_boundary-4104f95c17c72b46)\n\nrunning 1 test\ncleanup=394.732958ms; immediate_marker=Err(Os { code: 2, kind: NotFound, message: \"No such file or directory\" })\ntest successful_leader_exit_cleans_up_descendants_with_inherited_pipes ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 1.69s\n\n"
+    },
+    {
+      "attempt": 6,
+      "exit_code": 0,
+      "tail": "    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s\n     Running tests/host_boundary.rs (/tmp/deadpan-transfer-20260923/mutation-target/debug/deps/host_boundary-4104f95c17c72b46)\n\nrunning 1 test\ncleanup=349.074833ms; immediate_marker=Err(Os { code: 2, kind: NotFound, message: \"No such file or directory\" })\ntest successful_leader_exit_cleans_up_descendants_with_inherited_pipes ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 1.65s\n\n"
+    },
+    {
+      "attempt": 7,
+      "exit_code": 0,
+      "tail": "    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.18s\n     Running tests/host_boundary.rs (/tmp/deadpan-transfer-20260923/mutation-target/debug/deps/host_boundary-4104f95c17c72b46)\n\nrunning 1 test\ncleanup=378.293459ms; immediate_marker=Err(Os { code: 2, kind: NotFound, message: \"No such file or directory\" })\ntest successful_leader_exit_cleans_up_descendants_with_inherited_pipes ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 1.63s\n\n"
+    },
+    {
+      "attempt": 8,
+      "exit_code": 0,
+      "tail": "    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s\n     Running tests/host_boundary.rs (/tmp/deadpan-transfer-20260923/mutation-target/debug/deps/host_boundary-4104f95c17c72b46)\n\nrunning 1 test\ncleanup=286.692666ms; immediate_marker=Err(Os { code: 2, kind: NotFound, message: \"No such file or directory\" })\ntest successful_leader_exit_cleans_up_descendants_with_inherited_pipes ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 1.59s\n\n"
+    },
+    {
+      "attempt": 9,
+      "exit_code": 0,
+      "tail": "    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s\n     Running tests/host_boundary.rs (/tmp/deadpan-transfer-20260923/mutation-target/debug/deps/host_boundary-4104f95c17c72b46)\n\nrunning 1 test\ncleanup=221.1845ms; immediate_marker=Err(Os { code: 2, kind: NotFound, message: \"No such file or directory\" })\ntest successful_leader_exit_cleans_up_descendants_with_inherited_pipes ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 1.52s\n\n"
+    },
+    {
+      "attempt": 10,
+      "exit_code": 0,
+      "tail": "    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s\n     Running tests/host_boundary.rs (/tmp/deadpan-transfer-20260923/mutation-target/debug/deps/host_boundary-4104f95c17c72b46)\n\nrunning 1 test\ncleanup=338.802458ms; immediate_marker=Err(Os { code: 2, kind: NotFound, message: \"No such file or directory\" })\ntest successful_leader_exit_cleans_up_descendants_with_inherited_pipes ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 1.63s\n\n"
+    },
+    {
+      "attempt": 11,
+      "exit_code": 0,
+      "tail": "    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s\n     Running tests/host_boundary.rs (/tmp/deadpan-transfer-20260923/mutation-target/debug/deps/host_boundary-4104f95c17c72b46)\n\nrunning 1 test\ncleanup=309.566708ms; immediate_marker=Err(Os { code: 2, kind: NotFound, message: \"No such file or directory\" })\ntest successful_leader_exit_cleans_up_descendants_with_inherited_pipes ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 1.44s\n\n"
+    },
+    {
+      "attempt": 12,
+      "exit_code": 0,
+      "tail": "    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s\n     Running tests/host_boundary.rs (/tmp/deadpan-transfer-20260923/mutation-target/debug/deps/host_boundary-4104f95c17c72b46)\n\nrunning 1 test\ncleanup=253.355542ms; immediate_marker=Err(Os { code: 2, kind: NotFound, message: \"No such file or directory\" })\ntest successful_leader_exit_cleans_up_descendants_with_inherited_pipes ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 1.36s\n\n"
+    },
+    {
+      "attempt": 13,
+      "exit_code": 0,
+      "tail": "    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s\n     Running tests/host_boundary.rs (/tmp/deadpan-transfer-20260923/mutation-target/debug/deps/host_boundary-4104f95c17c72b46)\n\nrunning 1 test\ncleanup=380.173166ms; immediate_marker=Err(Os { code: 2, kind: NotFound, message: \"No such file or directory\" })\ntest successful_leader_exit_cleans_up_descendants_with_inherited_pipes ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 1.65s\n\n"
+    },
+    {
+      "attempt": 14,
+      "exit_code": 0,
+      "tail": "    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s\n     Running tests/host_boundary.rs (/tmp/deadpan-transfer-20260923/mutation-target/debug/deps/host_boundary-4104f95c17c72b46)\n\nrunning 1 test\ncleanup=363.882375ms; immediate_marker=Err(Os { code: 2, kind: NotFound, message: \"No such file or directory\" })\ntest successful_leader_exit_cleans_up_descendants_with_inherited_pipes ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 1.66s\n\n"
+    },
+    {
+      "attempt": 15,
+      "exit_code": 0,
+      "tail": "    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s\n     Running tests/host_boundary.rs (/tmp/deadpan-transfer-20260923/mutation-target/debug/deps/host_boundary-4104f95c17c72b46)\n\nrunning 1 test\ncleanup=308.253541ms; immediate_marker=Err(Os { code: 2, kind: NotFound, message: \"No such file or directory\" })\ntest successful_leader_exit_cleans_up_descendants_with_inherited_pipes ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 1.55s\n\n"
+    },
+    {
+      "attempt": 16,
+      "exit_code": 0,
+      "tail": "    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s\n     Running tests/host_boundary.rs (/tmp/deadpan-transfer-20260923/mutation-target/debug/deps/host_boundary-4104f95c17c72b46)\n\nrunning 1 test\ncleanup=235.727208ms; immediate_marker=Err(Os { code: 2, kind: NotFound, message: \"No such file or directory\" })\ntest successful_leader_exit_cleans_up_descendants_with_inherited_pipes ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 1.53s\n\n"
+    },
+    {
+      "attempt": 17,
+      "exit_code": 0,
+      "tail": "    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s\n     Running tests/host_boundary.rs (/tmp/deadpan-transfer-20260923/mutation-target/debug/deps/host_boundary-4104f95c17c72b46)\n\nrunning 1 test\ncleanup=388.923542ms; immediate_marker=Err(Os { code: 2, kind: NotFound, message: \"No such file or directory\" })\ntest successful_leader_exit_cleans_up_descendants_with_inherited_pipes ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 1.67s\n\n"
+    },
+    {
+      "attempt": 18,
+      "exit_code": 0,
+      "tail": "    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s\n     Running tests/host_boundary.rs (/tmp/deadpan-transfer-20260923/mutation-target/debug/deps/host_boundary-4104f95c17c72b46)\n\nrunning 1 test\ncleanup=266.3185ms; immediate_marker=Err(Os { code: 2, kind: NotFound, message: \"No such file or directory\" })\ntest successful_leader_exit_cleans_up_descendants_with_inherited_pipes ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 1.56s\n\n"
+    },
+    {
+      "attempt": 19,
+      "exit_code": 0,
+      "tail": "    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s\n     Running tests/host_boundary.rs (/tmp/deadpan-transfer-20260923/mutation-target/debug/deps/host_boundary-4104f95c17c72b46)\n\nrunning 1 test\ncleanup=378.970875ms; immediate_marker=Err(Os { code: 2, kind: NotFound, message: \"No such file or directory\" })\ntest successful_leader_exit_cleans_up_descendants_with_inherited_pipes ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 1.67s\n\n"
+    },
+    {
+      "attempt": 20,
+      "exit_code": 0,
+      "tail": "    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.18s\n     Running tests/host_boundary.rs (/tmp/deadpan-transfer-20260923/mutation-target/debug/deps/host_boundary-4104f95c17c72b46)\n\nrunning 1 test\ncleanup=395.704292ms; immediate_marker=Err(Os { code: 2, kind: NotFound, message: \"No such file or directory\" })\ntest successful_leader_exit_cleans_up_descendants_with_inherited_pipes ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 1.51s\n\n"
+    }
+  ]
+}

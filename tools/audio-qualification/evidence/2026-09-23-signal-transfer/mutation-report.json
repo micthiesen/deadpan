@@ -1,0 +1,46 @@
+[
+  {
+    "name": "input-mask",
+    "mutation": {
+      "path": "crates/deadpan-audio/src/signal_transfer.rs",
+      "old": "block.samples[left..right].fill([0.0; 2]);",
+      "new": "let _ = (left, right); // Deliberate defect: omit prefilter suppression."
+    },
+    "command": [
+      "cargo",
+      "test",
+      "-p",
+      "deadpan-audio",
+      "--locked",
+      "--test",
+      "signal_transfer",
+      "explicit_silence_masks_input_taps_and_zero_pcm_does_not_create_policy",
+      "--",
+      "--exact"
+    ],
+    "exit_code": 101,
+    "seconds": 60.336297125089914
+  },
+  {
+    "name": "halo-work",
+    "mutation": {
+      "path": "crates/deadpan-audio/src/stages.rs",
+      "old": "self.read_controlled(provider, at, count, control, false)?",
+      "new": "self.read_inner(provider, at, count, control.check()?, cancelled, false)?"
+    },
+    "command": [
+      "cargo",
+      "test",
+      "-p",
+      "deadpan-audio",
+      "--locked",
+      "--test",
+      "stages",
+      "transferred_halo_",
+      "--",
+      "--nocapture"
+    ],
+    "exit_code": 101,
+    "seconds": 4.539596500340849
+  }
+]

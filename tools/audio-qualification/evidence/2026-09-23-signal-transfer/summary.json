@@ -1,0 +1,23 @@
+{
+  "passed": 1021,
+  "failed": 0,
+  "ignored": 0,
+  "source_and_fixture_hash_count": 335,
+  "sources_unchanged_through_gate": true,
+  "reviews": {
+    "general": "no outstanding findings",
+    "clock_and_filter": "no findings after scope reassessment",
+    "cleanup_fixture_followup": "independent attempt sentinels corrected; re-review clear"
+  },
+  "mutation_assertion_failures": {
+    "missing_input_mask": 1,
+    "reset_halo_work": 2
+  },
+  "cleanup_instrumented_attempts": 20,
+  "cleanup_instrumented_failures": 0,
+  "document_verification": {
+    "design_images_and_prompts": 8,
+    "unchanged_original_spec_files": 5,
+    "changed_markdown_links": "pass"
+  }
+}

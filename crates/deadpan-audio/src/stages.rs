@@ -23,7 +23,8 @@ use serde::Serialize;
 use crate::sequence::{original_sample, source_samples};
 use crate::{
     AudioSourceProvider, MAX_OUTPUT_FRAMES, PcmWindow, PreparationError, ResampleRecipe, Resampler,
-    RoomTone, RoomToneRecipe, StereoMatrix, check_cancel,
+    RoomTone, RoomToneRecipe, RootSignalBlock, RootSignalTransfer, SignalTransferError,
+    StereoMatrix, check_cancel,
 };
 
 /// PCM residency limits, not a claim about total process memory or latency.
@@ -73,6 +74,8 @@ pub enum StageAudioError {
     Time(#[from] TimeError),
     #[error(transparent)]
     Dsp(#[from] deadpan_dsp::DspError),
+    #[error(transparent)]
+    Transfer(#[from] SignalTransferError),
 }
 
 impl StageAudioError {
@@ -81,6 +84,9 @@ impl StageAudioError {
             self,
             Self::Preparation(PreparationError::Cancelled)
                 | Self::Dsp(deadpan_dsp::DspError::Cancelled)
+                | Self::Transfer(SignalTransferError::Preparation(
+                    PreparationError::Cancelled
+                ))
         )
     }
 }
@@ -96,6 +102,21 @@ pub struct TimeMappedBlock {
     pub start: AudioSample,
     pub samples: Vec<[f32; 2]>,
     pub suppressed: Vec<Range<AudioSample>>,
+}
+
+/// This revision's raw root signal sampled on an explicitly mapped preparation
+/// grid. Root audibility is applied before interpolation and retained afterwards;
+/// creative fades and the consuming stage's own policy remain separate.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct TransferredRootBlock {
+    pub schema_version: u32,
+    pub stage: &'static str,
+    pub project_id: ProjectId,
+    pub revision_id: RevisionId,
+    pub transfer: RootSignalTransfer,
+    pub start: SignalSample,
+    pub samples: Vec<[f32; 2]>,
+    pub suppressed: Vec<Range<SignalSample>>,
 }
 
 /// Per-voice edge treatment after continuous time/pitch mapping. This is still
@@ -117,6 +138,7 @@ struct ReadBlock {
     start: AudioSample,
     samples: Vec<[f32; 2]>,
     suppressed: Vec<Range<AudioSample>>,
+    exhausted: Vec<Range<AudioSample>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -292,6 +314,53 @@ impl StageAudio {
         })
     }
 
+    /// Convert the complete root signal into a point-grid input, using one work
+    /// allowance and deadline across every halo read. `transfer` describes sample
+    /// coordinates only; this renderer owns the immutable media/revision context.
+    /// Its support must retain the full root, even for a cropped output request.
+    /// This does not author continuity bindings or run a new Preserve stage.
+    pub fn read_transferred(
+        &mut self,
+        provider: &mut impl AudioSourceProvider,
+        transfer: &RootSignalTransfer,
+        start: SignalSample,
+        frames: u32,
+        timeout: Duration,
+        cancelled: &AtomicBool,
+    ) -> Result<TransferredRootBlock, StageAudioError> {
+        check_cancel(cancelled)?;
+        if transfer.root_support() != (AudioSample(0)..self.plan.audio_duration()?) {
+            return Err(StageAudioError::Range);
+        }
+        validate_timeout(timeout)?;
+        let work = RefCell::new(ReadWork::default());
+        let control = WorkControl {
+            cancelled,
+            deadline: Instant::now() + timeout,
+            work: &work,
+        };
+        let block = transfer.render::<StageAudioError>(start, frames, cancelled, |at, count| {
+            let mut block = self.read_controlled(provider, at, count, control, false)?;
+            block.suppressed.append(&mut block.exhausted);
+            Ok(RootSignalBlock {
+                start: block.start,
+                samples: block.samples,
+                suppressed: block.suppressed,
+            })
+        })?;
+        control.check()?;
+        Ok(TransferredRootBlock {
+            schema_version: 1,
+            stage: "root_signal_on_point_grid_before_effects",
+            project_id: self.plan.metadata().project_id.clone(),
+            revision_id: self.plan.metadata().revision_id.clone(),
+            transfer: transfer.clone(),
+            start: block.start,
+            samples: block.samples,
+            suppressed: block.suppressed,
+        })
+    }
+
     fn read_inner(
         &mut self,
         provider: &mut impl AudioSourceProvider,
@@ -302,6 +371,31 @@ impl StageAudio {
         edge_fades: bool,
     ) -> Result<ReadBlock, StageAudioError> {
         check_cancel(cancelled)?;
+        validate_timeout(timeout)?;
+        let work = RefCell::new(ReadWork::default());
+        self.read_controlled(
+            provider,
+            start,
+            frames,
+            WorkControl {
+                cancelled,
+                deadline: Instant::now() + timeout,
+                work: &work,
+            },
+            edge_fades,
+        )
+    }
+
+    fn read_controlled(
+        &mut self,
+        provider: &mut impl AudioSourceProvider,
+        start: AudioSample,
+        frames: u32,
+        control: WorkControl<'_>,
+        edge_fades: bool,
+    ) -> Result<ReadBlock, StageAudioError> {
+        control.check()?;
+        let cancelled = control.cancelled;
         let end = start
             .0
             .checked_add(i64::from(frames))
@@ -313,18 +407,9 @@ impl StageAudio {
         {
             return Err(StageAudioError::Range);
         }
-        if timeout.is_zero() || timeout > Duration::from_secs(60) {
-            return Err(PreparationError::InvalidRecipe("audio read time budget").into());
-        }
         // A local Arc keeps borrowed stage handles tied to this exact plan
         // without borrowing the mutable cache for the duration of preparation.
         let plan = Arc::clone(&self.plan);
-        let work = RefCell::new(ReadWork::default());
-        let control = WorkControl {
-            cancelled,
-            deadline: Instant::now() + timeout,
-            work: &work,
-        };
         let flattened = plan.audio(start..AudioSample(end), query_limits())?;
         for span in &flattened.spans {
             preflight(&span.content, &plan)?;
@@ -402,6 +487,7 @@ impl StageAudio {
             samples.extend(block);
         }
         let mut suppressed = Vec::new();
+        let mut exhausted = Vec::new();
         for span in flattened.spans {
             control.check()?;
             let left = usize::try_from(span.samples.start.0 - start.0)
@@ -417,6 +503,7 @@ impl StageAudio {
                     &mut samples[left..right],
                     edge_fades,
                 )?;
+                exhausted.extend(crate::edges::exhausted_ranges(&span)?);
             }
         }
         control.check()?;
@@ -424,6 +511,7 @@ impl StageAudio {
             start,
             samples,
             suppressed,
+            exhausted,
         })
     }
 
@@ -785,6 +873,13 @@ impl StageAudio {
             dependencies,
         })
     }
+}
+
+fn validate_timeout(timeout: Duration) -> Result<(), StageAudioError> {
+    if timeout.is_zero() || timeout > Duration::from_secs(60) {
+        return Err(PreparationError::InvalidRecipe("audio read time budget").into());
+    }
+    Ok(())
 }
 
 fn build_room_tone(

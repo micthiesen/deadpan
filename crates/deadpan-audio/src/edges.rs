@@ -1,4 +1,6 @@
 //! Stateless, per-voice fades using retained progress on the 48 kHz output clock.
+use std::ops::Range;
+
 use deadpan_core::{AudioEdgePolicy, AudioSample};
 use deadpan_plan::AudioSpan;
 
@@ -76,6 +78,38 @@ pub(crate) fn apply_retained_envelope(
         }
     }
     Ok(())
+}
+
+/// Endpoint audibility is retained through later interpolation independently of
+/// creative fade gains. Call after the envelope pass has validated the span.
+pub(crate) fn exhausted_ranges(
+    span: &AudioSpan,
+) -> Result<Vec<Range<AudioSample>>, StageAudioError> {
+    let count = span
+        .samples
+        .end
+        .0
+        .checked_sub(span.samples.start.0)
+        .filter(|count| *count > 0)
+        .ok_or(StageAudioError::Range)?;
+    let first = span.envelope.progress_at(span.samples.start)?;
+    let last = span
+        .envelope
+        .progress_at(AudioSample(span.samples.end.0 - 1))?;
+    let mut result = Vec::new();
+    if first < 0 {
+        // Saturating negation is exact after the count clamp even for MIN.
+        let prefix = i64::try_from(first.saturating_neg().min(i128::from(count)))
+            .map_err(|_| StageAudioError::Range)?;
+        result.push(span.samples.start..AudioSample(span.samples.start.0 + prefix));
+    }
+    let length = i128::from(span.envelope.length());
+    if last >= length {
+        let suffix = i64::try_from((last - length + 1).min(i128::from(count)))
+            .map_err(|_| StageAudioError::Range)?;
+        result.push(AudioSample(span.samples.end.0 - suffix)..span.samples.end);
+    }
+    Ok(result)
 }
 
 fn edge_gain(length: u64, at: i128, start: bool, end: bool) -> f32 {
@@ -271,6 +305,13 @@ mod tests {
         assert_eq!(pcm[0], [0.0; 2], "negative retained progress is silence");
         assert!(pcm[1..1602].iter().all(|sample| *sample == [0.75, -0.25]));
         assert_eq!(pcm[1602], [0.0; 2], "exhaustion also applies to raw reads");
+        assert_eq!(
+            exhausted_ranges(&voice).unwrap(),
+            vec![
+                AudioSample(3203)..AudioSample(3204),
+                AudioSample(4805)..AudioSample(4806)
+            ]
+        );
 
         let old = AudioEnvelope::from_samples(AudioSample(0)..AudioSample(3203)).unwrap();
         let resumed = span(
@@ -281,6 +322,20 @@ mod tests {
         apply_retained_envelope(&resumed, &mut pcm, false).unwrap();
         assert!(pcm[..1601].iter().all(|sample| *sample == [0.75, -0.25]));
         assert_eq!(pcm[1601], [0.0; 2]);
+        assert_eq!(
+            exhausted_ranges(&resumed).unwrap(),
+            vec![AudioSample(4804)..AudioSample(4805)]
+        );
+        for progress in [i128::MIN, i128::MAX] {
+            let voice = span(
+                0..1,
+                AudioEnvelope::new(1, progress, AudioSample(0)).unwrap(),
+            );
+            assert_eq!(
+                exhausted_ranges(&voice).unwrap(),
+                vec![AudioSample(0)..AudioSample(1)]
+            );
+        }
     }
 
     #[test]

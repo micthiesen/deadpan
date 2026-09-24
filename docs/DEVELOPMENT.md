@@ -166,6 +166,11 @@ loop period differs from rounded storage. The host integration verifies an
 explicit AAC loop, separate silence and following speech without history writes.
 See [room-tone audio](ROOM_TONE_AUDIO.md).
 
+`cargo test --locked -p deadpan-audio --test signal_transfer` compares bounded
+root-to-point reads with materialized masked PCM and canonical DSP. The `stages`
+suite adds decoded-source integration, preparation-budget and provenance checks
+across the complete transfer halo. See [signal transfer](AUDIO_SIGNAL_TRANSFER.md).
+
 Run `cargo test --locked -p deadpan-audio --test loudness --test true_peak` for
 informational metering, generated standard cases, channel/EOF behavior and
 transactional admission. [Audio measurement](AUDIO_METERING.md) describes the

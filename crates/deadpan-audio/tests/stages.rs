@@ -10,15 +10,15 @@ use std::time::Duration;
 
 use deadpan_audio::{
     AudioSourceProvider, PcmWindow, PreparationError, PreparedSource, ResampleRecipe, Resampler,
-    SequenceAudio, SequenceAudioError, StageAudio, StageAudioError, StageLimits, StereoMatrix,
-    TimeMappedBlock,
+    RootSignalTransfer, SequenceAudio, SequenceAudioError, StageAudio, StageAudioError,
+    StageLimits, StereoMatrix, TimeMappedBlock,
 };
 use deadpan_core::*;
 use deadpan_dsp::{CanonicalRecipe, CanonicalStretch, StereoPcm, StretchRate};
 use deadpan_media::audio_index::AudioChannelLayout;
 use deadpan_media::audio_session::{AudioSession, AudioSessionLimits};
 use deadpan_media::source_index::SourceContentIdentity;
-use deadpan_plan::RenderPlan;
+use deadpan_plan::{RenderPlan, SignalSample};
 use sha2::{Digest, Sha256};
 
 const TIMEOUT: Duration = Duration::from_secs(10);
@@ -643,6 +643,330 @@ fn cut_stage_plan() -> Arc<RenderPlan> {
             ),
         ],
     )
+}
+
+#[test]
+fn transferred_root_uses_qualified_pcm_without_baking_in_creative_fades() {
+    let rate = FrameRate::new(48_000, 1).unwrap();
+    let planned = plan(rate, &["source"], [("source", source(rate, 8197, 0..8197))]);
+    let mut provider = FixtureProvider::new();
+    let mut renderer = StageAudio::new(planned);
+    let transfer = RootSignalTransfer::new(
+        AudioSample(0)..AudioSample(8197),
+        ratio(211, 3),
+        SignalSample(400),
+        ratio(3, 2),
+        SignalSample(400)..SignalSample(656),
+    )
+    .unwrap();
+    let expected = sample_reference(0..8197, ratio(211, 3), ratio(3, 2), 256, fixture_sample);
+    for (offset, count) in [(173, 83), (0, 1), (1, 199), (200, 56)] {
+        let actual = renderer
+            .read_transferred(
+                &mut provider,
+                &transfer,
+                SignalSample(400 + offset),
+                count,
+                TIMEOUT,
+                &AtomicBool::new(false),
+            )
+            .unwrap();
+        assert_eq!(actual.schema_version, 1);
+        assert_eq!(actual.stage, "root_signal_on_point_grid_before_effects");
+        assert_eq!(actual.transfer, transfer);
+        assert_eq!(actual.project_id, ProjectId::new("stage-project").unwrap());
+        assert_eq!(
+            actual.revision_id,
+            RevisionId::new("stage-revision").unwrap()
+        );
+        assert_eq!(actual.start, SignalSample(400 + offset));
+        assert_eq!(
+            actual.samples,
+            expected[offset as usize..offset as usize + count as usize]
+        );
+        assert!(actual.suppressed.is_empty());
+    }
+    // A new stage consumes raw endpoint samples, without the old 2ms fade.
+    let identity = RootSignalTransfer::new(
+        AudioSample(0)..AudioSample(8197),
+        ExactRatio::ZERO,
+        SignalSample(0),
+        ExactRatio::ONE,
+        SignalSample(0)..SignalSample(2),
+    )
+    .unwrap();
+    let raw = renderer
+        .read_transferred(
+            &mut provider,
+            &identity,
+            SignalSample(0),
+            2,
+            TIMEOUT,
+            &AtomicBool::new(false),
+        )
+        .unwrap();
+    assert_eq!(raw.samples, vec![fixture_sample(0), fixture_sample(1)]);
+    let faded = renderer
+        .read_edge_faded(
+            &mut provider,
+            AudioSample(0),
+            2,
+            TIMEOUT,
+            &AtomicBool::new(false),
+        )
+        .unwrap();
+    assert_ne!(raw.samples, faded.samples);
+}
+
+#[test]
+fn transferred_preserve_keeps_root_silence_and_intrinsic_preparation_on_fractional_grid() {
+    let rate = FrameRate::new(30_000, 1001).unwrap();
+    let planned = plan(
+        rate,
+        &["preserve"],
+        [
+            ("left", source(rate, 4, 0..6406)),
+            ("quiet", hold(2)),
+            ("right", room_tone(4, audio(512, 833))),
+            (
+                "input",
+                BeatNode::sequence(
+                    "Speech, pause and room",
+                    vec![id("left"), id("quiet"), id("right")],
+                ),
+            ),
+            ("preserve", retime("input", 5, 0..10, PitchPolicy::Preserve)),
+        ],
+    );
+    let mut provider = FixtureProvider::new();
+    let mut original = StageAudio::new(Arc::clone(&planned));
+    let pcm = read_all(&mut original, &mut provider, &[256]);
+    assert_eq!(pcm.len(), 8008);
+    assert!(pcm[..3203].iter().flatten().any(|v| *v != 0.0));
+    assert!(pcm[3203..4805].iter().all(|v| *v == [0.0; 2]));
+    assert!(pcm[4805..].iter().flatten().any(|v| *v != 0.0));
+    let mut renderer = StageAudio::new(planned);
+    for origin in [ratio(16011, 5), ratio(24021, 5)] {
+        let transfer = RootSignalTransfer::new(
+            AudioSample(0)..AudioSample(8008),
+            origin,
+            SignalSample(17),
+            ratio(3, 4),
+            SignalSample(17)..SignalSample(273),
+        )
+        .unwrap();
+        let mut expected = sample_reference(0..8008, origin, ratio(3, 4), 256, |n| pcm[n as usize]);
+        for (n, sample) in expected.iter_mut().enumerate() {
+            let old = origin.checked_add(ratio(n as i128 * 3, 4)).unwrap();
+            if old.compare_integer(3203).is_ge() && old.compare_integer(4805).is_lt() {
+                *sample = [0.0; 2];
+            }
+        }
+        for (offset, count) in [(173, 83), (0, 1), (1, 199), (200, 56)] {
+            let actual = renderer
+                .read_transferred(
+                    &mut provider,
+                    &transfer,
+                    SignalSample(17 + offset),
+                    count,
+                    TIMEOUT,
+                    &AtomicBool::new(false),
+                )
+                .unwrap();
+            assert_eq!(
+                actual.samples,
+                expected[offset as usize..offset as usize + count as usize]
+            );
+            for (n, sample) in actual.samples.iter().enumerate() {
+                let old = origin
+                    .checked_add(ratio((offset as i128 + n as i128) * 3, 4))
+                    .unwrap();
+                let silent = old.compare_integer(3203).is_ge() && old.compare_integer(4805).is_lt();
+                assert_eq!(
+                    actual
+                        .suppressed
+                        .iter()
+                        .any(|range| range.contains(&SignalSample(17 + offset + n as i64))),
+                    silent
+                );
+                if silent {
+                    assert_eq!(*sample, [0.0; 2]);
+                }
+            }
+        }
+        assert_eq!(
+            renderer.cached_stage_count(),
+            2,
+            "whole Preserve and room-tone contexts are reused"
+        );
+    }
+}
+
+#[test]
+fn transferred_halo_shares_preparation_work_and_rejects_invalid_context_before_io() {
+    let rate = FrameRate::new(48_000, 1).unwrap();
+    let planned = plan(
+        rate,
+        &["one", "two", "three"],
+        [
+            ("one", room_tone(512, audio(0, 223))),
+            ("two", room_tone(512, audio(512, 833))),
+            ("three", room_tone(512, audio(4096, 4353))),
+        ],
+    );
+    let mut renderer = StageAudio::with_limits(
+        planned,
+        StageLimits {
+            maximum_prepared_stages: 2,
+            ..Default::default()
+        },
+    )
+    .unwrap();
+    let mut provider = FixtureProvider::new();
+    let recipe = |end| {
+        RootSignalTransfer::new(
+            AudioSample(0)..AudioSample(end),
+            ExactRatio::ZERO,
+            SignalSample(0),
+            ExactRatio::integer(4),
+            SignalSample(0)..SignalSample(256),
+        )
+        .unwrap()
+    };
+    let invalid = recipe(1535);
+    assert!(matches!(
+        renderer.read_transferred(
+            &mut provider,
+            &invalid,
+            SignalSample(0),
+            256,
+            TIMEOUT,
+            &AtomicBool::new(false)
+        ),
+        Err(StageAudioError::Range)
+    ));
+    let transfer = recipe(1536);
+    for (timeout, cancelled) in [
+        (Duration::ZERO, false),
+        (Duration::from_secs(61), false),
+        (TIMEOUT, true),
+    ] {
+        assert!(
+            renderer
+                .read_transferred(
+                    &mut provider,
+                    &transfer,
+                    SignalSample(0),
+                    256,
+                    timeout,
+                    &AtomicBool::new(cancelled)
+                )
+                .is_err()
+        );
+    }
+    assert_eq!(provider.calls, 0);
+    assert!(matches!(
+        renderer.read_transferred(
+            &mut provider,
+            &transfer,
+            SignalSample(0),
+            256,
+            Duration::from_nanos(1),
+            &AtomicBool::new(false)
+        ),
+        Err(StageAudioError::Timeout)
+    ));
+    assert_eq!(provider.calls, 0);
+    assert!(matches!(
+        renderer.read_transferred(
+            &mut provider,
+            &transfer,
+            SignalSample(0),
+            256,
+            TIMEOUT,
+            &AtomicBool::new(false)
+        ),
+        Err(StageAudioError::Limit("prepared stages per read"))
+    ));
+    assert_eq!(
+        renderer.cached_stage_count(),
+        2,
+        "the third preparation cannot reset the halo's work allowance"
+    );
+    assert!(
+        renderer
+            .read_transferred(
+                &mut provider,
+                &transfer,
+                SignalSample(0),
+                256,
+                TIMEOUT,
+                &AtomicBool::new(false)
+            )
+            .is_ok()
+    );
+    assert_eq!(renderer.cached_stage_count(), 3);
+}
+
+#[test]
+fn transferred_halo_rejects_changed_source_provenance_between_input_blocks() {
+    struct ChangingProvider {
+        first: FixtureProvider,
+        later: FixtureProvider,
+        calls: usize,
+    }
+    impl AudioSourceProvider for ChangingProvider {
+        fn source(
+            &mut self,
+            project: &ProjectId,
+            revision: &RevisionId,
+            asset: &AssetId,
+            cancelled: &AtomicBool,
+        ) -> Result<&PreparedSource, PreparationError> {
+            self.calls += 1;
+            if self.calls == 1 {
+                self.first.source(project, revision, asset, cancelled)
+            } else {
+                self.later.source(project, revision, asset, cancelled)
+            }
+        }
+    }
+    let rate = FrameRate::new(48_000, 1).unwrap();
+    let mut renderer = StageAudio::new(plan(
+        rate,
+        &["source"],
+        [("source", source(rate, 8197, 0..8197))],
+    ));
+    let mut provider = ChangingProvider {
+        first: FixtureProvider::new(),
+        later: FixtureProvider::with_layout(AudioChannelLayout::Native {
+            channels: 2,
+            mask: 5,
+        }),
+        calls: 0,
+    };
+    let transfer = RootSignalTransfer::new(
+        AudioSample(0)..AudioSample(8197),
+        ratio(1001, 3),
+        SignalSample(0),
+        ratio(3, 2),
+        SignalSample(0)..SignalSample(256),
+    )
+    .unwrap();
+    assert!(matches!(
+        renderer.read_transferred(
+            &mut provider,
+            &transfer,
+            SignalSample(0),
+            256,
+            TIMEOUT,
+            &AtomicBool::new(false)
+        ),
+        Err(StageAudioError::Preparation(
+            PreparationError::IndexMismatch
+        ))
+    ));
+    assert_eq!(provider.calls, 2);
 }
 
 #[test]

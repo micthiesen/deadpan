@@ -326,6 +326,15 @@ These APIs do not yet persist a Hold binding. Future bindings must transform
 live ownership separately from frozen placement and replace an edited policy's
 retained contribution. See [audio references](docs/AUDIO_REFERENCE.md).
 
+`RootSignalTransfer` consumes already mapped raw root PCM. Apply explicit silence
+and retained-envelope exhaustion to input taps before interpolation, then reapply
+their exact point-grid audibility. Numeric zero or missing input never creates a
+suppression policy. Keep creative fades after time mapping. StageAudio transfer
+reads retain full root support and share one deadline, preparation-work budget
+and source-provenance set across every halo chunk. Returned point samples need
+their exact transfer and owning revision. These are conversion APIs, not authored
+Hold bindings. See [signal transfer](docs/AUDIO_SIGNAL_TRANSFER.md).
+
 `Split` retains full contexts and inserts sibling Partitions; refining a Partition
 reuses its child domain and keeps repeated cuts shallow. Keep logical mark IDs,
 map owner and host independently, and relocate concrete events once using their
