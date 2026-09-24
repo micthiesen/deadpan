@@ -53,17 +53,26 @@ reads. Creative fades remain after time mapping. Tests include real decoder and
 canonical DSP paths. [Qualification](qualification/audio-transfer-2026-09-23.md)
 records 1,021 passing tests, the full gate and independent review. Authored live-to-frozen bindings, policy replacement,
 compact Repeat lifecycle, atomic Hold insertion and application playback remain
-open. This conversion does not change core 14/database 20 or complete a gate.
+open. This conversion introduced no authored-state change and did not complete a gate.
 
 [Physical reference-domain lookup](AUDIO_REFERENCE.md#physical-processing-domains-and-root-maps)
 now retains opaque Preserve and meaningful context independently of visible
 Partition allocation. Borrowed root maps compose the active cut and independently
 anchor later domains. Tests cover NTSC phase, compact repeats, clock ownership,
 real canonical DSP and fractional transfer. This does not author an insertion:
-logical audio lineage across Split copies, persisted bindings and live edit
-lifecycle remain required. [Qualification](qualification/audio-domains-2026-09-23.md)
+persisted sample bindings and their live edit lifecycle remain required. [Qualification](qualification/audio-domains-2026-09-23.md)
 records 1,026 passing tests, the full gate and independent review; no requirement
 or gate changes status.
+
+[Authored audio copy lineage](AUDIO_LINEAGE.md) now survives Split, occurrence
+isolation and durable history. Raw audio changes detach affected contexts and
+ancestors while unrelated copies retain their relationships. Frozen reference
+plans compare explicit lineage separately from physical identity and require
+compatible clocks, phase and stable occurrence paths. Core 15/database 21 migrate
+actual old copy history without inferring lineage from an initial snapshot.
+[Qualification](qualification/audio-lineage-2026-09-23.md) records lifecycle,
+strict migration and bounded reference tests. Live sample bindings, policy
+replacement, atomic Hold insertion and application playback remain open.
 
 Current measured evidence: [editing foundation verification](FOUNDATION_VERIFICATION.md), [picture plan and migration verification](PLAN_MIGRATION_VERIFICATION.md), [exact boundary verification](ANCHOR_VERIFICATION.md), [persistent mark verification](MARK_VERIFICATION.md), [sparse override verification](OVERRIDE_VERIFICATION.md), [nested occurrence verification](OCCURRENCE_VERIFICATION.md), [native media qualification](qualification/media-2026-09-20.md), [compatible FFmpeg/Rust qualification](qualification/media-compatible-2026-09-20.md), [audio candidate qualification](qualification/audio-2026-09-20.md), and [canonical audio qualification](qualification/audio-canonical-2026-09-20.md).
 
@@ -147,7 +156,7 @@ complete import/relink/format acceptance remains open.
 and geometry on the first primary picture insertion in an untimed project.
 Audio or other timed editing locks the existing clock; later primary geometry
 adoption is a separate previewable, undoable transaction that preserves timing.
-Core schema 14/database schema 20 retain this policy and migrate older histories
+Core schema 15/database schema 21 retain this policy and migrate older histories
 as explicit choices. [Qualification](qualification/presentation-basis-2026-09-21.md)
 records real-media insertion, unchanged sample/mark coordinates, rollback,
 headless previews and authentic schema-14 history migration. Native canvas

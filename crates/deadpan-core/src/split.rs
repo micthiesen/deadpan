@@ -9,7 +9,7 @@ use crate::{
     Anchor, AnchorIndex, BeatNode, DocumentError, EditError, EditErrorCode, ExactRatio,
     FrameDuration, FrameRange, InsertionBias, InstancePath, MAX_DOCUMENT_MARK_BINDINGS,
     MAX_DOCUMENT_NODES, MAX_MARK_BINDINGS, MarkFragment, MarkState, NodeId, NodeKind, PitchPolicy,
-    ProjectDocument, ProjectFrame, RetimePurpose,
+    ProjectDocument, ProjectFrame, RetimePurpose, RevisionId,
 };
 
 /// Fresh node IDs, consumed deterministically. Unused IDs are not persisted.
@@ -28,6 +28,7 @@ pub(crate) fn apply(
     target: &NodeId,
     at: FrameDuration,
     identities: &SplitIdentities,
+    allocation: &RevisionId,
 ) -> Result<ProjectDocument, EditError> {
     let durations = document.durations()?;
     let original = document.nodes.get(target).ok_or_else(|| {
@@ -120,9 +121,11 @@ pub(crate) fn apply(
         &right_bindings,
     )?;
     let mut result = document.clone();
-    crate::occurrence_edit::clone_nodes(&mut result, &copied)?;
+    crate::occurrence_edit::clone_nodes(&mut result, &copied, allocation)?;
     if root {
         result.nodes.insert(left_context.clone(), original.clone());
+        let lineage = result.audio_lineage[target].clone();
+        result.audio_lineage.insert(left_context.clone(), lineage);
     }
     let start = refinement.map_or(0, |(_, mapping)| mapping.start().0);
     let seam = start

@@ -99,9 +99,9 @@ display color, editorial effects, playback or an encoded export path.
 
 Every persisted edit, undo, and redo gets a never-reused revision ID. Core inverse patches can restore exact fixture identity; the store rebases them onto fresh revisions to prevent stale commands becoming valid after undo. Store writes use one transaction for the revision, history, and cursor. Keep `.writer.lock` held for the writable store lifetime; read-only inspection and dry runs may coexist. Take live database snapshots through SQLite's backup API, never copy only an open main database file.
 
-Repeat play IDs are scoped by Repeat node and allocation revision, with an ordinal inside that allocation. Preserve surviving IDs through resizing and reorder; allocate fresh IDs for growth and inserted subtrees. Imported initial snapshots reserve their allocation names even after plays are removed. Keep compact runs bounded and never expand a repeat merely to seek. Core schema 14 retains these runs, marks, sparse overrides, generated Hold metadata, independent source mappings, audio edge policies and transparent Retime partition intent, and binds qualified assets to immutable source receipts. Database schemas 1 through 19 replay the complete chronology directly into the current schema on a consistent copy, compare every legacy snapshot/transaction, and promote through SQLite's backup transaction only after validation. Strict legacy adapters freeze nested provider vocabulary and reject new fields, commands, and unexpected mark or override changes. Preserve the pre-migration backup.
+Repeat play IDs are scoped by Repeat node and allocation revision, with an ordinal inside that allocation. Preserve surviving IDs through resizing and reorder; allocate fresh IDs for growth and inserted subtrees. Imported initial snapshots reserve their allocation names even after plays are removed. Keep compact runs bounded and never expand a repeat merely to seek. Core schema 15 retains these runs, marks, sparse overrides, generated Hold metadata, independent source mappings, audio edge policies and transparent Retime partition intent, and binds qualified assets to immutable source receipts. Database schemas 1 through 20 replay the complete chronology directly into the current schema on a consistent copy, compare every legacy snapshot/transaction, and promote through SQLite's backup transaction only after validation. Strict legacy adapters freeze nested provider vocabulary and reject new fields, commands, and unexpected mark or override changes. Preserve the pre-migration backup.
 
-Database schema 20 stores core schema 14 and retains operational generation requests,
+Database schema 21 stores core schema 15 and retains operational generation requests,
 plus an optional validated single-Original workflow profile. Use the dedicated
 `create_single_source` / `initialize_prepared_source` path to bind the full measured
 Original, basis and protected baseline atomically. Undo never crosses that baseline;
@@ -185,7 +185,7 @@ Ready bundles alone do not authorize an edit. See [acceptance](docs/GENERATION_A
 See [generated Hold semantics](docs/GENERATED_HOLDS.md).
 
 Original byte ownership is operational and separate from stream readiness.
-Database schema 20 retains content-keyed original records with monotonic location
+Database schema 21 retains content-keyed original records with monotonic location
 versions introduced in schema 10; earlier schemas gain an empty inventory. Use the
 shared descriptor-relative object engine for `Media/Originals` and
 `Media/Generated`. Managed originals try APFS clone, then verified copy; retain
@@ -331,9 +331,15 @@ meaningful context separately from visible allocation. Borrowed physical-domain
 identity includes its plan and clock; equal aliases across plans are not equal
 domains. Root maps compose the current sample at a cut, while later domains keep
 their own meaningful-start anchors. Preparation-clock handles cannot enter this
-unit-rate root API. Physical Split copies still need authored logical audio
-lineage before insertion can carry phase through their transparent seams; do not
-infer that lineage from matching media or timing.
+unit-rate root API. Split and occurrence copies retain authored audio lineage
+under allocation-revision/origin tokens. Keep live ownership separate from those
+historical names. Transparent structural edits preserve tokens; changed raw
+contributions and their ancestors detach without resetting unrelated copies.
+Prune deleted owners, include lineage in guarded patches and changed IDs, and
+reserve initial allocation revisions after all owners disappear. Frozen layouts
+retain the relationships but never infer them from matching media or timing.
+Lineage alone does not authorize PCM or a live sample binding. See
+[audio lineage](docs/AUDIO_LINEAGE.md).
 
 `RootSignalTransfer` consumes already mapped raw root PCM. Apply explicit silence
 and retained-envelope exhaustion to input taps before interpolation, then reapply
@@ -396,7 +402,11 @@ binding ordinal within the resolved revision; do not use the representative
 target to discard other attachment owners. See [mark bindings](docs/MARK_FRAGMENTS.md).
 Database-18 history uses frozen core 12; all earlier mark wires reject fragments,
 including empty arrays and null. Database 19 uses frozen core 13, including its
-multi-binding mark vocabulary but excluding Split. Current schema 20 stores core 14.
+multi-binding mark vocabulary but excluding Split. Database 20 uses frozen core 14
+including closed direct/occurrence Split identity pools. Current schema 21 stores
+core 15. Legacy initial snapshots gain empty audio lineage; replayed copies may
+establish it. Compare every old projected patch and changed-ID summary exactly
+while retaining complete modern transactions for historical undo/redo.
 
 Build the pinned FFmpeg developer prefix and export `DEADPAN_FFMPEG_PREFIX` as
 described in [Development](docs/DEVELOPMENT.md). Run the exact repository gate

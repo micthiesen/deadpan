@@ -9,7 +9,7 @@ use crate::{
     TimeError,
 };
 
-pub const DOCUMENT_SCHEMA_VERSION: u32 = 14;
+pub const DOCUMENT_SCHEMA_VERSION: u32 = 15;
 /// Bounds apply before traversal. Structure is walked iteratively, never recursively.
 pub const MAX_DOCUMENT_NODES: usize = 100_000;
 pub const MAX_DOCUMENT_ASSETS: usize = 100_000;
@@ -403,6 +403,8 @@ pub struct ProjectDocument {
     pub(crate) assets: BTreeMap<AssetId, AssetRecord>,
     pub(crate) marks: BTreeMap<MarkId, Mark>,
     pub(crate) overrides: BTreeMap<NodeId, PlayOverrides>,
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub(crate) audio_lineage: BTreeMap<NodeId, crate::AudioLineageId>,
 }
 
 #[derive(Deserialize)]
@@ -422,6 +424,8 @@ struct DocumentWire {
     marks: BTreeMap<MarkId, Mark>,
     #[serde(deserialize_with = "unique_map")]
     overrides: BTreeMap<NodeId, PlayOverrides>,
+    #[serde(default, deserialize_with = "unique_map")]
+    audio_lineage: BTreeMap<NodeId, crate::AudioLineageId>,
 }
 
 impl TryFrom<DocumentWire> for ProjectDocument {
@@ -438,6 +442,7 @@ impl TryFrom<DocumentWire> for ProjectDocument {
             assets: value.assets,
             marks: value.marks,
             overrides: value.overrides,
+            audio_lineage: value.audio_lineage,
         };
         document.validate()?;
         Ok(document)
@@ -462,6 +467,7 @@ impl ProjectDocument {
             assets: BTreeMap::new(),
             marks: BTreeMap::new(),
             overrides: BTreeMap::new(),
+            audio_lineage: BTreeMap::new(),
         };
         document.validate()?;
         Ok(document)
@@ -505,6 +511,9 @@ impl ProjectDocument {
     }
     pub fn overrides(&self) -> &BTreeMap<NodeId, PlayOverrides> {
         &self.overrides
+    }
+    pub fn audio_lineage(&self) -> &BTreeMap<NodeId, crate::AudioLineageId> {
+        &self.audio_lineage
     }
 
     /// All owned structural children, including sparse Repeat override roots.
@@ -578,6 +587,7 @@ impl ProjectDocument {
     pub fn durations(&self) -> Result<BTreeMap<NodeId, FrameDuration>, DocumentError> {
         let durations = self.structural_durations()?;
         self.validate_basis_state(&durations)?;
+        crate::audio_lineage::validate(self)?;
         crate::marks::validate_marks(self, &durations)?;
         Ok(durations)
     }

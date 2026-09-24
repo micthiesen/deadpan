@@ -9,6 +9,7 @@
 
 mod anchor;
 mod audio_edges;
+mod audio_lineage;
 mod audio_mapping;
 mod audio_reference;
 mod basis;
@@ -25,6 +26,7 @@ pub mod legacy_v10;
 pub mod legacy_v11;
 pub mod legacy_v12;
 pub mod legacy_v13;
+pub mod legacy_v14;
 pub mod legacy_v2;
 pub mod legacy_v3;
 pub mod legacy_v4;
@@ -45,6 +47,7 @@ mod video_mapping;
 
 pub use anchor::*;
 pub use audio_edges::*;
+pub use audio_lineage::AudioLineageId;
 pub use audio_mapping::SourceAudioMapping;
 pub use audio_reference::*;
 pub use basis::*;

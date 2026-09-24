@@ -5,7 +5,8 @@ explicit `SignalSample` grid. `StageAudio::read_transferred` supplies that PCM
 from one immutable plan and its qualified source provider. This implements the
 bounded conversion needed when retained audio enters a new Preserve input.
 It does not persist continuity bindings, author a Hold insertion, or connect
-that operation to application playback. Core 14/database 20 are unchanged.
+that operation to application playback. This conversion introduced no authored
+state change; current core 15/database 21 also retain separate audio copy lineage.
 
 ## Keep the old discrete signal
 

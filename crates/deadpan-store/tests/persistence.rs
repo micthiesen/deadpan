@@ -169,6 +169,82 @@ fn imported_initial_allocations_stay_reserved_after_their_plays_are_removed() ->
 }
 
 #[test]
+fn imported_audio_lineage_allocations_stay_reserved_after_owners_are_removed() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let base = document()?;
+    let inserted = deadpan_core::apply(&base, &insert(&base, "insert-initial", "hold")?)?
+        .forward
+        .apply(&base)?;
+    let split = CommandRequest {
+        project_id: inserted.project_id().clone(),
+        expected_revision: inserted.revision_id().clone(),
+        new_revision: RevisionId::new("reserved-lineage")?,
+        command: Command::Split {
+            node: NodeId::new("hold")?,
+            at: FrameDuration::new(5)?,
+            identities: deadpan_core::SplitIdentities {
+                nodes: ["left", "right", "copied"]
+                    .into_iter()
+                    .map(NodeId::new)
+                    .collect::<std::result::Result<_, _>>()?,
+            },
+        },
+    };
+    let split = deadpan_core::apply(&inserted, &split)?
+        .forward
+        .apply(&inserted)?;
+    let mut wire = serde_json::to_value(&split)?;
+    wire["revision_id"] = serde_json::json!("imported-snapshot");
+    let initial = ProjectDocument::from_json(&wire.to_string())?;
+    assert!(
+        initial
+            .audio_lineage()
+            .values()
+            .any(|id| id.allocation.as_str() == "reserved-lineage")
+    );
+    let path = scratch.path().join("imported-lineage.deadpan");
+    let mut store = ProjectStore::create(&path, &initial)?;
+    for (node, revision) in [("left", "delete-left"), ("right", "delete-right")] {
+        let current = store.snapshot()?;
+        store.commit(&CommandRequest {
+            project_id: current.project_id().clone(),
+            expected_revision: current.revision_id().clone(),
+            new_revision: RevisionId::new(revision)?,
+            command: Command::Delete {
+                node: NodeId::new(node)?,
+            },
+        })?;
+    }
+    let current = store.snapshot()?;
+    assert!(current.audio_lineage().is_empty());
+    let forged = insert(&current, "reserved-lineage", "new-hold")?;
+    assert!(matches!(
+        store.preview(&forged),
+        Err(StoreError::RevisionReused(_))
+    ));
+    assert!(matches!(
+        store.commit(&forged),
+        Err(StoreError::RevisionReused(_))
+    ));
+    assert!(matches!(
+        store.undo(current.revision_id(), RevisionId::new("reserved-lineage")?),
+        Err(StoreError::RevisionReused(_))
+    ));
+    drop(store);
+    ProjectStore::open(&path, AccessMode::ReadOnly)?.validate()?;
+    let connection = Connection::open(path.join("project.sqlite"))?;
+    connection.execute_batch("PRAGMA foreign_keys=OFF; BEGIN;
+        UPDATE revisions SET id='reserved-lineage',document=json_set(document,'$.revision_id','reserved-lineage') WHERE id='delete-right';
+        UPDATE history SET revision_id='reserved-lineage',request=json_set(request,'$.new_revision','reserved-lineage'),edit=json_set(edit,'$.forward.to_revision','reserved-lineage','$.inverse.from_revision','reserved-lineage') WHERE revision_id='delete-right';
+        UPDATE state SET head_revision='reserved-lineage'; COMMIT;")?;
+    assert!(matches!(
+        ProjectStore::open(&path, AccessMode::ReadOnly),
+        Err(StoreError::History(_))
+    ));
+    Ok(())
+}
+
+#[test]
 fn undo_and_redo_survive_restart_without_reusing_revision_identity() -> Result {
     let scratch = tempfile::tempdir()?;
     let path = scratch.path().join("history.deadpan");

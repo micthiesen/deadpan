@@ -7,7 +7,7 @@ use std::{
 use deadpan_core::{
     IterationOrder, NodeId, NodeKind, ProjectDocument, RevisionId, legacy_v1, legacy_v2, legacy_v3,
     legacy_v4, legacy_v5, legacy_v6, legacy_v7, legacy_v8, legacy_v9, legacy_v10, legacy_v11,
-    legacy_v12, legacy_v13,
+    legacy_v12, legacy_v13, legacy_v14,
 };
 use deadpan_jobs::{Relevance, RequestId};
 use deadpan_store::generation::{
@@ -17,6 +17,181 @@ use deadpan_store::{AccessMode, DATABASE_SCHEMA_VERSION, ProjectStore, StoreErro
 use rusqlite::Connection;
 
 type Result<T = ()> = std::result::Result<T, Box<dyn Error>>;
+
+#[test]
+fn schema_twenty_replays_lineage_from_copy_history_and_preserves_navigation() -> Result {
+    use deadpan_core::{CommandRequest, EditTransaction};
+    let scratch = tempfile::tempdir()?;
+    let path = fixture_version(scratch.path(), 20)?;
+    let database = Connection::open(path.join("project.sqlite"))?;
+    let before = contents(&database)?;
+    let old_docs = docs(&database)?;
+    let old_history = history_json(&database)?;
+    let old_metadata = metadata(&database)?;
+    let old_operational = operational_metadata(&database)?;
+    assert!(matches!(
+        ProjectStore::open(&path, AccessMode::ReadOnly),
+        Err(StoreError::MigrationRequired(20))
+    ));
+    let migration = ProjectStore::migrate(&path)?;
+    assert_eq!(
+        (migration.from_schema, migration.to_schema),
+        (20, DATABASE_SCHEMA_VERSION)
+    );
+    assert_eq!(
+        contents(&Connection::open(migration.backup.unwrap())?)?,
+        before
+    );
+    assert_eq!(metadata(&database)?, old_metadata);
+    assert_eq!(operational_metadata(&database)?, old_operational);
+    for ((old_id, old_json), (new_id, new_json)) in old_docs.iter().zip(docs(&database)?) {
+        assert_eq!(old_id, &new_id);
+        let current = ProjectDocument::from_json(&new_json)?;
+        assert!(legacy_v14::Document::from_json(old_json)?.matches(&current));
+        let mut projected = serde_json::to_value(&current)?;
+        projected.as_object_mut().unwrap().remove("audio_lineage");
+        projected["schema_version"] = serde_json::json!(14);
+        assert_eq!(
+            projected,
+            serde_json::from_str::<serde_json::Value>(old_json)?
+        );
+        if new_id == "insert" {
+            assert!(current.audio_lineage().is_empty());
+        }
+        if ["split", "occurrence-rename", "occurrence-split"].contains(&new_id.as_str()) {
+            assert!(!current.audio_lineage().is_empty(), "{new_id}");
+        }
+    }
+    for ((old_request, old_edit), (new_request, new_edit)) in
+        old_history.iter().zip(history_json(&database)?)
+    {
+        let request: CommandRequest = serde_json::from_str(&new_request)?;
+        let edit: EditTransaction = serde_json::from_str(&new_edit)?;
+        assert_eq!(legacy_v14::upgrade_request(old_request)?, request);
+        assert!(legacy_v14::matches_edit(old_edit, &edit)?);
+        let before = snapshot(&database, request.expected_revision.as_str())?;
+        let after = snapshot(&database, request.new_revision.as_str())?;
+        assert_eq!(edit.forward.apply(&before)?, after);
+        assert_eq!(edit.inverse.apply(&after)?, before);
+        let mut wrong_summary: serde_json::Value = serde_json::from_str(old_edit)?;
+        wrong_summary["changed_ids"] = serde_json::json!(["not-a-changed-node"]);
+        assert!(!legacy_v14::matches_edit(
+            &wrong_summary.to_string(),
+            &edit
+        )?);
+    }
+    let mut store = ProjectStore::open(&path, AccessMode::ReadWrite)?;
+    assert_eq!(store.single_source_state()?, None);
+    let baseline = store.snapshot()?;
+    let redo = RevisionId::new("lineage-schema-redo")?;
+    store.redo(baseline.revision_id(), redo.clone())?;
+    assert!(
+        !store
+            .snapshot()?
+            .nodes()
+            .contains_key(&NodeId::new("left")?)
+    );
+    store.undo(&redo, RevisionId::new("lineage-schema-undo")?)?;
+    assert_eq!(store.snapshot()?.audio_lineage(), baseline.audio_lineage());
+    assert_eq!(store.snapshot()?.nodes(), baseline.nodes());
+    store.validate()?;
+    drop(store);
+    assert_eq!(
+        ProjectStore::open(&path, AccessMode::ReadOnly)?
+            .snapshot()?
+            .audio_lineage(),
+        baseline.audio_lineage()
+    );
+    assert!(ProjectStore::migrate(&path)?.backup.is_none());
+    Ok(())
+}
+
+#[test]
+fn all_legacy_databases_reject_lineage_ingress_without_promotion() -> Result {
+    for version in 1..=20 {
+        for position in ["initial", "later", "forward", "inverse", "command"] {
+            for value in ["null", "{}"] {
+                let scratch = tempfile::tempdir()?;
+                let path = fixture_version(scratch.path(), version)?;
+                let database = Connection::open(path.join("project.sqlite"))?;
+                if matches!(position, "initial" | "later") {
+                    let selector = if position == "initial" {
+                        "parent_id IS NULL"
+                    } else {
+                        "parent_id IS NOT NULL"
+                    };
+                    database.execute(&format!("UPDATE revisions SET document=json_set(document,'$.audio_lineage',json(?1)) WHERE id=(SELECT id FROM revisions WHERE {selector} LIMIT 1)"), [value])?;
+                } else if position == "command" {
+                    database.execute("UPDATE history SET request=json_set(request,'$.command.audio_lineage',json(?1)) WHERE id=(SELECT MIN(id) FROM history)", [value])?;
+                } else {
+                    let pointer = format!("$.{position}.audio_lineage");
+                    database.execute("UPDATE history SET edit=json_set(edit,?1,json(?2)) WHERE id=(SELECT MIN(id) FROM history)", [&pointer, value])?;
+                }
+                let before = contents(&database)?;
+                let StoreError::MigrationFailed { backup, .. } =
+                    ProjectStore::migrate(&path).unwrap_err()
+                else {
+                    panic!(
+                        "schema {version}, {position}={value}: expected retained failed migration"
+                    );
+                };
+                assert_eq!(contents(&database)?, before);
+                assert_eq!(contents(&Connection::open(backup)?)?, before);
+                assert_eq!(
+                    database
+                        .pragma_query_value(None, "user_version", |row| row.get::<_, u32>(0))?,
+                    version
+                );
+            }
+        }
+    }
+    Ok(())
+}
+
+#[test]
+fn earlier_occurrence_copy_history_gains_only_replayed_lineage() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let path = scratch.path().join("schema4-copy.deadpan");
+    fs::create_dir(&path)?;
+    fs::create_dir(path.join("Snapshots"))?;
+    let legacy = Connection::open(path.join("project.sqlite"))?;
+    legacy.pragma_update(None, "foreign_keys", false)?;
+    legacy.execute_batch(include_str!("fixtures/v4-audio-lineage.sql"))?;
+    drop(legacy);
+    ProjectStore::migrate(&path)?;
+    let database = Connection::open(path.join("project.sqlite"))?;
+    let initial: String = database.query_row(
+        "SELECT document FROM revisions WHERE parent_id IS NULL",
+        [],
+        |row| row.get(0),
+    )?;
+    assert!(
+        ProjectDocument::from_json(&initial)?
+            .audio_lineage()
+            .is_empty()
+    );
+    let mut saw_copy = false;
+    for (request, edit) in history_json(&database)? {
+        let request: deadpan_core::CommandRequest = serde_json::from_str(&request)?;
+        let edit: deadpan_core::EditTransaction = serde_json::from_str(&edit)?;
+        if matches!(
+            request.command,
+            deadpan_core::Command::EditOccurrence { .. }
+        ) && !edit.forward.audio_lineage.is_empty()
+        {
+            saw_copy = true;
+        }
+        let before = snapshot(&database, request.expected_revision.as_str())?;
+        let after = snapshot(&database, request.new_revision.as_str())?;
+        assert_eq!(edit.forward.apply(&before)?, after);
+        assert_eq!(edit.inverse.apply(&after)?, before);
+    }
+    assert!(
+        saw_copy,
+        "the frozen database-4 fixture must exercise occurrence copying"
+    );
+    Ok(())
+}
 
 #[test]
 fn schema_sixteen_retains_exact_core_eleven_history_and_stays_generic() -> Result {
@@ -1332,6 +1507,7 @@ fn fixture_version(scratch: &Path, version: u32) -> Result<PathBuf> {
         17 => include_str!("fixtures/v17-history.sql"),
         18 => include_str!("fixtures/v18-history.sql"),
         19 => include_str!("fixtures/v19-history.sql"),
+        20 => include_str!("fixtures/v20-history.sql"),
         _ => panic!("unsupported fixture"),
     })?;
     Ok(package)

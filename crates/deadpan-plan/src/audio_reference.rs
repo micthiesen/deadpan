@@ -81,7 +81,7 @@ pub enum ReferenceProcessingKind {
 
 /// A physical processing domain borrowed from one admitted timing layout.
 /// Neither matching node names nor matching numeric grids establish identity.
-/// This is not logical lineage between contexts copied by structural Split.
+/// Authored copy lineage can be queried separately from physical identity.
 #[derive(Debug, Clone)]
 pub struct ReferenceProcessingDomain<'plan> {
     clock: ReferenceAudioClock<'plan>,
@@ -145,6 +145,41 @@ impl<'plan> ReferenceProcessingDomain<'plan> {
             && self.gap_after == other.gap_after
             && self.meaningful_extent == other.meaningful_extent
             && self.kind == other.kind
+    }
+
+    /// Report an explicit copy relationship compatible with this frozen clock,
+    /// phase, processing kind and meaningful extent. Visible Partition crops
+    /// may differ. This is provenance, not proof of equal PCM: resolving live
+    /// media, recipes and retained policy remains a separate admission step.
+    /// Equal timing or media alone never establish lineage. Work is bounded by
+    /// the admitted occurrence depth and does not enumerate Repeat plays.
+    pub fn shares_copy_lineage(&self, other: &Self) -> bool {
+        if !std::ptr::eq(self.clock.plan, other.clock.plan)
+            || self.clock.owner != other.clock.owner
+            || self.gap_after != other.gap_after
+            || self.meaningful_extent != other.meaningful_extent
+            || self.transform.origin != other.transform.origin
+            || self.transform.scale != other.transform.scale
+            || self.kind != other.kind
+            || self.instance.repeats.len() != other.instance.repeats.len()
+        {
+            return false;
+        }
+        let lineages = self.clock.plan.layout.audio_lineage();
+        let related = |a: &NodeId, b: &NodeId| {
+            lineages
+                .get(a)
+                .is_some_and(|lineage| Some(lineage) == lineages.get(b))
+        };
+        related(&self.instance.node, &other.instance.node)
+            && self
+                .instance
+                .repeats
+                .iter()
+                .zip(&other.instance.repeats)
+                .all(|(a, b)| {
+                    a.iteration == b.iteration && (a.node == b.node || related(&a.node, &b.node))
+                })
     }
 
     /// Place this old domain on a new root grid without changing its rate.

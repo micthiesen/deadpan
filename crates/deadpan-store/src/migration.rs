@@ -45,7 +45,7 @@ impl ProjectStore {
                 backup: None,
             });
         }
-        if !matches!(version, 1..=19) {
+        if !matches!(version, 1..=20) {
             return Err(StoreError::UnsupportedSchema(version));
         }
         let lock = acquire_lock(&package)?;
@@ -193,6 +193,9 @@ fn migrate_candidate(
     // schema 18, every mark retains one binding; old JSON cannot add fragments.
     // Schema 19 uses core schema 13 with multiple bindings per logical mark;
     // its frozen command grammar does not admit Split.
+    // Schema 20 uses core schema 14, including Split. Old initial snapshots gain
+    // no audio lineage. Replayed copies generate lineage in modern patches;
+    // frozen comparisons omit only that new metadata and retain old summaries.
     // Replay all authored history, preserving operational rows and identities
     // while assigning FitBeat only to mappings absent in that legacy schema.
     // Schemas before 15 gain an explicit basis; schema 15 retains its policy.

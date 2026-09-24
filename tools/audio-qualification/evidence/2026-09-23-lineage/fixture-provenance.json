@@ -1,0 +1,20 @@
+[
+  {
+    "database_schema": 20,
+    "cli_revision": "1eb043c941bc923473e282edf6b169e236244076",
+    "cli_sha256": "e37c13033c49ed47a7c980e6fc952f75e3d3ab160fc41aeaea6433cd40ffecad",
+    "fixture": "crates/deadpan-store/tests/fixtures/v20-history.sql",
+    "fixture_sha256": "c8abbe32c1c3c5f927f9e8003bd40b294bfcc5dc8f8b1e237f9918fe80670d31",
+    "capture_script": "capture-fixture.py",
+    "capture_script_sha256": "f29fcf8810b9d0f76a32cf7d9f825e3c9e63f96670041f52e9154057a74cf4a5"
+  },
+  {
+    "database_schema": 4,
+    "cli_revision": "8b79526ca3ff9bca633aa9e9d795bcc9a0c0c2d1",
+    "cli_sha256": "0bfe374751c8737fa4697cf7b638cd5580410524b4372c4b66aee9efed67bb58",
+    "fixture": "crates/deadpan-store/tests/fixtures/v4-audio-lineage.sql",
+    "fixture_sha256": "35ece0e4de6c92cd651c06afdbec23a5067fe8bf144710e1fa3f1306118c04a3",
+    "capture_script": "capture-schema4-copy.py",
+    "capture_script_sha256": "9fe6322b7de2afe24caf42ea4ea017901477240be9da304e44c21eb0baa12f14"
+  }
+]

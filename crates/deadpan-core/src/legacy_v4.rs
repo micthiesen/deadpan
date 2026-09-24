@@ -321,6 +321,7 @@ impl Document {
 
     pub fn upgrade(self) -> Result<ProjectDocument, DocumentError> {
         let document = ProjectDocument {
+            audio_lineage: BTreeMap::new(),
             schema_version: DOCUMENT_SCHEMA_VERSION,
             project_id: self.project_id,
             revision_id: self.revision_id,
@@ -833,11 +834,21 @@ pub fn matches_edit(json: &str, edit: &EditTransaction) -> Result<bool, Document
     else {
         return Ok(false);
     };
+    // New lineage-only changes do not alter the legacy changed-node summary.
+    // Compare the complete summary derived from this frozen patch vocabulary.
+    let changed_ids = forward
+        .nodes
+        .keys()
+        .chain(forward.overrides.keys())
+        .cloned()
+        .collect::<std::collections::BTreeSet<_>>()
+        .into_iter()
+        .collect();
     Ok(old
         == Edit {
             forward,
             inverse,
-            changed_ids: edit.changed_ids.clone(),
+            changed_ids,
             duration_delta: edit.duration_delta,
             description: edit.description.clone(),
         })

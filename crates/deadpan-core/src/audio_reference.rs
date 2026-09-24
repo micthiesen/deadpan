@@ -10,10 +10,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::document::unique_map;
 use crate::{
-    AudioBoundaryKind, AudioEdgePolicies, AudioEdgePolicy, DocumentError, DocumentErrorCode,
-    ExactRatio, FrameDuration, FrameRange, FrameRate, HoldAudio, InstancePath, IterationId,
-    IterationOrder, MAX_DOCUMENT_DEPTH, MAX_DOCUMENT_JSON_BYTES, MAX_DOCUMENT_NODES, NodeId,
-    NodeKind, PitchPolicy, PlayOverrides, ProjectDocument, RepeatLayout, RetimePurpose,
+    AudioBoundaryKind, AudioEdgePolicies, AudioEdgePolicy, AudioLineageId, DocumentError,
+    DocumentErrorCode, ExactRatio, FrameDuration, FrameRange, FrameRate, HoldAudio, InstancePath,
+    IterationId, IterationOrder, MAX_DOCUMENT_DEPTH, MAX_DOCUMENT_JSON_BYTES, MAX_DOCUMENT_NODES,
+    NodeId, NodeKind, PitchPolicy, PlayOverrides, ProjectDocument, RepeatLayout, RetimePurpose,
 };
 
 /// Frozen references additionally bound the sum of compact runs across every
@@ -163,6 +163,8 @@ pub struct FrozenAudioLayout {
     rate: FrameRate,
     nodes: BTreeMap<NodeId, FrozenAudioNode>,
     overrides: BTreeMap<NodeId, PlayOverrides>,
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    audio_lineage: BTreeMap<NodeId, AudioLineageId>,
     #[serde(skip)]
     index: FrozenIndex,
 }
@@ -173,6 +175,7 @@ impl PartialEq for FrozenAudioLayout {
             && self.rate == other.rate
             && self.nodes == other.nodes
             && self.overrides == other.overrides
+            && self.audio_lineage == other.audio_lineage
     }
 }
 impl Eq for FrozenAudioLayout {}
@@ -186,6 +189,8 @@ struct LayoutWire {
     nodes: BTreeMap<NodeId, FrozenAudioNode>,
     #[serde(deserialize_with = "unique_map")]
     overrides: BTreeMap<NodeId, PlayOverrides>,
+    #[serde(default, deserialize_with = "unique_map")]
+    audio_lineage: BTreeMap<NodeId, AudioLineageId>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -206,6 +211,9 @@ impl FrozenAudioLayout {
         // before durations() builds any derived Repeat layouts.
         let mut edges = 0usize;
         let mut runs = 0usize;
+        if document.audio_lineage().len() > MAX_DOCUMENT_NODES {
+            return Err(limit("frozen audio lineage exceeds node limit"));
+        }
         for (id, node) in document.nodes() {
             edges = edges
                 .checked_add(document.children(id).count())
@@ -285,6 +293,7 @@ impl FrozenAudioLayout {
             rate,
             nodes,
             overrides: document.overrides().clone(),
+            audio_lineage: document.audio_lineage().clone(),
         })
     }
 
@@ -294,6 +303,7 @@ impl FrozenAudioLayout {
             rate: wire.rate,
             nodes: wire.nodes,
             overrides: wire.overrides,
+            audio_lineage: wire.audio_lineage,
             index: FrozenIndex::default(),
         };
         layout.index = layout.build_index()?;
@@ -341,6 +351,11 @@ impl FrozenAudioLayout {
     pub fn overrides(&self) -> &BTreeMap<NodeId, PlayOverrides> {
         &self.overrides
     }
+    /// Authored copy provenance keyed by owned frozen aliases. Token origins
+    /// are historical names, never live references or admission to media/PCM.
+    pub fn audio_lineage(&self) -> &BTreeMap<NodeId, AudioLineageId> {
+        &self.audio_lineage
+    }
     pub fn duration(&self) -> FrameDuration {
         self.nodes[&self.root].duration
     }
@@ -355,8 +370,18 @@ impl FrozenAudioLayout {
     }
 
     fn build_index(&self) -> Result<FrozenIndex, DocumentError> {
-        if self.nodes.len() > MAX_DOCUMENT_NODES || self.overrides.len() > MAX_DOCUMENT_NODES {
+        if self.nodes.len() > MAX_DOCUMENT_NODES
+            || self.overrides.len() > MAX_DOCUMENT_NODES
+            || self.audio_lineage.len() > MAX_DOCUMENT_NODES
+        {
             return Err(limit("frozen audio layout exceeds node limit"));
+        }
+        if self
+            .audio_lineage
+            .keys()
+            .any(|id| !self.nodes.contains_key(id))
+        {
+            return Err(invalid("frozen audio lineage owner is missing"));
         }
         if !matches!(
             self.nodes.get(&self.root).map(|node| &node.kind),

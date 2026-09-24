@@ -160,6 +160,7 @@ impl Document {
             .map(|(id, node)| Ok((id, node.upgrade(&self.revision_id)?)))
             .collect::<Result<_, DocumentError>>()?;
         let document = ProjectDocument {
+            audio_lineage: BTreeMap::new(),
             schema_version: DOCUMENT_SCHEMA_VERSION,
             project_id: self.project_id,
             revision_id: self.revision_id,
@@ -178,7 +179,7 @@ impl Document {
         document.validate()?;
         Ok(document)
     }
-    /// Compare every schema-1 field. Only new iteration metadata is projected out.
+    /// Compare every schema-1 field, projecting out later iteration and lineage metadata.
     pub fn matches(&self, document: &ProjectDocument) -> bool {
         if document.basis_state != BasisState::explicit() {
             return false;
@@ -448,6 +449,15 @@ pub fn matches_edit(json: &str, edit: &EditTransaction) -> Result<bool, Document
     else {
         return Ok(false);
     };
+    // New lineage-only changes do not alter the legacy changed-node summary.
+    // Compare the complete summary derived from this frozen patch vocabulary.
+    let changed_ids = forward
+        .nodes
+        .keys()
+        .cloned()
+        .collect::<std::collections::BTreeSet<_>>()
+        .into_iter()
+        .collect();
     Ok(edit.forward.marks.is_empty()
         && edit.inverse.marks.is_empty()
         && edit.forward.overrides.is_empty()
@@ -456,7 +466,7 @@ pub fn matches_edit(json: &str, edit: &EditTransaction) -> Result<bool, Document
             == Edit {
                 forward,
                 inverse,
-                changed_ids: edit.changed_ids.clone(),
+                changed_ids,
                 duration_delta: edit.duration_delta,
                 description: edit.description.clone(),
             })

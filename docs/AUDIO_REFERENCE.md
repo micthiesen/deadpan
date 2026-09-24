@@ -4,7 +4,7 @@
 tree. `AudioReferencePlan` queries that snapshot in an explicit old clock, and
 `RetainedRootPolicy` applies its silence to resumed PCM. These are checked
 foundation APIs. They do not yet persist a Hold binding or implement an
-inserted-time command. Core 14 and database 20 remain unchanged.
+inserted-time command. Core 15/database 21 now retain [audio copy lineage](AUDIO_LINEAGE.md).
 
 ## Retained facts
 
@@ -137,12 +137,13 @@ mute that location forever. Cross-grid conversion must consume the correctly
 bound context through the sampled-root adapter. Migration must freeze the previous grammar and give
 legacy projects no invented bindings.
 
-Split currently copies retained contexts without persisting shared audio-domain
-lineage. Those physical copies have different frozen aliases. Before authored
-insertion can carry an active resume across a previously transparent Split,
-the binding layer must retain their logical relationship through creation,
-copying and edits. Matching timing or media is not sufficient evidence of that
-relationship. The physical-domain query intentionally does not infer it.
+Split and occurrence isolation now persist [audio copy lineage](AUDIO_LINEAGE.md).
+The frozen layout retains those explicit relationships separately from physical
+alias identity. Compatible lineage, clock, occurrence and exact placement can be
+compared without inferring a relationship from timing or media equality. The
+binding layer still needs to carry an active resume through these related
+contexts and replace changed contributions. Lineage alone is not a sampled
+signal, a live binding or proof of equal PCM.
 
 The [sampling contract](AUDIO_SAMPLING.md) and
 [splice design](STRUCTURAL_SPLICE_DESIGN.md) describe the remaining composition.

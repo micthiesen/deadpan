@@ -215,6 +215,12 @@ pub struct DocumentPatch {
     pub marks: BTreeMap<MarkId, ValueChange<Mark>>,
     #[serde(deserialize_with = "unique_map")]
     pub overrides: BTreeMap<NodeId, ValueChange<PlayOverrides>>,
+    #[serde(
+        default,
+        skip_serializing_if = "BTreeMap::is_empty",
+        deserialize_with = "unique_map"
+    )]
+    pub audio_lineage: BTreeMap<NodeId, ValueChange<crate::AudioLineageId>>,
 }
 
 impl DocumentPatch {
@@ -239,6 +245,7 @@ impl DocumentPatch {
             || self.assets.len() > MAX_DOCUMENT_NODES
             || self.marks.len() > MAX_DOCUMENT_MARKS
             || self.overrides.len() > MAX_DOCUMENT_NODES
+            || self.audio_lineage.len() > MAX_DOCUMENT_NODES
         {
             return Err(EditError::new(
                 EditErrorCode::InvalidCommand,
@@ -270,6 +277,7 @@ impl DocumentPatch {
         apply_changes(&mut result.assets, &self.assets)?;
         apply_changes(&mut result.marks, &self.marks)?;
         apply_changes(&mut result.overrides, &self.overrides)?;
+        apply_changes(&mut result.audio_lineage, &self.audio_lineage)?;
         result.revision_id = self.to_revision.clone();
         result.validate()?;
         Ok(result)
@@ -288,6 +296,7 @@ impl DocumentPatch {
             assets: inverse_changes(&self.assets),
             marks: inverse_changes(&self.marks),
             overrides: inverse_changes(&self.overrides),
+            audio_lineage: inverse_changes(&self.audio_lineage),
         }
     }
 }
@@ -320,7 +329,7 @@ pub fn apply(
             node,
             at,
             identities,
-        } => crate::split::apply(document, node, *at, identities)?,
+        } => crate::split::apply(document, node, *at, identities, &request.new_revision)?,
         Command::EditOccurrence {
             instance,
             edit,
@@ -335,6 +344,7 @@ pub fn apply(
         command => {
             let mut result = document.clone();
             reduce(&mut result, command, &request.new_revision)?;
+            crate::audio_lineage::reconcile(document, &mut result, command)?;
             if !matches!(
                 command,
                 Command::SetMark { .. } | Command::DeleteMark { .. }
@@ -361,12 +371,14 @@ pub fn apply(
         assets: diff(&document.assets, &result.assets),
         marks: diff(&document.marks, &result.marks),
         overrides: diff(&document.overrides, &result.overrides),
+        audio_lineage: diff(&document.audio_lineage, &result.audio_lineage),
     };
     Ok(EditTransaction {
         changed_ids: forward
             .nodes
             .keys()
             .chain(forward.overrides.keys())
+            .chain(forward.audio_lineage.keys())
             .cloned()
             .collect::<BTreeSet<_>>()
             .into_iter()

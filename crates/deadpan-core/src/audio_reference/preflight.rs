@@ -1,7 +1,9 @@
 //! Scan collection sizes before serde materializes the frozen typed tree. The
-//! scanner retains counters and one map key, never a document-wide JSON value.
+//! scanner retains counters, one record key, and bounded lineage alias keys,
+//! never a document-wide JSON value.
 
 use std::borrow::Cow;
+use std::collections::BTreeSet;
 use std::fmt;
 
 use serde::de::{DeserializeSeed, Error, MapAccess, SeqAccess, Visitor};
@@ -22,6 +24,8 @@ enum Role {
     Iterations,
     Runs,
     Overrides,
+    Lineages,
+    Lineage,
     OverrideEntries,
     OverrideEntry,
     Iteration,
@@ -44,6 +48,7 @@ enum Charge {
     Edge,
     Run,
     OverrideOwner,
+    Lineage,
 }
 
 #[derive(Default)]
@@ -52,6 +57,7 @@ struct Counts {
     edges: usize,
     runs: usize,
     owners: usize,
+    lineages: usize,
     exceeded: Option<&'static str>,
     invalid_shape: bool,
 }
@@ -79,6 +85,11 @@ impl Counts {
                 &mut self.owners,
                 MAX_DOCUMENT_NODES,
                 "frozen override owner limit exceeded",
+            ),
+            Charge::Lineage => (
+                &mut self.lineages,
+                MAX_DOCUMENT_NODES,
+                "frozen audio lineage limit exceeded",
             ),
         };
         if *count == cap {
@@ -202,6 +213,7 @@ impl<'de> Visitor<'de> for Scan<'_> {
         }
         let mut length = 0usize;
         let mut seen_fields = 0u64;
+        let mut lineage_keys = BTreeSet::new();
         while let Some(key) = map.next_key_seed(Key)? {
             if length == MAX_DOCUMENT_NODES {
                 return Err(self.counts.fail("frozen JSON object member limit exceeded"));
@@ -211,7 +223,13 @@ impl<'de> Visitor<'de> for Scan<'_> {
             // before the internally tagged typed parser can buffer them. Alias
             // maps remain bounded by their charged entries and their typed
             // duplicate-ID checks; they are not structural record field names.
-            if !matches!(self.role, Role::Nodes | Role::Overrides | Role::Unknown) {
+            if matches!(self.role, Role::Lineages) && !lineage_keys.insert(key.clone()) {
+                return Err(A::Error::custom("duplicate frozen audio lineage alias"));
+            }
+            if !matches!(
+                self.role,
+                Role::Nodes | Role::Overrides | Role::Lineages | Role::Unknown
+            ) {
                 let bit = record_field_bit(&key);
                 if seen_fields & bit != 0 {
                     self.counts.invalid_shape = true;
@@ -221,6 +239,9 @@ impl<'de> Visitor<'de> for Scan<'_> {
             let (role, charge) = match (self.role, key.as_ref()) {
                 (Role::Root, "nodes") => (Role::Nodes, Charge::None),
                 (Role::Root, "overrides") => (Role::Overrides, Charge::None),
+                (Role::Root, "audio_lineage") => (Role::Lineages, Charge::None),
+                (Role::Lineages, _) => (Role::Lineage, Charge::Lineage),
+                (Role::Lineage, "allocation" | "origin") => (Role::String, Charge::None),
                 (Role::Root, "root") => (Role::String, Charge::None),
                 (Role::Root, "rate") => (Role::Rate, Charge::None),
                 (Role::Nodes, _) => (Role::Node, Charge::Node),
@@ -339,6 +360,8 @@ fn record_field_bit(key: &str) -> u64 {
         "source_placement_end" => 32,
         "repeat_gap_start" => 33,
         "repeat_gap_end" => 34,
+        "audio_lineage" => 35,
+        "origin" => 36,
         _ => return 0,
     };
     1 << ordinal
@@ -403,6 +426,10 @@ mod tests {
             r#"{"nodes":{"root":{"kind":{"pitch":["preserve"]}}}}"#,
             r#"{"overrides":{"root":[[0,0]]}}"#,
             r#"{"overrides":{"root":[{"iteration":{"allocation":{},"ordinal":0},"root":"id"}]}}"#,
+            r#"{"audio_lineage":{"root":{"allocation":[],"origin":"root"}}}"#,
+            r#"{"audio_lineage":{"root":{"allocation":"old","origin":{}}}}"#,
+            r#"{"audio_lineage":{"root":{"allocation":"old","origin":"root","extra":{}}}}"#,
+            r#"{"audio_lineage":[]}"#,
         ] {
             serde_json::from_str::<serde::de::IgnoredAny>(input).unwrap();
             assert_eq!(
@@ -425,6 +452,8 @@ mod tests {
             r#"{"nodes":{"a":{"edges":{"node_start":"hard","node_start":"automatic"}}}}"#,
             r#"{"overrides":{"a":[{"root":"b","root":"c"}]}}"#,
             r#"{"overrides":{"a":[{"iteration":{"allocation":"a","allocation":"b"}}]}}"#,
+            r#"{"audio_lineage":{"root":{"allocation":"a","allocation":"b","origin":"root"}}}"#,
+            r#"{"audio_lineage":{"root":{"allocation":"a","origin":"root","origin":"other"}}}"#,
         ] {
             serde_json::from_str::<serde::de::IgnoredAny>(input).unwrap();
             assert_eq!(

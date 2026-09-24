@@ -486,6 +486,84 @@ fn closed_grammar_rejects_unknown_missing_and_duplicate_fields() {
 }
 
 #[test]
+fn frozen_copy_lineage_roundtrips_owned_aliases_and_keeps_legacy_empty() {
+    let original = fixture(1_000_000_000);
+    let legacy = FrozenAudioLayout::capture(&original).unwrap();
+    assert!(legacy.audio_lineage().is_empty());
+    assert!(!legacy.to_json().unwrap().contains("audio_lineage"));
+    assert!(
+        FrozenAudioLayout::from_json(&legacy.to_json().unwrap())
+            .unwrap()
+            .audio_lineage()
+            .is_empty()
+    );
+    let split = edit(
+        &original,
+        Command::Split {
+            node: original.root().clone(),
+            at: duration(2),
+            identities: SplitIdentities {
+                nodes: (0..40).map(|i| id(&format!("split-{i}"))).collect(),
+            },
+        },
+    );
+    assert!(!split.audio_lineage().is_empty());
+    let frozen = FrozenAudioLayout::capture(&split).unwrap();
+    assert_eq!(frozen.audio_lineage(), split.audio_lineage());
+    assert_eq!(
+        FrozenAudioLayout::from_json(&frozen.to_json().unwrap()).unwrap(),
+        frozen
+    );
+    assert!(frozen.to_json().unwrap().len() < 20_000);
+    // Historical origins need not name an existing alias. Only map ownership
+    // is constrained by this frozen layout; no live-tree lookup is permitted.
+    let mut value = serde_json::to_value(&frozen).unwrap();
+    let owner = frozen.audio_lineage().keys().next().unwrap().to_string();
+    value["audio_lineage"][&owner]["origin"] = json!("historical-context");
+    FrozenAudioLayout::from_json(&value.to_string()).unwrap();
+    value["audio_lineage"]["missing-owner"] =
+        json!({"allocation":"old", "origin":"historical-context"});
+    rejected(value);
+}
+
+#[test]
+fn frozen_copy_lineage_preflight_is_closed_unique_and_bounded() {
+    let original = wire();
+    for token in [
+        json!({"allocation":"old", "origin":"source", "media":"original"}),
+        json!({"allocation":[], "origin":"source"}),
+        json!({"allocation":"old", "origin":{}}),
+        json!({"allocation":"old"}),
+        json!({"origin":"source"}),
+        Value::Null,
+    ] {
+        let mut value = original.clone();
+        value["audio_lineage"] = json!({"source":token});
+        rejected(value);
+    }
+    for input in [
+        r#"{"audio_lineage":{"source":{"allocation":"old","origin":"source"},"sour\u0063e":BROKEN"#,
+        r#"{"audio_lineage":{"source":{"allocation":"old","allocation":"new","origin":"source"}}}"#,
+        r#"{"audio_lineage":{"source":{"allocation":"old","origin":"source","origin":"other"}}}"#,
+        r#"{"audio_lineage":[],"audio_lineage":{}}"#,
+    ] {
+        let error = FrozenAudioLayout::from_json(input).unwrap_err();
+        assert_eq!(error.code, DocumentErrorCode::InvalidJson);
+        if input.contains("BROKEN") {
+            assert!(
+                error
+                    .to_string()
+                    .contains("duplicate frozen audio lineage alias")
+            );
+        }
+    }
+    let entries = (0..MAX_DOCUMENT_NODES)
+        .map(|i| format!(r#""owner-{i}":{{"allocation":"old","origin":"source"}},"#))
+        .collect::<String>();
+    limit_before_malformed_tail(format!(r#"{{"audio_lineage":{{{entries}"last":BROKEN"#));
+}
+
+#[test]
 fn admission_rejects_tampered_structure_durations_placements_and_policies() {
     let original = wire();
     for (pointer, replacement) in [

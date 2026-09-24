@@ -73,7 +73,7 @@ Stored binding validation remains independent of this query visibility test.
 
 ## Persistence and evidence
 
-Database schema 19 introduced core 13; current database 20 stores core 14 and
+Database schema 19 introduced core 13; current database 21 stores core 15 and
 replays database 19 through its frozen multi-binding grammar. Schemas 1 through 18 replay every revision and
 forward/inverse patch through strict frozen adapters. Core schemas 3 through 12
 use a shared frozen mark grammar that rejects `fragments`, including `[]` and

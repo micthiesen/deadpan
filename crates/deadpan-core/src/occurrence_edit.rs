@@ -290,7 +290,7 @@ pub(crate) fn apply(
         // owned/occurrence marks before the actual operation changes any time.
         let marks =
             crate::marks::clone_occurrence_marks(&result, &step, &mapping, || identities.mark())?;
-        clone_nodes(&mut result, &mapping)?;
+        clone_nodes(&mut result, &mapping, allocation)?;
         result
             .overrides
             .entry(step.node)
@@ -308,10 +308,11 @@ pub(crate) fn apply(
         identities,
     } = &command
     {
-        return crate::split::apply(&result, node, *at, identities);
+        return crate::split::apply(&result, node, *at, identities, allocation);
     }
     let isolated = result.clone();
     crate::command::reduce(&mut result, &command, allocation)?;
+    crate::audio_lineage::reconcile(&isolated, &mut result, &command)?;
     result.marks = crate::marks::transform_marks(&isolated, &result, &command)?;
     Ok(result)
 }
@@ -335,6 +336,7 @@ pub(crate) fn subtree_order(
 pub(crate) fn clone_nodes(
     document: &mut ProjectDocument,
     mapping: &BTreeMap<NodeId, NodeId>,
+    allocation: &RevisionId,
 ) -> Result<(), EditError> {
     for (old, new) in mapping {
         let mut node = document.nodes[old].clone();
@@ -366,6 +368,7 @@ pub(crate) fn clone_nodes(
                 .insert(new.clone(), PlayOverrides::try_from(copied)?);
         }
     }
+    crate::audio_lineage::inherit(document, mapping, allocation);
     Ok(())
 }
 

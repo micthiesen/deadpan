@@ -138,11 +138,12 @@ The reference plan now provides borrowed physical processing-domain lookup,
 separate visible/meaningful extents and unit-rate root resume maps. Lookup stops
 at opaque Preserve and remains bounded for compact repeats. Tests distinguish
 the active resumed domain from later domains' independent starts and exercise
-composed phase through another real DSP stage. This still needs logical audio
-lineage: pure Split copies currently have distinct aliases and no persisted
-relationship joining their continuous signal. A physical alias match cannot
-carry a resume across those copies, and media/timing equality cannot invent that
-relationship. See [the reference contract](AUDIO_REFERENCE.md).
+composed phase through another real DSP stage. Core 15/database 21 now retain
+[logical audio copy lineage](AUDIO_LINEAGE.md) through Split, occurrence copies,
+reversible patches and strict history migration. Physical aliases stay distinct.
+The remaining sample binding must use this relationship with exact clocks and
+live context; matching media/timing or lineage alone cannot authorize a retained
+signal. See [the reference contract](AUDIO_REFERENCE.md).
 
 ## Structural and mark requirements
 

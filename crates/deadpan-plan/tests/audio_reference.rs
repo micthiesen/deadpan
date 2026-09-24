@@ -665,10 +665,11 @@ fn partition_allocation_keeps_full_context_but_edit_crops_are_meaningful() {
         left.local_at(ReferenceSample(2)).unwrap(),
         right.local_at(ReferenceSample(2)).unwrap()
     );
-    // Split lineage is a separate future binding responsibility. Similar PCM
-    // clocks do not make copied physical contexts interchangeable.
+    // Explicit authored lineage relates the copies without erasing their
+    // distinct physical identity or admitting media/PCM.
     assert_ne!(left.instance(), right.instance());
     assert!(!left.same_domain(&right));
+    assert!(left.shares_copy_lineage(&right));
 }
 
 #[test]
@@ -709,6 +710,318 @@ fn retained_root_maps_keep_wide_exhausted_coordinates_and_fractional_phase() {
         normal.reference_position_at(ratio(13, 2)).unwrap(),
         ratio(-1, 2)
     );
+}
+
+#[test]
+fn copy_lineage_survives_root_split_refinement_but_rejects_detached_or_moved_audio() {
+    let doc = document(
+        FrameRate::new(48_000, 1).unwrap(),
+        &["a"],
+        vec![("a", source(8))],
+    );
+    let split = edit(
+        &doc,
+        "root-split",
+        Command::Split {
+            node: id("root"),
+            at: duration(2),
+            identities: SplitIdentities {
+                nodes: (0..12).map(|i| id(&format!("s-{i}"))).collect(),
+            },
+        },
+    );
+    let right = split.children(split.root()).nth(1).unwrap().clone();
+    let refined = edit(
+        &split,
+        "refine",
+        Command::Split {
+            node: right,
+            at: duration(2),
+            identities: SplitIdentities {
+                nodes: (0..12).map(|i| id(&format!("r-{i}"))).collect(),
+            },
+        },
+    );
+    let plan = compile(&refined);
+    let domains = [1, 3, 5].map(|sample| {
+        plan.root_clock()
+            .processing_domain_at(ReferenceSample(sample), Default::default())
+            .unwrap()
+    });
+    for pair in domains.windows(2) {
+        assert!(!pair[0].same_domain(&pair[1]));
+        assert!(pair[0].shares_copy_lineage(&pair[1]));
+        assert!(pair[1].shares_copy_lineage(&pair[0]));
+    }
+    let foreign = compile(&refined);
+    let foreign_domain = foreign
+        .root_clock()
+        .processing_domain_at(ReferenceSample(1), Default::default())
+        .unwrap();
+    assert!(!domains[0].shares_copy_lineage(&foreign_domain));
+    let mut legacy = serde_json::to_value(FrozenAudioLayout::capture(&refined).unwrap()).unwrap();
+    legacy.as_object_mut().unwrap().remove("audio_lineage");
+    let legacy =
+        AudioReferencePlan::compile(&FrozenAudioLayout::from_json(&legacy.to_string()).unwrap())
+            .unwrap();
+    let left = legacy
+        .root_clock()
+        .processing_domain_at(ReferenceSample(1), Default::default())
+        .unwrap();
+    let right = legacy
+        .root_clock()
+        .processing_domain_at(ReferenceSample(5), Default::default())
+        .unwrap();
+    assert!(!left.shares_copy_lineage(&right));
+    let changed = edit(
+        &refined,
+        "changed-audio",
+        Command::SetSourceAudioMapping {
+            node: domains[2].instance().node.clone(),
+            mapping: SourceAudioMapping::FitBeat,
+            offset: AudioSample(1),
+        },
+    );
+    let changed = compile(&changed);
+    let left = changed
+        .root_clock()
+        .processing_domain_at(ReferenceSample(1), Default::default())
+        .unwrap();
+    let right = changed
+        .root_clock()
+        .processing_domain_at(ReferenceSample(5), Default::default())
+        .unwrap();
+    assert!(!left.shares_copy_lineage(&right));
+    let moved = edit(
+        &refined,
+        "move",
+        Command::Move {
+            node: refined.children(refined.root()).nth(2).unwrap().clone(),
+            parent: id("root"),
+            index: 0,
+        },
+    );
+    let moved = compile(&moved);
+    let moved_right = moved
+        .root_clock()
+        .processing_domain_at(ReferenceSample(1), Default::default())
+        .unwrap();
+    let moved_left = moved
+        .root_clock()
+        .processing_domain_at(ReferenceSample(5), Default::default())
+        .unwrap();
+    assert!(!moved_right.shares_copy_lineage(&moved_left));
+}
+
+#[test]
+fn copy_lineage_keeps_compact_repeat_paths_and_gap_identity_explicit() {
+    let iterations = IterationOrder::new(RevisionId::new("plays").unwrap(), 1_000_000_000).unwrap();
+    let doc = document(
+        FrameRate::new(48_000, 1).unwrap(),
+        &["repeat"],
+        vec![
+            (
+                "repeat",
+                BeatNode {
+                    label: "Compact".into(),
+                    audio_edges: Default::default(),
+                    kind: NodeKind::Repeat {
+                        child: id("a"),
+                        iterations: iterations.clone(),
+                        gap: Some(HoldRecipe {
+                            duration: duration(4),
+                            video: HoldVideo::Background,
+                            audio: HoldAudio::RoomTone { source: audio() },
+                        }),
+                    },
+                },
+            ),
+            ("a", source(6)),
+        ],
+    );
+    for (cut, before, after) in [(3, 2, 3), (8, 7, 8)] {
+        let split = edit(
+            &doc,
+            "split",
+            Command::Split {
+                node: id("repeat"),
+                at: duration(cut),
+                identities: SplitIdentities {
+                    nodes: (0..12).map(|i| id(&format!("s-{i}"))).collect(),
+                },
+            },
+        );
+        let plan = compile(&split);
+        assert!(plan.layout().to_json().unwrap().len() < 6000);
+        let clock = plan.root_clock();
+        let domains = [before, after, after + 10].map(|sample| {
+            clock
+                .processing_domain_at(
+                    ReferenceSample(sample),
+                    AudioQueryLimits {
+                        maximum_spans: 1,
+                        maximum_work: 30,
+                    },
+                )
+                .unwrap()
+        });
+        assert!(!domains[0].same_domain(&domains[1]));
+        assert!(domains[0].shares_copy_lineage(&domains[1]));
+        assert!(!domains[1].shares_copy_lineage(&domains[2]));
+        for domain in &domains {
+            assert!(domain.lookup().visited_nodes < 8);
+        }
+        if cut == 8 {
+            assert_eq!(domains[0].gap_after(), iterations.at(0).as_ref());
+        }
+    }
+}
+
+#[test]
+fn nested_occurrence_split_retains_copy_lineage_without_expanding_repeats() {
+    let outer = IterationOrder::new(RevisionId::new("outer-plays").unwrap(), 2).unwrap();
+    let inner =
+        IterationOrder::new(RevisionId::new("inner-plays").unwrap(), 1_000_000_000).unwrap();
+    let doc = document(
+        FrameRate::new(48_000, 1).unwrap(),
+        &["outer"],
+        vec![
+            (
+                "outer",
+                BeatNode {
+                    label: "Outer".into(),
+                    audio_edges: Default::default(),
+                    kind: NodeKind::Repeat {
+                        child: id("inner"),
+                        iterations: outer.clone(),
+                        gap: None,
+                    },
+                },
+            ),
+            (
+                "inner",
+                BeatNode {
+                    label: "Inner".into(),
+                    audio_edges: Default::default(),
+                    kind: NodeKind::Repeat {
+                        child: id("a"),
+                        iterations: inner.clone(),
+                        gap: None,
+                    },
+                },
+            ),
+            ("a", source(6)),
+        ],
+    );
+    let split = edit(
+        &doc,
+        "nested-split",
+        Command::EditOccurrence {
+            instance: InstancePath {
+                node: id("a"),
+                repeats: vec![
+                    RepeatInstance {
+                        node: id("outer"),
+                        iteration: outer.at(1).unwrap(),
+                    },
+                    RepeatInstance {
+                        node: id("inner"),
+                        iteration: inner.at(1).unwrap(),
+                    },
+                ],
+            },
+            edit: OccurrenceEdit::Split {
+                at: duration(2),
+                identities: SplitIdentities {
+                    nodes: (0..12).map(|i| id(&format!("s-{i}"))).collect(),
+                },
+            },
+            identities: OccurrenceIdentities {
+                nodes: (0..12).map(|i| id(&format!("isolate-{i}"))).collect(),
+                marks: vec![],
+            },
+        },
+    );
+    let plan = compile(&split);
+    assert!(plan.layout().to_json().unwrap().len() < 8000);
+    let clock = plan.root_clock();
+    let domains = [6_000_000_007, 6_000_000_008].map(|sample| {
+        clock
+            .processing_domain_at(
+                ReferenceSample(sample),
+                AudioQueryLimits {
+                    maximum_spans: 1,
+                    maximum_work: 40,
+                },
+            )
+            .unwrap()
+    });
+    assert_eq!(domains[0].instance().repeats.len(), 2);
+    assert_eq!(
+        domains[0].instance().repeats[1].iteration,
+        inner.at(1).unwrap()
+    );
+    assert!(!domains[0].same_domain(&domains[1]));
+    assert!(domains[0].shares_copy_lineage(&domains[1]));
+}
+
+#[test]
+fn copied_preserve_lineage_does_not_merge_distinct_preparation_clocks() {
+    let doc = document(
+        FrameRate::new(48_000, 1).unwrap(),
+        &["preserve"],
+        vec![
+            ("preserve", retime("a", 8, 0, 4, PitchPolicy::Preserve)),
+            ("a", source(4)),
+        ],
+    );
+    let split = edit(
+        &doc,
+        "split",
+        Command::Split {
+            node: id("preserve"),
+            at: duration(3),
+            identities: SplitIdentities {
+                nodes: (0..12).map(|i| id(&format!("s-{i}"))).collect(),
+            },
+        },
+    );
+    let plan = compile(&split);
+    let domains = [1, 4].map(|sample| {
+        plan.root_clock()
+            .processing_domain_at(ReferenceSample(sample), Default::default())
+            .unwrap()
+    });
+    assert!(matches!(
+        domains[0].kind(),
+        ReferenceProcessingKind::Preserve { .. }
+    ));
+    assert!(!domains[0].same_domain(&domains[1]));
+    assert!(domains[0].shares_copy_lineage(&domains[1]));
+    let prepared = domains
+        .iter()
+        .map(|domain| {
+            plan.preserve_input_clock(domain.instance())
+                .unwrap()
+                .processing_domain_at(ReferenceSample(1), Default::default())
+                .unwrap()
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(
+        prepared[0].meaningful_extent(),
+        prepared[1].meaningful_extent()
+    );
+    assert_eq!(prepared[0].kind(), prepared[1].kind());
+    assert_eq!(
+        plan.layout()
+            .audio_lineage()
+            .get(&prepared[0].instance().node),
+        plan.layout()
+            .audio_lineage()
+            .get(&prepared[1].instance().node)
+    );
+    assert!(!prepared[0].shares_copy_lineage(&prepared[1]));
+    assert!(!prepared[0].same_domain(&prepared[1]));
 }
 
 #[test]
