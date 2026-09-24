@@ -951,3 +951,509 @@ fn historical_definition_survives_live_deletion_and_rechecks_cached_context_admi
     ));
     assert_eq!(provider.context_calls, calls + 1);
 }
+
+#[test]
+fn owned_source_root_clock_retains_signed_ntsc_phase_and_exact_filter_crop() {
+    let rate = FrameRate::new(30_000, 1001).unwrap();
+    let doc = document(
+        rate,
+        &["a"],
+        [("a", source(rate, 3, 0..4805))],
+        BTreeMap::new(),
+    );
+    let planned = compile(&doc, false);
+    let definition = planned.audio_definition(node("a")).unwrap();
+    let placement =
+        deadpan_plan::AudioRootPlacement::new(ratio(-13, 7), ratio(3, 2), ratio(1, 3)..ratio(5, 3))
+            .unwrap();
+    let domain = definition.in_root_clock(placement.clone()).unwrap();
+    // Independent arithmetic: root support is [-19/14,9/14) frames,
+    // rounding to [-2174,1030). Source support [8008/15,8008/3)
+    // admits discrete taps [534,2670). The first source phase is 533.6,
+    // not the cropped first tap and not a phase restarted at root zero.
+    assert_eq!(domain.root_samples(), AudioSample(-2174)..AudioSample(1030));
+    let first_span = &domain
+        .audio(AudioSample(-2174)..AudioSample(-2173), Default::default())
+        .unwrap()
+        .spans[0];
+    assert!(
+        !first_span.boundaries.start.is_empty(),
+        "cropped support owns its incoming envelope edge"
+    );
+    assert!(
+        !first_span.boundaries.end.is_empty(),
+        "cropped support owns its outgoing envelope edge"
+    );
+    let expected = sample_reference(534..2670, ratio(2668, 5), ratio(2, 3), 3204, fixture_sample);
+    let uncropped = sample_reference(0..4805, ratio(2668, 5), ratio(2, 3), 256, fixture_sample);
+    assert_ne!(expected[..256], uncropped);
+    let mut renderer = StageAudio::new(Arc::clone(&planned));
+    let mut provider = FixtureProvider::new();
+    for offset in (0..3204).step_by(191).collect::<Vec<_>>().into_iter().rev() {
+        let count = (3204 - offset).min(191) as u32;
+        let actual = renderer
+            .read_domain(
+                &mut provider,
+                &domain,
+                AudioSample(-2174 + offset as i64),
+                count,
+                TIMEOUT,
+                &AtomicBool::new(false),
+            )
+            .unwrap_or_else(|error| {
+                panic!("signed crop offset {offset}, count {count}: {error:?}")
+            });
+        assert_eq!(actual.samples, expected[offset..offset + count as usize]);
+        assert_eq!(actual.definition, Some(node("a")));
+        assert_eq!(actual.placement, Some(placement.clone()));
+        assert!(actual.suppressed.is_empty());
+    }
+    assert!(provider.calls > 0);
+    assert_eq!(provider.context_calls, 0);
+}
+
+struct RevisionProvider {
+    fixture: FixtureProvider,
+    revision: RevisionId,
+}
+
+impl AudioSourceProvider for RevisionProvider {
+    fn source(
+        &mut self,
+        project: &ProjectId,
+        revision: &RevisionId,
+        asset: &AssetId,
+        cancelled: &AtomicBool,
+    ) -> Result<&PreparedSource, PreparationError> {
+        assert_eq!(
+            revision, &self.revision,
+            "owned media uses the current revision"
+        );
+        self.fixture.source(
+            project,
+            &RevisionId::new("definition-revision").unwrap(),
+            asset,
+            cancelled,
+        )
+    }
+}
+
+#[test]
+fn owned_nested_preserve_uses_edited_room_tone_in_the_same_root_clock() {
+    let rate = FrameRate::new(48_000, 1).unwrap();
+    let silent_gap = HoldRecipe {
+        duration: frames(128),
+        video: HoldVideo::Background,
+        audio: HoldAudio::Silence,
+    };
+    let original = document(
+        rate,
+        &["outer"],
+        [
+            ("a", source(rate, 256, 512..768)),
+            (
+                "repeat",
+                BeatNode {
+                    label: "Editable gap".into(),
+                    audio_edges: Default::default(),
+                    kind: NodeKind::Repeat {
+                        child: id("a"),
+                        iterations: IterationOrder::new(RevisionId::new("plays").unwrap(), 2)
+                            .unwrap(),
+                        gap: Some(silent_gap.clone()),
+                    },
+                },
+            ),
+            (
+                "inner",
+                retime("repeat", 960, 0..640, PitchPolicy::Preserve),
+            ),
+            (
+                "outer",
+                retime("inner", 1280, 0..960, PitchPolicy::Preserve),
+            ),
+        ],
+        BTreeMap::new(),
+    );
+    let edit = apply(
+        &original,
+        &CommandRequest {
+            project_id: original.project_id().clone(),
+            expected_revision: original.revision_id().clone(),
+            new_revision: RevisionId::new("room-tone-revision").unwrap(),
+            command: Command::SetRepeat {
+                node: id("repeat"),
+                plays: 2,
+                gap: Some(HoldRecipe {
+                    audio: HoldAudio::RoomTone {
+                        source: audio(6144..6272),
+                    },
+                    ..silent_gap
+                }),
+            },
+        },
+    )
+    .unwrap();
+    let changed = edit.forward.apply(&original).unwrap();
+    assert_eq!(edit.inverse.apply(&changed).unwrap(), original);
+    let source_pcm: Vec<_> = (512..768).map(fixture_sample).collect();
+    let room_pcm: Vec<_> = (6144..6272).map(fixture_sample).collect();
+    let room = RoomTone::new(
+        RoomToneRecipe::new(ExactRatio::integer(128), 128).unwrap(),
+        &room_pcm,
+        &AtomicBool::new(false),
+    )
+    .unwrap()
+    .render(AudioSample(0), 128, &AtomicBool::new(false))
+    .unwrap()
+    .samples;
+    let mut rendered = Vec::new();
+    for (doc, gap, mute) in [
+        (&original, vec![[0.0; 2]; 128], true),
+        (&changed, room, false),
+    ] {
+        let input: Vec<_> = source_pcm
+            .iter()
+            .copied()
+            .chain(gap)
+            .chain(source_pcm.iter().copied())
+            .collect();
+        let mut inner = stretch(&input, 960, 2, 3);
+        if mute {
+            inner[384..576].fill([0.0; 2]);
+        }
+        let mut expected = stretch(&inner, 1280, 3, 4);
+        if mute {
+            expected[512..768].fill([0.0; 2]);
+        }
+        let planned = compile(doc, false);
+        let definition = planned.audio_definition(node("outer")).unwrap();
+        let domain = definition
+            .in_root_clock(
+                deadpan_plan::AudioRootPlacement::new(
+                    ExactRatio::integer(-64),
+                    ExactRatio::ONE,
+                    ExactRatio::ZERO..ExactRatio::integer(1280),
+                )
+                .unwrap(),
+            )
+            .unwrap();
+        let mut renderer = StageAudio::new(Arc::clone(&planned));
+        let mut provider = RevisionProvider {
+            fixture: FixtureProvider::new(),
+            revision: doc.revision_id().clone(),
+        };
+        for offset in [1024, 768, 512, 256, 0] {
+            let block = renderer
+                .read_domain(
+                    &mut provider,
+                    &domain,
+                    AudioSample(offset - 64),
+                    256,
+                    TIMEOUT,
+                    &AtomicBool::new(false),
+                )
+                .unwrap();
+            assert_eq!(
+                block.samples,
+                expected[offset as usize..offset as usize + 256]
+            );
+            assert_eq!(&block.revision_id, doc.revision_id());
+            let suppression = if mute && offset == 512 {
+                vec![AudioSample(448)..AudioSample(704)]
+            } else {
+                vec![]
+            };
+            assert_eq!(block.suppressed, suppression);
+        }
+        assert!(provider.fixture.calls > 0);
+        provider.fixture.unavailable = true;
+        assert!(matches!(
+            renderer.read_domain(
+                &mut provider,
+                &domain,
+                AudioSample(448),
+                16,
+                TIMEOUT,
+                &AtomicBool::new(false)
+            ),
+            Err(StageAudioError::Preparation(
+                PreparationError::SourceUnavailable(_)
+            ))
+        ));
+        rendered.push(expected);
+    }
+    assert!(rendered[0][512..768].iter().all(|value| *value == [0.0; 2]));
+    assert!(
+        rendered[1][512..768]
+            .iter()
+            .flatten()
+            .any(|value| value.abs() > 1e-5)
+    );
+    assert_ne!(rendered[0], rendered[1]);
+}
+
+#[test]
+fn owned_root_placement_keeps_silent_hold_without_any_preserve_input_point() {
+    let rate = FrameRate::new(192_000, 1).unwrap();
+    let doc = document(
+        rate,
+        &["outer"],
+        [
+            ("a", source(rate, 1, 0..1)),
+            ("silent", hold(1, HoldAudio::Silence)),
+            ("b", source(rate, 1, 1..2)),
+            (
+                "cuts",
+                BeatNode::sequence("Subsample Hold", vec![id("a"), id("silent"), id("b")]),
+            ),
+            ("inner", retime("cuts", 24, 0..3, PitchPolicy::Preserve)),
+            ("outer", retime("inner", 48, 0..24, PitchPolicy::Preserve)),
+        ],
+        BTreeMap::new(),
+    );
+    let planned = compile(&doc, false);
+    let definition = planned.audio_definition(node("outer")).unwrap();
+    let domain = definition
+        .in_root_clock(
+            deadpan_plan::AudioRootPlacement::new(
+                ratio(-1, 8),
+                ExactRatio::ONE,
+                ExactRatio::ZERO..ExactRatio::integer(48),
+            )
+            .unwrap(),
+        )
+        .unwrap();
+    let mut inner = stretch(&[fixture_sample(0)], 6, 1, 8);
+    inner[2..4].fill([0.0; 2]);
+    let mut outer = stretch(&inner, 12, 1, 2);
+    outer[4..8].fill([0.0; 2]);
+    let mut expected = sample_reference(0..12, ratio(1, 32), ExactRatio::ONE, 12, |at| {
+        outer[at as usize]
+    });
+    expected[4..8].fill([0.0; 2]);
+    let mut renderer = StageAudio::new(Arc::clone(&planned));
+    let block = renderer
+        .read_domain(
+            &mut FixtureProvider::new(),
+            &domain,
+            AudioSample(0),
+            12,
+            TIMEOUT,
+            &AtomicBool::new(false),
+        )
+        .unwrap();
+    assert_eq!(block.samples, expected);
+    assert_eq!(block.suppressed, vec![AudioSample(4)..AudioSample(8)]);
+    assert!(
+        block.samples[..4]
+            .iter()
+            .chain(&block.samples[8..])
+            .flatten()
+            .any(|value| value.abs() > 1e-5)
+    );
+}
+
+#[test]
+fn owned_root_placements_share_intrinsic_preparation_without_rebinding_clocks() {
+    let (doc, expected, _) = nested_fixture();
+    let planned = compile(&doc, false);
+    let definition = planned.audio_definition(node("outer")).unwrap();
+    let placement = |origin| {
+        deadpan_plan::AudioRootPlacement::new(
+            ExactRatio::integer(origin),
+            ExactRatio::ONE,
+            ExactRatio::ZERO..ExactRatio::integer(1280),
+        )
+        .unwrap()
+    };
+    let first = definition.in_root_clock(placement(-64)).unwrap();
+    let same = definition.in_root_clock(placement(-64)).unwrap();
+    let moved = definition.in_root_clock(placement(384)).unwrap();
+    let mut renderer = StageAudio::new(Arc::clone(&planned));
+    let mut provider = FixtureProvider::new();
+    for (domain, start) in [(&first, -64), (&same, -64), (&moved, 384)] {
+        let block = renderer
+            .read_domain(
+                &mut provider,
+                domain,
+                AudioSample(start),
+                256,
+                TIMEOUT,
+                &AtomicBool::new(false),
+            )
+            .unwrap();
+        assert_eq!(block.samples, expected[..256]);
+        assert_eq!(block.placement.as_ref(), domain.placement());
+    }
+    let count = renderer.cached_stage_count();
+    assert_eq!(
+        renderer
+            .read_definition(
+                &mut provider,
+                &definition,
+                SignalSample(0),
+                256,
+                TIMEOUT,
+                &AtomicBool::new(false)
+            )
+            .unwrap()
+            .samples,
+        expected[..256]
+    );
+    assert_eq!(
+        renderer.cached_stage_count(),
+        count,
+        "root placement cannot restart an unchanged intrinsic preparation"
+    );
+    let ordinary_domain = planned
+        .audio_domain_at(AudioSample(64), Default::default())
+        .unwrap();
+    assert_eq!(
+        renderer
+            .read_domain(
+                &mut provider,
+                &ordinary_domain,
+                AudioSample(64),
+                256,
+                TIMEOUT,
+                &AtomicBool::new(false)
+            )
+            .unwrap()
+            .samples,
+        expected[1000..1256]
+    );
+    assert_eq!(
+        renderer
+            .read(
+                &mut provider,
+                AudioSample(64),
+                256,
+                TIMEOUT,
+                &AtomicBool::new(false)
+            )
+            .unwrap()
+            .samples,
+        expected[1000..1256]
+    );
+    provider.unavailable = true;
+    for domain in [&first, &same, &moved, &ordinary_domain] {
+        assert!(matches!(
+            renderer.read_domain(
+                &mut provider,
+                domain,
+                domain.visible_samples().start,
+                1,
+                TIMEOUT,
+                &AtomicBool::new(false)
+            ),
+            Err(StageAudioError::Preparation(
+                PreparationError::SourceUnavailable(_)
+            ))
+        ));
+    }
+}
+
+#[test]
+fn owned_root_domain_rejects_foreign_handles_ranges_cancellation_and_work_limits() {
+    let (doc, _, _) = nested_fixture();
+    let planned = compile(&doc, false);
+    let foreign = compile(&doc, false);
+    let definition = planned.audio_definition(node("outer")).unwrap();
+    let domain = definition
+        .in_root_clock(
+            deadpan_plan::AudioRootPlacement::new(
+                ExactRatio::integer(-64),
+                ExactRatio::ONE,
+                ExactRatio::ZERO..ExactRatio::integer(1280),
+            )
+            .unwrap(),
+        )
+        .unwrap();
+    let mut provider = FixtureProvider::new();
+    let mut wrong = StageAudio::new(foreign);
+    assert!(matches!(
+        wrong.read_domain(
+            &mut provider,
+            &domain,
+            AudioSample(-64),
+            1,
+            TIMEOUT,
+            &AtomicBool::new(false)
+        ),
+        Err(StageAudioError::ForeignDomain)
+    ));
+    let mut renderer = StageAudio::new(Arc::clone(&planned));
+    for (start, count, timeout) in [
+        (-65, 1, TIMEOUT),
+        (1216, 1, TIMEOUT),
+        (1215, 2, TIMEOUT),
+        (-64, 0, TIMEOUT),
+        (-64, 257, TIMEOUT),
+        (i64::MAX, 1, TIMEOUT),
+        (-64, 1, Duration::ZERO),
+    ] {
+        assert!(
+            renderer
+                .read_domain(
+                    &mut provider,
+                    &domain,
+                    AudioSample(start),
+                    count,
+                    timeout,
+                    &AtomicBool::new(false)
+                )
+                .is_err()
+        );
+        assert_eq!(provider.calls, 0);
+    }
+    assert!(
+        renderer
+            .read_domain(
+                &mut provider,
+                &domain,
+                AudioSample(-64),
+                1,
+                TIMEOUT,
+                &AtomicBool::new(true)
+            )
+            .unwrap_err()
+            .is_cancelled()
+    );
+    let mut limited = StageAudio::with_limits(
+        Arc::clone(&planned),
+        StageLimits {
+            maximum_prepared_stages: 1,
+            ..Default::default()
+        },
+    )
+    .unwrap();
+    assert!(matches!(
+        limited.read_domain(
+            &mut provider,
+            &domain,
+            AudioSample(-64),
+            1,
+            TIMEOUT,
+            &AtomicBool::new(false)
+        ),
+        Err(StageAudioError::Limit(_))
+    ));
+    assert_eq!(provider.calls, 0);
+    assert_eq!(limited.cached_stage_count(), 0);
+    provider.cancel_on_call = true;
+    assert!(
+        renderer
+            .read_domain(
+                &mut provider,
+                &domain,
+                AudioSample(-64),
+                1,
+                TIMEOUT,
+                &AtomicBool::new(false)
+            )
+            .unwrap_err()
+            .is_cancelled()
+    );
+    assert_eq!(renderer.cached_stage_count(), 0);
+}

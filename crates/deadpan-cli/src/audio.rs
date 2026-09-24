@@ -15,7 +15,9 @@ use deadpan_core::{
     AssetId, AssetRecord, AudioSample, FrozenAudioContext, ProjectDocument, ProjectId, RevisionId,
 };
 use deadpan_media::audio_session::{AudioSession, AudioSessionLimits};
-use deadpan_plan::{AudioDefinitionSelector, PlanError, RenderPlan, SignalSample};
+use deadpan_plan::{
+    AudioDefinitionSelector, AudioRootPlacement, PlanError, RenderPlan, SignalSample,
+};
 use deadpan_store::original_media::OriginalMediaLimits;
 use deadpan_store::{AccessMode, ProjectStore, StoreError};
 
@@ -175,6 +177,33 @@ impl ProjectAudioSession {
         Ok(self.stages.read_definition(
             &mut self.sources,
             &definition,
+            start,
+            frames,
+            Duration::from_secs(10),
+            cancelled,
+        )?)
+    }
+
+    /// Evaluate this revision's owned recipe in an explicit root placement.
+    /// Placement supplies coordinates only; the selected live/historical
+    /// revision still supplies the raw recipe and qualified media contracts.
+    pub fn read_placement(
+        &mut self,
+        selector: AudioDefinitionSelector,
+        placement: AudioRootPlacement,
+        start: AudioSample,
+        frames: u32,
+        cancelled: &AtomicBool,
+    ) -> Result<DomainAudioBlock, ProjectAudioError> {
+        check_cancel(cancelled).map_err(StageAudioError::from)?;
+        let domain = self
+            .sequence
+            .plan()
+            .audio_definition(selector)?
+            .in_root_clock(placement)?;
+        Ok(self.stages.read_domain(
+            &mut self.sources,
+            &domain,
             start,
             frames,
             Duration::from_secs(10),

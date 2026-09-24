@@ -90,10 +90,12 @@ play's meaningful start; it does not claim historical occurrence continuity.
 One compact allocation-run rule should select the prototype without expanding
 every play. Existing survivors retain their separate physical/root maps.
 
-Current captured contexts contain raw recipes but no earlier bindings. Their
-evolution must include a bounded acyclic retained-context graph, explicit lexical
-Repeat arguments, live ownership transforms, exact composed anchors and shared
-preparation across contexts. Capture committed before-state revisions so the host
-can authenticate them against history. Do not label reducer intermediates as
-committed snapshots. See [the splice design](STRUCTURAL_SPLICE_DESIGN.md) and
+The [owned recipe clock](OWNED_AUDIO_CLOCKS.md) now supplies a physical definition's
+current raw body in an explicit root placement. The preferred binding approach
+uses the complete children already owned by Split, with timing-only indexes and
+explicit lexical Repeat arguments, instead of a second frozen raw-body graph.
+Live ownership transforms, exact composed anchors, birth environments and shared
+preparation remain required. Explicit historical contexts still authenticate
+against committed revisions; never label reducer intermediates as committed
+snapshots. See [the splice design](STRUCTURAL_SPLICE_DESIGN.md) and
 [physical domains](AUDIO_PHYSICAL_DOMAINS.md).

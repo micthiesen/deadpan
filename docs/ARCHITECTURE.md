@@ -48,13 +48,20 @@ Their signed root grids can extend outside visible allocation. `StageAudio`
 reads them through the shared preparation/cache path; a domain transfer exposes
 that raw signal on a point grid without resetting absolute phase. Headless
 domain inspection uses the same historical media host. It does not yet author
-the live bindings or multi-context graph needed for inserted-time edits.
+the live bindings needed for inserted-time edits.
 
 [Audio definition output](AUDIO_DEFINITIONS.md) reads a captured Node or actual
 Repeat default directly on a local-zero point grid. Definition scope brands
 relative paths, nested stage descriptors and caches. This supplies a distinct
 new-play recipe operand even when all existing plays are overridden; it does not
 replace their physical-domain continuity or install a live binding.
+
+[Owned recipe clocks](OWNED_AUDIO_CLOCKS.md) evaluate a physical definition in an
+explicit signed root placement while the selected plan supplies its current raw
+inputs and policies. Root spans retain definition scope and preparation uses the
+same bounded controller. This supports the proposed use of Split's owned children
+with retained timing indexes instead of a second graph of historical raw bodies.
+Persisted anchors, Repeat birth/survivor scope and complete lifecycle remain open.
 
 ## Full component map
 

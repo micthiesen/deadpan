@@ -378,6 +378,7 @@ fn boundary(
     kind: AudioBoundaryKind,
 ) -> AudioBoundaryOrigin {
     AudioBoundaryOrigin {
+        placement_support: false,
         instance: InstancePath {
             node: id(node),
             repeats: repeats

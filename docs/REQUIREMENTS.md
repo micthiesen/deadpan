@@ -91,7 +91,7 @@ subtree. Point-grid transfer preserves fractional phase and old silence through
 one shared preparation allowance. Headless inspection reads actual qualified
 historical media. [Qualification](qualification/audio-physical-domain-2026-09-23.md)
 records hidden-sibling, negative-coordinate, decoder/DSP and admission tests.
-Authored bindings, prior-binding dependency closure, lifecycle/policy replacement
+Authored bindings, retained evaluation ownership, lifecycle/policy replacement
 and atomic Hold insertion remain open; no requirement or gate changes status.
 
 [Authored audio definitions](AUDIO_DEFINITIONS.md) now expose the actual Repeat
@@ -99,8 +99,20 @@ default independently of audible occurrences, with scoped point-grid queries,
 real source/DSP rendering and historical headless admission. This resolves the
 all-overridden-default counterexample for a future new-play operand.
 [Qualification](qualification/audio-definition-2026-09-23.md) records exact
-grid, silence, cache and media tests. Authored birth rules, binding graph/lifecycle
+grid, silence, cache and media tests. Authored birth rules, binding lifecycle
 and Hold insertion remain open; no requirement or gate changes status.
+
+[Owned recipe clocks](OWNED_AUDIO_CLOCKS.md) evaluate current physical definitions
+in explicit signed root placements through the shared reader. Source alignment
+and silence-policy edits affect that revision's raw recipe; explicit historical
+reads retain their old meaning. This supplies the evaluation boundary for the
+proposed owned-tree binding model, without a second frozen raw-body graph.
+Persisted anchors, compact Repeat birth/survivor rules, command lifecycle and
+atomic Hold insertion remain open. No requirement or gate changes status.
+
+[Owned-clock qualification](qualification/owned-audio-clock-2026-09-23.md)
+records 11 new tests, the 1,108-test full gate and two independent reviews for
+this evaluation boundary.
 
 Current measured evidence: [editing foundation verification](FOUNDATION_VERIFICATION.md), [picture plan and migration verification](PLAN_MIGRATION_VERIFICATION.md), [exact boundary verification](ANCHOR_VERIFICATION.md), [persistent mark verification](MARK_VERIFICATION.md), [sparse override verification](OVERRIDE_VERIFICATION.md), [nested occurrence verification](OCCURRENCE_VERIFICATION.md), [native media qualification](qualification/media-2026-09-20.md), [compatible FFmpeg/Rust qualification](qualification/media-compatible-2026-09-20.md), [audio candidate qualification](qualification/audio-2026-09-20.md), and [canonical audio qualification](qualification/audio-canonical-2026-09-20.md).
 

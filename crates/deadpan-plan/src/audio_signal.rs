@@ -239,6 +239,8 @@ pub struct AudioSignalQuery<'plan> {
 /// point grid. A returned stage may have support beyond this ancestor crop.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct AudioProcessingSpan<'plan> {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub definition: Option<AudioDefinitionSelector>,
     pub samples: Range<AudioSample>,
     pub allocated_samples: Range<AudioSample>,
     pub project_extent: Range<ExactRatio>,
@@ -324,6 +326,7 @@ impl RenderPlan {
                 .into_iter()
                 .map(|span| {
                     Ok(AudioProcessingSpan {
+                        definition: span.definition,
                         samples: AudioSample(span.samples.start.0)..AudioSample(span.samples.end.0),
                         allocated_samples: AudioSample(span.allocated_samples.start.0)
                             ..AudioSample(span.allocated_samples.end.0),

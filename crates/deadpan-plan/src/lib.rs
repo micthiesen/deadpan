@@ -26,7 +26,7 @@ pub use plan::{
     NodeType, PlanInspection, PlanMetadata, RenderPlan, SilenceReason, SourceSamplingSupport,
     StorageStats,
 };
-pub use plan::{AudioDefinition, AudioDefinitionSelector};
+pub use plan::{AudioDefinition, AudioDefinitionSelector, AudioRootPlacement};
 pub use plan::{
     AudioProcessingQuery, AudioProcessingSpan, AudioSignal, AudioSignalContent, AudioSignalQuery,
     AudioSignalSpan, AudioStage, AudioStageDescriptor, SignalSample, SignalTransform,
@@ -58,6 +58,8 @@ pub enum PlanError {
     InvalidAudioLimits,
     #[error("audio definition selector does not name an available definition: {0:?}")]
     InvalidAudioDefinitionSelector(AudioDefinitionSelector),
+    #[error("invalid owned audio root placement: {0}")]
+    InvalidAudioRootPlacement(&'static str),
     #[error("audio query exceeded its {0} budget")]
     AudioQueryLimit(&'static str),
     #[error("audio span has no linearly mapped source audio")]

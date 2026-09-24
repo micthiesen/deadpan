@@ -2,8 +2,8 @@ use std::collections::BTreeMap;
 
 use deadpan_core::*;
 use deadpan_plan::{
-    AudioBoundaryRule, AudioContent, AudioDefinitionSelector, AudioQueryLimits, AudioSignalContent,
-    AudioStage, PlanError, RenderPlan, SignalSample,
+    AudioBoundaryRule, AudioContent, AudioDefinitionSelector, AudioQueryLimits, AudioRootPlacement,
+    AudioSignalContent, AudioStage, PlanError, RenderPlan, SignalSample,
 };
 
 fn id(name: &str) -> NodeId {
@@ -170,6 +170,322 @@ fn first_stage<'plan>(signal: &deadpan_plan::AudioSignal<'plan>) -> AudioStage<'
         panic!("expected Preserve")
     };
     stage
+}
+
+fn placement(origin: i64, scale: i64, start: i64, end: i64) -> AudioRootPlacement {
+    AudioRootPlacement::new(
+        ExactRatio::integer(origin),
+        ExactRatio::integer(scale),
+        ExactRatio::integer(start)..ExactRatio::integer(end),
+    )
+    .unwrap()
+}
+
+#[test]
+fn owned_source_uses_absolute_signed_root_phase_without_selecting_root_siblings() {
+    let plan = RenderPlan::compile(&document(
+        FrameRate::new(30_000, 1001).unwrap(),
+        &["silence", "source"],
+        [("silence", hold(4)), ("source", source(4))],
+        BTreeMap::new(),
+    ))
+    .unwrap();
+    let definition = plan.audio_definition(selection("source")).unwrap();
+    for (origin, start, end, first_ticks) in [
+        (1, 1602, 8008, ExactRatio::new(16, 1001).unwrap()),
+        (-1, -1602, 4805, ExactRatio::new(-16, 1001).unwrap()),
+    ] {
+        let placement = placement(origin, 1, 0, 4);
+        let domain = definition.in_root_clock(placement.clone()).unwrap();
+        assert_eq!(domain.root_samples(), AudioSample(start)..AudioSample(end));
+        assert_eq!(domain.visible_samples(), domain.root_samples());
+        assert_eq!(domain.placement(), Some(&placement));
+        assert_eq!(domain.definition(), Some(definition.selector()));
+        assert!(domain.belongs_to(&plan));
+        assert!(!domain.belongs_to(&plan.clone()));
+        let query = domain
+            .audio(
+                AudioSample(start)..AudioSample(start + 1),
+                Default::default(),
+            )
+            .unwrap();
+        let span = &query.spans[0];
+        assert_eq!(
+            span.source_point(AudioSample(start)).unwrap().ticks,
+            first_ticks
+        );
+        assert_eq!(span.definition.as_ref(), Some(definition.selector()));
+        assert_eq!(span.instance.repeats, vec![]);
+        assert_eq!(span.grid.frame_origin(), ExactRatio::ZERO);
+        assert_eq!(span.grid.boundary_rule(), AudioBoundaryRule::RoundEven);
+        assert_eq!(span.transform.project_origin, ExactRatio::integer(origin));
+        assert_eq!(
+            serde_json::to_value(span).unwrap()["definition"]["node"],
+            "source"
+        );
+    }
+    let ordinary = plan
+        .audio_domain_at(AudioSample(1602), Default::default())
+        .unwrap();
+    assert_eq!(ordinary.definition(), None);
+    assert_eq!(ordinary.placement(), None);
+    let ordinary = ordinary
+        .audio(AudioSample(1602)..AudioSample(1603), Default::default())
+        .unwrap();
+    assert!(matches!(
+        ordinary.spans[0].content,
+        AudioContent::Silence { .. }
+    ));
+    assert!(
+        serde_json::to_value(&ordinary.spans[0])
+            .unwrap()
+            .get("definition")
+            .is_none()
+    );
+}
+
+#[test]
+fn owned_source_support_limits_filter_and_envelope_without_rebasing_its_clock() {
+    let plan = compile(&["source"], [("source", source(4))]);
+    let definition = plan.audio_definition(selection("source")).unwrap();
+    let domain = definition.in_root_clock(placement(-1, 2, 1, 3)).unwrap();
+    assert_eq!(domain.root_samples(), AudioSample(1)..AudioSample(5));
+    let query = domain
+        .audio(AudioSample(1)..AudioSample(5), Default::default())
+        .unwrap();
+    let span = &query.spans[0];
+    let AudioContent::Source { support, .. } = &span.content else {
+        panic!("Source")
+    };
+    assert_eq!(support.start.ticks, ExactRatio::integer(64));
+    assert_eq!(support.end.ticks, ExactRatio::integer(192));
+    assert_eq!(span.envelope_samples, AudioSample(1)..AudioSample(5));
+    for boundary in [&span.boundaries.start, &span.boundaries.end] {
+        assert_eq!(boundary.len(), 1);
+        assert!(boundary[0].placement_support);
+        assert_eq!(boundary[0].policy, AudioEdgePolicy::Automatic);
+    }
+    assert_eq!(
+        span.source_point(AudioSample(1)).unwrap().ticks,
+        ExactRatio::integer(64)
+    );
+    assert_eq!(
+        span.source_point(AudioSample(2)).unwrap().ticks,
+        ExactRatio::integer(96)
+    );
+    assert!(matches!(
+        domain.audio(AudioSample(0)..AudioSample(1), Default::default()),
+        Err(PlanError::AudioRangeOutOfRange)
+    ));
+    assert!(matches!(
+        domain.processing(AudioSample(4)..AudioSample(6), Default::default()),
+        Err(PlanError::AudioRangeOutOfRange)
+    ));
+    assert!(matches!(
+        domain.processing(
+            AudioSample(1)..AudioSample(2),
+            AudioQueryLimits {
+                maximum_spans: 0,
+                maximum_work: 1
+            }
+        ),
+        Err(PlanError::InvalidAudioLimits)
+    ));
+}
+
+#[test]
+fn placement_support_never_moves_a_noncoincident_hard_edge_into_the_crop() {
+    let mut source = source(4);
+    source.audio_edges.node_start = AudioEdgePolicy::Hard;
+    source.audio_edges.node_end = AudioEdgePolicy::Hard;
+    let plan = compile(&["source"], [("source", source)]);
+    let definition = plan.audio_definition(selection("source")).unwrap();
+    for (start, end, expect_hard) in [(1, 3, false), (0, 4, true)] {
+        let domain = definition
+            .in_root_clock(placement(0, 1, start, end))
+            .unwrap();
+        let query = domain
+            .audio(AudioSample(start)..AudioSample(end), Default::default())
+            .unwrap();
+        for origins in [
+            &query.spans[0].boundaries.start,
+            &query.spans[0].boundaries.end,
+        ] {
+            assert!(
+                origins.iter().any(|origin| origin.placement_support
+                    && origin.policy == AudioEdgePolicy::Automatic)
+            );
+            assert_eq!(
+                origins
+                    .iter()
+                    .any(|origin| !origin.placement_support
+                        && origin.policy == AudioEdgePolicy::Hard),
+                expect_hard
+            );
+            for origin in origins.iter().filter(|origin| !origin.placement_support) {
+                assert!(
+                    serde_json::to_value(origin)
+                        .unwrap()
+                        .get("placement_support")
+                        .is_none()
+                );
+            }
+        }
+        assert!(matches!(
+            domain.audio(
+                AudioSample(start)..AudioSample(start + 1),
+                AudioQueryLimits {
+                    maximum_spans: 1,
+                    maximum_work: 1
+                }
+            ),
+            Err(PlanError::AudioQueryLimit(_))
+        ));
+    }
+}
+
+#[test]
+fn root_placed_preserve_keeps_full_nested_history_and_definition_scope() {
+    let plan = compile(
+        &["outer"],
+        [
+            ("source", source(8)),
+            (
+                "inner",
+                retime(
+                    "source",
+                    12,
+                    0,
+                    8,
+                    PitchPolicy::Preserve,
+                    RetimePurpose::Edit,
+                ),
+            ),
+            (
+                "outer",
+                retime(
+                    "inner",
+                    18,
+                    0,
+                    12,
+                    PitchPolicy::Preserve,
+                    RetimePurpose::Edit,
+                ),
+            ),
+        ],
+    );
+    let definition = plan.audio_definition(selection("outer")).unwrap();
+    let domain = definition.in_root_clock(placement(-4, 2, 6, 12)).unwrap();
+    let query = domain
+        .processing(AudioSample(8)..AudioSample(10), Default::default())
+        .unwrap();
+    let span = &query.spans[0];
+    assert_eq!(span.definition.as_ref(), Some(definition.selector()));
+    let AudioSignalContent::Stage(outer) = &span.content else {
+        panic!("Preserve")
+    };
+    assert_eq!(
+        outer.descriptor().definition.as_ref(),
+        Some(definition.selector())
+    );
+    assert_eq!(
+        outer.input_signal().sample_count().unwrap(),
+        SignalSample(12)
+    );
+    assert_eq!(
+        outer.output_signal().sample_count().unwrap(),
+        SignalSample(18)
+    );
+    let inner = first_stage(&outer.input_signal());
+    assert_eq!(
+        inner.descriptor().definition.as_ref(),
+        Some(definition.selector())
+    );
+    assert_eq!(
+        inner.input_signal().sample_count().unwrap(),
+        SignalSample(8)
+    );
+    let flattened = domain
+        .audio(AudioSample(8)..AudioSample(10), Default::default())
+        .unwrap();
+    assert_eq!(
+        flattened.spans[0].definition.as_ref(),
+        Some(definition.selector())
+    );
+    assert_eq!(flattened.spans[0].retimes.len(), 2);
+    assert!(matches!(
+        domain.processing(
+            AudioSample(8)..AudioSample(9),
+            AudioQueryLimits {
+                maximum_spans: 1,
+                maximum_work: 1
+            }
+        ),
+        Err(PlanError::AudioQueryLimit(_))
+    ));
+}
+
+#[test]
+fn root_placement_is_closed_checked_and_rejects_nonphysical_definition_roots() {
+    let plan = compile(
+        &["repeat", "unity"],
+        [
+            ("source", source(4)),
+            ("repeat", repeat("source", 2)),
+            ("hold", hold(4)),
+            (
+                "unity",
+                retime("hold", 4, 0, 4, PitchPolicy::Preserve, RetimePurpose::Edit),
+            ),
+        ],
+    );
+    for name in ["root", "repeat", "unity"] {
+        assert!(matches!(
+            plan.audio_definition(selection(name))
+                .unwrap()
+                .in_root_clock(placement(0, 1, 0, 4)),
+            Err(PlanError::InvalidAudioRootPlacement(_))
+        ));
+    }
+    let definition = plan.audio_definition(default_selection("repeat")).unwrap();
+    assert!(definition.in_root_clock(placement(0, 1, 0, 4)).is_ok());
+    assert!(matches!(
+        definition.in_root_clock(placement(0, 1, 0, 5)),
+        Err(PlanError::InvalidAudioRootPlacement(_))
+    ));
+    for (scale, start, end) in [(0, 0, 4), (-1, 0, 4), (1, -1, 4), (1, 2, 2), (1, 3, 2)] {
+        assert!(
+            AudioRootPlacement::new(
+                ExactRatio::ZERO,
+                ExactRatio::integer(scale),
+                ExactRatio::integer(start)..ExactRatio::integer(end)
+            )
+            .is_err()
+        );
+    }
+    let valid = placement(-8, 2, 1, 3);
+    let wire = serde_json::to_value(&valid).unwrap();
+    assert_eq!(
+        serde_json::from_value::<AudioRootPlacement>(wire.clone()).unwrap(),
+        valid
+    );
+    let mut extra = wire.clone();
+    extra["media"] = serde_json::json!("unrecognized");
+    assert!(serde_json::from_value::<AudioRootPlacement>(extra).is_err());
+    let mut extra_support = wire.clone();
+    extra_support["local_support"]["media"] = serde_json::json!("unrecognized");
+    assert!(serde_json::from_value::<AudioRootPlacement>(extra_support).is_err());
+    let mut zero = wire;
+    zero["root_frames_per_local_frame"] = serde_json::to_value(ExactRatio::ZERO).unwrap();
+    assert!(serde_json::from_value::<AudioRootPlacement>(zero).is_err());
+    assert!(
+        AudioRootPlacement::new(
+            ExactRatio::new(i128::MAX, 1).unwrap(),
+            ExactRatio::ONE,
+            ExactRatio::ZERO..ExactRatio::ONE
+        )
+        .is_err()
+    );
 }
 
 #[test]

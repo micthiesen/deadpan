@@ -102,15 +102,16 @@ cursor or reinterprets a latest-head asset alias.
 
 The rendering boundary is implemented; authored selection of that boundary is
 still required. Bindings need independent later-domain anchors, composed phase,
-compact Repeat birth/edit correspondence, live ownership transforms and a bounded
-retained dependency graph when earlier bindings enter a newly frozen context.
-Several contexts must share one preparation controller and context-qualified
-cache dependencies. Current `StageAudio` owns only one immutable plan.
+compact Repeat birth/edit correspondence and live ownership transforms. A
+frozen-body implementation would also require a bounded dependency graph and
+preparation shared across contexts. The preferred [owned recipe](OWNED_AUDIO_CLOCKS.md)
+approach evaluates Split's current children in explicit clocks within one plan,
+avoiding a duplicate raw-body graph. Its authored lifecycle is still unimplemented.
 
 [Definition-output reads](AUDIO_DEFINITIONS.md) now select a Node or actual
 Repeat default directly for the separate future birth operand. This avoids
-inventing an old occurrence when a Repeat gains new plays. Capturing earlier
-bindings and lexical Repeat arguments remains required.
+inventing an old occurrence when a Repeat gains new plays. Preserving intrinsic
+bindings while rebasing enclosing lexical Repeat placement remains required.
 
 Retained policies also need exact queries on both input and output grids of a
 new consuming Preserve stage. Scaling rounded input suppression ranges is

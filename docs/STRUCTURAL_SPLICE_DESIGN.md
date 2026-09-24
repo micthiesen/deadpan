@@ -162,12 +162,13 @@ domain handles seed both walkers at the physical subtree, preserving the origina
 signed grid and meaningful constraints. Domain-to-point transfer rebases only
 integer sample labels and shares the preparation controller across its halo.
 
-Persisted bindings still need a bounded dependency graph when a newly captured
-context contains earlier bindings, and compact birth rules for new Repeat plays
-and gaps. Multi-context preparation must share residency/work limits and qualify
-cache dependencies by context as well as asset alias. Retained audibility must
-remain queryable on both input and output grids of a later Preserve stage;
-scaling rounded input silence cannot recover intervals that owned no input point.
+The original frozen-body proposal would require a bounded dependency graph when
+a newly captured context contains earlier bindings. The preferred owned-tree
+approach below avoids duplicating those raw bodies. It still needs compact birth
+rules for new Repeat plays and gaps. Preparation must share residency/work limits
+through nested evaluations. Audibility must remain queryable on both input and
+output grids of a later Preserve stage; scaling rounded input silence cannot
+recover intervals that owned no input point.
 
 [Definition-output reads](AUDIO_DEFINITIONS.md) now supply the separate operand
 needed for new Repeat plays. Select the committed default child definition
@@ -177,14 +178,22 @@ the proposed canonical fresh-play recipe. Surviving plays retain their old-root
 continuity. The eventual binding graph must capture earlier descendant bindings
 and lexical Repeat arguments as well as these raw recipes.
 
-Keep retained contexts tied to committed before-state revisions. Store one flat,
-bounded context table whose binding references form an actual DAG, with explicit
-limits on aggregate nodes, rules, run segments, edges, depth and bytes. Live
-rules separately own scope, destination clock, structural anchor and exact
-operand coordinate. Birth allocation runs select definitions; existing paths
-select physical contexts. Removing a silence policy replaces its affected raw
-processing contribution, not merely a lineage token. These are binding design
-requirements, not implemented authored storage.
+The [owned recipe reader](OWNED_AUDIO_CLOCKS.md) now evaluates a physical
+definition from the selected current revision in an explicit signed root clock.
+It uses the complete children already owned by Split, and their current policies,
+instead of substituting an old raw body. This makes editing the retained recipe
+observable without a second historical recipe graph. Explicit historical reads
+still authenticate their complete capture against the committed revision.
+
+The proposed authored model retains bounded timing-only placement indexes and
+live rules with separate ownership, lexical scope, destination clock, local
+anchor and exact phase. Existing stable plays retain their historical placement;
+births use a canonical definition environment. Intrinsic resume phase must remain
+separate from enclosing Repeat placement so a birth can replace the latter
+without losing the former. Structural owned recursion supplies nested recipes.
+Changed raw contributions and their affected opaque ancestors replace old policy
+and preparation. These lifecycle rules remain design work, not implemented
+authored storage. The reader does not justify committing a partial binding schema.
 
 ## Structural and mark requirements
 

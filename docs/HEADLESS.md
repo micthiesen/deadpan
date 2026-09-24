@@ -75,7 +75,7 @@ three total plays and only two gaps. These are structural edits, not rendered
 media. Editing through range/text selectors, registers, macros, and effects
 remain required future work.
 
-Documents use schema 13. Retime `purpose` defaults to ordinary `edit` and is
+Documents use schema 15. Retime `purpose` defaults to ordinary `edit` and is
 omitted from canonical JSON. `partition` retains child audio context at unity
 speed and requires automatic edges; see [the partition contract](AUDIO_PARTITIONS.md).
 This primitive does not implement Split or inserted-time resume semantics.
@@ -280,6 +280,15 @@ inspection, not timeline allocation or a new-play edit. See
 Append `--revision <ID>` to inspect an exact committed historical revision without
 moving the cursor. The selected revision supplies aliases and source receipts,
 so deleting the current Repeat does not change its historical definition.
+
+`inspect-audio-placement <project.deadpan> --node <ID> --clock <clock.json> --samples <START> <END>`
+evaluates a physical definition's current recipe on an explicit signed root grid.
+`--repeat-default` and trailing `--revision <ID>` are also supported. The bounded
+clock JSON contains exact origin, scale and local support. The result includes
+the selector and placement, and uses current or requested historical source
+receipts without changing history. See [owned clocks](OWNED_AUDIO_CLOCKS.md) for
+the complete format, supported roots and errors. This is inspection, not an
+authored placement command.
 
 ## Picture and audio plan inspection
 

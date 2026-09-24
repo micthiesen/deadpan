@@ -119,6 +119,10 @@ pub struct DomainAudioBlock {
     pub stage: &'static str,
     pub project_id: ProjectId,
     pub revision_id: RevisionId,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub definition: Option<AudioDefinitionSelector>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub placement: Option<deadpan_plan::AudioRootPlacement>,
     pub instance: InstancePath,
     pub gap_after: Option<IterationId>,
     pub root_samples: Range<AudioSample>,
@@ -168,6 +172,10 @@ pub struct TransferredDomainBlock {
     pub stage: &'static str,
     pub project_id: ProjectId,
     pub revision_id: RevisionId,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub definition: Option<AudioDefinitionSelector>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub placement: Option<deadpan_plan::AudioRootPlacement>,
     pub instance: InstancePath,
     pub gap_after: Option<IterationId>,
     pub transfer: DomainTransferDescriptor,
@@ -460,6 +468,8 @@ impl StageAudio {
             stage: "physical_domain_pcm_before_effects",
             project_id: self.plan.metadata().project_id.clone(),
             revision_id: self.plan.metadata().revision_id.clone(),
+            definition: domain.definition().cloned(),
+            placement: domain.placement().cloned(),
             instance: domain.instance().clone(),
             gap_after: domain.gap_after().cloned(),
             root_samples: domain.root_samples(),
@@ -568,6 +578,8 @@ impl StageAudio {
             stage: "physical_domain_on_point_grid_before_effects",
             project_id: self.plan.metadata().project_id.clone(),
             revision_id: self.plan.metadata().revision_id.clone(),
+            definition: transfer.domain().definition().cloned(),
+            placement: transfer.domain().placement().cloned(),
             instance: transfer.domain().instance().clone(),
             gap_after: transfer.domain().gap_after().cloned(),
             transfer: transfer.descriptor().clone(),
@@ -719,7 +731,7 @@ impl StageAudio {
                 AudioSignalContent::Leaf(AudioContent::RoomTone { source, duration }) => {
                     let prepared = self.prepare_room_tone(
                         PreparedKey::RoomTone {
-                            definition: None,
+                            definition: span.definition.clone(),
                             instance: span.instance.clone(),
                             gap_after: span.gap_after.clone(),
                             source: source.clone(),

@@ -360,6 +360,17 @@ Definition counts do not replace final root allocation. Retained sources still
 require historical admission. Authored birth bindings remain separate work.
 See [audio definitions](docs/AUDIO_DEFINITIONS.md).
 
+`AudioDefinition::in_root_clock` evaluates a current owned Source, Hold or
+nonunity Preserve in a checked `AudioRootPlacement`. Keep the signed absolute
+round-even grid, local support and definition scope explicit. A placement is
+coordinate metadata, never an old raw recipe or media admission. Read current
+policies from the selected plan; keep full intrinsic Preserve preparation and
+source re-admission on cache hits. Do not treat a Sequence/Repeat as one domain
+or infer authored bindings from this inspection API. The owned-tree approach
+must still separate intrinsic resume phase from enclosing Repeat placement and
+implement compact birth/survivor rules before a persistence schema is selected.
+See [owned audio clocks](docs/OWNED_AUDIO_CLOCKS.md).
+
 Reference processing lookup stops at the first nonunity Preserve and retains
 meaningful context separately from visible allocation. Borrowed physical-domain
 identity includes its plan and clock; equal aliases across plans are not equal

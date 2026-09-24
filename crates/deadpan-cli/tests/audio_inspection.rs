@@ -658,6 +658,21 @@ fn missing_and_corrupt_linked_originals_fail_before_pcm_is_exposed() -> Result {
                 )
                 .is_err()
         );
+        assert!(
+            session
+                .read_placement(
+                    deadpan_plan::AudioDefinitionSelector::Node { node: node("clip") },
+                    deadpan_plan::AudioRootPlacement::new(
+                        deadpan_core::ExactRatio::ZERO,
+                        deadpan_core::ExactRatio::ONE,
+                        deadpan_core::ExactRatio::ZERO..deadpan_core::ExactRatio::ONE,
+                    )?,
+                    AudioSample(0),
+                    256,
+                    &active(),
+                )
+                .is_err()
+        );
         let error = inspect(&path, "0", "256", false)?;
         assert_eq!(error["error"]["code"], "SourceAudioUnavailable");
         assert!(
@@ -801,6 +816,145 @@ fn physical_domain_cli_reads_hidden_negative_source_and_retained_history() -> Re
         expected
     );
     assert_eq!(store.snapshot()?, after);
+    Ok(())
+}
+
+#[test]
+fn placement_cli_uses_selected_revision_recipe_and_never_changes_history() -> Result {
+    use deadpan_core::ExactRatio;
+    use deadpan_plan::AudioRootPlacement;
+
+    let scratch = tempfile::tempdir()?;
+    let (path, mut store) = project(scratch.path())?;
+    let expected = register(
+        &mut store,
+        &fixture("cfr-bframes.mp4"),
+        1,
+        OriginalOwnership::Managed,
+        "registered",
+    )?;
+    let before = store.snapshot()?;
+    let clock = AudioRootPlacement::new(
+        ExactRatio::integer(-1),
+        ExactRatio::ONE,
+        ExactRatio::ZERO..ExactRatio::integer(before.durations()?[&node("clip")].frames()),
+    )?;
+    let clock_path = scratch.path().join("clock.json");
+    let clock_json = serde_json::to_string(&clock)?;
+    fs::write(&clock_path, &clock_json)?;
+    let invoke = |selected: &str, start: &str, end: &str, retained: Option<&str>| {
+        let mut command = ProcessCommand::new(env!("CARGO_BIN_EXE_deadpan-cli"));
+        command.args([
+            "inspect-audio-placement",
+            path.to_str().unwrap(),
+            "--node",
+            selected,
+            "--clock",
+            clock_path.to_str().unwrap(),
+            "--samples",
+            start,
+            end,
+        ]);
+        if let Some(revision) = retained {
+            command.args(["--revision", revision]);
+        }
+        command.output()
+    };
+    let read = |retained| -> Result<Value> {
+        let output = invoke("clip", "-1600", "-1344", retained)?;
+        assert!(
+            output.status.success(),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        Ok(serde_json::from_slice(&output.stdout)?)
+    };
+    let first = read(None)?;
+    assert_eq!(first["protocol"], 1);
+    assert_eq!(first["audio"]["revision_id"], "registered");
+    assert_eq!(
+        first["audio"]["definition"],
+        json!({"type": "node", "node": "clip"})
+    );
+    assert_eq!(first["audio"]["placement"], serde_json::to_value(&clock)?);
+    assert_eq!(first["audio"]["start"], -1600);
+    let samples: Vec<[f32; 2]> = serde_json::from_value(first["audio"]["samples"].clone())?;
+    assert_eq!(samples, expected);
+    assert_eq!(store.snapshot()?, before);
+
+    let shifted_expected = ProjectAudioSession::open(&path)?
+        .read_time_mapped(AudioSample(1), 256, &active())?
+        .samples;
+    let NodeKind::Source { source } = &before.nodes()[&node("clip")].kind else {
+        panic!("registered source");
+    };
+    commit(
+        &mut store,
+        "shifted",
+        Command::SetSourceAudioMapping {
+            node: node("clip"),
+            mapping: source.audio_mapping,
+            offset: AudioSample(-1),
+        },
+    )?;
+    let shifted = store.snapshot()?;
+    let current = read(None)?;
+    assert_eq!(current["audio"]["revision_id"], "shifted");
+    let samples: Vec<[f32; 2]> = serde_json::from_value(current["audio"]["samples"].clone())?;
+    assert_eq!(samples, shifted_expected);
+    assert_ne!(samples, expected);
+    assert_eq!(read(Some("registered"))?, first);
+    assert_eq!(store.snapshot()?, shifted);
+
+    for (selected, start, end, retained, expected_code) in [
+        (
+            "missing",
+            "-1600",
+            "-1344",
+            None,
+            "AudioDefinitionUnavailable",
+        ),
+        ("root", "-1600", "-1344", None, "AudioPlacementUnavailable"),
+        ("clip", "-1600", "-1343", None, "AudioRangeOutOfRange"),
+        ("clip", "-1601", "-1345", None, "AudioRangeOutOfRange"),
+        ("clip", "-1600", "-1600", None, "AudioRangeOutOfRange"),
+    ] {
+        let output = invoke(selected, start, end, retained)?;
+        assert!(!output.status.success());
+        let error: Value = serde_json::from_slice(&output.stderr)?;
+        assert_eq!(error["error"]["code"], expected_code);
+    }
+    assert!(
+        !invoke("clip", "-1600", "-1344", Some("missing-revision"))?
+            .status
+            .success()
+    );
+    for invalid in [
+        "{}".to_owned(),
+        " ".repeat(4097),
+        {
+            let mut clock: Value = serde_json::from_str(&clock_json)?;
+            clock["unexpected"] = json!(true);
+            clock.to_string()
+        },
+        {
+            let mut clock: Value = serde_json::from_str(&clock_json)?;
+            clock["local_support"]["unexpected"] = json!(true);
+            clock.to_string()
+        },
+        {
+            let mut clock: Value = serde_json::from_str(&clock_json)?;
+            clock["root_frames_per_local_frame"]["numerator"] = json!("0");
+            clock.to_string()
+        },
+    ] {
+        fs::write(&clock_path, invalid)?;
+        let output = invoke("clip", "-1600", "-1344", None)?;
+        assert!(!output.status.success());
+        let error: Value = serde_json::from_slice(&output.stderr)?;
+        assert_eq!(error["error"]["code"], "InvalidInput");
+    }
+    assert_eq!(store.snapshot()?, shifted);
     Ok(())
 }
 

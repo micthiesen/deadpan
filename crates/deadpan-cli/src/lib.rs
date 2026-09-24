@@ -40,6 +40,7 @@ const HELP: &str = "Deadpan headless commands:
   inspect-audio <project.deadpan> --samples <START> <END> [--time-mapped | --edge-faded]
   inspect-audio-domain <project.deadpan> --at <PROBE> --samples <START> <END>
   inspect-audio-definition <project.deadpan> (--node <ID> | --repeat-default <ID>) --samples <START> <END> [--revision <ID>]
+  inspect-audio-placement <project.deadpan> (--node <ID> | --repeat-default <ID>) --clock <clock.json> --samples <START> <END> [--revision <ID>]
   resolve-selection <project.deadpan> --json <selection.json>
   command <project.deadpan> --json <request.json> [--dry-run]
 
@@ -48,7 +49,8 @@ Document dumps are inspection output; SQLite remains authoritative.
 Original retention preserves complete bytes; stream qualification and authored import remain separate.
 Audio inspection returns at most 256 stereo source samples before effects and mastering.
 Domain inspection reads raw physical context; signed START/END use its captured root grid.
-Definition inspection reads a local-zero point grid, not final timeline allocation.";
+Definition inspection reads a local-zero point grid, not final timeline allocation.
+Placement inspection evaluates the selected revision's recipe on an explicit signed root clock.";
 
 #[derive(Debug, thiserror::Error)]
 pub enum CliError {
@@ -96,6 +98,9 @@ impl CliError {
             Self::Plan(deadpan_plan::PlanError::InvalidAudioDefinitionSelector(_)) => {
                 "AudioDefinitionUnavailable"
             }
+            Self::Plan(deadpan_plan::PlanError::InvalidAudioRootPlacement(_)) => {
+                "AudioPlacementUnavailable"
+            }
             Self::Plan(deadpan_plan::PlanError::Time(_)) => "TimingOverflow",
             Self::Plan(_) => "PlanInvalid",
             Self::Anchor(error) => error.code(),
@@ -132,6 +137,12 @@ impl CliError {
                 | audio::ProjectAudioError::Stage(deadpan_audio::StageAudioError::Plan(
                     deadpan_plan::PlanError::InvalidAudioDefinitionSelector(_),
                 )) => "AudioDefinitionUnavailable",
+                audio::ProjectAudioError::Plan(
+                    deadpan_plan::PlanError::InvalidAudioRootPlacement(_),
+                )
+                | audio::ProjectAudioError::Stage(deadpan_audio::StageAudioError::Plan(
+                    deadpan_plan::PlanError::InvalidAudioRootPlacement(_),
+                )) => "AudioPlacementUnavailable",
                 audio::ProjectAudioError::Plan(deadpan_plan::PlanError::AudioQueryLimit(_))
                 | audio::ProjectAudioError::Stage(deadpan_audio::StageAudioError::Plan(
                     deadpan_plan::PlanError::AudioQueryLimit(_),
@@ -305,11 +316,7 @@ fn run(arguments: &[String]) -> Result<(), CliError> {
             end,
             retained @ ..,
         ] if matches!(*selector, "--node" | "--repeat-default") => {
-            let revision = match retained {
-                [] => None,
-                ["--revision", id] => Some(RevisionId::new(*id)?),
-                _ => return Err(CliError::Usage("expected optional --revision <ID>".into())),
-            };
+            let revision = inspection_revision(retained)?;
             let start = start
                 .parse::<i64>()
                 .map_err(|_| CliError::Usage("invalid definition sample start".into()))?;
@@ -340,6 +347,55 @@ fn run(arguments: &[String]) -> Result<(), CliError> {
             let block = session.read_definition(
                 selector,
                 deadpan_plan::SignalSample(start),
+                frames,
+                &std::sync::atomic::AtomicBool::new(false),
+            )?;
+            write_json(&serde_json::json!({ "protocol": 1, "audio": block }))
+        }
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        [
+            "inspect-audio-placement",
+            path,
+            selector,
+            id,
+            "--clock",
+            clock,
+            "--samples",
+            start,
+            end,
+            retained @ ..,
+        ] if matches!(*selector, "--node" | "--repeat-default") => {
+            let revision = inspection_revision(retained)?;
+            let start = start
+                .parse::<i64>()
+                .map_err(|_| CliError::Usage("invalid placement sample start".into()))?;
+            let end = end
+                .parse::<i64>()
+                .map_err(|_| CliError::Usage("invalid placement sample end".into()))?;
+            let frames = end
+                .checked_sub(start)
+                .and_then(|count| u32::try_from(count).ok())
+                .filter(|count| *count > 0 && *count <= deadpan_audio::MAX_OUTPUT_FRAMES)
+                .ok_or(audio::ProjectAudioError::Stage(
+                    deadpan_audio::StageAudioError::Range,
+                ))?;
+            let placement = read_audio_clock(Path::new(clock))?;
+            let id = deadpan_core::NodeId::new(*id)?;
+            let selector = if *selector == "--node" {
+                deadpan_plan::AudioDefinitionSelector::Node { node: id }
+            } else {
+                deadpan_plan::AudioDefinitionSelector::RepeatDefault { repeat: id }
+            };
+            let mut session = match revision {
+                Some(revision) => {
+                    audio::ProjectAudioSession::open_revision(Path::new(path), &revision)?
+                }
+                None => audio::ProjectAudioSession::open(Path::new(path))?,
+            };
+            let block = session.read_placement(
+                selector,
+                placement,
+                deadpan_core::AudioSample(start),
                 frames,
                 &std::sync::atomic::AtomicBool::new(false),
             )?;
@@ -606,6 +662,27 @@ fn read_request(request: &Path) -> Result<String, CliError> {
         ));
     }
     Ok(json)
+}
+
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+fn inspection_revision(arguments: &[&str]) -> Result<Option<RevisionId>, CliError> {
+    match arguments {
+        [] => Ok(None),
+        ["--revision", id] => Ok(Some(RevisionId::new(*id)?)),
+        _ => Err(CliError::Usage("expected optional --revision <ID>".into())),
+    }
+}
+
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+fn read_audio_clock(path: &Path) -> Result<deadpan_plan::AudioRootPlacement, CliError> {
+    let mut json = String::new();
+    File::open(path)?.take(4097).read_to_string(&mut json)?;
+    if json.len() > 4096 {
+        return Err(CliError::Usage(
+            "audio clock exceeds the 4 KiB limit".into(),
+        ));
+    }
+    Ok(serde_json::from_str(&json)?)
 }
 
 fn command(package: &Path, request: &Path, dry_run: bool) -> Result<(), CliError> {

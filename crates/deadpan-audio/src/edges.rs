@@ -148,8 +148,10 @@ mod tests {
             gap_after: None,
             kind,
             policy: AudioEdgePolicy::Automatic,
+            placement_support: false,
         };
         AudioSpan {
+            definition: None,
             samples: AudioSample(samples.start)..AudioSample(samples.end),
             allocated_samples: AudioSample(samples.start)..AudioSample(samples.end),
             project_extent: ExactRatio::integer(samples.start)..ExactRatio::integer(samples.end),

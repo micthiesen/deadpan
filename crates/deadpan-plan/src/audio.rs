@@ -9,7 +9,7 @@ use serde::Serialize;
 
 use super::audio_boundary::{AudioExtent, BoundaryOwner};
 use super::audio_domain::{AudioDomainSeed, AudioWalkSeed, DomainGap};
-use super::{AudioBoundaries, AudioBoundaryKind};
+use super::{AudioBoundaries, AudioBoundaryKind, AudioDefinitionSelector};
 use super::{AudioProcessingSpan, AudioSignalContent, AudioStage};
 use super::{CompiledKind, LookupStats, RenderPlan};
 use crate::{AudioBoundaryRule, AudioEnvelope, AudioSampleGrid, AudioSampleMap, PlanError};
@@ -183,6 +183,9 @@ pub struct AudioRetimeStage {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct AudioSpan {
+    /// Relative instance paths are scoped to this definition when present.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub definition: Option<AudioDefinitionSelector>,
     /// Portion requested by this query. All spans partition the query exactly.
     pub samples: Range<AudioSample>,
     /// Full interval after structural/placement clipping, independent of query
@@ -262,6 +265,7 @@ pub(super) struct Budget {
 // exactly coincident. Capture paths after descent to avoid cloning every prefix.
 #[derive(Debug, Clone)]
 pub(super) struct EnvelopeConstraint {
+    pub(super) placement_support: bool,
     pub(super) range: Range<ExactRatio>,
     pub(super) node: usize,
     pub(super) repeat_count: usize,
@@ -279,6 +283,7 @@ impl<'plan> AudioWalkSpan<'plan> {
         match self {
             Self::Stage(span) => span,
             Self::Leaf(span) => AudioProcessingSpan {
+                definition: span.definition,
                 samples: span.samples,
                 allocated_samples: span.allocated_samples,
                 project_extent: span.project_extent,
@@ -392,6 +397,7 @@ impl RenderPlan {
         let mut repeats = Vec::new();
         let mut retimes = Vec::new();
         let mut seeded_gap = None;
+        let definition = seed.and_then(|seed| seed.definition.as_ref());
         if let Some(seed) = seed {
             budget.spend(seed.constraints.len() + seed.repeats.len() + seed.retimes.len())?;
             current = seed.node;
@@ -428,6 +434,7 @@ impl RenderPlan {
                     None => gap_extent.clone(),
                 });
                 constraints.push(EnvelopeConstraint {
+                    placement_support: false,
                     range: gap_extent,
                     node: current,
                     repeat_count: repeats.len(),
@@ -453,6 +460,7 @@ impl RenderPlan {
                 }
             ) {
                 constraints.push(EnvelopeConstraint {
+                    placement_support: false,
                     range: node_extent.clone(),
                     node: current,
                     repeat_count: repeats.len(),
@@ -490,6 +498,7 @@ impl RenderPlan {
                         .as_mut()
                         .ok_or(PlanError::InvalidPlan("source has no envelope domain"))?;
                     let mut placement_constraint = EnvelopeConstraint {
+                        placement_support: false,
                         range: start..end,
                         node: current,
                         repeat_count: repeats.len(),
@@ -588,7 +597,7 @@ impl RenderPlan {
                         budget.spend(repeats.len() + 1)?;
                         break (
                             AudioSignalContent::Stage(AudioStage::for_node(
-                                self, current, &repeats, None,
+                                self, current, &repeats, definition,
                             )?),
                             None,
                         );
@@ -649,6 +658,7 @@ impl RenderPlan {
                             None => gap_extent.clone(),
                         });
                         constraints.push(EnvelopeConstraint {
+                            placement_support: false,
                             range: gap_extent,
                             node: current,
                             repeat_count: repeats.len(),
@@ -696,6 +706,7 @@ impl RenderPlan {
             }
             *capture = Some(AudioDomainSeed {
                 walk: AudioWalkSeed {
+                    definition: definition.cloned(),
                     node: current,
                     transform,
                     extent: envelope.range.clone(),
@@ -719,7 +730,12 @@ impl RenderPlan {
                 node: &node.inspection.id,
                 repeats: &repeats[..constraint.repeat_count],
                 gap_after: constraint.gap_after.as_ref(),
-                policies: node.audio_edges,
+                policies: if constraint.placement_support {
+                    Default::default()
+                } else {
+                    node.audio_edges
+                },
+                placement_support: constraint.placement_support,
             };
             if constraint.range.start == envelope.range.start {
                 envelope.clip_start(constraint.range.start, owner, constraint.kinds.0, budget)?;
@@ -740,6 +756,7 @@ impl RenderPlan {
         let content = match content {
             AudioSignalContent::Stage(stage) => {
                 return Ok(AudioWalkSpan::Stage(AudioProcessingSpan {
+                    definition: definition.cloned(),
                     samples: allocated_samples.clone(),
                     allocated_samples,
                     project_extent: extent,
@@ -758,6 +775,7 @@ impl RenderPlan {
             AudioSignalContent::Leaf(content) => content,
         };
         Ok(AudioWalkSpan::Leaf(AudioSpan {
+            definition: definition.cloned(),
             samples: allocated_samples.clone(),
             allocated_samples,
             project_extent: extent,

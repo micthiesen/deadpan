@@ -15,7 +15,7 @@ mod audio;
 pub use audio::*;
 #[path = "audio_domain.rs"]
 mod audio_domain;
-pub use audio_domain::AudioDomain;
+pub use audio_domain::{AudioDomain, AudioRootPlacement};
 #[path = "audio_definition.rs"]
 mod audio_definition;
 pub use audio_definition::{AudioDefinition, AudioDefinitionSelector};

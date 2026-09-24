@@ -3,15 +3,88 @@
 use std::ops::Range;
 
 use deadpan_core::{
-    AudioSample, ExactRatio, FrameDuration, InstancePath, IterationId, RepeatInstance,
+    AudioSample, ExactFrameRange, ExactRatio, FrameDuration, InstancePath, IterationId,
+    RepeatInstance,
 };
+use serde::{Deserialize, Serialize};
 
 use super::audio::{AudioWalkSpan, Budget, EnvelopeConstraint};
 use super::{
-    AudioProcessingQuery, AudioQuery, AudioQueryLimits, AudioRetimeStage, AudioTransform,
-    LookupStats, RenderPlan,
+    AudioDefinitionSelector, AudioProcessingQuery, AudioQuery, AudioQueryLimits, AudioRetimeStage,
+    AudioTransform, LookupStats, RenderPlan,
 };
 use crate::PlanError;
+
+/// Evaluation placement of an owned physical definition in an absolute root
+/// clock. This is a sampling description, not an authored edit or media token.
+/// The support is in the selected definition's local output frames.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(try_from = "RootPlacementWire", deny_unknown_fields)]
+pub struct AudioRootPlacement {
+    origin: ExactRatio,
+    root_frames_per_local_frame: ExactRatio,
+    local_support: Range<ExactRatio>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct RootPlacementWire {
+    origin: ExactRatio,
+    root_frames_per_local_frame: ExactRatio,
+    local_support: ExactFrameRange,
+}
+
+impl TryFrom<RootPlacementWire> for AudioRootPlacement {
+    type Error = PlanError;
+
+    fn try_from(wire: RootPlacementWire) -> Result<Self, Self::Error> {
+        Self::new(
+            wire.origin,
+            wire.root_frames_per_local_frame,
+            wire.local_support.start..wire.local_support.end,
+        )
+    }
+}
+
+impl AudioRootPlacement {
+    pub fn new(
+        origin: ExactRatio,
+        root_frames_per_local_frame: ExactRatio,
+        local_support: Range<ExactRatio>,
+    ) -> Result<Self, PlanError> {
+        if !root_frames_per_local_frame.compare_integer(0).is_gt()
+            || local_support.start.compare_integer(0).is_lt()
+            || !local_support
+                .end
+                .checked_sub(local_support.start)?
+                .compare_integer(0)
+                .is_gt()
+        {
+            return Err(PlanError::InvalidAudioRootPlacement(
+                "scale and support must be positive and support must be nonnegative",
+            ));
+        }
+        // Fail before a later walk if either projected endpoint overflows.
+        for point in [local_support.start, local_support.end] {
+            origin.checked_add(point.checked_mul(root_frames_per_local_frame)?)?;
+        }
+        Ok(Self {
+            origin,
+            root_frames_per_local_frame,
+            local_support,
+        })
+    }
+
+    pub fn origin(&self) -> ExactRatio {
+        self.origin
+    }
+    pub fn root_frames_per_local_frame(&self) -> ExactRatio {
+        self.root_frames_per_local_frame
+    }
+    pub fn local_support(&self) -> Range<ExactRatio> {
+        self.local_support.clone()
+    }
+}
 
 #[derive(Debug, Clone)]
 pub(super) struct DomainGap {
@@ -23,6 +96,7 @@ pub(super) struct DomainGap {
 /// allocation again. In a gap, `transform` already names the gap's local zero.
 #[derive(Debug, Clone)]
 pub(super) struct AudioWalkSeed {
+    pub(super) definition: Option<AudioDefinitionSelector>,
     pub(super) node: usize,
     pub(super) transform: AudioTransform,
     pub(super) extent: Range<ExactRatio>,
@@ -40,18 +114,20 @@ pub(super) struct AudioDomainSeed {
     pub(super) instance: InstancePath,
 }
 
-/// One physical leaf, Repeat gap or nonunity Preserve occurrence, borrowed
-/// from the plan that resolved it. Transparent allocation may hide part of its
-/// meaningful support; its absolute round-even root grid never changes.
+/// One physical leaf, Repeat gap or nonunity Preserve output, borrowed from
+/// the plan that resolved it. An optional definition scope distinguishes an
+/// explicitly placed owned recipe from a project occurrence. Transparent
+/// allocation may hide support; the absolute round-even root grid never changes.
 ///
 /// This handle is neither serialized admission nor an authored resume binding.
 #[derive(Debug, Clone)]
 pub struct AudioDomain<'plan> {
-    plan: &'plan RenderPlan,
-    seed: AudioWalkSeed,
-    samples: Range<AudioSample>,
-    visible: Range<AudioSample>,
-    instance: InstancePath,
+    pub(super) plan: &'plan RenderPlan,
+    pub(super) seed: AudioWalkSeed,
+    pub(super) samples: Range<AudioSample>,
+    pub(super) visible: Range<AudioSample>,
+    pub(super) instance: InstancePath,
+    pub(super) placement: Option<AudioRootPlacement>,
 }
 
 impl RenderPlan {
@@ -79,11 +155,21 @@ impl RenderPlan {
             samples: seed.samples,
             visible: seed.visible,
             instance: seed.instance,
+            placement: None,
         })
     }
 }
 
 impl<'plan> AudioDomain<'plan> {
+    /// Present only when this domain evaluates an explicitly selected definition.
+    /// Its occurrence path is then relative to that definition.
+    pub fn definition(&self) -> Option<&AudioDefinitionSelector> {
+        self.seed.definition.as_ref()
+    }
+
+    pub fn placement(&self) -> Option<&AudioRootPlacement> {
+        self.placement.as_ref()
+    }
     /// Complete meaningful support, rounded on the original absolute root grid.
     /// It can begin before zero or end beyond the visible project's duration.
     pub fn root_samples(&self) -> Range<AudioSample> {

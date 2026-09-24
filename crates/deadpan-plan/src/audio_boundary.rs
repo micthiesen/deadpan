@@ -18,6 +18,11 @@ pub struct AudioBoundaryOrigin {
     pub instance: InstancePath,
     pub gap_after: Option<IterationId>,
     pub kind: AudioBoundaryKind,
+    /// An explicit evaluation-support edge, not an authored node boundary.
+    /// Its NodeStart/NodeEnd kind gives direction and its policy is Automatic.
+    /// Real exactly coincident boundaries retain their independent policies.
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub placement_support: bool,
     /// The owning node's choice for this original constraint in this revision.
     pub policy: AudioEdgePolicy,
 }
@@ -39,6 +44,7 @@ pub(super) struct BoundaryOwner<'a> {
     pub repeats: &'a [RepeatInstance],
     pub gap_after: Option<&'a IterationId>,
     pub policies: AudioEdgePolicies,
+    pub placement_support: bool,
 }
 
 impl BoundaryOwner<'_> {
@@ -57,6 +63,7 @@ impl BoundaryOwner<'_> {
             },
             gap_after: self.gap_after.cloned(),
             kind,
+            placement_support: self.placement_support,
             policy: self.policies.get(kind),
         })
     }
