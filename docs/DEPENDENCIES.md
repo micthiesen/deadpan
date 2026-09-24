@@ -19,7 +19,7 @@ requires an explicit pinned FFmpeg developer prefix; see [Development](DEVELOPME
 | wgpu | 30.0.1 | MIT OR Apache-2.0 | Already locked through eframe; direct Metal/WGSL dependency for the shared picture baseline. |
 | pollster | 1.0.1 | Apache-2.0 OR MIT | Already locked; development-only offscreen GPU qualification. |
 | serde | 1.0.229 | MIT OR Apache-2.0 | Validated domain, transaction, and protocol serialization. |
-| serde_json | 1.0.151 | MIT OR Apache-2.0 | Bounded project/command JSON and diagnostics. |
+| serde_json | 1.0.151 | MIT OR Apache-2.0 | Bounded project/command JSON and diagnostics. Core enables `raw_value` for borrowed retained-audio layout/input preflight before typed materialization. |
 | rusqlite | 0.40.2 | MIT | Authoritative SQLite package/history, backup API, and SQLite limits. |
 | SQLite via libsqlite3-sys | 3.53.2 via 0.38.2 | Public domain; binding MIT | Bundled with rusqlite; WAL, FULL synchronization, foreign keys, immutable revision/history writes. |
 | tempfile | 3.27.0 | MIT OR Apache-2.0 | Atomic checkpoint files and isolated integration fixtures. |

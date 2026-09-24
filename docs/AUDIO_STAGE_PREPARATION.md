@@ -72,6 +72,13 @@ leaf policies on the same grid. Unity Preserve is transparent.
 
 ## Policies, cache and limits
 
+[Retained audio contexts](AUDIO_CONTEXT.md) compile into the same stage graph.
+Every source read, including RoomTone, nested preparation and prepared-cache
+dependency checks, uses explicit context admission with the full retained asset
+contract. A provider implementing only ordinary revision lookup cannot supply
+context PCM. The production headless host first authenticates the complete
+context against retained history, then verifies source receipts and originals.
+
 The renderer validates each complete stage output before decoding its input.
 This matters when a Hold owns no input-grid point but acquires output samples
 after slowing, including through nested stages. Silent Holds suppress incoming

@@ -74,6 +74,16 @@ actual old copy history without inferring lineage from an initial snapshot.
 strict migration and bounded reference tests. Live sample bindings, policy
 replacement, atomic Hold insertion and application playback remain open.
 
+[Retained audio contexts](AUDIO_CONTEXT.md) now capture complete raw audio trees,
+exact media inputs and immutable asset contracts. Direct audio-only compilation
+retains Source absence, RoomTone, nested Preserve, edges and compact Repeat
+structure. The headless host authenticates each context against its exact
+historical revision before verified media reads, including after undo and alias
+reuse. This adds the old signal body; authored live bindings, phase composition,
+policy replacement and atomic Hold insertion remain open. Core 15/database 21
+are unchanged. [Qualification](qualification/audio-context-2026-09-23.md) records
+the decoder/DSP parity, strict ingress and host-admission evidence.
+
 Current measured evidence: [editing foundation verification](FOUNDATION_VERIFICATION.md), [picture plan and migration verification](PLAN_MIGRATION_VERIFICATION.md), [exact boundary verification](ANCHOR_VERIFICATION.md), [persistent mark verification](MARK_VERIFICATION.md), [sparse override verification](OVERRIDE_VERIFICATION.md), [nested occurrence verification](OCCURRENCE_VERIFICATION.md), [native media qualification](qualification/media-2026-09-20.md), [compatible FFmpeg/Rust qualification](qualification/media-compatible-2026-09-20.md), [audio candidate qualification](qualification/audio-2026-09-20.md), and [canonical audio qualification](qualification/audio-canonical-2026-09-20.md).
 
 The [native host conversion qualification](qualification/media-host-conversion-2026-09-21.md)

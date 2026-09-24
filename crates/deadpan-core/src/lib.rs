@@ -8,6 +8,7 @@
 //! persistence, identity generation, media decoding, and external jobs.
 
 mod anchor;
+mod audio_context;
 mod audio_edges;
 mod audio_lineage;
 mod audio_mapping;
@@ -46,6 +47,7 @@ mod time;
 mod video_mapping;
 
 pub use anchor::*;
+pub use audio_context::*;
 pub use audio_edges::*;
 pub use audio_lineage::AudioLineageId;
 pub use audio_mapping::SourceAudioMapping;

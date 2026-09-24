@@ -73,6 +73,13 @@ These limits establish bounded preparation, not acceptable app playback latency
 or a completed prepared-cache lifecycle. All I/O and filtering stay off UI and
 device callbacks.
 
+[Retained contexts](AUDIO_CONTEXT.md) use `source_for_context`, whose default
+rejects serialized media intent. `ProjectAudioSession::open_context` compares
+the complete snapshot with its immutable historical revision before preparing
+PCM. Every source and cache check also compares the expected full asset record
+before using the existing receipt and verified-byte path. No latest-head alias
+lookup or implicit admission is allowed.
+
 ## Inspection and verification
 
 ```sh

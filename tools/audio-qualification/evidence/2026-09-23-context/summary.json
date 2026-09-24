@@ -1,0 +1,12 @@
+{
+  "passed": 1062,
+  "failed": 0,
+  "ignored": 0,
+  "source_and_fixture_hash_count": 347,
+  "sources_unchanged_through_gate": true,
+  "document_verification": {
+    "design_images_and_prompts": 8,
+    "unchanged_original_spec_files": 5,
+    "changed_markdown_links": "pass"
+  }
+}

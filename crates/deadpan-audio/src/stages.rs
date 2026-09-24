@@ -20,7 +20,7 @@ use deadpan_plan::{
 };
 use serde::Serialize;
 
-use crate::sequence::{original_sample, source_samples};
+use crate::sequence::{original_sample, resolve_source, source_samples};
 use crate::{
     AudioSourceProvider, MAX_OUTPUT_FRAMES, PcmWindow, PreparationError, ResampleRecipe, Resampler,
     RoomTone, RoomToneRecipe, RootSignalBlock, RootSignalTransfer, SignalTransferError,
@@ -425,12 +425,7 @@ impl StageAudio {
             control.check()?;
             let block = match &span.content {
                 AudioSignalContent::Leaf(AudioContent::Source { source, .. }) => {
-                    let prepared = provider.source(
-                        &plan.metadata().project_id,
-                        &plan.metadata().revision_id,
-                        &source.asset,
-                        cancelled,
-                    )?;
+                    let prepared = resolve_source(provider, &plan, &source.asset, cancelled)?;
                     control.observe(&source.asset, prepared)?;
                     let recipe = root_source_recipe(&span, prepared.index().stream().sample_rate)?;
                     prepare_source_block(
@@ -572,12 +567,7 @@ impl StageAudio {
             let mut valid = true;
             for (asset, fingerprint) in &entry.block.dependencies {
                 control.check()?;
-                let source = provider.source(
-                    &self.plan.metadata().project_id,
-                    &self.plan.metadata().revision_id,
-                    asset,
-                    control.cancelled,
-                )?;
+                let source = resolve_source(provider, &self.plan, asset, control.cancelled)?;
                 valid &= control.observe(asset, source)? == *fingerprint;
             }
             if valid {
@@ -669,12 +659,7 @@ impl StageAudio {
         let reservation = self.reserve(input_frames, output_frames, control)?;
         let result = (|| {
             let recipe = RoomToneRecipe::new(source_extent, output_frames)?;
-            let prepared = provider.source(
-                &self.plan.metadata().project_id,
-                &self.plan.metadata().revision_id,
-                &source.asset,
-                control.cancelled,
-            )?;
+            let prepared = resolve_source(provider, &self.plan, &source.asset, control.cancelled)?;
             let fingerprint = control.observe(&source.asset, prepared)?;
             let samples = build_room_tone(source, prepared, recipe, input_frames, control)?;
             Ok::<_, StageAudioError>(SignalBlock {
@@ -812,12 +797,7 @@ impl StageAudio {
                 .map_err(|_| StageAudioError::Range)?;
             let block = match &span.content {
                 AudioSignalContent::Leaf(AudioContent::Source { source, .. }) => {
-                    let prepared = provider.source(
-                        &query.project_id,
-                        &query.revision_id,
-                        &source.asset,
-                        cancelled,
-                    )?;
+                    let prepared = resolve_source(provider, &self.plan, &source.asset, cancelled)?;
                     dependencies.insert(
                         source.asset.clone(),
                         control.observe(&source.asset, prepared)?,

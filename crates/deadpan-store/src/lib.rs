@@ -241,6 +241,12 @@ impl ProjectStore {
         read_snapshot(&self.connection)
     }
 
+    /// Read one immutable committed revision, including an abandoned branch.
+    /// This does not move the history cursor or perform writer recovery.
+    pub fn snapshot_at(&self, revision: &RevisionId) -> Result<ProjectDocument, StoreError> {
+        Ok(validation::read_revision(&self.connection, revision.as_str())?.document)
+    }
+
     pub fn validate(&self) -> Result<(), StoreError> {
         let transaction = self.connection.unchecked_transaction()?;
         validation::check_stored_sizes(&transaction, schema::MAX_DOCUMENT_BYTES)?;

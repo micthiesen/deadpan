@@ -10,7 +10,9 @@ use deadpan_audio::{
     AudioSourceProvider, EdgeFadedBlock, PreparationError, PreparedSource, SequenceAudio,
     SequenceAudioError, SourceStageBlock, StageAudio, StageAudioError, TimeMappedBlock,
 };
-use deadpan_core::{AssetId, AudioSample, ProjectDocument, ProjectId, RevisionId};
+use deadpan_core::{
+    AssetId, AssetRecord, AudioSample, FrozenAudioContext, ProjectDocument, ProjectId, RevisionId,
+};
 use deadpan_media::audio_session::{AudioSession, AudioSessionLimits};
 use deadpan_plan::{PlanError, RenderPlan};
 use deadpan_store::original_media::OriginalMediaLimits;
@@ -18,6 +20,8 @@ use deadpan_store::{AccessMode, ProjectStore, StoreError};
 
 #[derive(Debug, thiserror::Error)]
 pub enum ProjectAudioError {
+    #[error("retained audio context differs from the captured project revision")]
+    ContextMismatch,
     #[error(transparent)]
     Store(#[from] StoreError),
     #[error(transparent)]
@@ -41,9 +45,34 @@ impl ProjectAudioSession {
     pub fn open(path: &Path) -> Result<Self, ProjectAudioError> {
         let store = ProjectStore::open(path, AccessMode::ReadOnly)?;
         let document = store.snapshot()?;
-        let plan = Arc::new(RenderPlan::compile(&document)?);
+        let plan = RenderPlan::compile(&document)?;
+        Ok(Self::from_plan(store, document, plan))
+    }
+
+    /// Reopen a serialized raw audio context against its exact retained history.
+    /// Compare the complete capture before preparing media; claimed revision or
+    /// qualification names alone cannot redirect the host to different intent.
+    /// Accepted original bytes and source receipts are still independently
+    /// verified on demand. This does not author or select a live resume binding.
+    pub fn open_context(
+        path: &Path,
+        context: &FrozenAudioContext,
+    ) -> Result<Self, ProjectAudioError> {
+        let store = ProjectStore::open(path, AccessMode::ReadOnly)?;
+        let document = store.snapshot_at(context.revision_id())?;
+        if document.project_id() != context.project_id()
+            || FrozenAudioContext::capture(&document).map_err(PlanError::from)? != *context
+        {
+            return Err(ProjectAudioError::ContextMismatch);
+        }
+        let plan = RenderPlan::compile_audio_context(context)?;
+        Ok(Self::from_plan(store, document, plan))
+    }
+
+    fn from_plan(store: ProjectStore, document: ProjectDocument, plan: RenderPlan) -> Self {
+        let plan = Arc::new(plan);
         let sequence = SequenceAudio::new(Arc::clone(&plan));
-        Ok(Self {
+        Self {
             sequence,
             stages: StageAudio::new(plan),
             sources: RegisteredSources {
@@ -51,7 +80,7 @@ impl ProjectAudioSession {
                 document,
                 retained: None,
             },
-        })
+        }
     }
 
     pub fn plan(&self) -> &RenderPlan {
@@ -115,6 +144,21 @@ struct RegisteredSources {
 }
 
 impl AudioSourceProvider for RegisteredSources {
+    fn source_for_context(
+        &mut self,
+        project: &ProjectId,
+        revision: &RevisionId,
+        asset: &AssetId,
+        expected: &AssetRecord,
+        cancelled: &AtomicBool,
+    ) -> Result<&PreparedSource, PreparationError> {
+        check_cancel(cancelled)?;
+        if self.document.assets().get(asset) != Some(expected) {
+            return Err(PreparationError::IndexMismatch);
+        }
+        self.source(project, revision, asset, cancelled)
+    }
+
     fn source(
         &mut self,
         project: &ProjectId,

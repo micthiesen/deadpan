@@ -19,6 +19,8 @@ pub use audio_boundary::{AudioBoundaries, AudioBoundaryKind, AudioBoundaryOrigin
 #[path = "audio_signal.rs"]
 mod audio_signal;
 pub use audio_signal::*;
+#[path = "audio_context.rs"]
+mod audio_context;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize)]
 pub struct StorageStats {
@@ -81,6 +83,9 @@ pub struct RenderPlan {
     nodes: Vec<PlanNode>,
     by_id: BTreeMap<NodeId, usize>,
     root: usize,
+    // Presence identifies an audio-only retained context, including one with
+    // no sources. These contracts still require explicit host admission.
+    audio_context_assets: Option<BTreeMap<AssetId, deadpan_core::AssetRecord>>,
 }
 
 #[derive(Debug, Clone)]
@@ -362,11 +367,18 @@ impl RenderPlan {
             nodes,
             by_id,
             root,
+            audio_context_assets: None,
         })
     }
 
     pub fn metadata(&self) -> &PlanMetadata {
         &self.metadata
+    }
+
+    /// Retained contracts are serialized intent, not permission to read media.
+    /// A source provider must explicitly compare each with its host receipt.
+    pub fn audio_context_assets(&self) -> Option<&BTreeMap<AssetId, deadpan_core::AssetRecord>> {
+        self.audio_context_assets.as_ref()
     }
 
     pub fn duration(&self) -> FrameDuration {
@@ -394,6 +406,9 @@ impl RenderPlan {
     /// O(depth * log(max(children, runs + overrides))); repeat counts do not affect storage.
     /// Arithmetic overflow fails explicitly instead of rounding an intermediate.
     pub fn picture(&self, frame: ProjectFrame) -> Result<PictureSample, PlanError> {
+        if self.audio_context_assets.is_some() {
+            return Err(PlanError::AudioOnlyContext);
+        }
         if frame.0 < 0 || frame.0 >= self.duration().frames() {
             return Err(PlanError::FrameOutOfRange {
                 frame,

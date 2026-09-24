@@ -38,6 +38,8 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum PlanError {
+    #[error("a retained audio context cannot render picture")]
+    AudioOnlyContext,
     #[error(transparent)]
     Document(#[from] DocumentError),
     #[error(transparent)]

@@ -33,6 +33,15 @@ resolves Documents through safe Foundation calls in an autorelease pool and does
 all package work on the service thread. Existing generic projects migrate without
 invented profile data, and native Open upgrades only through validated backups.
 
+[Retained audio contexts](AUDIO_CONTEXT.md) capture complete raw audio trees,
+exact source inputs and immutable asset contracts independently of picture.
+The plan compiles them directly through the shared audio graph and refuses
+picture evaluation. Audio preparation requires explicit context-aware source
+admission, including cached dependencies. The headless host authenticates the
+complete context against `ProjectStore::snapshot_at` before reading historical
+receipts and verified originals. Context schema 1 is standalone; core 15/database
+21 remain unchanged. Authored live bindings and atomic Hold insertion remain open.
+
 ## Full component map
 
 Section 24 defines boundaries, not an obligation to create empty crates. Introduce each component when its implementation needs isolation; related modules may remain combined initially.

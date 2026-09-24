@@ -326,6 +326,18 @@ These APIs do not yet persist a Hold binding. Future bindings must transform
 live ownership separately from frozen placement and replace an edited policy's
 retained contribution. See [audio references](docs/AUDIO_REFERENCE.md).
 
+`FrozenAudioContext` adds exact Source mapping/offset, Hold/gap inputs and full
+referenced asset contracts to a frozen timing layout. Keep its standalone closed
+schema and aggregate wire bound. Borrow raw layout/input JSON until preflight
+has bounded it. Preserve picture-only Source absence as such, never as an
+explicit silent Hold; processed decay and Source edges differ. Compile directly
+to an audio-only plan and reject picture evaluation. Do not fold signed offsets
+into Placement if doing so narrows valid coordinates. Serialized contexts are
+not admission: `source_for_context` defaults to rejection and all recursive,
+RoomTone and cache-hit paths must verify the retained contract. The project
+host compares the complete context to its exact immutable history before
+using qualified original bytes. See [audio contexts](docs/AUDIO_CONTEXT.md).
+
 Reference processing lookup stops at the first nonunity Preserve and retains
 meaningful context separately from visible allocation. Borrowed physical-domain
 identity includes its plan and clock; equal aliases across plans are not equal

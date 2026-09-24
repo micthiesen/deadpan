@@ -145,6 +145,15 @@ The remaining sample binding must use this relationship with exact clocks and
 live context; matching media/timing or lineage alone cannot authorize a retained
 signal. See [the reference contract](AUDIO_REFERENCE.md).
 
+[Retained audio contexts](AUDIO_CONTEXT.md) now carry the complete raw processing
+tree and its media inputs, beyond the timing-only reference layout. Direct
+audio-only compilation preserves picture-only Source absence, exact original
+mappings and mix offsets, Hold policies and nested processing. The headless host
+reopens a context only after comparing it with the exact retained historical
+revision, then qualifies source receipts and original bytes on demand. This
+provides the old signal body. It does not yet persist which live occurrence reads
+that body, its composed phase anchors or its transformation through later edits.
+
 ## Structural and mark requirements
 
 Resolve boundary coordinates through `RepeatLayout`, using the right-hand object

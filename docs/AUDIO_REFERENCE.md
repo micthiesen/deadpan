@@ -5,6 +5,8 @@ tree. `AudioReferencePlan` queries that snapshot in an explicit old clock, and
 `RetainedRootPolicy` applies its silence to resumed PCM. These are checked
 foundation APIs. They do not yet persist a Hold binding or implement an
 inserted-time command. Core 15/database 21 now retain [audio copy lineage](AUDIO_LINEAGE.md).
+The separate [retained audio context](AUDIO_CONTEXT.md) supplies complete audio
+inputs and media contracts without treating this timing layout as admission.
 
 ## Retained facts
 

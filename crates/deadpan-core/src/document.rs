@@ -656,7 +656,7 @@ impl ProjectDocument {
             ));
         }
         for (id, asset) in &self.assets {
-            self.validate_asset(id, asset)?;
+            Self::validate_asset(id, asset)?;
         }
         if !matches!(
             self.nodes.get(&self.root).map(|n| &n.kind),
@@ -837,7 +837,7 @@ impl ProjectDocument {
         Ok(durations)
     }
 
-    fn validate_asset(&self, id: &AssetId, asset: &AssetRecord) -> Result<(), DocumentError> {
+    pub(crate) fn validate_asset(id: &AssetId, asset: &AssetRecord) -> Result<(), DocumentError> {
         validate_label(&asset.label)?;
         let sha256 = asset.content_hash.len() == 64
             && asset

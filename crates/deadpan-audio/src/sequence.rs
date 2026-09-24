@@ -5,7 +5,7 @@ use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
 use deadpan_core::{
-    AssetId, AudioSample, ExactRatio, NodeId, PitchPolicy, ProjectId, RevisionId,
+    AssetId, AssetRecord, AudioSample, ExactRatio, NodeId, PitchPolicy, ProjectId, RevisionId,
     SourceAudioMapping, SourcePoint, SourceTimestamp, TimeError,
 };
 use deadpan_plan::{AudioContent, AudioQueryLimits, AudioSpan, PlanError, RenderPlan};
@@ -25,6 +25,53 @@ pub trait AudioSourceProvider {
         asset: &AssetId,
         cancelled: &AtomicBool,
     ) -> Result<&PreparedSource, PreparationError>;
+
+    /// Admit a retained context's exact asset contract against immutable host
+    /// evidence and verified originals. Ordinary revision lookup is deliberately
+    /// not a default: a serialized context can claim another record under the
+    /// same alias/revision names. Hosts must compare the complete contract before
+    /// returning PCM, including on prepared-stage cache hits.
+    fn source_for_context(
+        &mut self,
+        _project: &ProjectId,
+        _revision: &RevisionId,
+        _asset: &AssetId,
+        _expected: &AssetRecord,
+        cancelled: &AtomicBool,
+    ) -> Result<&PreparedSource, PreparationError> {
+        check_cancel(cancelled)?;
+        Err(PreparationError::SourceUnavailable(
+            "retained audio context requires explicit source admission".into(),
+        ))
+    }
+}
+
+pub(crate) fn resolve_source<'a>(
+    provider: &'a mut impl AudioSourceProvider,
+    plan: &RenderPlan,
+    asset: &AssetId,
+    cancelled: &AtomicBool,
+) -> Result<&'a PreparedSource, PreparationError> {
+    let metadata = plan.metadata();
+    if let Some(assets) = plan.audio_context_assets() {
+        let expected = assets.get(asset).ok_or_else(|| {
+            PreparationError::SourceUnavailable("retained audio asset is missing".into())
+        })?;
+        provider.source_for_context(
+            &metadata.project_id,
+            &metadata.revision_id,
+            asset,
+            expected,
+            cancelled,
+        )
+    } else {
+        provider.source(
+            &metadata.project_id,
+            &metadata.revision_id,
+            asset,
+            cancelled,
+        )
+    }
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -113,12 +160,7 @@ impl SequenceAudio {
             let count = u32::try_from(span.samples.end.0 - span.samples.start.0)
                 .map_err(|_| SequenceAudioError::Range)?;
             if let AudioContent::Source { source, .. } = &span.content {
-                let prepared = provider.source(
-                    &metadata.project_id,
-                    &metadata.revision_id,
-                    &source.asset,
-                    cancelled,
-                )?;
+                let prepared = resolve_source(provider, &self.plan, &source.asset, cancelled)?;
                 if let Some(recipe) = source_recipe(&span, prepared.index().stream().sample_rate)? {
                     samples.extend(
                         prepared
