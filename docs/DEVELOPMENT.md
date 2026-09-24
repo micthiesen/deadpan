@@ -72,7 +72,10 @@ selected beat, or at sequence end. `⌘Z` / `⌘Shift Z` navigate saved history.
 Use `--project /absolute/project.deadpan` to reopen directly, or
 `--preview-source /absolute/video.mp4` for standalone source inspection.
 The source decoder retains the [admitted MP4/Matroska grammar](SOURCE_ADMISSION.md).
-Playback, range editing, generated-provider preview and export remain open.
+Space plays/pauses [pre-master sequence audition](PLAYBACK.md). Run
+`cargo test -p deadpan-playback -p deadpan-output --locked` for canonical PCM,
+delivery-clock, cancellation and queue tests without a native device. Full
+mastering, range editing, generated-provider preview and export remain open.
 
 `h/l` or Left/Right move the boundary cursor, accepting counts such as `12l`.
 `j/k` choose sources or sequence beats according to pane focus. `gg/G` and

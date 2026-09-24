@@ -72,6 +72,7 @@ struct DecodedPicture {
 struct DisplayedPicture {
     request: RequestedPicture,
     source_frame: Option<SourceFrameId>,
+    canvas: Option<(u32, u32)>,
 }
 
 #[derive(Default)]
@@ -87,6 +88,16 @@ pub struct Presentation {
 impl Presentation {
     pub fn clear(&mut self) {
         *self = Self::default();
+    }
+
+    /// Revoke work from a stopped transport while retaining the last submitted
+    /// display identity and texture. No pending decode may cross this boundary.
+    pub fn invalidate_pending(&mut self) {
+        self.requested = None;
+        self.decoded = None;
+        self.loading = false;
+        self.error = None;
+        self.render_failed = false;
     }
 
     pub fn request(&mut self, ticket: Ticket, work: &Work) {
@@ -130,6 +141,16 @@ impl Presentation {
         self.decoded.as_ref().map(|decoded| &decoded.picture)
     }
 
+    pub fn canvas(&self) -> Option<(u32, u32)> {
+        self.picture()
+            .and_then(|picture| picture.canvas)
+            .or_else(|| {
+                self.displayed
+                    .as_ref()
+                    .and_then(|displayed| displayed.canvas)
+            })
+    }
+
     pub fn loading(&self) -> bool {
         self.loading
     }
@@ -163,6 +184,7 @@ impl Presentation {
         self.displayed = self.decoded.as_ref().map(|decoded| DisplayedPicture {
             request: decoded.request.clone(),
             source_frame: decoded.picture.frame.as_ref().map(|_| decoded.picture.id),
+            canvas: decoded.picture.canvas,
         });
     }
 

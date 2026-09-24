@@ -821,7 +821,9 @@ dependencies = [
  "deadpan-cli",
  "deadpan-core",
  "deadpan-media",
+ "deadpan-output",
  "deadpan-plan",
+ "deadpan-playback",
  "deadpan-render",
  "deadpan-source",
  "deadpan-store",
@@ -970,7 +972,11 @@ dependencies = [
 name = "deadpan-output"
 version = "0.1.0"
 dependencies = [
+ "block2 0.6.2",
  "cpal",
+ "objc2 0.6.4",
+ "objc2-app-kit 0.3.2",
+ "objc2-foundation 0.3.2",
  "rtrb",
  "serde_json",
  "thiserror 2.0.20",
@@ -984,6 +990,21 @@ dependencies = [
  "proptest",
  "serde",
  "serde_json",
+ "thiserror 2.0.20",
+]
+
+[[package]]
+name = "deadpan-playback"
+version = "0.1.0"
+dependencies = [
+ "deadpan-audio",
+ "deadpan-core",
+ "deadpan-media",
+ "deadpan-output",
+ "deadpan-plan",
+ "deadpan-store",
+ "serde_json",
+ "tempfile",
  "thiserror 2.0.20",
 ]
 

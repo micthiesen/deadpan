@@ -1,0 +1,25 @@
+[package]
+name = "deadpan-playback"
+description = "Bounded revision-bound pre-master audition and device transport"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+deadpan-core.workspace = true
+deadpan-store.workspace = true
+deadpan-plan.workspace = true
+deadpan-media.workspace = true
+deadpan-audio.workspace = true
+deadpan-output.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+serde_json.workspace = true
+
+[lints]
+workspace = true

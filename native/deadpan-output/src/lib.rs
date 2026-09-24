@@ -8,10 +8,18 @@
 mod queue;
 pub use queue::*;
 
+mod clock;
+pub use clock::*;
+
 #[cfg(target_os = "macos")]
 mod device;
 #[cfg(target_os = "macos")]
 pub use device::*;
+
+#[cfg(target_os = "macos")]
+mod lifecycle;
+#[cfg(target_os = "macos")]
+pub use lifecycle::*;
 
 pub const ENGINE_ID: &str = "deadpan-prepared-output-v1";
 pub const SAMPLE_RATE: u32 = 48_000;

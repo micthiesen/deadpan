@@ -103,10 +103,12 @@ details are intentionally not implementation instructions:
 - The enlarged workspace's `y` reuse label describes future range copying.
   Current whole-original reuse uses `⌘Return`; no inactive range-copy control
   should imply that `y` already works. New starts with the original already inserted.
-- Thumbnails, filmstrips, waveform selection, playback, recent projects, YouTube
+- Thumbnails, filmstrips, waveform selection, recent projects, YouTube
   acquisition and advanced workflow actions require actual supporting data and
   behavior. Use truthful media-type tiles until a bounded thumbnail service exists.
-  Do not turn the stopped-frame viewer into a pretend transport.
+  [Sequence audition](../PLAYBACK.md) has real Space Play/Pause beside the picture,
+  explicit preparation/cancellation and independent monitor volume. Label its
+  current pre-master boundary; full mastered playback remains required.
 - Sound import only registers audio today. The Place a sound panel is the target
   for a real anchored overlay, never an audio-only sequential beat with blank picture.
 - The workflow board shows intended live Camera/Trim preview. Current Hold and

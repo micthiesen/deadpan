@@ -2,6 +2,7 @@ use std::cell::Cell;
 use std::path::PathBuf;
 use std::rc::Rc;
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
 use deadpan_core::{AssetId, NodeId, NodeKind, ProjectFrame, RevisionId, SourceFrameId};
@@ -21,6 +22,7 @@ use crate::worker::{PreviewWorker, ProjectView, SourceSummary, Ticket, Work};
 mod cards;
 mod help_scroll;
 mod inspector;
+mod playback;
 mod selection;
 mod style;
 
@@ -76,6 +78,14 @@ pub struct DeadpanApp {
     close_pending: bool,
     exited: Rc<Cell<bool>>,
     worker: PreviewWorker,
+    playback: deadpan_playback::Engine,
+    #[cfg(target_os = "macos")]
+    _lifecycle: deadpan_output::LifecycleObserver,
+    playback_interrupted: Arc<AtomicBool>,
+    transport: Option<crate::transport::Run>,
+    monitor_gain: f32,
+    monitor_control: Option<egui::Id>,
+    resume: Option<crate::transport::Resume>,
     service: ProjectService,
     dialogs: Dialogs,
     dialog_intent: Option<DialogIntent>,
@@ -130,12 +140,35 @@ impl DeadpanApp {
         let repaint = context.egui_ctx.clone();
         let service = ProjectService::new(Arc::new(move || repaint.request_repaint()))?;
         let worker = PreviewWorker::new(context.egui_ctx.clone())?;
+        let repaint = context.egui_ctx.clone();
+        let playback = deadpan_playback::Engine::new(Arc::new(move || repaint.request_repaint()))?;
+        let playback_interrupted = Arc::new(AtomicBool::new(false));
+        #[cfg(target_os = "macos")]
+        let lifecycle = {
+            let stop = playback.stop_handle();
+            let interrupted = Arc::clone(&playback_interrupted);
+            let repaint = context.egui_ctx.clone();
+            deadpan_output::LifecycleObserver::new(Arc::new(move || {
+                stop.stop();
+                interrupted.store(true, Ordering::Release);
+                repaint.request_repaint();
+            }))
+            .map_err(std::io::Error::other)?
+        };
         let renderer = PictureRenderer::new(&render_state.device, &render_state.queue);
         let mut app = Self {
             smoke_frames: smoke_test.then_some(0),
             close_pending: false,
             exited,
             worker,
+            playback,
+            #[cfg(target_os = "macos")]
+            _lifecycle: lifecycle,
+            playback_interrupted,
+            transport: None,
+            monitor_gain: 0.125,
+            monitor_control: None,
+            resume: None,
             service,
             dialogs: Dialogs::default(),
             dialog_intent: None,
@@ -188,6 +221,7 @@ impl DeadpanApp {
     }
 
     fn submit(&mut self, request: ProjectRequest) -> bool {
+        self.stop_playback();
         self.bindings.clear();
         match self.service.submit(request) {
             Ok(()) => {
@@ -215,6 +249,7 @@ impl DeadpanApp {
     }
 
     fn clear_picture(&mut self) {
+        self.stop_playback();
         self.reset_picture();
         self.worker.clear();
     }
@@ -241,6 +276,7 @@ impl DeadpanApp {
         };
         self.preview_source = serial;
         let ticket = Ticket {
+            transport: None,
             source: serial,
             request: serial,
         };
@@ -272,6 +308,15 @@ impl DeadpanApp {
     }
 
     fn request_picture(&mut self, clear: bool) {
+        self.stop_playback();
+        self.request_picture_for_transport(clear, None);
+    }
+
+    fn request_picture_for_transport(
+        &mut self,
+        clear: bool,
+        transport: Option<deadpan_output::Generation>,
+    ) {
         self.error = None;
         if clear {
             self.reset_picture();
@@ -325,6 +370,7 @@ impl DeadpanApp {
             return;
         };
         let ticket = Ticket {
+            transport,
             source: self.preview_source,
             request: serial,
         };
@@ -473,6 +519,7 @@ impl DeadpanApp {
         if self.dialogs.is_open() || self.service.is_busy() {
             return;
         }
+        self.pause_playback();
         if matches!(
             kind,
             DialogKind::CreateProject
@@ -745,6 +792,7 @@ impl DeadpanApp {
     }
 
     fn open_command(&mut self, command: String, context: &egui::Context) {
+        self.pause_playback();
         self.bindings.clear();
         self.command_open = true;
         self.command = command;
@@ -847,6 +895,10 @@ impl DeadpanApp {
             Action::Insert => self.insert(),
             Action::Undo => self.history(false),
             Action::Redo => self.history(true),
+            Action::Playback => {
+                self.toggle_playback();
+                context.memory_mut(|m| m.request_focus(pane_id(self.pane)));
+            }
             Action::Edit(edit) => self.edit(edit),
             Action::Invalid(error) => self.error = Some(error.into()),
             Action::Pane { reverse } => {
@@ -951,14 +1003,17 @@ impl DeadpanApp {
                 });
             }
             Action::Help => {
+                self.pause_playback();
                 self.help_open = true;
                 self.bindings.clear();
             }
             Action::Escape => {
+                self.pause_playback();
                 self.command_open = false;
                 self.command_focus_pending = false;
                 self.help_open = false;
                 self.bindings.clear();
+                context.memory_mut(|m| m.request_focus(pane_id(self.pane)));
             }
             Action::OfferInsert => {
                 if self.view == View::Source {
@@ -1038,6 +1093,16 @@ impl DeadpanApp {
             {
                 let focused = text_input_active(context, self.command_open);
                 let ime = self.ime_composing || ime_event;
+                if self
+                    .monitor_control
+                    .is_some_and(|id| context.memory(|m| m.has_focus(id)))
+                    && !focused
+                    && !ime
+                    && matches!(key, egui::Key::ArrowLeft | egui::Key::ArrowRight)
+                {
+                    self.bindings.clear();
+                    continue; // The focused volume slider owns its arrows.
+                }
                 if let Some(text_action) = navigation::text_action(key, modifiers, focused, ime) {
                     text_result = Some((text_action, self.command_open));
                     context.input_mut(|i| {
@@ -1047,6 +1112,10 @@ impl DeadpanApp {
                 }
                 if text_result.is_some() {
                     continue;
+                }
+                if control_owns_activation(context, key) {
+                    self.bindings.clear();
+                    continue; // Preserve egui/AccessKit activation of a focused control.
                 }
                 if repeat && !navigation::allows_key_repeat(key, modifiers) {
                     continue;
@@ -1110,6 +1179,15 @@ impl DeadpanApp {
                 }
             }
             Ok(navigation::command::Entry::Help) => self.help_open = true,
+            Ok(navigation::command::Entry::Monitor(tenths)) => {
+                self.pause_playback();
+                self.monitor_gain = f32::from(tenths) / 1000.0;
+                self.message = Some(format!(
+                    "Monitor {}.{}% · project and export gain unchanged",
+                    tenths / 10,
+                    tenths % 10
+                ));
+            }
             Ok(navigation::command::Entry::Empty) => {}
             Err(error) => self.error = Some(error),
         }
@@ -1183,7 +1261,11 @@ impl DeadpanApp {
                                 .on_hover_text("Keyboard reference · ? or :help")
                                 .clicked()
                             {
-                                self.help_open = !self.help_open;
+                                if self.help_open {
+                                    self.help_open = false;
+                                } else {
+                                    self.action(Action::Help, ui.ctx());
+                                }
                             }
                             let ready = !self.service.is_busy() && !self.dialogs.is_open();
                             if ui
@@ -1675,12 +1757,12 @@ impl DeadpanApp {
                 if self.view == View::Sequence { ui.add(egui::Label::new(egui::RichText::new(if self.focused_workflow() { "Same original. Your changes." } else { "Current sequence" }).color(style::MUTED).size(12.0)).truncate()); }
                 else if let Some(source) = self.workspace.as_ref().and_then(|w| self.selected_source.as_ref().and_then(|id| w.sources.get(id))) { ui.add(egui::Label::new(egui::RichText::new(&source.label).color(style::MUTED).size(12.0)).truncate()).on_hover_text(&source.label); }
             });
-            let available = egui::vec2(ui.available_width().max(1.0), (ui.available_height() - 98.0).max(50.0));
+            let available = egui::vec2(ui.available_width().max(1.0), (ui.available_height() - if self.view == View::Sequence { 142.0 } else { 98.0 }).max(50.0));
             let (_, rect) = ui.allocate_space(available);
             let response = pane_focus(ui, Pane::Viewer, rect, "Picture viewer pane");
             if response.has_focus() { self.pane = Pane::Viewer; }
             ui.painter().rect_filled(rect, 2.0, egui::Color32::BLACK);
-            let aspect = self.presentation.picture().and_then(|p| p.canvas).map(|(w, h)| w as f32 / h as f32);
+            let aspect = self.presentation.canvas().map(|(w, h)| w as f32 / h as f32);
             let canvas = aspect.map_or(rect, |aspect| fit_rect(rect, aspect));
             self.render_picture(ui.ctx(), canvas.size());
             let displayed_label = self.presentation.displayed_label();
@@ -1708,6 +1790,7 @@ impl DeadpanApp {
                     ui.label(egui::RichText::new(format!("project clock · {}", frame_rate_label(workspace.document.presentation_basis().frame_rate))).size(10.0).color(style::MUTED));
                 }).response.on_hover_text("Both durations use the same project-frame clock. Original includes the measured picture/audio stream union; source browsing counts decoded picture frames separately.");
             }
+            self.playback_controls(ui);
             ui.horizontal_wrapped(|ui| {
                 if self.workspace.is_none() && self.raw_source.is_none() {
                     if ui.button("New project  ⌘N").clicked() { self.begin_dialog(DialogKind::CreateProject, ui.ctx(), false); }
@@ -1817,6 +1900,8 @@ impl DeadpanApp {
                     ui.label(egui::RichText::new("START & MOVE").strong().color(style::LAVENDER));
                     for (key, description) in [
                         ("⌘N / ⌘O", "Choose one Original / open a project. New projects live in Documents/Deadpan."),
+                        ("Space", "Play / pause Your edit. During preparation, Space cancels. Audition is before effects and final mastering; pause to change Monitor volume."),
+                        (":monitor 25%", "Set monitor volume without changing the project or export gain. 0 mutes; 12.5% restores the initial level."),
                         ("h l · Left Right", "Move one frame in the current clock. Prefix a count: 12l."),
                         ("j k", "V1: select the next / previous root beat and return to Your edit. In a legacy Sources pane, choose a source."),
                         ("gg / G", "First / final boundary."),
@@ -1847,7 +1932,7 @@ impl DeadpanApp {
                     ] { help_binding(ui, key, description); }
                     ui.separator();
                     ui.weak("Original browsing never changes it. Your edit commands affect the selected root beat and its linked picture and sound. Counts precede operators, such as 3rr; the visible PENDING badge waits without a timer.");
-                    ui.weak("Current limits: range cuts/reuse, navigation and insertion within nested structures, sound placement/audition, playback, effects, AI generation in the app, and export are not available yet. Registered sounds are retained catalog entries only.");
+                    ui.weak("Space auditions Your edit before effects and final mastering. Pause before changing Monitor volume. Editing, seeking, opening commands and help stop audition. Original playback, range cuts/reuse, nested navigation/insertion, sound placement, effects, AI generation in the app, and export remain unavailable. Registered sounds are retained catalog entries only.");
             });
     }
 }
@@ -1855,11 +1940,18 @@ impl DeadpanApp {
 impl eframe::App for DeadpanApp {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         let context = ui.ctx().clone();
+        if self.playback_interrupted.swap(false, Ordering::AcqRel) && self.transport.is_some() {
+            self.pause_playback();
+            self.message =
+                Some("Audition stopped for sleep or wake. Press Space to start again.".into());
+        }
         self.close_pending |= context.input(|i| i.viewport().close_requested());
         let previous_pane = self.pane;
         self.receive();
+        self.receive_playback();
         self.ensure_visible_pane(&context);
         if self.close_pending {
+            self.stop_playback();
             if self.service.is_busy() {
                 context.send_viewport_cmd(egui::ViewportCommand::CancelClose);
                 context.request_repaint_after(Duration::from_millis(16));
@@ -1897,6 +1989,7 @@ impl eframe::App for DeadpanApp {
         self.timeline(ui);
         self.inspector(ui);
         self.viewer(ui);
+        self.schedule_playback_picture();
         self.help(&context);
         if input_scope
             != (
@@ -1933,6 +2026,7 @@ impl eframe::App for DeadpanApp {
         }
     }
     fn on_exit(&mut self) {
+        self.playback.shutdown();
         self.service.shutdown();
         self.worker.shutdown();
         self.forget_target();
@@ -1941,6 +2035,7 @@ impl eframe::App for DeadpanApp {
 }
 impl Drop for DeadpanApp {
     fn drop(&mut self) {
+        self.playback.shutdown();
         self.service.shutdown();
         self.worker.shutdown();
         self.forget_target();
@@ -2124,6 +2219,17 @@ fn focus_command_for_frame(context: &egui::Context, pending: &mut bool) {
         context.memory_mut(|m| m.request_focus(egui::Id::new(COMMAND_ID)));
     }
 }
+fn control_owns_activation(context: &egui::Context, key: egui::Key) -> bool {
+    matches!(key, egui::Key::Space | egui::Key::Enter)
+        && context
+            .memory(|memory| memory.focused())
+            .is_some_and(|focused| {
+                [Pane::Sources, Pane::Viewer, Pane::Sequence, Pane::Inspector]
+                    .into_iter()
+                    .all(|pane| focused != pane_id(pane))
+            })
+}
+
 fn text_input_active(context: &egui::Context, command_open: bool) -> bool {
     command_open
         || context.memory(|m| {
@@ -2385,6 +2491,66 @@ mod tests {
             pressed: true,
             repeat: false,
             modifiers: egui::Modifiers::NONE,
+        }
+    }
+
+    #[test]
+    fn focused_button_keeps_space_and_return_while_pane_space_controls_playback() {
+        for key in [egui::Key::Space, egui::Key::Enter] {
+            let context = egui::Context::default();
+            let mut bindings = Bindings::default();
+            let draw = |ui: &mut egui::Ui, focus_button: bool| {
+                let (_, rect) = ui.allocate_space(egui::vec2(100.0, 40.0));
+                pane_focus(ui, Pane::Viewer, rect, "Viewer");
+                let response = ui.button("Change duration");
+                if focus_button {
+                    response.request_focus();
+                }
+                response.clicked()
+            };
+            run_ui(&context, egui::RawInput::default(), |ui| {
+                draw(ui, true);
+            });
+            let mut clicked = false;
+            let mut action = None;
+            run_ui(
+                &context,
+                egui::RawInput {
+                    events: vec![key_event(key)],
+                    ..Default::default()
+                },
+                |ui| {
+                    assert!(control_owns_activation(ui.ctx(), key));
+                    if !control_owns_activation(ui.ctx(), key) {
+                        action = bindings.key(key, egui::Modifiers::NONE, false, false);
+                        ui.input_mut(|input| {
+                            input.consume_key(egui::Modifiers::NONE, key);
+                        });
+                    }
+                    clicked |= draw(ui, false);
+                },
+            );
+            assert!(clicked, "focused button did not receive {key:?}");
+            assert!(action.is_none());
+            run_ui(&context, egui::RawInput::default(), |ui| {
+                ui.memory_mut(|m| m.request_focus(pane_id(Pane::Viewer)));
+                draw(ui, false);
+            });
+            run_ui(
+                &context,
+                egui::RawInput {
+                    events: vec![key_event(egui::Key::Space)],
+                    ..Default::default()
+                },
+                |ui| {
+                    assert!(!control_owns_activation(ui.ctx(), egui::Key::Space));
+                    assert_eq!(
+                        bindings.key(egui::Key::Space, egui::Modifiers::NONE, false, false),
+                        Some(Action::Playback)
+                    );
+                    draw(ui, false);
+                },
+            );
         }
     }
 

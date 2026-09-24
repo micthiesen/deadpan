@@ -64,6 +64,7 @@ pub enum Action {
     Insert,
     Undo,
     Redo,
+    Playback,
     Step { forward: bool, count: u32 },
     Beat { forward: bool, count: u32 },
     First,
@@ -238,6 +239,10 @@ impl Bindings {
             self.clear();
             return None;
         }
+        if key == Key::Space {
+            self.clear();
+            return Some(Action::Playback);
+        }
         if self.count_overflow {
             self.clear();
             return Some(Action::Invalid(
@@ -373,6 +378,40 @@ pub fn text_action(
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn space_is_one_normal_mode_toggle_and_clears_pending_edits() {
+        use super::*;
+        for prefix in [None, Some(Key::R), Some(Key::Comma), Some(Key::G)] {
+            let mut bindings = Bindings::default();
+            if let Some(key) = prefix {
+                bindings.key(key, Modifiers::NONE, false, false);
+            }
+            assert_eq!(
+                bindings.key(Key::Space, Modifiers::NONE, false, false),
+                Some(Action::Playback)
+            );
+            assert!(bindings.pending().is_empty());
+        }
+        for (text, ime) in [(true, false), (false, true), (true, true)] {
+            assert_eq!(
+                Bindings::default().key(Key::Space, Modifiers::NONE, text, ime),
+                None
+            );
+        }
+        for modifiers in [
+            Modifiers::SHIFT,
+            Modifiers::ALT,
+            Modifiers::CTRL,
+            Modifiers::COMMAND,
+            Modifiers::MAC_CMD,
+        ] {
+            assert_eq!(
+                Bindings::default().key(Key::Space, modifiers, false, false),
+                None
+            );
+        }
+        assert!(!allows_key_repeat(Key::Space, Modifiers::NONE));
+    }
     use super::*;
 
     #[test]
@@ -676,7 +715,7 @@ mod tests {
     #[test]
     fn invalid_prefixes_escape_and_explicit_reset_discard_pending_input() {
         let mut bindings = Bindings::default();
-        for invalid in [Key::H, Key::Num2, Key::Space] {
+        for invalid in [Key::H, Key::Num2, Key::A] {
             bindings.key(Key::G, Modifiers::NONE, false, false);
             assert!(
                 bindings

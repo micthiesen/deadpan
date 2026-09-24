@@ -79,7 +79,7 @@ fn seek_discards_partial_and_queued_old_pcm_without_replaying_either() {
 }
 
 #[test]
-fn admission_failures_leave_cursor_unchanged_and_full_end_can_be_retried() {
+fn pcm_backpressure_preserves_cursor_and_reserves_one_terminal_slot() {
     let (mut feed, mut callback) = channel().unwrap();
     let generation = feed.restart(7).unwrap();
     for _ in 0..QUEUE_PACKETS {
@@ -87,17 +87,97 @@ fn admission_failures_leave_cursor_unchanged_and_full_end_can_be_retried() {
     }
     let next = feed.next_sample();
     assert_eq!(feed.submit(generation, &[[0.2; 2]]), Err(FeedError::Full));
-    assert_eq!(feed.finish(generation), Err(FeedError::Full));
+    feed.finish(generation).unwrap();
     assert_eq!(feed.next_sample(), next);
     feed.activate(generation).unwrap();
     let first = callback.render(&mut [0.0; 2]);
     assert_eq!(first.first_sample, Some(7));
-    feed.finish(generation).unwrap();
     let mut output = [0.0; QUEUE_PACKETS * 2];
     let report = callback.render(&mut output);
     assert_eq!(report.status, RenderStatus::Ended);
     assert_eq!(report.rendered_frames, QUEUE_PACKETS - 1);
     assert_eq!(feed.next_sample(), next);
+}
+
+#[test]
+fn finite_region_fills_all_pcm_slots_then_ends_in_one_maximum_callback() {
+    let (mut feed, mut callback) = channel().unwrap();
+    let generation = feed.restart(7).unwrap();
+    let expected: Vec<_> = (0..8_000).map(frame).collect();
+    assert_eq!(expected.chunks(PACKET_FRAMES).len(), QUEUE_PACKETS);
+    for chunk in expected.chunks(PACKET_FRAMES) {
+        feed.submit(generation, chunk).unwrap();
+    }
+    feed.finish(generation).unwrap();
+    feed.activate(generation).unwrap();
+    // No producer call occurs during or after this callback. The terminal slot
+    // must prevent the old 8000-content / 8192-buffer starvation race.
+    let mut output = vec![1.0; MAX_CALLBACK_FRAMES * 2];
+    let report = callback.render(&mut output);
+    assert_eq!(report.status, RenderStatus::Ended);
+    assert_eq!(report.first_sample, Some(7));
+    assert_eq!(report.rendered_frames, expected.len());
+    assert_eq!(report.silent_frames, MAX_CALLBACK_FRAMES - expected.len());
+    for (actual, expected) in output.chunks_exact(2).zip(&expected) {
+        assert_eq!(actual, expected);
+    }
+    assert!(
+        output[expected.len() * 2..]
+            .iter()
+            .all(|sample| *sample == 0.0)
+    );
+}
+
+#[test]
+fn stopped_preparation_cannot_publish_and_late_old_stop_preserves_new_audio() {
+    let (mut feed, mut callback) = channel().unwrap();
+    let old = feed.restart(100).unwrap();
+    let stop = feed.stop_token(old).unwrap();
+    let remote = stop.clone();
+    feed.submit(old, &[[0.1; 2]; 17]).unwrap();
+    thread::spawn(move || remote.stop()).join().unwrap();
+    assert!(stop.is_stopped());
+    assert_eq!(feed.submit(old, &[[0.2; 2]]), Err(FeedError::Stopped));
+    assert_eq!(feed.finish(old), Err(FeedError::Stopped));
+    assert_eq!(feed.activate(old), Err(FeedError::Stopped));
+    let mut output = [1.0; 12];
+    assert_eq!(callback.render(&mut output).status, RenderStatus::Paused);
+    assert_eq!(output, [0.0; 12]);
+
+    let next = feed.restart(500).unwrap();
+    let current_stop = feed.stop_token(next).unwrap();
+    assert!(next > old);
+    feed.submit(next, &[[0.3; 2]; 4]).unwrap();
+    feed.finish(next).unwrap();
+    feed.activate(next).unwrap();
+    stop.stop();
+    assert!(!current_stop.is_stopped());
+    let report = callback.render(&mut output);
+    assert_eq!(report.generation, next);
+    assert_eq!(report.first_sample, Some(500));
+    assert_eq!(report.status, RenderStatus::Ended);
+    assert_eq!(&output[..8], &[0.3; 8]);
+    assert_eq!(&output[8..], &[0.0; 4]);
+}
+
+#[test]
+fn a_permanent_fault_remains_distinct_from_an_explicit_stop() {
+    let (mut feed, mut callback) = channel().unwrap();
+    let generation = feed.restart(0).unwrap();
+    let stop = feed.stop_token(generation).unwrap();
+    feed.submit(generation, &[[0.2; 2]; 2]).unwrap();
+    feed.activate(generation).unwrap();
+    feed.fault_signal().raise();
+    assert!(
+        !stop.is_stopped(),
+        "controller must handle the permanent fault separately"
+    );
+    let mut output = [1.0; 4];
+    assert_eq!(callback.render(&mut output).status, RenderStatus::Fault);
+    assert_eq!(output, [0.0; 4]);
+    assert_eq!(feed.submit(generation, &[[0.1; 2]]), Err(FeedError::Fault));
+    stop.stop();
+    assert!(stop.is_stopped());
 }
 
 #[test]
@@ -110,11 +190,12 @@ fn stale_cleanup_is_bounded_and_does_not_latch_starvation_before_matching_pcm() 
     for _ in 0..QUEUE_PACKETS {
         feed.submit(old, &[[0.2; 2]]).unwrap();
     }
+    feed.finish(old).unwrap(); // full PCM ring plus the reserved terminal slot
     let new = feed.restart(1000).unwrap();
     let mut output = [7.0; 4];
     let report = callback.render(&mut output);
     assert_eq!(report.status, RenderStatus::Paused);
-    assert_eq!(report.discarded_packets, QUEUE_PACKETS);
+    assert_eq!(report.discarded_packets, QUEUE_PACKETS + 1);
     assert_eq!(report.rendered_frames, 0);
     assert_eq!(output, [0.0; 4]);
     feed.submit(new, &[[0.8, -0.8]; 2]).unwrap();

@@ -45,13 +45,14 @@ Current crates:
 - `crates/deadpan-media`: shared verified source snapshots, measured video/audio indexes, exact video seeks and bounded private PCM caches, plus isolated conversion, strict helper reports and private BLAKE3 output. No database or authored-state mutation.
 - `native/deadpan-source`: separate persistent descriptor-only FFmpeg video/audio decoders, raw metadata, owned RGBA and original-rate interleaved f32. Unsafe code stays in this narrow adapter; unsupported interpretations fail explicitly.
 - `native/deadpan-dsp`: bounded owned planar PCM and the canonical pinned stretch schedule through a safe Rust/C++ boundary. Construct it on a preparation worker; no device output or media decoding.
-- `native/deadpan-output`: bounded prepared-PCM queue and narrow macOS device boundary. Prepare a fresh channel-scoped generation, prefill, then explicitly activate; starvation and device faults never silently resume. No project/DSP or application transport integration yet. See [output contract](docs/AUDIO_OUTPUT.md).
-- `crates/deadpan-audio`: exact-phase source resampling, explicit speaker matrices, qualified PCM access, source-stage blocks, bounded continuous Preserve preparation and informational meters. Preparation/analysis is worker work; full voice graph, mastering and device integration remain open.
+- `native/deadpan-output`: bounded prepared-PCM queue, delivery-clock intervals, generation-scoped stop tokens, owned sleep/wake observation and narrow macOS device boundary. Prepare a fresh channel-scoped generation, prefill, then explicitly activate; starvation and device faults never silently resume. No project/DSP ownership. See [output contract](docs/AUDIO_OUTPUT.md).
+- `crates/deadpan-playback`: immutable-revision pre-master audition. Separate preparation and control workers own canonical PCM and device delivery. The UI never opens source media or owns the device; full mastering and acoustic/performance qualification remain open. See [audition contract](docs/PLAYBACK.md).
+- `crates/deadpan-audio`: exact-phase source resampling, explicit speaker matrices, qualified PCM access, source-stage blocks, bounded continuous Preserve preparation and informational meters. Preparation/analysis is worker work; the playback crate owns device integration. Full voice graph and mastering remain open.
 - `native/deadpan-fileclone`: bounded safe descriptor-clone interface around the macOS system call. The store owns copying, checksums, publication and durability.
 - `crates/deadpan-render`: bounded shared SDR picture pipeline, linear Rec.2020 working textures, explicit sRGB display transform, aspect and rotation. No decoding, document mutation or encoding.
 - `native/deadpan-media-worker`: process-isolated FFmpeg conversion and independent decode verification through bounded descriptor-only AVIO. Only the documented FFI call permits unsafe Rust. Requires the explicitly selected pinned LGPL FFmpeg development prefix.
 - `native/deadpan-process`: checked worker/leader teardown and Darwin group-membership adapter; unsafe is denied except for its documented bounded libproc call. Higher layers continue to forbid unsafe.
-- `crates/deadpan-app`: native `egui`/`eframe` project workspace using Metal. One service owns the writable store, one import worker prepares media, and a separate bounded preview worker consumes immutable workspaces. Native dialogs, source registration, explicit insertion and history are implemented; full editing, playback and export remain open.
+- `crates/deadpan-app`: native `egui`/`eframe` project workspace using Metal. One service owns the writable store, one import worker prepares media, and a separate bounded preview worker consumes immutable workspaces. Native dialogs, source registration, explicit insertion, history and pre-master sequence audition are implemented; full editing, mastered playback and export remain open.
 - `crates/deadpan-cli`: versioned headless project/command API, reused by `deadpan-app --headless`.
 
 [Architecture](docs/ARCHITECTURE.md) records Section 24's full boundary map. Add crates only when an implemented responsibility needs isolation. Do not create empty crates or feature controls that pretend to work.
@@ -87,6 +88,17 @@ accessibility label only with successful GPU submission or an explicit backgroun
 transition. Retain the old target until a resized replacement renders successfully.
 Picture errors belong to presentation and clear on successful recovery. These
 state transitions must remain testable without a native window.
+
+Sequence audition uses the device's reported content intervals, never producer
+progress as the heard clock. Retain past and future delivery reports; a terminal
+callback's nonempty prefix remains pending until its reported playback deadline.
+Tag pictures with the output generation and coalesce desired frames behind one
+active decode/GPU submission. Stop invalidates pending work but retains the last
+submitted picture and geometry. Pause/resume preserves the exact sample estimate;
+navigation and edits discard it. Context-preserving stops never retarget an
+inspector command. Device faults, lost reports and sleep/wake cannot silently
+resume. Monitor gain is independent of authored/export gain; never clip or
+normalize pre-master PCM to conceal missing mastering.
 
 The shared picture baseline accepts owned, bounded, full-range straight RGBA8
 with explicit transfer, primaries, SAR, rotation and source PTS. Decode transfer

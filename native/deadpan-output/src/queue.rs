@@ -11,7 +11,9 @@ use std::sync::atomic::{AtomicU8, AtomicU64, Ordering};
 use rtrb::{Consumer, Producer, RingBuffer};
 
 pub const PACKET_FRAMES: usize = 256;
+/// PCM packet capacity. One additional ring slot is reserved for explicit EOS.
 pub const QUEUE_PACKETS: usize = 32;
+const QUEUE_SLOTS: usize = QUEUE_PACKETS + 1;
 pub const MAX_CALLBACK_FRAMES: usize = 8192;
 const MAX_GENERATION: u64 = u64::MAX >> 1;
 static LAST_CHANNEL: AtomicU64 = AtomicU64::new(0);
@@ -60,6 +62,8 @@ pub enum FeedError {
     Full,
     #[error("audio generation is stale")]
     StaleGeneration,
+    #[error("audio generation was stopped; prepare a new generation")]
+    Stopped,
     #[error("audio output is paused")]
     Paused,
     #[error("audio generation has already ended")]
@@ -89,7 +93,45 @@ struct Shared {
     // One publication carries both identity and playback state. Bit zero is
     // playing; all higher bits are the monotonically increasing generation.
     control: AtomicU64,
+    // A stop token can revoke its generation without owning or waiting for the
+    // producer. Serial zero is initially paused, not a revocable preparation.
+    revoked_through: AtomicU64,
     fault: AtomicU8,
+}
+
+/// Generation-scoped immediate mute, independent of preparation/Feed ownership.
+/// Stopping an old token cannot revoke a newer generation. Like every control
+/// change, it cannot retract a buffer already submitted to the native device.
+#[derive(Clone)]
+pub struct StopToken {
+    shared: Arc<Shared>,
+    generation: Generation,
+}
+
+impl std::fmt::Debug for StopToken {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("StopToken")
+            .field("generation", &self.generation)
+            .finish_non_exhaustive()
+    }
+}
+
+impl StopToken {
+    pub fn generation(&self) -> Generation {
+        self.generation
+    }
+
+    pub fn stop(&self) {
+        self.shared
+            .revoked_through
+            .fetch_max(self.generation.serial, Ordering::AcqRel);
+    }
+
+    pub fn is_stopped(&self) -> bool {
+        self.shared.revoked_through.load(Ordering::Acquire) >= self.generation.serial
+            || self.shared.control.load(Ordering::Acquire) >> 1 > self.generation.serial
+    }
 }
 
 /// Device errors are permanent for this channel. Recovery creates a new channel.
@@ -161,6 +203,17 @@ impl Feed {
         FaultSignal(Arc::clone(&self.shared))
     }
 
+    pub fn stop_token(&self, generation: Generation) -> Result<StopToken, FeedError> {
+        self.check_generation(generation)?;
+        if self.state == FeedState::Paused {
+            return Err(FeedError::Paused);
+        }
+        Ok(StopToken {
+            shared: Arc::clone(&self.shared),
+            generation,
+        })
+    }
+
     /// Prepare a new generation without starting its clock. Existing queued
     /// packets occupy slots until the paused callback drains them. Submit the
     /// desired prefill, then call `activate`; callbacks during preparation stay
@@ -230,6 +283,11 @@ impl Feed {
         if generation != self.generation {
             return Err(FeedError::StaleGeneration);
         }
+        if generation.serial != 0
+            && self.shared.revoked_through.load(Ordering::Acquire) >= generation.serial
+        {
+            return Err(FeedError::Stopped);
+        }
         Ok(())
     }
 
@@ -264,6 +322,13 @@ impl Feed {
             .next
             .checked_add(samples.len() as i64)
             .ok_or(FeedError::SampleOverflow)?;
+        // Never consume the terminal slot with PCM. A finite region that fills
+        // every PCM packet can finish before activation, even when one native
+        // callback is larger than that region. No producer/callback race is
+        // needed to deliver EOS instead of latching starvation.
+        if self.producer.slots() <= 1 {
+            return Err(FeedError::Full);
+        }
         let mut packet_samples = [[0.0; 2]; PACKET_FRAMES];
         packet_samples[..samples.len()].copy_from_slice(samples);
         let packet = Packet {
@@ -327,10 +392,11 @@ pub struct Callback {
 pub fn channel() -> Result<(Feed, Callback), FeedError> {
     let channel = allocate_channel(&LAST_CHANNEL)?;
     let generation = Generation { channel, serial: 0 };
-    let (producer, consumer) = RingBuffer::new(QUEUE_PACKETS);
+    let (producer, consumer) = RingBuffer::new(QUEUE_SLOTS);
     let shared = Arc::new(Shared {
         channel,
         control: AtomicU64::new(0),
+        revoked_through: AtomicU64::new(0),
         fault: AtomicU8::new(0),
     });
     Ok((
@@ -389,7 +455,9 @@ impl Callback {
         output.fill(0.0);
         let frames = output.len() / 2;
         let control = self.shared.control.load(Ordering::Acquire);
-        let (generation, playing) = decode(control, self.shared.channel);
+        let (generation, requested_playing) = decode(control, self.shared.channel);
+        let playing = requested_playing
+            && self.shared.revoked_through.load(Ordering::Acquire) < generation.serial;
         let mut discarded = 0;
         if generation != self.generation || playing != self.playing {
             self.generation = generation;
@@ -437,15 +505,16 @@ impl Callback {
         let frames = output.len() / 2;
         let final_control = self.shared.control.load(Ordering::Acquire);
         let faulted = self.shared.fault.load(Ordering::Acquire) != 0;
-        if final_control != control || faulted {
+        let (generation, requested_playing) = decode(final_control, self.shared.channel);
+        let stopped = self.shared.revoked_through.load(Ordering::Acquire) >= generation.serial;
+        if final_control != control || faulted || stopped {
             // Packets consumed before invalidation stay consumed. In particular,
             // do not rewind an old partial packet or replay a submitted buffer.
             output.fill(0.0);
-            let (generation, playing) = decode(final_control, self.shared.channel);
             report.generation = generation;
             report.status = if faulted {
                 RenderStatus::Fault
-            } else if playing {
+            } else if requested_playing && !stopped {
                 RenderStatus::Playing
             } else {
                 RenderStatus::Paused
@@ -467,7 +536,7 @@ impl Callback {
                 // queue concurrently. Matching/future packets are not discarded.
                 if let Ok(packet) = self.consumer.peek() {
                     if packet.generation() < self.generation
-                        && report.discarded_packets >= QUEUE_PACKETS
+                        && report.discarded_packets >= QUEUE_SLOTS
                     {
                         break;
                     }
@@ -664,6 +733,48 @@ mod tests {
         assert_eq!(current.first_sample, Some(100));
         assert_eq!(current.discarded_packets, 1);
         assert_eq!(output, [0.8, -0.8, 0.8, -0.8]);
+    }
+
+    #[test]
+    fn token_stop_after_fill_erases_pcm_without_producer_cooperation() {
+        let (mut feed, mut callback) = channel().unwrap();
+        let generation = feed.restart(100).unwrap();
+        let stop = feed.stop_token(generation).unwrap();
+        feed.submit(generation, &[[0.2; 2]; 5]).unwrap();
+        feed.activate(generation).unwrap();
+        let mut report = callback.render(&mut []);
+        let control = feed.shared.control.load(Ordering::Acquire);
+        let mut output = [0.0; 4];
+        callback.fill(&mut output, &mut report);
+        assert_eq!(report.rendered_frames, 2);
+        stop.stop();
+        let invalidated = callback.finish_render(&mut output, control, report);
+        assert_eq!(invalidated.generation, generation);
+        assert_eq!(invalidated.status, RenderStatus::Paused);
+        assert_eq!(invalidated.rendered_frames, 0);
+        assert_eq!(output, [0.0; 4]);
+        assert_eq!(callback.render(&mut output).status, RenderStatus::Paused);
+        assert_eq!(feed.activate(generation), Err(FeedError::Stopped));
+    }
+
+    #[test]
+    fn token_stop_between_admission_and_activation_publication_cannot_revive_pcm() {
+        let (mut feed, mut callback) = channel().unwrap();
+        let generation = feed.restart(100).unwrap();
+        let stop = feed.stop_token(generation).unwrap();
+        feed.submit(generation, &[[0.2; 2]; 5]).unwrap();
+        // Model the narrow race after activate's admission check. Publishing
+        // the playing bit later cannot undo the separate monotonic revocation.
+        feed.check_generation(generation).unwrap();
+        stop.stop();
+        feed.shared
+            .control
+            .store(encode(generation, true), Ordering::Release);
+        let mut output = [1.0; 4];
+        let report = callback.render(&mut output);
+        assert_eq!(report.status, RenderStatus::Paused);
+        assert_eq!(report.rendered_frames, 0);
+        assert_eq!(output, [0.0; 4]);
     }
 
     #[test]

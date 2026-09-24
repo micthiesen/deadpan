@@ -5,7 +5,57 @@ use deadpan_render::{
 };
 
 fn ticket(source: u64, request: u64) -> Ticket {
-    Ticket { source, request }
+    Ticket {
+        source,
+        request,
+        transport: None,
+    }
+}
+
+#[test]
+fn transport_stop_keeps_displayed_picture_but_revokes_unsubmitted_decode() {
+    let (mut feed, _callback) = deadpan_output::channel().unwrap();
+    let old_generation = feed.restart(0).unwrap();
+    let mut state = Presentation::default();
+    let mut first = ticket(1, 1);
+    first.transport = Some(old_generation);
+    state.request(first, &Work::Frame(SourceFrameId(4)));
+    accept(&mut state, first, picture(4));
+    state.presented();
+    let mut pending = ticket(1, 2);
+    pending.transport = Some(old_generation);
+    state.request(pending, &Work::Frame(SourceFrameId(8)));
+    accept(&mut state, pending, picture(8));
+    assert!(state.needs_render());
+    state.invalidate_pending();
+    assert!(!state.needs_render());
+    assert_eq!(state.displayed_source_frame(), Some(SourceFrameId(4)));
+    assert!(
+        state
+            .receive(Reply {
+                ticket: pending,
+                picture: Ok(picture(8))
+            })
+            .is_none()
+    );
+    let next_generation = feed.restart(900).unwrap();
+    let current = Ticket {
+        transport: Some(next_generation),
+        ..pending
+    };
+    state.request(current, &Work::Frame(SourceFrameId(12)));
+    assert!(
+        state
+            .receive(Reply {
+                ticket: pending,
+                picture: Err("late error".into())
+            })
+            .is_none()
+    );
+    assert_eq!(state.displayed_source_frame(), Some(SourceFrameId(4)));
+    accept(&mut state, current, picture(12));
+    state.presented();
+    assert_eq!(state.displayed_source_frame(), Some(SourceFrameId(12)));
 }
 
 fn picture(id: u64) -> Picture {

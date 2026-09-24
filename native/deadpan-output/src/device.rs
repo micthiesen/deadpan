@@ -9,7 +9,7 @@ use cpal::{
     traits::{DeviceTrait, HostTrait, StreamTrait},
 };
 
-use crate::{Feed, RenderReport, SAMPLE_RATE, channel};
+use crate::{DeviceReport, Feed, SAMPLE_RATE, channel};
 
 const REPORT_CAPACITY: usize = 256;
 
@@ -44,34 +44,6 @@ pub fn default_device_info() -> Result<DeviceInfo, DeviceError> {
         .default_output_device()
         .ok_or(DeviceError::Unavailable)?;
     describe(&device)
-}
-
-/// One bounded telemetry record. These are estimates from the host's clock,
-/// not loopback measurements of the sound arriving at a speaker.
-#[derive(Debug, Clone, Copy)]
-pub struct DeviceReport {
-    pub render: RenderReport,
-    pub callback_ns: u64,
-    pub playback_ns: u64,
-    /// Timestamp validation and kernel rendering, excluding telemetry publish
-    /// and CPAL/CoreAudio work outside our closure. Not a full callback deadline.
-    pub render_cost_ns: u64,
-}
-
-impl DeviceReport {
-    /// Map the stream clock to content only inside this submitted PCM prefix.
-    /// Never extrapolate across starvation, silence, another stream or seek.
-    /// Callers must first match this report's generation to their active one.
-    pub fn sample_at(&self, stream_clock_ns: u64) -> Option<i64> {
-        let elapsed = stream_clock_ns.checked_sub(self.playback_ns)?;
-        let offset = u128::from(elapsed) * u128::from(SAMPLE_RATE) / 1_000_000_000;
-        if offset >= self.render.rendered_frames as u128 {
-            return None;
-        }
-        self.render
-            .first_sample?
-            .checked_add(i64::try_from(offset).ok()?)
-    }
 }
 
 /// One explicitly bound device. All methods other than its internal render

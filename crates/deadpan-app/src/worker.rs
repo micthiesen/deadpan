@@ -31,6 +31,7 @@ mod project_tests;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Ticket {
+    pub transport: Option<deadpan_output::Generation>,
     pub source: u64,
     pub request: u64,
 }
@@ -141,11 +142,15 @@ impl Mailbox {
     }
 
     fn clear(&mut self) {
+        self.cancel();
+        self.clear_requested = true;
+    }
+
+    fn cancel(&mut self) {
         self.cancel_active();
         self.latest = None;
         self.pending = None;
         self.reply = None;
-        self.clear_requested = true;
     }
 }
 
@@ -190,6 +195,15 @@ impl PreviewWorker {
             .expect("preview mailbox")
             .reply
             .take()
+    }
+
+    /// Revoke outstanding pictures while retaining the verified source decoder.
+    pub fn cancel(&self) {
+        self.shared
+            .mailbox
+            .lock()
+            .expect("preview mailbox")
+            .cancel();
     }
 
     pub fn shutdown(&self) {
@@ -694,7 +708,11 @@ mod tests {
     }
 
     fn ticket(source: u64, request: u64) -> Ticket {
-        Ticket { source, request }
+        Ticket {
+            source,
+            request,
+            transport: None,
+        }
     }
 
     #[test]

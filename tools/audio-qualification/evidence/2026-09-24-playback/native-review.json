@@ -1,0 +1,51 @@
+{
+  "date": "2026-09-24",
+  "bundle": "Deadpan Playback Review.app",
+  "build_manifest": "native-build.json",
+  "project": "Pause review.deadpan",
+  "fixture": {
+    "original_video_frames": 120,
+    "edit_frames": 187,
+    "rate": "30000/1001",
+    "beats_frames": [
+      37,
+      15,
+      83,
+      45,
+      7
+    ],
+    "picture": "burned-in original frame counter and color bars",
+    "audio": "qualified AAC"
+  },
+  "final_build_observations": [
+    "Opened the retained project through the native Open dialog using its full path. The initial AX click attempt selected the parent folder and reported the expected .deadpan-extension error; no project edit occurred.",
+    "Colon, monitor 25%, Return displayed Monitor 25.0% with project and export gain unchanged; Saved, duration 187, and history controls remained unchanged.",
+    "Colon, monitor 12.5%, Return restored initial monitor gain. Later AX slider value was 0.125.",
+    "Space began playback. Clicking header Keys paused at edit boundary 29 with picture frame 30; the guide showed Space and :monitor shortcuts. The native screenshot confirmed the help window and stopped position.",
+    "Escape closed help. Space resumed and reached exact end boundary 187/187. The final 7-frame Hold was selected and revealed, image label read Showing sequence frame 187, and the source counter showed 119.",
+    "Final screenshot shows picture-dominant dark layout, muted panes, lavender selection, yellow end cursor, pinned Original, separate Original/Edit durations, and visible Play edit / Space plus Monitor / :monitor controls.",
+    "Command-Q exited the owned review process; pgrep found no review bundle process."
+  ],
+  "earlier_build_observations": [
+    "Space played, paused and restarted from EOS; navigation stopped the generation.",
+    "Command entry paused; typing help followed by a space retained the literal space in the text field.",
+    "Monitor slider AX/coordinate clicks did not establish focus; arrow-key slider behavior was not manually qualified. The final build adds the independently verified :monitor command."
+  ],
+  "aesthetic_reference": "docs/design/boards/single-source-workspace-v1.png and existing one-Original design boards",
+  "independent_reviews": [
+    "Playback author reviewed output clock/queue/lifecycle; output author reviewed playback engine. The general reviewer reviewed application transport/focus and the complete change.",
+    "Fixed terminal reports ending before the prior PCM playback deadline under admitted timestamp jitter; regression uses actual queue reports and repeated terminal observations.",
+    "Fixed fault classification so stopped-token checks cannot hide device failure.",
+    "Fixed global Space/Enter consuming focused native control activation; regression uses headless egui with AccessKit.",
+    "Fixed header Keys opening help without pausing; routed through the shared Help action.",
+    "Monitor parser/state change passed narrow review; final tooltip now retains one decimal so 12.5% is not rounded to 13%."
+  ],
+  "not_qualified": [
+    "Acoustic listening, speaker latency or physical A/V synchronization",
+    "Physical sleep/wake or device unplug/route-change scenarios",
+    "VoiceOver, physical CJK IME or non-US keyboard layout",
+    "Native focused-slider arrow adjustment",
+    "Long-source preparation and performance targets",
+    "Full effects, voice graph, oversampled master limiter or preview/export equivalence"
+  ]
+}

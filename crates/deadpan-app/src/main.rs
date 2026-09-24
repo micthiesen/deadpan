@@ -6,6 +6,7 @@ mod navigation;
 mod presentation;
 mod preview;
 mod project;
+mod transport;
 mod worker;
 
 use std::cell::Cell;

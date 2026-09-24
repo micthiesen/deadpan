@@ -245,6 +245,7 @@ fn sequence(frame: i64) -> ProjectView {
 fn request(workspace: &Arc<Workspace>, view: ProjectView, serial: u64) -> Request {
     Request {
         ticket: Ticket {
+            transport: None,
             source: workspace.session,
             request: serial,
         },

@@ -2,17 +2,17 @@
 
 `native/deadpan-output` is a narrow device boundary and a headlessly testable
 prepared-PCM queue. It implements no project edits, decoding, expensive DSP,
-master limiter or application playback. `StageAudio` still emits pre-effects
-samples; those samples are not yet connected to this output.
+master limiter or project transport. The separate [playback engine](PLAYBACK.md)
+connects canonical pre-master `StageAudio` samples to this output.
 
 ## Queue and clock contract
 
 One preparation/controller thread owns `Feed`; one callback owns `Callback`.
-Construction allocates a fixed 32-packet ring. Each packet contains at most 256
+Construction allocates 32 PCM slots plus one reserved terminal slot. Each PCM packet contains at most 256
 stereo float frames by value. PCM must be finite and within magnitude one.
 Admission rejects invalid data; it never normalizes, clips or limits it.
 Failed admission leaves the contiguous 48 kHz sample cursor unchanged. Explicit
-EOS is queued after all accepted PCM and consumes one slot.
+EOS is queued after all accepted PCM in its reserved slot, even when PCM is full.
 
 `restart(start)` allocates a fresh generation, invalidates earlier PCM and stays
 muted while the producer prepares data. `activate(generation)` publishes the
@@ -28,7 +28,7 @@ for prefill before restarting native callbacks can otherwise stall on `Full`.
 Initial construction has an empty queue and can be prefilled before starting.
 
 The callback handles partial packets, arbitrary interleaved buffer partitions,
-bounded stale-packet cleanup and EOS. At most 32 stale packets are discarded per
+bounded stale-packet cleanup and EOS. At most 33 stale packets are discarded per
 call; matching packet work is additionally bounded by the 8,192-frame output
 limit. Cleanup can produce a silent buffer while preparation catches up.
 An underrun preserves any already copied prefix, silences the suffix and latches

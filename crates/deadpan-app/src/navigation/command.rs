@@ -10,6 +10,8 @@ pub enum Entry {
     Source,
     Sequence,
     Help,
+    /// Tenths of one percent, independent of authored or export gain.
+    Monitor(u16),
     Empty,
 }
 
@@ -25,6 +27,7 @@ pub fn parse(input: &str) -> Result<Entry, String> {
         return Err("Extra arguments are not supported by this command.".into());
     }
     let action = match verb.as_str() {
+        "monitor" => return monitor(argument).map(Entry::Monitor),
         "hold" => {
             let duration =
                 DurationInput::parse(argument.ok_or(
@@ -94,9 +97,59 @@ pub fn parse(input: &str) -> Result<Entry, String> {
     Ok(Entry::Action(action))
 }
 
+fn monitor(argument: Option<&str>) -> Result<u16, String> {
+    let invalid =
+        || "Use :monitor 25% with a value from 0 to 100%, optionally one decimal place.".to_owned();
+    let input = argument.ok_or_else(invalid)?;
+    let input = input.strip_suffix('%').unwrap_or(input);
+    let (whole, fraction) = input.split_once('.').unwrap_or((input, "0"));
+    if whole.is_empty()
+        || whole.len() > 3
+        || !whole.bytes().all(|b| b.is_ascii_digit())
+        || fraction.len() != 1
+        || !fraction.bytes().all(|b| b.is_ascii_digit())
+    {
+        return Err(invalid());
+    }
+    let tenths = whole.parse::<u16>().map_err(|_| invalid())? * 10
+        + fraction.parse::<u16>().map_err(|_| invalid())?;
+    if tenths > 1000 {
+        return Err(invalid());
+    }
+    Ok(tenths)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn monitor_command_preserves_bounded_percentages_without_authored_edits() {
+        for (input, expected) in [
+            ("monitor 0", 0),
+            ("monitor 100%", 1000),
+            ("monitor 12.5%", 125),
+            ("monitor 25", 250),
+        ] {
+            assert_eq!(parse(input), Ok(Entry::Monitor(expected)));
+        }
+        for input in [
+            "monitor",
+            "monitor NaN",
+            "monitor inf",
+            "monitor -1",
+            "monitor 101",
+            "monitor 100.1%",
+            "monitor 1.25",
+            "monitor 12.%",
+            "monitor 12.5% more",
+            "monitor 65535",
+            "monitor 1e2",
+            "monitor +1",
+        ] {
+            assert!(parse(input).is_err(), "{input}");
+        }
+    }
 
     #[test]
     fn pause_command_keeps_exact_units_and_zero_without_committing() {

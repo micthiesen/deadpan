@@ -10,8 +10,10 @@ retain their broader register/insert workflow. See [the profile contract](SINGLE
 It also splits root beats at the cursor, inserts silent freezes through
 [Insert Time](INSERT_TIME.md), wraps or updates Repeats, deletes beats and changes
 an existing root Hold's duration. [Pause qualification](qualification/insert-time-2026-09-24.md)
-records exact input, measured frame selection and native focus review. Playback,
-range operators, generated-provider rendering and export remain open.
+records exact input, measured frame selection and native focus review.
+[Sequence audition](PLAYBACK.md) adds Space Play/Pause with canonical pre-master
+audio and device-clock pictures. Full mastering, range operators,
+generated-provider rendering and export remain open.
 
 ## Project and media ownership
 
@@ -97,7 +99,9 @@ index, including source span endpoint policy, retiming, repeats and freeze Holds
 Blank/background plans display deterministic black. Empty sequence frame zero
 has an explicit empty state. Unsupported still/generated providers report an
 error rather than silently substituting footage. Project canvas aspect and the
-shared SDR renderer determine displayed geometry. No audio is played.
+shared SDR renderer determine displayed geometry. Sequence audition uses the
+same picture path and a separate canonical audio preparation worker. Stopped
+inspection and Original browsing remain silent.
 
 Presentation keeps the requested position, accepted decoded picture and displayed
 picture separate. Each identity retains the project session/revision and explicit

@@ -78,6 +78,7 @@ fn callback_has_no_heap_operations_on_content_silence_seek_or_fault() {
     for _ in 0..QUEUE_PACKETS {
         feed.submit(generation, &[[0.1, -0.1]; 256]).unwrap();
     }
+    feed.finish(generation).unwrap();
     feed.activate(generation).unwrap();
     render(2); // retain most of a partial packet
     feed.restart(9_000).unwrap();
@@ -94,6 +95,15 @@ fn callback_has_no_heap_operations_on_content_silence_seek_or_fault() {
     feed.activate(generation).unwrap();
     render(512); // starvation
     render(512); // starvation remains latched
+    let generation = feed.restart(12_000).unwrap();
+    let stop = feed.stop_token(generation).unwrap();
+    feed.submit(generation, &[[0.1, -0.1]; 256]).unwrap();
+    feed.finish(generation).unwrap();
+    feed.activate(generation).unwrap();
+    render(2); // hold a partial packet while an external caller revokes it
+    let (_, counts) = allocation_probe::measure(|| stop.stop());
+    assert_eq!(counts, [0; 4], "stop token heap operations");
+    render(512); // externally revoked, no producer mutation
     feed.pause().unwrap();
     render(512);
     render(511); // invalid shape, permanent fault

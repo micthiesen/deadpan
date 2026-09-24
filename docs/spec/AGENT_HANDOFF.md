@@ -8,6 +8,11 @@ Build a native macOS, Rust-first, Vim-style instrument for massaging one origina
 
 ## Read first
 
+The current [sequence audition contract](../PLAYBACK.md) describes the native
+Space Play/Pause increment, exact paused sample retention and its pre-master
+boundary. It does not qualify the full mastered preview/export pipeline or
+reduce the requirements below.
+
 Read Sections 1–8 for product/primitive/keyboard semantics, 12–14 for AI contracts and qualification, 17–22 for rendering/runtime/storage/export, and 23–30 for dependencies, tests, requirements, and build gates. Section 31 resolves command targeting and source-browser behavior. Source references are in Section 33.
 
 ## Decisions already made
