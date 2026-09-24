@@ -13,7 +13,7 @@ use deadpan_core::{
     AssetId, AudioSample, BeatNode, ColorPolicy, Command, CommandRequest, FrameDuration,
     FrameRange, FrameRate, HoldAudio, HoldRecipe, HoldVideo, NodeId, NodeKind, PitchPolicy,
     PresentationBasis, ProjectDocument, ProjectFrame, ProjectId, RevisionId, SourceAudio,
-    SourceSpan, SourceTimeBase, SourceTimestamp, Subtree,
+    SourceSpan, SourceTimeBase, SourceTimestamp, SplitIdentities, Subtree,
 };
 use deadpan_media::audio_session::{AudioSession, AudioSessionLimits, SourceAudioSample};
 use deadpan_media::source_index::SourceContentIdentity;
@@ -643,6 +643,11 @@ fn missing_and_corrupt_linked_originals_fail_before_pcm_is_exposed() -> Result {
             fs::remove_file(&local)?;
         }
         assert!(session.read(AudioSample(0), 256, &active()).is_err());
+        assert!(
+            session
+                .read_domain(AudioSample(0), AudioSample(0), 256, &active())
+                .is_err()
+        );
         let error = inspect(&path, "0", "256", false)?;
         assert_eq!(error["error"]["code"], "SourceAudioUnavailable");
         assert!(
@@ -690,5 +695,101 @@ fn unspecified_layout_and_legacy_unqualified_assets_are_not_guessed() -> Result 
             .contains("qualification")
     );
     assert_eq!(legacy_store.snapshot()?, legacy);
+    Ok(())
+}
+
+#[test]
+fn physical_domain_cli_reads_hidden_negative_source_and_retained_history() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let (path, mut store) = project(scratch.path())?;
+    let expected = register(
+        &mut store,
+        &fixture("cfr-bframes.mp4"),
+        1,
+        OriginalOwnership::Managed,
+        "registered",
+    )?;
+    commit(
+        &mut store,
+        "split",
+        Command::Split {
+            node: node("clip"),
+            at: FrameDuration::new(1)?,
+            identities: SplitIdentities {
+                nodes: vec![node("left"), node("right"), node("right-context")],
+            },
+        },
+    )?;
+    commit(
+        &mut store,
+        "only-right",
+        Command::Delete { node: node("left") },
+    )?;
+    let before = store.snapshot()?;
+    let context = deadpan_core::FrozenAudioContext::capture(&before)?;
+    let mut session = ProjectAudioSession::open(&path)?;
+    let block = session.read_domain(AudioSample(0), AudioSample(-1600), 256, &active())?;
+    assert_eq!(block.samples, expected);
+    assert_eq!(block.root_samples.start, AudioSample(-1600));
+    assert_eq!(block.visible_samples.start, AudioSample(0));
+    assert_eq!(block.instance.node, node("right-context"));
+
+    let invoke = |probe: &str, start: &str, end: &str| {
+        ProcessCommand::new(env!("CARGO_BIN_EXE_deadpan-cli"))
+            .args([
+                "inspect-audio-domain",
+                path.to_str().unwrap(),
+                "--at",
+                probe,
+                "--samples",
+                start,
+                end,
+            ])
+            .output()
+    };
+    let output = invoke("0", "-1600", "-1344")?;
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let actual: Value = serde_json::from_slice(&output.stdout)?;
+    assert_eq!(actual["protocol"], 1);
+    assert_eq!(
+        actual["audio"]["stage"],
+        "physical_domain_pcm_before_effects"
+    );
+    assert_eq!(actual["audio"]["start"], -1600);
+    let decoded: Vec<[f32; 2]> = serde_json::from_value(actual["audio"]["samples"].clone())?;
+    assert_eq!(decoded, expected);
+    for (probe, start, end) in [
+        ("-1", "-1600", "-1344"),
+        ("0", "-1601", "-1600"),
+        ("0", "0", "257"),
+        ("0", "0", "0"),
+        ("0", "9223372036854775807", "-9223372036854775808"),
+    ] {
+        let output = invoke(probe, start, end)?;
+        assert!(!output.status.success());
+        let error: Value = serde_json::from_slice(&output.stderr)?;
+        assert_eq!(error["error"]["code"], "AudioRangeOutOfRange");
+    }
+    assert_eq!(store.snapshot()?, before);
+    commit(
+        &mut store,
+        "delete-right",
+        Command::Delete {
+            node: node("right"),
+        },
+    )?;
+    let after = store.snapshot()?;
+    let mut historical = ProjectAudioSession::open_context(&path, &context)?;
+    assert_eq!(
+        historical
+            .read_domain(AudioSample(0), AudioSample(-1600), 256, &active())?
+            .samples,
+        expected
+    );
+    assert_eq!(store.snapshot()?, after);
     Ok(())
 }

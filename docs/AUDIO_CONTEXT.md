@@ -80,6 +80,11 @@ all media preparation off the UI and device callback.
 
 ## Remaining insertion work
 
+[Physical-domain reads](AUDIO_PHYSICAL_DOMAINS.md) now render full context outside
+visible Partitions on the original signed root grid. They seed the physical
+subtree rather than selecting an unrelated sibling through the global root.
+The corresponding point-grid transfer retains this domain and exact phase.
+
 This body can supply actual retained raw PCM through the existing source,
 RoomTone, Preserve, envelope and root-to-point conversion paths. It does not yet
 bind a live occurrence to that PCM. An inserted-time transaction still needs

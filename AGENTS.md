@@ -338,6 +338,19 @@ RoomTone and cache-hit paths must verify the retained contract. The project
 host compares the complete context to its exact immutable history before
 using qualified original bytes. See [audio contexts](docs/AUDIO_CONTEXT.md).
 
+`AudioDomain` borrows one plan and retains a physical Source, Hold/gap or opaque
+Preserve context on its captured absolute root grid. Meaningful support may lie
+outside visible Partitions or before root zero. Seed both processing and policy
+queries at that physical subtree; whole-root lookup can select an unrelated
+sibling at the same coordinate. Preserve ordinary Edit/placement constraints,
+ancestor edge ownership and compact occurrence/gap identity. Domain PCM readers
+must reject foreign handles and retain source admission, cache provenance and
+full DSP history. `DomainSignalTransfer` rebases only allocated integer labels,
+never frame origins or round-even boundaries, and shares one preparation budget
+and deadline across its halo. Retain exact old silence before interpolation and
+after transfer; current consuming-stage policies remain separately required.
+See [physical audio domains](docs/AUDIO_PHYSICAL_DOMAINS.md).
+
 Reference processing lookup stops at the first nonunity Preserve and retains
 meaningful context separately from visible allocation. Borrowed physical-domain
 identity includes its plan and clock; equal aliases across plans are not equal

@@ -13,6 +13,9 @@ use crate::{Picture, PictureSample, PlanError};
 #[path = "audio.rs"]
 mod audio;
 pub use audio::*;
+#[path = "audio_domain.rs"]
+mod audio_domain;
+pub use audio_domain::AudioDomain;
 #[path = "audio_boundary.rs"]
 mod audio_boundary;
 pub use audio_boundary::{AudioBoundaries, AudioBoundaryKind, AudioBoundaryOrigin};

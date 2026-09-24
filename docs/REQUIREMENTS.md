@@ -84,6 +84,16 @@ policy replacement and atomic Hold insertion remain open. Core 15/database 21
 are unchanged. [Qualification](qualification/audio-context-2026-09-23.md) records
 the decoder/DSP parity, strict ingress and host-admission evidence.
 
+[Physical audio domains](AUDIO_PHYSICAL_DOMAINS.md) now render retained Source,
+RoomTone and Preserve context outside visible Partitions on the original signed
+root grid. Both processing and policy queries stay inside the captured physical
+subtree. Point-grid transfer preserves fractional phase and old silence through
+one shared preparation allowance. Headless inspection reads actual qualified
+historical media. [Qualification](qualification/audio-physical-domain-2026-09-23.md)
+records hidden-sibling, negative-coordinate, decoder/DSP and admission tests.
+Authored bindings, prior-binding dependency closure, lifecycle/policy replacement
+and atomic Hold insertion remain open; no requirement or gate changes status.
+
 Current measured evidence: [editing foundation verification](FOUNDATION_VERIFICATION.md), [picture plan and migration verification](PLAN_MIGRATION_VERIFICATION.md), [exact boundary verification](ANCHOR_VERIFICATION.md), [persistent mark verification](MARK_VERIFICATION.md), [sparse override verification](OVERRIDE_VERIFICATION.md), [nested occurrence verification](OCCURRENCE_VERIFICATION.md), [native media qualification](qualification/media-2026-09-20.md), [compatible FFmpeg/Rust qualification](qualification/media-compatible-2026-09-20.md), [audio candidate qualification](qualification/audio-2026-09-20.md), and [canonical audio qualification](qualification/audio-canonical-2026-09-20.md).
 
 The [native host conversion qualification](qualification/media-host-conversion-2026-09-21.md)

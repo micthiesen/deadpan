@@ -14,17 +14,17 @@ use deadpan_core::{
 use deadpan_dsp::{CanonicalRecipe, CanonicalStretch, StereoPcm, StretchRate};
 use deadpan_media::audio_index::AudioChannelLayout;
 use deadpan_plan::{
-    AudioContent, AudioProcessingSpan, AudioQueryLimits, AudioSignal, AudioSignalContent,
-    AudioSignalSpan, AudioStage, AudioStageDescriptor, PlanError, RenderPlan, SignalSample,
-    SilenceReason,
+    AudioContent, AudioDomain, AudioProcessingQuery, AudioProcessingSpan, AudioQuery,
+    AudioQueryLimits, AudioSignal, AudioSignalContent, AudioSignalSpan, AudioStage,
+    AudioStageDescriptor, PlanError, RenderPlan, SignalSample, SilenceReason,
 };
 use serde::Serialize;
 
 use crate::sequence::{original_sample, resolve_source, source_samples};
 use crate::{
-    AudioSourceProvider, MAX_OUTPUT_FRAMES, PcmWindow, PreparationError, ResampleRecipe, Resampler,
-    RoomTone, RoomToneRecipe, RootSignalBlock, RootSignalTransfer, SignalTransferError,
-    StereoMatrix, check_cancel,
+    AudioSourceProvider, DomainSignalTransfer, DomainTransferDescriptor, MAX_OUTPUT_FRAMES,
+    PcmWindow, PreparationError, ResampleRecipe, Resampler, RoomTone, RoomToneRecipe,
+    RootSignalBlock, RootSignalTransfer, SignalTransferError, StereoMatrix, check_cancel,
 };
 
 /// PCM residency limits, not a claim about total process memory or latency.
@@ -58,6 +58,8 @@ impl Default for StageLimits {
 pub enum StageAudioError {
     #[error("time-mapped inspection requires 1..256 samples inside the sequence")]
     Range,
+    #[error("audio domain belongs to another immutable plan")]
+    ForeignDomain,
     #[error("invalid stage preparation limits")]
     InvalidLimits,
     #[error("audio stage preparation exceeds {0}")]
@@ -104,6 +106,25 @@ pub struct TimeMappedBlock {
     pub suppressed: Vec<Range<AudioSample>>,
 }
 
+/// Raw PCM from one physical processing domain, before creative fades. Signed
+/// indices belong to its captured absolute project grid, including meaningful
+/// context outside the domain's visible allocation or the project root itself.
+/// Explicit suppression includes both silent Holds and envelope exhaustion.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct DomainAudioBlock {
+    pub schema_version: u32,
+    pub stage: &'static str,
+    pub project_id: ProjectId,
+    pub revision_id: RevisionId,
+    pub instance: InstancePath,
+    pub gap_after: Option<IterationId>,
+    pub root_samples: Range<AudioSample>,
+    pub visible_samples: Range<AudioSample>,
+    pub start: AudioSample,
+    pub samples: Vec<[f32; 2]>,
+    pub suppressed: Vec<Range<AudioSample>>,
+}
+
 /// This revision's raw root signal sampled on an explicitly mapped preparation
 /// grid. Root audibility is applied before interpolation and retained afterwards;
 /// creative fades and the consuming stage's own policy remain separate.
@@ -114,6 +135,23 @@ pub struct TransferredRootBlock {
     pub project_id: ProjectId,
     pub revision_id: RevisionId,
     pub transfer: RootSignalTransfer,
+    pub start: SignalSample,
+    pub samples: Vec<[f32; 2]>,
+    pub suppressed: Vec<Range<SignalSample>>,
+}
+
+/// A single admitted physical domain transferred onto a preparation grid.
+/// Metadata retains the signed captured root clock independently of the output
+/// SignalSample grid. Current consuming-stage policies still apply separately.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct TransferredDomainBlock {
+    pub schema_version: u32,
+    pub stage: &'static str,
+    pub project_id: ProjectId,
+    pub revision_id: RevisionId,
+    pub instance: InstancePath,
+    pub gap_after: Option<IterationId>,
+    pub transfer: DomainTransferDescriptor,
     pub start: SignalSample,
     pub samples: Vec<[f32; 2]>,
     pub suppressed: Vec<Range<SignalSample>>,
@@ -139,6 +177,11 @@ struct ReadBlock {
     samples: Vec<[f32; 2]>,
     suppressed: Vec<Range<AudioSample>>,
     exhausted: Vec<Range<AudioSample>>,
+}
+
+struct RootReadQueries<'plan> {
+    flattened: AudioQuery,
+    processing: AudioProcessingQuery<'plan>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -314,6 +357,155 @@ impl StageAudio {
         })
     }
 
+    /// Render this plan's complete physical processing context, independently
+    /// of visible Partition allocation. Never resolve these signed positions
+    /// through the project root, where another sibling may own the same sample.
+    pub fn read_domain(
+        &mut self,
+        provider: &mut impl AudioSourceProvider,
+        domain: &AudioDomain<'_>,
+        start: AudioSample,
+        frames: u32,
+        timeout: Duration,
+        cancelled: &AtomicBool,
+    ) -> Result<DomainAudioBlock, StageAudioError> {
+        check_cancel(cancelled)?;
+        validate_timeout(timeout)?;
+        let work = RefCell::new(ReadWork::default());
+        let mut block = self.read_domain_controlled(
+            provider,
+            domain,
+            start,
+            frames,
+            WorkControl {
+                cancelled,
+                deadline: Instant::now() + timeout,
+                work: &work,
+            },
+        )?;
+        block.suppressed.append(&mut block.exhausted);
+        Ok(DomainAudioBlock {
+            schema_version: 1,
+            stage: "physical_domain_pcm_before_effects",
+            project_id: self.plan.metadata().project_id.clone(),
+            revision_id: self.plan.metadata().revision_id.clone(),
+            instance: domain.instance().clone(),
+            gap_after: domain.gap_after().cloned(),
+            root_samples: domain.root_samples(),
+            visible_samples: domain.visible_samples(),
+            start: block.start,
+            samples: block.samples,
+            suppressed: merged_suppression(block.suppressed),
+        })
+    }
+
+    fn read_domain_controlled(
+        &mut self,
+        provider: &mut impl AudioSourceProvider,
+        domain: &AudioDomain<'_>,
+        start: AudioSample,
+        frames: u32,
+        control: WorkControl<'_>,
+    ) -> Result<ReadBlock, StageAudioError> {
+        control.check()?;
+        if !domain.belongs_to(&self.plan) {
+            return Err(StageAudioError::ForeignDomain);
+        }
+        let end = start
+            .0
+            .checked_add(i64::from(frames))
+            .map(AudioSample)
+            .ok_or(StageAudioError::Range)?;
+        if frames == 0 || frames > MAX_OUTPUT_FRAMES {
+            return Err(StageAudioError::Range);
+        }
+        let queries = RootReadQueries {
+            flattened: domain.audio(start..end, query_limits())?,
+            processing: domain.processing(start..end, query_limits())?,
+        };
+        self.read_queries(provider, start, frames, control, false, queries)
+    }
+
+    /// Transfer hidden or visible domain PCM with one preparation allowance and
+    /// deadline across all interpolation halo reads. The transfer retains the
+    /// borrowed domain; foreign plans cannot supply a same-named replacement.
+    pub fn read_domain_transferred(
+        &mut self,
+        provider: &mut impl AudioSourceProvider,
+        transfer: &DomainSignalTransfer<'_>,
+        start: SignalSample,
+        frames: u32,
+        timeout: Duration,
+        cancelled: &AtomicBool,
+    ) -> Result<TransferredDomainBlock, StageAudioError> {
+        check_cancel(cancelled)?;
+        if !transfer.domain().belongs_to(&self.plan) {
+            return Err(StageAudioError::ForeignDomain);
+        }
+        validate_timeout(timeout)?;
+        let work = RefCell::new(ReadWork::default());
+        let control = WorkControl {
+            cancelled,
+            deadline: Instant::now() + timeout,
+            work: &work,
+        };
+        let anchor = transfer.descriptor().root_support.start.0;
+        let block = transfer.carrier().render::<StageAudioError>(
+            start,
+            frames,
+            cancelled,
+            |at, count| {
+                // `at` indexes a zero-based carrier of already allocated root
+                // samples. Restore the integer label, not a rounded frame origin.
+                let absolute = AudioSample(at.0.checked_add(anchor).ok_or(TimeError::Overflow)?);
+                let mut block = self.read_domain_controlled(
+                    provider,
+                    transfer.domain(),
+                    absolute,
+                    count,
+                    control,
+                )?;
+                block.suppressed.append(&mut block.exhausted);
+                let suppressed = block
+                    .suppressed
+                    .into_iter()
+                    .map(|range| {
+                        Ok::<_, TimeError>(
+                            AudioSample(
+                                range
+                                    .start
+                                    .0
+                                    .checked_sub(anchor)
+                                    .ok_or(TimeError::Overflow)?,
+                            )
+                                ..AudioSample(
+                                    range.end.0.checked_sub(anchor).ok_or(TimeError::Overflow)?,
+                                ),
+                        )
+                    })
+                    .collect::<Result<_, _>>()?;
+                Ok(RootSignalBlock {
+                    start: at,
+                    samples: block.samples,
+                    suppressed,
+                })
+            },
+        )?;
+        control.check()?;
+        Ok(TransferredDomainBlock {
+            schema_version: 1,
+            stage: "physical_domain_on_point_grid_before_effects",
+            project_id: self.plan.metadata().project_id.clone(),
+            revision_id: self.plan.metadata().revision_id.clone(),
+            instance: transfer.domain().instance().clone(),
+            gap_after: transfer.domain().gap_after().cloned(),
+            transfer: transfer.descriptor().clone(),
+            start: block.start,
+            samples: block.samples,
+            suppressed: block.suppressed,
+        })
+    }
+
     /// Convert the complete root signal into a point-grid input, using one work
     /// allowance and deadline across every halo read. `transfer` describes sample
     /// coordinates only; this renderer owns the immutable media/revision context.
@@ -395,7 +587,6 @@ impl StageAudio {
         edge_fades: bool,
     ) -> Result<ReadBlock, StageAudioError> {
         control.check()?;
-        let cancelled = control.cancelled;
         let end = start
             .0
             .checked_add(i64::from(frames))
@@ -410,18 +601,35 @@ impl StageAudio {
         // A local Arc keeps borrowed stage handles tied to this exact plan
         // without borrowing the mutable cache for the duration of preparation.
         let plan = Arc::clone(&self.plan);
-        let flattened = plan.audio(start..AudioSample(end), query_limits())?;
-        for span in &flattened.spans {
+        let queries = RootReadQueries {
+            flattened: plan.audio(start..AudioSample(end), query_limits())?,
+            processing: plan.audio_processing(start..AudioSample(end), query_limits())?,
+        };
+        self.read_queries(provider, start, frames, control, edge_fades, queries)
+    }
+
+    fn read_queries(
+        &mut self,
+        provider: &mut impl AudioSourceProvider,
+        start: AudioSample,
+        frames: u32,
+        control: WorkControl<'_>,
+        edge_fades: bool,
+        queries: RootReadQueries<'_>,
+    ) -> Result<ReadBlock, StageAudioError> {
+        control.check()?;
+        let cancelled = control.cancelled;
+        let plan = Arc::clone(&self.plan);
+        for span in &queries.flattened.spans {
             preflight(&span.content, &plan)?;
         }
-        let query = plan.audio_processing(start..AudioSample(end), query_limits())?;
-        for span in &query.spans {
+        for span in &queries.processing.spans {
             if let AudioSignalContent::Leaf(content) = &span.content {
                 preflight(content, &plan)?;
             }
         }
         let mut samples = Vec::with_capacity(frames as usize);
-        for span in query.spans {
+        for span in queries.processing.spans {
             control.check()?;
             let block = match &span.content {
                 AudioSignalContent::Leaf(AudioContent::Source { source, .. }) => {
@@ -483,7 +691,7 @@ impl StageAudio {
         }
         let mut suppressed = Vec::new();
         let mut exhausted = Vec::new();
-        for span in flattened.spans {
+        for span in queries.flattened.spans {
             control.check()?;
             let left = usize::try_from(span.samples.start.0 - start.0)
                 .map_err(|_| StageAudioError::Range)?;
@@ -855,6 +1063,19 @@ impl StageAudio {
     }
 }
 
+fn merged_suppression(mut ranges: Vec<Range<AudioSample>>) -> Vec<Range<AudioSample>> {
+    ranges.sort_unstable_by_key(|range| range.start);
+    let mut merged: Vec<Range<AudioSample>> = Vec::with_capacity(ranges.len());
+    for range in ranges {
+        if let Some(last) = merged.last_mut().filter(|last| range.start <= last.end) {
+            last.end = last.end.max(range.end);
+        } else {
+            merged.push(range);
+        }
+    }
+    merged
+}
+
 fn validate_timeout(timeout: Duration) -> Result<(), StageAudioError> {
     if timeout.is_zero() || timeout > Duration::from_secs(60) {
         return Err(PreparationError::InvalidRecipe("audio read time budget").into());
@@ -1055,7 +1276,7 @@ fn source_recipe(
         return Ok(None);
     }
     let origin = source_samples(origin, rate)?;
-    Ok(Some(ResampleRecipe::new(
+    Ok(Some(ResampleRecipe::on_signed_grid(
         i64::try_from(left).map_err(|_| TimeError::Overflow)?
             ..i64::try_from(right).map_err(|_| TimeError::Overflow)?,
         origin,
@@ -1126,7 +1347,7 @@ fn stage_recipe(
     let conversion = samples_per_frame(rate)?;
     // Prepared-stage context retains the entire intrinsic output. An ancestor
     // crop changes demand, never the established DSP history or kernel context.
-    Ok(ResampleRecipe::new(
+    Ok(ResampleRecipe::on_signed_grid(
         0..i64::try_from(length).map_err(|_| TimeError::Overflow)?,
         local_origin.checked_mul(conversion)?,
         output.start,

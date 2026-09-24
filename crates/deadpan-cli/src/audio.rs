@@ -7,8 +7,9 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
 use deadpan_audio::{
-    AudioSourceProvider, EdgeFadedBlock, PreparationError, PreparedSource, SequenceAudio,
-    SequenceAudioError, SourceStageBlock, StageAudio, StageAudioError, TimeMappedBlock,
+    AudioSourceProvider, DomainAudioBlock, EdgeFadedBlock, PreparationError, PreparedSource,
+    SequenceAudio, SequenceAudioError, SourceStageBlock, StageAudio, StageAudioError,
+    TimeMappedBlock,
 };
 use deadpan_core::{
     AssetId, AssetRecord, AudioSample, FrozenAudioContext, ProjectDocument, ProjectId, RevisionId,
@@ -114,6 +115,31 @@ impl ProjectAudioSession {
     ) -> Result<TimeMappedBlock, ProjectAudioError> {
         Ok(self.stages.read(
             &mut self.sources,
+            start,
+            frames,
+            Duration::from_secs(10),
+            cancelled,
+        )?)
+    }
+
+    /// Inspect one physical audio context on its captured signed root grid.
+    /// The probe selects a currently allocated sample; the requested interval
+    /// can include hidden context outside that allocation or before root zero.
+    pub fn read_domain(
+        &mut self,
+        probe: AudioSample,
+        start: AudioSample,
+        frames: u32,
+        cancelled: &AtomicBool,
+    ) -> Result<DomainAudioBlock, ProjectAudioError> {
+        check_cancel(cancelled).map_err(StageAudioError::from)?;
+        let domain = self
+            .sequence
+            .plan()
+            .audio_domain_at(probe, Default::default())?;
+        Ok(self.stages.read_domain(
+            &mut self.sources,
+            &domain,
             start,
             frames,
             Duration::from_secs(10),

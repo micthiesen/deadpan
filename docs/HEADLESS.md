@@ -252,6 +252,22 @@ shorten for tiny fragments; read chunks cannot create new fades. See
 [audio edges](AUDIO_EDGES.md). Gain, effects, mastering and final mix integration
 remain open.
 
+## Physical audio context inspection
+
+```sh
+cargo run --locked -p deadpan-cli -- inspect-audio-domain /tmp/example.deadpan --at 0 --samples -1600 -1344
+```
+
+`--at` selects an allocated root sample and its physical Source, Hold/gap or
+Preserve domain. The signed sample interval can read that domain's hidden context
+outside its visible Partition, including before root zero. The request must fit
+its meaningful support and contain 1..256 samples. Returned protocol-1 `audio`
+identifies `physical_domain_pcm_before_effects`, the captured occurrence and both
+meaningful and visible sample ranges. It uses qualified historical media and
+does not mutate the project. See [physical domains](AUDIO_PHYSICAL_DOMAINS.md)
+for exact phase, policy and transfer semantics. This is context inspection,
+not a final mix, export or an authored resume binding.
+
 ## Picture and audio plan inspection
 
 ```sh

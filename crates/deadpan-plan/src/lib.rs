@@ -21,7 +21,7 @@ pub use audio_sampling::{AudioBoundaryRule, AudioSampleGrid, AudioSampleMap};
 
 pub use picture::{Picture, PictureSample};
 pub use plan::{
-    AudioBoundaries, AudioBoundaryKind, AudioBoundaryOrigin, AudioContent, AudioQuery,
+    AudioBoundaries, AudioBoundaryKind, AudioBoundaryOrigin, AudioContent, AudioDomain, AudioQuery,
     AudioQueryLimits, AudioRetimeStage, AudioSpan, AudioTransform, LookupStats, NodeInspection,
     NodeType, PlanInspection, PlanMetadata, RenderPlan, SilenceReason, SourceSamplingSupport,
     StorageStats,

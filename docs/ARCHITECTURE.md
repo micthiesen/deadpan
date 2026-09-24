@@ -42,6 +42,14 @@ complete context against `ProjectStore::snapshot_at` before reading historical
 receipts and verified originals. Context schema 1 is standalone; core 15/database
 21 remain unchanged. Authored live bindings and atomic Hold insertion remain open.
 
+[Physical audio domains](AUDIO_PHYSICAL_DOMAINS.md) borrow the exact plan and
+seed processing and flattened-policy queries at one retained subtree or gap.
+Their signed root grids can extend outside visible allocation. `StageAudio`
+reads them through the shared preparation/cache path; a domain transfer exposes
+that raw signal on a point grid without resetting absolute phase. Headless
+domain inspection uses the same historical media host. It does not yet author
+the live bindings or multi-context graph needed for inserted-time edits.
+
 ## Full component map
 
 Section 24 defines boundaries, not an obligation to create empty crates. Introduce each component when its implementation needs isolation; related modules may remain combined initially.

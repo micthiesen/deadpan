@@ -4,6 +4,7 @@
 //! Informational peak/loudness meters leave PCM untouched. Voice effects,
 //! mastering gain and the device engine remain separate work.
 
+mod domain_transfer;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 mod edges;
 mod loudness;
@@ -20,6 +21,7 @@ mod signal_transfer;
 mod stages;
 mod true_peak;
 
+pub use domain_transfer::{DomainSignalTransfer, DomainTransferDescriptor};
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub use edges::EDGE_FADE_ID;
 pub use loudness::{
@@ -38,7 +40,8 @@ pub use signal_transfer::{
 };
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub use stages::{
-    EdgeFadedBlock, StageAudio, StageAudioError, StageLimits, TimeMappedBlock, TransferredRootBlock,
+    DomainAudioBlock, EdgeFadedBlock, StageAudio, StageAudioError, StageLimits, TimeMappedBlock,
+    TransferredDomainBlock, TransferredRootBlock,
 };
 pub use true_peak::{
     MAX_TRUE_PEAK_FRAMES, TRUE_PEAK_ID, TruePeakError, TruePeakMeter, TruePeakReport,

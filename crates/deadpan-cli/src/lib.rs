@@ -38,13 +38,15 @@ const HELP: &str = "Deadpan headless commands:
   inspect-plan <project.deadpan> [--frame <N>]
   inspect-plan <project.deadpan> --audio-samples <START> <END>
   inspect-audio <project.deadpan> --samples <START> <END> [--time-mapped | --edge-faded]
+  inspect-audio-domain <project.deadpan> --at <PROBE> --samples <START> <END>
   resolve-selection <project.deadpan> --json <selection.json>
   command <project.deadpan> --json <request.json> [--dry-run]
 
 Creation defaults to a provisional 1920x1080, 30 fps presentation basis.
 Document dumps are inspection output; SQLite remains authoritative.
 Original retention preserves complete bytes; stream qualification and authored import remain separate.
-Audio inspection returns at most 256 stereo source samples before effects and mastering.";
+Audio inspection returns at most 256 stereo source samples before effects and mastering.
+Domain inspection reads raw physical context; signed START/END use its captured root grid.";
 
 #[derive(Debug, thiserror::Error)]
 pub enum CliError {
@@ -106,9 +108,20 @@ impl CliError {
                 audio::ProjectAudioError::Sequence(deadpan_audio::SequenceAudioError::Range) => {
                     "AudioRangeOutOfRange"
                 }
-                audio::ProjectAudioError::Stage(deadpan_audio::StageAudioError::Range) => {
+                audio::ProjectAudioError::Stage(deadpan_audio::StageAudioError::Range)
+                | audio::ProjectAudioError::Stage(deadpan_audio::StageAudioError::Plan(
+                    deadpan_plan::PlanError::AudioRangeOutOfRange,
+                ))
+                | audio::ProjectAudioError::Plan(deadpan_plan::PlanError::AudioRangeOutOfRange) => {
                     "AudioRangeOutOfRange"
                 }
+                audio::ProjectAudioError::Stage(deadpan_audio::StageAudioError::ForeignDomain) => {
+                    "AudioDomainUnavailable"
+                }
+                audio::ProjectAudioError::Plan(deadpan_plan::PlanError::AudioQueryLimit(_))
+                | audio::ProjectAudioError::Stage(deadpan_audio::StageAudioError::Plan(
+                    deadpan_plan::PlanError::AudioQueryLimit(_),
+                )) => "AudioQueryLimit",
                 audio::ProjectAudioError::Stage(
                     deadpan_audio::StageAudioError::Limit(_)
                     | deadpan_audio::StageAudioError::InvalidLimits,
@@ -232,6 +245,41 @@ fn run(arguments: &[String]) -> Result<(), CliError> {
             Ok(())
         }
         ["doctor"] => write_json(&doctor::report()?),
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        [
+            "inspect-audio-domain",
+            path,
+            "--at",
+            probe,
+            "--samples",
+            start,
+            end,
+        ] => {
+            let probe = probe
+                .parse::<i64>()
+                .map_err(|_| CliError::Usage("invalid audio domain probe".into()))?;
+            let start = start
+                .parse::<i64>()
+                .map_err(|_| CliError::Usage("invalid audio sample start".into()))?;
+            let end = end
+                .parse::<i64>()
+                .map_err(|_| CliError::Usage("invalid audio sample end".into()))?;
+            let frames = end
+                .checked_sub(start)
+                .and_then(|value| u32::try_from(value).ok())
+                .filter(|frames| *frames > 0 && *frames <= deadpan_audio::MAX_OUTPUT_FRAMES)
+                .ok_or(audio::ProjectAudioError::Stage(
+                    deadpan_audio::StageAudioError::Range,
+                ))?;
+            let mut session = audio::ProjectAudioSession::open(Path::new(path))?;
+            let block = session.read_domain(
+                deadpan_core::AudioSample(probe),
+                deadpan_core::AudioSample(start),
+                frames,
+                &std::sync::atomic::AtomicBool::new(false),
+            )?;
+            write_json(&serde_json::json!({ "protocol": 1, "audio": block }))
+        }
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         ["inspect-audio", path, "--samples", start, end]
         | [

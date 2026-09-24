@@ -30,12 +30,7 @@ pub(crate) fn apply_retained_envelope(
     if count != samples.len()
         || span.samples.end > span.allocated_samples.end
         || span.samples.start < span.allocated_samples.start
-        || span
-            .allocated_samples
-            .end
-            .0
-            .checked_sub(span.allocated_samples.start.0)
-            .is_none_or(|length| length <= 0)
+        || span.allocated_samples.start >= span.allocated_samples.end
         || span.boundaries.start.is_empty()
         || span.boundaries.end.is_empty()
     {
@@ -339,6 +334,25 @@ mod tests {
     }
 
     #[test]
+    fn bounded_pcm_keeps_wide_allocation_and_envelope_progress() {
+        let allocation = AudioSample(i64::MIN)..AudioSample(i64::MAX);
+        let envelope = AudioEnvelope::from_samples(allocation.clone()).unwrap();
+        for at in [i64::MIN, 0, i64::MAX - 1] {
+            let mut voice = span(at..at + 1, envelope);
+            voice.allocated_samples = allocation.clone();
+            voice.envelope_samples = allocation.clone();
+            voice.envelope_extent = ExactRatio::integer(i64::MIN)..ExactRatio::integer(i64::MAX);
+            for fades in [false, true] {
+                let mut pcm = [[1.0, 0.25]];
+                apply_retained_envelope(&voice, &mut pcm, fades).unwrap();
+                let gain = if fades && at != 0 { 1.0 / 192.0 } else { 1.0 };
+                assert_eq!(pcm, [[gain, gain * 0.25]]);
+                assert!(exhausted_ranges(&voice).unwrap().is_empty());
+            }
+        }
+    }
+
+    #[test]
     fn invalid_queries_owners_and_progress_fail_before_modifying_pcm() {
         let original = span(0..2, AudioEnvelope::new(2, 0, AudioSample(0)).unwrap());
         let mut invalid = Vec::new();
@@ -355,7 +369,7 @@ mod tests {
         voice.allocated_samples = AudioSample(1)..AudioSample(1);
         invalid.push(voice);
         let mut voice = original.clone();
-        voice.allocated_samples = AudioSample(i64::MIN)..AudioSample(i64::MAX);
+        voice.allocated_samples = AudioSample(i64::MAX)..AudioSample(i64::MIN);
         invalid.push(voice);
         let mut voice = original.clone();
         voice.boundaries.start.clear();

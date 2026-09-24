@@ -103,6 +103,50 @@ impl PartialEq for AudioStage<'_> {
 impl Eq for AudioStage<'_> {}
 
 impl<'plan> AudioStage<'plan> {
+    pub(super) fn for_node(
+        plan: &'plan RenderPlan,
+        node: usize,
+        repeats: &[RepeatInstance],
+    ) -> Result<Self, PlanError> {
+        let compiled = &plan.nodes[node];
+        let CompiledKind::Retime {
+            child,
+            start,
+            scale,
+            pitch,
+            ..
+        } = &compiled.kind
+        else {
+            return Err(PlanError::InvalidPlan("audio stage is not a retime"));
+        };
+        if *pitch != PitchPolicy::Preserve || *scale == ExactRatio::ONE {
+            return Err(PlanError::InvalidPlan(
+                "audio stage is not nonunity Preserve",
+            ));
+        }
+        Ok(Self {
+            plan,
+            child: *child,
+            node,
+            descriptor: AudioStageDescriptor {
+                project_id: plan.metadata.project_id.clone(),
+                revision_id: plan.metadata.revision_id.clone(),
+                instance: InstancePath {
+                    node: compiled.inspection.id.clone(),
+                    repeats: repeats.to_vec(),
+                },
+                child: plan.nodes[*child].inspection.id.clone(),
+                selection: *start
+                    ..start.checked_add(scale.checked_mul(ExactRatio::integer(
+                        compiled.inspection.duration.frames(),
+                    ))?)?,
+                duration: compiled.inspection.duration,
+                rate: *scale,
+                pitch: *pitch,
+            },
+        })
+    }
+
     pub fn descriptor(&self) -> &AudioStageDescriptor {
         &self.descriptor
     }
@@ -505,29 +549,10 @@ impl<'plan> AudioSignal<'plan> {
                         && *pitch == PitchPolicy::Preserve
                         && *scale != ExactRatio::ONE
                     {
-                        let descriptor = AudioStageDescriptor {
-                            project_id: self.plan.metadata.project_id.clone(),
-                            revision_id: self.plan.metadata.revision_id.clone(),
-                            instance: InstancePath {
-                                node: node.inspection.id.clone(),
-                                repeats: repeats.clone(),
-                            },
-                            child: self.plan.nodes[*child].inspection.id.clone(),
-                            selection: *start
-                                ..start.checked_add(scale.checked_mul(ExactRatio::integer(
-                                    node.inspection.duration.frames(),
-                                ))?)?,
-                            duration: node.inspection.duration,
-                            rate: *scale,
-                            pitch: *pitch,
-                        };
                         break (
-                            AudioSignalContent::Stage(AudioStage {
-                                plan: self.plan,
-                                child: *child,
-                                node: current,
-                                descriptor,
-                            }),
+                            AudioSignalContent::Stage(AudioStage::for_node(
+                                self.plan, current, &repeats,
+                            )?),
                             None,
                         );
                     }

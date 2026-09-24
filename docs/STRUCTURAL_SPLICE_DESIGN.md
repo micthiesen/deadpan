@@ -154,6 +154,21 @@ revision, then qualifies source receipts and original bytes on demand. This
 provides the old signal body. It does not yet persist which live occurrence reads
 that body, its composed phase anchors or its transformation through later edits.
 
+The [physical-domain reader](AUDIO_PHYSICAL_DOMAINS.md) now supplies hidden
+processing context independently of root allocation. A moved Partition can
+project its meaningful context into a sibling or before root zero. Whole-root
+PCM and policy queries would then select the wrong contribution. Borrowed
+domain handles seed both walkers at the physical subtree, preserving the original
+signed grid and meaningful constraints. Domain-to-point transfer rebases only
+integer sample labels and shares the preparation controller across its halo.
+
+Persisted bindings still need a bounded dependency graph when a newly captured
+context contains earlier bindings, and compact birth rules for new Repeat plays
+and gaps. Multi-context preparation must share residency/work limits and qualify
+cache dependencies by context as well as asset alias. Retained audibility must
+remain queryable on both input and output grids of a later Preserve stage;
+scaling rounded input silence cannot recover intervals that owned no input point.
+
 ## Structural and mark requirements
 
 Resolve boundary coordinates through `RepeatLayout`, using the right-hand object

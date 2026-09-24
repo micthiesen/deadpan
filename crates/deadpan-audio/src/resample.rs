@@ -27,10 +27,35 @@ impl ResampleRecipe {
         source_step: ExactRatio,
         output_range: Range<AudioSample>,
     ) -> Result<Self, PreparationError> {
+        if output_range.start.0 < 0 {
+            return Err(PreparationError::InvalidRecipe(
+                "empty or negative output range",
+            ));
+        }
+        Self::on_signed_grid(
+            selection,
+            source_origin,
+            output_origin,
+            source_step,
+            output_range,
+        )
+    }
+
+    /// Internal physical-domain reads retain a captured absolute root grid,
+    /// whose hidden context can precede sample zero. This changes no source
+    /// support, rate or phase. Public root and point-grid entrypoints retain
+    /// their own nonnegative output admission.
+    pub(crate) fn on_signed_grid(
+        selection: Range<i64>,
+        source_origin: ExactRatio,
+        output_origin: AudioSample,
+        source_step: ExactRatio,
+        output_range: Range<AudioSample>,
+    ) -> Result<Self, PreparationError> {
         if selection.start >= selection.end {
             return Err(PreparationError::InvalidRecipe("empty source selection"));
         }
-        if output_range.start.0 < 0 || output_range.start >= output_range.end {
+        if output_range.start >= output_range.end {
             return Err(PreparationError::InvalidRecipe(
                 "empty or negative output range",
             ));
