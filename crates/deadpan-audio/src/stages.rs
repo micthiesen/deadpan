@@ -14,10 +14,10 @@ use deadpan_core::{
 use deadpan_dsp::{CanonicalRecipe, CanonicalStretch, StereoPcm, StretchRate};
 use deadpan_media::audio_index::AudioChannelLayout;
 use deadpan_plan::{
-    AudioContent, AudioDefinition, AudioDefinitionSelector, AudioDomain, AudioProcessingQuery,
-    AudioProcessingSpan, AudioQuery, AudioQueryLimits, AudioSignal, AudioSignalContent,
-    AudioSignalSpan, AudioStage, AudioStageDescriptor, PlanError, RenderPlan, SignalSample,
-    SilenceReason,
+    AudioContent, AudioDefinition, AudioDefinitionSelector, AudioDomain, AudioPointDomain,
+    AudioProcessingQuery, AudioProcessingSpan, AudioQuery, AudioQueryLimits, AudioSignal,
+    AudioSignalContent, AudioSignalSpan, AudioStage, AudioStageDescriptor, PlanError,
+    ReferenceSample, RenderPlan, SignalSample, SilenceReason,
 };
 use serde::Serialize;
 
@@ -148,6 +148,24 @@ pub struct DefinitionAudioBlock {
     pub suppressed: Vec<Range<SignalSample>>,
 }
 
+/// Current owned PCM evaluated on the selected PointCeil reference grid.
+/// Signed labels retain their original meaning rather than becoming root samples.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct PointDomainAudioBlock {
+    pub schema_version: u32,
+    pub stage: &'static str,
+    pub project_id: ProjectId,
+    pub revision_id: RevisionId,
+    pub definition: AudioDefinitionSelector,
+    pub root: deadpan_core::NodeId,
+    pub placement: deadpan_plan::AudioRootPlacement,
+    pub reference_grid: deadpan_plan::AudioSampleGrid<ReferenceSample>,
+    pub reference_samples: Range<ReferenceSample>,
+    pub start: ReferenceSample,
+    pub samples: Vec<[f32; 2]>,
+    pub suppressed: Vec<Range<ReferenceSample>>,
+}
+
 /// This revision's raw root signal sampled on an explicitly mapped preparation
 /// grid. Root audibility is applied before interpolation and retained afterwards;
 /// creative fades and the consuming stage's own policy remain separate.
@@ -202,6 +220,9 @@ pub struct EdgeFadedBlock {
 struct ReadBlock {
     start: AudioSample,
     samples: Vec<[f32; 2]>,
+    // Complete for this block, even if this read already observed the asset or
+    // obtained its samples from an admitted preparation cache entry.
+    dependencies: Dependencies,
     suppressed: Vec<Range<AudioSample>>,
     exhausted: Vec<Range<AudioSample>>,
 }
@@ -209,6 +230,12 @@ struct ReadBlock {
 struct RootReadQueries<'plan> {
     flattened: AudioQuery,
     processing: AudioProcessingQuery<'plan>,
+}
+
+#[derive(Clone, Copy)]
+struct RootReadMode {
+    edge_fades: bool,
+    depth: usize,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -436,6 +463,100 @@ impl StageAudio {
         })
     }
 
+    /// Evaluate a live owned physical recipe on its explicitly selected point
+    /// clock. Point labels and allocation remain distinct from root audio.
+    pub fn read_point_domain(
+        &mut self,
+        provider: &mut impl AudioSourceProvider,
+        domain: &AudioPointDomain<'_>,
+        start: ReferenceSample,
+        frames: u32,
+        timeout: Duration,
+        cancelled: &AtomicBool,
+    ) -> Result<PointDomainAudioBlock, StageAudioError> {
+        check_cancel(cancelled)?;
+        validate_timeout(timeout)?;
+        let work = RefCell::new(ReadWork::default());
+        let block = self.read_point_domain_controlled(
+            provider,
+            domain,
+            start,
+            frames,
+            WorkControl {
+                cancelled,
+                deadline: Instant::now() + timeout,
+                work: &work,
+            },
+            0,
+        )?;
+        let suppressed = block
+            .suppressed
+            .into_iter()
+            .map(|range| {
+                Ok::<_, PlanError>(
+                    domain.reference_at_signal(range.start)?
+                        ..domain.reference_at_signal(range.end)?,
+                )
+            })
+            .collect::<Result<_, _>>()?;
+        Ok(PointDomainAudioBlock {
+            schema_version: 1,
+            stage: "owned_point_domain_pcm_before_effects",
+            project_id: self.plan.metadata().project_id.clone(),
+            revision_id: self.plan.metadata().revision_id.clone(),
+            definition: domain.definition().clone(),
+            root: domain.root().clone(),
+            placement: domain.placement().clone(),
+            reference_grid: domain.reference_grid(),
+            reference_samples: domain.reference_samples(),
+            start,
+            samples: block.samples,
+            suppressed,
+        })
+    }
+
+    // The signal retains the exact placed support and selected grid origin.
+    // Future bound consumers reuse this controller and preserve descendant
+    // evaluation scope rather than re-entering a public preparation boundary.
+    fn read_point_domain_controlled(
+        &mut self,
+        provider: &mut impl AudioSourceProvider,
+        domain: &AudioPointDomain<'_>,
+        start: ReferenceSample,
+        frames: u32,
+        control: WorkControl<'_>,
+        depth: usize,
+    ) -> Result<SignalBlock, StageAudioError> {
+        control.check()?;
+        if !domain.belongs_to(&self.plan) {
+            return Err(StageAudioError::ForeignDomain);
+        }
+        if depth > self.limits.maximum_depth {
+            return Err(StageAudioError::Limit("nested stage depth"));
+        }
+        if frames == 0 || frames > MAX_OUTPUT_FRAMES {
+            return Err(StageAudioError::Range);
+        }
+        let end = ReferenceSample(
+            start
+                .0
+                .checked_add(i64::from(frames))
+                .ok_or(StageAudioError::Range)?,
+        );
+        let signal_start = domain.signal_at_reference(start)?;
+        domain.signal_at_reference(end)?;
+        let block = self.read_signal(
+            &domain.signal(),
+            provider,
+            signal_start,
+            frames,
+            control,
+            depth,
+        )?;
+        control.check()?;
+        Ok(block)
+    }
+
     /// Render this plan's complete physical processing context, independently
     /// of visible Partition allocation. Never resolve these signed positions
     /// through the project root, where another sibling may own the same sample.
@@ -461,6 +582,7 @@ impl StageAudio {
                 deadline: Instant::now() + timeout,
                 work: &work,
             },
+            0,
         )?;
         block.suppressed.append(&mut block.exhausted);
         Ok(DomainAudioBlock {
@@ -487,6 +609,7 @@ impl StageAudio {
         start: AudioSample,
         frames: u32,
         control: WorkControl<'_>,
+        depth: usize,
     ) -> Result<ReadBlock, StageAudioError> {
         control.check()?;
         if !domain.belongs_to(&self.plan) {
@@ -504,7 +627,17 @@ impl StageAudio {
             flattened: domain.audio(start..end, query_limits())?,
             processing: domain.processing(start..end, query_limits())?,
         };
-        self.read_queries(provider, start, frames, control, false, queries)
+        self.read_queries(
+            provider,
+            start,
+            frames,
+            control,
+            RootReadMode {
+                edge_fades: false,
+                depth,
+            },
+            queries,
+        )
     }
 
     /// Transfer hidden or visible domain PCM with one preparation allowance and
@@ -530,11 +663,48 @@ impl StageAudio {
             deadline: Instant::now() + timeout,
             work: &work,
         };
+        let block =
+            self.read_domain_transferred_controlled(provider, transfer, start, frames, control, 0)?;
+        Ok(TransferredDomainBlock {
+            schema_version: 1,
+            stage: "physical_domain_on_point_grid_before_effects",
+            project_id: self.plan.metadata().project_id.clone(),
+            revision_id: self.plan.metadata().revision_id.clone(),
+            definition: transfer.domain().definition().cloned(),
+            placement: transfer.domain().placement().cloned(),
+            instance: transfer.domain().instance().clone(),
+            gap_after: transfer.domain().gap_after().cloned(),
+            transfer: transfer.descriptor().clone(),
+            start,
+            samples: block.samples,
+            suppressed: block.suppressed,
+        })
+    }
+
+    // Recursive consumers retain their parent's deadline, work allowance and
+    // depth. The returned dependencies cover every halo, including cache hits.
+    fn read_domain_transferred_controlled(
+        &mut self,
+        provider: &mut impl AudioSourceProvider,
+        transfer: &DomainSignalTransfer<'_>,
+        start: SignalSample,
+        frames: u32,
+        control: WorkControl<'_>,
+        depth: usize,
+    ) -> Result<SignalBlock, StageAudioError> {
+        control.check()?;
+        if depth > self.limits.maximum_depth {
+            return Err(StageAudioError::Limit("nested stage depth"));
+        }
+        if !transfer.domain().belongs_to(&self.plan) {
+            return Err(StageAudioError::ForeignDomain);
+        }
+        let mut dependencies = Dependencies::new();
         let anchor = transfer.descriptor().root_support.start.0;
         let block = transfer.carrier().render::<StageAudioError>(
             start,
             frames,
-            cancelled,
+            control.cancelled,
             |at, count| {
                 // `at` indexes a zero-based carrier of already allocated root
                 // samples. Restore the integer label, not a rounded frame origin.
@@ -545,7 +715,9 @@ impl StageAudio {
                     absolute,
                     count,
                     control,
+                    depth,
                 )?;
+                dependencies.extend(block.dependencies);
                 block.suppressed.append(&mut block.exhausted);
                 let suppressed = block
                     .suppressed
@@ -573,18 +745,9 @@ impl StageAudio {
             },
         )?;
         control.check()?;
-        Ok(TransferredDomainBlock {
-            schema_version: 1,
-            stage: "physical_domain_on_point_grid_before_effects",
-            project_id: self.plan.metadata().project_id.clone(),
-            revision_id: self.plan.metadata().revision_id.clone(),
-            definition: transfer.domain().definition().cloned(),
-            placement: transfer.domain().placement().cloned(),
-            instance: transfer.domain().instance().clone(),
-            gap_after: transfer.domain().gap_after().cloned(),
-            transfer: transfer.descriptor().clone(),
-            start: block.start,
+        Ok(SignalBlock {
             samples: block.samples,
+            dependencies,
             suppressed: block.suppressed,
         })
     }
@@ -615,7 +778,7 @@ impl StageAudio {
             work: &work,
         };
         let block = transfer.render::<StageAudioError>(start, frames, cancelled, |at, count| {
-            let mut block = self.read_controlled(provider, at, count, control, false)?;
+            let mut block = self.read_controlled(provider, at, count, control, false, 0)?;
             block.suppressed.append(&mut block.exhausted);
             Ok(RootSignalBlock {
                 start: block.start,
@@ -658,6 +821,7 @@ impl StageAudio {
                 work: &work,
             },
             edge_fades,
+            0,
         )
     }
 
@@ -668,6 +832,7 @@ impl StageAudio {
         frames: u32,
         control: WorkControl<'_>,
         edge_fades: bool,
+        depth: usize,
     ) -> Result<ReadBlock, StageAudioError> {
         control.check()?;
         let end = start
@@ -688,7 +853,14 @@ impl StageAudio {
             flattened: plan.audio(start..AudioSample(end), query_limits())?,
             processing: plan.audio_processing(start..AudioSample(end), query_limits())?,
         };
-        self.read_queries(provider, start, frames, control, edge_fades, queries)
+        self.read_queries(
+            provider,
+            start,
+            frames,
+            control,
+            RootReadMode { edge_fades, depth },
+            queries,
+        )
     }
 
     fn read_queries(
@@ -697,10 +869,13 @@ impl StageAudio {
         start: AudioSample,
         frames: u32,
         control: WorkControl<'_>,
-        edge_fades: bool,
+        mode: RootReadMode,
         queries: RootReadQueries<'_>,
     ) -> Result<ReadBlock, StageAudioError> {
         control.check()?;
+        if mode.depth > self.limits.maximum_depth {
+            return Err(StageAudioError::Limit("nested stage depth"));
+        }
         let cancelled = control.cancelled;
         let plan = Arc::clone(&self.plan);
         for span in &queries.flattened.spans {
@@ -712,12 +887,16 @@ impl StageAudio {
             }
         }
         let mut samples = Vec::with_capacity(frames as usize);
+        let mut dependencies = Dependencies::new();
         for span in queries.processing.spans {
             control.check()?;
             let block = match &span.content {
                 AudioSignalContent::Leaf(AudioContent::Source { source, .. }) => {
                     let prepared = resolve_source(provider, &plan, &source.asset, cancelled)?;
-                    control.observe(&source.asset, prepared)?;
+                    dependencies.insert(
+                        source.asset.clone(),
+                        control.observe(&source.asset, prepared)?,
+                    );
                     let recipe = root_source_recipe(&span, prepared.index().stream().sample_rate)?;
                     prepare_source_block(
                         prepared,
@@ -739,8 +918,9 @@ impl StageAudio {
                         },
                         provider,
                         control,
-                        1,
+                        mode.depth + 1,
                     )?;
+                    dependencies.extend(prepared.block.dependencies.clone());
                     let recipe = root_stage_recipe(
                         &span,
                         prepared.block.samples.len(),
@@ -756,7 +936,8 @@ impl StageAudio {
                 }
                 AudioSignalContent::Leaf(_) => vec![[0.0; 2]; count(&span.samples)? as usize],
                 AudioSignalContent::Stage(stage) => {
-                    let prepared = self.prepare_stage(stage, provider, control, 1)?;
+                    let prepared = self.prepare_stage(stage, provider, control, mode.depth + 1)?;
+                    dependencies.extend(prepared.block.dependencies.clone());
                     let recipe = root_stage_recipe(
                         &span,
                         prepared.block.samples.len(),
@@ -788,7 +969,7 @@ impl StageAudio {
                 crate::edges::apply_retained_envelope(
                     &span,
                     &mut samples[left..right],
-                    edge_fades,
+                    mode.edge_fades,
                 )?;
                 exhausted.extend(crate::edges::exhausted_ranges(&span)?);
             }
@@ -797,6 +978,7 @@ impl StageAudio {
         Ok(ReadBlock {
             start,
             samples,
+            dependencies,
             suppressed,
             exhausted,
         })
@@ -810,12 +992,12 @@ impl StageAudio {
         depth: usize,
     ) -> Result<Arc<PreparedStage>, StageAudioError> {
         control.check()?;
+        if depth > self.limits.maximum_depth {
+            return Err(StageAudioError::Limit("nested stage depth"));
+        }
         let key = PreparedKey::Preserve(stage.descriptor().clone());
         if let Some(entry) = self.cached(&key, provider, control)? {
             return Ok(entry);
-        }
-        if depth > self.limits.maximum_depth {
-            return Err(StageAudioError::Limit("nested stage depth"));
         }
         let input_signal = stage.input_signal();
         let output_signal = stage.output_signal();
@@ -920,11 +1102,11 @@ impl StageAudio {
         depth: usize,
     ) -> Result<Arc<PreparedStage>, StageAudioError> {
         control.check()?;
-        if let Some(entry) = self.cached(&key, provider, control)? {
-            return Ok(entry);
-        }
         if depth > self.limits.maximum_depth {
             return Err(StageAudioError::Limit("nested stage depth"));
+        }
+        if let Some(entry) = self.cached(&key, provider, control)? {
+            return Ok(entry);
         }
         let PreparedKey::RoomTone {
             source, duration, ..
@@ -1473,6 +1655,735 @@ fn sample_prepared(
         })
         .transpose()?;
     Ok(sampler.render(start, frames, window, cancelled)?.samples)
+}
+
+#[cfg(all(test, any(target_os = "macos", target_os = "linux")))]
+mod controlled_reads {
+    use super::*;
+    use deadpan_core::*;
+    use deadpan_media::audio_session::{AudioSession, AudioSessionLimits};
+    use deadpan_media::source_index::SourceContentIdentity;
+    use sha2::{Digest, Sha256};
+    use std::io::Cursor;
+
+    struct Provider {
+        prepared: crate::PreparedSource,
+        calls: usize,
+    }
+
+    impl AudioSourceProvider for Provider {
+        fn source(
+            &mut self,
+            _: &ProjectId,
+            _: &RevisionId,
+            asset: &AssetId,
+            _: &AtomicBool,
+        ) -> Result<&crate::PreparedSource, PreparationError> {
+            assert_eq!(asset, &AssetId::new("media").unwrap());
+            self.calls += 1;
+            Ok(&self.prepared)
+        }
+    }
+
+    fn fixture() -> (Arc<RenderPlan>, Provider) {
+        fixture_at_rate(FrameRate::new(48_000, 1).unwrap())
+    }
+
+    fn fixture_at_rate(rate: FrameRate) -> (Arc<RenderPlan>, Provider) {
+        let bytes = std::fs::read(
+            std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                .join("../../native/deadpan-source/tests/audio-fixtures/pcm-stereo-48000.wav"),
+        )
+        .unwrap();
+        let cancelled = AtomicBool::new(false);
+        let session = AudioSession::open_verified(
+            &mut Cursor::new(&bytes),
+            SourceContentIdentity::new(Sha256::digest(&bytes).into(), bytes.len() as u64).unwrap(),
+            0,
+            AudioSessionLimits::default(),
+            &cancelled,
+        )
+        .unwrap();
+        let index = session.index().clone();
+        let prepared = crate::PreparedSource::with_layout(
+            session,
+            &index,
+            AudioChannelLayout::Native {
+                channels: 2,
+                mask: 3,
+            },
+            &cancelled,
+        )
+        .unwrap();
+        let id = |value: &str| NodeId::new(value).unwrap();
+        let duration = |value| FrameDuration::new(value).unwrap();
+        let audio = |start, end| SourceAudio {
+            asset: AssetId::new("media").unwrap(),
+            span: SourceSpan::new(
+                SourceTimestamp {
+                    ticks: start,
+                    time_base: SourceTimeBase::new(1, 48_000).unwrap(),
+                },
+                SourceTimestamp {
+                    ticks: end,
+                    time_base: SourceTimeBase::new(1, 48_000).unwrap(),
+                },
+            )
+            .unwrap(),
+        };
+        let source = |start, end| BeatNode {
+            label: "Source".into(),
+            audio_edges: Default::default(),
+            kind: NodeKind::Source {
+                source: SourceNode {
+                    duration: duration(end - start),
+                    video: SourceVideo::Blank,
+                    video_mapping: SourceVideoMapping::FitBeat,
+                    audio: Some(audio(start, end)),
+                    audio_mapping: SourceAudioMapping::natural_rate(audio(start, end).span, rate)
+                        .unwrap(),
+                    audio_offset: AudioSample(0),
+                    link: LinkRelation::Independent,
+                },
+            },
+        };
+        let mut wire = serde_json::to_value(
+            ProjectDocument::new(
+                ProjectId::new("controlled-read").unwrap(),
+                RevisionId::new("revision").unwrap(),
+                PresentationBasis {
+                    width: 16,
+                    height: 16,
+                    frame_rate: rate,
+                    color_policy: ColorPolicy::SdrRec709,
+                },
+                id("root"),
+            )
+            .unwrap(),
+        )
+        .unwrap();
+        wire["nodes"] = serde_json::to_value(BTreeMap::from([
+            (
+                id("root"),
+                BeatNode::sequence("Root", vec![id("a"), id("room"), id("stage")]),
+            ),
+            (id("a"), source(0, 512)),
+            (
+                id("room"),
+                BeatNode::hold(
+                    "Room",
+                    HoldRecipe {
+                        duration: duration(128),
+                        video: HoldVideo::Background,
+                        audio: HoldAudio::RoomTone {
+                            source: audio(1024, 1152),
+                        },
+                    },
+                ),
+            ),
+            (id("b"), source(512, 1024)),
+            (
+                id("stage"),
+                BeatNode {
+                    label: "Preserve".into(),
+                    audio_edges: Default::default(),
+                    kind: NodeKind::Retime {
+                        child: id("b"),
+                        duration: duration(768),
+                        mapping: FrameRange::new(ProjectFrame(0), ProjectFrame(512)).unwrap(),
+                        pitch: PitchPolicy::Preserve,
+                        purpose: RetimePurpose::Edit,
+                    },
+                },
+            ),
+        ]))
+        .unwrap();
+        wire["assets"] = serde_json::to_value(BTreeMap::from([(
+            AssetId::new("media").unwrap(),
+            AssetRecord {
+                label: "PCM fixture".into(),
+                content_hash: "a".repeat(64),
+                video: None,
+                audio: Some(audio(0, 8197).span),
+                still_image: true,
+                frame_count: None,
+                source_qualification: None,
+            },
+        )]))
+        .unwrap();
+        let doc = ProjectDocument::from_json(&wire.to_string()).unwrap();
+        (
+            Arc::new(RenderPlan::compile(&doc).unwrap()),
+            Provider { prepared, calls: 0 },
+        )
+    }
+
+    #[test]
+    fn every_controlled_block_retains_dependencies_already_observed_or_cached() {
+        let (plan, mut provider) = fixture();
+        let mut renderer = StageAudio::new(plan);
+        let work = RefCell::new(ReadWork::default());
+        let cancelled = AtomicBool::new(false);
+        let control = WorkControl {
+            cancelled: &cancelled,
+            deadline: Instant::now() + Duration::from_secs(10),
+            work: &work,
+        };
+        let asset = AssetId::new("media").unwrap();
+        let fingerprint = control.observe(&asset, &provider.prepared).unwrap();
+        let expected = BTreeMap::from([(asset, fingerprint)]);
+        for start in [0, 512, 640, 512, 640, 0] {
+            let block = renderer
+                .read_controlled(&mut provider, AudioSample(start), 64, control, false, 0)
+                .unwrap();
+            assert_eq!(block.dependencies, expected);
+            assert_eq!(block.samples.len(), 64);
+        }
+        assert_eq!(work.borrow().observed, expected);
+        assert_eq!(work.borrow().prepared_stages, 2);
+        assert_eq!(renderer.cached_stage_count(), 2);
+        assert_eq!(
+            provider.calls, 7,
+            "each cached dependency is re-admitted, including both source preparation blocks"
+        );
+    }
+
+    #[test]
+    fn controlled_transfer_unions_halo_dependencies_and_keeps_parent_work_limit() {
+        let (plan, mut provider) = fixture();
+        let domain = plan
+            .audio_domain_at(AudioSample(640), Default::default())
+            .unwrap();
+        let transfer = DomainSignalTransfer::new(
+            domain,
+            ExactRatio::new(1921, 3).unwrap(),
+            SignalSample(0),
+            ExactRatio::new(3, 2).unwrap(),
+            SignalSample(0)..SignalSample(256),
+        )
+        .unwrap();
+        let mut renderer = StageAudio::new(Arc::clone(&plan));
+        let work = RefCell::new(ReadWork::default());
+        let cancelled = AtomicBool::new(false);
+        let control = WorkControl {
+            cancelled: &cancelled,
+            deadline: Instant::now() + Duration::from_secs(10),
+            work: &work,
+        };
+        let asset = AssetId::new("media").unwrap();
+        let fingerprint = control.observe(&asset, &provider.prepared).unwrap();
+        let expected = BTreeMap::from([(asset, fingerprint)]);
+        for _ in 0..2 {
+            let block = renderer
+                .read_domain_transferred_controlled(
+                    &mut provider,
+                    &transfer,
+                    SignalSample(0),
+                    256,
+                    control,
+                    0,
+                )
+                .unwrap();
+            assert_eq!(block.dependencies, expected);
+            assert_eq!(block.samples.len(), 256);
+        }
+        assert_eq!(
+            work.borrow().prepared_stages,
+            1,
+            "halo reads and later reads share preparation"
+        );
+        assert!(
+            provider.calls > 2,
+            "interpolation spans several individually admitted halo blocks"
+        );
+
+        let mut limited = StageAudio::with_limits(
+            Arc::clone(&plan),
+            StageLimits {
+                maximum_prepared_stages: 1,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        let limited_work = RefCell::new(ReadWork::default());
+        let limited_control = WorkControl {
+            work: &limited_work,
+            ..control
+        };
+        limited
+            .read_controlled(
+                &mut provider,
+                AudioSample(512),
+                64,
+                limited_control,
+                false,
+                0,
+            )
+            .unwrap();
+        let calls = provider.calls;
+        assert!(matches!(
+            limited.read_domain_transferred_controlled(
+                &mut provider,
+                &transfer,
+                SignalSample(0),
+                256,
+                limited_control,
+                0
+            ),
+            Err(StageAudioError::Limit("prepared stages per read"))
+        ));
+        assert_eq!(
+            provider.calls, calls,
+            "the inherited exhausted budget fails before new media work"
+        );
+        assert_eq!(limited.cached_stage_count(), 1);
+    }
+
+    #[test]
+    fn placed_point_source_keeps_selected_origin_and_matches_partitioned_pcm() {
+        let (plan, mut provider) = fixture();
+        let definition = plan
+            .audio_definition(AudioDefinitionSelector::Node {
+                node: NodeId::new("a").unwrap(),
+            })
+            .unwrap();
+        let domain = definition
+            .in_point_clock(
+                deadpan_plan::AudioRootPlacement::new(
+                    ExactRatio::new(-7, 3).unwrap(),
+                    ExactRatio::new(3, 2).unwrap(),
+                    ExactRatio::integer(3)..ExactRatio::integer(131),
+                )
+                .unwrap(),
+                ExactRatio::new(5, 7).unwrap(),
+            )
+            .unwrap();
+        assert_eq!(
+            domain.reference_samples(),
+            ReferenceSample(2)..ReferenceSample(194)
+        );
+        // Independent source recipe: n=2 lies at source 212/63, with 2/3
+        // source sample per selected-grid point and the explicit crop [3,131).
+        let recipe = ResampleRecipe::new(
+            3..131,
+            ExactRatio::new(212, 63).unwrap(),
+            AudioSample(0),
+            ExactRatio::new(2, 3).unwrap(),
+            AudioSample(0)..AudioSample(192),
+        )
+        .unwrap();
+        let cancelled = AtomicBool::new(false);
+        let expected = provider
+            .prepared
+            .prepare(
+                recipe,
+                AudioSample(0),
+                192,
+                Duration::from_secs(10),
+                &cancelled,
+            )
+            .unwrap()
+            .samples;
+        let mut renderer = StageAudio::new(Arc::clone(&plan));
+        let full = renderer
+            .read_point_domain(
+                &mut provider,
+                &domain,
+                ReferenceSample(2),
+                192,
+                Duration::from_secs(10),
+                &cancelled,
+            )
+            .unwrap();
+        assert_eq!(full.samples, expected);
+        assert_eq!(
+            full.reference_grid.frame_origin(),
+            ExactRatio::new(5, 7).unwrap()
+        );
+        assert!(full.suppressed.is_empty());
+        for (offset, count) in [(127, 65), (0, 51), (51, 76)] {
+            let block = renderer
+                .read_point_domain(
+                    &mut provider,
+                    &domain,
+                    ReferenceSample(2 + offset),
+                    count,
+                    Duration::from_secs(10),
+                    &cancelled,
+                )
+                .unwrap();
+            assert_eq!(
+                block.samples,
+                full.samples[offset as usize..offset as usize + count as usize]
+            );
+        }
+        let calls = provider.calls;
+        assert!(
+            renderer
+                .read_point_domain(
+                    &mut provider,
+                    &domain,
+                    ReferenceSample(1),
+                    1,
+                    Duration::from_secs(10),
+                    &cancelled
+                )
+                .is_err()
+        );
+        assert!(
+            renderer
+                .read_point_domain(
+                    &mut provider,
+                    &domain,
+                    ReferenceSample(194),
+                    1,
+                    Duration::from_secs(10),
+                    &cancelled
+                )
+                .is_err()
+        );
+        assert_eq!(provider.calls, calls);
+    }
+
+    #[test]
+    fn placed_ntsc_source_preserves_signed_reference_phase_and_controlled_dependencies() {
+        let (plan, mut provider) = fixture_at_rate(FrameRate::new(30_000, 1001).unwrap());
+        let definition = plan
+            .audio_definition(AudioDefinitionSelector::Node {
+                node: NodeId::new("a").unwrap(),
+            })
+            .unwrap();
+        let domain = definition
+            .in_point_clock(
+                deadpan_plan::AudioRootPlacement::new(
+                    ExactRatio::new(-1, 3).unwrap(),
+                    ExactRatio::ONE,
+                    ExactRatio::ZERO..ExactRatio::new(1, 4).unwrap(),
+                )
+                .unwrap(),
+                ExactRatio::new(1, 7).unwrap(),
+            )
+            .unwrap();
+        assert_eq!(
+            domain.reference_samples(),
+            ReferenceSample(-762)..ReferenceSample(-362)
+        );
+        // The source begins at 2/3 of a physical sample. Neither zero-based
+        // storage nor the selected 1/7-frame clock origin may reset that phase.
+        let recipe = ResampleRecipe::new(
+            0..401,
+            ExactRatio::new(2, 3).unwrap(),
+            AudioSample(0),
+            ExactRatio::ONE,
+            AudioSample(0)..AudioSample(400),
+        )
+        .unwrap();
+        let cancelled = AtomicBool::new(false);
+        let work = RefCell::new(ReadWork::default());
+        let control = WorkControl {
+            cancelled: &cancelled,
+            deadline: Instant::now() + Duration::from_secs(10),
+            work: &work,
+        };
+        let mut renderer = StageAudio::new(Arc::clone(&plan));
+        let expected_dependency = BTreeMap::from([(
+            AssetId::new("media").unwrap(),
+            provider.prepared.provenance(),
+        )]);
+        for (offset, count) in [(256, 144), (0, 256)] {
+            let expected = provider
+                .prepared
+                .prepare(
+                    recipe.clone(),
+                    AudioSample(offset),
+                    count,
+                    Duration::from_secs(10),
+                    &cancelled,
+                )
+                .unwrap()
+                .samples;
+            let actual = renderer
+                .read_point_domain_controlled(
+                    &mut provider,
+                    &domain,
+                    ReferenceSample(-762 + offset),
+                    count,
+                    control,
+                    0,
+                )
+                .unwrap();
+            assert_eq!(actual.samples, expected);
+            assert_eq!(actual.dependencies, expected_dependency);
+        }
+        assert_eq!(work.borrow().observed, expected_dependency);
+        let mut foreign = StageAudio::new(fixture().0);
+        assert!(matches!(
+            foreign.read_point_domain(
+                &mut provider,
+                &domain,
+                ReferenceSample(-762),
+                1,
+                Duration::from_secs(10),
+                &cancelled
+            ),
+            Err(StageAudioError::ForeignDomain)
+        ));
+    }
+
+    #[test]
+    fn placed_point_preserve_rechecks_policy_that_owned_no_input_point() {
+        let (_, mut provider) = fixture();
+        let cancelled = AtomicBool::new(false);
+        let id = |value: &str| NodeId::new(value).unwrap();
+        let duration = |value| FrameDuration::new(value).unwrap();
+        let rate = FrameRate::new(192_000, 1).unwrap();
+        let audio = |start, end| SourceAudio {
+            asset: AssetId::new("media").unwrap(),
+            span: SourceSpan::new(
+                SourceTimestamp {
+                    ticks: start,
+                    time_base: SourceTimeBase::new(1, 48_000).unwrap(),
+                },
+                SourceTimestamp {
+                    ticks: end,
+                    time_base: SourceTimeBase::new(1, 48_000).unwrap(),
+                },
+            )
+            .unwrap(),
+        };
+        let source = |at| BeatNode {
+            label: "Source".into(),
+            audio_edges: Default::default(),
+            kind: NodeKind::Source {
+                source: SourceNode {
+                    duration: duration(1),
+                    video: SourceVideo::Blank,
+                    video_mapping: SourceVideoMapping::FitBeat,
+                    audio: Some(audio(at, at + 1)),
+                    audio_mapping: SourceAudioMapping::natural_rate(audio(at, at + 1).span, rate)
+                        .unwrap(),
+                    audio_offset: AudioSample(0),
+                    link: LinkRelation::Independent,
+                },
+            },
+        };
+        let retime = |child: &str, output, selected| BeatNode {
+            label: "Preserve".into(),
+            audio_edges: Default::default(),
+            kind: NodeKind::Retime {
+                child: id(child),
+                duration: duration(output),
+                mapping: FrameRange::new(ProjectFrame(0), ProjectFrame(selected)).unwrap(),
+                pitch: PitchPolicy::Preserve,
+                purpose: RetimePurpose::Edit,
+            },
+        };
+        let mut wire = serde_json::to_value(
+            ProjectDocument::new(
+                ProjectId::new("point-policy").unwrap(),
+                RevisionId::new("r0").unwrap(),
+                PresentationBasis {
+                    width: 16,
+                    height: 16,
+                    frame_rate: rate,
+                    color_policy: ColorPolicy::SdrRec709,
+                },
+                id("root"),
+            )
+            .unwrap(),
+        )
+        .unwrap();
+        wire["nodes"] = serde_json::to_value(BTreeMap::from([
+            (id("root"), BeatNode::sequence("Root", vec![id("outer")])),
+            (id("a"), source(0)),
+            (
+                id("silent"),
+                BeatNode::hold(
+                    "No input point",
+                    HoldRecipe {
+                        duration: duration(1),
+                        video: HoldVideo::Background,
+                        audio: HoldAudio::Silence,
+                    },
+                ),
+            ),
+            (id("b"), source(1)),
+            (
+                id("cuts"),
+                BeatNode::sequence("Cuts", vec![id("a"), id("silent"), id("b")]),
+            ),
+            (id("inner"), retime("cuts", 24, 3)),
+            (id("outer"), retime("inner", 48, 24)),
+        ]))
+        .unwrap();
+        wire["assets"] = serde_json::to_value(BTreeMap::from([(
+            AssetId::new("media").unwrap(),
+            AssetRecord {
+                label: "PCM".into(),
+                content_hash: "a".repeat(64),
+                video: None,
+                audio: Some(audio(0, 8197).span),
+                still_image: true,
+                frame_count: None,
+                source_qualification: None,
+            },
+        )]))
+        .unwrap();
+        let plan = Arc::new(
+            RenderPlan::compile(&ProjectDocument::from_json(&wire.to_string()).unwrap()).unwrap(),
+        );
+        let definition = plan
+            .audio_definition(AudioDefinitionSelector::Node { node: id("outer") })
+            .unwrap();
+        let domain = definition
+            .in_point_clock(
+                deadpan_plan::AudioRootPlacement::new(
+                    ExactRatio::new(-1, 8).unwrap(),
+                    ExactRatio::ONE,
+                    ExactRatio::ZERO..ExactRatio::integer(48),
+                )
+                .unwrap(),
+                ExactRatio::new(131, 8).unwrap(),
+            )
+            .unwrap();
+        assert_eq!(
+            domain.reference_samples(),
+            ReferenceSample(-4)..ReferenceSample(8)
+        );
+        // Source, Hold, Source each occupy 1/4 of the inner input grid. Only
+        // Source A owns an input point. The Hold must nevertheless suppress
+        // inner output [2,4), outer [4,8), and final reference labels [0,4).
+        let stretch = |input: &[[f32; 2]], output, numerator, denominator| {
+            let input = StereoPcm::new(
+                input.iter().map(|x| x[0]).collect(),
+                input.iter().map(|x| x[1]).collect(),
+            )
+            .unwrap();
+            let recipe = CanonicalRecipe::with_rate(
+                input.frames(),
+                output,
+                StretchRate::new(numerator, denominator).unwrap(),
+                0,
+            )
+            .unwrap();
+            let mut dsp = CanonicalStretch::new(recipe, input).unwrap();
+            let mut left = vec![0.0; output as usize];
+            let mut right = vec![0.0; output as usize];
+            assert_eq!(
+                dsp.read(&mut left, &mut right, &cancelled).unwrap(),
+                output as usize
+            );
+            left.into_iter()
+                .zip(right)
+                .map(|(l, r)| [l, r])
+                .collect::<Vec<_>>()
+        };
+        let mut inner = stretch(&[[0.75, -1.0]], 6, 1, 8);
+        inner[2..4].fill([0.0; 2]);
+        let mut outer = stretch(&inner, 12, 1, 2);
+        outer[4..8].fill([0.0; 2]);
+        let mut expected = sample_prepared(
+            &outer,
+            ResampleRecipe::new(
+                0..12,
+                ExactRatio::new(1, 8).unwrap(),
+                AudioSample(0),
+                ExactRatio::ONE,
+                AudioSample(0)..AudioSample(12),
+            )
+            .unwrap(),
+            AudioSample(0),
+            12,
+            &cancelled,
+        )
+        .unwrap();
+        expected[4..8].fill([0.0; 2]);
+        let mut renderer = StageAudio::new(Arc::clone(&plan));
+        let full = renderer
+            .read_point_domain(
+                &mut provider,
+                &domain,
+                ReferenceSample(-4),
+                12,
+                Duration::from_secs(10),
+                &cancelled,
+            )
+            .unwrap();
+        assert_eq!(full.samples, expected);
+        assert_eq!(
+            full.suppressed,
+            vec![ReferenceSample(0)..ReferenceSample(4)]
+        );
+        assert!(
+            full.samples[..4]
+                .iter()
+                .chain(&full.samples[8..])
+                .flatten()
+                .any(|sample| sample.abs() > 1e-5)
+        );
+        for (start, count) in [(4, 4), (-4, 3), (-1, 5)] {
+            let block = renderer
+                .read_point_domain(
+                    &mut provider,
+                    &domain,
+                    ReferenceSample(start),
+                    count,
+                    Duration::from_secs(10),
+                    &cancelled,
+                )
+                .unwrap();
+            assert_eq!(
+                block.samples,
+                full.samples[(start + 4) as usize..(start + 4) as usize + count as usize]
+            );
+        }
+        assert_eq!(renderer.cached_stage_count(), 2);
+    }
+
+    #[test]
+    fn controlled_depth_cannot_restart_at_a_domain_or_bypass_through_cache() {
+        let (plan, mut provider) = fixture();
+        let mut renderer = StageAudio::with_limits(
+            Arc::clone(&plan),
+            StageLimits {
+                maximum_depth: 1,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        let cancelled = AtomicBool::new(false);
+        let work = RefCell::new(ReadWork::default());
+        let control = WorkControl {
+            cancelled: &cancelled,
+            deadline: Instant::now() + Duration::from_secs(10),
+            work: &work,
+        };
+        for start in [512, 640] {
+            let domain = plan
+                .audio_domain_at(AudioSample(start), Default::default())
+                .unwrap();
+            renderer
+                .read_domain_controlled(&mut provider, &domain, AudioSample(start), 64, control, 0)
+                .unwrap();
+            let calls = provider.calls;
+            assert!(matches!(
+                renderer.read_domain_controlled(
+                    &mut provider,
+                    &domain,
+                    AudioSample(start),
+                    64,
+                    control,
+                    1
+                ),
+                Err(StageAudioError::Limit("nested stage depth"))
+            ));
+            assert_eq!(
+                provider.calls, calls,
+                "depth rejection precedes cache admission"
+            );
+        }
+        assert_eq!(renderer.cached_stage_count(), 2);
+    }
 }
 
 #[cfg(test)]

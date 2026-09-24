@@ -45,7 +45,7 @@ impl ProjectStore {
                 backup: None,
             });
         }
-        if !matches!(version, 1..=20) {
+        if !matches!(version, 1..=21) {
             return Err(StoreError::UnsupportedSchema(version));
         }
         let lock = acquire_lock(&package)?;
@@ -196,6 +196,8 @@ fn migrate_candidate(
     // Schema 20 uses core schema 14, including Split. Old initial snapshots gain
     // no audio lineage. Replayed copies generate lineage in modern patches;
     // frozen comparisons omit only that new metadata and retain old summaries.
+    // Schema 21 uses core schema 15 with audio lineage. Its closed snapshots
+    // and history cannot contain authored timing bindings, even empty fields.
     // Replay all authored history, preserving operational rows and identities
     // while assigning FitBeat only to mappings absent in that legacy schema.
     // Schemas before 15 gain an explicit basis; schema 15 retains its policy.

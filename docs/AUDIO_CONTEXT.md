@@ -3,8 +3,10 @@
 `FrozenAudioContext` retains the media-bearing body of one immutable audio
 context. It combines a [frozen timing layout](AUDIO_REFERENCE.md) with exact
 Source, RoomTone and Tail inputs and their full immutable asset records. The
-standalone wire uses schema 1. Core 15/database 21 remain unchanged; live sample
-bindings and the arbitrary-boundary Hold command are still required.
+standalone wire uses schema 1. It predates the core 16/database 22 binding state;
+binding-aware rendering and the arbitrary-boundary Hold command remain open.
+Capture explicitly rejects a nonempty binding state until the context format
+can retain it completely.
 
 ## Capture and admission
 

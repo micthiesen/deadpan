@@ -68,6 +68,11 @@ struct ContextWire<'a> {
 impl FrozenAudioContext {
     pub fn capture(document: &ProjectDocument) -> Result<Self, DocumentError> {
         document.validate()?;
+        if !document.audio_bindings().is_empty() {
+            return Err(invalid(
+                "audio context schema 1 cannot retain authored audio timing bindings",
+            ));
+        }
         let layout = FrozenAudioLayout::capture(document)?;
         // The layout has already charged nodes, edges, compact runs and its
         // serialized size. Count dependencies before cloning source records.

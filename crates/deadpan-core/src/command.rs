@@ -221,6 +221,9 @@ pub struct DocumentPatch {
         deserialize_with = "unique_map"
     )]
     pub audio_lineage: BTreeMap<NodeId, ValueChange<crate::AudioLineageId>>,
+    /// One guarded replacement keeps binding ownership and timing records atomic.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub audio_bindings: Option<ValueChange<crate::AudioBindingState>>,
 }
 
 impl DocumentPatch {
@@ -278,6 +281,21 @@ impl DocumentPatch {
         apply_changes(&mut result.marks, &self.marks)?;
         apply_changes(&mut result.overrides, &self.overrides)?;
         apply_changes(&mut result.audio_lineage, &self.audio_lineage)?;
+        if let Some(change) = &self.audio_bindings {
+            let (Some(before), Some(after)) = (&change.before, &change.after) else {
+                return Err(EditError::new(
+                    EditErrorCode::InvalidCommand,
+                    "audio binding state replacement requires both before and after values",
+                ));
+            };
+            if &document.audio_bindings != before {
+                return Err(EditError::new(
+                    EditErrorCode::PatchConflict,
+                    "audio binding patch before-value does not match the current document",
+                ));
+            }
+            result.audio_bindings = after.clone();
+        }
         result.revision_id = self.to_revision.clone();
         result.validate()?;
         Ok(result)
@@ -297,6 +315,10 @@ impl DocumentPatch {
             marks: inverse_changes(&self.marks),
             overrides: inverse_changes(&self.overrides),
             audio_lineage: inverse_changes(&self.audio_lineage),
+            audio_bindings: self.audio_bindings.as_ref().map(|change| ValueChange {
+                before: change.after.clone(),
+                after: change.before.clone(),
+            }),
         }
     }
 }
@@ -354,6 +376,7 @@ pub fn apply(
             result
         }
     };
+    crate::audio_binding_lifecycle::prune(&mut result);
     result.lock_timed_basis(document)?;
     result.revision_id = request.new_revision.clone();
     let after_duration = result.duration()?.frames();
@@ -372,13 +395,20 @@ pub fn apply(
         marks: diff(&document.marks, &result.marks),
         overrides: diff(&document.overrides, &result.overrides),
         audio_lineage: diff(&document.audio_lineage, &result.audio_lineage),
+        audio_bindings: (document.audio_bindings != result.audio_bindings).then(|| ValueChange {
+            before: Some(document.audio_bindings.clone()),
+            after: Some(result.audio_bindings.clone()),
+        }),
     };
+    let binding_changed_ids =
+        changed_audio_binding_owners(&document.audio_bindings, &result.audio_bindings);
     Ok(EditTransaction {
         changed_ids: forward
             .nodes
             .keys()
             .chain(forward.overrides.keys())
             .chain(forward.audio_lineage.keys())
+            .chain(binding_changed_ids.iter())
             .cloned()
             .collect::<BTreeSet<_>>()
             .into_iter()
@@ -389,6 +419,47 @@ pub fn apply(
         duration_delta: after_duration - before_duration,
         description: description(&request.command).to_owned(),
     })
+}
+
+fn changed_audio_binding_owners(
+    before: &crate::AudioBindingState,
+    after: &crate::AudioBindingState,
+) -> BTreeSet<NodeId> {
+    // Compare each retained layout once; many owners can share a large clock.
+    let changed_timings: BTreeSet<_> = before
+        .timings()
+        .iter()
+        .filter(|(timing, layout)| Some(*layout) != after.timings().get(*timing))
+        .map(|(timing, _)| timing)
+        .chain(
+            after
+                .timings()
+                .keys()
+                .filter(|timing| !before.timings().contains_key(*timing)),
+        )
+        .collect();
+    before
+        .bindings()
+        .keys()
+        .chain(after.bindings().keys())
+        .filter(|owner| {
+            let previous = before.bindings().get(*owner);
+            let next = after.bindings().get(*owner);
+            if previous != next {
+                return true;
+            }
+            previous.is_some_and(|binding| {
+                std::iter::once(&binding.lattice)
+                    .chain(
+                        binding.resume.iter().flat_map(|resume| {
+                            resume.phase.terms.iter().map(|term| &term.placement)
+                        }),
+                    )
+                    .any(|template| changed_timings.contains(&template.reference.timing))
+            })
+        })
+        .cloned()
+        .collect()
 }
 
 fn check_revision(
@@ -1352,3 +1423,186 @@ impl fmt::Display for EditError {
     }
 }
 impl Error for EditError {}
+
+#[cfg(test)]
+mod binding_patch_tests {
+    use super::*;
+
+    fn bound_document() -> ProjectDocument {
+        let mut document = ProjectDocument::new(
+            ProjectId::new("bound-patch").unwrap(),
+            RevisionId::new("initial").unwrap(),
+            crate::PresentationBasis {
+                width: 16,
+                height: 16,
+                frame_rate: crate::FrameRate::new(30, 1).unwrap(),
+                color_policy: crate::ColorPolicy::SdrRec709,
+            },
+            NodeId::new("root").unwrap(),
+        )
+        .unwrap();
+        let owners: Vec<_> = ["first", "second"]
+            .into_iter()
+            .map(|name| NodeId::new(name).unwrap())
+            .collect();
+        for owner in &owners {
+            document.nodes.insert(
+                owner.clone(),
+                BeatNode::hold(
+                    "Pause",
+                    HoldRecipe {
+                        duration: FrameDuration::new(4).unwrap(),
+                        video: crate::HoldVideo::Background,
+                        audio: crate::HoldAudio::Silence,
+                    },
+                ),
+            );
+        }
+        document.nodes.insert(
+            document.root.clone(),
+            BeatNode::sequence("Root", owners.clone()),
+        );
+        let layout = crate::FrozenAudioLayout::capture(&document).unwrap();
+        let records = owners
+            .iter()
+            .map(|owner| crate::AudioTimingRecord {
+                id: crate::AudioTimingId {
+                    allocation: RevisionId::new(owner.as_str()).unwrap(),
+                    ordinal: 0,
+                },
+                layout: layout.clone(),
+            })
+            .collect::<Vec<_>>();
+        let bindings = owners
+            .into_iter()
+            .zip(&records)
+            .map(|(owner, record)| {
+                (
+                    owner.clone(),
+                    crate::OwnedAudioBinding {
+                        lattice: crate::AudioPlacementTemplate {
+                            reference: crate::AudioReferenceClock {
+                                timing: record.id.clone(),
+                                root: crate::AudioClockRoot::ProjectRootRoundEven,
+                                physical: owner,
+                            },
+                            arguments: vec![],
+                            births: vec![],
+                        },
+                        resume: None,
+                    },
+                )
+            })
+            .collect();
+        document.audio_bindings = crate::AudioBindingState::new(records, bindings).unwrap();
+        document.validate().unwrap();
+        document
+    }
+
+    #[test]
+    fn changed_binding_owners_exclude_untouched_values_and_clocks() {
+        let document = bound_document();
+        let before = document.audio_bindings();
+        let first = NodeId::new("first").unwrap();
+        assert!(changed_audio_binding_owners(before, before).is_empty());
+        let mut changed = before.clone();
+        changed.bindings.get_mut(&first).unwrap().resume = Some(crate::AudioResume {
+            local_boundary: crate::ExactRatio::ZERO,
+            phase: crate::AudioLocalPhase::default(),
+        });
+        assert_eq!(
+            changed_audio_binding_owners(before, &changed),
+            BTreeSet::from([first.clone()])
+        );
+        let mut changed_document = document.clone();
+        let NodeKind::Hold { recipe } = &mut changed_document.nodes.get_mut(&first).unwrap().kind
+        else {
+            panic!("fixture is a Hold");
+        };
+        recipe.duration = FrameDuration::new(5).unwrap();
+        let mut changed_clock = before.clone();
+        let timing = before.bindings()[&first].lattice.reference.timing.clone();
+        changed_clock.timings.insert(
+            timing,
+            crate::FrozenAudioLayout::capture(&changed_document).unwrap(),
+        );
+        assert_eq!(
+            changed_audio_binding_owners(before, &changed_clock),
+            BTreeSet::from([first])
+        );
+    }
+
+    #[test]
+    fn binding_patch_rejects_stale_before_state_without_mutation() {
+        let document = bound_document();
+        let tx = apply(
+            &document,
+            &CommandRequest {
+                project_id: document.project_id().clone(),
+                expected_revision: document.revision_id().clone(),
+                new_revision: RevisionId::new("renamed").unwrap(),
+                command: Command::Rename {
+                    node: document.root().clone(),
+                    label: "Renamed".into(),
+                },
+            },
+        )
+        .unwrap();
+        let mut forged = tx.forward;
+        forged.audio_bindings = Some(ValueChange {
+            before: Some(crate::AudioBindingState::default()),
+            after: Some(document.audio_bindings().clone()),
+        });
+        assert_eq!(
+            forged.apply(&document).unwrap_err().code,
+            EditErrorCode::PatchConflict
+        );
+        assert_eq!(document, bound_document());
+    }
+
+    #[test]
+    fn binding_state_replacement_requires_both_guards_and_roundtrips() {
+        let before = ProjectDocument::new_automatic(
+            ProjectId::new("binding-patch").unwrap(),
+            RevisionId::new("initial").unwrap(),
+            NodeId::new("root").unwrap(),
+        )
+        .unwrap();
+        let tx = apply(
+            &before,
+            &CommandRequest {
+                project_id: before.project_id().clone(),
+                expected_revision: before.revision_id().clone(),
+                new_revision: RevisionId::new("renamed").unwrap(),
+                command: Command::Rename {
+                    node: before.root().clone(),
+                    label: "Renamed".into(),
+                },
+            },
+        )
+        .unwrap();
+        assert!(tx.forward.audio_bindings.is_none());
+        assert!(before.audio_bindings().is_empty());
+        assert!(!before.to_json().unwrap().contains("audio_bindings"));
+        for (before_guard, after_guard) in [(false, false), (false, true), (true, false)] {
+            let mut patch = tx.forward.clone();
+            patch.audio_bindings = Some(ValueChange {
+                before: before_guard.then(crate::AudioBindingState::default),
+                after: after_guard.then(crate::AudioBindingState::default),
+            });
+            assert_eq!(
+                patch.apply(&before).unwrap_err().code,
+                EditErrorCode::InvalidCommand
+            );
+        }
+        let mut patch = tx.forward;
+        patch.audio_bindings = Some(ValueChange {
+            before: Some(crate::AudioBindingState::default()),
+            after: Some(crate::AudioBindingState::default()),
+        });
+        let after = patch.apply(&before).unwrap();
+        assert_eq!(patch.inverse().apply(&after).unwrap(), before);
+        let wire = serde_json::to_string(&patch).unwrap();
+        assert_eq!(serde_json::from_str::<DocumentPatch>(&wire).unwrap(), patch);
+    }
+}

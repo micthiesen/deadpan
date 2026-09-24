@@ -75,7 +75,7 @@ three total plays and only two gaps. These are structural edits, not rendered
 media. Editing through range/text selectors, registers, macros, and effects
 remain required future work.
 
-Documents use schema 15. Retime `purpose` defaults to ordinary `edit` and is
+Documents use schema 16. Retime `purpose` defaults to ordinary `edit` and is
 omitted from canonical JSON. `partition` retains child audio context at unity
 speed and requires automatic edges; see [the partition contract](AUDIO_PARTITIONS.md).
 This primitive does not implement Split or inserted-time resume semantics.

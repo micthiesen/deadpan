@@ -14,6 +14,7 @@ use crate::{
     DocumentErrorCode, ExactRatio, FrameDuration, FrameRange, FrameRate, HoldAudio, InstancePath,
     IterationId, IterationOrder, MAX_DOCUMENT_DEPTH, MAX_DOCUMENT_JSON_BYTES, MAX_DOCUMENT_NODES,
     NodeId, NodeKind, PitchPolicy, PlayOverrides, ProjectDocument, RepeatLayout, RetimePurpose,
+    TimeError,
 };
 
 /// Frozen references additionally bound the sum of compact runs across every
@@ -320,6 +321,12 @@ impl FrozenAudioLayout {
         Self::admit(serde_json::from_str(json).map_err(DocumentError::json)?)
     }
 
+    pub(crate) fn preflight_binding_counts(
+        json: &str,
+    ) -> Result<(usize, usize, usize), DocumentError> {
+        preflight::complexity(json)
+    }
+
     pub fn to_json(&self) -> Result<String, DocumentError> {
         let mut output = BoundedJson {
             bytes: Vec::new(),
@@ -507,10 +514,49 @@ impl FrozenAudioLayout {
         gap_after: Option<&IterationId>,
         maximum_work: usize,
     ) -> Result<FrozenAudioProjection, DocumentError> {
+        self.project_scoped(&self.root, instance, local, gap_after, maximum_work)
+    }
+
+    /// Project an occurrence relative to an explicit lexical definition root.
+    /// The Repeat path contains only ancestors strictly inside that scope;
+    /// no enclosing occurrence or current alias is inferred.
+    pub fn project_scoped(
+        &self,
+        root: &NodeId,
+        instance: &InstancePath,
+        local: ExactRatio,
+        gap_after: Option<&IterationId>,
+        maximum_work: usize,
+    ) -> Result<FrozenAudioProjection, DocumentError> {
+        self.project_scoped_inner(root, instance, local, gap_after, maximum_work, false)
+            .map(|(projection, _)| projection)
+    }
+
+    pub(crate) fn project_scoped_supported(
+        &self,
+        root: &NodeId,
+        instance: &InstancePath,
+        maximum_work: usize,
+    ) -> Result<(FrozenAudioProjection, std::ops::Range<ExactRatio>), DocumentError> {
+        self.project_scoped_inner(root, instance, ExactRatio::ZERO, None, maximum_work, true)
+    }
+
+    fn project_scoped_inner(
+        &self,
+        root: &NodeId,
+        instance: &InstancePath,
+        local: ExactRatio,
+        gap_after: Option<&IterationId>,
+        maximum_work: usize,
+        capture_support: bool,
+    ) -> Result<(FrozenAudioProjection, std::ops::Range<ExactRatio>), DocumentError> {
         if maximum_work == 0 || maximum_work > MAX_DOCUMENT_NODES {
             return Err(limit("invalid frozen projection budget"));
         }
         instance.validate_depth()?;
+        if !self.nodes.contains_key(root) {
+            return Err(invalid("frozen projection scope is missing"));
+        }
         let target = self
             .nodes
             .get(&instance.node)
@@ -519,6 +565,7 @@ impl FrozenAudioLayout {
         let mut origin = ExactRatio::ZERO;
         let mut scale = ExactRatio::ONE;
         let mut local_duration = target.duration;
+        let mut support = ExactRatio::ZERO..ExactRatio::integer(local_duration.frames());
         if let Some(gap) = gap_after {
             let layout = self
                 .index
@@ -540,14 +587,30 @@ impl FrozenAudioLayout {
         let mut step = instance.repeats.len();
         loop {
             spend(&mut work, 1, maximum_work)?;
-            let Some((parent, offset)) = self.index.parents.get(node) else {
+            if node == root {
                 break;
-            };
+            }
+            let (parent, offset) = self
+                .index
+                .parents
+                .get(node)
+                .ok_or_else(|| invalid("frozen projection host is outside scope"))?;
             match &self.nodes[parent].kind {
                 FrozenAudioKind::Sequence { .. } => {
                     origin = origin.checked_add(ExactRatio::integer(*offset))?
                 }
-                FrozenAudioKind::Retime { mapping, .. } => {
+                FrozenAudioKind::Retime {
+                    mapping, purpose, ..
+                } => {
+                    if capture_support && *purpose != crate::RetimePurpose::Partition {
+                        let selected = ExactRatio::integer(mapping.start().0)
+                            .checked_sub(origin)?
+                            .checked_div(scale)?
+                            ..ExactRatio::integer(mapping.end().0)
+                                .checked_sub(origin)?
+                                .checked_div(scale)?;
+                        clip_binding_support(&mut support, selected)?;
+                    }
                     let factor = ExactRatio::new(
                         i128::from(self.nodes[parent].duration.frames()),
                         i128::from(mapping.duration().frames()),
@@ -584,16 +647,121 @@ impl FrozenAudioLayout {
         if step != 0 {
             return Err(invalid("frozen occurrence has extra Repeat ancestors"));
         }
-        Ok(FrozenAudioProjection {
-            origin,
-            frames_per_local_frame: scale,
-            point: origin.checked_add(local.checked_mul(scale)?)?,
-            local_duration,
-            instance: instance.clone(),
-            gap_after: gap_after.cloned(),
-            work,
-        })
+        Ok((
+            FrozenAudioProjection {
+                origin,
+                frames_per_local_frame: scale,
+                point: origin.checked_add(local.checked_mul(scale)?)?,
+                local_duration,
+                instance: instance.clone(),
+                gap_after: gap_after.cloned(),
+                work,
+            },
+            support,
+        ))
     }
+
+    /// Structural Repeat ancestors from outside inward, without selecting any
+    /// play. This also reaches an unplayed default child and sparse overrides.
+    /// The path stays within one physical clock, including its explicit root.
+    pub(crate) fn scoped_repeats(
+        &self,
+        root: &NodeId,
+        target: &NodeId,
+        maximum_work: usize,
+    ) -> Result<(Vec<NodeId>, usize), DocumentError> {
+        if maximum_work == 0 || maximum_work > MAX_DOCUMENT_NODES {
+            return Err(limit("invalid frozen scope budget"));
+        }
+        if !self.nodes.contains_key(root) || !self.nodes.contains_key(target) {
+            return Err(invalid("frozen scope alias is missing"));
+        }
+        let mut node = target;
+        let mut repeats = Vec::new();
+        let mut work = 0;
+        loop {
+            spend(&mut work, 1, maximum_work)?;
+            if node == root {
+                break;
+            }
+            let (parent, _) = self
+                .index
+                .parents
+                .get(node)
+                .ok_or_else(|| invalid("frozen scope does not contain its target"))?;
+            let parent_node = &self.nodes[parent];
+            if matches!(
+                &parent_node.kind,
+                FrozenAudioKind::Retime {
+                    mapping,
+                    pitch: PitchPolicy::Preserve,
+                    ..
+                } if mapping.duration() != parent_node.duration
+            ) {
+                return Err(invalid("audio binding scope crosses an opaque Preserve"));
+            }
+            if matches!(self.nodes[parent].kind, FrozenAudioKind::Repeat { .. }) {
+                repeats.push(parent.clone());
+            }
+            node = parent;
+        }
+        repeats.reverse();
+        Ok((repeats, work))
+    }
+
+    /// Immediate owned child on the target's path below an explicit ancestor.
+    /// Sparse overrides are indexed parents, so unrelated branches cost no work.
+    pub(crate) fn branch_below(
+        &self,
+        ancestor: &NodeId,
+        target: &NodeId,
+        maximum_work: usize,
+    ) -> Result<(NodeId, usize), DocumentError> {
+        if maximum_work == 0 || maximum_work > MAX_DOCUMENT_NODES {
+            return Err(limit("invalid frozen branch budget"));
+        }
+        if !self.nodes.contains_key(ancestor) || !self.nodes.contains_key(target) {
+            return Err(invalid("frozen branch alias is missing"));
+        }
+        let mut node = target;
+        let mut work = 0;
+        loop {
+            spend(&mut work, 1, maximum_work)?;
+            let (parent, _) = self
+                .index
+                .parents
+                .get(node)
+                .ok_or_else(|| invalid("frozen ancestor does not contain its target"))?;
+            if parent == ancestor {
+                return Ok((node.clone(), work));
+            }
+            node = parent;
+        }
+    }
+}
+
+pub(crate) fn clip_binding_support(
+    support: &mut std::ops::Range<ExactRatio>,
+    constraint: std::ops::Range<ExactRatio>,
+) -> Result<(), TimeError> {
+    let min = |a: ExactRatio, b: ExactRatio| -> Result<ExactRatio, TimeError> {
+        Ok(if a.checked_sub(b)?.compare_integer(0).is_le() {
+            a
+        } else {
+            b
+        })
+    };
+    let max = |a: ExactRatio, b: ExactRatio| -> Result<ExactRatio, TimeError> {
+        Ok(if a.checked_sub(b)?.compare_integer(0).is_ge() {
+            a
+        } else {
+            b
+        })
+    };
+    let start = min(max(support.start, constraint.start)?, support.end)?;
+    let end = max(min(support.end, constraint.end)?, start)?;
+    *support = start..end;
+    Ok(())
 }
 
 fn validate_node(node: &FrozenAudioNode) -> Result<(), DocumentError> {

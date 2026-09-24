@@ -9,8 +9,9 @@ or permission to read media.
 This provides a tested evaluation boundary for the owned-tree approach to
 inserted-time audio. Split already retains full editable child contexts. A future
 binding can preserve their evaluation clocks without adding a second graph of
-historical raw recipes. Persisted bindings, their complete edit lifecycle and
-arbitrary Hold insertion remain open. Core 15 and database 21 are unchanged.
+historical raw recipes. Core 16/database 22 now retain the separate
+[binding representation](OWNED_AUDIO_BINDINGS.md). Its renderer, complete edit
+lifecycle and arbitrary Hold insertion remain open.
 
 ## Placement and support
 
@@ -34,6 +35,12 @@ Only an exactly coincident authored edge can contribute a Hard exception; a crop
 cannot inherit an old edge's choice merely because both round to the same sample.
 A positive support may round to zero root samples, leaving no nonempty PCM read.
 
+`in_point_clock` evaluates the same physical recipe on a true PointCeil grid
+with a separately supplied selected origin. Its `AudioPointDomain` retains
+signed reference labels and exposes a zero-based `AudioSignal` by subtracting
+only the allocated integer start. The exact support remains available when it
+contains no sample point. Root and point grids retain distinct types and rules.
+
 A Sequence, Repeat or transparent Retime cannot be treated as one physical
 domain. Each genuine domain needs its own placement. In an NTSC `A2f, B2f`
 sequence, inserting 1f at frame 1 requires A to resume new sample 3203 from old
@@ -51,6 +58,12 @@ root spans, processing descriptors and nested stage signals. Intrinsic Preserve
 and RoomTone preparations can be reused across outer placements of the same
 definition because their full local grids and inputs are unchanged. Source
 dependencies are still checked on cache hits.
+
+`read_point_domain` uses that same preparation path. Controlled nested root,
+domain and point reads share their caller's deadline, depth and work allowance.
+Per-read dependency sets include already observed sources and cache hits;
+building them by subtracting global observations would omit required inputs.
+Depth admission precedes cache reuse.
 
 Policy comes from the selected owned tree. A new revision that changes Source
 alignment or a silent Repeat gap into RoomTone uses that new recipe even when
@@ -103,8 +116,9 @@ their old policy and invalidate affected opaque preparations.
 Historical timing layouts may supply bounded placement indexes. Historical raw
 bodies remain useful for explicit revision inspection, but are not required by
 this owned-recipe reader. Neither this API nor the timing-only proposal proves
-the complete binding lifecycle; do not add a persistent schema by assuming
-those remaining transformations are automatic.
+the complete binding lifecycle. The separate persisted representation keeps
+rendering explicitly unavailable until its policy and PCM consumers honor the
+authored clocks.
 
 [Qualification](qualification/owned-audio-clock-2026-09-23.md) records the actual
 PCM/current-recipe tests, independent review and full 1,108-test repository gate.

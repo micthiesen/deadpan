@@ -93,6 +93,28 @@ impl<'plan> AudioDefinition<'plan> {
         &self,
         placement: AudioRootPlacement,
     ) -> Result<AudioDomain<'plan>, PlanError> {
+        self.validate_physical_placement(&placement)?;
+        self.root_domain(placement)
+    }
+
+    /// Retain a distinct selected point-grid origin while placing this owned
+    /// physical recipe. The returned storage signal rebases integer labels only.
+    pub fn in_point_clock(
+        &self,
+        placement: AudioRootPlacement,
+        grid_origin: ExactRatio,
+    ) -> Result<super::AudioPointDomain<'plan>, PlanError> {
+        self.validate_physical_placement(&placement)?;
+        super::AudioPointDomain::new(
+            self.plan,
+            self.root,
+            self.selector.clone(),
+            placement,
+            grid_origin,
+        )
+    }
+
+    fn validate_physical_placement(&self, placement: &AudioRootPlacement) -> Result<(), PlanError> {
         match &self.plan.nodes[self.root].kind {
             CompiledKind::Source { .. } | CompiledKind::Hold { .. } => {}
             CompiledKind::Retime {
@@ -116,6 +138,11 @@ impl<'plan> AudioDefinition<'plan> {
                 "support is outside the definition output",
             ));
         }
+        Ok(())
+    }
+
+    fn root_domain(&self, placement: AudioRootPlacement) -> Result<AudioDomain<'plan>, PlanError> {
+        let support = placement.local_support();
         let rate = self.plan.metadata.presentation_basis.frame_rate;
         let frames_per_sample = ExactRatio::new(
             i128::from(rate.numerator()),

@@ -9,7 +9,7 @@ use crate::{
     TimeError,
 };
 
-pub const DOCUMENT_SCHEMA_VERSION: u32 = 15;
+pub const DOCUMENT_SCHEMA_VERSION: u32 = 16;
 /// Bounds apply before traversal. Structure is walked iteratively, never recursively.
 pub const MAX_DOCUMENT_NODES: usize = 100_000;
 pub const MAX_DOCUMENT_ASSETS: usize = 100_000;
@@ -405,6 +405,8 @@ pub struct ProjectDocument {
     pub(crate) overrides: BTreeMap<NodeId, PlayOverrides>,
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub(crate) audio_lineage: BTreeMap<NodeId, crate::AudioLineageId>,
+    #[serde(skip_serializing_if = "crate::AudioBindingState::is_empty")]
+    pub(crate) audio_bindings: crate::AudioBindingState,
 }
 
 #[derive(Deserialize)]
@@ -426,6 +428,8 @@ struct DocumentWire {
     overrides: BTreeMap<NodeId, PlayOverrides>,
     #[serde(default, deserialize_with = "unique_map")]
     audio_lineage: BTreeMap<NodeId, crate::AudioLineageId>,
+    #[serde(default)]
+    audio_bindings: crate::AudioBindingState,
 }
 
 impl TryFrom<DocumentWire> for ProjectDocument {
@@ -443,6 +447,7 @@ impl TryFrom<DocumentWire> for ProjectDocument {
             marks: value.marks,
             overrides: value.overrides,
             audio_lineage: value.audio_lineage,
+            audio_bindings: value.audio_bindings,
         };
         document.validate()?;
         Ok(document)
@@ -468,6 +473,7 @@ impl ProjectDocument {
             marks: BTreeMap::new(),
             overrides: BTreeMap::new(),
             audio_lineage: BTreeMap::new(),
+            audio_bindings: crate::AudioBindingState::default(),
         };
         document.validate()?;
         Ok(document)
@@ -514,6 +520,9 @@ impl ProjectDocument {
     }
     pub fn audio_lineage(&self) -> &BTreeMap<NodeId, crate::AudioLineageId> {
         &self.audio_lineage
+    }
+    pub fn audio_bindings(&self) -> &crate::AudioBindingState {
+        &self.audio_bindings
     }
 
     /// All owned structural children, including sparse Repeat override roots.
@@ -588,6 +597,7 @@ impl ProjectDocument {
         let durations = self.structural_durations()?;
         self.validate_basis_state(&durations)?;
         crate::audio_lineage::validate(self)?;
+        self.audio_bindings.validate_for(self)?;
         crate::marks::validate_marks(self, &durations)?;
         Ok(durations)
     }

@@ -369,6 +369,7 @@ pub(crate) fn clone_nodes(
         }
     }
     crate::audio_lineage::inherit(document, mapping, allocation);
+    crate::audio_binding_lifecycle::inherit(document, mapping);
     Ok(())
 }
 

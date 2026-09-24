@@ -1,0 +1,7 @@
+{
+  "fixture": "crates/deadpan-store/tests/fixtures/v21-history.sql",
+  "prior_executable_sha256": "9478d4e076d6442560d049c74b21e5e4342918f2e01b51b73ad0a7ec928b9ade",
+  "observed_prior_core_schema": 15,
+  "observed_prior_database_schema": 21,
+  "prior_migration_and_validation": "passed"
+}

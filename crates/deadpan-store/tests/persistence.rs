@@ -991,3 +991,125 @@ fn logical_mark_fragments_survive_partial_loss_reopen_and_durable_history() -> R
     );
     Ok(())
 }
+
+#[test]
+fn imported_audio_timing_namespaces_remain_reserved_after_bindings_are_removed() -> Result {
+    use deadpan_core::{
+        AudioBindingState, AudioClockRoot, AudioPlacementTemplate, AudioReferenceClock,
+        AudioRepeatArgument, AudioRepeatValue, AudioTimingId, AudioTimingRecord,
+        FrozenAudioContext, FrozenAudioLayout, IterationId, OwnedAudioBinding, WrapAnchorPolicy,
+    };
+    let base = document()?;
+    let inserted = deadpan_core::apply(&base, &insert(&base, "inserted", "hold")?)?
+        .forward
+        .apply(&base)?;
+    let old_repeat = deadpan_core::apply(
+        &inserted,
+        &CommandRequest {
+            project_id: inserted.project_id().clone(),
+            expected_revision: inserted.revision_id().clone(),
+            new_revision: RevisionId::new("frozen-plays")?,
+            command: Command::WrapRepeat {
+                node: NodeId::new("hold")?,
+                id: NodeId::new("repeat")?,
+                plays: 2,
+                gap: None,
+                anchor_policy: WrapAnchorPolicy::First,
+            },
+        },
+    )?
+    .forward
+    .apply(&inserted)?;
+    let mut old_wire = serde_json::to_value(old_repeat)?;
+    old_wire["audio_lineage"] = serde_json::json!({
+        "hold": {"allocation":"frozen-lineage", "origin":"old-hold"}
+    });
+    let old = ProjectDocument::from_json(&old_wire.to_string())?;
+    let timing = AudioTimingId {
+        allocation: RevisionId::new("reserved-timing")?,
+        ordinal: 0,
+    };
+    let bindings = AudioBindingState::new(
+        vec![AudioTimingRecord {
+            id: timing.clone(),
+            layout: FrozenAudioLayout::capture(&old)?,
+        }],
+        BTreeMap::from([(
+            NodeId::new("hold")?,
+            OwnedAudioBinding {
+                lattice: AudioPlacementTemplate {
+                    reference: AudioReferenceClock {
+                        timing,
+                        root: AudioClockRoot::ProjectRootRoundEven,
+                        physical: NodeId::new("hold")?,
+                    },
+                    arguments: vec![AudioRepeatArgument {
+                        reference_repeat: NodeId::new("repeat")?,
+                        value: AudioRepeatValue::Captured {
+                            iteration: IterationId {
+                                allocation: RevisionId::new("frozen-plays")?,
+                                ordinal: 0,
+                            },
+                        },
+                    }],
+                    births: vec![],
+                },
+                resume: None,
+            },
+        )]),
+    )?;
+    let mut wire = serde_json::to_value(inserted)?;
+    wire["revision_id"] = serde_json::json!("imported-snapshot");
+    wire["audio_bindings"] = serde_json::to_value(bindings)?;
+    let initial = ProjectDocument::from_json(&wire.to_string())?;
+    assert!(
+        FrozenAudioContext::capture(&initial)
+            .unwrap_err()
+            .message
+            .contains("cannot retain")
+    );
+    for reserved in ["reserved-timing", "frozen-plays", "frozen-lineage"] {
+        let scratch = tempfile::tempdir()?;
+        let path = scratch.path().join("imported-timing.deadpan");
+        let mut store = ProjectStore::create(&path, &initial)?;
+        store.commit(&CommandRequest {
+            project_id: initial.project_id().clone(),
+            expected_revision: initial.revision_id().clone(),
+            new_revision: RevisionId::new("delete-owner")?,
+            command: Command::Delete {
+                node: NodeId::new("hold")?,
+            },
+        })?;
+        let current = store.snapshot()?;
+        assert!(current.audio_bindings().is_empty());
+        let request = insert(&current, reserved, "replacement")?;
+        assert!(matches!(
+            store.preview(&request),
+            Err(StoreError::RevisionReused(_))
+        ));
+        assert!(matches!(
+            store.commit(&request),
+            Err(StoreError::RevisionReused(_))
+        ));
+        assert!(matches!(
+            store.undo(current.revision_id(), RevisionId::new(reserved)?),
+            Err(StoreError::RevisionReused(_))
+        ));
+        assert_eq!(store.snapshot()?, current);
+        drop(store);
+        ProjectStore::open(&path, AccessMode::ReadOnly)?.validate()?;
+        // A coherent forged transition must also fail chronological validation.
+        let connection = Connection::open(path.join("project.sqlite"))?;
+        connection.execute_batch("PRAGMA foreign_keys=OFF;")?;
+        let transaction = connection.unchecked_transaction()?;
+        transaction.execute("UPDATE revisions SET id=?1,document=json_set(document,'$.revision_id',?1) WHERE id='delete-owner'", [reserved])?;
+        transaction.execute("UPDATE history SET revision_id=?1,request=json_set(request,'$.new_revision',?1),edit=json_set(edit,'$.forward.to_revision',?1,'$.inverse.from_revision',?1) WHERE revision_id='delete-owner'", [reserved])?;
+        transaction.execute("UPDATE state SET head_revision=?1", [reserved])?;
+        transaction.commit()?;
+        assert!(matches!(
+            ProjectStore::open(&path, AccessMode::ReadOnly),
+            Err(StoreError::History(_))
+        ));
+    }
+    Ok(())
+}

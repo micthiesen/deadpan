@@ -8,6 +8,8 @@
 //! persistence, identity generation, media decoding, and external jobs.
 
 mod anchor;
+mod audio_binding;
+mod audio_binding_lifecycle;
 mod audio_context;
 mod audio_edges;
 mod audio_lineage;
@@ -28,6 +30,7 @@ pub mod legacy_v11;
 pub mod legacy_v12;
 pub mod legacy_v13;
 pub mod legacy_v14;
+pub mod legacy_v15;
 pub mod legacy_v2;
 pub mod legacy_v3;
 pub mod legacy_v4;
@@ -47,6 +50,7 @@ mod time;
 mod video_mapping;
 
 pub use anchor::*;
+pub use audio_binding::*;
 pub use audio_context::*;
 pub use audio_edges::*;
 pub use audio_lineage::AudioLineageId;

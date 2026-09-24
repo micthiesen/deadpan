@@ -195,6 +195,7 @@ impl Document {
     pub fn upgrade(self) -> Result<ProjectDocument, DocumentError> {
         let document = ProjectDocument {
             audio_lineage: BTreeMap::new(),
+            audio_bindings: crate::AudioBindingState::default(),
             schema_version: DOCUMENT_SCHEMA_VERSION,
             project_id: self.project_id,
             revision_id: self.revision_id,
@@ -215,6 +216,9 @@ impl Document {
     }
 
     pub fn matches(&self, document: &ProjectDocument) -> bool {
+        if !document.audio_bindings.is_empty() {
+            return false;
+        }
         let Some(marks) = project_marks(&document.marks) else {
             return false;
         };
@@ -816,6 +820,9 @@ struct Edit {
 }
 
 pub fn matches_edit(json: &str, edit: &EditTransaction) -> Result<bool, DocumentError> {
+    if edit.forward.audio_bindings.is_some() || edit.inverse.audio_bindings.is_some() {
+        return Ok(false);
+    }
     let old: Edit = parse(json)?;
     let (Some(forward), Some(inverse)) =
         (Patch::project(&edit.forward), Patch::project(&edit.inverse))

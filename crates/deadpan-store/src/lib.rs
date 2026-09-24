@@ -609,8 +609,9 @@ fn ensure_unused_revision(
         return Err(StoreError::RevisionReused(revision.as_str().to_owned()));
     }
     // A package may start from a nonempty imported snapshot. Its occurrence
-    // and audio-lineage allocations predate this database's revision rows, but
-    // reserve those names forever, even after every live owner is removed.
+    // and audio-lineage/timing allocations predate this database's revision
+    // rows. Retained timing layouts also own old play namespaces. Reserve all
+    // of those names forever, even after every live owner is removed.
     // Subsequent command allocations use committed revision IDs.
     let initial =
         validation::read_revision(connection, &validation::read_initial_id(connection)?)?.document;
@@ -622,6 +623,7 @@ fn ensure_unused_revision(
         .audio_lineage()
         .values()
         .any(|lineage| &lineage.allocation == revision)
+        || initial.audio_bindings().allocation_ids().contains(revision)
     {
         return Err(StoreError::RevisionReused(revision.as_str().to_owned()));
     }

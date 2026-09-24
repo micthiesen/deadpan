@@ -123,8 +123,9 @@ which requires both old reference-policy and current structural suppression.
 [Frozen timing capture and reference queries](AUDIO_REFERENCE.md) now preserve
 those old policy facts and stable play placements outside the live tree. The
 bounded root-resume PCM consumer proves both rounding phases with canonical DSP.
-Persisted live-to-frozen bindings, lifecycle transforms, cross-grid composition
-and the atomic insertion command remain to be implemented.
+The owned binding representation described below now persists timing intent.
+Its complete lifecycle, cross-grid consumption and the atomic insertion command
+remain to be implemented.
 
 [Sampled-root transfer](AUDIO_SIGNAL_TRANSFER.md) now converts already mapped,
 explicitly suppressed root PCM to a new point grid with bounded halo reads.
@@ -185,15 +186,15 @@ instead of substituting an old raw body. This makes editing the retained recipe
 observable without a second historical recipe graph. Explicit historical reads
 still authenticate their complete capture against the committed revision.
 
-The proposed authored model retains bounded timing-only placement indexes and
-live rules with separate ownership, lexical scope, destination clock, local
-anchor and exact phase. Existing stable plays retain their historical placement;
-births use a canonical definition environment. Intrinsic resume phase must remain
-separate from enclosing Repeat placement so a birth can replace the latter
-without losing the former. Structural owned recursion supplies nested recipes.
-Changed raw contributions and their affected opaque ancestors replace old policy
-and preparation. These lifecycle rules remain design work, not implemented
-authored storage. The reader does not justify committing a partial binding schema.
+Core 16/database 22 now retain the [owned binding representation](OWNED_AUDIO_BINDINGS.md):
+bounded timing-only records, lexical arguments, ordered default-birth clauses
+and symbolic local phase terms. Each term retains its own clock, so rounding at
+a shared-definition cut can differ across existing plays without expanding them.
+Split/isolation remap live aliases and removal prunes unused records atomically.
+The representation does not implement its complete edit lifecycle or consumer.
+Render compilation rejects nonempty bindings until both PCM and policy honor
+them. Changed raw contributions and affected opaque ancestors still need explicit
+replacement; the arbitrary insertion command remains open.
 
 ## Structural and mark requirements
 

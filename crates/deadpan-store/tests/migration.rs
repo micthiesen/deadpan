@@ -7,7 +7,7 @@ use std::{
 use deadpan_core::{
     IterationOrder, NodeId, NodeKind, ProjectDocument, RevisionId, legacy_v1, legacy_v2, legacy_v3,
     legacy_v4, legacy_v5, legacy_v6, legacy_v7, legacy_v8, legacy_v9, legacy_v10, legacy_v11,
-    legacy_v12, legacy_v13, legacy_v14,
+    legacy_v12, legacy_v13, legacy_v14, legacy_v15,
 };
 use deadpan_jobs::{Relevance, RequestId};
 use deadpan_store::generation::{
@@ -17,6 +17,151 @@ use deadpan_store::{AccessMode, DATABASE_SCHEMA_VERSION, ProjectStore, StoreErro
 use rusqlite::Connection;
 
 type Result<T = ()> = std::result::Result<T, Box<dyn Error>>;
+
+#[test]
+fn schema_twenty_one_retains_exact_lineage_and_does_not_invent_audio_bindings() -> Result {
+    use deadpan_core::{CommandRequest, EditTransaction};
+    let scratch = tempfile::tempdir()?;
+    let path = fixture_version(scratch.path(), 21)?;
+    let database = Connection::open(path.join("project.sqlite"))?;
+    let before = contents(&database)?;
+    let old_docs = docs(&database)?;
+    let old_history = history_json(&database)?;
+    let old_metadata = metadata(&database)?;
+    let old_operational = operational_metadata(&database)?;
+    assert!(matches!(
+        ProjectStore::open(&path, AccessMode::ReadOnly),
+        Err(StoreError::MigrationRequired(21))
+    ));
+    let migration = ProjectStore::migrate(&path)?;
+    assert_eq!(
+        (migration.from_schema, migration.to_schema),
+        (21, DATABASE_SCHEMA_VERSION)
+    );
+    assert_eq!(
+        contents(&Connection::open(migration.backup.unwrap())?)?,
+        before
+    );
+    assert_eq!(metadata(&database)?, old_metadata);
+    assert_eq!(operational_metadata(&database)?, old_operational);
+    let mut saw_lineage = false;
+    for ((old_id, old_json), (new_id, new_json)) in old_docs.iter().zip(docs(&database)?) {
+        assert_eq!(old_id, &new_id);
+        let current = ProjectDocument::from_json(&new_json)?;
+        assert!(legacy_v15::Document::from_json(old_json)?.matches(&current));
+        assert!(current.audio_bindings().is_empty());
+        saw_lineage |= !current.audio_lineage().is_empty();
+        let mut expected: serde_json::Value = serde_json::from_str(old_json)?;
+        expected["schema_version"] = serde_json::json!(deadpan_core::DOCUMENT_SCHEMA_VERSION);
+        assert_eq!(serde_json::to_value(current)?, expected);
+    }
+    assert!(saw_lineage, "fixture must retain authored audio lineage");
+    for ((old_request, old_edit), (new_request, new_edit)) in
+        old_history.iter().zip(history_json(&database)?)
+    {
+        let request: CommandRequest = serde_json::from_str(&new_request)?;
+        let edit: EditTransaction = serde_json::from_str(&new_edit)?;
+        assert_eq!(legacy_v15::upgrade_request(old_request)?, request);
+        assert!(legacy_v15::matches_edit(old_edit, &edit)?);
+        assert!(edit.forward.audio_bindings.is_none());
+        assert!(edit.inverse.audio_bindings.is_none());
+        assert_eq!(
+            serde_json::from_str::<serde_json::Value>(old_edit)?,
+            serde_json::to_value(&edit)?
+        );
+        let prior = snapshot(&database, request.expected_revision.as_str())?;
+        let after = snapshot(&database, request.new_revision.as_str())?;
+        assert_eq!(edit.forward.apply(&prior)?, after);
+        assert_eq!(edit.inverse.apply(&after)?, prior);
+    }
+    let mut store = ProjectStore::open(&path, AccessMode::ReadWrite)?;
+    assert_eq!(store.single_source_state()?, None);
+    let baseline = store.snapshot()?;
+    let next = RevisionId::new("binding-schema-redo")?;
+    store.redo(baseline.revision_id(), next.clone())?;
+    store.undo(&next, RevisionId::new("binding-schema-undo")?)?;
+    assert_eq!(store.snapshot()?.audio_lineage(), baseline.audio_lineage());
+    assert_eq!(store.snapshot()?.nodes(), baseline.nodes());
+    assert!(store.snapshot()?.audio_bindings().is_empty());
+    store.validate()?;
+    drop(store);
+    assert!(
+        ProjectStore::open(&path, AccessMode::ReadOnly)?
+            .snapshot()?
+            .audio_bindings()
+            .is_empty()
+    );
+    assert!(ProjectStore::migrate(&path)?.backup.is_none());
+    Ok(())
+}
+
+#[test]
+fn all_legacy_databases_reject_audio_binding_ingress_without_promotion() -> Result {
+    for version in 1..=21 {
+        for position in ["initial", "later", "forward", "inverse", "command"] {
+            for value in ["null", "{}"] {
+                let scratch = tempfile::tempdir()?;
+                let path = fixture_version(scratch.path(), version)?;
+                let database = Connection::open(path.join("project.sqlite"))?;
+                if matches!(position, "initial" | "later") {
+                    let selector = if position == "initial" {
+                        "parent_id IS NULL"
+                    } else {
+                        "parent_id IS NOT NULL"
+                    };
+                    database.execute(&format!("UPDATE revisions SET document=json_set(document,'$.audio_bindings',json(?1)) WHERE id=(SELECT id FROM revisions WHERE {selector} LIMIT 1)"), [value])?;
+                } else if position == "command" {
+                    database.execute("UPDATE history SET request=json_set(request,'$.command.audio_bindings',json(?1)) WHERE id=(SELECT MIN(id) FROM history)", [value])?;
+                } else {
+                    let pointer = format!("$.{position}.audio_bindings");
+                    database.execute("UPDATE history SET edit=json_set(edit,?1,json(?2)) WHERE id=(SELECT MIN(id) FROM history)", [&pointer, value])?;
+                }
+                let before = contents(&database)?;
+                let StoreError::MigrationFailed { backup, .. } =
+                    ProjectStore::migrate(&path).unwrap_err()
+                else {
+                    panic!(
+                        "schema {version}, {position}={value}: expected retained failed migration"
+                    );
+                };
+                assert_eq!(contents(&database)?, before);
+                assert_eq!(contents(&Connection::open(backup)?)?, before);
+                assert_eq!(
+                    database
+                        .pragma_query_value(None, "user_version", |row| row.get::<_, u32>(0))?,
+                    version
+                );
+            }
+        }
+    }
+    Ok(())
+}
+
+#[test]
+fn schema_twenty_one_rejects_changed_lineage_without_promotion() -> Result {
+    for tamper in [
+        "UPDATE revisions SET document=json_set(document,'$.audio_lineage',json('{}')) WHERE id='split'",
+        "UPDATE history SET edit=json_set(edit,'$.forward.audio_lineage',json('{}')) WHERE revision_id='split'",
+        "UPDATE history SET edit=json_set(edit,'$.inverse.audio_lineage',json('{}')) WHERE revision_id='split'",
+    ] {
+        let scratch = tempfile::tempdir()?;
+        let path = fixture_version(scratch.path(), 21)?;
+        let database = Connection::open(path.join("project.sqlite"))?;
+        assert_eq!(database.execute(tamper, [])?, 1);
+        let before = contents(&database)?;
+        let StoreError::MigrationFailed { backup, .. } = ProjectStore::migrate(&path).unwrap_err()
+        else {
+            panic!("expected retained failed migration");
+        };
+        assert_eq!(contents(&database)?, before);
+        assert_eq!(contents(&Connection::open(backup)?)?, before);
+        assert_eq!(
+            database.pragma_query_value(None, "user_version", |row| row.get::<_, u32>(0))?,
+            21
+        );
+    }
+    Ok(())
+}
 
 #[test]
 fn schema_twenty_replays_lineage_from_copy_history_and_preserves_navigation() -> Result {
@@ -1508,6 +1653,7 @@ fn fixture_version(scratch: &Path, version: u32) -> Result<PathBuf> {
         18 => include_str!("fixtures/v18-history.sql"),
         19 => include_str!("fixtures/v19-history.sql"),
         20 => include_str!("fixtures/v20-history.sql"),
+        21 => include_str!("fixtures/v21-history.sql"),
         _ => panic!("unsupported fixture"),
     })?;
     Ok(package)

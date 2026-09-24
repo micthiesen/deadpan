@@ -165,6 +165,7 @@ impl<'plan> AudioStage<'plan> {
             constrain_support: true,
             repeats: self.descriptor.instance.repeats.clone(),
             definition: self.descriptor.definition.clone(),
+            placed_transform: None,
         }
     }
 
@@ -178,6 +179,7 @@ impl<'plan> AudioStage<'plan> {
             constrain_support: false,
             repeats: self.descriptor.instance.repeats.clone(),
             definition: self.descriptor.definition.clone(),
+            placed_transform: None,
         }
     }
 }
@@ -290,6 +292,9 @@ pub struct AudioSignal<'plan> {
     constrain_support: bool,
     repeats: Vec<RepeatInstance>,
     definition: Option<AudioDefinitionSelector>,
+    // An explicitly placed owned definition carries a distinct point-grid
+    // origin. Ordinary signals derive their grid from their selected support.
+    placed_transform: Option<SignalTransform>,
 }
 
 impl RenderPlan {
@@ -303,6 +308,7 @@ impl RenderPlan {
             constrain_support: false,
             repeats: Vec::new(),
             definition: None,
+            placed_transform: None,
         }
     }
 
@@ -374,6 +380,25 @@ impl<'plan> AudioSignal<'plan> {
             constrain_support: false,
             repeats: Vec::new(),
             definition: Some(definition),
+            placed_transform: None,
+        }
+    }
+
+    pub(super) fn for_placed_definition(
+        plan: &'plan RenderPlan,
+        root: usize,
+        definition: AudioDefinitionSelector,
+        support: Range<ExactRatio>,
+        transform: SignalTransform,
+    ) -> Self {
+        Self {
+            plan,
+            root,
+            support,
+            constrain_support: true,
+            repeats: Vec::new(),
+            definition: Some(definition),
+            placed_transform: Some(transform),
         }
     }
 
@@ -417,6 +442,9 @@ impl<'plan> AudioSignal<'plan> {
     }
 
     fn transform(&self) -> Result<SignalTransform, TimeError> {
+        if let Some(transform) = self.placed_transform {
+            return Ok(transform);
+        }
         let rate = self.plan.metadata.presentation_basis.frame_rate;
         Ok(SignalTransform {
             signal_origin: ExactRatio::ZERO,

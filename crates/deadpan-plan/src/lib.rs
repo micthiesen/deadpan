@@ -26,7 +26,7 @@ pub use plan::{
     NodeType, PlanInspection, PlanMetadata, RenderPlan, SilenceReason, SourceSamplingSupport,
     StorageStats,
 };
-pub use plan::{AudioDefinition, AudioDefinitionSelector, AudioRootPlacement};
+pub use plan::{AudioDefinition, AudioDefinitionSelector, AudioPointDomain, AudioRootPlacement};
 pub use plan::{
     AudioProcessingQuery, AudioProcessingSpan, AudioSignal, AudioSignalContent, AudioSignalQuery,
     AudioSignalSpan, AudioStage, AudioStageDescriptor, SignalSample, SignalTransform,
@@ -39,6 +39,8 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum PlanError {
+    #[error("authored audio timing bindings are not yet supported by the render walker")]
+    UnsupportedAudioBindings,
     #[error("a retained audio context cannot render picture")]
     AudioOnlyContext,
     #[error(transparent)]

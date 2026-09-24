@@ -107,6 +107,11 @@ impl Counts {
 }
 
 pub(super) fn check(json: &str) -> Result<(), DocumentError> {
+    complexity(json).map(|_| ())
+}
+
+/// Shared aggregate admission counts for a collection of retained layouts.
+pub(super) fn complexity(json: &str) -> Result<(usize, usize, usize), DocumentError> {
     let mut counts = Counts::default();
     let mut deserializer = serde_json::Deserializer::from_str(json);
     let result = Scan {
@@ -127,7 +132,7 @@ pub(super) fn check(json: &str) -> Result<(), DocumentError> {
             "frozen JSON has an unknown or duplicate field, or invalid container shape",
         ));
     }
-    Ok(())
+    Ok((counts.nodes, counts.runs, counts.lineages))
 }
 
 struct Scan<'a> {

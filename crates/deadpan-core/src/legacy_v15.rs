@@ -1,58 +1,33 @@
-//! Frozen schema-7 document and history adapter. Source placement vocabulary
-//! must never enter old history through current serde.
+//! Frozen schema-15 document and history adapter. Transparent partitions, Split
+//! and audio lineage are retained; owned audio timing bindings are absent.
 
 use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
 use crate::document::unique_map;
-use crate::legacy_asset::{Asset, project_assets, project_changes, upgrade_assets};
-use crate::legacy_mark::{LegacyMark, project_mark_changes, project_marks, upgrade_marks};
-use crate::legacy_source_mapping::{AudioMapping, VideoMapping};
+use crate::legacy_mark_v13::{LegacyMark, project_mark_changes, project_marks, upgrade_marks};
+use crate::legacy_v8::LegacySourceNode;
 use crate::*;
+use crate::{SourceAudioMapping as AudioMapping, SourceVideoMapping as VideoMapping};
 
-/// Schema-7 source wire retains independent extents but cannot admit placements.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub(crate) struct LegacySourceNode {
-    duration: FrameDuration,
-    video: SourceVideo,
-    audio: Option<SourceAudio>,
-    link: LinkRelation,
-    audio_offset: AudioSample,
-    audio_mapping: AudioMapping,
-    video_mapping: VideoMapping,
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+enum LegacyRetimePurpose {
+    #[default]
+    Edit,
+    Partition,
 }
 
-impl LegacySourceNode {
-    pub(crate) fn upgrade(self) -> SourceNode {
-        SourceNode {
-            duration: self.duration,
-            video: self.video,
-            audio: self.audio,
-            link: self.link,
-            audio_offset: self.audio_offset,
-            audio_mapping: self.audio_mapping.upgrade(),
-            video_mapping: self.video_mapping.upgrade(),
-        }
-    }
-
-    pub(crate) fn project(source: &SourceNode) -> Option<Self> {
-        Some(Self {
-            duration: source.duration,
-            video: source.video.clone(),
-            audio: source.audio.clone(),
-            link: source.link,
-            audio_offset: source.audio_offset,
-            audio_mapping: AudioMapping::project(source.audio_mapping)?,
-            video_mapping: VideoMapping::project(source.video_mapping)?,
-        })
+impl LegacyRetimePurpose {
+    fn is_edit(&self) -> bool {
+        matches!(self, Self::Edit)
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
-pub(crate) enum LegacyNodeKind {
+enum LegacyNodeKind {
     Source {
         source: LegacySourceNode,
     },
@@ -72,21 +47,25 @@ pub(crate) enum LegacyNodeKind {
         duration: FrameDuration,
         mapping: FrameRange,
         pitch: PitchPolicy,
+        #[serde(default, skip_serializing_if = "LegacyRetimePurpose::is_edit")]
+        purpose: LegacyRetimePurpose,
     },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub(crate) struct LegacyBeatNode {
-    pub(crate) label: String,
-    pub(crate) kind: LegacyNodeKind,
+struct LegacyBeatNode {
+    label: String,
+    kind: LegacyNodeKind,
+    #[serde(default, skip_serializing_if = "AudioEdgePolicies::is_automatic")]
+    audio_edges: AudioEdgePolicies,
 }
 
 impl LegacyBeatNode {
-    pub(crate) fn upgrade(self) -> BeatNode {
+    fn upgrade(self) -> BeatNode {
         BeatNode {
             label: self.label,
-            audio_edges: AudioEdgePolicies::default(),
+            audio_edges: self.audio_edges,
             kind: match self.kind {
                 LegacyNodeKind::Source { source } => NodeKind::Source {
                     source: source.upgrade(),
@@ -107,24 +86,26 @@ impl LegacyBeatNode {
                     duration,
                     mapping,
                     pitch,
+                    purpose,
                 } => NodeKind::Retime {
                     child,
                     duration,
                     mapping,
                     pitch,
-                    purpose: RetimePurpose::Edit,
+                    purpose: match purpose {
+                        LegacyRetimePurpose::Edit => RetimePurpose::Edit,
+                        LegacyRetimePurpose::Partition => RetimePurpose::Partition,
+                    },
                 },
             },
         }
     }
 
-    pub(crate) fn project(value: &BeatNode) -> Option<Self> {
-        if value.audio_edges != AudioEdgePolicies::default() {
-            return None;
-        }
+    fn project(node: &BeatNode) -> Option<Self> {
         Some(Self {
-            label: value.label.clone(),
-            kind: match &value.kind {
+            label: node.label.clone(),
+            audio_edges: node.audio_edges,
+            kind: match &node.kind {
                 NodeKind::Source { source } => LegacyNodeKind::Source {
                     source: LegacySourceNode::project(source)?,
                 },
@@ -144,20 +125,20 @@ impl LegacyBeatNode {
                     gap: gap.clone(),
                 },
                 NodeKind::Retime {
-                    purpose: RetimePurpose::Partition,
-                    ..
-                } => return None,
-                NodeKind::Retime {
                     child,
                     duration,
                     mapping,
                     pitch,
-                    purpose: RetimePurpose::Edit,
+                    purpose,
                 } => LegacyNodeKind::Retime {
                     child: child.clone(),
                     duration: *duration,
                     mapping: *mapping,
                     pitch: *pitch,
+                    purpose: match purpose {
+                        RetimePurpose::Edit => LegacyRetimePurpose::Edit,
+                        RetimePurpose::Partition => LegacyRetimePurpose::Partition,
+                    },
                 },
             },
         })
@@ -185,22 +166,29 @@ pub struct Document {
     project_id: ProjectId,
     revision_id: RevisionId,
     presentation_basis: PresentationBasis,
+    basis_state: BasisState,
     root: NodeId,
     #[serde(deserialize_with = "unique_map")]
     nodes: BTreeMap<NodeId, LegacyBeatNode>,
     #[serde(deserialize_with = "unique_map")]
-    assets: BTreeMap<AssetId, Asset>,
+    assets: BTreeMap<AssetId, AssetRecord>,
     #[serde(deserialize_with = "unique_map")]
     marks: BTreeMap<MarkId, LegacyMark>,
     #[serde(deserialize_with = "unique_map")]
     overrides: BTreeMap<NodeId, PlayOverrides>,
+    #[serde(
+        default,
+        deserialize_with = "unique_map",
+        skip_serializing_if = "BTreeMap::is_empty"
+    )]
+    audio_lineage: BTreeMap<NodeId, AudioLineageId>,
 }
 
 impl Document {
     pub fn from_json(json: &str) -> Result<Self, DocumentError> {
         let old: Self = parse(json)?;
-        if old.schema_version != 7 {
-            return Err(invalid("migration requires document schema 7"));
+        if old.schema_version != 15 {
+            return Err(invalid("migration requires document schema 15"));
         }
         old.clone().upgrade()?;
         Ok(old)
@@ -212,21 +200,21 @@ impl Document {
 
     pub fn upgrade(self) -> Result<ProjectDocument, DocumentError> {
         let document = ProjectDocument {
-            audio_lineage: BTreeMap::new(),
+            audio_lineage: self.audio_lineage,
             audio_bindings: crate::AudioBindingState::default(),
             schema_version: DOCUMENT_SCHEMA_VERSION,
             project_id: self.project_id,
             revision_id: self.revision_id,
             presentation_basis: self.presentation_basis,
-            basis_state: BasisState::explicit(),
+            basis_state: self.basis_state,
             root: self.root,
             nodes: self
                 .nodes
                 .into_iter()
                 .map(|(id, node)| (id, node.upgrade()))
                 .collect(),
-            assets: upgrade_assets(self.assets),
-            marks: upgrade_marks(self.marks),
+            assets: self.assets,
+            marks: upgrade_marks(self.marks)?,
             overrides: self.overrides,
         };
         document.validate()?;
@@ -240,9 +228,6 @@ impl Document {
         let Some(marks) = project_marks(&document.marks) else {
             return false;
         };
-        if document.basis_state != BasisState::explicit() {
-            return false;
-        }
         let Some(nodes) = document
             .nodes
             .iter()
@@ -251,19 +236,19 @@ impl Document {
         else {
             return false;
         };
-        let Some(assets) = project_assets(&document.assets) else {
-            return false;
-        };
+        let assets = document.assets.clone();
         self == &Self {
-            schema_version: 7,
+            schema_version: 15,
             project_id: document.project_id.clone(),
             revision_id: document.revision_id.clone(),
             presentation_basis: document.presentation_basis.clone(),
+            basis_state: document.basis_state.clone(),
             root: document.root.clone(),
             nodes,
             assets,
             marks,
             overrides: document.overrides.clone(),
+            audio_lineage: document.audio_lineage.clone(),
         }
     }
 }
@@ -293,8 +278,24 @@ impl OldSubtree {
 }
 
 #[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct OldSplitIdentities {
+    nodes: Vec<NodeId>,
+}
+
+impl OldSplitIdentities {
+    fn upgrade(self) -> SplitIdentities {
+        SplitIdentities { nodes: self.nodes }
+    }
+}
+
+#[derive(Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
 enum OldOccurrenceEdit {
+    Split {
+        at: FrameDuration,
+        identities: OldSplitIdentities,
+    },
     Insert {
         index: usize,
         subtree: OldSubtree,
@@ -343,11 +344,15 @@ enum OldOccurrenceEdit {
     AcceptGeneratedHold {
         artifact: GeneratedArtifact,
         #[serde(deserialize_with = "unique_map")]
-        assets: BTreeMap<AssetId, Asset>,
+        assets: BTreeMap<AssetId, AssetRecord>,
     },
     RevertGeneratedHold {},
     Rename {
         label: String,
+    },
+    SetAudioEdge {
+        edge: AudioBoundaryKind,
+        policy: AudioEdgePolicy,
     },
     SetPlayOverride {
         iteration: IterationId,
@@ -361,6 +366,10 @@ enum OldOccurrenceEdit {
 impl OldOccurrenceEdit {
     fn upgrade(self) -> OccurrenceEdit {
         match self {
+            Self::Split { at, identities } => OccurrenceEdit::Split {
+                at,
+                identities: identities.upgrade(),
+            },
             Self::Insert { index, subtree } => OccurrenceEdit::Insert {
                 index,
                 subtree: subtree.upgrade(),
@@ -400,23 +409,20 @@ impl OldOccurrenceEdit {
                 end,
                 destination,
             },
-            Self::SetSourceVideoMapping { mapping } => OccurrenceEdit::SetSourceVideoMapping {
-                mapping: mapping.upgrade(),
-            },
+            Self::SetSourceVideoMapping { mapping } => {
+                OccurrenceEdit::SetSourceVideoMapping { mapping }
+            }
             Self::SetSourceAudioMapping { mapping, offset } => {
-                OccurrenceEdit::SetSourceAudioMapping {
-                    mapping: mapping.upgrade(),
-                    offset,
-                }
+                OccurrenceEdit::SetSourceAudioMapping { mapping, offset }
             }
             Self::SetHoldDuration { duration } => OccurrenceEdit::SetHoldDuration { duration },
             Self::SetHoldProvider { video } => OccurrenceEdit::SetHoldProvider { video },
-            Self::AcceptGeneratedHold { artifact, assets } => OccurrenceEdit::AcceptGeneratedHold {
-                artifact,
-                assets: upgrade_assets(assets),
-            },
+            Self::AcceptGeneratedHold { artifact, assets } => {
+                OccurrenceEdit::AcceptGeneratedHold { artifact, assets }
+            }
             Self::RevertGeneratedHold {} => OccurrenceEdit::RevertGeneratedHold,
             Self::Rename { label } => OccurrenceEdit::Rename { label },
+            Self::SetAudioEdge { edge, policy } => OccurrenceEdit::SetAudioEdge { edge, policy },
             Self::SetPlayOverride { iteration, subtree } => OccurrenceEdit::SetPlayOverride {
                 iteration,
                 subtree: subtree.upgrade(),
@@ -431,6 +437,11 @@ impl OldOccurrenceEdit {
 #[derive(Deserialize)]
 #[serde(tag = "command", rename_all = "snake_case", deny_unknown_fields)]
 enum OldCommand {
+    Split {
+        node: NodeId,
+        at: FrameDuration,
+        identities: OldSplitIdentities,
+    },
     Insert {
         parent: NodeId,
         index: usize,
@@ -499,7 +510,7 @@ enum OldCommand {
         node: NodeId,
         artifact: GeneratedArtifact,
         #[serde(deserialize_with = "unique_map")]
-        assets: BTreeMap<AssetId, Asset>,
+        assets: BTreeMap<AssetId, AssetRecord>,
     },
     RevertGeneratedHold {
         node: NodeId,
@@ -508,9 +519,29 @@ enum OldCommand {
         node: NodeId,
         label: String,
     },
+    SetAudioEdge {
+        node: NodeId,
+        edge: AudioBoundaryKind,
+        policy: AudioEdgePolicy,
+    },
     AddAsset {
         id: AssetId,
-        asset: Asset,
+        asset: AssetRecord,
+    },
+    ImportSource {
+        id: AssetId,
+        asset: AssetRecord,
+        insertion: Option<Box<OldSourceInsertion>>,
+        #[serde(default)]
+        primary: Option<PrimarySourceImport>,
+    },
+    SetCanvas {
+        width: u32,
+        height: u32,
+    },
+    AdoptPrimaryGeometry {
+        width: u32,
+        height: u32,
     },
     SetMark {
         id: MarkId,
@@ -540,6 +571,28 @@ enum OldCommand {
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
+struct OldSourceInsertion {
+    parent: NodeId,
+    index: usize,
+    node: NodeId,
+    label: String,
+    source: LegacySourceNode,
+}
+
+impl OldSourceInsertion {
+    fn upgrade(self) -> SourceInsertion {
+        SourceInsertion {
+            parent: self.parent,
+            index: self.index,
+            node: self.node,
+            label: self.label,
+            source: self.source.upgrade(),
+        }
+    }
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
 struct OldRequest {
     project_id: ProjectId,
     expected_revision: RevisionId,
@@ -550,6 +603,15 @@ struct OldRequest {
 pub fn upgrade_request(json: &str) -> Result<CommandRequest, DocumentError> {
     let old: OldRequest = parse(json)?;
     let command = match old.command {
+        OldCommand::Split {
+            node,
+            at,
+            identities,
+        } => Command::Split {
+            node,
+            at,
+            identities: identities.upgrade(),
+        },
         OldCommand::Insert {
             parent,
             index,
@@ -611,17 +673,16 @@ pub fn upgrade_request(json: &str) -> Result<CommandRequest, DocumentError> {
             end,
             destination,
         },
-        OldCommand::SetSourceVideoMapping { node, mapping } => Command::SetSourceVideoMapping {
-            node,
-            mapping: mapping.upgrade(),
-        },
+        OldCommand::SetSourceVideoMapping { node, mapping } => {
+            Command::SetSourceVideoMapping { node, mapping }
+        }
         OldCommand::SetSourceAudioMapping {
             node,
             mapping,
             offset,
         } => Command::SetSourceAudioMapping {
             node,
-            mapping: mapping.upgrade(),
+            mapping,
             offset,
         },
         OldCommand::SetHoldDuration { node, duration } => {
@@ -635,14 +696,29 @@ pub fn upgrade_request(json: &str) -> Result<CommandRequest, DocumentError> {
         } => Command::AcceptGeneratedHold {
             node,
             artifact,
-            assets: upgrade_assets(assets),
+            assets,
         },
         OldCommand::RevertGeneratedHold { node } => Command::RevertGeneratedHold { node },
         OldCommand::Rename { node, label } => Command::Rename { node, label },
-        OldCommand::AddAsset { id, asset } => Command::AddAsset {
+        OldCommand::SetAudioEdge { node, edge, policy } => {
+            Command::SetAudioEdge { node, edge, policy }
+        }
+        OldCommand::AddAsset { id, asset } => Command::AddAsset { id, asset },
+        OldCommand::ImportSource {
             id,
-            asset: asset.upgrade(),
+            asset,
+            insertion,
+            primary,
+        } => Command::ImportSource {
+            id,
+            asset,
+            insertion: insertion.map(|insertion| Box::new(insertion.upgrade())),
+            primary,
         },
+        OldCommand::SetCanvas { width, height } => Command::SetCanvas { width, height },
+        OldCommand::AdoptPrimaryGeometry { width, height } => {
+            Command::AdoptPrimaryGeometry { width, height }
+        }
         OldCommand::SetMark {
             id,
             owner,
@@ -693,25 +769,27 @@ struct Patch {
     project_id: ProjectId,
     from_revision: RevisionId,
     to_revision: RevisionId,
+    #[serde(default)]
+    presentation: Option<PresentationChange>,
     #[serde(deserialize_with = "unique_map")]
     nodes: BTreeMap<NodeId, ValueChange<LegacyBeatNode>>,
     #[serde(deserialize_with = "unique_map")]
-    assets: BTreeMap<AssetId, ValueChange<Asset>>,
+    assets: BTreeMap<AssetId, ValueChange<AssetRecord>>,
     #[serde(deserialize_with = "unique_map")]
     marks: BTreeMap<MarkId, ValueChange<LegacyMark>>,
     #[serde(deserialize_with = "unique_map")]
     overrides: BTreeMap<NodeId, ValueChange<PlayOverrides>>,
+    #[serde(default, deserialize_with = "unique_map")]
+    audio_lineage: BTreeMap<NodeId, ValueChange<AudioLineageId>>,
 }
 
 impl Patch {
     fn project(patch: &DocumentPatch) -> Option<Self> {
-        if patch.presentation.is_some() {
-            return None;
-        }
         Some(Self {
             project_id: patch.project_id.clone(),
             from_revision: patch.from_revision.clone(),
             to_revision: patch.to_revision.clone(),
+            presentation: patch.presentation.clone(),
             nodes: patch
                 .nodes
                 .iter()
@@ -733,9 +811,10 @@ impl Patch {
                     ))
                 })
                 .collect::<Option<_>>()?,
-            assets: project_changes(&patch.assets)?,
+            assets: patch.assets.clone(),
             marks: project_mark_changes(&patch.marks)?,
             overrides: patch.overrides.clone(),
+            audio_lineage: patch.audio_lineage.clone(),
         })
     }
 }
@@ -760,12 +839,12 @@ pub fn matches_edit(json: &str, edit: &EditTransaction) -> Result<bool, Document
     else {
         return Ok(false);
     };
-    // New lineage-only changes do not alter the legacy changed-node summary.
-    // Compare the complete summary derived from this frozen patch vocabulary.
+    // Schema 15 summaries include changes to retained lineage identities.
     let changed_ids = forward
         .nodes
         .keys()
         .chain(forward.overrides.keys())
+        .chain(forward.audio_lineage.keys())
         .cloned()
         .collect::<std::collections::BTreeSet<_>>()
         .into_iter()
@@ -789,325 +868,4 @@ fn parse<T: DeserializeOwned>(json: &str) -> Result<T, DocumentError> {
 
 fn invalid(message: &str) -> DocumentError {
     DocumentError::new(DocumentErrorCode::InvalidJson, message)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use serde_json::{Value, json};
-
-    fn document(version: u32) -> Value {
-        let span = json!({
-            "start": {"ticks": -24000, "time_base": {"numerator": 1, "denominator": 48000}},
-            "end": {"ticks": 72000, "time_base": {"numerator": 1, "denominator": 48000}}
-        });
-        let mut value = json!({
-            "schema_version": version, "project_id": "legacy", "revision_id": "initial",
-            "presentation_basis": {"width": 16, "height": 16, "frame_rate": {"numerator": 30000, "denominator": 1001}, "color_policy": "sdr_rec709"},
-            "root": "root", "nodes": {
-                "root": {"label": "Root", "kind": {"type": "sequence", "children": ["source"]}},
-                "source": {"label": "Original A/V", "kind": {"type": "source", "source": {
-                    "duration": 60, "video": {"type": "stream", "asset": "asset", "span": span},
-                    "audio": {"asset": "asset", "span": span},
-                    "link": "independent", "audio_offset": -137
-                }}}
-            }, "assets": {"asset": {"label": "A/V", "content_hash": "a".repeat(64), "video": span, "audio": span, "still_image": false, "frame_count": 60}}
-        });
-        if version >= 3 {
-            value["marks"] = json!({});
-        }
-        if version >= 4 {
-            value["overrides"] = json!({});
-        }
-        if version >= 6 {
-            value["nodes"]["source"]["kind"]["source"]["audio_mapping"] =
-                json!({"type":"duration", "frames":{"numerator":"60000","denominator":"1001"}});
-        }
-        if version >= 7 {
-            value["nodes"]["source"]["kind"]["source"]["video_mapping"] = json!({"type":"duration", "frames":{"numerator":"55", "denominator":"1"}, "endpoints":"hold_adjacent"});
-        }
-        value
-    }
-
-    fn upgrade(version: u32, json: &str) -> Result<ProjectDocument, DocumentError> {
-        match version {
-            1 => legacy_v1::Document::from_json(json)?.upgrade(),
-            2 => legacy_v2::Document::from_json(json)?.upgrade(),
-            3 => legacy_v3::Document::from_json(json)?.upgrade(),
-            4 => legacy_v4::Document::from_json(json)?.upgrade(),
-            5 => legacy_v5::Document::from_json(json)?.upgrade(),
-            6 => legacy_v6::Document::from_json(json)?.upgrade(),
-            7 => Document::from_json(json)?.upgrade(),
-            _ => unreachable!(),
-        }
-    }
-
-    fn matches_document(version: u32, json: &str, current: &ProjectDocument) -> bool {
-        match version {
-            1 => legacy_v1::Document::from_json(json)
-                .unwrap()
-                .matches(current),
-            2 => legacy_v2::Document::from_json(json)
-                .unwrap()
-                .matches(current),
-            3 => legacy_v3::Document::from_json(json)
-                .unwrap()
-                .matches(current),
-            4 => legacy_v4::Document::from_json(json)
-                .unwrap()
-                .matches(current),
-            5 => legacy_v5::Document::from_json(json)
-                .unwrap()
-                .matches(current),
-            6 => legacy_v6::Document::from_json(json)
-                .unwrap()
-                .matches(current),
-            7 => Document::from_json(json).unwrap().matches(current),
-            _ => unreachable!(),
-        }
-    }
-
-    type RequestAdapter = fn(&str) -> Result<CommandRequest, DocumentError>;
-    const REQUEST_ADAPTERS: [RequestAdapter; 7] = [
-        legacy_v1::upgrade_request,
-        legacy_v2::upgrade_request,
-        legacy_v3::upgrade_request,
-        legacy_v4::upgrade_request,
-        legacy_v5::upgrade_request,
-        legacy_v6::upgrade_request,
-        upgrade_request,
-    ];
-    type EditAdapter = fn(&str, &EditTransaction) -> Result<bool, DocumentError>;
-    const EDIT_ADAPTERS: [EditAdapter; 7] = [
-        legacy_v1::matches_edit,
-        legacy_v2::matches_edit,
-        legacy_v3::matches_edit,
-        legacy_v4::matches_edit,
-        legacy_v5::matches_edit,
-        legacy_v6::matches_edit,
-        matches_edit,
-    ];
-
-    fn placement(video: bool) -> Value {
-        let mut value = json!({"type":"placement", "start":{"numerator":"0", "denominator":"1"}, "frames":{"numerator":"60", "denominator":"1"}});
-        if video {
-            value["endpoints"] = json!("hold_adjacent");
-        }
-        value
-    }
-
-    #[test]
-    fn all_legacy_documents_subtrees_and_commands_reject_placements() {
-        for version in 1..=7 {
-            let old = document(version);
-            let current = upgrade(version, &old.to_string()).unwrap();
-            assert_eq!(current.schema_version(), DOCUMENT_SCHEMA_VERSION);
-            assert!(matches_document(version, &old.to_string(), &current));
-            let adapter = REQUEST_ADAPTERS[(version - 1) as usize];
-            for video in [false, true] {
-                let field = if video {
-                    "video_mapping"
-                } else {
-                    "audio_mapping"
-                };
-                let mut forged = old.clone();
-                forged["nodes"]["source"]["kind"]["source"][field] = placement(video);
-                assert!(
-                    upgrade(version, &forged.to_string()).is_err(),
-                    "schema {version} {field}"
-                );
-                let mut subtree =
-                    json!({"root":"source", "nodes":{"source": old["nodes"]["source"]}});
-                if version >= 4 {
-                    subtree["overrides"] = json!({});
-                }
-                subtree["nodes"]["source"]["kind"]["source"][field] = placement(video);
-                let mut direct = json!({"command":format!("set_source_{field}"), "node":"source", "mapping":placement(video)});
-                let mut occurrence =
-                    json!({"type":format!("set_source_{field}"), "mapping":placement(video)});
-                if !video {
-                    direct["offset"] = json!(0);
-                    occurrence["offset"] = json!(0);
-                }
-                for command in [
-                    json!({"command":"insert", "parent":"root", "index":0, "subtree":subtree}),
-                    direct,
-                    json!({"command":"edit_occurrence", "instance":{"node":"source","repeats":[]}, "edit":occurrence, "identities":{"nodes":[],"marks":[]}}),
-                ] {
-                    let request = json!({"project_id":"legacy", "expected_revision":"initial", "new_revision":"changed", "command":command});
-                    assert!(
-                        adapter(&request.to_string()).is_err(),
-                        "schema {version} {field}"
-                    );
-                }
-            }
-        }
-    }
-
-    #[test]
-    fn schema_seven_preserves_both_extent_commands_and_requires_strict_mapping_fields() {
-        let old = document(7);
-        let current = upgrade(7, &old.to_string()).unwrap();
-        let source = match &current.nodes()[&NodeId::new("source").unwrap()].kind {
-            NodeKind::Source { source } => source,
-            _ => panic!(),
-        };
-        assert_eq!(
-            source.video_mapping,
-            SourceVideoMapping::Duration {
-                frames: ExactRatio::integer(55),
-                endpoints: EndpointPolicy::HoldAdjacent
-            }
-        );
-        assert_eq!(
-            source.audio_mapping,
-            SourceAudioMapping::Duration {
-                frames: ExactRatio::new(60000, 1001).unwrap()
-            }
-        );
-        assert_eq!(source.audio_offset, AudioSample(-137));
-        for field in ["audio_mapping", "video_mapping"] {
-            for invalid in [
-                Value::Null,
-                json!({"type":"fit_beat", "start":null}),
-                json!({"type":"duration", "frames":{"numerator":"1", "denominator":"1"}, "endpoints":"reject", "start":null}),
-            ] {
-                let mut forged = old.clone();
-                forged["nodes"]["source"]["kind"]["source"][field] = invalid;
-                assert!(Document::from_json(&forged.to_string()).is_err());
-            }
-            let mut missing = old.clone();
-            missing["nodes"]["source"]["kind"]["source"]
-                .as_object_mut()
-                .unwrap()
-                .remove(field);
-            assert!(Document::from_json(&missing.to_string()).is_err());
-            for occurrence in [false, true] {
-                let mut operation =
-                    json!({"mapping": old["nodes"]["source"]["kind"]["source"][field]});
-                if field == "audio_mapping" {
-                    operation["offset"] = json!(-137);
-                }
-                let command = if occurrence {
-                    operation["type"] = json!(format!("set_source_{field}"));
-                    json!({"command":"edit_occurrence", "instance":{"node":"source", "repeats":[]}, "edit":operation, "identities":{"nodes":[], "marks":[]}})
-                } else {
-                    operation["command"] = json!(format!("set_source_{field}"));
-                    operation["node"] = json!("source");
-                    operation
-                };
-                let request = json!({"project_id":"legacy", "expected_revision":"initial", "new_revision":"changed", "command":command}).to_string();
-                assert_eq!(
-                    upgrade_request(&request).unwrap(),
-                    serde_json::from_str::<CommandRequest>(&request).unwrap()
-                );
-            }
-        }
-        for mapping in [
-            json!({"type":"fit_beat", "start":null}),
-            json!({"type":"duration", "frames":{"numerator":"1", "denominator":"1"}, "start":null}),
-        ] {
-            let mut old = document(6);
-            old["nodes"]["source"]["kind"]["source"]["audio_mapping"] = mapping;
-            assert!(legacy_v6::Document::from_json(&old.to_string()).is_err());
-        }
-    }
-
-    #[test]
-    fn all_legacy_patches_reject_placements_and_projection_cannot_hide_them() {
-        for (index, adapter) in EDIT_ADAPTERS.into_iter().enumerate() {
-            let version = index as u32 + 1;
-            let current = upgrade(version, &document(version).to_string()).unwrap();
-            let edit = apply(
-                &current,
-                &CommandRequest {
-                    project_id: current.project_id().clone(),
-                    expected_revision: current.revision_id().clone(),
-                    new_revision: RevisionId::new("renamed").unwrap(),
-                    command: Command::Rename {
-                        node: NodeId::new("source").unwrap(),
-                        label: "Renamed".into(),
-                    },
-                },
-            )
-            .unwrap();
-            let mut old = serde_json::to_value(&edit).unwrap();
-            for direction in ["forward", "inverse"] {
-                if version < 3 {
-                    old[direction].as_object_mut().unwrap().remove("marks");
-                }
-                if version < 4 {
-                    old[direction].as_object_mut().unwrap().remove("overrides");
-                }
-                for side in ["before", "after"] {
-                    old[direction]["nodes"]["source"][side]
-                        .as_object_mut()
-                        .unwrap()
-                        .remove("audio_edges");
-                    let source = old[direction]["nodes"]["source"][side]["kind"]["source"]
-                        .as_object_mut()
-                        .unwrap();
-                    if version < 7 {
-                        source.remove("video_mapping");
-                    }
-                    if version < 6 {
-                        source.remove("audio_mapping");
-                    }
-                }
-            }
-            assert!(adapter(&old.to_string(), &edit).unwrap());
-            for video in [false, true] {
-                let field = if video {
-                    "video_mapping"
-                } else {
-                    "audio_mapping"
-                };
-                for direction in ["forward", "inverse"] {
-                    for side in ["before", "after"] {
-                        let mut forged = old.clone();
-                        forged[direction]["nodes"]["source"][side]["kind"]["source"][field] =
-                            placement(video);
-                        assert!(adapter(&forged.to_string(), &edit).is_err());
-                    }
-                }
-                let mutate = |source: &mut SourceNode| {
-                    if video {
-                        source.video_mapping = serde_json::from_value(placement(true)).unwrap();
-                    } else {
-                        source.audio_mapping = serde_json::from_value(placement(false)).unwrap();
-                    }
-                };
-                let mut forged = edit.clone();
-                let NodeKind::Source { source } = &mut forged
-                    .forward
-                    .nodes
-                    .get_mut(&NodeId::new("source").unwrap())
-                    .unwrap()
-                    .after
-                    .as_mut()
-                    .unwrap()
-                    .kind
-                else {
-                    panic!()
-                };
-                mutate(source);
-                assert!(!adapter(&old.to_string(), &forged).unwrap());
-                let mut forged = current.clone();
-                let NodeKind::Source { source } = &mut forged
-                    .nodes
-                    .get_mut(&NodeId::new("source").unwrap())
-                    .unwrap()
-                    .kind
-                else {
-                    panic!()
-                };
-                mutate(source);
-                assert!(!matches_document(
-                    version,
-                    &document(version).to_string(),
-                    &forged
-                ));
-            }
-        }
-    }
 }

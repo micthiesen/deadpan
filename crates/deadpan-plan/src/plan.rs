@@ -16,6 +16,9 @@ pub use audio::*;
 #[path = "audio_domain.rs"]
 mod audio_domain;
 pub use audio_domain::{AudioDomain, AudioRootPlacement};
+#[path = "audio_point_domain.rs"]
+mod audio_point_domain;
+pub use audio_point_domain::AudioPointDomain;
 #[path = "audio_definition.rs"]
 mod audio_definition;
 pub use audio_definition::{AudioDefinition, AudioDefinitionSelector};
@@ -238,6 +241,11 @@ impl CompiledHold {
 impl RenderPlan {
     pub fn compile(document: &ProjectDocument) -> Result<Self, PlanError> {
         let durations = document.durations()?;
+        // Until the binding-aware policy and PCM walks are installed together,
+        // never render a different signal by silently dropping authored clocks.
+        if !document.audio_bindings().is_empty() {
+            return Err(PlanError::UnsupportedAudioBindings);
+        }
         let by_id: BTreeMap<_, _> = document
             .nodes()
             .keys()
