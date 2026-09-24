@@ -39,6 +39,7 @@ const HELP: &str = "Deadpan headless commands:
   inspect-plan <project.deadpan> --audio-samples <START> <END>
   inspect-audio <project.deadpan> --samples <START> <END> [--time-mapped | --edge-faded]
   inspect-audio-domain <project.deadpan> --at <PROBE> --samples <START> <END>
+  inspect-audio-definition <project.deadpan> (--node <ID> | --repeat-default <ID>) --samples <START> <END> [--revision <ID>]
   resolve-selection <project.deadpan> --json <selection.json>
   command <project.deadpan> --json <request.json> [--dry-run]
 
@@ -46,7 +47,8 @@ Creation defaults to a provisional 1920x1080, 30 fps presentation basis.
 Document dumps are inspection output; SQLite remains authoritative.
 Original retention preserves complete bytes; stream qualification and authored import remain separate.
 Audio inspection returns at most 256 stereo source samples before effects and mastering.
-Domain inspection reads raw physical context; signed START/END use its captured root grid.";
+Domain inspection reads raw physical context; signed START/END use its captured root grid.
+Definition inspection reads a local-zero point grid, not final timeline allocation.";
 
 #[derive(Debug, thiserror::Error)]
 pub enum CliError {
@@ -91,6 +93,9 @@ impl CliError {
             Self::Plan(deadpan_plan::PlanError::FrameOutOfRange { .. }) => "FrameOutOfRange",
             Self::Plan(deadpan_plan::PlanError::AudioRangeOutOfRange) => "AudioRangeOutOfRange",
             Self::Plan(deadpan_plan::PlanError::AudioQueryLimit(_)) => "AudioQueryLimit",
+            Self::Plan(deadpan_plan::PlanError::InvalidAudioDefinitionSelector(_)) => {
+                "AudioDefinitionUnavailable"
+            }
             Self::Plan(deadpan_plan::PlanError::Time(_)) => "TimingOverflow",
             Self::Plan(_) => "PlanInvalid",
             Self::Anchor(error) => error.code(),
@@ -118,6 +123,15 @@ impl CliError {
                 audio::ProjectAudioError::Stage(deadpan_audio::StageAudioError::ForeignDomain) => {
                     "AudioDomainUnavailable"
                 }
+                audio::ProjectAudioError::Stage(
+                    deadpan_audio::StageAudioError::ForeignDefinition,
+                )
+                | audio::ProjectAudioError::Plan(
+                    deadpan_plan::PlanError::InvalidAudioDefinitionSelector(_),
+                )
+                | audio::ProjectAudioError::Stage(deadpan_audio::StageAudioError::Plan(
+                    deadpan_plan::PlanError::InvalidAudioDefinitionSelector(_),
+                )) => "AudioDefinitionUnavailable",
                 audio::ProjectAudioError::Plan(deadpan_plan::PlanError::AudioQueryLimit(_))
                 | audio::ProjectAudioError::Stage(deadpan_audio::StageAudioError::Plan(
                     deadpan_plan::PlanError::AudioQueryLimit(_),
@@ -275,6 +289,57 @@ fn run(arguments: &[String]) -> Result<(), CliError> {
             let block = session.read_domain(
                 deadpan_core::AudioSample(probe),
                 deadpan_core::AudioSample(start),
+                frames,
+                &std::sync::atomic::AtomicBool::new(false),
+            )?;
+            write_json(&serde_json::json!({ "protocol": 1, "audio": block }))
+        }
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        [
+            "inspect-audio-definition",
+            path,
+            selector,
+            id,
+            "--samples",
+            start,
+            end,
+            retained @ ..,
+        ] if matches!(*selector, "--node" | "--repeat-default") => {
+            let revision = match retained {
+                [] => None,
+                ["--revision", id] => Some(RevisionId::new(*id)?),
+                _ => return Err(CliError::Usage("expected optional --revision <ID>".into())),
+            };
+            let start = start
+                .parse::<i64>()
+                .map_err(|_| CliError::Usage("invalid definition sample start".into()))?;
+            let end = end
+                .parse::<i64>()
+                .map_err(|_| CliError::Usage("invalid definition sample end".into()))?;
+            let frames = end
+                .checked_sub(start)
+                .and_then(|count| u32::try_from(count).ok())
+                .filter(|count| {
+                    start >= 0 && *count > 0 && *count <= deadpan_audio::MAX_OUTPUT_FRAMES
+                })
+                .ok_or(audio::ProjectAudioError::Stage(
+                    deadpan_audio::StageAudioError::Range,
+                ))?;
+            let id = deadpan_core::NodeId::new(*id)?;
+            let selector = if *selector == "--node" {
+                deadpan_plan::AudioDefinitionSelector::Node { node: id }
+            } else {
+                deadpan_plan::AudioDefinitionSelector::RepeatDefault { repeat: id }
+            };
+            let mut session = match revision {
+                Some(revision) => {
+                    audio::ProjectAudioSession::open_revision(Path::new(path), &revision)?
+                }
+                None => audio::ProjectAudioSession::open(Path::new(path))?,
+            };
+            let block = session.read_definition(
+                selector,
+                deadpan_plan::SignalSample(start),
                 frames,
                 &std::sync::atomic::AtomicBool::new(false),
             )?;

@@ -351,6 +351,15 @@ and deadline across its halo. Retain exact old silence before interpolation and
 after transfer; current consuming-stage policies remain separately required.
 See [physical audio domains](docs/AUDIO_PHYSICAL_DOMAINS.md).
 
+New Repeat plays have no captured old occurrence. `AudioDefinition` selects an
+authored Node or the actual Repeat default directly, including all-overridden
+Repeats. Its local-zero point-ceil signal is explicitly branded by its selector;
+relative paths and nested Preserve/RoomTone cache keys must retain that scope.
+Never invent an outer play or use a neighboring root probe as a prototype.
+Definition counts do not replace final root allocation. Retained sources still
+require historical admission. Authored birth bindings remain separate work.
+See [audio definitions](docs/AUDIO_DEFINITIONS.md).
+
 Reference processing lookup stops at the first nonunity Preserve and retains
 meaningful context separately from visible allocation. Borrowed physical-domain
 identity includes its plan and clock; equal aliases across plans are not equal

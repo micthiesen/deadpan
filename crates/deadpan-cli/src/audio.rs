@@ -7,15 +7,15 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
 use deadpan_audio::{
-    AudioSourceProvider, DomainAudioBlock, EdgeFadedBlock, PreparationError, PreparedSource,
-    SequenceAudio, SequenceAudioError, SourceStageBlock, StageAudio, StageAudioError,
-    TimeMappedBlock,
+    AudioSourceProvider, DefinitionAudioBlock, DomainAudioBlock, EdgeFadedBlock, PreparationError,
+    PreparedSource, SequenceAudio, SequenceAudioError, SourceStageBlock, StageAudio,
+    StageAudioError, TimeMappedBlock,
 };
 use deadpan_core::{
     AssetId, AssetRecord, AudioSample, FrozenAudioContext, ProjectDocument, ProjectId, RevisionId,
 };
 use deadpan_media::audio_session::{AudioSession, AudioSessionLimits};
-use deadpan_plan::{PlanError, RenderPlan};
+use deadpan_plan::{AudioDefinitionSelector, PlanError, RenderPlan, SignalSample};
 use deadpan_store::original_media::OriginalMediaLimits;
 use deadpan_store::{AccessMode, ProjectStore, StoreError};
 
@@ -44,8 +44,22 @@ pub struct ProjectAudioSession {
 
 impl ProjectAudioSession {
     pub fn open(path: &Path) -> Result<Self, ProjectAudioError> {
+        Self::open_at(path, None)
+    }
+
+    /// Inspect a specific committed revision without moving the history cursor.
+    /// The store validates history and the media host uses this revision's
+    /// receipts and asset meanings, even if their aliases differ at HEAD.
+    pub fn open_revision(path: &Path, revision: &RevisionId) -> Result<Self, ProjectAudioError> {
+        Self::open_at(path, Some(revision))
+    }
+
+    fn open_at(path: &Path, revision: Option<&RevisionId>) -> Result<Self, ProjectAudioError> {
         let store = ProjectStore::open(path, AccessMode::ReadOnly)?;
-        let document = store.snapshot()?;
+        let document = match revision {
+            Some(revision) => store.snapshot_at(revision)?,
+            None => store.snapshot()?,
+        };
         let plan = RenderPlan::compile(&document)?;
         Ok(Self::from_plan(store, document, plan))
     }
@@ -140,6 +154,27 @@ impl ProjectAudioSession {
         Ok(self.stages.read_domain(
             &mut self.sources,
             &domain,
+            start,
+            frames,
+            Duration::from_secs(10),
+            cancelled,
+        )?)
+    }
+
+    /// Read an authored Node or Repeat default directly in its canonical
+    /// definition-output clock. Historical sessions retain the same admission.
+    pub fn read_definition(
+        &mut self,
+        selector: AudioDefinitionSelector,
+        start: SignalSample,
+        frames: u32,
+        cancelled: &AtomicBool,
+    ) -> Result<DefinitionAudioBlock, ProjectAudioError> {
+        check_cancel(cancelled).map_err(StageAudioError::from)?;
+        let definition = self.sequence.plan().audio_definition(selector)?;
+        Ok(self.stages.read_definition(
+            &mut self.sources,
+            &definition,
             start,
             frames,
             Duration::from_secs(10),

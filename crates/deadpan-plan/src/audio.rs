@@ -588,7 +588,7 @@ impl RenderPlan {
                         budget.spend(repeats.len() + 1)?;
                         break (
                             AudioSignalContent::Stage(AudioStage::for_node(
-                                self, current, &repeats,
+                                self, current, &repeats, None,
                             )?),
                             None,
                         );

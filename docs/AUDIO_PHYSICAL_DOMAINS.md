@@ -107,6 +107,11 @@ retained dependency graph when earlier bindings enter a newly frozen context.
 Several contexts must share one preparation controller and context-qualified
 cache dependencies. Current `StageAudio` owns only one immutable plan.
 
+[Definition-output reads](AUDIO_DEFINITIONS.md) now select a Node or actual
+Repeat default directly for the separate future birth operand. This avoids
+inventing an old occurrence when a Repeat gains new plays. Capturing earlier
+bindings and lexical Repeat arguments remains required.
+
 Retained policies also need exact queries on both input and output grids of a
 new consuming Preserve stage. Scaling rounded input suppression ranges is
 insufficient: a silent interval with no input-grid point can acquire output

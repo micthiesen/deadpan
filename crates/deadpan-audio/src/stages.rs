@@ -14,9 +14,10 @@ use deadpan_core::{
 use deadpan_dsp::{CanonicalRecipe, CanonicalStretch, StereoPcm, StretchRate};
 use deadpan_media::audio_index::AudioChannelLayout;
 use deadpan_plan::{
-    AudioContent, AudioDomain, AudioProcessingQuery, AudioProcessingSpan, AudioQuery,
-    AudioQueryLimits, AudioSignal, AudioSignalContent, AudioSignalSpan, AudioStage,
-    AudioStageDescriptor, PlanError, RenderPlan, SignalSample, SilenceReason,
+    AudioContent, AudioDefinition, AudioDefinitionSelector, AudioDomain, AudioProcessingQuery,
+    AudioProcessingSpan, AudioQuery, AudioQueryLimits, AudioSignal, AudioSignalContent,
+    AudioSignalSpan, AudioStage, AudioStageDescriptor, PlanError, RenderPlan, SignalSample,
+    SilenceReason,
 };
 use serde::Serialize;
 
@@ -60,6 +61,8 @@ pub enum StageAudioError {
     Range,
     #[error("audio domain belongs to another immutable plan")]
     ForeignDomain,
+    #[error("audio definition belongs to another immutable plan")]
+    ForeignDefinition,
     #[error("invalid stage preparation limits")]
     InvalidLimits,
     #[error("audio stage preparation exceeds {0}")]
@@ -125,6 +128,22 @@ pub struct DomainAudioBlock {
     pub suppressed: Vec<Range<AudioSample>>,
 }
 
+/// A captured authored definition's raw output on its canonical local-zero
+/// point grid. Its selector identifies a definition independently of project
+/// occurrences. This is not final timeline allocation.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct DefinitionAudioBlock {
+    pub schema_version: u32,
+    pub stage: &'static str,
+    pub project_id: ProjectId,
+    pub revision_id: RevisionId,
+    pub definition: AudioDefinitionSelector,
+    pub root: deadpan_core::NodeId,
+    pub start: SignalSample,
+    pub samples: Vec<[f32; 2]>,
+    pub suppressed: Vec<Range<SignalSample>>,
+}
+
 /// This revision's raw root signal sampled on an explicitly mapped preparation
 /// grid. Root audibility is applied before interpolation and retained afterwards;
 /// creative fades and the consuming stage's own policy remain separate.
@@ -188,6 +207,7 @@ struct RootReadQueries<'plan> {
 enum PreparedKey {
     Preserve(AudioStageDescriptor),
     RoomTone {
+        definition: Option<AudioDefinitionSelector>,
         instance: InstancePath,
         gap_after: Option<IterationId>,
         source: SourceAudio,
@@ -206,6 +226,7 @@ type Dependencies = BTreeMap<AssetId, [u8; 32]>;
 struct SignalBlock {
     samples: Vec<[f32; 2]>,
     dependencies: Dependencies,
+    suppressed: Vec<Range<SignalSample>>,
 }
 
 #[derive(Default)]
@@ -352,6 +373,56 @@ impl StageAudio {
             project_id: self.plan.metadata().project_id.clone(),
             revision_id: self.plan.metadata().revision_id.clone(),
             start: block.start,
+            samples: block.samples,
+            suppressed: block.suppressed,
+        })
+    }
+
+    /// Render a checked authored definition on its own point-ceil output grid.
+    /// A Repeat default is read directly even when every actual play overrides
+    /// it. Source admission, DSP history and preparation limits remain shared.
+    pub fn read_definition(
+        &mut self,
+        provider: &mut impl AudioSourceProvider,
+        definition: &AudioDefinition<'_>,
+        start: SignalSample,
+        frames: u32,
+        timeout: Duration,
+        cancelled: &AtomicBool,
+    ) -> Result<DefinitionAudioBlock, StageAudioError> {
+        check_cancel(cancelled)?;
+        if !definition.belongs_to(&self.plan) {
+            return Err(StageAudioError::ForeignDefinition);
+        }
+        validate_timeout(timeout)?;
+        let signal = definition.signal();
+        let end = start
+            .0
+            .checked_add(i64::from(frames))
+            .ok_or(StageAudioError::Range)?;
+        if start.0 < 0
+            || frames == 0
+            || frames > MAX_OUTPUT_FRAMES
+            || end > signal.sample_count()?.0
+        {
+            return Err(StageAudioError::Range);
+        }
+        let work = RefCell::new(ReadWork::default());
+        let control = WorkControl {
+            cancelled,
+            deadline: Instant::now() + timeout,
+            work: &work,
+        };
+        let block = self.read_signal(&signal, provider, start, frames, control, 0)?;
+        control.check()?;
+        Ok(DefinitionAudioBlock {
+            schema_version: 1,
+            stage: "definition_output_pcm_before_effects",
+            project_id: self.plan.metadata().project_id.clone(),
+            revision_id: self.plan.metadata().revision_id.clone(),
+            definition: definition.selector().clone(),
+            root: definition.root().clone(),
+            start,
             samples: block.samples,
             suppressed: block.suppressed,
         })
@@ -648,6 +719,7 @@ impl StageAudio {
                 AudioSignalContent::Leaf(AudioContent::RoomTone { source, duration }) => {
                     let prepared = self.prepare_room_tone(
                         PreparedKey::RoomTone {
+                            definition: None,
                             instance: span.instance.clone(),
                             gap_after: span.gap_after.clone(),
                             source: source.clone(),
@@ -873,6 +945,7 @@ impl StageAudio {
             Ok::<_, StageAudioError>(SignalBlock {
                 samples,
                 dependencies: BTreeMap::from([(source.asset.clone(), fingerprint)]),
+                suppressed: Vec::new(),
             })
         })();
         self.active_frames -= reservation;
@@ -974,6 +1047,9 @@ impl StageAudio {
         Ok(SignalBlock {
             samples,
             dependencies,
+            // Consumers query policy in their own point grid. Do not retain a
+            // second full-stage interval cache or scale rounded input masks.
+            suppressed: Vec::new(),
         })
     }
 
@@ -1024,6 +1100,7 @@ impl StageAudio {
                 AudioSignalContent::Leaf(AudioContent::RoomTone { source, duration }) => {
                     let prepared = self.prepare_room_tone(
                         PreparedKey::RoomTone {
+                            definition: signal.definition().cloned(),
                             instance: span.instance.clone(),
                             gap_after: span.gap_after.clone(),
                             source: source.clone(),
@@ -1055,17 +1132,18 @@ impl StageAudio {
             };
             samples.extend(block);
         }
-        suppress_signal(signal, start, &mut samples, &self.plan)?;
+        let suppressed = suppress_signal(signal, start, &mut samples, &self.plan)?;
         Ok(SignalBlock {
             samples,
             dependencies,
+            suppressed,
         })
     }
 }
 
-fn merged_suppression(mut ranges: Vec<Range<AudioSample>>) -> Vec<Range<AudioSample>> {
+fn merged_suppression<T: Copy + Ord>(mut ranges: Vec<Range<T>>) -> Vec<Range<T>> {
     ranges.sort_unstable_by_key(|range| range.start);
-    let mut merged: Vec<Range<AudioSample>> = Vec::with_capacity(ranges.len());
+    let mut merged: Vec<Range<T>> = Vec::with_capacity(ranges.len());
     for range in ranges {
         if let Some(last) = merged.last_mut().filter(|last| range.start <= last.end) {
             last.end = last.end.max(range.end);
@@ -1180,13 +1258,14 @@ fn suppress_signal(
     start: SignalSample,
     samples: &mut [[f32; 2]],
     plan: &RenderPlan,
-) -> Result<(), StageAudioError> {
+) -> Result<Vec<Range<SignalSample>>, StageAudioError> {
     let end = SignalSample(
         start
             .0
             .checked_add(i64::try_from(samples.len()).map_err(|_| TimeError::Overflow)?)
             .ok_or(TimeError::Overflow)?,
     );
+    let mut suppressed = Vec::new();
     for span in signal.query_flattened(start..end, query_limits())?.spans {
         if let AudioSignalContent::Leaf(content) = &span.content {
             preflight(content, plan)?;
@@ -1198,9 +1277,10 @@ fn suppress_signal(
             let right = usize::try_from(span.samples.end.0 - start.0)
                 .map_err(|_| StageAudioError::Range)?;
             samples[left..right].fill([0.0; 2]);
+            suppressed.push(span.samples);
         }
     }
-    Ok(())
+    Ok(merged_suppression(suppressed))
 }
 
 fn root_source_recipe(

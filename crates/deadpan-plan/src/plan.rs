@@ -16,6 +16,9 @@ pub use audio::*;
 #[path = "audio_domain.rs"]
 mod audio_domain;
 pub use audio_domain::AudioDomain;
+#[path = "audio_definition.rs"]
+mod audio_definition;
+pub use audio_definition::{AudioDefinition, AudioDefinitionSelector};
 #[path = "audio_boundary.rs"]
 mod audio_boundary;
 pub use audio_boundary::{AudioBoundaries, AudioBoundaryKind, AudioBoundaryOrigin};
@@ -115,6 +118,7 @@ enum CompiledKind {
         audio: HoldAudio,
     },
     Repeat {
+        default_child: usize,
         layout: RepeatLayout,
         gap: Option<CompiledHold>,
         gap_audio: Option<HoldAudio>,
@@ -316,6 +320,7 @@ impl RenderPlan {
                     storage.referenced_plays += u64::from(iterations.len());
                     (
                         CompiledKind::Repeat {
+                            default_child: by_id[child],
                             layout,
                             gap_audio: gap.as_ref().map(|recipe| recipe.audio.clone()),
                             gap: gap

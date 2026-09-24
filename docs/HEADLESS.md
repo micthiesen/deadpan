@@ -268,6 +268,19 @@ does not mutate the project. See [physical domains](AUDIO_PHYSICAL_DOMAINS.md)
 for exact phase, policy and transfer semantics. This is context inspection,
 not a final mix, export or an authored resume binding.
 
+## Audio definition inspection
+
+Authored definition output is separately available with
+`inspect-audio-definition <project.deadpan> --repeat-default <ID> --samples <START> <END>`
+or `--node <ID>`. It reads 1..256 nonnegative samples on the selected definition's
+local-zero point grid, including a Repeat default that no current play uses.
+Protocol 1 returns `definition_output_pcm_before_effects`. This is recipe
+inspection, not timeline allocation or a new-play edit. See
+[audio definitions](AUDIO_DEFINITIONS.md) for scope, exact grids and admission.
+Append `--revision <ID>` to inspect an exact committed historical revision without
+moving the cursor. The selected revision supplies aliases and source receipts,
+so deleting the current Repeat does not change its historical definition.
+
 ## Picture and audio plan inspection
 
 ```sh

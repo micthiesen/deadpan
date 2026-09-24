@@ -648,6 +648,16 @@ fn missing_and_corrupt_linked_originals_fail_before_pcm_is_exposed() -> Result {
                 .read_domain(AudioSample(0), AudioSample(0), 256, &active())
                 .is_err()
         );
+        assert!(
+            session
+                .read_definition(
+                    deadpan_plan::AudioDefinitionSelector::Node { node: node("clip") },
+                    deadpan_plan::SignalSample(0),
+                    256,
+                    &active(),
+                )
+                .is_err()
+        );
         let error = inspect(&path, "0", "256", false)?;
         assert_eq!(error["error"]["code"], "SourceAudioUnavailable");
         assert!(
@@ -787,6 +797,205 @@ fn physical_domain_cli_reads_hidden_negative_source_and_retained_history() -> Re
     assert_eq!(
         historical
             .read_domain(AudioSample(0), AudioSample(-1600), 256, &active())?
+            .samples,
+        expected
+    );
+    assert_eq!(store.snapshot()?, after);
+    Ok(())
+}
+
+#[test]
+fn definition_cli_reads_unplayed_default_from_current_and_historical_media() -> Result {
+    use deadpan_plan::{AudioDefinitionSelector, SignalSample};
+
+    let scratch = tempfile::tempdir()?;
+    let (path, mut store) = project(scratch.path())?;
+    let expected = register(
+        &mut store,
+        &fixture("cfr-bframes.mp4"),
+        1,
+        OriginalOwnership::Managed,
+        "registered",
+    )?;
+    commit(
+        &mut store,
+        "repeated",
+        Command::WrapRepeat {
+            node: node("clip"),
+            id: node("repeat"),
+            plays: 2,
+            gap: None,
+            anchor_policy: Default::default(),
+        },
+    )?;
+    for ordinal in 0..2 {
+        let name = format!("override-{ordinal}");
+        let id = node(&name);
+        commit(
+            &mut store,
+            &name,
+            Command::SetPlayOverride {
+                node: node("repeat"),
+                iteration: deadpan_core::IterationId {
+                    allocation: revision("repeated"),
+                    ordinal,
+                },
+                subtree: Subtree {
+                    root: id.clone(),
+                    nodes: BTreeMap::from([(
+                        id,
+                        BeatNode::hold(
+                            "Silent override",
+                            HoldRecipe {
+                                duration: FrameDuration::new(1)?,
+                                video: HoldVideo::Background,
+                                audio: HoldAudio::Silence,
+                            },
+                        ),
+                    )]),
+                    overrides: BTreeMap::new(),
+                },
+            },
+        )?;
+    }
+    let before = store.snapshot()?;
+    let context = deadpan_core::FrozenAudioContext::capture(&before)?;
+    let selector = AudioDefinitionSelector::RepeatDefault {
+        repeat: node("repeat"),
+    };
+    let mut session = ProjectAudioSession::open(&path)?;
+    assert_eq!(
+        session
+            .read_time_mapped(AudioSample(0), 256, &active())?
+            .samples,
+        vec![[0.0; 2]; 256]
+    );
+    let block = session.read_definition(selector.clone(), SignalSample(0), 256, &active())?;
+    assert_eq!(block.definition, selector);
+    assert_eq!(block.root, node("clip"));
+    assert_eq!(block.samples, expected);
+    assert!(block.suppressed.is_empty());
+
+    let invoke = |selection: &str, id: &str, start: &str, end: &str, retained: Option<&str>| {
+        let mut command = ProcessCommand::new(env!("CARGO_BIN_EXE_deadpan-cli"));
+        command.args([
+            "inspect-audio-definition",
+            path.to_str().unwrap(),
+            selection,
+            id,
+            "--samples",
+            start,
+            end,
+        ]);
+        if let Some(revision) = retained {
+            command.args(["--revision", revision]);
+        }
+        command.output()
+    };
+    for (selection, id) in [("--repeat-default", "repeat"), ("--node", "clip")] {
+        let output = invoke(selection, id, "0", "256", None)?;
+        assert!(
+            output.status.success(),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        let actual: Value = serde_json::from_slice(&output.stdout)?;
+        assert_eq!(actual["protocol"], 1);
+        assert_eq!(
+            actual["audio"]["stage"],
+            "definition_output_pcm_before_effects"
+        );
+        assert_eq!(actual["audio"]["root"], "clip");
+        let pcm: Vec<[f32; 2]> = serde_json::from_value(actual["audio"]["samples"].clone())?;
+        assert_eq!(pcm, expected);
+    }
+    for (selection, id, start, end, code) in [
+        (
+            "--repeat-default",
+            "clip",
+            "0",
+            "1",
+            "AudioDefinitionUnavailable",
+        ),
+        ("--node", "missing", "0", "1", "AudioDefinitionUnavailable"),
+        (
+            "--repeat-default",
+            "repeat",
+            "-1",
+            "1",
+            "AudioRangeOutOfRange",
+        ),
+        (
+            "--repeat-default",
+            "repeat",
+            "0",
+            "257",
+            "AudioRangeOutOfRange",
+        ),
+        (
+            "--repeat-default",
+            "repeat",
+            "0",
+            "0",
+            "AudioRangeOutOfRange",
+        ),
+        (
+            "--repeat-default",
+            "repeat",
+            "9223372036854775807",
+            "-9223372036854775808",
+            "AudioRangeOutOfRange",
+        ),
+    ] {
+        let output = invoke(selection, id, start, end, None)?;
+        assert!(!output.status.success());
+        let error: Value = serde_json::from_slice(&output.stderr)?;
+        assert_eq!(error["error"]["code"], code);
+    }
+    assert_eq!(store.snapshot()?, before);
+    commit(
+        &mut store,
+        "delete-repeat",
+        Command::Delete {
+            node: node("repeat"),
+        },
+    )?;
+    let after = store.snapshot()?;
+    let missing_current = invoke("--repeat-default", "repeat", "0", "256", None)?;
+    assert!(!missing_current.status.success());
+    let output = invoke(
+        "--repeat-default",
+        "repeat",
+        "0",
+        "256",
+        Some(before.revision_id().as_str()),
+    )?;
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let actual: Value = serde_json::from_slice(&output.stdout)?;
+    assert_eq!(
+        actual["audio"]["revision_id"],
+        before.revision_id().as_str()
+    );
+    let pcm: Vec<[f32; 2]> = serde_json::from_value(actual["audio"]["samples"].clone())?;
+    assert_eq!(pcm, expected);
+    let missing = invoke(
+        "--repeat-default",
+        "repeat",
+        "0",
+        "256",
+        Some("missing-revision"),
+    )?;
+    assert!(!missing.status.success());
+    let missing: Value = serde_json::from_slice(&missing.stderr)?;
+    assert!(missing.get("audio").is_none());
+    let mut historical = ProjectAudioSession::open_context(&path, &context)?;
+    assert_eq!(
+        historical
+            .read_definition(selector, SignalSample(0), 256, &active())?
             .samples,
         expected
     );

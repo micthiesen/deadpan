@@ -12,8 +12,8 @@ use serde::Serialize;
 
 use super::audio::{Budget, intersect, maximum, minimum, source_point_from_local};
 use super::{
-    AudioContent, AudioQueryLimits, AudioRetimeStage, AudioTransform, CompiledKind, LookupStats,
-    RenderPlan, SilenceReason, SourceSamplingSupport,
+    AudioContent, AudioDefinitionSelector, AudioQueryLimits, AudioRetimeStage, AudioTransform,
+    CompiledKind, LookupStats, RenderPlan, SilenceReason, SourceSamplingSupport,
 };
 use crate::{AudioBoundaryRule, AudioSampleGrid, AudioSampleMap, PlanError};
 
@@ -72,6 +72,10 @@ impl SignalTransform {
 pub struct AudioStageDescriptor {
     pub project_id: ProjectId,
     pub revision_id: RevisionId,
+    /// When present, the instance is relative to this authored definition,
+    /// distinct from any occurrence in the project tree.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub definition: Option<AudioDefinitionSelector>,
     pub instance: InstancePath,
     pub child: NodeId,
     pub selection: Range<ExactRatio>,
@@ -107,6 +111,7 @@ impl<'plan> AudioStage<'plan> {
         plan: &'plan RenderPlan,
         node: usize,
         repeats: &[RepeatInstance],
+        definition: Option<&AudioDefinitionSelector>,
     ) -> Result<Self, PlanError> {
         let compiled = &plan.nodes[node];
         let CompiledKind::Retime {
@@ -131,6 +136,7 @@ impl<'plan> AudioStage<'plan> {
             descriptor: AudioStageDescriptor {
                 project_id: plan.metadata.project_id.clone(),
                 revision_id: plan.metadata.revision_id.clone(),
+                definition: definition.cloned(),
                 instance: InstancePath {
                     node: compiled.inspection.id.clone(),
                     repeats: repeats.to_vec(),
@@ -158,6 +164,7 @@ impl<'plan> AudioStage<'plan> {
             support: self.descriptor.selection.clone(),
             constrain_support: true,
             repeats: self.descriptor.instance.repeats.clone(),
+            definition: self.descriptor.definition.clone(),
         }
     }
 
@@ -170,6 +177,7 @@ impl<'plan> AudioStage<'plan> {
             support: ExactRatio::ZERO..ExactRatio::integer(self.descriptor.duration.frames()),
             constrain_support: false,
             repeats: self.descriptor.instance.repeats.clone(),
+            definition: self.descriptor.definition.clone(),
         }
     }
 }
@@ -183,6 +191,9 @@ pub enum AudioSignalContent<'plan> {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct AudioSignalSpan<'plan> {
+    /// Scope of every relative instance in this span, including nested stages.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub definition: Option<AudioDefinitionSelector>,
     pub samples: Range<SignalSample>,
     pub allocated_samples: Range<SignalSample>,
     /// Exact structural extent in this signal's root frame clock, before grid
@@ -216,6 +227,8 @@ impl AudioSignalSpan<'_> {
 pub struct AudioSignalQuery<'plan> {
     pub project_id: ProjectId,
     pub revision_id: RevisionId,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub definition: Option<AudioDefinitionSelector>,
     pub samples: Range<SignalSample>,
     pub spans: Vec<AudioSignalSpan<'plan>>,
     pub lookup: LookupStats,
@@ -274,6 +287,7 @@ pub struct AudioSignal<'plan> {
     // itself does not: a root Partition retains its complete child's support.
     constrain_support: bool,
     repeats: Vec<RepeatInstance>,
+    definition: Option<AudioDefinitionSelector>,
 }
 
 impl RenderPlan {
@@ -286,6 +300,7 @@ impl RenderPlan {
             support: ExactRatio::ZERO..ExactRatio::integer(self.duration().frames()),
             constrain_support: false,
             repeats: Vec::new(),
+            definition: None,
         }
     }
 
@@ -343,6 +358,32 @@ impl RenderPlan {
 }
 
 impl<'plan> AudioSignal<'plan> {
+    pub(super) fn for_definition(
+        plan: &'plan RenderPlan,
+        root: usize,
+        definition: AudioDefinitionSelector,
+    ) -> Self {
+        Self {
+            plan,
+            root,
+            support: ExactRatio::ZERO
+                ..ExactRatio::integer(plan.nodes[root].inspection.duration.frames()),
+            constrain_support: false,
+            repeats: Vec::new(),
+            definition: Some(definition),
+        }
+    }
+
+    /// Relative instance paths in a definition signal are scoped by this
+    /// selector. `None` retains the ordinary project-occurrence interpretation.
+    pub fn definition(&self) -> Option<&AudioDefinitionSelector> {
+        self.definition.as_ref()
+    }
+
+    pub fn belongs_to(&self, plan: &RenderPlan) -> bool {
+        std::ptr::eq(self.plan, plan)
+    }
+
     pub fn support(&self) -> Range<ExactRatio> {
         self.support.clone()
     }
@@ -416,6 +457,7 @@ impl<'plan> AudioSignal<'plan> {
         Ok(AudioSignalQuery {
             project_id: self.plan.metadata.project_id.clone(),
             revision_id: self.plan.metadata.revision_id.clone(),
+            definition: self.definition.clone(),
             samples,
             spans,
             lookup: budget.lookup,
@@ -551,7 +593,10 @@ impl<'plan> AudioSignal<'plan> {
                     {
                         break (
                             AudioSignalContent::Stage(AudioStage::for_node(
-                                self.plan, current, &repeats,
+                                self.plan,
+                                current,
+                                &repeats,
+                                self.definition.as_ref(),
                             )?),
                             None,
                         );
@@ -634,6 +679,7 @@ impl<'plan> AudioSignal<'plan> {
                 .checked_div(transform.signal_frames_per_local_frame)?,
         )?;
         Ok(AudioSignalSpan {
+            definition: self.definition.clone(),
             samples: allocated_samples.clone(),
             allocated_samples,
             signal_extent: extent,

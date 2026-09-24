@@ -50,6 +50,12 @@ that raw signal on a point grid without resetting absolute phase. Headless
 domain inspection uses the same historical media host. It does not yet author
 the live bindings or multi-context graph needed for inserted-time edits.
 
+[Audio definition output](AUDIO_DEFINITIONS.md) reads a captured Node or actual
+Repeat default directly on a local-zero point grid. Definition scope brands
+relative paths, nested stage descriptors and caches. This supplies a distinct
+new-play recipe operand even when all existing plays are overridden; it does not
+replace their physical-domain continuity or install a live binding.
+
 ## Full component map
 
 Section 24 defines boundaries, not an obligation to create empty crates. Introduce each component when its implementation needs isolation; related modules may remain combined initially.

@@ -169,6 +169,23 @@ cache dependencies by context as well as asset alias. Retained audibility must
 remain queryable on both input and output grids of a later Preserve stage;
 scaling rounded input silence cannot recover intervals that owned no input point.
 
+[Definition-output reads](AUDIO_DEFINITIONS.md) now supply the separate operand
+needed for new Repeat plays. Select the committed default child definition
+directly, including when all existing plays are overridden; never choose an old
+effective occurrence by convenience. Its scoped local-zero point grid provides
+the proposed canonical fresh-play recipe. Surviving plays retain their old-root
+continuity. The eventual binding graph must capture earlier descendant bindings
+and lexical Repeat arguments as well as these raw recipes.
+
+Keep retained contexts tied to committed before-state revisions. Store one flat,
+bounded context table whose binding references form an actual DAG, with explicit
+limits on aggregate nodes, rules, run segments, edges, depth and bytes. Live
+rules separately own scope, destination clock, structural anchor and exact
+operand coordinate. Birth allocation runs select definitions; existing paths
+select physical contexts. Removing a silence policy replaces its affected raw
+processing contribution, not merely a lineage token. These are binding design
+requirements, not implemented authored storage.
+
 ## Structural and mark requirements
 
 Resolve boundary coordinates through `RepeatLayout`, using the right-hand object

@@ -99,6 +99,7 @@ impl RenderPlan {
                     let gap = *gap_duration != FrameDuration::ZERO;
                     (
                         CompiledKind::Repeat {
+                            default_child: by_id[child],
                             layout: repeat,
                             gap: gap.then_some(CompiledHold::Background),
                             gap_audio: gap

@@ -94,6 +94,14 @@ records hidden-sibling, negative-coordinate, decoder/DSP and admission tests.
 Authored bindings, prior-binding dependency closure, lifecycle/policy replacement
 and atomic Hold insertion remain open; no requirement or gate changes status.
 
+[Authored audio definitions](AUDIO_DEFINITIONS.md) now expose the actual Repeat
+default independently of audible occurrences, with scoped point-grid queries,
+real source/DSP rendering and historical headless admission. This resolves the
+all-overridden-default counterexample for a future new-play operand.
+[Qualification](qualification/audio-definition-2026-09-23.md) records exact
+grid, silence, cache and media tests. Authored birth rules, binding graph/lifecycle
+and Hold insertion remain open; no requirement or gate changes status.
+
 Current measured evidence: [editing foundation verification](FOUNDATION_VERIFICATION.md), [picture plan and migration verification](PLAN_MIGRATION_VERIFICATION.md), [exact boundary verification](ANCHOR_VERIFICATION.md), [persistent mark verification](MARK_VERIFICATION.md), [sparse override verification](OVERRIDE_VERIFICATION.md), [nested occurrence verification](OCCURRENCE_VERIFICATION.md), [native media qualification](qualification/media-2026-09-20.md), [compatible FFmpeg/Rust qualification](qualification/media-compatible-2026-09-20.md), [audio candidate qualification](qualification/audio-2026-09-20.md), and [canonical audio qualification](qualification/audio-canonical-2026-09-20.md).
 
 The [native host conversion qualification](qualification/media-host-conversion-2026-09-21.md)
