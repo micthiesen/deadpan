@@ -97,8 +97,10 @@ pub(super) struct DomainGap {
 #[derive(Debug, Clone)]
 pub(super) struct AudioWalkSeed {
     pub(super) definition: Option<AudioDefinitionSelector>,
+    pub(super) bypass_binding: Option<usize>,
     pub(super) node: usize,
     pub(super) transform: AudioTransform,
+    pub(super) grid: crate::AudioSampleGrid<AudioSample>,
     pub(super) extent: Range<ExactRatio>,
     pub(super) envelope: Option<Range<ExactRatio>>,
     pub(super) constraints: Vec<EnvelopeConstraint>,
@@ -147,7 +149,7 @@ impl RenderPlan {
             lookup: LookupStats::default(),
         };
         let mut captured = None;
-        self.audio_walk(sample, &mut budget, None, true, Some(&mut captured))?;
+        self.audio_walk(sample, &mut budget, None, true, true, Some(&mut captured))?;
         let seed = captured.ok_or(PlanError::InvalidPlan("audio domain was not captured"))?;
         Ok(AudioDomain {
             plan: self,
@@ -196,6 +198,9 @@ impl<'plan> AudioDomain<'plan> {
     pub fn belongs_to(&self, plan: &RenderPlan) -> bool {
         std::ptr::eq(self.plan, plan)
     }
+    pub(super) fn has_audio_bindings(&self) -> bool {
+        self.plan.has_audio_bindings()
+    }
 
     fn budget(
         &self,
@@ -231,7 +236,7 @@ impl<'plan> AudioDomain<'plan> {
             }
             let AudioWalkSpan::Leaf(mut span) =
                 self.plan
-                    .audio_walk(cursor, &mut budget, Some(&self.seed), false, None)?
+                    .audio_walk(cursor, &mut budget, Some(&self.seed), false, false, None)?
             else {
                 return Err(PlanError::InvalidPlan("flattened audio retained a stage"));
             };
@@ -245,6 +250,7 @@ impl<'plan> AudioDomain<'plan> {
             samples,
             spans,
             lookup: budget.lookup,
+            work: limits.maximum_work - budget.remaining,
         })
     }
 
@@ -255,6 +261,15 @@ impl<'plan> AudioDomain<'plan> {
         samples: Range<AudioSample>,
         limits: AudioQueryLimits,
     ) -> Result<AudioProcessingQuery<'plan>, PlanError> {
+        self.processing_inner(samples, limits, true)
+    }
+
+    pub(super) fn processing_inner(
+        &self,
+        samples: Range<AudioSample>,
+        limits: AudioQueryLimits,
+        stop_at_preserve: bool,
+    ) -> Result<AudioProcessingQuery<'plan>, PlanError> {
         let mut budget = self.budget(&samples, limits)?;
         let mut spans = Vec::new();
         let mut cursor = samples.start;
@@ -264,7 +279,14 @@ impl<'plan> AudioDomain<'plan> {
             }
             let mut span = self
                 .plan
-                .audio_walk(cursor, &mut budget, Some(&self.seed), true, None)?
+                .audio_walk(
+                    cursor,
+                    &mut budget,
+                    Some(&self.seed),
+                    stop_at_preserve,
+                    true,
+                    None,
+                )?
                 .into_processing();
             span.samples = cursor..span.allocated_samples.end.min(samples.end);
             cursor = span.samples.end;
@@ -276,6 +298,7 @@ impl<'plan> AudioDomain<'plan> {
             samples,
             spans,
             lookup: budget.lookup,
+            work: limits.maximum_work - budget.remaining,
         })
     }
 }

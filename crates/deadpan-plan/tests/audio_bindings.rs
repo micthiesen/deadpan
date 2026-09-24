@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
 use deadpan_core::*;
-use deadpan_plan::{PlanError, RenderPlan};
+use deadpan_plan::{AudioBoundDomain, AudioQueryLimits, AudioSignalContent, RenderPlan};
 
 #[test]
 fn compilation_never_silently_discards_persisted_sampling_clocks() {
@@ -69,9 +69,46 @@ fn compilation_never_silently_discards_persisted_sampling_clocks() {
     wire["audio_bindings"] = serde_json::to_value(&bindings).unwrap();
     let bound = ProjectDocument::from_json(&wire.to_string()).unwrap();
     assert_eq!(bound.audio_bindings(), &bindings);
+    let plan = RenderPlan::compile(&bound).unwrap();
+    assert!(plan.has_audio_bindings());
+    let query = plan
+        .audio_processing(
+            AudioSample(1602)..AudioSample(1603),
+            AudioQueryLimits::default(),
+        )
+        .unwrap();
+    let AudioSignalContent::Bound(operand) = &query.spans[0].content else {
+        panic!("binding was dropped")
+    };
+    assert!(operand.belongs_to(&plan));
+    assert_eq!(
+        operand.reference_at_offset(1602).unwrap(),
+        ExactRatio::new(3432, 5).unwrap()
+    );
     assert!(matches!(
-        RenderPlan::compile(&bound),
-        Err(PlanError::UnsupportedAudioBindings)
+        operand.raw_domain().unwrap(),
+        AudioBoundDomain::Root(_)
     ));
+    assert!(query.work > operand.work());
+    let policy = plan
+        .audio_policy(
+            AudioSample(1602)..AudioSample(1603),
+            AudioQueryLimits::default(),
+        )
+        .unwrap();
+    assert_eq!(
+        policy.suppressed,
+        vec![AudioSample(1602)..AudioSample(1603)]
+    );
+    assert!(
+        plan.audio_policy(
+            AudioSample(1602)..AudioSample(1603),
+            AudioQueryLimits {
+                maximum_work: 2,
+                maximum_spans: 8
+            }
+        )
+        .is_err()
+    );
     assert!(FrozenAudioContext::capture(&bound).is_err());
 }

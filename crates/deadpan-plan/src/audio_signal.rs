@@ -51,7 +51,7 @@ impl SignalTransform {
             .checked_div(self.signal_frames_per_local_frame)
     }
 
-    fn signal_from_local(self, local: ExactRatio) -> Result<ExactRatio, TimeError> {
+    pub(super) fn signal_from_local(self, local: ExactRatio) -> Result<ExactRatio, TimeError> {
         self.signal_origin
             .checked_add(local.checked_mul(self.signal_frames_per_local_frame)?)
     }
@@ -82,6 +82,10 @@ pub struct AudioStageDescriptor {
     pub duration: FrameDuration,
     pub rate: ExactRatio,
     pub pitch: PitchPolicy,
+    /// Raw evaluation bypasses this stage's binding only. Descendants remain
+    /// active, and this scope participates in preparation cache identity.
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub bypass_binding: bool,
 }
 
 /// A nonunity Preserve stage borrowed from exactly one immutable plan. Only
@@ -112,6 +116,7 @@ impl<'plan> AudioStage<'plan> {
         node: usize,
         repeats: &[RepeatInstance],
         definition: Option<&AudioDefinitionSelector>,
+        bypass_binding: Option<usize>,
     ) -> Result<Self, PlanError> {
         let compiled = &plan.nodes[node];
         let CompiledKind::Retime {
@@ -149,6 +154,7 @@ impl<'plan> AudioStage<'plan> {
                 duration: compiled.inspection.duration,
                 rate: *scale,
                 pitch: *pitch,
+                bypass_binding: bypass_binding == Some(node),
             },
         })
     }
@@ -166,6 +172,7 @@ impl<'plan> AudioStage<'plan> {
             repeats: self.descriptor.instance.repeats.clone(),
             definition: self.descriptor.definition.clone(),
             placed_transform: None,
+            bypass_binding: None,
         }
     }
 
@@ -180,6 +187,7 @@ impl<'plan> AudioStage<'plan> {
             repeats: self.descriptor.instance.repeats.clone(),
             definition: self.descriptor.definition.clone(),
             placed_transform: None,
+            bypass_binding: self.descriptor.bypass_binding.then_some(self.node),
         }
     }
 }
@@ -189,6 +197,7 @@ impl<'plan> AudioStage<'plan> {
 pub enum AudioSignalContent<'plan> {
     Leaf(AudioContent),
     Stage(AudioStage<'plan>),
+    Bound(Box<super::AudioBound<'plan>>),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -234,6 +243,8 @@ pub struct AudioSignalQuery<'plan> {
     pub samples: Range<SignalSample>,
     pub spans: Vec<AudioSignalSpan<'plan>>,
     pub lookup: LookupStats,
+    #[serde(skip)]
+    pub work: usize,
 }
 
 /// Root output allocation with stateful processing boundaries retained. Its
@@ -280,6 +291,8 @@ pub struct AudioProcessingQuery<'plan> {
     pub samples: Range<AudioSample>,
     pub spans: Vec<AudioProcessingSpan<'plan>>,
     pub lookup: LookupStats,
+    #[serde(skip)]
+    pub work: usize,
 }
 
 #[derive(Debug, Clone)]
@@ -295,6 +308,7 @@ pub struct AudioSignal<'plan> {
     // An explicitly placed owned definition carries a distinct point-grid
     // origin. Ordinary signals derive their grid from their selected support.
     placed_transform: Option<SignalTransform>,
+    bypass_binding: Option<usize>,
 }
 
 impl RenderPlan {
@@ -309,6 +323,7 @@ impl RenderPlan {
             repeats: Vec::new(),
             definition: None,
             placed_transform: None,
+            bypass_binding: None,
         }
     }
 
@@ -321,6 +336,7 @@ impl RenderPlan {
             SignalSample(samples.start.0)..SignalSample(samples.end.0),
             limits,
             AudioBoundaryRule::RoundEven,
+            true,
             true,
         )?;
         Ok(AudioProcessingQuery {
@@ -362,6 +378,7 @@ impl RenderPlan {
                 })
                 .collect::<Result<_, PlanError>>()?,
             lookup: query.lookup,
+            work: query.work,
         })
     }
 }
@@ -381,6 +398,7 @@ impl<'plan> AudioSignal<'plan> {
             repeats: Vec::new(),
             definition: Some(definition),
             placed_transform: None,
+            bypass_binding: None,
         }
     }
 
@@ -399,6 +417,7 @@ impl<'plan> AudioSignal<'plan> {
             repeats: Vec::new(),
             definition: Some(definition),
             placed_transform: Some(transform),
+            bypass_binding: None,
         }
     }
 
@@ -408,8 +427,22 @@ impl<'plan> AudioSignal<'plan> {
         self.definition.as_ref()
     }
 
+    pub(super) fn set_evaluation(
+        &mut self,
+        definition: Option<AudioDefinitionSelector>,
+        repeats: Vec<RepeatInstance>,
+        bypass_binding: Option<usize>,
+    ) {
+        self.definition = definition;
+        self.repeats = repeats;
+        self.bypass_binding = bypass_binding;
+    }
+
     pub fn belongs_to(&self, plan: &RenderPlan) -> bool {
         std::ptr::eq(self.plan, plan)
+    }
+    pub(super) fn has_audio_bindings(&self) -> bool {
+        self.plan.has_audio_bindings()
     }
 
     pub fn support(&self) -> Range<ExactRatio> {
@@ -428,7 +461,7 @@ impl<'plan> AudioSignal<'plan> {
         samples: Range<SignalSample>,
         limits: AudioQueryLimits,
     ) -> Result<AudioSignalQuery<'plan>, PlanError> {
-        self.query_inner(samples, limits, AudioBoundaryRule::PointCeil, true)
+        self.query_inner(samples, limits, AudioBoundaryRule::PointCeil, true, true)
     }
 
     /// Resolve structural policies through all retimes on the same point grid.
@@ -438,7 +471,7 @@ impl<'plan> AudioSignal<'plan> {
         samples: Range<SignalSample>,
         limits: AudioQueryLimits,
     ) -> Result<AudioSignalQuery<'plan>, PlanError> {
-        self.query_inner(samples, limits, AudioBoundaryRule::PointCeil, false)
+        self.query_inner(samples, limits, AudioBoundaryRule::PointCeil, false, false)
     }
 
     fn transform(&self) -> Result<SignalTransform, TimeError> {
@@ -457,12 +490,13 @@ impl<'plan> AudioSignal<'plan> {
         })
     }
 
-    fn query_inner(
+    pub(super) fn query_inner(
         &self,
         samples: Range<SignalSample>,
         limits: AudioQueryLimits,
         rule: AudioBoundaryRule,
         stop_at_preserve: bool,
+        stop_at_bindings: bool,
     ) -> Result<AudioSignalQuery<'plan>, PlanError> {
         limits.validate()?;
         let grid = self.transform()?.grid(rule)?;
@@ -480,7 +514,13 @@ impl<'plan> AudioSignal<'plan> {
             if spans.len() == limits.maximum_spans {
                 return Err(PlanError::AudioQueryLimit("span count"));
             }
-            let mut span = self.span(cursor, grid, stop_at_preserve, &mut budget)?;
+            let mut span = self.span(
+                cursor,
+                grid,
+                stop_at_preserve,
+                stop_at_bindings,
+                &mut budget,
+            )?;
             span.samples = cursor..span.allocated_samples.end.min(samples.end);
             cursor = span.samples.end;
             spans.push(span);
@@ -492,6 +532,7 @@ impl<'plan> AudioSignal<'plan> {
             samples,
             spans,
             lookup: budget.lookup,
+            work: limits.maximum_work - budget.remaining,
         })
     }
 
@@ -500,6 +541,7 @@ impl<'plan> AudioSignal<'plan> {
         sample: SignalSample,
         grid: AudioSampleGrid<SignalSample>,
         stop_at_preserve: bool,
+        stop_at_bindings: bool,
         budget: &mut Budget,
     ) -> Result<AudioSignalSpan<'plan>, PlanError> {
         let mut transform = self.transform()?;
@@ -529,6 +571,24 @@ impl<'plan> AudioSignal<'plan> {
                     Some(previous) => intersect(previous, node_extent)?,
                     None => node_extent,
                 });
+            }
+            if stop_at_bindings
+                && self.bypass_binding != Some(current)
+                && let Some(bound) = self.plan.bound_at(
+                    current,
+                    &repeats,
+                    self.definition.as_ref(),
+                    super::audio_bound::BoundPlacement {
+                        transform,
+                        grid,
+                        allocated_start: grid.boundary(extent.start)?,
+                        support: sampling_extent.as_ref(),
+                        constraints: &[],
+                    },
+                    budget,
+                )?
+            {
+                break (AudioSignalContent::Bound(Box::new(bound)), None);
             }
             let local = transform.local_at_signal_frame(probe)?;
             match &node.kind {
@@ -628,6 +688,7 @@ impl<'plan> AudioSignal<'plan> {
                                 current,
                                 &repeats,
                                 self.definition.as_ref(),
+                                self.bypass_binding,
                             )?),
                             None,
                         );

@@ -191,10 +191,15 @@ bounded timing-only records, lexical arguments, ordered default-birth clauses
 and symbolic local phase terms. Each term retains its own clock, so rounding at
 a shared-definition cut can differ across existing plays without expanding them.
 Split/isolation remap live aliases and removal prunes unused records atomically.
-The representation does not implement its complete edit lifecycle or consumer.
-Render compilation rejects nonempty bindings until both PCM and policy honor
-them. Changed raw contributions and affected opaque ancestors still need explicit
-replacement; the arbitrary insertion command remains open.
+Normal plans and StageAudio now consume these bindings. Pure capture retains
+existing clocks and compact default/override scope, but rejects nonempty Repeat
+gaps until their ownership is represented. The consumer preserves current raw
+recipes, resumed phase, crop support, current Hard policies and virtual
+post-mapping fades. Endpoint masks stay on the physical sampling grid; explicit
+SilentHold policy also applies after a downstream Preserve, including intervals
+with no input point. Query/preparation work, source provenance and relative cache
+depth remain shared. Changed raw contributions and affected opaque ancestors
+still need explicit lifecycle rules; the arbitrary insertion command remains open.
 
 ## Structural and mark requirements
 

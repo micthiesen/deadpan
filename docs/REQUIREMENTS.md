@@ -119,14 +119,24 @@ representation for timing lattices, stable Repeat scope, explicit births and
 bounded symbolic phase. Split/isolation copy live arguments while retaining old
 aliases; removal and inverse patches retain atomic ownership. PointCeil owned
 evaluation preserves selected origins and nested preparation budgets. Existing
-commands do not create bindings in empty projects, and nonempty bindings are
-explicitly rejected by render compilation and context-schema-1 capture. Binding
-consumers, full command lifecycle and arbitrary Hold insertion remain open.
+commands do not create bindings in empty projects. Normal StageAudio rendering
+now consumes root/point bindings, current and retained-placement policies, exact
+resume phase and virtual post-mapping fades. A pure capture helper retains
+compact birth scope and existing bindings, rejecting nonempty Repeat gaps.
+Context-schema-1 capture and source-only SequenceAudio still reject nonempty
+bindings. Full command lifecycle and arbitrary Hold insertion remain open.
 No requirement or gate changes status.
 
 [Binding qualification](qualification/owned-audio-bindings-2026-09-23.md)
 records 1,140 passing tests, the complete repository gate and three independent
 reviews for this representation and evaluation boundary.
+
+[Consumer qualification](qualification/owned-audio-consumer-2026-09-23.md)
+records 1,172 passing tests and the full gate for retained PCM,
+post-mapping fades, compact capture, independent grid policies and shared
+preparation admission. Review fixed tiny-clip fade changes, crop leakage,
+dense policy inventory rejection and unintended muting of Preserve decay.
+This remains an engine milestone; native pause insertion is still open.
 
 Current measured evidence: [editing foundation verification](FOUNDATION_VERIFICATION.md), [picture plan and migration verification](PLAN_MIGRATION_VERIFICATION.md), [exact boundary verification](ANCHOR_VERIFICATION.md), [persistent mark verification](MARK_VERIFICATION.md), [sparse override verification](OVERRIDE_VERIFICATION.md), [nested occurrence verification](OCCURRENCE_VERIFICATION.md), [native media qualification](qualification/media-2026-09-20.md), [compatible FFmpeg/Rust qualification](qualification/media-compatible-2026-09-20.md), [audio candidate qualification](qualification/audio-2026-09-20.md), and [canonical audio qualification](qualification/audio-canonical-2026-09-20.md).
 

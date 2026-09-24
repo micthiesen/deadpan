@@ -253,6 +253,8 @@ pub struct AudioQuery {
     pub samples: Range<AudioSample>,
     pub spans: Vec<AudioSpan>,
     pub lookup: LookupStats,
+    #[serde(skip)]
+    pub work: usize,
 }
 
 pub(super) struct Budget {
@@ -263,7 +265,7 @@ pub(super) struct Budget {
 // Sequence/Repeat bounds describe derived allocation, not a new crop of a
 // retained partition. Keep their policies only when a real envelope edge is
 // exactly coincident. Capture paths after descent to avoid cloning every prefix.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub(super) struct EnvelopeConstraint {
     pub(super) placement_support: bool,
     pub(super) range: Range<ExactRatio>,
@@ -354,11 +356,12 @@ impl RenderPlan {
             samples,
             spans,
             lookup: budget.lookup,
+            work: limits.maximum_work - budget.remaining,
         })
     }
 
     fn audio_span(&self, sample: AudioSample, budget: &mut Budget) -> Result<AudioSpan, PlanError> {
-        match self.audio_walk(sample, budget, None, false, None)? {
+        match self.audio_walk(sample, budget, None, false, false, None)? {
             AudioWalkSpan::Leaf(span) => Ok(span),
             AudioWalkSpan::Stage(_) => {
                 Err(PlanError::InvalidPlan("flattened audio retained a stage"))
@@ -372,6 +375,7 @@ impl RenderPlan {
         budget: &mut Budget,
         seed: Option<&AudioWalkSeed>,
         stop_at_preserve: bool,
+        stop_at_bindings: bool,
         capture: Option<&mut Option<AudioDomainSeed>>,
     ) -> Result<AudioWalkSpan<'plan>, PlanError> {
         let rate = self.metadata.presentation_basis.frame_rate;
@@ -383,11 +387,13 @@ impl RenderPlan {
                 i128::from(MIX_SAMPLE_RATE) * i128::from(rate.denominator()),
             )?,
         };
-        let grid = AudioSampleGrid::<AudioSample>::new(
-            ExactRatio::ZERO,
-            transform.project_frames_per_sample,
-            AudioBoundaryRule::RoundEven,
-        )?;
+        let grid = seed.map(|seed| seed.grid).map(Ok).unwrap_or_else(|| {
+            AudioSampleGrid::<AudioSample>::new(
+                ExactRatio::ZERO,
+                transform.project_frames_per_sample,
+                AudioBoundaryRule::RoundEven,
+            )
+        })?;
         // Search the allocated interval, not the PCM sample's coordinate.
         let (probe, bias) = grid.probe(sample)?;
         let mut extent = ExactRatio::ZERO..ExactRatio::integer(self.duration().frames());
@@ -398,6 +404,7 @@ impl RenderPlan {
         let mut retimes = Vec::new();
         let mut seeded_gap = None;
         let definition = seed.and_then(|seed| seed.definition.as_ref());
+        let bypass_binding = seed.and_then(|seed| seed.bypass_binding);
         if let Some(seed) = seed {
             budget.spend(seed.constraints.len() + seed.repeats.len() + seed.retimes.len())?;
             current = seed.node;
@@ -476,6 +483,33 @@ impl RenderPlan {
                         None => node_extent,
                     });
                 }
+            }
+            if stop_at_bindings
+                && bypass_binding != Some(current)
+                && let Some(bound) = self.bound_at(
+                    current,
+                    &repeats,
+                    definition,
+                    super::audio_bound::BoundPlacement {
+                        transform: super::SignalTransform {
+                            signal_origin: transform.project_origin,
+                            signal_frames_per_local_frame: transform.project_frames_per_local_frame,
+                            grid_origin: grid.frame_origin(),
+                            signal_frames_per_sample: transform.project_frames_per_sample,
+                        },
+                        grid: AudioSampleGrid::new(
+                            grid.frame_origin(),
+                            transform.project_frames_per_sample,
+                            grid.boundary_rule(),
+                        )?,
+                        allocated_start: super::SignalSample(grid.boundary(extent.start)?.0),
+                        support: envelope.as_ref(),
+                        constraints: &constraints,
+                    },
+                    budget,
+                )?
+            {
+                break (AudioSignalContent::Bound(Box::new(bound)), None);
             }
             let local = probe
                 .checked_sub(transform.project_origin)?
@@ -597,7 +631,11 @@ impl RenderPlan {
                         budget.spend(repeats.len() + 1)?;
                         break (
                             AudioSignalContent::Stage(AudioStage::for_node(
-                                self, current, &repeats, definition,
+                                self,
+                                current,
+                                &repeats,
+                                definition,
+                                bypass_binding,
                             )?),
                             None,
                         );
@@ -707,8 +745,10 @@ impl RenderPlan {
             *capture = Some(AudioDomainSeed {
                 walk: AudioWalkSeed {
                     definition: definition.cloned(),
+                    bypass_binding,
                     node: current,
                     transform,
+                    grid,
                     extent: envelope.range.clone(),
                     envelope: inherited_envelope,
                     constraints: constraints[..inherited_constraints].to_vec(),
@@ -748,13 +788,15 @@ impl RenderPlan {
             grid.boundary(envelope.range.start)?..grid.boundary(envelope.range.end)?;
         let sampling = AudioSampleMap::new(
             allocated_samples.start,
-            transform.local_at(allocated_samples.start)?,
+            grid.at(allocated_samples.start)?
+                .checked_sub(transform.project_origin)?
+                .checked_div(transform.project_frames_per_local_frame)?,
             transform
                 .project_frames_per_sample
                 .checked_div(transform.project_frames_per_local_frame)?,
         )?;
         let content = match content {
-            AudioSignalContent::Stage(stage) => {
+            content @ (AudioSignalContent::Stage(_) | AudioSignalContent::Bound(_)) => {
                 return Ok(AudioWalkSpan::Stage(AudioProcessingSpan {
                     definition: definition.cloned(),
                     samples: allocated_samples.clone(),
@@ -769,7 +811,7 @@ impl RenderPlan {
                     grid,
                     sampling,
                     retimes,
-                    content: AudioSignalContent::Stage(stage),
+                    content,
                 }));
             }
             AudioSignalContent::Leaf(content) => content,

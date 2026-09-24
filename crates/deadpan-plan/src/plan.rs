@@ -28,8 +28,17 @@ pub use audio_boundary::{AudioBoundaries, AudioBoundaryKind, AudioBoundaryOrigin
 #[path = "audio_signal.rs"]
 mod audio_signal;
 pub use audio_signal::*;
+#[path = "audio_bound.rs"]
+mod audio_bound;
 #[path = "audio_context.rs"]
 mod audio_context;
+pub use audio_bound::{AudioBound, AudioBoundDomain};
+#[path = "audio_policy.rs"]
+mod audio_policy;
+pub use audio_policy::AudioPolicyQuery;
+#[path = "audio_fades.rs"]
+mod audio_fades;
+pub use audio_fades::{AudioFadeQuery, AudioFadeSpan};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize)]
 pub struct StorageStats {
@@ -95,6 +104,8 @@ pub struct RenderPlan {
     // Presence identifies an audio-only retained context, including one with
     // no sources. These contracts still require explicit host admission.
     audio_context_assets: Option<BTreeMap<AssetId, deadpan_core::AssetRecord>>,
+    audio_bindings: deadpan_core::AudioBindingState,
+    parents: Vec<Option<usize>>,
 }
 
 #[derive(Debug, Clone)]
@@ -241,11 +252,6 @@ impl CompiledHold {
 impl RenderPlan {
     pub fn compile(document: &ProjectDocument) -> Result<Self, PlanError> {
         let durations = document.durations()?;
-        // Until the binding-aware policy and PCM walks are installed together,
-        // never render a different signal by silently dropping authored clocks.
-        if !document.audio_bindings().is_empty() {
-            return Err(PlanError::UnsupportedAudioBindings);
-        }
         let by_id: BTreeMap<_, _> = document
             .nodes()
             .keys()
@@ -371,6 +377,12 @@ impl RenderPlan {
             });
         }
         let root = by_id[document.root()];
+        let mut parents = vec![None; nodes.len()];
+        for id in document.nodes().keys() {
+            for child in document.children(id) {
+                parents[by_id[child]] = Some(by_id[id]);
+            }
+        }
         Ok(Self {
             metadata: PlanMetadata {
                 project_id: document.project_id().clone(),
@@ -383,6 +395,8 @@ impl RenderPlan {
             nodes,
             by_id,
             root,
+            parents,
+            audio_bindings: document.audio_bindings().clone(),
             audio_context_assets: None,
         })
     }

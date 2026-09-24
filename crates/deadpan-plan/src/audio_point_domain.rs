@@ -28,6 +28,15 @@ pub struct AudioPointDomain<'plan> {
 }
 
 impl<'plan> AudioPointDomain<'plan> {
+    pub(super) fn set_evaluation(
+        &mut self,
+        definition: Option<AudioDefinitionSelector>,
+        repeats: Vec<deadpan_core::RepeatInstance>,
+        bypass_binding: Option<usize>,
+    ) {
+        self.signal
+            .set_evaluation(definition, repeats, bypass_binding);
+    }
     pub(super) fn new(
         plan: &'plan RenderPlan,
         root: usize,

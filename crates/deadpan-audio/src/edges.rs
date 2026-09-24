@@ -1,13 +1,134 @@
 //! Stateless, per-voice fades using retained progress on the 48 kHz output clock.
 use std::ops::Range;
 
-use deadpan_core::{AudioEdgePolicy, AudioSample};
-use deadpan_plan::AudioSpan;
+use deadpan_core::{AudioEdgePolicy, AudioSample, ExactRatio};
+use deadpan_plan::{AudioFadeSpan, AudioSpan};
 
 use crate::StageAudioError;
 
 /// Sample-centered linear edges after all time/pitch mapping, before treatments.
 pub const EDGE_FADE_ID: &str = "deadpan-voice-edge-sample-centered-linear-2ms-v1";
+
+/// Admit the complete derived creative envelope before media access. The
+/// independent endpoint policy owns exhaustion, including zero/one-point spans.
+pub(crate) fn validate_creative_fades(
+    start: AudioSample,
+    frames: usize,
+    spans: &[AudioFadeSpan],
+) -> Result<(), StageAudioError> {
+    creative_gains(start, frames, spans).map(|_| ())
+}
+
+pub(crate) fn apply_creative_fades(
+    start: AudioSample,
+    samples: &mut [[f32; 2]],
+    spans: &[AudioFadeSpan],
+) -> Result<(), StageAudioError> {
+    // Calculate and validate every gain before changing PCM. Fractional
+    // envelope progress never becomes an accumulated floating-point clock.
+    let gains = creative_gains(start, samples.len(), spans)?;
+    for (sample, gain) in samples.iter_mut().zip(gains) {
+        if gain == 0.0 {
+            *sample = [0.0; 2];
+        } else {
+            for channel in sample {
+                *channel *= gain;
+            }
+        }
+    }
+    Ok(())
+}
+
+fn creative_gains(
+    start: AudioSample,
+    frames: usize,
+    spans: &[AudioFadeSpan],
+) -> Result<Vec<f32>, StageAudioError> {
+    if frames == 0 || frames > crate::MAX_OUTPUT_FRAMES as usize || spans.len() > frames {
+        return Err(StageAudioError::Range);
+    }
+    let end = start
+        .0
+        .checked_add(i64::try_from(frames).map_err(|_| StageAudioError::Range)?)
+        .ok_or(StageAudioError::Range)?;
+    let mut cursor = start.0;
+    let mut gains = vec![1.0; frames];
+    for span in spans {
+        if span.samples.start.0 != cursor
+            || span.samples.start >= span.samples.end
+            || span.samples.end.0 > end
+            || (span.length >= 2
+                && (span.boundaries.start.is_empty() || span.boundaries.end.is_empty()))
+        {
+            return Err(StageAudioError::Range);
+        }
+        cursor = span.samples.end.0;
+        let left =
+            usize::try_from(span.samples.start.0 - start.0).map_err(|_| StageAudioError::Range)?;
+        let right =
+            usize::try_from(span.samples.end.0 - start.0).map_err(|_| StageAudioError::Range)?;
+        let start_fade = !span
+            .boundaries
+            .start
+            .iter()
+            .any(|origin| origin.policy == AudioEdgePolicy::Hard);
+        let end_fade = !span
+            .boundaries
+            .end
+            .iter()
+            .any(|origin| origin.policy == AudioEdgePolicy::Hard);
+        for (offset, gain) in gains[left..right].iter_mut().enumerate() {
+            let progress = span.progress_at_start.checked_add(ExactRatio::integer(
+                i64::try_from(offset).map_err(|_| StageAudioError::Range)?,
+            ))?;
+            *gain = creative_gain(span.length, progress, start_fade, end_fade)?;
+        }
+    }
+    if cursor != end {
+        return Err(StageAudioError::Range);
+    }
+    Ok(gains)
+}
+
+fn creative_gain(
+    length: u64,
+    progress: ExactRatio,
+    start: bool,
+    end: bool,
+) -> Result<f32, StageAudioError> {
+    if length < 2 || (!start && !end) {
+        return Ok(1.0);
+    }
+    let twice_width = ExactRatio::new(i128::from(length.min(192)), 1)?;
+    let ramp = |distance: ExactRatio| -> Result<f32, StageAudioError> {
+        // The fade never extends beyond 96 output samples. Clamp far-away
+        // progress before adding its half-sample center or scaling a ratio.
+        if distance.compare_integer(-1).is_le() {
+            return Ok(0.0);
+        }
+        if distance.compare_integer(96).is_ge() {
+            return Ok(1.0);
+        }
+        let value = distance
+            .checked_mul(ExactRatio::integer(2))?
+            .checked_add(ExactRatio::ONE)?
+            .checked_div(twice_width)?;
+        if value.compare_integer(0).is_le() {
+            return Ok(0.0);
+        }
+        if value.compare_integer(1).is_ge() {
+            return Ok(1.0);
+        }
+        Ok((value.numerator() as f64 / value.denominator() as f64) as f32)
+    };
+    let left = if start { ramp(progress)? } else { 1.0 };
+    let right = if end {
+        ramp(ExactRatio::new(i128::from(length) - 1, 1)?.checked_sub(progress)?)?
+    } else {
+        1.0
+    };
+    Ok(left.min(right))
+}
 
 /// Enforce retained-domain silence on every read. Optional creative edge fades
 /// affect only samples inside that domain; raw time-mapped reads still exhaust.
@@ -137,6 +258,68 @@ mod tests {
     };
 
     use super::*;
+
+    #[test]
+    fn derived_creative_gain_preserves_integer_fades_and_exact_fractional_progress() {
+        for length in 2..256 {
+            for at in 0..length {
+                for (start, end) in [(false, false), (true, false), (false, true), (true, true)] {
+                    assert_eq!(
+                        creative_gain(
+                            length,
+                            ExactRatio::new(i128::from(at), 1).unwrap(),
+                            start,
+                            end
+                        )
+                        .unwrap(),
+                        edge_gain(length, i128::from(at), start, end),
+                    );
+                }
+            }
+        }
+        assert_eq!(
+            creative_gain(4, ExactRatio::new(1, 3).unwrap(), true, true).unwrap(),
+            5.0_f32 / 12.0
+        );
+        assert_eq!(
+            creative_gain(4, ExactRatio::new(8, 3).unwrap(), true, true).unwrap(),
+            5.0_f32 / 12.0
+        );
+        assert_eq!(
+            creative_gain(400, ExactRatio::new(191, 2).unwrap(), true, true).unwrap(),
+            1.0
+        );
+        for length in [0, 1] {
+            for progress in [-100, 0, 100] {
+                assert_eq!(
+                    creative_gain(length, ExactRatio::integer(progress), true, true).unwrap(),
+                    1.0,
+                    "endpoint policy, not the creative ramp, owns tiny-domain exhaustion"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn derived_fade_validation_is_atomic_for_a_later_invalid_span() {
+        let base = span(0..2, AudioEnvelope::new(2, 0, AudioSample(0)).unwrap());
+        let first = AudioFadeSpan {
+            samples: AudioSample(0)..AudioSample(2),
+            length: 4,
+            progress_at_start: ExactRatio::ZERO,
+            boundaries: base.boundaries.clone(),
+        };
+        let invalid = AudioFadeSpan {
+            samples: AudioSample(1)..AudioSample(3),
+            length: 4,
+            progress_at_start: ExactRatio::integer(1),
+            boundaries: base.boundaries,
+        };
+        let mut samples = vec![[0.75, -0.5]; 4];
+        let original = samples.clone();
+        assert!(apply_creative_fades(AudioSample(0), &mut samples, &[first, invalid]).is_err());
+        assert_eq!(samples, original);
+    }
 
     fn span(samples: Range<i64>, envelope: AudioEnvelope) -> AudioSpan {
         let instance = InstancePath {

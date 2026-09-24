@@ -1,11 +1,11 @@
 # Owned audio timing bindings
 
 Core 16/database 22 store bounded timing bindings separately from the raw owned
-tree. This is the representation and persistence layer for inserted-time audio.
-It does not implement the inserted-time command or a binding-aware renderer.
-No existing editor command creates bindings in an empty project. Render-plan
-compilation explicitly rejects a nonempty binding state rather than ignoring it.
-The complete editing lifecycle and PCM integration remain open.
+tree. The normal plan and `StageAudio` paths evaluate these bindings with retained
+sampling, current owned policies and post-mapping fades. A pure capture helper
+can capture previously unbound physical owners without expanding Repeat plays.
+No editor command creates bindings in an empty project yet. Arbitrary Hold
+insertion and the complete authoring lifecycle remain open.
 
 The [single-Original workflow](SINGLE_ORIGINAL.md) remains the product model:
 reshape the full source with reversible changes. Timing records are internal
@@ -97,23 +97,92 @@ lineage, source coordinates, matching PCM, or old structural edits.
 rejects a nonempty state explicitly; it cannot silently export an unbound recipe
 as an equivalent historical context.
 
-## Remaining integration
+## Rendering and policy
 
-The renderer must intercept a binding at its physical owner, evaluate the current
-owned recipe on the selected lattice, and bypass only that root binding while
-honoring descendants. Preserve cache identity must include the evaluation scope.
-Current and retained policy must be queried independently on every input/output
-grid, including silent intervals that own no input point. Scaling a returned
-input mask is insufficient.
+The renderer intercepts a binding at its physical owner, evaluates the current
+owned recipe on the selected lattice, and bypasses only that root binding while
+honoring descendants. Preserve cache identity includes the evaluation scope and
+root bypass. Current and retained policy are queried independently on every
+input/output grid, including silent intervals that own no input point. Scaling
+a returned input mask is insufficient.
 
 Both policy paths evaluate the current owned children and their descendant
 bindings. The timing table supplies coordinates; its old policy flags do not
 authorize an additional silence mask. Otherwise a Hold changed from Silence to
-RoomTone could remain muted by an obsolete flag. Empty retained support needs an
-explicit result without discarding the exact policy extent. Repeat gaps still
-need their own binding ownership before arbitrary insertion can preserve them.
+RoomTone could remain muted by an obsolete flag. Empty retained support has an
+explicit result without discarding the exact policy extent. Current Edit crops
+constrain raw filter support; transparent partitions and root allocation do not
+remove hidden physical context. Current coincident boundary owners retain their
+creative Hard choices in the retained placement.
 
-Only after that consumer and the complete lifecycle are verified can a typed
+Raw endpoint masks stay on their physical sampling grid. A downstream Preserve
+receives those masked inputs, then may produce ordinary processing decay through
+an absent Source. Do not turn an empty PointCeil operand into an explicit output
+mute after crossing that stage. Authored SilentHold policy still applies on each
+output grid, even when its input interval contained no point. Capturing timing
+alone must not convert absent audio into intentional silence.
+
+Root and PointCeil transfers share source provenance, cancellation, deadlines,
+work, residency and nested preparation limits. Cache hits retain relative depth
+as well as transitive source dependencies. A warmed shallow cache cannot bypass
+the limit in a deeper binding evaluation. Query work includes resolution and
+both policy paths. Source-only `SequenceAudio` rejects nonempty bindings before
+media access; use `StageAudio` for these documents. Context-schema-1 capture
+still rejects them because that historical format cannot retain their meaning.
+The transfer carrier requires its full retained support length to fit a positive
+i64, even for a short requested block. Unrepresentable carriers fail explicitly;
+the independent physical-domain inspection API supports wider signed spans.
+
+## Creative fade clock
+
+Creative fades are applied once, after all time/pitch mapping. Raw binding reads
+retain endpoint suppression without baking fades into a Preserve input. Fade
+queries stop at the first physical output before crossing a nonunity Preserve;
+its owned output leaves supply envelope geometry. A descendant input binding
+does not substitute its input-grid fade for an output-grid fade.
+
+For a translated binding, retain its original meaningful envelope length and
+advance the retained progress. This matters even for a one-frame clip: at
+32000 fps its allocation can change from two samples to one after a move, but
+the remaining sample must retain the two-sample fade.
+
+A new rate uses a virtual creative clock. Keep the retained grid origin,
+boundary rule and physical owner origin `o`; rescale exact envelope geometry
+around `o` by the current-to-retained physical scale `s`. For raw envelope
+extent `[a,b)`, retained boundary function `B`, mapped sample `q` and reference
+samples per output sample `r`:
+
+```text
+V(x) = o + (x-o)*s
+N = B(V(b)) - B(V(a))
+progress = (q-B(a))/r
+```
+
+Progress advances one output sample per sample. A later translation changes
+neither `N` nor progress. This deliberately uses the retained virtual origin,
+not a new current absolute origin on each rate edit. Both root ties-to-even and
+selected-origin PointCeil remain distinct. For `N >= 2`, the sample-centered
+linear ramps use `F=min(96,N/2)` output samples; Hard disables only its applicable
+ramp. `N < 2` has no creative attenuation. Retained raw endpoint and current
+silence policies remain independent, so virtual fade sizing never grants a
+sample outside the raw domain.
+
+## Capture and remaining authoring
+
+`capture_unbound_audio_bindings` returns a complete candidate binding state;
+it does not mutate the document or allocate a revision. Existing bindings stay
+unchanged. One bounded owned-tree traversal visits default and override
+subtrees. Default edges retain live stable play arguments plus birth clauses;
+override edges capture their exact play. Nonunity Preserve output uses the
+enclosing clock, then its input resets lexical scope at the exact selected
+origin. One shared frozen timing record is added only when needed.
+
+Repeat gaps still need their own binding ownership. Complete capture rejects a
+nonempty gap rather than claiming continuity while omitting it. Raw recipe/rate
+and support changes still need explicit command lifecycle rules, including
+replacement of affected opaque ancestors and preservation of unaffected owners.
+
+After the complete lifecycle is verified, a typed
 atomic insertion command capture clocks, isolate a selected occurrence, split
 the required context, insert the fallback Hold, transform marks and generation
 relevance, and commit one revision. The native interface must then expose the

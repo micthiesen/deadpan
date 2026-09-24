@@ -14,10 +14,11 @@ use deadpan_core::{
 use deadpan_dsp::{CanonicalRecipe, CanonicalStretch, StereoPcm, StretchRate};
 use deadpan_media::audio_index::AudioChannelLayout;
 use deadpan_plan::{
-    AudioContent, AudioDefinition, AudioDefinitionSelector, AudioDomain, AudioPointDomain,
-    AudioProcessingQuery, AudioProcessingSpan, AudioQuery, AudioQueryLimits, AudioSignal,
-    AudioSignalContent, AudioSignalSpan, AudioStage, AudioStageDescriptor, PlanError,
-    ReferenceSample, RenderPlan, SignalSample, SilenceReason,
+    AudioBound, AudioBoundDomain, AudioContent, AudioDefinition, AudioDefinitionSelector,
+    AudioDomain, AudioFadeQuery, AudioPointDomain, AudioPolicyQuery, AudioProcessingQuery,
+    AudioProcessingSpan, AudioQuery, AudioQueryLimits, AudioSignal, AudioSignalContent,
+    AudioSignalSpan, AudioStage, AudioStageDescriptor, PlanError, ReferenceSample, RenderPlan,
+    SignalSample, SilenceReason,
 };
 use serde::Serialize;
 
@@ -223,6 +224,8 @@ struct ReadBlock {
     // Complete for this block, even if this read already observed the asset or
     // obtained its samples from an admitted preparation cache entry.
     dependencies: Dependencies,
+    // Maximum recursive preparation depth below this read's entry depth.
+    relative_depth: usize,
     suppressed: Vec<Range<AudioSample>>,
     exhausted: Vec<Range<AudioSample>>,
 }
@@ -230,11 +233,14 @@ struct ReadBlock {
 struct RootReadQueries<'plan> {
     flattened: AudioQuery,
     processing: AudioProcessingQuery<'plan>,
+    policy: AudioPolicyQuery<AudioSample>,
+    fades: Option<AudioFadeQuery>,
 }
 
 #[derive(Clone, Copy)]
-struct RootReadMode {
-    edge_fades: bool,
+struct BoundRead {
+    offset: i128,
+    frames: u32,
     depth: usize,
 }
 
@@ -262,6 +268,8 @@ struct SignalBlock {
     samples: Vec<[f32; 2]>,
     dependencies: Dependencies,
     suppressed: Vec<Range<SignalSample>>,
+    // Retained with cached PCM so reuse at a deeper caller is re-admitted.
+    relative_depth: usize,
 }
 
 #[derive(Default)]
@@ -270,7 +278,10 @@ struct ReadWork {
     prepared_frames: u64,
     source_checks: u32,
     observed: Dependencies,
+    plan_work: usize,
 }
+
+const MAX_PLAN_WORK_PER_READ: usize = 16 * 1024 * 1024;
 
 #[derive(Clone, Copy)]
 struct WorkControl<'a> {
@@ -286,6 +297,28 @@ impl WorkControl<'_> {
             .checked_duration_since(Instant::now())
             .filter(|remaining| !remaining.is_zero())
             .ok_or(StageAudioError::Timeout)
+    }
+
+    fn spend_plan_work(self, amount: usize) -> Result<(), StageAudioError> {
+        self.check()?;
+        let mut work = self.work.borrow_mut();
+        work.plan_work = work
+            .plan_work
+            .checked_add(amount)
+            .filter(|total| *total <= MAX_PLAN_WORK_PER_READ)
+            .ok_or(StageAudioError::Limit("plan work per read"))?;
+        Ok(())
+    }
+
+    fn query_limits(self) -> Result<AudioQueryLimits, StageAudioError> {
+        self.check()?;
+        let remaining = MAX_PLAN_WORK_PER_READ
+            .checked_sub(self.work.borrow().plan_work)
+            .filter(|remaining| *remaining > 0)
+            .ok_or(StageAudioError::Limit("plan work per read"))?;
+        let mut limits = query_limits();
+        limits.maximum_work = limits.maximum_work.min(remaining);
+        Ok(limits)
     }
 
     fn observe(
@@ -623,21 +656,19 @@ impl StageAudio {
         if frames == 0 || frames > MAX_OUTPUT_FRAMES {
             return Err(StageAudioError::Range);
         }
+        let flattened = domain.audio(start..end, control.query_limits()?)?;
+        control.spend_plan_work(flattened.work)?;
+        let processing = domain.processing(start..end, control.query_limits()?)?;
+        control.spend_plan_work(processing.work)?;
+        let policy = domain.policy(start..end, control.query_limits()?)?;
+        control.spend_plan_work(policy.work)?;
         let queries = RootReadQueries {
-            flattened: domain.audio(start..end, query_limits())?,
-            processing: domain.processing(start..end, query_limits())?,
+            flattened,
+            processing,
+            policy,
+            fades: None,
         };
-        self.read_queries(
-            provider,
-            start,
-            frames,
-            control,
-            RootReadMode {
-                edge_fades: false,
-                depth,
-            },
-            queries,
-        )
+        self.read_queries(provider, start, frames, control, depth, queries)
     }
 
     /// Transfer hidden or visible domain PCM with one preparation allowance and
@@ -700,6 +731,7 @@ impl StageAudio {
             return Err(StageAudioError::ForeignDomain);
         }
         let mut dependencies = Dependencies::new();
+        let mut relative_depth = 0;
         let anchor = transfer.descriptor().root_support.start.0;
         let block = transfer.carrier().render::<StageAudioError>(
             start,
@@ -718,6 +750,7 @@ impl StageAudio {
                     depth,
                 )?;
                 dependencies.extend(block.dependencies);
+                relative_depth = relative_depth.max(block.relative_depth);
                 block.suppressed.append(&mut block.exhausted);
                 let suppressed = block
                     .suppressed
@@ -749,7 +782,105 @@ impl StageAudio {
             samples: block.samples,
             dependencies,
             suppressed: block.suppressed,
+            relative_depth,
         })
+    }
+
+    /// Read a bound physical recipe with this read's admission and work state.
+    /// Output labels are rebased from the containing span, never rerounded.
+    fn read_bound(
+        &mut self,
+        bound: &AudioBound<'_>,
+        provider: &mut impl AudioSourceProvider,
+        request: BoundRead,
+        control: WorkControl<'_>,
+    ) -> Result<SignalBlock, StageAudioError> {
+        let BoundRead {
+            offset,
+            frames,
+            depth,
+        } = request;
+        control.check()?;
+        if depth > self.limits.maximum_depth {
+            return Err(StageAudioError::Limit("nested stage depth"));
+        }
+        if !bound.belongs_to(&self.plan) {
+            return Err(StageAudioError::ForeignDomain);
+        }
+        if offset < 0 || frames == 0 || frames > MAX_OUTPUT_FRAMES {
+            return Err(StageAudioError::Range);
+        }
+        let at = bound.reference_at_wide_offset(offset)?;
+        let step = bound.reference_samples_per_output_sample();
+        let output = SignalSample(0)..SignalSample(i64::from(frames));
+        match bound.raw_domain()? {
+            AudioBoundDomain::Root(domain) => {
+                if domain.root_samples().is_empty() {
+                    return Ok(empty_bound_block(frames));
+                }
+                let transfer = DomainSignalTransfer::new(domain, at, output.start, step, output)?;
+                self.read_domain_transferred_controlled(
+                    provider,
+                    &transfer,
+                    SignalSample(0),
+                    frames,
+                    control,
+                    depth,
+                )
+            }
+            AudioBoundDomain::Point(domain) => {
+                let support = domain.reference_samples();
+                let length = support
+                    .end
+                    .0
+                    .checked_sub(support.start.0)
+                    .ok_or(TimeError::Overflow)?;
+                if length == 0 {
+                    return Ok(empty_bound_block(frames));
+                }
+                let transfer = RootSignalTransfer::new(
+                    AudioSample(0)..AudioSample(length),
+                    at.checked_sub(ExactRatio::integer(support.start.0))?,
+                    output.start,
+                    step,
+                    output,
+                )?;
+                let mut dependencies = Dependencies::new();
+                let mut relative_depth = 0;
+                let block = transfer.render::<StageAudioError>(
+                    SignalSample(0),
+                    frames,
+                    control.cancelled,
+                    |storage, count| {
+                        let reference = domain.reference_at_signal(SignalSample(storage.0))?;
+                        let block = self.read_point_domain_controlled(
+                            provider, &domain, reference, count, control, depth,
+                        )?;
+                        dependencies.extend(block.dependencies);
+                        relative_depth = relative_depth.max(block.relative_depth);
+                        // These labels index the already rebased carrier. The
+                        // PointCeil reference origin remains in `domain`.
+                        Ok(RootSignalBlock {
+                            start: storage,
+                            samples: block.samples,
+                            suppressed: block
+                                .suppressed
+                                .into_iter()
+                                .map(|range| AudioSample(range.start.0)..AudioSample(range.end.0))
+                                .collect(),
+                        })
+                    },
+                )?;
+                control.check()?;
+                Ok(SignalBlock {
+                    samples: block.samples,
+                    dependencies,
+                    suppressed: block.suppressed,
+                    relative_depth,
+                })
+            }
+            AudioBoundDomain::Empty => Ok(empty_bound_block(frames)),
+        }
     }
 
     /// Convert the complete root signal into a point-grid input, using one work
@@ -849,18 +980,26 @@ impl StageAudio {
         // A local Arc keeps borrowed stage handles tied to this exact plan
         // without borrowing the mutable cache for the duration of preparation.
         let plan = Arc::clone(&self.plan);
-        let queries = RootReadQueries {
-            flattened: plan.audio(start..AudioSample(end), query_limits())?,
-            processing: plan.audio_processing(start..AudioSample(end), query_limits())?,
+        let flattened = plan.audio(start..AudioSample(end), control.query_limits()?)?;
+        control.spend_plan_work(flattened.work)?;
+        let processing = plan.audio_processing(start..AudioSample(end), control.query_limits()?)?;
+        control.spend_plan_work(processing.work)?;
+        let policy = plan.audio_policy(start..AudioSample(end), control.query_limits()?)?;
+        control.spend_plan_work(policy.work)?;
+        let fades = if edge_fades {
+            let query = plan.audio_fades(start..AudioSample(end), control.query_limits()?)?;
+            control.spend_plan_work(query.work)?;
+            Some(query)
+        } else {
+            None
         };
-        self.read_queries(
-            provider,
-            start,
-            frames,
-            control,
-            RootReadMode { edge_fades, depth },
-            queries,
-        )
+        let queries = RootReadQueries {
+            flattened,
+            processing,
+            policy,
+            fades,
+        };
+        self.read_queries(provider, start, frames, control, depth, queries)
     }
 
     fn read_queries(
@@ -869,15 +1008,18 @@ impl StageAudio {
         start: AudioSample,
         frames: u32,
         control: WorkControl<'_>,
-        mode: RootReadMode,
+        depth: usize,
         queries: RootReadQueries<'_>,
     ) -> Result<ReadBlock, StageAudioError> {
         control.check()?;
-        if mode.depth > self.limits.maximum_depth {
+        if depth > self.limits.maximum_depth {
             return Err(StageAudioError::Limit("nested stage depth"));
         }
         let cancelled = control.cancelled;
         let plan = Arc::clone(&self.plan);
+        if let Some(fades) = &queries.fades {
+            crate::edges::validate_creative_fades(start, frames as usize, &fades.spans)?;
+        }
         for span in &queries.flattened.spans {
             preflight(&span.content, &plan)?;
         }
@@ -886,8 +1028,12 @@ impl StageAudio {
                 preflight(content, &plan)?;
             }
         }
+        for content in &queries.policy.contents {
+            preflight(content, &plan)?;
+        }
         let mut samples = Vec::with_capacity(frames as usize);
         let mut dependencies = Dependencies::new();
+        let mut relative_depth = 0;
         for span in queries.processing.spans {
             control.check()?;
             let block = match &span.content {
@@ -918,9 +1064,10 @@ impl StageAudio {
                         },
                         provider,
                         control,
-                        mode.depth + 1,
+                        depth + 1,
                     )?;
                     dependencies.extend(prepared.block.dependencies.clone());
+                    relative_depth = relative_depth.max(1 + prepared.block.relative_depth);
                     let recipe = root_stage_recipe(
                         &span,
                         prepared.block.samples.len(),
@@ -936,8 +1083,9 @@ impl StageAudio {
                 }
                 AudioSignalContent::Leaf(_) => vec![[0.0; 2]; count(&span.samples)? as usize],
                 AudioSignalContent::Stage(stage) => {
-                    let prepared = self.prepare_stage(stage, provider, control, mode.depth + 1)?;
+                    let prepared = self.prepare_stage(stage, provider, control, depth + 1)?;
                     dependencies.extend(prepared.block.dependencies.clone());
+                    relative_depth = relative_depth.max(1 + prepared.block.relative_depth);
                     let recipe = root_stage_recipe(
                         &span,
                         prepared.block.samples.len(),
@@ -950,6 +1098,22 @@ impl StageAudio {
                         count(&span.samples)?,
                         cancelled,
                     )?
+                }
+                AudioSignalContent::Bound(bound) => {
+                    let block = self.read_bound(
+                        bound,
+                        provider,
+                        BoundRead {
+                            offset: i128::from(span.samples.start.0)
+                                - i128::from(span.allocated_samples.start.0),
+                            frames: count(&span.samples)?,
+                            depth: depth + 1,
+                        },
+                        control,
+                    )?;
+                    dependencies.extend(block.dependencies);
+                    relative_depth = relative_depth.max(1 + block.relative_depth);
+                    block.samples
                 }
             };
             samples.extend(block);
@@ -966,20 +1130,24 @@ impl StageAudio {
                 samples[left..right].fill([0.0; 2]);
                 suppressed.push(span.samples);
             } else {
-                crate::edges::apply_retained_envelope(
-                    &span,
-                    &mut samples[left..right],
-                    mode.edge_fades,
-                )?;
+                crate::edges::apply_retained_envelope(&span, &mut samples[left..right], false)?;
                 exhausted.extend(crate::edges::exhausted_ranges(&span)?);
             }
+        }
+        apply_suppression(start, &mut samples, &queries.policy.suppressed, |sample| {
+            sample.0
+        })?;
+        suppressed.extend(queries.policy.suppressed);
+        if let Some(fades) = &queries.fades {
+            crate::edges::apply_creative_fades(start, &mut samples, &fades.spans)?;
         }
         control.check()?;
         Ok(ReadBlock {
             start,
             samples,
             dependencies,
-            suppressed,
+            relative_depth,
+            suppressed: merged_suppression(suppressed),
             exhausted,
         })
     }
@@ -996,7 +1164,7 @@ impl StageAudio {
             return Err(StageAudioError::Limit("nested stage depth"));
         }
         let key = PreparedKey::Preserve(stage.descriptor().clone());
-        if let Some(entry) = self.cached(&key, provider, control)? {
+        if let Some(entry) = self.cached(&key, provider, control, depth)? {
             return Ok(entry);
         }
         let input_signal = stage.input_signal();
@@ -1035,8 +1203,15 @@ impl StageAudio {
         key: &PreparedKey,
         provider: &mut impl AudioSourceProvider,
         control: WorkControl<'_>,
+        depth: usize,
     ) -> Result<Option<Arc<PreparedStage>>, StageAudioError> {
         if let Some(index) = self.cache.iter().position(|entry| entry.key == *key) {
+            if depth
+                .checked_add(self.cache[index].block.relative_depth)
+                .is_none_or(|maximum| maximum > self.limits.maximum_depth)
+            {
+                return Err(StageAudioError::Limit("nested stage depth"));
+            }
             let entry = self.cache.remove(index);
             let mut valid = true;
             for (asset, fingerprint) in &entry.block.dependencies {
@@ -1105,7 +1280,7 @@ impl StageAudio {
         if depth > self.limits.maximum_depth {
             return Err(StageAudioError::Limit("nested stage depth"));
         }
-        if let Some(entry) = self.cached(&key, provider, control)? {
+        if let Some(entry) = self.cached(&key, provider, control, depth)? {
             return Ok(entry);
         }
         let PreparedKey::RoomTone {
@@ -1140,6 +1315,7 @@ impl StageAudio {
                 samples,
                 dependencies: BTreeMap::from([(source.asset.clone(), fingerprint)]),
                 suppressed: Vec::new(),
+                relative_depth: 0,
             })
         })();
         self.active_frames -= reservation;
@@ -1184,21 +1360,19 @@ impl StageAudio {
         while validated < recipe.output_frames() {
             control.check()?;
             let end = (validated + MAX_OUTPUT_FRAMES).min(recipe.output_frames());
-            for span in output
-                .query_flattened(
-                    SignalSample(i64::from(validated))..SignalSample(i64::from(end)),
-                    query_limits(),
-                )?
-                .spans
-            {
-                if let AudioSignalContent::Leaf(content) = span.content {
-                    preflight(&content, &self.plan)?;
-                }
+            let policy = output.policy(
+                SignalSample(i64::from(validated))..SignalSample(i64::from(end)),
+                control.query_limits()?,
+            )?;
+            control.spend_plan_work(policy.work)?;
+            for content in &policy.contents {
+                preflight(content, &self.plan)?;
             }
             validated = end;
         }
         let mut input_pcm = Vec::with_capacity(recipe.input_frames() as usize);
         let mut dependencies = Dependencies::new();
+        let mut relative_depth = 0;
         while input_pcm.len() < recipe.input_frames() as usize {
             control.check()?;
             let start = SignalSample(input_pcm.len() as i64);
@@ -1206,6 +1380,7 @@ impl StageAudio {
             let block = self.read_signal(input, provider, start, frames, control, depth)?;
             input_pcm.extend(block.samples);
             dependencies.extend(block.dependencies);
+            relative_depth = relative_depth.max(block.relative_depth);
         }
         check_cancel(cancelled)?;
         let (left, right) = input_pcm
@@ -1234,6 +1409,7 @@ impl StageAudio {
                 SignalSample(samples.len() as i64),
                 &mut block,
                 &self.plan,
+                control,
             )?;
             samples.extend(block);
         }
@@ -1244,6 +1420,7 @@ impl StageAudio {
             // Consumers query policy in their own point grid. Do not retain a
             // second full-stage interval cache or scale rounded input masks.
             suppressed: Vec::new(),
+            relative_depth,
         })
     }
 
@@ -1257,10 +1434,23 @@ impl StageAudio {
         depth: usize,
     ) -> Result<SignalBlock, StageAudioError> {
         let WorkControl { cancelled, .. } = control;
+        control.check()?;
+        if depth > self.limits.maximum_depth {
+            return Err(StageAudioError::Limit("nested stage depth"));
+        }
         let query = signal.query(
             start..SignalSample(start.0 + i64::from(frames)),
-            query_limits(),
+            control.query_limits()?,
         )?;
+        control.spend_plan_work(query.work)?;
+        let policy = signal.policy(
+            start..SignalSample(start.0 + i64::from(frames)),
+            control.query_limits()?,
+        )?;
+        control.spend_plan_work(policy.work)?;
+        for content in &policy.contents {
+            preflight(content, &self.plan)?;
+        }
         for span in &query.spans {
             if let AudioSignalContent::Leaf(content) = &span.content {
                 preflight(content, &self.plan)?;
@@ -1268,6 +1458,7 @@ impl StageAudio {
         }
         let mut samples = Vec::with_capacity(frames as usize);
         let mut dependencies = Dependencies::new();
+        let mut relative_depth = 0;
         for span in query.spans {
             control.check()?;
             let start = AudioSample(span.samples.start.0);
@@ -1305,6 +1496,7 @@ impl StageAudio {
                         depth + 1,
                     )?;
                     dependencies.extend(prepared.block.dependencies.clone());
+                    relative_depth = relative_depth.max(1 + prepared.block.relative_depth);
                     let recipe = signal_stage_recipe(
                         &span,
                         prepared.block.samples.len(),
@@ -1316,6 +1508,7 @@ impl StageAudio {
                 AudioSignalContent::Stage(stage) => {
                     let prepared = self.prepare_stage(stage, provider, control, depth + 1)?;
                     dependencies.extend(prepared.block.dependencies.clone());
+                    relative_depth = relative_depth.max(1 + prepared.block.relative_depth);
                     let recipe = signal_stage_recipe(
                         &span,
                         prepared.block.samples.len(),
@@ -1323,14 +1516,33 @@ impl StageAudio {
                     )?;
                     sample_prepared(&prepared.block.samples, recipe, start, count, cancelled)?
                 }
+                AudioSignalContent::Bound(bound) => {
+                    let block = self.read_bound(
+                        bound,
+                        provider,
+                        BoundRead {
+                            offset: i128::from(span.samples.start.0)
+                                - i128::from(span.allocated_samples.start.0),
+                            frames: count,
+                            depth: depth + 1,
+                        },
+                        control,
+                    )?;
+                    dependencies.extend(block.dependencies);
+                    relative_depth = relative_depth.max(1 + block.relative_depth);
+                    block.samples
+                }
             };
             samples.extend(block);
         }
-        let suppressed = suppress_signal(signal, start, &mut samples, &self.plan)?;
+        control.check()?;
+        apply_suppression(start, &mut samples, &policy.suppressed, |sample| sample.0)?;
+        let suppressed = merged_suppression(policy.suppressed);
         Ok(SignalBlock {
             samples,
             dependencies,
             suppressed,
+            relative_depth,
         })
     }
 }
@@ -1452,6 +1664,7 @@ fn suppress_signal(
     start: SignalSample,
     samples: &mut [[f32; 2]],
     plan: &RenderPlan,
+    control: WorkControl<'_>,
 ) -> Result<Vec<Range<SignalSample>>, StageAudioError> {
     let end = SignalSample(
         start
@@ -1459,22 +1672,52 @@ fn suppress_signal(
             .checked_add(i64::try_from(samples.len()).map_err(|_| TimeError::Overflow)?)
             .ok_or(TimeError::Overflow)?,
     );
-    let mut suppressed = Vec::new();
-    for span in signal.query_flattened(start..end, query_limits())?.spans {
-        if let AudioSignalContent::Leaf(content) = &span.content {
-            preflight(content, plan)?;
-            if !is_silent_hold(content) {
-                continue;
-            }
-            let left = usize::try_from(span.samples.start.0 - start.0)
-                .map_err(|_| StageAudioError::Range)?;
-            let right = usize::try_from(span.samples.end.0 - start.0)
-                .map_err(|_| StageAudioError::Range)?;
-            samples[left..right].fill([0.0; 2]);
-            suppressed.push(span.samples);
-        }
+    let policy = signal.policy(start..end, control.query_limits()?)?;
+    control.spend_plan_work(policy.work)?;
+    for content in &policy.contents {
+        preflight(content, plan)?;
     }
-    Ok(merged_suppression(suppressed))
+    control.check()?;
+    apply_suppression(start, samples, &policy.suppressed, |sample| sample.0)?;
+    Ok(merged_suppression(policy.suppressed))
+}
+
+fn empty_bound_block(frames: u32) -> SignalBlock {
+    SignalBlock {
+        samples: vec![[0.0; 2]; frames as usize],
+        suppressed: vec![SignalSample(0)..SignalSample(i64::from(frames))],
+        ..Default::default()
+    }
+}
+
+fn apply_suppression<T: Copy>(
+    start: T,
+    samples: &mut [[f32; 2]],
+    ranges: &[Range<T>],
+    index: impl Fn(T) -> i64,
+) -> Result<(), StageAudioError> {
+    let start = index(start);
+    let offsets = ranges
+        .iter()
+        .map(|range| {
+            let left = index(range.start)
+                .checked_sub(start)
+                .and_then(|value| usize::try_from(value).ok())
+                .ok_or(StageAudioError::Range)?;
+            let right = index(range.end)
+                .checked_sub(start)
+                .and_then(|value| usize::try_from(value).ok())
+                .ok_or(StageAudioError::Range)?;
+            if left >= right || right > samples.len() {
+                return Err(StageAudioError::Range);
+            }
+            Ok(left..right)
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    for range in offsets {
+        samples[range].fill([0.0; 2]);
+    }
+    Ok(())
 }
 
 fn root_source_recipe(
@@ -1666,9 +1909,9 @@ mod controlled_reads {
     use sha2::{Digest, Sha256};
     use std::io::Cursor;
 
-    struct Provider {
-        prepared: crate::PreparedSource,
-        calls: usize,
+    pub(super) struct Provider {
+        pub(super) prepared: crate::PreparedSource,
+        pub(super) calls: usize,
     }
 
     impl AudioSourceProvider for Provider {
@@ -1690,6 +1933,11 @@ mod controlled_reads {
     }
 
     fn fixture_at_rate(rate: FrameRate) -> (Arc<RenderPlan>, Provider) {
+        let (document, provider) = fixture_document_at_rate(rate);
+        (Arc::new(RenderPlan::compile(&document).unwrap()), provider)
+    }
+
+    pub(super) fn fixture_document_at_rate(rate: FrameRate) -> (ProjectDocument, Provider) {
         let bytes = std::fs::read(
             std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
                 .join("../../native/deadpan-source/tests/audio-fixtures/pcm-stereo-48000.wav"),
@@ -1812,10 +2060,7 @@ mod controlled_reads {
         )]))
         .unwrap();
         let doc = ProjectDocument::from_json(&wire.to_string()).unwrap();
-        (
-            Arc::new(RenderPlan::compile(&doc).unwrap()),
-            Provider { prepared, calls: 0 },
-        )
+        (doc, Provider { prepared, calls: 0 })
     }
 
     #[test]
@@ -2385,6 +2630,10 @@ mod controlled_reads {
         assert_eq!(renderer.cached_stage_count(), 2);
     }
 }
+
+#[cfg(all(test, any(target_os = "macos", target_os = "linux")))]
+#[path = "bound_reads.rs"]
+mod bound_reads;
 
 #[cfg(test)]
 mod sampling_recipes {

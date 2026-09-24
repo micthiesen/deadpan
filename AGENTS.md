@@ -460,9 +460,21 @@ play IDs; an overridden old play is not a surviving default contribution. Phase
 terms retain their own clock because a shared local cut may round differently in
 different plays. Transparent copies remap live arguments in every term, never
 historical aliases. Reserve all retained allocation names and prune unused tables
-atomically with owners. Legacy histories gain no invented bindings. Rendering and
-context-schema-1 capture currently reject nonempty bindings explicitly; remove
-those guards only with complete policy/PCM consumers and lifecycle verification.
+atomically with owners. Legacy histories gain no invented bindings. Normal
+StageAudio rendering resolves bindings on their retained root/point grids and
+evaluates current owned policy independently on every consuming grid. Preserve
+input bindings do not move creative fades before DSP. Fade geometry keeps a
+retained virtual origin through later rate changes and translations; raw endpoint
+audibility remains separate. Endpoint masks gate a physical grid's raw input;
+do not turn them into output mutes across a later nonunity Preserve. Explicit
+SilentHold policy still crosses that stage, including zero-input-point intervals.
+Carry current Edit support and exact coincident
+Hard owners into retained evaluation. Share work and relative cached-depth
+admission across every nested read. Context-schema-1 capture and source-only
+SequenceAudio still reject nonempty bindings. Pure capture retains existing
+bindings and compact birth scope, but rejects nonempty Repeat gaps; no editor
+command yet creates these bindings. Complete authoring lifecycle and atomic Hold
+insertion remain open.
 See [owned bindings](docs/OWNED_AUDIO_BINDINGS.md).
 
 Build the pinned FFmpeg developer prefix and export `DEADPAN_FFMPEG_PREFIX` as

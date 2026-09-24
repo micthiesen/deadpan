@@ -10,6 +10,7 @@
 mod anchor;
 mod audio_binding;
 mod audio_binding_lifecycle;
+pub use audio_binding_lifecycle::capture_unbound_audio_bindings;
 mod audio_context;
 mod audio_edges;
 mod audio_lineage;

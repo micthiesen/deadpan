@@ -171,6 +171,15 @@ root-to-point reads with materialized masked PCM and canonical DSP. The `stages`
 suite adds decoded-source integration, preparation-budget and provenance checks
 across the complete transfer halo. See [signal transfer](AUDIO_SIGNAL_TRANSFER.md).
 
+`cargo test --locked -p deadpan-core --test audio_binding_capture` checks compact
+capture, existing-binding preservation and atomic rejection of unsupported gaps.
+`cargo test --locked -p deadpan-plan --test audio_fades` checks retained virtual
+fade clocks without media. `cargo test --locked -p deadpan-audio --lib bound_reads`
+compares actual decoded PCM through moved/resumed bindings, stable Repeat scope,
+current Edit support, Preserve input/output policies and shared preparation
+limits. See [owned audio bindings](OWNED_AUDIO_BINDINGS.md). These are engine
+tests; native pause insertion, playback and listening remain separate work.
+
 Run `cargo test --locked -p deadpan-audio --test loudness --test true_peak` for
 informational metering, generated standard cases, channel/EOF behavior and
 transactional admission. [Audio measurement](AUDIO_METERING.md) describes the

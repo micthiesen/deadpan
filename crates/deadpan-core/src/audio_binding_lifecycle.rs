@@ -3,7 +3,297 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use crate::{AudioPlacementTemplate, NodeId, ProjectDocument};
+use crate::{
+    AudioBindingState, AudioBirthClause, AudioBirthSurvivors, AudioClockRoot,
+    AudioPlacementTemplate, AudioReferenceClock, AudioRepeatArgument, AudioRepeatValue,
+    AudioTimingId, DocumentError, DocumentErrorCode, FrozenAudioKind, FrozenAudioLayout,
+    MAX_AUDIO_BINDING_ENTRIES, MAX_DOCUMENT_DEPTH, MAX_DOCUMENT_NODES, NodeId, NodeKind,
+    OwnedAudioBinding, PitchPolicy, ProjectDocument,
+};
+
+/// Capture the current sampling lattice of every previously unbound physical
+/// node. All new bindings share one pre-edit timing layout; existing lattices
+/// and resume expressions remain unchanged. Repeat defaults are captured even
+/// when no current play uses them. No play order is expanded.
+///
+/// The caller owns timing identity allocation and document installation. This
+/// pure operation neither authors a command nor changes its input. When every
+/// physical node is already bound, it returns the existing state without using
+/// the supplied identity or retaining another timing layout.
+/// Nonempty Repeat gaps are rejected because embedded gap recipes do not yet
+/// have representable binding ownership.
+pub fn capture_unbound_audio_bindings(
+    document: &ProjectDocument,
+    timing: AudioTimingId,
+) -> Result<AudioBindingState, DocumentError> {
+    document.validate()?;
+    let mut capture = Capture {
+        document,
+        timing: &timing,
+        clock: AudioClockRoot::ProjectRootRoundEven,
+        arguments: Vec::new(),
+        births: Vec::new(),
+        bindings: BTreeMap::new(),
+        entries: 0,
+        visited: 0,
+    };
+    for binding in document.audio_bindings().bindings().values() {
+        for template in std::iter::once(&binding.lattice).chain(
+            binding
+                .resume
+                .iter()
+                .flat_map(|resume| resume.phase.terms.iter().map(|term| &term.placement)),
+        ) {
+            charge(
+                &mut capture.entries,
+                1 + template.arguments.len() + template.births.len(),
+            )?;
+        }
+    }
+    capture.walk()?;
+    if capture.bindings.is_empty() {
+        return Ok(document.audio_bindings().clone());
+    }
+    if document.audio_bindings().timings().contains_key(&timing) {
+        return Err(DocumentError::new(
+            DocumentErrorCode::InvalidTree,
+            "audio capture timing identity is already retained",
+        ));
+    }
+    // Charge the complete aggregate timing inventory before cloning any layout
+    // or existing binding state. The final validator also charges path work.
+    let mut retained = capture.entries;
+    for layout in document.audio_bindings().timings().values() {
+        charge(
+            &mut retained,
+            layout.nodes().len() + layout.audio_lineage().len(),
+        )?;
+        for node in layout.nodes().values() {
+            if let FrozenAudioKind::Repeat { iterations, .. } = &node.kind {
+                charge(&mut retained, iterations.segment_count())?;
+            }
+        }
+    }
+    charge(
+        &mut retained,
+        document.nodes().len() + document.audio_lineage().len(),
+    )?;
+    for node in document.nodes().values() {
+        if let NodeKind::Repeat { iterations, .. } = &node.kind {
+            charge(&mut retained, iterations.segment_count())?;
+        }
+    }
+    let layout = FrozenAudioLayout::capture(document)?;
+    let bindings = capture.bindings;
+    let mut result = document.audio_bindings().clone();
+    result.timings.insert(timing, layout);
+    result.bindings.extend(bindings);
+    result.validate_for(document)?;
+    result.to_json()?;
+    Ok(result)
+}
+
+struct Capture<'a> {
+    document: &'a ProjectDocument,
+    timing: &'a AudioTimingId,
+    clock: AudioClockRoot,
+    arguments: Vec<AudioRepeatArgument>,
+    births: Vec<AudioBirthClause>,
+    bindings: BTreeMap<NodeId, OwnedAudioBinding>,
+    entries: usize,
+    visited: usize,
+}
+
+enum CaptureStep<'a> {
+    Node(&'a NodeId, usize),
+    RepeatBranch {
+        repeat: &'a NodeId,
+        child: &'a NodeId,
+        iteration: Option<&'a crate::IterationId>,
+        depth: usize,
+    },
+    LeaveRepeat {
+        default: bool,
+    },
+    RestoreClock {
+        clock: AudioClockRoot,
+        arguments: Vec<AudioRepeatArgument>,
+        births: Vec<AudioBirthClause>,
+    },
+}
+
+impl Capture<'_> {
+    fn walk(&mut self) -> Result<(), DocumentError> {
+        let document = self.document;
+        let mut pending = vec![CaptureStep::Node(document.root(), 0)];
+        while let Some(step) = pending.pop() {
+            // A validated owned tree has at most one pending branch per edge
+            // plus one restoration per active ancestor. No event clones paths.
+            if pending.len() > MAX_DOCUMENT_NODES + MAX_DOCUMENT_DEPTH {
+                return Err(capture_limit());
+            }
+            match step {
+                CaptureStep::LeaveRepeat { default } => {
+                    self.arguments.pop();
+                    if default {
+                        self.births.pop();
+                    }
+                }
+                CaptureStep::RestoreClock {
+                    clock,
+                    arguments,
+                    births,
+                } => {
+                    self.clock = clock;
+                    self.arguments = arguments;
+                    self.births = births;
+                }
+                CaptureStep::RepeatBranch {
+                    repeat,
+                    child,
+                    iteration,
+                    depth,
+                } => {
+                    self.arguments.push(AudioRepeatArgument {
+                        reference_repeat: repeat.clone(),
+                        value: iteration.map_or_else(
+                            || AudioRepeatValue::Live {
+                                repeat: repeat.clone(),
+                            },
+                            |iteration| AudioRepeatValue::Captured {
+                                iteration: iteration.clone(),
+                            },
+                        ),
+                    });
+                    if iteration.is_none() {
+                        self.births.push(AudioBirthClause {
+                            repeat: repeat.clone(),
+                            survivors: AudioBirthSurvivors::CapturedRepeat {
+                                repeat: repeat.clone(),
+                            },
+                            definition_root: child.clone(),
+                        });
+                    }
+                    pending.push(CaptureStep::LeaveRepeat {
+                        default: iteration.is_none(),
+                    });
+                    pending.push(CaptureStep::Node(child, depth));
+                }
+                CaptureStep::Node(id, depth) => {
+                    let node = &document.nodes()[id];
+                    let preserve = matches!(
+                        &node.kind,
+                        NodeKind::Retime { duration, mapping, pitch: PitchPolicy::Preserve, .. }
+                            if mapping.duration() != *duration
+                    );
+                    self.capture_node(id, depth, preserve)?;
+                    match &node.kind {
+                        NodeKind::Sequence { children } => pending.extend(
+                            children
+                                .iter()
+                                .rev()
+                                .map(|child| CaptureStep::Node(child, depth + 1)),
+                        ),
+                        NodeKind::Repeat { child, gap, .. } => {
+                            if gap.as_ref().is_some_and(|gap| gap.duration.frames() > 0) {
+                                return Err(DocumentError::new(
+                                    DocumentErrorCode::InvalidTree,
+                                    "audio binding capture does not support Repeat gap binding ownership",
+                                ));
+                            }
+                            if let Some(overrides) = document.overrides().get(id) {
+                                pending.extend(overrides.iter().rev().map(|(iteration, child)| {
+                                    CaptureStep::RepeatBranch {
+                                        repeat: id,
+                                        child,
+                                        iteration: Some(iteration),
+                                        depth: depth + 1,
+                                    }
+                                }));
+                            }
+                            pending.push(CaptureStep::RepeatBranch {
+                                repeat: id,
+                                child,
+                                iteration: None,
+                                depth: depth + 1,
+                            });
+                        }
+                        NodeKind::Retime { child, .. } => {
+                            if preserve {
+                                pending.push(CaptureStep::RestoreClock {
+                                    clock: std::mem::replace(
+                                        &mut self.clock,
+                                        AudioClockRoot::PreserveInputPointCeil {
+                                            stage: id.clone(),
+                                        },
+                                    ),
+                                    arguments: std::mem::take(&mut self.arguments),
+                                    births: std::mem::take(&mut self.births),
+                                });
+                            }
+                            pending.push(CaptureStep::Node(child, depth + 1));
+                        }
+                        NodeKind::Source { .. } | NodeKind::Hold { .. } => {}
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
+
+    fn capture_node(
+        &mut self,
+        id: &NodeId,
+        depth: usize,
+        preserve: bool,
+    ) -> Result<(), DocumentError> {
+        if depth > MAX_DOCUMENT_DEPTH || self.visited == MAX_DOCUMENT_NODES {
+            return Err(capture_limit());
+        }
+        self.visited += 1;
+        let document = self.document;
+        let node = &document.nodes()[id];
+        if (preserve || matches!(node.kind, NodeKind::Source { .. } | NodeKind::Hold { .. }))
+            && !document.audio_bindings().bindings().contains_key(id)
+        {
+            charge(
+                &mut self.entries,
+                1 + self.arguments.len() + self.births.len(),
+            )?;
+            self.bindings.insert(
+                id.clone(),
+                OwnedAudioBinding {
+                    lattice: AudioPlacementTemplate {
+                        reference: AudioReferenceClock {
+                            timing: self.timing.clone(),
+                            root: self.clock.clone(),
+                            physical: id.clone(),
+                        },
+                        arguments: self.arguments.clone(),
+                        births: self.births.clone(),
+                    },
+                    resume: None,
+                },
+            );
+        }
+        Ok(())
+    }
+}
+
+fn charge(used: &mut usize, additional: usize) -> Result<(), DocumentError> {
+    *used = used
+        .checked_add(additional)
+        .filter(|used| *used <= MAX_AUDIO_BINDING_ENTRIES)
+        .ok_or_else(capture_limit)?;
+    Ok(())
+}
+
+fn capture_limit() -> DocumentError {
+    DocumentError::new(
+        DocumentErrorCode::LimitExceeded,
+        "audio binding capture complexity limit",
+    )
+}
 
 /// Transparent Split and occurrence isolation already copy complete raw owned
 /// subtrees. Carry their clock expressions through the same physical ID map.

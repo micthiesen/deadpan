@@ -158,6 +158,10 @@ impl RenderPlan {
             root: by_id[layout.root()],
             by_id,
             audio_context_assets: Some(context.assets().clone()),
+            audio_bindings: Default::default(),
+            // Context schema 1 cannot carry bindings. Definition exclusions
+            // are therefore immaterial in these retained legacy operands.
+            parents: vec![None; layout.nodes().len()],
         })
     }
 }

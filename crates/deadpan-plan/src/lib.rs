@@ -20,6 +20,7 @@ pub use audio_reference::{
 pub use audio_sampling::{AudioBoundaryRule, AudioSampleGrid, AudioSampleMap};
 
 pub use picture::{Picture, PictureSample};
+pub use plan::{AudioBound, AudioBoundDomain, AudioFadeQuery, AudioFadeSpan, AudioPolicyQuery};
 pub use plan::{
     AudioBoundaries, AudioBoundaryKind, AudioBoundaryOrigin, AudioContent, AudioDomain, AudioQuery,
     AudioQueryLimits, AudioRetimeStage, AudioSpan, AudioTransform, LookupStats, NodeInspection,

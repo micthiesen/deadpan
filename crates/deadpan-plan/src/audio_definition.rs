@@ -28,9 +28,9 @@ pub enum AudioDefinitionSelector {
 /// authored binding to a future play.
 #[derive(Debug, Clone)]
 pub struct AudioDefinition<'plan> {
-    plan: &'plan RenderPlan,
-    selector: AudioDefinitionSelector,
-    root: usize,
+    pub(super) plan: &'plan RenderPlan,
+    pub(super) selector: AudioDefinitionSelector,
+    pub(super) root: usize,
 }
 
 impl RenderPlan {
@@ -141,7 +141,19 @@ impl<'plan> AudioDefinition<'plan> {
         Ok(())
     }
 
-    fn root_domain(&self, placement: AudioRootPlacement) -> Result<AudioDomain<'plan>, PlanError> {
+    pub(super) fn root_domain(
+        &self,
+        placement: AudioRootPlacement,
+    ) -> Result<AudioDomain<'plan>, PlanError> {
+        self.root_domain_on_grid(placement, ExactRatio::ZERO, AudioBoundaryRule::RoundEven)
+    }
+
+    pub(super) fn root_domain_on_grid(
+        &self,
+        placement: AudioRootPlacement,
+        grid_origin: ExactRatio,
+        rule: AudioBoundaryRule,
+    ) -> Result<AudioDomain<'plan>, PlanError> {
         let support = placement.local_support();
         let rate = self.plan.metadata.presentation_basis.frame_rate;
         let frames_per_sample = ExactRatio::new(
@@ -159,18 +171,16 @@ impl<'plan> AudioDefinition<'plan> {
                 .checked_add(point.checked_mul(placement.root_frames_per_local_frame())?)
         };
         let extent = project_at(support.start)?..project_at(support.end)?;
-        let grid = AudioSampleGrid::<AudioSample>::new(
-            ExactRatio::ZERO,
-            frames_per_sample,
-            AudioBoundaryRule::RoundEven,
-        )?;
+        let grid = AudioSampleGrid::<AudioSample>::new(grid_origin, frames_per_sample, rule)?;
         let samples = grid.boundary(extent.start)?..grid.boundary(extent.end)?;
         Ok(AudioDomain {
             plan: self.plan,
             seed: AudioWalkSeed {
                 definition: Some(self.selector.clone()),
+                bypass_binding: None,
                 node: self.root,
                 transform,
+                grid,
                 extent: extent.clone(),
                 envelope: Some(extent.clone()),
                 constraints: vec![EnvelopeConstraint {
