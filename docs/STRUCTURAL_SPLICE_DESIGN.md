@@ -120,6 +120,11 @@ separate derived grid/map/progress values and consume them in both audio readers
 This does not persist the retained reference domain or author an insertion. That
 contract also records the nested Preserve/silent-Hold rounding counterexample
 which requires both old reference-policy and current structural suppression.
+[Frozen timing capture and reference queries](AUDIO_REFERENCE.md) now preserve
+those old policy facts and stable play placements outside the live tree. The
+bounded root-resume PCM consumer proves both rounding phases with canonical DSP.
+Persisted live-to-frozen bindings, lifecycle transforms, cross-grid composition
+and the atomic insertion command remain to be implemented.
 
 ## Structural and mark requirements
 

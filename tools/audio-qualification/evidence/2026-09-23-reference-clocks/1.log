@@ -1,0 +1,12 @@
+    Checking deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+    Checking deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+    Checking deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+    Checking deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+    Checking deadpan-render v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-render)
+    Checking deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+    Checking deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+    Checking deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+    Checking deadpan-media-worker v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-media-worker)
+    Checking deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Checking deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2m 02s

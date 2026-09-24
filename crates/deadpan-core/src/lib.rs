@@ -10,6 +10,7 @@
 mod anchor;
 mod audio_edges;
 mod audio_mapping;
+mod audio_reference;
 mod basis;
 mod command;
 mod document;
@@ -45,6 +46,7 @@ mod video_mapping;
 pub use anchor::*;
 pub use audio_edges::*;
 pub use audio_mapping::SourceAudioMapping;
+pub use audio_reference::*;
 pub use basis::*;
 pub use command::*;
 pub use document::*;

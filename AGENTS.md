@@ -312,6 +312,20 @@ resume intent. Future insertion must compose the current map and retain old
 reference audibility alongside current silence; compact Repeat phase follows
 stable play identity, not live ordinal. See [sampling clocks](docs/AUDIO_SAMPLING.md).
 
+`FrozenAudioLayout` owns old timing aliases, never live node references or media.
+Keep its flat closed vocabulary, compact play order, exact placement, edge policy
+and local Tail maximum. Preflight JSON collection counts before materializing
+owned values; capture precharges before cloning. The frozen-only aggregate run
+limit is 100,000, independent of play count. Reference policy queries require
+their own root or Preserve input/output clock handle; policy flattening does not
+bypass DSP.
+`RetainedRootPolicy` unions old `SilentHold` policy with current explicit
+suppression and outside-domain silence, validating fully before mutating PCM.
+Source absence and placement gaps must preserve existing processed decay.
+These APIs do not yet persist a Hold binding. Future bindings must transform
+live ownership separately from frozen placement and replace an edited policy's
+retained contribution. See [audio references](docs/AUDIO_REFERENCE.md).
+
 `Split` retains full contexts and inserts sibling Partitions; refining a Partition
 reuses its child domain and keeps repeated cuts shallow. Keep logical mark IDs,
 map owner and host independently, and relocate concrete events once using their

@@ -31,6 +31,8 @@ support. `grid` makes root round-even versus preparation point-ceil allocation
 explicit. `sampling` independently maps sample positions to local PCM coordinates;
 `envelope` retains meaningful length/progress and an explicit silence endpoint.
 See [sampling clocks](AUDIO_SAMPLING.md) and [transparent partitions](AUDIO_PARTITIONS.md).
+Separate [frozen reference clocks](AUDIO_REFERENCE.md) query retained policy facts
+without consulting a later live tree; they do not persist an authored resume.
 
 `boundaries.start` and `boundaries.end` retain the constraints that formed the
 full envelope edges: structural node boundaries, Source placement boundaries and

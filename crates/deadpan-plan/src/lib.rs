@@ -6,11 +6,16 @@
 //! performs no decoding, GPU work, effects, audio processing, or external I/O.
 
 mod audio_envelope;
+mod audio_reference;
 mod audio_sampling;
 mod picture;
 mod plan;
 
 pub use audio_envelope::{AudioEnvelope, AudioEnvelopeEndpoint};
+pub use audio_reference::{
+    AudioReferencePlan, ReferenceAudioClock, ReferenceAudioContent, ReferenceAudioQuery,
+    ReferenceAudioSpan, ReferenceClockOwner, ReferenceSample,
+};
 pub use audio_sampling::{AudioBoundaryRule, AudioSampleGrid, AudioSampleMap};
 
 pub use picture::{Picture, PictureSample};

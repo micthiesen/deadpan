@@ -348,13 +348,7 @@ impl<'plan> AudioSignal<'plan> {
         rule: AudioBoundaryRule,
         stop_at_preserve: bool,
     ) -> Result<AudioSignalQuery<'plan>, PlanError> {
-        if limits.maximum_spans == 0
-            || limits.maximum_spans > 4096
-            || limits.maximum_work == 0
-            || limits.maximum_work > 65_536
-        {
-            return Err(PlanError::InvalidAudioLimits);
-        }
+        limits.validate()?;
         let grid = self.transform()?.grid(rule)?;
         let count = grid.boundary(self.support.end)?;
         if samples.start.0 < 0 || samples.end < samples.start || samples.end > count {

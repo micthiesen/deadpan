@@ -6,7 +6,7 @@ use std::marker::PhantomData;
 use deadpan_core::{AudioSample, ExactRatio, InsertionBias, TimeError};
 use serde::Serialize;
 
-use crate::{PlanError, SignalSample};
+use crate::{PlanError, ReferenceSample, SignalSample};
 
 /// Root output encloses edits using ties-to-even endpoints. Prepared signals
 /// contain sample points and therefore use ceil endpoints. Neither rule rounds
@@ -179,6 +179,7 @@ macro_rules! sample_domain {
 
 sample_domain!(AudioSample);
 sample_domain!(SignalSample);
+sample_domain!(ReferenceSample);
 
 #[cfg(test)]
 mod tests {

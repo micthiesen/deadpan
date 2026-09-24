@@ -8,6 +8,7 @@
 mod edges;
 mod loudness;
 mod matrix;
+mod reference_policy;
 mod resample;
 mod room_tone;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
@@ -24,6 +25,7 @@ pub use loudness::{
     LOUDNESS_ID, LoudnessError, LoudnessMeter, LoudnessReport, MAX_LOUDNESS_FRAMES,
 };
 pub use matrix::StereoMatrix;
+pub use reference_policy::{ReferencePolicyError, RetainedRootPolicy};
 pub use resample::{PcmWindow, ResampleRecipe, Resampler, StereoBlock};
 pub use room_tone::{ROOM_TONE_ID, RoomTone, RoomToneRecipe};
 #[cfg(any(target_os = "macos", target_os = "linux"))]

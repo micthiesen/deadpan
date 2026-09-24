@@ -20,6 +20,19 @@ pub struct AudioQueryLimits {
     pub maximum_work: usize,
 }
 
+impl AudioQueryLimits {
+    pub fn validate(self) -> Result<(), PlanError> {
+        if self.maximum_spans == 0
+            || self.maximum_spans > 4096
+            || self.maximum_work == 0
+            || self.maximum_work > 65_536
+        {
+            return Err(PlanError::InvalidAudioLimits);
+        }
+        Ok(())
+    }
+}
+
 impl Default for AudioQueryLimits {
     fn default() -> Self {
         Self {
@@ -280,13 +293,7 @@ impl RenderPlan {
         samples: Range<AudioSample>,
         limits: AudioQueryLimits,
     ) -> Result<AudioQuery, PlanError> {
-        if limits.maximum_spans == 0
-            || limits.maximum_spans > 4096
-            || limits.maximum_work == 0
-            || limits.maximum_work > 65_536
-        {
-            return Err(PlanError::InvalidAudioLimits);
-        }
+        limits.validate()?;
         if samples.start.0 < 0
             || samples.end < samples.start
             || samples.end > self.audio_duration()?

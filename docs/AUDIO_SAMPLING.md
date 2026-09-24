@@ -78,7 +78,7 @@ Source/filter support and prepared DSP history are unchanged, and genuine new
 seam fades are not synthesized by reanchoring. Endpoint audibility does not
 replace explicit silent-Hold suppression.
 
-## Remaining inserted-time policy work
+## Reference policies and remaining inserted-time work
 
 Retain old audibility policies in their reference clock as well as the new
 structural policy. A concrete counterexample is an outer Preserve with a silent
@@ -87,7 +87,10 @@ root suppression starts at 3203. After inserting 1f at f=1, new sample 4804 maps
 to old prepared sample 3203, but current structural silence starts at 4805.
 Without the retained root policy, previously muted audio can become audible.
 The opposite rounding phase requires current structural silence to win too.
-The sampling/envelope values here do not yet encode that reference-policy map.
+The [frozen reference policy APIs](AUDIO_REFERENCE.md) now capture the old timing
+layout and apply its root silence alongside current suppression. The sampled
+values alone do not encode it; authored persistence and command binding remain
+open.
 
 Compact Repeat phase must follow stable play identity and retained reference
 placement, not live ordinal or a per-play expansion. A later reordered/deleted
