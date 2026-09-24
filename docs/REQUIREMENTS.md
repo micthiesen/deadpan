@@ -21,6 +21,14 @@ requirement or gate; [qualification](qualification/playback-2026-09-24.md) recor
 its native, headless and review evidence. Older evidence below describes its own
 historical boundary.
 
+[Master gain research](qualification/audio-limiter-gain-search-2026-09-24.md)
+retains independently audited finite-fixture solutions, the corrected unwanted
+muting failure, and a longer stress failure in a faster finite-context design.
+Neither candidate is adopted. The [mastering boundary](AUDIO_MASTERING.md)
+records the required final-output, dynamics and bounded-seek qualification;
+production limiting, listening and encoded output remain open. No requirement
+or gate changes status.
+
 [Pause insertion](INSERT_TIME.md) adds atomic root Source/Hold splices with
 sample-preserving resume for every shifted fragment, including earlier splits
 and repeated pauses. Native `,h`, counts and exact `:hold` duration entry resolve

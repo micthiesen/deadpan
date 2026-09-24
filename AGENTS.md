@@ -574,6 +574,16 @@ algorithm identities and frame/storage admission explicit. These meters change
 no gain and do not qualify a limiter or final master. See
 [audio measurement](docs/AUDIO_METERING.md).
 
+Mastering follows the final policy-resolved voice/group bus and precedes monitor
+gain and output conversion. Keep exact digital silence, tiny fragments and
+intentional dynamics; do not use blanket fades or program normalization to pass
+peak tests. Qualify the actual final f32 output under declared finite true-peak
+paths, and retain broader complete-sinc failures as explicit diagnostic evidence.
+These are separate claims, not a universal DAC theorem. Signed reconstruction
+is not monotone under independent gain reduction. The current global LP and
+finite-context experiments are unadopted; they add no production master reader.
+See [mastering qualification](docs/AUDIO_MASTERING.md) before implementing it.
+
 Source resampling evaluates each original coordinate from its exact affine
 origin, splitting the integer floor before float conversion. Keep fixed filter
 order and versioned kernel/matrix/trim-context policies. Never reset phase at a

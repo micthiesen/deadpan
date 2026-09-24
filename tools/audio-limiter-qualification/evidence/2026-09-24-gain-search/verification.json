@@ -1,0 +1,9 @@
+{
+  "archive_files": 778,
+  "case_identity_and_gain_joins": 125,
+  "compiled_meter_joins": 32,
+  "v5_active_frames_preserved_cases": 16,
+  "v5_unchanged_controls": 8,
+  "negative_evidence_verified": true,
+  "scope": "Artifact integrity and stored output relationships, not new limiter qualification"
+}

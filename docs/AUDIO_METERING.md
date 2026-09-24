@@ -62,7 +62,11 @@ oracle. Passing it alone does not qualify a limiter against other reconstruction
 filters, difficult near-Nyquist signals, or the final encoded file.
 The [post-mask limiter experiment](qualification/audio-limiter-postmask-2026-09-22.md)
 retains concrete outputs that pass this meter while exceeding the intended
-ceiling under a broader complete-sinc reconstruction. The limiter is unadopted.
+ceiling under a broader complete-sinc reconstruction. The subsequent
+[gain-search experiment](qualification/audio-limiter-gain-search-2026-09-24.md)
+adds independently audited global solutions and a longer finite-context
+counterexample. Both designs remain unadopted. [Mastering qualification](AUDIO_MASTERING.md)
+distinguishes the required finite output contract from that broader diagnostic.
 
 ## Qualification
 
