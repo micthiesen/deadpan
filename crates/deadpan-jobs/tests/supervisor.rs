@@ -461,7 +461,10 @@ fn successful_worker_cleans_up_many_forking_descendants_before_delivering_candid
     responses(workspace.path(), &[completed()]);
     let mut specification = spec(workspace.path(), "messages");
     let worker = specification.executable.clone();
-    let descendants = "(sleep 1; printf alive > survived) &\n".repeat(32);
+    // Killing sleep can wake its shell before the same group signal reaches it.
+    // Observe only a completed delay and continuation after host return.
+    let descendants =
+        "(sleep 1 && [ -f cleanup-returned ] && printf alive > survived) &\n".repeat(32);
     specification.executable = "/bin/sh".into();
     specification.arguments = vec![
         "-c".into(),
@@ -477,6 +480,7 @@ fn successful_worker_cleans_up_many_forking_descendants_before_delivering_candid
         [ProcessEvent::Message(message), ProcessEvent::Exited { status, cancellation_escalated: false }]
             if message.as_ref() == &completed() && status.success()
     ));
+    std::fs::write(workspace.path().join("cleanup-returned"), b"returned").unwrap();
     thread::sleep(Duration::from_millis(1100));
     assert!(
         !workspace.path().join("survived").exists(),

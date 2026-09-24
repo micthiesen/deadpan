@@ -316,61 +316,71 @@ fn failure_diagnostic_and_output_budget_are_preserved() {
 
 #[test]
 fn cancellation_and_hard_deadline_stop_the_process_group() {
-    let directory = tempfile::tempdir().unwrap();
-    let marker = directory.path().join("survived");
-    let executable = helper(
-        directory.path(),
-        &format!("(sleep 1; printf alive > '{}') &\nwait", marker.display()),
-    );
-    let start = Instant::now();
-    let mut short = request();
-    short.limits.timeout_ms = 80;
-    assert!(matches!(
-        canonicalize(
-            &executable,
-            &mut Cursor::new(b"input"),
-            identity(),
-            &short,
-            &AtomicBool::new(false)
-        ),
-        Err(ConversionError::Deadline)
-    ));
-    assert!(start.elapsed() < Duration::from_secs(2));
-    let cancelled = AtomicBool::new(false);
-    std::thread::scope(|scope| {
-        scope.spawn(|| {
-            std::thread::sleep(Duration::from_millis(50));
-            cancelled.store(true, Ordering::Release);
-        });
-        assert!(matches!(
-            canonicalize(
+    for cancel in [false, true] {
+        // Each attempt releases its own witness immediately after returning.
+        // A slow later attempt cannot hide an earlier surviving descendant.
+        let directory = tempfile::tempdir().unwrap();
+        let marker = directory.path().join("survived");
+        let returned = directory.path().join("cleanup-returned");
+        let executable = helper(
+            directory.path(),
+            &format!(
+                "(sleep 1 && [ -f '{}' ] && printf alive > '{}') &\nwait",
+                returned.display(),
+                marker.display()
+            ),
+        );
+        let start = Instant::now();
+        let mut bounded = request();
+        if !cancel {
+            bounded.limits.timeout_ms = 80;
+        }
+        let cancelled = AtomicBool::new(false);
+        std::thread::scope(|scope| {
+            if cancel {
+                scope.spawn(|| {
+                    std::thread::sleep(Duration::from_millis(50));
+                    cancelled.store(true, Ordering::Release);
+                });
+            }
+            let result = canonicalize(
                 &executable,
                 &mut Cursor::new(b"input"),
                 identity(),
-                &request(),
-                &cancelled
-            ),
-            Err(ConversionError::Cancelled)
-        ));
-    });
-    std::thread::sleep(Duration::from_millis(1100));
-    assert!(
-        !marker.exists(),
-        "a descendant continued after cancellation/deadline"
-    );
+                &bounded,
+                &cancelled,
+            );
+            fs::write(&returned, b"returned").unwrap();
+            if cancel {
+                assert!(matches!(result, Err(ConversionError::Cancelled)));
+            } else {
+                assert!(matches!(result, Err(ConversionError::Deadline)));
+            }
+        });
+        assert!(start.elapsed() < Duration::from_secs(2));
+        std::thread::sleep(Duration::from_millis(1100));
+        assert!(
+            !marker.exists(),
+            "a descendant continued after cleanup (cancel={cancel})"
+        );
+    }
 }
 
 #[test]
 fn successful_leader_exit_cleans_up_descendants_with_inherited_pipes() {
     let directory = tempfile::tempdir().unwrap();
     let marker = directory.path().join("survived");
+    let returned = directory.path().join("cleanup-returned");
     // Keep the control pipe inherited on fd 3, but prevent a subshell's
     // asynchronous "Killed: 9 sleep" diagnostic from corrupting the leader's
     // JSON reply. Descendants must still be killed for that pipe to reach EOF.
+    // A killed sleep can wake its shell during group teardown. Only a successful
+    // delay followed by a post-return continuation is a survival witness.
     let descendants = (0..32)
         .map(|_| {
             format!(
-                "(exec 3>&2 2>/dev/null; sleep 1; printf alive > '{}') &\n",
+                "(exec 3>&2 2>/dev/null; sleep 1 && [ -f '{}' ] && printf alive > '{}') &\n",
+                returned.display(),
                 marker.display()
             )
         })
@@ -389,6 +399,7 @@ fn successful_leader_exit_cleans_up_descendants_with_inherited_pipes() {
     )
     .unwrap_or_else(|error| panic!("successful worker cleanup failed: {error:?}: {error}"));
     assert!(start.elapsed() < Duration::from_secs(2));
+    fs::write(&returned, b"returned").unwrap();
     std::thread::sleep(Duration::from_millis(1100));
     assert!(!marker.exists());
 }
