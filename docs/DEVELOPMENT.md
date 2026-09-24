@@ -86,7 +86,9 @@ text entry after its final input is applied. `:help` lists the implemented keys.
 Run `cargo test -p deadpan-app --locked` for actual-media service/preview tests,
 deterministic worker interleavings, binding transitions, dialog polling, headless
 egui focus and final-text routing, canvas geometry, and requested/decoded/displayed
-picture transitions. The viewer caption identifies the submitted picture;
+picture transitions. Camera adds `,f`, visible counted movement/scale hints,
+validated numeric fields and Enter/Escape draft handling; see [framing](FRAMING.md).
+The viewer caption identifies the submitted picture;
 the bottom boundary can advance while the next picture is preparing. Tests cover
 GPU-delay state, stale replies, picture-error recovery and actual decoded freezes
 at distinct sequence positions. See the

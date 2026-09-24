@@ -220,6 +220,7 @@ fn measured_av_candidates_drive_picture_plans_through_leading_and_trailing_holds
                         nodes: BTreeMap::from([(
                             leaf,
                             BeatNode {
+                                framing: None,
                                 audio_edges: Default::default(),
                                 label: name.into(),
                                 kind: NodeKind::Source {

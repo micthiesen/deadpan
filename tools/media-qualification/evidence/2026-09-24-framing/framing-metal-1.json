@@ -1,0 +1,2014 @@
+{
+  "adapter": {
+    "backend": "Metal",
+    "device": 0,
+    "device_type": "IntegratedGpu",
+    "driver": "",
+    "driver_info": "",
+    "name": "Apple M5 Max",
+    "vendor": 0
+  },
+  "case_count": 84,
+  "cases": [
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec709-Srgb-None-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 5.734084,
+      "submit_through_readback_ms": 39.273666999999996,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec709-Srgb-None-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.6332499999999999,
+      "submit_through_readback_ms": 2.647834,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec709-Srgb-Clockwise90-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.377667,
+      "submit_through_readback_ms": 2.4595,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec709-Srgb-Clockwise90-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.299583,
+      "submit_through_readback_ms": 2.325458,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec709-Srgb-Clockwise180-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.422542,
+      "submit_through_readback_ms": 2.4845829999999998,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec709-Srgb-Clockwise180-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.280042,
+      "submit_through_readback_ms": 2.2607500000000003,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec709-Srgb-Clockwise270-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.300666,
+      "submit_through_readback_ms": 2.3092910000000004,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec709-Srgb-Clockwise270-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.342041,
+      "submit_through_readback_ms": 2.494958,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec709-Rec709-None-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.164709,
+      "submit_through_readback_ms": 2.156417,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec709-Rec709-None-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.1522080000000001,
+      "submit_through_readback_ms": 2.1917500000000003,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec709-Rec709-Clockwise90-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.18475,
+      "submit_through_readback_ms": 2.218334,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec709-Rec709-Clockwise90-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.193292,
+      "submit_through_readback_ms": 2.233709,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec709-Rec709-Clockwise180-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.860125,
+      "submit_through_readback_ms": 2.870292,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec709-Rec709-Clockwise180-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.0801669999999999,
+      "submit_through_readback_ms": 2.103542,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec709-Rec709-Clockwise270-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.219,
+      "submit_through_readback_ms": 2.266041,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec709-Rec709-Clockwise270-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.154375,
+      "submit_through_readback_ms": 2.0641249999999998,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec709-Linear-None-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 0.8737079999999999,
+      "submit_through_readback_ms": 1.773333,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec709-Linear-None-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 0.7362500000000001,
+      "submit_through_readback_ms": 1.69425,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec709-Linear-Clockwise90-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 0.71025,
+      "submit_through_readback_ms": 1.596959,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec709-Linear-Clockwise90-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.0384579999999999,
+      "submit_through_readback_ms": 1.99125,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec709-Linear-Clockwise180-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 0.970541,
+      "submit_through_readback_ms": 1.922458,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec709-Linear-Clockwise180-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 0.827875,
+      "submit_through_readback_ms": 1.759292,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec709-Linear-Clockwise270-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 0.8244170000000001,
+      "submit_through_readback_ms": 1.753,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec709-Linear-Clockwise270-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 0.721291,
+      "submit_through_readback_ms": 1.200041,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec2020-Srgb-None-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 0.8017500000000001,
+      "submit_through_readback_ms": 1.677958,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec2020-Srgb-None-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.366375,
+      "submit_through_readback_ms": 2.321125,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec2020-Srgb-Clockwise90-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.150875,
+      "submit_through_readback_ms": 2.178208,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec2020-Srgb-Clockwise90-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.046917,
+      "submit_through_readback_ms": 2.189458,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec2020-Srgb-Clockwise180-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 3.648375,
+      "submit_through_readback_ms": 4.7620830000000005,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec2020-Srgb-Clockwise180-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.280125,
+      "submit_through_readback_ms": 2.278416,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec2020-Srgb-Clockwise270-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.181042,
+      "submit_through_readback_ms": 2.2330840000000003,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec2020-Srgb-Clockwise270-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.014916,
+      "submit_through_readback_ms": 2.081458,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec2020-Rec709-None-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 0.766708,
+      "submit_through_readback_ms": 1.639375,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec2020-Rec709-None-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 0.7421660000000001,
+      "submit_through_readback_ms": 1.67775,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec2020-Rec709-Clockwise90-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 0.830667,
+      "submit_through_readback_ms": 1.732167,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec2020-Rec709-Clockwise90-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 0.7183750000000001,
+      "submit_through_readback_ms": 1.6997920000000002,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec2020-Rec709-Clockwise180-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 0.759625,
+      "submit_through_readback_ms": 1.690375,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec2020-Rec709-Clockwise180-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 0.86775,
+      "submit_through_readback_ms": 1.887709,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec2020-Rec709-Clockwise270-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 0.7959160000000001,
+      "submit_through_readback_ms": 1.711083,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec2020-Rec709-Clockwise270-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 0.800917,
+      "submit_through_readback_ms": 1.749542,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec2020-Linear-None-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 0.845542,
+      "submit_through_readback_ms": 1.837042,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec2020-Linear-None-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.031625,
+      "submit_through_readback_ms": 2.112708,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec2020-Linear-Clockwise90-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.161666,
+      "submit_through_readback_ms": 2.1939580000000003,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec2020-Linear-Clockwise90-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 0.9596669999999999,
+      "submit_through_readback_ms": 1.8805,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec2020-Linear-Clockwise180-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.149209,
+      "submit_through_readback_ms": 2.214334,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec2020-Linear-Clockwise180-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.193875,
+      "submit_through_readback_ms": 2.126709,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec2020-Linear-Clockwise270-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.137458,
+      "submit_through_readback_ms": 2.166916,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-Rec2020-Linear-Clockwise270-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.289875,
+      "submit_through_readback_ms": 2.382333,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-DisplayP3D65-Srgb-None-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.3500420000000002,
+      "submit_through_readback_ms": 2.5717079999999997,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-DisplayP3D65-Srgb-None-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.354584,
+      "submit_through_readback_ms": 2.373542,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-DisplayP3D65-Srgb-Clockwise90-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.271042,
+      "submit_through_readback_ms": 2.31825,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-DisplayP3D65-Srgb-Clockwise90-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.324458,
+      "submit_through_readback_ms": 2.324541,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-DisplayP3D65-Srgb-Clockwise180-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.372542,
+      "submit_through_readback_ms": 2.370417,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-DisplayP3D65-Srgb-Clockwise180-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.1722499999999998,
+      "submit_through_readback_ms": 2.297166,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-DisplayP3D65-Srgb-Clockwise270-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.239459,
+      "submit_through_readback_ms": 2.215125,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-DisplayP3D65-Srgb-Clockwise270-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.202542,
+      "submit_through_readback_ms": 2.236125,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-DisplayP3D65-Rec709-None-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.159291,
+      "submit_through_readback_ms": 2.152666,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-DisplayP3D65-Rec709-None-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.176917,
+      "submit_through_readback_ms": 2.192667,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-DisplayP3D65-Rec709-Clockwise90-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.272375,
+      "submit_through_readback_ms": 2.328416,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-DisplayP3D65-Rec709-Clockwise90-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.218834,
+      "submit_through_readback_ms": 2.2287090000000003,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-DisplayP3D65-Rec709-Clockwise180-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.2013749999999999,
+      "submit_through_readback_ms": 2.228792,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-DisplayP3D65-Rec709-Clockwise180-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.196875,
+      "submit_through_readback_ms": 2.181208,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-DisplayP3D65-Rec709-Clockwise270-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.157208,
+      "submit_through_readback_ms": 2.113541,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-DisplayP3D65-Rec709-Clockwise270-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.074375,
+      "submit_through_readback_ms": 2.092792,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-DisplayP3D65-Linear-None-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.255875,
+      "submit_through_readback_ms": 2.268167,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-DisplayP3D65-Linear-None-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.076292,
+      "submit_through_readback_ms": 2.0301669999999996,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 0,
+      "name": "odd-padded-DisplayP3D65-Linear-Clockwise90-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.252542,
+      "submit_through_readback_ms": 2.3275829999999997,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-DisplayP3D65-Linear-Clockwise90-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.25225,
+      "submit_through_readback_ms": 2.2139170000000004,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-DisplayP3D65-Linear-Clockwise180-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.125959,
+      "submit_through_readback_ms": 2.1912920000000002,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-DisplayP3D65-Linear-Clockwise180-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.124417,
+      "submit_through_readback_ms": 2.085958,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 0,
+      "name": "odd-padded-DisplayP3D65-Linear-Clockwise270-Fit",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.1275,
+      "submit_through_readback_ms": 2.155125,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        13,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "odd-padded-DisplayP3D65-Linear-Clockwise270-Fill",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.129792,
+      "submit_through_readback_ms": 2.074875,
+      "target_size": [
+        13,
+        9
+      ]
+    },
+    {
+      "canvas": [
+        1,
+        1
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 0,
+      "name": "linear-light-midpoint",
+      "source_size": [
+        2,
+        1
+      ],
+      "source_stride": 8,
+      "submit_cpu_ms": 1.253958,
+      "submit_through_readback_ms": 3.024416,
+      "target_size": [
+        1,
+        1
+      ]
+    },
+    {
+      "canvas": [
+        1,
+        1
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 0,
+      "name": "transparent-magenta-no-fringe",
+      "source_size": [
+        2,
+        1
+      ],
+      "source_stride": 8,
+      "submit_cpu_ms": 1.1912500000000001,
+      "submit_through_readback_ms": 2.1502499999999998,
+      "target_size": [
+        1,
+        1
+      ]
+    },
+    {
+      "canvas": [
+        7,
+        3
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 0,
+      "name": "single-pixel-fit-bars",
+      "source_size": [
+        1,
+        1
+      ],
+      "source_stride": 8,
+      "submit_cpu_ms": 1.293084,
+      "submit_through_readback_ms": 2.2720420000000003,
+      "target_size": [
+        7,
+        3
+      ]
+    },
+    {
+      "canvas": [
+        319,
+        181
+      ],
+      "channel_tolerance": 2,
+      "framing": [],
+      "max_channel_difference": 1,
+      "name": "larger-anamorphic-padded",
+      "source_size": [
+        193,
+        109
+      ],
+      "source_stride": 800,
+      "submit_cpu_ms": 1.909084,
+      "submit_through_readback_ms": 3.003084,
+      "target_size": [
+        319,
+        181
+      ]
+    },
+    {
+      "canvas": [
+        16,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [
+        {
+          "center_x": {
+            "denominator": "5",
+            "numerator": "3"
+          },
+          "center_y": {
+            "denominator": "2",
+            "numerator": "1"
+          },
+          "scale": {
+            "denominator": "20",
+            "numerator": "27"
+          }
+        },
+        null,
+        {
+          "center_x": {
+            "denominator": "5",
+            "numerator": "2"
+          },
+          "center_y": {
+            "denominator": "2",
+            "numerator": "1"
+          },
+          "scale": {
+            "denominator": "4",
+            "numerator": "3"
+          }
+        }
+      ],
+      "max_channel_difference": 1,
+      "name": "framed-nested-anamorphic-None",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 2.209417,
+      "submit_through_readback_ms": 22.50425,
+      "target_size": [
+        31,
+        17
+      ]
+    },
+    {
+      "canvas": [
+        16,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [
+        {
+          "center_x": {
+            "denominator": "5",
+            "numerator": "3"
+          },
+          "center_y": {
+            "denominator": "2",
+            "numerator": "1"
+          },
+          "scale": {
+            "denominator": "20",
+            "numerator": "27"
+          }
+        },
+        null,
+        {
+          "center_x": {
+            "denominator": "5",
+            "numerator": "2"
+          },
+          "center_y": {
+            "denominator": "2",
+            "numerator": "1"
+          },
+          "scale": {
+            "denominator": "4",
+            "numerator": "3"
+          }
+        }
+      ],
+      "max_channel_difference": 1,
+      "name": "framed-nested-anamorphic-Clockwise90",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.8615000000000002,
+      "submit_through_readback_ms": 3.0965,
+      "target_size": [
+        31,
+        17
+      ]
+    },
+    {
+      "canvas": [
+        16,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [
+        {
+          "center_x": {
+            "denominator": "5",
+            "numerator": "3"
+          },
+          "center_y": {
+            "denominator": "2",
+            "numerator": "1"
+          },
+          "scale": {
+            "denominator": "20",
+            "numerator": "27"
+          }
+        },
+        null,
+        {
+          "center_x": {
+            "denominator": "5",
+            "numerator": "2"
+          },
+          "center_y": {
+            "denominator": "2",
+            "numerator": "1"
+          },
+          "scale": {
+            "denominator": "4",
+            "numerator": "3"
+          }
+        }
+      ],
+      "max_channel_difference": 1,
+      "name": "framed-nested-anamorphic-Clockwise180",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.4625000000000001,
+      "submit_through_readback_ms": 2.552791,
+      "target_size": [
+        31,
+        17
+      ]
+    },
+    {
+      "canvas": [
+        16,
+        9
+      ],
+      "channel_tolerance": 2,
+      "framing": [
+        {
+          "center_x": {
+            "denominator": "5",
+            "numerator": "3"
+          },
+          "center_y": {
+            "denominator": "2",
+            "numerator": "1"
+          },
+          "scale": {
+            "denominator": "20",
+            "numerator": "27"
+          }
+        },
+        null,
+        {
+          "center_x": {
+            "denominator": "5",
+            "numerator": "2"
+          },
+          "center_y": {
+            "denominator": "2",
+            "numerator": "1"
+          },
+          "scale": {
+            "denominator": "4",
+            "numerator": "3"
+          }
+        }
+      ],
+      "max_channel_difference": 1,
+      "name": "framed-nested-anamorphic-Clockwise270",
+      "source_size": [
+        7,
+        5
+      ],
+      "source_stride": 40,
+      "submit_cpu_ms": 1.534667,
+      "submit_through_readback_ms": 2.687875,
+      "target_size": [
+        31,
+        17
+      ]
+    },
+    {
+      "canvas": [
+        4,
+        4
+      ],
+      "channel_tolerance": 0,
+      "framing": [
+        {
+          "center_x": {
+            "denominator": "2",
+            "numerator": "1"
+          },
+          "center_y": {
+            "denominator": "2",
+            "numerator": "1"
+          },
+          "scale": {
+            "denominator": "1",
+            "numerator": "2"
+          }
+        },
+        {
+          "center_x": {
+            "denominator": "2",
+            "numerator": "1"
+          },
+          "center_y": {
+            "denominator": "2",
+            "numerator": "1"
+          },
+          "scale": {
+            "denominator": "2",
+            "numerator": "1"
+          }
+        }
+      ],
+      "max_channel_difference": 0,
+      "name": "framed-child-crop-retained-after-group-zoom-out",
+      "source_size": [
+        4,
+        4
+      ],
+      "source_stride": 16,
+      "submit_cpu_ms": 1.4677920000000002,
+      "submit_through_readback_ms": 3.315,
+      "target_size": [
+        4,
+        4
+      ]
+    },
+    {
+      "canvas": [
+        4,
+        4
+      ],
+      "channel_tolerance": 0,
+      "framing": [
+        null,
+        {
+          "center_x": {
+            "denominator": "2",
+            "numerator": "1"
+          },
+          "center_y": {
+            "denominator": "2",
+            "numerator": "1"
+          },
+          "scale": {
+            "denominator": "2",
+            "numerator": "1"
+          }
+        }
+      ],
+      "max_channel_difference": 0,
+      "name": "framed-provider-identity-before-group-zoom",
+      "source_size": [
+        4,
+        4
+      ],
+      "source_stride": 16,
+      "submit_cpu_ms": 1.2623339999999998,
+      "submit_through_readback_ms": 2.2712090000000003,
+      "target_size": [
+        4,
+        4
+      ]
+    },
+    {
+      "canvas": [
+        4,
+        4
+      ],
+      "channel_tolerance": 0,
+      "framing": [
+        {
+          "center_x": {
+            "denominator": "2",
+            "numerator": "1"
+          },
+          "center_y": {
+            "denominator": "2",
+            "numerator": "1"
+          },
+          "scale": {
+            "denominator": "4",
+            "numerator": "1"
+          }
+        }
+      ],
+      "max_channel_difference": 0,
+      "name": "framed-exact-half-open-coverage-edge",
+      "source_size": [
+        4,
+        4
+      ],
+      "source_stride": 16,
+      "submit_cpu_ms": 1.203208,
+      "submit_through_readback_ms": 2.17975,
+      "target_size": [
+        4,
+        4
+      ]
+    },
+    {
+      "canvas": [
+        4,
+        4
+      ],
+      "channel_tolerance": 0,
+      "framing": [
+        {
+          "center_x": {
+            "denominator": "4294967296",
+            "numerator": "2147483647"
+          },
+          "center_y": {
+            "denominator": "4294967296",
+            "numerator": "2147483647"
+          },
+          "scale": {
+            "denominator": "4",
+            "numerator": "1"
+          }
+        }
+      ],
+      "max_channel_difference": 0,
+      "name": "framed-q32-after-half-open-coverage-edge",
+      "source_size": [
+        4,
+        4
+      ],
+      "source_stride": 16,
+      "submit_cpu_ms": 1.25475,
+      "submit_through_readback_ms": 1.953083,
+      "target_size": [
+        4,
+        4
+      ]
+    }
+  ],
+  "checks": [
+    "invalid output limits rejected",
+    "foreign targets rejected",
+    "all output pixels compared to f64 CPU reference",
+    "negative working gamut coordinate retained",
+    "canonical-canvas nested framing and upright source interpretation",
+    "exact half-open coverage and retained child clips"
+  ],
+  "display_channel_tolerance_codes": 2,
+  "input": "full-range straight-alpha progressive RGBA8; row padding retained; original PTS unchanged",
+  "limitations": [
+    "synthetic SDR input only",
+    "no HDR tone mapping or HDR input",
+    "no ICC display management",
+    "no encoder/output-file verification",
+    "no realtime throughput claim",
+    "no UI/Metal interop qualification"
+  ],
+  "output": "Rec709 primaries, explicit sRGB encoding, opaque RGBA8Unorm; SDR clipping only",
+  "platform": {
+    "arch": "aarch64",
+    "os": "macos"
+  },
+  "provenance": {
+    "crate_working_tree_status": "M README.md\n M examples/qualify_picture.rs\n M src/geometry.rs\n M src/gpu.rs\n M src/lib.rs\n M src/picture.wgsl\n?? src/framing.rs\n?? src/framing/",
+    "git_head": "643feccd6760796e34627cc7440293a9f542bf5f",
+    "macos_version": "26.5.2",
+    "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)"
+  },
+  "renderer": "deadpan-render-0.1.0",
+  "schema_version": 1,
+  "status": "passed",
+  "wgpu": "30.0.1",
+  "working": "linear Rec2020 D65 RGBA16Float, no normalized clamp",
+  "working_absolute_tolerance": 0.0005,
+  "working_p3_red_rgba": [
+    0.75341796875,
+    0.04571533203125,
+    -0.0012102127075195312,
+    1.0
+  ]
+}

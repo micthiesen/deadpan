@@ -859,6 +859,7 @@ fn transparent_partition_intent_is_durable_atomic_and_undoable() -> Result {
     subtree.nodes.insert(
         subtree.root.clone(),
         BeatNode {
+            framing: None,
             label: "Transparent output interval".into(),
             kind: NodeKind::Retime {
                 child: NodeId::new("context")?,

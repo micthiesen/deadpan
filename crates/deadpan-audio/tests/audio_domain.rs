@@ -60,6 +60,7 @@ fn audio(start: i64, end: i64, sample_rate: u32) -> SourceAudio {
 fn source(rate: FrameRate, frames: i64, selected: Range<i64>, sample_rate: u32) -> BeatNode {
     let audio = audio(selected.start, selected.end, sample_rate);
     BeatNode {
+        framing: None,
         label: "Qualified original".into(),
         audio_edges: Default::default(),
         kind: NodeKind::Source {
@@ -89,6 +90,7 @@ fn hold(frames: i64, audio: HoldAudio) -> BeatNode {
 
 fn retime(child: &str, frames: i64, selected: Range<i64>, pitch: PitchPolicy) -> BeatNode {
     BeatNode {
+        framing: None,
         label: "Authored retime".into(),
         audio_edges: Default::default(),
         kind: NodeKind::Retime {
@@ -759,6 +761,7 @@ fn hidden_room_tone_gap_keeps_its_loop_origin_and_rechecks_cached_admission() {
             (
                 "repeat",
                 BeatNode {
+                    framing: None,
                     label: "Repeated speech".into(),
                     audio_edges: Default::default(),
                     kind: NodeKind::Repeat {

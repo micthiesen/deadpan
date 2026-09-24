@@ -80,11 +80,14 @@ fn fallback(workspace: &Workspace, at: ProjectFrame) -> Result<HoldVideo, String
     if workspace.plan.duration() == FrameDuration::ZERO {
         return Ok(HoldVideo::Background);
     }
-    let picture = workspace
+    let sample = workspace
         .plan
         .picture(ProjectFrame(if at.0 == 0 { 0 } else { at.0 - 1 }))
-        .map_err(|error| error.to_string())?
-        .picture;
+        .map_err(|error| error.to_string())?;
+    if sample.framing.iter().any(|layer| layer.pose.is_some()) {
+        return Err("Freezing an already framed picture needs a retained composition snapshot. Insert the pause before framing it; the current edit was not changed.".into());
+    }
+    let picture = sample.picture;
     match &picture {
         Picture::Source { asset, .. } | Picture::Freeze { asset, .. } => {
             let index = workspace

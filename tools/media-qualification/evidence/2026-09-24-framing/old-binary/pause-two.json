@@ -1,0 +1,34 @@
+{
+  "protocol": 1,
+  "project_id": "fae28ee2-efb0-4435-a95d-e99a4f7081cb",
+  "expected_revision": "pause-one",
+  "new_revision": "pause-two",
+  "command": {
+    "command": "insert_time",
+    "at": 3,
+    "hold": {
+      "duration": 2,
+      "video": {
+        "type": "background"
+      },
+      "audio": {
+        "type": "silence"
+      }
+    },
+    "id": "inserted",
+    "identities": {
+      "nodes": [
+        "pause-two-copy-0",
+        "pause-two-copy-1",
+        "pause-two-copy-2",
+        "pause-two-copy-3",
+        "pause-two-copy-4",
+        "pause-two-copy-5"
+      ]
+    },
+    "timing": {
+      "allocation": "pause-two",
+      "ordinal": 0
+    }
+  }
+}

@@ -64,6 +64,7 @@ struct LegacyBeatNode {
 impl LegacyBeatNode {
     fn upgrade(self) -> BeatNode {
         BeatNode {
+            framing: None,
             label: self.label,
             audio_edges: self.audio_edges,
             kind: match self.kind {
@@ -102,6 +103,9 @@ impl LegacyBeatNode {
     }
 
     fn project(node: &BeatNode) -> Option<Self> {
+        if node.framing.is_some() {
+            return None;
+        }
         Some(Self {
             label: node.label.clone(),
             audio_edges: node.audio_edges,

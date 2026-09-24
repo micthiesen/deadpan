@@ -85,13 +85,21 @@ pub(crate) fn apply(
         }
         offset = end;
     }
-    let split_nodes = interior.as_ref().map_or(0, |(target, _)| {
-        if matches!(document.nodes()[target].kind, NodeKind::Retime { .. }) {
-            2
-        } else {
-            3
-        }
-    });
+    let split_nodes = if let Some((target, _)) = &interior {
+        let node = &document.nodes()[target];
+        let context = match &node.kind {
+            NodeKind::Retime {
+                child,
+                purpose: RetimePurpose::Partition,
+                ..
+            } if node.framing.is_none() => child,
+            _ => target,
+        };
+        crate::occurrence_edit::subtree_order(document, context)?.len()
+            + if context == target { 2 } else { 1 }
+    } else {
+        0
+    };
     if document
         .nodes()
         .len()
@@ -228,15 +236,37 @@ fn physical<'a>(
     document: &'a ProjectDocument,
     node: &'a NodeId,
 ) -> Result<(&'a NodeId, i64), EditError> {
-    let (owner, start) = match &document.nodes()[node].kind {
-        NodeKind::Retime {
+    let mut owner = node;
+    let mut start = 0i64;
+    let mut partitions = 0usize;
+    let mut framed = false;
+    loop {
+        let node = &document.nodes()[owner];
+        framed |= node.framing.is_some();
+        let NodeKind::Retime {
             child,
             mapping,
             purpose: RetimePurpose::Partition,
             ..
-        } => (child, mapping.start().0),
-        _ => (node, 0),
-    };
+        } = &node.kind
+        else {
+            break;
+        };
+        partitions += 1;
+        if partitions > crate::MAX_DOCUMENT_DEPTH {
+            return Err(limit("pause partition depth"));
+        }
+        start = start.checked_add(mapping.start().0).ok_or_else(overflow)?;
+        owner = child;
+    }
+    // A framed Partition is a meaningful retained effect scope. A subsequent
+    // Split must keep it, so modern framing can introduce transparent nesting.
+    // Old unframed nested inputs keep core17's refusal and frozen replay grammar.
+    if partitions > 1 && !framed {
+        return Err(invalid(
+            "pause insertion cannot yet shift unframed nested beats",
+        ));
+    }
     match &document.nodes()[owner].kind {
         NodeKind::Source { .. } => Ok((owner, start)),
         NodeKind::Hold { recipe } if ordinary_hold(recipe) => Ok((owner, start)),

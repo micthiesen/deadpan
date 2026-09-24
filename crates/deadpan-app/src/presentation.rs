@@ -67,12 +67,14 @@ impl RequestedPicture {
 struct DecodedPicture {
     request: RequestedPicture,
     picture: Picture,
+    geometry_revision: u64,
 }
 
 struct DisplayedPicture {
     request: RequestedPicture,
     source_frame: Option<SourceFrameId>,
     canvas: Option<(u32, u32)>,
+    geometry_revision: u64,
 }
 
 #[derive(Default)]
@@ -125,6 +127,7 @@ impl Presentation {
                 self.decoded = Some(DecodedPicture {
                     request: request.clone(),
                     picture,
+                    geometry_revision: 0,
                 });
                 Ok(summary)
             }
@@ -139,6 +142,89 @@ impl Presentation {
 
     pub fn picture(&self) -> Option<&Picture> {
         self.decoded.as_ref().map(|decoded| &decoded.picture)
+    }
+
+    /// Camera entry requires the exact stopped Sequence picture to have reached
+    /// GPU submission. A retained image from another request is not its target.
+    pub fn stable_sequence_ticket(
+        &self,
+        session: u64,
+        revision: &RevisionId,
+        frame: deadpan_core::ProjectFrame,
+    ) -> Option<Ticket> {
+        if self.loading || self.render_failed || self.needs_render() {
+            return None;
+        }
+        let decoded = self.decoded.as_ref()?;
+        let displayed = self.displayed.as_ref()?;
+        if self.requested.as_ref() != Some(&decoded.request)
+            || displayed.request != decoded.request
+            || decoded.picture.frame.is_none()
+        {
+            return None;
+        }
+        match &decoded.request.location {
+            Location::Project {
+                session: current_session,
+                revision: current_revision,
+                view:
+                    ProjectView::Sequence {
+                        frame: current_frame,
+                    },
+                empty_sequence: false,
+                ..
+            } if *current_session == session
+                && current_revision == revision
+                && *current_frame == frame =>
+            {
+                Some(decoded.request.ticket)
+            }
+            _ => None,
+        }
+    }
+
+    /// Replace one evaluated spatial operation on the retained decoded picture.
+    /// This is transient presentation state, never an authored document mutation.
+    /// Old tickets cannot modify a new request, even before its decode arrives.
+    pub fn set_framing_pose(
+        &mut self,
+        ticket: Ticket,
+        scope: &deadpan_core::InstancePath,
+        pose: Option<deadpan_core::FramingPose>,
+    ) -> Result<(), String> {
+        if self
+            .requested
+            .as_ref()
+            .is_none_or(|request| request.ticket != ticket)
+        {
+            return Err("The Camera picture changed before the adjustment.".into());
+        }
+        if let Some(pose) = &pose {
+            pose.validate().map_err(|error| error.to_string())?;
+        }
+        let decoded = self
+            .decoded
+            .as_mut()
+            .filter(|decoded| decoded.request.ticket == ticket)
+            .ok_or("The Camera picture is no longer available.")?;
+        let layer = decoded
+            .picture
+            .framing
+            .iter_mut()
+            .find(|layer| &layer.instance == scope)
+            .ok_or("The Camera scope is absent from this picture.")?;
+        if layer.pose == pose {
+            return Ok(());
+        }
+        let next = decoded
+            .geometry_revision
+            .checked_add(1)
+            .ok_or("Camera preview identities are exhausted. Reopen the project.")?;
+        layer.pose = pose;
+        decoded.geometry_revision = next;
+        self.render_failed = false;
+        self.error = None;
+        Ok(())
     }
 
     pub fn canvas(&self) -> Option<(u32, u32)> {
@@ -158,9 +244,10 @@ impl Presentation {
     pub fn needs_render(&self) -> bool {
         !self.render_failed
             && self.decoded.as_ref().is_some_and(|decoded| {
-                self.displayed
-                    .as_ref()
-                    .is_none_or(|displayed| displayed.request != decoded.request)
+                self.displayed.as_ref().is_none_or(|displayed| {
+                    displayed.request != decoded.request
+                        || displayed.geometry_revision != decoded.geometry_revision
+                })
             })
     }
 
@@ -185,6 +272,7 @@ impl Presentation {
             request: decoded.request.clone(),
             source_frame: decoded.picture.frame.as_ref().map(|_| decoded.picture.id),
             canvas: decoded.picture.canvas,
+            geometry_revision: decoded.geometry_revision,
         });
     }
 

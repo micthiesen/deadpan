@@ -68,14 +68,17 @@ revision fails with `RevisionConflict` and the current revision, without writing
 
 Supported commands are `insert`, `insert_time`, `split`, `delete`, `move`, `group`,
 `ungroup`, `wrap_repeat`, `set_repeat`, `insert_plays`, `move_plays`, `set_hold_duration`, `set_hold_provider`, `set_source_audio_mapping`, `set_source_video_mapping`,
-`rename`, `set_audio_edge`, `add_asset`, `set_canvas`, `set_mark`, `delete_mark`, `set_play_override`, `clear_play_override`, and `edit_occurrence`. Their exact typed parameters are defined in
+`rename`, `set_audio_edge`, `set_framing`, `add_asset`, `set_canvas`, `set_mark`, `delete_mark`, `set_play_override`, `clear_play_override`, and `edit_occurrence`. Their exact typed parameters are defined in
 [`Command`](../crates/deadpan-core/src/command.rs). `set_repeat` changes an existing
 Repeat; `wrap_repeat` deliberately adds nesting. A three-play repeat includes
 three total plays and only two gaps. These are structural edits, not rendered
 media. Editing through range/text selectors, registers, macros, and effects
 remain required future work.
 
-Documents use schema 17. Retime `purpose` defaults to ordinary `edit` and is
+Documents use schema 18. Optional per-node [framing](FRAMING.md) retains a static
+pose or whole-owner envelope; `set_framing` sets it, and `framing: null` removes it.
+`inspect-plan --frame N` includes exact evaluated provider-to-root framing scopes.
+Retime `purpose` defaults to ordinary `edit` and is
 omitted from canonical JSON. `partition` retains child audio context at unity
 speed and requires automatic edges; see [the partition contract](AUDIO_PARTITIONS.md).
 `split` retains editable child context through transparent partitions.
@@ -584,7 +587,8 @@ Both geometry paths keep frame rate, nodes, marks and temporal coordinates fixed
 `set_canvas` records explicit geometry; on a provisional blank project it also
 fixes the existing rate. Generic commands that claim source-derived adoption
 return `SourceBasisAdmissionUnavailable`; they must use the qualified host path.
-Native visual canvas previews and framing-effect reevaluation remain open.
+Committed canvas geometry reevaluates normalized framing through the shared
+[picture geometry](FRAMING.md). Native temporary canvas-edit previews remain open.
 
 ## History and checkpoints
 

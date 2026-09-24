@@ -424,6 +424,118 @@ fn edit_rejects_stale_session_revision_and_invalid_targets_without_authored_chan
 }
 
 #[test]
+fn native_framing_preserves_time_and_cursor_with_one_durable_undoable_commit() {
+    use deadpan_core::{ExactRatio, Framing, FramingCurve, FramingPose};
+    let scratch = tempfile::tempdir().unwrap();
+    let path = scratch.path().join("framing.deadpan");
+    drop(seed_holds(&path, &["a", "b"]));
+    let service = ProjectService::new(Arc::new(|| {})).unwrap();
+    let before = command(&service, ProjectRequest::Open(path.clone()))
+        .workspace
+        .unwrap();
+    let end = FramingPose {
+        scale: ExactRatio::new(27, 20).unwrap(),
+        ..Default::default()
+    };
+    let framing = Framing::creep(Default::default(), end, FramingCurve::Smoothstep).unwrap();
+    let outcome = edited(
+        &service,
+        &before,
+        ProjectEdit::SetFraming {
+            node: node("a"),
+            framing: Some(framing.clone()),
+        },
+    );
+    let committed = outcome.committed.unwrap();
+    assert!(committed.preserve_cursor);
+    assert_eq!(committed.selected_node, Some(node("a")));
+    let current = outcome.workspace.unwrap();
+    assert_eq!(
+        current.document.duration().unwrap(),
+        before.document.duration().unwrap()
+    );
+    assert_eq!(
+        current.document.nodes()[&node("a")].kind,
+        before.document.nodes()[&node("a")].kind
+    );
+    assert_eq!(
+        current.document.nodes()[&node("b")],
+        before.document.nodes()[&node("b")]
+    );
+    assert_eq!(
+        current.document.nodes()[&node("a")].framing,
+        Some(framing.clone())
+    );
+    let stale = command(
+        &service,
+        edit_request(
+            &before,
+            ProjectEdit::SetFraming {
+                node: node("b"),
+                framing: Some(framing.clone()),
+            },
+        ),
+    );
+    assert!(stale.error.unwrap().contains("changed"));
+    assert!(stale.committed.is_none());
+    let undone = command(
+        &service,
+        ProjectRequest::Undo {
+            expected_revision: current.document.revision_id().clone(),
+        },
+    )
+    .workspace
+    .unwrap();
+    assert_eq!(undone.document.nodes(), before.document.nodes());
+    assert_ne!(undone.document.revision_id(), before.document.revision_id());
+    let redone = command(
+        &service,
+        ProjectRequest::Redo {
+            expected_revision: undone.document.revision_id().clone(),
+        },
+    )
+    .workspace
+    .unwrap();
+    assert_eq!(redone.document.nodes(), current.document.nodes());
+    assert_ne!(
+        redone.document.revision_id(),
+        current.document.revision_id()
+    );
+    command(&service, ProjectRequest::Close);
+    let reopened = command(&service, ProjectRequest::Open(path))
+        .workspace
+        .unwrap();
+    assert_eq!(reopened.document.nodes(), current.document.nodes());
+    let stale_session = command(
+        &service,
+        edit_request(
+            &redone,
+            ProjectEdit::SetFraming {
+                node: node("a"),
+                framing: None,
+            },
+        ),
+    );
+    assert!(stale_session.error.unwrap().contains("session changed"));
+    assert_eq!(
+        *stale_session.workspace.unwrap().document,
+        *reopened.document
+    );
+    let invalid = command(
+        &service,
+        edit_request(
+            &reopened,
+            ProjectEdit::SetFraming {
+                node: node("root"),
+                framing: Some(framing),
+            },
+        ),
+    );
+    assert!(invalid.error.unwrap().contains("root beat"));
+    assert_eq!(*invalid.workspace.unwrap().document, *reopened.document);
+}
+
+#[test]
 fn structural_edit_during_import_preparation_survives_coalesced_progress() {
     let scratch = tempfile::tempdir().unwrap();
     let path = scratch.path().join("edit-during-import.deadpan");
@@ -1228,6 +1340,7 @@ fn real_import_registers_without_inserting_and_round_trips_entire_history() {
     let CommittedEdit {
         revision,
         selected_node,
+        ..
     } = completed.committed.unwrap();
     let node = selected_node.unwrap();
     let workspace = completed.workspace.unwrap();
@@ -1422,6 +1535,7 @@ fn insertion_completion_survives_import_progress_and_replaced_mailbox_updates() 
     let CommittedEdit {
         revision: insertion_revision,
         selected_node,
+        ..
     } = completed.committed.unwrap();
     let node = selected_node.unwrap();
     let workspace = completed.workspace.unwrap();

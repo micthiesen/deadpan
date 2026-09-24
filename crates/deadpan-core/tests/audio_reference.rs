@@ -93,6 +93,7 @@ fn fixture(plays: u32) -> ProjectDocument {
         (
             id("source"),
             BeatNode {
+                framing: None,
                 label: "original selection".into(),
                 audio_edges: AudioEdgePolicies {
                     source_placement_start: AudioEdgePolicy::Hard,
@@ -117,6 +118,7 @@ fn fixture(plays: u32) -> ProjectDocument {
         (
             id("retime"),
             BeatNode {
+                framing: None,
                 label: "preserve".into(),
                 audio_edges: Default::default(),
                 kind: NodeKind::Retime {
@@ -133,6 +135,7 @@ fn fixture(plays: u32) -> ProjectDocument {
     nodes.insert(
         id("repeat"),
         BeatNode {
+            framing: None,
             label: "repeat".into(),
             audio_edges: Default::default(),
             kind: NodeKind::Repeat {

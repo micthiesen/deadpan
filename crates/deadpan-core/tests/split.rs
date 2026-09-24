@@ -24,6 +24,7 @@ fn hold(frames: i64) -> BeatNode {
 }
 fn repeat(child: &str, plays: u32) -> BeatNode {
     BeatNode {
+        framing: None,
         label: "Repeat".into(),
         kind: NodeKind::Repeat {
             child: id(child),
@@ -35,6 +36,7 @@ fn repeat(child: &str, plays: u32) -> BeatNode {
 }
 fn retime(child: &str, start: i64, end: i64, output: i64, purpose: RetimePurpose) -> BeatNode {
     BeatNode {
+        framing: None,
         label: "Retime".into(),
         kind: NodeKind::Retime {
             child: id(child),

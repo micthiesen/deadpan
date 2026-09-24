@@ -13,8 +13,10 @@ establish an implemented feature.
 | [Single-original workspace](boards/single-source-workspace-v1.png) | Primary target: one pinned Original, Your edit, picture, beat cards, conditional inspector, sounds and visible keys. | [Workspace prompt](prompts/single-source-workspace-v1.txt) |
 | [Single-original product board](boards/single-source-product-board-v2.png) | Choose one video, full-original baseline, revised edit, time-range reuse, sound/AI and keyboard/library views. | [Initial prompt](prompts/single-source-product-board-v1.txt), [review corrections](prompts/single-source-product-board-v2.txt) |
 | [Shape, extend, finish](boards/single-source-workflows-v1.png) | Camera versus temporal Trim, sound placement, explicit AI acceptance, export, recovery and local models. | [Workflow prompt](prompts/single-source-workflows-v1.txt) |
+| [Camera and framing](boards/camera-framing-board-v1.png) | Dedicated Camera preview, visible movement and scale keys, manual targets, keyboard region fields and a whole-Hold creep. | [Camera prompt](prompts/camera-framing-board-v1.txt) |
 
-The built-in `image_gen.imagegen` tool generated these assets on 2026-09-23.
+The built-in `image_gen.imagegen` tool generated these assets on 2026-09-23 and
+the Camera companion on 2026-09-24.
 The current boards implement the owner's single-original direction in specification
 1.1: begin with the complete video and gradually reshape it, reuse its moments,
 add audio effects and accept AI extensions. New projects belong in Documents/Deadpan.
@@ -80,12 +82,13 @@ unit. The interaction keeps one Original and one reversible edit in view.
 | Operator pending | Exact typed prefix and current scope | No timeout. `3rr` means three total plays. Escape cancels the pending input. |
 | Command/text | Focused field, command reference and units | macOS editing and IME own keystrokes. Text never dispatches structural shortcuts. Same-frame text is processed before submission. |
 | Parameter entry | Selected node, current value and command | Current native setters use the shared command entry. Return commits a validated command; Escape cancels entry. This is not a live parameter preview. |
-| Temporary preview | Proposed change clearly identified | Intended Camera/Trim contract: Enter commits once; Escape restores entry state. Remains unimplemented until preview transactions exist. |
+| Temporary preview | Camera mode, root-beat scope, unsaved draft and actual resulting picture | Camera: Enter commits once; Escape restores entry framing. Numeric fields retain native editing. Trim and other live parameter previews remain required. |
 | Candidate | Committed provider beside candidate status | Ready does not change the edit. Explicit acceptance is undoable; Escape never rolls back a previously committed edit. |
 
 Original is the Source context; Your edit is the Sequence context. Original
 browsing remains non-destructive. Sequence root-beat actions show their
-scope explicitly. Full selector, occurrence, Camera, Trim, Visual and macro
+scope explicitly. Camera currently edits root-beat framing. Full selector,
+occurrence, saved-target, Trim, Visual and macro
 workflows remain required and must use the same typed command boundary as the
 implemented actions. Discoverable controls refer to actual bindings. Standard
 macOS focus, copy/paste, composition and logical-key behavior take precedence
@@ -96,6 +99,15 @@ while text is active.
 Generated visual content is a composition reference. The following generated
 details are intentionally not implementation instructions:
 
+- The Camera board is a target; [native qualification](../qualification/framing-2026-09-24.md)
+  records the implemented subset. Saved targets and regions remain required.
+  Its large crop boundary illustrates source context; the coded main viewer must
+  show the actual draft output, with source context confined to an explicit
+  overview. Never overlay a purported source crop rectangle on already cropped
+  output. Show numbered choices only in the target picker so digits can remain
+  counts during ordinary Camera adjustment. Its source thumbnail and illustrated
+  sound entries require real supporting data. The board's Mug example depicts
+  manual targeting, not detection or tracking.
 - Use the implemented binding table and normative grammar. `?` and `:help` open
   actual help. The product board's Original-view footer still includes `rr`/`dd`;
   the coded Original view must instead teach browsing, return to Your edit and
@@ -112,7 +124,7 @@ details are intentionally not implementation instructions:
   mastered export remain required.
 - Sound import only registers audio today. The Place a sound panel is the target
   for a real anchored overlay, never an audio-only sequential beat with blank picture.
-- The workflow board shows intended live Camera/Trim preview. Current Hold and
+- The workflow board shows live Camera preview and intended Trim preview. Current Hold and
   Repeat setters are validated command entry; do not claim Escape restores a
   committed edit or that a text field previews on every keystroke.
 - Ready AI candidates keep the current provider unchanged until explicit

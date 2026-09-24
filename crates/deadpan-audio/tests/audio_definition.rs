@@ -56,6 +56,7 @@ fn audio(selected: Range<i64>) -> SourceAudio {
 fn source(rate: FrameRate, duration: i64, selected: Range<i64>) -> BeatNode {
     let audio = audio(selected);
     BeatNode {
+        framing: None,
         label: "Measured source".into(),
         audio_edges: Default::default(),
         kind: NodeKind::Source {
@@ -85,6 +86,7 @@ fn hold(duration: i64, audio: HoldAudio) -> BeatNode {
 
 fn retime(child: &str, duration: i64, selection: Range<i64>, pitch: PitchPolicy) -> BeatNode {
     BeatNode {
+        framing: None,
         label: "Retime".into(),
         audio_edges: Default::default(),
         kind: NodeKind::Retime {
@@ -347,6 +349,7 @@ fn all_overridden_repeat_still_renders_its_unheard_default_definition() {
             (
                 "repeat",
                 BeatNode {
+                    framing: None,
                     label: "All plays overridden".into(),
                     audio_edges: Default::default(),
                     kind: NodeKind::Repeat {
@@ -1054,6 +1057,7 @@ fn owned_nested_preserve_uses_edited_room_tone_in_the_same_root_clock() {
             (
                 "repeat",
                 BeatNode {
+                    framing: None,
                     label: "Editable gap".into(),
                     audio_edges: Default::default(),
                     kind: NodeKind::Repeat {

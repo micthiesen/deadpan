@@ -150,6 +150,16 @@ impl Inspector {
                 )
             }
         };
+        if let Some(framing) = &node.framing {
+            let description = match &framing.value {
+                deadpan_core::FramingValue::Static { pose } => {
+                    let scale = pose.scale.numerator() as f64 / pose.scale.denominator() as f64;
+                    format!("Static · {scale:.3}×")
+                }
+                deadpan_core::FramingValue::Envelope { .. } => "Whole-beat motion".into(),
+            };
+            fields.push(("Framing", description));
+        }
         Self {
             label: node.label.clone(),
             kind,
@@ -174,6 +184,7 @@ mod tests {
     fn hold_facts_and_duration_entry_preserve_actual_policy_and_frame_units() {
         let node = BeatNode {
             label: "Pause".into(),
+            framing: None,
             audio_edges: Default::default(),
             kind: NodeKind::Hold {
                 recipe: HoldRecipe {
@@ -200,6 +211,7 @@ mod tests {
     fn repeat_inspection_is_compact_and_edits_the_existing_repeat() {
         let node = BeatNode {
             label: "Again".into(),
+            framing: None,
             audio_edges: Default::default(),
             kind: NodeKind::Repeat {
                 child: NodeId::new("child").unwrap(),

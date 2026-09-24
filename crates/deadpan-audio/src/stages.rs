@@ -2116,6 +2116,7 @@ mod controlled_reads {
             .unwrap(),
         };
         let source = |start, end| BeatNode {
+            framing: None,
             label: "Source".into(),
             audio_edges: Default::default(),
             kind: NodeKind::Source {
@@ -2169,6 +2170,7 @@ mod controlled_reads {
             (
                 id("stage"),
                 BeatNode {
+                    framing: None,
                     label: "Preserve".into(),
                     audio_edges: Default::default(),
                     kind: NodeKind::Retime {
@@ -2533,6 +2535,7 @@ mod controlled_reads {
             .unwrap(),
         };
         let source = |at| BeatNode {
+            framing: None,
             label: "Source".into(),
             audio_edges: Default::default(),
             kind: NodeKind::Source {
@@ -2549,6 +2552,7 @@ mod controlled_reads {
             },
         };
         let retime = |child: &str, output, selected| BeatNode {
+            framing: None,
             label: "Preserve".into(),
             audio_edges: Default::default(),
             kind: NodeKind::Retime {

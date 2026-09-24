@@ -35,6 +35,7 @@ fn hold(duration: i64) -> BeatNode {
 }
 fn repeat(child: &str, count: u32) -> BeatNode {
     BeatNode {
+        framing: None,
         label: "repeat".into(),
         audio_edges: Default::default(),
         kind: NodeKind::Repeat {
@@ -46,6 +47,7 @@ fn repeat(child: &str, count: u32) -> BeatNode {
 }
 fn retime(child: &str, duration: i64, start: i64, end: i64, pitch: PitchPolicy) -> BeatNode {
     BeatNode {
+        framing: None,
         label: "retime".into(),
         audio_edges: Default::default(),
         kind: NodeKind::Retime {
@@ -284,6 +286,7 @@ fn source_capture_retains_its_current_placement_without_freezing_raw_assets() {
     )]))
     .unwrap();
     wire["nodes"]["a"] = serde_json::to_value(BeatNode {
+        framing: None,
         label: "source".into(),
         audio_edges: Default::default(),
         kind: NodeKind::Source {

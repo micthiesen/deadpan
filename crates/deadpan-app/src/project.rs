@@ -87,12 +87,18 @@ pub struct CommittedEdit {
     pub revision: RevisionId,
     /// None explicitly clears selection when deletion leaves an empty Sequence.
     pub selected_node: Option<NodeId>,
+    /// Spatial edits keep the stopped position instead of jumping to the beat start.
+    pub preserve_cursor: bool,
 }
 
 /// Authored root-beat operations. Nested occurrence editing requires a separate
 /// concrete occurrence scope; the service rejects hidden or nested targets.
 #[derive(Clone, Debug)]
 pub enum ProjectEdit {
+    SetFraming {
+        node: NodeId,
+        framing: Option<deadpan_core::Framing>,
+    },
     InsertTime {
         at: ProjectFrame,
         duration: FrameDuration,

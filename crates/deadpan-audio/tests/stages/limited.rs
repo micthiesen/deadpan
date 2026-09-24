@@ -279,6 +279,7 @@ fn limited_admission_cache_residency_and_empty_dependency_cancellation_are_bound
 fn adjacent_tiles_reuse_exact_bus_context_and_revalidate_its_source_layout() {
     let rate = FrameRate::new(48_000, 1).unwrap();
     let repeated = BeatNode {
+        framing: None,
         audio_edges: Default::default(),
         label: "Long original reuse".into(),
         kind: NodeKind::Repeat {

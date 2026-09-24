@@ -137,6 +137,7 @@ impl RenderPlan {
                 },
                 kind,
                 audio_edges: node.edges,
+                framing: None,
             });
         }
         Ok(Self {

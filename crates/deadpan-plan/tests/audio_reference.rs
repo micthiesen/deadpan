@@ -47,6 +47,7 @@ fn audio() -> SourceAudio {
 fn source(frames: i64) -> BeatNode {
     BeatNode {
         label: "Original".into(),
+        framing: None,
         audio_edges: Default::default(),
         kind: NodeKind::Source {
             source: SourceNode {
@@ -76,6 +77,7 @@ fn hold(frames: i64, audio: HoldAudio) -> BeatNode {
 fn retime(child: &str, frames: i64, start: i64, end: i64, pitch: PitchPolicy) -> BeatNode {
     BeatNode {
         label: "Retime".into(),
+        framing: None,
         audio_edges: Default::default(),
         kind: NodeKind::Retime {
             child: id(child),
@@ -824,6 +826,7 @@ fn copy_lineage_keeps_compact_repeat_paths_and_gap_identity_explicit() {
                 "repeat",
                 BeatNode {
                     label: "Compact".into(),
+                    framing: None,
                     audio_edges: Default::default(),
                     kind: NodeKind::Repeat {
                         child: id("a"),
@@ -890,6 +893,7 @@ fn nested_occurrence_split_retains_copy_lineage_without_expanding_repeats() {
                 "outer",
                 BeatNode {
                     label: "Outer".into(),
+                    framing: None,
                     audio_edges: Default::default(),
                     kind: NodeKind::Repeat {
                         child: id("inner"),
@@ -902,6 +906,7 @@ fn nested_occurrence_split_retains_copy_lineage_without_expanding_repeats() {
                 "inner",
                 BeatNode {
                     label: "Inner".into(),
+                    framing: None,
                     audio_edges: Default::default(),
                     kind: NodeKind::Repeat {
                         child: id("a"),
@@ -1039,6 +1044,7 @@ fn tail_maximum_retains_local_hold_and_gap_units_through_retime() {
                         "context",
                         BeatNode {
                             label: "Tail gap".into(),
+                            framing: None,
                             audio_edges: Default::default(),
                             kind: NodeKind::Repeat {
                                 child: id("a"),
@@ -1148,6 +1154,7 @@ fn billion_play_reference_keeps_old_order_gap_identity_after_current_edits() {
                 "repeat",
                 BeatNode {
                     label: "Compact".into(),
+                    framing: None,
                     audio_edges: Default::default(),
                     kind: NodeKind::Repeat {
                         child: id("a"),
@@ -1288,6 +1295,7 @@ fn sparse_override_clock_validates_its_effective_play_and_retains_partition_allo
                 "repeat",
                 BeatNode {
                     label: "Repeated".into(),
+                    framing: None,
                     audio_edges: Default::default(),
                     kind: NodeKind::Repeat {
                         child: id("default"),
@@ -1413,6 +1421,7 @@ fn invalid_owner_paths_ranges_and_budgets_fail_before_results() {
                 "repeat",
                 BeatNode {
                     label: "Repeated".into(),
+                    framing: None,
                     audio_edges: Default::default(),
                     kind: NodeKind::Repeat {
                         child: id("preserve"),

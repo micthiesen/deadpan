@@ -9,10 +9,11 @@ use std::{
     time::{Duration, Instant},
 };
 
-use deadpan_core::{SourceTimeBase, SourceTimestamp};
+use deadpan_core::{ExactRatio, SourceTimeBase, SourceTimestamp};
 use deadpan_render::{
-    FitMode, FrameMetadata, MAX_DIMENSION, PictureRenderer, Primaries, RenderError, Rgba8Frame,
-    Rotation, SampleAspectRatio, SourceColor, Transfer, reference_pixel,
+    FitMode, FrameMetadata, FramingLayer, MAX_DIMENSION, PictureGeometry, PictureRenderer,
+    Primaries, RenderError, Rgba8Frame, Rotation, SampleAspectRatio, SourceColor, Transfer,
+    reference_pixel, reference_pixel_with_geometry,
 };
 use serde_json::{Value, json};
 
@@ -186,6 +187,73 @@ fn qualify() -> Result<Value> {
         "larger-anamorphic-padded",
     )?);
 
+    let half_ratio = ExactRatio::new(1, 2)?;
+    let child = FramingLayer::new(
+        [ExactRatio::new(3, 5)?, half_ratio],
+        ExactRatio::new(27, 20)?,
+    )?;
+    let parent = FramingLayer::new([ExactRatio::new(2, 5)?, half_ratio], ExactRatio::new(3, 4)?)?;
+    for rotation in [
+        Rotation::None,
+        Rotation::Clockwise90,
+        Rotation::Clockwise180,
+        Rotation::Clockwise270,
+    ] {
+        let frame = fixture(7, 5, 12, color, rotation, SampleAspectRatio::new(4, 3)?)?;
+        cases.push(check_framed_case(
+            &device,
+            &queue,
+            &mut renderer,
+            &frame,
+            FramedCase {
+                size: (31, 17),
+                canvas: [16, 9],
+                mode: FitMode::Fit,
+                layers: &[child, FramingLayer::identity(), parent],
+                label: &format!("framed-nested-anamorphic-{rotation:?}"),
+                strict: false,
+            },
+        )?);
+    }
+    let white = Rgba8Frame::new(
+        metadata(4, 4, 0, color, Rotation::None, SampleAspectRatio::SQUARE)?,
+        vec![255; 64],
+    )?;
+    let zoom_in = FramingLayer::new([half_ratio; 2], ExactRatio::integer(2))?;
+    let zoom_out = FramingLayer::new([half_ratio; 2], half_ratio)?;
+    let small = FramingLayer::new([half_ratio; 2], ExactRatio::new(1, 4)?)?;
+    let after_edge = FramingLayer::new(
+        [half_ratio.checked_sub(ExactRatio::new(1, 1 << 32)?)?; 2],
+        ExactRatio::new(1, 4)?,
+    )?;
+    for (label, layers) in [
+        (
+            "framed-child-crop-retained-after-group-zoom-out",
+            vec![zoom_in, zoom_out],
+        ),
+        (
+            "framed-provider-identity-before-group-zoom",
+            vec![FramingLayer::identity(), zoom_out],
+        ),
+        ("framed-exact-half-open-coverage-edge", vec![small]),
+        ("framed-q32-after-half-open-coverage-edge", vec![after_edge]),
+    ] {
+        cases.push(check_framed_case(
+            &device,
+            &queue,
+            &mut renderer,
+            &white,
+            FramedCase {
+                size: (4, 4),
+                canvas: [4, 4],
+                mode: FitMode::Fit,
+                layers: &layers,
+                label,
+                strict: true,
+            },
+        )?);
+    }
+
     // Read the actual working intermediate. P3 red has a small negative blue
     // component in Rec2020, which normalized storage would incorrectly discard.
     let color = SourceColor {
@@ -239,7 +307,7 @@ fn qualify() -> Result<Value> {
         "input": "full-range straight-alpha progressive RGBA8; row padding retained; original PTS unchanged",
         "working": "linear Rec2020 D65 RGBA16Float, no normalized clamp",
         "output": "Rec709 primaries, explicit sRGB encoding, opaque RGBA8Unorm; SDR clipping only",
-        "checks": ["invalid output limits rejected", "foreign targets rejected", "all output pixels compared to f64 CPU reference", "negative working gamut coordinate retained"],
+        "checks": ["invalid output limits rejected", "foreign targets rejected", "all output pixels compared to f64 CPU reference", "negative working gamut coordinate retained", "canonical-canvas nested framing and upright source interpretation", "exact half-open coverage and retained child clips"],
         "limitations": ["synthetic SDR input only", "no HDR tone mapping or HDR input", "no ICC display management", "no encoder/output-file verification", "no realtime throughput claim", "no UI/Metal interop qualification"]
     }))
 }
@@ -320,10 +388,50 @@ fn check_case(
     mode: FitMode,
     label: &str,
 ) -> Result<Value> {
-    let (width, height) = size;
+    check_framed_case(
+        device,
+        queue,
+        renderer,
+        frame,
+        FramedCase {
+            size,
+            canvas: [size.0, size.1],
+            mode,
+            layers: &[],
+            label,
+            strict: false,
+        },
+    )
+}
+
+struct FramedCase<'a> {
+    size: (u32, u32),
+    canvas: [u32; 2],
+    mode: FitMode,
+    layers: &'a [FramingLayer],
+    label: &'a str,
+    strict: bool,
+}
+
+fn check_framed_case(
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+    renderer: &mut PictureRenderer,
+    frame: &Rgba8Frame,
+    case: FramedCase<'_>,
+) -> Result<Value> {
+    let (width, height) = case.size;
+    let label = case.label;
+    let geometry = PictureGeometry::framed(
+        frame.metadata(),
+        case.canvas,
+        [width, height],
+        case.mode,
+        case.layers,
+    )?;
     let target = renderer.create_target(width, height)?;
     let started = Instant::now();
-    renderer.render(frame, &target, mode)?;
+    renderer.render_framed(frame, &target, case.canvas, case.mode, case.layers)?;
     let submitted_ms = started.elapsed().as_secs_f64() * 1000.0;
     let actual = readback(device, queue, target.display_texture(), 4)?;
     let readback_ms = started.elapsed().as_secs_f64() * 1000.0;
@@ -333,12 +441,12 @@ fn check_case(
     let mut max_difference = 0;
     for y in 0..height {
         for x in 0..width {
-            let expected = reference_pixel(frame, width, height, mode, x, y)?;
+            let expected = reference_pixel_with_geometry(frame, &geometry, x, y)?;
             let offset = usize::try_from((u64::from(y) * u64::from(width) + u64::from(x)) * 4)?;
             for channel in 0..4 {
                 let difference = actual[offset + channel].abs_diff(expected[channel]);
                 max_difference = max_difference.max(difference);
-                if difference > 2 {
+                if difference > if case.strict { 0 } else { 2 } {
                     return Err(format!("{label} ({x},{y}) channel {channel}: GPU {} reference {} difference {difference}", actual[offset + channel], expected[channel]).into());
                 }
             }
@@ -346,7 +454,8 @@ fn check_case(
     }
     Ok(
         json!({"name": label, "source_size": [frame.metadata().width, frame.metadata().height], "source_stride": frame.metadata().row_stride_bytes,
-        "target_size": [width, height], "max_channel_difference": max_difference, "submit_cpu_ms": submitted_ms, "submit_through_readback_ms": readback_ms}),
+        "target_size": [width, height], "canvas": case.canvas, "framing": case.layers.iter().map(|layer| layer.pose()).collect::<Vec<_>>(),
+        "channel_tolerance": if case.strict { 0 } else { 2 }, "max_channel_difference": max_difference, "submit_cpu_ms": submitted_ms, "submit_through_readback_ms": readback_ms}),
     )
 }
 

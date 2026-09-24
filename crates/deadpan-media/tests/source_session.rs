@@ -183,6 +183,7 @@ fn natural_picture_plan_selects_and_decodes_original_pixels_after_trim_rounding(
                     nodes: BTreeMap::from([(
                         leaf.clone(),
                         BeatNode {
+                            framing: None,
                             audio_edges: Default::default(),
                             label: "Natural trimmed picture".into(),
                             kind: NodeKind::Source {

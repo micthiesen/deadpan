@@ -31,6 +31,7 @@ fn span() -> SourceSpan {
 }
 fn source() -> BeatNode {
     BeatNode {
+        framing: None,
         label: "Original speech".into(),
         kind: NodeKind::Source {
             source: SourceNode {
@@ -67,6 +68,7 @@ fn sequence(children: &[&str]) -> BeatNode {
 }
 fn repeat(child: &str, plays: u32) -> BeatNode {
     BeatNode {
+        framing: None,
         label: "Repeat".into(),
         kind: NodeKind::Repeat {
             child: id(child),
@@ -78,6 +80,7 @@ fn repeat(child: &str, plays: u32) -> BeatNode {
 }
 fn retime(child: &str, input: i64, output: i64) -> BeatNode {
     BeatNode {
+        framing: None,
         label: "Preserve".into(),
         kind: NodeKind::Retime {
             child: id(child),

@@ -32,6 +32,7 @@ fn audio(start: i64, end: i64) -> SourceAudio {
 fn source(length: i64, selection: Option<SourceAudio>, offset: i64) -> BeatNode {
     BeatNode {
         label: "Source".into(),
+        framing: None,
         audio_edges: AudioEdgePolicies {
             node_start: AudioEdgePolicy::Hard,
             node_end: AudioEdgePolicy::Hard,
@@ -80,6 +81,7 @@ fn retime(
 ) -> BeatNode {
     BeatNode {
         label: "Retime".into(),
+        framing: None,
         audio_edges: Default::default(),
         kind: NodeKind::Retime {
             purpose,
@@ -286,6 +288,7 @@ fn billion_play_context_keeps_sparse_override_and_bounded_last_seek() {
     let plays = 1_000_000_000;
     let repeat = BeatNode {
         label: "Repeat".into(),
+        framing: None,
         audio_edges: Default::default(),
         kind: NodeKind::Repeat {
             child: id("ordinary"),

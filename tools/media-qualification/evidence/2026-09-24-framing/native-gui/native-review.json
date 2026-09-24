@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-24",
+  "method": "Native CUA keyboard actions, AX observations and screenshot inspection; headless read-only dumps and final validation. No browser.",
+  "first_build": "build.json",
+  "final_build": "build-final.json",
+  "fixture": "fixture.json",
+  "project": "/Users/michael/Documents/Deadpan/Camera review.deadpan",
+  "screenshots": {
+    "dimensions_pixels": [
+      2984,
+      1858
+    ],
+    "retained_in_repository": false,
+    "inspected_states": [
+      "First Camera adjustment",
+      "Final source-target picker",
+      "Final Camera adjustment"
+    ],
+    "reference": "docs/design/boards/camera-framing-board-v1.png"
+  },
+  "first_pass_observations": [
+    "Native creation initialized all 120 Original frames automatically in Documents/Deadpan.",
+    "Camera counted zoom and pan displayed 49%, 50%, 115.7625% while the sequence frame remained fixed.",
+    "Command-Z undid numeric field text without leaving Camera or invoking project Undo.",
+    "Tab/Shift-Tab navigation, invalid finite-percentage input and Apply disabling were observed.",
+    "Target picker digit 2 selected upright top left; reset restored neutral.",
+    "Enter saved one static framing edit; read-only dump preserved time, source and all other nodes.",
+    "Native undo/redo worked; an unframed insertion at frame 40 created one 15-frame Freeze/Silence pause.",
+    "Creep at the pause midpoint showed 117.5%; Camera pan changed its full path, retaining the whole-beat curve, duration and source freeze.",
+    "Question-mark opened keyboard help and cancelled Camera draft."
+  ],
+  "final_pass_observations": [
+    "Reopened the saved 135-frame project with the whole-beat curve intact.",
+    "Camera at boundary 47 displayed center X49%, Y50%, scale117.5%; no Normal navigation/playback controls or false Framing focus badge.",
+    "Tab focused Center X and displayed the Framing focus badge; Up changed X49% to50%.",
+    "NaN displayed one finite-percentage error and disabled Apply.",
+    "Escape restored saved pose. The target picker disabled fields and taught 1-5 selection, f back, r reset and Escape cancel.",
+    "Returned to adjustment, applied one scale step, and saved at unchanged boundary47/135.",
+    "Native Command-Z/Command-Shift-Z restored saved123.375% scale and preserved whole-beat motion.",
+    "A subsequent pan/Escape restored saved framing and normal controls.",
+    "Native framed pause insertion refused with a retained-composition explanation. Final read-only document comparison found only the intended earlier Pause framing edit.",
+    "Owned app quit. Headless project validate returned valid:true, duration135,6nodes."
+  ],
+  "visual_assessment": "Dark picture-dominant layout, pinned Original, separate sound catalog, compact beat cards, scoped right inspector, contextual lavender keycaps and actual draft output follow the board. Longer inspector contents scroll. Saved regions, thumbnails and curve graph remain future targets.",
+  "failures_and_corrections": [
+    "First pass found Normal-mode key hints during Camera, false inspector focus, duplicate errors and unavailable picker keys; final pass verified fixes.",
+    "One batched file-panel path/Return sequence submitted the parent directory and was rejected. Observing the Go to path selection before the final Return opened the package.",
+    "Build metadata harness first called unsupported doctor --json. The actual doctor command emits JSON without that flag and succeeded."
+  ],
+  "not_qualified": [
+    "Live CJK IME composition",
+    "Physical non-US keyboard layout",
+    "VoiceOver",
+    "Minimum-size native window resizing",
+    "GPU or device fault injection",
+    "Acoustic synchronization",
+    "Performance",
+    "Full DP-08 or preview/export acceptance"
+  ]
+}

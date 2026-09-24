@@ -3,7 +3,7 @@ use std::sync::{
     atomic::{AtomicBool, Ordering},
 };
 
-use crate::{FitMode, PictureGeometry, Primaries, RenderError, Rgba8Frame, Rotation, Transfer};
+use crate::{FitMode, FramingLayer, PictureGeometry, Primaries, RenderError, Rgba8Frame, Transfer};
 use crate::{color::conversion, surface::validate_dimensions};
 
 /// Reusable destination and its owned GPU textures. Views remain stable for
@@ -82,7 +82,7 @@ impl PictureRenderer {
                     ty: wgpu::BindingType::Buffer {
                         ty: wgpu::BufferBindingType::Uniform,
                         has_dynamic_offset: false,
-                        min_binding_size: wgpu::BufferSize::new(128),
+                        min_binding_size: wgpu::BufferSize::new(160),
                     },
                     count: None,
                 },
@@ -113,7 +113,7 @@ impl PictureRenderer {
         );
         let uniform = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("Deadpan picture parameters"),
-            size: 128,
+            size: 160,
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
@@ -177,6 +177,19 @@ impl PictureRenderer {
         target: &RenderTarget,
         mode: FitMode,
     ) -> Result<wgpu::SubmissionIndex, RenderError> {
+        self.render_framed(frame, target, [target.width(), target.height()], mode, &[])
+    }
+
+    /// Render evaluated provider-to-root framing in the committed canvas space.
+    /// Geometry and all limits are checked before any upload or submission.
+    pub fn render_framed(
+        &mut self,
+        frame: &Rgba8Frame,
+        target: &RenderTarget,
+        canvas: [u32; 2],
+        mode: FitMode,
+        layers: &[FramingLayer],
+    ) -> Result<wgpu::SubmissionIndex, RenderError> {
         if !Arc::ptr_eq(&self.owner, &target.owner) {
             return Err(RenderError::ForeignTarget);
         }
@@ -185,7 +198,14 @@ impl PictureRenderer {
             return Err(RenderError::Busy);
         }
         let metadata = frame.metadata();
-        let geometry = PictureGeometry::new(metadata, target.width(), target.height(), mode)?;
+        let geometry = PictureGeometry::framed(
+            metadata,
+            canvas,
+            [target.width(), target.height()],
+            mode,
+            layers,
+        )?;
+        let parameters = parameters(frame, &geometry)?;
         if self.source.as_ref().is_none_or(|texture| {
             texture.width() != metadata.width || texture.height() != metadata.height
         }) {
@@ -208,8 +228,7 @@ impl PictureRenderer {
             },
             source.size(),
         );
-        self.queue
-            .write_buffer(&self.uniform, 0, &parameters(frame, geometry));
+        self.queue.write_buffer(&self.uniform, 0, &parameters);
         let source_view = source.create_view(&Default::default());
         let source_bindings = self.bindings(&source_view);
         let display_bindings = self.bindings(&target.working_view);
@@ -288,22 +307,17 @@ impl PictureRenderer {
     }
 }
 
-fn parameters(frame: &Rgba8Frame, geometry: PictureGeometry) -> Vec<u8> {
+fn parameters(frame: &Rgba8Frame, geometry: &PictureGeometry) -> Result<Vec<u8>, RenderError> {
     let metadata = frame.metadata();
-    let rotation = match metadata.rotation {
-        Rotation::None => 0.0,
-        Rotation::Clockwise90 => 1.0,
-        Rotation::Clockwise180 => 2.0,
-        Rotation::Clockwise270 => 3.0,
-    };
     let transfer = match metadata.color.transfer {
         Transfer::Srgb => 0.0,
         Transfer::Rec709 => 1.0,
         Transfer::Linear => 2.0,
     };
-    let mut vectors = Vec::with_capacity(8);
-    vectors.push(geometry.rectangle.map(|value| value as f32));
-    vectors.push([rotation, transfer, 0.0, 0.0]);
+    let mut vectors = Vec::with_capacity(10);
+    vectors.extend(geometry.sampling_parameters()?);
+    vectors.push(geometry.coverage.map(|value| value as f32));
+    vectors.push([0.0, transfer, 0.0, 0.0]);
     for matrix in [
         conversion(metadata.color.primaries, Primaries::Rec2020),
         conversion(Primaries::Rec2020, Primaries::Rec709),
@@ -312,13 +326,13 @@ fn parameters(frame: &Rgba8Frame, geometry: PictureGeometry) -> Vec<u8> {
             vectors.push([row[0] as f32, row[1] as f32, row[2] as f32, 0.0]);
         }
     }
-    // Uniform consists solely of eight vec4<f32> values; no native struct casts,
+    // Uniform consists solely of ten vec4<f32> values; no native struct casts,
     // unsafe code, implicit padding, or external ABI representation is involved.
-    vectors
+    Ok(vectors
         .into_iter()
         .flatten()
         .flat_map(f32::to_ne_bytes)
-        .collect()
+        .collect())
 }
 
 fn pipeline(

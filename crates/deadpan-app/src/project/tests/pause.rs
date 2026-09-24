@@ -1,6 +1,57 @@
 use super::*;
 
 #[test]
+fn native_pause_never_silently_discards_the_frozen_pictures_framing() {
+    let scratch = tempfile::tempdir().unwrap();
+    let service = ProjectService::start(
+        Arc::new(|| {}),
+        Some(ProjectLibrary::from_documents(scratch.path().join("Documents")).unwrap()),
+    )
+    .unwrap();
+    service
+        .submit(ProjectRequest::CreateFromSource {
+            path: fixture("cfr-bframes.mp4"),
+        })
+        .unwrap();
+    let initialized = wait(&service, |update| {
+        update.import.as_ref().is_some_and(|status| {
+            matches!(status.stage, ImportStage::Complete | ImportStage::Failed)
+        })
+    });
+    assert!(initialized.error.is_none(), "{:?}", initialized.error);
+    let selected = initialized.committed.unwrap().selected_node.unwrap();
+    let before = initialized.workspace.unwrap();
+    let framing = deadpan_core::Framing::static_pose(deadpan_core::FramingPose {
+        scale: deadpan_core::ExactRatio::new(27, 20).unwrap(),
+        ..Default::default()
+    })
+    .unwrap();
+    let framed = edited(
+        &service,
+        &before,
+        ProjectEdit::SetFraming {
+            node: selected,
+            framing: Some(framing),
+        },
+    )
+    .workspace
+    .unwrap();
+    let failed = command(
+        &service,
+        edit_request(
+            &framed,
+            ProjectEdit::InsertTime {
+                at: ProjectFrame(5),
+                duration: FrameDuration::new(11).unwrap(),
+            },
+        ),
+    );
+    assert!(failed.error.unwrap().contains("composition snapshot"));
+    assert!(failed.committed.is_none());
+    assert_eq!(*failed.workspace.unwrap().document, *framed.document);
+}
+
+#[test]
 fn native_pause_freezes_measured_vfr_picture_and_keeps_one_undo_step() {
     let scratch = tempfile::tempdir().unwrap();
     let service = ProjectService::start(

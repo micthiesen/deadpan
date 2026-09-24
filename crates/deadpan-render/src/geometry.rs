@@ -1,4 +1,3 @@
-use crate::surface::validate_dimensions;
 use crate::{
     FrameMetadata, RenderError, Rgba8Frame, Rotation, source_to_working, working_to_display,
 };
@@ -11,12 +10,19 @@ pub enum FitMode {
     Fill,
 }
 
-/// Source interpretation precedes fit/fill: pixel aspect stretches the source
-/// horizontal axis, then clockwise rotation determines the displayed aspect.
-#[derive(Debug, Clone, Copy)]
+/// Shared canonical-canvas geometry. Spatial computation uses f64; integer
+/// coverage is derived once before the GPU's f32 sampling boundary.
+#[derive(Debug, Clone)]
 pub struct PictureGeometry {
     pub(crate) rectangle: [f64; 4],
     pub(crate) rotation: Rotation,
+    pub(crate) coverage: [u32; 4],
+    pub(crate) visible: crate::framing::Rect,
+    pub(crate) canvas: [u32; 2],
+    pub(crate) raster: [u32; 2],
+    pub(crate) inputs: Vec<crate::framing::InputGeometry>,
+    pub(crate) output: crate::framing::InputGeometry,
+    pub(crate) source_metadata: FrameMetadata,
 }
 
 impl PictureGeometry {
@@ -26,52 +32,33 @@ impl PictureGeometry {
         height: u32,
         mode: FitMode,
     ) -> Result<Self, RenderError> {
-        validate_dimensions(source.width, source.height)?;
-        validate_dimensions(width, height)?;
-        let mut source_width = f64::from(source.width) * source.sample_aspect_ratio.as_f64();
-        let mut source_height = f64::from(source.height);
-        if matches!(
-            source.rotation,
-            Rotation::Clockwise90 | Rotation::Clockwise270
-        ) {
-            std::mem::swap(&mut source_width, &mut source_height);
-        }
-        let scales = [
-            f64::from(width) / source_width,
-            f64::from(height) / source_height,
-        ];
-        let scale = match mode {
-            FitMode::Fit => scales[0].min(scales[1]),
-            FitMode::Fill => scales[0].max(scales[1]),
-        };
-        let displayed_width = source_width * scale;
-        let displayed_height = source_height * scale;
-        Ok(Self {
-            rectangle: [
-                (f64::from(width) - displayed_width) / 2.0,
-                (f64::from(height) - displayed_height) / 2.0,
-                displayed_width,
-                displayed_height,
-            ],
-            rotation: source.rotation,
-        })
+        Self::framed(source, [width, height], [width, height], mode, &[])
     }
 
-    /// Map an output pixel center to original, unrotated normalized source UV.
-    /// Returns None for black bars, using half-open display bounds.
+    /// Continuous output coordinates to original, unrotated normalized source
+    /// UV. Coverage is half-open; pixel reads use the shared integer coverage.
     pub fn source_uv(&self, pixel_center: [f64; 2]) -> Option<[f64; 2]> {
+        self.visible
+            .contains(pixel_center, false)
+            .then(|| self.unclipped_uv(pixel_center))
+    }
+
+    pub(crate) fn pixel_uv(&self, x: u32, y: u32) -> Option<[f64; 2]> {
+        let [left, top, right, bottom] = self.coverage;
+        (x >= left && x < right && y >= top && y < bottom)
+            .then(|| self.unclipped_uv([f64::from(x) + 0.5, f64::from(y) + 0.5]))
+    }
+
+    pub(crate) fn unclipped_uv(&self, pixel: [f64; 2]) -> [f64; 2] {
         let [left, top, width, height] = self.rectangle;
-        let u = (pixel_center[0] - left) / width;
-        let v = (pixel_center[1] - top) / height;
-        if !(0.0..1.0).contains(&u) || !(0.0..1.0).contains(&v) {
-            return None;
-        }
-        Some(match self.rotation {
+        let u = (pixel[0] - left) / width;
+        let v = (pixel[1] - top) / height;
+        match self.rotation {
             Rotation::None => [u, v],
             Rotation::Clockwise90 => [v, 1.0 - u],
             Rotation::Clockwise180 => [1.0 - u, 1.0 - v],
             Rotation::Clockwise270 => [1.0 - v, u],
-        })
+        }
     }
 }
 
@@ -87,10 +74,23 @@ pub fn reference_pixel(
     y: u32,
 ) -> Result<[u8; 4], RenderError> {
     let geometry = PictureGeometry::new(frame.metadata(), width, height, mode)?;
-    if x >= width || y >= height {
+    reference_pixel_with_geometry(frame, &geometry, x, y)
+}
+
+/// CPU color/filter reference for the same spatial geometry used by a framed GPU draw.
+pub fn reference_pixel_with_geometry(
+    frame: &Rgba8Frame,
+    geometry: &PictureGeometry,
+    x: u32,
+    y: u32,
+) -> Result<[u8; 4], RenderError> {
+    if geometry.source_metadata != *frame.metadata() {
+        return Err(RenderError::FramingGeometry);
+    }
+    if x >= geometry.raster[0] || y >= geometry.raster[1] {
         return Err(RenderError::Dimensions);
     }
-    let Some(uv) = geometry.source_uv([f64::from(x) + 0.5, f64::from(y) + 0.5]) else {
+    let Some(uv) = geometry.pixel_uv(x, y) else {
         return Ok([0, 0, 0, 255]);
     };
     let metadata = frame.metadata();

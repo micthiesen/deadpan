@@ -1,0 +1,75 @@
+{
+  "commands": [
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 2.7019637087360024,
+      "log": "0.log"
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 11.931534457951784,
+      "log": "1.log"
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked"
+      ],
+      "exit_code": 0,
+      "seconds": 341.92083608265966,
+      "log": "2.log"
+    },
+    {
+      "command": [
+        "cargo",
+        "build",
+        "--workspace",
+        "--locked"
+      ],
+      "exit_code": 0,
+      "seconds": 0.6691242498345673,
+      "log": "3.log"
+    },
+    {
+      "command": [
+        "cargo",
+        "run",
+        "-p",
+        "deadpan-cli",
+        "--",
+        "doctor"
+      ],
+      "exit_code": 0,
+      "seconds": 0.3554974589496851,
+      "log": "4.log"
+    }
+  ],
+  "source_count": 414,
+  "source_unchanged": true,
+  "changed_sources": [],
+  "tests": {
+    "passed": 1323,
+    "failed": 0,
+    "ignored": 0
+  },
+  "passed": true
+}

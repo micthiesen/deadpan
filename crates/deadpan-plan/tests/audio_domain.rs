@@ -40,6 +40,7 @@ fn selected(start: i64, end: i64) -> SourceAudio {
 fn source(length: i64, input: Option<SourceAudio>, offset: i64) -> BeatNode {
     BeatNode {
         label: "Source".into(),
+        framing: None,
         audio_edges: AudioEdgePolicies {
             node_start: AudioEdgePolicy::Hard,
             node_end: AudioEdgePolicy::Hard,
@@ -86,6 +87,7 @@ fn retime(
 ) -> BeatNode {
     BeatNode {
         label: "Retime".into(),
+        framing: None,
         audio_edges: Default::default(),
         kind: NodeKind::Retime {
             purpose,
@@ -475,6 +477,7 @@ fn billion_play_sparse_domains_and_gaps_keep_complete_occurrence_identity() {
                 "repeat",
                 BeatNode {
                     label: "Repeat".into(),
+                    framing: None,
                     audio_edges: Default::default(),
                     kind: NodeKind::Repeat {
                         child: id("ordinary"),
@@ -624,6 +627,7 @@ fn cropped_nested_gap_keeps_its_outer_play_and_its_own_original_zero() {
                 "inner",
                 BeatNode {
                     label: "Inner".into(),
+                    framing: None,
                     audio_edges: Default::default(),
                     kind: NodeKind::Repeat {
                         child: id("a"),
@@ -643,6 +647,7 @@ fn cropped_nested_gap_keeps_its_outer_play_and_its_own_original_zero() {
                 "outer",
                 BeatNode {
                     label: "Outer".into(),
+                    framing: None,
                     audio_edges: Default::default(),
                     kind: NodeKind::Repeat {
                         child: id("partition"),

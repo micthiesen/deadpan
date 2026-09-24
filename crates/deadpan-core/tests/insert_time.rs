@@ -21,6 +21,7 @@ fn recipe(frames: i64) -> HoldRecipe {
 }
 fn source(frames: i64) -> BeatNode {
     BeatNode {
+        framing: None,
         label: "Original".into(),
         kind: NodeKind::Source {
             source: SourceNode {
@@ -523,6 +524,7 @@ fn unsupported_shifted_structures_and_any_nonempty_gap_fail_atomically() {
     // A fully preceding gap-free nested scope is not shifted and is safe.
     edit(&nested, insertion(&nested, "suffix", 2, 1));
     let repeat = |gap| BeatNode {
+        framing: None,
         label: "Repeat".into(),
         audio_edges: Default::default(),
         kind: NodeKind::Repeat {

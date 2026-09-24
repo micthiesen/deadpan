@@ -18,6 +18,8 @@ use rusqlite::Connection;
 
 type Result<T = ()> = std::result::Result<T, Box<dyn Error>>;
 
+#[path = "migration/framing.rs"]
+mod framing;
 #[path = "migration/insert_time.rs"]
 mod insert_time;
 

@@ -57,6 +57,7 @@ fn hold(frames: i64) -> ProjectDocument {
     let mut wire: serde_json::Value = serde_json::from_str(&empty().to_json().unwrap()).unwrap();
     wire["nodes"]["root"] = json!(BeatNode::sequence("Sequence", vec![node("pause")]));
     wire["nodes"]["pause"] = json!(BeatNode {
+        framing: None,
         label: "Pause".into(),
         audio_edges: Default::default(),
         kind: NodeKind::Hold {
@@ -689,6 +690,7 @@ fn canonical_playback_consumes_pause_bindings_and_a_real_preserve_stage() {
     wire["revision_id"] = json!("preserve-fixture");
     wire["nodes"]["output"] = json!(BeatNode::sequence("Output", vec![node("stretch")]));
     wire["nodes"]["stretch"] = json!(BeatNode {
+        framing: None,
         label: "Preserve".into(),
         audio_edges: Default::default(),
         kind: NodeKind::Retime {

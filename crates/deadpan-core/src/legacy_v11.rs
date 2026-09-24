@@ -33,7 +33,11 @@ impl LegacyBeatNode {
     }
 
     fn project(node: &BeatNode) -> Option<Self> {
+        if node.framing.is_some() {
+            return None;
+        }
         let old = crate::legacy_v8::LegacyBeatNode::project(&BeatNode {
+            framing: None,
             label: node.label.clone(),
             kind: node.kind.clone(),
             audio_edges: AudioEdgePolicies::default(),

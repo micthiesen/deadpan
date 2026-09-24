@@ -155,7 +155,10 @@ fn schema22_preserves_bindings_patches_and_redo_in_the_backed_up_migration() -> 
         Err(StoreError::MigrationRequired(22))
     ));
     let migration = ProjectStore::migrate(&path)?;
-    assert_eq!((migration.from_schema, migration.to_schema), (22, 23));
+    assert_eq!(
+        (migration.from_schema, migration.to_schema),
+        (22, DATABASE_SCHEMA_VERSION)
+    );
     assert_eq!(
         contents(&Connection::open(migration.backup.unwrap())?)?,
         before
@@ -169,7 +172,7 @@ fn schema22_preserves_bindings_patches_and_redo_in_the_backed_up_migration() -> 
         assert!(retained.matches(&current));
         assert_eq!(retained.upgrade()?, current);
         let mut old: serde_json::Value = serde_json::from_str(old)?;
-        old["schema_version"] = serde_json::json!(17);
+        old["schema_version"] = serde_json::json!(DOCUMENT_SCHEMA_VERSION);
         assert_eq!(serde_json::to_value(&current)?, old);
         assert!(!current.audio_bindings().is_empty());
     }

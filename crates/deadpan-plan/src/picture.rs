@@ -1,7 +1,7 @@
 use deadpan_core::{
-    AssetId, EndpointPolicy, ExactRatio, IndexedSourceFrame, InstancePath, IterationId,
-    ProjectFrame, ProjectId, RevisionId, SourceFrameId, SourceFrameIndex, SourcePoint, SourceSpan,
-    SourceTimeBase,
+    AssetId, EndpointPolicy, ExactRatio, FrameDuration, FramingPose, IndexedSourceFrame,
+    InstancePath, IterationId, ProjectFrame, ProjectId, RevisionId, SourceFrameId,
+    SourceFrameIndex, SourcePoint, SourceSpan, SourceTimeBase,
 };
 use serde::Serialize;
 
@@ -88,6 +88,16 @@ impl Picture {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct PictureFraming {
+    /// The operation's exact scope. Identity scopes remain present so a preview
+    /// can replace an operation at its original position in the composition.
+    pub instance: InstancePath,
+    pub local_position: ExactRatio,
+    pub duration: FrameDuration,
+    pub pose: Option<FramingPose>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct PictureSample {
     pub project_id: ProjectId,
     pub revision_id: RevisionId,
@@ -102,5 +112,9 @@ pub struct PictureSample {
     /// Exact coordinate within the sampled Source, Hold, or gap recipe.
     pub local_position: ExactRatio,
     pub picture: Picture,
+    /// Provider to root, including scopes without authored framing. A Repeat
+    /// gap has no provider node scope; consumers first apply an identity provider
+    /// clip, then this list beginning with the Repeat's own operation.
+    pub framing: Vec<PictureFraming>,
     pub lookup: LookupStats,
 }

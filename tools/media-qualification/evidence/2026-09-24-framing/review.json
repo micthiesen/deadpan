@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "review_base": "origin/main",
+  "base_head": "643feccd6760796e34627cc7440293a9f542bf5f",
+  "scope": "Committed changes plus staged, unstaged and untracked implementation; the base and HEAD were equal when review began.",
+  "method": "Check skill; two independent read-only reviewers: numerical/render and migration followed by general app review. A fresh general-agent spawn hit the harness thread limit, so the completed migration reviewer was reused for the general pass. Parent triaged against current source.",
+  "reviewers": [
+    {
+      "scope": "Core numerical framing, preflight, Split/InsertTime, exact plan traversal, renderer geometry/GPU/shader and tests",
+      "execution": "ripwire, rg, source/diff reads; no tests or GUI"
+    },
+    {
+      "scope": "DB23 to24 validation/backup/promotion, strict V17 snapshots/commands/patches, old pending redo, framing admission; then app Camera fields/routing, sessions, presentation identities, service commits and pause guard",
+      "execution": "ripwire, rg, source/diff reads, git diff --check; no tests or GUI"
+    }
+  ],
+  "findings": [
+    {
+      "id": "R1",
+      "disposition": "dismissed and withdrawn by reviewer",
+      "claim": "Source targets and motion vectors should rotate coded axes.",
+      "reason": "The API explicitly takes upright post-rotation source coordinates. SAR and90/270 display dimensions are applied before the rectangle. Rotating those coordinates again would double-rotate them.",
+      "source": "crates/deadpan-render/src/framing.rs"
+    },
+    {
+      "id": "R2",
+      "disposition": "fixed; reviewer verified code correction",
+      "severity": "major",
+      "claim": "Command-Z in a Camera field can reach project Undo because the generic text-focus helper knows only search/command IDs.",
+      "fix": "Camera routes field text shortcuts natively before project bindings, independent of the generic text flag. Explicit Command-N/O/I lifecycle actions still route globally. Regression includes false generic focus and true field focus, native undo/redo/clipboard/selection/Enter, and the project-history negative control.",
+      "source": "crates/deadpan-app/src/preview/camera.rs"
+    }
+  ],
+  "parent_corrections": [
+    {
+      "issue": "Earlier count text could enter a field when Tab focused it later in the same native batch.",
+      "fix": "Retain only the ordered event suffix before focusing Camera fields. A headless negative-control regression reproduces the old leak and distinguishes the corrected result.",
+      "test": "tab_into_camera_fields_does_not_retype_an_earlier_count"
+    },
+    {
+      "issue": "A fixed-width horizontal label/input row exceeded the168pt minimum inspector content width.",
+      "fix": "Stack unit-bearing labels above bounded fields; headless168pt no-overflow test."
+    },
+    {
+      "issue": "Typed numeric values and same-frame Apply could use older data or tentative IME preedit.",
+      "fix": "Controlled bounded buffers, complete post-widget validation, precomposition snapshot restoration and explicit full-curve admission before Apply."
+    },
+    {
+      "issue": "Native Camera displayed ordinary navigation/playback hints, a false inspector focus badge, duplicate field validation and unavailable picker keys.",
+      "fix": "Hide Normal controls while Camera is active, report actual field focus, draw each error once and show phase-specific hints. Verified in final native build 4df29f2d65ba76d2cdcf88f4c361a38d416a224270aeae26b3d297052896036e."
+    }
+  ],
+  "limits": [
+    "No review-agent execution-based migration check; repository gate supplies it separately.",
+    "No native IME, VoiceOver, GPU/device fault injection or performance claim from code review.",
+    "Saved regions, tracking, full framed Ungroup and frozen-composition pause snapshots remain required work."
+  ]
+}

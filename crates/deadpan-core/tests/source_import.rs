@@ -157,6 +157,7 @@ fn import_registers_and_inserts_in_one_reversible_edit_without_changing_basis() 
     assert_eq!(
         after.nodes()[&node("first")],
         BeatNode {
+            framing: None,
             audio_edges: Default::default(),
             label: insertion.label,
             kind: NodeKind::Source {

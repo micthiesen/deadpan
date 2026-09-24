@@ -1,7 +1,9 @@
 use eframe::egui::{Key, Modifiers};
 
+pub mod camera;
 pub mod command;
 pub mod duration;
+pub use camera::route_camera_key;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum BeatEdit {
@@ -76,7 +78,19 @@ pub enum Action {
     Escape,
     OfferInsert,
     Edit(BeatEdit),
+    Framing(FramingAction),
     Invalid(&'static str),
+}
+
+/// Framing actions owned by the selected edited beat.
+///
+/// Camera opens a cancellable draft. PunchIn and Creep are ordinary typed
+/// edits and must be committed by the project service as one history step.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum FramingAction {
+    EnterCamera,
+    PunchIn,
+    Creep,
 }
 
 /// The implemented navigation vocabulary. Prefixes have no timing dependency.
@@ -138,9 +152,7 @@ impl Bindings {
         match self.operator {
             Some(Key::R) => Some("r completes the Repeat · Esc cancels"),
             Some(Key::D) => Some("d cuts this whole beat · Esc cancels"),
-            _ if self.comma => {
-                Some("h inserts a silent freeze · each count adds 0.5 s · Esc cancels")
-            }
+            _ if self.comma => Some("h pause · f Camera · z punch in · c creep · Esc cancels"),
             _ if self.g => Some("g goes to the start · Esc cancels"),
             _ if self.count.is_some() => {
                 Some("Then h/l to move, rr to repeat, or ,h to pause · Esc cancels")
@@ -250,14 +262,22 @@ impl Bindings {
             ));
         }
         if self.comma {
-            let action = if key == Key::H {
-                Action::Edit(BeatEdit::InsertHold(duration::DurationInput::half_seconds(
-                    self.count.unwrap_or(1),
-                )))
-            } else {
-                Action::Invalid(
-                    "After comma, h inserts a silent freeze. Other leader actions are not ready.",
-                )
+            let action = match key {
+                Key::H => Action::Edit(BeatEdit::InsertHold(
+                    duration::DurationInput::half_seconds(self.count.unwrap_or(1)),
+                )),
+                Key::F | Key::Z | Key::C if self.count.is_none() => Action::Framing(match key {
+                    Key::F => FramingAction::EnterCamera,
+                    Key::Z => FramingAction::PunchIn,
+                    Key::C => FramingAction::Creep,
+                    _ => unreachable!("matched framing key"),
+                }),
+                Key::F | Key::Z | Key::C => {
+                    Action::Invalid("Counts apply only to ,h. Use ,f, ,z, or ,c without a count.")
+                }
+                _ => Action::Invalid(
+                    "After comma, use h for a pause, f for Camera, z to punch in, or c to creep.",
+                ),
             };
             self.clear();
             return Some(action);
@@ -423,7 +443,7 @@ mod tests {
             Some(Action::OfferInsert)
         );
         assert_eq!(bindings.pending(), "3,");
-        assert!(bindings.pending_hint().unwrap().contains("silent freeze"));
+        assert!(bindings.pending_hint().unwrap().contains("Camera"));
         assert_eq!(
             bindings.key(Key::H, Modifiers::NONE, false, false),
             Some(Action::Edit(BeatEdit::InsertHold(
@@ -488,6 +508,43 @@ mod tests {
         for modifiers in [Modifiers::CTRL, Modifiers::COMMAND, Modifiers::MAC_CMD] {
             let mut bindings = Bindings::default();
             assert_eq!(bindings.key(Key::Comma, modifiers, false, false), None);
+            assert!(bindings.pending().is_empty());
+        }
+    }
+
+    #[test]
+    fn comma_f_z_c_are_direct_unrepeatable_camera_actions() {
+        for (key, action) in [
+            (Key::F, Action::Framing(FramingAction::EnterCamera)),
+            (Key::Z, Action::Framing(FramingAction::PunchIn)),
+            (Key::C, Action::Framing(FramingAction::Creep)),
+        ] {
+            let mut bindings = Bindings::default();
+            assert_eq!(
+                bindings.key(Key::Comma, Modifiers::NONE, false, false),
+                Some(Action::OfferInsert)
+            );
+            assert_eq!(bindings.pending(), ",");
+            assert_eq!(
+                bindings.key(key, Modifiers::NONE, false, false),
+                Some(action)
+            );
+            assert!(bindings.pending().is_empty());
+            assert!(!allows_key_repeat(key, Modifiers::NONE));
+        }
+
+        for (key, modifiers) in [
+            (Key::F, Modifiers::NONE),
+            (Key::Z, Modifiers::NONE),
+            (Key::C, Modifiers::NONE),
+        ] {
+            let mut bindings = Bindings::default();
+            bindings.key(Key::Num2, Modifiers::NONE, false, false);
+            bindings.key(Key::Comma, Modifiers::NONE, false, false);
+            assert!(matches!(
+                bindings.key(key, modifiers, false, false),
+                Some(Action::Invalid(_))
+            ));
             assert!(bindings.pending().is_empty());
         }
     }

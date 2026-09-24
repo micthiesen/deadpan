@@ -3,15 +3,17 @@
 //! transform. Preview and offline callers use the same renderer and targets.
 //!
 //! This does not implement a timeline, HDR input, tone mapping, encoder pixel
-//! conversion, ICC display management, editorial effects, or native interop.
+//! conversion, ICC display management, effects beyond canvas framing, or native interop.
 
 mod color;
+mod framing;
 mod geometry;
 mod gpu;
 mod surface;
 
 pub use color::{Primaries, SourceColor, Transfer, source_to_working, working_to_display};
-pub use geometry::{FitMode, PictureGeometry, reference_pixel};
+pub use framing::{FramingLayer, MAX_FRAMING_LAYERS, MAX_FRAMING_SCOPES};
+pub use geometry::{FitMode, PictureGeometry, reference_pixel, reference_pixel_with_geometry};
 pub use gpu::{PictureRenderer, RenderTarget};
 pub use surface::{
     FrameMetadata, MAX_DIMENSION, MAX_FRAME_BYTES, MAX_PIXELS, Rgba8Frame, Rotation,
@@ -20,6 +22,16 @@ pub use surface::{
 
 #[derive(Debug, thiserror::Error)]
 pub enum RenderError {
+    #[error(transparent)]
+    Framing(#[from] deadpan_core::FramingError),
+    #[error("framing exceeds the supported active-layer or scope bound")]
+    FramingLayers,
+    #[error("framing geometry exceeds the supported finite spatial precision")]
+    FramingGeometry,
+    #[error("framing source target must be finite and within the uncropped source")]
+    FramingPoint,
+    #[error("framing scope is absent from this picture path")]
+    FramingScope,
     #[error(
         "picture dimensions must be nonzero, at most {MAX_DIMENSION} per axis and {MAX_PIXELS} pixels"
     )]

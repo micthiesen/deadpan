@@ -16,7 +16,7 @@ generic backend behavior and legacy multi-video projects remain supported.
 This repository currently contains an **editing foundation**, not a working video editor:
 
 - `deadpan-core`: exact time, validated beat documents, structural commands, nested occurrence edits, [audio copy lineage](docs/AUDIO_LINEAGE.md), reversible transactions, and [generated Hold intent and retained sampling](docs/GENERATED_HOLDS.md).
-- `deadpan-store`: SQLite project packages, a [protected full-original baseline](docs/SINGLE_ORIGINAL.md), persistent marks and undo/redo, monotonic generation requests, durable attempts and interrupted-job recovery, schema-1-through-22 migration to schema 23, checkpoints, verified media storage, and [explicit durable bundle acceptance](docs/GENERATION_ACCEPTANCE.md). Generic new generated-provider ingress remains guarded.
+- `deadpan-store`: SQLite project packages, a [protected full-original baseline](docs/SINGLE_ORIGINAL.md), persistent marks and undo/redo, monotonic generation requests, durable attempts and interrupted-job recovery, schema-1-through-23 migration to schema 24, checkpoints, verified media storage, and [explicit durable bundle acceptance](docs/GENERATION_ACCEPTANCE.md). Generic new generated-provider ingress remains guarded.
 - `deadpan-plan`: immutable indexed picture mappings and [exact structural audio spans](docs/AUDIO_PLAN.md), with separate [sample clocks and retained envelopes](docs/AUDIO_SAMPLING.md), [frozen reference policy clocks](docs/AUDIO_REFERENCE.md), [retained audio contexts](docs/AUDIO_CONTEXT.md), exact retiming, stable repeated-play identities, and sparse play overrides.
 - `deadpan-jobs`: bounded worker messages, job lifecycle, subprocess supervision, contained artifact snapshots, and exact bridge-generation planning. A real MLX development adapter exercises this boundary; it is not connected to the app yet.
 - `deadpan-media`: shared verified originals, measured video/audio indexes, exact video seeks and bounded original-rate PCM caches through `native/deadpan-source`, plus isolated FFV1 conversion and exact interior bridge sampling.
@@ -38,6 +38,10 @@ The app implements a local-video-to-full-timeline workflow with reversible root 
 
 The [interface design boards](docs/design/README.md) contain the imagegen workspace,
 screens and interaction targets, with exact prompts and reviewed behavior notes.
+[Authored framing and Camera](docs/FRAMING.md) provide static/enveloped framing,
+counted pan/zoom, numeric fields and temporary previews against the dedicated
+Camera board. Saved targets, frozen compositions, tracking and the
+complete picture-operation surface remain required.
 
 ## Run the foundation
 

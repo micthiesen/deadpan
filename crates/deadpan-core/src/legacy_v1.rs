@@ -46,6 +46,7 @@ struct Beat {
 impl Beat {
     fn upgrade(self, allocation: &RevisionId) -> Result<BeatNode, DocumentError> {
         Ok(BeatNode {
+            framing: None,
             label: self.label,
             audio_edges: AudioEdgePolicies::default(),
             kind: match self.kind {
@@ -77,6 +78,9 @@ impl Beat {
         })
     }
     fn project(node: &BeatNode) -> Option<Self> {
+        if node.framing.is_some() {
+            return None;
+        }
         if node.audio_edges != AudioEdgePolicies::default() {
             return None;
         }

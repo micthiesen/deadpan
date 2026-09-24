@@ -21,13 +21,34 @@ previewing or reading pixels for an offline render:
 1. Upload source as `Rgba8Unorm`, so hardware never implicitly decodes transfer.
 2. Inverse sRGB, inverse BT.709 OETF, or explicit linear RGB, followed by the
    named Rec.709, Rec.2020, or Display P3 D65 conversion to linear Rec.2020 D65.
-3. Apply sample aspect and rotation, then centered fit/fill. Bilinear sampling
+3. Apply sample aspect and rotation, provider fit/fill, and ordered canvas framing. Bilinear sampling
    decodes each texel before interpolation and premultiplies alpha before
    filtering. The composite background is opaque black.
 4. Store the composite in `Rgba16Float` without normalized range clipping.
    Negative and above-reference values retain binary16 precision and range.
 5. Transform working RGB to linear Rec.709, clip to the SDR display gamut and
    reference white, and explicitly encode sRGB into opaque `Rgba8Unorm`.
+
+`render_framed` takes the canonical project canvas independently of the output
+raster and evaluated `FramingLayer` values in provider-to-root order. Keep identity
+provider scopes: its own framing precedes the first canvas clip, while ancestor
+framing transforms the clipped child canvas. Repeat gaps need a render-only
+identity provider scope before their Repeat owner. Clips remain distinct from
+the full source sampling rectangle, so a group zoom-out cannot reveal an earlier
+child crop. `render` remains the identity convenience entrypoint.
+
+`PictureGeometry::framed` supplies the same spatial calculation to CPU and GPU.
+It uses f64 canvas geometry, derives half-open integer pixel coverage once, and
+anchors f32 inverse UV at the first covered pixel. Coverage is not re-decided by
+rounded shader UV. There are at most 16 authored operations and 258 scopes
+(the maximum structural path plus an optional gap provider);
+unrepresentable cumulative geometry fails explicitly rather than collapsing to
+a different image. This is a declared numerical spatial boundary, not arbitrary
+precision geometry. Upright source target projection and 1% source-axis steps
+are available before any selected scope; clipped targets return unavailable.
+Their f64 results become authored values only through the host's explicit core
+numeric policy. Framing changes currently reuse the renderer's upload allocation
+but still upload the source bytes for each draw.
 
 The display view has stable lifetime in its `RenderTarget` and can be registered
 with egui. Keep the target alive until registration is released. Do not mark the
@@ -58,9 +79,12 @@ The fixture suite includes odd dimensions, padded source and readback rows, all
 supported color/rotation/fit combinations, non-square samples, color patches,
 black bars, partial/zero alpha, and size rejection. Report timings include CPU
 submission and GPU readback overhead and are not playback performance evidence.
+Eight additional framing cases cover nested transforms, all source rotations,
+child clip retention, and exact/Q32-offset crop boundaries. The solid-color
+coverage cases require exact output codes rather than the color tolerance.
 
 This foundation does not establish full DP-16/DP-17 or Gate A completion. HDR
-inputs, tone mapping, color-correct physical display/ICC integration, editorial
+inputs, tone mapping, color-correct physical display/ICC integration, other editorial
 effects, attachments, encoder pixel conversion, full-quality downsampling,
 timeline playback, output-file verification, native zero-copy ownership, and
 resource-contention benchmarks remain separate work.

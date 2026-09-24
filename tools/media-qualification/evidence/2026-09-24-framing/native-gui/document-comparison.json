@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "only_pause_framing_changed_after_final_native_session": true,
+  "before_revision": "df754560-87f2-4c07-a523-30ac3ce785b2",
+  "after_revision": "bbf35d4c-740c-4757-a84e-f938c40fb7c3",
+  "pause_id": "36156bda-69e2-4e13-8fa0-c825ad30a823",
+  "before": {
+    "value": {
+      "type": "envelope",
+      "envelope": {
+        "initial": {
+          "center_x": {
+            "numerator": "2104533975",
+            "denominator": "4294967296"
+          },
+          "center_y": {
+            "numerator": "1",
+            "denominator": "2"
+          },
+          "scale": {
+            "numerator": "1",
+            "denominator": "1"
+          }
+        },
+        "segments": [
+          {
+            "end": {
+              "numerator": "1",
+              "denominator": "1"
+            },
+            "pose": {
+              "center_x": {
+                "numerator": "2104533975",
+                "denominator": "4294967296"
+              },
+              "center_y": {
+                "numerator": "1",
+                "denominator": "2"
+              },
+              "scale": {
+                "numerator": "2899102925",
+                "denominator": "2147483648"
+              }
+            },
+            "curve": {
+              "type": "smoothstep"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "after": {
+    "value": {
+      "type": "envelope",
+      "envelope": {
+        "initial": {
+          "center_x": {
+            "numerator": "2104533975",
+            "denominator": "4294967296"
+          },
+          "center_y": {
+            "numerator": "1",
+            "denominator": "2"
+          },
+          "scale": {
+            "numerator": "4509715661",
+            "denominator": "4294967296"
+          }
+        },
+        "segments": [
+          {
+            "end": {
+              "numerator": "1",
+              "denominator": "1"
+            },
+            "pose": {
+              "center_x": {
+                "numerator": "2104533975",
+                "denominator": "4294967296"
+              },
+              "center_y": {
+                "numerator": "1",
+                "denominator": "2"
+              },
+              "scale": {
+                "numerator": "6088116143",
+                "denominator": "4294967296"
+              }
+            },
+            "curve": {
+              "type": "smoothstep"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "unchanged": "Complete document except fresh revision and selected Pause framing; the rejected pause insertion and cancelled draft left no authored change."
+}

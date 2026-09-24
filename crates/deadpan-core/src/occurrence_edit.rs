@@ -89,6 +89,9 @@ pub enum OccurrenceEdit {
         edge: crate::AudioBoundaryKind,
         policy: crate::AudioEdgePolicy,
     },
+    SetFraming {
+        framing: Option<crate::Framing>,
+    },
     SetPlayOverride {
         iteration: IterationId,
         subtree: Subtree,
@@ -183,6 +186,10 @@ impl OccurrenceEdit {
             Self::Rename { label } => Command::Rename {
                 node,
                 label: label.clone(),
+            },
+            Self::SetFraming { framing } => Command::SetFraming {
+                node,
+                framing: framing.clone(),
             },
             Self::SetAudioEdge { edge, policy } => Command::SetAudioEdge {
                 node,
@@ -421,6 +428,7 @@ mod tests {
         document.nodes.insert(
             repeat.clone(),
             BeatNode {
+                framing: None,
                 audio_edges: Default::default(),
                 label: "repeat".into(),
                 kind: NodeKind::Repeat {

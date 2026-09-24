@@ -74,6 +74,10 @@ pub struct Picture {
     pub id: SourceFrameId,
     pub frame: Option<Rgba8Frame>,
     pub canvas: Option<(u32, u32)>,
+    /// Exact sampled scope order, provider to root. Never part of decoded bytes.
+    pub framing: Vec<deadpan_plan::PictureFraming>,
+    /// A Repeat gap has a provider before its first authored (Repeat) scope.
+    pub framing_gap: bool,
 }
 
 pub struct Reply {
@@ -313,6 +317,8 @@ fn perform(request: &Request, retained: &mut Option<RetainedSession>) -> Result<
         id,
         frame: Some(render_frame(decoded, session.source.info())?),
         canvas: None,
+        framing: Vec::new(),
+        framing_gap: false,
     })
 }
 
@@ -365,7 +371,11 @@ fn project_picture(
                 .select_source_frame(index)
                 .map_err(|error| error.to_string())?
                 .identity;
-            return registered_picture(workspace, registered, frame, canvas, cancelled, retained);
+            let mut picture =
+                registered_picture(workspace, registered, frame, canvas, cancelled, retained)?;
+            picture.framing = sample.framing;
+            picture.framing_gap = sample.gap_after.is_some();
+            return Ok(picture);
         }
     };
     let registered = registered_source(workspace, asset)?;
@@ -378,6 +388,8 @@ fn background_picture(canvas: Option<(u32, u32)>) -> Picture {
         id: SourceFrameId(0),
         frame: None,
         canvas,
+        framing: Vec::new(),
+        framing_gap: false,
     }
 }
 
@@ -500,6 +512,8 @@ fn registered_picture(
         id,
         frame: Some(render_frame(decoded, session.source.info())?),
         canvas,
+        framing: Vec::new(),
+        framing_gap: false,
     })
 }
 

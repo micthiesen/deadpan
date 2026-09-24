@@ -1,0 +1,7 @@
+{
+  "repository_fixture": "native/deadpan-source/tests/fixtures/cfr-bframes.mp4",
+  "copy": "/tmp/deadpan-framing-20260924/native-gui/Camera review.mp4",
+  "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+  "expected_library_base": "/Users/michael/Documents/Deadpan/Camera review.deadpan",
+  "base_exists": false
+}

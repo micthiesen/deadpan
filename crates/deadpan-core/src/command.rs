@@ -143,6 +143,10 @@ pub enum Command {
         edge: crate::AudioBoundaryKind,
         policy: crate::AudioEdgePolicy,
     },
+    SetFraming {
+        node: NodeId,
+        framing: Option<crate::Framing>,
+    },
     AddAsset {
         id: AssetId,
         asset: AssetRecord,
@@ -264,6 +268,16 @@ impl DocumentPatch {
                 "patch exceeds document limits",
             ));
         }
+        crate::framing::validate_nodes(
+            self.nodes
+                .values()
+                .filter_map(|change| change.before.as_ref()),
+        )?;
+        crate::framing::validate_nodes(
+            self.nodes
+                .values()
+                .filter_map(|change| change.after.as_ref()),
+        )?;
         let mut result = document.clone();
         if let Some(change) = &self.presentation {
             if document.presentation_state() != change.before {
@@ -602,6 +616,12 @@ pub(crate) fn reduce(
                     "reset this Sequence's explicit audio edge choices before ungrouping",
                 ));
             }
+            if beat.framing.is_some() {
+                return Err(EditError::new(
+                    EditErrorCode::InvalidCommand,
+                    "ungroup cannot yet preserve this Sequence's framing; retain the group or explicitly clear its framing",
+                ));
+            }
             let siblings = children_mut(document, &parent)?;
             let position = siblings
                 .iter()
@@ -628,6 +648,7 @@ pub(crate) fn reduce(
             document.nodes.insert(
                 id.clone(),
                 BeatNode {
+                    framing: None,
                     audio_edges: Default::default(),
                     label: "Repeat".into(),
                     kind: NodeKind::Repeat {
@@ -846,6 +867,7 @@ pub(crate) fn reduce(
                 document.nodes.insert(
                     insertion.node.clone(),
                     BeatNode {
+                        framing: None,
                         audio_edges: Default::default(),
                         label: insertion.label.clone(),
                         kind: NodeKind::Source {
@@ -854,6 +876,14 @@ pub(crate) fn reduce(
                     },
                 );
             }
+        }
+        Command::SetFraming { node, framing } => {
+            if let Some(framing) = framing {
+                framing.validate().map_err(|error| {
+                    EditError::new(EditErrorCode::InvalidCommand, error.to_string())
+                })?;
+            }
+            node_mut(document, node)?.framing = framing.clone();
         }
         Command::SetAudioEdge { node, edge, policy } => {
             let beat = node_mut(document, node)?;
@@ -968,6 +998,7 @@ fn prepare_subtree(
     for id in subtree.nodes.keys() {
         unused(document, id)?;
     }
+    crate::framing::validate_nodes(subtree.nodes.values())?;
     let mut prepared = subtree.clone();
     for (id, entries) in &subtree.overrides {
         let Some(BeatNode {
@@ -1359,6 +1390,7 @@ fn description(command: &Command) -> &'static str {
         Command::RevertGeneratedHold { .. } => "Revert generated hold",
         Command::Rename { .. } => "Rename beat",
         Command::SetAudioEdge { .. } => "Change audio edge policy",
+        Command::SetFraming { .. } => "Change framing",
         Command::AddAsset { .. } => "Register media asset",
         Command::ImportSource { .. } => "Import source media",
         Command::SetCanvas { .. } => "Change canvas geometry",

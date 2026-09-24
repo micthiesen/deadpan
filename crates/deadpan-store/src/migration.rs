@@ -45,7 +45,7 @@ impl ProjectStore {
                 backup: None,
             });
         }
-        if !matches!(version, 1..=22) {
+        if !matches!(version, 1..=23) {
             return Err(StoreError::UnsupportedSchema(version));
         }
         let lock = acquire_lock(&package)?;
@@ -200,6 +200,8 @@ fn migrate_candidate(
     // and history cannot contain authored timing bindings, even empty fields.
     // Schema 22 uses core schema 16 with owned timing bindings. It preserves
     // those values exactly but does not admit the new InsertTime command.
+    // Schema 23 uses core schema 17, including InsertTime. It gains no framing,
+    // and its closed node and command vocabulary rejects the new effect fields.
     // Replay all authored history, preserving operational rows and identities
     // while assigning FitBeat only to mappings absent in that legacy schema.
     // Schemas before 15 gain an explicit basis; schema 15 retains its policy.

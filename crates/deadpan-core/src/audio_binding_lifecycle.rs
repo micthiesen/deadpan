@@ -408,6 +408,7 @@ mod tests {
         document.nodes.insert(
             node("repeat"),
             BeatNode {
+                framing: None,
                 label: "Repeat".into(),
                 audio_edges: Default::default(),
                 kind: NodeKind::Repeat {

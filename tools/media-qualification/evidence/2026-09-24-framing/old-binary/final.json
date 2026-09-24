@@ -1,0 +1,246 @@
+{
+  "schema_version": 17,
+  "project_id": "fae28ee2-efb0-4435-a95d-e99a4f7081cb",
+  "revision_id": "867471d7-8105-4dd6-9803-1f2518308283",
+  "presentation_basis": {
+    "width": 16,
+    "height": 16,
+    "frame_rate": {
+      "numerator": 30000,
+      "denominator": 1001
+    },
+    "color_policy": "sdr_rec709"
+  },
+  "basis_state": {
+    "rate_origin": "explicit",
+    "geometry_origin": "explicit",
+    "primary": null
+  },
+  "root": "c289aced-ac0a-4d77-8bc0-121f54591304",
+  "nodes": {
+    "c289aced-ac0a-4d77-8bc0-121f54591304": {
+      "label": "Sequence",
+      "kind": {
+        "type": "sequence",
+        "children": [
+          "pause-two-copy-0",
+          "inserted",
+          "pause-two-copy-1"
+        ]
+      }
+    },
+    "hold": {
+      "label": "Pause",
+      "kind": {
+        "type": "hold",
+        "recipe": {
+          "duration": 8,
+          "video": {
+            "type": "background"
+          },
+          "audio": {
+            "type": "silence"
+          }
+        }
+      }
+    },
+    "inserted": {
+      "label": "Pause",
+      "kind": {
+        "type": "hold",
+        "recipe": {
+          "duration": 2,
+          "video": {
+            "type": "background"
+          },
+          "audio": {
+            "type": "silence"
+          }
+        }
+      }
+    },
+    "pause-two-copy-0": {
+      "label": "Pause",
+      "kind": {
+        "type": "retime",
+        "child": "hold",
+        "duration": 3,
+        "mapping": {
+          "start": 0,
+          "end": 3
+        },
+        "pitch": "preserve",
+        "purpose": "partition"
+      }
+    },
+    "pause-two-copy-1": {
+      "label": "Pause",
+      "kind": {
+        "type": "retime",
+        "child": "pause-two-copy-2",
+        "duration": 5,
+        "mapping": {
+          "start": 3,
+          "end": 8
+        },
+        "pitch": "preserve",
+        "purpose": "partition"
+      }
+    },
+    "pause-two-copy-2": {
+      "label": "Pause",
+      "kind": {
+        "type": "hold",
+        "recipe": {
+          "duration": 8,
+          "video": {
+            "type": "background"
+          },
+          "audio": {
+            "type": "silence"
+          }
+        }
+      }
+    }
+  },
+  "assets": {},
+  "marks": {},
+  "overrides": {},
+  "audio_lineage": {
+    "hold": {
+      "allocation": "pause-two",
+      "origin": "hold"
+    },
+    "pause-two-copy-2": {
+      "allocation": "pause-two",
+      "origin": "hold"
+    }
+  },
+  "audio_bindings": {
+    "timings": [
+      {
+        "id": {
+          "allocation": "pause-two",
+          "ordinal": 0
+        },
+        "layout": {
+          "root": "c289aced-ac0a-4d77-8bc0-121f54591304",
+          "rate": {
+            "numerator": 30000,
+            "denominator": 1001
+          },
+          "nodes": {
+            "c289aced-ac0a-4d77-8bc0-121f54591304": {
+              "duration": 8,
+              "edges": {
+                "node_start": "automatic",
+                "node_end": "automatic",
+                "source_placement_start": "automatic",
+                "source_placement_end": "automatic",
+                "repeat_gap_start": "automatic",
+                "repeat_gap_end": "automatic"
+              },
+              "kind": {
+                "type": "sequence",
+                "children": [
+                  "hold"
+                ]
+              }
+            },
+            "hold": {
+              "duration": 8,
+              "edges": {
+                "node_start": "automatic",
+                "node_end": "automatic",
+                "source_placement_start": "automatic",
+                "source_placement_end": "automatic",
+                "repeat_gap_start": "automatic",
+                "repeat_gap_end": "automatic"
+              },
+              "kind": {
+                "type": "hold",
+                "audio": {
+                  "type": "silence"
+                }
+              }
+            }
+          },
+          "overrides": {}
+        }
+      }
+    ],
+    "bindings": {
+      "hold": {
+        "lattice": {
+          "reference": {
+            "timing": {
+              "allocation": "pause-two",
+              "ordinal": 0
+            },
+            "root": {
+              "type": "project_root_round_even"
+            },
+            "physical": "hold"
+          },
+          "arguments": [],
+          "births": []
+        },
+        "resume": null
+      },
+      "pause-two-copy-2": {
+        "lattice": {
+          "reference": {
+            "timing": {
+              "allocation": "pause-two",
+              "ordinal": 0
+            },
+            "root": {
+              "type": "project_root_round_even"
+            },
+            "physical": "hold"
+          },
+          "arguments": [],
+          "births": []
+        },
+        "resume": {
+          "local_boundary": {
+            "numerator": "3",
+            "denominator": "1"
+          },
+          "phase": {
+            "constant": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "terms": [
+              {
+                "placement": {
+                  "reference": {
+                    "timing": {
+                      "allocation": "pause-two",
+                      "ordinal": 0
+                    },
+                    "root": {
+                      "type": "project_root_round_even"
+                    },
+                    "physical": "hold"
+                  },
+                  "arguments": [],
+                  "births": []
+                },
+                "from_local": {
+                  "numerator": "0",
+                  "denominator": "1"
+                },
+                "to_local": {
+                  "numerator": "3",
+                  "denominator": "1"
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}

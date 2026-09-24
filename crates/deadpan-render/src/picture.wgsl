@@ -1,5 +1,7 @@
 struct Parameters {
-    rectangle: vec4<f32>,
+    sampling_origin_x: vec4<f32>,
+    sampling_y: vec4<f32>,
+    coverage: vec4<f32>,
     interpretation: vec4<f32>,
     source_row0: vec4<f32>,
     source_row1: vec4<f32>,
@@ -45,17 +47,13 @@ fn working_texel(position: vec2<i32>) -> vec3<f32> {
 
 @fragment
 fn interpret(@builtin(position) position: vec4<f32>) -> @location(0) vec4<f32> {
-    let display_uv = (position.xy - parameters.rectangle.xy) / parameters.rectangle.zw;
-    if any(display_uv < vec2(0.0)) || any(display_uv >= vec2(1.0)) {
+    if any(position.xy < parameters.coverage.xy) || any(position.xy >= parameters.coverage.zw) {
         return vec4(0.0, 0.0, 0.0, 1.0);
     }
-    var uv = display_uv;
-    switch u32(parameters.interpretation.x) {
-        case 1u: { uv = vec2(display_uv.y, 1.0 - display_uv.x); }
-        case 2u: { uv = vec2(1.0) - display_uv; }
-        case 3u: { uv = vec2(1.0 - display_uv.y, display_uv.x); }
-        default: {}
-    }
+    let offset = position.xy - (parameters.coverage.xy + vec2(0.5));
+    let uv = parameters.sampling_origin_x.xy
+        + offset.x * parameters.sampling_origin_x.zw
+        + offset.y * parameters.sampling_y.xy;
     let source = uv * vec2<f32>(textureDimensions(picture)) - vec2(0.5);
     let base = vec2<i32>(floor(source));
     let fraction = fract(source);

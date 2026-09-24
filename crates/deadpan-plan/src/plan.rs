@@ -8,7 +8,7 @@ use deadpan_core::{
 };
 use serde::Serialize;
 
-use crate::{Picture, PictureSample, PlanError};
+use crate::{Picture, PictureFraming, PictureSample, PlanError};
 
 #[path = "audio.rs"]
 mod audio;
@@ -113,6 +113,7 @@ struct PlanNode {
     inspection: NodeInspection,
     kind: CompiledKind,
     audio_edges: deadpan_core::AudioEdgePolicies,
+    framing: Option<deadpan_core::Framing>,
 }
 
 #[derive(Debug, Clone)]
@@ -374,6 +375,7 @@ impl RenderPlan {
                 },
                 kind,
                 audio_edges: node.audio_edges,
+                framing: node.framing.clone(),
             });
         }
         let root = by_id[document.root()];
@@ -449,6 +451,7 @@ impl RenderPlan {
         let mut current = self.root;
         let mut repeats = Vec::new();
         let mut lookup = LookupStats::default();
+        let mut framing = Vec::new();
         let (picture, gap_after) = loop {
             let node = &self.nodes[current];
             lookup.visited_nodes += 1;
@@ -461,6 +464,19 @@ impl RenderPlan {
                     "local picture coordinate exceeds node duration",
                 ));
             }
+            framing.push(PictureFraming {
+                instance: InstancePath {
+                    node: node.inspection.id.clone(),
+                    repeats: repeats.clone(),
+                },
+                local_position: local,
+                duration: node.inspection.duration,
+                pose: node
+                    .framing
+                    .as_ref()
+                    .map(|framing| framing.evaluate(local, node.inspection.duration))
+                    .transpose()?,
+            });
             match &node.kind {
                 CompiledKind::Source {
                     video,
@@ -532,6 +548,7 @@ impl RenderPlan {
                 }
             }
         };
+        framing.reverse();
         Ok(PictureSample {
             project_id: self.metadata.project_id.clone(),
             revision_id: self.metadata.revision_id.clone(),
@@ -543,6 +560,7 @@ impl RenderPlan {
             gap_after,
             local_position: local,
             picture,
+            framing,
             lookup,
         })
     }

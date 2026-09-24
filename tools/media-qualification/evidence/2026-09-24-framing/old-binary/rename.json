@@ -1,0 +1,11 @@
+{
+  "protocol": 1,
+  "project_id": "fae28ee2-efb0-4435-a95d-e99a4f7081cb",
+  "expected_revision": "pause-two",
+  "new_revision": "rename",
+  "command": {
+    "command": "rename",
+    "node": "inserted",
+    "label": "Old binary pause"
+  }
+}

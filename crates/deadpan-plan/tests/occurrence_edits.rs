@@ -33,6 +33,7 @@ fn gap(frames: i64) -> Option<HoldRecipe> {
 }
 fn repeat(child: &str, plays: u32, gap_frames: i64, allocation: &str) -> BeatNode {
     BeatNode {
+        framing: None,
         audio_edges: Default::default(),
         label: allocation.into(),
         kind: NodeKind::Repeat {
@@ -60,6 +61,7 @@ fn span(start: i64, end: i64) -> SourceSpan {
 }
 fn source(frames: i64, start: i64, end: i64) -> BeatNode {
     BeatNode {
+        framing: None,
         audio_edges: Default::default(),
         label: "Original speech".into(),
         kind: NodeKind::Source {
@@ -80,6 +82,7 @@ fn source(frames: i64, start: i64, end: i64) -> BeatNode {
 }
 fn retime(child: &str, frames: i64, start: i64, end: i64) -> BeatNode {
     BeatNode {
+        framing: None,
         audio_edges: Default::default(),
         label: "Exact retime".into(),
         kind: NodeKind::Retime {

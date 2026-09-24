@@ -1,0 +1,95 @@
+{
+  "passed": true,
+  "pairs": [
+    {
+      "image": "boards/product-board-v1.png",
+      "sha256": "6f433ece606255242002a7d15d3286a47f339335c19763730e422ebdedb5e7e5",
+      "prompt": "prompts/product-board-v1.txt",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "verified": true
+    },
+    {
+      "image": "boards/workspace-target-v1.png",
+      "sha256": "65423f21e10b757d9335f8cf28b74a94c6225eb788a746cc5cfb5264bff84c2d",
+      "prompt": "prompts/workspace-target-v1.txt",
+      "dimensions": [
+        1586,
+        992
+      ],
+      "verified": true
+    },
+    {
+      "image": "boards/workflows-board-v1.png",
+      "sha256": "5190d1f5d011ddef79841f6240720d0f81d924adae89ba1daa85f1eed9725b22",
+      "prompt": "prompts/workflows-board-v1.txt",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "verified": true
+    },
+    {
+      "image": "boards/workflows-board-v2.png",
+      "sha256": "bac47ac2167715affb0fdddcaa30b69733c6967d30e9f1d315e933ceb22aa594",
+      "prompt": "prompts/workflows-board-v2.txt",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "verified": true
+    },
+    {
+      "image": "boards/single-source-workspace-v1.png",
+      "sha256": "d95eefb072f40d27562c6ab5286d3fae131275a615bcfbbf974bffea07a5f8d1",
+      "prompt": "prompts/single-source-workspace-v1.txt",
+      "dimensions": [
+        1586,
+        992
+      ],
+      "verified": true
+    },
+    {
+      "image": "boards/single-source-product-board-v1.png",
+      "sha256": "5b1ab5d433174e43d3afd41b68e991953817bfed515d14473dc1428a410e8731",
+      "prompt": "prompts/single-source-product-board-v1.txt",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "verified": true
+    },
+    {
+      "image": "boards/single-source-product-board-v2.png",
+      "sha256": "5768b4125b985118391ef758cf581758d25028a504a506511d3e6883eb92b361",
+      "prompt": "prompts/single-source-product-board-v2.txt",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "verified": true
+    },
+    {
+      "image": "boards/single-source-workflows-v1.png",
+      "sha256": "430faa97020f2cd9da0aa9156dc6dfa2099597e37652773c50133a9f89ef7f57",
+      "prompt": "prompts/single-source-workflows-v1.txt",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "verified": true
+    },
+    {
+      "image": "boards/camera-framing-board-v1.png",
+      "sha256": "9bf79bcb8c4089652b3a0e55ba9a1f0526a80035e4d5080e65bdf82ca4c27306",
+      "prompt": "prompts/camera-framing-board-v1.txt",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "verified": true
+    }
+  ]
+}

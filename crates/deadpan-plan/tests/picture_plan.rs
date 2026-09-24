@@ -37,6 +37,7 @@ fn span(start: i64, end: i64) -> SourceSpan {
 }
 fn node(kind: NodeKind) -> BeatNode {
     BeatNode {
+        framing: None,
         audio_edges: Default::default(),
         label: "Fixture".into(),
         kind,
@@ -166,6 +167,171 @@ fn ticks(picture: &Picture) -> ExactRatio {
     match picture {
         Picture::Source { point, .. } | Picture::Freeze { point, .. } => point.ticks,
         other => panic!("unexpected {other:?}"),
+    }
+}
+
+fn framed(mut node: BeatNode, end_scale: i64) -> BeatNode {
+    node.framing = Some(
+        Framing::creep(
+            FramingPose::identity(),
+            FramingPose::new(
+                ExactRatio::new(1, 2).unwrap(),
+                ExactRatio::new(1, 2).unwrap(),
+                ExactRatio::integer(end_scale),
+            )
+            .unwrap(),
+            FramingCurve::Linear,
+        )
+        .unwrap(),
+    );
+    node
+}
+
+#[test]
+fn framing_retains_every_owner_clock_and_repeat_scope_in_composition_order() {
+    let document = document(
+        &["lead", "group"],
+        vec![
+            ("lead", hold(3)),
+            ("group", BeatNode::sequence("group", vec![id("repeat")])),
+            ("repeat", framed(repeat("retime", 3, 1, "plays"), 2)),
+            ("retime", framed(retime("source", 4, 0, 8), 2)),
+            ("source", framed(source(8, 0, 8000), 3)),
+        ],
+    );
+    let plan = RenderPlan::compile(&document).unwrap();
+    let sample = plan.picture(ProjectFrame(9)).unwrap();
+    let layers = &sample.framing;
+    assert_eq!(
+        layers
+            .iter()
+            .map(|l| l.instance.node.as_str())
+            .collect::<Vec<_>>(),
+        ["source", "retime", "repeat", "group", "root"]
+    );
+    assert_eq!(
+        layers.iter().map(|l| l.local_position).collect::<Vec<_>>(),
+        [
+            ExactRatio::integer(3),
+            ExactRatio::new(3, 2).unwrap(),
+            ExactRatio::new(13, 2).unwrap(),
+            ExactRatio::new(13, 2).unwrap(),
+            ExactRatio::new(19, 2).unwrap()
+        ]
+    );
+    assert_eq!(
+        layers
+            .iter()
+            .map(|l| l.duration.frames())
+            .collect::<Vec<_>>(),
+        [8, 4, 14, 14, 17]
+    );
+    assert_eq!(
+        layers[0].pose.unwrap().scale,
+        ExactRatio::new(7, 4).unwrap()
+    );
+    assert_eq!(
+        layers[1].pose.unwrap().scale,
+        ExactRatio::new(11, 8).unwrap()
+    );
+    assert_eq!(layers[0].instance.repeats[0].iteration.ordinal, 1);
+    assert_eq!(layers[1].instance.repeats[0].iteration.ordinal, 1);
+    assert!(layers[2].instance.repeats.is_empty());
+    assert!(layers[3].pose.is_none() && layers[4].pose.is_none());
+    for layer in layers {
+        layer.instance.validate(&document).unwrap();
+    }
+    assert!(sample.lookup.visited_nodes <= 5);
+
+    let gap = plan.picture(ProjectFrame(7)).unwrap();
+    assert_eq!(gap.gap_after.unwrap().ordinal, 0);
+    assert_eq!(
+        gap.framing
+            .iter()
+            .map(|l| l.instance.node.as_str())
+            .collect::<Vec<_>>(),
+        ["repeat", "group", "root"]
+    );
+    assert_eq!(gap.local_position, ExactRatio::new(1, 2).unwrap());
+    assert_eq!(
+        gap.framing[0].local_position,
+        ExactRatio::new(9, 2).unwrap()
+    );
+    assert_eq!(gap.framing[0].duration, duration(14));
+}
+
+#[test]
+fn freeze_picture_identity_stays_fixed_while_its_framing_clock_advances() {
+    let freeze = node(NodeKind::Hold {
+        recipe: HoldRecipe {
+            duration: duration(8),
+            video: HoldVideo::Freeze {
+                asset: asset_id("video"),
+                timestamp: SourceTimestamp {
+                    ticks: 1001,
+                    time_base: clock(),
+                },
+            },
+            audio: HoldAudio::Silence,
+        },
+    });
+    let document = document(&["hold"], vec![("hold", framed(freeze, 3))]);
+    let plan = RenderPlan::compile(&document).unwrap();
+    let first = plan.picture(ProjectFrame(0)).unwrap();
+    let last = plan.picture(ProjectFrame(7)).unwrap();
+    assert_eq!(first.picture, last.picture);
+    assert_eq!(
+        first.framing[0].pose.unwrap().scale,
+        ExactRatio::new(9, 8).unwrap()
+    );
+    assert_eq!(
+        last.framing[0].pose.unwrap().scale,
+        ExactRatio::new(23, 8).unwrap()
+    );
+}
+
+#[test]
+fn source_framing_envelope_survives_actual_split_without_reset_or_duplication() {
+    let before = document(&["source"], vec![("source", framed(source(9, 0, 9009), 3))]);
+    let original = RenderPlan::compile(&before).unwrap();
+    let transaction = apply(
+        &before,
+        &CommandRequest {
+            project_id: before.project_id().clone(),
+            expected_revision: before.revision_id().clone(),
+            new_revision: revision("split-framing"),
+            command: Command::Split {
+                node: id("source"),
+                at: duration(4),
+                identities: SplitIdentities {
+                    nodes: (0..10).map(|n| id(&format!("part-{n}"))).collect(),
+                },
+            },
+        },
+    )
+    .unwrap();
+    let divided = transaction.forward.apply(&before).unwrap();
+    let after = RenderPlan::compile(&divided).unwrap();
+    for frame in [8, 0, 3, 4, 7, 1, 5, 2, 6] {
+        let old = original.picture(ProjectFrame(frame)).unwrap();
+        let new = after.picture(ProjectFrame(frame)).unwrap();
+        assert_eq!(old.picture, new.picture);
+        assert_eq!(
+            old.framing
+                .iter()
+                .filter_map(|l| l.pose)
+                .collect::<Vec<_>>(),
+            new.framing
+                .iter()
+                .filter_map(|l| l.pose)
+                .collect::<Vec<_>>()
+        );
+        let old = old.framing.iter().find(|l| l.pose.is_some()).unwrap();
+        let new = new.framing.iter().find(|l| l.pose.is_some()).unwrap();
+        assert_eq!(
+            (old.local_position, old.duration),
+            (new.local_position, new.duration)
+        );
     }
 }
 

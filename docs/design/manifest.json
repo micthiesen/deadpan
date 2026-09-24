@@ -99,6 +99,19 @@
       "referenced_images": [
         "boards/single-source-workspace-v1.png"
       ]
+    },
+    {
+      "image": "boards/camera-framing-board-v1.png",
+      "status": "current-target",
+      "generated_on": "2026-09-24",
+      "sha256": "9bf79bcb8c4089652b3a0e55ba9a1f0526a80035e4d5080e65bdf82ca4c27306",
+      "width": 1536,
+      "height": 1024,
+      "prompt": "prompts/camera-framing-board-v1.txt",
+      "prompt_sha256": "5a5a7941c4a6082b7c4bad251a49f755dcfad3da3e69fc30d5ba530bec533d87",
+      "referenced_images": [
+        "boards/single-source-workspace-v1.png"
+      ]
     }
   ]
 }

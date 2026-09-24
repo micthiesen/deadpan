@@ -29,6 +29,7 @@ impl DeadpanApp {
     }
 
     pub(super) fn toggle_playback(&mut self) {
+        self.cancel_camera();
         if self.transport.is_some() {
             // Admit the latest device estimate before immediate revocation.
             // Already submitted native buffers are not retractable.

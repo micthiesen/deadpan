@@ -548,6 +548,7 @@ fn reference(gap: InputGap) -> Arc<AudioReferencePlan> {
         .unwrap(),
     };
     let source = |frames| BeatNode {
+        framing: None,
         label: "Synthetic input".into(),
         audio_edges: Default::default(),
         kind: NodeKind::Source {
@@ -608,6 +609,7 @@ fn reference(gap: InputGap) -> Arc<AudioReferencePlan> {
         (
             id("preserve"),
             BeatNode {
+                framing: None,
                 label: "Full Preserve history".into(),
                 audio_edges: Default::default(),
                 kind: NodeKind::Retime {

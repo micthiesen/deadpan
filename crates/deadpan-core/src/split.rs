@@ -66,7 +66,7 @@ pub(crate) fn apply(
             mapping,
             purpose: RetimePurpose::Partition,
             ..
-        } => Some((child, *mapping)),
+        } if original.framing.is_none() => Some((child, *mapping)),
         _ => None,
     };
     let context = refinement.map_or(target, |(child, _)| child);
@@ -200,6 +200,7 @@ fn partition(
     let mapping =
         FrameRange::new(ProjectFrame(start), ProjectFrame(end)).map_err(DocumentError::from)?;
     Ok(BeatNode {
+        framing: None,
         label: label.into(),
         kind: NodeKind::Retime {
             child,

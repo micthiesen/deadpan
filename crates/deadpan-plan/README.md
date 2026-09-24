@@ -33,6 +33,17 @@ only its repeated ancestors; `gap_after` identifies the stable preceding
 iteration. Both paths satisfy core validation. No gap follows the last play,
 and iteration reordering changes positions without changing those identities.
 
+`PictureSample.framing` retains every visited owner in provider-to-root order,
+including identity scopes, with its `InstancePath`, exact output-local position,
+duration and optional evaluated `FramingPose`. Owner envelopes use the shared
+core evaluator: segment/time selection is exact and interpolated values follow
+its declared numeric policy. A Retime's own operation uses its output clock;
+its child operation uses mapped child time. Child Repeat effects reset per play,
+while Repeat-owner effects span the full passage, including gaps. Gap framing
+starts with the actual Repeat scope and requires the renderer's separate identity
+provider clip. Keeping the full path lets a transient Camera replace the selected
+operation in place without appending it after ancestor effects.
+
 The tests cover negative/fractional source origins, exact sequence boundaries,
 VFR lookup, nested retimes/repeats, accepted frame mapping, all picture provider
 variants, stable gap identities after reordering, binary iteration-run lookup,
@@ -48,7 +59,7 @@ cargo fmt -p deadpan-plan -- --check
 ```
 
 This is a structural picture mapping layer, not a media renderer. It has no
-decoders, pixels, GPU handles, audio mapping/DSP, effects, framing, attachments,
+decoders, pixels, GPU handles, audio DSP, pixel effects, attachments,
 color transforms, cache fragments, incremental recompilation, transport, or
 export implementation. Compilation currently rebuilds the full structural
 index. Exact arithmetic is bounded by checked `i128` intermediates; an

@@ -80,6 +80,7 @@ fn fixture(offset: AudioSample, mapping: SourceAudioMapping) -> ProjectDocument 
         span: span(),
     };
     let source_node = BeatNode {
+        framing: None,
         label: "private source label".into(),
         audio_edges: AudioEdgePolicies {
             source_placement_start: AudioEdgePolicy::Hard,
@@ -101,6 +102,7 @@ fn fixture(offset: AudioSample, mapping: SourceAudioMapping) -> ProjectDocument 
         },
     };
     let picture_only = BeatNode {
+        framing: None,
         label: "picture only".into(),
         audio_edges: Default::default(),
         kind: NodeKind::Source {
@@ -130,6 +132,7 @@ fn fixture(offset: AudioSample, mapping: SourceAudioMapping) -> ProjectDocument 
         },
     );
     let repeat = BeatNode {
+        framing: None,
         label: "repeat".into(),
         audio_edges: Default::default(),
         kind: NodeKind::Repeat {

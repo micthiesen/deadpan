@@ -31,6 +31,7 @@ fn source(rate: FrameRate, start: i64, end: i64, duration: i64) -> BeatNode {
         .unwrap(),
     };
     BeatNode {
+        framing: None,
         label: "Source".into(),
         audio_edges: Default::default(),
         kind: NodeKind::Source {
@@ -60,6 +61,7 @@ fn hold(duration: i64) -> BeatNode {
 
 fn preserve(child: &str, selected: i64, duration: i64) -> BeatNode {
     BeatNode {
+        framing: None,
         label: "Preserve".into(),
         audio_edges: Default::default(),
         kind: NodeKind::Retime {
@@ -581,6 +583,7 @@ fn fresh_follow_speed_keeps_two_millisecond_post_mapping_fades() {
 fn bound_hidden_negative_support_is_not_capped_to_the_old_project() {
     let rate = FrameRate::new(30_000, 1001).unwrap();
     let partition = BeatNode {
+        framing: None,
         label: "Hidden start".into(),
         audio_edges: Default::default(),
         kind: NodeKind::Retime {
@@ -654,6 +657,7 @@ fn new_ordinary_edit_crop_excludes_filter_context_from_bound_raw_source() {
         vec![("prefix", hold(1)), ("a", source(rate, 0, 6406, 4))],
     );
     let crop = BeatNode {
+        framing: None,
         label: "Authored trim".into(),
         audio_edges: Default::default(),
         kind: NodeKind::Retime {
@@ -1019,6 +1023,7 @@ fn cached_intrinsic_depth_is_readmitted_before_dependency_access() {
 fn reordered_survivors_keep_old_phase_and_a_fresh_play_uses_definition_phase() {
     let rate = FrameRate::new(30_000, 1001).unwrap();
     let repeat = BeatNode {
+        framing: None,
         label: "Repeat".into(),
         audio_edges: Default::default(),
         kind: NodeKind::Repeat {

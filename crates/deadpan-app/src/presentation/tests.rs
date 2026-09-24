@@ -84,6 +84,8 @@ fn picture(id: u64) -> Picture {
             .unwrap(),
         ),
         canvas: None,
+        framing: Vec::new(),
+        framing_gap: false,
     }
 }
 
@@ -97,6 +99,113 @@ fn accept(state: &mut Presentation, ticket: Ticket, picture: Picture) {
             .unwrap()
             .is_ok()
     );
+}
+
+fn camera_picture() -> (Picture, deadpan_core::InstancePath) {
+    let mut value = picture(4);
+    let scope = deadpan_core::InstancePath {
+        node: deadpan_core::NodeId::new("pause").unwrap(),
+        repeats: Vec::new(),
+    };
+    value.canvas = Some((1920, 1080));
+    value.framing.push(deadpan_plan::PictureFraming {
+        instance: scope.clone(),
+        local_position: deadpan_core::ExactRatio::new(1, 2).unwrap(),
+        duration: deadpan_core::FrameDuration::new(11).unwrap(),
+        pose: None,
+    });
+    (value, scope)
+}
+
+#[test]
+fn camera_geometry_redraws_same_bytes_and_only_submission_advances_display() {
+    let mut state = Presentation {
+        requested: Some(project_request(20, 1, "r1", false)),
+        ..Default::default()
+    };
+    let (value, scope) = camera_picture();
+    accept(&mut state, ticket(1, 1), value);
+    let revision = RevisionId::new("r1").unwrap();
+    assert_eq!(
+        state.stable_sequence_ticket(1, &revision, ProjectFrame(20)),
+        None
+    );
+    state.presented();
+    assert_eq!(
+        state.stable_sequence_ticket(1, &revision, ProjectFrame(20)),
+        Some(ticket(1, 1))
+    );
+    let bytes = state.picture().unwrap().frame.as_ref().unwrap() as *const Rgba8Frame;
+    let pose = deadpan_core::FramingPose {
+        center_x: deadpan_core::ExactRatio::new(58, 100).unwrap(),
+        center_y: deadpan_core::ExactRatio::new(46, 100).unwrap(),
+        scale: deadpan_core::ExactRatio::new(135, 100).unwrap(),
+    };
+    state
+        .set_framing_pose(ticket(1, 1), &scope, Some(pose))
+        .unwrap();
+    assert!(state.needs_render());
+    assert_eq!(state.displayed.as_ref().unwrap().geometry_revision, 0);
+    assert_eq!(
+        state.picture().unwrap().frame.as_ref().unwrap() as *const Rgba8Frame,
+        bytes
+    );
+    state.render_failed("GPU temporarily unavailable".into());
+    assert_eq!(state.displayed.as_ref().unwrap().geometry_revision, 0);
+    // Escape restores the captured entry operation and can recover a failed draw.
+    state.set_framing_pose(ticket(1, 1), &scope, None).unwrap();
+    assert!(state.needs_render());
+    assert!(state.can_render());
+    state.presented();
+    assert_eq!(state.displayed.as_ref().unwrap().geometry_revision, 2);
+    assert!(!state.needs_render());
+    assert_eq!(state.displayed_source_frame(), Some(SourceFrameId(4)));
+}
+
+#[test]
+fn camera_ticket_cannot_modify_retained_picture_after_a_new_request() {
+    let mut state = Presentation {
+        requested: Some(project_request(20, 1, "r1", false)),
+        ..Default::default()
+    };
+    let (value, scope) = camera_picture();
+    accept(&mut state, ticket(1, 1), value);
+    state.presented();
+    state.requested = Some(project_request(20, 2, "r2", false));
+    state.loading = true;
+    assert!(
+        state
+            .set_framing_pose(ticket(1, 1), &scope, Some(Default::default()))
+            .is_err()
+    );
+    assert_eq!(state.picture().unwrap().framing[0].pose, None);
+    assert_eq!(
+        state.stable_sequence_ticket(1, &RevisionId::new("r1").unwrap(), ProjectFrame(20)),
+        None
+    );
+    let (mut current, _) = camera_picture();
+    current.framing[0].pose = Some(Default::default());
+    accept(&mut state, ticket(1, 2), current);
+    assert!(state.set_framing_pose(ticket(1, 1), &scope, None).is_err());
+    assert_eq!(
+        state.picture().unwrap().framing[0].pose,
+        Some(Default::default())
+    );
+    state.presented();
+    assert_eq!(
+        state.stable_sequence_ticket(2, &RevisionId::new("r2").unwrap(), ProjectFrame(20)),
+        None
+    );
+    assert_eq!(
+        state.stable_sequence_ticket(1, &RevisionId::new("r2").unwrap(), ProjectFrame(21)),
+        None
+    );
+    assert_eq!(
+        state.stable_sequence_ticket(1, &RevisionId::new("r2").unwrap(), ProjectFrame(20)),
+        Some(ticket(1, 2))
+    );
+    state.invalidate_pending();
+    assert!(state.set_framing_pose(ticket(1, 2), &scope, None).is_err());
 }
 
 #[test]
@@ -351,6 +460,8 @@ fn background_and_empty_sequence_do_not_invent_source_frame_identity() {
                 id: SourceFrameId(0),
                 frame: None,
                 canvas: Some((1920, 1080)),
+                framing: Vec::new(),
+                framing_gap: false,
             },
         );
         assert!(state.needs_render());

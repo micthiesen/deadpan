@@ -209,6 +209,18 @@ unsupported shifted structures fail without an edit. Existing child-index Insert
 retains its distinct semantics. [Splice design prerequisites](STRUCTURAL_SPLICE_DESIGN.md)
 record the wider scope still required.
 
+`,f` opens a temporary [Camera draft](FRAMING.md) on the selected root beat in
+Your edit. The stopped picture previews source-relative `h/j/k/l` movement,
+counted zoom steps and numbered center/corner targets. Numeric fields use canvas
+percentages, preserve native text editing and expose validation before Apply.
+Enter applies one edit and keeps the cursor; Escape restores the entry framing.
+Ordinary Camera changes move the complete existing curve. Reset replaces it;
+`,z` creates a static 1.35× punch and `,c` creates a whole-beat smoothstep creep.
+The normal inspector distinguishes static framing from whole-beat motion.
+Saved regions, tracking and native nested targets remain open. A native pause
+from an already framed picture is refused until a durable composition snapshot
+can retain its crops; it must never silently freeze the bare Original instead.
+
 [Qualification](qualification/native-workspace-2026-09-21.md) records the actual
 service, decoder, keyboard/focus and native interaction checks and their limits.
 The [root editing qualification](qualification/native-editing-2026-09-23.md)

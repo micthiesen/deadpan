@@ -47,6 +47,7 @@ fn audio(start: i64, end: i64) -> SourceAudio {
 
 fn source(frames: i64, start: i64, end: i64, mapping: SourceAudioMapping) -> BeatNode {
     BeatNode {
+        framing: None,
         audio_edges: Default::default(),
         label: "Source".into(),
         kind: NodeKind::Source {
@@ -77,6 +78,7 @@ fn hold(frames: i64) -> BeatNode {
 
 fn retime(child: &str, frames: i64, start: i64, end: i64, pitch: PitchPolicy) -> BeatNode {
     BeatNode {
+        framing: None,
         audio_edges: Default::default(),
         label: "Retime".into(),
         kind: NodeKind::Retime {
@@ -98,6 +100,7 @@ fn iteration(ordinal: u32) -> IterationId {
 
 fn repeat(child: &str, plays: u32, gap: i64) -> BeatNode {
     BeatNode {
+        framing: None,
         audio_edges: Default::default(),
         label: "Repeat".into(),
         kind: NodeKind::Repeat {

@@ -19,6 +19,8 @@ use crate::project::{
 };
 use crate::worker::{PreviewWorker, ProjectView, SourceSummary, Ticket, Work};
 
+mod camera;
+mod camera_fields;
 mod cards;
 mod help_scroll;
 mod inspector;
@@ -105,6 +107,8 @@ pub struct DeadpanApp {
     command_open: bool,
     command_focus_pending: bool,
     bindings: Bindings,
+    camera: Option<camera::CameraSession>,
+    camera_pending: Option<camera::CameraPending>,
     ime_composing: bool,
     help_open: bool,
     help_scroll: help_scroll::HelpScroll,
@@ -188,6 +192,8 @@ impl DeadpanApp {
             command_open: false,
             command_focus_pending: false,
             bindings: Bindings::default(),
+            camera: None,
+            camera_pending: None,
             ime_composing: false,
             help_open: false,
             help_scroll: help_scroll::HelpScroll::default(),
@@ -221,6 +227,7 @@ impl DeadpanApp {
     }
 
     fn submit(&mut self, request: ProjectRequest) -> bool {
+        self.cancel_camera();
         self.stop_playback();
         self.bindings.clear();
         match self.service.submit(request) {
@@ -257,6 +264,7 @@ impl DeadpanApp {
     /// Clear presentation while a self-contained request replaces the picture.
     /// The worker keeps its verified decoder until the session/asset key changes.
     fn reset_picture(&mut self) {
+        self.cancel_camera();
         self.presentation.clear();
         if self.raw_source.is_none() {
             self.summary = None;
@@ -308,6 +316,9 @@ impl DeadpanApp {
     }
 
     fn request_picture(&mut self, clear: bool) {
+        // Pointer navigation also reaches this boundary. Revoke the draft in
+        // this frame, before a later inspector widget could apply its old scope.
+        self.cancel_camera();
         self.stop_playback();
         self.request_picture_for_transport(clear, None);
     }
@@ -455,6 +466,12 @@ impl DeadpanApp {
                 completed,
             );
             let committed_selection = completion == selection::Completion::Edit;
+            let preserve_picture = committed_selection
+                && old_session == new_session
+                && update
+                    .committed
+                    .as_ref()
+                    .is_some_and(|commit| commit.preserve_cursor);
             self.view
                 .set(self.view.after_completion(&completion), &mut self.message);
             if let Some(commit) = update.committed.filter(|_| committed_selection) {
@@ -467,7 +484,9 @@ impl DeadpanApp {
                     .iter()
                     .find(|b| Some(&b.id) == self.selected_beat.as_ref())
                 {
-                    self.sequence_cursor = beat.start;
+                    if !commit.preserve_cursor {
+                        self.sequence_cursor = beat.start;
+                    }
                     self.reveal_beat = true;
                 } else {
                     self.selected_beat = None;
@@ -494,7 +513,7 @@ impl DeadpanApp {
                 self.reconcile_beat_selection();
             }
             if old_revision != new_revision || old_session != new_session || completed {
-                self.request_picture(true);
+                self.request_picture(!preserve_picture);
             }
         }
         if let Some(result) = self
@@ -519,6 +538,7 @@ impl DeadpanApp {
         if self.dialogs.is_open() || self.service.is_busy() {
             return;
         }
+        self.cancel_camera();
         self.pause_playback();
         if matches!(
             kind,
@@ -888,7 +908,11 @@ impl DeadpanApp {
     }
 
     fn action(&mut self, action: Action, context: &egui::Context) {
+        if self.camera.is_some() && !matches!(action, Action::Framing(_)) {
+            self.cancel_camera();
+        }
         match action {
+            Action::Framing(action) => self.framing_action(action, context),
             Action::New => self.begin_dialog(DialogKind::CreateProject, context, false),
             Action::Open => self.begin_dialog(DialogKind::OpenProject, context, false),
             Action::Import => self.begin_dialog(self.import_dialog_kind(), context, false),
@@ -1093,6 +1117,44 @@ impl DeadpanApp {
             {
                 let focused = text_input_active(context, self.command_open);
                 let ime = self.ime_composing || ime_event;
+                if self.camera.is_some() {
+                    match camera::dispatch_key(
+                        key,
+                        modifiers,
+                        focused,
+                        ime,
+                        repeat,
+                        self.camera_field_focused(context),
+                        control_owns_activation(context, key),
+                    ) {
+                        camera::KeyDispatch::Native => {
+                            self.camera_input(navigation::camera::CameraKey::ClearCount, context);
+                            continue;
+                        }
+                        camera::KeyDispatch::Deferred(camera_key) => {
+                            self.defer_camera_field_key(camera_key);
+                            context.input_mut(|input| {
+                                input.consume_key(modifiers, key);
+                            });
+                            continue;
+                        }
+                        camera::KeyDispatch::Draft(camera_key) => {
+                            if matches!(camera_key, navigation::camera::CameraKey::Tab { .. }) {
+                                camera::retain_field_input_suffix(context, events.as_slice());
+                            }
+                            self.camera_input(camera_key, context);
+                            context.input_mut(|input| {
+                                input.consume_key(modifiers, key);
+                            });
+                            continue;
+                        }
+                        camera::KeyDispatch::Global => {
+                            // Recognized global actions cancel the draft through
+                            // the ordinary action path. Native text shortcuts
+                            // continue to use their original focus context.
+                        }
+                    }
+                }
                 if self
                     .monitor_control
                     .is_some_and(|id| context.memory(|m| m.has_focus(id)))
@@ -1291,6 +1353,8 @@ impl DeadpanApp {
                             if self.service.is_busy() {
                                 ui.spinner();
                                 ui.weak("Working");
+                            } else if self.camera.is_some() {
+                                ui.colored_label(style::LAVENDER, "Draft preview");
                             } else if self.workspace.is_some() {
                                 ui.colored_label(style::SAVED, "Saved")
                                     .on_hover_text("Current committed revision is saved locally");
@@ -1303,6 +1367,10 @@ impl DeadpanApp {
 
     fn footer(&mut self, ui: &mut egui::Ui) {
         egui::Panel::bottom("workspace-status").resizable(false).frame(style::panel()).show(ui, |ui| {
+            if self.camera.is_some() {
+                self.camera_footer(ui);
+                return;
+            }
             let pending = self.bindings.pending();
             let mode = if self.command_open { "COMMAND" } else if text_input_active(ui.ctx(), false) { "TEXT" } else if pending.is_empty() { "NORMAL" } else { "PENDING" };
             ui.horizontal_wrapped(|ui| {
@@ -1348,6 +1416,7 @@ impl DeadpanApp {
                         style::key_hint(ui, "j k", "beat");
                         style::key_hint(ui, "s", "split");
                         style::key_hint(ui, ",h", "pause");
+                        style::key_hint(ui, ",f", "camera");
                         style::key_hint(ui, "rr", "repeat");
                         style::key_hint(ui, "dd", "cut beat");
                         style::key_hint(ui, "u", "undo");
@@ -1618,6 +1687,10 @@ impl DeadpanApp {
     }
 
     fn inspector(&mut self, ui: &mut egui::Ui) {
+        if self.camera.is_some() {
+            self.camera_inspector(ui);
+            return;
+        }
         let Some(data) = self.inspector_description() else {
             return;
         };
@@ -1699,6 +1772,15 @@ impl DeadpanApp {
                         );
                         ui.add_space(8.0);
                         ui.add_enabled_ui(ready, |ui| {
+                            for (label, action) in [
+                                ("Camera…  ·  ,f", navigation::FramingAction::EnterCamera),
+                                ("Punch in 1.35×  ·  ,z", navigation::FramingAction::PunchIn),
+                                ("Creep to 1.35×  ·  ,c", navigation::FramingAction::Creep),
+                            ] {
+                                if ui.add_sized([ui.available_width(), 28.0], egui::Button::new(label)).clicked() {
+                                    self.framing_action(action, ui.ctx());
+                                }
+                            }
                             if ui.add_sized([ui.available_width(), 28.0], egui::Button::new("Insert pause  ·  ,h"))
                                 .on_hover_text("Insert 0.5 s of frozen picture and silence at the cursor. A count scales the duration: 3,h adds 1.5 s.")
                                 .clicked()
@@ -1757,7 +1839,11 @@ impl DeadpanApp {
                 if self.view == View::Sequence { ui.add(egui::Label::new(egui::RichText::new(if self.focused_workflow() { "Same original. Your changes." } else { "Current sequence" }).color(style::MUTED).size(12.0)).truncate()); }
                 else if let Some(source) = self.workspace.as_ref().and_then(|w| self.selected_source.as_ref().and_then(|id| w.sources.get(id))) { ui.add(egui::Label::new(egui::RichText::new(&source.label).color(style::MUTED).size(12.0)).truncate()).on_hover_text(&source.label); }
             });
-            let available = egui::vec2(ui.available_width().max(1.0), (ui.available_height() - if self.view == View::Sequence { 142.0 } else { 98.0 }).max(50.0));
+            if self.camera.is_some() {
+                ui.label(egui::RichText::new("CAMERA · Draft preview").color(style::LAVENDER));
+            }
+            let controls_height = if self.camera.is_some() { 88.0 } else if self.view == View::Sequence { 142.0 } else { 98.0 };
+            let available = egui::vec2(ui.available_width().max(1.0), (ui.available_height() - controls_height).max(50.0));
             let (_, rect) = ui.allocate_space(available);
             let response = pane_focus(ui, Pane::Viewer, rect, "Picture viewer pane");
             if response.has_focus() { self.pane = Pane::Viewer; }
@@ -1775,6 +1861,7 @@ impl DeadpanApp {
                 ui.painter().text(rect.center(), egui::Align2::CENTER_CENTER, message, egui::FontId::proportional(18.0), style::MUTED);
             }
             ui.painter().rect_stroke(rect, 2.0, egui::Stroke::new(1.0, if self.pane == Pane::Viewer { style::LAVENDER } else { style::BORDER }), egui::StrokeKind::Inside);
+            self.camera_overlay(ui, canvas);
             if let Some(label) = displayed_label {
                 let mut response = ui.add(egui::Label::new(egui::RichText::new(&label).size(11.5).color(style::MUTED)).truncate()).on_hover_text(&label);
                 if let Some(summary) = &self.summary { response = response.on_hover_text(format!("Measured source: {} × {} pixels; original PTS [{}, {}), clock {}/{} seconds per tick.", summary.info.width, summary.info.height, summary.first_pts, summary.terminal_pts, summary.info.time_base_num, summary.info.time_base_den)); }
@@ -1790,8 +1877,11 @@ impl DeadpanApp {
                     ui.label(egui::RichText::new(format!("project clock · {}", frame_rate_label(workspace.document.presentation_basis().frame_rate))).size(10.0).color(style::MUTED));
                 }).response.on_hover_text("Both durations use the same project-frame clock. Original includes the measured picture/audio stream union; source browsing counts decoded picture frames separately.");
             }
-            self.playback_controls(ui);
-            ui.horizontal_wrapped(|ui| {
+            if self.camera.is_some() {
+                ui.weak("Apply or cancel Camera to resume navigation and playback.");
+            } else {
+                self.playback_controls(ui);
+                ui.horizontal_wrapped(|ui| {
                 if self.workspace.is_none() && self.raw_source.is_none() {
                     if ui.button("New project  ⌘N").clicked() { self.begin_dialog(DialogKind::CreateProject, ui.ctx(), false); }
                     if ui.button("Open project  ⌘O").clicked() { self.begin_dialog(DialogKind::OpenProject, ui.ctx(), false); }
@@ -1802,7 +1892,8 @@ impl DeadpanApp {
                     }
                     if self.view == View::Source && ui.add_enabled(self.workspace.is_some() && self.selected_source.is_some() && !self.service.is_busy(), egui::Button::new(if self.focused_workflow() { "Reuse full Original  ⌘↩" } else { "Insert source  ⌘↩" }).fill(style::SELECTED)).on_hover_text("Insert the whole source after the selected root beat. This creates an undoable edit.").clicked() { self.insert(); }
                 }
-            });
+                });
+            }
         });
     }
 
@@ -1867,13 +1958,27 @@ impl DeadpanApp {
         };
         let picture = self.presentation.picture().expect("picture checked");
         let frame = picture.frame.as_ref().expect("frame checked");
-        match self.renderer.render(
-            frame,
-            replacement
-                .as_ref()
-                .unwrap_or_else(|| &self.target.as_ref().expect("target exists").target),
-            FitMode::Fit,
-        ) {
+        let target = replacement
+            .as_ref()
+            .unwrap_or_else(|| &self.target.as_ref().expect("target exists").target);
+        let result = if let Some((width, height)) = picture.canvas {
+            match camera::render_layers(picture) {
+                Ok(layers) => self.renderer.render_framed(
+                    frame,
+                    target,
+                    [width, height],
+                    FitMode::Fit,
+                    &layers,
+                ),
+                Err(error) => {
+                    self.presentation.render_failed(error);
+                    return;
+                }
+            }
+        } else {
+            self.renderer.render(frame, target, FitMode::Fit)
+        };
+        match result {
             Ok(_) => {
                 if let Some(target) = replacement {
                     let texture = self.render_state.renderer.write().register_native_texture(
@@ -1920,6 +2025,11 @@ impl DeadpanApp {
                         (":repeat 3", "Set total plays on a Repeat; wrap a different root beat."),
                         (":wrap-repeat 3", "Always add an enclosing Repeat, including nesting."),
                         ("Enter in Inspector", "Edit the selected Repeat count or existing Hold duration."),
+                        (",f", "Camera preview on the selected root beat. h/j/k/l move 1% of the uncropped Original; uppercase moves 5%."),
+                        ("Camera + / −", "Scale by ×1.05 or its reciprocal. Counts repeat: 3+ is three steps."),
+                        ("Camera f · 1–5", "Toggle center/corner targets, then choose by number. Digits are counts outside the picker."),
+                        ("Camera r · Enter · Esc", "Reset the draft, apply once, or restore entry framing. Normal adjustments preserve an existing curve."),
+                        (",z / ,c", "One undoable 1.35× punch / whole-beat smoothstep creep to 1.35×. These replace an existing framing curve."),
                         (":hold-duration 11f", "Set a selected root Hold to exactly 11 project frames."),
                         ("⌘Return / :insert", "Reuse the full Original after the selected root beat. Legacy projects insert their selected source."),
                         ("u / Ctrl R", "Undo / redo. Native ⌘Z / ⌘Shift Z also work."),
@@ -1949,6 +2059,7 @@ impl eframe::App for DeadpanApp {
         let previous_pane = self.pane;
         self.receive();
         self.receive_playback();
+        self.reconcile_camera();
         self.ensure_visible_pane(&context);
         if self.close_pending {
             self.stop_playback();
@@ -1989,6 +2100,7 @@ impl eframe::App for DeadpanApp {
         self.timeline(ui);
         self.inspector(ui);
         self.viewer(ui);
+        self.finish_camera_entry(&context);
         self.schedule_playback_picture();
         self.help(&context);
         if input_scope

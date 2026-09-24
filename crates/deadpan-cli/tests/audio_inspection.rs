@@ -426,6 +426,7 @@ fn mapped_inspection_prepares_preserve_from_historical_aac_without_writing() -> 
                     (
                         node("slow"),
                         BeatNode {
+                            framing: None,
                             audio_edges: Default::default(),
                             label: "Preserve speech pitch".into(),
                             kind: NodeKind::Retime {

@@ -1,0 +1,466 @@
+{
+  "schema_version": 18,
+  "project_id": "70e0222d-71ed-4131-acf2-f3f5fb62487e",
+  "revision_id": "bbf35d4c-740c-4757-a84e-f938c40fb7c3",
+  "presentation_basis": {
+    "width": 320,
+    "height": 180,
+    "frame_rate": {
+      "numerator": 30000,
+      "denominator": 1001
+    },
+    "color_policy": "sdr_rec709"
+  },
+  "basis_state": {
+    "rate_origin": "primary_source",
+    "geometry_origin": "primary_source",
+    "primary": {
+      "asset": "5fd642fb-97ef-4459-b065-744193037a88",
+      "qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6"
+    }
+  },
+  "root": "f4863567-ebaf-48e8-b6a0-2ba9901633c3",
+  "nodes": {
+    "308ec7fb-d876-495c-b999-3667dc4469f5": {
+      "label": "Camera review.mp4",
+      "kind": {
+        "type": "retime",
+        "child": "4fd7f1fe-0ddd-40bf-973e-06afe20d4dcc",
+        "duration": 80,
+        "mapping": {
+          "start": 40,
+          "end": 120
+        },
+        "pitch": "preserve",
+        "purpose": "partition"
+      }
+    },
+    "36156bda-69e2-4e13-8fa0-c825ad30a823": {
+      "label": "Pause",
+      "kind": {
+        "type": "hold",
+        "recipe": {
+          "duration": 15,
+          "video": {
+            "type": "freeze",
+            "asset": "5fd642fb-97ef-4459-b065-744193037a88",
+            "timestamp": {
+              "ticks": 39039,
+              "time_base": {
+                "numerator": 1,
+                "denominator": 30000
+              }
+            }
+          },
+          "audio": {
+            "type": "silence"
+          }
+        }
+      },
+      "framing": {
+        "value": {
+          "type": "envelope",
+          "envelope": {
+            "initial": {
+              "center_x": {
+                "numerator": "2104533975",
+                "denominator": "4294967296"
+              },
+              "center_y": {
+                "numerator": "1",
+                "denominator": "2"
+              },
+              "scale": {
+                "numerator": "4509715661",
+                "denominator": "4294967296"
+              }
+            },
+            "segments": [
+              {
+                "end": {
+                  "numerator": "1",
+                  "denominator": "1"
+                },
+                "pose": {
+                  "center_x": {
+                    "numerator": "2104533975",
+                    "denominator": "4294967296"
+                  },
+                  "center_y": {
+                    "numerator": "1",
+                    "denominator": "2"
+                  },
+                  "scale": {
+                    "numerator": "6088116143",
+                    "denominator": "4294967296"
+                  }
+                },
+                "curve": {
+                  "type": "smoothstep"
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    "4fd7f1fe-0ddd-40bf-973e-06afe20d4dcc": {
+      "label": "Camera review.mp4",
+      "kind": {
+        "type": "source",
+        "source": {
+          "duration": 120,
+          "video": {
+            "type": "stream",
+            "asset": "5fd642fb-97ef-4459-b065-744193037a88",
+            "span": {
+              "start": {
+                "ticks": 0,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 30000
+                }
+              },
+              "end": {
+                "ticks": 120120,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 30000
+                }
+              }
+            }
+          },
+          "video_mapping": {
+            "type": "placement",
+            "start": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "frames": {
+              "numerator": "120",
+              "denominator": "1"
+            },
+            "endpoints": "hold_adjacent"
+          },
+          "audio": {
+            "asset": "5fd642fb-97ef-4459-b065-744193037a88",
+            "span": {
+              "start": {
+                "ticks": 0,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 48000
+                }
+              },
+              "end": {
+                "ticks": 192192,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 48000
+                }
+              }
+            }
+          },
+          "audio_mapping": {
+            "type": "placement",
+            "start": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "frames": {
+              "numerator": "120",
+              "denominator": "1"
+            }
+          },
+          "link": "linked",
+          "audio_offset": 0
+        }
+      }
+    },
+    "66e93813-9d36-4ede-967f-57198ca61b87": {
+      "label": "Camera review.mp4",
+      "kind": {
+        "type": "retime",
+        "child": "74eae9ee-1cc5-4b4f-9524-3051b4b8e6e5",
+        "duration": 40,
+        "mapping": {
+          "start": 0,
+          "end": 40
+        },
+        "pitch": "preserve",
+        "purpose": "partition"
+      }
+    },
+    "74eae9ee-1cc5-4b4f-9524-3051b4b8e6e5": {
+      "label": "Camera review.mp4",
+      "kind": {
+        "type": "source",
+        "source": {
+          "duration": 120,
+          "video": {
+            "type": "stream",
+            "asset": "5fd642fb-97ef-4459-b065-744193037a88",
+            "span": {
+              "start": {
+                "ticks": 0,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 30000
+                }
+              },
+              "end": {
+                "ticks": 120120,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 30000
+                }
+              }
+            }
+          },
+          "video_mapping": {
+            "type": "placement",
+            "start": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "frames": {
+              "numerator": "120",
+              "denominator": "1"
+            },
+            "endpoints": "hold_adjacent"
+          },
+          "audio": {
+            "asset": "5fd642fb-97ef-4459-b065-744193037a88",
+            "span": {
+              "start": {
+                "ticks": 0,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 48000
+                }
+              },
+              "end": {
+                "ticks": 192192,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 48000
+                }
+              }
+            }
+          },
+          "audio_mapping": {
+            "type": "placement",
+            "start": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "frames": {
+              "numerator": "120",
+              "denominator": "1"
+            }
+          },
+          "link": "linked",
+          "audio_offset": 0
+        }
+      }
+    },
+    "f4863567-ebaf-48e8-b6a0-2ba9901633c3": {
+      "label": "Sequence",
+      "kind": {
+        "type": "sequence",
+        "children": [
+          "66e93813-9d36-4ede-967f-57198ca61b87",
+          "36156bda-69e2-4e13-8fa0-c825ad30a823",
+          "308ec7fb-d876-495c-b999-3667dc4469f5"
+        ]
+      }
+    }
+  },
+  "assets": {
+    "5fd642fb-97ef-4459-b065-744193037a88": {
+      "label": "Camera review.mp4",
+      "content_hash": "blake3:16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+      "video": {
+        "start": {
+          "ticks": 0,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 30000
+          }
+        },
+        "end": {
+          "ticks": 120120,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 30000
+          }
+        }
+      },
+      "audio": {
+        "start": {
+          "ticks": 0,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 48000
+          }
+        },
+        "end": {
+          "ticks": 192192,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 48000
+          }
+        }
+      },
+      "still_image": false,
+      "frame_count": 120,
+      "source_qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6"
+    }
+  },
+  "marks": {},
+  "overrides": {},
+  "audio_lineage": {
+    "4fd7f1fe-0ddd-40bf-973e-06afe20d4dcc": {
+      "allocation": "8e9e4f03-89d7-4785-bfb4-dbb0d3bd1c61",
+      "origin": "74eae9ee-1cc5-4b4f-9524-3051b4b8e6e5"
+    },
+    "74eae9ee-1cc5-4b4f-9524-3051b4b8e6e5": {
+      "allocation": "8e9e4f03-89d7-4785-bfb4-dbb0d3bd1c61",
+      "origin": "74eae9ee-1cc5-4b4f-9524-3051b4b8e6e5"
+    }
+  },
+  "audio_bindings": {
+    "timings": [
+      {
+        "id": {
+          "allocation": "8e9e4f03-89d7-4785-bfb4-dbb0d3bd1c61",
+          "ordinal": 0
+        },
+        "layout": {
+          "root": "f4863567-ebaf-48e8-b6a0-2ba9901633c3",
+          "rate": {
+            "numerator": 30000,
+            "denominator": 1001
+          },
+          "nodes": {
+            "74eae9ee-1cc5-4b4f-9524-3051b4b8e6e5": {
+              "duration": 120,
+              "edges": {
+                "node_start": "automatic",
+                "node_end": "automatic",
+                "source_placement_start": "automatic",
+                "source_placement_end": "automatic",
+                "repeat_gap_start": "automatic",
+                "repeat_gap_end": "automatic"
+              },
+              "kind": {
+                "type": "source",
+                "placement": {
+                  "start": {
+                    "numerator": "0",
+                    "denominator": "1"
+                  },
+                  "end": {
+                    "numerator": "120",
+                    "denominator": "1"
+                  }
+                }
+              }
+            },
+            "f4863567-ebaf-48e8-b6a0-2ba9901633c3": {
+              "duration": 120,
+              "edges": {
+                "node_start": "automatic",
+                "node_end": "automatic",
+                "source_placement_start": "automatic",
+                "source_placement_end": "automatic",
+                "repeat_gap_start": "automatic",
+                "repeat_gap_end": "automatic"
+              },
+              "kind": {
+                "type": "sequence",
+                "children": [
+                  "74eae9ee-1cc5-4b4f-9524-3051b4b8e6e5"
+                ]
+              }
+            }
+          },
+          "overrides": {}
+        }
+      }
+    ],
+    "bindings": {
+      "4fd7f1fe-0ddd-40bf-973e-06afe20d4dcc": {
+        "lattice": {
+          "reference": {
+            "timing": {
+              "allocation": "8e9e4f03-89d7-4785-bfb4-dbb0d3bd1c61",
+              "ordinal": 0
+            },
+            "root": {
+              "type": "project_root_round_even"
+            },
+            "physical": "74eae9ee-1cc5-4b4f-9524-3051b4b8e6e5"
+          },
+          "arguments": [],
+          "births": []
+        },
+        "resume": {
+          "local_boundary": {
+            "numerator": "40",
+            "denominator": "1"
+          },
+          "phase": {
+            "constant": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "terms": [
+              {
+                "placement": {
+                  "reference": {
+                    "timing": {
+                      "allocation": "8e9e4f03-89d7-4785-bfb4-dbb0d3bd1c61",
+                      "ordinal": 0
+                    },
+                    "root": {
+                      "type": "project_root_round_even"
+                    },
+                    "physical": "74eae9ee-1cc5-4b4f-9524-3051b4b8e6e5"
+                  },
+                  "arguments": [],
+                  "births": []
+                },
+                "from_local": {
+                  "numerator": "0",
+                  "denominator": "1"
+                },
+                "to_local": {
+                  "numerator": "40",
+                  "denominator": "1"
+                }
+              }
+            ]
+          }
+        }
+      },
+      "74eae9ee-1cc5-4b4f-9524-3051b4b8e6e5": {
+        "lattice": {
+          "reference": {
+            "timing": {
+              "allocation": "8e9e4f03-89d7-4785-bfb4-dbb0d3bd1c61",
+              "ordinal": 0
+            },
+            "root": {
+              "type": "project_root_round_even"
+            },
+            "physical": "74eae9ee-1cc5-4b4f-9524-3051b4b8e6e5"
+          },
+          "arguments": [],
+          "births": []
+        },
+        "resume": null
+      }
+    }
+  }
+}

@@ -13,6 +13,12 @@ Space Play/Pause increment, exact paused sample retention and the limited
 edge-faded bus. It does not qualify the full mastered preview/export pipeline or
 reduce the requirements below.
 
+[Authored framing and Camera](../FRAMING.md) records the current implementation
+contract and remaining work, including frozen composition, saved targets and
+tracking. Use the dedicated [Camera design board](../design/boards/camera-framing-board-v1.png)
+alongside the primary workspace target. A temporary preview must remain distinct
+from a committed edit, and opening Camera must preserve existing curves.
+
 Read Sections 1–8 for product/primitive/keyboard semantics, 12–14 for AI contracts and qualification, 17–22 for rendering/runtime/storage/export, and 23–30 for dependencies, tests, requirements, and build gates. Section 31 resolves command targeting and source-browser behavior. Source references are in Section 33.
 
 ## Decisions already made

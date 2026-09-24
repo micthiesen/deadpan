@@ -32,6 +32,7 @@ pub(crate) fn fixture_plan(preserve: bool) -> RenderPlan {
         .unwrap(),
     };
     let source = BeatNode {
+        framing: None,
         label: "Original speech".into(),
         audio_edges: Default::default(),
         kind: NodeKind::Source {
@@ -60,6 +61,7 @@ pub(crate) fn fixture_plan(preserve: bool) -> RenderPlan {
         nodes.insert(
             id("preserve"),
             BeatNode {
+                framing: None,
                 label: "Full preparation".into(),
                 audio_edges: Default::default(),
                 kind: NodeKind::Retime {

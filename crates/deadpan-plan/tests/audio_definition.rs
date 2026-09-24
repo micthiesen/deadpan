@@ -29,6 +29,7 @@ fn source(length: i64) -> BeatNode {
     let time_base = SourceTimeBase::new(1, 48_000).unwrap();
     BeatNode {
         label: "Source".into(),
+        framing: None,
         audio_edges: Default::default(),
         kind: NodeKind::Source {
             source: SourceNode {
@@ -71,6 +72,7 @@ fn hold(length: i64) -> BeatNode {
 fn repeat(child: &str, count: u32) -> BeatNode {
     BeatNode {
         label: "Repeat".into(),
+        framing: None,
         audio_edges: Default::default(),
         kind: NodeKind::Repeat {
             child: id(child),
@@ -90,6 +92,7 @@ fn retime(
 ) -> BeatNode {
     BeatNode {
         label: "Retime".into(),
+        framing: None,
         audio_edges: Default::default(),
         kind: NodeKind::Retime {
             child: id(child),

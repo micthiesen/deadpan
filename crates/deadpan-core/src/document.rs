@@ -9,7 +9,7 @@ use crate::{
     TimeError,
 };
 
-pub const DOCUMENT_SCHEMA_VERSION: u32 = 17;
+pub const DOCUMENT_SCHEMA_VERSION: u32 = 18;
 /// Bounds apply before traversal. Structure is walked iteratively, never recursively.
 pub const MAX_DOCUMENT_NODES: usize = 100_000;
 pub const MAX_DOCUMENT_ASSETS: usize = 100_000;
@@ -369,6 +369,8 @@ pub struct BeatNode {
         skip_serializing_if = "crate::AudioEdgePolicies::is_automatic"
     )]
     pub audio_edges: crate::AudioEdgePolicies,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub framing: Option<crate::Framing>,
 }
 
 impl BeatNode {
@@ -377,6 +379,7 @@ impl BeatNode {
             label: label.into(),
             kind: NodeKind::Sequence { children },
             audio_edges: crate::AudioEdgePolicies::default(),
+            framing: None,
         }
     }
     pub fn hold(label: impl Into<String>, recipe: HoldRecipe) -> Self {
@@ -384,6 +387,7 @@ impl BeatNode {
             label: label.into(),
             kind: NodeKind::Hold { recipe },
             audio_edges: crate::AudioEdgePolicies::default(),
+            framing: None,
         }
     }
 }
@@ -566,6 +570,7 @@ impl ProjectDocument {
         if json.len() > MAX_DOCUMENT_JSON_BYTES {
             return Err(json_limit());
         }
+        crate::framing::preflight(json)?;
         let wire: DocumentWire = serde_json::from_str(json).map_err(DocumentError::json)?;
         Self::try_from(wire)
     }
@@ -595,6 +600,7 @@ impl ProjectDocument {
     /// Validate once and return every authored duration for plan compilation.
     pub fn durations(&self) -> Result<BTreeMap<NodeId, FrameDuration>, DocumentError> {
         let durations = self.structural_durations()?;
+        crate::framing::validate_document(self)?;
         self.validate_basis_state(&durations)?;
         crate::audio_lineage::validate(self)?;
         self.audio_bindings.validate_for(self)?;

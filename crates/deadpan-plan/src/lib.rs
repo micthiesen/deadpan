@@ -3,7 +3,8 @@
 //! Compilation validates one authored revision and indexes sequence boundaries
 //! and compact repeat identity runs. Sampling maps project frame centers through
 //! exact affine retimes without rounding intermediate coordinates. This crate
-//! performs no decoding, GPU work, effects, audio processing, or external I/O.
+//! evaluates owner-local framing values but performs no decoding, GPU work,
+//! pixel effects, audio processing, or external I/O.
 
 mod audio_envelope;
 mod audio_reference;
@@ -19,7 +20,7 @@ pub use audio_reference::{
 };
 pub use audio_sampling::{AudioBoundaryRule, AudioSampleGrid, AudioSampleMap};
 
-pub use picture::{Picture, PictureSample};
+pub use picture::{Picture, PictureFraming, PictureSample};
 pub use plan::{AudioBound, AudioBoundDomain, AudioFadeQuery, AudioFadeSpan, AudioPolicyQuery};
 pub use plan::{
     AudioBoundaries, AudioBoundaryKind, AudioBoundaryOrigin, AudioContent, AudioDomain, AudioQuery,
@@ -48,6 +49,8 @@ pub enum PlanError {
     Document(#[from] DocumentError),
     #[error(transparent)]
     Time(#[from] TimeError),
+    #[error(transparent)]
+    Framing(#[from] deadpan_core::FramingError),
     #[error("project frame {frame:?} is outside the plan's {duration:?} duration")]
     FrameOutOfRange {
         frame: ProjectFrame,

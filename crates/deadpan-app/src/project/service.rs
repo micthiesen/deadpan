@@ -339,6 +339,7 @@ impl Service {
             self.committed = Some(CommittedEdit {
                 revision: outcome.revision_id,
                 selected_node: Some(id),
+                preserve_cursor: false,
             });
             self.message = Some(format!(
                 "Inserted a {} frame silent pause at boundary {} and saved",
@@ -352,6 +353,7 @@ impl Service {
             ProjectEdit::Split { node, .. }
             | ProjectEdit::Repeat { node, .. }
             | ProjectEdit::WrapRepeat { node, .. }
+            | ProjectEdit::SetFraming { node, .. }
             | ProjectEdit::Delete { node }
             | ProjectEdit::HoldDuration { node, .. } => node,
         };
@@ -364,7 +366,13 @@ impl Service {
             .ok_or("Select a root beat; nested occurrence editing is not available yet")?;
         let selected = Some(target.clone());
         let split_position = matches!(edit, ProjectEdit::Split { .. }).then_some(position);
+        let preserve_cursor = matches!(edit, ProjectEdit::SetFraming { .. });
         let (command, selected_node, message) = match edit {
+            ProjectEdit::SetFraming { node, framing } => (
+                Command::SetFraming { node, framing },
+                selected,
+                "Framing updated and saved",
+            ),
             ProjectEdit::InsertTime { .. } => unreachable!("pause handled above"),
             ProjectEdit::Split { node: target, at } => {
                 let mut pending = vec![target.clone()];
@@ -479,6 +487,7 @@ impl Service {
         self.committed = Some(CommittedEdit {
             revision: outcome.revision_id,
             selected_node,
+            preserve_cursor,
         });
         self.message = Some(message.into());
         Ok(())
@@ -693,6 +702,7 @@ impl Service {
                                 .map(|insertion| CommittedEdit {
                                     revision: commit.revision_id,
                                     selected_node: Some(insertion.node.clone()),
+                                    preserve_cursor: false,
                                 })
                         });
                         if self.active.is_none() {
@@ -820,6 +830,7 @@ impl Service {
             self.committed = outcome.commit.map(|commit| CommittedEdit {
                 revision: commit.revision_id,
                 selected_node: Some(initialization.node),
+                preserve_cursor: false,
             });
             if let Some(status) = &mut self.import {
                 status.stage = ImportStage::Complete;
@@ -879,6 +890,7 @@ impl Service {
             self.committed = Some(CommittedEdit {
                 revision: commit.revision_id.clone(),
                 selected_node: Some(insertion.node.clone()),
+                preserve_cursor: false,
             });
         }
         if let Some(status) = &mut self.import {
