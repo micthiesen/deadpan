@@ -18,7 +18,8 @@ pub fn report() -> Result<serde_json::Value, CliError> {
         "time_mapped_pcm": "bounded-continuous-preserve-before-effects",
         "room_tone_pcm": "explicit-source-range-exact-overlap-before-effects",
         "edge_faded_pcm": "authored-boundary-exceptions-after-time-mapping-before-voice-effects",
-        "device_output": "macos-bounded-pre-master-sequence-audition",
+        "limited_pcm": "canonical-edge-faded-bus-with-finite-oversampled-limiter-before-missing-voice-mix-stages",
+        "device_output": "macos-bounded-limited-sequence-audition",
         "sequence_audition": "immutable-revision-device-clock-pictures-exact-paused-sample-resume",
         "unimplemented": ["mastered-preview-audio", "original-view-playback", "full-device-and-acoustic-qualification", "full-keyboard-editor", "analysis", "ai-generation", "youtube-import", "export", "distribution"],
     }))

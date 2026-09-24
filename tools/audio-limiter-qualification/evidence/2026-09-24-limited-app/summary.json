@@ -1,0 +1,31 @@
+{
+  "required_commands_passed": true,
+  "tests": {
+    "passed": 1265,
+    "failed": 0,
+    "ignored": 0
+  },
+  "documentation_change_during_gate": {
+    "path": "crates/deadpan-playback/README.md",
+    "change": "Added two missing spaces to at most 8192 frames. The raw gate runner includes crate Markdown in its source seal and therefore reports source_unchanged=false and passed=false. All five required commands passed; this exact byte substitution is independently checked here."
+  },
+  "optimized_native_build": {
+    "command": [
+      "cargo",
+      "build",
+      "-p",
+      "deadpan-app",
+      "--release",
+      "--locked"
+    ],
+    "exit_code": 0,
+    "seconds": 636.6611458328553,
+    "source_unchanged": true,
+    "source_count": 400,
+    "binary_sha256": "f68cb731edbc6ae1c3e7e4ce416dac7aa158156d61beba80b12d059bcbc3e5b9",
+    "bundle_sha256": "f68cb731edbc6ae1c3e7e4ce416dac7aa158156d61beba80b12d059bcbc3e5b9"
+  },
+  "project_dump_unchanged": true,
+  "prior_failures": "final-1 and final-2 retain canonical-reference ten-second deadline failures before matching the existing sixty-second production budget. The production deadline was not increased. final-1/count-correction.json corrects its original parser omission of a failed test binary.",
+  "unchanged_selected_paths": 399
+}

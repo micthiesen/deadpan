@@ -29,6 +29,10 @@ use crate::{
     RootSignalBlock, RootSignalTransfer, SignalTransferError, StereoMatrix, check_cancel,
 };
 
+/// Worker-owned bus preparation, including downstream finite DSP context.
+/// Small inspection and source reads retain their separate 256-frame limit.
+pub const MAX_EDGE_PREPARATION_FRAMES: u32 = 131_072;
+
 /// PCM residency limits, not a claim about total process memory or latency.
 /// Native FFT state, decoder caches and one bounded resampling halo are separate.
 #[derive(Debug, Clone, Copy)]
@@ -60,6 +64,8 @@ impl Default for StageLimits {
 pub enum StageAudioError {
     #[error("time-mapped inspection requires 1..256 samples inside the sequence")]
     Range,
+    #[error("edge-faded preparation requires 1..131072 samples inside the sequence")]
+    PreparationRange,
     #[error("audio domain belongs to another immutable plan")]
     ForeignDomain,
     #[error("audio definition belongs to another immutable plan")]
@@ -261,7 +267,14 @@ struct PreparedStage {
     block: SignalBlock,
 }
 
-type Dependencies = BTreeMap<AssetId, [u8; 32]>;
+pub(crate) type Dependencies = BTreeMap<AssetId, [u8; 32]>;
+
+/// The complete preparation inputs, including hidden Preserve context. These
+/// stay internal so serialized PCM metadata cannot be used as an admission token.
+pub(crate) struct PreparedBus {
+    pub block: EdgeFadedBlock,
+    pub dependencies: Dependencies,
+}
 
 #[derive(Default)]
 struct SignalBlock {
@@ -282,6 +295,45 @@ struct ReadWork {
 }
 
 const MAX_PLAN_WORK_PER_READ: usize = 16 * 1024 * 1024;
+
+/// One consumer request owns this budget across bus halos and cache checks.
+/// Downstream preparation must use the same deadline, never renew it per tile.
+pub(crate) struct PreparationBudget<'a> {
+    cancelled: &'a AtomicBool,
+    deadline: Instant,
+    work: RefCell<ReadWork>,
+}
+
+impl<'a> PreparationBudget<'a> {
+    pub(crate) fn new(
+        timeout: Duration,
+        cancelled: &'a AtomicBool,
+    ) -> Result<Self, StageAudioError> {
+        check_cancel(cancelled)?;
+        validate_timeout(timeout)?;
+        Ok(Self {
+            cancelled,
+            deadline: Instant::now() + timeout,
+            work: RefCell::new(ReadWork::default()),
+        })
+    }
+
+    pub(crate) fn deadline(&self) -> Instant {
+        self.deadline
+    }
+
+    pub(crate) fn check(&self) -> Result<Duration, StageAudioError> {
+        self.control().check()
+    }
+
+    fn control(&self) -> WorkControl<'_> {
+        WorkControl {
+            cancelled: self.cancelled,
+            deadline: self.deadline,
+            work: &self.work,
+        }
+    }
+}
 
 #[derive(Clone, Copy)]
 struct WorkControl<'a> {
@@ -444,6 +496,90 @@ impl StageAudio {
             samples: block.samples,
             suppressed: block.suppressed,
         })
+    }
+
+    /// Prepare a contiguous bus interval under one deadline and cumulative
+    /// source, stage and plan-work admission. Consumer batch boundaries do not
+    /// reset time mapping or authored fades. Nothing is returned on rejection.
+    pub fn prepare_edge_faded(
+        &mut self,
+        provider: &mut impl AudioSourceProvider,
+        start: AudioSample,
+        frames: u32,
+        timeout: Duration,
+        cancelled: &AtomicBool,
+    ) -> Result<EdgeFadedBlock, StageAudioError> {
+        let budget = PreparationBudget::new(timeout, cancelled)?;
+        Ok(self.prepare_bus(provider, start, frames, &budget)?.block)
+    }
+
+    pub(crate) fn prepare_bus(
+        &mut self,
+        provider: &mut impl AudioSourceProvider,
+        start: AudioSample,
+        frames: u32,
+        budget: &PreparationBudget<'_>,
+    ) -> Result<PreparedBus, StageAudioError> {
+        budget.check()?;
+        let end = start
+            .0
+            .checked_add(i64::from(frames))
+            .ok_or(StageAudioError::PreparationRange)?;
+        if start.0 < 0
+            || frames == 0
+            || frames > MAX_EDGE_PREPARATION_FRAMES
+            || end > self.plan.audio_duration()?.0
+        {
+            return Err(StageAudioError::PreparationRange);
+        }
+        let control = budget.control();
+        let mut samples = Vec::with_capacity(frames as usize);
+        let mut suppressed = Vec::new();
+        let mut dependencies = Dependencies::new();
+        let mut cursor = start;
+        while cursor.0 < end {
+            let count = u32::try_from((end - cursor.0).min(i64::from(MAX_OUTPUT_FRAMES)))
+                .map_err(|_| StageAudioError::PreparationRange)?;
+            let block = self.read_controlled(provider, cursor, count, control, true, 0)?;
+            samples.extend(block.samples);
+            suppressed.extend(block.suppressed);
+            dependencies.extend(block.dependencies);
+            cursor.0 += i64::from(count);
+        }
+        let suppressed = merged_suppression(suppressed);
+        control.check()?;
+        let block = EdgeFadedBlock {
+            schema_version: 1,
+            stage: "edge_faded_pcm_before_voice_effects",
+            engine: crate::EDGE_FADE_ID,
+            processing_order: ["time_pitch_mapping", "edge_fades"],
+            project_id: self.plan.metadata().project_id.clone(),
+            revision_id: self.plan.metadata().revision_id.clone(),
+            start,
+            samples,
+            suppressed,
+        };
+        Ok(PreparedBus {
+            block,
+            dependencies,
+        })
+    }
+
+    pub(crate) fn revalidate_dependencies(
+        &self,
+        provider: &mut impl AudioSourceProvider,
+        dependencies: &Dependencies,
+        budget: &PreparationBudget<'_>,
+    ) -> Result<bool, StageAudioError> {
+        let control = budget.control();
+        let mut valid = true;
+        for (asset, fingerprint) in dependencies {
+            control.check()?;
+            let source = resolve_source(provider, &self.plan, asset, control.cancelled)?;
+            valid &= control.observe(asset, source)? == *fingerprint;
+        }
+        control.check()?;
+        Ok(valid)
     }
 
     /// Render a checked authored definition on its own point-ceil output grid.

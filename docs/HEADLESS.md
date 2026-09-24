@@ -253,8 +253,16 @@ Use `--edge-faded` instead to apply authored automatic/hard choices after time
 mapping. It returns `edge_faded_pcm_before_voice_effects` with the engine and
 fixed implemented stage order. Fades remain inside each full allocation and
 shorten for tiny fragments; read chunks cannot create new fades. See
-[audio edges](AUDIO_EDGES.md). Gain, effects, mastering and final mix integration
-remain open.
+[audio edges](AUDIO_EDGES.md). This inspection stage does not apply limiting.
+
+Use `--limited` for the shared limited audition bus. It returns
+`limited_edge_faded_pcm`, its exact implemented processing order, linked stereo
+gain and the complete canonical tiles whose reconstruction anchors were verified.
+The output remains limited to 256 requested samples, with real adjacent context
+prepared internally. Cache hits re-admit all source dependencies. Gain is
+informational; this command never changes the project. Voice effects, sends,
+the full group mix and encoded-output qualification remain open. See
+[mastering](AUDIO_MASTERING.md).
 
 ## Physical audio context inspection
 

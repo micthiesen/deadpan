@@ -6,7 +6,7 @@ use std::sync::Arc;
 use std::sync::atomic::Ordering;
 use std::time::Duration;
 
-use deadpan_audio::{StageAudio, StageLimits};
+use deadpan_audio::{LimitedAudio, StageAudio, StageLimits};
 use deadpan_core::AudioSample;
 use deadpan_plan::RenderPlan;
 
@@ -81,7 +81,7 @@ fn publish(shared: &Shared, job: &Job, reply: Reply) {
 
 struct Prepared {
     sources: Sources,
-    audio: StageAudio,
+    audio: LimitedAudio,
     end: AudioSample,
 }
 
@@ -102,8 +102,9 @@ fn prepare(shared: &Shared, job: &Job, retained: &mut Option<Prepared>) -> Resul
         let sources = Sources::new(job.snapshot.clone());
         // Canonical Preserve has an explicit full-input limit (~21.8 s at 48 kHz),
         // 128 MiB stereo stage residency and 64 stages. Exceeding it is an error.
-        let audio =
-            StageAudio::with_limits(plan, StageLimits::default()).map_err(|e| e.to_string())?;
+        let audio = LimitedAudio::from_stages(
+            StageAudio::with_limits(plan, StageLimits::default()).map_err(|e| e.to_string())?,
+        );
         *retained = Some(Prepared {
             sources,
             audio,
@@ -123,16 +124,11 @@ fn prepare(shared: &Shared, job: &Job, retained: &mut Option<Prepared>) -> Resul
         let start = cursor;
         let remaining = usize::try_from((end.0 - cursor.0).min(BATCH_FRAMES as i64))
             .map_err(|e| e.to_string())?;
-        let mut samples = Vec::with_capacity(remaining);
-        while samples.len() < remaining {
-            if job.cancelled.load(Ordering::Acquire) {
-                return Ok(());
-            }
-            let count =
-                u32::try_from((remaining - samples.len()).min(256)).map_err(|e| e.to_string())?;
+        let mut samples = if remaining > 0 {
+            let count = u32::try_from(remaining).map_err(|e| e.to_string())?;
             let block = prepared
                 .audio
-                .read_edge_faded(
+                .read(
                     &mut prepared.sources,
                     cursor,
                     count,
@@ -147,22 +143,23 @@ fn prepare(shared: &Shared, job: &Job, retained: &mut Option<Prepared>) -> Resul
             {
                 return Err("canonical audio returned a foreign or incomplete block".into());
             }
-            for mut sample in block.samples {
-                for value in &mut sample {
-                    *value *= job.gain;
-                    if !value.is_finite() || value.abs() > 1.0 {
-                        return Err(
-                            "pre-master audition exceeds the device range at this monitor level"
-                                .into(),
-                        );
-                    }
-                }
-                samples.push(sample);
-            }
             cursor.0 = cursor
                 .0
                 .checked_add(i64::from(count))
                 .ok_or("playback sample overflow")?;
+            block.samples
+        } else {
+            Vec::new()
+        };
+        for sample in &mut samples {
+            for value in sample {
+                *value *= job.gain;
+                if !value.is_finite() || value.abs() > 1.0 {
+                    return Err(
+                        "limited audition exceeds the device range at this monitor level".into(),
+                    );
+                }
+            }
         }
         let eos = cursor == end;
         publish(

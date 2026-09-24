@@ -1,4 +1,4 @@
-//! Revision-bound pre-master audition. Media preparation and device control
+//! Revision-bound limited audition. Media preparation and device control
 //! have separate owners; no decoding or authored-state mutation runs on the UI.
 
 mod controller;

@@ -16,10 +16,12 @@ position. The exact subframe sample is retained for resume; a seek or authored
 edit discards it. Selection stays fixed while playing. Opening an inspector
 command pauses without changing its captured target.
 
-This is **pre-master audition**, not the completed preview/export audio contract.
+This is **limited audition**, with the full preview/export audio contract still open.
 It uses canonical source audio, structural Repeat/Retime/Hold semantics, room
-tone, authored bindings and edge fades. The full voice/effects graph and final
-oversampled master limiter remain required. Monitor volume is independent of
+tone, authored bindings and edge fades, followed by the shared
+[finite oversampled limiter](AUDIO_MASTERING.md). The full voice/effects graph,
+sends and group mix remain required before this can be a final master.
+Monitor volume is independent of
 authored and export gain, defaults to 12.5%, and changes while stopped. PCM beyond
 the device's finite ±1 range fails explicitly; the application does not clip or
 normalize individual blocks. Original-view playback and sound-event placement
@@ -43,8 +45,15 @@ continuous Preserve input is bounded to 1,048,576 frames, approximately 21.8 s a
 not substitute for continuous history. Cold qualification may read the whole
 source, but cancellation and editing remain available.
 
-Prepared PCM uses at most two 8192-frame batches plus the native queue. Each
-canonical read contains at most 256 stereo frames. The queue reserves 32 PCM
+Prepared PCM uses at most two 8192-frame batches plus the native queue. A shared
+limited reader retains at most four verified 8192-frame tiles and twelve exact
+input bus ranges of at most 8192 frames. Overlapping input is reused without
+expanding the requested support. Cold preparation
+includes real adjacent project context under one deadline and cumulative source,
+stage and plan-work budget. Internal bus reads remain at most 256 frames. Every
+tile cache hit rechecks complete transitive source/layout provenance; read and
+seek boundaries do not reset gain history. Monitoring gain is applied only after
+the canonical limited samples. The queue reserves 32 PCM
 packet slots and one separate terminal slot so a full valid final prefix can
 carry EOS without racing its consumer. A fresh channel-scoped generation is
 prefilled before activation. A cloneable stop token revokes its callbacks and

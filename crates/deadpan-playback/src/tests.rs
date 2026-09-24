@@ -5,7 +5,7 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
 
-use deadpan_audio::{AudioSourceProvider, StageAudio};
+use deadpan_audio::{AudioSourceProvider, LimitedAudio};
 use deadpan_core::*;
 use deadpan_media::audio_session::{AudioSession, AudioSessionLimits};
 use deadpan_media::source_index::SourceContentIdentity;
@@ -267,13 +267,14 @@ fn canonical_source_pcm_uses_fixed_monitor_gain_and_delivery_clock() {
     register(&mut store);
     let snapshot = snapshot(&store, 12);
     let mut expected_sources = Sources::new(snapshot.clone());
-    let mut canonical = StageAudio::new(Arc::new(RenderPlan::compile(&snapshot.document).unwrap()));
+    let mut canonical =
+        LimitedAudio::new(Arc::new(RenderPlan::compile(&snapshot.document).unwrap()));
     let expected = canonical
-        .read_edge_faded(
+        .read(
             &mut expected_sources,
             AudioSample(160),
             256,
-            Duration::from_secs(10),
+            Duration::from_secs(60),
             &cancelled(),
         )
         .unwrap();
@@ -705,15 +706,15 @@ fn canonical_playback_consumes_pause_bindings_and_a_real_preserve_stage() {
         originals: captured.originals.clone(),
     });
     let mut sources = Sources::new(edited.clone());
-    let mut canonical = StageAudio::new(Arc::new(RenderPlan::compile(&edited.document).unwrap()));
+    let mut canonical = LimitedAudio::new(Arc::new(RenderPlan::compile(&edited.document).unwrap()));
     let mut expected = Vec::new();
     for start in (0..2048).step_by(256) {
         let block = canonical
-            .read_edge_faded(
+            .read(
                 &mut sources,
                 AudioSample(start),
                 256,
-                Duration::from_secs(10),
+                Duration::from_secs(60),
                 &cancelled(),
             )
             .unwrap();

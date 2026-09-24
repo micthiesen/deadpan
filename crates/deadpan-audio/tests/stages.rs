@@ -26,6 +26,12 @@ const TIMEOUT: Duration = Duration::from_secs(10);
 #[path = "stages/insert_time.rs"]
 mod insert_time;
 
+#[path = "stages/preparation.rs"]
+mod preparation;
+
+#[path = "stages/limited.rs"]
+mod limited;
+
 fn id(value: &str) -> NodeId {
     NodeId::new(value).unwrap()
 }

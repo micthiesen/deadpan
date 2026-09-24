@@ -1,0 +1,10 @@
+{
+  "original_report_unchanged": true,
+  "original_report_sha256": "40eb09767e91780c5bc67ecd8aecd2989c647333ca1d6535cd7ab27f6dc1177e",
+  "corrected_tests": {
+    "passed": 988,
+    "failed": 1,
+    "ignored": 0
+  },
+  "reason": "Original parser counted only successful test binaries. Raw log and exit code retained; failed playback binary contributes ten passed and one failed. The failure was the canonical reference deadline of ten seconds, before that reference was aligned with the existing sixty-second production preparation budget."
+}

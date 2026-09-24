@@ -7,9 +7,9 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
 use deadpan_audio::{
-    AudioSourceProvider, DefinitionAudioBlock, DomainAudioBlock, EdgeFadedBlock, PreparationError,
-    PreparedSource, SequenceAudio, SequenceAudioError, SourceStageBlock, StageAudio,
-    StageAudioError, TimeMappedBlock,
+    AudioSourceProvider, DefinitionAudioBlock, DomainAudioBlock, EdgeFadedBlock, LimitedAudio,
+    LimitedAudioBlock, LimitedAudioError, PreparationError, PreparedSource, SequenceAudio,
+    SequenceAudioError, SourceStageBlock, StageAudio, StageAudioError, TimeMappedBlock,
 };
 use deadpan_core::{
     AssetId, AssetRecord, AudioSample, FrozenAudioContext, ProjectDocument, ProjectId, RevisionId,
@@ -25,6 +25,8 @@ use deadpan_store::{AccessMode, ProjectStore, StoreError};
 pub enum ProjectAudioError {
     #[error("retained audio context differs from the captured project revision")]
     ContextMismatch,
+    #[error("limited audio inspection requires 1..256 samples")]
+    LimitedInspectionRange,
     #[error(transparent)]
     Store(#[from] StoreError),
     #[error(transparent)]
@@ -33,14 +35,18 @@ pub enum ProjectAudioError {
     Sequence(#[from] SequenceAudioError),
     #[error(transparent)]
     Stage(#[from] StageAudioError),
+    #[error(transparent)]
+    Limited(#[from] LimitedAudioError),
 }
 
 /// A fixed revision with one retained source PCM session. Subsequent writer
 /// edits, undo and reuse of asset aliases cannot change this session's meaning.
-/// Returned PCM is explicitly before voice effects and the master pipeline.
+/// Each inspection path declares its processing order. Limited audition still
+/// omits the unimplemented voice effects, sends and full group mix.
 pub struct ProjectAudioSession {
     sequence: SequenceAudio,
     stages: StageAudio,
+    limited: LimitedAudio,
     sources: RegisteredSources,
 }
 
@@ -91,7 +97,8 @@ impl ProjectAudioSession {
         let sequence = SequenceAudio::new(Arc::clone(&plan));
         Self {
             sequence,
-            stages: StageAudio::new(plan),
+            stages: StageAudio::new(Arc::clone(&plan)),
+            limited: LimitedAudio::new(plan),
             sources: RegisteredSources {
                 store,
                 document,
@@ -222,6 +229,27 @@ impl ProjectAudioSession {
             start,
             frames,
             Duration::from_secs(10),
+            cancelled,
+        )?)
+    }
+
+    /// The same canonical limited bus used by audition, with informational gain.
+    /// Inspection keeps its 256-frame response limit; preparation includes the
+    /// full real halo and shares one deadline across any crossed cache tiles.
+    pub fn read_limited(
+        &mut self,
+        start: AudioSample,
+        frames: u32,
+        cancelled: &AtomicBool,
+    ) -> Result<LimitedAudioBlock, ProjectAudioError> {
+        if frames == 0 || frames > deadpan_audio::MAX_OUTPUT_FRAMES {
+            return Err(ProjectAudioError::LimitedInspectionRange);
+        }
+        Ok(self.limited.read(
+            &mut self.sources,
+            start,
+            frames,
+            Duration::from_secs(60),
             cancelled,
         )?)
     }

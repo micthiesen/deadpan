@@ -1,0 +1,77 @@
+{
+  "commands": [
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 2.419852207880467,
+      "log": "0.log"
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 57.18369241710752,
+      "log": "1.log"
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked"
+      ],
+      "exit_code": 0,
+      "seconds": 444.7538941660896,
+      "log": "2.log"
+    },
+    {
+      "command": [
+        "cargo",
+        "build",
+        "--workspace",
+        "--locked"
+      ],
+      "exit_code": 0,
+      "seconds": 2.3425111663527787,
+      "log": "3.log"
+    },
+    {
+      "command": [
+        "cargo",
+        "run",
+        "-p",
+        "deadpan-cli",
+        "--",
+        "doctor"
+      ],
+      "exit_code": 0,
+      "seconds": 30.061154208146036,
+      "log": "4.log"
+    }
+  ],
+  "source_count": 400,
+  "source_unchanged": false,
+  "changed_sources": [
+    "crates/deadpan-playback/README.md"
+  ],
+  "tests": {
+    "passed": 1265,
+    "failed": 0,
+    "ignored": 0
+  },
+  "passed": false
+}

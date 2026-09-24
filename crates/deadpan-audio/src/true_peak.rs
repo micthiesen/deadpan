@@ -13,7 +13,7 @@ pub const MAX_TRUE_PEAK_FRAMES: u64 = 48_000 * 86_400;
 // ITU-R BS.1770-5 (November 2023), Annex 2, pp. 19-20. Each row is
 // one base-rate tap and each column one of the four interpolation phases.
 // https://www.itu.int/dms_pubrec/itu-r/rec/bs/R-REC-BS.1770-5-202311-I!!PDF-E.pdf
-const FIR: [[f64; 4]; 12] = [
+pub(crate) const FIR: [[f64; 4]; 12] = [
     [
         0.001708984375,
         -0.0291748046875,

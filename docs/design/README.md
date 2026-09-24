@@ -108,7 +108,8 @@ details are intentionally not implementation instructions:
   behavior. Use truthful media-type tiles until a bounded thumbnail service exists.
   [Sequence audition](../PLAYBACK.md) has real Space Play/Pause beside the picture,
   explicit preparation/cancellation and independent monitor volume. Label its
-  current pre-master boundary; full mastered playback remains required.
+  current limited edge-faded bus; full voice processing, group mixing and
+  mastered export remain required.
 - Sound import only registers audio today. The Place a sound panel is the target
   for a real anchored overlay, never an audio-only sequential beat with blank picture.
 - The workflow board shows intended live Camera/Trim preview. Current Hold and

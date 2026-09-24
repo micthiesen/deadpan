@@ -12,7 +12,7 @@ multi-video workspace; concept screens do not establish completed capabilities.
 **Open** means required behavior has no qualifying implementation. **Partial** identifies concrete groundwork while acceptance remains unmet. **Complete** requires linked code, passing relevant tests, and a demonstrable acceptance result. No requirement or delivery gate is complete. Baseline checks are described in [Development](DEVELOPMENT.md); they are not substitutes for full acceptance evidence.
 
 [Sequence audition](PLAYBACK.md) connects immutable qualified originals and
-canonical pre-master PCM to the native device, with Space Play/Pause, a monitor
+canonical limited PCM to the native device, with Space Play/Pause, a monitor
 level, exact audio-clock picture scheduling and explicit interruption. Bounded
 preparation runs separately from device control. Full mastering, Original-view
 playback, acoustic synchronization, long-source/performance qualification and
@@ -24,10 +24,13 @@ historical boundary.
 [Master gain research](qualification/audio-limiter-gain-search-2026-09-24.md)
 retains independently audited finite-fixture solutions, the corrected unwanted
 muting failure, and a longer stress failure in a faster finite-context design.
-Neither candidate is adopted. The [mastering boundary](AUDIO_MASTERING.md)
-records the required final-output, dynamics and bounded-seek qualification;
-production limiting, listening and encoded output remain open. No requirement
-or gate changes status.
+Neither of those earlier candidates is adopted. The [shared limited reader](AUDIO_MASTERING.md)
+now implements a pinned finite oversampled gain path over the current edge-faded
+bus, consumed by playback and `inspect-audio --limited`. It uses canonical tiles,
+complete source provenance, one cumulative preparation budget and final-f32
+verification, with [qualification evidence](qualification/audio-limited-2026-09-24.md).
+Full voice/group processing, gain-motion/listening acceptance and
+encoded output remain open. No requirement or gate changes status.
 
 [Pause insertion](INSERT_TIME.md) adds atomic root Source/Hold splices with
 sample-preserving resume for every shifted fragment, including earlier splits
@@ -337,9 +340,10 @@ acoustic or stress acceptance.
 [Informational audio measurement](AUDIO_METERING.md) adds shared integrated
 loudness and true-peak meters, generated standard cases and an independent
 [reference qualification](qualification/audio-metering-2026-09-21.md). Meters
-preserve PCM; the failed limiter prototypes remain evidence rather than a
-production mastering implementation. Limiting, reduction reporting and final
-mix integration remain open.
+preserve PCM; the failed limiter prototypes remain historical evidence. The
+current [limited reader](AUDIO_MASTERING.md) separately applies gain and reports
+reduction through the headless API. Reduction UI and final mix integration remain
+open.
 
 [Worker cleanup verification](qualification/worker-cleanup-2026-09-21.md) records
 a failed macOS CI run and the shared membership-confirmed teardown for media
@@ -377,7 +381,7 @@ downstream effects/mastering, playback and export remain open.
 | DP-06 | Registers, macros, semantic dot-repeat, configurable bindings. | Open | None. | Parser/transaction/replay tests. |
 | DP-07 | All time/delivery operations in Section 8. | Partial | Core commands insert/delete/move/group/ungroup nodes, wrap/update structural repeats, and change Hold duration/provider. Pure Split retains complete contexts and logical marks. Native root-beat Split/Repeat/delete/Hold-duration edits use that path and refresh the stopped-frame picture plan. Atomic InsertTime retains sample phase through Source/Hold fragments and freezes a measured original picture. | Arbitrary nested/gapped Hold insertion, compact occurrence resume dispatch, nested range planning, remaining operations, semantic targeting, recipe fixture renders, and editable inspector demos. |
 | DP-08 | All framing/picture operations and keyboard target selection. | Partial | [Canvas geometry transactions](PRESENTATION_BASIS.md) preserve frame rate, nodes and marks; source-derived geometry uses qualified receipt metadata. | Framing/camera operations, keyboard target selection, effect reevaluation, and tracking/geometry/interaction tests. |
-| DP-09 | All audio operations with preserved intentional dynamics. | Partial | Pre-master [sequence audition](PLAYBACK.md) connects canonical PCM to the native device; full audio authoring remains open. [Raw DSP qualification](qualification/audio-2026-09-20.md) retains failed targets. The [canonical worker prototype](qualification/audio-canonical-2026-09-20.md) supplies the single schedule now used by the bounded [production DSP adapter](AUDIO_DSP.md). [Source preparation](AUDIO_PREPARATION.md) implements exact-phase resampling and explicit matrices without loudness normalization. [Plan-driven source PCM](SOURCE_STAGE_AUDIO.md) binds exact spans to historical qualified media, including repeats, silent Holds and FollowSpeed retimes. [Continuous Preserve stages](AUDIO_STAGE_PREPARATION.md) retain exact fractional grids and nested history with bounded preparation and source/layout-aware caches. [Room-tone loops](ROOM_TONE_AUDIO.md) use explicit ranges and exact crossfades, with [qualification](qualification/room-tone-audio-2026-09-21.md). [Authored edges](AUDIO_EDGES.md) add reversible hard exceptions and shared post-mapping fades. | Room-tone selection/editing/audition UI, full voice processing, authored layout choice, full signal/format/listening corpus, remaining fade integration, gain/tails/limiting, all remaining audio operations, preview/export equivalence, devices, long-clip preparation and cache lifecycle. |
+| DP-09 | All audio operations with preserved intentional dynamics. | Partial | Limited [sequence audition](PLAYBACK.md) connects canonical PCM to the native device. The shared [finite oversampled limiter](AUDIO_MASTERING.md) verifies emitted tiles and preserves source-aware context across reads; full audio authoring remains open. [Raw DSP qualification](qualification/audio-2026-09-20.md) retains failed targets. The [canonical worker prototype](qualification/audio-canonical-2026-09-20.md) supplies the single schedule now used by the bounded [production DSP adapter](AUDIO_DSP.md). [Source preparation](AUDIO_PREPARATION.md) implements exact-phase resampling and explicit matrices without loudness normalization. [Plan-driven source PCM](SOURCE_STAGE_AUDIO.md) binds exact spans to historical qualified media, including repeats, silent Holds and FollowSpeed retimes. [Continuous Preserve stages](AUDIO_STAGE_PREPARATION.md) retain exact fractional grids and nested history with bounded preparation and source/layout-aware caches. [Room-tone loops](ROOM_TONE_AUDIO.md) use explicit ranges and exact crossfades, with [qualification](qualification/room-tone-audio-2026-09-21.md). [Authored edges](AUDIO_EDGES.md) add reversible hard exceptions and shared post-mapping fades. | Room-tone selection/editing/audition UI, full voice processing, authored layout choice, full signal/format/listening corpus, remaining fade integration, gain/tails and final-bus integration, all remaining audio operations, preview/export equivalence, devices, long-clip preparation and cache lifecycle. |
 | DP-10 | Local transcript, timing refinement, shot/silence proposals. | Open | None. | Analysis accuracy and correction tests. |
 | DP-11 | Selected target tracking with manual correction and loss handling. | Open | None. | Occlusion/shot-change fixtures. |
 | DP-12 | Local AI hold generation, exact seams/duration, variants, acceptance. | Open | A [real supervised MLX development adapter](qualification/model-worker-2026-09-21.md) uses exact bridge planning and interior sampling, with decoded-file timing/color/hash checks. [Generated Hold semantics](GENERATED_HOLDS.md) retain sampling and resize fallback. [Dedicated store acceptance](GENERATION_ACCEPTANCE.md) binds the selected Ready receipt, retained inputs and derived assets to one reversible edit. Generic ingress remains guarded; no app backend or qualified model pack. | Source joins, speech preservation, source/color context, audition/variants, app integration, and the full qualified model corpus. |

@@ -1,0 +1,16 @@
+{
+  "command": [
+    "cargo",
+    "build",
+    "-p",
+    "deadpan-app",
+    "--release",
+    "--locked"
+  ],
+  "exit_code": 0,
+  "seconds": 636.6611458328553,
+  "source_unchanged": true,
+  "source_count": 400,
+  "binary_sha256": "f68cb731edbc6ae1c3e7e4ce416dac7aa158156d61beba80b12d059bcbc3e5b9",
+  "bundle_sha256": "f68cb731edbc6ae1c3e7e4ce416dac7aa158156d61beba80b12d059bcbc3e5b9"
+}

@@ -323,6 +323,72 @@ fn room_tone_inspection_loops_an_explicit_aac_range_and_retains_silent_time() ->
     assert_eq!(faded_wire["audio"]["revision_id"], "silence");
     let faded_pcm: Vec<[f32; 2]> = serde_json::from_value(faded_wire["audio"]["samples"].clone())?;
     assert_eq!(faded_pcm, faded.samples);
+    let limited = session.read_limited(AudioSample(0), 256, &active())?;
+    assert_eq!(limited.stage, "limited_edge_faded_pcm");
+    assert_eq!(limited.engine, deadpan_audio::LIMITER_ID);
+    assert_eq!(
+        limited.samples, faded.samples,
+        "compliant source level is preserved"
+    );
+    assert_eq!(limited.maximum_reduction_db(), 0.0);
+    let limited_silence = session.read_limited(AudioSample(3200), 256, &active())?;
+    assert_eq!(limited_silence.samples, silent.samples);
+    assert_eq!(limited_silence.suppressed, silent.suppressed);
+    let limited_output = ProcessCommand::new(env!("CARGO_BIN_EXE_deadpan-cli"))
+        .args([
+            "inspect-audio",
+            path.to_str().unwrap(),
+            "--samples",
+            "0",
+            "256",
+            "--limited",
+        ])
+        .output()?;
+    assert!(
+        limited_output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&limited_output.stderr)
+    );
+    assert!(limited_output.stderr.is_empty());
+    let limited_wire: Value = serde_json::from_slice(&limited_output.stdout)?;
+    let limited_pcm: Vec<[f32; 2]> =
+        serde_json::from_value(limited_wire["audio"]["samples"].clone())?;
+    assert_eq!(limited_pcm, limited.samples);
+    let limited_gain: Vec<f64> = serde_json::from_value(limited_wire["audio"]["gain"].clone())?;
+    assert_eq!(limited_gain, limited.gain);
+    for key in [
+        "schema_version",
+        "stage",
+        "engine",
+        "processing_order",
+        "project_id",
+        "revision_id",
+        "start",
+        "suppressed",
+    ] {
+        assert_eq!(
+            limited_wire["audio"][key],
+            serde_json::to_value(&limited)?[key],
+            "{key}"
+        );
+    }
+    assert_eq!(
+        limited_wire["audio"]["verified_tiles"][0]["samples"],
+        json!({"start": 0, "end": 8192})
+    );
+    assert!(
+        (limited_wire["audio"]["verified_tiles"][0]["peak"]
+            .as_f64()
+            .unwrap()
+            - limited.verified_tiles[0].peak)
+            .abs()
+            <= f64::EPSILON
+    );
+    assert!(
+        session
+            .read_limited(AudioSample(0), 257, &active())
+            .is_err()
+    );
     assert_eq!(
         inspect(&path, "0", "256", false)?["error"]["code"],
         "AudioOperationUnsupported"

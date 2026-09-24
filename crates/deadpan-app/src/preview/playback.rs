@@ -194,8 +194,8 @@ impl DeadpanApp {
             if ui.add_enabled(enabled, egui::Button::new(label).fill(style::SELECTED)).clicked() {
                 self.toggle_playback();
             }
-            ui.label(egui::RichText::new("Pre-master audition").size(10.5).color(style::MUTED))
-                .on_hover_text("Canonical sequence sound before effects and the final master limiter. Out-of-range audio stops explicitly. Monitor volume does not change the project or export gain.");
+            ui.label(egui::RichText::new("Limited audition").size(10.5).color(style::MUTED))
+                .on_hover_text("Sequence sound with edge fades and a −1 dBTP safety limiter. Voice effects and the full mix remain unavailable. Monitor volume does not change the project or export gain.");
             let monitor = ui.add_enabled(!active, egui::Slider::new(&mut self.monitor_gain, 0.0..=1.0)
                 .text("Monitor · :monitor").show_value(false))
                 .on_hover_text(format!("Monitor {:.1}%. Pause to change volume. The initial level is 12.5%.", self.monitor_gain * 100.0));

@@ -1900,7 +1900,7 @@ impl DeadpanApp {
                     ui.label(egui::RichText::new("START & MOVE").strong().color(style::LAVENDER));
                     for (key, description) in [
                         ("⌘N / ⌘O", "Choose one Original / open a project. New projects live in Documents/Deadpan."),
-                        ("Space", "Play / pause Your edit. During preparation, Space cancels. Audition is before effects and final mastering; pause to change Monitor volume."),
+                        ("Space", "Play / pause Your edit. During preparation, Space cancels. Audition includes a safety limiter; voice effects and the full mix remain unavailable. Pause to change Monitor volume."),
                         (":monitor 25%", "Set monitor volume without changing the project or export gain. 0 mutes; 12.5% restores the initial level."),
                         ("h l · Left Right", "Move one frame in the current clock. Prefix a count: 12l."),
                         ("j k", "V1: select the next / previous root beat and return to Your edit. In a legacy Sources pane, choose a source."),
@@ -1932,7 +1932,7 @@ impl DeadpanApp {
                     ] { help_binding(ui, key, description); }
                     ui.separator();
                     ui.weak("Original browsing never changes it. Your edit commands affect the selected root beat and its linked picture and sound. Counts precede operators, such as 3rr; the visible PENDING badge waits without a timer.");
-                    ui.weak("Space auditions Your edit before effects and final mastering. Pause before changing Monitor volume. Editing, seeking, opening commands and help stop audition. Original playback, range cuts/reuse, nested navigation/insertion, sound placement, effects, AI generation in the app, and export remain unavailable. Registered sounds are retained catalog entries only.");
+                    ui.weak("Space auditions Your edit with edge fades and a safety limiter. Pause before changing Monitor volume. Editing, seeking, opening commands and help stop audition. Original playback, range cuts/reuse, nested navigation/insertion, sound placement, voice effects, the full mix, AI generation in the app, and export remain unavailable. Registered sounds are retained catalog entries only.");
             });
     }
 }

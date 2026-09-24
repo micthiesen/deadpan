@@ -7,6 +7,10 @@
 mod domain_transfer;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 mod edges;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+mod limited;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+mod limiter;
 mod loudness;
 mod matrix;
 mod reference_policy;
@@ -24,6 +28,16 @@ mod true_peak;
 pub use domain_transfer::{DomainSignalTransfer, DomainTransferDescriptor};
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub use edges::EDGE_FADE_ID;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+pub use limited::{
+    LimitedAudio, LimitedAudioBlock, LimitedAudioError, MAX_CACHED_LIMITED_TILES,
+    MAX_CACHED_LIMITER_BUS_BLOCKS, VerifiedLimitedTile,
+};
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+pub use limiter::{
+    LIMITER_ID, LIMITER_LEFT_HALO, LIMITER_MAX_CONTEXT_FRAMES, LIMITER_MAX_OUTPUT_FRAMES,
+    LIMITER_RIGHT_HALO, LimitedTile, LimiterContext, LimiterError,
+};
 pub use loudness::{
     LOUDNESS_ID, LoudnessError, LoudnessMeter, LoudnessReport, MAX_LOUDNESS_FRAMES,
 };
@@ -40,8 +54,9 @@ pub use signal_transfer::{
 };
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub use stages::{
-    DefinitionAudioBlock, DomainAudioBlock, EdgeFadedBlock, PointDomainAudioBlock, StageAudio,
-    StageAudioError, StageLimits, TimeMappedBlock, TransferredDomainBlock, TransferredRootBlock,
+    DefinitionAudioBlock, DomainAudioBlock, EdgeFadedBlock, MAX_EDGE_PREPARATION_FRAMES,
+    PointDomainAudioBlock, StageAudio, StageAudioError, StageLimits, TimeMappedBlock,
+    TransferredDomainBlock, TransferredRootBlock,
 };
 pub use true_peak::{
     MAX_TRUE_PEAK_FRAMES, TRUE_PEAK_ID, TruePeakError, TruePeakMeter, TruePeakReport,

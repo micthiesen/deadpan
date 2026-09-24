@@ -1,0 +1,31 @@
+{
+  "method": "Native CUA keyboard input, accessibility observations and screenshots of the optimized owned app. Screenshots were inspected in-session; no screenshot files are published.",
+  "binary_sha256": "f68cb731edbc6ae1c3e7e4ce416dac7aa158156d61beba80b12d059bcbc3e5b9",
+  "project": "/Users/michael/Documents/Deadpan/Pause review.deadpan",
+  "source_frames": 120,
+  "edit_frames": 187,
+  "frame_rate": "30000/1001",
+  "beat_frames": [
+    37,
+    15,
+    83,
+    45,
+    7
+  ],
+  "observations": [
+    "Limited audition label is visible beside Play edit / Space and Monitor / :monitor below the dominant picture. Original and Edit durations are separate. Original remains pinned left; selected beat and focus use lavender, cursor yellow.",
+    "Space started native playback; accessibility observed sequence frame150 at boundary149. Playback subsequently ended at exactly187/187, selected/revealed the final seven-frame Hold, and displayed sequence frame187 with Original counter119. No playback failure appeared.",
+    "12h from final boundary moved to boundary175 and displayed sequence frame176; selected fourth Hold135..180.",
+    ":monitor25% (entered with a separating space) showed Monitor25.0% and slider0.25 while Saved remained visible. :monitor12.5% restored the starting setting before the next playback.",
+    "gg returned to start. A second playback showed frame153 at boundary152. After returning to start, immediate Space then Space left boundary0/frame1 and stopped preparation; this is cancellation evidence, not a separately observed midstream pause.",
+    "? opened the readable Keys guide with the updated limiter/full-mix explanation and monitor binding. PageDown visibly scrolled to structural commands. Escape closed it. Tab focused Inspector; ShiftTab restored Viewer.",
+    "Command-Q exited the owned process. The entire logical SQLite dump is unchanged."
+  ],
+  "limitations": [
+    "No acoustic recording or listening assessment, route/sleep/wake stress, physical non-US keyboard, CJK IME or VoiceOver run.",
+    "The CUA accessibility snapshot did not expose help text in its truncated tree; help appearance and paging were verified visually. No accessibility conformance claim.",
+    "Current application still omits full effects/mix/export and broader product requirements. This review compares the implemented layout with the existing single-source target, not every proposed target feature."
+  ],
+  "project_dump_unchanged": true,
+  "owned_process_exited": true
+}

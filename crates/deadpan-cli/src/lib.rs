@@ -37,7 +37,7 @@ const HELP: &str = "Deadpan headless commands:
   project relink-original <project.deadpan> <blake3-digest> <absolute-source> --expected-version <N>
   inspect-plan <project.deadpan> [--frame <N>]
   inspect-plan <project.deadpan> --audio-samples <START> <END>
-  inspect-audio <project.deadpan> --samples <START> <END> [--time-mapped | --edge-faded]
+  inspect-audio <project.deadpan> --samples <START> <END> [--time-mapped | --edge-faded | --limited]
   inspect-audio-domain <project.deadpan> --at <PROBE> --samples <START> <END>
   inspect-audio-definition <project.deadpan> (--node <ID> | --repeat-default <ID>) --samples <START> <END> [--revision <ID>]
   inspect-audio-placement <project.deadpan> (--node <ID> | --repeat-default <ID>) --clock <clock.json> --samples <START> <END> [--revision <ID>]
@@ -418,7 +418,8 @@ fn run(arguments: &[String]) -> Result<(), CliError> {
             start,
             end,
             "--edge-faded",
-        ] => {
+        ]
+        | ["inspect-audio", path, "--samples", start, end, "--limited"] => {
             let start = start
                 .parse::<i64>()
                 .map_err(|_| CliError::Usage("invalid audio sample start".into()))?;
@@ -433,7 +434,13 @@ fn run(arguments: &[String]) -> Result<(), CliError> {
                 ))?;
             let mut session = audio::ProjectAudioSession::open(Path::new(path))?;
             let cancelled = std::sync::atomic::AtomicBool::new(false);
-            let block = if arguments.last() == Some(&"--edge-faded") {
+            let block = if arguments.last() == Some(&"--limited") {
+                serde_json::to_value(session.read_limited(
+                    deadpan_core::AudioSample(start),
+                    frames,
+                    &cancelled,
+                )?)?
+            } else if arguments.last() == Some(&"--edge-faded") {
                 serde_json::to_value(session.read_edge_faded(
                     deadpan_core::AudioSample(start),
                     frames,

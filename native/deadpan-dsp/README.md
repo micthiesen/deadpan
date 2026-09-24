@@ -17,6 +17,18 @@ semitones in both modes. Reads accept at most 256 frames. Configuration owns
 additional native DSP state; the retained-input bound is not a process-memory
 or allocation guarantee.
 
+`FixedPeakBank` is a separate worker-side finite FIR detector, not a limiter. It
+copies a bounded 15-by-129 f64 coefficient table at construction and prepares
+the portable Signalsmith real-FFT kernels once. Each call consumes exactly 1152
+stereo f32 frames (a 1024-frame tile with 64 real context frames on either
+side) and returns 1024 f64 magnitudes linked across phases and channels. The
+bank uses the shared engine version `FIXED_PEAK_ENGINE_ID`; callers must also
+include the actual coefficient table and source identity in any cache key.
+Cancellation is checked before and after each tile, and a rejected or cancelled
+call leaves its output unchanged. Each call is bounded but is not a realtime or
+wall-time guarantee. The native plan is worker-owned, retains no caller buffers,
+and performs no heap allocation while processing a tile.
+
 Cancellation is cooperative between reads. The first read also runs the fixed
 negative-context priming schedule, up to 203 discarded quanta at the slowest
 admitted rate, and is not interrupted mid-native-call. Later reads may span an
@@ -90,3 +102,8 @@ Compile `tests/exact_rate_probe.cpp` with the same flags and adapter to exercise
 the new ABI, u64 rate arithmetic, reduced-equivalent ratios, count independence
 and output guards. AddressSanitizer and UndefinedBehaviorSanitizer are supported
 on the measured macOS environment; its LeakSanitizer option is unavailable.
+
+Compile `tests/finite_peak_abi_probe.cpp` with `src/finite_peak.cpp` and the same
+flags and include paths to exercise the detector's fixed ABI lengths, coefficient
+and sample admission, direct impulse response, output guards and independent
+plans.

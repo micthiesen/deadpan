@@ -46,13 +46,13 @@ Current crates:
 - `native/deadpan-source`: separate persistent descriptor-only FFmpeg video/audio decoders, raw metadata, owned RGBA and original-rate interleaved f32. Unsafe code stays in this narrow adapter; unsupported interpretations fail explicitly.
 - `native/deadpan-dsp`: bounded owned planar PCM and the canonical pinned stretch schedule through a safe Rust/C++ boundary. Construct it on a preparation worker; no device output or media decoding.
 - `native/deadpan-output`: bounded prepared-PCM queue, delivery-clock intervals, generation-scoped stop tokens, owned sleep/wake observation and narrow macOS device boundary. Prepare a fresh channel-scoped generation, prefill, then explicitly activate; starvation and device faults never silently resume. No project/DSP ownership. See [output contract](docs/AUDIO_OUTPUT.md).
-- `crates/deadpan-playback`: immutable-revision pre-master audition. Separate preparation and control workers own canonical PCM and device delivery. The UI never opens source media or owns the device; full mastering and acoustic/performance qualification remain open. See [audition contract](docs/PLAYBACK.md).
-- `crates/deadpan-audio`: exact-phase source resampling, explicit speaker matrices, qualified PCM access, source-stage blocks, bounded continuous Preserve preparation and informational meters. Preparation/analysis is worker work; the playback crate owns device integration. Full voice graph and mastering remain open.
+- `crates/deadpan-playback`: immutable-revision limited audition. Separate preparation and control workers own canonical PCM and device delivery. The UI never opens source media or owns the device; full mastering and acoustic/performance qualification remain open. See [audition contract](docs/PLAYBACK.md).
+- `crates/deadpan-audio`: exact-phase source resampling, explicit speaker matrices, qualified PCM access, continuous Preserve preparation, informational meters and bounded finite oversampled limiting of the current edge-faded bus. Preparation/analysis is worker work; the playback crate owns device integration. Full voice graph, group mix and encoded master qualification remain open.
 - `native/deadpan-fileclone`: bounded safe descriptor-clone interface around the macOS system call. The store owns copying, checksums, publication and durability.
 - `crates/deadpan-render`: bounded shared SDR picture pipeline, linear Rec.2020 working textures, explicit sRGB display transform, aspect and rotation. No decoding, document mutation or encoding.
 - `native/deadpan-media-worker`: process-isolated FFmpeg conversion and independent decode verification through bounded descriptor-only AVIO. Only the documented FFI call permits unsafe Rust. Requires the explicitly selected pinned LGPL FFmpeg development prefix.
 - `native/deadpan-process`: checked worker/leader teardown and Darwin group-membership adapter; unsafe is denied except for its documented bounded libproc call. Higher layers continue to forbid unsafe.
-- `crates/deadpan-app`: native `egui`/`eframe` project workspace using Metal. One service owns the writable store, one import worker prepares media, and a separate bounded preview worker consumes immutable workspaces. Native dialogs, source registration, explicit insertion, history and pre-master sequence audition are implemented; full editing, mastered playback and export remain open.
+- `crates/deadpan-app`: native `egui`/`eframe` project workspace using Metal. One service owns the writable store, one import worker prepares media, and a separate bounded preview worker consumes immutable workspaces. Native dialogs, source registration, explicit insertion, history and limited sequence audition are implemented; full editing, mastered playback and export remain open.
 - `crates/deadpan-cli`: versioned headless project/command API, reused by `deadpan-app --headless`.
 
 [Architecture](docs/ARCHITECTURE.md) records Section 24's full boundary map. Add crates only when an implemented responsibility needs isolation. Do not create empty crates or feature controls that pretend to work.
@@ -97,8 +97,8 @@ active decode/GPU submission. Stop invalidates pending work but retains the last
 submitted picture and geometry. Pause/resume preserves the exact sample estimate;
 navigation and edits discard it. Context-preserving stops never retarget an
 inspector command. Device faults, lost reports and sleep/wake cannot silently
-resume. Monitor gain is independent of authored/export gain; never clip or
-normalize pre-master PCM to conceal missing mastering.
+resume. Monitor gain follows canonical limiting and remains independent of
+authored/export gain; never clip or normalize PCM to conceal a preparation failure.
 
 The shared picture baseline accepts owned, bounded, full-range straight RGBA8
 with explicit transfer, primaries, SAR, rotation and source PTS. Decode transfer
@@ -580,9 +580,28 @@ intentional dynamics; do not use blanket fades or program normalization to pass
 peak tests. Qualify the actual final f32 output under declared finite true-peak
 paths, and retain broader complete-sinc failures as explicit diagnostic evidence.
 These are separate claims, not a universal DAC theorem. Signed reconstruction
-is not monotone under independent gain reduction. The current global LP and
-finite-context experiments are unadopted; they add no production master reader.
-See [mastering qualification](docs/AUDIO_MASTERING.md) before implementing it.
+is not monotone under independent gain reduction. Earlier global LP and
+finite-context experiments remain unadopted. `LimitedAudio` now feeds audition
+and headless inspection with a pinned finite limiter after the current edge-faded
+bus; this does not complete the missing voice, send, group or export paths.
+
+Limiter cache tiles are absolute 8192-sample intervals, independent of playback,
+seek, beat and request boundaries. Retain complete transitive source/layout
+fingerprints and re-admit every hit through the exact immutable plan. One
+`PreparationBudget` spans all tiles, cache checks, bus halos and kernel work in
+a request. Pass its original deadline through final verification/publication.
+Real context is required inside the project; only actual project endpoints permit
+zero extension. Numerical FFT tile dependence is part of the halo proof. Verify
+actual final f32 at owned reconstruction anchors, never temporary halo edges.
+Reject an unverified tile before publication. Keep exact-zero and all-unity
+shortcuts mathematically identical to the pinned finite gain recipe. See
+[mastering qualification](docs/AUDIO_MASTERING.md).
+
+The separate limiter input cache holds twelve exact bus ranges of at most 8192
+frames. Split from the required context start and reuse only matching ranges;
+never round outward to a cache grid. Unrequested source/effect support could
+introduce a false failure or dependency. Re-admit every input-cache dependency
+under the same request budget, and union those dependencies into the final tile.
 
 Source resampling evaluates each original coordinate from its exact affine
 origin, splitting the integer floor before float conversion. Keep fixed filter

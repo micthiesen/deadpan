@@ -1,0 +1,19 @@
+{
+  "scope": "Selected candidate environment reports, native audit environment and compiler records, pipeline metadata and process/resource reports, kernel timing metadata, and sanitizer commands/compiler logs",
+  "review": "Read the retained metadata fields and process reports; additionally scanned selected environment/process records for credential assignment patterns without printing any matching values.",
+  "credentials_found": false,
+  "unrelated_personal_fields_found": false,
+  "retained_context": [
+    "Hardware model, CPU, memory, operating system and load statistics",
+    "Compiler versions, commands, source and executable hashes",
+    "Absolute build and fixture paths on the original run host",
+    "This repository's changed-file names and immutable revision identifiers",
+    "Process resource statistics and generated audio fixture identities"
+  ],
+  "not_collected": [
+    "Raw process environment variables",
+    "Browser state, user documents, credentials or unrelated application content"
+  ],
+  "omitted_fields": [],
+  "note": "Source snapshots and generated fixture files are retained for reproducibility. This review does not claim to scan arbitrary user storage."
+}

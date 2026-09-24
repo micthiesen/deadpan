@@ -1,0 +1,25 @@
+{
+  "archive_files": 1501,
+  "candidate_case_gain_joins": 75,
+  "native_finite_audit_joins": 50,
+  "stored_native_cold_parity_assertions": 26,
+  "native_unchanged_controls": 14,
+  "native_equals_triggered17": true,
+  "retained_stronger_sinc_failures": [
+    "alternating-16.0",
+    "long-rapid-mask-16",
+    "near-nyquist",
+    "rapid-mask-0.8",
+    "rapid-mask-16.0",
+    "retained-failure-16"
+  ],
+  "cached_baseline_hash_fields": 135,
+  "cached_baseline_artifact_files": 15,
+  "pipeline_record_hashes_join_actual_pcm": true,
+  "negative_evidence_verified": true,
+  "compiler_correction_retained": true,
+  "pinned_rust1971_replay_equals_rust1980": true,
+  "sanitizer_probe_pass_recorded": true,
+  "stronger_sinc_point_witness_hash_joins": 6,
+  "scope": "Retained artifact integrity, stored audit assertions and actual byte relationships; no DSP rerun, timing rerun or executable-binary revalidation"
+}
