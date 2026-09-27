@@ -1,0 +1,16 @@
+{
+  "command": [
+    "target/release/deadpan-app",
+    "--ui-check",
+    "--mode",
+    "performance",
+    "--scenario",
+    "edit-latency",
+    "--output",
+    "/tmp/deadpan-repeat-input-20260927/edit-latency-release-01",
+    "--kestrel-source",
+    "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+  ],
+  "exit_code": 0,
+  "elapsed_seconds": 2.348330790642649
+}

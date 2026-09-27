@@ -16,8 +16,11 @@ records restored Metal access, the expanded fourteen-scenario coverage and
 focused follow-ups. It retains failed development runs as well as passing
 results. The new moment, Original audition, sound audition and Retime scenarios
 have now executed with actual paint. Camera visibility, command-hint clipping,
-first-frame errors and sound-control clipping are fixed. Rapid busy-edit
-rejection remains interaction work. Fresh release measurements now pass warm
+first-frame errors and sound-control clipping are fixed. The subsequent
+[Repeat increment](qualification/repeat-input-2026-09-27.md) adds a bounded queue
+for explicit wraps, matching completion guards, separate undo and visible
+cancellation/overflow counts. Its release run passes navigation p95 4.91 ms, Repeat 6.76 ms and Hold 8.98 ms. Other busy edits remain interaction work.
+The layout release measurements pass warm
 navigation (4.67 ms p95), Repeat (6.85 ms) and Hold (9.11 ms) against unchanged
 targets. The earlier records below retain their original run boundaries; they
 are not the current access or performance status.
@@ -32,8 +35,9 @@ budgets: Repeat p95 was 75.26 ms against 50 ms; Hold p95 was 138.65 ms against
 100 ms. The [qualification record](qualification/ui-feedback-2026-09-26.md)
 retains the workload, results and playback-test timeout/retry history. The loop
 also found and fixed a selected-card resize defect; regression coverage now checks
-that selection stays visible. Rapid-edit rejection remains an explicit
-[interaction finding](INTERACTION_REVIEW.md#observed-development-findings).
+that selection stays visible. The seven rejected wraps remain evidence of that
+earlier behavior; the current [interaction finding](INTERACTION_REVIEW.md#observed-development-findings)
+records the scoped Repeat fix.
 Existing qualification records keep their original scope.
 
 The [Original moment increment](qualification/moment-paste-2026-09-27.md) adds
@@ -216,7 +220,7 @@ the real app. The initial viewport is 1280×820 points at 1×. The code lives in
 | `camera` | Pointer opening and numeric preview, Cancel, keyboard reopening/zoom and pointer Apply. Reach clipped inspector controls with real wheel input before clicking. Checks unchanged revision during preview, restoration of the submitted entry framing/source frame after Cancel, and authored framing after Apply. |
 | `menus` | File-menu ownership of edit keys, help opening, keyboard/wheel changes to scroll offset and painted content, text containing edit keys and punctuation, and cancellation back to the exact active pane's focus. |
 | `delayed-preview` | Holds a real decoder reply at a controlled delivery boundary, advances intent, resizes, releases the stale reply, checks newest-picture recovery, then injects a decoder failure and recovers. |
-| `rapid-input` | Accounts for all eight Repeat intents in one batch as admitted or explicitly rejected; every admitted edit must have a distinct committed revision and exact result. Checks 30 frame-navigation inputs, final intent and idle repaint. Busy rejection remains a warning about friction. Performance mode warms 16 back/forward inputs, then measures exactly 120 more. |
+| `rapid-input` | Requires all eight explicit Repeat wraps in one batch to commit separately, with exact nested results and per-wrap undo. Delays delivery of real writer updates to check a partial `rr` through queued commits, pointer context cancellation, sixteen-waiting capacity, explicit overflow and Escape. Checks painted notices at default/minimum sizes, 30 frame-navigation inputs, final intent and idle repaint. Restores the Original before navigation. Performance mode warms 16 back/forward inputs, then measures exactly 120 more. |
 | `playback-feedback` | Pointer Play/Pause/Cancel with injected preparation, delivery, stale-update and device-failure states. Requires complete error text on its first paint and wrapped errors on the first resize frame. Checks feedback and picture routing only; no device, PCM or listening claim. |
 | `large-project` | Opens a real SQLite fixture with 10,000 root Background/Silence Holds. Tests end navigation, pointer wheel/selection, minimum-size selection visibility and bounded rendered cards. Alternates near-end `j/k` 64 times visually or 160 times in performance mode. No media or large asset inventory is stressed. |
 | `edit-latency` | Dispatches cached `rr`, waits for its committed picture, then undoes; repeats with `:hold 11f` and undo. Checks one matching commit and picture completion per edit, the exact Repeat or Freeze/Silence structure, and restoration of the authored Original baseline with a fresh revision. Visual mode runs two cycles per type. Performance mode warms four cycles per type and measures 40 more per type. |

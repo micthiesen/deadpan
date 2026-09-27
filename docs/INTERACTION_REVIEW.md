@@ -69,11 +69,20 @@ records the latest fixes, review and retained failures:
   a disclosure. The real Camera replay passes without its former scroll warning.
   Keep real wheel input for controls that need it; clicking a clipped
   accessibility rectangle would hide the usability problem.
-- **Rapid edit input is rejected while busy.** Seven of eight Repeat intents in
-  one batch were explicitly rejected in the final visual run. Every intent was
-  accounted for and the admitted edit had the correct result, but this remains
-  interaction friction. Review safe bounded handling of successive edit intent
-  and make any rejection immediately clear; do not insert replay waits to hide it.
+- **Rapid Repeat wraps now retain intent.** The layout run rejected seven of
+  eight batched wraps while busy. The [Repeat increment](qualification/repeat-input-2026-09-27.md)
+  retains up to sixteen waiting explicit wraps behind one submitted edit. Each
+  consumes a matching committed wrapper before using a fresh target/revision,
+  and each has a separate undo. Replay sends all eight in one batch without
+  inserted waits. Visible counts explain waiting, overflow and cancellation.
+  Setters and unrelated commands retain their normal busy rejection.
+- **Closing command entry leaves a one-frame layout gap.** The first `rr`
+  batch after `:sequence` paints its notice correctly, but the status panel
+  starts at the previous command panel height before shrinking on the next
+  frame. This leaves a temporary blank band and moves the picture. The
+  [Repeat qualification](qualification/repeat-input-2026-09-27.md) retains both
+  frames. Correct the panel's initial geometry without hiding this transition
+  behind an extra replay wait.
 - **The earlier replay missed edit feedback budgets.** On 2026-09-26, cached
   Repeat input-to-picture p95 was 75.26 ms against 50 ms, and the 11-frame Hold
   fallback was 138.65 ms against 100 ms. Their observed commit p95 values were
@@ -117,8 +126,8 @@ do not establish overall usability or native accessibility.
 | First | Every advertised shortcut reaches its action in the user's environment. | `,i` replaces Cmd+Return. The evaluated Kestrel reservation audit covers globals and the known Ghostty-specific exception; source drift fails explicitly when supplied. Complete native physical-delivery evidence and maintain the audit as bindings change. |
 | First | Focus, selected content, Original/Your edit context and requested/displayed positions remain distinguishable. | Replay checks selected-card visibility and exact pane focus after text cancellation. Inspect loaded, pending and error frames and confirm equivalent meaning through native accessibility. |
 | First | Common inspector actions are visible and reachable without discovery by scrolling. | Camera and pause now precede metadata; actual default/minimum captures and Camera replay qualify this change. Preserve pointer-wheel replay and verify actual clipped bounds as more actions arrive. |
-| First | A committed edit reaches its picture feedback budget. | Fresh release Repeat/Hold p95 is 6.85/9.11 ms against unchanged 50/100 ms targets. Preserve the earlier misses and qualify full-size workloads and physical display latency. |
-| First | Rapid commands preserve intent or make rejection clear. | Seven of eight batched Repeat intents were rejected while busy. Keep bounded work and revision-aware targets while reviewing whether successive edits can be retained safely. |
+| First | A committed edit reaches its picture feedback budget. | The Repeat increment passes release Repeat/Hold p95 at 6.76/8.98 ms against unchanged 50/100 ms targets. Preserve the earlier misses and qualify full-size workloads and physical display latency. |
+| First | Rapid commands preserve intent or make rejection clear. | Eight batched explicit Repeat wraps now commit separately through a bounded queue, with cancellation and overflow feedback. Other command types retain busy rejection and need their own interaction review. |
 | First | New errors are readable on the first painted frame. | Premeasured notices now pass first-paint and wrapped first-resize assertions. Preserve exact paint checks and stable widget identities as status content grows. |
 | First | Escape has one predictable meaning in the current owner. | Replay checks menu ownership and Camera cancellation restoring the submitted entry composition without a revision. Preserve pending-input, text and native-dialog ownership; Escape must not undo a committed edit. Extend mixed and same-frame coverage with new modes. |
 | First | Continuous navigation stays visually coherent. | Delayed-preview replay checks retained and stale pictures. Ticket-bound telemetry distinguishes completed, failed, superseded and repeated work. Inspect intermediate frames and the isolated warm input-to-GPU-completion measurements. |
@@ -168,10 +177,10 @@ uses injected service updates and does not qualify audio output. Extend replay
 coverage when adding an interaction; keep unsupported and unmeasured behavior
 visible instead of inferring coverage from a similarly named scenario.
 
-The rapid-input scenario now accounts for every edit intent, including explicit
-busy-service rejection, and requires a distinct revision and exact result for
-every admitted edit. A warning about rejected intents remains useful product
-feedback even when correctness checks pass. Help replay checks both scroll state
+The rapid-input scenario now requires eight separate commits from one batch of
+explicit wraps, their exact nested result, and individual undo to the Original.
+It also holds real writer updates at the UI delivery boundary to check pending
+prefixes, pointer cancellation, bounded overflow and Escape. Help replay checks both scroll state
 and changed painted content. Camera cancellation checks the submitted composition
 rather than only a closed mode or unchanged revision. The separate `edit-latency`
 scenario checks cached Repeat and an 11-frame silent-freeze Hold through the real

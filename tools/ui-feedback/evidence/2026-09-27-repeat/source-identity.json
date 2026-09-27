@@ -1,0 +1,16 @@
+{
+  "base_commit": "c09a5f616ed96c4b8a9621eff3a0e3afc833a110",
+  "files": {
+    "Cargo.lock": "b08a6300d22949cf7f5feebeba858b85b6776fd2956b8617325477c56ead0226",
+    "crates/deadpan-app/src/preview.rs": "f068d915afe9ac9186f772ab9c1cbbe015d997e51bd52428a85c95a450a7e4e5",
+    "crates/deadpan-app/src/preview/harness.rs": "d33b5eaac1cc07fd19f9f2b35c66e5f36a2a001af48d89d4546f2ea013da6305",
+    "crates/deadpan-app/src/preview/harness/repeat_input.rs": "1a4b66dc841acaaaf6e916e94ae44f0cb68984b1e834878991f60c6df56c4cfc",
+    "crates/deadpan-app/src/preview/harness/scenarios.rs": "5e536959e15ab30856a7c59de1798b74967ce06f873491ba9e7893e8af7ae00c",
+    "crates/deadpan-app/src/preview/harness/telemetry.rs": "a7d40044170821cd9bf3af31d606cdb6c0218d8217cfa375884fd161557591bf",
+    "crates/deadpan-app/src/preview/repeat_queue.rs": "61a65dbae2384ee68b52dd938ae5758d3df66863a921175d0fdab200c6a56ee8",
+    "crates/deadpan-app/src/preview/repeat_queue/tests.rs": "ab7c723bcedb8a244e0e35cdfd80bb86dc39d2bce206d60b21a8e67e96d4500a",
+    "crates/deadpan-app/src/preview/repeats.rs": "393be1dc34255e678f95540948c29eb5ae1091c0684b629f2cd2d9460ee0844c",
+    "crates/deadpan-app/src/project/scope.rs": "725b9f69b212e33c814b6e05246d09d7fad75ff188a7f5d2148ff27ae4d7d092",
+    "rust-toolchain.toml": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc"
+  }
+}

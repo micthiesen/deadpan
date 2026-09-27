@@ -1,0 +1,5 @@
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 17.01s
+     Running `target/debug/deadpan-app --ui-check --scenario rapid-input --output /tmp/deadpan-repeat-input-20260927/rapid-input-02 --kestrel-source /Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift`
+rapid-input: PASS
+UI feedback: /tmp/deadpan-repeat-input-20260927/rapid-input-02/report.html

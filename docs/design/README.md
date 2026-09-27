@@ -90,6 +90,7 @@ clock. Long breadcrumbs scroll without covering the cards. See the implemented
 | --- | --- | --- |
 | Normal | Mode, Original/Your edit context, pane, selected beat and scope | `h/l` move frames; `j/k` move the focused list; counts precede motions; `Tab`/`Shift-Tab` cycle visible panes. In Your edit, beat actions require an editable selection. |
 | Operator pending | Exact typed prefix and current scope | No timeout. `3rr` means three total plays. Escape cancels the pending input. |
+| Repeat wraps waiting | Waiting count, Escape hint and explicit cancellation/overflow counts in the notice | Up to sixteen explicit wraps wait behind one save. Each commits and undoes separately. Escape or a context change discards waiting work; the submitted edit may finish. |
 | Command/text | Focused field, command reference and units | macOS editing and IME own keystrokes. Text never dispatches structural shortcuts. Same-frame text is processed before submission. |
 | Parameter entry | Selected node, current value and command | Current native setters use the shared command entry. Return commits a validated command; Escape cancels entry. This is not a live parameter preview. |
 | Temporary preview | Camera mode, root-beat scope, unsaved draft and actual resulting picture | Camera: Enter commits once; Escape restores entry framing. Numeric fields retain native editing. Trim and other live parameter previews remain required. |

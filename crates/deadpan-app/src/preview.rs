@@ -29,6 +29,8 @@ mod help_scroll;
 mod inspector;
 mod moment;
 mod playback;
+mod repeat_queue;
+mod repeats;
 mod scope;
 mod selection;
 mod style;
@@ -97,6 +99,7 @@ pub struct DeadpanApp {
     monitor_control: Option<egui::Id>,
     resume: Option<crate::transport::Resume>,
     service: ProjectService,
+    repeat_queue: repeat_queue::Queue,
     dialogs: Dialogs,
     dialog_intent: Option<DialogIntent>,
     render_state: egui_wgpu::RenderState,
@@ -192,6 +195,7 @@ impl DeadpanApp {
             monitor_control: None,
             resume: None,
             service,
+            repeat_queue: repeat_queue::Queue::default(),
             dialogs: Dialogs::default(),
             dialog_intent: None,
             render_state,
@@ -252,6 +256,11 @@ impl DeadpanApp {
     }
 
     fn submit(&mut self, request: ProjectRequest) -> bool {
+        self.cancel_repeats("another project action");
+        self.submit_now(request)
+    }
+
+    fn submit_now(&mut self, request: ProjectRequest) -> bool {
         self.cancel_camera();
         self.stop_playback();
         self.bindings.clear();
@@ -433,7 +442,27 @@ impl DeadpanApp {
     }
 
     fn receive(&mut self) {
-        if let Some(update) = self.service.take_update() {
+        #[cfg(feature = "ui-harness")]
+        let update = self.feedback.take_project_update(&self.service);
+        #[cfg(not(feature = "ui-harness"))]
+        let update = self.service.take_update();
+        if let Some(update) = update {
+            let repeat_completion = match self.repeat_queue.matching_completion(
+                update.workspace.as_ref().map(|workspace| workspace.session),
+                update
+                    .workspace
+                    .as_ref()
+                    .map(|workspace| workspace.document.as_ref()),
+                update.committed.as_ref(),
+                update.error.is_some(),
+            ) {
+                Ok(matched) => matched,
+                Err(reason) => {
+                    self.cancel_repeats(reason);
+                    false
+                }
+            };
+            let repeat_bindings = repeat_completion.then(|| std::mem::take(&mut self.bindings));
             let old_session = self.workspace.as_ref().map(|w| w.session);
             let old_revision = self
                 .workspace
@@ -572,6 +601,16 @@ impl DeadpanApp {
             if old_revision != new_revision || old_session != new_session || completed {
                 self.request_picture(!preserve_picture);
             }
+            if repeat_completion {
+                if let Some(target) = self.repeat_target() {
+                    self.repeat_queue.completed(target);
+                } else {
+                    self.cancel_repeats("the committed selection is unavailable");
+                }
+            }
+            if let Some(bindings) = repeat_bindings {
+                self.bindings = bindings;
+            }
         }
         #[cfg(feature = "ui-harness")]
         let reply = self.feedback.take_reply(&self.worker);
@@ -601,6 +640,7 @@ impl DeadpanApp {
     }
 
     fn begin_dialog(&mut self, kind: DialogKind, context: &egui::Context, preview_only: bool) {
+        self.cancel_repeats("a file action was requested");
         if self.dialogs.is_open() || self.service.is_busy() {
             return;
         }
@@ -776,6 +816,7 @@ impl DeadpanApp {
     }
 
     fn history(&mut self, redo: bool) {
+        self.cancel_repeats("history navigation was requested");
         let Some(workspace) = &self.workspace else {
             return;
         };
@@ -798,8 +839,15 @@ impl DeadpanApp {
 
     fn edit(&mut self, edit: BeatEdit) {
         self.bindings.clear();
+        if !matches!(edit, BeatEdit::WrapRepeat(_)) {
+            self.cancel_repeats("another edit was requested");
+        }
         if self.view == View::Source {
             self.offer_insert();
+            return;
+        }
+        if let BeatEdit::WrapRepeat(plays) = edit {
+            self.wrap_repeat(plays);
             return;
         }
         if let BeatEdit::InsertHold(input) = edit {
@@ -855,7 +903,7 @@ impl DeadpanApp {
                 ProjectEdit::Split { node, at }
             }
             BeatEdit::Repeat(plays) => ProjectEdit::Repeat { node, plays },
-            BeatEdit::WrapRepeat(plays) => ProjectEdit::WrapRepeat { node, plays },
+            BeatEdit::WrapRepeat(_) => unreachable!("Repeat continuation handled above"),
             BeatEdit::Delete => ProjectEdit::Delete { node },
             BeatEdit::HoldDuration(duration) => ProjectEdit::HoldDuration { node, duration },
             BeatEdit::Retime(input) => ProjectEdit::Retime {
@@ -899,6 +947,7 @@ impl DeadpanApp {
     }
 
     fn open_command(&mut self, command: String, context: &egui::Context) {
+        self.cancel_repeats("command entry was opened");
         self.pause_playback();
         self.bindings.clear();
         self.command_open = true;
@@ -1037,6 +1086,13 @@ impl DeadpanApp {
     }
 
     fn action(&mut self, action: Action, context: &egui::Context) {
+        // OfferInsert also represents an unfinished operator (including the
+        // first r of rr). In Sequence it is only a hint, not another action.
+        let repeat_input = matches!(action, Action::Edit(BeatEdit::WrapRepeat(_)))
+            || (matches!(action, Action::OfferInsert) && self.view == View::Sequence);
+        if !repeat_input {
+            self.cancel_repeats("another action was requested");
+        }
         if self.sound_focused() && !sound_action_allowed(action) {
             self.bindings.clear();
             self.message = Some(
@@ -1567,7 +1623,7 @@ impl DeadpanApp {
                             {
                                 self.history(false);
                             }
-                            if self.service.is_busy() {
+                            if self.service.is_busy() || self.repeat_queue.active() {
                                 ui.spinner();
                                 ui.weak("Working");
                             } else if self.camera.is_some() {
@@ -1674,6 +1730,7 @@ impl DeadpanApp {
     }
 
     fn notice(&self, ui: &mut egui::Ui) {
+        let repeat_status = self.repeat_queue.status();
         let text = if self.command_open || (self.camera.is_some() && !self.sound_focused()) {
             None
         } else if let Some(error) = self
@@ -1682,13 +1739,19 @@ impl DeadpanApp {
             .or(self.project_error.as_deref())
             .or(self.presentation.error())
         {
+            let detail = match repeat_status.as_deref() {
+                Some(status) if status.contains(error) => status.to_owned(),
+                Some(status) => format!("{}; {status}", error.trim_end_matches('.')),
+                None => error.to_owned(),
+            };
             Some(
-                egui::RichText::new(format!("Could not complete action: {error}"))
+                egui::RichText::new(format!("Could not complete action: {detail}"))
                     .color(ui.visuals().error_fg_color),
             )
         } else {
-            self.message
+            repeat_status
                 .as_ref()
+                .or(self.message.as_ref())
                 .map(|message| egui::RichText::new(message).color(style::MUTED).size(12.0))
         };
         // A bottom panel normally starts with last frame's height. Measure this
@@ -2407,7 +2470,7 @@ impl DeadpanApp {
                         ("s / :split", "Split linked picture and sound at the cursor inside the selected beat. The right fragment stays selected; duration and output stay unchanged."),
                         (",h / 3,h", "Insert a silent freeze at the cursor: 0.5 s per count. Keeps the following original speech. The cursor stays at the pause; Enter opens its enclosing group when needed. At a group edge, Backspace returns to the seam's owner. u undoes it."),
                         (":hold 1.5s", "Choose an exact pause duration: 12f, 250ms, 1.5s, or 01:02.500. Seconds round once to project frames. Zero makes no edit. Source and pause fragments work inside Sequence groups; Repeat and Retime interiors remain unavailable."),
-                        ("rr / 3rr", "Wrap the selected beat in two / three total plays."),
+                        ("rr / 3rr", "Wrap the selected beat in two / three total plays. Rapid wraps wait in order, up to 16 pending; each has its own undo. Escape, navigation or another action cancels the waiting wraps."),
                         ("dd / :delete", "Cut one whole selected beat and close its time. Undo restores it."),
                         (":repeat 3", "Set total plays on a Repeat; wrap a different selected beat."),
                         (":wrap-repeat 3", "Always add an enclosing Repeat, including nesting."),
@@ -2447,6 +2510,7 @@ impl eframe::App for DeadpanApp {
                 Some("Audition stopped for sleep or wake. Press Space to start again.".into());
         }
         self.close_pending |= context.input(|i| i.viewport().close_requested());
+        self.reconcile_repeats(&context);
         let previous_pane = self.pane;
         self.receive();
         self.reconcile_sound_playback();
@@ -2525,6 +2589,7 @@ impl eframe::App for DeadpanApp {
         if !self.command_focus_pending && close_command_on_blur(&context, &mut self.command_open) {
             self.bindings.clear();
         }
+        self.dispatch_waiting_repeat(&context);
         if let Some(frames) = self.smoke_frames.as_mut() {
             *frames += 1;
             if *frames >= 3 {

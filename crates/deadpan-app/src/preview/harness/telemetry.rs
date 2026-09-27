@@ -11,6 +11,8 @@ pub(super) struct InputOrigins {
     current: Option<Instant>,
     committed: Option<Instant>,
     dispatching: bool,
+    repeats: std::collections::VecDeque<Option<Instant>>,
+    dequeued_repeat: Option<Option<Instant>>,
 }
 
 impl InputOrigins {
@@ -31,7 +33,21 @@ impl InputOrigins {
             }
             "command_admitted" => {
                 // A scripted picker can complete before new input is routed.
-                self.admitted = self.last_dispatched;
+                self.admitted = self.dequeued_repeat.take().unwrap_or(self.last_dispatched);
+            }
+            "command_rejected" => {
+                self.dequeued_repeat = None;
+            }
+            "repeat_queued" => {
+                if self.repeats.len() < crate::preview::repeat_queue::MAX_WAITING {
+                    self.repeats.push_back(self.last_dispatched);
+                }
+            }
+            "repeat_dequeued" => {
+                self.dequeued_repeat = Some(self.repeats.pop_front().flatten());
+            }
+            "repeat_cancelled" => {
+                self.repeats.pop_front();
             }
             "command_committed" => {
                 self.committed = self.admitted.take();
@@ -297,6 +313,39 @@ fn milliseconds(end: Instant, start: Instant) -> f64 {
 mod tests {
     use super::*;
     use std::time::Duration;
+
+    #[test]
+    fn queued_repeats_keep_fifo_input_origins_and_cancel_without_leaking_them() {
+        let first = Instant::now();
+        let second = first + Duration::from_millis(10);
+        let third = first + Duration::from_millis(20);
+        let mut origins = InputOrigins::default();
+        origins.begin_frame(Some(first));
+        origins.observe("input_dispatch");
+        origins.observe("command_admitted");
+        origins.observe("repeat_queued");
+        origins.begin_frame(Some(second));
+        origins.observe("input_dispatch");
+        origins.observe("repeat_queued");
+        assert_eq!(origins.observe("command_committed"), Some(first));
+        origins.observe("repeat_dequeued");
+        origins.observe("command_admitted");
+        assert_eq!(origins.observe("command_committed"), Some(first));
+        origins.observe("repeat_dequeued");
+        origins.observe("command_admitted");
+        assert_eq!(origins.observe("command_committed"), Some(second));
+        origins.observe("repeat_queued");
+        origins.observe("repeat_cancelled");
+        origins.begin_frame(Some(third));
+        origins.observe("input_dispatch");
+        origins.observe("command_admitted");
+        assert_eq!(origins.observe("command_committed"), Some(third));
+        assert!(origins.repeats.is_empty());
+        // Missing origin evidence stays unknown, never inferred from a newer key.
+        origins.observe("repeat_dequeued");
+        origins.observe("command_admitted");
+        assert_eq!(origins.observe("command_committed"), None);
+    }
 
     #[test]
     fn completion_before_new_input_keeps_its_admitted_origin() {

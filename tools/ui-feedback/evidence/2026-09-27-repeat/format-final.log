@@ -1,0 +1,10 @@
+Diff in /Users/michael/Code/deadpan/crates/deadpan-app/src/preview/harness/repeat_input.rs:241:
+         .as_ref()
+         .ok_or("Undo lost workspace")?
+         .document;
+-    let mut restored = serde_json::to_value(document.as_ref()).map_err(|error| error.to_string())?;
++    let mut restored =
++        serde_json::to_value(document.as_ref()).map_err(|error| error.to_string())?;
+     let mut expected = serde_json::to_value(baseline).map_err(|error| error.to_string())?;
+     // Undo receives a fresh revision; every other authored field must match,
+     // including marks, sparse overrides, media bindings and presentation basis.

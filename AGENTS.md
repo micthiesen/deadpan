@@ -344,7 +344,18 @@ for qualified limits and rejected grammars.
 
 The setup workflow's TypeScript/Bun/mitools/Biome defaults do not apply to this Rust-native product. The maintained Rust sibling `beastie` supplies the initial workspace conventions; consult maintained siblings for evolving personal tooling patterns. [Dependency decisions](docs/DEPENDENCIES.md) records the pins and qualification boundaries. Do not introduce Bun, Node, Python, or shell setup as an end-user requirement. Future model workers use an app-managed private runtime selected through measurement.
 
-The native UI submits typed project requests through one bounded service mailbox. Import preparation never owns SQLite. Cached insertion, current-depth editing and history may proceed while a new import prepares; an uncached insertion preserves its captured revision/target and fails if stale. Beat edits capture session, revision, absolute cursor and Sequence scope; reject non-direct targets and resolve through core/store commands. Consume explicit committed revisions and resulting selection, including an explicit clear, never infer completion from progress text. Preserve these markers across background updates and deduplicate them by revision. Repeat setters retain omitted gap parameters; explicit wrap-repeat always nests. Cancel pending keyboard operators when context, pane, selection or revision changes. Keep Source context non-destructive. Preview requests carry their immutable workspace, so cancellation of an earlier open cannot strand a later frame. Construct native dialogs on the main application thread, poll without blocking, and retain text focus until same-frame text and IME events are processed.
+Rapid explicit Repeat wraps may retain sixteen UI-owned waiting intents behind
+one submitted command. Rebuild each successor only after adopting the exact
+same-session committed wrapper, revision and Sequence scope. Never dispatch from
+writer-idle alone, enlarge the writer mailbox, or replay a stale request. Keep
+partial operator input through the chain's own commits; resolved other actions,
+context changes, modal entry, blur, close and mismatched completions cancel the
+waiting tail with a visible count. Each wrap has a separate durable undo step.
+Keep this exception specific to explicit wraps; setters and unrelated commands
+retain their normal rejection and revision behavior. See
+[the workspace contract](docs/NATIVE_WORKSPACE.md).
+
+The native UI submits typed project requests through one bounded service mailbox. Import preparation never owns SQLite. Cached insertion, current-depth editing and history may proceed while a new import prepares; an uncached insertion preserves its captured revision/target and fails if stale. Beat edits capture session, revision, absolute cursor and Sequence scope; reject non-direct targets and resolve through core/store commands. Consume explicit committed revisions and resulting selection, including an explicit clear, never infer completion from progress text. Preserve these markers across background updates and deduplicate them by revision. Repeat setters retain omitted gap parameters; explicit wrap-repeat always nests. Cancel pending keyboard operators when context, pane, selection or revision changes, except for a matching completion in the UI-owned explicit Repeat chain. Keep Source context non-destructive. Preview requests carry their immutable workspace, so cancellation of an earlier open cannot strand a later frame. Construct native dialogs on the main application thread, poll without blocking, and retain text focus until same-frame text and IME events are processed.
 
 Keyboard routing precedes widget drawing. Use persistent `egui::Popup` state for
 menu ownership; the current-pass `Context::any_popup_open` is empty at that point.

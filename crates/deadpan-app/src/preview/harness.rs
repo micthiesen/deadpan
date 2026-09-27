@@ -14,6 +14,7 @@ mod edit_latency;
 mod moment;
 mod nested_pause;
 mod original_playback;
+mod repeat_input;
 mod retime;
 mod scale;
 mod scenarios;
@@ -26,6 +27,7 @@ use wake::RepaintWake;
 
 #[derive(Default)]
 pub(super) struct Feedback {
+    pub hold_project_updates: bool,
     pub hold_preview: bool,
     pub held_reply: Option<crate::worker::Reply>,
     pub release_reply: Option<crate::worker::Reply>,
@@ -36,6 +38,17 @@ pub(super) struct Feedback {
 }
 
 impl Feedback {
+    pub fn take_project_update(
+        &self,
+        service: &ProjectService,
+    ) -> Option<crate::project::ProjectUpdate> {
+        if self.hold_project_updates {
+            None
+        } else {
+            service.take_update()
+        }
+    }
+
     pub fn record(&mut self, stage: &'static str) {
         self.record_event(stage, None, None, None);
     }
@@ -482,6 +495,7 @@ impl Driver<'_> {
             "revision":app.workspace.as_ref().map(|w| w.document.revision_id()),
             "duration":app.sequence_length(),"beat_count":app.beat_rows.len(),
             "busy":app.service.is_busy(),"command_open":app.command_open,"command":app.command,
+            "repeat_queue":{"active":app.repeat_queue.active(),"waiting":app.repeat_queue.waiting(),"status":app.repeat_queue.status()},
             "import":app.import.as_ref().map(|status| json!({"stage":format!("{:?}",status.stage),"error":status.error})),
             "help_open":app.help_open,"camera_open":app.camera.is_some(),"camera_pending":app.camera_pending.is_some(),
             "playback": app.transport.as_ref().map(|run| json!({"phase":format!("{:?}",run.phase),"sample":run.sample.0,"content_sample":run.content_sample().ok().map(|sample|sample.0),"looping":run.window().looping(),"window":[run.window().start().0,run.window().end().0],"lap":run.lap().ok(),"domain":match run.domain(){crate::transport::Domain::Sequence{..}=>"sequence",crate::transport::Domain::Original(_)=>"original",crate::transport::Domain::Sound(_)=>"sound"},"generation":format!("{:?}",run.generation)})),
@@ -691,6 +705,7 @@ impl Driver<'_> {
     fn settled(&mut self) -> Result<(), String> {
         self.wait_for("Project and picture settled", |app| {
             !app.service.is_busy()
+                && !app.repeat_queue.active()
                 && !app.presentation.loading()
                 && !app.presentation.needs_render()
                 && !app.importing()

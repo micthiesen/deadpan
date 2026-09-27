@@ -23,6 +23,13 @@ pub struct SequenceScopeView<'a> {
 }
 
 impl SequenceScope {
+    /// Identity-only fixture for reducers that compare scopes without resolving
+    /// a workspace. Production paths still come from checked descent.
+    #[cfg(test)]
+    pub(crate) fn test_path(groups: Vec<NodeId>) -> Self {
+        Self { groups }
+    }
+
     /// Resolve this path and calculate its absolute span from only the Sequence
     /// prefixes along the path. Durations come from the immutable compiled plan.
     pub fn resolve<'a>(&self, workspace: &'a Workspace) -> Result<SequenceScopeView<'a>, String> {

@@ -1,0 +1,14 @@
+{
+  "command": [
+    "target/debug/deadpan-app",
+    "--ui-check",
+    "--scenario",
+    "menus-focus",
+    "--output",
+    "/tmp/deadpan-repeat-input-20260927/menus-focus-02",
+    "--kestrel-source",
+    "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+  ],
+  "exit_code": 1,
+  "elapsed_seconds": 0.025051249656826258
+}

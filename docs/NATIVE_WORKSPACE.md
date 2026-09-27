@@ -84,6 +84,21 @@ setters preserve an existing gap; explicit wrapping creates a new Repeat even
 when the selected beat is already one. Deletion selects the next sibling, otherwise
 the previous sibling, otherwise explicitly clears selection.
 
+Rapid explicit wraps (`rr` / counted `rr`) retain up to sixteen waiting intents
+in the UI, in addition to one submitted edit. Each creates a separate nested
+Repeat and undo step. The next request is constructed only after consuming the
+matching committed wrapper, with its fresh revision, selected node and scope.
+An idle writer alone never authorizes continuation. The mailbox stays bounded
+to one command and its normal revision guards remain mandatory.
+
+The notice shows the waiting count and Escape hint. Escape, another resolved
+action, navigation, pointer context change, a modal, window blur or close cancels
+waiting wraps and reports their count; the submitted edit may finish. Overflow
+is explicitly counted. Errors and mismatching completions discard waiting work.
+The next partial operator/count survives the chain's own matching completions.
+Repeat setters and unrelated edits are not queued or silently retargeted.
+These session-local intents are not persisted recovery work.
+
 Every successful insertion or beat edit reports its actual committed revision,
 captured scope and resulting selected node, including an explicit empty selection.
 The completion marker survives coalesced background progress, registration and

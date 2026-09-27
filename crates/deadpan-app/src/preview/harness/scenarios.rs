@@ -720,66 +720,7 @@ fn delayed(d: &mut Driver<'_>) -> Result<(), String> {
 }
 
 fn rapid(d: &mut Driver<'_>) -> Result<(), String> {
-    let initial_revision = d.revision();
-    let initial_duration = d.app().sequence_length();
-    let burst_start = d.report.steps.len();
-    // One native batch, intentionally no service wait between edits.
-    let events = (0..8)
-        .flat_map(|_| {
-            [
-                key_event(Key::R, egui::Modifiers::NONE, true),
-                key_event(Key::R, egui::Modifiers::NONE, false),
-                key_event(Key::R, egui::Modifiers::NONE, true),
-                key_event(Key::R, egui::Modifiers::NONE, false),
-            ]
-        })
-        .collect();
-    d.events("Eight rapid repeat operations in one input batch", events)?;
-    // Worker busy can become false before the app consumes its committed
-    // mailbox update. Wait for the actual revision, then inspect accounting.
-    d.changed(&initial_revision)?;
-    let stage_count = |name| {
-        d.report.steps[burst_start..]
-            .iter()
-            .flat_map(|step| step.semantic["stages"].as_array().into_iter().flatten())
-            .filter(|event| event["stage"] == name)
-            .count()
-    };
-    let admitted = stage_count("command_admitted");
-    let rejected = stage_count("command_rejected");
-    let committed = stage_count("command_committed");
-    let revisions: std::collections::BTreeSet<_> = d.report.steps[burst_start..]
-        .iter()
-        .filter_map(|step| step.semantic["revision"].as_str())
-        .filter(|revision| *revision != initial_revision)
-        .map(str::to_owned)
-        .collect();
-    d.check(
-        "All eight rapid edit intents are admitted or explicitly rejected",
-        admitted + rejected == 8 && admitted > 0,
-        json!({"intents":8,"admitted_plus_rejected":8,"at_least_one_admitted":true}),
-        json!({"admitted":admitted,"rejected":rejected}),
-    )?;
-    let expected_duration = initial_duration
-        .checked_mul(
-            2_u64
-                .checked_pow(u32::try_from(admitted).map_err(|e| e.to_string())?)
-                .ok_or("Rapid repeat multiplier overflow")?,
-        )
-        .ok_or("Rapid repeat duration overflow")?;
-    d.check(
-        "Every admitted rapid edit has a distinct committed revision and exact result",
-        committed == admitted
-            && revisions.len() == admitted
-            && d.app().sequence_length() == expected_duration
-            && d.app().beat_rows.len() == 1
-            && revisions.contains(&d.revision()),
-        json!({"committed":admitted,"distinct_revisions":admitted,"duration":expected_duration,"root_beats":1}),
-        json!({"committed":committed,"revisions":revisions,"duration":d.app().sequence_length(),"root_beats":d.app().beat_rows.len(),"final_revision":d.revision()}),
-    )?;
-    if rejected > 0 {
-        d.report.findings.push(Finding { severity:Severity::Warning,message:format!("{rejected} of eight rapid edit intents were rejected while the project service was busy. The report retains this interaction friction; waits were not inserted to hide it.") });
-    }
+    super::repeat_input::run(d)?;
     for _ in 0..30 {
         d.key(Key::L)?;
     }

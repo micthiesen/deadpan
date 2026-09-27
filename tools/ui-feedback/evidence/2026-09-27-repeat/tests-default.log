@@ -1,0 +1,137 @@
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+error[E0624]: method `cancel_repeats` is private
+   --> crates/deadpan-app/src/preview.rs:259:14
+    |
+259 |         self.cancel_repeats("another project action");
+    |              ^^^^^^^^^^^^^^ private method
+    |
+   ::: crates/deadpan-app/src/preview/repeats.rs:19:5
+    |
+ 19 |     fn cancel_repeats(&mut self, reason: &str) {
+    |     ------------------------------------------ private method defined here
+
+error[E0624]: method `cancel_repeats` is private
+   --> crates/deadpan-app/src/preview.rs:461:26
+    |
+461 |                     self.cancel_repeats(reason);
+    |                          ^^^^^^^^^^^^^^ private method
+    |
+   ::: crates/deadpan-app/src/preview/repeats.rs:19:5
+    |
+ 19 |     fn cancel_repeats(&mut self, reason: &str) {
+    |     ------------------------------------------ private method defined here
+
+error[E0624]: method `repeat_target` is private
+   --> crates/deadpan-app/src/preview.rs:605:44
+    |
+605 |                 if let Some(target) = self.repeat_target() {
+    |                                            ^^^^^^^^^^^^^ private method
+    |
+   ::: crates/deadpan-app/src/preview/repeats.rs:4:5
+    |
+  4 |     fn repeat_target(&self) -> Option<repeat_queue::Target> {
+    |     ------------------------------------------------------- private method defined here
+
+error[E0624]: method `cancel_repeats` is private
+   --> crates/deadpan-app/src/preview.rs:608:26
+    |
+608 |                     self.cancel_repeats("the committed selection is unavailable");
+    |                          ^^^^^^^^^^^^^^ private method
+    |
+   ::: crates/deadpan-app/src/preview/repeats.rs:19:5
+    |
+ 19 |     fn cancel_repeats(&mut self, reason: &str) {
+    |     ------------------------------------------ private method defined here
+
+error[E0624]: method `cancel_repeats` is private
+   --> crates/deadpan-app/src/preview.rs:643:14
+    |
+643 |         self.cancel_repeats("a file action was requested");
+    |              ^^^^^^^^^^^^^^ private method
+    |
+   ::: crates/deadpan-app/src/preview/repeats.rs:19:5
+    |
+ 19 |     fn cancel_repeats(&mut self, reason: &str) {
+    |     ------------------------------------------ private method defined here
+
+error[E0624]: method `cancel_repeats` is private
+   --> crates/deadpan-app/src/preview.rs:819:14
+    |
+819 |         self.cancel_repeats("history navigation was requested");
+    |              ^^^^^^^^^^^^^^ private method
+    |
+   ::: crates/deadpan-app/src/preview/repeats.rs:19:5
+    |
+ 19 |     fn cancel_repeats(&mut self, reason: &str) {
+    |     ------------------------------------------ private method defined here
+
+error[E0624]: method `cancel_repeats` is private
+   --> crates/deadpan-app/src/preview.rs:843:18
+    |
+843 |             self.cancel_repeats("another edit was requested");
+    |                  ^^^^^^^^^^^^^^ private method
+    |
+   ::: crates/deadpan-app/src/preview/repeats.rs:19:5
+    |
+ 19 |     fn cancel_repeats(&mut self, reason: &str) {
+    |     ------------------------------------------ private method defined here
+
+error[E0624]: method `wrap_repeat` is private
+   --> crates/deadpan-app/src/preview.rs:850:18
+    |
+850 |             self.wrap_repeat(plays);
+    |                  ^^^^^^^^^^^ private method
+    |
+   ::: crates/deadpan-app/src/preview/repeats.rs:52:5
+    |
+ 52 |     fn wrap_repeat(&mut self, plays: u32) {
+    |     ------------------------------------- private method defined here
+
+error[E0624]: method `cancel_repeats` is private
+   --> crates/deadpan-app/src/preview.rs:950:14
+    |
+950 |         self.cancel_repeats("command entry was opened");
+    |              ^^^^^^^^^^^^^^ private method
+    |
+   ::: crates/deadpan-app/src/preview/repeats.rs:19:5
+    |
+ 19 |     fn cancel_repeats(&mut self, reason: &str) {
+    |     ------------------------------------------ private method defined here
+
+error[E0624]: method `cancel_repeats` is private
+    --> crates/deadpan-app/src/preview.rs:1094:18
+     |
+1094 |             self.cancel_repeats("another action was requested");
+     |                  ^^^^^^^^^^^^^^ private method
+     |
+    ::: crates/deadpan-app/src/preview/repeats.rs:19:5
+     |
+  19 |     fn cancel_repeats(&mut self, reason: &str) {
+     |     ------------------------------------------ private method defined here
+
+error[E0624]: method `reconcile_repeats` is private
+    --> crates/deadpan-app/src/preview.rs:2513:14
+     |
+2513 |         self.reconcile_repeats(&context);
+     |              ^^^^^^^^^^^^^^^^^ private method
+     |
+    ::: crates/deadpan-app/src/preview/repeats.rs:29:5
+     |
+  29 |     fn reconcile_repeats(&mut self, context: &egui::Context) {
+     |     -------------------------------------------------------- private method defined here
+
+error[E0624]: method `dispatch_waiting_repeat` is private
+    --> crates/deadpan-app/src/preview.rs:2592:14
+     |
+2592 |         self.dispatch_waiting_repeat(&context);
+     |              ^^^^^^^^^^^^^^^^^^^^^^^ private method
+     |
+    ::: crates/deadpan-app/src/preview/repeats.rs:78:5
+     |
+  78 |     fn dispatch_waiting_repeat(&mut self, context: &egui::Context) {
+     |     -------------------------------------------------------------- private method defined here
+
+For more information about this error, try `rustc --explain E0624`.
+error: could not compile `deadpan-app` (bin "deadpan-app") due to 12 previous errors
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `deadpan-app` (bin "deadpan-app" test) due to 12 previous errors
