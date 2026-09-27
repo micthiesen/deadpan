@@ -4,12 +4,18 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::{
-    AudioClockRoot, AudioLocalPhase, AudioPhaseTerm, AudioPlacementTemplate, AudioReferenceClock,
-    AudioResume, AudioTimingId, BeatNode, Command, EditError, EditErrorCode, ExactRatio,
-    FrameDuration, HoldRecipe, HoldVideo, InstancePath, MAX_AUDIO_BINDING_ENTRIES,
-    MAX_AUDIO_BINDING_TERMS, MAX_DOCUMENT_NODES, NodeId, NodeKind, ProjectDocument, ProjectFrame,
-    RetimePurpose, RevisionId, SplitIdentities, Subtree,
+    AudioClockRoot, AudioLocalPhase, AudioPhaseTerm, AudioPlacementTemplate, AudioReanchorStep,
+    AudioReferenceClock, AudioResume, AudioTimingId, BeatNode, Command, EditError, EditErrorCode,
+    ExactFrameRange, ExactRatio, FrameDuration, HoldRecipe, HoldVideo, InstancePath,
+    MAX_AUDIO_BINDING_ENTRIES, MAX_AUDIO_BINDING_TERMS, MAX_DOCUMENT_NODES, NodeId, NodeKind,
+    ProjectDocument, ProjectFrame, RetimePurpose, RevisionId, SplitIdentities, Subtree,
 };
+
+mod composite;
+mod source_splice;
+mod target;
+pub(crate) use source_splice::apply as splice_source;
+pub use target::{InsertTimeSplit, InsertTimeTarget};
 
 struct ShiftedOwner {
     /// Alias in the pre-edit timing layout, independent of any Split copy.
@@ -55,62 +61,75 @@ pub(crate) fn apply(
         return Err(invalid("pause insertion requires a project-root Sequence"));
     };
 
-    // Resolve once without expanding any repeated plays. The supported suffix
-    // is an ordinary physical beat or one transparent partition over it.
-    let mut offset = 0i64;
-    let mut slot = children.len();
-    let mut interior = None;
-    let mut shifted = Vec::new();
-    for (index, child) in children.iter().enumerate() {
-        let end = offset
-            .checked_add(durations[child].frames())
-            .ok_or_else(overflow)?;
-        if at.0 < end || at.0 <= offset {
-            if slot == children.len() {
-                slot = index;
-                if at.0 > offset {
-                    interior = Some((child.clone(), at.0 - offset));
-                }
+    let legacy = resolve_legacy_suffix(document, children, &durations, at);
+    let LegacySuffix {
+        slot,
+        interior,
+        shifted,
+    } = match legacy {
+        Ok(resolved) => resolved,
+        Err(error) if error.code == EditErrorCode::InvalidCommand => {
+            let target = target::resolve(document, &durations, at)?;
+            if let Some(split) = target.split {
+                // The split target must still be a Source, ordinary Hold or
+                // admitted transparent fragment. Later siblings may have the
+                // complete composite structure supported at a root seam.
+                validate_split_budget(document, Some(&split.target), identities)?;
+                let placement_timing = AudioTimingId {
+                    allocation: timing.allocation.clone(),
+                    ordinal: timing
+                        .ordinal
+                        .checked_add(1)
+                        .ok_or_else(|| limit("interior pause needs a second timing identity"))?,
+                };
+                let mut working = document.clone();
+                // Capture sampling lattices BEFORE copying the retained Source
+                // or Hold. The new right copy must not acquire a new origin.
+                working.audio_bindings =
+                    crate::audio_binding_lifecycle::capture_unbound_audio_bindings(
+                        document,
+                        timing.clone(),
+                    )?;
+                working =
+                    crate::split::apply(&working, &split.target, split.at, identities, allocation)?;
+                // The post-Split placement graph has new physical aliases.
+                // Give it a distinct immutable identity rather than overwriting
+                // the pre-Split graph still referenced by inherited lattices.
+                return composite::apply_at(
+                    &working,
+                    &target.parent,
+                    target.index + 1,
+                    composite::Insertion {
+                        at,
+                        total,
+                        node: BeatNode::hold("Pause", hold.clone()),
+                        id,
+                        timing: &placement_timing,
+                        allocation,
+                    },
+                );
             }
-            let (owner, start) = physical(document, child)?;
-            let cut = if index == slot {
-                (at.0 - offset).max(0)
-            } else {
-                0
-            };
-            shifted.push(ShiftedOwner {
-                old: owner.clone(),
-                entry: ExactRatio::integer(start.checked_add(cut).ok_or_else(overflow)?),
-            });
+            return composite::apply_at(
+                document,
+                &target.parent,
+                target.index,
+                composite::Insertion {
+                    at,
+                    total,
+                    node: BeatNode::hold("Pause", hold.clone()),
+                    id,
+                    timing,
+                    allocation,
+                },
+            );
         }
-        offset = end;
-    }
-    let split_nodes = if let Some((target, _)) = &interior {
-        let node = &document.nodes()[target];
-        let context = match &node.kind {
-            NodeKind::Retime {
-                child,
-                purpose: RetimePurpose::Partition,
-                ..
-            } if node.framing.is_none() => child,
-            _ => target,
-        };
-        crate::occurrence_edit::subtree_order(document, context)?.len()
-            + if context == target { 2 } else { 1 }
-    } else {
-        0
+        Err(error) => return Err(error),
     };
-    if document
-        .nodes()
-        .len()
-        .checked_add(split_nodes + 1)
-        .is_none_or(|count| count > MAX_DOCUMENT_NODES)
-    {
-        return Err(limit("pause insertion exceeds the document node limit"));
-    }
-    if identities.nodes.len() < split_nodes {
-        return Err(invalid("pause insertion needs more Split node identities"));
-    }
+    validate_split_budget(
+        document,
+        interior.as_ref().map(|(target, _)| target),
+        identities,
+    )?;
 
     // A current timing table is needed even when every physical node already
     // has a lattice. Resume terms compose the CURRENT mapping, never recapture
@@ -171,6 +190,40 @@ pub(crate) fn apply(
             .bindings
             .get_mut(&owner)
             .expect("captured physical owner");
+        if !binding.reanchors.is_empty() {
+            let previous_terms = binding
+                .resume
+                .as_ref()
+                .map_or(0, |resume| resume.phase.terms.len());
+            if previous_terms + binding.reanchors.len() >= MAX_AUDIO_BINDING_TERMS {
+                return Err(limit(
+                    "pause resume exceeds the phase-term and reanchor limit",
+                ));
+            }
+            remaining = remaining
+                .checked_sub(1)
+                .ok_or_else(|| limit("pause resume work"))?;
+            // Reanchor steps are chronological. A later pause must follow
+            // them, not alter the legacy initial phase evaluated before them.
+            binding.reanchors.push(AudioReanchorStep {
+                placement: AudioPlacementTemplate {
+                    gap_after: None,
+                    reference: AudioReferenceClock {
+                        recipe: crate::AudioRecipeKind::Node,
+                        timing: timing.clone(),
+                        root: AudioClockRoot::ProjectRootRoundEven,
+                        physical: shifted.old.clone(),
+                    },
+                    arguments: Vec::new(),
+                    births: Vec::new(),
+                },
+                window: Some(ExactFrameRange::new(
+                    ExactRatio::integer(at.0),
+                    ExactRatio::integer(total),
+                )?),
+            });
+            continue;
+        }
         let resume = binding.resume.get_or_insert_with(|| AudioResume {
             local_boundary: anchor,
             phase: AudioLocalPhase::default(),
@@ -184,7 +237,9 @@ pub(crate) fn apply(
                 .ok_or_else(|| limit("pause resume work"))?;
             resume.phase.terms.push(AudioPhaseTerm {
                 placement: AudioPlacementTemplate {
+                    gap_after: None,
                     reference: AudioReferenceClock {
+                        recipe: crate::AudioRecipeKind::Node,
                         timing: timing.clone(),
                         root: AudioClockRoot::ProjectRootRoundEven,
                         physical: shifted.old.clone(),
@@ -200,23 +255,231 @@ pub(crate) fn apply(
     }
     crate::audio_binding_lifecycle::prune(&mut working);
     working.audio_bindings.validate_for(&working)?;
+    insert_pause(&working, insertion_slot, id, hold, allocation)
+}
 
+fn validate_split_budget(
+    document: &ProjectDocument,
+    target: Option<&NodeId>,
+    identities: &SplitIdentities,
+) -> Result<(), EditError> {
+    let split_nodes = target.map_or(Ok(0), |target| split_node_count(document, target))?;
+    if document
+        .nodes()
+        .len()
+        .checked_add(split_nodes + 1)
+        .is_none_or(|count| count > MAX_DOCUMENT_NODES)
+    {
+        return Err(limit("pause insertion exceeds the document node limit"));
+    }
+    if identities.nodes.len() < split_nodes {
+        return Err(invalid("pause insertion needs more Split node identities"));
+    }
+
+    Ok(())
+}
+
+fn split_node_count(document: &ProjectDocument, target: &NodeId) -> Result<usize, EditError> {
+    let node = &document.nodes()[target];
+    let context = match &node.kind {
+        NodeKind::Retime {
+            child,
+            purpose: RetimePurpose::Partition,
+            ..
+        } if node.framing.is_none() => child,
+        _ => target,
+    };
+    Ok(
+        crate::occurrence_edit::subtree_order(document, context)?.len()
+            + if context == target { 2 } else { 1 },
+    )
+}
+
+struct LegacySuffix {
+    slot: usize,
+    interior: Option<(NodeId, i64)>,
+    shifted: Vec<ShiftedOwner>,
+}
+
+struct RootBoundary {
+    slot: usize,
+    interior: Option<(NodeId, i64)>,
+}
+
+fn root_boundary(
+    children: &[NodeId],
+    durations: &BTreeMap<NodeId, FrameDuration>,
+    at: ProjectFrame,
+) -> Result<RootBoundary, EditError> {
+    let mut offset = 0_i64;
+    for (slot, child) in children.iter().enumerate() {
+        if offset == at.0 {
+            return Ok(RootBoundary {
+                slot,
+                interior: None,
+            });
+        }
+        let end = offset
+            .checked_add(durations[child].frames())
+            .ok_or_else(overflow)?;
+        if offset < at.0 && at.0 < end {
+            return Ok(RootBoundary {
+                slot,
+                interior: Some((child.clone(), at.0 - offset)),
+            });
+        }
+        offset = end;
+    }
+    if at.0 == offset {
+        Ok(RootBoundary {
+            slot: children.len(),
+            interior: None,
+        })
+    } else {
+        Err(invalid("pause boundary is outside the project"))
+    }
+}
+
+/// Core 24 added composite suffixes only at existing root seams. Keep this
+/// admission closed when replaying database 30, independently of modern apply.
+pub(crate) fn validate_v24_context(
+    document: &ProjectDocument,
+    at: ProjectFrame,
+) -> Result<(), EditError> {
+    match validate_legacy_context(document, at) {
+        Ok(()) => Ok(()),
+        Err(error) if error.code == EditErrorCode::InvalidCommand => {
+            let durations = document.durations()?;
+            let NodeKind::Sequence { children } = &document.nodes()[document.root()].kind else {
+                return Err(invalid("pause insertion requires a project-root Sequence"));
+            };
+            if root_boundary(children, &durations, at)?.interior.is_some() {
+                Err(invalid(
+                    "composite suffix insertion requires an existing root Sequence seam",
+                ))
+            } else {
+                Ok(())
+            }
+        }
+        Err(error) => Err(error),
+    }
+}
+
+/// Core 25 added physical interiors before arbitrary root suffixes. A nested
+/// Sequence interior was still refused even when a modern patch is valid.
+pub(crate) fn validate_v25_context(
+    document: &ProjectDocument,
+    at: ProjectFrame,
+) -> Result<(), EditError> {
+    let durations = document.durations()?;
+    let NodeKind::Sequence { children } = &document.nodes()[document.root()].kind else {
+        return Err(invalid("pause insertion requires a project-root Sequence"));
+    };
+    if let Some((target, _)) = root_boundary(children, &durations, at)?.interior {
+        physical(document, &target)?;
+    }
+    Ok(())
+}
+
+/// Contextual admission through core 23. A closed command wire alone cannot
+/// prove that a pre-existing history could have authored a composite suffix.
+pub(crate) fn validate_legacy_context(
+    document: &ProjectDocument,
+    at: ProjectFrame,
+) -> Result<(), EditError> {
+    let durations = document.durations()?;
+    if at.0 < 0 || at.0 > durations[document.root()].frames() {
+        return Err(invalid("pause boundary is outside the project"));
+    }
+    let NodeKind::Sequence { children } = &document.nodes()[document.root()].kind else {
+        return Err(invalid("pause insertion requires a project-root Sequence"));
+    };
+    resolve_legacy_suffix(document, children, &durations, at).map(|_| ())
+}
+
+fn resolve_legacy_suffix(
+    document: &ProjectDocument,
+    children: &[NodeId],
+    durations: &BTreeMap<NodeId, FrameDuration>,
+    at: ProjectFrame,
+) -> Result<LegacySuffix, EditError> {
+    let mut offset = 0i64;
+    let mut slot = children.len();
+    let mut interior = None;
+    let mut shifted = Vec::new();
+    for (index, child) in children.iter().enumerate() {
+        let end = offset
+            .checked_add(durations[child].frames())
+            .ok_or_else(overflow)?;
+        if at.0 < end || at.0 <= offset {
+            if slot == children.len() {
+                slot = index;
+                if at.0 > offset {
+                    interior = Some((child.clone(), at.0 - offset));
+                }
+            }
+            let (owner, start) = physical(document, child)?;
+            let cut = if index == slot {
+                (at.0 - offset).max(0)
+            } else {
+                0
+            };
+            shifted.push(ShiftedOwner {
+                old: owner.clone(),
+                entry: ExactRatio::integer(start.checked_add(cut).ok_or_else(overflow)?),
+            });
+        }
+        offset = end;
+    }
+    Ok(LegacySuffix {
+        slot,
+        interior,
+        shifted,
+    })
+}
+
+fn insert_pause(
+    working: &ProjectDocument,
+    insertion_slot: usize,
+    id: &NodeId,
+    hold: &HoldRecipe,
+    allocation: &RevisionId,
+) -> Result<ProjectDocument, EditError> {
+    insert_leaf_at(
+        working,
+        working.root(),
+        insertion_slot,
+        id,
+        BeatNode::hold("Pause", hold.clone()),
+        allocation,
+    )
+}
+
+fn insert_leaf_at(
+    working: &ProjectDocument,
+    parent: &NodeId,
+    insertion_slot: usize,
+    id: &NodeId,
+    node: BeatNode,
+    allocation: &RevisionId,
+) -> Result<ProjectDocument, EditError> {
     // Split already transported logical mark fragments. Let the ordinary
     // insertion transform shift content-following marks from that intermediate
     // state, while sequence-pinned marks keep their authored project position.
     let insertion = Command::Insert {
-        parent: working.root().clone(),
+        parent: parent.clone(),
         index: insertion_slot,
         subtree: Subtree {
             root: id.clone(),
-            nodes: BTreeMap::from([(id.clone(), BeatNode::hold("Pause", hold.clone()))]),
+            nodes: BTreeMap::from([(id.clone(), node)]),
             overrides: BTreeMap::new(),
+            gap_overrides: BTreeMap::new(),
         },
     };
     let mut result = working.clone();
     crate::command::reduce(&mut result, &insertion, allocation)?;
-    crate::audio_lineage::reconcile(&working, &mut result, &insertion)?;
-    result.marks = crate::marks::transform_marks(&working, &result, &insertion)?;
+    crate::audio_lineage::reconcile(working, &mut result, &insertion)?;
+    result.marks = crate::marks::transform_marks(working, &result, &insertion)?;
     // The shared command entrypoint locks a provisional presentation basis
     // before full validation. A first Hold is the edit that establishes time.
     Ok(result)

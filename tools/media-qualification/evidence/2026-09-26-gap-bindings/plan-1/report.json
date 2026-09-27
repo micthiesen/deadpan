@@ -1,0 +1,25 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "-p",
+    "deadpan-plan",
+    "--locked",
+    "--test",
+    "gap_bindings",
+    "--test",
+    "audio_bindings",
+    "--test",
+    "audio_fades",
+    "--test",
+    "audio_definition",
+    "--test",
+    "audio_domain",
+    "--test",
+    "audio_signal",
+    "--test",
+    "audio_policy"
+  ],
+  "exit_code": 0,
+  "seconds": 206.59355083294213
+}

@@ -28,6 +28,7 @@ fn hold(frames: i64) -> BeatNode {
     BeatNode::hold(
         "Pause",
         HoldRecipe {
+            picture_context: None,
             duration: duration(frames),
             video: HoldVideo::Background,
             audio: HoldAudio::Silence,
@@ -66,6 +67,7 @@ fn insert_holds(durations: &[i64]) -> ProjectDocument {
     let group = id("group");
     let mut subtree = Subtree {
         overrides: Default::default(),
+        gap_overrides: Default::default(),
         root: group.clone(),
         nodes,
     };
@@ -262,6 +264,7 @@ fn inserted_repeat_cannot_reserve_a_future_revision_and_revive_retired_plays() {
             index: 0,
             subtree: Subtree {
                 overrides: Default::default(),
+                gap_overrides: Default::default(),
                 root: id("repeat"),
                 nodes: BTreeMap::from([
                     (id("child"), hold(1)),
@@ -419,6 +422,7 @@ fn structural_depth_is_bounded_without_recursive_documents() {
             index: 0,
             subtree: Subtree {
                 overrides: Default::default(),
+                gap_overrides: Default::default(),
                 root: id("level-1"),
                 nodes,
             },
@@ -432,6 +436,7 @@ fn structural_depth_is_bounded_without_recursive_documents() {
 fn repeat_setter_is_not_a_wrapper_and_gaps_are_between_plays() {
     let document = insert_holds(&[5]);
     let gap = HoldRecipe {
+        picture_context: None,
         duration: duration(2),
         video: HoldVideo::Background,
         audio: HoldAudio::Silence,
@@ -676,6 +681,7 @@ fn source_streams_retain_timestamps_and_validate_bounds_independently() {
         index: 0,
         subtree: Subtree {
             overrides: Default::default(),
+            gap_overrides: Default::default(),
             root: id("source"),
             nodes: BTreeMap::from([(
                 id("source"),
@@ -730,6 +736,7 @@ fn hold_provider_changes_are_explicit_and_duration_checked() {
             index: 0,
             subtree: Subtree {
                 overrides: Default::default(),
+                gap_overrides: Default::default(),
                 root: id("hold"),
                 nodes: BTreeMap::from([(id("hold"), hold(12))]),
             },
@@ -847,6 +854,7 @@ fn retime_range_is_in_child_clock_and_overflow_is_rejected() {
             index: 0,
             subtree: Subtree {
                 overrides: Default::default(),
+                gap_overrides: Default::default(),
                 root: id("retime"),
                 nodes,
             },
@@ -893,7 +901,7 @@ proptest! {
         prop_assert_eq!(document.duration().unwrap().frames(), expected);
         let (grouped, _) = edited(&document, Command::Group { parent:id("group"),start:0,end:frames.len(),id:id("nested"),label:"Nested".into() },"grouped");
         prop_assert_eq!(grouped.duration().unwrap().frames(), expected);
-        let (wrapped, _) = edited(&grouped, Command::WrapRepeat { node:id("nested"),id:id("repeat"),plays,gap:Some(HoldRecipe { duration:duration(gap),video:HoldVideo::Background,audio:HoldAudio::Silence }),anchor_policy:WrapAnchorPolicy::First },"wrapped");
+        let (wrapped, _) = edited(&grouped, Command::WrapRepeat { node:id("nested"),id:id("repeat"),plays,gap:Some(HoldRecipe { picture_context:None,duration:duration(gap),video:HoldVideo::Background,audio:HoldAudio::Silence }),anchor_policy:WrapAnchorPolicy::First },"wrapped");
         prop_assert_eq!(wrapped.duration().unwrap().frames(), i64::from(plays)*expected+i64::from(plays-1)*gap);
         let encoded = wrapped.to_json().unwrap();
         prop_assert_eq!(ProjectDocument::from_json(&encoded).unwrap(), wrapped);

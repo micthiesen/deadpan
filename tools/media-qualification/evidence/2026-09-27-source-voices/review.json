@@ -1,0 +1,36 @@
+{
+  "base": "origin/main",
+  "scope": "Increment against saved before/ working-tree snapshot; all prior dirty work preserved",
+  "reviewers": [
+    "source_voice_general_review",
+    "source_voice_timing_review",
+    "source_voice_wav_review"
+  ],
+  "source_sha256": {
+    "crates/deadpan-plan/src/audio_context.rs": "5a13157679454a29f72a8d043661c448159c9973e6ac1ca74b38aaee843174ef",
+    "crates/deadpan-plan/src/audio_hold_policy.rs": "38738cf9d6d79c8bf1d8de3cc0ad3b8a6da66049a09c2f5885fa3a5f0ad342c4",
+    "crates/deadpan-plan/src/audio_policy.rs": "2eac65c7852b2c7b92e8c32efa95ebc313a437380e46aeee47b65b57ef4bf761",
+    "crates/deadpan-plan/src/audio_signal.rs": "7b7672d177fdb337f1c5209aaf1890ba363d059be2f15711eace19cd75299c49",
+    "crates/deadpan-plan/src/audio_source_voice.rs": "0d68bb7315d4d4e8f7e43c0279e409c7e0e0249b54798c46132af2bfefd38461",
+    "crates/deadpan-plan/src/lib.rs": "3df99cad13a37eee5d01bb80d256317bcba46c751ec210950416d70f4ed41121",
+    "crates/deadpan-plan/src/plan.rs": "d09a0a7be6ae0ea6fcf21d31f3b535fcc8f2467208fcc11b3fa340044d3a34cb",
+    "crates/deadpan-plan/tests/source_voice.rs": "7eb074da153e5cfd1a9e988e185de2a02a8594ef1a705baac17f569562027c16",
+    "crates/deadpan-plan/tests/source_voice_policy.rs": "6f654606e4acf6c83504354765c625e9e8b1883fecdcd3363222977a431294a3",
+    "crates/deadpan-playback/Cargo.toml": "5f166a5d1d81bbd93a00bf1f2f0db40fae9a3d1aebff2b4d593e9fff5af201da",
+    "crates/deadpan-playback/src/tests.rs": "727153354ef2e9123e1f70a3a82a404d2a759e600f48faa8b6c03b4cfb1b6f1f",
+    "crates/deadpan-playback/src/tests/sound.rs": "b36275d0f93ee611d2515bdd78be0fbf2c017b8341fd1f64152f018bba198328",
+    "crates/deadpan-playback/src/tests/source_voice.rs": "aefa479b97f49152b9d3b934fb602efae80d49dcecf086261ae79e5c5b9cb23f",
+    "native/deadpan-source/src/audio_decoder.c": "15de3f3dd17e59927b412350464126e6e0dc04ff55c905e64c5294678260697e",
+    "native/deadpan-source/src/input.rs": "da321f74fb4e93c17cc45902e29558da948e299307da0adfab17888631c72a28"
+  },
+  "applied": [],
+  "dismissed": [],
+  "outstanding": [],
+  "final_review": "All three reviewers returned no findings",
+  "tests": "Final Preserve test additionally checks cold cropped intrinsic output and nonzero processed decay after its scaled source endpoint",
+  "fixture_corrections": [
+    "A no-audio Original fixture requires FitBeat; its invalid explicit audio duration was corrected",
+    "Initial real PCM tests exposed rejection of extensible WAV fmt40; production now admits only the exact bounded PCM16 extension and retains all layout/byte/codec limits"
+  ],
+  "native_reference": "https://learn.microsoft.com/en-us/windows/win32/api/mmreg/ns-mmreg-waveformatextensible"
+}

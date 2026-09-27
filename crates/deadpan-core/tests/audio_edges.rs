@@ -115,6 +115,7 @@ fn source_and_gap_choices_are_kind_checked_and_retained_when_not_audible() {
             subtree: Subtree {
                 root: id("source"),
                 overrides: BTreeMap::new(),
+                gap_overrides: BTreeMap::new(),
                 nodes: BTreeMap::from([(
                     id("source"),
                     BeatNode {
@@ -212,6 +213,7 @@ fn source_and_gap_choices_are_kind_checked_and_retained_when_not_audible() {
             node: id("repeat"),
             plays: 3,
             gap: Some(HoldRecipe {
+                picture_context: None,
                 duration: FrameDuration::new(2).unwrap(),
                 video: HoldVideo::Background,
                 audio: HoldAudio::Silence,
@@ -309,6 +311,7 @@ fn migrating_automatic_edges_does_not_grow_legacy_document_request_or_patch_json
                         BeatNode::hold(
                             "Hold",
                             HoldRecipe {
+                                picture_context: None,
                                 duration: FrameDuration::new(3).unwrap(),
                                 video: HoldVideo::Background,
                                 audio: HoldAudio::Silence,
@@ -317,6 +320,7 @@ fn migrating_automatic_edges_does_not_grow_legacy_document_request_or_patch_json
                     ),
                 ]),
                 overrides: BTreeMap::new(),
+                gap_overrides: BTreeMap::new(),
             },
         },
     );
@@ -370,6 +374,7 @@ fn ungroup_cannot_silently_drop_an_explicit_edge_exception() {
                 root: id("group"),
                 nodes: BTreeMap::from([(id("group"), BeatNode::sequence("Group", vec![]))]),
                 overrides: BTreeMap::new(),
+                gap_overrides: BTreeMap::new(),
             },
         },
     );

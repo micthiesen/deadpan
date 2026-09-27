@@ -53,6 +53,7 @@ fn fixture() -> Result<(
                         BeatNode::hold(
                             "Pause",
                             HoldRecipe {
+                                picture_context: None,
                                 duration: duration(30),
                                 video: HoldVideo::Background,
                                 audio: HoldAudio::Silence,
@@ -60,6 +61,7 @@ fn fixture() -> Result<(
                         ),
                     )]),
                     overrides: BTreeMap::new(),
+                    gap_overrides: BTreeMap::new(),
                 },
             },
         ),
@@ -192,6 +194,7 @@ fn generic_commands_cannot_bypass_dedicated_candidate_admission() -> Result {
         }),
     };
     let recipe = HoldRecipe {
+        picture_context: None,
         duration: duration(30),
         video: video.clone(),
         audio: HoldAudio::Silence,
@@ -222,6 +225,7 @@ fn generic_commands_cannot_bypass_dedicated_candidate_admission() -> Result {
                 root: fresh.clone(),
                 nodes: BTreeMap::from([(fresh, BeatNode::hold("Inserted", recipe.clone()))]),
                 overrides: BTreeMap::new(),
+                gap_overrides: BTreeMap::new(),
             },
         },
         Command::WrapRepeat {

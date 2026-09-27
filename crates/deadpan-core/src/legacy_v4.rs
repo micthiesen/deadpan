@@ -142,6 +142,7 @@ pub(crate) struct LegacyHoldRecipe {
 impl LegacyHoldRecipe {
     pub(crate) fn upgrade(self) -> HoldRecipe {
         HoldRecipe {
+            picture_context: None,
             duration: self.duration,
             video: self.video.upgrade(),
             audio: self.audio,
@@ -149,6 +150,9 @@ impl LegacyHoldRecipe {
     }
 
     pub(crate) fn project(value: &HoldRecipe) -> Option<Self> {
+        if value.picture_context.is_some() {
+            return None;
+        }
         Some(Self {
             duration: value.duration,
             video: LegacyHoldVideo::project(&value.video)?,
@@ -325,6 +329,7 @@ impl Document {
 
     pub fn upgrade(self) -> Result<ProjectDocument, DocumentError> {
         let document = ProjectDocument {
+            gap_overrides: BTreeMap::new(),
             audio_lineage: BTreeMap::new(),
             audio_bindings: crate::AudioBindingState::default(),
             schema_version: DOCUMENT_SCHEMA_VERSION,
@@ -351,6 +356,9 @@ impl Document {
     }
 
     pub fn matches(&self, document: &ProjectDocument) -> bool {
+        if !document.gap_overrides.is_empty() {
+            return false;
+        }
         if !document.audio_bindings.is_empty() {
             return false;
         }
@@ -403,6 +411,7 @@ struct OldSubtree {
 impl OldSubtree {
     fn upgrade(self) -> Subtree {
         Subtree {
+            gap_overrides: BTreeMap::new(),
             root: self.root,
             nodes: self
                 .nodes
@@ -771,6 +780,9 @@ struct Patch {
 
 impl Patch {
     fn project(patch: &DocumentPatch) -> Option<Self> {
+        if !patch.gap_overrides.is_empty() {
+            return None;
+        }
         if patch.presentation.is_some() {
             return None;
         }

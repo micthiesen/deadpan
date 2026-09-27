@@ -1,0 +1,1849 @@
+--- before/crates/deadpan-audio/src/lib.rs
++++ crates/deadpan-audio/src/lib.rs
+@@ -55,8 +55,8 @@
+ #[cfg(any(target_os = "macos", target_os = "linux"))]
+ pub use stages::{
+     DefinitionAudioBlock, DomainAudioBlock, EdgeFadedBlock, MAX_EDGE_PREPARATION_FRAMES,
+-    PointDomainAudioBlock, StageAudio, StageAudioError, StageLimits, TimeMappedBlock,
+-    TransferredDomainBlock, TransferredRootBlock,
++    PointDomainAudioBlock, StageAudio, StageAudioError, StageLimits, TapeAudioBlock,
++    TimeMappedBlock, TransferredDomainBlock, TransferredRootBlock,
+ };
+ pub use true_peak::{
+     MAX_TRUE_PEAK_FRAMES, TRUE_PEAK_ID, TruePeakError, TruePeakMeter, TruePeakReport,
+--- before/crates/deadpan-audio/src/signal_input.rs
++++ crates/deadpan-audio/src/signal_input.rs
+@@ -0,0 +1,50 @@
++//! Closed preparation inputs. Both variants use the same DSP and admission
++//! path; this only selects the plan query supplying its exact sample mappings.
++
++use std::ops::Range;
++
++use deadpan_plan::{
++    AudioPolicyQuery, AudioQueryLimits, AudioSignal, AudioSignalQuery, AudioSignalTape, PlanError,
++    SignalSample,
++};
++
++pub(super) enum SignalInput<'signal, 'plan> {
++    Signal(&'signal AudioSignal<'plan>),
++    Tape(&'signal AudioSignalTape<'plan>),
++}
++
++impl<'signal, 'plan> From<&'signal AudioSignal<'plan>> for SignalInput<'signal, 'plan> {
++    fn from(value: &'signal AudioSignal<'plan>) -> Self {
++        Self::Signal(value)
++    }
++}
++
++impl<'signal, 'plan> From<&'signal AudioSignalTape<'plan>> for SignalInput<'signal, 'plan> {
++    fn from(value: &'signal AudioSignalTape<'plan>) -> Self {
++        Self::Tape(value)
++    }
++}
++
++impl<'plan> SignalInput<'_, 'plan> {
++    pub(super) fn query(
++        &self,
++        samples: Range<SignalSample>,
++        limits: AudioQueryLimits,
++    ) -> Result<AudioSignalQuery<'plan>, PlanError> {
++        match self {
++            Self::Signal(signal) => signal.query(samples, limits),
++            Self::Tape(tape) => tape.query(samples, limits),
++        }
++    }
++
++    pub(super) fn policy(
++        &self,
++        samples: Range<SignalSample>,
++        limits: AudioQueryLimits,
++    ) -> Result<AudioPolicyQuery<SignalSample>, PlanError> {
++        match self {
++            Self::Signal(signal) => signal.policy(samples, limits),
++            Self::Tape(tape) => tape.policy(samples, limits),
++        }
++    }
++}
+--- before/crates/deadpan-audio/src/stages.rs
++++ crates/deadpan-audio/src/stages.rs
+@@ -17,8 +17,8 @@
+     AudioBound, AudioBoundDomain, AudioContent, AudioDefinition, AudioDefinitionSelector,
+     AudioDomain, AudioFadeQuery, AudioPointDomain, AudioPolicyQuery, AudioProcessingQuery,
+     AudioProcessingSpan, AudioQuery, AudioQueryLimits, AudioSignal, AudioSignalContent,
+-    AudioSignalSpan, AudioStage, AudioStageDescriptor, PlanError, ReferenceSample, RenderPlan,
+-    SignalSample, SilenceReason,
++    AudioSignalSpan, AudioSignalTape, AudioStage, AudioStageDescriptor, PlanError, ReferenceSample,
++    RenderPlan, SignalSample, SilenceReason,
+ };
+ use serde::Serialize;
+ 
+@@ -28,6 +28,10 @@
+     PcmWindow, PreparationError, ResampleRecipe, Resampler, RoomTone, RoomToneRecipe,
+     RootSignalBlock, RootSignalTransfer, SignalTransferError, StereoMatrix, check_cancel,
+ };
++
++#[path = "signal_input.rs"]
++mod signal_input;
++use signal_input::SignalInput;
+ 
+ /// Worker-owned bus preparation, including downstream finite DSP context.
+ /// Small inspection and source reads retain their separate 256-frame limit.
+@@ -156,6 +160,21 @@
+     pub suppressed: Vec<Range<SignalSample>>,
+ }
+ 
++/// Live structural input on one common point grid. Tape windows allocate
++/// reads; they do not restart resampling or create new filter edges. This is
++/// preparation PCM, not a scheduled stage output or final timeline allocation.
++#[derive(Debug, Clone, PartialEq, Serialize)]
++pub struct TapeAudioBlock {
++    pub schema_version: u32,
++    pub stage: &'static str,
++    pub project_id: ProjectId,
++    pub revision_id: RevisionId,
++    pub support: Range<ExactRatio>,
++    pub start: SignalSample,
++    pub samples: Vec<[f32; 2]>,
++    pub suppressed: Vec<Range<SignalSample>>,
++}
++
+ /// Current owned PCM evaluated on the selected PointCeil reference grid.
+ /// Signed labels retain their original meaning rather than becoming root samples.
+ #[derive(Debug, Clone, PartialEq, Serialize)]
+@@ -627,6 +646,52 @@
+             revision_id: self.plan.metadata().revision_id.clone(),
+             definition: definition.selector().clone(),
+             root: definition.root().clone(),
++            start,
++            samples: block.samples,
++            suppressed: block.suppressed,
++        })
++    }
++
++    /// Read a checked projection of current structural signals under one
++    /// deadline and shared source, work and recursive-stage admission. Existing
++    /// Preserve children retain their complete intrinsic preparation and cache
++    /// identity; a tape does not redefine their input or output clocks.
++    pub fn read_tape(
++        &mut self,
++        provider: &mut impl AudioSourceProvider,
++        tape: &AudioSignalTape<'_>,
++        start: SignalSample,
++        frames: u32,
++        timeout: Duration,
++        cancelled: &AtomicBool,
++    ) -> Result<TapeAudioBlock, StageAudioError> {
++        check_cancel(cancelled)?;
++        if !tape.belongs_to(&self.plan) {
++            return Err(StageAudioError::ForeignDomain);
++        }
++        validate_timeout(timeout)?;
++        let end = start
++            .0
++            .checked_add(i64::from(frames))
++            .ok_or(StageAudioError::Range)?;
++        if start.0 < 0 || frames == 0 || frames > MAX_OUTPUT_FRAMES || end > tape.sample_count()?.0
++        {
++            return Err(StageAudioError::Range);
++        }
++        let work = RefCell::new(ReadWork::default());
++        let control = WorkControl {
++            cancelled,
++            deadline: Instant::now() + timeout,
++            work: &work,
++        };
++        let block = self.read_signal(tape, provider, start, frames, control, 0)?;
++        control.check()?;
++        Ok(TapeAudioBlock {
++            schema_version: 1,
++            stage: "projected_input_pcm_before_effects",
++            project_id: self.plan.metadata().project_id.clone(),
++            revision_id: self.plan.metadata().revision_id.clone(),
++            support: tape.support(),
+             start,
+             samples: block.samples,
+             suppressed: block.suppressed,
+@@ -1561,15 +1626,16 @@
+         })
+     }
+ 
+-    fn read_signal(
++    fn read_signal<'signal, 'plan: 'signal>(
+         &mut self,
+-        signal: &AudioSignal<'_>,
++        signal: impl Into<SignalInput<'signal, 'plan>>,
+         provider: &mut impl AudioSourceProvider,
+         start: SignalSample,
+         frames: u32,
+         control: WorkControl<'_>,
+         depth: usize,
+     ) -> Result<SignalBlock, StageAudioError> {
++        let signal = signal.into();
+         let WorkControl { cancelled, .. } = control;
+         control.check()?;
+         if depth > self.limits.maximum_depth {
+@@ -1622,7 +1688,7 @@
+                 AudioSignalContent::Leaf(AudioContent::RoomTone { source, duration }) => {
+                     let prepared = self.prepare_room_tone(
+                         PreparedKey::RoomTone {
+-                            definition: signal.definition().cloned(),
++                            definition: span.definition.clone(),
+                             instance: span.instance.clone(),
+                             gap_after: span.gap_after.clone(),
+                             source: source.clone(),
+--- before/crates/deadpan-audio/tests/audio_definition.rs
++++ crates/deadpan-audio/tests/audio_definition.rs
+@@ -1464,3 +1464,8 @@
+     );
+     assert_eq!(renderer.cached_stage_count(), 0);
+ }
++
++#[path = "audio_definition/tape.rs"]
++mod tape;
++#[path = "audio_definition/tape_admission.rs"]
++mod tape_admission;
+--- before/crates/deadpan-audio/tests/audio_definition/tape.rs
++++ crates/deadpan-audio/tests/audio_definition/tape.rs
+@@ -0,0 +1,392 @@
++use super::*;
++
++use deadpan_plan::{AudioQueryLimits, AudioSignal, AudioSignalTape, AudioSignalTapeRun};
++
++fn run<'plan>(
++    destination: Range<ExactRatio>,
++    source: Range<ExactRatio>,
++    signal: AudioSignal<'plan>,
++) -> AudioSignalTapeRun<'plan> {
++    AudioSignalTapeRun::new(destination, source, signal)
++}
++
++#[test]
++fn tape_uses_one_ntsc_point_ceil_grid_across_an_exact_run_seam() {
++    let rate = FrameRate::new(30_000, 1001).unwrap();
++    let doc = document(
++        rate,
++        &["source"],
++        [("source", source(rate, 3, 0..4805))],
++        BTreeMap::new(),
++    );
++    let plan = compile(&doc, false);
++    let signal = plan.audio_signal();
++    let tape = AudioSignalTape::new(
++        &plan,
++        ExactRatio::ZERO..ratio(3, 1),
++        vec![
++            run(
++                ExactRatio::ZERO..ratio(3, 2),
++                ExactRatio::ZERO..ratio(3, 2),
++                signal.clone(),
++            ),
++            run(ratio(3, 2)..ratio(3, 1), ratio(3, 2)..ratio(3, 1), signal),
++        ],
++    )
++    .unwrap();
++
++    assert_eq!(tape.sample_count().unwrap(), SignalSample(4805));
++    let query = tape
++        .query(
++            SignalSample(2400)..SignalSample(2405),
++            AudioQueryLimits::default(),
++        )
++        .unwrap();
++    assert_eq!(
++        query
++            .spans
++            .iter()
++            .map(|span| span.samples.clone())
++            .collect::<Vec<_>>(),
++        vec![
++            SignalSample(2400)..SignalSample(2403),
++            SignalSample(2403)..SignalSample(2405)
++        ]
++    );
++
++    let mut renderer = StageAudio::new(Arc::clone(&plan));
++    let actual = renderer
++        .read_tape(
++            &mut FixtureProvider::new(),
++            &tape,
++            SignalSample(2400),
++            5,
++            TIMEOUT,
++            &AtomicBool::new(false),
++        )
++        .unwrap();
++    let expected = sample_reference(
++        0..4805,
++        ExactRatio::ZERO,
++        ExactRatio::ONE,
++        4805,
++        fixture_sample,
++    );
++    assert_eq!(actual.samples, expected[2400..2405]);
++    assert_eq!(actual.support, ExactRatio::ZERO..ratio(3, 1));
++    assert!(actual.suppressed.is_empty());
++}
++
++#[test]
++fn tape_run_seams_do_not_crop_source_filter_context() {
++    let rate = FrameRate::new(48_000, 1).unwrap();
++    let doc = document(
++        rate,
++        &["source"],
++        [("source", source(rate, 2048, 0..2048))],
++        BTreeMap::new(),
++    );
++    let plan = compile(&doc, false);
++    let signal = plan.audio_signal();
++    let tape = AudioSignalTape::new(
++        &plan,
++        ExactRatio::ZERO..ratio(2048, 1),
++        vec![
++            run(
++                ExactRatio::ZERO..ratio(700, 1),
++                ExactRatio::ZERO..ratio(699, 1),
++                signal.clone(),
++            ),
++            run(
++                ratio(700, 1)..ratio(2048, 1),
++                ratio(699, 1)..ratio(2048, 1),
++                signal,
++            ),
++        ],
++    )
++    .unwrap();
++
++    let first = sample_reference(
++        0..2048,
++        ExactRatio::ZERO,
++        ratio(699, 700),
++        700,
++        fixture_sample,
++    );
++    let second = sample_reference(
++        0..2048,
++        ratio(699, 1),
++        ratio(1349, 1348),
++        1348,
++        fixture_sample,
++    );
++    let expected: Vec<_> = first.into_iter().chain(second).collect();
++    let cropped = sample_reference(
++        0..699,
++        ExactRatio::ZERO,
++        ratio(699, 700),
++        700,
++        fixture_sample,
++    );
++    assert_ne!(
++        &expected[694..700],
++        &cropped[694..700],
++        "the fixture must distinguish full source support from a crop at the run seam"
++    );
++
++    let mut renderer = StageAudio::new(Arc::clone(&plan));
++    let actual = renderer
++        .read_tape(
++            &mut FixtureProvider::new(),
++            &tape,
++            SignalSample(694),
++            12,
++            TIMEOUT,
++            &AtomicBool::new(false),
++        )
++        .unwrap();
++    assert_eq!(actual.samples, expected[694..706]);
++}
++
++#[test]
++fn tape_uses_live_source_mapping_when_one_asset_is_referenced_twice() {
++    let rate = FrameRate::new(48_000, 1).unwrap();
++    let doc = document(
++        rate,
++        &["a", "b"],
++        [("a", source(rate, 4, 0..4)), ("b", source(rate, 4, 8..12))],
++        BTreeMap::new(),
++    );
++    let mut wire = serde_json::to_value(&doc).unwrap();
++    wire["nodes"]["b"]["kind"]["source"]["audio_mapping"] =
++        serde_json::to_value(SourceAudioMapping::Placement {
++            start: ratio(-1, 2),
++            frames: ratio(4, 1),
++        })
++        .unwrap();
++    let edited = ProjectDocument::from_json(&wire.to_string()).unwrap();
++    let old_plan = compile(&doc, false);
++    let plan = compile(&edited, false);
++    let a = plan.audio_definition(node("a")).unwrap().signal();
++    let b = plan.audio_definition(node("b")).unwrap().signal();
++    let tape = AudioSignalTape::new(
++        &plan,
++        ExactRatio::ZERO..ratio(8, 1),
++        vec![
++            run(
++                ExactRatio::ZERO..ratio(4, 1),
++                ExactRatio::ZERO..ratio(4, 1),
++                a,
++            ),
++            run(ratio(4, 1)..ratio(8, 1), ExactRatio::ZERO..ratio(4, 1), b),
++        ],
++    )
++    .unwrap();
++
++    let mut renderer = StageAudio::new(Arc::clone(&plan));
++    let actual = renderer
++        .read_tape(
++            &mut FixtureProvider::new(),
++            &tape,
++            SignalSample(0),
++            8,
++            TIMEOUT,
++            &AtomicBool::new(false),
++        )
++        .unwrap();
++    let expected_a = sample_reference(0..4, ExactRatio::ZERO, ExactRatio::ONE, 4, fixture_sample);
++    let expected_b = sample_reference(9..12, ratio(17, 2), ExactRatio::ONE, 4, fixture_sample);
++    assert_eq!(
++        actual.samples,
++        expected_a.into_iter().chain(expected_b).collect::<Vec<_>>()
++    );
++
++    let old_signal = old_plan.audio_definition(node("b")).unwrap().signal();
++    let old_tape = AudioSignalTape::new(
++        &old_plan,
++        ExactRatio::ZERO..ratio(4, 1),
++        vec![run(
++            ExactRatio::ZERO..ratio(4, 1),
++            ExactRatio::ZERO..ratio(4, 1),
++            old_signal,
++        )],
++    )
++    .unwrap();
++    let old = StageAudio::new(Arc::clone(&old_plan))
++        .read_tape(
++            &mut FixtureProvider::new(),
++            &old_tape,
++            SignalSample(0),
++            4,
++            TIMEOUT,
++            &AtomicBool::new(false),
++        )
++        .unwrap();
++    assert_ne!(actual.samples[4..], old.samples);
++}
++
++#[test]
++fn tape_keeps_repeat_default_and_actual_room_tone_occurrence_scopes_distinct() {
++    let rate = FrameRate::new(48_000, 1).unwrap();
++    let repeat = BeatNode {
++        framing: None,
++        label: "Two RoomTone plays".into(),
++        audio_edges: Default::default(),
++        kind: NodeKind::Repeat {
++            child: id("room"),
++            iterations: IterationOrder::new(RevisionId::new("room-plays").unwrap(), 2).unwrap(),
++            gap: None,
++        },
++    };
++    let doc = document(
++        rate,
++        &["repeat"],
++        [
++            (
++                "room",
++                hold(
++                    128,
++                    HoldAudio::RoomTone {
++                        source: audio(512..640),
++                    },
++                ),
++            ),
++            ("repeat", repeat),
++        ],
++        BTreeMap::new(),
++    );
++    let plan = compile(&doc, false);
++    let default = plan
++        .audio_definition(AudioDefinitionSelector::RepeatDefault {
++            repeat: id("repeat"),
++        })
++        .unwrap()
++        .signal();
++    let occurrence = plan.audio_signal();
++    let tape = AudioSignalTape::new(
++        &plan,
++        ExactRatio::ZERO..ratio(256, 1),
++        vec![
++            run(
++                ExactRatio::ZERO..ratio(128, 1),
++                ExactRatio::ZERO..ratio(128, 1),
++                default,
++            ),
++            run(
++                ratio(128, 1)..ratio(256, 1),
++                ratio(128, 1)..ratio(256, 1),
++                occurrence,
++            ),
++        ],
++    )
++    .unwrap();
++
++    let source: Vec<_> = (512..640).map(fixture_sample).collect();
++    let room = RoomTone::new(
++        RoomToneRecipe::new(ratio(128, 1), 128).unwrap(),
++        &source,
++        &AtomicBool::new(false),
++    )
++    .unwrap()
++    .render(AudioSample(0), 128, &AtomicBool::new(false))
++    .unwrap()
++    .samples;
++    let expected: Vec<_> = room.iter().copied().chain(room.iter().copied()).collect();
++    let mut provider = FixtureProvider::new();
++    let mut renderer = StageAudio::new(Arc::clone(&plan));
++    let actual = renderer
++        .read_tape(
++            &mut provider,
++            &tape,
++            SignalSample(0),
++            256,
++            TIMEOUT,
++            &AtomicBool::new(false),
++        )
++        .unwrap();
++    assert_eq!(actual.samples, expected);
++    assert!(actual.suppressed.is_empty());
++    assert_eq!(provider.calls, 2);
++    assert_eq!(renderer.cached_stage_count(), 2);
++}
++
++#[test]
++fn tape_preserves_nested_preserve_history_suppression_and_cache_admission() {
++    let (doc, expected, _) = nested_fixture();
++    let plan = compile(&doc, false);
++    let signal = plan.audio_definition(node("outer")).unwrap().signal();
++    let tape = AudioSignalTape::new(
++        &plan,
++        ExactRatio::ZERO..ratio(1280, 1),
++        vec![
++            run(
++                ExactRatio::ZERO..ratio(640, 1),
++                ExactRatio::ZERO..ratio(640, 1),
++                signal.clone(),
++            ),
++            run(
++                ratio(640, 1)..ratio(1280, 1),
++                ratio(640, 1)..ratio(1280, 1),
++                signal,
++            ),
++        ],
++    )
++    .unwrap();
++    let mut provider = FixtureProvider::new();
++    let mut renderer = StageAudio::new(Arc::clone(&plan));
++
++    let suffix = renderer
++        .read_tape(
++            &mut provider,
++            &tape,
++            SignalSample(1024),
++            256,
++            TIMEOUT,
++            &AtomicBool::new(false),
++        )
++        .unwrap();
++    assert_eq!(suffix.samples, expected[1024..1280]);
++    assert_eq!(renderer.cached_stage_count(), 3);
++
++    let seam = renderer
++        .read_tape(
++            &mut provider,
++            &tape,
++            SignalSample(636),
++            8,
++            TIMEOUT,
++            &AtomicBool::new(false),
++        )
++        .unwrap();
++    assert_eq!(seam.samples, expected[636..644]);
++    let silent_hold = renderer
++        .read_tape(
++            &mut provider,
++            &tape,
++            SignalSample(800),
++            160,
++            TIMEOUT,
++            &AtomicBool::new(false),
++        )
++        .unwrap();
++    assert_eq!(silent_hold.samples, expected[800..960]);
++    assert_eq!(
++        silent_hold.suppressed,
++        vec![SignalSample(800)..SignalSample(960)]
++    );
++
++    provider.unavailable = true;
++    assert!(matches!(
++        renderer.read_tape(
++            &mut provider,
++            &tape,
++            SignalSample(0),
++            1,
++            TIMEOUT,
++            &AtomicBool::new(false),
++        ),
++        Err(StageAudioError::Preparation(
++            PreparationError::SourceUnavailable(_)
++        ))
++    ));
++}
+--- before/crates/deadpan-audio/tests/audio_definition/tape_admission.rs
++++ crates/deadpan-audio/tests/audio_definition/tape_admission.rs
+@@ -0,0 +1,243 @@
++use super::*;
++use deadpan_plan::{AudioSignalContent, AudioSignalTape, AudioSignalTapeRun};
++
++fn divided_root(plan: &RenderPlan, cut: i64, end: i64) -> AudioSignalTape<'_> {
++    let cut = ExactRatio::integer(cut);
++    let end = ExactRatio::integer(end);
++    AudioSignalTape::new(
++        plan,
++        ExactRatio::ZERO..end,
++        vec![
++            AudioSignalTapeRun::new(
++                ExactRatio::ZERO..cut,
++                ExactRatio::ZERO..cut,
++                plan.audio_signal(),
++            ),
++            AudioSignalTapeRun::new(cut..end, cut..end, plan.audio_signal()),
++        ],
++    )
++    .unwrap()
++}
++
++#[test]
++fn bound_source_reads_keep_the_physical_allocation_anchor_across_tape_seams() {
++    let rate = FrameRate::new(48_000, 1).unwrap();
++    let original = document(
++        rate,
++        &["a"],
++        [("a", source(rate, 1024, 512..1536))],
++        BTreeMap::new(),
++    );
++    let bindings = capture_unbound_audio_bindings(
++        &original,
++        AudioTimingId {
++            allocation: RevisionId::new("tape-capture").unwrap(),
++            ordinal: 0,
++        },
++    )
++    .unwrap();
++    let mut wire = serde_json::to_value(&original).unwrap();
++    wire["audio_bindings"] = serde_json::to_value(bindings).unwrap();
++    let bound = ProjectDocument::from_json(&wire.to_string()).unwrap();
++    let plan = compile(&bound, false);
++    let tape = divided_root(&plan, 512, 1024);
++    let query = tape
++        .query(SignalSample(504)..SignalSample(520), Default::default())
++        .unwrap();
++    assert_eq!(query.spans.len(), 2);
++    for span in &query.spans {
++        assert!(matches!(span.content, AudioSignalContent::Bound(_)));
++        assert_eq!(span.allocated_samples, SignalSample(0)..SignalSample(1024));
++    }
++    let mut renderer = StageAudio::new(Arc::clone(&plan));
++    let mut provider = FixtureProvider::new();
++    for (start, count) in [(640, 128), (504, 16), (0, 64)] {
++        let actual = renderer
++            .read_tape(
++                &mut provider,
++                &tape,
++                SignalSample(start),
++                count,
++                TIMEOUT,
++                &AtomicBool::new(false),
++            )
++            .unwrap();
++        let expected: Vec<_> = (512 + start..512 + start + i64::from(count))
++            .map(fixture_sample)
++            .collect();
++        assert_eq!(actual.samples, expected, "bound read at {start}");
++        assert!(actual.suppressed.is_empty());
++    }
++}
++
++#[test]
++fn tape_reads_reject_foreign_handles_bad_ranges_and_cancellation() {
++    let rate = FrameRate::new(48_000, 1).unwrap();
++    let doc = document(
++        rate,
++        &["a"],
++        [("a", source(rate, 1024, 0..1024))],
++        BTreeMap::new(),
++    );
++    let plan = compile(&doc, false);
++    let tape = divided_root(&plan, 512, 1024);
++    let mut provider = FixtureProvider::new();
++    let mut foreign = StageAudio::new(compile(&doc, false));
++    assert!(matches!(
++        foreign.read_tape(
++            &mut provider,
++            &tape,
++            SignalSample(0),
++            1,
++            TIMEOUT,
++            &AtomicBool::new(false),
++        ),
++        Err(StageAudioError::ForeignDomain)
++    ));
++    let mut renderer = StageAudio::new(Arc::clone(&plan));
++    for (start, count, timeout) in [
++        (-1, 1, TIMEOUT),
++        (0, 0, TIMEOUT),
++        (0, 257, TIMEOUT),
++        (1024, 1, TIMEOUT),
++        (1023, 2, TIMEOUT),
++        (i64::MAX, 1, TIMEOUT),
++        (0, 1, Duration::ZERO),
++        (0, 1, Duration::from_secs(61)),
++    ] {
++        assert!(
++            renderer
++                .read_tape(
++                    &mut provider,
++                    &tape,
++                    SignalSample(start),
++                    count,
++                    timeout,
++                    &AtomicBool::new(false),
++                )
++                .is_err()
++        );
++    }
++    assert!(
++        renderer
++            .read_tape(
++                &mut provider,
++                &tape,
++                SignalSample(0),
++                1,
++                TIMEOUT,
++                &AtomicBool::new(true),
++            )
++            .unwrap_err()
++            .is_cancelled()
++    );
++    assert_eq!(provider.calls, 0);
++    provider.cancel_on_call = true;
++    assert!(
++        renderer
++            .read_tape(
++                &mut provider,
++                &tape,
++                SignalSample(504),
++                16,
++                TIMEOUT,
++                &AtomicBool::new(false),
++            )
++            .unwrap_err()
++            .is_cancelled()
++    );
++    assert_eq!(renderer.cached_stage_count(), 0);
++}
++
++#[test]
++fn tape_preflights_all_runs_and_shares_preparation_limits_between_them() {
++    let rate = FrameRate::new(48_000, 1).unwrap();
++    let unsupported = document(
++        rate,
++        &["a", "tail"],
++        [
++            ("a", source(rate, 2, 512..514)),
++            (
++                "tail",
++                hold(
++                    2,
++                    HoldAudio::Tail {
++                        source: audio(512..514),
++                        maximum: frames(2),
++                    },
++                ),
++            ),
++        ],
++        BTreeMap::new(),
++    );
++    let plan = compile(&unsupported, false);
++    let tape = divided_root(&plan, 2, 4);
++    let mut provider = FixtureProvider::new();
++    assert!(matches!(
++        StageAudio::new(Arc::clone(&plan)).read_tape(
++            &mut provider,
++            &tape,
++            SignalSample(0),
++            4,
++            TIMEOUT,
++            &AtomicBool::new(false),
++        ),
++        Err(StageAudioError::Unsupported("effect tails"))
++    ));
++    assert_eq!(
++        provider.calls, 0,
++        "the second run must preflight before the first reads media"
++    );
++
++    let doc = document(
++        rate,
++        &["a", "b"],
++        [
++            (
++                "a",
++                hold(
++                    128,
++                    HoldAudio::RoomTone {
++                        source: audio(512..640),
++                    },
++                ),
++            ),
++            (
++                "b",
++                hold(
++                    128,
++                    HoldAudio::RoomTone {
++                        source: audio(512..640),
++                    },
++                ),
++            ),
++        ],
++        BTreeMap::new(),
++    );
++    let plan = compile(&doc, false);
++    let tape = divided_root(&plan, 128, 256);
++    let mut renderer = StageAudio::with_limits(
++        Arc::clone(&plan),
++        StageLimits {
++            maximum_prepared_stages: 1,
++            ..Default::default()
++        },
++    )
++    .unwrap();
++    assert!(matches!(
++        renderer.read_tape(
++            &mut provider,
++            &tape,
++            SignalSample(0),
++            256,
++            TIMEOUT,
++            &AtomicBool::new(false),
++        ),
++        Err(StageAudioError::Limit(_))
++    ));
++    assert_eq!(
++        provider.calls, 1,
++        "the second run cannot reset stage admission"
++    );
++    assert_eq!(renderer.cached_stage_count(), 1);
++}
+--- before/crates/deadpan-plan/src/audio_signal.rs
++++ crates/deadpan-plan/src/audio_signal.rs
+@@ -170,6 +170,7 @@
+             plan: self.plan,
+             root: self.child,
+             support: self.descriptor.selection.clone(),
++            sampling_support: Some(self.descriptor.selection.clone()),
+             constrain_support: true,
+             repeats: self.descriptor.instance.repeats.clone(),
+             definition: self.descriptor.definition.clone(),
+@@ -186,6 +187,7 @@
+             plan: self.plan,
+             root: self.node,
+             support: ExactRatio::ZERO..ExactRatio::integer(self.descriptor.duration.frames()),
++            sampling_support: None,
+             constrain_support: false,
+             repeats: self.descriptor.instance.repeats.clone(),
+             definition: self.descriptor.definition.clone(),
+@@ -306,7 +308,12 @@
+ pub struct AudioSignal<'plan> {
+     plan: &'plan RenderPlan,
+     root: usize,
++    /// Physical allocation for this signal. A tape run keeps this mapped to
++    /// its provider, even though its sample labels share the tape grid.
+     support: Range<ExactRatio>,
++    // A tape's meaningful intrinsic input selection is distinct from each
++    // provider's allocation and limits filter support without changing ownership.
++    sampling_support: Option<Range<ExactRatio>>,
+     // An authored stage input selection trims filter support. Root allocation
+     // itself does not: a root Partition retains its complete child's support.
+     constrain_support: bool,
+@@ -327,6 +334,7 @@
+             plan: self,
+             root: self.root,
+             support: ExactRatio::ZERO..ExactRatio::integer(self.duration().frames()),
++            sampling_support: None,
+             constrain_support: false,
+             repeats: Vec::new(),
+             definition: None,
+@@ -398,6 +406,7 @@
+             plan: definition.plan,
+             root: definition.root,
+             support: ExactRatio::ZERO..ExactRatio::integer(definition.duration().frames()),
++            sampling_support: None,
+             constrain_support: false,
+             repeats: Vec::new(),
+             definition: Some(definition.selector.clone()),
+@@ -415,7 +424,8 @@
+         Self {
+             plan: definition.plan,
+             root: definition.root,
+-            support,
++            support: support.clone(),
++            sampling_support: Some(support),
+             constrain_support: true,
+             repeats: Vec::new(),
+             definition: Some(definition.selector.clone()),
+@@ -451,6 +461,83 @@
+ 
+     pub fn support(&self) -> Range<ExactRatio> {
+         self.support.clone()
++    }
++
++    /// Rebase this current provider into a shared tape clock. Physical allocation
++    /// follows the mapped provider support; meaningful filter support is the full
++    /// tape selection intersected with any pre-existing authored constraint.
++    pub(crate) fn remap_for_tape(
++        &self,
++        full_support: Range<ExactRatio>,
++        destination: Range<ExactRatio>,
++        source: Range<ExactRatio>,
++        frames_per_sample: ExactRatio,
++    ) -> Result<Self, PlanError> {
++        if !positive_range(&destination)? || !positive_range(&source)? {
++            return Err(PlanError::InvalidPlan(
++                "audio tape run ranges must be positive",
++            ));
++        }
++        if source
++            .start
++            .checked_sub(self.support.start)?
++            .compare_integer(0)
++            .is_lt()
++            || source
++                .end
++                .checked_sub(self.support.end)?
++                .compare_integer(0)
++                .is_gt()
++        {
++            return Err(PlanError::InvalidPlan(
++                "audio tape source window is outside provider support",
++            ));
++        }
++        let destination_length = destination.end.checked_sub(destination.start)?;
++        let source_length = source.end.checked_sub(source.start)?;
++        let source_per_destination = source_length.checked_div(destination_length)?;
++        let old = self.transform()?;
++        let transform = SignalTransform {
++            signal_origin: destination.start.checked_add(
++                old.signal_origin
++                    .checked_sub(source.start)?
++                    .checked_div(source_per_destination)?,
++            )?,
++            signal_frames_per_local_frame: old
++                .signal_frames_per_local_frame
++                .checked_div(source_per_destination)?,
++            grid_origin: full_support.start,
++            signal_frames_per_sample: frames_per_sample,
++        };
++        let project_source = |source_frame: ExactRatio| {
++            destination.start.checked_add(
++                source_frame
++                    .checked_sub(source.start)?
++                    .checked_div(source_per_destination)?,
++            )
++        };
++        let mapped_allocation =
++            project_source(self.support.start)?..project_source(self.support.end)?;
++        let support = crate::plan::audio::intersect(mapped_allocation, full_support.clone())?;
++        let mapped_meaningful = if self.constrain_support {
++            let meaningful = self.sampling_support.as_ref().unwrap_or(&self.support);
++            let mapped = project_source(meaningful.start)?..project_source(meaningful.end)?;
++            crate::plan::audio::intersect(mapped, full_support.clone())?
++        } else {
++            full_support
++        };
++        Ok(Self {
++            plan: self.plan,
++            root: self.root,
++            support,
++            sampling_support: Some(mapped_meaningful),
++            constrain_support: true,
++            repeats: self.repeats.clone(),
++            definition: self.definition.clone(),
++            placed_transform: Some(transform),
++            bypass_binding: self.bypass_binding,
++            gap: self.gap.clone(),
++        })
+     }
+ 
+     pub fn sample_count(&self) -> Result<SignalSample, PlanError> {
+@@ -551,7 +638,11 @@
+         let mut transform = self.transform()?;
+         let (probe, bias) = grid.probe(sample)?;
+         let mut extent = self.support.clone();
+-        let mut sampling_extent = self.constrain_support.then(|| self.support.clone());
++        let mut sampling_extent = self.constrain_support.then(|| {
++            self.sampling_support
++                .clone()
++                .unwrap_or_else(|| self.support.clone())
++        });
+         let mut current = self.root;
+         let mut repeats = self.repeats.clone();
+         let mut retimes = Vec::new();
+@@ -829,6 +920,14 @@
+     }
+ }
+ 
++fn positive_range(range: &Range<ExactRatio>) -> Result<bool, TimeError> {
++    Ok(range
++        .end
++        .checked_sub(range.start)?
++        .compare_integer(0)
++        .is_gt())
++}
++
+ fn source_point(
+     content: &AudioSignalContent<'_>,
+     local: ExactRatio,
+--- before/crates/deadpan-plan/src/audio_tape.rs
++++ crates/deadpan-plan/src/audio_tape.rs
+@@ -0,0 +1,347 @@
++//! Exact borrowed projections of current audio signal contexts.
++
++use std::ops::Range;
++
++use deadpan_core::{ExactRatio, MIX_SAMPLE_RATE};
++
++use crate::{
++    AudioBoundaryRule, AudioPolicyQuery, AudioQueryLimits, AudioSampleGrid, AudioSignal,
++    AudioSignalQuery, LookupStats, PlanError, RenderPlan, SignalSample,
++};
++
++/// One exact destination run backed by a live signal window in the same plan.
++/// Its increasing affine map sends destination coordinates to source signal
++/// coordinates. The run window controls allocation only; signal filter support
++/// remains the provider's own meaningful support.
++#[derive(Debug, Clone)]
++pub struct AudioSignalTapeRun<'plan> {
++    destination: Range<ExactRatio>,
++    source: Range<ExactRatio>,
++    signal: AudioSignal<'plan>,
++}
++
++impl<'plan> AudioSignalTapeRun<'plan> {
++    pub fn new(
++        destination: Range<ExactRatio>,
++        source: Range<ExactRatio>,
++        signal: AudioSignal<'plan>,
++    ) -> Self {
++        Self {
++            destination,
++            source,
++            signal,
++        }
++    }
++
++    pub fn destination(&self) -> Range<ExactRatio> {
++        self.destination.clone()
++    }
++
++    pub fn source(&self) -> Range<ExactRatio> {
++        self.source.clone()
++    }
++}
++
++#[derive(Debug, Clone)]
++struct PlacedRun<'plan> {
++    samples: Range<SignalSample>,
++    signal: AudioSignal<'plan>,
++}
++
++/// A bounded exact projection of current signal windows onto one PointCeil grid.
++/// Runs keep physical query allocations separate from full source-filter support.
++#[derive(Debug, Clone)]
++pub struct AudioSignalTape<'plan> {
++    plan: &'plan RenderPlan,
++    support: Range<ExactRatio>,
++    grid: AudioSampleGrid<SignalSample>,
++    runs: Vec<PlacedRun<'plan>>,
++}
++
++impl<'plan> AudioSignalTape<'plan> {
++    /// Build a complete exact partition of `full_support` from current signals.
++    /// All providers are remapped to the same intrinsic PointCeil grid.
++    pub fn new(
++        plan: &'plan RenderPlan,
++        full_support: Range<ExactRatio>,
++        runs: Vec<AudioSignalTapeRun<'plan>>,
++    ) -> Result<Self, PlanError> {
++        if !positive_range(&full_support)? {
++            return Err(PlanError::InvalidPlan(
++                "audio tape support must be positive",
++            ));
++        }
++        if runs.is_empty() || runs.len() > 4096 {
++            return Err(PlanError::AudioQueryLimit("audio tape run count"));
++        }
++        let rate = plan.metadata().presentation_basis.frame_rate;
++        let frames_per_sample = ExactRatio::new(
++            i128::from(rate.numerator()),
++            i128::from(MIX_SAMPLE_RATE) * i128::from(rate.denominator()),
++        )?;
++        let grid: AudioSampleGrid<SignalSample> = AudioSampleGrid::new(
++            full_support.start,
++            frames_per_sample,
++            AudioBoundaryRule::PointCeil,
++        )?;
++        let mut expected_start = full_support.start;
++        let mut placed = Vec::with_capacity(runs.len());
++        for run in runs {
++            if run.destination.start != expected_start || !positive_range(&run.destination)? {
++                return Err(PlanError::InvalidPlan(
++                    "audio tape runs must be positive and exactly contiguous",
++                ));
++            }
++            if !run.signal.belongs_to(plan) {
++                return Err(PlanError::InvalidPlan(
++                    "audio tape provider belongs to another plan",
++                ));
++            }
++            if run
++                .destination
++                .start
++                .checked_sub(full_support.start)?
++                .compare_integer(0)
++                .is_lt()
++                || run
++                    .destination
++                    .end
++                    .checked_sub(full_support.end)?
++                    .compare_integer(0)
++                    .is_gt()
++            {
++                return Err(PlanError::InvalidPlan(
++                    "audio tape run is outside full support",
++                ));
++            }
++            let signal = run.signal.remap_for_tape(
++                full_support.clone(),
++                run.destination.clone(),
++                run.source.clone(),
++                frames_per_sample,
++            )?;
++            placed.push(PlacedRun {
++                samples: grid.boundary(run.destination.start)?
++                    ..grid.boundary(run.destination.end)?,
++                signal,
++            });
++            expected_start = run.destination.end;
++        }
++        if expected_start != full_support.end {
++            return Err(PlanError::InvalidPlan(
++                "audio tape runs do not cover full support",
++            ));
++        }
++        Ok(Self {
++            plan,
++            support: full_support,
++            grid,
++            runs: placed,
++        })
++    }
++
++    pub fn belongs_to(&self, plan: &RenderPlan) -> bool {
++        std::ptr::eq(self.plan, plan)
++    }
++
++    pub fn support(&self) -> Range<ExactRatio> {
++        self.support.clone()
++    }
++
++    /// Number of samples on the common PointCeil grid, independent of run splits.
++    pub fn sample_count(&self) -> Result<SignalSample, PlanError> {
++        Ok(self.grid.boundary(self.support.end)?)
++    }
++
++    /// Query current signal content while charging all run dispatch and traversal
++    /// to one caller-supplied work/span allowance.
++    pub fn query(
++        &self,
++        samples: Range<SignalSample>,
++        limits: AudioQueryLimits,
++    ) -> Result<AudioSignalQuery<'plan>, PlanError> {
++        limits.validate()?;
++        let count = self.sample_count()?;
++        if samples.start.0 < 0 || samples.end < samples.start || samples.end > count {
++            return Err(PlanError::AudioRangeOutOfRange);
++        }
++        let mut spans = Vec::new();
++        let mut lookup = LookupStats::default();
++        let mut work = 0_usize;
++        let mut cursor = samples.start;
++        while cursor < samples.end {
++            let index = self.run_for(cursor, &mut work, limits.maximum_work)?;
++            let run = self
++                .runs
++                .get(index)
++                .ok_or(PlanError::InvalidPlan("audio tape sample is uncovered"))?;
++            let end = samples.end.min(run.samples.end);
++            if cursor < run.samples.start || end <= cursor {
++                return Err(PlanError::InvalidPlan(
++                    "audio tape dispatch did not advance",
++                ));
++            }
++            charge(&mut work, 1, limits.maximum_work)?;
++            let remaining_spans = limits
++                .maximum_spans
++                .checked_sub(spans.len())
++                .ok_or(PlanError::AudioQueryLimit("audio tape span count"))?;
++            let remaining_work = limits
++                .maximum_work
++                .checked_sub(work)
++                .ok_or(PlanError::AudioQueryLimit("audio tape work"))?;
++            if remaining_spans == 0 || remaining_work == 0 {
++                return Err(PlanError::AudioQueryLimit("audio tape work/span"));
++            }
++            let query = run.signal.query(
++                cursor..end,
++                AudioQueryLimits {
++                    maximum_spans: remaining_spans,
++                    maximum_work: remaining_work,
++                },
++            )?;
++            charge(&mut work, query.work, limits.maximum_work)?;
++            add_lookup(&mut lookup, query.lookup)?;
++            spans.extend(query.spans);
++            if spans.len() > limits.maximum_spans {
++                return Err(PlanError::AudioQueryLimit("audio tape span count"));
++            }
++            cursor = end;
++        }
++        Ok(AudioSignalQuery {
++            project_id: self.plan.metadata().project_id.clone(),
++            revision_id: self.plan.metadata().revision_id.clone(),
++            // A tape can cross authored definitions; each returned span keeps
++            // its own definition scope, so there is no single query alias.
++            definition: None,
++            samples: samples.clone(),
++            spans,
++            lookup,
++            work,
++        })
++    }
++
++    /// Resolve policy over the same exact runs and charge one shared allowance.
++    pub fn policy(
++        &self,
++        samples: Range<SignalSample>,
++        limits: AudioQueryLimits,
++    ) -> Result<AudioPolicyQuery<SignalSample>, PlanError> {
++        limits.validate()?;
++        let count = self.sample_count()?;
++        if samples.start.0 < 0 || samples.end < samples.start || samples.end > count {
++            return Err(PlanError::AudioRangeOutOfRange);
++        }
++        let mut suppressed = Vec::new();
++        let mut contents = Vec::new();
++        let mut lookup = LookupStats::default();
++        let mut work = 0_usize;
++        let mut cursor = samples.start;
++        while cursor < samples.end {
++            let index = self.run_for(cursor, &mut work, limits.maximum_work)?;
++            let run = self.runs.get(index).ok_or(PlanError::InvalidPlan(
++                "audio tape policy sample is uncovered",
++            ))?;
++            let end = samples.end.min(run.samples.end);
++            if cursor < run.samples.start || end <= cursor {
++                return Err(PlanError::InvalidPlan("audio tape policy did not advance"));
++            }
++            charge(&mut work, 1, limits.maximum_work)?;
++            let remaining_work = limits
++                .maximum_work
++                .checked_sub(work)
++                .ok_or(PlanError::AudioQueryLimit("audio tape policy work"))?;
++            if remaining_work == 0 {
++                return Err(PlanError::AudioQueryLimit("audio tape policy work"));
++            }
++            let policy = run.signal.policy(
++                cursor..end,
++                AudioQueryLimits {
++                    // Policy span limits apply to each logical provider query;
++                    // recursive content and masks share the aggregate work cap.
++                    maximum_spans: limits.maximum_spans,
++                    maximum_work: remaining_work,
++                },
++            )?;
++            charge(&mut work, policy.work, limits.maximum_work)?;
++            add_lookup(&mut lookup, policy.lookup)?;
++            suppressed.extend(policy.suppressed);
++            contents.extend(policy.contents);
++            cursor = end;
++        }
++        suppressed.sort_unstable_by_key(|range| range.start);
++        let mut merged: Vec<Range<SignalSample>> = Vec::new();
++        for range in suppressed {
++            if range.start >= range.end {
++                continue;
++            }
++            if let Some(last) = merged.last_mut()
++                && range.start <= last.end
++            {
++                last.end = last.end.max(range.end);
++            } else {
++                merged.push(range);
++            }
++        }
++        Ok(AudioPolicyQuery {
++            suppressed: merged,
++            contents,
++            lookup,
++            work,
++        })
++    }
++
++    fn run_for(
++        &self,
++        sample: SignalSample,
++        work: &mut usize,
++        maximum: usize,
++    ) -> Result<usize, PlanError> {
++        let mut left = 0;
++        let mut right = self.runs.len();
++        while left < right {
++            charge(work, 1, maximum)?;
++            let middle = left + (right - left) / 2;
++            if self.runs[middle].samples.end <= sample {
++                left = middle + 1;
++            } else {
++                right = middle;
++            }
++        }
++        Ok(left)
++    }
++}
++
++fn positive_range(range: &Range<ExactRatio>) -> Result<bool, PlanError> {
++    Ok(range
++        .end
++        .checked_sub(range.start)?
++        .compare_integer(0)
++        .is_gt())
++}
++
++fn charge(used: &mut usize, amount: usize, maximum: usize) -> Result<(), PlanError> {
++    *used = used
++        .checked_add(amount)
++        .ok_or(PlanError::AudioQueryLimit("audio tape work"))?;
++    if *used > maximum {
++        return Err(PlanError::AudioQueryLimit("audio tape work"));
++    }
++    Ok(())
++}
++
++fn add_lookup(total: &mut LookupStats, next: LookupStats) -> Result<(), PlanError> {
++    total.visited_nodes = total
++        .visited_nodes
++        .checked_add(next.visited_nodes)
++        .ok_or(PlanError::AudioQueryLimit("audio tape lookup count"))?;
++    total.sequence_comparisons = total
++        .sequence_comparisons
++        .checked_add(next.sequence_comparisons)
++        .ok_or(PlanError::AudioQueryLimit("audio tape lookup count"))?;
++    total.iteration_run_comparisons = total
++        .iteration_run_comparisons
++        .checked_add(next.iteration_run_comparisons)
++        .ok_or(PlanError::AudioQueryLimit("audio tape lookup count"))?;
++    Ok(())
++}
+--- before/crates/deadpan-plan/src/lib.rs
++++ crates/deadpan-plan/src/lib.rs
+@@ -9,6 +9,7 @@
+ mod audio_envelope;
+ mod audio_reference;
+ mod audio_sampling;
++mod audio_tape;
+ mod picture;
+ mod plan;
+ 
+@@ -19,6 +20,7 @@
+     ReferenceSample, RetainedRootMap,
+ };
+ pub use audio_sampling::{AudioBoundaryRule, AudioSampleGrid, AudioSampleMap};
++pub use audio_tape::{AudioSignalTape, AudioSignalTapeRun};
+ 
+ pub use picture::{Picture, PictureFraming, PictureSample};
+ pub use plan::{AudioBound, AudioBoundDomain, AudioFadeQuery, AudioFadeSpan, AudioPolicyQuery};
+--- before/crates/deadpan-plan/tests/audio_tape.rs
++++ crates/deadpan-plan/tests/audio_tape.rs
+@@ -0,0 +1,464 @@
++use std::collections::BTreeMap;
++
++use deadpan_core::*;
++use deadpan_plan::{
++    AudioContent, AudioDefinitionSelector, AudioQueryLimits, AudioSignalContent, AudioSignalTape,
++    AudioSignalTapeRun, PlanError, RenderPlan, SignalSample,
++};
++
++fn id(value: &str) -> NodeId {
++    NodeId::new(value).unwrap()
++}
++
++fn ratio(numerator: i128, denominator: i128) -> ExactRatio {
++    ExactRatio::new(numerator, denominator).unwrap()
++}
++
++fn frames(value: i64) -> FrameDuration {
++    FrameDuration::new(value).unwrap()
++}
++
++fn audio_span() -> SourceSpan {
++    let time_base = SourceTimeBase::new(1, 48_000).unwrap();
++    SourceSpan::new(
++        SourceTimestamp {
++            ticks: 0,
++            time_base,
++        },
++        SourceTimestamp {
++            ticks: 1_000_000,
++            time_base,
++        },
++    )
++    .unwrap()
++}
++
++fn source(length: i64) -> BeatNode {
++    BeatNode {
++        label: "Current source".into(),
++        framing: None,
++        audio_edges: Default::default(),
++        kind: NodeKind::Source {
++            source: SourceNode {
++                duration: frames(length),
++                video: SourceVideo::Blank,
++                video_mapping: SourceVideoMapping::FitBeat,
++                audio: Some(SourceAudio {
++                    asset: AssetId::new("media").unwrap(),
++                    span: audio_span(),
++                }),
++                audio_mapping: SourceAudioMapping::FitBeat,
++                audio_offset: AudioSample(0),
++                link: LinkRelation::Independent,
++            },
++        },
++    }
++}
++
++fn hold(length: i64) -> BeatNode {
++    BeatNode::hold(
++        "Silent Hold",
++        HoldRecipe {
++            duration: frames(length),
++            video: HoldVideo::Background,
++            picture_context: None,
++            audio: HoldAudio::Silence,
++        },
++    )
++}
++
++fn make_plan(rate: FrameRate, source_frames: i64) -> RenderPlan {
++    let empty = ProjectDocument::new(
++        ProjectId::new("tape-project").unwrap(),
++        RevisionId::new("tape-revision").unwrap(),
++        PresentationBasis {
++            width: 16,
++            height: 16,
++            frame_rate: rate,
++            color_policy: ColorPolicy::SdrRec709,
++        },
++        id("root"),
++    )
++    .unwrap();
++    let mut nodes = BTreeMap::from([
++        (id("source"), source(source_frames)),
++        (id("left"), hold(4)),
++        (id("middle"), hold(4)),
++        (id("right"), hold(4)),
++        (id("partition-source"), source(4)),
++        (
++            id("partition"),
++            BeatNode {
++                label: "Retained input".into(),
++                framing: None,
++                audio_edges: Default::default(),
++                kind: NodeKind::Retime {
++                    child: id("partition-source"),
++                    duration: frames(2),
++                    mapping: FrameRange::new(ProjectFrame(1), ProjectFrame(3)).unwrap(),
++                    pitch: PitchPolicy::FollowSpeed,
++                    purpose: RetimePurpose::Partition,
++                },
++            },
++        ),
++    ]);
++    nodes.insert(
++        id("root"),
++        BeatNode::sequence(
++            "Root",
++            vec![
++                id("source"),
++                id("left"),
++                id("middle"),
++                id("right"),
++                id("partition"),
++            ],
++        ),
++    );
++    let mut wire = serde_json::to_value(empty).unwrap();
++    wire["nodes"] = serde_json::to_value(nodes).unwrap();
++    wire["assets"] = serde_json::to_value(BTreeMap::from([(
++        AssetId::new("media").unwrap(),
++        AssetRecord {
++            label: "Original".into(),
++            content_hash: "a".repeat(64),
++            video: None,
++            audio: Some(audio_span()),
++            still_image: true,
++            frame_count: None,
++            source_qualification: None,
++        },
++    )]))
++    .unwrap();
++    RenderPlan::compile(&ProjectDocument::from_json(&wire.to_string()).unwrap()).unwrap()
++}
++
++fn signal<'plan>(plan: &'plan RenderPlan, node: &str) -> deadpan_plan::AudioSignal<'plan> {
++    plan.audio_definition(AudioDefinitionSelector::Node { node: id(node) })
++        .unwrap()
++        .signal()
++}
++
++fn run<'plan>(
++    destination: std::ops::Range<ExactRatio>,
++    source: std::ops::Range<ExactRatio>,
++    signal: deadpan_plan::AudioSignal<'plan>,
++) -> AudioSignalTapeRun<'plan> {
++    AudioSignalTapeRun::new(destination, source, signal)
++}
++
++fn limits(maximum_spans: usize, maximum_work: usize) -> AudioQueryLimits {
++    AudioQueryLimits {
++        maximum_spans,
++        maximum_work,
++    }
++}
++
++#[test]
++fn ntsc_fractional_split_keeps_common_point_phase_and_span_allocations() {
++    let plan = make_plan(FrameRate::new(30_000, 1001).unwrap(), 4);
++    let tape = AudioSignalTape::new(
++        &plan,
++        ExactRatio::ZERO..ratio(5, 2),
++        vec![
++            run(
++                ExactRatio::ZERO..ratio(3, 2),
++                ExactRatio::ZERO..ratio(3, 2),
++                signal(&plan, "left"),
++            ),
++            run(
++                ratio(3, 2)..ratio(5, 2),
++                ExactRatio::ZERO..ExactRatio::ONE,
++                signal(&plan, "right"),
++            ),
++        ],
++    )
++    .unwrap();
++    assert_eq!(tape.sample_count().unwrap(), SignalSample(4004));
++
++    let query = tape
++        .query(
++            SignalSample(0)..SignalSample(4004),
++            AudioQueryLimits::default(),
++        )
++        .unwrap();
++    assert_eq!(query.spans.len(), 2);
++    assert_eq!(query.spans[0].samples, SignalSample(0)..SignalSample(2403));
++    assert_eq!(
++        query.spans[1].samples,
++        SignalSample(2403)..SignalSample(4004)
++    );
++    // Keep the provider's physical allocation; the tape only clips requested
++    // samples to its run window.
++    assert_eq!(
++        query.spans[1].allocated_samples,
++        SignalSample(2403)..SignalSample(4004)
++    );
++    assert_eq!(query.spans[1].grid.frame_origin(), ExactRatio::ZERO);
++    assert_eq!(
++        query.spans[1]
++            .sampling
++            .local_at(SignalSample(2403))
++            .unwrap(),
++        ratio(3, 8008)
++    );
++    assert_eq!(
++        query.spans[1].definition,
++        Some(AudioDefinitionSelector::Node { node: id("right") })
++    );
++}
++
++#[test]
++fn positive_run_with_no_point_labels_is_retained_and_skipped() {
++    let plan = make_plan(FrameRate::new(30, 1).unwrap(), 4);
++    let middle_start = ratio(6401, 6400);
++    let middle_end = ratio(6403, 6400);
++    let tape = AudioSignalTape::new(
++        &plan,
++        ExactRatio::ZERO..ExactRatio::integer(2),
++        vec![
++            run(
++                ExactRatio::ZERO..middle_start,
++                ExactRatio::ZERO..middle_start,
++                signal(&plan, "left"),
++            ),
++            run(
++                middle_start..middle_end,
++                ExactRatio::ZERO..ratio(1, 3200),
++                signal(&plan, "middle"),
++            ),
++            run(
++                middle_end..ExactRatio::integer(2),
++                ExactRatio::ZERO..ExactRatio::integer(2).checked_sub(middle_end).unwrap(),
++                signal(&plan, "right"),
++            ),
++        ],
++    )
++    .unwrap();
++    assert_eq!(tape.sample_count().unwrap(), SignalSample(3200));
++    let query = tape
++        .query(
++            SignalSample(0)..SignalSample(3200),
++            AudioQueryLimits::default(),
++        )
++        .unwrap();
++    assert_eq!(query.spans.len(), 2);
++    assert_eq!(query.spans[0].samples, SignalSample(0)..SignalSample(1601));
++    assert_eq!(
++        query.spans[1].samples,
++        SignalSample(1601)..SignalSample(3200)
++    );
++}
++
++#[test]
++fn requires_exact_coverage_and_rejects_foreign_provider_plans() {
++    let plan = make_plan(FrameRate::new(30, 1).unwrap(), 4);
++    let provider = signal(&plan, "left");
++    assert!(matches!(
++        AudioSignalTape::new(
++            &plan,
++            ExactRatio::ZERO..ExactRatio::integer(2),
++            vec![run(
++                ExactRatio::ZERO..ExactRatio::ONE,
++                ExactRatio::ZERO..ExactRatio::ONE,
++                provider.clone(),
++            )],
++        ),
++        Err(PlanError::InvalidPlan(_))
++    ));
++    assert!(matches!(
++        AudioSignalTape::new(
++            &plan,
++            ExactRatio::ZERO..ExactRatio::integer(2),
++            vec![
++                run(
++                    ExactRatio::ZERO..ExactRatio::ONE,
++                    ExactRatio::ZERO..ExactRatio::ONE,
++                    provider.clone(),
++                ),
++                run(
++                    ratio(1001, 1000)..ExactRatio::integer(2),
++                    ExactRatio::ZERO..ratio(999, 1000),
++                    provider.clone(),
++                ),
++            ],
++        ),
++        Err(PlanError::InvalidPlan(_))
++    ));
++    let other = make_plan(FrameRate::new(30, 1).unwrap(), 4);
++    assert!(matches!(
++        AudioSignalTape::new(
++            &plan,
++            ExactRatio::ZERO..ExactRatio::ONE,
++            vec![run(
++                ExactRatio::ZERO..ExactRatio::ONE,
++                ExactRatio::ZERO..ExactRatio::ONE,
++                signal(&other, "left"),
++            )],
++        ),
++        Err(PlanError::InvalidPlan(_))
++    ));
++}
++
++#[test]
++fn full_support_is_the_filter_crop_and_runs_do_not_crop_allocated_spans() {
++    let plan = make_plan(FrameRate::new(30, 1).unwrap(), 4);
++    let source = signal(&plan, "source");
++    let tape = AudioSignalTape::new(
++        &plan,
++        ExactRatio::ZERO..ExactRatio::integer(2),
++        vec![
++            run(
++                ExactRatio::ZERO..ExactRatio::ONE,
++                ExactRatio::ZERO..ExactRatio::ONE,
++                source.clone(),
++            ),
++            run(
++                ExactRatio::ONE..ExactRatio::integer(2),
++                ExactRatio::ONE..ExactRatio::integer(2),
++                source,
++            ),
++        ],
++    )
++    .unwrap();
++    let query = tape
++        .query(
++            SignalSample(0)..SignalSample(3200),
++            AudioQueryLimits::default(),
++        )
++        .unwrap();
++    assert_eq!(query.spans.len(), 2);
++    for span in &query.spans {
++        assert_eq!(span.allocated_samples, SignalSample(0)..SignalSample(3200));
++        let AudioSignalContent::Leaf(AudioContent::Source { support, .. }) = &span.content else {
++            panic!("expected live Source recipe")
++        };
++        assert_eq!(support.start.ticks, ExactRatio::ZERO);
++        assert_eq!(support.end.ticks, ExactRatio::integer(500_000));
++    }
++    assert_eq!(query.spans[0].samples, SignalSample(0)..SignalSample(1600));
++    assert_eq!(
++        query.spans[1].samples,
++        SignalSample(1600)..SignalSample(3200)
++    );
++}
++
++#[test]
++fn policy_keeps_per_provider_span_semantics_independent_of_run_order() {
++    let plan = make_plan(FrameRate::new(30, 1).unwrap(), 4);
++    let first = AudioSignalTape::new(
++        &plan,
++        ExactRatio::ZERO..ExactRatio::integer(2),
++        vec![
++            run(
++                ExactRatio::ZERO..ExactRatio::ONE,
++                ExactRatio::ZERO..ExactRatio::ONE,
++                signal(&plan, "left"),
++            ),
++            run(
++                ExactRatio::ONE..ExactRatio::integer(2),
++                ExactRatio::ZERO..ExactRatio::ONE,
++                signal(&plan, "source"),
++            ),
++        ],
++    )
++    .unwrap();
++    let second = AudioSignalTape::new(
++        &plan,
++        ExactRatio::ZERO..ExactRatio::integer(2),
++        vec![
++            run(
++                ExactRatio::ZERO..ExactRatio::ONE,
++                ExactRatio::ZERO..ExactRatio::ONE,
++                signal(&plan, "source"),
++            ),
++            run(
++                ExactRatio::ONE..ExactRatio::integer(2),
++                ExactRatio::ZERO..ExactRatio::ONE,
++                signal(&plan, "left"),
++            ),
++        ],
++    )
++    .unwrap();
++    let limits = limits(1, 512);
++    assert!(
++        first
++            .policy(SignalSample(0)..SignalSample(3200), limits)
++            .is_ok()
++    );
++    assert!(
++        second
++            .policy(SignalSample(0)..SignalSample(3200), limits)
++            .is_ok()
++    );
++    assert!(
++        first
++            .query(SignalSample(0)..SignalSample(3200), limits)
++            .is_err()
++    );
++}
++
++#[test]
++fn indexed_dispatch_comparisons_and_dispatch_use_the_shared_work_budget() {
++    let plan = make_plan(FrameRate::new(30, 1).unwrap(), 4096);
++    let source = signal(&plan, "source");
++    let runs = (0..4096)
++        .map(|frame| {
++            let start = ExactRatio::integer(frame);
++            let end = ExactRatio::integer(frame + 1);
++            run(start..end, start..end, source.clone())
++        })
++        .collect();
++    let tape =
++        AudioSignalTape::new(&plan, ExactRatio::ZERO..ExactRatio::integer(4096), runs).unwrap();
++    assert!(
++        tape.query(SignalSample(0)..SignalSample(1), limits(1, 2))
++            .is_err()
++    );
++    assert!(
++        tape.policy(SignalSample(0)..SignalSample(1), limits(1, 4))
++            .is_err()
++    );
++    assert!(
++        tape.query(SignalSample(0)..SignalSample(1), limits(1, 64))
++            .is_ok()
++    );
++    assert!(
++        tape.policy(SignalSample(0)..SignalSample(1), limits(1, 64))
++            .is_ok()
++    );
++}
++
++#[test]
++fn prior_partition_allocation_is_not_promoted_to_a_sampling_crop() {
++    let plan = make_plan(FrameRate::new(30, 1).unwrap(), 4);
++    let tape = AudioSignalTape::new(
++        &plan,
++        ExactRatio::ZERO..ExactRatio::integer(4),
++        vec![
++            run(
++                ExactRatio::ZERO..ExactRatio::ONE,
++                ExactRatio::ZERO..ExactRatio::ONE,
++                signal(&plan, "partition"),
++            ),
++            run(
++                ExactRatio::ONE..ExactRatio::integer(4),
++                ExactRatio::ZERO..ExactRatio::integer(3),
++                signal(&plan, "left"),
++            ),
++        ],
++    )
++    .unwrap();
++    let query = tape
++        .query(SignalSample(0)..SignalSample(1600), Default::default())
++        .unwrap();
++    let span = &query.spans[0];
++    assert_eq!(span.allocated_samples, SignalSample(0)..SignalSample(3200));
++    let AudioSignalContent::Leaf(AudioContent::Source { support, .. }) = &span.content else {
++        panic!("expected retained Source support")
++    };
++    // The global input begins at child frame1. The old partition ends at
++    // child3, but only allocates demand: context still reaches child4.
++    assert_eq!(support.start.ticks, ExactRatio::integer(250_000));
++    assert_eq!(support.end.ticks, ExactRatio::integer(1_000_000));
++}

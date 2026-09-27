@@ -1,6 +1,7 @@
 //! Read-only source-stage inspection against one immutable project revision.
 //! Opening originals, decoding and preparation belong off the UI/device thread.
 
+use std::collections::{BTreeMap, VecDeque};
 use std::path::Path;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -13,12 +14,14 @@ use deadpan_audio::{
 };
 use deadpan_core::{
     AssetId, AssetRecord, AudioSample, FrozenAudioContext, ProjectDocument, ProjectId, RevisionId,
+    SourceQualificationId,
 };
 use deadpan_media::audio_session::{AudioSession, AudioSessionLimits};
+use deadpan_media::source_index::SourceContentIdentity;
 use deadpan_plan::{
     AudioDefinitionSelector, AudioRootPlacement, PlanError, RenderPlan, SignalSample,
 };
-use deadpan_store::original_media::OriginalMediaLimits;
+use deadpan_store::original_media::{OriginalMediaLimits, OriginalMediaRecord};
 use deadpan_store::{AccessMode, ProjectStore, StoreError};
 
 #[derive(Debug, thiserror::Error)]
@@ -39,7 +42,7 @@ pub enum ProjectAudioError {
     Limited(#[from] LimitedAudioError),
 }
 
-/// A fixed revision with one retained source PCM session. Subsequent writer
+/// A fixed revision with bounded retained source PCM sessions. Subsequent writer
 /// edits, undo and reuse of asset aliases cannot change this session's meaning.
 /// Each inspection path declares its processing order. Limited audition still
 /// omits the unimplemented voice effects, sends and full group mix.
@@ -83,8 +86,9 @@ impl ProjectAudioSession {
     ) -> Result<Self, ProjectAudioError> {
         let store = ProjectStore::open(path, AccessMode::ReadOnly)?;
         let document = store.snapshot_at(context.revision_id())?;
-        if document.project_id() != context.project_id()
-            || FrozenAudioContext::capture(&document).map_err(PlanError::from)? != *context
+        if !context
+            .matches_document(&document)
+            .map_err(PlanError::from)?
         {
             return Err(ProjectAudioError::ContextMismatch);
         }
@@ -102,7 +106,10 @@ impl ProjectAudioSession {
             sources: RegisteredSources {
                 store,
                 document,
-                retained: None,
+                retained: BTreeMap::new(),
+                recency: VecDeque::new(),
+                cache_bytes: 0,
+                cache_index_frames: 0,
             },
         }
     }
@@ -255,10 +262,128 @@ impl ProjectAudioSession {
     }
 }
 
+// Unlike playback's lifetime cache, sequential CLI inspection can visit any
+// number of sources. Evict least-recently-used entries at these residency bounds;
+// callers cannot retain a source borrow across the next mutable provider call.
+// AudioSession retains only PCM and its index. Original-byte snapshots exist
+// during one serialized cold open, bounded by the decoder's input-byte limit.
+const MAX_CACHED_SOURCES: usize = 16;
+const MAX_CACHE_BYTES: u64 = 1024 * 1024 * 1024;
+const MAX_CACHE_INDEX_FRAMES: u64 = 1_000_000;
+
+struct CachedSource {
+    prepared: PreparedSource,
+    authored: AssetRecord,
+    qualification: SourceQualificationId,
+    content: SourceContentIdentity,
+    original: OriginalMediaRecord,
+    bytes: u64,
+    index_frames: u64,
+}
+
+impl CachedSource {
+    fn validate(&self, authored: &AssetRecord) -> Result<(), PreparationError> {
+        if authored != &self.authored
+            || authored.source_qualification.as_ref() != Some(&self.qualification)
+            || authored.content_hash != self.original.object().content().to_string()
+            || self.original.sha256() != self.content.sha256()
+            || self.original.object().byte_length() != self.content.byte_length()
+            || self.prepared.index().content() != self.content
+        {
+            return Err(PreparationError::IndexMismatch);
+        }
+        Ok(())
+    }
+}
+
 struct RegisteredSources {
     store: ProjectStore,
     document: ProjectDocument,
-    retained: Option<(AssetId, PreparedSource)>,
+    retained: BTreeMap<AssetId, CachedSource>,
+    recency: VecDeque<AssetId>,
+    cache_bytes: u64,
+    cache_index_frames: u64,
+}
+
+impl RegisteredSources {
+    /// Called only after qualified original bytes have been snapshotted. Make
+    /// room before native PCM allocation. A later decode failure leaves evicted
+    /// entries absent, all other entries intact, and no reservation charged to
+    /// the cache.
+    fn make_room(&mut self, bytes: u64, index_frames: u64) -> Result<(u64, u64), PreparationError> {
+        loop {
+            let reservation = reserve_source_capacity(
+                self.cache_bytes,
+                self.cache_index_frames,
+                bytes,
+                index_frames,
+            )?;
+            if self.retained.len() < MAX_CACHED_SOURCES
+                && let Some(reserved) = reservation
+            {
+                return Ok(reserved);
+            }
+            let oldest = self
+                .recency
+                .front()
+                .ok_or_else(|| unavailable("source cache recency is inconsistent"))?;
+            let entry = self
+                .retained
+                .get(oldest)
+                .ok_or_else(|| unavailable("source cache entry is absent"))?;
+            let remaining_bytes = self
+                .cache_bytes
+                .checked_sub(entry.bytes)
+                .ok_or_else(|| unavailable("source cache byte accounting is inconsistent"))?;
+            let remaining_index_frames = self
+                .cache_index_frames
+                .checked_sub(entry.index_frames)
+                .ok_or_else(|| unavailable("source cache index accounting is inconsistent"))?;
+            let oldest = oldest.clone();
+            self.recency.pop_front();
+            self.retained.remove(&oldest);
+            self.cache_bytes = remaining_bytes;
+            self.cache_index_frames = remaining_index_frames;
+        }
+    }
+
+    fn mark_recent(&mut self, asset: &AssetId) {
+        self.recency.retain(|cached| cached != asset);
+        self.recency.push_back(asset.clone());
+    }
+}
+
+/// None means existing entries must be evicted. A source whose own physical
+/// PCM or audio index cannot fit is rejected before snapshots, eviction or
+/// decoding. A successful reservation returns prospective (bytes, index frames)
+/// totals; neither counter is charged until preparation succeeds.
+fn reserve_source_capacity(
+    cached_bytes: u64,
+    cached_index_frames: u64,
+    bytes: u64,
+    index_frames: u64,
+) -> Result<Option<(u64, u64)>, PreparationError> {
+    if bytes == 0 {
+        return Err(unavailable("invalid physical PCM cache size"));
+    }
+    if bytes > MAX_CACHE_BYTES {
+        return Err(unavailable("source PCM exceeds the 1 GiB inspection cache"));
+    }
+    if index_frames == 0 {
+        return Err(unavailable("invalid audio index cache size"));
+    }
+    if index_frames > MAX_CACHE_INDEX_FRAMES {
+        return Err(unavailable(
+            "source audio index exceeds the 1,000,000-frame inspection cache",
+        ));
+    }
+    let reserved_bytes = cached_bytes
+        .checked_add(bytes)
+        .filter(|sum| *sum <= MAX_CACHE_BYTES);
+    let reserved_index_frames = cached_index_frames
+        .checked_add(index_frames)
+        .filter(|sum| *sum <= MAX_CACHE_INDEX_FRAMES);
+    Ok(reserved_bytes.zip(reserved_index_frames))
 }
 
 impl AudioSourceProvider for RegisteredSources {
@@ -290,23 +415,17 @@ impl AudioSourceProvider for RegisteredSources {
                 "audio request differs from the fixed project revision".into(),
             ));
         }
-        if !self
-            .retained
-            .as_ref()
-            .is_some_and(|(retained_asset, _)| retained_asset == asset)
-        {
-            // Drop first so even switching sources retains at most one bounded
-            // private PCM cache. A failed load never exposes an earlier source.
-            self.retained = None;
+        if !self.retained.contains_key(asset) {
+            let authored = self
+                .document
+                .assets()
+                .get(asset)
+                .ok_or_else(|| unavailable("source is absent from the fixed project revision"))?
+                .clone();
             let receipt = self
                 .store
                 .registered_source(revision, asset)
                 .map_err(unavailable)?;
-            let authored = self.document.assets().get(asset).ok_or_else(|| {
-                PreparationError::SourceUnavailable(
-                    "source is absent from the fixed project revision".into(),
-                )
-            })?;
             if authored.source_qualification.as_ref() != Some(receipt.id())
                 || authored.content_hash != receipt.original().content().to_string()
             {
@@ -318,7 +437,27 @@ impl AudioSourceProvider for RegisteredSources {
                 )
             })?;
             check_cancel(cancelled)?;
-            let audio_limits = AudioSessionLimits::default();
+            // Account for all physical samples, including priming and padding,
+            // before taking any snapshots or opening a native decoder. Publish
+            // the reservation only after complete preparation succeeds.
+            let bytes = expected
+                .decoded_samples()
+                .checked_mul(u64::from(expected.stream().channel_layout.channels()))
+                .and_then(|samples| samples.checked_mul(4))
+                .ok_or_else(|| unavailable("invalid physical PCM cache size"))?;
+            let index_frames = u64::try_from(expected.frames().len())
+                .map_err(|_| unavailable("invalid audio index cache size"))?;
+            let _ = reserve_source_capacity(
+                self.cache_bytes,
+                self.cache_index_frames,
+                bytes,
+                index_frames,
+            )?;
+            let audio_limits = AudioSessionLimits {
+                maximum_cache_bytes: bytes,
+                maximum_index_frames: expected.frames().len(),
+                ..AudioSessionLimits::default()
+            };
             let original_limits = OriginalMediaLimits::new(
                 audio_limits.decode.max_input_bytes,
                 audio_limits.opening_timeout,
@@ -335,6 +474,7 @@ impl AudioSourceProvider for RegisteredSources {
                 return Err(PreparationError::IndexMismatch);
             }
             check_cancel(cancelled)?;
+            let reserved = self.make_room(bytes, index_frames)?;
             let session = AudioSession::open_verified(
                 &mut original,
                 expected.content(),
@@ -343,13 +483,37 @@ impl AudioSourceProvider for RegisteredSources {
                 cancelled,
             )?;
             let prepared = PreparedSource::new(session, expected, cancelled)?;
-            self.retained = Some((asset.clone(), prepared));
+            check_cancel(cancelled)?;
+            self.retained.insert(
+                asset.clone(),
+                CachedSource {
+                    prepared,
+                    authored,
+                    qualification: receipt.id().clone(),
+                    content: expected.content(),
+                    original: original.record().clone(),
+                    bytes,
+                    index_frames,
+                },
+            );
+            (self.cache_bytes, self.cache_index_frames) = reserved;
+            self.mark_recent(asset);
         }
         check_cancel(cancelled)?;
+        // The complete index was compared when PreparedSource was constructed.
+        // Re-admit the captured contracts on every hit, while continuing to use
+        // private PCM if a linked external path has moved or disappeared.
         self.retained
-            .as_ref()
-            .map(|(_, source)| source)
-            .ok_or_else(|| PreparationError::SourceUnavailable("source cache is absent".into()))
+            .get(asset)
+            .ok_or_else(|| unavailable("source cache is absent"))?
+            .validate(self.document.assets().get(asset).ok_or_else(|| {
+                unavailable("source is absent from the fixed project revision")
+            })?)?;
+        self.mark_recent(asset);
+        self.retained
+            .get(asset)
+            .map(|entry| &entry.prepared)
+            .ok_or_else(|| unavailable("source cache is absent"))
     }
 }
 
@@ -364,3 +528,7 @@ fn check_cancel(cancelled: &AtomicBool) -> Result<(), PreparationError> {
 fn unavailable(error: impl std::fmt::Display) -> PreparationError {
     PreparationError::SourceUnavailable(error.to_string())
 }
+
+#[cfg(test)]
+#[path = "audio/cache_tests.rs"]
+mod cache_tests;

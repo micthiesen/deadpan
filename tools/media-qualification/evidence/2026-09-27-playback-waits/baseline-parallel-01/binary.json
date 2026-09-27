@@ -1,0 +1,7 @@
+{
+  "path": "/Users/michael/Code/deadpan/target/debug/deps/deadpan_playback-e4a6c13c0209ba22",
+  "sha256_before": "5b8fdaf2640a6f77081e3f44089b456bd02aee15faf05c9d6193dec931338030",
+  "sha256_after": "5b8fdaf2640a6f77081e3f44089b456bd02aee15faf05c9d6193dec931338030",
+  "unchanged": true,
+  "purpose": "Frozen baseline reproduction with full panic backtraces"
+}

@@ -290,7 +290,8 @@ static int open_impl(DeadpanAudio *s) {
     AVStream *stream = s->format->streams[s->stream];
     AVCodecParameters *p = stream->codecpar;
     if (!strcmp(s->format->iformat->name, "wav")) {
-        // Header preflight admits only plain PCM16. Preserve FFmpeg's normal
+        // Header preflight admits only PCM16 with a plain or checked extensible
+        // format header. Preserve FFmpeg's normal
         // packet size unless a tighter caller budget requires smaller blocks.
         int64_t packet_size = 0;
         uint64_t alignment = 2ULL * (uint64_t)p->ch_layout.nb_channels;

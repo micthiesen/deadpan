@@ -125,6 +125,7 @@ fn with_hold(video: HoldVideo) -> ProjectDocument {
                     BeatNode::hold(
                         "Hold",
                         HoldRecipe {
+                            picture_context: None,
                             duration: duration(10),
                             video,
                             audio: HoldAudio::Silence,
@@ -132,6 +133,7 @@ fn with_hold(video: HoldVideo) -> ProjectDocument {
                     ),
                 )]),
                 overrides: BTreeMap::new(),
+                gap_overrides: BTreeMap::new(),
             },
         },
         "hold",
@@ -211,6 +213,24 @@ fn sampling_map_is_exact_strict_and_never_samples_an_endpoint() {
 #[test]
 fn acceptance_is_atomic_reversible_and_resize_preserves_or_restores_fallback() {
     let document = with_hold(HoldVideo::Background);
+    let captured = CapturedFraming::capture(
+        None,
+        CapturedCanvas {
+            width: 1920,
+            height: 1080,
+            fit: CapturedFit::Fill,
+            layers: vec![Some(FramingPose::identity())],
+        },
+    )
+    .unwrap();
+    let document = edit(
+        &document,
+        Command::SetHoldPictureContext {
+            node: node("hold"),
+            context: Some(captured.clone()),
+        },
+        "captured",
+    );
     let before_audio = hold_recipe(&document, "hold").audio.clone();
     let (artifact, assets) = generated_fixture();
     let accepted = edit(
@@ -261,6 +281,21 @@ fn acceptance_is_atomic_reversible_and_resize_preserves_or_restores_fallback() {
         "reverted",
     );
     assert_eq!(hold_recipe(&reverted, "hold").video, HoldVideo::Background);
+    let provider = edit(
+        &document,
+        Command::SetHoldProvider {
+            node: node("hold"),
+            video: HoldVideo::Background,
+        },
+        "provider",
+    );
+    for doc in [&accepted, &shortened, &lengthened, &reverted, &provider] {
+        assert_eq!(
+            hold_recipe(doc, "hold").picture_context.as_ref(),
+            Some(&captured)
+        );
+        assert_eq!(hold_recipe(doc, "hold").audio, before_audio);
+    }
 }
 
 #[test]

@@ -73,6 +73,7 @@ fn hold(length: i64, audio: HoldAudio) -> BeatNode {
         HoldRecipe {
             duration: frames(length),
             video: HoldVideo::Background,
+            picture_context: None,
             audio,
         },
     )
@@ -485,6 +486,7 @@ fn billion_play_sparse_domains_and_gaps_keep_complete_occurrence_identity() {
                         gap: Some(HoldRecipe {
                             duration: frames(1),
                             video: HoldVideo::Background,
+                            picture_context: None,
                             audio: HoldAudio::RoomTone {
                                 source: selected(20, 22),
                             },
@@ -635,6 +637,7 @@ fn cropped_nested_gap_keeps_its_outer_play_and_its_own_original_zero() {
                         gap: Some(HoldRecipe {
                             duration: frames(2),
                             video: HoldVideo::Background,
+                            picture_context: None,
                             audio: HoldAudio::RoomTone {
                                 source: selected(20, 22),
                             },

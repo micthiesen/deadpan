@@ -1,0 +1,27 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+   Compiling deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+   Compiling deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+   Compiling deadpan-render v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-render)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+   Compiling deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2m 31s
+     Running unittests src/main.rs (target/debug/deps/deadpan_app-5f3f99c2ea2a437f)
+
+running 4 tests
+test project::tests::pause::native_pause_supports_empty_sequence_and_repeat_seams_but_refuses_repeat_interiors ... ok
+test project::tests::pause::native_capture_keeps_lower_clips_and_inherits_root_motion_once ... ok
+test project::tests::pause::native_pause_retains_framing_and_repeated_capture_does_not_grow_it ... ok
+test project::tests::pause::native_pause_freezes_measured_vfr_picture_and_keeps_one_undo_step ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 176 filtered out; finished in 3.46s
+
+     Running tests/headless.rs (target/debug/deps/headless-305c8ec0e5b74e33)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.00s
+

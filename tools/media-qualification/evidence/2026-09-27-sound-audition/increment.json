@@ -1,0 +1,172 @@
+[
+  {
+    "path": "AGENTS.md",
+    "sha256": "dd4dfdca75f6ba0207143b0eeff83d4a730a0b1a473361e24312a2fa76f9e4b4",
+    "bytes": 77045
+  },
+  {
+    "path": "README.md",
+    "sha256": "7b26a165ee17ef388ca865354434e49c6da310511e401924b30653fc95843b89",
+    "bytes": 11351
+  },
+  {
+    "path": "crates/deadpan-app/src/preview.rs",
+    "sha256": "e0867a200313f7ab38a7d1416b9b9cd21ca965a965b66f967ba4919865623d4f",
+    "bytes": 148797
+  },
+  {
+    "path": "crates/deadpan-app/src/preview/harness.rs",
+    "sha256": "bc412b6e334dd209f3d080892db1ea6254fa0864931fd74c3eea43a2e54fd6a1",
+    "bytes": 29518
+  },
+  {
+    "path": "crates/deadpan-app/src/preview/harness/scenarios.rs",
+    "sha256": "85773a1f283e26be5637373d8db780dd1116c8a0f840559614e74d8fee5c90fa",
+    "bytes": 36548
+  },
+  {
+    "path": "crates/deadpan-app/src/preview/harness/sound_playback.rs",
+    "sha256": "8b85d1d6c64d13394a1ef21b43db25cb7481e2c71f5829c40a0458808fe5783b",
+    "bytes": 12201
+  },
+  {
+    "path": "crates/deadpan-app/src/preview/playback.rs",
+    "sha256": "25bdf2179e91f44bfd3ee36d3cd984b21185f300695c78f08aa6f2a8f11048b7",
+    "bytes": 22204
+  },
+  {
+    "path": "crates/deadpan-app/src/project.rs",
+    "sha256": "c3f02c82b779edee0230d3bd5c2598befc2400f1b40795eebea2052dc0c003bf",
+    "bytes": 8885
+  },
+  {
+    "path": "crates/deadpan-app/src/project/service.rs",
+    "sha256": "d22d2c7b1fc4c0081022a2686cda2a491ab7baf5cec5d6662549694bf92f4081",
+    "bytes": 42017
+  },
+  {
+    "path": "crates/deadpan-app/src/project/tests.rs",
+    "sha256": "1b4b0cda3cfb0b13abcaeaf764740e00c2d3991e4fe5dde8a61367378cc9a184",
+    "bytes": 61892
+  },
+  {
+    "path": "crates/deadpan-app/src/transport.rs",
+    "sha256": "7f6e09b9e902d0aeca6d52d4cd04d4668afef94bed2732468bfd68b9e12a7761",
+    "bytes": 13371
+  },
+  {
+    "path": "crates/deadpan-app/src/transport/tests.rs",
+    "sha256": "f13678e2c70ac37750f46ef312a2fcfcaa00078a3b7d3108d075a68a940c819c",
+    "bytes": 12575
+  },
+  {
+    "path": "crates/deadpan-app/src/transport/tests/sound.rs",
+    "sha256": "2bc8b5c696e4858fd72ceb38b49bc8457f7e66566a3545a9cdf14a49c8a0a8f7",
+    "bytes": 5678
+  },
+  {
+    "path": "crates/deadpan-app/src/ui_harness.rs",
+    "sha256": "977f8846da6d65f5b64ebc1d8839fe91661051806c697a73a4b2bf9adad2c844",
+    "bytes": 10938
+  },
+  {
+    "path": "crates/deadpan-app/src/worker/project_tests.rs",
+    "sha256": "d9c1cc3e5337b9c5501f2fe06e9ab7dda200d0d0cfbdd74a9b1a49c5a5b0c9d6",
+    "bytes": 25657
+  },
+  {
+    "path": "crates/deadpan-cli/src/audio.rs",
+    "sha256": "14e98858e9e0c17fb4d4b5e8e63017bbfe2e629869cdcf13ef6a028c913ece8e",
+    "bytes": 19913
+  },
+  {
+    "path": "crates/deadpan-cli/src/audio/cache_tests.rs",
+    "sha256": "66d331a5e310b12b319bfa4584fe523071dc65ae71d04ce7135467f78306333e",
+    "bytes": 19869
+  },
+  {
+    "path": "crates/deadpan-core/src/lib.rs",
+    "sha256": "2df1c53305bcb3e1bf2ef098405b196611ebafd4e0d59f5c5e02998b6dbd5f65",
+    "bytes": 2577
+  },
+  {
+    "path": "crates/deadpan-core/src/sound_route.rs",
+    "sha256": "07b91b543bb2902380ede3639ae542d229cc85179153e86b9060907753448b43",
+    "bytes": 30162
+  },
+  {
+    "path": "crates/deadpan-core/tests/sound_routes.rs",
+    "sha256": "3ffaee67fc4a3c37afba4fd13f21b5f7571f6af670f36b84c485baed6546e041",
+    "bytes": 17262
+  },
+  {
+    "path": "crates/deadpan-playback/src/lib.rs",
+    "sha256": "2dd8a96807e7bc8d0cde9f744cb1c9f4e61f6e94d02038e062cb72ac72bfeb44",
+    "bytes": 404
+  },
+  {
+    "path": "crates/deadpan-playback/src/preparation.rs",
+    "sha256": "3d5dca82a8bda18bd6ef447cabfccab4f732f6207e3d49bd6fa8517d7c018c1b",
+    "bytes": 7940
+  },
+  {
+    "path": "crates/deadpan-playback/src/target.rs",
+    "sha256": "5eb6de71cd89f246846cc5e643e8698ee315a66039c460bd86180ea67eaabb67",
+    "bytes": 16335
+  },
+  {
+    "path": "crates/deadpan-playback/src/tests.rs",
+    "sha256": "b5b97b52a209122cdfb06532ff60d210bd63150a1b64fa78206a5be76e304580",
+    "bytes": 26990
+  },
+  {
+    "path": "crates/deadpan-playback/src/tests/sound.rs",
+    "sha256": "21889ffe867dfd97de5c985680d887607a974f979665b577342bcbc1dad385cf",
+    "bytes": 14561
+  },
+  {
+    "path": "docs/NATIVE_WORKSPACE.md",
+    "sha256": "83a3c54110939669ea486633d1f2b6ca1ad8739f21590307d48997d8901263de",
+    "bytes": 18567
+  },
+  {
+    "path": "docs/PLAYBACK.md",
+    "sha256": "db53d90ec3ba3c101f57c95e2652875361640118e25534516b99d830034b858d",
+    "bytes": 10953
+  },
+  {
+    "path": "docs/REQUIREMENTS.md",
+    "sha256": "0a0f968e3bb32aa755c9fa0cbc3ada62665be5e37b17e9d64d8107589dcc514a",
+    "bytes": 60064
+  },
+  {
+    "path": "docs/SOUND_EVENTS.md",
+    "sha256": "0cfda6e9889624b7f086e0e9462dd41441081729a5594bbd14b3b5b1d287e412",
+    "bytes": 14055
+  },
+  {
+    "path": "docs/SOURCE_STAGE_AUDIO.md",
+    "sha256": "8c62b3b4ab668e639ee42673b8db54647df5a1140cb27e47d322ecfcdc5142ce",
+    "bytes": 6491
+  },
+  {
+    "path": "docs/UI_FEEDBACK.md",
+    "sha256": "95d8f04978605889d06a6aa55e77d53acd3beb9dfa9e0a8c409c0da2ec39be78",
+    "bytes": 29228
+  },
+  {
+    "path": "docs/design/README.md",
+    "sha256": "4722cc1b8dae9ea37888ddf88318b5dc757455f286c6d72686fc2463c814da21",
+    "bytes": 15714
+  },
+  {
+    "path": "docs/qualification/sound-audition-2026-09-27.md",
+    "sha256": "8000dae83aa92850ee629a7041159b13b980c350966799a5cbeb641c3fc97ae5",
+    "bytes": 6920
+  },
+  {
+    "path": "docs/spec/AGENT_HANDOFF.md",
+    "sha256": "02665256e89e9b54ed2623bfddc12d8765d7b08353dca96631fd6286a6dbb5e1",
+    "bytes": 14231
+  }
+]

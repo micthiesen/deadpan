@@ -1,0 +1,23 @@
+   Compiling deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 53.38s
+     Running tests/audio_inspection.rs (target/debug/deps/audio_inspection-74cacaa23c2c07b5)
+
+running 13 tests
+test gap::unplayed_gap_reads_revalidate_original_bytes_before_returning_pcm ... ok
+test unspecified_layout_and_legacy_unqualified_assets_are_not_guessed ... ok
+test source_repeat_gaps_and_silent_hold_boundaries_follow_exact_sequence_allocation ... ok
+test actual_aac_pcm_inspection_is_read_only_beside_writer_and_matches_original_impulse ... ok
+test invalid_ranges_and_cancellation_fail_without_returning_partial_pcm ... ok
+test frozen_session_resolves_historical_receipt_after_undo_and_asset_alias_reuse ... ok
+test missing_and_corrupt_linked_originals_fail_before_pcm_is_exposed ... ok
+test physical_domain_cli_reads_hidden_negative_source_and_retained_history ... ok
+test placement_cli_uses_selected_revision_recipe_and_never_changes_history ... ok
+test definition_cli_reads_unplayed_default_from_current_and_historical_media ... ok
+test gap::repeat_gap_cli_reads_unplayed_recipe_and_retained_history_without_writes ... ok
+test mapped_inspection_prepares_preserve_from_historical_aac_without_writing ... ok
+test room_tone_inspection_loops_an_explicit_aac_range_and_retains_silent_time ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 9.35s
+

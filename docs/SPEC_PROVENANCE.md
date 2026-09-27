@@ -15,6 +15,12 @@ do not. New native projects use the system Documents/Deadpan library. The revise
 specification, handoff, keyboard reference and interface targets integrate that
 policy rather than maintaining a competing addendum.
 
+On 26 September 2026 the product owner made holistic offscreen UI replay the
+normal agent feedback loop and required compatibility with Kestrel's global
+shortcuts. The current keyboard policy reserves those globals; whole-Original
+reuse uses `,i` in place of the conflicting native `⌘Return` accelerator.
+[UI feedback](UI_FEEDBACK.md) defines the executable evidence and its limits.
+
 The original five files were hash-verified before archiving. Their names and
 relative links are retained there. The root `spec/DEADPAN_SPEC.pdf` also remains
 an unchanged historical 1.0 copy for old links; it is not an updated reading

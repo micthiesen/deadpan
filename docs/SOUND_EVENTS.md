@@ -1,0 +1,319 @@
+# Sound events and scoped audio mixing
+
+External sound effects must become editable sound events over the existing edit.
+Catalog import retains and qualifies audio-only sources. Catalog audition uses
+the shared playback engine; it does not place an event. The complete requirement remains in specification Sections 4.2,
+5.3–5.4, 8.3, 9.3 and 10. A separate audio player, blank-picture Source insertion
+or a sum added after the limiter would not implement that requirement.
+
+## Required ownership and timing
+
+A sound belongs to a host's output clock. A sound inside a Repeat child plays with
+each effective child; a sound on the Repeat itself spans the repeated passage.
+A sound inside a Retime child enters that stage's input. A sound on the Retime
+itself enters after that stage. Enclosing time maps affect each child voice in
+its declared clock. Specification Section 10.2 places time/pitch processing on
+each voice before the group bus. Keep the existing sequential Original voice's
+complete continuous processing history; do not split it into independent
+per-beat processors. Distinct attached sounds retain their own complete voice
+history and scoped output gates before mixing.
+
+An explicitly declared aggregate processing stage may process a mixed input
+once. That is a different operation from independently processing voices and
+summing their outputs. It must not become the default merely because the current
+structural audio tree previously had only one sequential voice.
+
+Prefer node-owned sound recipes with identities scoped by their authored owner.
+Each recipe needs a qualified source span, its complete exact source mapping,
+owner-local placement, independent 48 kHz offset, owned edge/effect parameters,
+and explicit silence and tail intent. Keep its retained processing recipe and
+continuity separate from its audible interval projections. An event's duration
+never contributes to structural picture duration. Placement cannot silently trim
+a sound, extend picture time or fit its source to the host. Overflow needs an
+explicit policy; cross-host tails additionally need a destination and ownership.
+
+An anchor's exact coordinate is usable for placement, but a point mark plus a
+length is insufficient for editing intervals. Deleting the start of an event
+must not erase its surviving suffix. A source phase, processing history or fade
+cannot restart merely because an event is represented by another fragment.
+
+These are implementation decisions within the specification's existing contract,
+not a new persisted wire format. They need validated commands, migration and
+rendering before the native workspace may advertise sound placement.
+
+## Structural edit contract
+
+| Operation | Required result |
+| --- | --- |
+| Move or Group | Keep owned recipes and phase with their owner. Ancestor-owned sounds stay in that ancestor's output clock; intersecting a moved child does not transfer ownership. |
+| Split | Copy complete retained context, then select each output fragment. Do not create new independent fades or preparation histories. |
+| Root Split | Put the old root's sound bus in retained contexts; the replacement structural root must not emit it again. Explicit pinned events remain a separate policy. |
+| Occurrence isolation | Copy sounds with their owners, remap physical identities and scoped allowances, and preserve continuity independently of new edit identity. |
+| WrapRepeat | The existing owner's sounds remain inside the new Repeat and follow its plays. |
+| SetRepeat or MovePlays | Child-owned sounds follow stable plays and their overrides. Sounds owned by the Repeat stay in its output clock; changed duration uses their explicit overflow policy. Reordering child plays does not reorder the Repeat's own sound. |
+| WrapRetime | Apply the new time map to every child-owned voice, retaining each complete processing context. Ancestor-owned sounds stay in their owner's output clock. An explicit aggregate bus processor is a separate choice. |
+| SetRetime | Keep an event authored on that stage in its declared output clock; do not silently reinterpret it as child-owned. Validate any changed extent and explicit overflow policy. |
+| Delete | Remove owned events and project surviving parts of intersecting ancestor events without a source restart. |
+| Ungroup | Redistribute exact projections of the removed bus, retaining its complete recipe and continuity. Independent shortened source copies are insufficient. |
+| InsertTime or source splice | Capture old clocks first, exclude inserted content from default event support, and resume surviving sound on its prior phase. Preserve input clocks and moved opaque processing outputs remain distinct. |
+
+This follows the ownership distinction in specification Sections 5.3 and 5.4.
+Moving a group moves its owned attachments; it does not turn every overlapping
+ancestor event into a child attachment. Ordinary internal reordering or retiming
+therefore requires no implicit cross-clock transport of a parent sound. Explicit
+ripple insertion/deletion still transforms intersecting host-local intervals;
+sequence-pinned events have a separate, visibly fixed policy. Preserve complete
+historical processing domains and select exact fractional windows afterward.
+A fractional selection alone does not require a new fractional DSP history.
+
+A physical fragment may share a retained logical event recipe with another
+fragment. Editing a logical event must identify that scope; independently changing
+one occurrence or fragment needs explicit isolation. This cannot be inferred from
+which copy happens to be visible.
+
+## Silence and edges
+
+Source exhaustion silences that source voice. It does not silence another voice
+at the same time. By contrast, an authored silent Hold suppresses its governed
+direct audio and incoming tails by default. These are different policy owners.
+A global union of zero ranges cannot represent both meanings. Apply each voice's
+Hold/tail gate at its processing output before the default group mix. One scalar
+mask after a nonlinear mixed Preserve cannot remove the Original's decay while
+preserving a permitted sound at the same samples.
+
+Placing a sound over a silent Hold needs an explicit, visible custom allowance
+for that contribution and that Hold. It must not re-enable original speech,
+permit unrelated tails or bypass another silent Hold later. Copying and splitting
+must retain or remap the allowance with its sound and Hold identities.
+
+Voice edge fades also need their own ownership. An Original cut must not fade an
+unrelated continuing effect. Ancestor policy cannot accidentally apply the same
+fade twice. The existing single-voice path must retain its samples when no sounds
+are added. Creative edge fades, source-support masking, post-Preserve silence and
+final limiter processing must remain separately testable.
+
+The authored integration needs a policy view separate from content: a stable
+issuer (such as a Hold and its occurrence), a subject (voice or send), default
+suppression and explicit allowances. Resolve those rules through the existing
+exact clocks and compact Repeat structure onto the consuming output grid.
+Materialized `AudioMixGate` ranges and temporary voice indices are not durable
+per-occurrence policy identities. The current single-voice output tape can remain
+an adapter, retaining its deliberate exclusion of physical source endpoints after
+Preserve. Separately processed voice tapes may then enter the borrowed mix.
+
+`audio_hold_policy` now reports current structural silent Holds with their
+issuer, preserving definition namespace, occurrence path and a Repeat gap's
+stable preceding play. An unplayed gap definition has no invented preceding play.
+Root and placed-domain queries use RoundEven; intrinsic signal queries use
+PointCeil. Source absence/exhaustion, RoomTone and Tail do not issue silent-Hold
+rules. The existing scalar Original policy remains unchanged. These current
+rules do not reconstruct historical policy, grant allowances, or flatten a
+projected processing operand's independently declared output policy.
+
+## Borrowed mixing boundary
+
+`AudioSignalMix` is a checked, borrowed preparation operand: ordered
+voices on one exact intrinsic grid, with explicit gates selecting which voices
+they affect. Each voice retains its own source support and policy. The bus is
+known silent only where every contribution is explicitly silent or suppressed.
+For explicitly aggregate processing, a mixed-input `AudioStageProjection` feeds
+the complete sum into one canonical Preserve while retaining an independently
+declared output-policy clock. This capability does not establish aggregate
+processing as the default for separate authored voices.
+
+This preparation primitive must share existing source admission, cancellation,
+deadlines, depth, cumulative work, PCM residency and dependency checks. It must
+not materialize Repeat plays, use a second rounded timeline, skip validation of
+a gated voice, or reuse a projected result based only on an authored descriptor.
+Its raw PCM precedes creative effects and mastering. It does not by itself
+establish persisted sound events, the complete voice graph or native placement.
+
+Construction accepts 1 through 64 complete `AudioSignalTape` voices on the same
+live plan, exact support and normalized PointCeil grid. At most 4,096 exact gates
+may reference at most 65,536 voice indices in total; one gate cannot name the same
+voice twice. A gate is converted on that common grid without restarting phase.
+Content, policy, gate lookup and interval composition share bounded query work.
+Content spans share an aggregate count limit. A fully gated voice still retains
+its policy and processing dependencies for admission.
+
+Explicit raw silence also contributes to that intersection, including absent
+source audio and time before a placed source begins. It is separate from authored
+tail-suppression policy. Do not infer silence by flattening an opaque processing
+stage: its output may still contain decay from earlier input.
+
+`StageAudio::read_mix` returns 1 through 256 stereo samples, labeled
+`scoped_mix_preparation_pcm_before_effects`. Each contribution passes through
+the existing raw preparation reader and its own policy before ordered f64
+accumulation and one finite f32 conversion. Values above unity remain above unity;
+this operation does not clip, normalize or apply the final limiter. A mixed
+`AudioStageProjection` uses the same single canonical stretch, independent
+output-policy tape, request-local identity and shared resource limits as a
+single-tape projection. Every voice must retain the owner's definition,
+occurrence and descendant scope, even when gated.
+
+## Exact route kernel
+
+`SoundRoute` retains one complete recipe extent and selects exact output windows
+through checked `SoundRippleMap` edits. Keep selects previous output; Gap allocates
+time without inherited sound; Sequence concatenates; Repeat advances a compact
+edit pattern through its input with a declared stride. This Repeat is a periodic
+ripple map, not an instruction to replay one sound. A deletion that removes an
+event's beginning keeps the surviving recipe suffix and its original phase.
+
+Both arenas require a final root, earlier-only references and complete reachability.
+Admission memoizes extents, monotone input footprints, depth and Sequence indexes.
+Combined routes admit at most 4,096 nodes, 16,384 edges and depth 64, with a 1 MiB
+serialized bound. Use `from_json` to reject oversized wire input before parsing;
+embedding callers using serde must bound their containing input too. Queries
+default to 65,536 work units and 4,096 result spans, with hard caps of 1,000,000
+and 16,384. Short queries seek directly to a Repeat ordinal or Sequence prefix;
+an entirely gap-only subtree returns one gap without expanding its plays.
+
+The kernel selects exact unity-rate intervals. It does not choose a sample grid,
+process PCM, persist events, or transform project edits. Whole-event removal is
+the authored layer's responsibility because stored route extents are positive.
+Fractional windows retain the full recipe rather than creating fractional DSP
+histories. JSON admission revalidates all derived extents and indexes.
+
+`SoundRippleMap::locate` returns the complete immediate-input and output leaf
+interval, with explicit seam bias. It seeks compact Repeat ordinals and Sequence
+prefixes directly. A compressed all-gap subtree returns one interval; an outward
+endpoint returns no interval. This differs from a flattened final recipe query:
+the intermediate physical cut is necessary for sampled editing.
+
+## Retained sample routes
+
+`AudioSoundRoute` binds one captured sample grid to every chronological route
+node. Root output uses branded `AudioSample` RoundEven grids; intrinsic output
+uses `SignalSample` PointCeil grids. Unity edits can move an origin but cannot
+change grid spacing or boundary rule. Allocation endpoints are checked before
+querying. These handles do not serialize new event state or admit media.
+
+Each Keep resolves its old cut on the preceding node's grid and its new anchor
+on the current grid, then resumes the preceding sampled output. Further edits
+compose that retained sample mapping. At 30000/1001 fps and 48 kHz, two one-frame
+insertions can resume at original sample 3204 where reconstructing the final
+picture offset would incorrectly choose 3203. Window projections preserve the
+complete recipe and apply the same physical-clock rule. Changing a rounded
+placement can change its allocated count. Keep and Window retain the previous
+selection's physical half-open audible mask; any extra allocated sample past
+that cut is explicitly silent, even when the complete prior recipe has more
+audio. That output mask does not shrink the retained recipe's filter/DSP support.
+
+Queries return exact recipe-frame sample maps or gaps. Their maps retain one
+constant step and are independent of query chunks. They do not choose source
+filter support, restart fades, create fractional DSP histories, or substitute
+for per-voice preparation. Prior gaps remain gaps when another edit resumes
+their sampled output. Sampleless exact gaps require no scanning. A shared query
+budget covers history traversal, indexed map lookup and emitted spans; the
+existing audio caps are 65,536 work units and 4,096 spans.
+
+The CLI and playback source providers each retain up to 16 qualified private PCM sessions under
+a 1 GiB aggregate physical-sample budget, including priming and padding, and
+1,000,000 aggregate indexed audio frames. Each keeps compact receipt identity
+instead of a duplicate full source snapshot. Least
+recently used eviction allows inspection of more sources sequentially. Every
+hot hit rechecks the captured asset/receipt/original contract; cold opens verify
+original bytes before eviction and reserve space before decode. Failed decode
+may leave evicted entries absent but never charges an uncommitted reservation.
+Playback reuses its immutable snapshot's shared receipt rather than cloning
+the full index into a second cache entry. A new revision still rebuilds the
+playback cache; this is bounded residency, not cross-revision cache admission.
+
+## Independent catalog source operands
+
+`AudioSignal::source_voice` derives an immutable `AudioSourceVoice` from a
+checked structural owner. The plan retains catalog-only asset contracts as well
+as structural sources. Admission requires an audio span contained in the asset's
+exact measured clock, a source-qualification identity and an explicit natural-rate
+mapping. Signed 48 kHz offsets and selected placement remain exact. FitBeat and
+implicit rate changes are rejected; processing uses explicit enclosing stages.
+The host still admits the exact revision, receipt, layout and original bytes
+before reading PCM. Catalog metadata alone is not media admission.
+
+Input and output views share one opaque voice identity and the complete source
+recipe. The input retains raw sound through current silent Holds so canonical
+processing has the required history. The output adds only current explicit
+silent-Hold rules from its structural owner, evaluated directly on the consuming
+grid. Original source absence, endpoints, RoomTone, tails and retained sampling
+bindings are not this voice's policy. Hold introspection retains the issuer's
+definition and stable occurrence identity. No allowance is implied.
+
+Both views use existing signal tapes, dependency admission, source resampling and
+`StageAudio` preparation. Physical query chunks and tape seams keep source phase
+and complete filter support; an explicit intrinsic input selection still constrains
+support. Source endpoints do not erase processed Preserve decay. Checked
+`AudioStageProjection` retains its existing descendant, definition and Repeat
+scope checks and independent output-policy tape. Constructing a catalog voice
+does not make an unrelated owner eligible for that stage.
+
+These operands read real qualified catalog PCM without adding a Source node or
+changing history. They do not persist a sound, grant scoped Hold allowances,
+add sound effects or populate the final bus.
+The continuous Original reader remains separate and unchanged. See
+[source-voice qualification](qualification/source-voices-2026-09-27.md) for the
+measured fixture, verification results and remaining acceptance limits.
+
+## Routed PCM preparation
+
+`AudioRoutedSignal` binds a retained PointCeil sample route to either a complete
+independent source input or a shared intrinsic Preserve projection.
+`AudioRoutedRoot` binds a RoundEven route to a complete captured projected root.
+Construction checks the original Recipe extent, grid origin, spacing, rule and
+allocation against that provider. Equal durations or sample counts are not enough.
+Cropped, transformed or resumed captures are rejected; select later output with
+the route while retaining the complete provider. An independently placed raw root
+source requires its own checked capture and is not inferred from a point signal.
+
+Root Recipe frames are relative to the complete output's start, while its sample
+labels remain absolute. The grid therefore retains the negative of that start as
+its frame origin, including signed and fractional placements. The captured root
+keeps its original exact sampling map and policy; a later route never substitutes
+the current destination frame coordinate for either.
+
+The `StageAudio` routed readers turn each exact recipe lookup into an integral
+old sample label, evaluate that old provider and copy its samples to the new
+allocation. They reuse source resampling and canonical preparation, with one
+deadline, work budget, dependency set and projection identity across every span.
+Cold suffix reads prepare the complete processing history. Even an entirely
+masked route admits its source dependencies and complete projected input.
+
+Route gaps and old selected audible masks remain separate from complete source
+filter support and processing history. Captured provider output policy is read
+on its old grid and copied with those samples. Current consuming Hold gates,
+scoped allowances and creative edges still belong after this routed preparation;
+moving an old gate does not implement a current allowance. The source case always
+uses the input view, preserving the sound beneath current structural Holds.
+These APIs do not yet feed persisted events or the final voice bus. See
+[routed-voice qualification](qualification/routed-voices-2026-09-27.md) for
+decoded-PCM witnesses, review, verification and acceptance limits.
+
+## Remaining integration
+
+The remaining integration is required, not optional follow-up scope:
+
+1. Persist owned recipes and bounded interval projections through validated,
+   reversible commands. Preserve strict old history grammars and actual old-CLI
+   fixture provenance during migration.
+2. Compile all live and retained sound dependencies into root, definition,
+   processing-input, bound-domain and projected readers. Stop at each processing
+   boundary so descendant voices enter once. Sound catalog assets need qualified
+   source admission without creating picture content.
+3. Resolve scoped Hold allowances and voice/ancestor edge ownership. Preserve
+   continuous per-voice time/pitch processing and its output gates. Apply gain,
+   treatments, sends and group processing in the declared order, then feed the
+   complete bus into the shared limiter. Extend host scheduling beyond the current
+   bounded source caches without weakening source admission.
+4. Extend catalog audition with host-local placement, sound
+   selection, parameters, removal and explicit overflow/custom-silence feedback.
+   Keep Original and edited clocks separate and use the common typed command path.
+5. Extend CLI inspection, production UI replay and real decoded-PCM tests. Verify
+   actual preview/export equivalence, listening, failure recovery and performance;
+   unit tests alone cannot qualify those acceptance results.
+
+Required PCM evidence includes different source rates, arbitrary sample onsets,
+independent scalar sums, per-voice exhaustion, scoped silence, mixed-before-
+Preserve witnesses, full retained history through split/repeat/reanchor, cold and
+shuffled reads, changed source fingerprints, aggregate limits, and summation
+before one shared limiter. Every source, recipe and processed result remains tied
+to its immutable project revision.

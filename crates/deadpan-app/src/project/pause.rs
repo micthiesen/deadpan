@@ -1,8 +1,9 @@
 //! Resolve deterministic pause intent from one immutable native workspace.
 
 use deadpan_core::{
-    AudioTimingId, Command, CommandRequest, FrameDuration, HoldAudio, HoldRecipe, HoldVideo,
-    NodeId, NodeKind, ProjectFrame, RevisionId, SourceTimestamp, SplitIdentities,
+    AudioTimingId, CapturedCanvas, CapturedFit, CapturedFraming, Command, CommandRequest,
+    FrameDuration, HoldAudio, HoldRecipe, HoldVideo, NodeId, ProjectFrame, RevisionId,
+    SourceTimestamp, SplitIdentities,
 };
 use deadpan_plan::Picture;
 
@@ -24,37 +25,17 @@ pub(super) fn prepare(
     if duration == FrameDuration::ZERO {
         return Err("Pause resolves to 0 frames; no edit was made.".into());
     }
-    let video = fallback(workspace, at)?;
-    let NodeKind::Sequence { children } = &document.nodes()[document.root()].kind else {
-        return Err("Pause insertion requires a root Sequence.".into());
-    };
-    let mut start = 0_i64;
-    let mut identities = Vec::new();
-    for child in children {
-        let end = start
-            .checked_add(
-                workspace
-                    .plan
-                    .node_duration(child)
-                    .ok_or("A sequence beat is missing from the current render plan.")?
-                    .frames(),
-            )
-            .ok_or("Sequence duration overflow")?;
-        if start < at.0 && at.0 < end {
-            let mut pending = vec![child.clone()];
-            let mut count = 3_usize;
-            while let Some(id) = pending.pop() {
-                count = count.checked_add(1).ok_or("Pause node budget exhausted")?;
-                if count > deadpan_core::MAX_DOCUMENT_NODES {
-                    return Err("Pause exceeds the document node limit.".into());
-                }
-                pending.extend(document.children(&id).cloned());
-            }
-            identities = (0..count).map(|_| allocate()).collect();
-            break;
-        }
-        start = end;
-    }
+    // Resolve support before sampling a fallback. This keeps native admission
+    // aligned with the core command and avoids preparing a picture for a
+    // Repeat or authored Retime interior that core will refuse.
+    let target = document
+        .insert_time_target(at)
+        .map_err(|error| error.to_string())?;
+    let (video, picture_context) = fallback(workspace, at, &target.parent)?;
+    let identities = target
+        .split
+        .map(|split| (0..split.required_ids).map(|_| allocate()).collect())
+        .unwrap_or_default();
     Ok(CommandRequest {
         project_id: document.project_id().clone(),
         expected_revision: document.revision_id().clone(),
@@ -64,6 +45,7 @@ pub(super) fn prepare(
                 duration,
                 video,
                 audio: HoldAudio::Silence,
+                picture_context,
             },
             id,
             identities: SplitIdentities { nodes: identities },
@@ -76,19 +58,20 @@ pub(super) fn prepare(
     })
 }
 
-fn fallback(workspace: &Workspace, at: ProjectFrame) -> Result<HoldVideo, String> {
+fn fallback(
+    workspace: &Workspace,
+    at: ProjectFrame,
+    insertion_parent: &NodeId,
+) -> Result<(HoldVideo, Option<CapturedFraming>), String> {
     if workspace.plan.duration() == FrameDuration::ZERO {
-        return Ok(HoldVideo::Background);
+        return Ok((HoldVideo::Background, None));
     }
     let sample = workspace
         .plan
         .picture(ProjectFrame(if at.0 == 0 { 0 } else { at.0 - 1 }))
         .map_err(|error| error.to_string())?;
-    if sample.framing.iter().any(|layer| layer.pose.is_some()) {
-        return Err("Freezing an already framed picture needs a retained composition snapshot. Insert the pause before framing it; the current edit was not changed.".into());
-    }
-    let picture = sample.picture;
-    match &picture {
+    let picture = &sample.picture;
+    match picture {
         Picture::Source { asset, .. } | Picture::Freeze { asset, .. } => {
             let index = workspace
                 .sources
@@ -98,15 +81,51 @@ fn fallback(workspace: &Workspace, at: ProjectFrame) -> Result<HoldVideo, String
             let selected = picture
                 .select_source_frame(index)
                 .map_err(|error| error.to_string())?;
-            Ok(HoldVideo::Freeze {
-                asset: asset.clone(),
-                timestamp: SourceTimestamp {
-                    ticks: selected.pts,
-                    time_base: index.time_base(),
+            // The new Hold is a child of the selected Sequence. Retain only
+            // composition below that parent. The parent and its ancestors
+            // stay live on the Hold and must not be captured a second time.
+            let parent = sample
+                .framing
+                .iter()
+                .position(|scope| {
+                    scope.instance.node == *insertion_parent && scope.instance.repeats.is_empty()
+                })
+                .ok_or("The stopped picture has no selected Sequence scope.")?;
+            let lower = &sample.framing[..parent];
+            // Even an unframed view retains its canvas and letterboxing. Fitting
+            // the raw source directly into a later canvas is not equivalent to
+            // fitting the already composed view into that canvas.
+            let mut layers =
+                Vec::with_capacity(lower.len() + usize::from(sample.gap_after.is_some()));
+            if sample.gap_after.is_some() {
+                layers.push(None);
+            }
+            layers.extend(lower.iter().map(|layer| layer.pose));
+            let basis = workspace.document.presentation_basis();
+            let picture_context = Some(
+                CapturedFraming::capture(
+                    sample.picture_context.as_deref(),
+                    CapturedCanvas {
+                        width: basis.width,
+                        height: basis.height,
+                        fit: CapturedFit::Fit,
+                        layers,
+                    },
+                )
+                .map_err(|error| error.to_string())?,
+            );
+            Ok((
+                HoldVideo::Freeze {
+                    asset: asset.clone(),
+                    timestamp: SourceTimestamp {
+                        ticks: selected.pts,
+                        time_base: index.time_base(),
+                    },
                 },
-            })
+                picture_context,
+            ))
         }
-        Picture::Blank | Picture::Background => Ok(HoldVideo::Background),
+        Picture::Blank | Picture::Background => Ok((HoldVideo::Background, None)),
         Picture::Still { .. } | Picture::Accepted { .. } => Err(
             "Freezing still or accepted generated footage for a new pause is not available yet."
                 .into(),

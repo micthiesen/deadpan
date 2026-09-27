@@ -52,6 +52,7 @@ fn hold(duration: i64) -> BeatNode {
     BeatNode::hold(
         "Silence",
         HoldRecipe {
+            picture_context: None,
             duration: frames(duration),
             video: HoldVideo::Background,
             audio: HoldAudio::Silence,
@@ -98,7 +99,9 @@ fn document(
 
 fn lattice(owner: &str, clock: AudioClockRoot) -> AudioPlacementTemplate {
     AudioPlacementTemplate {
+        gap_after: None,
         reference: AudioReferenceClock {
+            recipe: AudioRecipeKind::Node,
             timing: AudioTimingId {
                 allocation: revision("timing"),
                 ordinal: 0,
@@ -126,7 +129,16 @@ fn bind(
         }],
         bindings
             .into_iter()
-            .map(|(owner, lattice, resume)| (id(owner), OwnedAudioBinding { lattice, resume }))
+            .map(|(owner, lattice, resume)| {
+                (
+                    id(owner),
+                    OwnedAudioBinding {
+                        reanchors: Vec::new(),
+                        lattice,
+                        resume,
+                    },
+                )
+            })
             .collect(),
     )
     .unwrap();

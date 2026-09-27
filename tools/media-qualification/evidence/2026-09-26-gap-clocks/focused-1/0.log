@@ -1,0 +1,53 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.22s
+     Running tests/audio_bindings.rs (target/debug/deps/audio_bindings-0e4a5cba4e30697d)
+
+running 12 tests
+test outer_wrap_and_inner_birth_choose_their_captured_lexical_roots ... ok
+test every_template_clock_stays_inside_its_nearest_preserve_input ... ok
+test clear_override_exposes_a_definition_birth_even_for_a_surviving_play_id ... ok
+test captured_arguments_survive_extraction_and_explicit_definition_exclusion_is_required ... ok
+test live_validation_bounds_resume_anchors_without_narrowing_exact_phase ... ok
+test selected_point_clock_and_meaningful_edit_support_are_not_round_even_partitions ... ok
+test symbolic_phase_retains_each_play_rounding_and_composes_another_clock ... ok
+test state_round_trips_structured_ids_and_rejects_invalid_or_unbounded_intent ... ok
+test programmatic_bindings_obey_the_same_individual_wire_cap ... ok
+test constructor_validation_charges_all_template_walks_together ... ok
+test near_limit_binding_round_trips_inside_a_pretty_project_document ... ok
+test aggregate_wire_admission_precedes_any_typed_layout_body ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 8.75s
+
+     Running tests/audio_reference.rs (target/debug/deps/audio_reference-e27970d383608948)
+
+running 15 tests
+test billion_plays_and_sparse_override_have_bounded_projection_and_explicit_gap_clock ... ok
+test capture_roundtrips_only_timing_and_audibility ... ok
+test complete_nested_paths_are_required_and_signed_hidden_coordinates_are_not_clamped ... ok
+test scanner_keeps_field_named_aliases_and_escaped_keys_legal_and_rejects_trailing_input ... ok
+test frozen_phase_survives_live_play_reorder_move_and_deleted_siblings ... ok
+test tail_capture_preserves_local_maximum_for_holds_and_repeat_gaps_without_media ... ok
+test closed_grammar_rejects_unknown_missing_and_duplicate_fields ... ok
+test frozen_copy_lineage_roundtrips_owned_aliases_and_keeps_legacy_empty ... ok
+test reference_audibility_has_closed_tagged_grammar_and_checked_tail_limits ... ok
+test depth_budget_is_enforced_on_flat_wire_without_recursive_json ... ok
+test admission_rejects_tampered_structure_durations_placements_and_policies ... ok
+test frozen_copy_lineage_preflight_is_closed_unique_and_bounded ... ok
+test streaming_preflight_aggregates_edges_and_runs_across_collections ... ok
+test streaming_preflight_stops_oversized_lists_and_maps_before_their_malformed_tail ... ok
+test capture_enforces_the_frozen_only_aggregate_run_cap_and_accepts_its_exact_boundary ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.28s
+
+     Running tests/gap_projection.rs (target/debug/deps/gap_projection-38e7621f1e27e411)
+
+running 7 tests
+test ancestor_crop_composes_fractional_gap_support_through_a_tape_retime ... ok
+test nested_repeat_and_tape_retime_keep_exact_gap_origin_scale_and_local_support ... ok
+test gap_projection_independently_rejects_bad_scope_path_identity_and_budget ... ok
+test gap_support_uses_actual_duration_after_sparse_unequal_plays_at_ntsc ... ok
+test support_scope_stops_at_nonunity_preserve_but_its_input_and_output_are_independent ... ok
+test stable_gap_identity_follows_reordering_and_only_current_nonfinal_plays_have_gaps ... ok
+test partitions_retain_hidden_gap_support_while_edit_crops_clip_in_local_coordinates ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+

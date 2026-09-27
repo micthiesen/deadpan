@@ -1,0 +1,50 @@
+    Blocking waiting for file lock on build directory
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 47s
+     Running tests/audio_binding_capture.rs (target/debug/deps/audio_binding_capture-00c5ccb52c15929d)
+
+running 6 tests
+test captures_a_billion_plays_compactly_and_empty_projects_are_noops ... ok
+test source_capture_retains_its_current_placement_without_freezing_raw_assets ... ok
+test captures_unplayed_defaults_and_closes_each_override_at_its_stable_play ... ok
+test an_existing_intrinsic_binding_survives_a_new_wrapper_and_more_capture ... ok
+test nested_preserve_resets_input_scope_after_capturing_its_output ... ok
+test capture_includes_gaps_and_rejects_path_expansion_atomically ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s
+
+     Running tests/audio_bindings.rs (target/debug/deps/audio_bindings-0e4a5cba4e30697d)
+
+running 29 tests
+test captured_arguments_survive_extraction_and_explicit_definition_exclusion_is_required ... ok
+test live_validation_bounds_resume_anchors_without_narrowing_exact_phase ... ok
+test gaps::hidden_gap_has_no_reanchor_entry_and_later_visible_gap_starts_at_zero ... ok
+test clear_override_exposes_a_definition_birth_even_for_a_surviving_play_id ... ok
+test gaps::outer_birth_retains_surviving_inner_gap_and_own_birth_is_innermost ... ok
+test gaps::repeat_output_window_does_not_survive_same_id_gap_definition_birth ... ok
+test every_template_clock_stays_inside_its_nearest_preserve_input ... ok
+test outer_wrap_and_inner_birth_choose_their_captured_lexical_roots ... ok
+test reanchors::born_play_drops_outer_cut_but_keeps_intrinsic_partition_entry ... ok
+test reanchors::chronological_steps_extend_an_existing_phase_on_each_captured_clock ... ok
+test reanchors::outer_birth_at_the_same_retained_root_keeps_its_intrinsic_window ... ok
+test reanchors::hidden_retained_plays_leave_the_previous_map_intact ... ok
+test reanchors::preserve_input_selection_constrains_the_step_on_its_point_grid ... ok
+test gaps::gap_capture_and_resolution_are_bounded_for_a_billion_plays ... ok
+test reanchors::reanchor_queries_stay_bounded_for_billion_play_and_birth_occurrences ... ok
+test gaps::one_play_capture_retains_a_configured_gap_before_growth_and_direct_definition ... ok
+test gaps::gap_admission_rejects_cross_kind_arguments_and_malformed_maps ... ok
+test reanchors::clipped_first_play_and_full_later_plays_have_distinct_resume_entries ... ok
+test gaps::surviving_preceding_plays_keep_gaps_and_former_final_or_new_plays_are_born ... ok
+test gaps::gap_removal_prunes_intent_and_readding_does_not_resurrect_it ... ok
+test selected_point_clock_and_meaningful_edit_support_are_not_round_even_partitions ... ok
+test symbolic_phase_retains_each_play_rounding_and_composes_another_clock ... ok
+test gaps::split_and_occurrence_isolation_remap_live_gap_owner_and_restore_exact_inverse ... ok
+test state_round_trips_structured_ids_and_rejects_invalid_or_unbounded_intent ... ok
+test reanchors::aggregate_terms_steps_and_invalid_windows_fail_typed_and_wire_admission ... ok
+test programmatic_bindings_obey_the_same_individual_wire_cap ... ok
+test constructor_validation_charges_all_template_walks_together ... ok
+test near_limit_binding_round_trips_inside_a_pretty_project_document ... ok
+test aggregate_wire_admission_precedes_any_typed_layout_body ... ok
+
+test result: ok. 29 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 8.75s
+

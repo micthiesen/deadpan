@@ -32,6 +32,12 @@ mod preparation;
 #[path = "stages/limited.rs"]
 mod limited;
 
+#[path = "stages/selection.rs"]
+mod selection;
+
+#[path = "stages/retime_edits.rs"]
+mod retime_edits;
+
 fn id(value: &str) -> NodeId {
     NodeId::new(value).unwrap()
 }
@@ -90,6 +96,7 @@ fn hold(frames: i64) -> BeatNode {
     BeatNode::hold(
         "Inserted silence",
         HoldRecipe {
+            picture_context: None,
             duration: duration(frames),
             video: HoldVideo::Background,
             audio: HoldAudio::Silence,
@@ -101,6 +108,7 @@ fn room_tone(frames: i64, source: SourceAudio) -> BeatNode {
     BeatNode::hold(
         "Chosen room tone",
         HoldRecipe {
+            picture_context: None,
             duration: duration(frames),
             video: HoldVideo::Background,
             audio: HoldAudio::RoomTone { source },
@@ -1201,6 +1209,7 @@ fn repeat_and_override_occurrences_do_not_alias_prepared_history() {
             child: id("default-stage"),
             iterations: IterationOrder::new(RevisionId::new("plays").unwrap(), 3).unwrap(),
             gap: Some(HoldRecipe {
+                picture_context: None,
                 duration: duration(16),
                 video: HoldVideo::Background,
                 audio: HoldAudio::Silence,
@@ -1503,6 +1512,7 @@ fn unsupported_effect_tails_cannot_hide_between_input_grid_samples() {
                 BeatNode::hold(
                     "Unsupported policy",
                     HoldRecipe {
+                        picture_context: None,
                         duration: duration(1),
                         video: HoldVideo::Background,
                         audio: policy.clone(),
@@ -1804,6 +1814,7 @@ fn repeated_room_tone_and_override_restart_locally_with_two_distinct_gap_caches(
             child: id("default"),
             iterations: IterationOrder::new(RevisionId::new("plays").unwrap(), 3).unwrap(),
             gap: Some(HoldRecipe {
+                picture_context: None,
                 duration: duration(181),
                 video: HoldVideo::Background,
                 audio: HoldAudio::RoomTone {
@@ -2322,6 +2333,7 @@ fn partition_inside_a_repeat_gap_keeps_its_full_room_tone_origin() {
             child: id(child),
             iterations: IterationOrder::new(RevisionId::new("plays").unwrap(), 3).unwrap(),
             gap: Some(HoldRecipe {
+                picture_context: None,
                 duration: duration(181),
                 video: HoldVideo::Background,
                 audio: HoldAudio::RoomTone {
@@ -2543,6 +2555,7 @@ fn one_hard_repeat_override_and_room_tone_gap_edges_preserve_silence_masks() {
             child: id("default"),
             iterations: IterationOrder::new(RevisionId::new("plays").unwrap(), 3).unwrap(),
             gap: Some(HoldRecipe {
+                picture_context: None,
                 duration: duration(24),
                 video: HoldVideo::Background,
                 audio: HoldAudio::RoomTone {

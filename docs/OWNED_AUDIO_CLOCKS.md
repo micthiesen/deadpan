@@ -1,6 +1,6 @@
 # Owned audio recipes in explicit root clocks
 
-`AudioDefinition::in_root_clock` evaluates a Source, Hold or nonunity Preserve
+`AudioDefinition::in_root_clock` evaluates a Source, Hold, Repeat gap or nonunity Preserve
 definition from one immutable plan in an explicit root placement. The selected
 plan supplies the current recipe, media contracts and policies. A placement
 supplies coordinates only. It is not a frozen raw body, an authored binding,
@@ -41,12 +41,29 @@ signed reference labels and exposes a zero-based `AudioSignal` by subtracting
 only the allocated integer start. The exact support remains available when it
 contains no sample point. Root and point grids retain distinct types and rules.
 
+[Input tapes](AUDIO_INPUT_TAPES.md) instead project windows of complete current
+signals, including Sequence and Repeat contexts, onto one intrinsic PointCeil
+grid. They retain scoped traversal and share the existing PCM reader. A tape is
+a preparation input view; it does not turn a structural group into one physical
+output domain or replace the placement rules below.
+An `AudioStageProjection` can bind checked current descendant providers to a
+Preserve stage's original intrinsic clocks. Its output is still a preparation
+domain: a parent may consume it directly, and a separate PointCeil tape may
+schedule it around a pause. [Projected root placement](AUDIO_PROJECTED_ROOT.md)
+supplies the separate absolute RoundEven allocation and phase continuation for
+one such physical domain. It does not persist a new owned-tree binding or
+install a route into ordinary root-plan evaluation.
+
 A Sequence, Repeat or transparent Retime cannot be treated as one physical
 domain. Each genuine domain needs its own placement. In an NTSC `A2f, B2f`
 sequence, inserting 1f at frame 1 requires A to resume new sample 3203 from old
 1602, while B starts at new 4805 from old 3203. One suffix offset cannot express
 both. `RepeatDefault` may select a physical default directly, including an
 unplayed default, but it does not invent an enclosing play or a birth binding.
+`RepeatGap` similarly selects the configured positive gap recipe, even when the
+Repeat has only one play. Its intrinsic extent is the gap duration, independently
+of the Repeat's output duration. Explicit gap definitions have no preceding-play
+identity; actual occurrence domains retain their real `gap_after` identity.
 
 ## Reading and identity
 
@@ -77,7 +94,7 @@ playback or final master processing are added here.
 ## Headless inspection
 
 ```text
-inspect-audio-placement <project.deadpan> (--node <ID> | --repeat-default <ID>) --clock <clock.json> --samples <START> <END> [--revision <ID>]
+inspect-audio-placement <project.deadpan> (--node <ID> | --repeat-default <ID> | --repeat-gap <ID>) --clock <clock.json> --samples <START> <END> [--revision <ID>]
 ```
 
 The command reads 1..256 signed root samples without changing project history.

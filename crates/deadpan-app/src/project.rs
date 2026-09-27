@@ -17,17 +17,25 @@ use deadpan_store::source_registration::SourceQualificationReceipt;
 use crate::library::ProjectLibrary;
 
 mod pause;
+pub mod retime;
+mod scope;
 mod service;
 #[cfg(test)]
 mod tests;
 mod worker;
+
+pub use scope::SequenceScope;
 
 pub struct RegisteredSource {
     pub asset: AssetId,
     pub label: String,
     pub receipt: Arc<SourceQualificationReceipt>,
     pub original: OriginalMediaRecord,
-    pub video_index: Option<SourceFrameIndex>,
+    pub video_index: Option<Arc<SourceFrameIndex>>,
+    /// Prepared off the UI thread, including the complete measured A/V union.
+    pub original_audition: Option<Arc<deadpan_playback::Original>>,
+    /// Audio-only catalog clock, prepared off the UI thread from measured spans.
+    pub sound_audition: Option<Arc<deadpan_playback::Sound>>,
 }
 
 pub struct Workspace {
@@ -89,10 +97,16 @@ pub struct CommittedEdit {
     pub selected_node: Option<NodeId>,
     /// Spatial edits keep the stopped position instead of jumping to the beat start.
     pub preserve_cursor: bool,
+    /// Explicit committed boundary for cursor-based edits. The UI may have
+    /// navigated since submission; never infer this from its current cursor.
+    pub cursor: Option<ProjectFrame>,
+    /// Navigation scope captured when this edit was requested. Async completions
+    /// must not restore a scope inferred from the current UI state.
+    pub scope: SequenceScope,
 }
 
-/// Authored root-beat operations. Nested occurrence editing requires a separate
-/// concrete occurrence scope; the service rejects hidden or nested targets.
+/// Node-targeted operations edit direct children of the captured Sequence scope.
+/// InsertTime remains project-boundary based and resolves its actual owner.
 #[derive(Clone, Debug)]
 pub enum ProjectEdit {
     SetFraming {
@@ -105,7 +119,7 @@ pub enum ProjectEdit {
     },
     Split {
         node: NodeId,
-        /// Interior boundary in this root beat's project-frame clock.
+        /// Interior boundary in this selected beat's project-frame clock.
         at: FrameDuration,
     },
     Repeat {
@@ -123,6 +137,23 @@ pub enum ProjectEdit {
         node: NodeId,
         duration: FrameDuration,
     },
+    Retime {
+        node: NodeId,
+        speed: deadpan_core::ExactRatio,
+        pitch: deadpan_core::PitchPolicy,
+        wrap: bool,
+    },
+}
+
+pub struct MomentPaste {
+    pub expected_session: u64,
+    pub expected_revision: RevisionId,
+    pub asset: AssetId,
+    pub qualification: deadpan_core::SourceQualificationId,
+    pub ordinals: std::ops::Range<u64>,
+    pub scope: SequenceScope,
+    pub parent: NodeId,
+    pub index: usize,
 }
 
 pub enum ProjectRequest {
@@ -158,14 +189,19 @@ pub enum ProjectRequest {
     },
     CancelImport,
     Insert {
+        expected_session: u64,
         expected_revision: RevisionId,
         asset: AssetId,
+        scope: SequenceScope,
         parent: NodeId,
         index: usize,
     },
+    PasteMoment(MomentPaste),
     Edit {
         expected_session: u64,
         expected_revision: RevisionId,
+        cursor: ProjectFrame,
+        scope: SequenceScope,
         edit: ProjectEdit,
     },
     Undo {
@@ -193,7 +229,7 @@ impl ProjectService {
         Self::start(wake, None)
     }
 
-    fn start(
+    pub(crate) fn start(
         wake: Arc<dyn Fn() + Send + Sync>,
         library: Option<ProjectLibrary>,
     ) -> io::Result<Self> {

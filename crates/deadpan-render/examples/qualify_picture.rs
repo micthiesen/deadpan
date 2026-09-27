@@ -9,7 +9,9 @@ use std::{
     time::{Duration, Instant},
 };
 
-use deadpan_core::{ExactRatio, SourceTimeBase, SourceTimestamp};
+use deadpan_core::{
+    CapturedCanvas, CapturedFit, CapturedFraming, ExactRatio, SourceTimeBase, SourceTimestamp,
+};
 use deadpan_render::{
     FitMode, FrameMetadata, FramingLayer, MAX_DIMENSION, PictureGeometry, PictureRenderer,
     Primaries, RenderError, Rgba8Frame, Rotation, SampleAspectRatio, SourceColor, Transfer,
@@ -215,12 +217,191 @@ fn qualify() -> Result<Value> {
             },
         )?);
     }
+    let captured_crop = FramingLayer::new([half_ratio; 2], ExactRatio::integer(2))?;
+    let captured_context = CapturedFraming {
+        canvases: vec![CapturedCanvas {
+            width: 32,
+            height: 18,
+            fit: CapturedFit::Fit,
+            layers: vec![Some(captured_crop.pose().expect("authored pose")), None],
+        }],
+    };
+    let live_zoom =
+        FramingLayer::new([ExactRatio::new(2, 5)?, half_ratio], ExactRatio::new(3, 4)?)?;
+    let parity_frame = fixture(
+        7,
+        5,
+        12,
+        color,
+        Rotation::Clockwise270,
+        SampleAspectRatio::new(4, 3)?,
+    )?;
+    cases.push(check_same_canvas_equivalence(
+        &device,
+        &queue,
+        &mut renderer,
+        &parity_frame,
+        &captured_context,
+        FramedCase {
+            size: (31, 17),
+            canvas: [32, 18],
+            mode: FitMode::Fit,
+            layers: &[captured_crop, FramingLayer::identity(), live_zoom],
+            label: "captured-same-canvas-direct-source-exact-parity",
+            strict: true,
+        },
+        &[live_zoom],
+    )?);
+    for rotation in [
+        Rotation::None,
+        Rotation::Clockwise90,
+        Rotation::Clockwise180,
+        Rotation::Clockwise270,
+    ] {
+        let frame = fixture(7, 5, 12, color, rotation, SampleAspectRatio::new(4, 3)?)?;
+        cases.push(check_composed_case(
+            &device,
+            &queue,
+            &mut renderer,
+            &frame,
+            Some(&captured_context),
+            FramedCase {
+                size: (31, 17),
+                canvas: [32, 18],
+                mode: FitMode::Fit,
+                layers: &[live_zoom],
+                label: &format!("captured-freeze-direct-source-{rotation:?}"),
+                strict: false,
+            },
+        )?);
+    }
+    let aspect_change = CapturedFraming {
+        canvases: vec![CapturedCanvas {
+            width: 4,
+            height: 4,
+            fit: CapturedFit::Fill,
+            layers: Vec::new(),
+        }],
+    };
+    let frame = fixture(
+        7,
+        5,
+        12,
+        color,
+        Rotation::None,
+        SampleAspectRatio::new(4, 3)?,
+    )?;
+    cases.push(check_composed_case(
+        &device,
+        &queue,
+        &mut renderer,
+        &frame,
+        Some(&aspect_change),
+        FramedCase {
+            size: (8, 4),
+            canvas: [8, 4],
+            mode: FitMode::Fit,
+            layers: &[],
+            label: "captured-old-aspect-fits-current-canvas",
+            strict: false,
+        },
+    )?);
     let white = Rgba8Frame::new(
         metadata(4, 4, 0, color, Rotation::None, SampleAspectRatio::SQUARE)?,
         vec![255; 64],
     )?;
     let zoom_in = FramingLayer::new([half_ratio; 2], ExactRatio::integer(2))?;
     let zoom_out = FramingLayer::new([half_ratio; 2], half_ratio)?;
+    let identity_capture = CapturedFraming::capture(
+        None,
+        CapturedCanvas {
+            width: 8,
+            height: 4,
+            fit: CapturedFit::Fit,
+            layers: Vec::new(),
+        },
+    )?;
+    cases.push(check_composed_case(
+        &device,
+        &queue,
+        &mut renderer,
+        &white,
+        Some(&identity_capture),
+        FramedCase {
+            size: (4, 4),
+            canvas: [4, 4],
+            mode: FitMode::Fit,
+            layers: &[],
+            label: "captured-unframed-letterbox-retained-after-aspect-change",
+            strict: true,
+        },
+    )?);
+    let wide_white = Rgba8Frame::new(
+        metadata(8, 4, 0, color, Rotation::None, SampleAspectRatio::SQUARE)?,
+        vec![255; 128],
+    )?;
+    let staged_fill = CapturedFraming {
+        canvases: vec![
+            CapturedCanvas {
+                width: 8,
+                height: 4,
+                fit: CapturedFit::Fit,
+                layers: Vec::new(),
+            },
+            CapturedCanvas {
+                width: 4,
+                height: 4,
+                fit: CapturedFit::Fill,
+                layers: vec![zoom_out.pose()],
+            },
+        ],
+    };
+    cases.push(check_composed_case(
+        &device,
+        &queue,
+        &mut renderer,
+        &wide_white,
+        Some(&staged_fill),
+        FramedCase {
+            size: (4, 4),
+            canvas: [4, 4],
+            mode: FitMode::Fit,
+            layers: &[],
+            label: "captured-fill-placement-before-first-zoom-and-clip",
+            strict: true,
+        },
+    )?);
+    let merged_clip = CapturedFraming::capture(
+        Some(&CapturedFraming {
+            canvases: vec![CapturedCanvas {
+                width: 4,
+                height: 4,
+                fit: CapturedFit::Fill,
+                layers: Vec::new(),
+            }],
+        }),
+        CapturedCanvas {
+            width: 4,
+            height: 4,
+            fit: CapturedFit::Fit,
+            layers: vec![zoom_out.pose()],
+        },
+    )?;
+    cases.push(check_composed_case(
+        &device,
+        &queue,
+        &mut renderer,
+        &wide_white,
+        Some(&merged_clip),
+        FramedCase {
+            size: (4, 4),
+            canvas: [4, 4],
+            mode: FitMode::Fit,
+            layers: &[],
+            label: "captured-canonical-merge-preserves-implicit-first-clip",
+            strict: true,
+        },
+    )?);
     let small = FramingLayer::new([half_ratio; 2], ExactRatio::new(1, 4)?)?;
     let after_edge = FramingLayer::new(
         [half_ratio.checked_sub(ExactRatio::new(1, 1 << 32)?)?; 2],
@@ -420,10 +601,70 @@ fn check_framed_case(
     frame: &Rgba8Frame,
     case: FramedCase<'_>,
 ) -> Result<Value> {
+    check_composed_case(device, queue, renderer, frame, None, case)
+}
+
+fn check_same_canvas_equivalence(
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+    renderer: &mut PictureRenderer,
+    frame: &Rgba8Frame,
+    context: &CapturedFraming,
+    direct_case: FramedCase<'_>,
+    live_layers: &[FramingLayer],
+) -> Result<Value> {
+    let size = direct_case.size;
+    let canvas = direct_case.canvas;
+    let mode = direct_case.mode;
+    let retained_target = renderer.create_target(size.0, size.1)?;
+    renderer.render_composed(
+        frame,
+        &retained_target,
+        Some(context),
+        canvas,
+        mode,
+        live_layers,
+    )?;
+    let retained = readback(device, queue, retained_target.display_texture(), 4)?;
+    let direct_target = renderer.create_target(size.0, size.1)?;
+    renderer.render_framed(frame, &direct_target, canvas, mode, direct_case.layers)?;
+    let direct = readback(device, queue, direct_target.display_texture(), 4)?;
+    let mut max_difference = 0;
+    for (index, (retained, direct)) in retained.iter().zip(&direct).enumerate() {
+        let difference = retained.abs_diff(*direct);
+        max_difference = max_difference.max(difference);
+        if difference != 0 {
+            return Err(format!(
+                "same-canvas captured/direct source output differs at byte {index}: {retained} vs {direct}"
+            )
+            .into());
+        }
+    }
+    Ok(json!({
+        "name": direct_case.label,
+        "source_size": [frame.metadata().width, frame.metadata().height],
+        "source_stride": frame.metadata().row_stride_bytes,
+        "target_size": [size.0, size.1],
+        "canvas": canvas,
+        "retained_canvas_count": context.canvases.len(),
+        "max_channel_difference": max_difference,
+        "comparison": "render_composed against direct render_framed from original source bytes; no intermediate raster snapshot"
+    }))
+}
+
+fn check_composed_case(
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+    renderer: &mut PictureRenderer,
+    frame: &Rgba8Frame,
+    context: Option<&CapturedFraming>,
+    case: FramedCase<'_>,
+) -> Result<Value> {
     let (width, height) = case.size;
     let label = case.label;
-    let geometry = PictureGeometry::framed(
+    let geometry = PictureGeometry::composed(
         frame.metadata(),
+        context,
         case.canvas,
         [width, height],
         case.mode,
@@ -431,7 +672,7 @@ fn check_framed_case(
     )?;
     let target = renderer.create_target(width, height)?;
     let started = Instant::now();
-    renderer.render_framed(frame, &target, case.canvas, case.mode, case.layers)?;
+    renderer.render_composed(frame, &target, context, case.canvas, case.mode, case.layers)?;
     let submitted_ms = started.elapsed().as_secs_f64() * 1000.0;
     let actual = readback(device, queue, target.display_texture(), 4)?;
     let readback_ms = started.elapsed().as_secs_f64() * 1000.0;
@@ -455,6 +696,7 @@ fn check_framed_case(
     Ok(
         json!({"name": label, "source_size": [frame.metadata().width, frame.metadata().height], "source_stride": frame.metadata().row_stride_bytes,
         "target_size": [width, height], "canvas": case.canvas, "framing": case.layers.iter().map(|layer| layer.pose()).collect::<Vec<_>>(),
+        "retained_canvas_count": context.map_or(0, |value| value.canvases.len()),
         "channel_tolerance": if case.strict { 0 } else { 2 }, "max_channel_difference": max_difference, "submit_cpu_ms": submitted_ms, "submit_through_readback_ms": readback_ms}),
     )
 }

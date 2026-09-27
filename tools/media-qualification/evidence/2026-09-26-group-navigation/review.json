@@ -1,0 +1,61 @@
+{
+  "review_base": "origin/main",
+  "subject": "Nested ordinary Sequence navigation increment against exact preceding verified snapshot; earlier pending work preserved",
+  "reviewers": [
+    {
+      "agent": "group_general_review",
+      "lens": "general correctness",
+      "findings": [
+        "Returning via Backspace or breadcrumbs clamped an outside heard cursor to the parent end."
+      ],
+      "follow_up": "Reviewed all four preview-only changes; no remaining concrete defect."
+    },
+    {
+      "agent": "group_invariants_review",
+      "lens": "scope/cursor invariants and stale asynchronous completion",
+      "findings": []
+    },
+    {
+      "agent": "interior_timing_review",
+      "lens": "native keyboard ownership and test coverage",
+      "findings": [
+        "Inspector Enter path was only clicked in replay.",
+        "Camera Backspace lacked explicit replay coverage.",
+        "New navigation keys missing from Help/menu replay."
+      ],
+      "follow_up": "New sequences inspected; no findings. No Cargo or GUI was run by reviewer."
+    }
+  ],
+  "applied": [
+    "Shared pure scope transition preserves cursor on exit and clamps only on entry, with CPU regression.",
+    "Nested replay now uses Shift-Tab/Enter for Hold parameters and Camera 3/Backspace ownership.",
+    "CPU Help/menu replays exercise Enter/Backspace while their owner holds input."
+  ],
+  "dismissed": [
+    "Automatic descent into an arbitrary sibling group on pause: intended behavior is nearest containing ancestor of browsed path. Existing scope tests establish that contract."
+  ],
+  "unapplied_material_findings": [],
+  "source_sha256": {
+    "crates/deadpan-app/src/navigation/command.rs": "80aef630fd3a404010fe29a337abbc7c2c54845b69a2fb847674f145c7340b03",
+    "crates/deadpan-app/src/navigation.rs": "a5f80dae765f5a1422685cf9703577d27a0984b62096285df77bd44d48b232e5",
+    "crates/deadpan-app/src/preview/camera.rs": "17ea3c3ea068fcfdf18e4bf8df107e2b5a4c5bde1f4143c695076956169cbe57",
+    "crates/deadpan-app/src/preview/cards.rs": "9774dfca6ce98701201f872b9026f70cd8dff9daee8d5b1e9b3d69ac34ea747f",
+    "crates/deadpan-app/src/preview/harness/nested_pause.rs": "8555c91863f10afbb78a78f2f2fb03ce5c2866dc237b0b9f64e70453df9b2a6c",
+    "crates/deadpan-app/src/preview/harness/scale.rs": "85e00aa899d99494dcc442868f2db1339bc0d0af86c7007fca1c32cef1c52809",
+    "crates/deadpan-app/src/preview/harness/scenarios.rs": "7442148e40656858065f29072ee07c84c21c5e8f9d2ded25f573163aacecaea8",
+    "crates/deadpan-app/src/preview/harness.rs": "7d4999f2dcb65aef5ed3fc0bb2db93d0fcf5b66ed3465b251795af723638f06b",
+    "crates/deadpan-app/src/preview/help_scroll.rs": "a347c25572f0056251b2e97638607e10d2d36f94a6aec3a07c2102ccc944206a",
+    "crates/deadpan-app/src/preview/inspector.rs": "8cf0c19627fab9a962266c8ab1f324f7b12c161765ccb3970fde260353cf1c5a",
+    "crates/deadpan-app/src/preview/playback.rs": "8af843615ddfd52554c2f552a02c4a794427f387a6fbcd131090cd62b818df7c",
+    "crates/deadpan-app/src/preview/scope.rs": "cbc9d83adf678d1e4a8d40b91c43332d2484b6c03d3ddce65b942c09efd52d5e",
+    "crates/deadpan-app/src/preview/selection.rs": "fd39addcdf3a0daab85ee4f9bc19bc15b624309c2407c6678970d4469cbf5369",
+    "crates/deadpan-app/src/preview.rs": "d2803b14793c1830c9c61603d1c014700a28691df1198205d5bd4aeedef32c47",
+    "crates/deadpan-app/src/project/scope.rs": "d525ecc6a495abdcf47947e87797f8e5a13fdc0eaa262a615a1783b6e817b3c9",
+    "crates/deadpan-app/src/project/service.rs": "b12bb00be3b74acf9eb263527ba72bbeb18a6831cbf10285d9fccfcb3e56eae7",
+    "crates/deadpan-app/src/project/tests/pause.rs": "b74f35e2eb54739958ea72b266e948121ab071bc9546efea45e553277cf46322",
+    "crates/deadpan-app/src/project/tests/scope.rs": "9ae9fc09d67ec88938d4b7ebf17323dcd478fa4af92424020180fdc2f1dbf878",
+    "crates/deadpan-app/src/project/tests.rs": "443008724170037569f1a652ac3e3587d040d0ce752990f3ef73f8727e1febf5",
+    "crates/deadpan-app/src/project.rs": "703367115ea9a156de015fddbb74c76071620e2655152a71a76a871a369748fc"
+  },
+  "visual_review": "Unavailable: no Metal adapter; zero GUI assertions or captures. CPU layout is not visual qualification."
+}

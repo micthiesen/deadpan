@@ -8,16 +8,146 @@ Build a native macOS, Rust-first, Vim-style instrument for massaging one origina
 
 ## Read first
 
-The current [sequence audition contract](../PLAYBACK.md) describes the native
-Space Play/Pause increment, exact paused sample retention and the limited
-edge-faded bus. It does not qualify the full mastered preview/export pipeline or
+[Sound catalog audition](../PLAYBACK.md#sound-catalog-audition) uses the shared
+canonical playback service with its own sample clock and leaves the retained
+picture and edit selection untouched. Follow the
+[sound design board](../design/boards/sound-audition-board-v1.png) for focused
+selection, visible Space/Shift+Space keys and explicit state. It does not place
+sound events. The [sound integration contract](../SOUND_EVENTS.md) distinguishes
+node-owned clocks, continuous per-voice processing and scoped Hold allowances.
+Its exact route kernel and CLI LRU PCM cache are prerequisites; persisted event
+commands, edit transforms, voice effects and final mixing remain required.
+The [retained sample-route evaluator](../SOUND_EVENTS.md#retained-sample-routes)
+now composes each edit's physical-grid cut and new anchor. Keep the old selected
+audible mask separate from complete recipe/filter/DSP support. Current Hold
+queries retain issuer identity; they grant no allowance and invent no historical
+policy. Playback also uses bounded LRU source eviction. Authored event
+persistence and per-voice processing remain required. See
+[sound-clock qualification](../qualification/sound-clocks-2026-09-27.md).
+The [independent source operand](../SOUND_EVENTS.md#independent-catalog-source-operands)
+now feeds qualified catalog audio through the existing tape and PCM engine without
+adding a Source node. Its input retains complete DSP context; its output separately
+applies current scoped silent-Hold rules. Preserve still requires the checked
+owner/descendant relationship. Do not inherit Original bindings or use metadata
+as permission to bypass host admission.
+The [routed PCM readers](../SOUND_EVENTS.md#routed-pcm-preparation) connect retained
+sample routes to complete source or projected providers on checked PointCeil and
+RoundEven clocks. They read the old sample labels with full filter/DSP support,
+including cold suffixes, and admit dependencies even for entirely masked output.
+Captured provider policy stays separate from current consuming Hold gates. See
+[routed-voice qualification](../qualification/routed-voices-2026-09-27.md).
+Persisted events, allowances, effects and final bus integration remain required.
+Core 28 and database 34 are unchanged by these increments.
+
+[Structural speed editing](../RETIME_EDITING.md) exposes `:retime` and
+`:wrap-retime` through exact speed resolution and the native inspector. Preserve
+the input range when adjusting an ordinary Retime; wrap split Partitions instead.
+Only a changed stage's own retained output binding resets. Descendant source and
+DSP input bindings remain intact. Core 28/database 34 close the old command
+vocabulary through `legacy_v27`; old histories cannot gain new speed operations.
+
+The current [Original/edit audition contract](../PLAYBACK.md) describes the native
+Space Play/Pause and Shift+Space selection-loop increment, exact paused sample
+retention and the limited edge-faded bus. Whole Original playback includes its
+full A/V union; selected moments use measured picture endpoints before adding
+audition context. It does not qualify the full mastered preview/export pipeline or
 reduce the requirements below.
 
 [Authored framing and Camera](../FRAMING.md) records the current implementation
-contract and remaining work, including frozen composition, saved targets and
-tracking. Use the dedicated [Camera design board](../design/boards/camera-framing-board-v1.png)
+contract and remaining work, including saved targets and tracking.
+[Captured framing](../CAPTURED_FRAMING.md) preserves a pause's input composition
+separately from its provider and live Camera operations. Use the dedicated [Camera design board](../design/boards/camera-framing-board-v1.png)
 alongside the primary workspace target. A temporary preview must remain distinct
 from a committed edit, and opening Camera must preserve existing curves.
+
+[Exact Original moments](../SOURCE_MOMENTS.md) records measured range candidates
+and selected audio placements, including physical-grid endpoint behavior and the
+core-20/database-26 migration boundary. Core-27/database-33 add atomic
+`SpliceSource` at an explicit ordinary Sequence slot. Native `v`/`y` selects and
+copies an Original range; `p`/`P` pastes after/before the selected beat. Keep the
+copied session/asset/receipt identity and captured revision/scope through
+preparation. Admit the prepared existing receipt and Original freshness in the
+same history/relevance transaction. Do not use separate Split/Insert commits.
+The new Source begins unbound on the canonical project grid while each old
+suffix owner retains its sample entry. Frozen core 26 preserves DB32 nested
+pause history and rejects the new command. Persistent registers, arbitrary
+occurrence/cursor splice and Visual replacement remain required. The
+`original-moment` harness exercises the keyboard path when Metal is available.
+
+[Compact audio reanchors](../AUDIO_REANCHORS.md) adds core-21/database-27 ordered
+per-occurrence resume steps and retained allocation queries. Distinguish hidden
+allocation from meaningful raw support and preserve each step's lexical scope.
+Core-22/database-28 [gap bindings](../GAP_AUDIO_BINDINGS.md) extend this ownership
+to configured Repeat gaps, including gaps with no current occurrence. General
+atomic moment splice remains required.
+
+Core-23/database-29 [editable gap branches](../REPEAT_GAP_BRANCHES.md) retain
+independent subtrees after stable plays and materialize current default gaps
+without changing their audio clocks. Final-play branches stay dormant until a
+following play exists. Use these owned structures in the general splice author;
+the primitive commands do not yet resolve an arbitrary cursor insertion.
+
+Core-24/database-30 [pause insertion](../INSERT_TIME.md) admits existing root
+Sequence seams before composite suffixes. Capture current placements without
+replacing retained lattices; append windowed steps and stop at nonunity Preserve
+outputs. Every older replay checks the frozen contextual command boundary before
+modern apply. Core-25/database-31 add root Source/ordinary Hold fragment interiors
+before composite suffixes. Capture sampling before Split and placements afterward
+under separate timing identities; preserve each occurrence's own rounded entry.
+Frozen core 24 admits its old seams but refuses these new interiors. Arbitrary
+nested splice and general Visual replacement remain required. The native editing
+replay includes both pause-before-Repeat and interior-pause/undo paths.
+
+Core-26/database-32 extend that command into unretimed Sequence groups. Use
+`insert_time_target` for the exact native capture parent and required Split IDs.
+Capture only scopes below that parent; keep every ancestor live. Reanchor later
+siblings at each Sequence level, stopping at physical Preserve outputs. Frozen
+core 25 refuses this broader context when replaying database 31. Native edit
+completion carries the captured cursor. Native [Sequence navigation](../GROUP_NAVIGATION.md)
+adds Enter/Backspace, breadcrumbs and direct-child editing at each ordinary
+Sequence depth. A deeper Hold selects its visible enclosing group until entered.
+The `nested-pause` harness exercises insertion, navigation, duration, history and
+Camera when Metal is available. This does
+not implement fractional clocks or insertion under Repeat/Retime ancestors.
+
+Use `AnchorIndex::locate_boundary` for exact project-to-content descent. The
+[headless query](../HEADLESS.md) exposes all owner clocks, Sequence slots, stable
+Repeat identities, distinct play/gap entries and implicit-gap terminals under
+shared work bounds. This query performs no mutation.
+The [splice design](../STRUCTURAL_SPLICE_DESIGN.md#exact-boundary-descent) records
+the required ownership and resume work that remains. Do not use picture-center
+sampling or flatten a Repeat out of its live group to choose a splice target.
+
+The preferred [derived-clock representation](../STRUCTURAL_SPLICE_DESIGN.md#derived-owner-clocks)
+keeps authored integer durations separate from exact effective extents, including
+nested Retime output. It is not yet a document capability. The shared framing
+evaluator now accepts exact derived extents without rounding or overflowing
+intermediate quotients; existing integer callers use the same implementation.
+Do not implement subtree duration dilation as an audio-preserving shortcut:
+Preserve processing depends on its physical input grid and retained history.
+
+The borrowed [audio input tape](../AUDIO_INPUT_TAPES.md) projects current scoped
+signals onto one intrinsic PointCeil grid and reads actual PCM through the shared
+`StageAudio` path. Allocation seams never restart phase or crop filter support.
+Checked `AudioStageProjection` views retain full intrinsic input/output history;
+parent tapes consume child intrinsic output, while a separate PointCeil schedule
+can place pauses around it. A request-local identity memo prevents duplicate
+preparation and descriptor aliasing.
+[Projected root placement](../AUDIO_PROJECTED_ROOT.md) separately allocates one
+physical projection on the absolute RoundEven grid, preserving phase, exact
+policy and support exhaustion through crops and repeated resumes. These are
+borrowed evaluation views, not authored splice routes: exact effective owner
+clocks, persistent lifecycle, aggregate scheduling and normal root-plan
+integration remain required.
+
+Use the [UI feedback loop](../UI_FEEDBACK.md) for every meaningful interaction
+change: replay production keyboard, pointer, wheel and text paths, inspect actual
+Metal captures, and run the separate release latency checks. The
+[interaction review](../INTERACTION_REVIEW.md) records measured friction and
+priorities. Reserve Kestrel's global shortcuts; whole-Original reuse is `,i`,
+while Cmd+Return belongs to Kestrel. Update routing, visible hints, help and replay
+together. A passing replay does not establish native IME, VoiceOver or physical
+display behavior.
 
 Read Sections 1–8 for product/primitive/keyboard semantics, 12–14 for AI contracts and qualification, 17–22 for rendering/runtime/storage/export, and 23–30 for dependencies, tests, requirements, and build gates. Section 31 resolves command targeting and source-browser behavior. Source references are in Section 33.
 
@@ -47,6 +177,13 @@ Create a dependency/architecture decision log and the workspace boundaries in Se
 In parallel, implement the pure core with generated fixture documents and property tests. Establish command resolution, exact duration math, reversible transactions, serialization, and render-plan inspection before connecting widgets to mutable state.
 
 ## Completion discipline
+
+Playback tests reserve real-media work before fixture preparation and retain
+the permit through the shared engine callback until both workers exit. Use the
+existing test helper for new PCM scenarios; `Engine::drop` and `Stopped` alone
+do not establish teardown. The
+[scheduling record](../qualification/playback-waits-2026-09-27.md) retains the
+reproduced preparation timeouts and the scope of this test-only correction.
 
 Maintain a requirement tracker mapping DP IDs to implementation, tests, and evidence. Every operation must be editable, undoable, serializable, keyboard-accessible, previewable, and exportable. A UI button, mock worker, successful model download, or ignored test does not count as implementation.
 

@@ -180,6 +180,7 @@ fn natural_picture_plan_selects_and_decodes_original_pixels_after_trim_rounding(
                 subtree: Subtree {
                     root: leaf.clone(),
                     overrides: Default::default(),
+                    gap_overrides: Default::default(),
                     nodes: BTreeMap::from([(
                         leaf.clone(),
                         BeatNode {

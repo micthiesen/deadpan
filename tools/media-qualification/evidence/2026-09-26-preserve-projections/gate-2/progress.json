@@ -1,0 +1,131 @@
+{
+  "commands": [
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 2.898636708036065,
+      "log": "0.log"
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 182.2698829579167,
+      "log": "1.log"
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked"
+      ],
+      "exit_code": 101,
+      "seconds": 386.18632458290085,
+      "log": "2.log",
+      "tests": {
+        "passed": 928,
+        "failed": 1,
+        "ignored": 0
+      }
+    },
+    {
+      "command": [
+        "cargo",
+        "build",
+        "--workspace",
+        "--locked"
+      ],
+      "exit_code": 0,
+      "seconds": 0.6622541658580303,
+      "log": "3.log"
+    },
+    {
+      "command": [
+        "cargo",
+        "run",
+        "-p",
+        "deadpan-cli",
+        "--",
+        "doctor"
+      ],
+      "exit_code": 0,
+      "seconds": 69.81968533294275,
+      "log": "4.log"
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-store",
+        "-p",
+        "deadpan-plan",
+        "-p",
+        "deadpan-render"
+      ],
+      "exit_code": 0,
+      "seconds": 211.44179891701788,
+      "log": "5.log",
+      "tests": {
+        "passed": 410,
+        "failed": 0,
+        "ignored": 0
+      }
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 80.62156983325258,
+      "log": "6.log"
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--all-targets",
+        "--locked"
+      ],
+      "exit_code": 0,
+      "seconds": 92.72694283397868,
+      "log": "7.log",
+      "tests": {
+        "passed": 196,
+        "failed": 0,
+        "ignored": 0
+      }
+    }
+  ],
+  "source_count": 513
+}

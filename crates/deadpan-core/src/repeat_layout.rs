@@ -80,13 +80,14 @@ struct Segment {
     first: u32,
     child: NodeId,
     child_duration: FrameDuration,
+    gap_child: Option<NodeId>,
+    gap_duration: FrameDuration,
 }
 
 #[derive(Debug, Clone)]
 pub struct RepeatLayout {
     segments: Vec<Segment>,
     plays: u32,
-    gap: FrameDuration,
     duration: FrameDuration,
 }
 
@@ -98,6 +99,24 @@ pub struct RepeatPlay {
     pub start: i64,
     pub duration: FrameDuration,
     pub gap_after: FrameDuration,
+    /// An explicit gap branch belongs to this stable play. It remains present
+    /// when this is the final play, although that final gap renders no time.
+    pub gap_child: Option<NodeId>,
+}
+
+impl RepeatPlay {
+    /// The project-facing start of an active owned branch in this play.
+    /// A final or zero-length gap still owns its `gap_child`, but has no
+    /// project-resolvable occurrence.
+    pub fn branch_offset(&self, child: &NodeId) -> Option<i64> {
+        if &self.child == child {
+            return Some(self.start);
+        }
+        if self.gap_after != FrameDuration::ZERO && self.gap_child.as_ref() == Some(child) {
+            return self.start.checked_add(self.duration.frames());
+        }
+        None
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -117,67 +136,114 @@ impl RepeatLayout {
         gap: FrameDuration,
         durations: &BTreeMap<NodeId, FrameDuration>,
     ) -> Result<Self, DocumentError> {
+        Self::compile_with_gap_overrides(iterations, child, overrides, gap, None, durations)
+    }
+
+    /// Compile sparse play and gap branches together. A gap override is keyed
+    /// by its preceding stable play, including when that play is currently last.
+    /// Only the final gap's output is suppressed; its owned branch is validated.
+    pub fn compile_with_gap_overrides(
+        iterations: &IterationOrder,
+        child: &NodeId,
+        overrides: Option<&PlayOverrides>,
+        gap: FrameDuration,
+        gap_overrides: Option<&PlayOverrides>,
+        durations: &BTreeMap<NodeId, FrameDuration>,
+    ) -> Result<Self, DocumentError> {
         iterations.validate()?;
         let child_duration = duration(durations, child)?;
         let mut layout = Self {
             segments: Vec::new(),
             plays: iterations.len(),
-            gap,
             duration: FrameDuration::ZERO,
         };
         let mut play = 0u32;
-        let mut found = 0usize;
+        let mut found_plays = 0usize;
+        let mut found_gaps = 0usize;
         for (allocation, first, count) in iterations.segments() {
             let end = u64::from(first) + u64::from(count);
             let mut cursor = u64::from(first);
-            if let Some(overrides) = overrides {
-                let lower = IterationId {
-                    allocation: allocation.clone(),
-                    ordinal: first,
-                };
-                for (identity, root) in overrides.entries.range(lower..) {
-                    if &identity.allocation != allocation || u64::from(identity.ordinal) >= end {
-                        break;
-                    }
-                    let before = u32::try_from(u64::from(identity.ordinal) - cursor)
-                        .map_err(|_| TimeError::Overflow)?;
-                    layout.append(
-                        allocation,
-                        u32::try_from(cursor).map_err(|_| TimeError::Overflow)?,
-                        before,
-                        play,
-                        child,
-                        child_duration,
-                    )?;
-                    play += before;
-                    layout.append(
-                        allocation,
-                        identity.ordinal,
-                        1,
-                        play,
-                        root,
-                        duration(durations, root)?,
-                    )?;
-                    play += 1;
-                    cursor = u64::from(identity.ordinal) + 1;
-                    found += 1;
-                }
-            }
-            let count = u32::try_from(end - cursor).map_err(|_| TimeError::Overflow)?;
-            if count > 0 {
+            let lower = IterationId {
+                allocation: allocation.clone(),
+                ordinal: first,
+            };
+            let mut play_entries = overrides
+                .into_iter()
+                .flat_map(|entries| entries.entries.range(lower.clone()..))
+                .peekable();
+            let mut gap_entries = gap_overrides
+                .into_iter()
+                .flat_map(|entries| entries.entries.range(lower.clone()..))
+                .peekable();
+            while cursor < end {
+                let next_play = play_entries.peek().and_then(|(identity, _)| {
+                    (&identity.allocation == allocation && u64::from(identity.ordinal) < end)
+                        .then_some(u64::from(identity.ordinal))
+                });
+                let next_gap = gap_entries.peek().and_then(|(identity, _)| {
+                    (&identity.allocation == allocation && u64::from(identity.ordinal) < end)
+                        .then_some(u64::from(identity.ordinal))
+                });
+                let next = next_play.into_iter().chain(next_gap).min().unwrap_or(end);
+                let before = u32::try_from(next - cursor).map_err(|_| TimeError::Overflow)?;
                 layout.append(
                     allocation,
                     u32::try_from(cursor).map_err(|_| TimeError::Overflow)?,
-                    count,
+                    before,
                     play,
-                    child,
-                    child_duration,
+                    (child, child_duration),
+                    (None, gap),
                 )?;
-                play += count;
+                play += before;
+                if next == end {
+                    break;
+                }
+                let play_root = if next_play == Some(next) {
+                    found_plays += 1;
+                    Some(play_entries.next().expect("peeked play override").1)
+                } else {
+                    None
+                };
+                let gap_root = if next_gap == Some(next) {
+                    found_gaps += 1;
+                    Some(gap_entries.next().expect("peeked gap override").1)
+                } else {
+                    None
+                };
+                let effective_child = play_root.unwrap_or(child);
+                layout.append(
+                    allocation,
+                    u32::try_from(next).map_err(|_| TimeError::Overflow)?,
+                    1,
+                    play,
+                    (
+                        effective_child,
+                        if play_root.is_some() {
+                            duration(durations, effective_child)?
+                        } else {
+                            child_duration
+                        },
+                    ),
+                    (
+                        gap_root,
+                        if let Some(root) = gap_root {
+                            gap_duration(durations, root)?
+                        } else {
+                            gap
+                        },
+                    ),
+                )?;
+                play += 1;
+                cursor = next + 1;
             }
         }
-        if found != overrides.map_or(0, PlayOverrides::len) {
+        if found_plays != overrides.map_or(0, PlayOverrides::len) {
             return Err(invalid("override names a missing or retired Repeat play"));
+        }
+        if found_gaps != gap_overrides.map_or(0, PlayOverrides::len) {
+            return Err(invalid(
+                "gap override names a missing or retired Repeat play",
+            ));
         }
         Ok(layout)
     }
@@ -188,16 +254,18 @@ impl RepeatLayout {
         first: u32,
         count: u32,
         first_play: u32,
-        child: &NodeId,
-        child_duration: FrameDuration,
+        play: (&NodeId, FrameDuration),
+        gap: (Option<&NodeId>, FrameDuration),
     ) -> Result<(), DocumentError> {
         if count == 0 {
             return Ok(());
         }
+        let (child, child_duration) = play;
+        let (gap_child, gap_duration) = gap;
         let start = self.duration.frames();
-        let period = i128::from(child_duration.frames()) + i128::from(self.gap.frames());
+        let period = i128::from(child_duration.frames()) + i128::from(gap_duration.frames());
         let trailing_gap = if first_play + count == self.plays {
-            self.gap.frames()
+            gap_duration.frames()
         } else {
             0
         };
@@ -212,6 +280,8 @@ impl RepeatLayout {
             first,
             child: child.clone(),
             child_duration,
+            gap_child: gap_child.cloned(),
+            gap_duration,
         });
         self.duration = FrameDuration::new(end)?;
         Ok(())
@@ -240,7 +310,8 @@ impl RepeatLayout {
 
     fn in_segment(&self, segment: &Segment, offset: u32) -> RepeatPlay {
         let index = segment.first_play + offset;
-        let period = i128::from(segment.child_duration.frames()) + i128::from(self.gap.frames());
+        let period =
+            i128::from(segment.child_duration.frames()) + i128::from(segment.gap_duration.frames());
         // Compilation checked every nonnegative prefix against i64.
         let start = i64::try_from(i128::from(segment.start) + i128::from(offset) * period)
             .expect("compiled Repeat prefixes fit i64");
@@ -256,8 +327,9 @@ impl RepeatLayout {
             gap_after: if index + 1 == self.plays {
                 FrameDuration::ZERO
             } else {
-                self.gap
+                segment.gap_duration
             },
+            gap_child: segment.gap_child.clone(),
         }
     }
 
@@ -313,7 +385,8 @@ impl RepeatLayout {
             .get(index)
             .ok_or_else(|| invalid("Repeat boundary has no following content"))?;
         let relative = position.checked_sub(ExactRatio::integer(segment.start))?;
-        let period = i128::from(segment.child_duration.frames()) + i128::from(self.gap.frames());
+        let period =
+            i128::from(segment.child_duration.frames()) + i128::from(segment.gap_duration.frames());
         let quotient = relative.checked_div(ExactRatio::new(period, 1)?)?;
         let mut ordinal = quotient.floor();
         if bias == InsertionBias::Left && ordinal > 0 && quotient.denominator() == 1 {
@@ -352,6 +425,15 @@ fn duration(
         return Err(TimeError::EmptyRepeatChild.into());
     }
     Ok(duration)
+}
+fn gap_duration(
+    durations: &BTreeMap<NodeId, FrameDuration>,
+    node: &NodeId,
+) -> Result<FrameDuration, DocumentError> {
+    durations
+        .get(node)
+        .copied()
+        .ok_or_else(|| invalid("gap override root has no evaluated duration"))
 }
 fn invalid(message: &str) -> DocumentError {
     DocumentError::new(DocumentErrorCode::InvalidIdentity, message)

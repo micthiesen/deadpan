@@ -64,14 +64,19 @@ meaning. This is tested with a cold reader, so a warm cache cannot conceal an
 incorrect latest-revision lookup. The headless reader may coexist with a writer;
 it does not change authored snapshots, history, receipts or inventory.
 
-The host retains one private decoded PCM session and releases it before opening
-a different source. Existing limits admit at most 64 GiB of original input and
-1 GiB of private PCM; original snapshotting and audio opening each retain their
-separate 300-second deadline. Reads use a ten-second media-read deadline plus
-bounded, cancellable filtering. Alternating sources currently reopen decoders.
-These limits establish bounded preparation, not acceptable app playback latency
-or a completed prepared-cache lifecycle. All I/O and filtering stay off UI and
-device callbacks.
+The CLI host retains an LRU cache of up to 16 private decoded PCM sessions,
+bounded by 1 GiB of aggregate physical PCM and 1,000,000 aggregate indexed audio
+frames. It retains compact receipt identity rather than a second full receipt
+snapshot. A hot hit rechecks the captured contract and uses verified private PCM;
+an evicted source must verify and decode its original again. Cold byte verification
+precedes eviction, both budgets reserve before decoding, and failed preparation
+does not publish either reservation. Priming and padding count toward PCM usage.
+One cold original snapshot is bounded by the existing 64 GiB input limit.
+Original snapshotting and audio opening each retain their separate 300-second
+deadline. Reads use a ten-second media-read deadline plus bounded, cancellable
+filtering. These limits establish bounded preparation, not acceptable app playback
+latency or a completed prepared-cache lifecycle. All I/O and filtering stay off UI
+and device callbacks.
 
 [Retained contexts](AUDIO_CONTEXT.md) use `source_for_context`, whose default
 rejects serialized media intent. `ProjectAudioSession::open_context` compares

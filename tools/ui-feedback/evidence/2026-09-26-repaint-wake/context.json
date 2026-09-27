@@ -1,0 +1,11 @@
+{
+  "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
+  "architecture": "arm64",
+  "rust": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "os": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84",
+  "ffmpeg_prefix": "/tmp/deadpan-ui-ffmpeg/prefix",
+  "repository_gate": "validate.py; complete command exits preserved, including environment failures",
+  "git_write_access": "read-only by sandbox policy; commit and push not attempted in this increment",
+  "native_smoke": "not repeated: no native startup/lifecycle or production repaint callback ownership change",
+  "source_timing": "Monotonic std::time::Instant; optional feature only; virtual replay hz remains separate"
+}

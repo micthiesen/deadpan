@@ -1,0 +1,50 @@
+[
+  {
+    "command": [
+      "cargo",
+      "run",
+      "-p",
+      "deadpan-app",
+      "--features",
+      "ui-harness",
+      "--locked",
+      "--",
+      "--ui-check",
+      "--scenario",
+      "editing",
+      "--output",
+      "/tmp/deadpan-interior-splice-20260926/ui-editing"
+    ],
+    "exit_code": 1,
+    "seconds": 2.5038169589824975,
+    "log": "app-check-0.log",
+    "binary_sha256": "547b18a2a44d92ab54958f86fbbaeb8c943861024eb9a6a6bb6b2815113680e0"
+  },
+  {
+    "command": [
+      "python3",
+      "/tmp/deadpan-interior-splice-20260926/durable-cli.py",
+      "target/debug/deadpan-app",
+      "/tmp/deadpan-interior-splice-20260926/durable-app"
+    ],
+    "exit_code": 0,
+    "seconds": 6.216739708092064,
+    "log": "app-check-1.log",
+    "binary_sha256": "547b18a2a44d92ab54958f86fbbaeb8c943861024eb9a6a6bb6b2815113680e0"
+  },
+  {
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-plan",
+      "-p",
+      "deadpan-store"
+    ],
+    "exit_code": 0,
+    "seconds": 212.10748408315703,
+    "log": "app-check-2.log",
+    "binary_sha256": "547b18a2a44d92ab54958f86fbbaeb8c943861024eb9a6a6bb6b2815113680e0"
+  }
+]

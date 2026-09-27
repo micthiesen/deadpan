@@ -36,6 +36,9 @@ use rusqlite::Connection;
 
 type Result<T = ()> = std::result::Result<T, Box<dyn Error>>;
 
+#[path = "prepared_source_registration/moment.rs"]
+mod moment;
+
 fn cancelled() -> AtomicBool {
     AtomicBool::new(false)
 }
@@ -465,12 +468,14 @@ fn prepared_insertion_reconciles_generation_atomically_and_retries_after_cursor_
                         "Pause",
                         HoldRecipe {
                             duration,
+                            picture_context: None,
                             video: HoldVideo::Background,
                             audio: HoldAudio::Silence,
                         },
                     ),
                 )]),
                 overrides: BTreeMap::new(),
+                gap_overrides: BTreeMap::new(),
             },
         },
     ))?;

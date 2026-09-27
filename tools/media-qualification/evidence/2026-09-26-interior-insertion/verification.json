@@ -1,0 +1,335 @@
+{
+  "gate": {
+    "commands": [
+      {
+        "command": [
+          "cargo",
+          "fmt",
+          "--all",
+          "--",
+          "--check"
+        ],
+        "exit_code": 0,
+        "seconds": 2.743981124833226,
+        "log": "0.log"
+      },
+      {
+        "command": [
+          "cargo",
+          "clippy",
+          "--workspace",
+          "--all-targets",
+          "--locked",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "exit_code": 0,
+        "seconds": 367.8371645002626,
+        "log": "1.log"
+      },
+      {
+        "command": [
+          "cargo",
+          "test",
+          "--workspace",
+          "--locked"
+        ],
+        "exit_code": 101,
+        "seconds": 590.6265259170905,
+        "log": "2.log",
+        "tests": {
+          "passed": 603,
+          "failed": 1,
+          "ignored": 0
+        }
+      },
+      {
+        "command": [
+          "cargo",
+          "build",
+          "--workspace",
+          "--locked"
+        ],
+        "exit_code": 0,
+        "seconds": 0.6809492921456695,
+        "log": "3.log"
+      },
+      {
+        "command": [
+          "cargo",
+          "run",
+          "-p",
+          "deadpan-cli",
+          "--",
+          "doctor"
+        ],
+        "exit_code": 0,
+        "seconds": 34.160476916935295,
+        "log": "4.log"
+      },
+      {
+        "command": [
+          "cargo",
+          "test",
+          "--locked",
+          "-p",
+          "deadpan-plan",
+          "--test",
+          "picture_plan"
+        ],
+        "exit_code": 0,
+        "seconds": 16.970908457878977,
+        "log": "5.log",
+        "tests": {
+          "passed": 29,
+          "failed": 0,
+          "ignored": 0
+        }
+      },
+      {
+        "command": [
+          "cargo",
+          "clippy",
+          "-p",
+          "deadpan-app",
+          "--features",
+          "ui-harness",
+          "--all-targets",
+          "--locked",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "exit_code": 0,
+        "seconds": 141.79535429179668,
+        "log": "6.log"
+      },
+      {
+        "command": [
+          "cargo",
+          "test",
+          "-p",
+          "deadpan-app",
+          "--features",
+          "ui-harness",
+          "--all-targets",
+          "--locked"
+        ],
+        "exit_code": 0,
+        "seconds": 157.80656904075295,
+        "log": "7.log",
+        "tests": {
+          "passed": 196,
+          "failed": 0,
+          "ignored": 0
+        }
+      }
+    ],
+    "source_count": 498,
+    "source_unchanged": true,
+    "changed_sources": [],
+    "passed": false
+  },
+  "post_validation": {
+    "commands": [
+      {
+        "command": [
+          "cargo",
+          "fmt",
+          "--all",
+          "--",
+          "--check"
+        ],
+        "exit_code": 0,
+        "seconds": 2.9082149579189718,
+        "log": "0.log"
+      },
+      {
+        "command": [
+          "cargo",
+          "clippy",
+          "-p",
+          "deadpan-core",
+          "--all-targets",
+          "--locked",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "exit_code": 0,
+        "seconds": 146.42959375027567,
+        "log": "1.log"
+      },
+      {
+        "command": [
+          "cargo",
+          "test",
+          "--locked",
+          "-p",
+          "deadpan-core",
+          "--test",
+          "audio_bindings"
+        ],
+        "exit_code": 0,
+        "seconds": 24.82696754205972,
+        "log": "2.log",
+        "tests": {
+          "passed": 36,
+          "failed": 0,
+          "ignored": 0
+        }
+      },
+      {
+        "command": [
+          "cargo",
+          "test",
+          "--workspace",
+          "--locked"
+        ],
+        "exit_code": 101,
+        "seconds": 175.43850925005972,
+        "log": "3.log",
+        "tests": {
+          "passed": 896,
+          "failed": 1,
+          "ignored": 0
+        }
+      }
+    ],
+    "source_count": 498,
+    "source_unchanged": true,
+    "changed_since_original_gate": [
+      "crates/deadpan-core/tests/audio_bindings/gaps.rs"
+    ],
+    "production_sources_unchanged": true
+  },
+  "app_checks": [
+    {
+      "command": [
+        "cargo",
+        "run",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--locked",
+        "--",
+        "--ui-check",
+        "--scenario",
+        "editing",
+        "--output",
+        "/tmp/deadpan-interior-splice-20260926/ui-editing"
+      ],
+      "exit_code": 1,
+      "seconds": 2.5038169589824975,
+      "log": "app-check-0.log",
+      "binary_sha256": "547b18a2a44d92ab54958f86fbbaeb8c943861024eb9a6a6bb6b2815113680e0"
+    },
+    {
+      "command": [
+        "python3",
+        "/tmp/deadpan-interior-splice-20260926/durable-cli.py",
+        "target/debug/deadpan-app",
+        "/tmp/deadpan-interior-splice-20260926/durable-app"
+      ],
+      "exit_code": 0,
+      "seconds": 6.216739708092064,
+      "log": "app-check-1.log",
+      "binary_sha256": "547b18a2a44d92ab54958f86fbbaeb8c943861024eb9a6a6bb6b2815113680e0"
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-plan",
+        "-p",
+        "deadpan-store"
+      ],
+      "exit_code": 0,
+      "seconds": 212.10748408315703,
+      "log": "app-check-2.log",
+      "binary_sha256": "547b18a2a44d92ab54958f86fbbaeb8c943861024eb9a6a6bb6b2815113680e0"
+    }
+  ],
+  "durable_headless": {
+    "passed": true,
+    "binary_sha256": "547b18a2a44d92ab54958f86fbbaeb8c943861024eb9a6a6bb6b2815113680e0",
+    "entrypoint": "deadpan-app --headless",
+    "commands": 42,
+    "revisions": 10,
+    "history_entries": 5,
+    "final_revision": "f54edc4a-4736-4274-ac65-44c8b94e7da4",
+    "scope": "Ordinary Hold interior before Repeat, repeated fragment insertion, process reopen on every command, two atomic undo/redo edits, nested Repeat interior refusal"
+  },
+  "old_binary_refusal": {
+    "binary_sha256": "ba8c2c9dd860d0ae8540df6aaa3759d5f0b61e9bbadc87798fbbe2cabd35522a",
+    "core": 24,
+    "database": 30,
+    "refusals": [
+      {
+        "command": [
+          "command",
+          "/tmp/deadpan-interior-splice-20260926/old-context-refusal-02/probe.deadpan",
+          "--json",
+          "/tmp/deadpan-interior-splice-20260926/old-context-refusal-02/old-hold-interior.json"
+        ],
+        "code": 1,
+        "error": {
+          "code": "InvalidCommand",
+          "current_revision": null,
+          "message": "composite suffix insertion requires an existing root Sequence seam",
+          "recovery_backup": null
+        }
+      },
+      {
+        "command": [
+          "command",
+          "/tmp/deadpan-interior-splice-20260926/old-context-refusal-02/probe.deadpan",
+          "--json",
+          "/tmp/deadpan-interior-splice-20260926/old-context-refusal-02/old-source-interior.json"
+        ],
+        "code": 1,
+        "error": {
+          "code": "InvalidCommand",
+          "current_revision": null,
+          "message": "composite suffix insertion requires an existing root Sequence seam",
+          "recovery_backup": null
+        }
+      }
+    ],
+    "unchanged_database_on_each_refusal": true,
+    "validation": {
+      "basis_state": {
+        "geometry_origin": "explicit",
+        "primary": null,
+        "rate_origin": "explicit"
+      },
+      "duration_frames": 93,
+      "mark_count": 0,
+      "node_count": 23,
+      "presentation_basis": {
+        "color_policy": "sdr_rec709",
+        "frame_rate": {
+          "denominator": 1001,
+          "numerator": 30000
+        },
+        "height": 16,
+        "width": 16
+      },
+      "project_id": "d038df46-94c6-4c0a-9d11-038b0e6da220",
+      "protocol": 1,
+      "revision_id": "old-source-prefix",
+      "root": "b5903f58-0249-4a89-8af8-ed3d8a5cfe1f",
+      "valid": true
+    },
+    "commands_sha256": "5b1e2aaeab33132df1314cd51834b1a694e55120c7c2c6658bb4d7370feb000c",
+    "script_sha256": "a75fb26485caf48b1b011d4662de37f39489c1ebcfd258edd8c460fbc122b4d1",
+    "first_probe": "old-context-refusal failed a script assertion expecting exit 2 instead of actual exit 1; no application assertion failed there"
+  },
+  "fixture_provenance_verified": true,
+  "source_count": 498,
+  "sources_match_final_gate": true
+}

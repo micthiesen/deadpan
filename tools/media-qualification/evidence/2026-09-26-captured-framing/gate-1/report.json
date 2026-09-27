@@ -1,0 +1,35 @@
+{
+  "commands": [
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 2.6031072079204023,
+      "log": "0.log"
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 101,
+      "seconds": 147.78478262526914,
+      "log": "1.log"
+    }
+  ],
+  "source_count": 423,
+  "source_unchanged": true,
+  "changed_sources": [],
+  "passed": false
+}

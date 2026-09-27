@@ -18,6 +18,7 @@ fn hold(length: i64) -> BeatNode {
         HoldRecipe {
             duration: frames(length),
             video: HoldVideo::Background,
+            picture_context: None,
             audio: HoldAudio::Silence,
         },
     )
@@ -73,8 +74,11 @@ fn bind(
         ordinal: 0,
     };
     let binding = OwnedAudioBinding {
+        reanchors: Vec::new(),
         lattice: AudioPlacementTemplate {
+            gap_after: None,
             reference: AudioReferenceClock {
+                recipe: AudioRecipeKind::Node,
                 timing: timing.clone(),
                 root: clock,
                 physical: id(physical),

@@ -1,0 +1,237 @@
+[
+  {
+    "path": "AGENTS.md",
+    "sha256": "9104f9bbd58bf225fa029c665bb1a0d9314471bd15f53527505cecf08d283e1e",
+    "bytes": 74845
+  },
+  {
+    "path": "README.md",
+    "sha256": "2cd492eb86e04f300e6b480bbaffe9a60acc5231b12ab4d62dec50e818f353be",
+    "bytes": 11345
+  },
+  {
+    "path": "crates/deadpan-app/src/navigation.rs",
+    "sha256": "29150f1ed3ac7e1a2262c0537ec55335274a8d9b4012bd6fd7190a847ada323b",
+    "bytes": 47454
+  },
+  {
+    "path": "crates/deadpan-app/src/navigation/command.rs",
+    "sha256": "fb9902f76e95e0693f3aa30d0c3f1d88cb4710377c5ebc57b3ee1a7ce3638dc4",
+    "bytes": 12851
+  },
+  {
+    "path": "crates/deadpan-app/src/navigation/duration.rs",
+    "sha256": "7560014d009c4791dbecd446175d05c14f632806cb710d3fb99dab6850aaa61e",
+    "bytes": 8464
+  },
+  {
+    "path": "crates/deadpan-app/src/navigation/retime.rs",
+    "sha256": "a592c783eba95a66d979a187764803d1cb0105735352ef53fb91b881801b0919",
+    "bytes": 3663
+  },
+  {
+    "path": "crates/deadpan-app/src/preview.rs",
+    "sha256": "639e679c74f9a93c522aecc7e0c7efbe0feb6fd11c30228db8ef18a016d49747",
+    "bytes": 140911
+  },
+  {
+    "path": "crates/deadpan-app/src/preview/harness.rs",
+    "sha256": "497568311e9cd3b65155dd820e3e1d461a3f7c6089e1c1e8dfcefe9c2bb97040",
+    "bytes": 29373
+  },
+  {
+    "path": "crates/deadpan-app/src/preview/harness/retime.rs",
+    "sha256": "07523ad19b43fed46167f9812b492d341e84a1104ace25d6220c1414a1168fde",
+    "bytes": 4995
+  },
+  {
+    "path": "crates/deadpan-app/src/preview/harness/scenarios.rs",
+    "sha256": "1a93593c1e5b04645f4c4432e5dd048f1538e22bc1c0c3c418dd0b01ba840e29",
+    "bytes": 36489
+  },
+  {
+    "path": "crates/deadpan-app/src/preview/inspector.rs",
+    "sha256": "ec52969a1cfe662500a6799cfc4ccdb3c1ac93a5f8c6e13f80e651006e5f4a67",
+    "bytes": 11672
+  },
+  {
+    "path": "crates/deadpan-app/src/project.rs",
+    "sha256": "d024fb046df0535b616eac606d96d090ffc90784e216841f00a5301de2799b72",
+    "bytes": 8741
+  },
+  {
+    "path": "crates/deadpan-app/src/project/retime.rs",
+    "sha256": "e0eb417f8f3897dd3790dd7db9065474ddd39ac98c61e3a9d4ad3dbe3c10ffc2",
+    "bytes": 2659
+  },
+  {
+    "path": "crates/deadpan-app/src/project/service.rs",
+    "sha256": "957a9988409511ebf2cf9fc4b2228d781494891a3d079f1387df694f30f60150",
+    "bytes": 41472
+  },
+  {
+    "path": "crates/deadpan-app/src/project/tests.rs",
+    "sha256": "d42545f82f9598960021ca2e79b16abd670876911cde9462cfce07d288e52a2d",
+    "bytes": 61089
+  },
+  {
+    "path": "crates/deadpan-app/src/project/tests/retime.rs",
+    "sha256": "ec7d22b55f80893e5e57f229be0bc402ee98f1115f5d8ea32845c665e112d0ba",
+    "bytes": 9734
+  },
+  {
+    "path": "crates/deadpan-app/src/ui_harness.rs",
+    "sha256": "655894a19d8e545a1a69d6b66172fdce68062d20a5f5ff23e2721e898de3bda3",
+    "bytes": 10916
+  },
+  {
+    "path": "crates/deadpan-audio/tests/stages.rs",
+    "sha256": "4be1e802a27e901f019006ed1a0f6aa56ea2c20904b2ce74ee2f991d0eeb7dfb",
+    "bytes": 86963
+  },
+  {
+    "path": "crates/deadpan-audio/tests/stages/retime_edits.rs",
+    "sha256": "aa3ff66c7dc6124f7be0066ab8efda81819b9b6316b81e3ae3173d76b7da0b72",
+    "bytes": 10872
+  },
+  {
+    "path": "crates/deadpan-cli/src/doctor.rs",
+    "sha256": "5522edf14d4d27595eaef56a79b25a584650f773cf270d2640211ee89b4904fa",
+    "bytes": 3197
+  },
+  {
+    "path": "crates/deadpan-cli/tests/project_commands.rs",
+    "sha256": "8d3fe8122cd6f291a934975d83d357bbbf1bfc6205b88f99f5d14a8a18fcb45a",
+    "bytes": 48102
+  },
+  {
+    "path": "crates/deadpan-core/src/command.rs",
+    "sha256": "7f16f5b59fb41f5ad853e7d46d1d93c02a9e99d05131b80f87960b52c18a885c",
+    "bytes": 71104
+  },
+  {
+    "path": "crates/deadpan-core/src/document.rs",
+    "sha256": "c52e5ab8dffc620f7ee377f9f0bed768b2dc4f6468d20cf0d8cf14f49ac3c1f4",
+    "bytes": 47447
+  },
+  {
+    "path": "crates/deadpan-core/src/legacy_v27.rs",
+    "sha256": "679b6d6dc97206f9390580acb81f963368b4c2c917485093a0b3cb8b4f7df2cc",
+    "bytes": 29688
+  },
+  {
+    "path": "crates/deadpan-core/src/lib.rs",
+    "sha256": "07c4483386850b6e73155ac321f834f0fff3b9fff154d80688a6fc05b494c26c",
+    "bytes": 2536
+  },
+  {
+    "path": "crates/deadpan-core/src/occurrence_edit.rs",
+    "sha256": "b705cb73696a5288bfdc23109b54d6ab9b8ee07f261cdf39eb99876fbd60fec7",
+    "bytes": 21774
+  },
+  {
+    "path": "crates/deadpan-core/tests/retime_edits.rs",
+    "sha256": "b05b1b41a59fed9c3401cb071fae506fee04db3b7c40f7d17fb0690a03bfb702",
+    "bytes": 14417
+  },
+  {
+    "path": "crates/deadpan-store/src/migration.rs",
+    "sha256": "ddfb16933200fc69fca3f7c84079aa9646679916482f03d48d1668e60106896e",
+    "bytes": 15830
+  },
+  {
+    "path": "crates/deadpan-store/src/schema.rs",
+    "sha256": "19ff4781910a38cfe56d28f8ca111d1621619d53d16300e49280f173b0511d8b",
+    "bytes": 3513
+  },
+  {
+    "path": "crates/deadpan-store/src/validation.rs",
+    "sha256": "2e459e5d4f4bfd504847b37806f11528e68f2be7e1244603658efc99b843d577",
+    "bytes": 36503
+  },
+  {
+    "path": "crates/deadpan-store/tests/fixtures/produce-v33-retime-history.py",
+    "sha256": "a965047ead4c539e6ae297ee7dbbe122df8d7c39a70b348f46bd746c24b50cc1",
+    "bytes": 6447
+  },
+  {
+    "path": "crates/deadpan-store/tests/fixtures/v33-retime-history.commands.json",
+    "sha256": "5cb6b96a9f8792ebc5489bfc42feb4b23931e8abe42ee403ea50d4cdd8c91016",
+    "bytes": 12319
+  },
+  {
+    "path": "crates/deadpan-store/tests/fixtures/v33-retime-history.provenance.json",
+    "sha256": "4fd91f07c61a2a75a5f3fad9c2bc76e8a5f825d7f6abfaf45a6ca4101b0a42e7",
+    "bytes": 4550
+  },
+  {
+    "path": "crates/deadpan-store/tests/fixtures/v33-retime-history.sql",
+    "sha256": "94f7e1eb67e2532a1ad56e639cc6cdc2800b2e2ef82b24e402180232578d0373",
+    "bytes": 9669143
+  },
+  {
+    "path": "crates/deadpan-store/tests/migration.rs",
+    "sha256": "a12f4e7c2313a488c7d61040e5be8a297a36b9c326500b0a8137f74593804605",
+    "bytes": 160895
+  },
+  {
+    "path": "crates/deadpan-store/tests/migration/retime.rs",
+    "sha256": "10e74f8ce9995fd185b945ade76048b91a1bbf442ba93e3b5346f5255a38f9d4",
+    "bytes": 13201
+  },
+  {
+    "path": "crates/deadpan-store/tests/occurrence_edits.rs",
+    "sha256": "452d751ce7d45c139e5bd7c5519508aff01366774a550d4a87d8476ad3c16d53",
+    "bytes": 12928
+  },
+  {
+    "path": "docs/ARCHITECTURE.md",
+    "sha256": "39e67fbcea22d7d6b821fe450df4b1f6df9acf294ffc56525d90b006a36aeb0a",
+    "bytes": 21542
+  },
+  {
+    "path": "docs/DEVELOPMENT.md",
+    "sha256": "ed66417a0e190e59fe243487d803844714824876e8273ea34595082cb202e601",
+    "bytes": 20594
+  },
+  {
+    "path": "docs/HEADLESS.md",
+    "sha256": "7f45f815a9e6e8c4c107086d675f4ad79f6daf517f07dd9da65cd5c671fcc402",
+    "bytes": 45221
+  },
+  {
+    "path": "docs/NATIVE_WORKSPACE.md",
+    "sha256": "c724fae51ffe7c0eda33992c45a7f89225f5ab967a8d75fd0e6d1802c9be3650",
+    "bytes": 18252
+  },
+  {
+    "path": "docs/PLAYBACK.md",
+    "sha256": "f5dbe6ba4dce1c1a07da82aceb8b054ae03a3f799f6277f69ab033196dba5b85",
+    "bytes": 9325
+  },
+  {
+    "path": "docs/REQUIREMENTS.md",
+    "sha256": "cd8376f4760000ea2f6bffef013a65dbd7510f5b122ef078f5518ddab823beed",
+    "bytes": 58701
+  },
+  {
+    "path": "docs/RETIME_EDITING.md",
+    "sha256": "706217a909e428ff91712f1828e5e661d3b507ab4d5c5208a91668f4edb4627a",
+    "bytes": 4503
+  },
+  {
+    "path": "docs/UI_FEEDBACK.md",
+    "sha256": "8d235bce47595c5727c314b28242c4b3f02e4a2adff52179c7b1d9d748ac4823",
+    "bytes": 28051
+  },
+  {
+    "path": "docs/qualification/retime-editing-2026-09-27.md",
+    "sha256": "953f86d44d1fe0c244e0ed1dc5837448b9fee162ec60bd8a68e0a299201d9cf3",
+    "bytes": 5670
+  },
+  {
+    "path": "docs/spec/AGENT_HANDOFF.md",
+    "sha256": "c0e2d36df0f597fd5af4cc642a4a2c0ff1c9192d409f37de94852477cfb6f983",
+    "bytes": 13493
+  }
+]

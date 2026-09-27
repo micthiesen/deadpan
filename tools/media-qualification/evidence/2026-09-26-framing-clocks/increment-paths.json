@@ -1,0 +1,8 @@
+[
+  "crates/deadpan-core/src/framing.rs",
+  "crates/deadpan-core/src/framing/numeric.rs",
+  "crates/deadpan-core/tests/fixtures/framing-clock-oracles.json",
+  "crates/deadpan-core/tests/fixtures/produce-framing-clock-oracles.py",
+  "crates/deadpan-core/tests/framing.rs",
+  "crates/deadpan-core/tests/framing/exact_clock.rs"
+]

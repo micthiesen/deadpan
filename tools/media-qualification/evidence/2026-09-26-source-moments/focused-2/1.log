@@ -1,0 +1,26 @@
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 9.85s
+     Running tests/source_import_timing.rs (target/debug/deps/source_import_timing-ebfa99e3c2736049)
+
+running 18 tests
+test audio_interior_exclusions_identity_mismatch_and_unmeasured_video_end_fail ... ok
+test moment::fractional_audio_selection_keeps_full_samples_phase_and_exact_cut_before_picture_slack ... ok
+test moment::vfr_selection_uses_presentation_intervals_and_the_measured_final_boundary ... ok
+test moment::a_positive_window_with_no_discrete_audio_sample_is_retained_without_snapping ... ok
+test moment::moment_rejects_invalid_ordinals_and_reuses_full_stream_evidence_checks ... ok
+test moment::moment_duration_and_mapping_arithmetic_are_checked ... ok
+test signed_global_origins_do_not_change_fractional_cross_clock_placement ... ok
+test moment::moving_the_shared_signed_origin_preserves_relative_audio_selection ... ok
+test high_rates_use_highest_common_exact_divisor_then_exact_rational_fallback ... ok
+test moment::delayed_early_ending_and_nonoverlapping_audio_keep_measured_av_alignment ... ok
+test cadence_requires_repeated_integral_evidence_and_bounds_histogram_growth ... ok
+test geometry_applies_sar_before_rotation_with_even_rounding_and_no_target_upscale ... ok
+test an_existing_project_rate_changes_sampling_occupancy_but_never_original_duration ... ok
+test decoded_rgb_rotation_anamorphic_and_single_frame_basis_use_measured_geometry_and_cadence ... ok
+test decoded_44100_audio_keeps_native_samples_and_exact_extent_on_audio_only_canvas ... ok
+test measured_av_candidates_drive_picture_plans_through_leading_and_trailing_holds ... ok
+test decoded_cfr_offset_and_vfr_keep_measured_tails_and_original_av_alignment ... ok
+test moment::decoded_cfr_offset_and_vfr_moments_retain_real_pts_and_endpoint_picture_identity ... ok
+
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.26s
+

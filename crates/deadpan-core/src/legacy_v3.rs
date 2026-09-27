@@ -39,6 +39,7 @@ impl Document {
     }
     pub fn upgrade(self) -> Result<ProjectDocument, DocumentError> {
         let document = ProjectDocument {
+            gap_overrides: BTreeMap::new(),
             audio_lineage: BTreeMap::new(),
             audio_bindings: crate::AudioBindingState::default(),
             schema_version: DOCUMENT_SCHEMA_VERSION,
@@ -64,6 +65,9 @@ impl Document {
         Ok(document)
     }
     pub fn matches(&self, document: &ProjectDocument) -> bool {
+        if !document.gap_overrides.is_empty() {
+            return false;
+        }
         if !document.audio_bindings.is_empty() {
             return false;
         }
@@ -205,6 +209,7 @@ pub fn upgrade_request(json: &str) -> Result<CommandRequest, DocumentError> {
             parent,
             index,
             subtree: Subtree {
+                gap_overrides: BTreeMap::new(),
                 root: subtree.root,
                 nodes: subtree
                     .nodes
@@ -320,6 +325,9 @@ struct Patch {
 }
 impl Patch {
     fn project(patch: &DocumentPatch) -> Option<Self> {
+        if !patch.gap_overrides.is_empty() {
+            return None;
+        }
         if patch.presentation.is_some() {
             return None;
         }

@@ -1,0 +1,90 @@
+{
+  "commands": [
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 3.198452416807413,
+      "log": "0.log"
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 74.96502195904031,
+      "log": "1.log"
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "deadpan-cli",
+        "--test",
+        "project_commands",
+        "--locked"
+      ],
+      "exit_code": 0,
+      "seconds": 48.60490170912817,
+      "log": "2.log",
+      "tests": {
+        "passed": 17,
+        "failed": 0,
+        "ignored": 0
+      }
+    },
+    {
+      "command": [
+        "cargo",
+        "run",
+        "-p",
+        "deadpan-cli",
+        "--locked",
+        "--",
+        "doctor"
+      ],
+      "exit_code": 0,
+      "seconds": 0.37667741626501083,
+      "log": "3.log"
+    },
+    {
+      "command": [
+        "cargo",
+        "run",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--locked",
+        "--",
+        "--ui-check",
+        "--scenario",
+        "retime",
+        "--kestrel-source",
+        "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+        "--output",
+        "/tmp/deadpan-retime-20260927/ui-retime"
+      ],
+      "exit_code": 1,
+      "seconds": 50.588084124960005,
+      "log": "4.log"
+    }
+  ],
+  "changes_after_workspace_gate": [
+    "crates/deadpan-cli/src/doctor.rs",
+    "crates/deadpan-cli/tests/project_commands.rs"
+  ]
+}

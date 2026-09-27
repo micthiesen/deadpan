@@ -1,0 +1,27 @@
+{
+  "protocol": 1,
+  "project_id": "d038df46-94c6-4c0a-9d11-038b0e6da220",
+  "expected_revision": "core26-nested-interior",
+  "new_revision": "core26-nested-seam",
+  "command": {
+    "command": "insert_time",
+    "at": 6,
+    "hold": {
+      "duration": 3,
+      "video": {
+        "type": "background"
+      },
+      "audio": {
+        "type": "silence"
+      }
+    },
+    "id": "core26-second-pause",
+    "identities": {
+      "nodes": []
+    },
+    "timing": {
+      "allocation": "core26-nested-seam",
+      "ordinal": 0
+    }
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "commands": [
+    {
+      "command": [
+        "cargo",
+        "run",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--locked",
+        "--",
+        "--ui-check",
+        "--mode",
+        "visual",
+        "--scenario",
+        "sound-playback",
+        "--kestrel-source",
+        "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+        "--output",
+        "/tmp/deadpan-authored-sounds-20260927/ui-visual"
+      ],
+      "exit_code": 1,
+      "seconds": 2.677671750076115,
+      "log": "0.log"
+    }
+  ]
+}

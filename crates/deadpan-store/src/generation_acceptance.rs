@@ -238,6 +238,18 @@ pub(crate) fn require_single_generation_occurrence(
                     .ok_or_else(|| invalid("invalid override count"))?;
                 occurrences = occurrences.saturating_mul(defaults).min(2);
             }
+            NodeKind::Repeat { iterations, .. } => {
+                if let Some((iteration, _)) = document
+                    .gap_overrides()
+                    .get(*parent)
+                    .and_then(|entries| entries.iter().find(|(_, root)| *root == child))
+                    && iterations
+                        .position(iteration)
+                        .is_none_or(|position| position + 1 == iterations.len())
+                {
+                    occurrences = 0;
+                }
+            }
             NodeKind::Retime { .. } => {
                 return Err(invalid(
                     "generation requires a concrete Hold outside a Retime crop",
@@ -257,4 +269,45 @@ pub(crate) fn require_single_generation_occurrence(
 
 fn invalid(message: &str) -> StoreError {
     StoreError::GenerationAcceptance(message.into())
+}
+
+#[cfg(test)]
+mod gap_occurrence_tests {
+    use super::*;
+    use deadpan_core::{ColorPolicy, FrameRate, PresentationBasis, ProjectId};
+    use serde_json::json;
+
+    #[test]
+    fn dormant_gap_is_not_an_effective_generation_target() {
+        let blank = ProjectDocument::new(
+            ProjectId::new("gap-generation").unwrap(),
+            RevisionId::new("initial").unwrap(),
+            PresentationBasis {
+                width: 16,
+                height: 16,
+                frame_rate: FrameRate::new(30, 1).unwrap(),
+                color_policy: ColorPolicy::SdrRec709,
+            },
+            NodeId::new("root").unwrap(),
+        )
+        .unwrap();
+        let mut wire = serde_json::to_value(blank).unwrap();
+        let hold = json!({"label":"Hold","kind":{"type":"hold","recipe":{
+            "duration":2,"video":{"type":"background"},"audio":{"type":"silence"}
+        }}});
+        wire["nodes"] = json!({
+            "root":{"label":"Root","kind":{"type":"sequence","children":["repeat"]}},
+            "repeat":{"label":"Repeat","kind":{"type":"repeat","child":"child",
+                "iterations":{"runs":[{"allocation":"plays","first":0,"count":2}]},"gap":null}},
+            "child":hold,"gap":hold,
+        });
+        wire["gap_overrides"] =
+            json!({"repeat":[{"iteration":{"allocation":"plays","ordinal":1},"root":"gap"}]});
+        let dormant = ProjectDocument::from_json(&wire.to_string()).unwrap();
+        let gap = NodeId::new("gap").unwrap();
+        assert!(require_single_generation_occurrence(&dormant, &gap).is_err());
+        wire["gap_overrides"]["repeat"][0]["iteration"]["ordinal"] = json!(0);
+        let active = ProjectDocument::from_json(&wire.to_string()).unwrap();
+        assert!(require_single_generation_occurrence(&active, &gap).is_ok());
+    }
 }

@@ -1,0 +1,58 @@
+{
+  "commands": [
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "-p",
+        "deadpan-plan",
+        "-p",
+        "deadpan-playback"
+      ],
+      "exit_code": 0,
+      "seconds": 0.6490772911347449,
+      "log": "0.log"
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-plan",
+        "--test",
+        "source_voice",
+        "--test",
+        "source_voice_policy",
+        "--test",
+        "hold_policy"
+      ],
+      "exit_code": 0,
+      "seconds": 18.063047083094716,
+      "log": "1.log",
+      "tests": {
+        "passed": 20,
+        "failed": 0,
+        "ignored": 0
+      }
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-playback",
+        "source_voice"
+      ],
+      "exit_code": 101,
+      "seconds": 47.47781529184431,
+      "log": "2.log",
+      "tests": {
+        "passed": 0,
+        "failed": 4,
+        "ignored": 0
+      }
+    }
+  ]
+}

@@ -123,6 +123,7 @@ fn fixture(offset: AudioSample, mapping: SourceAudioMapping) -> ProjectDocument 
     let hold = BeatNode::hold(
         "tail",
         HoldRecipe {
+            picture_context: None,
             duration: frames(3),
             video: HoldVideo::Background,
             audio: HoldAudio::Tail {
@@ -140,6 +141,7 @@ fn fixture(offset: AudioSample, mapping: SourceAudioMapping) -> ProjectDocument 
             iterations: IterationOrder::new(RevisionId::new("plays").unwrap(), 1_000_000_000)
                 .unwrap(),
             gap: Some(HoldRecipe {
+                picture_context: None,
                 duration: frames(1),
                 video: HoldVideo::Background,
                 audio: HoldAudio::RoomTone {
@@ -169,9 +171,26 @@ fn fixture(offset: AudioSample, mapping: SourceAudioMapping) -> ProjectDocument 
                     (node("pictureonly"), picture_only),
                 ]),
                 overrides: BTreeMap::new(),
+                gap_overrides: BTreeMap::new(),
             },
         },
     )
+}
+
+#[test]
+fn old_context_versions_reject_even_empty_gap_branch_vocabulary() {
+    let document = fixture(AudioSample(0), SourceAudioMapping::FitBeat);
+    let context = FrozenAudioContext::capture(&document).unwrap();
+    let current = serde_json::to_value(&context).unwrap();
+    for version in [1, 2] {
+        let mut wire = current.clone();
+        wire["schema_version"] = json!(version);
+        assert!(FrozenAudioContext::from_json(&wire.to_string()).is_ok());
+        for field in [json!({}), Value::Null] {
+            wire["layout"]["gap_overrides"] = field;
+            assert!(FrozenAudioContext::from_json(&wire.to_string()).is_err());
+        }
+    }
 }
 
 #[test]
@@ -225,12 +244,82 @@ fn captures_exact_inputs_and_only_their_full_asset_records() {
 }
 
 #[test]
+fn selected_context_keeps_full_phase_mapping_and_captures_only_its_audible_extent() {
+    let mapping = SourceAudioMapping::SelectedPlacement {
+        start: ratio(-1, 3),
+        frames: ratio(11, 2),
+        selection: ExactFrameRange {
+            start: ratio(1, 7),
+            end: ratio(5, 3),
+        },
+    };
+    let offset = AudioSample(23);
+    let document = fixture(offset, mapping);
+    let context = FrozenAudioContext::capture(&document).unwrap();
+    assert_eq!(
+        context.inputs()[&node("source")],
+        FrozenAudioInput::Source {
+            source: SourceAudio {
+                asset: asset("original"),
+                span: span()
+            },
+            mapping,
+            offset,
+        }
+    );
+    assert_eq!(
+        context.layout().nodes()[&node("source")].kind,
+        FrozenAudioKind::Source {
+            placement: Some(
+                mapping
+                    .selection_frames_with_offset(
+                        frames(10),
+                        offset,
+                        document.presentation_basis().frame_rate
+                    )
+                    .unwrap()
+            ),
+        }
+    );
+    assert_eq!(
+        FrozenAudioContext::from_json(&context.to_json().unwrap()).unwrap(),
+        context
+    );
+    let mut wire = serde_json::to_value(context).unwrap();
+    assert_eq!(wire["schema_version"], json!(3));
+    wire["schema_version"] = json!(1);
+    assert!(FrozenAudioContext::from_json(&wire.to_string()).is_err());
+    let escaped = wire
+        .to_string()
+        .replace("selected_placement", "selected_placem\\u0065nt");
+    assert!(FrozenAudioContext::from_json(&escaped).is_err());
+}
+
+#[test]
+fn legacy_context_roundtrips_its_closed_mapping_vocabulary_without_upgrading() {
+    let context = FrozenAudioContext::capture(&fixture(
+        AudioSample(0),
+        SourceAudioMapping::Placement {
+            start: ratio(-1, 3),
+            frames: ratio(11, 2),
+        },
+    ))
+    .unwrap();
+    let mut wire = serde_json::to_value(context).unwrap();
+    wire["schema_version"] = json!(1);
+    let legacy = FrozenAudioContext::from_json(&wire.to_string()).unwrap();
+    assert_eq!(serde_json::to_value(legacy).unwrap(), wire);
+    wire["inputs"]["source"]["mapping"]["selection"] = Value::Null;
+    assert!(FrozenAudioContext::from_json(&wire.to_string()).is_err());
+}
+
+#[test]
 fn ingress_rejects_open_or_inconsistent_inventory() {
     let context =
         FrozenAudioContext::capture(&fixture(AudioSample(0), SourceAudioMapping::FitBeat)).unwrap();
     let mut value: Value = serde_json::from_str(&context.to_json().unwrap()).unwrap();
     let baseline = value.clone();
-    value["schema_version"] = json!(2);
+    value["schema_version"] = json!(4);
     assert_eq!(
         FrozenAudioContext::from_json(&value.to_string())
             .unwrap_err()
@@ -279,8 +368,8 @@ fn ingress_rejects_open_or_inconsistent_inventory() {
         DocumentErrorCode::LimitExceeded
     );
     let duplicate = context.to_json().unwrap().replacen(
-        "\"schema_version\":1",
-        "\"schema_version\":1,\"schema_version\":1",
+        "\"schema_version\":3",
+        "\"schema_version\":3,\"schema_version\":3",
         1,
     );
     assert!(FrozenAudioContext::from_json(&duplicate).is_err());
@@ -308,6 +397,7 @@ fn compact_repeat_overrides_and_lineage_survive_capture() {
     value["nodes"]["alternate"] = serde_json::to_value(BeatNode::hold(
         "alternate",
         HoldRecipe {
+            picture_context: None,
             duration: frames(10),
             video: HoldVideo::Background,
             audio: HoldAudio::Silence,

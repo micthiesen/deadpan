@@ -1,0 +1,67 @@
+{
+  "protocol": 1,
+  "project_id": "c11cecb6-2308-451b-a3cf-d2920bdd2541",
+  "expected_revision": "2e66eda3-b90c-421d-92df-26e8660fabaa",
+  "new_revision": "nested-seed",
+  "command": {
+    "command": "insert",
+    "parent": "23ea72dd-71b8-4dd6-adf2-aac559bc0de2",
+    "index": 0,
+    "subtree": {
+      "root": "outer",
+      "nodes": {
+        "outer": {
+          "label": "Group",
+          "kind": {
+            "type": "sequence",
+            "children": [
+              "inner"
+            ]
+          }
+        },
+        "inner": {
+          "label": "Group",
+          "kind": {
+            "type": "sequence",
+            "children": [
+              "first",
+              "second"
+            ]
+          }
+        },
+        "first": {
+          "label": "Hold",
+          "kind": {
+            "type": "hold",
+            "recipe": {
+              "duration": 4,
+              "video": {
+                "type": "background"
+              },
+              "audio": {
+                "type": "silence"
+              }
+            }
+          }
+        },
+        "second": {
+          "label": "Hold",
+          "kind": {
+            "type": "hold",
+            "recipe": {
+              "duration": 3,
+              "video": {
+                "type": "background"
+              },
+              "audio": {
+                "type": "silence"
+              }
+            }
+          }
+        }
+      },
+      "overrides": {},
+      "gap_overrides": {}
+    }
+  }
+}

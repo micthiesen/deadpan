@@ -1,0 +1,45 @@
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 00s
+     Running tests/audio_inspection.rs (target/debug/deps/audio_inspection-74cacaa23c2c07b5)
+
+running 14 tests
+test unspecified_layout_and_legacy_unqualified_assets_are_not_guessed ... ok
+test gap::unplayed_gap_reads_revalidate_original_bytes_before_returning_pcm ... ok
+test source_repeat_gaps_and_silent_hold_boundaries_follow_exact_sequence_allocation ... ok
+test invalid_ranges_and_cancellation_fail_without_returning_partial_pcm ... ok
+test actual_aac_pcm_inspection_is_read_only_beside_writer_and_matches_original_impulse ... ok
+test missing_and_corrupt_linked_originals_fail_before_pcm_is_exposed ... ok
+test frozen_session_resolves_historical_receipt_after_undo_and_asset_alias_reuse ... ok
+test physical_domain_cli_reads_hidden_negative_source_and_retained_history ... ok
+test gap::pause_captures_unplayed_gap_then_growth_and_historical_reads_keep_verified_media ... ok
+test placement_cli_uses_selected_revision_recipe_and_never_changes_history ... ok
+test definition_cli_reads_unplayed_default_from_current_and_historical_media ... ok
+test gap::repeat_gap_cli_reads_unplayed_recipe_and_retained_history_without_writes ... ok
+test mapped_inspection_prepares_preserve_from_historical_aac_without_writing ... ok
+test room_tone_inspection_loops_an_explicit_aac_range_and_retains_silent_time ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 11.11s
+
+     Running tests/project_commands.rs (target/debug/deps/project_commands-014501bb02c3077d)
+
+running 16 tests
+test doctor_reports_gap_binding_document_and_migration_schemas ... ok
+test failed_migration_returns_retained_backup_and_preserves_original ... ok
+test malformed_or_future_protocol_is_rejected_before_mutation ... ok
+test writer_lock_is_enforced_between_processes_but_readers_and_dry_run_work ... ok
+test selection_resolution_is_revision_checked_exact_and_read_only ... ok
+test current_generation_requires_host_reconciliation_but_allows_cli_preview ... ok
+test history_dry_runs_work_with_a_writer_and_preserve_the_redo_path ... ok
+test headless_split_preview_commit_and_history_share_one_exact_command ... ok
+test dry_run_and_commit_preserve_actionable_domain_errors ... ok
+test headless_captured_view_is_inspectable_reversible_and_validated_before_commit ... ok
+test headless_edit_dry_run_conflict_and_durable_history ... ok
+test headless_migration_and_plan_inspection_are_explicit_and_read_only ... ok
+test sparse_override_commands_and_inspection_share_revision_and_dry_run_guards ... ok
+test nested_occurrence_command_is_atomic_and_uses_the_same_headless_plan ... ok
+test persistent_mark_queries_and_loss_states_share_the_headless_command_path ... ok
+test independent_stream_mappings_use_headless_commands_and_durable_undo ... ok
+
+test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.92s
+

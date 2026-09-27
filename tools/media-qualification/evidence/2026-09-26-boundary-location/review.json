@@ -1,0 +1,39 @@
+{
+  "scope": "Exact boundary locator increment relative to the source checkpoint in before/, not the accumulated Git diff",
+  "git_review_base": "origin/main",
+  "paths": [
+    "crates/deadpan-cli/src/lib.rs",
+    "crates/deadpan-cli/tests/boundary_location.rs",
+    "crates/deadpan-core/src/anchor.rs",
+    "crates/deadpan-core/src/anchor/location.rs",
+    "crates/deadpan-core/src/marks.rs",
+    "crates/deadpan-core/tests/anchors.rs",
+    "crates/deadpan-core/tests/anchors/location.rs"
+  ],
+  "general": {
+    "agent": "interior_general_review",
+    "result": "No actionable findings",
+    "focus": [
+      "exact prefix-index equivalence for mark transforms",
+      "zero-duration child slots",
+      "stable Repeat paths and implicit-gap terminals",
+      "shared comparison and scope bounds",
+      "strict revision-bound read-only CLI"
+    ],
+    "cargo_run": false
+  },
+  "timing": {
+    "agent": "interior_timing_review",
+    "result": "No findings",
+    "focus": [
+      "fractional Retime coordinates",
+      "partition and crop seam bias",
+      "nested Repeat identities and owned gaps",
+      "independent expanded half-frame reference",
+      "max-depth and shared-budget behavior"
+    ],
+    "cargo_run": false
+  },
+  "parent_triage": "No findings to apply or dismiss; inspected current index/mark diffs and CLI behavior tests. Verification is recorded separately.",
+  "schema_change": false
+}

@@ -1,0 +1,31 @@
+{
+  "protocol": 1,
+  "project_id": "d038df46-94c6-4c0a-9d11-038b0e6da220",
+  "expected_revision": "old-source-prefix",
+  "new_revision": "old-source-interior",
+  "command": {
+    "command": "insert_time",
+    "at": 2,
+    "hold": {
+      "duration": 2,
+      "video": {
+        "type": "background"
+      },
+      "audio": {
+        "type": "silence"
+      }
+    },
+    "id": "old-source-interior-hold",
+    "identities": {
+      "nodes": [
+        "old-source-interior-left",
+        "old-source-interior-right",
+        "old-source-interior-source"
+      ]
+    },
+    "timing": {
+      "allocation": "old-source-interior",
+      "ordinal": 0
+    }
+  }
+}

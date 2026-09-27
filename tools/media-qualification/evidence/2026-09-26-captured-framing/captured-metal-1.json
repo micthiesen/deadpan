@@ -1,0 +1,5 @@
+{
+  "error": "No suitable graphics adapter found; noop not requested, vulkan not requested, metal found no adapters, dx12 not requested, gl not requested, webgpu not requested",
+  "schema_version": 1,
+  "status": "failed"
+}

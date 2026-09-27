@@ -1,0 +1,21 @@
+{
+  "protocol": 1,
+  "project_id": "4d2f760f-3e30-464e-87d5-2730c09aafcc",
+  "expected_revision": "insert-child",
+  "new_revision": "repeat",
+  "command": {
+    "command": "wrap_repeat",
+    "node": "child",
+    "id": "repeat",
+    "plays": 3,
+    "gap": {
+      "duration": 1,
+      "video": {
+        "type": "background"
+      },
+      "audio": {
+        "type": "silence"
+      }
+    }
+  }
+}

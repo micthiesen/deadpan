@@ -1,0 +1,14 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "-p",
+    "deadpan-playback",
+    "--lib"
+  ],
+  "exit_code": 101,
+  "seconds": 36.1367137497291,
+  "changes_to_test_or_production_timeouts": false,
+  "system_load_observation": "sysctl vm.loadavg was denied by the sandbox; no numeric load measurement available"
+}

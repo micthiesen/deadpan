@@ -320,6 +320,7 @@ fn schema12_preserves_partitions_in_documents_subtrees_and_history() {
                     .map(|id| (id.clone(), document.nodes()[&id].clone()))
                     .into(),
                 overrides: Default::default(),
+                gap_overrides: Default::default(),
             },
         },
     );

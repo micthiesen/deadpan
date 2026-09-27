@@ -99,6 +99,7 @@ fn document(hold_start: i64) -> ProjectDocument {
             BeatNode::hold(
                 "Quiet",
                 HoldRecipe {
+                    picture_context: None,
                     duration: duration(2),
                     video: HoldVideo::Background,
                     audio: HoldAudio::Silence,

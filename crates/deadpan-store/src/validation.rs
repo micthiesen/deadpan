@@ -5,6 +5,8 @@ use deadpan_core::{
     CommandRequest, EditTransaction, MAX_IDENTITY_BYTES, ProjectDocument, RevisionId, legacy_v1,
     legacy_v2, legacy_v3, legacy_v4, legacy_v5, legacy_v6, legacy_v7, legacy_v8, legacy_v9,
     legacy_v10, legacy_v11, legacy_v12, legacy_v13, legacy_v14, legacy_v15, legacy_v16, legacy_v17,
+    legacy_v18, legacy_v19, legacy_v20, legacy_v21, legacy_v22, legacy_v23, legacy_v24, legacy_v25,
+    legacy_v26, legacy_v27,
 };
 use rusqlite::{Connection, params};
 
@@ -178,6 +180,16 @@ pub(crate) fn migrate_history(connection: &Connection, version: u32) -> Result<(
         21 => ReplaySchema::V15,
         22 => ReplaySchema::V16,
         23 => ReplaySchema::V17,
+        24 => ReplaySchema::V18,
+        25 => ReplaySchema::V19,
+        26 => ReplaySchema::V20,
+        27 => ReplaySchema::V21,
+        28 => ReplaySchema::V22,
+        29 => ReplaySchema::V23,
+        30 => ReplaySchema::V24,
+        31 => ReplaySchema::V25,
+        32 => ReplaySchema::V26,
+        33 => ReplaySchema::V27,
         _ => return Err(StoreError::UnsupportedSchema(version)),
     };
     replay(connection, schema)
@@ -203,6 +215,16 @@ enum ReplaySchema {
     V15,
     V16,
     V17,
+    V18,
+    V19,
+    V20,
+    V21,
+    V22,
+    V23,
+    V24,
+    V25,
+    V26,
+    V27,
 }
 
 enum StoredDocument {
@@ -224,6 +246,16 @@ enum StoredDocument {
     V15(legacy_v15::Document),
     V16(legacy_v16::Document),
     V17(legacy_v17::Document),
+    V18(legacy_v18::Document),
+    V19(legacy_v19::Document),
+    V20(legacy_v20::Document),
+    V21(legacy_v21::Document),
+    V22(legacy_v22::Document),
+    V23(legacy_v23::Document),
+    V24(legacy_v24::Document),
+    V25(legacy_v25::Document),
+    V26(legacy_v26::Document),
+    V27(legacy_v27::Document),
 }
 impl StoredDocument {
     fn revision_id(&self) -> &RevisionId {
@@ -246,6 +278,16 @@ impl StoredDocument {
             Self::V15(doc) => doc.revision_id(),
             Self::V16(doc) => doc.revision_id(),
             Self::V17(doc) => doc.revision_id(),
+            Self::V18(doc) => doc.revision_id(),
+            Self::V19(doc) => doc.revision_id(),
+            Self::V20(doc) => doc.revision_id(),
+            Self::V21(doc) => doc.revision_id(),
+            Self::V22(doc) => doc.revision_id(),
+            Self::V23(doc) => doc.revision_id(),
+            Self::V24(doc) => doc.revision_id(),
+            Self::V25(doc) => doc.revision_id(),
+            Self::V26(doc) => doc.revision_id(),
+            Self::V27(doc) => doc.revision_id(),
         }
     }
     fn initial(self) -> Result<ProjectDocument, StoreError> {
@@ -268,6 +310,16 @@ impl StoredDocument {
             Self::V15(doc) => Ok(doc.upgrade()?),
             Self::V16(doc) => Ok(doc.upgrade()?),
             Self::V17(doc) => Ok(doc.upgrade()?),
+            Self::V18(doc) => Ok(doc.upgrade()?),
+            Self::V19(doc) => Ok(doc.upgrade()?),
+            Self::V20(doc) => Ok(doc.upgrade()?),
+            Self::V21(doc) => Ok(doc.upgrade()?),
+            Self::V22(doc) => Ok(doc.upgrade()?),
+            Self::V23(doc) => Ok(doc.upgrade()?),
+            Self::V24(doc) => Ok(doc.upgrade()?),
+            Self::V25(doc) => Ok(doc.upgrade()?),
+            Self::V26(doc) => Ok(doc.upgrade()?),
+            Self::V27(doc) => Ok(doc.upgrade()?),
         }
     }
     fn matches(&self, doc: &ProjectDocument) -> bool {
@@ -290,6 +342,16 @@ impl StoredDocument {
             Self::V15(stored) => stored.matches(doc),
             Self::V16(stored) => stored.matches(doc),
             Self::V17(stored) => stored.matches(doc),
+            Self::V18(stored) => stored.matches(doc),
+            Self::V19(stored) => stored.matches(doc),
+            Self::V20(stored) => stored.matches(doc),
+            Self::V21(stored) => stored.matches(doc),
+            Self::V22(stored) => stored.matches(doc),
+            Self::V23(stored) => stored.matches(doc),
+            Self::V24(stored) => stored.matches(doc),
+            Self::V25(stored) => stored.matches(doc),
+            Self::V26(stored) => stored.matches(doc),
+            Self::V27(stored) => stored.matches(doc),
         }
     }
 }
@@ -319,6 +381,16 @@ fn read_replay_revision(
         ReplaySchema::V15 => StoredDocument::V15(legacy_v15::Document::from_json(&json)?),
         ReplaySchema::V16 => StoredDocument::V16(legacy_v16::Document::from_json(&json)?),
         ReplaySchema::V17 => StoredDocument::V17(legacy_v17::Document::from_json(&json)?),
+        ReplaySchema::V18 => StoredDocument::V18(legacy_v18::Document::from_json(&json)?),
+        ReplaySchema::V19 => StoredDocument::V19(legacy_v19::Document::from_json(&json)?),
+        ReplaySchema::V20 => StoredDocument::V20(legacy_v20::Document::from_json(&json)?),
+        ReplaySchema::V21 => StoredDocument::V21(legacy_v21::Document::from_json(&json)?),
+        ReplaySchema::V22 => StoredDocument::V22(legacy_v22::Document::from_json(&json)?),
+        ReplaySchema::V23 => StoredDocument::V23(legacy_v23::Document::from_json(&json)?),
+        ReplaySchema::V24 => StoredDocument::V24(legacy_v24::Document::from_json(&json)?),
+        ReplaySchema::V25 => StoredDocument::V25(legacy_v25::Document::from_json(&json)?),
+        ReplaySchema::V26 => StoredDocument::V26(legacy_v26::Document::from_json(&json)?),
+        ReplaySchema::V27 => StoredDocument::V27(legacy_v27::Document::from_json(&json)?),
     };
     if document.revision_id().as_str() != id {
         return Err(history_error("revision identity disagrees with document"));
@@ -451,7 +523,33 @@ fn replay(connection: &Connection, schema: ReplaySchema) -> Result<(), StoreErro
                     ReplaySchema::V15 => legacy_v15::upgrade_request(&request_json)?,
                     ReplaySchema::V16 => legacy_v16::upgrade_request(&request_json)?,
                     ReplaySchema::V17 => legacy_v17::upgrade_request(&request_json)?,
+                    ReplaySchema::V18 => legacy_v18::upgrade_request(&request_json)?,
+                    ReplaySchema::V19 => legacy_v19::upgrade_request(&request_json)?,
+                    ReplaySchema::V20 => legacy_v20::upgrade_request(&request_json)?,
+                    ReplaySchema::V21 => legacy_v21::upgrade_request(&request_json)?,
+                    ReplaySchema::V22 => legacy_v22::upgrade_request(&request_json)?,
+                    ReplaySchema::V23 => legacy_v23::upgrade_request(&request_json)?,
+                    ReplaySchema::V24 => legacy_v24::upgrade_request(&request_json)?,
+                    ReplaySchema::V25 => legacy_v25::upgrade_request(&request_json)?,
+                    ReplaySchema::V26 => legacy_v26::upgrade_request(&request_json)?,
+                    ReplaySchema::V27 => legacy_v27::upgrade_request(&request_json)?,
                 };
+                if migrate {
+                    // An old command must have been admissible in its original
+                    // pre-edit context. Matching a newly supported operation's
+                    // patches cannot legitimize a forged legacy chronology.
+                    if schema == ReplaySchema::V27 {
+                        legacy_v27::validate_request_context(&current, &request)?;
+                    } else if schema == ReplaySchema::V26 {
+                        legacy_v26::validate_request_context(&current, &request)?;
+                    } else if schema == ReplaySchema::V25 {
+                        legacy_v25::validate_request_context(&current, &request)?;
+                    } else if schema == ReplaySchema::V24 {
+                        legacy_v24::validate_request_context(&current, &request)?;
+                    } else {
+                        legacy_v23::validate_request_context(&current, &request)?;
+                    }
+                }
                 let calculated = deadpan_core::apply(&current, &request)?;
                 let matches_edit = match schema {
                     ReplaySchema::Current => {
@@ -474,6 +572,16 @@ fn replay(connection: &Connection, schema: ReplaySchema) -> Result<(), StoreErro
                     ReplaySchema::V15 => legacy_v15::matches_edit(&edit_json, &calculated)?,
                     ReplaySchema::V16 => legacy_v16::matches_edit(&edit_json, &calculated)?,
                     ReplaySchema::V17 => legacy_v17::matches_edit(&edit_json, &calculated)?,
+                    ReplaySchema::V18 => legacy_v18::matches_edit(&edit_json, &calculated)?,
+                    ReplaySchema::V19 => legacy_v19::matches_edit(&edit_json, &calculated)?,
+                    ReplaySchema::V20 => legacy_v20::matches_edit(&edit_json, &calculated)?,
+                    ReplaySchema::V21 => legacy_v21::matches_edit(&edit_json, &calculated)?,
+                    ReplaySchema::V22 => legacy_v22::matches_edit(&edit_json, &calculated)?,
+                    ReplaySchema::V23 => legacy_v23::matches_edit(&edit_json, &calculated)?,
+                    ReplaySchema::V24 => legacy_v24::matches_edit(&edit_json, &calculated)?,
+                    ReplaySchema::V25 => legacy_v25::matches_edit(&edit_json, &calculated)?,
+                    ReplaySchema::V26 => legacy_v26::matches_edit(&edit_json, &calculated)?,
+                    ReplaySchema::V27 => legacy_v27::matches_edit(&edit_json, &calculated)?,
                 };
                 let next_document = calculated.forward.apply(&current)?;
                 if !matches_edit || !next.matches(&next_document) {

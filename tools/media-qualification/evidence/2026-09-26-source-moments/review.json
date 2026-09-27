@@ -1,0 +1,28 @@
+{
+  "workflow": "check",
+  "base": "origin/main",
+  "subject": "Exact Original moment candidates and selected audio placements only; prior captured framing retained as baseline",
+  "reviewers": [
+    {
+      "agent": "source_selection_general_review",
+      "scope": "core/media/context host correctness and tests",
+      "findings": []
+    },
+    {
+      "agent": "source_selection_migration_review",
+      "scope": "strict legacy grammars, migration and history",
+      "findings": []
+    },
+    {
+      "agent": "source_selection_audio_review",
+      "scope": "sample phase, physical endpoints, transfer, Preserve and bindings",
+      "findings": []
+    }
+  ],
+  "root_additions": [
+    "Closed audio-context schema1 input and version-independent exact historical content authentication",
+    "Captured-framing aggregate preflight before frozen core19 snapshot materialization",
+    "Outside-host/zero-sample selections and current-window changes after timing capture"
+  ],
+  "remaining_findings": []
+}

@@ -1,9 +1,20 @@
 use deadpan_core::{
-    AssetId, EndpointPolicy, ExactRatio, FrameDuration, FramingPose, IndexedSourceFrame,
-    InstancePath, IterationId, ProjectFrame, ProjectId, RevisionId, SourceFrameId,
-    SourceFrameIndex, SourcePoint, SourceSpan, SourceTimeBase,
+    AssetId, CapturedFraming, EndpointPolicy, ExactRatio, FrameDuration, FramingPose,
+    IndexedSourceFrame, InstancePath, IterationId, ProjectFrame, ProjectId, RevisionId,
+    SourceFrameId, SourceFrameIndex, SourcePoint, SourceSpan, SourceTimeBase,
 };
-use serde::Serialize;
+use serde::{Serialize, Serializer};
+use std::sync::Arc;
+
+fn serialize_picture_context<S>(
+    context: &Option<Arc<CapturedFraming>>,
+    serializer: S,
+) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    context.as_deref().serialize(serializer)
+}
 
 use crate::{LookupStats, PlanError};
 
@@ -102,19 +113,24 @@ pub struct PictureSample {
     pub project_id: ProjectId,
     pub revision_id: RevisionId,
     pub project_frame: ProjectFrame,
-    /// For ordinary pictures this targets the Source or Hold. For a Repeat gap
-    /// it targets the Repeat, with only its ancestor repeats in the path. Thus
-    /// this remains a valid core InstancePath in either case.
+    /// Ordinary pictures, including explicit gap branches, target the Source
+    /// or Hold. A configured Repeat gap targets the Repeat with only ancestor
+    /// repeats in the path.
     pub instance: InstancePath,
     /// A gap belongs to the preceding stable iteration, never to a shifting
     /// numeric play position. The last iteration has no following gap.
     pub gap_after: Option<IterationId>,
-    /// Exact coordinate within the sampled Source, Hold, or gap recipe.
+    /// Exact coordinate within the sampled Source, Hold, or default gap recipe.
     pub local_position: ExactRatio,
     pub picture: Picture,
+    /// Geometry retained by an inserted Hold, independent of its provider.
+    /// Arc keeps per-frame sampling from copying bounded authored context.
+    #[serde(serialize_with = "serialize_picture_context")]
+    pub picture_context: Option<Arc<CapturedFraming>>,
     /// Provider to root, including scopes without authored framing. A Repeat
-    /// gap has no provider node scope; consumers first apply an identity provider
-    /// clip, then this list beginning with the Repeat's own operation.
+    /// default gap has no provider node scope; consumers first apply an identity
+    /// provider clip, then this list beginning with the Repeat's operation.
+    /// An explicit gap branch retains its provider and ancestor scopes.
     pub framing: Vec<PictureFraming>,
     pub lookup: LookupStats,
 }

@@ -6,13 +6,15 @@
 //! and reverified original bytes can enter through this host boundary.
 
 use std::collections::BTreeMap;
+use std::ops::Range;
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use deadpan_core::{
-    AssetId, AssetRecord, Command, CommandRequest, EditTransaction, FrameDuration, FrameRate,
-    FrameRateOrigin, GeometryOrigin, NodeId, PrimarySourceImport, ProjectDocument, RevisionId,
-    SourceFrameIndex, SourceInsertion, SourceQualificationId,
+    AssetId, AssetRecord, AudioTimingId, Command, CommandRequest, EditTransaction, FrameDuration,
+    FrameRate, FrameRateOrigin, GeometryOrigin, NodeId, PrimarySourceImport, ProjectDocument,
+    RevisionId, SourceFrameIndex, SourceInsertion, SourceQualificationId,
 };
+use deadpan_media::source_import_timing::derive_source_moment;
 use deadpan_media::source_qualification::{
     DecodedSourceQualification, MAX_SOURCE_QUALIFICATION_JSON_BYTES, SourceQualificationSnapshot,
 };
@@ -69,6 +71,23 @@ pub struct SourceRegistration {
     pub new_asset_id: AssetId,
     pub label: String,
     pub insertion: Option<SourceInsertionRequest>,
+}
+
+/// Paste a measured, half-open Original picture selection into an explicit
+/// ordinary Sequence slot. The store derives timing from the retained receipt;
+/// callers cannot replace its measured source mapping or choose a new asset.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SourceMomentInsertionRequest {
+    pub expected_revision: RevisionId,
+    pub new_revision: RevisionId,
+    pub asset: AssetId,
+    pub parent: NodeId,
+    pub index: usize,
+    pub node: NodeId,
+    pub label: String,
+    pub timing: AudioTimingId,
+    pub ordinals: Range<u64>,
 }
 
 #[derive(Debug, Serialize)]
@@ -188,6 +207,43 @@ struct PreparedRegistration {
 }
 
 impl ProjectStore {
+    /// Resolve a paste for relevance without mutating history or publishing a
+    /// receipt. Only a currently admitted source from this live session can paste.
+    pub fn preview_prepared_source_moment(
+        &self,
+        input: &SourceMomentInsertionRequest,
+        source: &PreparedSourceRegistration,
+        cancelled: &AtomicBool,
+    ) -> Result<EditTransaction, StoreError> {
+        source.original.validate_for(self, cancelled)?;
+        let transaction = self.connection.unchecked_transaction()?;
+        let plan = prepare_source_moment(&transaction, input, source)?;
+        source.original.recheck(cancelled)?;
+        Ok(plan.edit)
+    }
+
+    /// Atomically splice an existing qualified Original moment and preserve the
+    /// suffix's audio sample alignment. Final byte-availability checks inspect
+    /// metadata only, after the edit and relevance have been staged together.
+    pub fn commit_prepared_source_moment(
+        &mut self,
+        input: &SourceMomentInsertionRequest,
+        source: &PreparedSourceRegistration,
+        relevance: Option<&RelevancePlan>,
+        cancelled: &AtomicBool,
+    ) -> Result<CommitOutcome, StoreError> {
+        self.require_writer()?;
+        source.original.validate_for(self, cancelled)?;
+        let transaction = self
+            .connection
+            .transaction_with_behavior(TransactionBehavior::Immediate)?;
+        let plan = prepare_source_moment(&transaction, input, source)?;
+        let outcome = crate::write_command_plan(&transaction, plan, relevance)?;
+        source.original.recheck(cancelled)?;
+        transaction.commit()?;
+        Ok(outcome)
+    }
+
     /// Derives the recorded first primary source's geometry at the already
     /// fixed project rate. Metadata can be inspected even when media is offline.
     pub fn preview_primary_geometry(
@@ -382,6 +438,61 @@ impl ProjectStore {
             commit,
         })
     }
+}
+
+fn prepare_source_moment(
+    connection: &Connection,
+    input: &SourceMomentInsertionRequest,
+    source: &PreparedSourceRegistration,
+) -> Result<CommandPlan, StoreError> {
+    let current = crate::read_snapshot(connection)?;
+    if current.revision_id() != &input.expected_revision {
+        return Err(StoreError::RevisionConflict {
+            expected: input.expected_revision.as_str().into(),
+            current: current.revision_id().as_str().into(),
+        });
+    }
+    let record = current
+        .assets()
+        .get(&input.asset)
+        .ok_or_else(|| invalid("moment asset is absent from the selected revision"))?;
+    if record.source_qualification.as_ref() != Some(source.receipt.id())
+        || *record != source.receipt.asset_record(record.label.clone())?
+    {
+        return Err(invalid(
+            "moment asset disagrees with prepared source qualification",
+        ));
+    }
+    check_original_binding(connection, &source.receipt)?;
+    if !matching_receipt_exists(connection, &source.receipt, &source.bytes)? {
+        return Err(invalid("moment source qualification is missing"));
+    }
+    let video = source
+        .receipt
+        .snapshot
+        .video()
+        .ok_or_else(|| invalid("moment source has no selected picture"))?;
+    let timing = derive_source_moment(
+        video.index(),
+        source.receipt.snapshot.audio(),
+        input.ordinals.clone(),
+        current.presentation_basis().frame_rate,
+    )
+    .map_err(deadpan_media::source_qualification::SourceQualificationError::from)?;
+    let request = CommandRequest {
+        project_id: current.project_id().clone(),
+        expected_revision: input.expected_revision.clone(),
+        new_revision: input.new_revision.clone(),
+        command: Command::SpliceSource {
+            parent: input.parent.clone(),
+            index: input.index,
+            source: timing.source_node(input.asset.clone()),
+            id: input.node.clone(),
+            label: input.label.clone(),
+            timing: input.timing.clone(),
+        },
+    };
+    crate::prepare_command(connection, &request)
 }
 
 fn prepare_receipt(
@@ -602,6 +713,28 @@ fn write_receipt(
     receipt: &SourceQualificationReceipt,
     bytes: &[u8],
 ) -> Result<(), StoreError> {
+    if matching_receipt_exists(connection, receipt, bytes)? {
+        return Ok(());
+    }
+    let count: i64 =
+        connection.query_row("SELECT count(*) FROM source_qualifications", [], |row| {
+            row.get(0)
+        })?;
+    if count >= MAX_QUALIFICATIONS {
+        return Err(invalid("source qualification count limit reached"));
+    }
+    connection.execute(
+        "INSERT INTO source_qualifications(id,original_content_id,original_ref,snapshot) VALUES(?1,?2,?3,?4)",
+        params![receipt.id.as_str(), receipt.original.content().to_string(), serde_json::to_string(&receipt.original)?, bytes],
+    )?;
+    Ok(())
+}
+
+fn matching_receipt_exists(
+    connection: &Connection,
+    receipt: &SourceQualificationReceipt,
+    bytes: &[u8],
+) -> Result<bool, StoreError> {
     // The incoming opaque token already owns canonical, hashed evidence. Compare
     // existing bytes inside SQLite instead of deserializing and rehashing a large
     // index on the writer thread. Exact equality retains collision/corruption checks.
@@ -621,20 +754,9 @@ fn write_receipt(
         {
             return Err(invalid("immutable qualification identity collision"));
         }
-        return Ok(());
+        return Ok(true);
     }
-    let count: i64 =
-        connection.query_row("SELECT count(*) FROM source_qualifications", [], |row| {
-            row.get(0)
-        })?;
-    if count >= MAX_QUALIFICATIONS {
-        return Err(invalid("source qualification count limit reached"));
-    }
-    connection.execute(
-        "INSERT INTO source_qualifications(id,original_content_id,original_ref,snapshot) VALUES(?1,?2,?3,?4)",
-        params![receipt.id.as_str(), receipt.original.content().to_string(), serde_json::to_string(&receipt.original)?, bytes],
-    )?;
-    Ok(())
+    Ok(false)
 }
 
 pub(crate) fn read_receipt(

@@ -29,8 +29,21 @@ tracks remain rejected. SimpleTags must be flat, with at most 1,024 in the file;
 this bounds FFmpeg's language-dependent metadata expansion and dictionary work.
 The audio adapter still rejects Matroska.
 
-PCM16 RIFF/WAVE audio admission is unchanged. Other codecs and container grammars
-remain required product work; rejecting them here does not reduce the spec.
+PCM16 RIFF/WAVE admits one plain `fmt16` or one closed extensible `fmt40` before
+its aligned nonempty data chunk. The extensible form requires tag `0xfffe`,
+`cbSize = 22`, sixteen valid bits, the exact PCM subtype GUID and a nonzero
+speaker mask containing only the eighteen canonical WAVE speaker bits, with
+one bit per channel. Channel/rate, block alignment, byte rate, file length,
+sample count, packet and header budgets remain checked before FFmpeg opening.
+Unknown extensions, reserved speaker bits, float and other subtypes stay rejected.
+The downstream matrix independently checks whether it supports the declared
+layout. Plain WAV channels remain unspecified when the file supplies no layout.
+The field contract follows Microsoft's
+[WAVEFORMATEXTENSIBLE definition](https://learn.microsoft.com/en-us/windows/win32/api/mmreg/ns-mmreg-waveformatextensible);
+Deadpan deliberately admits only the exact PCM16 subset above. See
+[source-voice qualification](qualification/source-voices-2026-09-27.md) for real
+declared-layout decoding and malformed-header tests. Other codecs and container
+grammars remain required product work; rejecting them here does not reduce the spec.
 
 ## Codec expansion and controlled decoding
 

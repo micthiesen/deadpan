@@ -1,0 +1,58 @@
+{
+  "commands": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "deadpan-plan",
+        "--test",
+        "routed_voice",
+        "--test",
+        "sound_route_sampling",
+        "--locked"
+      ],
+      "exit_code": 0,
+      "seconds": 51.240137125365436,
+      "log": "0.log",
+      "tests": {
+        "passed": 19,
+        "failed": 0,
+        "ignored": 0
+      }
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "deadpan-audio",
+        "--test",
+        "audio_definition",
+        "projection::routed",
+        "--locked"
+      ],
+      "exit_code": 0,
+      "seconds": 41.88495387462899,
+      "log": "1.log",
+      "tests": {
+        "passed": 3,
+        "failed": 0,
+        "ignored": 0
+      }
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "deadpan-playback",
+        "source_voice::routed",
+        "--locked"
+      ],
+      "exit_code": 101,
+      "seconds": 24.39678724994883,
+      "log": "2.log"
+    }
+  ]
+}

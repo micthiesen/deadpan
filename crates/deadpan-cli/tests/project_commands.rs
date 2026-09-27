@@ -13,6 +13,9 @@ use serde_json::{Value, json};
 
 type Result<T = ()> = std::result::Result<T, Box<dyn Error>>;
 
+#[path = "project_commands/nested_pause.rs"]
+mod nested_pause;
+
 fn cli(arguments: &[&str]) -> Result<Output> {
     Ok(ProcessCommand::new(env!("CARGO_BIN_EXE_deadpan-cli"))
         .args(arguments)
@@ -27,6 +30,26 @@ fn success(arguments: &[&str]) -> Result<Value> {
         String::from_utf8_lossy(&output.stderr)
     );
     Ok(serde_json::from_slice(&output.stdout)?)
+}
+
+#[test]
+fn doctor_reports_speed_editing_document_and_migration_schemas() -> Result {
+    let report = success(&["doctor"])?;
+    assert_eq!(report["document_schema"], 28);
+    assert_eq!(report["database_schema"], 34);
+    let partial = report["partial"].as_array().unwrap();
+    for capability in [
+        "schema-1-through-33-migration",
+        "native-original-audition",
+        "selection-loop-audition",
+        "native-structural-speed-editing",
+    ] {
+        assert!(partial.contains(&json!(capability)), "{capability}");
+    }
+    let unimplemented = report["unimplemented"].as_array().unwrap();
+    assert!(!unimplemented.contains(&json!("original-view-playback")));
+    assert!(unimplemented.contains(&json!("full-device-and-acoustic-qualification")));
+    Ok(())
 }
 
 fn create(root: &Path) -> Result<PathBuf> {
@@ -47,14 +70,84 @@ fn create(root: &Path) -> Result<PathBuf> {
 fn request(document: &ProjectDocument) -> Result<Value> {
     let node = NodeId::new("hold")?;
     Ok(json!({
-        "protocol": 1, "project_id": document.project_id(), "expected_revision": document.revision_id(), "new_revision": "after-hold",
-        "command": Command::Insert {parent: document.root().clone(), index: 0, subtree: Subtree {
-                overrides: Default::default(),
-            root: node.clone(), nodes: BTreeMap::from([(node, BeatNode::hold("Silence", HoldRecipe {
-                duration: FrameDuration::new(45)?, video: HoldVideo::Background, audio: HoldAudio::Silence,
-            }))]),
-        }},
-    }))
+            "protocol": 1, "project_id": document.project_id(), "expected_revision": document.revision_id(), "new_revision": "after-hold",
+            "command": Command::Insert {parent: document.root().clone(), index: 0, subtree: Subtree {
+                    overrides: Default::default(),
+                    gap_overrides: Default::default(),
+                root: node.clone(), nodes: BTreeMap::from([(node, BeatNode::hold("Silence", HoldRecipe {
+     picture_context: None,
+    duration: FrameDuration::new(45)?, video: HoldVideo::Background, audio: HoldAudio::Silence,
+                }))]),
+            }},
+        }))
+}
+
+#[test]
+fn headless_captured_view_is_inspectable_reversible_and_validated_before_commit() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let package = create(scratch.path())?;
+    let path = package.to_str().unwrap();
+    let input = scratch.path().join("capture.json");
+    let file = input.to_str().unwrap();
+    let empty = ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?;
+    fs::write(&input, request(&empty)?.to_string())?;
+    success(&["command", path, "--json", file])?;
+    let before = ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?;
+    let context = json!({"canvases": [{
+        "width": 1920, "height": 1080, "fit": "fit",
+        "layers": [{
+            "center_x": {"numerator": "1", "denominator": "2"},
+            "center_y": {"numerator": "1", "denominator": "2"},
+            "scale": {"numerator": "27", "denominator": "20"}
+        }, null]
+    }]});
+    let edit = json!({
+        "protocol": 1, "project_id": before.project_id(),
+        "expected_revision": before.revision_id(), "new_revision": "captured",
+        "command": {"command": "set_hold_picture_context", "node": "hold", "context": context}
+    });
+    fs::write(&input, edit.to_string())?;
+    let preview = success(&["command", path, "--json", file, "--dry-run"])?;
+    assert_eq!(preview["edit"]["duration_delta"], 0);
+    assert_eq!(
+        ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?,
+        before
+    );
+    let committed = success(&["command", path, "--json", file])?;
+    assert_eq!(committed["outcome"]["edit"], preview["edit"]);
+    let inspected = success(&["inspect-plan", path, "--frame", "17"])?;
+    assert_eq!(inspected["sample"]["picture_context"], context);
+    let captured = ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?;
+    assert_eq!(captured.duration()?, before.duration()?);
+    assert_eq!(captured.audio_bindings(), before.audio_bindings());
+    let mut invalid = edit;
+    invalid["expected_revision"] = json!(captured.revision_id());
+    invalid["new_revision"] = json!("invalid-capture");
+    invalid["command"]["context"]["canvases"][0]["width"] = json!(1919);
+    fs::write(&input, invalid.to_string())?;
+    assert!(!cli(&["command", path, "--json", file])?.status.success());
+    assert_eq!(
+        ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?,
+        captured
+    );
+    invalid["new_revision"] = json!("clear-capture");
+    invalid["command"]["context"] = Value::Null;
+    fs::write(&input, invalid.to_string())?;
+    success(&["command", path, "--json", file])?;
+    let cleared = success(&["inspect-plan", path, "--frame", "17"])?;
+    assert!(cleared["sample"]["picture_context"].is_null());
+    success(&["project", "undo", path, "--expected", "clear-capture"])?;
+    assert_eq!(
+        ProjectStore::open(&package, AccessMode::ReadOnly)?
+            .snapshot()?
+            .nodes(),
+        captured.nodes()
+    );
+    assert_eq!(
+        success(&["inspect-plan", path, "--frame", "17"])?["sample"]["picture_context"],
+        context
+    );
+    Ok(())
 }
 
 #[test]
@@ -333,6 +426,7 @@ fn independent_stream_mappings_use_headless_commands_and_durable_undo() -> Resul
             subtree: Subtree {
                 root: source.clone(),
                 overrides: Default::default(),
+                gap_overrides: Default::default(),
                 nodes: BTreeMap::from([(
                     source.clone(),
                     BeatNode {
@@ -1000,11 +1094,13 @@ fn sparse_override_commands_and_inspection_share_revision_and_dry_run_guards() -
         subtree: Subtree {
             root: NodeId::new("custom")?,
             overrides: BTreeMap::new(),
+            gap_overrides: BTreeMap::new(),
             nodes: BTreeMap::from([(
                 NodeId::new("custom")?,
                 BeatNode::hold(
                     "Longer pause",
                     HoldRecipe {
+                        picture_context: None,
                         duration: FrameDuration::new(60)?,
                         video: HoldVideo::Background,
                         audio: HoldAudio::Silence,

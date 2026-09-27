@@ -1,0 +1,304 @@
+[
+  {
+    "command": [
+      "/private/tmp/deadpan-composite-splice-20260926/core23-deadpan-cli",
+      "doctor"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "fb8d56850f06602eda19cbf8d418938dc98e8d132b294208a53264fb8391ffd2",
+    "stderr": "",
+    "stdout": "{\n  \"application\": \"deadpan\",\n  \"architecture\": \"aarch64\",\n  \"database_schema\": 29,\n  \"device_output\": \"macos-bounded-limited-sequence-audition\",\n  \"document_schema\": 23,\n  \"edge_faded_pcm\": \"authored-boundary-exceptions-after-time-mapping-before-voice-effects\",\n  \"internal_audio_sample_rate\": 48000,\n  \"limited_pcm\": \"canonical-edge-faded-bus-with-finite-oversampled-limiter-before-missing-voice-mix-stages\",\n  \"os\": \"macos\",\n  \"partial\": [\n    \"structural-editing-commands\",\n    \"sqlite-project-history\",\n    \"schema-1-through-28-migration\",\n    \"single-original-project-baseline\",\n    \"native-documents-project-library\",\n    \"indexed-picture-plan\",\n    \"indexed-audio-plan\",\n    \"worker-dsp-adapter\",\n    \"source-audio-preparation\",\n    \"plan-driven-source-pcm\",\n    \"transparent-audio-partitions\",\n    \"retained-context-split\",\n    \"atomic-root-pause-insertion\",\n    \"logical-mark-bindings\",\n    \"exact-boundary-selectors\",\n    \"persistent-marks\",\n    \"sparse-play-overrides\",\n    \"nested-occurrence-edits\",\n    \"persistent-generation-requests\",\n    \"persistent-generation-attempts\",\n    \"authored-generated-hold-semantics\",\n    \"generated-media-conversion\",\n    \"native-bridge-bundle-qualification\",\n    \"durable-generated-bundle-acceptance\",\n    \"durable-original-byte-ownership\",\n    \"identity-checked-relinking\",\n    \"persistent-source-decoding\",\n    \"measured-source-audio-indexes\",\n    \"independent-source-audio-mapping\",\n    \"independent-source-video-mapping\",\n    \"exact-source-stream-placement\",\n    \"measured-import-timing-candidates\",\n    \"measured-original-moment-candidates\",\n    \"exact-source-audio-selections\",\n    \"durable-source-qualification\",\n    \"atomic-source-registration-and-insertion\",\n    \"background-import-preparation\",\n    \"automatic-presentation-basis\",\n    \"timed-basis-locking\",\n    \"explicit-canvas-geometry\",\n    \"shared-sdr-picture-pipeline\",\n    \"authored-framing-envelopes\",\n    \"ordered-canvas-framing\",\n    \"captured-hold-framing\",\n    \"native-camera-draft\",\n    \"native-source-preview\",\n    \"native-project-workspace\",\n    \"native-sequence-audition\"\n  ],\n  \"room_tone_pcm\": \"explicit-source-range-exact-overlap-before-effects\",\n  \"schema_version\": 1,\n  \"sequence_audition\": \"immutable-revision-device-clock-pictures-exact-paused-sample-resume\",\n  \"sqlite_version\": \"3.53.2\",\n  \"stage\": \"development-foundation\",\n  \"time_mapped_pcm\": \"bounded-continuous-preserve-before-effects\",\n  \"timing_probe\": {\n    \"frame\": 1,\n    \"frame_rate_denominator\": 1001,\n    \"frame_rate_numerator\": 30000,\n    \"sample_boundary\": 1602\n  },\n  \"unimplemented\": [\n    \"mastered-preview-audio\",\n    \"original-view-playback\",\n    \"full-device-and-acoustic-qualification\",\n    \"full-keyboard-editor\",\n    \"analysis\",\n    \"ai-generation\",\n    \"youtube-import\",\n    \"export\",\n    \"distribution\"\n  ],\n  \"version\": \"0.1.0\"\n}\n"
+  },
+  {
+    "command": [
+      "/private/tmp/deadpan-composite-splice-20260926/core23-deadpan-cli",
+      "project",
+      "migrate",
+      "/tmp/deadpan-composite-splice-20260926/fixture-v29/composite-insert-history.deadpan"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "8cb019511fbeab874f88c3a37b523c86c34f1c575cb9236e92d7925b650c8d4f",
+    "stderr": "",
+    "stdout": "{\n  \"migration\": {\n    \"backup\": \"/private/tmp/deadpan-composite-splice-20260926/fixture-v29/composite-insert-history.deadpan/Snapshots/before-schema-29-epd5vS.sqlite\",\n    \"from_schema\": 28,\n    \"to_schema\": 29\n  },\n  \"protocol\": 1\n}\n"
+  },
+  {
+    "command": [
+      "/private/tmp/deadpan-composite-splice-20260926/core23-deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-composite-splice-20260926/fixture-v29/composite-insert-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "55577907baf46d9ff3cf9dac26ddd4f61946cd138b7b1af72488fbf0c8733161",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "/private/tmp/deadpan-composite-splice-20260926/core23-deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-composite-splice-20260926/fixture-v29/composite-insert-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "55577907baf46d9ff3cf9dac26ddd4f61946cd138b7b1af72488fbf0c8733161",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "/private/tmp/deadpan-composite-splice-20260926/core23-deadpan-cli",
+      "command",
+      "/tmp/deadpan-composite-splice-20260926/fixture-v29/composite-insert-history.deadpan",
+      "--json",
+      "/tmp/deadpan-composite-splice-20260926/fixture-v29/core23-ordinary-insert.json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "fb9e62518743837b5b607dc9540bb64e006e2711d394c263615fc028d51670b2",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "/private/tmp/deadpan-composite-splice-20260926/core23-deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-composite-splice-20260926/fixture-v29/composite-insert-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "1e723be9d6802bed8f68062de0601ce2ea7b2ef63433c7401908be28b3e65a22",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "/private/tmp/deadpan-composite-splice-20260926/core23-deadpan-cli",
+      "command",
+      "/tmp/deadpan-composite-splice-20260926/fixture-v29/composite-insert-history.deadpan",
+      "--json",
+      "/tmp/deadpan-composite-splice-20260926/fixture-v29/core23-isolate-gap.json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "b17577f9825274e3da4dcc248de4ae220f4ee6921bfa247b721e67b0de0decdd",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "/private/tmp/deadpan-composite-splice-20260926/core23-deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-composite-splice-20260926/fixture-v29/composite-insert-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "afef5ed7124582101ecece6684b17211b4df55ffd88f503a0c44c45e9af66edc",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "/private/tmp/deadpan-composite-splice-20260926/core23-deadpan-cli",
+      "command",
+      "/tmp/deadpan-composite-splice-20260926/fixture-v29/composite-insert-history.deadpan",
+      "--json",
+      "/tmp/deadpan-composite-splice-20260926/fixture-v29/core23-gap-branch.json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "dc135f2034d2c5fea128ed48f1296ce559bd93deb872d98ae89ffbc2b24d7ef5",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "/private/tmp/deadpan-composite-splice-20260926/core23-deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-composite-splice-20260926/fixture-v29/composite-insert-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "27c2824a71cca9bb22e76d0b8dcf50ab590cffde90d925b5f0095b0a968588c3",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "/private/tmp/deadpan-composite-splice-20260926/core23-deadpan-cli",
+      "command",
+      "/tmp/deadpan-composite-splice-20260926/fixture-v29/composite-insert-history.deadpan",
+      "--json",
+      "/tmp/deadpan-composite-splice-20260926/fixture-v29/core23-occurrence-gap.json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "e32bbf5870fae21735d366dc0c4f3840ee3b8068585eee8eb6be84884d154d15",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "/private/tmp/deadpan-composite-splice-20260926/core23-deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-composite-splice-20260926/fixture-v29/composite-insert-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "bf6e776fa50e451f541df21e95c86e4f89aefac3614defa1f0b1665833c2e400",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "/private/tmp/deadpan-composite-splice-20260926/core23-deadpan-cli",
+      "command",
+      "/tmp/deadpan-composite-splice-20260926/fixture-v29/composite-insert-history.deadpan",
+      "--json",
+      "/tmp/deadpan-composite-splice-20260926/fixture-v29/core23-clear-gap.json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "d556919563f81704b9cd45978d2158606540fa8ebfe334fe5cb61ffc357b40cf",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "/private/tmp/deadpan-composite-splice-20260926/core23-deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-composite-splice-20260926/fixture-v29/composite-insert-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "7750a77ce047e0de033a2a7768a2d341a0e8cc2a8e44a890a5a4e5cfc909937d",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "/private/tmp/deadpan-composite-splice-20260926/core23-deadpan-cli",
+      "project",
+      "undo",
+      "/tmp/deadpan-composite-splice-20260926/fixture-v29/composite-insert-history.deadpan",
+      "--expected",
+      "core23-clear-gap"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "ca7539bbdadc3bb5e2f049954f717e025446b51ec62fb73bb7fdb78fa8722966",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "/private/tmp/deadpan-composite-splice-20260926/core23-deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-composite-splice-20260926/fixture-v29/composite-insert-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "1c97bdc7f41abeab6b16ee36e4e556c3afe620e9c43ffe50f9a2a67c9032870b",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "/private/tmp/deadpan-composite-splice-20260926/core23-deadpan-cli",
+      "command",
+      "/tmp/deadpan-composite-splice-20260926/fixture-v29/composite-insert-history.deadpan",
+      "--json",
+      "/tmp/deadpan-composite-splice-20260926/fixture-v29/core23-gap-rename.json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "69361b8475b69636e2ce59f112ccadb58233db938376aa1c43439cd2948b0f67",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "/private/tmp/deadpan-composite-splice-20260926/core23-deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-composite-splice-20260926/fixture-v29/composite-insert-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "3fbc251bbbe72d36ae851dde250f4508d2a9de6a62d9b196172378fddf21e167",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "/private/tmp/deadpan-composite-splice-20260926/core23-deadpan-cli",
+      "project",
+      "undo",
+      "/tmp/deadpan-composite-splice-20260926/fixture-v29/composite-insert-history.deadpan",
+      "--expected",
+      "core23-gap-rename"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "c2318bc0a28e916a8e4b4e4209b80db13e96ccd84b472dc9339232e268eb6a9b",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "/private/tmp/deadpan-composite-splice-20260926/core23-deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-composite-splice-20260926/fixture-v29/composite-insert-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "618061624ab81ef577e9e0c5645d4ff78d5b643db210d8dc0655c072a64fafea",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "/private/tmp/deadpan-composite-splice-20260926/core23-deadpan-cli",
+      "project",
+      "redo",
+      "/tmp/deadpan-composite-splice-20260926/fixture-v29/composite-insert-history.deadpan",
+      "--expected",
+      "90bbcf72-9fba-466f-abc0-7441547b99cc"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "533268a3f6d396dd1dda347b57e01064147b4fdd8d83a8b1871ba85a68ebfad0",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "/private/tmp/deadpan-composite-splice-20260926/core23-deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-composite-splice-20260926/fixture-v29/composite-insert-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "cf9ffa885782ffadab44fa7adc539655d947a2413fb62da48de998239c88268a",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "/private/tmp/deadpan-composite-splice-20260926/core23-deadpan-cli",
+      "project",
+      "undo",
+      "/tmp/deadpan-composite-splice-20260926/fixture-v29/composite-insert-history.deadpan",
+      "--expected",
+      "0c014521-570f-48b7-9b1c-371538a1293f"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "b0c9b75d1d43713ad23f3440263484ce46b796aac77b9cb938bd02fb7a8fe3d4",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "/private/tmp/deadpan-composite-splice-20260926/core23-deadpan-cli",
+      "project",
+      "validate",
+      "/tmp/deadpan-composite-splice-20260926/fixture-v29/composite-insert-history.deadpan"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "0fc8960321c0a7926b9262b2291d24bfcc196924c3a222a3dc47d80773cde925",
+    "stderr": "",
+    "stdout": "{\n  \"basis_state\": {\n    \"geometry_origin\": \"explicit\",\n    \"primary\": null,\n    \"rate_origin\": \"explicit\"\n  },\n  \"duration_frames\": 58,\n  \"mark_count\": 0,\n  \"node_count\": 21,\n  \"presentation_basis\": {\n    \"color_policy\": \"sdr_rec709\",\n    \"frame_rate\": {\n      \"denominator\": 1001,\n      \"numerator\": 30000\n    },\n    \"height\": 16,\n    \"width\": 16\n  },\n  \"project_id\": \"d038df46-94c6-4c0a-9d11-038b0e6da220\",\n  \"protocol\": 1,\n  \"revision_id\": \"5dae105d-b871-4ea6-9716-fe7424b643cf\",\n  \"root\": \"b5903f58-0249-4a89-8af8-ed3d8a5cfe1f\",\n  \"valid\": true\n}\n"
+  },
+  {
+    "command": [
+      "/private/tmp/deadpan-composite-splice-20260926/core23-deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-composite-splice-20260926/fixture-v29/composite-insert-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "e62c7d4aeb2f81e8d8138ede71121b48c767f8c9bd5dbc6368fc7ea39ef4f8a3",
+    "stderr": ""
+  }
+]

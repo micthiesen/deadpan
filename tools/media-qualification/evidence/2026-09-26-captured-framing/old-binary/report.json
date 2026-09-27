@@ -1,0 +1,9 @@
+{
+  "sql_sha256": "7429704f56c886610decc265d100fec07cbfb973455807084534b0fa0a47f3e2",
+  "counts": {
+    "revisions": 8,
+    "history": 4
+  },
+  "final_revision": "5700ab26-76a7-4c9f-ae02-d6728f058aff",
+  "producer_note": "All old-binary commands and validation passed. Final statistics initially referenced edit_history instead of actual history; corrected report used the already produced, unchanged database."
+}

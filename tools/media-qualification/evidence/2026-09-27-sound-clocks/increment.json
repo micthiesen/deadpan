@@ -1,0 +1,87 @@
+[
+  {
+    "path": "AGENTS.md",
+    "sha256": "4d771b780812336d3bca00ccdf34267d416a2b6707929daab806dd09c1e510f4",
+    "bytes": 77970
+  },
+  {
+    "path": "crates/deadpan-core/src/sound_route.rs",
+    "sha256": "b68f2ff6b780c894d96aadccfddf2316b414d96bb01865a4e66096ca10d24bc0",
+    "bytes": 35755
+  },
+  {
+    "path": "crates/deadpan-core/tests/sound_routes.rs",
+    "sha256": "3e8d1fd267761af81c1676ec9bdafdb25c51eaede6ad58ad0eb989f24093cc26",
+    "bytes": 29630
+  },
+  {
+    "path": "crates/deadpan-plan/src/audio_hold_policy.rs",
+    "sha256": "3be90f9d1f53d307cdf57ccba354676026521b8f10cf1fa83bea5f6c35e08e7e",
+    "bytes": 5935
+  },
+  {
+    "path": "crates/deadpan-plan/src/audio_sound_route.rs",
+    "sha256": "8aeed3f0eddf5d26c16df9a9859440a885857aea018791f7ff63eaf76af6ad13",
+    "bytes": 13451
+  },
+  {
+    "path": "crates/deadpan-plan/src/lib.rs",
+    "sha256": "5ff1258a51bfd457ee73083d2ed6edccba4c1c4a7605fe9b085ece6673952034",
+    "bytes": 4267
+  },
+  {
+    "path": "crates/deadpan-plan/src/plan.rs",
+    "sha256": "2b985f8933374b167e0e1f9c524efb128a9f8b863fb75fa64c01ce5ea317e672",
+    "bytes": 24331
+  },
+  {
+    "path": "crates/deadpan-plan/tests/hold_policy.rs",
+    "sha256": "c21a81961b4d2cf0483b2a98858413fab76fd6bd323ba2ed4e4c36c435cd146b",
+    "bytes": 22193
+  },
+  {
+    "path": "crates/deadpan-plan/tests/sound_route_sampling.rs",
+    "sha256": "3e988b5c67f71a99942a3e8ad4a954b8c22acb87656bc5c5644250797d80752e",
+    "bytes": 19701
+  },
+  {
+    "path": "crates/deadpan-playback/src/sources.rs",
+    "sha256": "96cb97691cd62a2845fc325a9cd48adac73841192694da941cb2525d784ccf2d",
+    "bytes": 10828
+  },
+  {
+    "path": "crates/deadpan-playback/src/sources/cache_tests.rs",
+    "sha256": "81d45d3fc519e3a95c7b6435f4cf1f7194890a250c23c55a715dcb63bbf7185e",
+    "bytes": 9403
+  },
+  {
+    "path": "docs/DEVELOPMENT.md",
+    "sha256": "c22ec1545c84e5fe96e921d8d9746759d0646f7683aff1faa908d6aeeb0b1e7e",
+    "bytes": 21866
+  },
+  {
+    "path": "docs/PLAYBACK.md",
+    "sha256": "752bc5940374deecf60e50677ff899b36a59dc62b5194023412a83df7ff18f2d",
+    "bytes": 11257
+  },
+  {
+    "path": "docs/REQUIREMENTS.md",
+    "sha256": "80fcd8bfa4eb8dc871c870613408c4063dc8f313b6153a1221725cc0789a708b",
+    "bytes": 60632
+  },
+  {
+    "path": "docs/SOUND_EVENTS.md",
+    "sha256": "48637d13c9be9322612774f3edce06d60300ed199fc02b5263c4bf793f2ed424",
+    "bytes": 17018
+  },
+  {
+    "path": "docs/qualification/sound-clocks-2026-09-27.md",
+    "sha256": "40e1296b09adf19d5301346bbb886830c53f1ecdda886f22b989076177351e92",
+    "bytes": 6167
+  },
+  {
+    "path": "docs/spec/AGENT_HANDOFF.md",
+    "sha256": "8176998cbe332b117cf2c66a3767fdef001b24a2362006376f751dca1f5a9d32",
+    "bytes": 14755
+  }
+]

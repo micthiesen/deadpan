@@ -1,0 +1,39 @@
+{
+  "commands": [
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 1,
+      "seconds": 7.199677332770079,
+      "log": "0.log"
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 101,
+      "seconds": 102.80296545894817,
+      "log": "1.log"
+    }
+  ],
+  "source_count": 466,
+  "source_unchanged": false,
+  "changed_sources": [
+    "crates/deadpan-app/src/dialogs.rs",
+    "crates/deadpan-app/src/preview/harness.rs",
+    "crates/deadpan-app/src/ui_harness.rs"
+  ],
+  "passed": false
+}

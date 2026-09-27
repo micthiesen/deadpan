@@ -16,6 +16,7 @@ fn hold(frames: i64) -> BeatNode {
     BeatNode::hold(
         "silence",
         HoldRecipe {
+            picture_context: None,
             duration: duration(frames),
             video: HoldVideo::Background,
             audio: HoldAudio::Silence,
@@ -142,6 +143,7 @@ fn fixture(plays: u32) -> ProjectDocument {
                 child: id("retime"),
                 iterations: IterationOrder::new(allocation.clone(), plays).unwrap(),
                 gap: Some(HoldRecipe {
+                    picture_context: None,
                     duration: duration(1),
                     video: HoldVideo::Background,
                     audio: HoldAudio::RoomTone { source: audio },
@@ -169,6 +171,7 @@ fn fixture(plays: u32) -> ProjectDocument {
                 root: id("context"),
                 nodes,
                 overrides,
+                gap_overrides: BTreeMap::new(),
             },
         },
     )
@@ -781,6 +784,7 @@ fn scanner_keeps_field_named_aliases_and_escaped_keys_legal_and_rejects_trailing
                     (id("overrides"), hold(2)),
                 ]),
                 overrides: BTreeMap::new(),
+                gap_overrides: BTreeMap::new(),
             },
         },
     );

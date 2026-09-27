@@ -1,0 +1,31 @@
+{
+  "protocol": 1,
+  "project_id": "d038df46-94c6-4c0a-9d11-038b0e6da220",
+  "expected_revision": "f574b5d7-ff88-41d2-8f6e-33f7fd42ec00",
+  "new_revision": "old-hold-interior",
+  "command": {
+    "command": "insert_time",
+    "at": 2,
+    "hold": {
+      "duration": 2,
+      "video": {
+        "type": "background"
+      },
+      "audio": {
+        "type": "silence"
+      }
+    },
+    "id": "old-hold-interior-hold",
+    "identities": {
+      "nodes": [
+        "old-hold-interior-left",
+        "old-hold-interior-right",
+        "old-hold-interior-source"
+      ]
+    },
+    "timing": {
+      "allocation": "old-hold-interior",
+      "ordinal": 0
+    }
+  }
+}

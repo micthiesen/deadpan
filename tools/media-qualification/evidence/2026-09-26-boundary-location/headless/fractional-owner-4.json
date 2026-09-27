@@ -1,0 +1,35 @@
+{
+  "protocol": 1,
+  "request": {
+    "project_id": "80096a2d-41b8-4f59-839c-f719a027a064",
+    "expected_revision": "fixture",
+    "role": "linked",
+    "selector": {
+      "type": "point",
+      "target": {
+        "boundary": {
+          "coordinate": {
+            "space": "occurrence",
+            "instance": {
+              "node": "inner",
+              "repeats": [
+                {
+                  "iteration": {
+                    "allocation": "fixture",
+                    "ordinal": 1
+                  },
+                  "node": "repeat"
+                }
+              ]
+            },
+            "position": {
+              "denominator": "2",
+              "numerator": "5"
+            }
+          },
+          "bias": "right"
+        }
+      }
+    }
+  }
+}

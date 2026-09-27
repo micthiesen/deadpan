@@ -1,0 +1,21 @@
+    Checking deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+    Checking deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+    Checking deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+    Checking deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+    Checking deadpan-render v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-render)
+error[E0063]: missing field `gap_overrides` in initializer of `deadpan_core::Subtree`
+   --> crates/deadpan-core/tests/audio_reference.rs:170:22
+    |
+170 |             subtree: Subtree {
+    |                      ^^^^^^^ missing `gap_overrides`
+
+error[E0063]: missing field `gap_overrides` in initializer of `deadpan_core::Subtree`
+   --> crates/deadpan-core/tests/legacy_marks.rs:317:22
+    |
+317 |             subtree: Subtree {
+    |                      ^^^^^^^ missing `gap_overrides`
+
+For more information about this error, try `rustc --explain E0063`.
+error: could not compile `deadpan-core` (test "legacy_marks") due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `deadpan-core` (test "audio_reference") due to 1 previous error

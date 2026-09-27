@@ -1,6 +1,9 @@
 //! Exact, revision-aware boundary targeting. This module resolves coordinates;
 //! it does not mutate a document or infer which repeated occurrence a user meant.
 
+mod location;
+pub use location::*;
+
 use std::{cmp::Ordering, collections::BTreeMap, error::Error, fmt};
 
 use serde::{Deserialize, Serialize};
@@ -180,6 +183,7 @@ pub enum AnchorErrorCode {
     MarkMissing,
     MarkUnresolved,
     MarkAmbiguous,
+    QueryLimit,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -212,6 +216,7 @@ impl AnchorError {
             AnchorErrorCode::MarkMissing => "MarkMissing",
             AnchorErrorCode::MarkUnresolved => "MarkUnresolved",
             AnchorErrorCode::MarkAmbiguous => "MarkAmbiguous",
+            AnchorErrorCode::QueryLimit => "BoundaryQueryLimit",
         }
     }
 }
@@ -235,6 +240,15 @@ pub struct AnchorIndex<'a> {
     pub(crate) durations: BTreeMap<NodeId, FrameDuration>,
     pub(crate) parents: BTreeMap<NodeId, (NodeId, i64)>,
     pub(crate) repeats: BTreeMap<NodeId, crate::RepeatLayout>,
+    /// Positive-duration children, indexed by their exclusive Sequence end.
+    pub(crate) sequences: BTreeMap<NodeId, Vec<SequenceChild>>,
+}
+
+pub(crate) struct SequenceChild {
+    pub end: i64,
+    pub node: NodeId,
+    /// Authored slot, including preceding zero-duration children.
+    pub index: usize,
 }
 
 impl<'a> AnchorIndex<'a> {
@@ -252,13 +266,25 @@ impl<'a> AnchorIndex<'a> {
     ) -> Result<Self, crate::DocumentError> {
         let mut parents = BTreeMap::new();
         let mut repeats = BTreeMap::new();
+        let mut sequences = BTreeMap::new();
         for (id, node) in document.nodes() {
             let mut offset = 0;
-            for child in document.children(id) {
+            let mut entries = Vec::new();
+            for (index, child) in document.children(id).enumerate() {
                 parents.insert(child.clone(), (id.clone(), offset));
                 if matches!(node.kind, NodeKind::Sequence { .. }) {
                     offset += durations[child].frames();
+                    if durations[child] != FrameDuration::ZERO {
+                        entries.push(SequenceChild {
+                            end: offset,
+                            node: child.clone(),
+                            index,
+                        });
+                    }
                 }
+            }
+            if matches!(node.kind, NodeKind::Sequence { .. }) {
+                sequences.insert(id.clone(), entries);
             }
             if let NodeKind::Repeat {
                 child,
@@ -268,11 +294,12 @@ impl<'a> AnchorIndex<'a> {
             {
                 repeats.insert(
                     id.clone(),
-                    crate::RepeatLayout::compile(
+                    crate::RepeatLayout::compile_with_gap_overrides(
                         iterations,
                         child,
                         document.overrides().get(id),
                         gap.as_ref().map_or(FrameDuration::ZERO, |gap| gap.duration),
+                        document.gap_overrides().get(id),
                         &durations,
                     )?,
                 );
@@ -283,27 +310,37 @@ impl<'a> AnchorIndex<'a> {
             durations,
             parents,
             repeats,
+            sequences,
         })
     }
 
-    pub fn resolve(&self, request: &SelectionRequest) -> Result<ResolvedSelection, AnchorError> {
-        if &request.project_id != self.document.project_id() {
+    fn check_revision(
+        &self,
+        project: &ProjectId,
+        revision: &RevisionId,
+    ) -> Result<(), AnchorError> {
+        if project != self.document.project_id() {
             return Err(AnchorError::new(
                 AnchorErrorCode::ProjectConflict,
                 "selector targets a different project",
             ));
         }
-        if &request.expected_revision != self.document.revision_id() {
+        if revision != self.document.revision_id() {
             return Err(AnchorError {
                 code: AnchorErrorCode::RevisionConflict,
                 message: format!(
                     "expected revision {}; current revision is {}",
-                    request.expected_revision,
+                    revision,
                     self.document.revision_id()
                 ),
                 current_revision: Some(self.document.revision_id().clone()),
             });
         }
+        Ok(())
+    }
+
+    pub fn resolve(&self, request: &SelectionRequest) -> Result<ResolvedSelection, AnchorError> {
+        self.check_revision(&request.project_id, &request.expected_revision)?;
         let selection = match &request.selector {
             BoundarySelector::Point { target } => ResolvedSelectionKind::Point {
                 point: self.resolve_target(target)?,
@@ -537,7 +574,9 @@ impl<'a> AnchorIndex<'a> {
                     || iterations.position(&selected.iteration).is_none()
                     || self.repeats[parent]
                         .play(&selected.iteration)
-                        .is_none_or(|play| &play.child != node)
+                        .is_none_or(|play| {
+                            &play.child != node && play.gap_child.as_ref() != Some(node)
+                        })
                 {
                     return Err(AnchorError::new(
                         AnchorErrorCode::OccurrenceInvalid,
@@ -593,7 +632,13 @@ impl<'a> AnchorIndex<'a> {
                                 "iteration disappeared from immutable index",
                             )
                         })?;
-                    position.checked_add(ExactRatio::integer(play.start))?
+                    let offset = play.branch_offset(node).ok_or_else(|| {
+                        AnchorError::new(
+                            AnchorErrorCode::OutsideMapping,
+                            "gap branch has no rendered interval",
+                        )
+                    })?;
+                    position.checked_add(ExactRatio::integer(offset))?
                 }
                 NodeKind::Retime {
                     child,
@@ -732,10 +777,32 @@ impl<'a> AnchorIndex<'a> {
                 )
             }
         };
-        source_fraction(timestamp, selected)?
+        let position = source_fraction(timestamp, selected)?
             .checked_mul(duration)?
-            .checked_add(offset)
-            .map_err(Into::into)
+            .checked_add(offset)?;
+        if stream == SourceStream::Audio {
+            let selection = source.audio_mapping.selection_frames_with_offset(
+                source.duration,
+                source.audio_offset,
+                self.document.presentation_basis().frame_rate,
+            )?;
+            if position
+                .checked_sub(selection.start)?
+                .compare_integer(0)
+                .is_lt()
+                || selection
+                    .end
+                    .checked_sub(position)?
+                    .compare_integer(0)
+                    .is_lt()
+            {
+                return Err(AnchorError::new(
+                    AnchorErrorCode::OutsideMapping,
+                    "audio source boundary is outside the selected moment",
+                ));
+            }
+        }
+        Ok(position)
     }
 }
 

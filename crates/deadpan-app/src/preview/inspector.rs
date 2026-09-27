@@ -41,6 +41,9 @@ impl Inspector {
                     }
                     .into(),
                 ));
+                if recipe.picture_context.is_some() {
+                    fields.push(("Captured view", "Framing preserved".into()));
+                }
                 let note = if matches!(recipe.video, HoldVideo::Generated { .. }) {
                     "Extending beyond the available generated footage restores the captured fallback."
                 } else {
@@ -114,7 +117,7 @@ impl Inspector {
                     "Sequence",
                     "≡",
                     None,
-                    "This group is selected as one root beat. Nested navigation is not available yet.",
+                    "Enter opens this group's child beats. Backspace returns without changing the edit.",
                 )
             }
             NodeKind::Retime {
@@ -133,20 +136,37 @@ impl Inspector {
                     "This fragment keeps the full beat's original picture and sound timing. Split again to make a smaller cut.",
                 )
             }
-            NodeKind::Retime { pitch, .. } => {
+            NodeKind::Retime {
+                pitch,
+                mapping,
+                duration,
+                ..
+            } => {
+                fields.push((
+                    "Speed",
+                    format!("{}/{}×", mapping.duration().frames(), duration.frames()),
+                ));
                 fields.push((
                     "Pitch",
                     match pitch {
                         PitchPolicy::Preserve => "Preserve",
-                        PitchPolicy::FollowSpeed => "Follow speed",
+                        PitchPolicy::FollowSpeed => "Tape (follows speed)",
                     }
                     .into(),
                 ));
                 (
                     "Retime",
                     "R",
-                    None,
-                    "The complete Retime is selected. Its existing timing remains structural.",
+                    Some((
+                        "Change speed…",
+                        format!(
+                            "retime {}/{} pitch={}",
+                            mapping.duration().frames(),
+                            duration.frames(),
+                            crate::navigation::retime::pitch_name(*pitch)
+                        ),
+                    )),
+                    "Speed is relative to this Retime's input span. Changing it preserves its input selection. :wrap-retime adds another speed stage.",
                 )
             }
         };
@@ -188,6 +208,7 @@ mod tests {
             audio_edges: Default::default(),
             kind: NodeKind::Hold {
                 recipe: HoldRecipe {
+                    picture_context: None,
                     duration: FrameDuration::new(11).unwrap(),
                     video: HoldVideo::Background,
                     audio: HoldAudio::Silence,
@@ -239,5 +260,50 @@ mod tests {
         assert_eq!(inspector.range, "4–4");
         assert_eq!(inspector.fields, vec![("Child beats", "0".into())]);
         assert!(inspector.parameter.is_none());
+    }
+
+    #[test]
+    fn retime_entry_uses_the_exact_retained_input_speed_and_current_pitch() {
+        let mut node = BeatNode {
+            label: "Delivery".into(),
+            framing: None,
+            audio_edges: Default::default(),
+            kind: NodeKind::Retime {
+                child: NodeId::new("child").unwrap(),
+                duration: FrameDuration::new(3).unwrap(),
+                mapping: deadpan_core::FrameRange::new(
+                    deadpan_core::ProjectFrame(5),
+                    deadpan_core::ProjectFrame(15),
+                )
+                .unwrap(),
+                pitch: PitchPolicy::FollowSpeed,
+                purpose: deadpan_core::RetimePurpose::Edit,
+            },
+        };
+        let inspector = Inspector::describe(&node, 22, 3);
+        let command = inspector.parameter.unwrap().1;
+        assert_eq!(command, "retime 10/3 pitch=tape");
+        assert!(inspector.fields.contains(&("Speed", "10/3×".into())));
+        assert_eq!(
+            crate::navigation::command::parse(&command),
+            Ok(crate::navigation::command::Entry::Action(
+                crate::navigation::Action::Edit(crate::navigation::BeatEdit::Retime(
+                    crate::navigation::retime::RetimeInput {
+                        speed: deadpan_core::ExactRatio::new(10, 3).unwrap(),
+                        pitch: PitchPolicy::FollowSpeed,
+                        wrap: false,
+                    }
+                ))
+            ))
+        );
+        if let NodeKind::Retime { purpose, .. } = &mut node.kind {
+            *purpose = deadpan_core::RetimePurpose::Partition;
+        }
+        let fragment = Inspector::describe(&node, 22, 3);
+        assert_eq!(fragment.kind, "Fragment");
+        assert!(
+            fragment.parameter.is_none(),
+            "partition clocks are never edited in place"
+        );
     }
 }

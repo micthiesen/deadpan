@@ -93,7 +93,7 @@ fn fade_query(
                 AudioSignalContent::Bound(_) => {
                     bound_fade(processing, cursor, samples.end, &mut budget)?
                 }
-                AudioSignalContent::Stage(_) => {
+                AudioSignalContent::Stage(_) | AudioSignalContent::ProjectedStage(_) => {
                     // The first opaque output owns creative fades. Flatten its
                     // current geometry in this output grid, retaining ancestor
                     // constraints and deliberately ignoring input bindings.

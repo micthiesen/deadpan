@@ -1,0 +1,31 @@
+{
+  "protocol": 1,
+  "project_id": "c11cecb6-2308-451b-a3cf-d2920bdd2541",
+  "expected_revision": "nested-seed",
+  "new_revision": "refused-2",
+  "command": {
+    "command": "insert_time",
+    "at": 2,
+    "hold": {
+      "duration": 2,
+      "video": {
+        "type": "background"
+      },
+      "audio": {
+        "type": "silence"
+      }
+    },
+    "id": "pause-2",
+    "identities": {
+      "nodes": [
+        "left",
+        "right",
+        "owner"
+      ]
+    },
+    "timing": {
+      "allocation": "refused-2",
+      "ordinal": 0
+    }
+  }
+}

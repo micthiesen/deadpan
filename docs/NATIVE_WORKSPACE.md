@@ -7,12 +7,17 @@ timeline automatically. Your edit evolves through reversible changes; Original
 stays pinned for browsing and deliberate reuse. A separate sound catalog admits
 external audio without changing picture or duration. Generic/legacy packages
 retain their broader register/insert workflow. See [the profile contract](SINGLE_ORIGINAL.md).
-It also splits root beats at the cursor, inserts silent freezes through
+It also navigates ordinary [Sequence groups](GROUP_NAVIGATION.md), splits their
+direct child beats at the cursor, inserts silent freezes through
 [Insert Time](INSERT_TIME.md), wraps or updates Repeats, deletes beats and changes
-an existing root Hold's duration. [Pause qualification](qualification/insert-time-2026-09-24.md)
+an existing selected Hold's duration. [Pause qualification](qualification/insert-time-2026-09-24.md)
 records exact input, measured frame selection and native focus review.
-[Sequence audition](PLAYBACK.md) adds Space Play/Pause with canonical pre-master
-audio and device-clock pictures. Full mastering, range operators,
+[Structural speed editing](RETIME_EDITING.md) adds exact `:retime` and
+`:wrap-retime` with an explicit preserve/tape pitch choice, a resolved-duration
+preview and one reversible command. Existing Retime parameters remain editable.
+[Original and edit audition](PLAYBACK.md) adds Space Play/Pause and Shift+Space
+selection loops with adjustable context, canonical pre-master audio and
+device-clock pictures. Full mastering, range operators,
 generated-provider rendering and export remain open.
 
 ## Project and media ownership
@@ -50,8 +55,12 @@ Documents directory on the service thread, never cwd. Initial picker cancellatio
 creates no package. Bounded names and exclusive creation prevent overwrite.
 
 Sound import registers audio without changing the sequence or stealing the
-Original selection and cursor. This is catalog registration; sound-event placement
-and mixing remain open. Legacy import also retains registration-only semantics.
+Original selection and cursor. The focused catalog supports separate selection,
+`j/k`, Space play/pause/resume and Shift+Space whole-sound loops, with its own
+elapsed/total clock and visible key hints. [Sound audition](PLAYBACK.md#sound-catalog-audition)
+uses canonical playback and measured sample endpoints without moving either
+editor cursor or requesting picture changes. Sound-event placement and mixing
+remain open. Legacy import also retains registration-only semantics.
 Explicit whole-original reuse (or generic source insertion)
 uses the caller's current revision, parent and insertion index, and the shared
 store transaction path. The first primary video insertion may select measured
@@ -66,16 +75,17 @@ Undo/redo remain available during preparation. Active-generation edits that need
 unimplemented source-context resolution fail explicitly through the store's
 relevance guard. They are not admitted with invented context hashes.
 
-Root-beat edits capture both writer session and revision. The service resolves
+Beat edits capture the writer session, revision, cursor and Sequence scope. The service resolves
 the typed intent against that immutable document, allocates identities and commits
-through the same core/store command path. Hidden descendants and root-node targets
-are rejected until concrete nested occurrence selection is implemented. Repeat
+through the same core/store command path. Only direct children of the active
+Sequence may be targeted. Repeat/Retime descendants require occurrence-aware
+selection and remain unavailable in native navigation. Repeat
 setters preserve an existing gap; explicit wrapping creates a new Repeat even
 when the selected beat is already one. Deletion selects the next sibling, otherwise
 the previous sibling, otherwise explicitly clears selection.
 
-Every successful insertion or root edit reports its actual committed revision
-and resulting selected node, including an explicit empty selection.
+Every successful insertion or beat edit reports its actual committed revision,
+captured scope and resulting selected node, including an explicit empty selection.
 The completion marker survives coalesced background progress, registration and
 stale worker replies until the next user command. UI selection follows this
 marker, not a progress label or an assumed index. Errors survive unrelated
@@ -99,9 +109,10 @@ index, including source span endpoint policy, retiming, repeats and freeze Holds
 Blank/background plans display deterministic black. Empty sequence frame zero
 has an explicit empty state. Unsupported still/generated providers report an
 error rather than silently substituting footage. Project canvas aspect and the
-shared SDR renderer determine displayed geometry. Sequence audition uses the
-same picture path and a separate canonical audio preparation worker. Stopped
-inspection and Original browsing remain silent.
+shared SDR renderer determine displayed geometry. Audition uses the same picture
+path and a separate canonical audio preparation worker. Ordinary stopped
+inspection remains silent. Explicit Original playback follows its measured PTS
+and full A/V union, without moving the edit cursor or changing project history.
 
 Presentation keeps the requested position, accepted decoded picture and displayed
 picture separate. Each identity retains the project session/revision and explicit
@@ -132,11 +143,14 @@ comparisons use project frames; Original browsing counts measured video frames.
 These counts can differ for VFR or offset media and are labeled separately.
 Source and beat widgets are virtualized; their derived lists are rebuilt when
 the document or search changes, not every redraw. Keyboard selection reveals the
-selected row. Sequence cursor motion selects the root beat to its right, or the
+selected row. Sequence cursor motion selects the current-depth beat to its right, or the
 last beat at the final boundary. Compact cards have explicit half-open frame
 boundaries and a local yellow cursor; equal widths do not imply equal durations.
-The current strip presents root beats, not a complete nested editor. A conditional
-inspector describes the selected beat and offers real command-based parameters.
+Enter opens a selected ordinary Sequence group; Backspace returns to its parent.
+Breadcrumbs show the current depth, and the footer separates the group-relative
+position from the absolute edit cursor. Empty groups remain navigable. A conditional
+inspector describes the selected child and offers real command-based parameters.
+See [group navigation](GROUP_NAVIGATION.md) for scope and asynchronous completion.
 
 Normal bindings include counts, `h/l`, `j/k`, `gg/G`, native arrows/Home/End,
 `u`/Ctrl-R and native Command shortcuts. Prefixes do not time out. Logical
@@ -153,10 +167,19 @@ key-only navigation and hovering are unaffected.
 
 `⌘N` chooses a new Original, `⌘O` opens an existing project, and `⌘I` adds sound
 in a Ready V1 project or chooses the Original for an incomplete project. Legacy
-projects retain generic import. `⌘Return` reuses the whole Original after the
-selected root beat or at sequence end. `/` searches; `?` opens keyboard help;
+projects retain generic import. `,i` reuses the whole Original after the
+selected child or at the current group's end. `/` searches; `?` opens keyboard help;
 `:` opens command entry with
-`insert`, `split`, `undo`, `redo`, `new`, `open`, `import`, `source`, `sequence`, `help`.
+`insert`, `split`, `undo`, `redo`, `new`, `open`, `import`, `source`, `sequence`, `enter`, `parent`, `help`.
+In Original, `v` starts/finishes a half-open temporal range, `h/l` adjusts its
+head, and `y` copies it without history. The inspector displays In, excluded Out,
+original ordinal count and measured duration; the bar uses measured PTS. Return
+to Your edit and use `p`/`P` after/before its selected direct child. An empty group
+accepts paste at its start. `:select`, `:yank`, `:paste` and `:paste-before` expose
+the same actions. The session-local copy survives selection cancellation and
+ordinary edits, but not session or source receipt changes. Named/persistent
+registers and Visual replacement remain open. See [Original moments](SOURCE_MOMENTS.md).
+
 Native panels are constructed on the main app thread and polled through a retained
 future/waker. One panel may be open at a time, and an active import disables another import
 chooser. Import captures its project session and revision before opening the
@@ -170,15 +193,15 @@ that follows Escape in the same input batch reaches command entry in order.
 Opening help mid-batch immediately transfers ownership to it. Native dialogs
 and popup menus retain priority, including their Escape and IME handling.
 
-In Sequence context, `rr` wraps the current root beat in two total plays;
-`3rr` makes three total plays and `1rr` retains one. `dd` deletes one root beat.
+In Sequence context, `rr` wraps the selected child in two total plays;
+`3rr` makes three total plays and `1rr` retains one. `dd` deletes that child.
 Operator prefixes remain pending without a timer. Unsupported deletion counts,
 zero/overflow counts and conflicting post-operator counts fail explicitly.
 Held-key autorepeat cannot complete an edit operator. Changing context, pane or
 selection cancels the pending operator. Source context remains non-destructive
 and teaches browsing, returning to Your edit and explicit reuse instead.
 
-`s` and `:split` cut inside the selected root beat at the current project-frame
+`s` and `:split` cut inside the selected child at the current project-frame
 boundary. Both linked roles retain their original timing and full processing
 context. The right fragment is selected from the committed structure, keeping
 the cursor at the cut. The footer, inspector button and help teach the binding;
@@ -198,18 +221,28 @@ duration: `3,h` inserts 1.5 seconds. `:hold 12f`, `:hold 250ms`, `:hold 1.5s` an
 `:hold 01:02.500` use exact time input and show the resolved frame count. Seconds
 round once with ties-to-even; zero creates no history. The inspector and footer
 teach the shortcut, and Choose pause duration opens the command entry. The new
-pause stays selected at its start; Enter edits its existing frame duration.
-The service freezes a measured original frame and commits one atomic splice.
+cursor stays at the pause's committed start, even if navigation occurred while
+the command was pending. A direct child Hold stays selected; Inspector Enter
+edits its duration. A deeper pause selects its visible enclosing group; Enter
+opens that group so the Hold can be selected and edited.
+The service freezes a measured original frame and its existing cropped view,
+then commits one atomic splice. The new Hold inherits its actual Sequence
+parent and all ancestor framing once, retaining only lower crops. Camera can
+adjust a selected pause independently;
+its inspector explains that Reset keeps the captured view.
 See [pause insertion](INSERT_TIME.md) for resume semantics and supported scope.
 
-Arbitrary nested insertion, Repeat gaps, nested occurrence navigation, range
-edits, gain controls, semantic dot-repeat and macros remain open. The current
-pause command supports root Source and ordinary Hold beats and their fragments;
-unsupported shifted structures fail without an edit. Existing child-index Insert
+The pause command supports root Source and ordinary Hold interiors and their
+fragments, plus existing root seams before composite suffixes, including Repeats
+and their gap branches. It also supports these cuts inside unretimed Sequence
+groups without flattening them. Insertion beneath Repeat or Retime ancestors,
+Repeat gaps, occurrence navigation, range edits, gain controls, semantic
+dot-repeat and macros remain open. Unsupported interior boundaries fail without
+an edit. Existing child-index Insert
 retains its distinct semantics. [Splice design prerequisites](STRUCTURAL_SPLICE_DESIGN.md)
 record the wider scope still required.
 
-`,f` opens a temporary [Camera draft](FRAMING.md) on the selected root beat in
+`,f` opens a temporary [Camera draft](FRAMING.md) on the selected direct child in
 Your edit. The stopped picture previews source-relative `h/j/k/l` movement,
 counted zoom steps and numbered center/corner targets. Numeric fields use canvas
 percentages, preserve native text editing and expose validation before Apply.
@@ -217,9 +250,17 @@ Enter applies one edit and keeps the cursor; Escape restores the entry framing.
 Ordinary Camera changes move the complete existing curve. Reset replaces it;
 `,z` creates a static 1.35× punch and `,c` creates a whole-beat smoothstep creep.
 The normal inspector distinguishes static framing from whole-beat motion.
-Saved regions, tracking and native nested targets remain open. A native pause
-from an already framed picture is refused until a durable composition snapshot
-can retain its crops; it must never silently freeze the bare Original instead.
+Saved regions, tracking and native occurrence targets remain open.
+[Captured views](CAPTURED_FRAMING.md) retain existing framing when a native pause
+is inserted. Still and accepted-generated providers remain unsupported for this
+native capture path.
+
+Use the [UI feedback loop](UI_FEEDBACK.md) for current keyboard, mouse, layout and
+picture review. Replay production inputs through the real application, inspect
+the visual artifacts and run separate release timing when responsiveness can
+change. The [interaction review](INTERACTION_REVIEW.md) records personal shortcut
+compatibility and remaining improvements. Offscreen checks do not establish
+native dialogs, IME, VoiceOver, global shortcut delivery or physical presentation.
 
 [Qualification](qualification/native-workspace-2026-09-21.md) records the actual
 service, decoder, keyboard/focus and native interaction checks and their limits.

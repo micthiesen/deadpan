@@ -3,8 +3,13 @@
 `FrozenAudioContext` retains the media-bearing body of one immutable audio
 context. It combines a [frozen timing layout](AUDIO_REFERENCE.md) with exact
 Source, RoomTone and Tail inputs and their full immutable asset records. The
-standalone wire uses schema 1. It predates the core 16/database 22 binding state;
-binding-aware rendering and the arbitrary-boundary Hold command remain open.
+standalone wire uses schema 3, including [exact audio selections](SOURCE_MOMENTS.md)
+and [sparse gap branches](REPEAT_GAP_BRANCHES.md). Schema 2 retains selected audio
+placements but rejects gap-branch layout fields; schema 1 also retains its older
+closed audio-mapping grammar.
+Schema 1 retains its closed historical source mapping vocabulary and remains
+readable without changing its serialization version. Captured raw contexts
+predate the core 16/database 22 binding state;
 Capture explicitly rejects a nonempty binding state until the context format
 can retain it completely.
 
@@ -14,7 +19,8 @@ Capture retains the complete processing tree, compact Repeat order, sparse
 overrides, exact Retime selections and pitch policies, transparent Partitions,
 audio edges and copy lineage. Source inputs retain their original selected span,
 `SourceAudioMapping` and signed `audio_offset`. Their effective placement must
-agree exactly with the frozen layout. Source offsets must not be normalized into
+agree exactly with the frozen layout. For selected placements this is the audible
+selection, while the input retains the complete source phase mapping. Source offsets must not be normalized into
 rounded frame positions. Even exact normalization into `Placement` is not always
 valid: a supported mapping plus offset can place its effective origin beyond
 that variant's explicit i64 frame-coordinate range.
@@ -66,7 +72,8 @@ existing work, residency, deadline and provenance checks.
 `ProjectStore::snapshot_at` reads an immutable committed revision, including an
 abandoned branch, without moving the history cursor. The headless host's
 `ProjectAudioSession::open_context` resolves that revision and compares the
-complete supplied context with a fresh capture of its retained document. It
+complete supplied context with a fresh capture of its retained document. The
+comparison ignores only the supported context serialization version. It
 rejects altered timing, inputs or asset contracts even when the claimed project
 and revision names match.
 

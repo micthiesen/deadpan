@@ -27,6 +27,28 @@ pub(super) fn retain_field_input_suffix(context: &egui::Context, suffix: &[egui:
     });
 }
 
+fn cycle_camera_focus(
+    context: &egui::Context,
+    phase: CameraPhase,
+    fields: &[egui::Id],
+    reverse: bool,
+) {
+    let mut ids = vec![pane_id(Pane::Viewer)];
+    if phase == CameraPhase::Adjust {
+        ids.extend_from_slice(fields);
+    }
+    let current = context
+        .memory(|memory| memory.focused())
+        .and_then(|id| ids.iter().position(|candidate| *candidate == id))
+        .unwrap_or(0);
+    let next = if reverse {
+        (current + ids.len() - 1) % ids.len()
+    } else {
+        (current + 1) % ids.len()
+    };
+    context.memory_mut(|memory| memory.request_focus(ids[next]));
+}
+
 pub(super) fn dispatch_key(
     key: egui::Key,
     modifiers: egui::Modifiers,
@@ -85,12 +107,14 @@ pub(super) struct CameraPending {
     revision: RevisionId,
     node: NodeId,
     cursor: u64,
+    navigation_scope: SequenceScope,
 }
 
 pub(super) struct CameraSession {
     session: u64,
     revision: RevisionId,
     scope: InstancePath,
+    navigation_scope: SequenceScope,
     ticket: Ticket,
     cursor: u64,
     entry: Option<Framing>,
@@ -212,12 +236,13 @@ impl CameraSession {
             .position(|layer| {
                 layer.instance.node == pending.node && layer.instance.repeats.is_empty()
             })
-            .ok_or("Move the cursor inside the selected root beat to frame it.")?;
+            .ok_or("Move the cursor inside the selected beat to frame it.")?;
         let layer = &picture.framing[index];
         let (width, height) = picture.canvas.ok_or("Camera requires Your edit.")?;
         let render_layers = render_layers(picture)?;
-        let geometry = deadpan_render::PictureGeometry::framed(
+        let geometry = deadpan_render::PictureGeometry::composed(
             frame.metadata(),
+            picture.picture_context.as_deref(),
             [width, height],
             [width, height],
             FitMode::Fit,
@@ -248,6 +273,7 @@ impl CameraSession {
             session: pending.session,
             revision: pending.revision,
             scope: layer.instance.clone(),
+            navigation_scope: pending.navigation_scope,
             ticket,
             cursor: pending.cursor,
             entry: workspace.document.nodes()[&pending.node].framing.clone(),
@@ -295,7 +321,7 @@ impl DeadpanApp {
             return;
         };
         let Some(node) = &self.selected_beat else {
-            self.error = Some("Select a root beat to frame.".into());
+            self.error = Some("Select a beat in the current group to frame.".into());
             return;
         };
         self.camera_pending = Some(CameraPending {
@@ -304,6 +330,7 @@ impl DeadpanApp {
             revision: workspace.document.revision_id().clone(),
             node: node.clone(),
             cursor: self.sequence_cursor,
+            navigation_scope: self.sequence_scope.clone(),
         });
         self.finish_camera_entry(context);
     }
@@ -313,6 +340,7 @@ impl DeadpanApp {
             return;
         };
         let valid = self.view == View::Sequence
+            && self.sequence_scope == pending.navigation_scope
             && self.sequence_cursor == pending.cursor
             && self.selected_beat.as_ref() == Some(&pending.node)
             && self.workspace.as_ref().is_some_and(|workspace| {
@@ -389,6 +417,8 @@ impl DeadpanApp {
         self.submit(ProjectRequest::Edit {
             expected_session: camera.session,
             expected_revision: camera.revision.clone(),
+            scope: camera.navigation_scope.clone(),
+            cursor: ProjectFrame(camera.cursor as i64),
             edit: ProjectEdit::SetFraming {
                 node: camera.scope.node.clone(),
                 framing,
@@ -414,6 +444,7 @@ impl DeadpanApp {
             return;
         };
         let valid = self.view == View::Sequence
+            && self.sequence_scope == camera.navigation_scope
             && self.sequence_cursor == camera.cursor
             && self.selected_beat.as_ref() == Some(&camera.scope.node)
             && self.workspace.as_ref().is_some_and(|workspace| {
@@ -479,18 +510,7 @@ impl DeadpanApp {
             }
             CameraEffect::CycleField { reverse } => {
                 if let Some(camera) = &self.camera {
-                    let mut ids = vec![pane_id(Pane::Viewer)];
-                    ids.extend(camera.fields.ids().iter().copied());
-                    let current = context
-                        .memory(|memory| memory.focused())
-                        .and_then(|id| ids.iter().position(|candidate| *candidate == id))
-                        .unwrap_or(0);
-                    let next = if reverse {
-                        (current + ids.len() - 1) % ids.len()
-                    } else {
-                        (current + 1) % ids.len()
-                    };
-                    context.memory_mut(|memory| memory.request_focus(ids[next]));
+                    cycle_camera_focus(context, camera.draft.phase(), camera.fields.ids(), reverse);
                 }
             }
             CameraEffect::AdjustField { direction, count } => {
@@ -603,9 +623,9 @@ impl DeadpanApp {
     }
 
     pub(super) fn camera_field_focused(&self, context: &egui::Context) -> bool {
-        self.camera
-            .as_ref()
-            .is_some_and(|camera| camera.fields.owns_focus(context))
+        self.camera.as_ref().is_some_and(|camera| {
+            camera.draft.phase() == CameraPhase::Adjust && camera.fields.owns_focus(context)
+        })
     }
 
     // TextEdit must see this frame's native text/IME before field arrows or
@@ -642,8 +662,9 @@ impl DeadpanApp {
         let Ok(layers) = render_layers(picture) else {
             return;
         };
-        let Ok(geometry) = deadpan_render::PictureGeometry::framed(
+        let Ok(geometry) = deadpan_render::PictureGeometry::composed(
             frame.metadata(),
+            picture.picture_context.as_deref(),
             [width, height],
             [width, height],
             FitMode::Fit,
@@ -711,7 +732,7 @@ impl DeadpanApp {
                 .as_ref()
                 .and_then(|workspace| workspace.document.nodes().get(&camera.scope.node))
                 .map_or("Selected beat", |node| node.label.as_str());
-            ui.label(format!("{label} · Root beat"));
+            ui.label(format!("{label} · {}", self.beat_scope_label()));
             ui.label(if camera.committing {
                 "Saving framing…"
             } else {
@@ -758,6 +779,10 @@ impl DeadpanApp {
             return;
         };
         let layout = self.workspace_layout(ui);
+        let captured = self
+            .presentation
+            .picture()
+            .is_some_and(|picture| picture.picture_context.is_some());
         let mut proposed = None;
         let mut requested = None;
         let mut target = None;
@@ -769,7 +794,7 @@ impl DeadpanApp {
                 ui.separator();
                 ui.add_enabled_ui(!camera.committing, |ui| {
                     egui::ScrollArea::vertical().id_salt("camera-inspector").show(ui, |ui| {
-                        ui.label("Scope: selected root beat");
+                        ui.label(format!("Scope: {}", self.beat_scope_label()));
                         ui.add_space(8.0);
                         ui.add_enabled_ui(camera.draft.phase() == CameraPhase::Adjust, |ui| {
                             proposed = camera.fields.show(ui);
@@ -806,6 +831,10 @@ impl DeadpanApp {
                         let curve = !camera.draft.reset_requested() && matches!(camera.entry.as_ref().map(|entry| &entry.value), Some(FramingValue::Envelope { .. }));
                         if curve { ui.label("Existing curve preserved"); ui.weak("Adjustments move and scale its full path. Reset replaces the curve."); }
                         else { ui.label("Static framing"); }
+                        if captured {
+                            ui.label("Captured view retained");
+                            ui.weak("Camera changes this view. Reset keeps its captured crop.");
+                        }
                         if ui.button(if camera.draft.phase() == CameraPhase::TargetPicker { "Close source targets  ·  f" } else { "Choose source target  ·  f" }).clicked() { requested = Some(CameraKey::RefreshTargets); }
                         if camera.draft.phase() == CameraPhase::TargetPicker {
                             for (number, label, center) in &camera.targets {
@@ -863,6 +892,63 @@ pub(super) fn render_layers(picture: &crate::worker::Picture) -> Result<Vec<Fram
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn target_picker_tab_keeps_same_batch_digits_and_return_key_routable() {
+        let context = egui::Context::default();
+        let fields = super::super::camera_fields::CameraFields::new(FramingPose::identity());
+        let viewer = pane_id(Pane::Viewer);
+        for reverse in [false, true] {
+            let mut draft = CameraDraft::new(FramingPose::identity()).unwrap();
+            assert_eq!(
+                draft.input(CameraKey::RefreshTargets, None),
+                CameraEffect::RefreshTargets
+            );
+            context.memory_mut(|memory| memory.request_focus(viewer));
+            // Negative control: old unconditional field cycling synchronously
+            // focuses a disabled field before the next key in the same batch.
+            cycle_camera_focus(&context, CameraPhase::Adjust, fields.ids(), reverse);
+            assert!(fields.owns_focus(&context));
+            assert_eq!(
+                dispatch_key(
+                    egui::Key::Num3,
+                    egui::Modifiers::NONE,
+                    false,
+                    false,
+                    false,
+                    fields.owns_focus(&context),
+                    false
+                ),
+                KeyDispatch::Native
+            );
+            cycle_camera_focus(&context, draft.phase(), fields.ids(), reverse);
+            assert!(context.memory(|memory| memory.has_focus(viewer)));
+            for (key, expected) in [
+                (egui::Key::Num3, CameraKey::Digit(3)),
+                (egui::Key::F, CameraKey::RefreshTargets),
+            ] {
+                let routed = dispatch_key(
+                    key,
+                    egui::Modifiers::NONE,
+                    false,
+                    false,
+                    false,
+                    fields.owns_focus(&context),
+                    false,
+                );
+                assert_eq!(routed, KeyDispatch::Draft(expected));
+            }
+            assert_eq!(
+                draft.input(CameraKey::Digit(3), None),
+                CameraEffect::SelectTarget(3)
+            );
+            assert_eq!(
+                draft.input(CameraKey::RefreshTargets, None),
+                CameraEffect::TargetsClosed
+            );
+            assert_eq!(draft.phase(), CameraPhase::Adjust);
+        }
+    }
 
     #[test]
     fn tab_into_camera_fields_does_not_retype_an_earlier_count() {

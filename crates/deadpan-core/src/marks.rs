@@ -226,33 +226,14 @@ enum ContentPoint {
 
 struct Index<'a> {
     anchors: AnchorIndex<'a>,
-    /// Positive-duration child ends permit binary boundary selection; empty
-    /// sequences have edges but contain no time to capture a neighboring mark.
-    sequences: BTreeMap<NodeId, Vec<(i64, NodeId)>>,
 }
 impl<'a> Index<'a> {
     fn new(
         document: &'a ProjectDocument,
         durations: BTreeMap<NodeId, FrameDuration>,
     ) -> std::result::Result<Self, DocumentError> {
-        let mut sequences = BTreeMap::new();
-        for (id, node) in document.nodes() {
-            if let NodeKind::Sequence { children } = &node.kind {
-                let mut end = 0;
-                let mut entries = Vec::new();
-                for child in children {
-                    let duration = durations[child].frames();
-                    end += duration; // structural validation checked the sum
-                    if duration > 0 {
-                        entries.push((end, child.clone()));
-                    }
-                }
-                sequences.insert(id.clone(), entries);
-            }
-        }
         Ok(Self {
             anchors: AnchorIndex::from_durations(document, durations)?,
-            sequences,
         })
     }
     fn duration(&self, node: &NodeId) -> Result<i64> {
@@ -285,14 +266,15 @@ impl<'a> Index<'a> {
         loop {
             match &self.anchors.document.nodes()[node].kind {
                 NodeKind::Sequence { .. } => {
-                    let children = &self.sequences[node];
-                    let selected = children.partition_point(|(end, _)| match bias {
-                        InsertionBias::Left => position.compare_integer(*end).is_gt(),
-                        InsertionBias::Right => !position.compare_integer(*end).is_lt(),
+                    let children = &self.anchors.sequences[node];
+                    let selected = children.partition_point(|child| match bias {
+                        InsertionBias::Left => position.compare_integer(child.end).is_gt(),
+                        InsertionBias::Right => !position.compare_integer(child.end).is_lt(),
                     });
-                    let (_, child) = children
+                    let child = &children
                         .get(selected)
-                        .ok_or(Failure::Lost(MarkLossReason::ContentMissing))?;
+                        .ok_or(Failure::Lost(MarkLossReason::ContentMissing))?
+                        .node;
                     position =
                         position.checked_sub(ExactRatio::integer(self.anchors.parents[child].1))?;
                     node = child;
@@ -314,7 +296,7 @@ impl<'a> Index<'a> {
                 NodeKind::Repeat { .. } => {
                     let location = self.anchors.repeats[node].locate(position, bias)?;
                     position = location.position;
-                    if location.in_gap {
+                    if location.in_gap && location.play.gap_child.is_none() {
                         return Ok(ContentPoint::Content {
                             node: node.clone(),
                             position,
@@ -327,7 +309,15 @@ impl<'a> Index<'a> {
                         .anchors
                         .document
                         .nodes()
-                        .get_key_value(&location.play.child)
+                        .get_key_value(if location.in_gap {
+                            location
+                                .play
+                                .gap_child
+                                .as_ref()
+                                .ok_or(Failure::Lost(MarkLossReason::GapMissing))?
+                        } else {
+                            &location.play.child
+                        })
                         .ok_or(Failure::Lost(MarkLossReason::HostMissing))?
                         .0;
                 }
@@ -374,7 +364,7 @@ impl<'a> Index<'a> {
                 .get(&node)
                 .and_then(|layout| layout.play(&identity))
                 .ok_or(Failure::Lost(MarkLossReason::OccurrenceMissing))?;
-            if play.gap_after == FrameDuration::ZERO {
+            if play.gap_after == FrameDuration::ZERO || play.gap_child.is_some() {
                 return lost(MarkLossReason::GapMissing);
             }
             within_content(
@@ -410,10 +400,10 @@ impl<'a> Index<'a> {
                     let play = self.anchors.repeats[parent]
                         .play(&identity)
                         .ok_or(Failure::Lost(MarkLossReason::OccurrenceMissing))?;
-                    if play.child != node {
-                        return lost(MarkLossReason::ContentMissing);
-                    }
-                    position.checked_add(ExactRatio::integer(play.start))?
+                    let offset = play
+                        .branch_offset(&node)
+                        .ok_or(Failure::Lost(MarkLossReason::ContentMissing))?;
+                    position.checked_add(ExactRatio::integer(offset))?
                 }
                 NodeKind::Retime {
                     mapping, duration, ..
@@ -479,7 +469,9 @@ impl<'a> Index<'a> {
                 if iterations.position(&identity).is_none()
                     || self.anchors.repeats[parent]
                         .play(&identity)
-                        .is_none_or(|play| &play.child != node)
+                        .is_none_or(|play| {
+                            &play.child != node && play.gap_child.as_ref() != Some(node)
+                        })
                 {
                     return lost(MarkLossReason::OccurrenceMissing);
                 }

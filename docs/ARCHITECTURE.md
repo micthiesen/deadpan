@@ -11,7 +11,7 @@
 | `deadpan-plan` | Exact picture mappings, bounded audio spans and occurrence-bound processing stages, sequence duration indexes, compact repeat-run indexes, source-index selection, and deterministic inspection. | Immutable authored revision; no decoder, GPU handle, audio processing, or database connection. Audio separates final allocation, grid origin/rule, retained sampling and post-mapping fade progress. Bound physical owners evaluate current raw recipes on retained clocks, with independent current/retained-placement policy. |
 | `deadpan-dsp` | Owned bounded planar PCM and the canonical pinned Signalsmith stretch engine behind a safe Rust/C++ boundary. | Worker-only preparation, fixed internal schedule, explicit recipe/engine identity, cooperative replay, no devices, decoding or cache publication. |
 | `deadpan-output` | Bounded prepared-PCM queue, generation revocation, delivery-clock intervals, sleep/wake observation and a narrow macOS CPAL device boundary. | Headless kernel plus explicit hardware harness; full lifecycle recovery, rate conversion and release callback qualification remain open. |
-| `deadpan-playback` | Immutable revision/source admission, canonical limited PCM preparation and a separate device controller. | Limited sequence audition with bounded queues, warm verified caches and explicit clock/route failure. Full mastering, acoustic and performance qualification remain open. |
+| `deadpan-playback` | Immutable revision/source admission, canonical limited PCM preparation and a separate device controller. | Limited Original/edit audition and selection loops with bounded queues, warm verified caches and explicit clock/route failure. Full mastering, acoustic and performance qualification remain open. |
 | `deadpan-audio` | Exact-phase source resampling, explicit speaker mixing, qualified PCM access, exact room-tone loops, continuous Preserve preparation, sampled-root transfer onto point grids, informational meters and finite oversampled limiting. | Preparation/analysis workers only; exact affine grids, intrinsic DSP history, transitive source/layout cache provenance and shared work/residency limits. Transfer applies old audibility before filtering and retains it at exact destination points, separately from creative fades. LimitedAudio verifies actual final f32 in absolute cache tiles and shares its bus/DSP deadline. Meters preserve PCM. A revision-aware provider supplies media without database coupling. The playback crate owns devices; full voice graph, group mix, encoded mastering and background cache scheduling remain open. |
 | `deadpan-jobs` | Typed length-framed worker protocol, pure attempt lifecycle and validated checkpoints, bounded subprocess supervision, controlled hash-verified artifact snapshots, and exact bridge-generation planning. | Real MLX qualification uses this boundary in a developer harness. The store persists attempts; app inference remains open. |
 | `deadpan-models` | Native bridge qualification, retained conditioning, measured source spans, request/provenance binding, and immutable host provenance. | The host derives both masters from one native snapshot and binds pre-launch inputs. Admission-bearing Ready receipts require all six objects; the store owns explicit acceptance. |
@@ -20,10 +20,10 @@
 | `deadpan-fileclone` | Safe descriptor-based APFS clone boundary. | Narrow private unsafe system call; copying, verification, publication and durability belong to the store. |
 | `deadpan-render` | Shared SDR picture composition, ordered framing/clipping, aspect/rotation and display transform. | Owned RGBA8 input, linear Rec.2020 working texture, one in-flight upload/render and no decoder or authored state. |
 | `deadpan-media-worker` | Descriptor-only FFmpeg decode, exact interior RGB8 interpolation, FFV1 v3 encoding, and independent decoded-pixel/timing comparison. | One isolated process per conversion, pinned LGPL libraries, bounded native scratch, no worker paths or publication authority. |
-| `deadpan-app` | Native project workspace with `egui`/`eframe`, Metal, a single-writer service, separate import preparation and preview workers. | System Documents library creation, atomic full-Original initialization, protected baseline history, separate sound registration, same-original reuse, legacy compatibility, root-beat Split/Repeat/delete/Hold-duration commands, atomic Source/Hold pause insertion, immutable Original/Your edit frame inspection, and limited sequence audition. Full editing, mastered playback and export remain open. |
+| `deadpan-app` | Native project workspace with `egui`/`eframe`, Metal, a single-writer service, separate import preparation and preview workers. | System Documents library creation, atomic full-Original initialization, protected baseline history, separate sound registration, same-original reuse, legacy compatibility, current-depth Split/Repeat/delete/Hold-duration and Retime commands, atomic Source/Hold pause insertion, immutable Original/Your edit frame inspection, and limited Original/edit audition with selection loops. Full editing, mastered playback and export remain open. |
 | `deadpan-cli` | Versioned headless project and command operations, dry runs, history, plan/source-PCM inspection and diagnostics. | Shared with the native host's `--headless` path. The audio host binds an immutable revision to historical receipts and verified originals; final mixes and export remain open. |
 
-The foundation has typed Source/Sequence/Hold/Repeat/Retime nodes, stable nested occurrence identities, persistent marks with atomic edit transforms, sparse play override subtrees, automatic isolation for node edits through complete occurrence paths, an indexed structural picture plan, independent exact picture/audio mappings, and exact revision-aware boundary/named-mark range queries. Temporal attachments, effects, semantic editing through ranges, a full media engine, audio pipeline, and an app-managed inference worker remain open. Persistence migrates database schemas 1 through 23 directly to schema 24 and core document schema 18. [Audio copy lineage](AUDIO_LINEAGE.md) retains explicit relationships through Split, occurrence isolation and durable history. [Owned timing bindings](OWNED_AUDIO_BINDINGS.md) have persisted clocks, compact capture and a normal plan/PCM consumer; their complete authoring lifecycle remains open. [Audio edge intent](AUDIO_EDGES.md) persists exact boundary choices and applies shared short fades after time mapping. [Source registration](SOURCE_REGISTRATION.md) binds measured indexes and metadata to historical assets and optionally inserts the full source atomically. [Automatic basis state](PRESENTATION_BASIS.md) and explicit canvas changes are authored transactions. [Connection-free import preparation](IMPORT_PREPARATION.md) separates copying, snapshot verification and qualification receipt construction from writer commits using session-bound opaque results. Native relinking, recovery UI and host socket routing remain open. Native source-preview evidence does not qualify a complete editing viewport.
+The foundation has typed Source/Sequence/Hold/Repeat/Retime nodes, stable nested occurrence identities, persistent marks with atomic edit transforms, sparse play override subtrees, automatic isolation for node edits through complete occurrence paths, an indexed structural picture plan, independent exact picture/audio mappings, and exact revision-aware boundary/named-mark range queries. Temporal attachments, effects, semantic editing through ranges, a full media engine, audio pipeline, and an app-managed inference worker remain open. Persistence migrates database schemas 1 through 33 directly to schema 34 and core document schema 28. [Original moments](SOURCE_MOMENTS.md) use native Visual selection and atomic explicit-Sequence paste, and retain measured picture ranges and exact audio selections independently of the full source phase mapping. [Audio copy lineage](AUDIO_LINEAGE.md) retains explicit relationships through Split, occurrence isolation and durable history. [Owned timing bindings](OWNED_AUDIO_BINDINGS.md) have persisted clocks, compact capture and a normal plan/PCM consumer; their complete authoring lifecycle remains open. [Audio edge intent](AUDIO_EDGES.md) persists exact boundary choices and applies shared short fades after time mapping. [Source registration](SOURCE_REGISTRATION.md) binds measured indexes and metadata to historical assets and optionally inserts the full source atomically. [Automatic basis state](PRESENTATION_BASIS.md) and explicit canvas changes are authored transactions. [Connection-free import preparation](IMPORT_PREPARATION.md) separates copying, snapshot verification and qualification receipt construction from writer commits using session-bound opaque results. Native relinking, recovery UI and host socket routing remain open. Native source-preview evidence does not qualify a complete editing viewport.
 
 [Framing](FRAMING.md) stores bounded static poses or explicit whole-host envelopes
 on authored nodes. The plan retains exact owner clocks and provider-to-root scope
@@ -31,7 +31,9 @@ identity; the renderer composes those operations with every intermediate canvas
 clip. Native Camera temporarily changes the retained stopped picture, then submits
 one revision-guarded command through the project service. Its scope is currently
 the selected root beat. Split preserves complete effect clocks; framed Ungroup
-and freezing a complete framed composition remain required.
+remains required. [Captured Hold geometry](CAPTURED_FRAMING.md) retains the input
+composition before the live Hold and ancestor framing. Native root insertion
+captures lower scopes, preserving exact source PTS and intermediate clips.
 
 The [single-Original workflow](SINGLE_ORIGINAL.md) is an optional store profile,
 not a restriction baked into every core primitive. One atomic initialization
@@ -42,13 +44,25 @@ resolves Documents through safe Foundation calls in an autorelease pool and does
 all package work on the service thread. Existing generic projects migrate without
 invented profile data, and native Open upgrades only through validated backups.
 
+[Sound events](SOUND_EVENTS.md) defines the required ownership and integration
+contract for external audio over existing picture time. Sound recipes must retain
+their source phase through structural edits, enter processing at their declared
+owner, and preserve scoped silence. Catalog registration does not yet provide
+placement. The default effect order keeps each voice's continuous time/pitch
+processing and scoped output gates before the group bus. Explicit aggregate
+processing can use a mixed intrinsic operand, but its scalar output policy
+cannot replace independent voice gates.
+
 [Retained audio contexts](AUDIO_CONTEXT.md) capture complete raw audio trees,
 exact source inputs and immutable asset contracts independently of picture.
 The plan compiles them directly through the shared audio graph and refuses
 picture evaluation. Audio preparation requires explicit context-aware source
 admission, including cached dependencies. The headless host authenticates the
 complete context against `ProjectStore::snapshot_at` before reading historical
-receipts and verified originals. Context schema 1 is standalone and explicitly rejects nonempty binding state. Normal document plans support binding-aware rendering; atomic root Source/Hold insertion is implemented; arbitrary nested insertion remains open.
+receipts and verified originals. Context schemas 1 and 2 are standalone and
+explicitly reject nonempty binding state. Normal document plans support
+binding-aware rendering; atomic Source/Hold insertion under ordinary Sequence groups is implemented;
+arbitrary nested insertion remains open.
 
 [Physical audio domains](AUDIO_PHYSICAL_DOMAINS.md) borrow the exact plan and
 seed processing and flattened-policy queries at one retained subtree or gap.
@@ -58,8 +72,11 @@ that raw signal on a point grid without resetting absolute phase. Headless
 domain inspection uses the same historical media host. It does not yet author
 the live bindings needed for inserted-time edits.
 
-[Audio definition output](AUDIO_DEFINITIONS.md) reads a captured Node or actual
-Repeat default directly on a local-zero point grid. Definition scope brands
+[Audio definition output](AUDIO_DEFINITIONS.md) reads a captured Node, actual
+Repeat default or configured Repeat gap directly on a local-zero point grid.
+An unplayed gap definition has no invented preceding-play identity. Actual gap
+projection retains that stable identity and its own local support, bounded by
+the nearest physical clock. Definition scope brands
 relative paths, nested stage descriptors and caches. This supplies a distinct
 new-play recipe operand even when all existing plays are overridden; it does not
 replace their physical-domain continuity or install a live binding.
@@ -74,7 +91,7 @@ Repeat birth/survivor scope. The normal StageAudio path consumes those bindings,
 including current crop support, independent silence and post-mapping virtual
 fades. Root-only bypass and evaluation scope participate in intrinsic cache
 identity. Pure capture preserves existing bindings and rejects nonempty Repeat
-gaps. Atomic root Source/Hold insertion now composes those clocks; nested insertion
+gaps. Atomic Source/Hold insertion under ordinary Sequence groups composes those clocks; Repeat/Retime insertion
 and the complete authoring lifecycle remain open.
 
 ## Full component map
@@ -84,7 +101,7 @@ Section 24 defines boundaries, not an obligation to create empty crates. Introdu
 | Component | Required responsibility | Status |
 | --- | --- | --- |
 | `deadpan-core` | Document/time types, nodes, anchors, occurrences, selectors, commands, reduction, validation, and serialization contracts. | Documents, timing, node/occurrence-targeted commands, inverse patches, persistent marks/edit transforms, sparse play overrides, and exact boundary queries implemented; temporal attachments and remaining domains open. |
-| `deadpan-store` | Authoritative SQLite document/history, one writer, migrations, recovery, and asset ownership. | SQLite schema 24, schema-1-through-23 migration, optional validated single-Original profile and protected full-source baseline, writer lock, durable transactions, request relevance, attempts/receipts/selection, interrupted recovery, checkpoints, verified object publication/readback, explicit bundle acceptance, managed/linked originals, relinking and qualified source registration implemented. Full asset lifecycle and application integration remain open. |
+| `deadpan-store` | Authoritative SQLite document/history, one writer, migrations, recovery, and asset ownership. | SQLite schema 34, schema-1-through-33 migration, optional validated single-Original profile and protected full-source baseline, writer lock, durable transactions, request relevance, attempts/receipts/selection, interrupted recovery, checkpoints, verified object publication/readback, explicit bundle acceptance, managed/linked originals, relinking and qualified source registration implemented. Full asset lifecycle and application integration remain open. |
 | `deadpan-plan` | Compile immutable revisions into indexed render plans and incremental fragments. | Picture mapping and bounded structural audio queries implemented; fragment reuse, attachments/effects and full preview/export integration open. |
 | `deadpan-media` | Qualified FFmpeg/native probing, PTS indexing, bounded decoding, surfaces, encoding/mux interfaces. | Generated RGB-to-FFV1 conversion, persistent H.264/FFV1 source indexes/seeks and measured selected-stream qualification implemented. The store retains qualified indexes. The native workspace connects this bounded import path; full format matrix, playback and export remain open. |
 | `deadpan-render` | Shared GPU composition, framing, color, visual effects, and output transformations. | SDR RGBA and ordered framing/clipping implemented with actual Metal/CPU comparison. HDR, physical display integration, remaining effects and encoder output remain open. |

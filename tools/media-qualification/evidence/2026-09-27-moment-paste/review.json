@@ -1,0 +1,87 @@
+{
+  "review_base": "origin/main",
+  "subject": "Original moment paste increment against preceding verified source snapshot",
+  "source_sha256": {
+    "crates/deadpan-app/src/navigation.rs": "997cbf51cdb66369dd74f5d260d41f0a5e1d2732d64a59b6f1250d65d655eba9",
+    "crates/deadpan-app/src/navigation/command.rs": "bfa4c0d2ad839ab541682e6491c5af96aa8d0eb47ed5760a088f579e366a5993",
+    "crates/deadpan-app/src/preview.rs": "5d4f9a303d3e9fccd327b0cc50bfa32224eb03905686a54b781be73f8424a67b",
+    "crates/deadpan-app/src/preview/harness.rs": "805eb28ec842250811eb057784cc102784320879cbf5e7a9c416ca95b56c68cb",
+    "crates/deadpan-app/src/preview/harness/moment.rs": "f7bccdccd99da49fdddd83d38dc0a960c8a0d8703148577e18b0a53b59e4acd3",
+    "crates/deadpan-app/src/preview/harness/scenarios.rs": "831753222f151f309864cf6c5b836a8a5ab2dee7ede11b74b26170869225cd62",
+    "crates/deadpan-app/src/preview/moment.rs": "6d4fad4d465f478fd540dc7e820183f157a2b51b16c89e33f4e2c9742b246985",
+    "crates/deadpan-app/src/project.rs": "5c37cd2f930d5d047db9826cc1edc38fc24ee56b4758234c5256ad4e8d9799f1",
+    "crates/deadpan-app/src/project/service.rs": "4c96c05ba155b5e37a7ef075256983be89bbbd8cf1e34a8ffc05649b071b9fb9",
+    "crates/deadpan-app/src/project/service/moment.rs": "65aa081f1999b05762c8a3a9cbafc458066773b524a64c3e0542f8c373fffc83",
+    "crates/deadpan-app/src/project/tests.rs": "4bf87e09b300454218ee67eed6b7b46bf96fa24ce900a3e9e98b48e02cae2db7",
+    "crates/deadpan-app/src/project/tests/moment.rs": "53256e8b680cbf48b90d2882715fbe49ef89877294cd83afa37fe6f8e4a8c12f",
+    "crates/deadpan-app/src/ui_harness.rs": "15068f254ebc71aa41cc5e9fe3d51ee8e14bd3d59fd9828cfde3f59488b02b68",
+    "crates/deadpan-audio/tests/composite_insert.rs": "e7df3638ad5569bc54d1cf1e52ce4790b6d377490ca62d58ec621de2e9510175",
+    "crates/deadpan-audio/tests/composite_insert/source_splice.rs": "b447dc342f45573943fff01bdd430e982ce8b2e1f14e2f300588cf31cb851109",
+    "crates/deadpan-cli/src/doctor.rs": "1730037747433e1e738254db0910fe2b31016c1f1fd15242f9fbd69235e4c2eb",
+    "crates/deadpan-cli/tests/project_commands.rs": "cacdd9584c64dd6633bd0d7b1031d007245f0bf038a6b532a86403215ce3bc2a",
+    "crates/deadpan-core/src/command.rs": "a7e00094e50903ec429a2161628d6cf949ce8aaffdbb2331a2ced6566b63dbc3",
+    "crates/deadpan-core/src/document.rs": "b71bd02b0373bb67f8bf8107fcd29fa72144e4a84f529875609cc84f095d05bf",
+    "crates/deadpan-core/src/insert_time.rs": "52692be3acdd053104c988602354c121d24a96e35db7ad953bbeee6f8776a2e7",
+    "crates/deadpan-core/src/insert_time/composite.rs": "0db7c49a8bb1ec325aba5c046014fc7591275d1ecad9b54f3b2e964699b86bae",
+    "crates/deadpan-core/src/insert_time/source_splice.rs": "acbccb268daa0473262115ccbec72055f247f28ba2d8b4bb21dab281e73a3d3d",
+    "crates/deadpan-core/src/legacy_v26.rs": "797d390e0abfbd31570852212a3db8557e7f28e115477dc55a8f45a280567b3b",
+    "crates/deadpan-core/src/lib.rs": "59457f78c38c6ca631ef2d899bdf47c972b1d8aeb8986fcfecd005bfb08a3c44",
+    "crates/deadpan-core/tests/insert_time.rs": "a9c03611204cecd05b5370e950d88c79dbe1cc86bbeec0c8000bc5b78474bc22",
+    "crates/deadpan-core/tests/insert_time/source_splice.rs": "ce14e8b3083a6bd3e9836989b017c411cc2152533999a151ac2eb583a111a85e",
+    "crates/deadpan-plan/tests/picture_plan.rs": "d1873201722c4d3c104018aa4e3979b0bd1163524eaa2be2d23b30811dba8850",
+    "crates/deadpan-store/src/migration.rs": "587bc585c9351918ef9b6895fa17e4c98141b48ce9fe6026d1071d3d88b483c1",
+    "crates/deadpan-store/src/schema.rs": "5f8510a9ac76ecb2e4073e74e18036669d2d3ad10e742505cc105db2f9cba98f",
+    "crates/deadpan-store/src/source_registration.rs": "a13a42b9514f7ae6c06f2bcc71518b03e717fd1a6cb90edc523c6fd7ce3e1ac3",
+    "crates/deadpan-store/src/validation.rs": "7ad05839065b673916f1256e1eedc8fb7d902785ab59cb278016d855e041f5c6",
+    "crates/deadpan-store/tests/fixtures/produce-v32-moment-splice-history.py": "47ee3fde84852c40aa810df60b9c35345eaea68ee77fd5278a2d7c8fe9b2d98f",
+    "crates/deadpan-store/tests/fixtures/v32-moment-splice-history.commands.json": "b1a85cd095edd22dacb49dbfe5bb322062ec24748f95ca329496466ee6397195",
+    "crates/deadpan-store/tests/fixtures/v32-moment-splice-history.provenance.json": "88c08641bf36f3c197f8da3aab7a11ab775a273d7ebeb3cb9669f67f6fd998bd",
+    "crates/deadpan-store/tests/fixtures/v32-moment-splice-history.sql": "6c6472ae0fed33417e186cd7cd964b5d1540f01e823fad10982c384e9f99ed8a",
+    "crates/deadpan-store/tests/migration.rs": "1d9d924385848bc68c44fecf19f33e3943eefaa0a83820cc65f6d374de63f37c",
+    "crates/deadpan-store/tests/migration/moment_splice.rs": "c58cb8ff767e65e0f28dac67631217534efee29070be449c1889bfe83732cf34",
+    "crates/deadpan-store/tests/migration/sequence_insert.rs": "a212a2ac37db877858468ce138ff9ef7edccfc498c024bc8682ad0d328e81108",
+    "crates/deadpan-store/tests/prepared_source_registration.rs": "0d6a05faac70abe779465b97e57e804a90166b1a75b7a5a18c379b4d37783ead",
+    "crates/deadpan-store/tests/prepared_source_registration/moment.rs": "34ca2278bad774d21ba707c24f1f0cb407f0da914c72b9fc03bc63b23a46b52d",
+    "crates/deadpan-app/src/navigation/kestrel-reserved.tsv": "ed5f30a61d9c1f506a7798c943e1d8633ae66fc6174c0d3a2879f488cb453cd1"
+  },
+  "reviewers": [
+    {
+      "agent": "moment_general_review",
+      "lens": "general end-to-end correctness and keyboard/service ownership",
+      "findings": [],
+      "follow_up_findings": [
+        "Active empty Original selection inspector still instructed pressing v to start."
+      ],
+      "resolution": "Inspector text is conditional on active state. Original-moment harness now checks the active-empty state before range movement.",
+      "supplemental_review": {
+        "scope": "Reviewed Kestrel digest-only refresh against live trusted registry, commit diff and evaluated exporter output",
+        "findings": [],
+        "result": "Fixture equals exporter output; only Ghostty help prose changed upstream; reservation rows and audit checks unchanged"
+      }
+    },
+    {
+      "agent": "moment_timing_review",
+      "lens": "exact sample phase and structural owner invariants",
+      "findings": []
+    },
+    {
+      "agent": "moment_storage_review",
+      "lens": "prepared receipt admission and migration safety",
+      "findings": []
+    }
+  ],
+  "root_corrections": [
+    "Temporal bar maps measured PTS instead of ordinal percentage; VFR and large signed origin regression added.",
+    "Standalone raw preview cannot expose registered Original moment inspector.",
+    "Selection buttons stay in inspector to preserve picture space and avoid duplicate accessibility labels.",
+    "Empty Visual range has truthful finish and boundary guidance.",
+    "Pointer selection buttons report Inspector focus; pointer paste reports Viewer focus before committed Sequence selection.",
+    "Re-evaluated trusted live Kestrel registry after source drift; all reservation rows identical and only a help description changed in the source. Refreshed digest without weakening audit."
+  ],
+  "remaining_material_findings": [],
+  "scope_limits": [
+    "Reviews are static; reviewers ran no Cargo or GUI.",
+    "Current native edits pass no generation relevance plan, an existing explicitly rejected integration boundary; store API/test supports complete relevance.",
+    "No visual or native accessibility qualification is inferred from static code review."
+  ]
+}

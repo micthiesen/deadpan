@@ -15,23 +15,28 @@ use crate::dialogs::{DialogKind, Dialogs};
 use crate::navigation::{self, Action, BeatEdit, Bindings, Pane, TextAction};
 use crate::presentation::Presentation;
 use crate::project::{
-    ImportMedia, ImportStage, ImportStatus, ProjectEdit, ProjectRequest, ProjectService, Workspace,
+    ImportMedia, ImportStage, ImportStatus, ProjectEdit, ProjectRequest, ProjectService,
+    SequenceScope, Workspace,
 };
 use crate::worker::{PreviewWorker, ProjectView, SourceSummary, Ticket, Work};
 
 mod camera;
 mod camera_fields;
 mod cards;
+#[cfg(feature = "ui-harness")]
+pub(crate) mod harness;
 mod help_scroll;
 mod inspector;
+mod moment;
 mod playback;
+mod scope;
 mod selection;
 mod style;
 
 const SEARCH_ID: &str = "source-search";
 const COMMAND_ID: &str = "command-input";
 const MAX_TARGET_PIXELS: f64 = 1920.0 * 1080.0;
-const SOURCE_INSERT_HINT: &str = "The Original stays intact. Switch to Your edit (:sequence) to reshape it, or reuse the full Original with ⌘Return (:insert).";
+const SOURCE_INSERT_HINT: &str = "The Original stays intact. Switch to Your edit (:sequence) to reshape it, or reuse the full Original with ,i (:insert).";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum View {
@@ -76,6 +81,8 @@ struct DialogIntent {
 }
 
 pub struct DeadpanApp {
+    #[cfg(feature = "ui-harness")]
+    feedback: harness::Feedback,
     smoke_frames: Option<u8>,
     close_pending: bool,
     exited: Rc<Cell<bool>>,
@@ -86,6 +93,7 @@ pub struct DeadpanApp {
     playback_interrupted: Arc<AtomicBool>,
     transport: Option<crate::transport::Run>,
     monitor_gain: f32,
+    audition_context: playback::AuditionContext,
     monitor_control: Option<egui::Id>,
     resume: Option<crate::transport::Resume>,
     service: ProjectService,
@@ -97,10 +105,17 @@ pub struct DeadpanApp {
     workspace: Option<Arc<Workspace>>,
     import: Option<ImportStatus>,
     selected_source: Option<AssetId>,
+    selected_sound: Option<AssetId>,
+    sound_cursor: u64,
     selected_beat: Option<NodeId>,
+    sequence_scope: SequenceScope,
+    scope_start: u64,
+    scope_end: u64,
+    scope_labels: Vec<String>,
     view: View,
     pane: Pane,
     source_cursor: u64,
+    moment: moment::Selection,
     sequence_cursor: u64,
     source_search: String,
     command: String,
@@ -161,6 +176,8 @@ impl DeadpanApp {
         };
         let renderer = PictureRenderer::new(&render_state.device, &render_state.queue);
         let mut app = Self {
+            #[cfg(feature = "ui-harness")]
+            feedback: harness::Feedback::default(),
             smoke_frames: smoke_test.then_some(0),
             close_pending: false,
             exited,
@@ -171,6 +188,7 @@ impl DeadpanApp {
             playback_interrupted,
             transport: None,
             monitor_gain: 0.125,
+            audition_context: playback::AuditionContext::default(),
             monitor_control: None,
             resume: None,
             service,
@@ -182,10 +200,17 @@ impl DeadpanApp {
             workspace: None,
             import: None,
             selected_source: None,
+            selected_sound: None,
+            sound_cursor: 0,
             selected_beat: None,
+            sequence_scope: SequenceScope::default(),
+            scope_start: 0,
+            scope_end: 0,
+            scope_labels: Vec::new(),
             view: View::Source,
             pane: Pane::Viewer,
             source_cursor: 0,
+            moment: moment::Selection::default(),
             sequence_cursor: 0,
             source_search: String::new(),
             command: String::new(),
@@ -232,10 +257,14 @@ impl DeadpanApp {
         self.bindings.clear();
         match self.service.submit(request) {
             Ok(()) => {
+                #[cfg(feature = "ui-harness")]
+                self.feedback.record("command_admitted");
                 self.error = None;
                 true
             }
             Err(error) => {
+                #[cfg(feature = "ui-harness")]
+                self.feedback.record("command_rejected");
                 self.error = Some(error);
                 false
             }
@@ -316,6 +345,7 @@ impl DeadpanApp {
     }
 
     fn request_picture(&mut self, clear: bool) {
+        self.reconcile_moment();
         // Pointer navigation also reaches this boundary. Revoke the draft in
         // this frame, before a later inspector widget could apply its old scope.
         self.cancel_camera();
@@ -327,6 +357,15 @@ impl DeadpanApp {
         &mut self,
         clear: bool,
         transport: Option<deadpan_output::Generation>,
+    ) {
+        self.request_picture_for_transport_at(clear, transport, None);
+    }
+
+    fn request_picture_for_transport_at(
+        &mut self,
+        clear: bool,
+        transport: Option<deadpan_output::Generation>,
+        picture: Option<u64>,
     ) {
         self.error = None;
         if clear {
@@ -352,14 +391,16 @@ impl DeadpanApp {
                     ProjectView::Source {
                         asset: asset.clone(),
                         frame: SourceFrameId(
-                            self.source_cursor
+                            picture
+                                .unwrap_or(self.source_cursor)
                                 .min(self.source_length().saturating_sub(1)),
                         ),
                     }
                 }
                 View::Sequence => ProjectView::Sequence {
                     frame: ProjectFrame(
-                        self.sequence_cursor
+                        picture
+                            .unwrap_or(self.sequence_cursor)
                             .min(self.sequence_length().saturating_sub(1))
                             as i64,
                     ),
@@ -386,6 +427,8 @@ impl DeadpanApp {
             request: serial,
         };
         self.presentation.request(ticket, &work);
+        #[cfg(feature = "ui-harness")]
+        self.feedback.picture_requested(ticket);
         self.worker.submit(ticket, work);
     }
 
@@ -421,7 +464,10 @@ impl DeadpanApp {
                 self.clear_picture();
                 self.raw_source = None;
                 self.selected_source = None;
+                self.selected_sound = None;
+                self.sound_cursor = 0;
                 self.selected_beat = None;
+                self.sequence_scope = SequenceScope::default();
                 self.source_cursor = 0;
                 self.sequence_cursor = 0;
                 self.last_committed = None;
@@ -458,6 +504,11 @@ impl DeadpanApp {
             }
             if old_revision != new_revision || old_session != new_session {
                 self.bindings.clear();
+                if let Some(commit) = update.committed.as_ref()
+                    && self.last_committed.as_ref() != Some(&commit.revision)
+                {
+                    self.sequence_scope = commit.scope.clone();
+                }
                 self.rebuild_rows();
             }
             let completion = selection::completion(
@@ -475,21 +526,26 @@ impl DeadpanApp {
             self.view
                 .set(self.view.after_completion(&completion), &mut self.message);
             if let Some(commit) = update.committed.filter(|_| committed_selection) {
+                #[cfg(feature = "ui-harness")]
+                self.feedback.record("command_committed");
                 self.last_committed = Some(commit.revision);
                 self.bindings.clear();
                 self.pane = Pane::Sequence;
-                self.selected_beat = commit.selected_node;
-                if let Some(beat) = self
-                    .beat_rows
-                    .iter()
-                    .find(|b| Some(&b.id) == self.selected_beat.as_ref())
-                {
-                    if !commit.preserve_cursor {
+                if let Some(cursor) = commit.cursor.and_then(|at| u64::try_from(at.0).ok()) {
+                    self.sequence_cursor = cursor;
+                }
+                let selected = selection::after_commit(
+                    &self.beat_rows,
+                    commit.selected_node.as_ref(),
+                    commit.cursor,
+                );
+                self.selected_beat = selected.map(|index| self.beat_rows[index].id.clone());
+                if let Some(index) = selected {
+                    let beat = &self.beat_rows[index];
+                    if commit.cursor.is_none() && !commit.preserve_cursor {
                         self.sequence_cursor = beat.start;
                     }
                     self.reveal_beat = true;
-                } else {
-                    self.selected_beat = None;
                 }
             } else if completion == selection::Completion::Registration
                 && let Some(asset) = self.import.as_ref().and_then(|i| i.asset.clone())
@@ -509,6 +565,7 @@ impl DeadpanApp {
             }
             self.sequence_cursor = self.sequence_cursor.min(self.sequence_length());
             self.source_cursor = self.source_cursor.min(self.source_length());
+            self.reconcile_moment();
             if self.view == View::Sequence && !committed_selection {
                 self.reconcile_beat_selection();
             }
@@ -516,11 +573,20 @@ impl DeadpanApp {
                 self.request_picture(!preserve_picture);
             }
         }
-        if let Some(result) = self
-            .worker
-            .take_reply()
-            .and_then(|reply| self.presentation.receive(reply))
-        {
+        #[cfg(feature = "ui-harness")]
+        let reply = self.feedback.take_reply(&self.worker);
+        #[cfg(not(feature = "ui-harness"))]
+        let reply = self.worker.take_reply();
+        let result = reply.and_then(|reply| {
+            #[cfg(feature = "ui-harness")]
+            let (ticket, timing) = (reply.ticket, reply.timing);
+            let result = self.presentation.receive(reply);
+            #[cfg(feature = "ui-harness")]
+            self.feedback
+                .picture_received(ticket, result.as_ref().map(Result::is_ok), timing);
+            result
+        });
+        if let Some(result) = result {
             match result {
                 Ok(summary) => {
                     if summary.is_some() {
@@ -679,16 +745,25 @@ impl DeadpanApp {
         let Some(asset) = original_asset(workspace).or(self.selected_source.as_ref()) else {
             return;
         };
-        let children = root_children(workspace);
+        let scope = match self.sequence_scope.resolve(workspace) {
+            Ok(scope) => scope,
+            Err(error) => {
+                self.error = Some(error);
+                return;
+            }
+        };
+        let children = scope.children;
         let index = self
             .selected_beat
             .as_ref()
             .and_then(|id| children.iter().position(|child| child == id))
             .map_or(children.len(), |n| n + 1);
         let request = ProjectRequest::Insert {
+            expected_session: workspace.session,
             expected_revision: workspace.document.revision_id().clone(),
+            scope: self.sequence_scope.clone(),
             asset: asset.clone(),
-            parent: workspace.document.root().clone(),
+            parent: scope.owner.clone(),
             index,
         };
         self.submit(request);
@@ -744,9 +819,18 @@ impl DeadpanApp {
                 self.message = Some("Pause resolves to 0 frames; no edit was made.".into());
                 return;
             }
+            if let Err(error) = self
+                .sequence_scope
+                .check_pause(workspace, ProjectFrame(self.sequence_cursor as i64))
+            {
+                self.error = Some(error);
+                return;
+            }
             self.submit(ProjectRequest::Edit {
                 expected_session: workspace.session,
                 expected_revision: workspace.document.revision_id().clone(),
+                scope: self.sequence_scope.clone(),
+                cursor: ProjectFrame(self.sequence_cursor as i64),
                 edit: ProjectEdit::InsertTime {
                     at: ProjectFrame(self.sequence_cursor as i64),
                     duration,
@@ -755,7 +839,7 @@ impl DeadpanApp {
             return;
         }
         let (Some(workspace), Some(node)) = (&self.workspace, &self.selected_beat) else {
-            self.error = Some("Select a root beat in the sequence before editing.".into());
+            self.error = Some("Select a beat in the current group before editing.".into());
             return;
         };
         let node = node.clone();
@@ -774,10 +858,18 @@ impl DeadpanApp {
             BeatEdit::WrapRepeat(plays) => ProjectEdit::WrapRepeat { node, plays },
             BeatEdit::Delete => ProjectEdit::Delete { node },
             BeatEdit::HoldDuration(duration) => ProjectEdit::HoldDuration { node, duration },
+            BeatEdit::Retime(input) => ProjectEdit::Retime {
+                node,
+                speed: input.speed,
+                pitch: input.pitch,
+                wrap: input.wrap,
+            },
         };
         self.submit(ProjectRequest::Edit {
             expected_session: workspace.session,
             expected_revision: workspace.document.revision_id().clone(),
+            scope: self.sequence_scope.clone(),
+            cursor: ProjectFrame(self.sequence_cursor as i64),
             edit,
         });
     }
@@ -802,13 +894,8 @@ impl DeadpanApp {
             self.selected_beat = node;
             self.reveal_beat = true;
         }
-        if let Some(index) = selected {
-            let beat = &self.beat_rows[index];
-            if self.sequence_cursor < beat.start || self.sequence_cursor > beat.start + beat.frames
-            {
-                self.sequence_cursor = beat.start;
-            }
-        }
+        // History and background refresh preserve the absolute cursor. A valid
+        // selected identity may have moved; do not turn that into a seek.
     }
 
     fn open_command(&mut self, command: String, context: &egui::Context) {
@@ -835,6 +922,8 @@ impl DeadpanApp {
             return;
         }
         self.bindings.clear();
+        self.stop_playback();
+        self.selected_sound = None;
         self.selected_source = Some(id);
         self.raw_source = None;
         self.source_cursor = 0;
@@ -844,16 +933,55 @@ impl DeadpanApp {
         self.request_picture(true);
     }
 
+    fn select_sound(&mut self, id: AssetId) {
+        if self
+            .workspace
+            .as_ref()
+            .and_then(|w| w.sources.get(&id))
+            .and_then(|source| source.sound_audition.as_ref())
+            .is_none()
+        {
+            return;
+        }
+        self.stop_playback();
+        self.bindings.clear();
+        self.selected_sound = Some(id);
+        self.sound_cursor = 0;
+        self.pane = Pane::Sources;
+        self.error = None;
+    }
+
     fn rebuild_rows(&mut self) {
         let Some(workspace) = &self.workspace else {
             self.beat_rows = Arc::new(Vec::new());
+            self.scope_start = 0;
+            self.scope_end = 0;
+            self.scope_labels.clear();
             self.source_rows = Arc::new(Vec::new());
             self.sound_rows = Arc::new(Vec::new());
             return;
         };
-        let mut start = 0_u64;
+        self.sequence_scope.reconcile(workspace);
+        let scope = match self.sequence_scope.resolve(workspace) {
+            Ok(scope) => scope,
+            Err(error) => {
+                self.error = Some(error);
+                self.beat_rows = Arc::new(Vec::new());
+                return;
+            }
+        };
+        self.scope_start = scope.start;
+        self.scope_end = scope.end;
+        self.scope_labels = self
+            .sequence_scope
+            .groups()
+            .iter()
+            .map(|id| workspace.document.nodes()[id].label.clone())
+            .collect();
+        let mut start = scope.start;
         self.beat_rows = Arc::new(
-            root_children(workspace)
+            scope
+                .children
                 .iter()
                 .map(|id| {
                     let node = &workspace.document.nodes()[id];
@@ -908,7 +1036,15 @@ impl DeadpanApp {
     }
 
     fn action(&mut self, action: Action, context: &egui::Context) {
-        if self.camera.is_some() && !matches!(action, Action::Framing(_)) {
+        if self.sound_focused() && !sound_action_allowed(action) {
+            self.bindings.clear();
+            self.message = Some(
+                "Choose Original or Your edit for editing commands. Sounds can be auditioned here."
+                    .into(),
+            );
+            return;
+        }
+        if self.camera.is_some() && !self.sound_focused() && !matches!(action, Action::Framing(_)) {
             self.cancel_camera();
         }
         match action {
@@ -923,9 +1059,21 @@ impl DeadpanApp {
                 self.toggle_playback();
                 context.memory_mut(|m| m.request_focus(pane_id(self.pane)));
             }
+            Action::Audition => {
+                self.audition_selection();
+                context.memory_mut(|m| m.request_focus(pane_id(self.pane)));
+            }
+            Action::EnterGroup => self.enter_group(context),
+            Action::LeaveGroup => self.leave_group(context),
+            Action::VisualMoment => self.visual_moment(),
+            Action::CopyMoment => self.copy_moment(),
+            Action::PasteMoment { before } => self.paste_moment(before),
             Action::Edit(edit) => self.edit(edit),
             Action::Invalid(error) => self.error = Some(error.into()),
             Action::Pane { reverse } => {
+                if self.sound_focused() {
+                    self.stop_playback();
+                }
                 self.pane = self.pane.cycle_visible(reverse, self.inspector_visible());
                 self.bindings.clear();
                 context.memory_mut(|m| m.request_focus(pane_id(self.pane)));
@@ -938,15 +1086,17 @@ impl DeadpanApp {
                             self.source_length(),
                             forward,
                             count,
-                        )
+                        );
+                        self.moment.move_to(self.source_cursor);
                     }
                     View::Sequence => {
                         self.sequence_cursor = navigation::boundary_step(
-                            self.sequence_cursor,
-                            self.sequence_length(),
+                            self.sequence_cursor.clamp(self.scope_start, self.scope_end)
+                                - self.scope_start,
+                            self.scope_end - self.scope_start,
                             forward,
                             count,
-                        )
+                        ) + self.scope_start
                     }
                 }
                 if self.view == View::Sequence {
@@ -957,9 +1107,16 @@ impl DeadpanApp {
             Action::First | Action::Last => {
                 let end = action == Action::Last;
                 match self.view {
-                    View::Source => self.source_cursor = if end { self.source_length() } else { 0 },
+                    View::Source => {
+                        self.source_cursor = if end { self.source_length() } else { 0 };
+                        self.moment.move_to(self.source_cursor);
+                    }
                     View::Sequence => {
-                        self.sequence_cursor = if end { self.sequence_length() } else { 0 }
+                        self.sequence_cursor = if end {
+                            self.scope_end
+                        } else {
+                            self.scope_start
+                        }
                     }
                 }
                 if self.view == View::Sequence {
@@ -968,12 +1125,31 @@ impl DeadpanApp {
                 self.request_picture(false);
             }
             Action::Beat { forward, count } => {
-                if self.pane == Pane::Sources && !self.focused_workflow() {
+                if self.pane == Pane::Sources && self.focused_workflow() {
+                    let sounds = Arc::clone(&self.sound_rows);
+                    if !sounds.is_empty() {
+                        let current = self
+                            .selected_sound
+                            .as_ref()
+                            .and_then(|id| sounds.iter().position(|sound| &sound.0 == id));
+                        let next =
+                            current.map_or(if forward { 0 } else { sounds.len() - 1 }, |index| {
+                                navigation::boundary_step(
+                                    index as u64,
+                                    sounds.len().saturating_sub(1) as u64,
+                                    forward,
+                                    count,
+                                ) as usize
+                            });
+                        self.select_sound(sounds[next].0.clone());
+                    }
+                } else if self.pane == Pane::Sources && !self.focused_workflow() {
                     let sources = Arc::clone(&self.source_rows);
                     if !sources.is_empty() {
                         let index = self
-                            .selected_source
+                            .selected_sound
                             .as_ref()
+                            .or(self.selected_source.as_ref())
                             .and_then(|id| sources.iter().position(|source| &source.0 == id))
                             .unwrap_or(0);
                         let next = navigation::boundary_step(
@@ -982,7 +1158,11 @@ impl DeadpanApp {
                             forward,
                             count,
                         ) as usize;
-                        self.select_source(sources[next].0.clone());
+                        if sources[next].2 {
+                            self.select_source(sources[next].0.clone());
+                        } else {
+                            self.select_sound(sources[next].0.clone());
+                        }
                     }
                 } else {
                     let beats = Arc::clone(&self.beat_rows);
@@ -1032,6 +1212,9 @@ impl DeadpanApp {
                 self.bindings.clear();
             }
             Action::Escape => {
+                if !self.sound_focused() {
+                    self.moment.cancel();
+                }
                 self.pause_playback();
                 self.command_open = false;
                 self.command_focus_pending = false;
@@ -1041,7 +1224,11 @@ impl DeadpanApp {
             }
             Action::OfferInsert => {
                 if self.view == View::Source {
-                    self.offer_insert();
+                    if self.bindings.reuse_pending() {
+                        self.message = Some(SOURCE_INSERT_HINT.into());
+                    } else {
+                        self.offer_insert();
+                    }
                 }
             }
         }
@@ -1117,7 +1304,7 @@ impl DeadpanApp {
             {
                 let focused = text_input_active(context, self.command_open);
                 let ime = self.ime_composing || ime_event;
-                if self.camera.is_some() {
+                if self.camera.is_some() && !self.sound_focused() {
                     match camera::dispatch_key(
                         key,
                         modifiers,
@@ -1226,12 +1413,16 @@ impl DeadpanApp {
         match command {
             Ok(navigation::command::Entry::Action(action)) => self.action(action, context),
             Ok(navigation::command::Entry::Source) => {
+                self.stop_playback();
+                self.selected_sound = None;
                 if self.view != View::Source {
                     self.view.set(View::Source, &mut self.message);
                     self.request_picture(true);
                 }
             }
             Ok(navigation::command::Entry::Sequence) => {
+                self.stop_playback();
+                self.selected_sound = None;
                 if self.workspace.is_none() {
                     self.error = Some("Create or open a project to inspect its sequence.".into());
                 } else if self.view != View::Sequence {
@@ -1249,6 +1440,31 @@ impl DeadpanApp {
                     tenths / 10,
                     tenths % 10
                 ));
+            }
+            Ok(navigation::command::Entry::AuditionContext { lead, follow }) => {
+                let rate = self
+                    .workspace
+                    .as_ref()
+                    .map(|workspace| workspace.document.presentation_basis().frame_rate);
+                match rate
+                    .ok_or_else(|| "Open a project before changing audition context.".to_owned())
+                    .and_then(|rate| {
+                        Ok(playback::AuditionContext {
+                            lead: lead.samples(rate)?,
+                            follow: follow.samples(rate)?,
+                        })
+                    }) {
+                    Ok(value) => {
+                        self.stop_playback();
+                        self.audition_context = value;
+                        self.message = Some(format!(
+                            "Loop context: {} lead-in · {} follow-through",
+                            value.lead_label(),
+                            value.follow_label()
+                        ));
+                    }
+                    Err(error) => self.error = Some(error),
+                }
             }
             Ok(navigation::command::Entry::Empty) => {}
             Err(error) => self.error = Some(error),
@@ -1367,20 +1583,22 @@ impl DeadpanApp {
 
     fn footer(&mut self, ui: &mut egui::Ui) {
         egui::Panel::bottom("workspace-status").resizable(false).frame(style::panel()).show(ui, |ui| {
-            if self.camera.is_some() {
+            if self.camera.is_some() && !self.sound_focused() {
                 self.camera_footer(ui);
                 return;
             }
             let pending = self.bindings.pending();
-            let mode = if self.command_open { "COMMAND" } else if text_input_active(ui.ctx(), false) { "TEXT" } else if pending.is_empty() { "NORMAL" } else { "PENDING" };
+            let mode = if self.command_open { "COMMAND" } else if text_input_active(ui.ctx(), false) { "TEXT" } else if self.moment.active && self.view == View::Source { "VISUAL" } else if pending.is_empty() { "NORMAL" } else { "PENDING" };
             ui.horizontal_wrapped(|ui| {
                 ui.label(egui::RichText::new(mode).monospace().strong());
                 ui.separator();
-                ui.label(egui::RichText::new(match (self.focused_workflow(), self.view) { (true, View::Source) => "ORIGINAL", (true, View::Sequence) => "YOUR EDIT", (false, View::Source) => "SOURCE", (false, View::Sequence) => "SEQUENCE" }).monospace());
+                ui.label(egui::RichText::new(if self.sound_focused() { "SOUND" } else { match (self.focused_workflow(), self.view) { (true, View::Source) => "ORIGINAL", (true, View::Sequence) => "YOUR EDIT", (false, View::Source) => "SOURCE", (false, View::Sequence) => "SEQUENCE" } }).monospace());
                 ui.separator();
-                if self.view == View::Sequence {
+                if self.sound_focused() {
+                    ui.weak("Catalog audition");
+                } else if self.view == View::Sequence {
                     if let Some(beat) = self.beat_rows.iter().find(|beat| Some(&beat.id) == self.selected_beat.as_ref()) {
-                        ui.add(egui::Label::new(format!("{} · Root beat", beat.label)).truncate()).on_hover_text(format!("{} · {} · {} frames · Root beat", beat.label, beat.kind, beat.frames));
+                        ui.add(egui::Label::new(format!("{} · {}", beat.label, self.beat_scope_label())).truncate()).on_hover_text(format!("{} · {} · {} frames · {}", beat.label, beat.kind, beat.frames, self.beat_scope_label()));
                     } else { ui.weak("No beat selected"); }
                 } else { ui.weak("Unchanged source"); }
                 ui.colored_label(style::LAVENDER, format!("Focus: {}", if self.pane == Pane::Sources && self.focused_workflow() { "Original / sounds" } else { pane_name(self.pane) }));
@@ -1392,7 +1610,7 @@ impl DeadpanApp {
                 egui::Frame::new().fill(style::PANEL).stroke(egui::Stroke::new(1.0, style::LAVENDER)).corner_radius(4).inner_margin(egui::Margin::symmetric(10, 6)).show(ui, |ui| {
                     ui.horizontal(|ui| {
                         ui.label(egui::RichText::new(":").monospace().color(style::LAVENDER));
-                        ui.add(egui::TextEdit::singleline(&mut self.command).id(egui::Id::new(COMMAND_ID)).font(egui::TextStyle::Monospace).frame(egui::Frame::NONE).desired_width(f32::INFINITY).hint_text("hold 0.5s · split · repeat 3 · hold-duration 11f · delete · help"));
+                        ui.add(egui::TextEdit::singleline(&mut self.command).id(egui::Id::new(COMMAND_ID)).font(egui::TextStyle::Monospace).frame(egui::Frame::NONE).desired_width(f32::INFINITY).hint_text("hold 0.5s · repeat 3 · retime 0.75 pitch=preserve · help"));
                         retain_text_escape(ui, COMMAND_ID);
                     });
                 });
@@ -1406,24 +1624,40 @@ impl DeadpanApp {
                         ui.colored_label(style::LAVENDER, format!("{} frames · freeze + silence · at boundary {}", duration.frames(), self.sequence_cursor));
                     }
                 });
+                if let Some(hint) = self.retime_hint() {
+                    match hint {
+                        Ok(text) => { ui.colored_label(style::LAVENDER, text); }
+                        Err(error) => { ui.colored_label(ui.visuals().error_fg_color, error); }
+                    }
+                }
             } else {
                 ui.horizontal_wrapped(|ui| {
-                    let (cursor, length) = if self.view == View::Source { (self.source_cursor, self.source_length()) } else { (self.sequence_cursor, self.sequence_length()) };
-                    ui.label(egui::RichText::new(format!("{} {cursor} / {length}", if self.view == View::Source { "Original video boundary" } else { "Edit boundary" })).monospace().color(style::CURSOR));
+                    let clock = if self.sound_focused() { format!("Sound {}", playback::sound_time(self.sound_cursor)) } else if self.view == View::Source { format!("Original video boundary {} / {}", self.source_cursor, self.source_length()) } else { self.scope_clock_label() };
+                    ui.label(egui::RichText::new(clock).monospace().color(style::CURSOR));
                     if self.presentation.loading() || self.presentation.needs_render() { ui.spinner(); ui.weak("Updating picture"); }
-                    style::key_hint(ui, "h l", "frame");
-                    if self.view == View::Sequence {
+                    if self.sound_focused() {
+                        style::key_hint(ui, "j k", "sound");
+                        style::key_hint(ui, "Space", "play / pause");
+                        style::key_hint(ui, "⇧Space", "loop sound");
+                    } else if self.view == View::Sequence {
+                        style::key_hint(ui, "h l", "frame");
                         style::key_hint(ui, "j k", "beat");
+                        if self.selected_group() { style::key_hint(ui, "Enter", "open group"); }
+                        if !self.sequence_scope.groups().is_empty() { style::key_hint(ui, "Backspace", "parent"); }
                         style::key_hint(ui, "s", "split");
                         style::key_hint(ui, ",h", "pause");
                         style::key_hint(ui, ",f", "camera");
                         style::key_hint(ui, "rr", "repeat");
                         style::key_hint(ui, "dd", "cut beat");
+                        if self.moment.copied.is_some() { style::key_hint(ui, "p / P", "paste after / before"); }
                         style::key_hint(ui, "u", "undo");
                     } else {
+                        style::key_hint(ui, "h l", "frame");
                         if self.focused_workflow() && !self.beat_rows.is_empty() { style::key_hint(ui, "j k", "edit beat"); }
+                        style::key_hint(ui, "v", if self.moment.active { "finish selection" } else { "select moment" });
+                        style::key_hint(ui, "y", "copy moment");
                         style::key_hint(ui, ":sequence", if self.focused_workflow() { "Your edit" } else { "Sequence" });
-                        if self.workspace.is_some() && self.selected_source.is_some() { style::key_hint(ui, "⌘↩", if self.focused_workflow() { "reuse Original" } else { "insert source" }); }
+                        if self.workspace.is_some() && self.selected_source.is_some() { style::key_hint(ui, ",i", if self.focused_workflow() { "reuse Original" } else { "insert source" }); }
                     }
                     style::key_hint(ui, "Tab", "pane");
                     style::key_hint(ui, ":", "command");
@@ -1477,7 +1711,7 @@ impl DeadpanApp {
                         let sources = Arc::clone(&self.source_rows);
                         if let Some((asset, label, _)) = sources.first() {
                             let detail = format!("{} decoded video frames", self.source_length());
-                            let response = cards::original(ui, label, &detail, self.selected_source.as_ref() == Some(asset));
+                            let response = cards::original(ui, label, &detail, self.selected_sound.is_none() && self.selected_source.as_ref() == Some(asset));
                             if response.clicked() { self.select_source(asset.clone()); }
                         }
                         ui.label(egui::RichText::new("Your starting point stays intact.").size(12.0).color(style::MUTED));
@@ -1486,7 +1720,7 @@ impl DeadpanApp {
                         ui.label("Reuse from original");
                         if ui.add_sized([ui.available_width(), 30.0], egui::Button::new("Browse  :source")).clicked()
                             && let Some(asset) = self.workspace.as_ref().and_then(|workspace| original_asset(workspace)).cloned() { self.select_source(asset); }
-                        if ui.add_enabled(!self.service.is_busy(), egui::Button::new("Reuse full Original  ⌘↩")).on_hover_text("Append the entire Original after the selected root beat. Range reuse is not available yet.").clicked() { self.insert(); }
+                        if ui.add_enabled(!self.service.is_busy(), egui::Button::new("Reuse full Original  ,i")).on_hover_text("Append the entire Original after the selected beat in the current group. Select a range in Original with v, move with h/l, then copy with y.").clicked() { self.insert(); }
                     } else {
                         let search = ui.add(egui::TextEdit::singleline(&mut self.source_search).id(egui::Id::new(SEARCH_ID)).hint_text("Find source  /").desired_width(f32::INFINITY));
                         if search.has_focus() { self.pane = Pane::Sources; }
@@ -1498,7 +1732,10 @@ impl DeadpanApp {
                         scroll.show_rows(ui, 34.0, sources.len(), |ui, range| {
                             for index in range {
                                 let (asset, label, video) = &sources[index];
-                                if ui.selectable_label(self.selected_source.as_ref() == Some(asset), format!("{}  {label}", if *video { "Video" } else { "Audio" })).clicked() { self.select_source(asset.clone()); }
+                                if ui.selectable_label(self.selected_sound.as_ref().or(self.selected_source.as_ref()) == Some(asset), format!("{}  {label}", if *video { "Video" } else { "Audio" })).clicked() {
+                                    if *video { self.select_source(asset.clone()); } else { self.select_sound(asset.clone()); }
+                                    ui.memory_mut(|m| m.request_focus(pane_id(Pane::Sources)));
+                                }
                             }
                         });
                         if self.workspace.is_none() {
@@ -1521,13 +1758,16 @@ impl DeadpanApp {
                         if sounds.is_empty() { ui.weak(if self.source_search.is_empty() { "No sounds added." } else { "No matching sounds." }); }
                         egui::ScrollArea::vertical().id_salt("sound-catalog").max_height(120.0).show_rows(ui, 32.0, sounds.len(), |ui, range| {
                             for index in range {
-                                let (_, label, _) = &sounds[index];
-                                egui::Frame::new().fill(style::PANEL).corner_radius(4).inner_margin(6).show(ui, |ui| {
-                                    ui.add(egui::Label::new(label).truncate()).on_hover_text("Retained audio-only source. Sound placement and audition are not available yet.");
-                                });
+                                let (asset, label, _) = &sounds[index];
+                                if ui.selectable_label(self.selected_sound.as_ref() == Some(asset), label)
+                                    .on_hover_text("Select to audition this sound. Space plays or pauses; Shift+Space loops the whole sound.").clicked() {
+                                    self.select_sound(asset.clone());
+                                    ui.memory_mut(|m| m.request_focus(pane_id(Pane::Sources)));
+                                }
                             }
                         });
                         ui.label(egui::RichText::new("Retained sounds. Placement is not available yet.").size(11.0).color(style::MUTED));
+                        self.sound_preview_controls(ui);
                     }
                     let available = self.workspace.is_some() && !matches!(profile, Some(SingleSourceState::AwaitingSource { .. })) && !self.service.is_busy() && !self.dialogs.is_open() && !self.importing();
                     if self.workspace.is_some() && !matches!(profile, Some(SingleSourceState::AwaitingSource { .. })) {
@@ -1565,28 +1805,15 @@ impl DeadpanApp {
     }
 
     fn timeline(&mut self, ui: &mut egui::Ui) {
-        let beats = Arc::clone(&self.beat_rows);
         let layout = self.workspace_layout(ui);
         style::beat_panel(layout).show(ui, |ui| {
-            let heading = cards::heading(
-                ui,
-                if self.focused_workflow() {
-                    "YOUR EDIT"
-                } else {
-                    "BEATS"
-                },
-                self.pane == Pane::Sequence,
-                beats.len(),
-                self.sequence_length(),
-                self.workspace
-                    .as_ref()
-                    .map(|workspace| workspace.document.presentation_basis().frame_rate),
-            );
+            let heading = self.sequence_heading(ui);
+            let beats = Arc::clone(&self.beat_rows);
             if pane_focus(
                 ui,
                 Pane::Sequence,
                 heading.rect,
-                "Root sequence beat outline pane",
+                "Current group beat outline pane",
             )
             .has_focus()
             {
@@ -1594,6 +1821,10 @@ impl DeadpanApp {
             }
             if beats.is_empty() {
                 ui.add_space(16.0);
+                if !self.sequence_scope.groups().is_empty() {
+                    ui.weak("This group is empty. Backspace returns to its parent; ,i reuses the Original here.");
+                    return;
+                }
                 ui.weak(
                     match self
                         .workspace
@@ -1647,12 +1878,12 @@ impl DeadpanApp {
     }
 
     fn inspector_visible(&self) -> bool {
-        self.view == View::Sequence
-            && self.workspace.as_ref().is_some_and(|workspace| {
-                self.selected_beat
+        (self.view == View::Source && self.moment_identity().is_some())
+            || self.view == View::Sequence
+                && self
+                    .selected_beat
                     .as_ref()
-                    .is_some_and(|node| root_children(workspace).contains(node))
-            })
+                    .is_some_and(|node| self.beat_rows.iter().any(|row| &row.id == node))
     }
 
     fn ensure_visible_pane(&mut self, context: &egui::Context) {
@@ -1665,7 +1896,7 @@ impl DeadpanApp {
     }
 
     fn inspector_description(&self) -> Option<inspector::Inspector> {
-        if !self.inspector_visible() {
+        if self.view != View::Sequence || !self.inspector_visible() {
             return None;
         }
         let workspace = self.workspace.as_ref()?;
@@ -1675,6 +1906,40 @@ impl DeadpanApp {
             .find(|row| Some(&row.id) == self.selected_beat.as_ref())?;
         let node = workspace.document.nodes().get(&row.id)?;
         Some(inspector::Inspector::describe(node, row.start, row.frames))
+    }
+
+    fn retime_hint(&self) -> Option<Result<String, String>> {
+        let Ok(navigation::command::Entry::Action(Action::Edit(BeatEdit::Retime(input)))) =
+            navigation::command::parse(&self.command)
+        else {
+            return None;
+        };
+        Some((|| {
+            if self.view != View::Sequence {
+                return Err(
+                    "The Original is unchanged. Select a beat in Your edit to change its speed."
+                        .into(),
+                );
+            }
+            let workspace = self
+                .workspace
+                .as_ref()
+                .ok_or("Open a project before changing speed.")?;
+            let target = self
+                .selected_beat
+                .as_ref()
+                .ok_or("Select a beat before changing speed.")?;
+            if !self
+                .sequence_scope
+                .resolve(workspace)?
+                .children
+                .contains(target)
+            {
+                return Err("Select a direct child of the active Sequence before editing.".into());
+            }
+            crate::project::retime::resolve(workspace, target, input.speed, input.wrap)
+                .map(|change| change.describe(input.pitch))
+        })())
     }
 
     fn open_inspector_parameter(&mut self, context: &egui::Context) -> bool {
@@ -1691,6 +1956,10 @@ impl DeadpanApp {
             self.camera_inspector(ui);
             return;
         }
+        if self.view == View::Source && self.inspector_visible() {
+            self.moment_inspector(ui);
+            return;
+        }
         let Some(data) = self.inspector_description() else {
             return;
         };
@@ -1698,6 +1967,11 @@ impl DeadpanApp {
             return;
         };
         let frame_rate = frame_rate_label(workspace.document.presentation_basis().frame_rate);
+        let can_retime = self
+            .selected_beat
+            .as_ref()
+            .and_then(|node| workspace.plan.node_duration(node))
+            .is_some_and(|duration| duration.frames() > 0);
         let layout = self.workspace_layout(ui);
         egui::Panel::right("workspace-inspector")
             .resizable(false)
@@ -1711,7 +1985,7 @@ impl DeadpanApp {
                     ui,
                     Pane::Inspector,
                     heading.rect,
-                    "Selected root beat inspector pane",
+                    "Selected beat inspector pane",
                 )
                 .has_focus()
                 {
@@ -1745,6 +2019,12 @@ impl DeadpanApp {
                         ui.add_space(12.0);
                         let ready = !self.service.is_busy() && !self.dialogs.is_open();
                         inspector_value(ui, "Duration", &data.duration);
+                        if self.selected_group()
+                            && ui.add_sized([ui.available_width(), 30.0], egui::Button::new("Enter group  ·  Enter").fill(style::SELECTED)).clicked()
+                        {
+                            self.enter_group(ui.ctx());
+                            return;
+                        }
                         if let Some((label, command)) = &data.parameter
                             && ui.add_enabled(ready, egui::Button::new(format!("{label}  ·  Enter"))
                                 .fill(style::SELECTED)
@@ -1753,12 +2033,21 @@ impl DeadpanApp {
                             self.pane = Pane::Inspector;
                             self.open_command(command.clone(), ui.ctx());
                         }
+                        if data.kind != "Retime"
+                            && ui.add_enabled(ready && can_retime, egui::Button::new("Change speed…  ·  :retime")
+                                .min_size(egui::vec2(ui.available_width(), 28.0)))
+                                .on_hover_text("Choose an exact playback speed and preserve or tape pitch. Enter applies one undoable edit; Escape cancels entry.")
+                                .clicked()
+                        {
+                            self.pane = Pane::Inspector;
+                            self.open_command("retime 0.75 pitch=preserve".into(), ui.ctx());
+                        }
                         for (label, value) in &data.fields {
                             inspector_value(ui, label, value);
                         }
                         ui.add_space(8.0);
                         ui.separator();
-                        inspector_value(ui, "Scope", "Root beat");
+                        inspector_value(ui, "Scope", self.beat_scope_label());
                         inspector_value(ui, "Boundaries", &data.range);
                         ui.label(
                             egui::RichText::new(format!("{} at {frame_rate}", data.duration))
@@ -1815,7 +2104,7 @@ impl DeadpanApp {
                                     [ui.available_width(), 28.0],
                                     egui::Button::new("Delete beat  ·  dd"),
                                 )
-                                .on_hover_text("Ripple-delete this root beat. Undo is available.")
+                                .on_hover_text("Ripple-delete this selected beat. Undo is available.")
                                 .clicked()
                             {
                                 self.edit(BeatEdit::Delete);
@@ -1830,6 +2119,8 @@ impl DeadpanApp {
             ui.horizontal(|ui| {
                 for (label, view) in [(if self.focused_workflow() { "Original" } else { "Source" }, View::Source), (if self.focused_workflow() { "Your edit" } else { "Sequence" }, View::Sequence)] {
                     if ui.add_enabled(view == View::Source || self.workspace.is_some(), egui::Button::new(label).min_size(egui::vec2(88.0, 28.0)).selected(self.view == view)).clicked() {
+                        self.stop_playback();
+                        self.selected_sound = None;
                         self.bindings.clear();
                         if self.view != view { self.view.set(view, &mut self.message); if view == View::Sequence { self.reconcile_beat_selection(); } self.request_picture(true); }
                         self.pane = Pane::Viewer;
@@ -1842,7 +2133,7 @@ impl DeadpanApp {
             if self.camera.is_some() {
                 ui.label(egui::RichText::new("CAMERA · Draft preview").color(style::LAVENDER));
             }
-            let controls_height = if self.camera.is_some() { 88.0 } else if self.view == View::Sequence { 142.0 } else { 98.0 };
+            let controls_height = if self.camera.is_some() { 88.0 } else if self.view == View::Sequence { if self.moment.copied.is_some() { 216.0 } else { 170.0 } } else { 238.0 };
             let available = egui::vec2(ui.available_width().max(1.0), (ui.available_height() - controls_height).max(50.0));
             let (_, rect) = ui.allocate_space(available);
             let response = pane_focus(ui, Pane::Viewer, rect, "Picture viewer pane");
@@ -1880,6 +2171,7 @@ impl DeadpanApp {
             if self.camera.is_some() {
                 ui.weak("Apply or cancel Camera to resume navigation and playback.");
             } else {
+                self.moment_controls(ui);
                 self.playback_controls(ui);
                 ui.horizontal_wrapped(|ui| {
                 if self.workspace.is_none() && self.raw_source.is_none() {
@@ -1890,7 +2182,7 @@ impl DeadpanApp {
                     for (label, action) in [("Start  gg", Action::First), ("Previous  h", Action::Step { forward: false, count: 1 }), ("Next  l", Action::Step { forward: true, count: 1 }), ("End  G", Action::Last)] {
                         if ui.small_button(label).clicked() { self.action(action, ui.ctx()); }
                     }
-                    if self.view == View::Source && ui.add_enabled(self.workspace.is_some() && self.selected_source.is_some() && !self.service.is_busy(), egui::Button::new(if self.focused_workflow() { "Reuse full Original  ⌘↩" } else { "Insert source  ⌘↩" }).fill(style::SELECTED)).on_hover_text("Insert the whole source after the selected root beat. This creates an undoable edit.").clicked() { self.insert(); }
+                    if self.view == View::Source && ui.add_enabled(self.workspace.is_some() && self.selected_source.is_some() && !self.service.is_busy(), egui::Button::new(if self.focused_workflow() { "Reuse full Original  ,i" } else { "Insert source  ,i" }).fill(style::SELECTED)).on_hover_text("Insert the whole source after the selected beat in the current group. This creates an undoable edit.").clicked() { self.insert(); }
                 }
                 });
             }
@@ -1916,6 +2208,9 @@ impl DeadpanApp {
         if picture.frame.is_none() {
             if self.presentation.needs_render() {
                 self.forget_target();
+                #[cfg(feature = "ui-harness")]
+                self.feedback
+                    .picture_submitted(self.presentation.decoded_ticket());
                 self.presentation.presented();
                 context.request_repaint();
             }
@@ -1927,6 +2222,9 @@ impl DeadpanApp {
                 return;
             }
             Err(error) => {
+                #[cfg(feature = "ui-harness")]
+                self.feedback
+                    .picture_failed(self.presentation.decoded_ticket());
                 self.presentation
                     .render_failed(format!("Preview renderer: {error}"));
                 return;
@@ -1948,6 +2246,9 @@ impl DeadpanApp {
             Some(match self.renderer.create_target(width, height) {
                 Ok(target) => target,
                 Err(error) => {
+                    #[cfg(feature = "ui-harness")]
+                    self.feedback
+                        .picture_failed(self.presentation.decoded_ticket());
                     self.presentation
                         .render_failed(format!("Preview renderer: {error}"));
                     return;
@@ -1963,14 +2264,18 @@ impl DeadpanApp {
             .unwrap_or_else(|| &self.target.as_ref().expect("target exists").target);
         let result = if let Some((width, height)) = picture.canvas {
             match camera::render_layers(picture) {
-                Ok(layers) => self.renderer.render_framed(
+                Ok(layers) => self.renderer.render_composed(
                     frame,
                     target,
+                    picture.picture_context.as_deref(),
                     [width, height],
                     FitMode::Fit,
                     &layers,
                 ),
                 Err(error) => {
+                    #[cfg(feature = "ui-harness")]
+                    self.feedback
+                        .picture_failed(self.presentation.decoded_ticket());
                     self.presentation.render_failed(error);
                     return;
                 }
@@ -1980,6 +2285,9 @@ impl DeadpanApp {
         };
         match result {
             Ok(_) => {
+                #[cfg(feature = "ui-harness")]
+                self.feedback
+                    .picture_submitted(self.presentation.decoded_ticket());
                 if let Some(target) = replacement {
                     let texture = self.render_state.renderer.write().register_native_texture(
                         &self.render_state.device,
@@ -1993,6 +2301,9 @@ impl DeadpanApp {
                 context.request_repaint_after(Duration::from_millis(16));
             }
             Err(error) => {
+                #[cfg(feature = "ui-harness")]
+                self.feedback
+                    .picture_failed(self.presentation.decoded_ticket());
                 self.presentation
                     .render_failed(format!("Preview renderer: {error}"));
             }
@@ -2005,11 +2316,14 @@ impl DeadpanApp {
                     ui.label(egui::RichText::new("START & MOVE").strong().color(style::LAVENDER));
                     for (key, description) in [
                         ("⌘N / ⌘O", "Choose one Original / open a project. New projects live in Documents/Deadpan."),
-                        ("Space", "Play / pause Your edit. During preparation, Space cancels. Audition includes a safety limiter; voice effects and the full mix remain unavailable. Pause to change Monitor volume."),
+                        ("Space", "Play / pause the focused sound, Original, or Your edit. During preparation, Space cancels. Pause retains the exact heard sample; navigation stops playback."),
+                        ("Shift+Space", "Loop the complete selected sound. In Original or Your edit, loop the selected moment or beat with 500ms before and 750ms after, bounded by that domain. Space pauses and resumes the loop."),
+                        (":audition-context lead=500ms follow=750ms", "Set loop lead-in and follow-through. Use 0ms for an exact selection. Seconds, milliseconds and project frames are accepted."),
                         (":monitor 25%", "Set monitor volume without changing the project or export gain. 0 mutes; 12.5% restores the initial level."),
                         ("h l · Left Right", "Move one frame in the current clock. Prefix a count: 12l."),
-                        ("j k", "V1: select the next / previous root beat and return to Your edit. In a legacy Sources pane, choose a source."),
-                        ("gg / G", "First / final boundary."),
+                        ("j k", "In the sound catalog, select the next / previous sound. Elsewhere select a beat at the current group depth and return to Your edit. In legacy Sources, choose a source."),
+                        ("gg / G", "First / final boundary of the current group or Original."),
+                        ("Enter / Backspace · :enter / :parent", "Open a selected Sequence group / return to its parent. The project cursor stays exact; breadcrumbs show the active group. Repeat plays and Retime descendants are not yet navigable."),
                         (":source / :sequence", "Browse unchanged Original / work on Your edit."),
                         ("Tab / Shift Tab", "Cycle Original, Viewer, visible Inspector, and Beats focus."),
                         ("/", "Find a sound in V1, or a source in a legacy project."),
@@ -2017,21 +2331,25 @@ impl DeadpanApp {
                     ui.separator();
                     ui.label(egui::RichText::new("RESHAPE THE SELECTED BEAT").strong().color(style::LAVENDER));
                     for (key, description) in [
-                        ("s / :split", "Split linked picture and sound at the cursor inside the selected root beat. The right fragment stays selected; duration and output stay unchanged."),
-                        (",h / 3,h", "Insert a silent freeze at the cursor: 0.5 s per count. Keeps the following original speech. The new pause stays selected; u undoes it."),
-                        (":hold 1.5s", "Choose an exact pause duration: 12f, 250ms, 1.5s, or 01:02.500. Seconds round once to project frames. Zero makes no edit. Source and existing pause fragments are supported; nested structures remain unavailable."),
-                        ("rr / 3rr", "Wrap the selected root beat in two / three total plays."),
-                        ("dd / :delete", "Cut one whole root beat and close its time. Undo restores it."),
-                        (":repeat 3", "Set total plays on a Repeat; wrap a different root beat."),
+                        ("s / :split", "Split linked picture and sound at the cursor inside the selected beat. The right fragment stays selected; duration and output stay unchanged."),
+                        (",h / 3,h", "Insert a silent freeze at the cursor: 0.5 s per count. Keeps the following original speech. The cursor stays at the pause; Enter opens its enclosing group when needed. At a group edge, Backspace returns to the seam's owner. u undoes it."),
+                        (":hold 1.5s", "Choose an exact pause duration: 12f, 250ms, 1.5s, or 01:02.500. Seconds round once to project frames. Zero makes no edit. Source and pause fragments work inside Sequence groups; Repeat and Retime interiors remain unavailable."),
+                        ("rr / 3rr", "Wrap the selected beat in two / three total plays."),
+                        ("dd / :delete", "Cut one whole selected beat and close its time. Undo restores it."),
+                        (":repeat 3", "Set total plays on a Repeat; wrap a different selected beat."),
                         (":wrap-repeat 3", "Always add an enclosing Repeat, including nesting."),
-                        ("Enter in Inspector", "Edit the selected Repeat count or existing Hold duration."),
-                        (",f", "Camera preview on the selected root beat. h/j/k/l move 1% of the uncropped Original; uppercase moves 5%."),
+                        (":retime 0.75 pitch=preserve", "Slow the selected beat to 0.75× input speed. Use pitch=tape to let pitch follow speed. Exact fractions such as 3/4 work too. The command shows its resolved duration before Enter; Escape cancels entry."),
+                        (":wrap-retime 2 pitch=tape", "Always add an enclosing speed stage. :retime instead updates an existing ordinary Retime, preserving its child and input range. Split fragments are wrapped without changing their retained clocks."),
+                        ("Enter in Inspector", "Edit the selected Repeat count, existing Hold duration, or Retime speed and pitch."),
+                        (",f", "Camera preview on the selected beat. Parent framing stays live. h/j/k/l move 1% of the uncropped Original; uppercase moves 5%."),
                         ("Camera + / −", "Scale by ×1.05 or its reciprocal. Counts repeat: 3+ is three steps."),
                         ("Camera f · 1–5", "Toggle center/corner targets, then choose by number. Digits are counts outside the picker."),
                         ("Camera r · Enter · Esc", "Reset the draft, apply once, or restore entry framing. Normal adjustments preserve an existing curve."),
                         (",z / ,c", "One undoable 1.35× punch / whole-beat smoothstep creep to 1.35×. These replace an existing framing curve."),
-                        (":hold-duration 11f", "Set a selected root Hold to exactly 11 project frames."),
-                        ("⌘Return / :insert", "Reuse the full Original after the selected root beat. Legacy projects insert their selected source."),
+                        (":hold-duration 11f", "Set a selected Hold to exactly 11 project frames."),
+                        ("v / :select · y / :yank", "In Original, start or finish a half-open time selection. Move with h/l or counted motions. y copies the range; Esc cancels selection. The Out frame is excluded. Copy is session-local; named and persistent registers are not available yet."),
+                        ("p / P · :paste / :paste-before", "In Your edit, paste the copied Original moment after / before the selected beat in the displayed group. An empty group accepts a paste at its start. Each paste is one undoable transaction; later audio keeps its sampling phase."),
+                        (",i / :insert", "Reuse the full Original after the selected beat in the current group, or append to an empty group. Legacy projects insert their selected source."),
                         ("u / Ctrl R", "Undo / redo. Native ⌘Z / ⌘Shift Z also work."),
                     ] { help_binding(ui, key, description); }
                     ui.separator();
@@ -2041,8 +2359,8 @@ impl DeadpanApp {
                         ("? / :help / Esc", "Open this reference / close it."),
                     ] { help_binding(ui, key, description); }
                     ui.separator();
-                    ui.weak("Original browsing never changes it. Your edit commands affect the selected root beat and its linked picture and sound. Counts precede operators, such as 3rr; the visible PENDING badge waits without a timer.");
-                    ui.weak("Space auditions Your edit with edge fades and a safety limiter. Pause before changing Monitor volume. Editing, seeking, opening commands and help stop audition. Original playback, range cuts/reuse, nested navigation/insertion, sound placement, voice effects, the full mix, AI generation in the app, and export remain unavailable. Registered sounds are retained catalog entries only.");
+                    ui.weak("Original browsing never changes it. Your edit commands affect the selected beat in the displayed group and its linked picture and sound. Counts precede operators, such as 3rr; the visible PENDING badge waits without a timer.");
+                    ui.weak("Space auditions the focused sound, Original, or full edit. In the sound catalog, j/k selects a sound and Shift+Space loops its complete measured audio. Sound audition keeps the picture and both editor cursors in place. Leaving the catalog or choosing another sound stops it. Elsewhere Shift+Space loops the selected Original moment or edited beat with context. Playback has edge fades and a safety limiter; pause before changing Monitor volume. Range cuts/replacement, named registers, Repeat/Retime descendant navigation and insertion, sound placement, voice effects, the full mix, AI generation in the app, and export remain unavailable.");
             });
     }
 }
@@ -2058,6 +2376,7 @@ impl eframe::App for DeadpanApp {
         self.close_pending |= context.input(|i| i.viewport().close_requested());
         let previous_pane = self.pane;
         self.receive();
+        self.reconcile_sound_playback();
         self.receive_playback();
         self.reconcile_camera();
         self.ensure_visible_pane(&context);
@@ -2083,6 +2402,8 @@ impl eframe::App for DeadpanApp {
         if self.command_open {
             focus_command_for_frame(&context, &mut self.command_focus_pending);
         }
+        #[cfg(feature = "ui-harness")]
+        self.feedback.record("input_dispatch");
         let text_result = if self.close_pending {
             None
         } else {
@@ -2093,6 +2414,7 @@ impl eframe::App for DeadpanApp {
             self.view,
             self.selected_beat.clone(),
             self.selected_source.clone(),
+            self.selected_sound.clone(),
         );
         self.header(ui);
         self.footer(ui);
@@ -2101,6 +2423,7 @@ impl eframe::App for DeadpanApp {
         self.inspector(ui);
         self.viewer(ui);
         self.finish_camera_entry(&context);
+        self.reconcile_sound_playback();
         self.schedule_playback_picture();
         self.help(&context);
         if input_scope
@@ -2109,6 +2432,7 @@ impl eframe::App for DeadpanApp {
                 self.view,
                 self.selected_beat.clone(),
                 self.selected_source.clone(),
+                self.selected_sound.clone(),
             )
             || context.memory(|m| {
                 m.has_focus(egui::Id::new(SEARCH_ID)) || m.has_focus(egui::Id::new(COMMAND_ID))
@@ -2190,6 +2514,26 @@ fn frame_rate_label(rate: deadpan_core::FrameRate) -> String {
     } else {
         format!("{}/{} fps", rate.numerator(), rate.denominator())
     }
+}
+
+fn sound_action_allowed(action: Action) -> bool {
+    matches!(
+        action,
+        Action::New
+            | Action::Open
+            | Action::Import
+            | Action::Undo
+            | Action::Redo
+            | Action::Playback
+            | Action::Audition
+            | Action::Beat { .. }
+            | Action::Pane { .. }
+            | Action::Search
+            | Action::Command
+            | Action::Help
+            | Action::Escape
+            | Action::Invalid(_)
+    )
 }
 
 fn pane_name(pane: Pane) -> &'static str {
@@ -2277,6 +2621,7 @@ fn retain_text_escape(ui: &egui::Ui, id: &str) {
         )
     });
 }
+#[cfg(feature = "ui-harness")]
 fn root_children(workspace: &Workspace) -> &[NodeId] {
     match &workspace.document.nodes()[workspace.document.root()].kind {
         NodeKind::Sequence { children } => children,
@@ -2608,59 +2953,191 @@ mod tests {
 
     #[test]
     fn focused_button_keeps_space_and_return_while_pane_space_controls_playback() {
-        for key in [egui::Key::Space, egui::Key::Enter] {
-            let context = egui::Context::default();
+        for (pane, label) in [
+            (Pane::Viewer, "Change duration"),
+            (Pane::Sources, "Play sound  ·  Space"),
+        ] {
+            for key in [egui::Key::Space, egui::Key::Enter] {
+                let context = egui::Context::default();
+                let mut bindings = Bindings::default();
+                let draw = |ui: &mut egui::Ui, focus_button: bool| {
+                    let (_, rect) = ui.allocate_space(egui::vec2(100.0, 40.0));
+                    pane_focus(ui, pane, rect, "Playback pane");
+                    let response = ui.button(label);
+                    if focus_button {
+                        response.request_focus();
+                    }
+                    response.clicked()
+                };
+                run_ui(&context, egui::RawInput::default(), |ui| {
+                    draw(ui, true);
+                });
+                let mut clicked = false;
+                let mut action = None;
+                run_ui(
+                    &context,
+                    egui::RawInput {
+                        events: vec![key_event(key)],
+                        ..Default::default()
+                    },
+                    |ui| {
+                        assert!(control_owns_activation(ui.ctx(), key));
+                        if !control_owns_activation(ui.ctx(), key) {
+                            action = bindings.key(key, egui::Modifiers::NONE, false, false);
+                            ui.input_mut(|input| {
+                                input.consume_key(egui::Modifiers::NONE, key);
+                            });
+                        }
+                        clicked |= draw(ui, false);
+                    },
+                );
+                assert!(clicked, "focused button did not receive {key:?}");
+                assert!(action.is_none());
+                run_ui(&context, egui::RawInput::default(), |ui| {
+                    ui.memory_mut(|m| m.request_focus(pane_id(pane)));
+                    draw(ui, false);
+                });
+                run_ui(
+                    &context,
+                    egui::RawInput {
+                        events: vec![key_event(egui::Key::Space)],
+                        ..Default::default()
+                    },
+                    |ui| {
+                        assert!(!control_owns_activation(ui.ctx(), egui::Key::Space));
+                        assert_eq!(
+                            bindings.key(egui::Key::Space, egui::Modifiers::NONE, false, false),
+                            Some(Action::Playback)
+                        );
+                        draw(ui, false);
+                    },
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn sound_catalog_shortcuts_cannot_target_the_retained_timeline_selection() {
+        for action in [
+            Action::Insert,
+            Action::Edit(BeatEdit::Delete),
+            Action::Edit(BeatEdit::Split),
+            Action::Edit(BeatEdit::Repeat(3)),
+            Action::PasteMoment { before: false },
+            Action::VisualMoment,
+            Action::CopyMoment,
+            Action::EnterGroup,
+            Action::LeaveGroup,
+            Action::First,
+            Action::Last,
+            Action::Step {
+                forward: true,
+                count: 1,
+            },
+            Action::Framing(navigation::FramingAction::EnterCamera),
+        ] {
+            assert!(
+                !sound_action_allowed(action),
+                "{action:?} must not target the retained editor selection"
+            );
+        }
+        for action in [
+            Action::Playback,
+            Action::Audition,
+            Action::Beat {
+                forward: true,
+                count: 1,
+            },
+            Action::Pane { reverse: false },
+            Action::Search,
+            Action::Command,
+            Action::Undo,
+            Action::Redo,
+            Action::Escape,
+        ] {
+            assert!(
+                sound_action_allowed(action),
+                "{action:?} remains available in the sound catalog"
+            );
+        }
+    }
+
+    #[test]
+    fn sound_catalog_keys_use_production_bindings_and_honor_native_text() {
+        use egui::{Key, Modifiers};
+        for keys in [
+            vec![Key::D, Key::D],
+            vec![Key::S],
+            vec![Key::R, Key::R],
+            vec![Key::Comma, Key::F],
+            vec![Key::P],
+        ] {
             let mut bindings = Bindings::default();
-            let draw = |ui: &mut egui::Ui, focus_button: bool| {
+            let action = keys
+                .into_iter()
+                .filter_map(|key| bindings.key(key, Modifiers::NONE, false, false))
+                .last()
+                .unwrap();
+            assert!(
+                !sound_action_allowed(action),
+                "Sound focus must suppress {action:?}"
+            );
+        }
+        for (key, forward) in [(Key::J, true), (Key::K, false)] {
+            let mut bindings = Bindings::default();
+            assert_eq!(bindings.key(Key::Num2, Modifiers::NONE, false, false), None);
+            let action = bindings.key(key, Modifiers::NONE, false, false).unwrap();
+            assert_eq!(action, Action::Beat { forward, count: 2 });
+            assert!(sound_action_allowed(action));
+        }
+        for (text, ime) in [(true, false), (false, true), (true, true)] {
+            let mut bindings = Bindings::default();
+            for key in [Key::J, Key::K, Key::Space, Key::D, Key::D] {
+                assert_eq!(bindings.key(key, Modifiers::NONE, text, ime), None);
+            }
+            assert!(bindings.pending().is_empty());
+        }
+    }
+
+    #[test]
+    fn focused_control_keeps_shift_space_and_pane_shift_space_loops_selection() {
+        let context = egui::Context::default();
+        let mut bindings = Bindings::default();
+        for focus_control in [true, false] {
+            let draw = |ui: &mut egui::Ui| {
                 let (_, rect) = ui.allocate_space(egui::vec2(100.0, 40.0));
                 pane_focus(ui, Pane::Viewer, rect, "Viewer");
-                let response = ui.button("Change duration");
-                if focus_button {
-                    response.request_focus();
+                let button = ui.button("Change duration");
+                if focus_control {
+                    button.request_focus();
+                } else {
+                    ui.memory_mut(|m| m.request_focus(pane_id(Pane::Viewer)));
                 }
-                response.clicked()
             };
-            run_ui(&context, egui::RawInput::default(), |ui| {
-                draw(ui, true);
-            });
-            let mut clicked = false;
-            let mut action = None;
+            run_ui(&context, egui::RawInput::default(), draw);
+            let event = egui::Event::Key {
+                key: egui::Key::Space,
+                physical_key: None,
+                pressed: true,
+                repeat: false,
+                modifiers: egui::Modifiers::SHIFT,
+            };
             run_ui(
                 &context,
                 egui::RawInput {
-                    events: vec![key_event(key)],
+                    events: vec![event],
                     ..Default::default()
                 },
                 |ui| {
-                    assert!(control_owns_activation(ui.ctx(), key));
-                    if !control_owns_activation(ui.ctx(), key) {
-                        action = bindings.key(key, egui::Modifiers::NONE, false, false);
-                        ui.input_mut(|input| {
-                            input.consume_key(egui::Modifiers::NONE, key);
-                        });
-                    }
-                    clicked |= draw(ui, false);
-                },
-            );
-            assert!(clicked, "focused button did not receive {key:?}");
-            assert!(action.is_none());
-            run_ui(&context, egui::RawInput::default(), |ui| {
-                ui.memory_mut(|m| m.request_focus(pane_id(Pane::Viewer)));
-                draw(ui, false);
-            });
-            run_ui(
-                &context,
-                egui::RawInput {
-                    events: vec![key_event(egui::Key::Space)],
-                    ..Default::default()
-                },
-                |ui| {
-                    assert!(!control_owns_activation(ui.ctx(), egui::Key::Space));
-                    assert_eq!(
-                        bindings.key(egui::Key::Space, egui::Modifiers::NONE, false, false),
-                        Some(Action::Playback)
-                    );
-                    draw(ui, false);
+                    let owned = control_owns_activation(ui.ctx(), egui::Key::Space);
+                    assert_eq!(owned, focus_control);
+                    let action = (!owned)
+                        .then(|| {
+                            bindings.key(egui::Key::Space, egui::Modifiers::SHIFT, false, false)
+                        })
+                        .flatten();
+                    assert_eq!(action, (!focus_control).then_some(Action::Audition));
+                    draw(ui);
                 },
             );
         }

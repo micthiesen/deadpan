@@ -1,0 +1,34 @@
+{
+  "commands": [
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 3.569147207774222,
+      "log": "0.log"
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-playback",
+        "--lib"
+      ],
+      "exit_code": 0,
+      "seconds": 272.0846286662854,
+      "log": "1.log",
+      "tests": {
+        "passed": 35,
+        "failed": 0,
+        "ignored": 0
+      }
+    }
+  ]
+}

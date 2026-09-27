@@ -57,6 +57,7 @@ fn hold(frames: i64) -> BeatNode {
     BeatNode::hold(
         "Silence",
         HoldRecipe {
+            picture_context: None,
             duration: duration(frames),
             video: HoldVideo::Background,
             audio: HoldAudio::Silence,
@@ -218,6 +219,7 @@ fn subtree(name: &str, frames: i64) -> Subtree {
         root: id(name),
         nodes: BTreeMap::from([(id(name), hold(frames))]),
         overrides: BTreeMap::new(),
+        gap_overrides: BTreeMap::new(),
     }
 }
 

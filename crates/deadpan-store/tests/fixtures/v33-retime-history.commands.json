@@ -1,0 +1,292 @@
+[
+  {
+    "command": [
+      "old-deadpan-cli",
+      "doctor"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "c9b99f5c5f46808e73ca0b15cd49338f637748cfdcb4ab4bf1718bca3b6e4fed",
+    "stderr": "",
+    "stdout": "{\n  \"application\": \"deadpan\",\n  \"architecture\": \"aarch64\",\n  \"database_schema\": 33,\n  \"device_output\": \"macos-bounded-limited-sequence-audition\",\n  \"document_schema\": 27,\n  \"edge_faded_pcm\": \"authored-boundary-exceptions-after-time-mapping-before-voice-effects\",\n  \"internal_audio_sample_rate\": 48000,\n  \"limited_pcm\": \"canonical-edge-faded-bus-with-finite-oversampled-limiter-before-missing-voice-mix-stages\",\n  \"os\": \"macos\",\n  \"partial\": [\n    \"structural-editing-commands\",\n    \"sqlite-project-history\",\n    \"schema-1-through-32-migration\",\n    \"single-original-project-baseline\",\n    \"native-documents-project-library\",\n    \"indexed-picture-plan\",\n    \"indexed-audio-plan\",\n    \"worker-dsp-adapter\",\n    \"source-audio-preparation\",\n    \"plan-driven-source-pcm\",\n    \"transparent-audio-partitions\",\n    \"retained-context-split\",\n    \"atomic-sequence-pause-insertion\",\n    \"logical-mark-bindings\",\n    \"exact-boundary-selectors\",\n    \"persistent-marks\",\n    \"sparse-play-overrides\",\n    \"nested-occurrence-edits\",\n    \"persistent-generation-requests\",\n    \"persistent-generation-attempts\",\n    \"authored-generated-hold-semantics\",\n    \"generated-media-conversion\",\n    \"native-bridge-bundle-qualification\",\n    \"durable-generated-bundle-acceptance\",\n    \"durable-original-byte-ownership\",\n    \"identity-checked-relinking\",\n    \"persistent-source-decoding\",\n    \"measured-source-audio-indexes\",\n    \"independent-source-audio-mapping\",\n    \"independent-source-video-mapping\",\n    \"exact-source-stream-placement\",\n    \"measured-import-timing-candidates\",\n    \"measured-original-moment-candidates\",\n    \"exact-source-audio-selections\",\n    \"durable-source-qualification\",\n    \"atomic-source-registration-and-insertion\",\n    \"background-import-preparation\",\n    \"automatic-presentation-basis\",\n    \"timed-basis-locking\",\n    \"explicit-canvas-geometry\",\n    \"shared-sdr-picture-pipeline\",\n    \"authored-framing-envelopes\",\n    \"ordered-canvas-framing\",\n    \"captured-hold-framing\",\n    \"native-camera-draft\",\n    \"native-source-preview\",\n    \"native-project-workspace\",\n    \"native-sequence-audition\"\n  ],\n  \"room_tone_pcm\": \"explicit-source-range-exact-overlap-before-effects\",\n  \"schema_version\": 1,\n  \"sequence_audition\": \"immutable-revision-device-clock-pictures-exact-paused-sample-resume\",\n  \"sqlite_version\": \"3.53.2\",\n  \"stage\": \"development-foundation\",\n  \"time_mapped_pcm\": \"bounded-continuous-preserve-before-effects\",\n  \"timing_probe\": {\n    \"frame\": 1,\n    \"frame_rate_denominator\": 1001,\n    \"frame_rate_numerator\": 30000,\n    \"sample_boundary\": 1602\n  },\n  \"unimplemented\": [\n    \"mastered-preview-audio\",\n    \"original-view-playback\",\n    \"full-device-and-acoustic-qualification\",\n    \"full-keyboard-editor\",\n    \"analysis\",\n    \"ai-generation\",\n    \"youtube-import\",\n    \"export\",\n    \"distribution\"\n  ],\n  \"version\": \"0.1.0\"\n}\n"
+  },
+  {
+    "command": [
+      "old-deadpan-cli",
+      "project",
+      "migrate",
+      "/tmp/deadpan-retime-20260927/history/producer/retime-history.deadpan"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "4107b836f430a208fa29e5a183acee48ce91457de493867ac2d9dfd711e0decb",
+    "stderr": "",
+    "stdout": "{\n  \"migration\": {\n    \"backup\": \"/private/tmp/deadpan-retime-20260927/history/producer/retime-history.deadpan/Snapshots/before-schema-33-oJo433.sqlite\",\n    \"from_schema\": 32,\n    \"to_schema\": 33\n  },\n  \"protocol\": 1\n}\n"
+  },
+  {
+    "command": [
+      "old-deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-retime-20260927/history/producer/retime-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "28fc41f536e57b70fa398e0d0794fcbe7f070db136a74a939b0ca8889f614993",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "old-deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-retime-20260927/history/producer/retime-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "28fc41f536e57b70fa398e0d0794fcbe7f070db136a74a939b0ca8889f614993",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "old-deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-retime-20260927/history/producer/retime-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "28fc41f536e57b70fa398e0d0794fcbe7f070db136a74a939b0ca8889f614993",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "old-deadpan-cli",
+      "command",
+      "/tmp/deadpan-retime-20260927/history/producer/retime-history.deadpan",
+      "--json",
+      "/tmp/deadpan-retime-20260927/history/producer/core27-root-splice.json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "0ebc8422186ed81b8fe6e05cf0cd347ca9ecd944c62c749950336b959749a149",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "old-deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-retime-20260927/history/producer/retime-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "be49167997bb0ab4797b89f76b84f9bb79e8822027d482feac5ba492e0c2b0af",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "old-deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-retime-20260927/history/producer/retime-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "be49167997bb0ab4797b89f76b84f9bb79e8822027d482feac5ba492e0c2b0af",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "old-deadpan-cli",
+      "command",
+      "/tmp/deadpan-retime-20260927/history/producer/retime-history.deadpan",
+      "--json",
+      "/tmp/deadpan-retime-20260927/history/producer/core27-abandoned-splice.json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "2d30d97c36fa7845af0421df77b4e4203dcfddd5a941e25356701c69b2b50453",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "old-deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-retime-20260927/history/producer/retime-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "88445b4524f796f16813ddc3480a5411eb415635c1afe9fd480494589e259646",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "old-deadpan-cli",
+      "project",
+      "undo",
+      "/tmp/deadpan-retime-20260927/history/producer/retime-history.deadpan",
+      "--expected",
+      "core27-abandoned-splice"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "539ddf104009cb41e2e4f3f0927dc724dece2dd851334809a3276d306b5076e7",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "old-deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-retime-20260927/history/producer/retime-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "75b329d95b9cefd1476a34aa017afeb9d816594a157c8e009f7d2eae2afa1e26",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "old-deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-retime-20260927/history/producer/retime-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "75b329d95b9cefd1476a34aa017afeb9d816594a157c8e009f7d2eae2afa1e26",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "old-deadpan-cli",
+      "command",
+      "/tmp/deadpan-retime-20260927/history/producer/retime-history.deadpan",
+      "--json",
+      "/tmp/deadpan-retime-20260927/history/producer/core27-nested-splice.json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "25809d1b4283ea86f095095a5f21e13ace1bdc6e6b02157e84d468bc29068397",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "old-deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-retime-20260927/history/producer/retime-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "a47695967dd53a55c3f75bcee020df4741c2a7eece52693f622d0f63c5f95e15",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "old-deadpan-cli",
+      "project",
+      "undo",
+      "/tmp/deadpan-retime-20260927/history/producer/retime-history.deadpan",
+      "--expected",
+      "core27-nested-splice"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "a53b75b00b01c69d9d0d5cfe8b37cbea0228bb0d8b151e7a4621a88d09b39e62",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "old-deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-retime-20260927/history/producer/retime-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "44b5c253a1eaaed90242e1960befedd07323bb7763fb46c6dbab8df95ddebc2d",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "old-deadpan-cli",
+      "project",
+      "redo",
+      "/tmp/deadpan-retime-20260927/history/producer/retime-history.deadpan",
+      "--expected",
+      "f5893921-32ee-43fa-ace1-f447b5be1c48"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "59331bdc48d0bbdb0d1ad441bcadd35978fde2536f6b99dbdd9510c2842b6f7b",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "old-deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-retime-20260927/history/producer/retime-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "99ec10533ba241aae97b2db236a091d1ef21aa0fc89557258befbf085249ce0a",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "old-deadpan-cli",
+      "project",
+      "undo",
+      "/tmp/deadpan-retime-20260927/history/producer/retime-history.deadpan",
+      "--expected",
+      "19668daf-ce48-41e8-bcc8-cfaaa6b03b9b"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "cef5f9c5aebdde971e59170fac92e7994ae1c4acbde219fd57e1b71856262f3b",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "old-deadpan-cli",
+      "project",
+      "validate",
+      "/tmp/deadpan-retime-20260927/history/producer/retime-history.deadpan"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "59b9c2bfb7c6fbdc2c9ff33de36c213185d22d5e028c97fcafce4cc4f16d932f",
+    "stderr": "",
+    "stdout": "{\n  \"basis_state\": {\n    \"geometry_origin\": \"explicit\",\n    \"primary\": null,\n    \"rate_origin\": \"explicit\"\n  },\n  \"duration_frames\": 104,\n  \"mark_count\": 0,\n  \"node_count\": 35,\n  \"presentation_basis\": {\n    \"color_policy\": \"sdr_rec709\",\n    \"frame_rate\": {\n      \"denominator\": 1001,\n      \"numerator\": 30000\n    },\n    \"height\": 16,\n    \"width\": 16\n  },\n  \"project_id\": \"d038df46-94c6-4c0a-9d11-038b0e6da220\",\n  \"protocol\": 1,\n  \"revision_id\": \"2a554b9b-2fc6-4e8f-8677-cb90075a3b4f\",\n  \"root\": \"b5903f58-0249-4a89-8af8-ed3d8a5cfe1f\",\n  \"valid\": true\n}\n"
+  },
+  {
+    "command": [
+      "old-deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-retime-20260927/history/producer/retime-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "69505ed62486f5e4fa88f2aca2c3dae60402a54d4f885045f855f3fb46ef788e",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "old-deadpan-cli",
+      "project",
+      "validate",
+      "/tmp/deadpan-retime-20260927/history/producer/reopened-sql.deadpan"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "59b9c2bfb7c6fbdc2c9ff33de36c213185d22d5e028c97fcafce4cc4f16d932f",
+    "stderr": "",
+    "stdout": "{\n  \"basis_state\": {\n    \"geometry_origin\": \"explicit\",\n    \"primary\": null,\n    \"rate_origin\": \"explicit\"\n  },\n  \"duration_frames\": 104,\n  \"mark_count\": 0,\n  \"node_count\": 35,\n  \"presentation_basis\": {\n    \"color_policy\": \"sdr_rec709\",\n    \"frame_rate\": {\n      \"denominator\": 1001,\n      \"numerator\": 30000\n    },\n    \"height\": 16,\n    \"width\": 16\n  },\n  \"project_id\": \"d038df46-94c6-4c0a-9d11-038b0e6da220\",\n  \"protocol\": 1,\n  \"revision_id\": \"2a554b9b-2fc6-4e8f-8677-cb90075a3b4f\",\n  \"root\": \"b5903f58-0249-4a89-8af8-ed3d8a5cfe1f\",\n  \"valid\": true\n}\n"
+  },
+  {
+    "command": [
+      "old-deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-retime-20260927/history/producer/reopened-sql.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "69505ed62486f5e4fa88f2aca2c3dae60402a54d4f885045f855f3fb46ef788e",
+    "stderr": ""
+  }
+]

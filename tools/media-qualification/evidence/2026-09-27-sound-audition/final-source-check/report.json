@@ -1,0 +1,21 @@
+{
+  "commands": [
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 3.45068325009197,
+      "log": "0.log"
+    }
+  ],
+  "source_count": 572,
+  "source_unchanged": true,
+  "changed_sources": [],
+  "inherited_gate": "gate-01",
+  "scope": "Final format recheck and source seal; workspace and feature results remain in gate-01, including any test failures"
+}

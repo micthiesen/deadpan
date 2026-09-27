@@ -1,0 +1,23 @@
+{
+  "limb_mul_u128_cases": 58259,
+  "limb_mul_u128_outcomes": {
+    "success": 48770,
+    "overflow": 9489
+  },
+  "rational_segment_cases": 6064,
+  "integer_frozen_formula_comparisons": 6000,
+  "fixture_cases": 300,
+  "fixture_reproduced_byte_for_byte": true,
+  "fixture_sha256": "dba51facc19af8cbf7b8fa5c60336a47972df49e0524628a73897489fb530bad",
+  "quotient_overflow_cases": 58,
+  "endpoint_overflow_cases": 78,
+  "observed_max_product_bits": 294,
+  "observed_max_division_shift_bits": 295,
+  "source_sha256": {
+    "crates/deadpan-core/src/framing.rs": "3349c08e695463e61b0578b3dae8a6b9977e8985b2d7708b17aabcd3ec2bf252",
+    "crates/deadpan-core/src/framing/numeric.rs": "464e2d767da2444fb6099fb1031a0f2a821b01520b8c0f8c0c61ef8a5a626596",
+    "crates/deadpan-core/tests/fixtures/produce-framing-clock-oracles.py": "14b416d962221d5b13f1277d47d829b011aafa33f3a6a5243d56eb3cdb19f010",
+    "crates/deadpan-core/tests/fixtures/framing-clock-oracles.json": "dba51facc19af8cbf7b8fa5c60336a47972df49e0524628a73897489fb530bad"
+  },
+  "scope": "Independent Python model of limb operations and exact Fraction formulas; no Cargo or Rust execution."
+}

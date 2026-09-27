@@ -1,0 +1,122 @@
+[
+  {
+    "path": "AGENTS.md",
+    "sha256": "8bb158293f6ee2d4729fb462a4f403d2f1d00c28340fc2087b4e40f3ca11552b",
+    "bytes": 78786
+  },
+  {
+    "path": "Cargo.lock",
+    "sha256": "b08a6300d22949cf7f5feebeba858b85b6776fd2956b8617325477c56ead0226",
+    "bytes": 113206
+  },
+  {
+    "path": "crates/deadpan-plan/src/audio_context.rs",
+    "sha256": "5a13157679454a29f72a8d043661c448159c9973e6ac1ca74b38aaee843174ef",
+    "bytes": 8870
+  },
+  {
+    "path": "crates/deadpan-plan/src/audio_hold_policy.rs",
+    "sha256": "38738cf9d6d79c8bf1d8de3cc0ad3b8a6da66049a09c2f5885fa3a5f0ad342c4",
+    "bytes": 6573
+  },
+  {
+    "path": "crates/deadpan-plan/src/audio_policy.rs",
+    "sha256": "2eac65c7852b2c7b92e8c32efa95ebc313a437380e46aeee47b65b57ef4bf761",
+    "bytes": 16460
+  },
+  {
+    "path": "crates/deadpan-plan/src/audio_signal.rs",
+    "sha256": "7b7672d177fdb337f1c5209aaf1890ba363d059be2f15711eace19cd75299c49",
+    "bytes": 45620
+  },
+  {
+    "path": "crates/deadpan-plan/src/audio_source_voice.rs",
+    "sha256": "0d68bb7315d4d4e8f7e43c0279e409c7e0e0249b54798c46132af2bfefd38461",
+    "bytes": 9095
+  },
+  {
+    "path": "crates/deadpan-plan/src/lib.rs",
+    "sha256": "3df99cad13a37eee5d01bb80d256317bcba46c751ec210950416d70f4ed41121",
+    "bytes": 4351
+  },
+  {
+    "path": "crates/deadpan-plan/src/plan.rs",
+    "sha256": "d09a0a7be6ae0ea6fcf21d31f3b535fcc8f2467208fcc11b3fa340044d3a34cb",
+    "bytes": 24457
+  },
+  {
+    "path": "crates/deadpan-plan/tests/source_voice.rs",
+    "sha256": "7eb074da153e5cfd1a9e988e185de2a02a8594ef1a705baac17f569562027c16",
+    "bytes": 7837
+  },
+  {
+    "path": "crates/deadpan-plan/tests/source_voice_policy.rs",
+    "sha256": "6f654606e4acf6c83504354765c625e9e8b1883fecdcd3363222977a431294a3",
+    "bytes": 16439
+  },
+  {
+    "path": "crates/deadpan-playback/Cargo.toml",
+    "sha256": "5f166a5d1d81bbd93a00bf1f2f0db40fae9a3d1aebff2b4d593e9fff5af201da",
+    "bytes": 631
+  },
+  {
+    "path": "crates/deadpan-playback/src/tests.rs",
+    "sha256": "727153354ef2e9123e1f70a3a82a404d2a759e600f48faa8b6c03b4cfb1b6f1f",
+    "bytes": 27042
+  },
+  {
+    "path": "crates/deadpan-playback/src/tests/sound.rs",
+    "sha256": "b36275d0f93ee611d2515bdd78be0fbf2c017b8341fd1f64152f018bba198328",
+    "bytes": 14572
+  },
+  {
+    "path": "crates/deadpan-playback/src/tests/source_voice.rs",
+    "sha256": "aefa479b97f49152b9d3b934fb602efae80d49dcecf086261ae79e5c5b9cb23f",
+    "bytes": 21886
+  },
+  {
+    "path": "docs/DEVELOPMENT.md",
+    "sha256": "15dbe153c3bf2e1369d56a1aa6562f33567e2a48dea27c33f31d22d7dfb79309",
+    "bytes": 22600
+  },
+  {
+    "path": "docs/REQUIREMENTS.md",
+    "sha256": "7571072b9672e15f8df2b1c868393db1d96c5cdfe1f6f3289dd3b96c1374ba26",
+    "bytes": 61110
+  },
+  {
+    "path": "docs/SOUND_EVENTS.md",
+    "sha256": "46530ea3d01f8df0c390e291a18985dd5a44207acaa39cd4b8b8cbd8ad3b7f03",
+    "bytes": 19211
+  },
+  {
+    "path": "docs/SOURCE_ADMISSION.md",
+    "sha256": "1410f45acbf7cc62918833c048773b53d2d19d35b54faa62e0a0622ceecc4123",
+    "bytes": 5901
+  },
+  {
+    "path": "docs/SOURCE_AUDIO.md",
+    "sha256": "85c1821fdf390aa4f2949c650408a03d9ad8e6d5739cb0d5e7264db2de82d729",
+    "bytes": 5799
+  },
+  {
+    "path": "docs/qualification/source-voices-2026-09-27.md",
+    "sha256": "e3eea6e88d51a7d804495284525f213eb7d71f90e54770eb942043632a50f7ef",
+    "bytes": 6585
+  },
+  {
+    "path": "docs/spec/AGENT_HANDOFF.md",
+    "sha256": "213a9267a32a1aca86688a9913a74af841f2861fd11dc85b24dfaaeb2afce35b",
+    "bytes": 15320
+  },
+  {
+    "path": "native/deadpan-source/src/audio_decoder.c",
+    "sha256": "15de3f3dd17e59927b412350464126e6e0dc04ff55c905e64c5294678260697e",
+    "bytes": 27132
+  },
+  {
+    "path": "native/deadpan-source/src/input.rs",
+    "sha256": "da321f74fb4e93c17cc45902e29558da948e299307da0adfab17888631c72a28",
+    "bytes": 81826
+  }
+]

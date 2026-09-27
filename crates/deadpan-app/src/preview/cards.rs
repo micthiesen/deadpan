@@ -4,40 +4,6 @@ use eframe::egui;
 
 use super::{BeatRow, NodeId, paint_cursor, style};
 
-pub(super) fn heading(
-    ui: &mut egui::Ui,
-    title: &str,
-    focused: bool,
-    count: usize,
-    frames: u64,
-    frame_rate: Option<deadpan_core::FrameRate>,
-) -> egui::Response {
-    ui.horizontal_wrapped(|ui| {
-        let heading = ui.label(egui::RichText::new(title).size(13.0).strong());
-        if focused {
-            ui.label(
-                egui::RichText::new("FOCUS")
-                    .size(9.0)
-                    .color(style::LAVENDER),
-            );
-        }
-        ui.label(
-            egui::RichText::new(format!("{count} root beats · {frames} frames"))
-                .color(style::MUTED)
-                .size(12.0),
-        );
-        if let Some(rate) = frame_rate {
-            ui.label(
-                egui::RichText::new(super::frame_rate_label(rate))
-                    .color(style::MUTED)
-                    .size(12.0),
-            );
-        }
-        heading
-    })
-    .inner
-}
-
 pub(super) fn original(
     ui: &mut egui::Ui,
     label: &str,
@@ -97,8 +63,17 @@ pub(super) fn strip(
     reveal: bool,
 ) -> Option<usize> {
     let canvas_width = beats.len() as f32 * layout.card_width;
+    let geometry_id = ui.make_persistent_id("beat-strip-geometry");
+    let geometry = (layout.card_width, ui.available_width());
+    let resized = ui.data_mut(|data| {
+        let previous = data.get_temp::<(f32, f32)>(geometry_id);
+        data.insert_temp(geometry_id, geometry);
+        previous.is_some_and(|previous| previous != geometry)
+    });
     let mut scroll = egui::ScrollArea::horizontal().id_salt("beat-strip");
-    if reveal && let Some(index) = beats.iter().position(|beat| Some(&beat.id) == selected) {
+    if (reveal || resized)
+        && let Some(index) = beats.iter().position(|beat| Some(&beat.id) == selected)
+    {
         // egui positions this frame's content before clamping the retained
         // offset. Bound a new reveal now so a fitting strip never overscrolls
         // for one frame after an append or selection change.
@@ -146,7 +121,7 @@ fn beat_card(
         ui.make_persistent_id(("beat-card", &beat.id)),
         selected,
         &format!(
-            "Root beat {}: {}, {}, {} frames, half-open frame boundaries {} to {}",
+            "Beat {}: {}, {}, {} frames, half-open frame boundaries {} to {}",
             index + 1,
             beat.label,
             beat.kind,
@@ -248,6 +223,46 @@ mod tests {
     use super::*;
 
     #[test]
+    fn resize_keeps_the_selected_card_visible_when_card_pitch_changes() {
+        let context = egui::Context::default();
+        style::apply(&context);
+        let beats = (0..50)
+            .map(|index| BeatRow {
+                id: NodeId::new(format!("beat-{index}")).unwrap(),
+                label: format!("Beat {index}"),
+                kind: "Hold".into(),
+                start: index * 12,
+                frames: 12,
+            })
+            .collect::<Vec<_>>();
+        for (size, reveal) in [
+            (egui::vec2(1280.0, 820.0), true),
+            (egui::vec2(960.0, 640.0), false),
+        ] {
+            let layout = style::Layout::for_size(size.x, size.y);
+            let mut output = context.run_ui(
+                egui::RawInput {
+                    screen_rect: Some(egui::Rect::from_min_size(egui::Pos2::ZERO, size)),
+                    ..Default::default()
+                },
+                |ui| {
+                    egui::CentralPanel::default().show(ui, |ui| {
+                        strip(ui, layout, &beats, Some(&beats[30].id), None, 360, reveal);
+                    });
+                },
+            );
+            output.textures_delta.clear();
+            assert!(
+                output.shapes.iter().any(|clipped| {
+                    matches!(&clipped.shape, egui::Shape::Rect(shape)
+                    if shape.fill == style::SELECTED && clipped.clip_rect.contains_rect(shape.rect))
+                }),
+                "selection disappeared after resize to {size:?}"
+            );
+        }
+    }
+
+    #[test]
     fn undo_then_insert_after_first_preserves_each_card_and_its_text() {
         let context = egui::Context::default();
         style::apply(&context);
@@ -296,13 +311,13 @@ mod tests {
                     .exact_size(layout.sources)
                     .show(ui, |_| {});
                 style::beat_panel(layout).show(ui, |ui| {
-                    heading(
+                    super::super::scope::draw_heading(
                         ui,
-                        "YOUR EDIT",
                         true,
+                        true,
+                        &[],
                         beats.len(),
                         beats.len() as u64 * 120,
-                        Some(deadpan_core::FrameRate::new(24, 1).unwrap()),
                     );
                     viewport = ui.available_rect_before_wrap();
                     strip(
@@ -472,13 +487,13 @@ mod tests {
                             .exact_size(layout.sources)
                             .show(ui, |_| {});
                         style::beat_panel(layout).show(ui, |ui| {
-                            heading(
+                            super::super::scope::draw_heading(
                                 ui,
-                                "YOUR EDIT",
                                 true,
+                                true,
+                                &[],
                                 beats.len(),
                                 beats.len() as u64 * 120,
-                                None,
                             );
                             strip(
                                 ui,
@@ -518,7 +533,15 @@ mod tests {
     #[test]
     fn beat_headers_and_card_rows_remain_visible_below_the_viewer() {
         for size in [egui::vec2(960.0, 640.0), egui::vec2(1492.0, 929.0)] {
-            for count in [1, 2, 4, 9] {
+            for (count, group_labels) in [
+                (1, vec![]),
+                (2, vec![]),
+                (4, vec!["Outer group".into(), "Inner group".into()]),
+                (
+                    9,
+                    vec!["A long group name that needs horizontal scrolling".into(); 16],
+                ),
+            ] {
                 for reveal in [false, true] {
                     let context = egui::Context::default();
                     style::apply(&context);
@@ -556,14 +579,15 @@ mod tests {
                                     .show(ui, |_| {});
                                 panel = style::beat_panel(layout)
                                     .show(ui, |ui| {
-                                        title = heading(
+                                        title = super::super::scope::draw_heading(
                                             ui,
-                                            "YOUR EDIT",
                                             true,
+                                            true,
+                                            &group_labels,
                                             count,
                                             count as u64 * 120,
-                                            Some(deadpan_core::FrameRate::new(24, 1).unwrap()),
                                         )
+                                        .0
                                         .rect;
                                         strip(
                                             ui,

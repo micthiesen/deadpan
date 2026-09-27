@@ -1,0 +1,23 @@
+{
+  "commands": [
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 1,
+      "seconds": 5.621715125162154,
+      "log": "0.log"
+    }
+  ],
+  "source_count": 466,
+  "source_unchanged": false,
+  "changed_sources": [
+    "crates/deadpan-app/src/preview/harness.rs",
+    "crates/deadpan-app/src/preview/harness/telemetry.rs"
+  ],
+  "passed": false
+}

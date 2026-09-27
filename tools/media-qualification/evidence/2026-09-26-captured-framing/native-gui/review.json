@@ -1,0 +1,19 @@
+{
+  "status": "blocked",
+  "native_interaction_performed": false,
+  "tool": "mcp__cua_repl.js / cua.getApp",
+  "attempted_app": "/tmp/deadpan-freeze-20260924/native-gui/Deadpan Captured Review.app",
+  "tool_result": "Computer Use was not approved to use Deadpan Captured Review",
+  "screenshots": [],
+  "pending_checks": [
+    "Open scratch Captured view review.deadpan; verify schema24 migration retains existing framing and baseline.",
+    "At a boundary inside the framed Pause, insert with ,h and compare retained composition with the preceding frame.",
+    "Open Camera on the new pause; verify Captured view retained explanation, pan/zoom, Reset and Escape.",
+    "In TargetPicker, use Tab then3 and Shift-Tab then f; verify target selection and closing remain keyboard-routable.",
+    "Commit framing, undo, redo and reopen; verify captured context, cursor, duration and selection.",
+    "Compare hierarchy, spacing, keycaps, readable labels and narrow inspector with the saved Camera/workspace targets."
+  ],
+  "limits": [
+    "No live visual, focus, native IME or accessibility verification of this build. Headless tests are separate evidence."
+  ]
+}

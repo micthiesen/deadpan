@@ -1,0 +1,22 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+warning: method `project_scoped_supported` is never used
+   --> crates/deadpan-core/src/audio_reference.rs:547:19
+    |
+216 | impl FrozenAudioLayout {
+    | ---------------------- method in this implementation
+...
+547 |     pub(crate) fn project_scoped_supported(
+    |                   ^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `deadpan-core` (lib test) generated 1 warning (1 duplicate)
+warning: `deadpan-core` (lib) generated 1 warning
+error: couldn't read `crates/deadpan-core/tests/audio_bindings/gaps.rs`: No such file or directory (os error 2)
+ --> crates/deadpan-core/tests/audio_bindings.rs:8:1
+  |
+8 | mod gaps;
+  | ^^^^^^^^^
+
+error: could not compile `deadpan-core` (test "audio_bindings") due to 1 previous error
+warning: build failed, waiting for other jobs to finish...

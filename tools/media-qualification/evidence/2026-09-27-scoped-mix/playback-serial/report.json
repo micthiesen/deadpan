@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/michael/Code/deadpan/target/debug/deps/deadpan_playback-34f16a24a1d54369",
+    "--test-threads=1"
+  ],
+  "binary_sha256": "0bdd60b9c3620a1a53576747e6edfb432caa12f41318b5d6bb3777a6debc930b",
+  "exit_code": 0,
+  "seconds": 104.77748441556469,
+  "tests": {
+    "passed": 17,
+    "failed": 0,
+    "ignored": 0
+  }
+}

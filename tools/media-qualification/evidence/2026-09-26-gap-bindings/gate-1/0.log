@@ -1,0 +1,45 @@
+Diff in /Users/michael/Code/deadpan/crates/deadpan-app/src/preview/harness.rs:10:
+ use super::*;
+ use crate::ui_harness::{Options, gpu::Offscreen, report::*};
+ 
+-mod scenarios;
+ mod scale;
++mod scenarios;
+ 
+ #[derive(Default)]
+ pub(super) struct Feedback {
+Diff in /Users/michael/Code/deadpan/crates/deadpan-app/src/preview/harness.rs:333:
+             complete,
+             SampleOutcome::Completed,
+         );
+-        if events.iter().any(|(stage, _)| *stage == "picture_submitted") {
++        if events
++            .iter()
++            .any(|(stage, _)| *stage == "picture_submitted")
++        {
+             if let Some(start) = self.picture_input.take() {
+                 self.metric(
+                     "input_to_picture_complete_ms",
+Diff in /Users/michael/Code/deadpan/crates/deadpan-app/src/preview/harness.rs:536:
+         self.check(
+             "Settled picture has no failure and displays the current request",
+             picture["error"].is_null()
+-                && (picture["requested"].is_null()
+-                    || picture["requested"] == picture["displayed"]),
++                && (picture["requested"].is_null() || picture["requested"] == picture["displayed"]),
+             json!("no picture error; current requested identity displayed"),
+             picture,
+         )
+Diff in /Users/michael/Code/deadpan/crates/deadpan-store/tests/migration.rs:18:
+ 
+ type Result<T = ()> = std::result::Result<T, Box<dyn Error>>;
+ 
+-#[path = "migration/audio_reanchors.rs"]
+-mod audio_reanchors;
+ #[path = "migration/audio_gap_bindings.rs"]
+ mod audio_gap_bindings;
++#[path = "migration/audio_reanchors.rs"]
++mod audio_reanchors;
+ #[path = "migration/framing.rs"]
+ mod framing;
+ #[path = "migration/insert_time.rs"]

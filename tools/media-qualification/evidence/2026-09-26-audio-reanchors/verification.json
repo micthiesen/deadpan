@@ -1,0 +1,126 @@
+{
+  "base_revision": "c03a5edde5f28d27074745eb15711cb28b1f2e50",
+  "committed": false,
+  "pushed": false,
+  "git_write_access": "read-only in this session",
+  "environment": {
+    "os": "macOS 26.5.2",
+    "build": "25F84",
+    "architecture": "arm64",
+    "rust": "1.97.1 (8bab26f4f 2026-07-14)",
+    "ffmpeg_prefix": "/tmp/deadpan-media-compatible-xyhilms4/prefix"
+  },
+  "schemas": {
+    "core": 21,
+    "database": 27,
+    "audio_context": 2
+  },
+  "gate": {
+    "commands": [
+      {
+        "command": [
+          "cargo",
+          "fmt",
+          "--all",
+          "--",
+          "--check"
+        ],
+        "exit_code": 0,
+        "seconds": 2.629630709066987,
+        "log": "0.log"
+      },
+      {
+        "command": [
+          "cargo",
+          "clippy",
+          "--workspace",
+          "--all-targets",
+          "--locked",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "exit_code": 0,
+        "seconds": 360.588855041191,
+        "log": "1.log"
+      },
+      {
+        "command": [
+          "cargo",
+          "test",
+          "--workspace",
+          "--locked",
+          "--no-fail-fast"
+        ],
+        "exit_code": 101,
+        "seconds": 910.0727161671966,
+        "log": "2.log"
+      },
+      {
+        "command": [
+          "cargo",
+          "build",
+          "--workspace",
+          "--locked"
+        ],
+        "exit_code": 0,
+        "seconds": 0.6827947092242539,
+        "log": "3.log"
+      },
+      {
+        "command": [
+          "cargo",
+          "run",
+          "-p",
+          "deadpan-cli",
+          "--",
+          "doctor"
+        ],
+        "exit_code": 0,
+        "seconds": 0.4035911657847464,
+        "log": "4.log"
+      }
+    ],
+    "source_count": 446,
+    "source_unchanged": true,
+    "changed_sources": [],
+    "tests": {
+      "passed": 1463,
+      "failed": 1,
+      "ignored": 0
+    },
+    "passed": false
+  },
+  "focused_unique_final_cases": {
+    "core": 129,
+    "store": 91,
+    "pcm": 6,
+    "cli": 16
+  },
+  "unlogged_initial_compile_failure": {
+    "error": "E0583 missing module reanchors",
+    "file": "crates/deadpan-core/tests/audio_bindings.rs:5",
+    "correction": "explicit path attribute to audio_bindings/reanchors.rs",
+    "warning": "unused super import in frozen binding tests, removed"
+  },
+  "pcm_fixture_corrections": [
+    "Oracle must constrain filter context at the Source host end: ceil(100+128*147/160)=218",
+    "Full original 384-sample comparison requires two reads within the 256-sample inspection limit"
+  ],
+  "old_binary": {
+    "sha256": "8694544804e5554d3d4bff5fa0ed57255672306205b80acee8437d9c62c205f5",
+    "core": 20,
+    "database": 26,
+    "fixture_revisions": 27,
+    "fixture_history": 15
+  },
+  "gui_review": "Not repeated: no native UI, startup, lifecycle or picture changes in this increment",
+  "new_imagegen": false,
+  "remaining_work": [
+    "Authored Repeat-gap binding ownership and birth",
+    "Complete movement/raw-recipe binding lifecycle",
+    "General atomic Original-moment splice",
+    "Native Visual/register workflow",
+    "Full normative product and release gates"
+  ]
+}

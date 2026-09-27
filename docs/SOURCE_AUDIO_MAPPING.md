@@ -8,6 +8,12 @@ start with `placement`; see [import timing](SOURCE_IMPORT_TIMING.md).
 The signed 48 kHz `audio_offset` additionally translates
 the audio start. It does not change the audio rate or erase original timestamps.
 
+Core schema 20 adds `selected_placement`: an exact half-open selection of a
+complete affine mapping. It retains the original sample span and phase while
+constraining audible support and fade endpoints. The separate offset translates
+both mapping and selection. See [Original moments](SOURCE_MOMENTS.md) for the
+measured-range derivation, rendering policy and migration boundary.
+
 `SourceAudioMapping::natural_rate(span, frame_rate)` computes the destination
 duration from original timestamp units and rational project frame rate, without
 rounding. For a one-second audio selection beneath a two-second picture at 30

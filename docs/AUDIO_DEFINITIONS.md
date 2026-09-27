@@ -4,8 +4,9 @@
 recipe directly on its canonical local-zero 48 kHz point grid. This supplies a
 deterministic operand for future new-Repeat-play bindings, separately from an old
 physical occurrence's sampled continuity. It does not install a binding, grow a
-Repeat or insert time. Core 15/database 21 and `FrozenAudioContext` schema 1 are
-unchanged.
+Repeat or insert time. The gap-definition extension changes no persisted wire:
+core 24/database 30 and `FrozenAudioContext` schema 3 are current. Authored
+[gap bindings](GAP_AUDIO_BINDINGS.md) now preserve these recipe clocks across edits.
 
 ## Definition and occurrence are separate
 
@@ -20,6 +21,14 @@ default child directly. Normal and retained-context compilation keep its index
 even when no current play uses it. `Node { node }` selects a node's authored output,
 as needed for a future WrapRepeat prototype. Neither selector probes the project
 root or invents an outer Repeat identity.
+
+`RepeatGap { repeat }` selects the Repeat's configured positive-duration Hold
+recipe directly. It works with one play, when no gap is rendered, and when all
+plays use overrides. Missing or zero-duration gap recipes are unavailable. The
+handle's root is the owning Repeat, but its duration and content come exclusively
+from the gap. Its relative occurrence has no `gap_after` identity: a definition
+is not an existing gap after a selected play. Explicit gap and whole-Repeat
+selectors remain distinct in processing and cache identities.
 
 The borrowed handle retains its exact immutable plan, selector and resolved root.
 It exposes duration and an `AudioSignal` whose support begins at local frame zero.
@@ -68,6 +77,7 @@ reads. A serialized selector grants neither media access nor an authored edit.
 cargo run --locked -p deadpan-cli -- inspect-audio-definition example.deadpan --repeat-default repeat --samples 0 256
 cargo run --locked -p deadpan-cli -- inspect-audio-definition example.deadpan --node clip --samples 0 256
 cargo run --locked -p deadpan-cli -- inspect-audio-definition example.deadpan --repeat-default repeat --samples 0 256 --revision prior-edit
+cargo run --locked -p deadpan-cli -- inspect-audio-definition example.deadpan --repeat-gap repeat --samples 0 256
 ```
 
 Protocol 1 labels the returned `audio` object
@@ -91,11 +101,13 @@ One compact allocation-run rule should select the prototype without expanding
 every play. Existing survivors retain their separate physical/root maps.
 
 The [owned recipe clock](OWNED_AUDIO_CLOCKS.md) now supplies a physical definition's
-current raw body in an explicit root placement. The preferred binding approach
-uses the complete children already owned by Split, with timing-only indexes and
+current raw body, including a configured Repeat gap, in an explicit root or point
+placement. [Gap binding state](GAP_AUDIO_BINDINGS.md) now connects this operand
+to retained clocks and canonical gap birth. The binding approach uses the
+complete children already owned by Split, with timing-only indexes and
 explicit lexical Repeat arguments, instead of a second frozen raw-body graph.
-Live ownership transforms, exact composed anchors, birth environments and shared
-preparation remain required. Explicit historical contexts still authenticate
+The complete movement and raw-recipe editing lifecycle remains required.
+Explicit historical contexts still authenticate
 against committed revisions; never label reducer intermediates as committed
 snapshots. See [the splice design](STRUCTURAL_SPLICE_DESIGN.md) and
 [physical domains](AUDIO_PHYSICAL_DOMAINS.md).

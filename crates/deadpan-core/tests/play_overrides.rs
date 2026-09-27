@@ -13,6 +13,7 @@ fn dur(n: i64) -> FrameDuration {
 }
 fn recipe(n: i64) -> HoldRecipe {
     HoldRecipe {
+        picture_context: None,
         duration: dur(n),
         video: HoldVideo::Background,
         audio: HoldAudio::Silence,
@@ -23,6 +24,7 @@ fn subtree(name: &str, n: i64) -> Subtree {
         root: id(name),
         nodes: BTreeMap::from([(id(name), BeatNode::hold(name, recipe(n)))]),
         overrides: BTreeMap::new(),
+        gap_overrides: BTreeMap::new(),
     }
 }
 fn request(document: &ProjectDocument, command: Command) -> CommandRequest {
@@ -374,6 +376,7 @@ fn nested_override_insertion_remaps_ids_and_wrapping_preserves_actual_ancestry()
             }])
             .unwrap(),
         )]),
+        gap_overrides: BTreeMap::new(),
     };
     let document = edit(
         &document,
@@ -539,6 +542,7 @@ fn override_duration_overflow_and_empty_content_reject_the_whole_edit() {
         root: id("empty"),
         nodes: BTreeMap::from([(id("empty"), BeatNode::sequence("Empty", vec![]))]),
         overrides: BTreeMap::new(),
+        gap_overrides: BTreeMap::new(),
     };
     assert!(
         apply(

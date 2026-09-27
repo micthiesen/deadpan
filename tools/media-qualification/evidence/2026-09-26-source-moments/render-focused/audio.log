@@ -1,0 +1,79 @@
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 20.01s
+     Running tests/stages.rs (target/debug/deps/stages-b5d8805212aa22c3)
+
+running 56 tests
+test insert_time::a_pause_preserves_the_two_sample_creative_envelope_on_both_sides ... ok
+test cancellation_during_source_access_leaves_no_partial_stage_and_retry_replays_exactly ... ok
+test insert_time::start_and_end_pauses_retain_hard_source_edges_room_tone_phase_and_silence ... ok
+test a_subsample_room_tone_hold_renders_through_preserve_without_becoming_silence ... ok
+test edge_fades_follow_continuous_preserve_and_inner_cuts_without_query_edges ... ok
+test limited::limited_admission_cache_residency_and_empty_dependency_cancellation_are_bounded ... ok
+test nested_depth_and_native_long_input_limits_fail_without_decoding_originals ... ok
+test edge_fades_follow_nested_mixed_room_tone_retimes_and_authored_crops ... ok
+test nested_preserve_retains_inner_history_and_outer_crop_matches_full_render ... ok
+test mixed_pitch_policies_keep_their_order_even_when_overall_speed_is_unity ... ok
+test one_hard_repeat_override_and_room_tone_gap_edges_preserve_silence_masks ... ok
+test partition_inside_a_repeat_gap_keeps_its_full_room_tone_origin ... ok
+test actual_split_and_refinement_preserve_ntsc_44100_pcm_and_two_sample_envelopes ... ok
+test partition_inside_preserve_input_retains_full_source_filter_context ... ok
+test placement_hard_end_does_not_mistake_the_host_start_for_its_later_onset ... ok
+test preparation::preparation_does_not_renew_stage_allowance_at_each_small_read ... ok
+test insert_time::selected_original_window_survives_ntsc_split_pause_and_endpoint_exhaustion ... ok
+test preparation::preparation_matches_irregular_reads_and_cold_crops_across_all_stages ... ok
+test preparation::preparation_rejects_bad_admission_and_cancellation_without_a_partial_block ... ok
+test ntsc_fractional_input_and_output_origins_preserve_exact_three_over_two_speed ... ok
+test pure_partition_preserves_a_two_sample_envelope_and_standalone_fragment_offset ... ok
+test ntsc_partition_keeps_44100_filter_phase_placement_and_original_fades_in_both_readers ... ok
+test repeated_room_tone_and_override_restart_locally_with_two_distinct_gap_caches ... ok
+test preserve_processes_both_source_cuts_continuously_and_query_partitions_cannot_restart_it ... ok
+test repeat_and_override_occurrences_do_not_alias_prepared_history ... ok
+test prepared_cache_rechecks_explicit_source_layout_including_nested_dependencies ... ok
+test selection::changing_a_selected_window_keeps_retained_phase_and_uses_current_support ... FAILED
+test room_tone_cache_layout_changes_invalidate_both_holds_and_dependent_preserve_stages ... ok
+test selection::selected_empty_host_intersections_and_zero_point_windows_do_not_read_media ... ok
+test selection::fractional_selected_source_preserves_original_phase_and_excludes_outside_taps ... ok
+test selection::selected_source_follow_speed_uses_exact_window_on_its_retained_physical_grid ... ok
+test insert_time::ntsc_44100_pause_at_an_existing_split_resumes_1602_and_exhausts_4804 ... ok
+test silent_hold_is_suppressed_even_when_its_input_interval_owns_no_grid_sample ... ok
+test room_tone_keeps_fractional_44100_source_extent_and_long_hold_duration_across_loops ... ok
+test transferred_halo_rejects_changed_source_provenance_between_input_blocks ... ok
+test stage_budget_failures_and_initial_cancellation_do_not_decode_or_publish_cache_entries ... ok
+test transferred_halo_shares_preparation_work_and_rejects_invalid_context_before_io ... ok
+test insert_time::ntsc_pause_reanchors_room_tone_from_its_old_visible_entry ... ok
+test transferred_root_uses_qualified_pcm_without_baking_in_creative_fades ... ok
+test unsupported_effect_tails_cannot_hide_between_input_grid_samples ... ok
+test selection::selection_masks_physical_transfer_but_preserve_retains_its_decay ... ok
+test actual_split_preserves_mixed_retime_and_room_tone_history_when_suffix_is_read_first ... ok
+test room_tone_retimes_keep_pitch_order_and_outer_crop_keeps_the_intrinsic_loop_history ... ok
+test shared_per_read_work_limits_bound_repeated_stage_preparation_and_allow_warm_retry ... ok
+test insert_time::extending_moved_room_tone_retains_its_binding_and_uses_the_current_duration ... ok
+test partitions_of_mixed_retimes_retain_full_preserve_and_room_tone_histories ... ok
+test transferred_preserve_keeps_root_silence_and_intrinsic_preparation_on_fractional_grid ... ok
+test insert_time::insertion_preserves_fractional_source_placement_offset_and_first_speech_sample ... ok
+test insert_time::inserting_before_several_split_fragments_reanchors_every_surviving_entry ... ok
+test insert_time::a_second_interior_pause_composes_the_current_resume_without_changing_its_prefix ... ok
+test insert_time::extending_a_captured_repeat_hold_keeps_each_surviving_play_clock ... ok
+test limited::limited_cache_rechecks_nested_stage_provenance_and_recovers_after_cancellation ... ok
+test limited::bus_cache_does_not_round_context_into_an_unavailable_following_source ... ok
+test limited::two_tile_read_cannot_mix_source_interpretations_even_when_both_tiles_are_warm ... ok
+test limited::adjacent_tiles_reuse_exact_bus_context_and_revalidate_its_source_layout ... ok
+test limited::limited_bus_matches_direct_full_context_and_cold_shuffled_reads ... ok
+
+failures:
+
+---- selection::changing_a_selected_window_keeps_retained_phase_and_uses_current_support stdout ----
+
+thread 'selection::changing_a_selected_window_keeps_retained_phase_and_uses_current_support' (44578317) panicked at crates/deadpan-audio/tests/stages.rs:618:5:
+assertion `left == right` failed
+  left: RevisionId("selected-window-change")
+ right: RevisionId("stage-revision")
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    selection::changing_a_selected_window_keeps_retained_phase_and_uses_current_support
+
+test result: FAILED. 55 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 37.35s
+
+error: test failed, to rerun pass `-p deadpan-audio --test stages`

@@ -47,6 +47,8 @@ impl Wake for Repaint {
 #[derive(Default)]
 pub struct Dialogs {
     pending: Option<PendingDialog>,
+    #[cfg(feature = "ui-harness")]
+    scripted: Option<std::collections::VecDeque<(DialogKind, Option<PathBuf>)>>,
 }
 
 impl Dialogs {
@@ -56,6 +58,19 @@ impl Dialogs {
         if self.is_open() {
             return Err("Finish or cancel the open dialog before opening another.".into());
         }
+        #[cfg(feature = "ui-harness")]
+        let future: DialogFuture = if let Some(scripted) = &mut self.scripted {
+            let (expected, path) = scripted
+                .pop_front()
+                .ok_or("No scripted dialog response; native dialogs are disabled in UI replay")?;
+            if expected != kind {
+                return Err("Unexpected dialog kind in UI replay".into());
+            }
+            Box::pin(std::future::ready(path))
+        } else {
+            native_dialog(kind)?
+        };
+        #[cfg(not(feature = "ui-harness"))]
         let future = native_dialog(kind)?;
         self.pending = Some(PendingDialog {
             kind,
@@ -80,6 +95,16 @@ impl Dialogs {
 
     pub fn is_open(&self) -> bool {
         self.pending.is_some()
+    }
+
+    /// Replace only the operating-system picker result. Application dialog
+    /// intent, input ownership and import preparation still run normally.
+    #[cfg(feature = "ui-harness")]
+    pub(crate) fn scripted(responses: Vec<(DialogKind, Option<PathBuf>)>) -> Self {
+        Self {
+            pending: None,
+            scripted: Some(responses.into()),
+        }
     }
 }
 
@@ -144,6 +169,8 @@ mod tests {
                 future: Box::pin(std::future::pending()),
                 waker: Waker::from(Arc::new(Repaint(context.clone()))),
             }),
+            #[cfg(feature = "ui-harness")]
+            scripted: None,
         };
         assert!(dialogs.is_open());
         assert!(dialogs.take_result().is_none());
@@ -167,6 +194,8 @@ mod tests {
                 )))),
                 waker: Waker::from(Arc::new(Repaint(egui::Context::default()))),
             }),
+            #[cfg(feature = "ui-harness")]
+            scripted: None,
         };
         let result = dialogs.take_result().unwrap();
         assert_eq!(result.kind, DialogKind::CreateProject);

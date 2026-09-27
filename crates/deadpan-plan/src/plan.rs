@@ -1,10 +1,11 @@
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, sync::Arc};
 
 use deadpan_core::{
-    AssetId, EndpointPolicy, ExactRatio, FrameDuration, FrameRange, HoldAudio, HoldRecipe,
-    HoldVideo, InsertionBias, InstancePath, NodeId, NodeKind, PitchPolicy, PresentationBasis,
-    ProjectDocument, ProjectFrame, ProjectId, RepeatInstance, RepeatLayout, RetimePurpose,
-    RevisionId, SourceAudio, SourceFrameId, SourcePoint, SourceTimeBase, SourceVideo, TimeError,
+    AssetId, CapturedFraming, EndpointPolicy, ExactRatio, FrameDuration, FrameRange, HoldAudio,
+    HoldRecipe, HoldVideo, InsertionBias, InstancePath, NodeId, NodeKind, PitchPolicy,
+    PresentationBasis, ProjectDocument, ProjectFrame, ProjectId, RepeatInstance, RepeatLayout,
+    RetimePurpose, RevisionId, SourceAudio, SourceFrameId, SourcePoint, SourceTimeBase,
+    SourceVideo, TimeError,
 };
 use serde::Serialize;
 
@@ -36,6 +37,9 @@ pub use audio_bound::{AudioBound, AudioBoundDomain};
 #[path = "audio_policy.rs"]
 mod audio_policy;
 pub use audio_policy::AudioPolicyQuery;
+#[path = "audio_hold_policy.rs"]
+mod audio_hold_policy;
+pub use audio_hold_policy::{AudioHoldIssuer, AudioHoldPolicyQuery, AudioHoldRule};
 #[path = "audio_fades.rs"]
 mod audio_fades;
 pub use audio_fades::{AudioFadeQuery, AudioFadeSpan};
@@ -94,16 +98,18 @@ pub struct PlanInspection {
 }
 
 /// A validated, owned snapshot. There are no mutation methods or media handles.
-/// Storage is O(authored nodes + child edges + compact iteration runs).
+/// Storage is O(authored nodes + child edges + compact iteration runs + catalog assets).
 #[derive(Debug, Clone)]
 pub struct RenderPlan {
     metadata: PlanMetadata,
     nodes: Vec<PlanNode>,
     by_id: BTreeMap<NodeId, usize>,
     root: usize,
-    // Presence identifies an audio-only retained context, including one with
-    // no sources. These contracts still require explicit host admission.
-    audio_context_assets: Option<BTreeMap<AssetId, deadpan_core::AssetRecord>>,
+    // Catalog-only sounds are retained alongside structural dependencies.
+    // These contracts still require explicit host admission.
+    audio_assets: BTreeMap<AssetId, deadpan_core::AssetRecord>,
+    // Frozen admission stays distinct even when its catalog is empty.
+    audio_context: bool,
     audio_bindings: deadpan_core::AudioBindingState,
     parents: Vec<Option<usize>>,
 }
@@ -130,13 +136,16 @@ enum CompiledKind {
     },
     Hold {
         video: CompiledHold,
+        picture_context: Option<Arc<CapturedFraming>>,
         audio: HoldAudio,
     },
     Repeat {
         default_child: usize,
         layout: RepeatLayout,
         gap: Option<CompiledHold>,
+        gap_picture_context: Option<Arc<CapturedFraming>>,
         gap_audio: Option<HoldAudio>,
+        gap_duration: FrameDuration,
     },
     Retime {
         child: usize,
@@ -152,6 +161,18 @@ struct CompiledSourceAudio {
     source: SourceAudio,
     start: ExactRatio,
     duration: ExactRatio,
+    selection: deadpan_core::ExactFrameRange,
+    selected: bool,
+}
+
+impl CompiledSourceAudio {
+    fn outside_reason(&self) -> SilenceReason {
+        if self.selected {
+            SilenceReason::OutsideSourceSelection
+        } else {
+            SilenceReason::OutsideSourcePlacement
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -287,6 +308,15 @@ impl RenderPlan {
                                     duration: source
                                         .audio_mapping
                                         .duration_frames(source.duration)?,
+                                    selection: source.audio_mapping.selection_frames_with_offset(
+                                        source.duration,
+                                        source.audio_offset,
+                                        document.presentation_basis().frame_rate,
+                                    )?,
+                                    selected: matches!(
+                                        source.audio_mapping,
+                                        deadpan_core::SourceAudioMapping::SelectedPlacement { .. }
+                                    ),
                                 })
                             })
                             .transpose()?,
@@ -311,6 +341,10 @@ impl RenderPlan {
                 NodeKind::Hold { recipe } => (
                     CompiledKind::Hold {
                         video: CompiledHold::compile(recipe, document)?,
+                        picture_context: recipe
+                            .picture_context
+                            .as_ref()
+                            .map(|context| Arc::new(context.clone())),
                         audio: recipe.audio.clone(),
                     },
                     NodeType::Hold,
@@ -321,23 +355,33 @@ impl RenderPlan {
                     gap,
                 } => {
                     let overrides = document.overrides().get(id);
-                    let layout = RepeatLayout::compile(
+                    let gap_overrides = document.gap_overrides().get(id);
+                    let layout = RepeatLayout::compile_with_gap_overrides(
                         iterations,
                         child,
                         overrides,
                         gap.as_ref()
                             .map_or(FrameDuration::ZERO, |recipe| recipe.duration),
+                        gap_overrides,
                         &durations,
                     )?;
                     storage.iteration_run_entries += iterations.segment_count();
                     storage.repeat_segment_entries += layout.segment_count();
-                    storage.sparse_override_entries += overrides.map_or(0, |entries| entries.len());
+                    storage.sparse_override_entries += overrides.map_or(0, |entries| entries.len())
+                        + gap_overrides.map_or(0, |entries| entries.len());
                     storage.referenced_plays += u64::from(iterations.len());
                     (
                         CompiledKind::Repeat {
                             default_child: by_id[child],
                             layout,
                             gap_audio: gap.as_ref().map(|recipe| recipe.audio.clone()),
+                            gap_duration: gap
+                                .as_ref()
+                                .map_or(FrameDuration::ZERO, |recipe| recipe.duration),
+                            gap_picture_context: gap
+                                .as_ref()
+                                .and_then(|recipe| recipe.picture_context.as_ref())
+                                .map(|context| Arc::new(context.clone())),
                             gap: gap
                                 .as_ref()
                                 .map(|recipe| CompiledHold::compile(recipe, document))
@@ -399,7 +443,8 @@ impl RenderPlan {
             root,
             parents,
             audio_bindings: document.audio_bindings().clone(),
-            audio_context_assets: None,
+            audio_assets: document.assets().clone(),
+            audio_context: false,
         })
     }
 
@@ -410,7 +455,7 @@ impl RenderPlan {
     /// Retained contracts are serialized intent, not permission to read media.
     /// A source provider must explicitly compare each with its host receipt.
     pub fn audio_context_assets(&self) -> Option<&BTreeMap<AssetId, deadpan_core::AssetRecord>> {
-        self.audio_context_assets.as_ref()
+        self.audio_context.then_some(&self.audio_assets)
     }
 
     pub fn duration(&self) -> FrameDuration {
@@ -438,7 +483,7 @@ impl RenderPlan {
     /// O(depth * log(max(children, runs + overrides))); repeat counts do not affect storage.
     /// Arithmetic overflow fails explicitly instead of rounding an intermediate.
     pub fn picture(&self, frame: ProjectFrame) -> Result<PictureSample, PlanError> {
-        if self.audio_context_assets.is_some() {
+        if self.audio_context {
             return Err(PlanError::AudioOnlyContext);
         }
         if frame.0 < 0 || frame.0 >= self.duration().frames() {
@@ -452,7 +497,7 @@ impl RenderPlan {
         let mut repeats = Vec::new();
         let mut lookup = LookupStats::default();
         let mut framing = Vec::new();
-        let (picture, gap_after) = loop {
+        let (picture, picture_context, gap_after) = loop {
             let node = &self.nodes[current];
             lookup.visited_nodes += 1;
             if local.compare_integer(0).is_lt()
@@ -506,9 +551,13 @@ impl RenderPlan {
                         },
                         SourceVideo::Blank => Picture::Blank,
                     };
-                    break (picture, None);
+                    break (picture, None, None);
                 }
-                CompiledKind::Hold { video, .. } => break (video.picture(local)?, None),
+                CompiledKind::Hold {
+                    video,
+                    picture_context,
+                    ..
+                } => break (video.picture(local)?, picture_context.clone(), None),
                 CompiledKind::Sequence { entries } => {
                     let index = upper_bound(
                         entries.len(),
@@ -530,15 +579,32 @@ impl RenderPlan {
                     local = start.checked_add(local.checked_mul(*scale)?)?;
                     current = *child;
                 }
-                CompiledKind::Repeat { layout, gap, .. } => {
+                CompiledKind::Repeat {
+                    layout,
+                    gap,
+                    gap_picture_context,
+                    ..
+                } => {
                     let location = layout.locate(local, InsertionBias::Right)?;
                     lookup.iteration_run_comparisons += location.comparisons;
                     local = location.position;
                     if location.in_gap {
+                        if let Some(child) = location.play.gap_child {
+                            repeats.push(RepeatInstance {
+                                node: node.inspection.id.clone(),
+                                iteration: location.play.iteration,
+                            });
+                            current = self.by_id[&child];
+                            continue;
+                        }
                         let gap = gap
                             .as_ref()
                             .ok_or(PlanError::InvalidPlan("repeat gap recipe is missing"))?;
-                        break (gap.picture(local)?, Some(location.play.iteration));
+                        break (
+                            gap.picture(local)?,
+                            gap_picture_context.clone(),
+                            Some(location.play.iteration),
+                        );
                     }
                     repeats.push(RepeatInstance {
                         node: node.inspection.id.clone(),
@@ -560,6 +626,7 @@ impl RenderPlan {
             gap_after,
             local_position: local,
             picture,
+            picture_context,
             framing,
             lookup,
         })

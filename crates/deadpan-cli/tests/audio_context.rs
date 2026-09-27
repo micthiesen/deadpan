@@ -204,6 +204,16 @@ fn captured_context_reopens_abandoned_source_after_alias_reuse_without_moving_hi
         historical.read(AudioSample(90), 21, &active())?.samples,
         original[90..111]
     );
+    let mut old_wire: Value = serde_json::from_str(&restored.to_json()?)?;
+    old_wire["schema_version"] = Value::from(1);
+    let old_context = FrozenAudioContext::from_json(&old_wire.to_string())?;
+    let mut old_historical = ProjectAudioSession::open_context(&path, &old_context)?;
+    assert_eq!(
+        old_historical
+            .read_time_mapped(AudioSample(0), 256, &active())?
+            .samples,
+        original
+    );
     let mut current = ProjectAudioSession::open(&path)?;
     assert_eq!(
         current.read(AudioSample(0), 256, &active())?.samples,

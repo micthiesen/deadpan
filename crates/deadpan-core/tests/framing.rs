@@ -6,6 +6,9 @@ use std::{
 use deadpan_core::*;
 use serde_json::json;
 
+#[path = "framing/exact_clock.rs"]
+mod exact_clock;
+
 fn ratio(n: i128, d: i128) -> ExactRatio {
     ExactRatio::new(n, d).unwrap()
 }
@@ -25,6 +28,7 @@ fn hold(frames: i64) -> BeatNode {
     BeatNode::hold(
         "Hold",
         HoldRecipe {
+            picture_context: None,
             duration: duration(frames),
             video: HoldVideo::Background,
             audio: HoldAudio::Silence,
@@ -508,6 +512,7 @@ fn explicit_pause_can_split_a_retained_framed_partition_without_losing_its_clock
         Command::InsertTime {
             at: ProjectFrame(6),
             hold: HoldRecipe {
+                picture_context: None,
                 duration: duration(2),
                 video: HoldVideo::Background,
                 audio: HoldAudio::Silence,
@@ -695,6 +700,7 @@ fn typed_subtree_aggregate_framing_is_rejected_before_installation() {
                 root: id("large-root"),
                 nodes,
                 overrides: BTreeMap::new(),
+                gap_overrides: BTreeMap::new(),
             },
         },
     );

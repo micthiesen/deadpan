@@ -1,0 +1,32 @@
+{
+  "scope": "Six source/test/fixture paths in increment-paths.json, relative to the preceding checkpoint",
+  "general": {
+    "agent": "/root/interior_general_review",
+    "result": "No findings",
+    "basis": "Read-only review of exact-clock validation, endpoint/step selection, equivalent integer wrapper, scale invariance, invalid ranges and independent wide-value oracles; no Cargo run"
+  },
+  "numerical": {
+    "agent": "/root/interior_migration",
+    "result": "No findings",
+    "basis": "Read-only bound, limb carry/overflow, exact progress and integer compatibility audit, plus independent Python scratch checks; no Cargo or Rust execution",
+    "multiplication_cases": 58259,
+    "overflow_refusals": 9489,
+    "rational_segment_cases": 6064,
+    "frozen_integer_formula_comparisons": 6000,
+    "largest_product_bits": 294,
+    "largest_division_intermediate_bits": 295,
+    "fixture_regeneration": "All 300 cases match byte-for-byte",
+    "evidence": "numeric-review/check.py and numeric-review/summary.json"
+  },
+  "design": {
+    "reviewers": ["/root/interior_general_review", "/root/interior_timing_review", "/root/interior_migration"],
+    "conclusion": "Keep authored counts integral and represent effective clocks separately; nested Retime needs its own exact effective extent. Ordinary duration dilation is not PCM-preserving through Preserve. The preferred clock layer still needs a complete structural/DSP ownership contract, strict schema integration and end-to-end qualification.",
+    "implementation_boundary": "Only bounded rational framing evaluation is implemented in this increment. Document core25/database31 and all edit reducers remain unchanged.",
+    "preserve_followup": "The timing reviewer identified a missing current-body input projection in existing bindings. Proposed owned PreserveSpliceRoute maps old intrinsic input to current descendant ranges and schedules intrinsic output around inserted policy intervals; nested Preserve must consume intrinsic, not splice-allocated, child output. This proposal is recorded in STRUCTURAL_SPLICE_DESIGN.md with bounds, lifecycle, policy and qualification work explicitly open."
+  },
+  "exploratory_checks": {
+    "initial": "86 core library tests passed; 12 framing tests passed and 1 failed on an incorrect guessed minimum count of overflowing fixture quotients. All arithmetic assertions passed.",
+    "correction": "The independent Fraction generator now records actual unrepresentable quotient/endpoint counts: 58 and 78 among 300 cases. Tests require coverage of those oracle counts instead of a guessed 70.",
+    "focused_retry": "All 13 framing tests passed."
+  }
+}

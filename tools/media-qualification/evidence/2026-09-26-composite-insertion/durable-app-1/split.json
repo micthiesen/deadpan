@@ -1,0 +1,31 @@
+{
+  "protocol": 1,
+  "project_id": "9c88b275-f4da-44ab-b4d1-419a65d60a02",
+  "expected_revision": "isolate",
+  "new_revision": "split",
+  "command": {
+    "command": "split",
+    "node": "repeat",
+    "at": 1,
+    "identities": {
+      "nodes": [
+        "fragment-0",
+        "fragment-1",
+        "fragment-2",
+        "fragment-3",
+        "fragment-4",
+        "fragment-5",
+        "fragment-6",
+        "fragment-7",
+        "fragment-8",
+        "fragment-9",
+        "fragment-10",
+        "fragment-11",
+        "fragment-12",
+        "fragment-13",
+        "fragment-14",
+        "fragment-15"
+      ]
+    }
+  }
+}

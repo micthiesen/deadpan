@@ -1,0 +1,22 @@
+{
+  "commands": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-playback",
+        "--lib"
+      ],
+      "exit_code": 101,
+      "seconds": 104.03321624966338,
+      "log": "0.log",
+      "tests": {
+        "passed": 30,
+        "failed": 4,
+        "ignored": 0
+      }
+    }
+  ]
+}

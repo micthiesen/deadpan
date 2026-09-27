@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "base_head": "c03a5edde5f28d27074745eb15711cb28b1f2e50",
+  "scope": "Tracked and untracked captured-framing implementation against HEAD, plus the Camera target-picker correction.",
+  "method": "Three independent read-only reviewers; parent implemented and triaged corrections. Reviewers did not run Cargo or GUI checks.",
+  "reviewers": [
+    {"scope": "Core and store admission, legacy grammar and migration", "result": "No remaining findings after two corrections and follow-up review."},
+    {"scope": "Plan, renderer and Metal qualification harness", "result": "No findings."},
+    {"scope": "Native pause capture, picture propagation and Camera keyboard routing", "result": "No findings."}
+  ],
+  "findings": [
+    {
+      "id": "R1", "severity": "major", "disposition": "fixed; reviewer verified",
+      "problem": "Typed incoming contexts in recipes, subtrees and patches were copied before validation.",
+      "fix": "Shared command/occurrence payload preflight, bounded subtree admission, virtual resulting patch validation and cumulative isolation-copy checks.",
+      "tests": ["every_typed_payload_checks_context_before_resolving_its_target", "aggregate_preflight_covers_subtrees_patches_and_repeated_isolation"]
+    },
+    {
+      "id": "R2", "severity": "minor", "disposition": "fixed; reviewer verified",
+      "problem": "Clearing a repeated occurrence's context at the aggregate limit rejected its temporary isolation copy even though the final result was within the limit.",
+      "fix": "Private isolation validation allows two document budgets in that intermediate state; the final result and public validation remain at 100,000 records.",
+      "tests": ["aggregate_preflight_covers_subtrees_patches_and_repeated_isolation"],
+      "limit": "The cap applies to each private intermediate document, not all simultaneous input, snapshot and transaction allocations."
+    }
+  ],
+  "parent_corrections": [
+    "Retain an empty captured stage's implicit clip when appending a pose, and compact only redundant identity clips.",
+    "Apply a canvas fit and first pose before that stage's clip; do not preclip a Fill placement.",
+    "Use shared context collection caps, with renderer-specific dimension and cumulative numerical checks.",
+    "Keep omitted legacy Repeat gaps optional while rejecting modern context fields, including null and escaped keys.",
+    "Keep numeric fields out of TargetPicker focus cycling so Tab followed by a digit or f stays routable.",
+    "Correct four fixture fields accidentally placed on AssetRecord rather than HoldRecipe."
+  ],
+  "limits": [
+    "Code review does not establish actual Metal execution, native focus or visual quality.",
+    "Generated-media preview, arbitrary nested pause insertion, saved Camera targets and the remaining full specification stay open."
+  ]
+}

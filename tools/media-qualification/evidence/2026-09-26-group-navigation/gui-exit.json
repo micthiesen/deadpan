@@ -1,0 +1,20 @@
+{
+  "exit_code": 1,
+  "failed": true,
+  "scenario_checks": 0,
+  "scenario_steps": 0,
+  "screenshots": 0,
+  "findings": [
+    {
+      "message": "Scenario panicked: Failed to create render state: CustomNativeAdapterSelectionError(\"No adapter found\")",
+      "severity": "failure"
+    }
+  ],
+  "shortcut_passed": true,
+  "shortcut_checked": 3472,
+  "shortcut_reservations": 62,
+  "shortcut_conflicts": [],
+  "live_source_sha256": "2b10b5b9428ef9745829576267c2cc5478111c5839e728b6c19e79c5dc8e21a0",
+  "binary_sha256": "81c3f4dac16a8beebfa4492fa3ad86a36fba7266e3a029c320f75b04541c7e75",
+  "run_stage": "Before review cursor fix and keyboard regression additions; zero GUI assertions at any stage"
+}

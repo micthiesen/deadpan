@@ -270,7 +270,12 @@ impl InstancePath {
                     .unwrap_or(child);
                 if &instance.node != *parent
                     || iterations.position(&instance.iteration).is_none()
-                    || effective != target
+                    || (effective != target
+                        && document
+                            .gap_overrides()
+                            .get(*parent)
+                            .and_then(|entries| entries.get(&instance.iteration))
+                            != Some(target))
                 {
                     return Err(invalid(
                         "instance path names the wrong Repeat or a retired iteration",

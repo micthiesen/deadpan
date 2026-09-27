@@ -54,6 +54,7 @@ fn document(holds: &[(&str, i64)]) -> Result<ProjectDocument> {
                             BeatNode::hold(
                                 "Pause",
                                 HoldRecipe {
+                                    picture_context: None,
                                     duration: FrameDuration::new(*frames)?,
                                     video: HoldVideo::Background,
                                     audio: HoldAudio::Silence,
@@ -61,6 +62,7 @@ fn document(holds: &[(&str, i64)]) -> Result<ProjectDocument> {
                             ),
                         )]),
                         overrides: BTreeMap::new(),
+                        gap_overrides: BTreeMap::new(),
                     },
                 },
             },
@@ -689,6 +691,7 @@ fn validation_rechecks_the_request_against_its_origin_revision() -> Result {
                     BeatNode::hold(
                         "Pause",
                         HoldRecipe {
+                            picture_context: None,
                             duration: FrameDuration::new(12)?,
                             video: HoldVideo::Background,
                             audio: HoldAudio::Silence,
@@ -696,6 +699,7 @@ fn validation_rechecks_the_request_against_its_origin_revision() -> Result {
                     ),
                 )]),
                 overrides: BTreeMap::new(),
+                gap_overrides: BTreeMap::new(),
             },
         },
     )?;

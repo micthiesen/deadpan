@@ -59,6 +59,7 @@ fn document(hold_count: usize) -> Result<ProjectDocument> {
                             BeatNode::hold(
                                 "Pause",
                                 HoldRecipe {
+                                    picture_context: None,
                                     duration: FrameDuration::new(12)?,
                                     video: HoldVideo::Background,
                                     audio: HoldAudio::Silence,
@@ -66,6 +67,7 @@ fn document(hold_count: usize) -> Result<ProjectDocument> {
                             ),
                         )]),
                         overrides: BTreeMap::new(),
+                        gap_overrides: BTreeMap::new(),
                     },
                 },
             },

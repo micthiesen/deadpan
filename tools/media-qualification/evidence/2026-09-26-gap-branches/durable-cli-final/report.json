@@ -1,0 +1,9 @@
+{
+  "passed": true,
+  "binary_sha256": "1c0e22b21da81133b10ccfb3fa7a06f4a0b9ea0e0d16e3020b78a2c21c0c489a",
+  "commands": 43,
+  "revisions": 11,
+  "history_entries": 7,
+  "final_revision": "70267e2f-a133-4e5d-ab65-c4c6601f464b",
+  "scope": "Current CLI gap isolation, duration, dormant/revived ownership, clear, durable undo/redo"
+}

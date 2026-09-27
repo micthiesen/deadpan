@@ -1,0 +1,415 @@
+RUN single_source
+
+running 8 tests
+test changed_original_cannot_initialize_from_a_retained_prepared_snapshot ... ok
+test failing_baseline_publication_rolls_back_source_history_and_can_retry ... ok
+test a_valid_generic_reimport_branch_cannot_be_forged_into_single_source_history ... ok
+test full_original_is_atomic_and_undo_floor_survives_branch_and_reopen ... ok
+test generic_projects_keep_source_import_undo_and_creation_collisions_are_specific ... ok
+test initialization_rejects_generic_edits_audio_stale_cancelled_and_closed_preparation ... ok
+test second_picture_is_rejected_after_delete_but_original_reuse_and_sounds_work ... ok
+test malformed_or_displaced_profile_is_rejected_on_reopen ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.54s
+
+RUN migration
+
+running 75 tests
+test earlier_occurrence_copy_history_gains_only_replayed_lineage ... ok
+test corruption_is_rejected_without_promoting_any_migrated_rows ... ok
+test every_old_database_rejects_new_asset_hash_vocabulary_without_promotion ... ok
+test framing::frozen_v17_rejects_framing_in_commands_subtrees_occurrences_and_patches ... ok
+test framing::actual_old_binary_schema23_fixture_replays_every_snapshot_and_pending_redo ... ok
+test framing::schema23_cannot_smuggle_new_node_fields_and_failed_migration_keeps_original ... ok
+test audio_reanchors::modern_reanchor_intent_survives_durable_history_undo_redo_and_reopen ... ok
+test framing::schema23_keeps_insert_time_history_and_redo_then_persists_framing ... ok
+test insert_time::atomic_insert_time_history_survives_reopen_undo_redo_and_rejected_requests ... ok
+test audio_gap_bindings::gap_bindings_survive_durable_commands_undo_redo_and_reopen ... ok
+test audio_reanchors::actual_schema26_binary_retains_selected_audio_phase_terms_and_pending_redo ... ok
+test legacy_projection_cannot_hide_empty_override_entries_from_faulty_replay ... ok
+test legacy_database_rejects_preexisting_qualification_inventory_without_losing_it ... ok
+test legacy_projection_cannot_hide_marks_added_by_a_faulty_replay ... ok
+test legacy_schema_cannot_smuggle_modern_original_records_through_migration ... ok
+test migration_promotes_with_a_live_wal_reader_without_replacing_its_snapshot ... ok
+test every_old_schema_rejects_override_vocabulary_before_promotion ... ok
+test old_binary_history_migrates_with_stable_ids_and_pending_redo ... ok
+test insert_time::schema22_preserves_bindings_patches_and_redo_in_the_backed_up_migration ... ok
+test picture_context::schema24_rejects_injected_null_context_without_touching_original_or_backup ... ok
+test audio_gap_bindings::actual_schema27_binary_retains_reanchors_phase_terms_and_pending_redo ... ok
+test schema_eight_retains_unqualified_bundle_json_and_pending_redo ... ok
+test picture_context::actual_schema24_binary_fixture_preserves_every_snapshot_history_backup_and_redo ... ok
+test schema_eight_rejects_modern_evidence_and_corruption_without_promotion ... ok
+test audio_reanchors::schema26_rejects_reanchors_in_snapshots_and_both_nested_patch_directions ... ok
+test schema_eighteen_replays_partitions_marks_branches_and_pending_redo ... ok
+test old_schemas_reject_new_mark_vocabulary_without_changing_original ... ok
+test insert_time::schema22_rejects_new_commands_and_nested_binding_vocabulary_without_promotion ... ok
+test schema_five_preserves_requests_clocks_history_and_pending_redo ... ok
+test schema_eighteen_rejects_fragment_vocabulary_without_promotion ... ok
+test schema_five_invalid_requests_and_table_collisions_never_promote ... ok
+test insert_time::all_older_database_grammars_reject_insert_time_before_replay ... ok
+test schema_four_migrates_core_vocabulary_and_preserves_authored_history ... ok
+test schema_eleven_preserves_independent_audio_chronology_and_all_operational_rows ... ok
+test schema_nine_adds_empty_original_inventory_and_preserves_full_history ... ok
+test schema_four_rejects_corruption_and_operational_table_collisions_before_promotion ... ok
+test schema_seven_preserves_legacy_core_history_and_selected_legacy_attempt ... ok
+test schema_nineteen_replays_fragment_loss_branches_and_pending_redo ... ok
+test every_legacy_snapshot_retains_its_exact_explicit_presentation_basis ... ok
+test schema_nineteen_rejects_unknown_fragment_fields_in_all_history_positions ... ok
+test schema_sixteen_rejects_premature_profile_vocabulary_without_touching_original ... ok
+test schema_six_preserves_attempts_and_defers_recovery_until_writer_open ... ok
+test every_legacy_snapshot_defaults_audio_edges_without_retiming ... ok
+test schema_seventeen_preserves_single_original_floor_and_authored_crop_history ... ok
+test schema_six_corruption_preserves_original_history_jobs_and_backup ... ok
+test schema_fifteen_preserves_presentation_chronology_and_all_operational_state ... ok
+test schema_sixteen_retains_exact_core_eleven_history_and_stays_generic ... ok
+test schema_ten_preserves_source_audio_history_generated_receipts_and_originals ... ok
+test schema_three_mark_corruption_retains_original_and_backup ... ok
+test schema_fourteen_preserves_explicit_basis_and_qualified_source_branches ... ok
+test schema_seventeen_rejects_new_purpose_everywhere_and_missing_profile_without_promotion ... ok
+test schema_three_history_preserves_every_mark_and_pending_redo ... ok
+test schema_twenty_one_rejects_changed_lineage_without_promotion ... ok
+test schema_eleven_rejects_video_vocabulary_and_corruption_without_promotion ... ok
+test every_legacy_database_retains_single_binding_marks_without_default_json_growth ... ok
+test schema_two_duplicate_identities_are_rejected_before_promotion ... ok
+test schema_twenty_one_retains_exact_lineage_and_does_not_invent_audio_bindings ... ok
+test schema_thirteen_preserves_exact_placements_without_inventing_qualification ... ok
+test schema_twenty_replays_lineage_from_copy_history_and_preserves_navigation ... ok
+test schema_twelve_preserves_stream_mappings_and_accepts_reversible_exact_placement ... ok
+test schema_two_history_preserves_compact_identities_and_pending_redo ... ok
+test schema_ten_rejects_new_audio_vocabulary_and_corruption_without_promotion ... ok
+test source_selection::schema25_rejects_new_mapping_variant_or_null_selection_without_touching_original ... ok
+test schema_fourteen_rejects_new_primary_fields_and_damaged_historical_receipts ... ok
+test source_selection::actual_schema25_binary_preserves_captured_views_audio_history_and_pending_redo ... ok
+test writer_and_database_locks_prevent_migration_without_damage ... ok
+test schema_twelve_rejects_placement_vocabulary_in_all_history_surfaces ... ok
+test every_legacy_schema_rejects_presentation_vocabulary_without_promotion ... ok
+test schema_thirteen_rejects_registration_vocabulary_and_corrupt_placement_history ... ok
+test every_legacy_database_rejects_split_ingress_without_promotion ... ok
+test every_legacy_schema_rejects_audio_edge_vocabulary_without_promotion ... ok
+test corrupt_old_tables_and_oversized_rows_retain_backup_before_validation ... ok
+test audio_gap_bindings::schema27_rejects_new_gap_intent_in_snapshots_and_both_patch_directions ... ok
+test all_legacy_databases_reject_lineage_ingress_without_promotion ... ok
+test all_legacy_databases_reject_audio_binding_ingress_without_promotion ... ok
+
+test result: ok. 75 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 30.39s
+
+RUN generation_attempts
+
+running 8 tests
+test relevance_is_independent_and_stale_requests_cannot_select ... ok
+test receipt_mismatch_and_late_selection_roll_back_atomically ... ok
+test recovery_of_multiple_attempts_rolls_back_if_one_sequence_is_exhausted ... ok
+test retries_retain_variants_and_selection_is_explicit ... ok
+test exact_duplicates_are_idempotent_and_progress_is_not_persisted ... ok
+test copied_project_never_infers_live_process_ownership ... ok
+test writable_reopen_interrupts_every_nonterminal_state_but_read_only_does_not ... ok
+test validation_rejects_indexless_live_duplicates_and_orphan_receipts ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.25s
+
+RUN persistence
+
+running 19 tests
+test one_writer_readers_and_reopen_preserve_the_document ... ok
+test history_previews_share_validation_and_never_change_state ... ok
+test storage_symlinks_are_rejected ... ok
+test failed_history_write_rolls_back_both_revision_and_current_state ... ok
+test newer_schema_is_refused_without_rewriting_database ... ok
+test backup_contains_committed_wal_and_is_independently_readable ... ok
+test preview_rejects_reused_revisions_exactly_as_commit ... ok
+test editing_after_undo_keeps_old_revisions_and_starts_a_new_branch ... ok
+test crash_during_transaction ... ok
+test imported_initial_allocations_stay_reserved_after_their_plays_are_removed ... ok
+test imported_audio_lineage_allocations_stay_reserved_after_owners_are_removed ... ok
+test transparent_partition_intent_is_durable_atomic_and_undoable ... ok
+test logical_mark_fragments_survive_partial_loss_reopen_and_durable_history ... ok
+test undo_and_redo_survive_restart_without_reusing_revision_identity ... ok
+test marks_and_loss_states_commit_atomically_and_survive_history_reopen ... ok
+test play_overrides_retire_with_identity_and_survive_durable_undo_redo ... ok
+test semantic_validation_preserves_valid_branches_and_nested_navigation ... ok
+test imported_audio_timing_namespaces_remain_reserved_after_bindings_are_removed ... ok
+test semantic_validation_rejects_forged_history_and_state ... ok
+
+test result: ok. 19 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.86s
+
+RUN prepared_source_registration
+
+running 12 tests
+test stale_target_is_rejected_then_same_token_registers_against_current_revision ... ok
+test preparation_can_run_on_worker_while_writer_edits_and_does_not_author_state ... ok
+test changed_managed_original_invalidates_prepared_token_without_history_changes ... ok
+test prepared_duplicate_reuses_receipt_but_corrupted_existing_payload_is_rejected ... ok
+test preview_is_read_only_and_prepared_token_is_bound_to_issuing_writer ... ok
+test cancelled_prepared_insertion_leaves_no_receipt_or_edit_and_allows_retry ... ok
+test prepared_commit_rejects_read_only_wrong_project_and_reopened_sessions ... ok
+test prepared_insertion_rolls_back_on_history_failure_and_retries_same_token ... ok
+test prepared_insertion_reconciles_generation_atomically_and_retries_after_cursor_failure ... ok
+test linked_relocation_requires_fresh_inventory_proof_even_when_old_path_is_unchanged ... ok
+test prepared_primary_uses_current_timing_after_automatic_basis_becomes_explicit ... ok
+test prepared_token_rejects_delete_same_bytes_and_in_place_rewrite ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.76s
+
+RUN deadpan_render
+
+running 23 tests
+test color::tests::named_primaries_match_independent_known_red_and_white ... ok
+test color::tests::transfer_functions_are_distinct_and_round_trip_srgb ... ok
+test framing::tests::each_canvas_places_input_before_its_first_operation_and_clip ... ok
+test color::tests::working_values_are_not_clipped_to_a_normalized_texture ... ok
+test framing::tests::identity_capture_retains_letterboxing_when_the_canvas_aspect_changes ... ok
+test framing::tests::integer_coverage_obeys_half_open_pixel_center_edges_without_color_tolerance ... ok
+test framing::tests::pose_scope_and_numeric_admission_are_bounded ... ok
+test framing::tests::provider_framing_precedes_its_first_clip_and_group_framing_follows_it ... ok
+test framing::tests::nested_sampling_parameters_match_independent_cpu_coordinates ... ok
+test framing::tests::retained_clip_survives_zoomout_and_multiple_canvas_changes ... ok
+test framing::tests::retained_canvas_fits_old_aspect_into_current_canvas_without_resurrecting_black ... ok
+test framing::tests::retained_geometry_limits_and_cumulative_precision_fail_before_sampling ... ok
+test framing::tests::upright_sar_steps_and_targets_do_not_depend_on_preview_rounding ... ok
+test framing::tests::same_canvas_merge_keeps_fill_clip_before_zoomout_and_identity_evaluation ... ok
+test geometry::tests::every_right_angle_maps_asymmetric_corners ... ok
+test framing::tests::ancestor_identity_preserves_child_pan_and_selected_input_scope ... ok
+test framing::tests::retained_same_canvas_freeze_matches_direct_framing_with_sar_and_rotation ... ok
+test geometry::tests::fit_fill_and_anamorphic_rotation_have_explicit_geometry ... ok
+test framing::tests::group_zoom_out_does_not_resurrect_leaf_crop ... ok
+test geometry::tests::interpolation_and_alpha_happen_in_linear_light ... ok
+test surface::tests::preserves_pts_and_ignores_owned_row_padding ... ok
+test surface::tests::rejects_invalid_size_stride_and_buffer_before_gpu_work ... ok
+test gpu::tests::shared_shader_validates_without_a_gpu ... ok
+
+test result: ok. 23 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+RUN generated_admission
+
+running 2 tests
+test generic_commands_cannot_bypass_dedicated_candidate_admission ... ok
+test existing_authored_artifact_resizes_reverts_and_navigates_durable_history ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s
+
+RUN original_media
+
+running 6 tests
+test linked_original_relink_checks_content_and_monotonic_location_version ... ok
+test same_filename_is_not_identity_and_inventory_pages_without_duplicates ... ok
+test readonly_cancelled_oversized_and_special_inputs_do_not_create_records ... ok
+test tampered_record_and_managed_bytes_fail_verification ... ok
+test managed_original_preserves_all_container_bytes_deduplicates_and_survives_relocation ... ok
+test failed_database_commit_keeps_verified_object_and_retry_reuses_it ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.24s
+
+RUN generation
+
+running 11 tests
+test deletion_detaches_permanently_even_when_undo_restores_the_hold ... ok
+test relevant_edits_isolate_holds_and_undo_redo_never_revive_requests ... ok
+test incomplete_duplicate_and_wrong_binding_plans_are_atomic ... ok
+test validation_rejects_an_obsolete_version_forged_back_to_current ... ok
+test validation_rechecks_the_request_against_its_origin_revision ... ok
+test allocation_is_typed_monotonic_persistent_and_preview_is_pure ... ok
+test relevance_and_revision_changes_roll_back_together ... ok
+test validation_streams_duplicate_request_ids_without_a_primary_key ... ok
+test allocation_rejects_read_only_stale_invalid_and_exhausted_inputs ... ok
+test stored_generation_json_is_bounded_and_strictly_revalidated ... ok
+test validation_does_not_depend_on_generation_uniqueness_indexes ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.29s
+
+RUN occurrence_edits
+
+running 2 tests
+test insufficient_identity_pools_and_stale_requests_leave_no_partial_clones_or_history ... ok
+test occurrence_isolation_and_mark_clones_are_one_durable_reversible_edit ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s
+
+RUN original_preparation
+
+running 9 tests
+test cancellation_preserves_publication_without_registering_it ... ok
+test database_rollback_keeps_published_bytes_and_the_prepared_token_can_retry ... ok
+test delayed_linked_retention_cannot_replace_a_newer_location ... ok
+test worker_prepares_without_borrowing_or_blocking_the_writer ... ok
+test prepared_retention_merges_current_locations_and_deduplicates ... ok
+test handles_and_tokens_are_writer_session_bound_and_do_not_keep_the_lock ... ok
+test prepared_snapshots_keep_private_bytes_after_source_change_and_session_close ... ok
+test final_admission_rejects_unsafe_namespaces_and_objects ... ok
+test prepared_retention_rejects_missing_replaced_and_in_place_modified_originals ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.47s
+
+RUN generated_media
+
+running 8 tests
+test references_keep_the_hash_algorithm_and_reject_forged_wire_values ... ok
+test returned_snapshot_survives_later_mutation_and_corrupt_object_is_not_replaced ... ok
+test unsafe_generated_directory_and_hard_links_are_rejected ... ok
+test shared_directory_permissions_restrict_media_operations_without_blocking_inspection ... ok
+test worker_snapshot_can_be_published_after_the_worker_workspace_is_removed ... ok
+test metadata_only_packages_still_open_but_missing_media_never_looks_available ... ok
+test publication_is_durable_idempotent_and_separate_from_authored_history ... ok
+test package_path_replacement_cannot_redirect_publication ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.20s
+
+RUN presentation_basis
+
+running 6 tests
+test self_consistent_history_cannot_claim_geometry_different_from_source_evidence ... ok
+test failed_insertion_rolls_back_basis_origin_receipt_and_history_together ... ok
+test secondary_picture_cannot_choose_basis_and_generic_commands_cannot_claim_qualified_adoption ... ok
+test imported_initial_snapshot_cannot_claim_false_default_canvas_or_timed_rate ... ok
+test audio_locks_time_and_explicit_geometry_changes_no_frame_sample_or_mark_coordinate ... ok
+test inserted_primary_not_registration_order_selects_basis_and_undo_restores_provisional ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.37s
+
+RUN source_registration
+
+running 6 tests
+test generic_asset_and_initial_snapshot_cannot_bypass_source_admission ... ok
+test failed_transaction_retains_original_but_rolls_back_receipt_asset_history_and_cursor ... ok
+test missing_bytes_identity_mismatch_cancelled_stale_and_read_only_requests_preserve_history ... ok
+test actual_source_registration_deduplicates_then_inserts_and_survives_undo_relocation ... ok
+test tampered_qualification_payload_and_missing_receipt_fail_reopen ... ok
+test reused_asset_alias_retains_both_branch_receipts_and_revision_specific_indexes ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.66s
+
+RUN generation_bundles
+
+running 15 tests
+test object_alias_requires_an_identical_video_contract ... ok
+test admission_wire_rejects_alias_conflicts_and_unchecked_spans ... ok
+test malformed_nonnull_plan_is_never_projected_as_a_legacy_request ... ok
+test protocol_kinds_cannot_cross_attempt_or_readiness_boundaries ... ok
+test persisted_bundle_json_cannot_bypass_constructor_invariants ... ok
+test modern_ready_requires_objects_and_eviction_survives_reopen ... ok
+test cancelled_and_stale_bridge_completions_never_select ... ok
+test retry_supersedes_modern_selection_and_corrupt_objects_cannot_be_ready ... ok
+test identical_masters_can_share_one_fresh_asset_identity ... ok
+test acceptance_rollback_read_only_and_legacy_receipt_are_safe ... ok
+test bridge_allocation_and_acceptance_require_one_concrete_occurrence ... ok
+test admission_requires_all_six_immutable_objects_and_matching_context ... ok
+test explicit_acceptance_derives_assets_and_survives_history_without_worker ... ok
+test acceptance_rechecks_selection_receipt_revision_and_complete_relevance ... ok
+test stale_and_detached_bundles_never_revive_through_undo ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.06s
+
+RUN deadpan_store
+
+running 29 tests
+test object_storage::tests::object_control_distinguishes_session_close_from_user_cancellation ... ok
+test object_storage::tests::identifiers_and_references_have_a_strict_wire_shape ... ok
+test object_storage::tests::missing_and_symbolic_directories_fail_only_media_operations ... ok
+test object_storage::tests::namespace_authority_is_checked_at_each_media_operation ... ok
+test object_storage::tests::device_owner_and_type_checks_are_independent_of_schema_constraints ... ok
+test object_storage::tests::an_existing_corrupt_object_is_never_overwritten ... ok
+test object_storage::tests::controlled_publication_cancels_and_cleans_its_pending_object ... ok
+test object_storage::tests::clone_validation_failure_removes_only_its_observed_pending_entry ... ok
+test object_storage::tests::no_replace_race_verifies_and_durably_accepts_the_winner ... ok
+test object_storage::tests::bounds_mismatches_and_source_errors_remove_only_pending_files ... ok
+test object_storage::tests::copy_fallback_never_overwrites_a_competing_object ... ok
+test original_media::tests::final_link_confirmation_rejects_same_inode_changes_after_hashing ... ok
+test object_storage::tests::replaced_pending_entry_is_not_published_or_deleted ... ok
+test object_storage::tests::copy_fallback_rejects_a_source_changed_after_clone_attempt ... ok
+test object_storage::tests::publication_rejects_namespace_replacement_during_durability ... ok
+test object_storage::tests::hardlinks_writable_files_and_mutation_are_rejected ... ok
+test validation::tests::stored_json_is_bounded_in_bytes_before_deserialization ... ok
+test object_storage::tests::promotion_is_read_only_deduplicated_and_snapshot_is_immutable ... ok
+test object_storage::tests::publication_durability_failure_is_not_hidden_by_close_or_cancel ... ok
+test object_storage::tests::retry_after_post_publish_failure_finishes_existing_object_durability ... ok
+test object_storage::tests::publication_finishes_durability_before_close_or_cancel_stops_verification ... ok
+test object_storage::tests::shared_original_storage_clones_or_copies_without_moving_the_source_cursor ... ok
+test object_storage::tests::held_descriptors_defeat_directory_swaps_and_final_symlinks ... ok
+test object_storage::tests::unsupported_clone_uses_verified_copy_without_moving_the_source_cursor ... ok
+test validation::tests::stored_identity_metadata_is_bounded_before_text_extraction ... ok
+test migration::tests::crash_during_partial_promotion ... ok
+test migration::tests::disk_full_during_promotion_rolls_back_original ... ok
+test tests::duplicated_handle_does_not_extend_writer_ownership ... ok
+test tests::sqlite_full_error_keeps_last_committed_revision ... ok
+
+test result: ok. 29 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.21s
+
+RUN persistent_decode
+
+running 14 tests
+[h264 @ 0x818cc5500] decode_slice_header error
+test packet_byte_limits_are_validated_and_applied_before_decode ... ok
+test descriptor_byte_budget_and_external_playlist_fail_closed ... ok
+test full_range_rgb_is_exact_and_pixels_outlive_session_reuse ... ok
+test stream_hdr_metadata_is_rejected_during_open_despite_sdr_transfer_tags ... ok
+test yuv_matrix_and_range_are_applied_without_relabeling_transfer ... ok
+test anamorphic_samples_are_retained_and_interlace_is_rejected ... ok
+test source_orientation_is_retained_and_unqualified_hdr_and_depth_fail ... ok
+test h264_packet_expansion_and_invalid_nal_lengths_fail_before_codec_submission ... ok
+test audio_inventory_reports_probe_observations_without_claiming_decoded_readiness ... ok
+test input_interpretation_and_resource_bounds_fail_explicitly ... ok
+test pixel_budget_rejects_sources_before_frame_decode ... ok
+test first_frame_probe_is_retained_counted_and_discarded_on_seek ... ok
+test cancellation_before_call_preserves_session_and_invalid_timeouts_are_rejected ... ok
+test original_bframe_pts_vfr_and_offset_survive_persistent_reverse_seeks ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 9.34s
+
+RUN audio_decode
+
+running 11 tests
+test first_audio_does_not_fall_back_to_video_or_relax_admission ... ok
+test unsupported_selection_and_invalid_sources_fail ... ok
+test unsupported_codec_garbage_and_truncated_packet_are_rejected ... ok
+test wav_packet_sizes_are_bounded_before_demux_allocation ... ok
+test allocation_deadline_does_not_advance_retained_audio ... ok
+test cancelled_and_invalid_requests_preserve_current_frame ... ok
+test retained_descriptor_uses_pread_and_survives_unlinked_path ... ok
+test input_and_decode_budgets_fail_and_poison_failed_contexts ... ok
+test pcm_exact_samples_keep_rate_channel_slots_and_non_aligned_endpoint ... ok
+test aac_manual_skip_preserves_priming_duration_tail_and_original_pts ... ok
+test first_audio_selects_actual_stream_and_preserves_decoded_evidence ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+RUN deadpan_source
+
+running 36 tests
+test input::tests::cached_constant_size_work_still_observes_cancellation_and_limits_charge_reads ... ok
+test input::tests::committed_aac_h264_and_pcm_fixtures_pass_without_changing_descriptors ... ok
+test input::tests::every_committed_mp4_passes_video_allocation_admission ... ok
+test input::tests::sparse_large_table_is_rejected_before_reading_or_allocating_its_rows ... ok
+test matroska_input::tests::all_committed_matroska_fixtures_pass_allocation_admission ... ok
+test matroska_input::tests::configured_dimensions_packets_io_and_cancellation_are_enforced ... ok
+test input::tests::sparse_huge_headers_and_compact_huge_sample_counts_fail_without_large_buffers ... ok
+test matroska_input::tests::finite_complete_document_and_block_group_are_admitted ... ok
+test input::tests::nested_descriptor_lengths_cannot_escape_a_small_codec_box ... ok
+test input::tests::first_audio_uses_complete_admitted_inventory_without_extra_header_reads ... ok
+test matroska_input::tests::sparse_oversized_block_is_rejected_without_reading_its_payload ... ok
+test input::tests::video_selection_requires_one_video_and_bounded_audio_inventory ... ok
+test input::tests::thousands_of_interleaved_chunk_and_size_reads_reuse_bounded_pages ... ok
+test input::tests::wav_lengths_block_alignment_and_metadata_are_checked_before_demux ... ok
+test input::tests::declared_video_geometry_obeys_dimension_and_pixel_limits ... ok
+test video_codec::tests::committed_ffv1_configurations_admit_including_semantic_negatives ... ok
+test matroska_input::tests::duplicate_unknown_and_unqualified_metadata_are_rejected_even_after_frames ... ok
+test video_codec::tests::range_scalars_preserve_signed_values_and_reject_exponent_overflow ... ok
+test video_codec::tests::unsupported_versions_and_reserved_fields_do_not_reach_codec_open ... ok
+test input::tests::compact_and_constant_sizes_and_wide_offsets_have_bounded_semantic_coverage ... ok
+test input::tests::video_admission_checks_ignored_audio_counts_and_every_packet_size ... ok
+test audio::opening_budget_tests::header_guard_and_ffmpeg_share_one_opening_io_allowance ... ok
+test video_codec::tests::valid_large_slice_raster_and_context_expansion_fail_before_codec_open ... ok
+test matroska_input::tests::deferred_cues_and_seek_entries_require_actual_boundaries ... ok
+test input::tests::malformed_extents_and_unsafe_metadata_never_reach_ffmpeg ... ok
+test matroska_input::tests::unknown_sizes_truncation_and_overflowing_positions_are_rejected ... ok
+test matroska_input::tests::metadata_conversion_cannot_expand_nested_language_tags_or_unbounded_flat_tags ... ok
+test matroska_input::tests::large_fields_and_laced_or_extra_payloads_fail_before_payload_reads ... ok
+test opening_budget_tests::admission_and_controlled_first_frame_share_the_opening_io_budget ... ok
+test input::tests::counts_and_expansions_in_unselected_tracks_fail_before_ffmpeg ... ok
+test video_codec::tests::every_truncation_and_configuration_corruption_is_rejected ... ok
+test video_codec::tests::valid_synthesized_configurations_cover_coders_and_initial_states ... ok
+test video_codec::tests::truncated_range_streams_recomputed_crcs_and_extreme_inputs_are_bounded ... ok
+test video_codec::tests::compact_expanded_initial_states_have_a_binary_work_ceiling ... ok
+test matroska_input::tests::twelve_thousand_sparse_blocks_do_not_spend_one_page_per_frame ... ok
+test matroska_input::tests::nested_tags_and_aggregate_metadata_have_hard_limits ... ok
+
+test result: ok. 36 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.72s
+

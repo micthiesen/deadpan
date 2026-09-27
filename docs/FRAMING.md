@@ -32,6 +32,21 @@ clock. Cubic pose controls use ordinary Bezier value interpolation with linear
 segment progress. Keyframe time handles and arbitrary fixed-time envelopes remain
 separate required work.
 
+`Framing::evaluate_exact` also accepts an exact positive derived owner extent.
+The integer `evaluate` API delegates to it. Segment selection compares products
+without first constructing `local / duration` or `duration * endpoint`, which can
+exceed `ExactRatio` even when every input is valid. Five fixed 64-bit limbs cover
+the largest 294-bit product and the one-bit shift used by Q32 division. There is
+no floating-point time calculation or arbitrary-precision runtime dependency.
+Independent Fraction fixtures cover rational extents, tiny and large domains,
+half-even ties, and products beyond the ordinary ratio representation.
+
+This is numerical support for the [derived-clock splice design](STRUCTURAL_SPLICE_DESIGN.md#derived-owner-clocks).
+Current documents and render plans still expose integer owner durations. No
+fractional structural extent, new command or schema is admitted by this API.
+The [qualification record](qualification/framing-clocks-2026-09-26.md) records
+the reference cases, independent numerical review and repository checks.
+
 Split retains complete effect owners behind transparent partitions. Re-splitting
 a framed partition must retain that meaningful wrapper instead of discarding its
 framing. Copies and occurrence isolation copy owned numeric curves independently.
@@ -64,18 +79,21 @@ explicit source-target reapplication or an implemented live target relationship.
 
 `PictureSample.framing` retains provider-to-root scope identities, exact local
 positions, owner durations and evaluated optional poses. The shared
-`PictureGeometry::framed` and `PictureRenderer::render_framed` serve native preview
-and offline callers. Integer pixel coverage is derived before f32 GPU sampling;
+`PictureGeometry::composed` and `PictureRenderer::render_composed` apply optional
+[captured Hold composition](CAPTURED_FRAMING.md) before those live operations.
+The existing `framed` / `render_framed` entrypoints use no captured context.
+Both paths serve native preview and offline callers. Integer pixel coverage is derived before f32 GPU sampling;
 the CPU reference retains f64 spatial/color calculations. An actual encoded export
 consumer, physical display qualification, HDR and all remaining picture effects
 remain open.
 
 ## Native interaction
 
-Native framing targets a selected root beat in Your edit and a successfully
+Native framing targets a selected direct child of the current ordinary Sequence
+in Your edit and a successfully
 displayed stopped picture. The immutable Original view remains a browsing context.
 Camera entry pauses audition and waits for that exact picture. Revision, session,
-selection and cursor changes revoke the draft.
+selection, navigation scope and cursor changes revoke the draft.
 
 | Input | Behavior |
 | --- | --- |
@@ -114,19 +132,24 @@ on each framed submission; upload reuse and measured latency remain open.
 
 ## Storage and remaining work
 
-Database 24 stores core 18. Frozen core 17 rejects the new framing vocabulary even
+Database 24 introduced core 18. Frozen core 17 rejects the new framing vocabulary even
 when a supplied value is empty. Schema-23 migration must compare complete old
 snapshots and edit history on a consistent backed-up copy before promotion, with
 existing operational media/generation records preserved. Framing-only authoring
 does not by itself change source media, sound, time or generation conditioning.
+Database 25 now stores core 19 and freezes core 18 before admitting captured Hold
+geometry. See [the capture contract](CAPTURED_FRAMING.md) for its stricter legacy
+recipe boundary and migration fixture.
 
 Saved named manual point/region targets, keyboard region creation, actual detection
 and source-time tracking, per-play crop escalation, nested native selection, full
 framed Ungroup, arbitrary temporal envelopes, captions, cutaways, and the remaining
-Section 8 picture operations remain required. Native pause insertion must not
-freeze a bare source frame while silently dropping existing framing. A durable
-frozen-composition snapshot preserving all intermediate clips remains required;
-until it exists, native insertion from a framed picture must report that limit.
+Section 8 picture operations remain required. [Captured framing](CAPTURED_FRAMING.md)
+retains the cropped composition for native Source/Freeze pause insertion, separately
+from the exact source PTS and new Hold framing. Root framing remains inherited
+once; lower curves become their sampled poses. Camera reset keeps the captured
+crop. Arbitrary nested insertion and capture from still or accepted footage
+remain required.
 
 The [qualification record](qualification/framing-2026-09-24.md) separates the
 repository gate, actual Metal/CPU comparisons, old-binary migration fixture,

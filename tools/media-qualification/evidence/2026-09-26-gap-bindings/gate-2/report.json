@@ -1,0 +1,43 @@
+{
+  "commands": [
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 3.4299611672759056,
+      "log": "0.log"
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 101,
+      "seconds": 317.6142682079226,
+      "log": "1.log"
+    }
+  ],
+  "source_count": 465,
+  "source_unchanged": false,
+  "changed_sources": [
+    "Cargo.lock",
+    "crates/deadpan-app/Cargo.toml",
+    "crates/deadpan-app/src/preview/harness.rs",
+    "crates/deadpan-app/src/preview/harness/scenarios.rs",
+    "crates/deadpan-app/src/preview/harness/telemetry.rs",
+    "crates/deadpan-app/src/preview/help_scroll.rs",
+    "crates/deadpan-app/src/ui_harness.rs"
+  ],
+  "passed": false
+}

@@ -12,7 +12,10 @@ mod gpu;
 mod surface;
 
 pub use color::{Primaries, SourceColor, Transfer, source_to_working, working_to_display};
-pub use framing::{FramingLayer, MAX_FRAMING_LAYERS, MAX_FRAMING_SCOPES};
+pub use framing::{
+    FramingLayer, MAX_CAPTURED_CANVASES, MAX_CAPTURED_POSES, MAX_CAPTURED_SCOPES,
+    MAX_FRAMING_LAYERS, MAX_FRAMING_SCOPES,
+};
 pub use geometry::{FitMode, PictureGeometry, reference_pixel, reference_pixel_with_geometry};
 pub use gpu::{PictureRenderer, RenderTarget};
 pub use surface::{

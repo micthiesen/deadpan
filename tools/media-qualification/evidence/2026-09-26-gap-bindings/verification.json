@@ -1,0 +1,205 @@
+{
+  "base_revision": "c03a5edde5f28d27074745eb15711cb28b1f2e50",
+  "committed": false,
+  "pushed": false,
+  "git_write_access": "read-only in this session",
+  "environment": {
+    "os": "macOS 26.5.2",
+    "build": "25F84",
+    "architecture": "arm64",
+    "rust": "1.97.1 (8bab26f4f 2026-07-14)",
+    "ffmpeg_prefix": "/tmp/deadpan-media-compatible-xyhilms4/prefix"
+  },
+  "schemas": {
+    "core": 22,
+    "database": 28,
+    "audio_context": 2
+  },
+  "gate_directory": "gate-5",
+  "gate": {
+    "commands": [
+      {
+        "command": [
+          "cargo",
+          "fmt",
+          "--all",
+          "--",
+          "--check"
+        ],
+        "exit_code": 1,
+        "seconds": 8.144840708002448,
+        "log": "0.log"
+      },
+      {
+        "command": [
+          "cargo",
+          "clippy",
+          "--workspace",
+          "--all-targets",
+          "--locked",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "exit_code": 0,
+        "seconds": 72.01677325041965,
+        "log": "1.log"
+      },
+      {
+        "command": [
+          "cargo",
+          "test",
+          "--workspace",
+          "--locked",
+          "--no-fail-fast"
+        ],
+        "exit_code": 101,
+        "seconds": 1136.0003122496419,
+        "log": "2.log"
+      },
+      {
+        "command": [
+          "cargo",
+          "build",
+          "--workspace",
+          "--locked"
+        ],
+        "exit_code": 0,
+        "seconds": 18.76296762470156,
+        "log": "3.log"
+      },
+      {
+        "command": [
+          "cargo",
+          "run",
+          "--locked",
+          "-p",
+          "deadpan-cli",
+          "--",
+          "doctor"
+        ],
+        "exit_code": 0,
+        "seconds": 0.47818362480029464,
+        "log": "4.log"
+      }
+    ],
+    "source_count": 466,
+    "source_unchanged": false,
+    "changed_sources": [
+      "crates/deadpan-app/src/main.rs",
+      "crates/deadpan-app/src/navigation.rs",
+      "crates/deadpan-app/src/presentation.rs",
+      "crates/deadpan-app/src/preview.rs",
+      "crates/deadpan-app/src/preview/cards.rs",
+      "crates/deadpan-app/src/preview/harness.rs",
+      "crates/deadpan-app/src/preview/harness/edit_latency.rs",
+      "crates/deadpan-app/src/preview/harness/scenarios.rs",
+      "crates/deadpan-app/src/preview/harness/telemetry.rs",
+      "crates/deadpan-app/src/ui_harness.rs"
+    ],
+    "tests": {
+      "passed": 1501,
+      "failed": 4,
+      "ignored": 0
+    },
+    "passed": false
+  },
+  "subsequent_formatting": [
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--all"
+      ],
+      "exit_code": 0,
+      "seconds": 3.102631834335625
+    },
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 3.1150230830535293
+    }
+  ],
+  "playback_package_retry": {
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-playback",
+      "--lib"
+    ],
+    "exit_code": 101,
+    "seconds": 36.1367137497291,
+    "changes_to_test_or_production_timeouts": false,
+    "system_load_observation": "sysctl vm.loadavg was denied by the sandbox; no numeric load measurement available"
+  },
+  "playback_exact_workspace_artifact_retry": {
+    "command": [
+      "/Users/michael/Code/deadpan/target/debug/deps/deadpan_playback-34f16a24a1d54369"
+    ],
+    "sha256": "164b98ea42232884dfa15bd5b9f5e90ed2a8f80231eadf1c8984786a8bceb284",
+    "exit_code": 0,
+    "seconds": 12.893360709305853,
+    "test_threads": "default",
+    "changed_timeouts_or_assertions": false,
+    "rust_backtrace": "unset as in the original full gate",
+    "reason": "Package-only Cargo retry compiled a different feature-unified binary; backtrace instrumentation timed out the intentionally panicking test. This runs the original exact workspace artifact."
+  },
+  "gap_backend_unchanged_during_gate": true,
+  "concurrent_source_changes_during_gate": [
+    "crates/deadpan-app/src/main.rs",
+    "crates/deadpan-app/src/navigation.rs",
+    "crates/deadpan-app/src/presentation.rs",
+    "crates/deadpan-app/src/preview.rs",
+    "crates/deadpan-app/src/preview/cards.rs",
+    "crates/deadpan-app/src/preview/harness.rs",
+    "crates/deadpan-app/src/preview/harness/edit_latency.rs",
+    "crates/deadpan-app/src/preview/harness/scenarios.rs",
+    "crates/deadpan-app/src/preview/harness/telemetry.rs",
+    "crates/deadpan-app/src/ui_harness.rs"
+  ],
+  "focused_completed_cases": {
+    "plan": 55,
+    "frozen_adapter": 12,
+    "decoded_pcm": 5,
+    "cli_audio_inspection": 14,
+    "cli_project_commands": 16
+  },
+  "incomplete_focused_runs": [
+    "core/focused-rerun.log and migration/store-final-2.log contain no final test result; final workspace run supplies complete coverage"
+  ],
+  "corrections": [
+    "Initial compilation saw the registered gaps test module before its file existed; the file was subsequently completed.",
+    "InsertTime legacy test still expected capture of an unaffected positive-gap prefix to fail. It now asserts success and retains rejection of shifted unsupported structures.",
+    "Migration fixture gained a legacy Repeat while its test still wrapped another Repeat; the test now captures the existing old-gap-owner.",
+    "The signed bound-definition PCM oracle used unbound fractional phase. It now pins phase zero at the retained allocated anchor, with origin -1/3 and nonunity scale 3/2. Production timing was unchanged.",
+    "Concurrent optional UI harness manifest/lock mismatch interrupted a locked test before execution. Cargo metadata resolved existing pins offline; later checks remained locked.",
+    "Initial full gate found rustfmt differences in migration module ordering and the concurrent UI harness; formatting was applied without behavior changes.",
+    "All-target compilation found omitted recipe and gap_after fields in an older persistence test literal; it now explicitly uses the existing node/default recipe with no gap argument.",
+    "Concurrent Dialogs test initializers used a struct update with no remaining fields when ui-harness was disabled. Explicit cfg-gated scripted: None preserves both feature configurations without suppressing Clippy."
+  ],
+  "old_binary": {
+    "sha256": "2c3a9501d1d412797ea076f6c8f56c5ad529b1cbd4bba0fdb200e6a364be4600",
+    "core": 21,
+    "database": 27,
+    "fixture_revisions": 9,
+    "fixture_history": 5,
+    "initial_seed": "Explicit reanchor intent seeded only in the initial no-history snapshot and validated by the old binary; all later history was command-generated"
+  },
+  "gui_review": "Not repeated for this timing/history increment. Concurrent UI harness work is preserved and has independent verification scope.",
+  "optional_ui_harness_qualified_by_gate": false,
+  "new_imagegen": false,
+  "remaining_work": [
+    "Complete movement/raw-recipe binding lifecycle",
+    "General atomic Original-moment splice",
+    "Native Visual/register workflow",
+    "Full normative product and release gates"
+  ]
+}

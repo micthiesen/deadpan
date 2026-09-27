@@ -9,7 +9,7 @@ use crate::{
     TimeError,
 };
 
-pub const DOCUMENT_SCHEMA_VERSION: u32 = 18;
+pub const DOCUMENT_SCHEMA_VERSION: u32 = 28;
 /// Bounds apply before traversal. Structure is walked iteratively, never recursively.
 pub const MAX_DOCUMENT_NODES: usize = 100_000;
 pub const MAX_DOCUMENT_ASSETS: usize = 100_000;
@@ -292,6 +292,8 @@ pub enum HoldAudio {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct HoldRecipe {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub picture_context: Option<crate::CapturedFraming>,
     pub duration: FrameDuration,
     pub video: HoldVideo,
     pub audio: HoldAudio,
@@ -407,6 +409,10 @@ pub struct ProjectDocument {
     pub(crate) assets: BTreeMap<AssetId, AssetRecord>,
     pub(crate) marks: BTreeMap<MarkId, Mark>,
     pub(crate) overrides: BTreeMap<NodeId, PlayOverrides>,
+    /// Independently owned gap subtrees, keyed by the stable preceding play.
+    /// A final play retains its override without rendering trailing time.
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub(crate) gap_overrides: BTreeMap<NodeId, PlayOverrides>,
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub(crate) audio_lineage: BTreeMap<NodeId, crate::AudioLineageId>,
     #[serde(skip_serializing_if = "crate::AudioBindingState::is_empty")]
@@ -431,6 +437,8 @@ struct DocumentWire {
     #[serde(deserialize_with = "unique_map")]
     overrides: BTreeMap<NodeId, PlayOverrides>,
     #[serde(default, deserialize_with = "unique_map")]
+    gap_overrides: BTreeMap<NodeId, PlayOverrides>,
+    #[serde(default, deserialize_with = "unique_map")]
     audio_lineage: BTreeMap<NodeId, crate::AudioLineageId>,
     #[serde(default)]
     audio_bindings: crate::AudioBindingState,
@@ -450,6 +458,7 @@ impl TryFrom<DocumentWire> for ProjectDocument {
             assets: value.assets,
             marks: value.marks,
             overrides: value.overrides,
+            gap_overrides: value.gap_overrides,
             audio_lineage: value.audio_lineage,
             audio_bindings: value.audio_bindings,
         };
@@ -476,6 +485,7 @@ impl ProjectDocument {
             assets: BTreeMap::new(),
             marks: BTreeMap::new(),
             overrides: BTreeMap::new(),
+            gap_overrides: BTreeMap::new(),
             audio_lineage: BTreeMap::new(),
             audio_bindings: crate::AudioBindingState::default(),
         };
@@ -491,6 +501,50 @@ impl ProjectDocument {
         let mut document = Self::new(project_id, revision_id, crate::basis::default_basis(), root)?;
         document.basis_state = BasisState::provisional();
         Ok(document)
+    }
+    /// Build a detached, validated view of one captured immutable source.
+    /// The project, revision and presentation basis are retained, but authored
+    /// edits, bindings, marks and framing are not copied into this view. This
+    /// constructs no edit transaction and never changes the captured document.
+    pub fn source_view(
+        &self,
+        asset: &AssetId,
+        source: SourceNode,
+        root: NodeId,
+        node: NodeId,
+    ) -> Result<Self, DocumentError> {
+        if root == node {
+            return Err(DocumentError::new(
+                DocumentErrorCode::InvalidTree,
+                "source view root and source identities must differ",
+            ));
+        }
+        let record = self.assets.get(asset).ok_or_else(|| {
+            DocumentError::new(
+                DocumentErrorCode::MissingAsset,
+                "source view asset is absent",
+            )
+        })?;
+        let mut view = Self::new(
+            self.project_id.clone(),
+            self.revision_id.clone(),
+            self.presentation_basis.clone(),
+            root.clone(),
+        )?;
+        view.assets.insert(asset.clone(), record.clone());
+        view.nodes
+            .insert(root, BeatNode::sequence("Original", vec![node.clone()]));
+        view.nodes.insert(
+            node,
+            BeatNode {
+                label: record.label.clone(),
+                framing: None,
+                audio_edges: Default::default(),
+                kind: NodeKind::Source { source },
+            },
+        );
+        view.validate()?;
+        Ok(view)
     }
     pub fn schema_version(&self) -> u32 {
         self.schema_version
@@ -522,6 +576,9 @@ impl ProjectDocument {
     pub fn overrides(&self) -> &BTreeMap<NodeId, PlayOverrides> {
         &self.overrides
     }
+    pub fn gap_overrides(&self) -> &BTreeMap<NodeId, PlayOverrides> {
+        &self.gap_overrides
+    }
     pub fn audio_lineage(&self) -> &BTreeMap<NodeId, crate::AudioLineageId> {
         &self.audio_lineage
     }
@@ -538,6 +595,12 @@ impl ProjectDocument {
             .flat_map(|node| node.kind.children())
             .chain(
                 self.overrides
+                    .get(id)
+                    .into_iter()
+                    .flat_map(|entries| entries.iter().map(|(_, root)| root)),
+            )
+            .chain(
+                self.gap_overrides
                     .get(id)
                     .into_iter()
                     .flat_map(|entries| entries.iter().map(|(_, root)| root)),
@@ -571,6 +634,7 @@ impl ProjectDocument {
             return Err(json_limit());
         }
         crate::framing::preflight(json)?;
+        crate::picture_context::preflight(json)?;
         let wire: DocumentWire = serde_json::from_str(json).map_err(DocumentError::json)?;
         Self::try_from(wire)
     }
@@ -599,8 +663,25 @@ impl ProjectDocument {
 
     /// Validate once and return every authored duration for plan compilation.
     pub fn durations(&self) -> Result<BTreeMap<NodeId, FrameDuration>, DocumentError> {
+        self.durations_with_picture_context_limit(crate::MAX_CAPTURED_FRAMING_RECORDS)
+    }
+
+    /// Private intermediate state only: the pending edit can retire copied
+    /// context. Public validation still enforces the ordinary document budget.
+    pub(crate) fn validate_isolated_context(&self) -> Result<(), DocumentError> {
+        self.durations_with_picture_context_limit(
+            crate::picture_context::MAX_ISOLATED_FRAMING_RECORDS,
+        )
+        .map(|_| ())
+    }
+
+    fn durations_with_picture_context_limit(
+        &self,
+        context_limit: usize,
+    ) -> Result<BTreeMap<NodeId, FrameDuration>, DocumentError> {
         let durations = self.structural_durations()?;
         crate::framing::validate_document(self)?;
+        crate::picture_context::validate_nodes_with_limit(self.nodes.values(), context_limit)?;
         self.validate_basis_state(&durations)?;
         crate::audio_lineage::validate(self)?;
         self.audio_bindings.validate_for(self)?;
@@ -628,13 +709,15 @@ impl ProjectDocument {
                 "document exceeds 100,000 nodes or assets",
             ));
         }
-        if self.overrides.len() > MAX_DOCUMENT_NODES {
+        if self.overrides.len() > MAX_DOCUMENT_NODES
+            || self.gap_overrides.len() > MAX_DOCUMENT_NODES
+        {
             return Err(DocumentError::new(
                 DocumentErrorCode::LimitExceeded,
                 "too many override owners",
             ));
         }
-        for (id, entries) in &self.overrides {
+        for (id, entries) in self.overrides.iter().chain(&self.gap_overrides) {
             if entries.is_empty()
                 || !matches!(
                     self.nodes.get(id).map(|node| &node.kind),
@@ -751,7 +834,11 @@ impl ProjectDocument {
                     if let Some(audio) = &source.audio {
                         self.validate_audio(audio)?;
                         let frames = source.audio_mapping.duration_frames(source.duration)?;
-                        if matches!(source.audio_mapping, SourceAudioMapping::Placement { .. }) {
+                        if matches!(
+                            source.audio_mapping,
+                            SourceAudioMapping::Placement { .. }
+                                | SourceAudioMapping::SelectedPlacement { .. }
+                        ) {
                             source
                                 .audio_mapping
                                 .start_frames_with_offset(
@@ -760,6 +847,11 @@ impl ProjectDocument {
                                 )?
                                 .checked_add(frames)?;
                         }
+                        source.audio_mapping.selection_frames_with_offset(
+                            source.duration,
+                            source.audio_offset,
+                            self.presentation_basis.frame_rate,
+                        )?;
                     } else if source.audio_mapping != SourceAudioMapping::FitBeat {
                         return Err(DocumentError::new(
                             DocumentErrorCode::SourceRangeInvalid,
@@ -802,11 +894,12 @@ impl ProjectDocument {
                     if let Some(gap) = gap {
                         self.validate_hold(gap)?;
                     }
-                    RepeatLayout::compile(
+                    RepeatLayout::compile_with_gap_overrides(
                         iterations,
                         child,
                         self.overrides.get(&id),
                         gap.as_ref().map_or(FrameDuration::ZERO, |gap| gap.duration),
+                        self.gap_overrides.get(&id),
                         &durations,
                     )?
                     .duration()
@@ -928,6 +1021,9 @@ impl ProjectDocument {
     }
     fn validate_hold(&self, recipe: &HoldRecipe) -> Result<(), DocumentError> {
         positive(recipe.duration, "hold")?;
+        if let Some(context) = &recipe.picture_context {
+            context.validate()?;
+        }
         match &recipe.video {
             HoldVideo::Background => {}
             HoldVideo::Freeze { asset, timestamp } => {

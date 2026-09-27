@@ -1,0 +1,112 @@
+[
+  {
+    "path": "AGENTS.md",
+    "sha256": "1e74f25d0cd4bee914a921200fe8af58d32024adf115601daef2c98c36e8ece7",
+    "bytes": 75869
+  },
+  {
+    "path": "crates/deadpan-audio/src/signal_input.rs",
+    "sha256": "e1b9782f8730a19ce2fc46e393033f642d666d6109466b045146d747b8a08085",
+    "bytes": 2656
+  },
+  {
+    "path": "crates/deadpan-audio/src/signal_mix.rs",
+    "sha256": "a0d083a6b11287681b2d5bcbd6f21ce62baa11a1ed3e1322adeaeb31e5fb062d",
+    "bytes": 6094
+  },
+  {
+    "path": "crates/deadpan-audio/src/stage_projection.rs",
+    "sha256": "f942cf3e43e3e24660a79af16eb7f3fcb45b2edd0c264f12664453d3f4336369",
+    "bytes": 10055
+  },
+  {
+    "path": "crates/deadpan-audio/src/stages.rs",
+    "sha256": "66ed31cf60aa647ab0e6da9cbaa77ae68f982f488ec1570f08fd7d4411e8c571",
+    "bytes": 121290
+  },
+  {
+    "path": "crates/deadpan-audio/tests/audio_definition.rs",
+    "sha256": "806ed4c8e068e8da3eed67dab3f8ed1604988333b55b4c9f3058850a612263d4",
+    "bytes": 47443
+  },
+  {
+    "path": "crates/deadpan-audio/tests/audio_definition/mix.rs",
+    "sha256": "065678f241303f1bbc11e7afd55c3d5cd9e6e5888d30d37a136b3732d8d9ca19",
+    "bytes": 18904
+  },
+  {
+    "path": "crates/deadpan-audio/tests/audio_definition/mix_limits.rs",
+    "sha256": "8858f3d891f90bf5055e5f70d9675f77903a3c20d901959acdc1dc42feb4e5f7",
+    "bytes": 8648
+  },
+  {
+    "path": "crates/deadpan-audio/tests/audio_definition/projection.rs",
+    "sha256": "3d5082dfea4898aeca2cb0054a109c7f06af52a195280bc096c02f726b4d92b3",
+    "bytes": 30791
+  },
+  {
+    "path": "crates/deadpan-plan/src/audio_mix.rs",
+    "sha256": "fd0086865e01ffc11aa358935273e5a26619b7677957645ee82f1be6bc2ce693",
+    "bytes": 17533
+  },
+  {
+    "path": "crates/deadpan-plan/src/audio_projection.rs",
+    "sha256": "af7e4f4c6707fc871d49221b82827fb02aba5e5e1d5d00263fe27e5543c1eb34",
+    "bytes": 9811
+  },
+  {
+    "path": "crates/deadpan-plan/src/audio_tape.rs",
+    "sha256": "732e77a1a760232af2cd46948c729b7b1f3c1797606b21def04eb0217071dd6b",
+    "bytes": 24574
+  },
+  {
+    "path": "crates/deadpan-plan/src/lib.rs",
+    "sha256": "030e903ae48e78e234d4d018c3ee7cf54d78197ec44bdf31eea64a0ca33b8619",
+    "bytes": 4085
+  },
+  {
+    "path": "crates/deadpan-plan/tests/audio_definition/projection.rs",
+    "sha256": "834c1ea4ad0aba0e255b712e85dcfee13c264f75ca4669af785e788ef0c24f02",
+    "bytes": 19449
+  },
+  {
+    "path": "crates/deadpan-plan/tests/audio_tape.rs",
+    "sha256": "f54717da88d944622c07435a0cfdff34f2bd83967cf36685906184ba916a09a1",
+    "bytes": 14381
+  },
+  {
+    "path": "crates/deadpan-plan/tests/audio_tape/mix.rs",
+    "sha256": "d4f2eab9ac6f6728185d6bc6864220caf633e4209678d8bf8ceca8d7e4a45a66",
+    "bytes": 9634
+  },
+  {
+    "path": "docs/ARCHITECTURE.md",
+    "sha256": "91ff5bc7cef69afd7d731ec38ddc94af005927861fc1e5b8fd43feedf19b4a75",
+    "bytes": 22130
+  },
+  {
+    "path": "docs/AUDIO_INPUT_TAPES.md",
+    "sha256": "1c1e517f7161ceb879968c3d0398020ce7f63832e6d4607e1d4b0b76aecac0be",
+    "bytes": 7112
+  },
+  {
+    "path": "docs/DEVELOPMENT.md",
+    "sha256": "a3dec9561373d28cacc0f398c74892cb29661eb806b5d6810560b26ec7c4f3fc",
+    "bytes": 21166
+  },
+  {
+    "path": "docs/REQUIREMENTS.md",
+    "sha256": "dbd55a63c0fe75e74bd0641e83da045dfa94756cc0d7b2a17a48f773487faf05",
+    "bytes": 59428
+  },
+  {
+    "path": "docs/SOUND_EVENTS.md",
+    "sha256": "3f1d5c228ae59b6d1d82f1d954857b3669797eaeb746bc15e02681b61c6c0bd6",
+    "bytes": 11043
+  },
+  {
+    "path": "docs/qualification/scoped-mix-2026-09-27.md",
+    "sha256": "d5bcf1ac7b40cefed19ca61e019effcaeb3d0043dc01eb9e3ea3d0bc5b166976",
+    "bytes": 5997
+  }
+]

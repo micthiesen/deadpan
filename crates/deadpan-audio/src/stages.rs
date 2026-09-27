@@ -1,7 +1,7 @@
 //! Continuous, bounded time mapping on preparation workers. Each Preserve
 //! occurrence owns one canonical history, independent of output queries/crops.
 use std::cell::RefCell;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::ops::Range;
 use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
@@ -16,8 +16,9 @@ use deadpan_media::audio_index::AudioChannelLayout;
 use deadpan_plan::{
     AudioBound, AudioBoundDomain, AudioContent, AudioDefinition, AudioDefinitionSelector,
     AudioDomain, AudioFadeQuery, AudioPointDomain, AudioPolicyQuery, AudioProcessingQuery,
-    AudioProcessingSpan, AudioQuery, AudioQueryLimits, AudioSignal, AudioSignalContent,
-    AudioSignalSpan, AudioStage, AudioStageDescriptor, PlanError, ReferenceSample, RenderPlan,
+    AudioProcessingSpan, AudioProjectionIdentity, AudioQuery, AudioQueryLimits, AudioSignalContent,
+    AudioSignalMix, AudioSignalQuery, AudioSignalSpan, AudioSignalTape, AudioStage,
+    AudioStageDescriptor, AudioStageProjection, PlanError, ReferenceSample, RenderPlan,
     SignalSample, SilenceReason,
 };
 use serde::Serialize;
@@ -28,6 +29,24 @@ use crate::{
     PcmWindow, PreparationError, ResampleRecipe, Resampler, RoomTone, RoomToneRecipe,
     RootSignalBlock, RootSignalTransfer, SignalTransferError, StereoMatrix, check_cancel,
 };
+
+#[path = "signal_input.rs"]
+mod signal_input;
+use signal_input::SignalInput;
+
+#[path = "stage_projection.rs"]
+mod stage_projection;
+
+#[path = "signal_mix.rs"]
+mod signal_mix;
+
+#[path = "projected_root.rs"]
+mod projected_root;
+pub use projected_root::ProjectedRootBlock;
+
+#[path = "routed.rs"]
+mod routed;
+pub use routed::{RoutedRootBlock, RoutedSignalBlock};
 
 /// Worker-owned bus preparation, including downstream finite DSP context.
 /// Small inspection and source reads retain their separate 256-frame limit.
@@ -119,7 +138,8 @@ pub struct TimeMappedBlock {
 /// Raw PCM from one physical processing domain, before creative fades. Signed
 /// indices belong to its captured absolute project grid, including meaningful
 /// context outside the domain's visible allocation or the project root itself.
-/// Explicit suppression includes both silent Holds and envelope exhaustion.
+/// Explicit suppression includes silent Holds, envelope exhaustion and Source
+/// selection endpoints on their owning physical grid.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct DomainAudioBlock {
     pub schema_version: u32,
@@ -150,6 +170,21 @@ pub struct DefinitionAudioBlock {
     pub revision_id: RevisionId,
     pub definition: AudioDefinitionSelector,
     pub root: deadpan_core::NodeId,
+    pub start: SignalSample,
+    pub samples: Vec<[f32; 2]>,
+    pub suppressed: Vec<Range<SignalSample>>,
+}
+
+/// Live structural or intrinsic-stage PCM on one common point grid. Tape windows allocate
+/// reads; they do not restart resampling or create new filter edges. This is
+/// preparation PCM, not final timeline allocation.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct TapeAudioBlock {
+    pub schema_version: u32,
+    pub stage: &'static str,
+    pub project_id: ProjectId,
+    pub revision_id: RevisionId,
+    pub support: Range<ExactRatio>,
     pub start: SignalSample,
     pub samples: Vec<[f32; 2]>,
     pub suppressed: Vec<Range<SignalSample>>,
@@ -291,10 +326,21 @@ struct ReadWork {
     prepared_frames: u64,
     source_checks: u32,
     observed: Dependencies,
+    // Static admission shares the same request boundary as runtime provenance.
+    // Policy-only and gated leaves still consume their unique asset identities.
+    preflight_assets: BTreeSet<AssetId>,
     plan_work: usize,
+    // Projection identity retains its allocation for this complete request.
+    // Different routes through the same authored stage must never alias PCM.
+    projected: Vec<(AudioProjectionIdentity, Arc<SignalBlock>)>,
+    projected_active: Vec<AudioProjectionIdentity>,
+    projected_preflight: Vec<(AudioProjectionIdentity, usize)>,
+    intrinsic_preflight: Vec<(AudioStageDescriptor, usize)>,
+    projected_resident_frames: u64,
 }
 
 const MAX_PLAN_WORK_PER_READ: usize = 16 * 1024 * 1024;
+const MAX_SOURCE_DEPENDENCIES: usize = 1024;
 
 /// One consumer request owns this budget across bus halos and cache checks.
 /// Downstream preparation must use the same deadline, never renew it per tile.
@@ -373,12 +419,38 @@ impl WorkControl<'_> {
         Ok(limits)
     }
 
+    fn admit_dependency(self, asset: &AssetId) -> Result<(), StageAudioError> {
+        self.check()?;
+        let mut work = self.work.borrow_mut();
+        if !work.preflight_assets.contains(asset) {
+            if work.preflight_assets.len() >= MAX_SOURCE_DEPENDENCIES {
+                return Err(StageAudioError::Limit("source dependencies"));
+            }
+            work.preflight_assets.insert(asset.clone());
+        }
+        Ok(())
+    }
+
+    fn preflight_content(
+        self,
+        content: &AudioContent,
+        plan: &RenderPlan,
+    ) -> Result<(), StageAudioError> {
+        preflight(content, plan)?;
+        match content {
+            AudioContent::Source { source, .. }
+            | AudioContent::RoomTone { source, .. }
+            | AudioContent::Tail { source, .. } => self.admit_dependency(&source.asset),
+            AudioContent::Silence { .. } => Ok(()),
+        }
+    }
+
     fn observe(
         self,
         asset: &AssetId,
         source: &crate::PreparedSource,
     ) -> Result<[u8; 32], StageAudioError> {
-        self.check()?;
+        self.admit_dependency(asset)?;
         let fingerprint = source.provenance();
         let mut work = self.work.borrow_mut();
         work.source_checks += 1;
@@ -390,7 +462,7 @@ impl WorkControl<'_> {
                 return Err(PreparationError::IndexMismatch.into());
             }
         } else {
-            if work.observed.len() >= 1024 {
+            if work.observed.len() >= MAX_SOURCE_DEPENDENCIES {
                 return Err(StageAudioError::Limit("source dependencies"));
             }
             work.observed.insert(asset.clone(), fingerprint);
@@ -626,6 +698,52 @@ impl StageAudio {
             revision_id: self.plan.metadata().revision_id.clone(),
             definition: definition.selector().clone(),
             root: definition.root().clone(),
+            start,
+            samples: block.samples,
+            suppressed: block.suppressed,
+        })
+    }
+
+    /// Read a checked projection of current structural signals under one
+    /// deadline and shared source, work and recursive-stage admission. Existing
+    /// Preserve children retain their complete intrinsic preparation. Explicit
+    /// projections use a separate request-local memo, never descriptor caching.
+    pub fn read_tape(
+        &mut self,
+        provider: &mut impl AudioSourceProvider,
+        tape: &AudioSignalTape<'_>,
+        start: SignalSample,
+        frames: u32,
+        timeout: Duration,
+        cancelled: &AtomicBool,
+    ) -> Result<TapeAudioBlock, StageAudioError> {
+        check_cancel(cancelled)?;
+        if !tape.belongs_to(&self.plan) {
+            return Err(StageAudioError::ForeignDomain);
+        }
+        validate_timeout(timeout)?;
+        let end = start
+            .0
+            .checked_add(i64::from(frames))
+            .ok_or(StageAudioError::Range)?;
+        if start.0 < 0 || frames == 0 || frames > MAX_OUTPUT_FRAMES || end > tape.sample_count()?.0
+        {
+            return Err(StageAudioError::Range);
+        }
+        let work = RefCell::new(ReadWork::default());
+        let control = WorkControl {
+            cancelled,
+            deadline: Instant::now() + timeout,
+            work: &work,
+        };
+        let block = self.read_signal(tape, provider, start, frames, control, 0)?;
+        control.check()?;
+        Ok(TapeAudioBlock {
+            schema_version: 1,
+            stage: "projected_preparation_pcm_before_effects",
+            project_id: self.plan.metadata().project_id.clone(),
+            revision_id: self.plan.metadata().revision_id.clone(),
+            support: tape.support(),
             start,
             samples: block.samples,
             suppressed: block.suppressed,
@@ -1157,15 +1275,19 @@ impl StageAudio {
             crate::edges::validate_creative_fades(start, frames as usize, &fades.spans)?;
         }
         for span in &queries.flattened.spans {
-            preflight(&span.content, &plan)?;
+            control.preflight_content(&span.content, &plan)?;
         }
         for span in &queries.processing.spans {
-            if let AudioSignalContent::Leaf(content) = &span.content {
-                preflight(content, &plan)?;
+            match &span.content {
+                AudioSignalContent::Leaf(content) => control.preflight_content(content, &plan)?,
+                AudioSignalContent::ProjectedStage(stage) => {
+                    self.preflight_projected(stage, control, depth + 1)?;
+                }
+                AudioSignalContent::Stage(_) | AudioSignalContent::Bound(_) => {}
             }
         }
         for content in &queries.policy.contents {
-            preflight(content, &plan)?;
+            control.preflight_content(content, &plan)?;
         }
         let mut samples = Vec::with_capacity(frames as usize);
         let mut dependencies = Dependencies::new();
@@ -1229,6 +1351,23 @@ impl StageAudio {
                     )?;
                     sample_prepared(
                         &prepared.block.samples,
+                        recipe,
+                        span.samples.start,
+                        count(&span.samples)?,
+                        cancelled,
+                    )?
+                }
+                AudioSignalContent::ProjectedStage(stage) => {
+                    let prepared = self.prepare_projected(stage, provider, control, depth + 1)?;
+                    dependencies.extend(prepared.dependencies.clone());
+                    relative_depth = relative_depth.max(1 + prepared.relative_depth);
+                    let recipe = root_stage_recipe(
+                        &span,
+                        prepared.samples.len(),
+                        plan.metadata().presentation_basis.frame_rate,
+                    )?;
+                    sample_prepared(
+                        &prepared.samples,
                         recipe,
                         span.samples.start,
                         count(&span.samples)?,
@@ -1322,8 +1461,8 @@ impl StageAudio {
         let reservation = self.reserve(input_frames, output_frames, control)?;
         let result = recipe.map_err(StageAudioError::from).and_then(|recipe| {
             self.build_stage(
-                &input_signal,
-                &output_signal,
+                (&input_signal).into(),
+                (&output_signal).into(),
                 recipe,
                 provider,
                 control,
@@ -1331,7 +1470,7 @@ impl StageAudio {
             )
         });
         self.active_frames -= reservation;
-        self.publish(key, result?)
+        self.publish(key, result?, control)
     }
 
     fn cached(
@@ -1389,7 +1528,7 @@ impl StageAudio {
         // Account for interleaved input and its planar conversion simultaneously,
         // plus output. Recursive preparations share the same residency budget.
         let reservation = u64::from(input_frames) * 2 + u64::from(output_frames);
-        self.make_room(reservation, false)?;
+        self.make_room(reservation, false, control)?;
         self.active_frames += reservation;
         Ok(reservation)
     }
@@ -1398,8 +1537,9 @@ impl StageAudio {
         &mut self,
         key: PreparedKey,
         block: SignalBlock,
+        control: WorkControl<'_>,
     ) -> Result<Arc<PreparedStage>, StageAudioError> {
-        self.make_room(block.samples.len() as u64, true)?;
+        self.make_room(block.samples.len() as u64, true, control)?;
         let entry = Arc::new(PreparedStage { key, block });
         self.cache.push(Arc::clone(&entry));
         Ok(entry)
@@ -1455,17 +1595,25 @@ impl StageAudio {
             })
         })();
         self.active_frames -= reservation;
-        self.publish(key, result?)
+        self.publish(key, result?, control)
     }
 
-    fn make_room(&mut self, additional: u64, new_entry: bool) -> Result<(), StageAudioError> {
+    fn make_room(
+        &mut self,
+        additional: u64,
+        new_entry: bool,
+        control: WorkControl<'_>,
+    ) -> Result<(), StageAudioError> {
         loop {
             let resident = self
                 .cache
                 .iter()
                 .map(|entry| entry.block.samples.len() as u64)
                 .sum::<u64>();
-            if resident + self.active_frames + additional
+            if resident
+                + self.active_frames
+                + control.work.borrow().projected_resident_frames
+                + additional
                 <= u64::from(self.limits.maximum_resident_frames)
                 && (!new_entry || self.cache.len() < self.limits.maximum_cached_stages)
             {
@@ -1482,8 +1630,8 @@ impl StageAudio {
 
     fn build_stage(
         &mut self,
-        input: &AudioSignal<'_>,
-        output: &AudioSignal<'_>,
+        input: SignalInput<'_, '_>,
+        output: SignalInput<'_, '_>,
         recipe: CanonicalRecipe,
         provider: &mut impl AudioSourceProvider,
         control: WorkControl<'_>,
@@ -1502,7 +1650,7 @@ impl StageAudio {
             )?;
             control.spend_plan_work(policy.work)?;
             for content in &policy.contents {
-                preflight(content, &self.plan)?;
+                control.preflight_content(content, &self.plan)?;
             }
             validated = end;
         }
@@ -1560,16 +1708,19 @@ impl StageAudio {
         })
     }
 
-    fn read_signal(
+    fn read_signal<'signal, 'plan: 'signal>(
         &mut self,
-        signal: &AudioSignal<'_>,
+        signal: impl Into<SignalInput<'signal, 'plan>>,
         provider: &mut impl AudioSourceProvider,
         start: SignalSample,
         frames: u32,
         control: WorkControl<'_>,
         depth: usize,
     ) -> Result<SignalBlock, StageAudioError> {
-        let WorkControl { cancelled, .. } = control;
+        let signal = signal.into();
+        if let SignalInput::Mix(mix) = signal {
+            return self.read_mix_controlled(mix, provider, start, frames, control, depth);
+        }
         control.check()?;
         if depth > self.limits.maximum_depth {
             return Err(StageAudioError::Limit("nested stage depth"));
@@ -1585,13 +1736,34 @@ impl StageAudio {
         )?;
         control.spend_plan_work(policy.work)?;
         for content in &policy.contents {
-            preflight(content, &self.plan)?;
+            control.preflight_content(content, &self.plan)?;
         }
         for span in &query.spans {
-            if let AudioSignalContent::Leaf(content) = &span.content {
-                preflight(content, &self.plan)?;
+            match &span.content {
+                AudioSignalContent::Leaf(content) => {
+                    control.preflight_content(content, &self.plan)?
+                }
+                AudioSignalContent::ProjectedStage(stage) => {
+                    self.preflight_projected(stage, control, depth + 1)?;
+                }
+                AudioSignalContent::Stage(_) | AudioSignalContent::Bound(_) => {}
             }
         }
+        self.read_signal_queries(query, policy, provider, control, depth)
+    }
+
+    fn read_signal_queries(
+        &mut self,
+        query: AudioSignalQuery<'_>,
+        policy: AudioPolicyQuery<SignalSample>,
+        provider: &mut impl AudioSourceProvider,
+        control: WorkControl<'_>,
+        depth: usize,
+    ) -> Result<SignalBlock, StageAudioError> {
+        let cancelled = control.cancelled;
+        let start = query.samples.start;
+        let frames =
+            u32::try_from(query.samples.end.0 - start.0).map_err(|_| StageAudioError::Range)?;
         let mut samples = Vec::with_capacity(frames as usize);
         let mut dependencies = Dependencies::new();
         let mut relative_depth = 0;
@@ -1621,7 +1793,7 @@ impl StageAudio {
                 AudioSignalContent::Leaf(AudioContent::RoomTone { source, duration }) => {
                     let prepared = self.prepare_room_tone(
                         PreparedKey::RoomTone {
-                            definition: signal.definition().cloned(),
+                            definition: span.definition.clone(),
                             instance: span.instance.clone(),
                             gap_after: span.gap_after.clone(),
                             source: source.clone(),
@@ -1651,6 +1823,17 @@ impl StageAudio {
                         self.plan.metadata().presentation_basis.frame_rate,
                     )?;
                     sample_prepared(&prepared.block.samples, recipe, start, count, cancelled)?
+                }
+                AudioSignalContent::ProjectedStage(stage) => {
+                    let prepared = self.prepare_projected(stage, provider, control, depth + 1)?;
+                    dependencies.extend(prepared.dependencies.clone());
+                    relative_depth = relative_depth.max(1 + prepared.relative_depth);
+                    let recipe = signal_stage_recipe(
+                        &span,
+                        prepared.samples.len(),
+                        self.plan.metadata().presentation_basis.frame_rate,
+                    )?;
+                    sample_prepared(&prepared.samples, recipe, start, count, cancelled)?
                 }
                 AudioSignalContent::Bound(bound) => {
                     let block = self.read_bound(
@@ -1796,7 +1979,7 @@ fn is_silent_hold(content: &AudioContent) -> bool {
 }
 
 fn suppress_signal(
-    signal: &AudioSignal<'_>,
+    signal: SignalInput<'_, '_>,
     start: SignalSample,
     samples: &mut [[f32; 2]],
     plan: &RenderPlan,
@@ -1811,7 +1994,7 @@ fn suppress_signal(
     let policy = signal.policy(start..end, control.query_limits()?)?;
     control.spend_plan_work(policy.work)?;
     for content in &policy.contents {
-        preflight(content, plan)?;
+        control.preflight_content(content, plan)?;
     }
     control.check()?;
     apply_suppression(start, samples, &policy.suppressed, |sample| sample.0)?;
@@ -2158,6 +2341,7 @@ mod controlled_reads {
                 BeatNode::hold(
                     "Room",
                     HoldRecipe {
+                        picture_context: None,
                         duration: duration(128),
                         video: HoldVideo::Background,
                         audio: HoldAudio::RoomTone {
@@ -2586,6 +2770,7 @@ mod controlled_reads {
                 BeatNode::hold(
                     "No input point",
                     HoldRecipe {
+                        picture_context: None,
                         duration: duration(1),
                         video: HoldVideo::Background,
                         audio: HoldAudio::Silence,

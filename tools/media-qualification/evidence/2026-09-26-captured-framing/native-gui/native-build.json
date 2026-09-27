@@ -1,0 +1,6 @@
+{
+  "app": "/tmp/deadpan-freeze-20260924/native-gui/Deadpan Captured Review.app",
+  "binary_sha256": "7ce122ea9973718f98707cabb1a194960e2221b92377cf32eb54ef5bc3bd1fd8",
+  "build_profile": "unoptimized Cargo dev",
+  "project": "/tmp/deadpan-freeze-20260924/native-gui/Captured view review.deadpan"
+}

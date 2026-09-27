@@ -37,6 +37,22 @@ identity provider scope before their Repeat owner. Clips remain distinct from
 the full source sampling rectangle, so a group zoom-out cannot reveal an earlier
 child crop. `render` remains the identity convenience entrypoint.
 
+`render_composed` and `PictureGeometry::composed` also accept optional captured
+Hold geometry before those live scopes. Each retained canvas fits its input,
+applies its first operation, then clips; further operations each clip again.
+The next canvas uses the previous whole canvas, including black areas. The final
+canvas is fitted into the current project canvas before live Hold and ancestor
+operations. There is no intermediate raster snapshot or repeated color conversion.
+Camera input indices remain local to the live scopes and project source points
+through the retained clipping. Identity-only capture retains letterboxing when
+the project aspect changes.
+
+Captured collection limits share core's 32 canvases, 512 stored scopes and 256
+poses. An empty stage has one implicit identity clip. Captured canvases also
+respect the core's even raster grammar and this renderer's qualified dimension
+and pixel limits. Source and visible rectangles are checked after every fit and
+operation; finite counts do not by themselves prevent numerical overflow.
+
 `PictureGeometry::framed` supplies the same spatial calculation to CPU and GPU.
 It uses f64 canvas geometry, derives half-open integer pixel coverage once, and
 anchors f32 inverse UV at the first covered pixel. Coverage is not re-decided by

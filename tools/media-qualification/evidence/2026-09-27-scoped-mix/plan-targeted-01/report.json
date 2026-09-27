@@ -1,0 +1,16 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "-p",
+    "deadpan-plan",
+    "--lib",
+    "--test",
+    "audio_tape",
+    "--test",
+    "audio_definition"
+  ],
+  "exit_code": 0,
+  "seconds": 46.384396499954164
+}

@@ -1,0 +1,26 @@
+{
+  "skill": "check",
+  "resolved_git_base": "origin/main",
+  "scope": "Increment against /tmp/deadpan-interior-splice-20260926/before, identified by increment.patch and increment-paths.json; earlier accumulated uncommitted work remains outside this review",
+  "reviews": [
+    {
+      "agent": "interior_general_review",
+      "lens": "General correctness, migration safety and test quality",
+      "findings": [],
+      "result": "DB30 maps to strict legacy_v24; DB<=29 retains legacy_v23 contextual admission. Gate precedes replay. Pre-Split lattices and post-Split placements retain distinct identities. Authentic chronology and forged interior history cover both sides."
+    },
+    {
+      "agent": "interior_timing_review",
+      "lens": "Exact audio/picture timing, Preserve history, gap births, marks and bounded repeat behavior",
+      "findings": [],
+      "result": "Independent hand-calculated sample-phase oracles exercise cold seeks, Preserve history, room-tone gaps and repeated insertions. No concrete timing or media defect found."
+    }
+  ],
+  "parent_triage": "No proposed findings to apply or dismiss. Parent inspected reducer diff, frozen-adapter diff, targeted test output and actual old-binary refusal evidence. Reviews do not establish GUI or performance qualification.",
+  "test_failure_followup": {
+    "path": "crates/deadpan-core/tests/audio_bindings/gaps.rs",
+    "finding": "First full workspace run expected the old root-seam diagnostic for an unsupported Repeat interior. The current physical-target guard rejects that same edit with a more specific diagnostic.",
+    "correction": "Name Repeat interiors explicitly; assert InvalidCommand and the Source/ordinary Hold boundary diagnostic. Production code unchanged.",
+    "independent_review": "interior_general_review found no issue: the new assertion reaches physical()'s unsupported-kind refusal and existing seam assertions retain the positive case."
+  }
+}

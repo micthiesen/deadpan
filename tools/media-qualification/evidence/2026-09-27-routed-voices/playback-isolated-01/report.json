@@ -1,0 +1,68 @@
+{
+  "commands": [
+    {
+      "command": [
+        "deadpan_playback-e4a6c13c0209ba22",
+        "--exact",
+        "tests::canonical_source_pcm_uses_fixed_monitor_gain_and_delivery_clock",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "seconds": 11.811130875255913,
+      "log": "0.log",
+      "tests": {
+        "passed": 1,
+        "failed": 0,
+        "ignored": 0
+      }
+    },
+    {
+      "command": [
+        "deadpan_playback-e4a6c13c0209ba22",
+        "--exact",
+        "tests::original::original_preserves_leading_audio_trailing_audio_and_exact_rounded_picture_clock",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "seconds": 20.934448208194226,
+      "log": "1.log",
+      "tests": {
+        "passed": 1,
+        "failed": 0,
+        "ignored": 0
+      }
+    },
+    {
+      "command": [
+        "deadpan_playback-e4a6c13c0209ba22",
+        "--exact",
+        "tests::original::original_pcm_ignores_edits_and_target_cache_never_reuses_sequence_pcm",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "seconds": 12.209324833005667,
+      "log": "2.log",
+      "tests": {
+        "passed": 1,
+        "failed": 0,
+        "ignored": 0
+      }
+    },
+    {
+      "command": [
+        "deadpan_playback-e4a6c13c0209ba22",
+        "--exact",
+        "tests::seek_reuses_private_pcm_but_a_new_session_must_reopen_sources",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "seconds": 8.132842832710594,
+      "log": "3.log",
+      "tests": {
+        "passed": 1,
+        "failed": 0,
+        "ignored": 0
+      }
+    }
+  ]
+}

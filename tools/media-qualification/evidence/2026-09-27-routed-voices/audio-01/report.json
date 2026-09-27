@@ -1,0 +1,19 @@
+{
+  "commands": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "deadpan-audio",
+        "--test",
+        "audio_definition",
+        "projection_routed",
+        "--locked"
+      ],
+      "exit_code": 101,
+      "seconds": 47.52114324970171,
+      "log": "0.log"
+    }
+  ]
+}

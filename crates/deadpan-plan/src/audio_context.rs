@@ -41,6 +41,15 @@ impl RenderPlan {
                             source: source.clone(),
                             start: mapping.start_frames_with_offset(*offset, layout.rate())?,
                             duration: mapping.duration_frames(node.duration)?,
+                            selection: mapping.selection_frames_with_offset(
+                                node.duration,
+                                *offset,
+                                layout.rate(),
+                            )?,
+                            selected: matches!(
+                                mapping,
+                                deadpan_core::SourceAudioMapping::SelectedPlacement { .. }
+                            ),
                         }),
                         None => None,
                         _ => return Err(PlanError::InvalidPlan("invalid retained Source input")),
@@ -74,6 +83,7 @@ impl RenderPlan {
                 FrozenAudioKind::Hold { audio } => (
                     CompiledKind::Hold {
                         video: CompiledHold::Background,
+                        picture_context: None,
                         audio: retained_hold_audio(context, id, *audio)?,
                     },
                     NodeType::Hold,
@@ -85,16 +95,19 @@ impl RenderPlan {
                     gap_audio,
                 } => {
                     let overrides = layout.overrides().get(id);
-                    let repeat = RepeatLayout::compile(
+                    let gap_overrides = layout.gap_overrides().get(id);
+                    let repeat = RepeatLayout::compile_with_gap_overrides(
                         iterations,
                         child,
                         overrides,
                         *gap_duration,
+                        gap_overrides,
                         &durations,
                     )?;
                     storage.iteration_run_entries += iterations.segment_count();
                     storage.repeat_segment_entries += repeat.segment_count();
-                    storage.sparse_override_entries += overrides.map_or(0, |entries| entries.len());
+                    storage.sparse_override_entries += overrides.map_or(0, |entries| entries.len())
+                        + gap_overrides.map_or(0, |entries| entries.len());
                     storage.referenced_plays += u64::from(iterations.len());
                     let gap = *gap_duration != FrameDuration::ZERO;
                     (
@@ -102,6 +115,8 @@ impl RenderPlan {
                             default_child: by_id[child],
                             layout: repeat,
                             gap: gap.then_some(CompiledHold::Background),
+                            gap_picture_context: None,
+                            gap_duration: *gap_duration,
                             gap_audio: gap
                                 .then(|| retained_hold_audio(context, id, *gap_audio))
                                 .transpose()?,
@@ -158,7 +173,8 @@ impl RenderPlan {
             nodes,
             root: by_id[layout.root()],
             by_id,
-            audio_context_assets: Some(context.assets().clone()),
+            audio_assets: context.assets().clone(),
+            audio_context: true,
             audio_bindings: Default::default(),
             // Context schema 1 cannot carry bindings. Definition exclusions
             // are therefore immaterial in these retained legacy operands.

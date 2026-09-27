@@ -6,6 +6,13 @@ use deadpan_plan::{
     AudioSignalContent, AudioStage, PlanError, RenderPlan, SignalSample,
 };
 
+#[path = "audio_definition/projected_root.rs"]
+mod projected_root;
+#[path = "audio_definition/projection.rs"]
+mod projection;
+#[path = "audio_definition/repeat_gap.rs"]
+mod repeat_gap;
+
 fn id(name: &str) -> NodeId {
     NodeId::new(name).unwrap()
 }
@@ -64,6 +71,7 @@ fn hold(length: i64) -> BeatNode {
         HoldRecipe {
             duration: frames(length),
             video: HoldVideo::Background,
+            picture_context: None,
             audio: HoldAudio::Silence,
         },
     )

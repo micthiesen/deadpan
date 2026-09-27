@@ -77,6 +77,7 @@ fn hold(duration: i64, audio: HoldAudio) -> BeatNode {
     BeatNode::hold(
         "Hold",
         HoldRecipe {
+            picture_context: None,
             duration: frames(duration),
             video: HoldVideo::Background,
             audio,
@@ -1045,6 +1046,7 @@ impl AudioSourceProvider for RevisionProvider {
 fn owned_nested_preserve_uses_edited_room_tone_in_the_same_root_clock() {
     let rate = FrameRate::new(48_000, 1).unwrap();
     let silent_gap = HoldRecipe {
+        picture_context: None,
         duration: frames(128),
         video: HoldVideo::Background,
         audio: HoldAudio::Silence,
@@ -1089,6 +1091,7 @@ fn owned_nested_preserve_uses_edited_room_tone_in_the_same_root_clock() {
                 node: id("repeat"),
                 plays: 2,
                 gap: Some(HoldRecipe {
+                    picture_context: None,
                     audio: HoldAudio::RoomTone {
                         source: audio(6144..6272),
                     },
@@ -1461,3 +1464,14 @@ fn owned_root_domain_rejects_foreign_handles_ranges_cancellation_and_work_limits
     );
     assert_eq!(renderer.cached_stage_count(), 0);
 }
+
+#[path = "audio_definition/mix.rs"]
+mod mix;
+#[path = "audio_definition/mix_limits.rs"]
+mod mix_limits;
+#[path = "audio_definition/projection.rs"]
+mod projection;
+#[path = "audio_definition/tape.rs"]
+mod tape;
+#[path = "audio_definition/tape_admission.rs"]
+mod tape_admission;

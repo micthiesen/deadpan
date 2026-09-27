@@ -3,6 +3,9 @@ use std::collections::BTreeMap;
 use deadpan_core::*;
 use proptest::prelude::*;
 
+#[path = "anchors/location.rs"]
+mod location;
+
 fn node(value: &str) -> NodeId {
     NodeId::new(value).unwrap()
 }
@@ -16,6 +19,7 @@ fn hold(frames: i64) -> BeatNode {
     BeatNode::hold(
         "Pause",
         HoldRecipe {
+            picture_context: None,
             duration: duration(frames),
             video: HoldVideo::Background,
             audio: HoldAudio::Silence,
@@ -67,6 +71,7 @@ fn tree(children: &[&str], nodes: Vec<(&str, BeatNode)>) -> ProjectDocument {
             index: 0,
             subtree: Subtree {
                 overrides: Default::default(),
+                gap_overrides: Default::default(),
                 root: node("group"),
                 nodes,
             },
@@ -185,6 +190,7 @@ fn occurrences_follow_stable_plays_and_groups_but_never_choose_a_play() {
             id: node("repeat"),
             plays: 4,
             gap: Some(HoldRecipe {
+                picture_context: None,
                 duration: duration(2),
                 video: HoldVideo::Background,
                 audio: HoldAudio::Silence,
@@ -381,6 +387,7 @@ fn billions_of_plays_and_unused_overflowing_gap_do_not_expand() {
             id: node("repeat"),
             plays: 1,
             gap: Some(HoldRecipe {
+                picture_context: None,
                 duration: duration(i64::MAX),
                 video: HoldVideo::Background,
                 audio: HoldAudio::Silence,
@@ -438,6 +445,7 @@ fn source_document() -> ProjectDocument {
             index: 0,
             subtree: Subtree {
                 overrides: Default::default(),
+                gap_overrides: Default::default(),
                 root: node("source"),
                 nodes: BTreeMap::from([(
                     node("source"),
@@ -1045,6 +1053,119 @@ fn audio_mapping_edits_keep_source_marks_fixed_and_isolate_one_repeat_play() {
         assert_eq!(point(&isolated, &target).frame, ProjectFrame(expected));
     }
     assert_eq!(isolated.duration().unwrap(), repeated.duration().unwrap());
+}
+
+#[test]
+fn exact_audio_selection_rejects_hidden_original_boundaries_and_preserves_phase() {
+    let rate = FrameRate::new(30, 1).unwrap();
+    let (original, _) = short_audio_document(rate);
+    let mapping = SourceAudioMapping::SelectedPlacement {
+        start: ExactRatio::new(-1, 3).unwrap(),
+        frames: ExactRatio::integer(30),
+        selection: ExactFrameRange {
+            start: ExactRatio::new(7, 3).unwrap(),
+            end: ExactRatio::new(19, 3).unwrap(),
+        },
+    };
+    let command = Command::SetSourceAudioMapping {
+        node: node("source"),
+        mapping,
+        offset: AudioSample(480),
+    };
+    let wire = serde_json::to_string(&command).unwrap();
+    assert_eq!(serde_json::from_str::<Command>(&wire).unwrap(), command);
+    let selected = edit(&original, command, "selected");
+    assert_eq!(selected.assets(), original.assets());
+    assert_eq!(selected.duration().unwrap(), original.duration().unwrap());
+    let NodeKind::Source { source: before } = &original.nodes()[&node("source")].kind else {
+        panic!()
+    };
+    let NodeKind::Source { source: after } = &selected.nodes()[&node("source")].kind else {
+        panic!()
+    };
+    assert_eq!(after.audio, before.audio);
+    assert_eq!(after.video, before.video);
+    assert_eq!(after.video_mapping, before.video_mapping);
+    let original_boundary = |ticks| {
+        source_target(SourceMoment::Timestamp {
+            stream: SourceStream::Audio,
+            timestamp: SourceTimestamp {
+                ticks,
+                time_base: SourceTimeBase::new(1, 45).unwrap(),
+            },
+        })
+    };
+    let index = AnchorIndex::new(&selected).unwrap();
+    // The audio span starts at -1s. Its original sample phase remains the
+    // complete 30-frame mapping, plus a 480-mix-sample (3/10 frame) shift.
+    for (ticks, numerator) in [(-41, 79), (-38, 139), (-35, 199)] {
+        assert_eq!(
+            index
+                .resolve_target(&original_boundary(ticks))
+                .unwrap()
+                .exact_frame,
+            ExactRatio::new(numerator, 30).unwrap()
+        );
+    }
+    for ticks in [-42, -34] {
+        assert_eq!(
+            index
+                .resolve_target(&original_boundary(ticks))
+                .unwrap_err()
+                .code,
+            AnchorErrorCode::OutsideMapping
+        );
+    }
+    assert_eq!(
+        ProjectDocument::from_json(&selected.to_json().unwrap()).unwrap(),
+        selected
+    );
+
+    let repeated = edit(
+        &original,
+        Command::WrapRepeat {
+            node: node("source"),
+            id: node("repeat"),
+            plays: 2,
+            gap: None,
+            anchor_policy: WrapAnchorPolicy::default(),
+        },
+        "repeat-selected",
+    );
+    let occurrence = play(&repeated, "repeat", 1);
+    let isolated = edit(
+        &repeated,
+        Command::EditOccurrence {
+            instance: InstancePath {
+                node: node("source"),
+                repeats: vec![occurrence.clone()],
+            },
+            edit: OccurrenceEdit::SetSourceAudioMapping {
+                mapping,
+                offset: AudioSample(480),
+            },
+            identities: OccurrenceIdentities {
+                nodes: vec![node("selected-copy")],
+                marks: vec![],
+            },
+        },
+        "select-one-play",
+    );
+    assert_eq!(
+        isolated.nodes()[&node("source")],
+        repeated.nodes()[&node("source")]
+    );
+    let mut endpoint = original_boundary(-35);
+    endpoint.occurrence = Some(InstancePath {
+        node: node("selected-copy"),
+        repeats: vec![occurrence],
+    });
+    assert_eq!(
+        point(&isolated, &endpoint).exact_frame,
+        ExactRatio::integer(60)
+            .checked_add(ExactRatio::new(199, 30).unwrap())
+            .unwrap()
+    );
 }
 
 #[test]

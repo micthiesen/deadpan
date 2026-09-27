@@ -1,0 +1,32 @@
+{
+  "base": "Saved before/ working-tree snapshot at HEAD c03a5edde5f28d27074745eb15711cb28b1f2e50; prior concurrent changes preserved",
+  "scope": "Seven playback test source files; four documentation files",
+  "reviewers": [
+    "routed_voice_general_review"
+  ],
+  "source_sha256": {
+    "crates/deadpan-playback/src/sources/cache_tests.rs": "68da587de1056ad351e1a710fad0cc7f450474af3a9bdda600ac18d4feaea92e",
+    "crates/deadpan-playback/src/tests.rs": "de306370ba0c76df8e96d452a75e491e6bc026542935da4806617a49a93560ba",
+    "crates/deadpan-playback/src/tests/original.rs": "fe1a4788ac80fc584a2ed9edbb3e5809d819546cd59b55b5d55d2bfd8d1f7325",
+    "crates/deadpan-playback/src/tests/resources.rs": "52f276e3d8e8461a271f98e8395491873cca56a785ba94caaf58c43102b4fe43",
+    "crates/deadpan-playback/src/tests/sound.rs": "ba7794d05631498e1da5e0ebc568bf46b2474b30395341bd9ee6eacd3e56b499",
+    "crates/deadpan-playback/src/tests/source_voice.rs": "51060d6a0ab5ee13dec211652287b2aa42f07aafe7d521ac756c2387927daec9",
+    "crates/deadpan-playback/src/tests/source_voice/routed.rs": "3c6ebc6d16d02ba08414ccd6115dc4e59d11a97caca23eaed3ba644962b6a0fd"
+  },
+  "finding": "Unbounded PCM reservation admission could strand later tests if a detached worker retained Shared forever",
+  "applied": [
+    "Replace per-increment fullgates with focused iteration and one milestone gate; remove redundant CI build/doctor while retaining base and harness branches",
+    "Bound admission to600seconds including queue behind complete scenarios; fail outside the lock",
+    "Exercise timeout while detachedworker holds the reservation, then successful zero-duration admission after release",
+    "Clarify private-slot lifecycle test exception in qualification scope"
+  ],
+  "final_review": "Independent reviewer found bounded helper correct and no further source findings; documentation scope nit corrected",
+  "outstanding": [],
+  "read_only_exploration": [
+    "playback_wait_map mapped wait callers, worker lifetimes, source preparation budgets and next routed-projection-input slice"
+  ],
+  "development_corrections": [
+    "Initial formatting check required multiline play call in new resource test"
+  ],
+  "verification_note": "Review bound was added after first fullgate started; six affected playback cases and strict crate lint cover the changed helper; the other586source/config paths retain workspace evidence. Artifact binary rerun after socket capability changed."
+}

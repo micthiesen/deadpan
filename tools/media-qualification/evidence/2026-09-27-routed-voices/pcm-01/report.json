@@ -1,0 +1,22 @@
+{
+  "commands": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "deadpan-playback",
+        "source_voice::routed",
+        "--locked"
+      ],
+      "exit_code": 101,
+      "seconds": 24.802188166882843,
+      "log": "0.log",
+      "tests": {
+        "passed": 3,
+        "failed": 1,
+        "ignored": 0
+      }
+    }
+  ]
+}

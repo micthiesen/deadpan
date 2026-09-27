@@ -1,0 +1,14 @@
+[
+  {
+    "command": [
+      "cargo",
+      "test",
+      "-p",
+      "deadpan-core",
+      "--locked"
+    ],
+    "exit_code": 101,
+    "seconds": 175.04346195794642,
+    "log": "0.log"
+  }
+]

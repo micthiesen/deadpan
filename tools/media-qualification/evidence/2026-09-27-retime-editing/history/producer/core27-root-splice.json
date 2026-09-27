@@ -1,0 +1,68 @@
+{
+  "protocol": 1,
+  "project_id": "d038df46-94c6-4c0a-9d11-038b0e6da220",
+  "expected_revision": "5305941b-2115-4846-aa8a-b6d7dcab25da",
+  "new_revision": "core27-root-splice",
+  "command": {
+    "command": "splice_source",
+    "parent": "b5903f58-0249-4a89-8af8-ed3d8a5cfe1f",
+    "index": 1,
+    "source": {
+      "duration": 30,
+      "video": {
+        "type": "blank"
+      },
+      "video_mapping": {
+        "type": "fit_beat"
+      },
+      "audio": {
+        "asset": "audio",
+        "span": {
+          "start": {
+            "ticks": 0,
+            "time_base": {
+              "numerator": 1,
+              "denominator": 48000
+            }
+          },
+          "end": {
+            "ticks": 48000,
+            "time_base": {
+              "numerator": 1,
+              "denominator": 48000
+            }
+          }
+        }
+      },
+      "audio_mapping": {
+        "type": "selected_placement",
+        "start": {
+          "numerator": "-2",
+          "denominator": "3"
+        },
+        "frames": {
+          "numerator": "30000",
+          "denominator": "1001"
+        },
+        "selection": {
+          "start": {
+            "numerator": "2",
+            "denominator": "1"
+          },
+          "end": {
+            "numerator": "20",
+            "denominator": "1"
+          }
+        }
+      },
+      "link": "independent",
+      "audio_offset": -31
+    },
+    "id": "core27-root-paste",
+    "label": "Pasted selected audio",
+    "timing": {
+      "allocation": "core27-root-splice",
+      "ordinal": 0
+    }
+  }
+}

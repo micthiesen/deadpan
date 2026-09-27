@@ -1,0 +1,9 @@
+[
+  "crates/deadpan-cli/src/lib.rs",
+  "crates/deadpan-cli/tests/boundary_location.rs",
+  "crates/deadpan-core/src/anchor.rs",
+  "crates/deadpan-core/src/anchor/location.rs",
+  "crates/deadpan-core/src/marks.rs",
+  "crates/deadpan-core/tests/anchors.rs",
+  "crates/deadpan-core/tests/anchors/location.rs"
+]

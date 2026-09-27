@@ -1,0 +1,34 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+   Compiling deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 19.50s
+     Running tests/insert_time.rs (target/debug/deps/insert_time-09b7b73852b83b50)
+
+running 15 tests
+test duration_overflow_and_nonfallback_provider_are_rejected_before_capture ... ok
+test first_pause_locks_an_automatic_empty_project_before_final_validation ... ok
+test split_and_insertion_compose_mark_bias_and_keep_sequence_pins ... ok
+test zero_bounds_stale_revision_and_identity_errors_leave_input_unchanged ... ok
+test existing_split_seam_reanchors_without_manufacturing_another_split ... ok
+test billion_play_seam_insertion_keeps_one_step_per_owned_recipe ... ok
+test insertion_after_compact_steps_appends_after_them_and_round_trips_atomically ... ok
+test composite_seam_moves_root_marks_once_and_retains_occurrence_and_source_clocks ... ok
+test fully_bound_input_keeps_a_phase_only_clock_until_terms_exist_and_prunes_unused_end_clock ... ok
+test start_interior_end_and_empty_project_insert_one_reversible_pause ... ok
+test repeated_interior_insertion_composes_current_phase_on_one_immutable_lattice ... ok
+test ordinary_hold_interior_and_its_partition_can_be_inserted_into_again ... ok
+test root_composite_seams_shift_while_interior_boundaries_remain_explicit ... ok
+test every_shifted_fragment_gets_its_own_old_entry_and_existing_lattice_survives ... ok
+test aggregate_identity_and_composed_phase_limits_fail_before_a_transaction ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s
+
+     Running tests/gap_branches.rs (target/debug/deps/gap_branches-cdb5987e5b2cdd7e)
+
+running 4 tests
+test empty_gap_branch_suppresses_one_gap_and_final_branch_stays_dormant ... ok
+test sparse_branch_lookup_stays_compact_at_a_billion_plays ... ok
+test nested_gap_branch_has_its_own_picture_audio_and_reference_path ... ok
+test pause_at_a_split_composite_seam_preserves_every_suffix_picture_and_owned_scope ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+

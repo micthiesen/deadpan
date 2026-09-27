@@ -1,0 +1,41 @@
+{
+  "workflow": "check",
+  "base": "origin/main",
+  "subject": "Core23/database29 sparse Repeat gap branches and exact default-gap materialization",
+  "baseline": "/tmp/deadpan-gap-branches-20260926/before",
+  "reviewers": [
+    {
+      "agent": "gap_branch_general_review",
+      "scope": "Core ownership/validation, occurrence edits, marks/anchors, shared plan walks, schema and generation occurrence checks",
+      "verdict": "No findings",
+      "tests_run": false
+    },
+    {
+      "agent": "gap_branch_audio_review",
+      "scope": "Exact retained clocks, current raw policy/support, birth dispatch, dormant ownership, Preserve and independent PCM oracles",
+      "verdict": "No findings",
+      "tests_run": false
+    },
+    {
+      "agent": "gap_branch_history_review",
+      "scope": "Closed legacy vocabulary, core22/database28 replay, history and provenance",
+      "verdict": "One test coverage finding resolved and re-reviewed",
+      "tests_run": false
+    }
+  ],
+  "applied_findings": [
+    {
+      "finding": "Legacy command rejection sample used an extra IterationId repeat field and could fail as malformed input",
+      "resolution": "Modern parsing now succeeds before legacy rejection for direct and occurrence SetGapOverride, ClearGapOverride and IsolateGap; empty/null subtree fields tested separately",
+      "reviewer_confirmation": "Resolved"
+    }
+  ],
+  "oracle_audit": "Independent review confirmed 96-sample start fade and Hard bypass, NTSC retained phases -1/5 and -2/5, and outer-definition birth phase +2/5 under the PointCeil grid.",
+  "remaining_findings": [],
+  "ui_harness_review": {
+    "agent": "ui_harness_integration_review",
+    "scope": "Production event ownership, shortcuts, displayed identities and feature-disabled behavior in app hooks and fixes; CI integration",
+    "verdict": "No findings",
+    "tests_run": false
+  }
+}

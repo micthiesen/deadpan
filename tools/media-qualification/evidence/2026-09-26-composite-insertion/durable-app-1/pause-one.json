@@ -1,0 +1,27 @@
+{
+  "protocol": 1,
+  "project_id": "9c88b275-f4da-44ab-b4d1-419a65d60a02",
+  "expected_revision": "split",
+  "new_revision": "pause-one",
+  "command": {
+    "command": "insert_time",
+    "at": 1,
+    "hold": {
+      "duration": 1,
+      "video": {
+        "type": "background"
+      },
+      "audio": {
+        "type": "silence"
+      }
+    },
+    "id": "pause-one",
+    "identities": {
+      "nodes": []
+    },
+    "timing": {
+      "allocation": "pause-one",
+      "ordinal": 0
+    }
+  }
+}

@@ -1,7 +1,7 @@
 //! Fixed bounded arithmetic for one framing interpolation fraction. This is not
 //! an arbitrary precision API. Admitted progress denominators are <= 10^6;
-//! local numerator/denominator are <= 127 bits and duration <= 63 bits.
-//! The largest product below uses at most 231 bits, leaving room for the one-bit
+//! nonnegative local and positive duration numerator/denominator are <= 127 bits.
+//! The largest product below uses at most 294 bits, leaving room for the one-bit
 //! shifts used by Q32 division. Every carry is still checked.
 
 use std::cmp::Ordering;
@@ -64,27 +64,50 @@ pub(super) fn lerp(a: i64, b: i64, t: u64) -> Result<i64, FramingError> {
 
 pub(super) fn segment_progress(
     local: ExactRatio,
-    frames: i64,
+    duration: ExactRatio,
     start: ExactRatio,
     end: ExactRatio,
 ) -> Result<u64, FramingError> {
-    // (local / D - a/A) / (b/B - a/A)
-    // = ((n*A - D*d*a)*B) / (D*d*(b*A-a*B)).
+    // For local=n/d and duration=u/v:
+    // (local / duration - a/A) / (b/B - a/A)
+    // = ((n*v*A - u*d*a)*B) / (u*d*(b*A-a*B)).
     let to_u64 = |v: i128| u64::try_from(v).map_err(|_| FramingError::Overflow);
     let a = to_u64(start.numerator())?;
     let a_den = to_u64(start.denominator())?;
     let b = to_u64(end.numerator())?;
     let b_den = to_u64(end.denominator())?;
-    let duration = u64::try_from(frames).map_err(|_| FramingError::Overflow)?;
     let n = u128::try_from(local.numerator()).map_err(|_| FramingError::Overflow)?;
     let d = local.denominator() as u128;
+    let u = u128::try_from(duration.numerator()).map_err(|_| FramingError::Overflow)?;
+    let v = duration.denominator() as u128;
     let delta = b
         .checked_mul(a_den)
         .and_then(|left| left.checked_sub(a.checked_mul(b_den)?))
         .ok_or(FramingError::Overflow)?;
-    let dd = Wide::from(d).mul(duration)?;
-    let numerator = Wide::from(n).mul(a_den)?.sub(dd.mul(a)?)?.mul(b_den)?;
-    fraction(numerator, dd.mul(delta)?)
+    let ud = Wide::from(u).mul_u128(d)?;
+    let numerator = Wide::from(n)
+        .mul_u128(v)?
+        .mul(a_den)?
+        .sub(ud.mul(a)?)?
+        .mul(b_den)?;
+    fraction(numerator, ud.mul(delta)?)
+}
+
+/// Compare local/duration with a validated envelope endpoint without creating
+/// either wide quotient or endpoint in the narrower ExactRatio representation.
+pub(super) fn compare_progress(
+    local: ExactRatio,
+    duration: ExactRatio,
+    progress: ExactRatio,
+) -> Result<Ordering, FramingError> {
+    let unsigned = |v| u128::try_from(v).map_err(|_| FramingError::Overflow);
+    let left = Wide::from(unsigned(local.numerator())?)
+        .mul_u128(duration.denominator() as u128)?
+        .mul(u64::try_from(progress.denominator()).map_err(|_| FramingError::Overflow)?)?;
+    let right = Wide::from(unsigned(duration.numerator())?)
+        .mul_u128(local.denominator() as u128)?
+        .mul(u64::try_from(progress.numerator()).map_err(|_| FramingError::Overflow)?)?;
+    Ok(left.cmp(&right))
 }
 
 fn fraction(mut numerator: Wide, denominator: Wide) -> Result<u64, FramingError> {
@@ -111,13 +134,13 @@ fn fraction(mut numerator: Wide, denominator: Wide) -> Result<u64, FramingError>
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-struct Wide([u64; 4]);
+struct Wide([u64; 5]);
 
 impl Wide {
-    const ZERO: Self = Self([0; 4]);
+    const ZERO: Self = Self([0; 5]);
 
     fn mul(self, value: u64) -> Result<Self, FramingError> {
-        let mut output = [0; 4];
+        let mut output = [0; 5];
         let mut carry = 0u128;
         for (slot, limb) in output.iter_mut().zip(self.0) {
             let product = u128::from(limb) * u128::from(value) + carry;
@@ -130,8 +153,28 @@ impl Wide {
         Ok(Self(output))
     }
 
+    fn mul_u128(self, value: u128) -> Result<Self, FramingError> {
+        let low = self.mul(value as u64)?;
+        let high = self.mul((value >> 64) as u64)?;
+        if high.0[4] != 0 {
+            return Err(FramingError::Overflow);
+        }
+        let mut output = low.0;
+        let mut carry = false;
+        for (slot, addend) in output[1..].iter_mut().zip(high.0) {
+            let (first, c1) = slot.overflowing_add(addend);
+            let (second, c2) = first.overflowing_add(u64::from(carry));
+            *slot = second;
+            carry = c1 || c2;
+        }
+        if carry {
+            return Err(FramingError::Overflow);
+        }
+        Ok(Self(output))
+    }
+
     fn sub(self, other: Self) -> Result<Self, FramingError> {
-        let mut output = [0; 4];
+        let mut output = [0; 5];
         let mut borrow = false;
         for (index, slot) in output.iter_mut().enumerate() {
             let (first, b1) = self.0[index].overflowing_sub(other.0[index]);
@@ -148,7 +191,7 @@ impl Wide {
 
 impl From<u128> for Wide {
     fn from(value: u128) -> Self {
-        Self([value as u64, (value >> 64) as u64, 0, 0])
+        Self([value as u64, (value >> 64) as u64, 0, 0, 0])
     }
 }
 impl Ord for Wide {
@@ -170,14 +213,20 @@ mod tests {
     fn wide_carries_borrows_and_failures() {
         assert_eq!(
             Wide::from(u128::MAX).mul(u64::MAX).unwrap().0,
-            [1, u64::MAX, u64::MAX - 1, 0]
+            [1, u64::MAX, u64::MAX - 1, 0, 0]
         );
         assert_eq!(
-            Wide([0, 0, 1, 0]).sub(Wide::from(1)).unwrap(),
+            Wide([0, 0, 1, 0, 0]).sub(Wide::from(1)).unwrap(),
             Wide::from(u128::MAX)
         );
         assert!(Wide::ZERO.sub(Wide::from(1)).is_err());
-        assert!(Wide([u64::MAX; 4]).mul(2).is_err());
+        assert!(Wide([u64::MAX; 5]).mul(2).is_err());
+        assert_eq!(
+            Wide::from(u128::MAX).mul_u128(u128::MAX).unwrap().0,
+            [1, 0, u64::MAX - 1, u64::MAX, 0]
+        );
+        assert!(Wide([0, 0, 0, 0, 1]).mul_u128(1 << 64).is_err());
+        assert_eq!(Wide([u64::MAX; 5]).mul_u128(0).unwrap(), Wide::ZERO);
     }
 
     #[test]

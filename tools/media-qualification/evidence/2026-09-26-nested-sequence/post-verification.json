@@ -1,0 +1,14 @@
+{
+  "source_count": 527,
+  "sources_match_final_gate": true,
+  "reviewed_paths": 32,
+  "review_hashes_match": true,
+  "retained_evidence_hashes_match": true,
+  "doc_links": {
+    "files": 12,
+    "local_targets": 404,
+    "missing": [],
+    "scope": "File targets only; fragments and external URLs not checked"
+  },
+  "diff_check_exit_code": 0
+}

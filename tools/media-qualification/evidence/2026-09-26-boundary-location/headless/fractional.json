@@ -1,0 +1,12 @@
+{
+  "protocol": 1,
+  "request": {
+    "project_id": "80096a2d-41b8-4f59-839c-f719a027a064",
+    "expected_revision": "fixture",
+    "position": {
+      "numerator": "29",
+      "denominator": "4"
+    },
+    "bias": "right"
+  }
+}

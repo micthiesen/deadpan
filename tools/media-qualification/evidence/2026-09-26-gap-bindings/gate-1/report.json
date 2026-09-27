@@ -1,0 +1,20 @@
+{
+  "commands": [
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 1,
+      "seconds": 10.658751334063709,
+      "log": "0.log"
+    }
+  ],
+  "source_count": 465,
+  "source_unchanged": true,
+  "changed_sources": [],
+  "passed": false
+}

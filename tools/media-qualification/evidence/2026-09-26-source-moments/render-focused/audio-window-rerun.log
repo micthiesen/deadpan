@@ -1,0 +1,9 @@
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 10.14s
+     Running tests/stages.rs (target/debug/deps/stages-b5d8805212aa22c3)
+
+running 1 test
+test selection::changing_a_selected_window_keeps_retained_phase_and_uses_current_support ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 55 filtered out; finished in 0.03s
+

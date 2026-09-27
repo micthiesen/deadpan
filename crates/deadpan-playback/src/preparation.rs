@@ -4,7 +4,7 @@
 
 use std::sync::Arc;
 use std::sync::atomic::Ordering;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use deadpan_audio::{LimitedAudio, StageAudio, StageLimits};
 use deadpan_core::AudioSample;
@@ -12,6 +12,7 @@ use deadpan_plan::RenderPlan;
 
 use crate::controller::{Job, Shared};
 use crate::sources::Sources;
+use crate::{Target, Window};
 
 pub(crate) const BATCH_FRAMES: usize = 8192;
 pub(crate) struct Batch {
@@ -80,6 +81,7 @@ fn publish(shared: &Shared, job: &Job, reply: Reply) {
 }
 
 struct Prepared {
+    target: Target,
     sources: Sources,
     audio: LimitedAudio,
     end: AudioSample,
@@ -89,16 +91,17 @@ fn prepare(shared: &Shared, job: &Job, retained: &mut Option<Prepared>) -> Resul
     if job.cancelled.load(Ordering::Acquire) {
         return Ok(());
     }
-    if !retained
-        .as_ref()
-        .is_some_and(|prepared| prepared.sources.matches(&job.snapshot))
-    {
+    if !retained.as_ref().is_some_and(|prepared| {
+        prepared.target == job.target && prepared.sources.matches(&job.snapshot)
+    }) {
         // Drop the old cache before any new media admission, preserving the
         // aggregate limit across revision/session changes as well as seeks.
         *retained = None;
-        let plan =
-            Arc::new(RenderPlan::compile(&job.snapshot.document).map_err(|e| e.to_string())?);
-        let end = plan.audio_duration().map_err(|e| e.to_string())?;
+        let document = job.target.document(&job.snapshot)?;
+        let plan = Arc::new(RenderPlan::compile(&document).map_err(|e| e.to_string())?);
+        let end = job
+            .target
+            .effective_end(plan.audio_duration().map_err(|e| e.to_string())?)?;
         let sources = Sources::new(job.snapshot.clone());
         // Canonical Preserve has an explicit full-input limit (~21.8 s at 48 kHz),
         // 128 MiB stereo stage residency and 64 stages. Exceeding it is an error.
@@ -106,39 +109,74 @@ fn prepare(shared: &Shared, job: &Job, retained: &mut Option<Prepared>) -> Resul
             StageAudio::with_limits(plan, StageLimits::default()).map_err(|e| e.to_string())?,
         );
         *retained = Some(Prepared {
+            target: job.target.clone(),
             sources,
             audio,
             end,
         });
     }
     let prepared = retained.as_mut().ok_or("preparation cache is absent")?;
-    let end = prepared.end;
-    if job.start.0 > end.0 {
-        return Err("playback start is past the sequence end".into());
-    }
+    let window = job
+        .window
+        .unwrap_or(Window::new(AudioSample(0), prepared.end, false).map_err(|e| e.to_string())?);
+    window.validate(prepared.end, job.start)?;
     let mut cursor = job.start;
     loop {
         if !wait_slot(shared, job) {
             return Ok(());
         }
         let start = cursor;
-        let remaining = usize::try_from((end.0 - cursor.0).min(BATCH_FRAMES as i64))
+        let deadline = Instant::now() + Duration::from_secs(60);
+        let mut samples = Vec::new();
+        while samples.len() < BATCH_FRAMES {
+            if job.cancelled.load(Ordering::Acquire) {
+                return Ok(());
+            }
+            let period = window.end().0 - window.start().0;
+            if window.looping() && period <= samples.len() as i64 {
+                // A complete, verified lap is already in this batch. Reuse it
+                // within the bounded output buffer, including a partial first
+                // lap after resume. Tiny loops must not turn one batch into
+                // thousands of repeated provenance queries and allocations.
+                let period = usize::try_from(period).map_err(|e| e.to_string())?;
+                let from = samples.len() % period;
+                let count = (BATCH_FRAMES - samples.len()).min(samples.len() - from);
+                cursor.0 = cursor
+                    .0
+                    .checked_add(count as i64)
+                    .ok_or("playback sample overflow")?;
+                samples.reserve_exact(count);
+                samples.extend_from_within(from..from + count);
+                continue;
+            }
+            let canonical = window
+                .sample(cursor)
+                .ok_or("playback delivery sample is out of range")?;
+            let remaining = usize::try_from(
+                (window.end().0 - canonical.0).min((BATCH_FRAMES - samples.len()) as i64),
+            )
             .map_err(|e| e.to_string())?;
-        let mut samples = if remaining > 0 {
+            if remaining == 0 {
+                break;
+            }
             let count = u32::try_from(remaining).map_err(|e| e.to_string())?;
+            // Each read ends at a content seam. The shared reader still sees
+            // the full plan and retains limiter/stage context across every lap.
             let block = prepared
                 .audio
                 .read(
                     &mut prepared.sources,
-                    cursor,
+                    canonical,
                     count,
-                    Duration::from_secs(60),
+                    deadline
+                        .checked_duration_since(Instant::now())
+                        .ok_or("audition batch preparation timed out")?,
                     &job.cancelled,
                 )
                 .map_err(|e| e.to_string())?;
             if block.project_id != *job.snapshot.document.project_id()
                 || block.revision_id != *job.snapshot.document.revision_id()
-                || block.start != cursor
+                || block.start != canonical
                 || block.samples.len() != count as usize
             {
                 return Err("canonical audio returned a foreign or incomplete block".into());
@@ -147,10 +185,13 @@ fn prepare(shared: &Shared, job: &Job, retained: &mut Option<Prepared>) -> Resul
                 .0
                 .checked_add(i64::from(count))
                 .ok_or("playback sample overflow")?;
-            block.samples
-        } else {
-            Vec::new()
-        };
+            if samples.is_empty() {
+                samples = block.samples;
+            } else {
+                samples.reserve_exact(block.samples.len());
+                samples.extend(block.samples);
+            }
+        }
         for sample in &mut samples {
             for value in sample {
                 *value *= job.gain;
@@ -161,14 +202,14 @@ fn prepare(shared: &Shared, job: &Job, retained: &mut Option<Prepared>) -> Resul
                 }
             }
         }
-        let eos = cursor == end;
+        let eos = !window.looping() && cursor == window.end();
         publish(
             shared,
             job,
             Reply::Batch(Batch {
                 epoch: job.epoch,
                 start,
-                end,
+                end: window.delivery_end(),
                 samples,
                 eos,
             }),

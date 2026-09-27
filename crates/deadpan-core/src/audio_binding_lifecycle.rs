@@ -5,10 +5,10 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use crate::{
     AudioBindingState, AudioBirthClause, AudioBirthSurvivors, AudioClockRoot,
-    AudioPlacementTemplate, AudioReferenceClock, AudioRepeatArgument, AudioRepeatValue,
-    AudioTimingId, DocumentError, DocumentErrorCode, FrozenAudioKind, FrozenAudioLayout,
-    MAX_AUDIO_BINDING_ENTRIES, MAX_DOCUMENT_DEPTH, MAX_DOCUMENT_NODES, NodeId, NodeKind,
-    OwnedAudioBinding, PitchPolicy, ProjectDocument,
+    AudioPlacementTemplate, AudioRecipeKind, AudioReferenceClock, AudioRepeatArgument,
+    AudioRepeatValue, AudioTimingId, DocumentError, DocumentErrorCode, FrozenAudioKind,
+    FrozenAudioLayout, MAX_AUDIO_BINDING_ENTRIES, MAX_DOCUMENT_DEPTH, MAX_DOCUMENT_NODES, NodeId,
+    NodeKind, OwnedAudioBinding, PitchPolicy, ProjectDocument,
 };
 
 /// Capture the current sampling lattice of every previously unbound physical
@@ -20,8 +20,7 @@ use crate::{
 /// pure operation neither authors a command nor changes its input. When every
 /// physical node is already bound, it returns the existing state without using
 /// the supplied identity or retaining another timing layout.
-/// Nonempty Repeat gaps are rejected because embedded gap recipes do not yet
-/// have representable binding ownership.
+/// Configured positive Repeat gaps are captured even before any play renders one.
 pub fn capture_unbound_audio_bindings(
     document: &ProjectDocument,
     timing: AudioTimingId,
@@ -38,11 +37,39 @@ pub(crate) fn capture_for_insertion(
     capture(document, timing, true)
 }
 
+/// Composite insertion moves every physical recipe in the selected root
+/// suffix, including recipes whose sampling lattice was captured by an older
+/// edit. These current placements are separate from that retained lattice.
+#[derive(Debug)]
+pub(crate) struct CompositeInsertionCapture {
+    pub(crate) state: AudioBindingState,
+    pub(crate) phase_only_layout: Option<FrozenAudioLayout>,
+    pub(crate) node_placements: BTreeMap<NodeId, AudioPlacementTemplate>,
+    pub(crate) gap_placements: BTreeMap<NodeId, AudioPlacementTemplate>,
+}
+
+pub(crate) fn capture_for_composite_insertion(
+    document: &ProjectDocument,
+    timing: AudioTimingId,
+) -> Result<CompositeInsertionCapture, DocumentError> {
+    capture_with_placements(document, timing, true, true)
+}
+
 fn capture(
     document: &ProjectDocument,
     timing: AudioTimingId,
     retain_timing: bool,
 ) -> Result<(AudioBindingState, Option<FrozenAudioLayout>), DocumentError> {
+    let capture = capture_with_placements(document, timing, retain_timing, false)?;
+    Ok((capture.state, capture.phase_only_layout))
+}
+
+fn capture_with_placements(
+    document: &ProjectDocument,
+    timing: AudioTimingId,
+    retain_timing: bool,
+    collect_root_placements: bool,
+) -> Result<CompositeInsertionCapture, DocumentError> {
     document.validate()?;
     let mut capture = Capture {
         document,
@@ -51,25 +78,29 @@ fn capture(
         arguments: Vec::new(),
         births: Vec::new(),
         bindings: BTreeMap::new(),
+        gap_bindings: BTreeMap::new(),
+        collect_root_placements,
+        node_placements: BTreeMap::new(),
+        gap_placements: BTreeMap::new(),
         entries: 0,
         visited: 0,
     };
-    for binding in document.audio_bindings().bindings().values() {
-        for template in std::iter::once(&binding.lattice).chain(
-            binding
-                .resume
-                .iter()
-                .flat_map(|resume| resume.phase.terms.iter().map(|term| &term.placement)),
-        ) {
-            charge(
-                &mut capture.entries,
-                1 + template.arguments.len() + template.births.len(),
-            )?;
+    for (_, _, binding) in document.audio_bindings().owners() {
+        for template in binding.placements() {
+            charge(&mut capture.entries, template.entry_count())?;
         }
     }
     capture.walk()?;
-    if capture.bindings.is_empty() && (!retain_timing || document.audio_bindings().is_empty()) {
-        return Ok((document.audio_bindings().clone(), None));
+    if capture.bindings.is_empty()
+        && capture.gap_bindings.is_empty()
+        && (!retain_timing || document.audio_bindings().is_empty())
+    {
+        return Ok(CompositeInsertionCapture {
+            state: document.audio_bindings().clone(),
+            phase_only_layout: None,
+            node_placements: capture.node_placements,
+            gap_placements: capture.gap_placements,
+        });
     }
     if document.audio_bindings().timings().contains_key(&timing) {
         return Err(DocumentError::new(
@@ -102,18 +133,32 @@ fn capture(
     }
     let layout = FrozenAudioLayout::capture(document)?;
     let bindings = capture.bindings;
+    let gap_bindings = capture.gap_bindings;
+    let node_placements = capture.node_placements;
+    let gap_placements = capture.gap_placements;
     let mut result = document.audio_bindings().clone();
-    if bindings.is_empty() {
+    if bindings.is_empty() && gap_bindings.is_empty() {
         // A phase-only layout has no reference yet. Keep it outside the valid
         // state through intermediate Split validation; insertion installs it
         // only while composing resume terms, then prunes any unused table.
-        return Ok((result, Some(layout)));
+        return Ok(CompositeInsertionCapture {
+            state: result,
+            phase_only_layout: Some(layout),
+            node_placements,
+            gap_placements,
+        });
     }
     result.timings.insert(timing, layout);
     result.bindings.extend(bindings);
+    result.gap_bindings.extend(gap_bindings);
     result.validate_for(document)?;
     result.to_json()?;
-    Ok((result, None))
+    Ok(CompositeInsertionCapture {
+        state: result,
+        phase_only_layout: None,
+        node_placements,
+        gap_placements,
+    })
 }
 
 struct Capture<'a> {
@@ -123,6 +168,10 @@ struct Capture<'a> {
     arguments: Vec<AudioRepeatArgument>,
     births: Vec<AudioBirthClause>,
     bindings: BTreeMap<NodeId, OwnedAudioBinding>,
+    gap_bindings: BTreeMap<NodeId, OwnedAudioBinding>,
+    collect_root_placements: bool,
+    node_placements: BTreeMap<NodeId, AudioPlacementTemplate>,
+    gap_placements: BTreeMap<NodeId, AudioPlacementTemplate>,
     entries: usize,
     visited: usize,
 }
@@ -219,12 +268,19 @@ impl Capture<'_> {
                         ),
                         NodeKind::Repeat { child, gap, .. } => {
                             if gap.as_ref().is_some_and(|gap| gap.duration.frames() > 0) {
-                                return Err(DocumentError::new(
-                                    DocumentErrorCode::InvalidTree,
-                                    "audio binding capture does not support Repeat gap binding ownership",
-                                ));
+                                self.capture_recipe(id, AudioRecipeKind::RepeatGap)?;
                             }
                             if let Some(overrides) = document.overrides().get(id) {
+                                pending.extend(overrides.iter().rev().map(|(iteration, child)| {
+                                    CaptureStep::RepeatBranch {
+                                        repeat: id,
+                                        child,
+                                        iteration: Some(iteration),
+                                        depth: depth + 1,
+                                    }
+                                }));
+                            }
+                            if let Some(overrides) = document.gap_overrides().get(id) {
                                 pending.extend(overrides.iter().rev().map(|(iteration, child)| {
                                     CaptureStep::RepeatBranch {
                                         repeat: id,
@@ -276,30 +332,73 @@ impl Capture<'_> {
         self.visited += 1;
         let document = self.document;
         let node = &document.nodes()[id];
-        if (preserve || matches!(node.kind, NodeKind::Source { .. } | NodeKind::Hold { .. }))
-            && !document.audio_bindings().bindings().contains_key(id)
-        {
-            charge(
-                &mut self.entries,
-                1 + self.arguments.len() + self.births.len(),
-            )?;
-            self.bindings.insert(
-                id.clone(),
-                OwnedAudioBinding {
-                    lattice: AudioPlacementTemplate {
-                        reference: AudioReferenceClock {
-                            timing: self.timing.clone(),
-                            root: self.clock.clone(),
-                            physical: id.clone(),
-                        },
-                        arguments: self.arguments.clone(),
-                        births: self.births.clone(),
-                    },
-                    resume: None,
-                },
-            );
+        if preserve || matches!(node.kind, NodeKind::Source { .. } | NodeKind::Hold { .. }) {
+            self.capture_recipe(id, AudioRecipeKind::Node)?;
         }
         Ok(())
+    }
+
+    fn capture_recipe(
+        &mut self,
+        id: &NodeId,
+        recipe: AudioRecipeKind,
+    ) -> Result<(), DocumentError> {
+        let existing = match recipe {
+            AudioRecipeKind::Node => self.document.audio_bindings().bindings(),
+            AudioRecipeKind::RepeatGap => self.document.audio_bindings().gap_bindings(),
+        };
+        let unbound = !existing.contains_key(id);
+        let current =
+            self.collect_root_placements && self.clock == AudioClockRoot::ProjectRootRoundEven;
+        // Charge both retained copies before cloning any lexical path. A
+        // Preserve output moves on its enclosing clock; its intrinsic recipes
+        // retain their input clock and never receive root-movement placements.
+        let entries = 1
+            + self.arguments.len()
+            + self.births.len()
+            + usize::from(recipe == AudioRecipeKind::RepeatGap);
+        if unbound {
+            charge(&mut self.entries, entries)?;
+        }
+        if current {
+            charge(&mut self.entries, entries)?;
+        }
+        if unbound {
+            let binding = OwnedAudioBinding {
+                lattice: self.placement(id, recipe),
+                resume: None,
+                reanchors: Vec::new(),
+            };
+            match recipe {
+                AudioRecipeKind::Node => &mut self.bindings,
+                AudioRecipeKind::RepeatGap => &mut self.gap_bindings,
+            }
+            .insert(id.clone(), binding);
+        }
+        if current {
+            let placement = self.placement(id, recipe);
+            match recipe {
+                AudioRecipeKind::Node => &mut self.node_placements,
+                AudioRecipeKind::RepeatGap => &mut self.gap_placements,
+            }
+            .insert(id.clone(), placement);
+        }
+        Ok(())
+    }
+
+    fn placement(&self, id: &NodeId, recipe: AudioRecipeKind) -> AudioPlacementTemplate {
+        AudioPlacementTemplate {
+            reference: AudioReferenceClock {
+                timing: self.timing.clone(),
+                root: self.clock.clone(),
+                physical: id.clone(),
+                recipe,
+            },
+            gap_after: (recipe == AudioRecipeKind::RepeatGap)
+                .then(|| AudioRepeatValue::Live { repeat: id.clone() }),
+            arguments: self.arguments.clone(),
+            births: self.births.clone(),
+        }
     }
 }
 
@@ -321,27 +420,37 @@ fn capture_limit() -> DocumentError {
 /// Transparent Split and occurrence isolation already copy complete raw owned
 /// subtrees. Carry their clock expressions through the same physical ID map.
 pub(crate) fn inherit(document: &mut ProjectDocument, mapping: &BTreeMap<NodeId, NodeId>) {
+    inherit_map(&mut document.audio_bindings.bindings, mapping);
+    inherit_map(&mut document.audio_bindings.gap_bindings, mapping);
+}
+
+fn inherit_map(
+    bindings: &mut BTreeMap<NodeId, OwnedAudioBinding>,
+    mapping: &BTreeMap<NodeId, NodeId>,
+) {
     let copied: Vec<_> = mapping
         .iter()
         .filter_map(|(old, new)| {
-            document.audio_bindings.bindings.get(old).map(|binding| {
+            bindings.get(old).map(|binding| {
                 let mut binding = binding.clone();
-                remap_template(&mut binding.lattice, mapping);
-                if let Some(resume) = &mut binding.resume {
-                    for term in &mut resume.phase.terms {
-                        remap_template(&mut term.placement, mapping);
-                    }
+                for template in binding.placements_mut() {
+                    remap_template(template, mapping);
                 }
                 (new.clone(), binding)
             })
         })
         .collect();
-    document.audio_bindings.bindings.extend(copied);
+    bindings.extend(copied);
 }
 
 fn remap_template(template: &mut AudioPlacementTemplate, mapping: &BTreeMap<NodeId, NodeId>) {
-    for argument in &mut template.arguments {
-        if let crate::AudioRepeatValue::Live { repeat } = &mut argument.value
+    for value in template
+        .arguments
+        .iter_mut()
+        .map(|argument| &mut argument.value)
+        .chain(template.gap_after.iter_mut())
+    {
+        if let crate::AudioRepeatValue::Live { repeat } = value
             && let Some(mapped) = mapping.get(repeat)
         {
             *repeat = mapped.clone();
@@ -361,13 +470,13 @@ pub(crate) fn prune(document: &mut ProjectDocument) {
         .audio_bindings
         .bindings
         .retain(|owner, _| document.nodes.contains_key(owner));
+    document.audio_bindings.gap_bindings.retain(|owner, _| {
+        matches!(document.nodes.get(owner).map(|node| &node.kind), Some(NodeKind::Repeat { gap: Some(gap), .. }) if gap.duration != crate::FrameDuration::ZERO)
+    });
     let mut retained = BTreeSet::new();
-    for binding in document.audio_bindings.bindings.values() {
-        retained.insert(binding.lattice.reference.timing.clone());
-        if let Some(resume) = &binding.resume {
-            for term in &resume.phase.terms {
-                retained.insert(term.placement.reference.timing.clone());
-            }
+    for (_, _, binding) in document.audio_bindings.owners() {
+        for template in binding.placements() {
+            retained.insert(template.reference.timing.clone());
         }
     }
     document
@@ -423,6 +532,7 @@ mod tests {
             BeatNode::hold(
                 "Pause",
                 HoldRecipe {
+                    picture_context: None,
                     duration: FrameDuration::new(2).unwrap(),
                     video: HoldVideo::Background,
                     audio: HoldAudio::Silence,
@@ -435,7 +545,9 @@ mod tests {
             ordinal: 0,
         };
         let template = AudioPlacementTemplate {
+            gap_after: None,
             reference: AudioReferenceClock {
+                recipe: crate::AudioRecipeKind::Node,
                 timing: timing.clone(),
                 root: AudioClockRoot::ProjectRootRoundEven,
                 physical: node("hold"),
@@ -459,6 +571,7 @@ mod tests {
             BTreeMap::from([(
                 node("hold"),
                 OwnedAudioBinding {
+                    reanchors: Vec::new(),
                     lattice: template.clone(),
                     resume: Some(AudioResume {
                         local_boundary: ExactRatio::ONE,
@@ -497,9 +610,351 @@ mod tests {
         (transaction.forward.apply(document).unwrap(), transaction)
     }
 
+    fn capture_timing(ordinal: u32) -> AudioTimingId {
+        AudioTimingId {
+            allocation: revision("composite-capture"),
+            ordinal,
+        }
+    }
+
+    fn capture_hold(duration: i64) -> BeatNode {
+        BeatNode::hold("hold", capture_gap(duration))
+    }
+
+    fn capture_gap(duration: i64) -> HoldRecipe {
+        HoldRecipe {
+            picture_context: None,
+            duration: FrameDuration::new(duration).unwrap(),
+            video: HoldVideo::Background,
+            audio: HoldAudio::Silence,
+        }
+    }
+
+    fn capture_repeat(child: &str, count: u32, gap_duration: i64) -> BeatNode {
+        BeatNode {
+            framing: None,
+            label: "repeat".into(),
+            audio_edges: Default::default(),
+            kind: NodeKind::Repeat {
+                child: node(child),
+                iterations: IterationOrder::new(revision("plays"), count).unwrap(),
+                gap: (gap_duration > 0).then(|| capture_gap(gap_duration)),
+            },
+        }
+    }
+
+    fn capture_document(
+        children: &[&str],
+        nodes: impl IntoIterator<Item = (NodeId, BeatNode)>,
+    ) -> ProjectDocument {
+        let mut document = ProjectDocument::new(
+            ProjectId::new("composite-capture").unwrap(),
+            revision("initial"),
+            PresentationBasis {
+                width: 16,
+                height: 16,
+                frame_rate: FrameRate::new(30_000, 1001).unwrap(),
+                color_policy: ColorPolicy::SdrRec709,
+            },
+            node("root"),
+        )
+        .unwrap();
+        document.nodes.extend(nodes);
+        document.nodes.insert(
+            node("root"),
+            BeatNode::sequence("root", children.iter().map(|name| node(name)).collect()),
+        );
+        document
+    }
+
+    #[test]
+    fn composite_capture_refreshes_bound_placements_without_changing_owned_phase() {
+        let mut before = fixture();
+        let binding = before
+            .audio_bindings
+            .bindings
+            .get_mut(&node("hold"))
+            .unwrap();
+        binding.reanchors.push(AudioReanchorStep {
+            placement: binding.lattice.clone(),
+            window: None,
+        });
+        let (before, _) = edit(
+            &before,
+            "reordered",
+            Command::MovePlays {
+                node: node("repeat"),
+                start: 1,
+                end: 2,
+                destination: 0,
+            },
+        );
+        let original = before.to_json().unwrap();
+        let current = capture_for_composite_insertion(&before, capture_timing(0)).unwrap();
+        assert_eq!(current.state, before.audio_bindings);
+        assert_eq!(current.node_placements.len(), 1);
+        assert!(current.gap_placements.is_empty());
+        let placement = &current.node_placements[&node("hold")];
+        assert_eq!(placement.reference.timing, capture_timing(0));
+        assert_eq!(placement.reference.physical, node("hold"));
+        let layout = current.phase_only_layout.as_ref().unwrap();
+        assert_eq!(layout, &FrozenAudioLayout::capture(&before).unwrap());
+        placement.validate(layout).unwrap();
+        current.state.validate_for(&before).unwrap();
+        let old_insertion = capture_for_insertion(&before, capture_timing(0)).unwrap();
+        assert_eq!(old_insertion, (current.state, current.phase_only_layout));
+        let retained_timing = before.audio_bindings.timings.keys().next().unwrap().clone();
+        assert_eq!(
+            capture_unbound_audio_bindings(&before, retained_timing.clone()).unwrap(),
+            before.audio_bindings
+        );
+        assert_eq!(
+            capture_for_composite_insertion(&before, retained_timing)
+                .unwrap_err()
+                .code,
+            DocumentErrorCode::InvalidTree
+        );
+        assert_eq!(before.to_json().unwrap(), original);
+    }
+
+    #[test]
+    fn composite_capture_keeps_compact_default_play_and_gap_branch_scopes() {
+        let mut before = capture_document(
+            &["repeat"],
+            [
+                (node("repeat"), capture_repeat("default", 1_000_000_000, 2)),
+                (
+                    node("default"),
+                    BeatNode::sequence("default", vec![node("hold"), node("nested")]),
+                ),
+                (node("hold"), capture_hold(2)),
+                (node("nested"), capture_repeat("nested_hold", 1, 1)),
+                (node("nested_hold"), capture_hold(3)),
+                (node("override"), capture_repeat("override_hold", 2, 2)),
+                (node("override_hold"), capture_hold(4)),
+                (node("gap_override"), capture_repeat("gap_hold", 1, 1)),
+                (node("gap_hold"), capture_hold(5)),
+            ],
+        );
+        let play = |ordinal| IterationId {
+            allocation: revision("plays"),
+            ordinal,
+        };
+        before.overrides.insert(
+            node("repeat"),
+            PlayOverrides::try_from(vec![PlayOverride {
+                iteration: play(4),
+                root: node("override"),
+            }])
+            .unwrap(),
+        );
+        before.gap_overrides.insert(
+            node("repeat"),
+            PlayOverrides::try_from(vec![PlayOverride {
+                iteration: play(3),
+                root: node("gap_override"),
+            }])
+            .unwrap(),
+        );
+        let fresh = capture_for_composite_insertion(&before, capture_timing(0)).unwrap();
+        assert_eq!(
+            fresh.state,
+            capture_unbound_audio_bindings(&before, capture_timing(0)).unwrap()
+        );
+        assert!(fresh.phase_only_layout.is_none());
+        assert_eq!(fresh.node_placements.len(), 4);
+        assert_eq!(fresh.gap_placements.len(), 4);
+        let layout = &fresh.state.timings[&capture_timing(0)];
+        for placement in fresh
+            .node_placements
+            .values()
+            .chain(fresh.gap_placements.values())
+        {
+            placement.validate(layout).unwrap();
+        }
+        let nested = &fresh.node_placements[&node("nested_hold")];
+        assert_eq!(nested.arguments.len(), 2);
+        assert_eq!(nested.births.len(), 2);
+        assert_eq!(nested.births[0].definition_root, node("default"));
+        assert_eq!(nested.births[1].definition_root, node("nested_hold"));
+        for (owner, ordinal, branch) in [
+            ("override_hold", 4, "override"),
+            ("gap_hold", 3, "gap_override"),
+        ] {
+            let placement = &fresh.node_placements[&node(owner)];
+            assert_eq!(placement.arguments.len(), 2);
+            assert_eq!(placement.arguments[0].reference_repeat, node("repeat"));
+            assert_eq!(
+                placement.arguments[0].value,
+                AudioRepeatValue::Captured {
+                    iteration: play(ordinal)
+                }
+            );
+            assert_eq!(placement.births.len(), 1);
+            assert_eq!(placement.births[0].repeat, node(branch));
+        }
+        for owner in ["repeat", "nested", "override", "gap_override"] {
+            let placement = &fresh.gap_placements[&node(owner)];
+            assert_eq!(placement.reference.recipe, AudioRecipeKind::RepeatGap);
+            assert_eq!(
+                placement.gap_after,
+                Some(AudioRepeatValue::Live {
+                    repeat: node(owner)
+                })
+            );
+        }
+        before.audio_bindings = fresh.state;
+        let bound = capture_for_composite_insertion(&before, capture_timing(1)).unwrap();
+        assert_eq!(bound.state, before.audio_bindings);
+        assert!(bound.phase_only_layout.is_some());
+        for (owner, placement) in &bound.gap_placements {
+            assert_eq!(placement.reference.timing, capture_timing(1));
+            assert_eq!(placement.arguments, fresh.gap_placements[owner].arguments);
+            assert_eq!(placement.births, fresh.gap_placements[owner].births);
+        }
+    }
+
+    #[test]
+    fn composite_capture_moves_preserve_output_but_keeps_intrinsic_recipes_on_input_clock() {
+        let preserve = |child, duration, start, end| BeatNode {
+            framing: None,
+            label: "preserve".into(),
+            audio_edges: Default::default(),
+            kind: NodeKind::Retime {
+                child: node(child),
+                duration: FrameDuration::new(duration).unwrap(),
+                mapping: FrameRange::new(ProjectFrame(start), ProjectFrame(end)).unwrap(),
+                pitch: PitchPolicy::Preserve,
+                purpose: RetimePurpose::Edit,
+            },
+        };
+        let mut before = capture_document(
+            &["outside", "tail"],
+            [
+                (node("outside"), capture_repeat("outer", 2, 1)),
+                (node("outer"), preserve("input", 12, 1, 7)),
+                (
+                    node("input"),
+                    BeatNode::sequence("input", vec![node("x"), node("inside")]),
+                ),
+                (node("x"), capture_hold(2)),
+                (node("inside"), capture_repeat("inner", 2, 1)),
+                (node("inner"), preserve("unity", 3, 1, 5)),
+                (node("unity"), preserve("a", 6, 0, 6)),
+                (node("a"), capture_hold(6)),
+                (node("tail"), capture_hold(1)),
+            ],
+        );
+        let fresh = capture_for_composite_insertion(&before, capture_timing(0)).unwrap();
+        assert_eq!(
+            fresh.node_placements.keys().cloned().collect::<Vec<_>>(),
+            [node("outer"), node("tail")]
+        );
+        assert_eq!(
+            fresh.gap_placements.keys().cloned().collect::<Vec<_>>(),
+            [node("outside")]
+        );
+        assert_eq!(fresh.state.bindings.len(), 5);
+        assert_eq!(fresh.state.gap_bindings.len(), 2);
+        assert_eq!(
+            fresh.state.gap_bindings[&node("inside")]
+                .lattice
+                .reference
+                .root,
+            AudioClockRoot::PreserveInputPointCeil {
+                stage: node("outer")
+            }
+        );
+        assert_eq!(
+            fresh.state.bindings[&node("a")].lattice.reference.root,
+            AudioClockRoot::PreserveInputPointCeil {
+                stage: node("inner")
+            }
+        );
+        assert_eq!(
+            fresh.state,
+            capture_for_insertion(&before, capture_timing(0)).unwrap().0
+        );
+        before.audio_bindings = fresh.state;
+        let bound = capture_for_composite_insertion(&before, capture_timing(1)).unwrap();
+        assert_eq!(bound.state, before.audio_bindings);
+        assert_eq!(bound.node_placements.len(), 2);
+        assert_eq!(bound.gap_placements.len(), 1);
+        before.audio_bindings.bindings.remove(&node("a"));
+        let mixed = capture_for_composite_insertion(&before, capture_timing(2)).unwrap();
+        assert!(mixed.phase_only_layout.is_none());
+        assert_eq!(mixed.state.timings.len(), 2);
+        assert_eq!(
+            mixed.state.bindings[&node("outer")],
+            before.audio_bindings.bindings[&node("outer")]
+        );
+        let new_intrinsic = &mixed.state.bindings[&node("a")].lattice;
+        assert_eq!(new_intrinsic.reference.timing, capture_timing(2));
+        assert_eq!(
+            new_intrinsic.reference.root,
+            AudioClockRoot::PreserveInputPointCeil {
+                stage: node("inner")
+            }
+        );
+        assert!(!mixed.node_placements.contains_key(&node("a")));
+        mixed.state.validate_for(&before).unwrap();
+    }
+
+    #[test]
+    fn composite_capture_rejects_aggregate_lexical_expansion_without_mutation() {
+        let mut nodes = BTreeMap::new();
+        for index in 0..100 {
+            let child = if index == 99 {
+                "leaves".into()
+            } else {
+                format!("r{}", index + 1)
+            };
+            nodes.insert(node(&format!("r{index}")), capture_repeat(&child, 1, 0));
+        }
+        let leaves: Vec<_> = (0..300)
+            .map(|index| node(&format!("leaf{index}")))
+            .collect();
+        for leaf in &leaves {
+            nodes.insert(leaf.clone(), capture_hold(1));
+        }
+        nodes.insert(node("leaves"), BeatNode::sequence("leaves", leaves));
+        let before = capture_document(&["r0"], nodes);
+        let original = before.to_json().unwrap();
+        let error = capture_for_composite_insertion(&before, capture_timing(0)).unwrap_err();
+        assert_eq!(error.code, DocumentErrorCode::LimitExceeded);
+        assert!(error.message.contains("capture complexity"));
+        assert_eq!(before.to_json().unwrap(), original);
+    }
+
     #[test]
     fn split_copies_live_scope_and_phase_arguments_but_keeps_historical_aliases() {
-        let before = fixture();
+        let mut before = fixture();
+        let mut step = before.audio_bindings.bindings[&node("hold")]
+            .lattice
+            .clone();
+        let original = before.audio_bindings.timings[&step.reference.timing].clone();
+        step.reference.timing = AudioTimingId {
+            allocation: revision("step_only"),
+            ordinal: 0,
+        };
+        before
+            .audio_bindings
+            .timings
+            .insert(step.reference.timing.clone(), original);
+        before
+            .audio_bindings
+            .bindings
+            .get_mut(&node("hold"))
+            .unwrap()
+            .reanchors
+            .push(AudioReanchorStep {
+                placement: step,
+                window: None,
+            });
+        // Pruning must retain a clock referenced only by a chronological step.
+        prune(&mut before);
+        assert_eq!(before.audio_bindings.timings.len(), 2);
+        before.validate().unwrap();
         let (after, transaction) = edit(
             &before,
             "split",
@@ -522,6 +977,7 @@ mod tests {
         for template in [
             &copied.lattice,
             &copied.resume.as_ref().unwrap().phase.terms[0].placement,
+            &copied.reanchors[0].placement,
         ] {
             assert_eq!(template.reference.physical, node("hold"));
             assert_eq!(template.arguments[0].reference_repeat, node("repeat"));
@@ -534,6 +990,15 @@ mod tests {
             assert_eq!(template.births[0].repeat, node("copied_repeat"));
             assert_eq!(template.births[0].definition_root, node("hold"));
         }
+        let current = capture_for_composite_insertion(&after, capture_timing(0)).unwrap();
+        assert_eq!(current.state, after.audio_bindings);
+        let placement = &current.node_placements[&node("copied_hold")];
+        assert_eq!(placement.reference.physical, node("copied_hold"));
+        assert_eq!(
+            placement.arguments[0].reference_repeat,
+            node("copied_repeat")
+        );
+        assert_eq!(placement.births[0].definition_root, node("copied_hold"));
         assert_eq!(transaction.inverse.apply(&after).unwrap(), before);
     }
 
@@ -628,8 +1093,11 @@ mod tests {
         before.audio_bindings.bindings.insert(
             node("other"),
             OwnedAudioBinding {
+                reanchors: Vec::new(),
                 lattice: AudioPlacementTemplate {
+                    gap_after: None,
                     reference: AudioReferenceClock {
+                        recipe: crate::AudioRecipeKind::Node,
                         timing: second.clone(),
                         root: AudioClockRoot::DefinitionPointCeil { root: node("hold") },
                         physical: node("hold"),

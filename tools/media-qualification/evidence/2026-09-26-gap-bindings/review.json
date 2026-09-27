@@ -1,0 +1,36 @@
+{
+  "workflow": "check",
+  "base": "origin/main",
+  "subject": "Core22/database28 authored Repeat-gap audio bindings and shared plan/PCM/history path, with previous dirty increments as baseline",
+  "excluded": "Concurrent native UI harness and shortcut changes, plus prior captured-framing, Original-moment, gap-clock and compact-reanchor increments",
+  "reviewers": [
+    {
+      "agent": "gap_general_review",
+      "scope": "General correctness, errors, admission, compactness and tests",
+      "findings": [],
+      "verdict": "No findings. Gap timing and root/point/physical-domain dispatch are consistent with the documented contract."
+    },
+    {
+      "agent": "gap_timing_review",
+      "scope": "Exact timing, support, birth scopes, plan dispatch and independent decoded-PCM oracle",
+      "findings": [],
+      "verdict": "No findings. Canonical gap zero maps to the consuming grid boundary; exact 2/3 sample step remains across root and point clocks."
+    },
+    {
+      "agent": "gap_migration_review",
+      "scope": "Closed legacy grammar, complete chronological replay and persisted identity",
+      "findings": [],
+      "verdict": "No findings. The alleged InsertTime-after-positive-gap migration mismatch is unreachable in valid v27 history."
+    }
+  ],
+  "applied_findings": [],
+  "dismissed_findings": [
+    {
+      "claim": "Modern replay invents gap bindings for legacy InsertTime after an already configured positive gap",
+      "reason": "The old Capture::walk rejected every positive configured gap before InsertTime could commit, including one-play gaps and bound children. The reviewer withdrew this finding after checking the baseline source.",
+      "independent_check": "Actual preserved core21/db27 CLI rejected terminal InsertTime for both 3-play and 1-play configured gaps and left each document/revision unchanged; see old-binary/gap-refusal-commands.json."
+    }
+  ],
+  "oracle_audit": "For explicit origin -1/3 and scale 3/2, a bound canonical gap has retained reference zero at its consuming allocated anchor. Root start -534 and PointCeil start -762 at grid origin 1/7 use phase zero and step 2/3. Unbound fractional start phase does not apply.",
+  "remaining_findings": []
+}

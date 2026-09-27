@@ -46,6 +46,7 @@ external media contributes sound only.
 | Key | Action |
 |---|---|
 | `,h` | Insert 0.5 seconds of freeze + silence. |
+| `,i` | Reuse the full Original after the selected beat (`:insert`). |
 | `3,h` | Insert 1.5 seconds. |
 | `,a` | Insert same hold and request an AI candidate. |
 | `,z` | 1.35× punch-in. |

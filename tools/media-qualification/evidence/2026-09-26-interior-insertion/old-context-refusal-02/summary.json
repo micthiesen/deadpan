@@ -1,0 +1,65 @@
+{
+  "binary_sha256": "ba8c2c9dd860d0ae8540df6aaa3759d5f0b61e9bbadc87798fbbe2cabd35522a",
+  "core": 24,
+  "database": 30,
+  "refusals": [
+    {
+      "command": [
+        "command",
+        "/tmp/deadpan-interior-splice-20260926/old-context-refusal-02/probe.deadpan",
+        "--json",
+        "/tmp/deadpan-interior-splice-20260926/old-context-refusal-02/old-hold-interior.json"
+      ],
+      "code": 1,
+      "error": {
+        "code": "InvalidCommand",
+        "current_revision": null,
+        "message": "composite suffix insertion requires an existing root Sequence seam",
+        "recovery_backup": null
+      }
+    },
+    {
+      "command": [
+        "command",
+        "/tmp/deadpan-interior-splice-20260926/old-context-refusal-02/probe.deadpan",
+        "--json",
+        "/tmp/deadpan-interior-splice-20260926/old-context-refusal-02/old-source-interior.json"
+      ],
+      "code": 1,
+      "error": {
+        "code": "InvalidCommand",
+        "current_revision": null,
+        "message": "composite suffix insertion requires an existing root Sequence seam",
+        "recovery_backup": null
+      }
+    }
+  ],
+  "unchanged_database_on_each_refusal": true,
+  "validation": {
+    "basis_state": {
+      "geometry_origin": "explicit",
+      "primary": null,
+      "rate_origin": "explicit"
+    },
+    "duration_frames": 93,
+    "mark_count": 0,
+    "node_count": 23,
+    "presentation_basis": {
+      "color_policy": "sdr_rec709",
+      "frame_rate": {
+        "denominator": 1001,
+        "numerator": 30000
+      },
+      "height": 16,
+      "width": 16
+    },
+    "project_id": "d038df46-94c6-4c0a-9d11-038b0e6da220",
+    "protocol": 1,
+    "revision_id": "old-source-prefix",
+    "root": "b5903f58-0249-4a89-8af8-ed3d8a5cfe1f",
+    "valid": true
+  },
+  "commands_sha256": "5b1e2aaeab33132df1314cd51834b1a694e55120c7c2c6658bb4d7370feb000c",
+  "script_sha256": "a75fb26485caf48b1b011d4662de37f39489c1ebcfd258edd8c460fbc122b4d1",
+  "first_probe": "old-context-refusal failed a script assertion expecting exit 2 instead of actual exit 1; no application assertion failed there"
+}

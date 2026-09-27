@@ -1,0 +1,125 @@
+{
+  "protocol": 1,
+  "project_id": "80096a2d-41b8-4f59-839c-f719a027a064",
+  "expected_revision": "ecef8ec5-570d-41ca-9a33-a4e215f554c2",
+  "new_revision": "fixture",
+  "command": {
+    "command": "insert",
+    "parent": "829bdd1f-b6a7-4563-a5f8-3be5fafba3d1",
+    "index": 0,
+    "subtree": {
+      "root": "scope",
+      "nodes": {
+        "scope": {
+          "label": "Group",
+          "kind": {
+            "type": "sequence",
+            "children": [
+              "prefix",
+              "outer",
+              "suffix"
+            ]
+          }
+        },
+        "prefix": {
+          "label": "Pause",
+          "kind": {
+            "type": "hold",
+            "recipe": {
+              "duration": 2,
+              "video": {
+                "type": "background"
+              },
+              "audio": {
+                "type": "silence"
+              }
+            }
+          }
+        },
+        "suffix": {
+          "label": "Pause",
+          "kind": {
+            "type": "hold",
+            "recipe": {
+              "duration": 1,
+              "video": {
+                "type": "background"
+              },
+              "audio": {
+                "type": "silence"
+              }
+            }
+          }
+        },
+        "outer": {
+          "label": "Retime",
+          "kind": {
+            "type": "retime",
+            "child": "repeat",
+            "duration": 7,
+            "mapping": {
+              "start": 0,
+              "end": 14
+            },
+            "pitch": "preserve"
+          }
+        },
+        "repeat": {
+          "label": "Repeat",
+          "kind": {
+            "type": "repeat",
+            "child": "inner",
+            "iterations": {
+              "runs": [
+                {
+                  "allocation": "imported",
+                  "first": 0,
+                  "count": 2
+                }
+              ]
+            },
+            "gap": {
+              "duration": 2,
+              "video": {
+                "type": "background"
+              },
+              "audio": {
+                "type": "silence"
+              }
+            }
+          }
+        },
+        "inner": {
+          "label": "Retime",
+          "kind": {
+            "type": "retime",
+            "child": "leaf",
+            "duration": 6,
+            "mapping": {
+              "start": 1,
+              "end": 10
+            },
+            "pitch": "preserve"
+          }
+        },
+        "leaf": {
+          "label": "Pause",
+          "kind": {
+            "type": "hold",
+            "recipe": {
+              "duration": 10,
+              "video": {
+                "type": "background"
+              },
+              "audio": {
+                "type": "silence"
+              }
+            }
+          }
+        }
+      },
+      "overrides": {},
+      "gap_overrides": {}
+    }
+  }
+}

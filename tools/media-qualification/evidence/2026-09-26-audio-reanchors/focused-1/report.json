@@ -1,0 +1,41 @@
+[
+  {
+    "command": [
+      "cargo",
+      "test",
+      "-p",
+      "deadpan-core",
+      "--lib",
+      "--test",
+      "audio_bindings",
+      "--test",
+      "allocation_projection",
+      "--test",
+      "gap_projection",
+      "--test",
+      "insert_time",
+      "--test",
+      "audio_binding_capture",
+      "--locked"
+    ],
+    "exit_code": 0,
+    "seconds": 64.39251033309847,
+    "log": "0.log"
+  },
+  {
+    "command": [
+      "cargo",
+      "test",
+      "-p",
+      "deadpan-store",
+      "--test",
+      "migration",
+      "--test",
+      "persistence",
+      "--locked"
+    ],
+    "exit_code": 0,
+    "seconds": 129.0944467918016,
+    "log": "1.log"
+  }
+]

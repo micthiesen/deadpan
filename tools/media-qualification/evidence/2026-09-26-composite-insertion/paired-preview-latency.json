@@ -1,0 +1,720 @@
+{
+  "source_report": "/tmp/deadpan-ui-performance-02/report.json",
+  "source_report_sha256": "95a4994a039c79912b16e2f174872507502fd9cf2f6ed0bbf4df42101426079f",
+  "source_binary_sha256": "20aea675e3f60ed915d5bb32dbb539288c5587852a0850de456c5ddb9307cd50",
+  "scope": "Paired samples from the prior host release run; no new runtime or physical-display measurement",
+  "kinds": {
+    "repeat": {
+      "distributions": {
+        "observed_commit_to_picture_ms": {
+          "samples": 40,
+          "p50_ms": 54.046625000000006,
+          "p95_ms": 71.791042,
+          "max_ms": 72.139541
+        },
+        "commit_to_request_ms": {
+          "samples": 40,
+          "p50_ms": 0.04383300000017698,
+          "p95_ms": 0.063083000000006,
+          "max_ms": 0.1330419999994774
+        },
+        "request_to_received_ms": {
+          "samples": 40,
+          "p50_ms": 50.943874999999935,
+          "p95_ms": 67.77383400000053,
+          "max_ms": 68.29166699999996
+        },
+        "received_to_submitted_ms": {
+          "samples": 40,
+          "p50_ms": 1.4735829999999623,
+          "p95_ms": 1.7507500000001528,
+          "max_ms": 2.1219999999998436
+        },
+        "submitted_to_composed_ms": {
+          "samples": 40,
+          "p50_ms": 1.8621669999993173,
+          "p95_ms": 2.4206249999997453,
+          "max_ms": 3.324540999999954
+        }
+      },
+      "paired_samples": [
+        {
+          "ticket": "Ticket { transport: None, source: 12, request: 12 }",
+          "observed_commit_to_picture_ms": 58.423333,
+          "commit_to_request_ms": 0.044458000000076936,
+          "request_to_received_ms": 55.527458000000024,
+          "received_to_submitted_ms": 1.3869590000001608,
+          "submitted_to_composed_ms": 1.4644579999999223
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 14, request: 14 }",
+          "observed_commit_to_picture_ms": 49.753875,
+          "commit_to_request_ms": 0.04229200000008859,
+          "request_to_received_ms": 46.67570799999976,
+          "received_to_submitted_ms": 1.4219170000001213,
+          "submitted_to_composed_ms": 1.6139580000001388
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 16, request: 16 }",
+          "observed_commit_to_picture_ms": 53.687417,
+          "commit_to_request_ms": 0.04600000000004911,
+          "request_to_received_ms": 50.76558399999999,
+          "received_to_submitted_ms": 1.262625000000071,
+          "submitted_to_composed_ms": 1.613207999999986
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 18, request: 18 }",
+          "observed_commit_to_picture_ms": 63.615458,
+          "commit_to_request_ms": 0.03608300000018971,
+          "request_to_received_ms": 60.34295799999995,
+          "received_to_submitted_ms": 1.492542000000185,
+          "submitted_to_composed_ms": 1.743874999999889
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 20, request: 20 }",
+          "observed_commit_to_picture_ms": 68.801667,
+          "commit_to_request_ms": 0.032958000000007814,
+          "request_to_received_ms": 65.205375,
+          "received_to_submitted_ms": 1.5115000000000691,
+          "submitted_to_composed_ms": 2.0518339999998716
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 22, request: 22 }",
+          "observed_commit_to_picture_ms": 70.769042,
+          "commit_to_request_ms": 0.03833400000030451,
+          "request_to_received_ms": 67.18129100000033,
+          "received_to_submitted_ms": 1.461124999999356,
+          "submitted_to_composed_ms": 2.088292000000365
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 24, request: 24 }",
+          "observed_commit_to_picture_ms": 46.300458000000006,
+          "commit_to_request_ms": 0.04383300000017698,
+          "request_to_received_ms": 43.310541999999714,
+          "received_to_submitted_ms": 1.4222909999998592,
+          "submitted_to_composed_ms": 1.5237919999999576
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 26, request: 26 }",
+          "observed_commit_to_picture_ms": 72.139541,
+          "commit_to_request_ms": 0.063083000000006,
+          "request_to_received_ms": 68.29166699999996,
+          "received_to_submitted_ms": 1.6385410000002594,
+          "submitted_to_composed_ms": 2.1462499999997817
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 28, request: 28 }",
+          "observed_commit_to_picture_ms": 70.374042,
+          "commit_to_request_ms": 0.03254200000037599,
+          "request_to_received_ms": 66.7074579999994,
+          "received_to_submitted_ms": 1.5407920000002377,
+          "submitted_to_composed_ms": 2.093249999999898
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 30, request: 30 }",
+          "observed_commit_to_picture_ms": 67.16000000000001,
+          "commit_to_request_ms": 0.052875000000312866,
+          "request_to_received_ms": 63.65320799999972,
+          "received_to_submitted_ms": 1.507125000000542,
+          "submitted_to_composed_ms": 1.946791999999732
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 32, request: 32 }",
+          "observed_commit_to_picture_ms": 33.96475,
+          "commit_to_request_ms": 0.03770899999972244,
+          "request_to_received_ms": 31.06316599999991,
+          "received_to_submitted_ms": 1.378791999999521,
+          "submitted_to_composed_ms": 1.4850830000004862
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 34, request: 34 }",
+          "observed_commit_to_picture_ms": 70.023875,
+          "commit_to_request_ms": 0.038250000000061846,
+          "request_to_received_ms": 67.07266699999991,
+          "received_to_submitted_ms": 1.3798750000000837,
+          "submitted_to_composed_ms": 1.533082999999806
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 36, request: 36 }",
+          "observed_commit_to_picture_ms": 61.818042000000005,
+          "commit_to_request_ms": 0.04212499999994179,
+          "request_to_received_ms": 56.82191699999976,
+          "received_to_submitted_ms": 2.1219999999998436,
+          "submitted_to_composed_ms": 2.8320000000003347
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 38, request: 38 }",
+          "observed_commit_to_picture_ms": 61.338874999999994,
+          "commit_to_request_ms": 0.0437499999998181,
+          "request_to_received_ms": 57.95591599999989,
+          "received_to_submitted_ms": 1.4105420000005324,
+          "submitted_to_composed_ms": 1.9286669999996775
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 40, request: 40 }",
+          "observed_commit_to_picture_ms": 72.020875,
+          "commit_to_request_ms": 0.051750000000083674,
+          "request_to_received_ms": 66.76054199999953,
+          "received_to_submitted_ms": 1.8840420000005906,
+          "submitted_to_composed_ms": 3.324540999999954
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 42, request: 42 }",
+          "observed_commit_to_picture_ms": 36.895624999999995,
+          "commit_to_request_ms": 0.061749999999847205,
+          "request_to_received_ms": 32.6976250000007,
+          "received_to_submitted_ms": 1.7156249999993634,
+          "submitted_to_composed_ms": 2.4206249999997453
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 44, request: 44 }",
+          "observed_commit_to_picture_ms": 25.602667,
+          "commit_to_request_ms": 0.03954200000043784,
+          "request_to_received_ms": 23.039874999999483,
+          "received_to_submitted_ms": 1.097458000000188,
+          "submitted_to_composed_ms": 1.4257920000000013
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 46, request: 46 }",
+          "observed_commit_to_picture_ms": 24.715625000000003,
+          "commit_to_request_ms": 0.05258300000059535,
+          "request_to_received_ms": 21.316625000000386,
+          "received_to_submitted_ms": 1.2128339999999298,
+          "submitted_to_composed_ms": 2.133582999999817
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 48, request: 48 }",
+          "observed_commit_to_picture_ms": 44.33566700000001,
+          "commit_to_request_ms": 0.05179199999929551,
+          "request_to_received_ms": 40.524625000000015,
+          "received_to_submitted_ms": 1.4876249999997526,
+          "submitted_to_composed_ms": 2.2716250000012224
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 50, request: 50 }",
+          "observed_commit_to_picture_ms": 54.046625000000006,
+          "commit_to_request_ms": 0.0253339999999298,
+          "request_to_received_ms": 50.943874999999935,
+          "received_to_submitted_ms": 1.5105409999996482,
+          "submitted_to_composed_ms": 1.5668750000004366
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 52, request: 52 }",
+          "observed_commit_to_picture_ms": 66.828625,
+          "commit_to_request_ms": 0.04712500000005093,
+          "request_to_received_ms": 63.16329200000018,
+          "received_to_submitted_ms": 1.5392909999991389,
+          "submitted_to_composed_ms": 2.078917000000729
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 54, request: 54 }",
+          "observed_commit_to_picture_ms": 41.425458,
+          "commit_to_request_ms": 0.05108299999938026,
+          "request_to_received_ms": 38.86200000000008,
+          "received_to_submitted_ms": 1.3687920000002123,
+          "submitted_to_composed_ms": 1.143583000000035
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 56, request: 56 }",
+          "observed_commit_to_picture_ms": 63.19691699999999,
+          "commit_to_request_ms": 0.09800000000086584,
+          "request_to_received_ms": 59.62224999999944,
+          "received_to_submitted_ms": 1.7507500000001528,
+          "submitted_to_composed_ms": 1.725916999999754
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 58, request: 58 }",
+          "observed_commit_to_picture_ms": 71.791042,
+          "commit_to_request_ms": 0.04545899999993708,
+          "request_to_received_ms": 68.24491600000056,
+          "received_to_submitted_ms": 1.6385000000000218,
+          "submitted_to_composed_ms": 1.8621669999993173
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 60, request: 60 }",
+          "observed_commit_to_picture_ms": 70.534208,
+          "commit_to_request_ms": 0.03341599999930622,
+          "request_to_received_ms": 66.99220900000091,
+          "received_to_submitted_ms": 1.5735829999994166,
+          "submitted_to_composed_ms": 1.9350000000004002
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 62, request: 62 }",
+          "observed_commit_to_picture_ms": 47.993041,
+          "commit_to_request_ms": 0.04291600000033213,
+          "request_to_received_ms": 44.83337499999925,
+          "received_to_submitted_ms": 1.1841670000003433,
+          "submitted_to_composed_ms": 1.932582999999795
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 64, request: 64 }",
+          "observed_commit_to_picture_ms": 69.751,
+          "commit_to_request_ms": 0.038124999999126885,
+          "request_to_received_ms": 67.62991700000111,
+          "received_to_submitted_ms": 0.9717499999997017,
+          "submitted_to_composed_ms": 1.1112079999993512
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 66, request: 66 }",
+          "observed_commit_to_picture_ms": 47.632208,
+          "commit_to_request_ms": 0.050666000000092026,
+          "request_to_received_ms": 44.967250000000604,
+          "received_to_submitted_ms": 1.2068339999987074,
+          "submitted_to_composed_ms": 1.407458000000588
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 68, request: 68 }",
+          "observed_commit_to_picture_ms": 32.221624999999996,
+          "commit_to_request_ms": 0.06070799999997689,
+          "request_to_received_ms": 29.07929200000035,
+          "received_to_submitted_ms": 1.4878749999998035,
+          "submitted_to_composed_ms": 1.59375
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 70, request: 70 }",
+          "observed_commit_to_picture_ms": 44.367791999999994,
+          "commit_to_request_ms": 0.04529200000069977,
+          "request_to_received_ms": 40.79449999999906,
+          "received_to_submitted_ms": 1.4827910000003612,
+          "submitted_to_composed_ms": 2.045208999999886
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 72, request: 72 }",
+          "observed_commit_to_picture_ms": 24.124917,
+          "commit_to_request_ms": 0.046666999999615655,
+          "request_to_received_ms": 21.057667000000038,
+          "received_to_submitted_ms": 1.4735829999999623,
+          "submitted_to_composed_ms": 1.5470000000004802
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 74, request: 74 }",
+          "observed_commit_to_picture_ms": 54.011792,
+          "commit_to_request_ms": 0.03562500000043656,
+          "request_to_received_ms": 50.525416999999834,
+          "received_to_submitted_ms": 1.4439170000005106,
+          "submitted_to_composed_ms": 2.00683300000037
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 76, request: 76 }",
+          "observed_commit_to_picture_ms": 70.71987499999999,
+          "commit_to_request_ms": 0.043374999999286956,
+          "request_to_received_ms": 67.77383400000053,
+          "received_to_submitted_ms": 1.450290999999197,
+          "submitted_to_composed_ms": 1.4523750000007567
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 78, request: 78 }",
+          "observed_commit_to_picture_ms": 64.941291,
+          "commit_to_request_ms": 0.056000000000494765,
+          "request_to_received_ms": 61.71587499999987,
+          "received_to_submitted_ms": 1.5987500000001091,
+          "submitted_to_composed_ms": 1.5706659999987096
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 80, request: 80 }",
+          "observed_commit_to_picture_ms": 50.370125,
+          "commit_to_request_ms": 0.04720799999904557,
+          "request_to_received_ms": 46.6369590000013,
+          "received_to_submitted_ms": 1.5977079999993293,
+          "submitted_to_composed_ms": 2.088249999999789
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 82, request: 82 }",
+          "observed_commit_to_picture_ms": 68.06887499999999,
+          "commit_to_request_ms": 0.04266700000061974,
+          "request_to_received_ms": 64.63224999999966,
+          "received_to_submitted_ms": 1.4337079999995694,
+          "submitted_to_composed_ms": 1.9602500000009968
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 84, request: 84 }",
+          "observed_commit_to_picture_ms": 61.590999999999994,
+          "commit_to_request_ms": 0.1330419999994774,
+          "request_to_received_ms": 57.78904099999909,
+          "received_to_submitted_ms": 1.6052500000005239,
+          "submitted_to_composed_ms": 2.0636670000003505
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 86, request: 86 }",
+          "observed_commit_to_picture_ms": 11.175125,
+          "commit_to_request_ms": 0.040542000000641565,
+          "request_to_received_ms": 9.587999999998829,
+          "received_to_submitted_ms": 0.6342080000013084,
+          "submitted_to_composed_ms": 0.9123750000007931
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 88, request: 88 }",
+          "observed_commit_to_picture_ms": 48.451417,
+          "commit_to_request_ms": 0.03862500000013824,
+          "request_to_received_ms": 45.02308399999856,
+          "received_to_submitted_ms": 1.2565829999994094,
+          "submitted_to_composed_ms": 2.133125000000291
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 90, request: 90 }",
+          "observed_commit_to_picture_ms": 8.681083,
+          "commit_to_request_ms": 0.05812499999774445,
+          "request_to_received_ms": 5.631500000003143,
+          "received_to_submitted_ms": 1.49766599999748,
+          "submitted_to_composed_ms": 1.4937920000011218
+        }
+      ]
+    },
+    "hold": {
+      "distributions": {
+        "observed_commit_to_picture_ms": {
+          "samples": 40,
+          "p50_ms": 53.328041,
+          "p95_ms": 72.303917,
+          "max_ms": 73.357542
+        },
+        "commit_to_request_ms": {
+          "samples": 40,
+          "p50_ms": 0.09962499999892316,
+          "p95_ms": 0.1373330000005808,
+          "max_ms": 0.14445900000100664
+        },
+        "request_to_received_ms": {
+          "samples": 40,
+          "p50_ms": 50.39916700000322,
+          "p95_ms": 69.02700000000004,
+          "max_ms": 70.50737499999923
+        },
+        "received_to_submitted_ms": {
+          "samples": 40,
+          "p50_ms": 1.5079170000008162,
+          "p95_ms": 1.6515409999992698,
+          "max_ms": 1.6916669999991427
+        },
+        "submitted_to_composed_ms": {
+          "samples": 40,
+          "p50_ms": 1.6185410000016418,
+          "p95_ms": 2.468249999998079,
+          "max_ms": 2.825542000000496
+        }
+      },
+      "paired_samples": [
+        {
+          "ticket": "Ticket { transport: None, source: 100, request: 100 }",
+          "observed_commit_to_picture_ms": 71.77525,
+          "commit_to_request_ms": 0.10283299999900919,
+          "request_to_received_ms": 69.07216700000026,
+          "received_to_submitted_ms": 1.1677079999990383,
+          "submitted_to_composed_ms": 1.432542000000467
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 102, request: 102 }",
+          "observed_commit_to_picture_ms": 19.890666999999993,
+          "commit_to_request_ms": 0.10516699999971024,
+          "request_to_received_ms": 16.612208000000464,
+          "received_to_submitted_ms": 1.5312919999996666,
+          "submitted_to_composed_ms": 1.6419999999998254
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 104, request: 104 }",
+          "observed_commit_to_picture_ms": 50.34891599999999,
+          "commit_to_request_ms": 0.11050000000068394,
+          "request_to_received_ms": 45.89058300000033,
+          "received_to_submitted_ms": 1.687832999999955,
+          "submitted_to_composed_ms": 2.6599999999998545
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 106, request: 106 }",
+          "observed_commit_to_picture_ms": 30.715792,
+          "commit_to_request_ms": 0.12245900000016263,
+          "request_to_received_ms": 26.22962500000176,
+          "received_to_submitted_ms": 1.538165999998455,
+          "submitted_to_composed_ms": 2.825542000000496
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 108, request: 108 }",
+          "observed_commit_to_picture_ms": 30.86775,
+          "commit_to_request_ms": 0.06270799999947485,
+          "request_to_received_ms": 27.68933299999844,
+          "received_to_submitted_ms": 1.4366250000002765,
+          "submitted_to_composed_ms": 1.6790840000012395
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 110, request: 110 }",
+          "observed_commit_to_picture_ms": 72.303917,
+          "commit_to_request_ms": 0.0897079999995185,
+          "request_to_received_ms": 68.54612500000076,
+          "received_to_submitted_ms": 1.5418749999989814,
+          "submitted_to_composed_ms": 2.126209000000017
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 112, request: 112 }",
+          "observed_commit_to_picture_ms": 30.87850000000001,
+          "commit_to_request_ms": 0.11287500000253203,
+          "request_to_received_ms": 27.843082999997932,
+          "received_to_submitted_ms": 1.4485420000000886,
+          "submitted_to_composed_ms": 1.47400000000016
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 114, request: 114 }",
+          "observed_commit_to_picture_ms": 11.153749999999995,
+          "commit_to_request_ms": 0.10895799999889277,
+          "request_to_received_ms": 8.40020800000093,
+          "received_to_submitted_ms": 1.2625840000000608,
+          "submitted_to_composed_ms": 1.381999999999607
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 116, request: 116 }",
+          "observed_commit_to_picture_ms": 40.784167000000004,
+          "commit_to_request_ms": 0.08558300000004238,
+          "request_to_received_ms": 37.56670900000063,
+          "received_to_submitted_ms": 1.5101249999988795,
+          "submitted_to_composed_ms": 1.6217500000002474
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 118, request: 118 }",
+          "observed_commit_to_picture_ms": 68.155458,
+          "commit_to_request_ms": 0.05325000000084401,
+          "request_to_received_ms": 64.98245799999859,
+          "received_to_submitted_ms": 1.5570829999996931,
+          "submitted_to_composed_ms": 1.5626670000001468
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 120, request: 120 }",
+          "observed_commit_to_picture_ms": 37.40225,
+          "commit_to_request_ms": 0.11541699999906996,
+          "request_to_received_ms": 34.39479100000062,
+          "received_to_submitted_ms": 1.3777499999996508,
+          "submitted_to_composed_ms": 1.5142919999998412
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 122, request: 122 }",
+          "observed_commit_to_picture_ms": 71.77291600000001,
+          "commit_to_request_ms": 0.0652910000007978,
+          "request_to_received_ms": 68.59333399999923,
+          "received_to_submitted_ms": 1.4957500000000437,
+          "submitted_to_composed_ms": 1.6185410000016418
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 124, request: 124 }",
+          "observed_commit_to_picture_ms": 70.26650000000001,
+          "commit_to_request_ms": 0.09962499999892316,
+          "request_to_received_ms": 67.05049999999937,
+          "received_to_submitted_ms": 1.6515409999992698,
+          "submitted_to_composed_ms": 1.4648340000003373
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 126, request: 126 }",
+          "observed_commit_to_picture_ms": 54.121125000000006,
+          "commit_to_request_ms": 0.11366699999962293,
+          "request_to_received_ms": 50.85020800000166,
+          "received_to_submitted_ms": 1.5721669999984442,
+          "submitted_to_composed_ms": 1.5850829999999405
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 128, request: 128 }",
+          "observed_commit_to_picture_ms": 73.357542,
+          "commit_to_request_ms": 0.1171249999988504,
+          "request_to_received_ms": 70.50737499999923,
+          "received_to_submitted_ms": 1.414083000001483,
+          "submitted_to_composed_ms": 1.3189590000001772
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 130, request: 130 }",
+          "observed_commit_to_picture_ms": 36.606167,
+          "commit_to_request_ms": 0.07708400000046822,
+          "request_to_received_ms": 33.2330409999995,
+          "received_to_submitted_ms": 1.6252499999991414,
+          "submitted_to_composed_ms": 1.6707920000008016
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 132, request: 132 }",
+          "observed_commit_to_picture_ms": 72.000792,
+          "commit_to_request_ms": 0.09987499999988358,
+          "request_to_received_ms": 68.71266699999978,
+          "received_to_submitted_ms": 1.606166999999914,
+          "submitted_to_composed_ms": 1.5820830000011483
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 134, request: 134 }",
+          "observed_commit_to_picture_ms": 68.447209,
+          "commit_to_request_ms": 0.11254200000075798,
+          "request_to_received_ms": 65.36845799999901,
+          "received_to_submitted_ms": 1.4654170000012527,
+          "submitted_to_composed_ms": 1.5007919999989099
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 136, request: 136 }",
+          "observed_commit_to_picture_ms": 59.833625,
+          "commit_to_request_ms": 0.12191700000221317,
+          "request_to_received_ms": 56.56175000000076,
+          "received_to_submitted_ms": 1.5705829999988055,
+          "submitted_to_composed_ms": 1.5793749999993452
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 138, request: 138 }",
+          "observed_commit_to_picture_ms": 68.83250000000001,
+          "commit_to_request_ms": 0.09579200000007404,
+          "request_to_received_ms": 65.46408300000076,
+          "received_to_submitted_ms": 1.6916669999991427,
+          "submitted_to_composed_ms": 1.5809579999986454
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 140, request: 140 }",
+          "observed_commit_to_picture_ms": 30.659750000000003,
+          "commit_to_request_ms": 0.09699999999975262,
+          "request_to_received_ms": 27.12395799999831,
+          "received_to_submitted_ms": 1.4572500000012951,
+          "submitted_to_composed_ms": 1.9815419999995356
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 142, request: 142 }",
+          "observed_commit_to_picture_ms": 71.75012500000001,
+          "commit_to_request_ms": 0.11083299999882001,
+          "request_to_received_ms": 68.70587500000147,
+          "received_to_submitted_ms": 1.1827499999999418,
+          "submitted_to_composed_ms": 1.7506670000002487
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 144, request: 144 }",
+          "observed_commit_to_picture_ms": 18.878625,
+          "commit_to_request_ms": 0.05687500000021828,
+          "request_to_received_ms": 15.908750000002328,
+          "received_to_submitted_ms": 1.2527919999974984,
+          "submitted_to_composed_ms": 1.6602080000011483
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 146, request: 146 }",
+          "observed_commit_to_picture_ms": 55.19716599999998,
+          "commit_to_request_ms": 0.1373330000005808,
+          "request_to_received_ms": 52.201333000000886,
+          "received_to_submitted_ms": 1.311958999998751,
+          "submitted_to_composed_ms": 1.5465409999997064
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 148, request: 148 }",
+          "observed_commit_to_picture_ms": 72.711917,
+          "commit_to_request_ms": 0.14445900000100664,
+          "request_to_received_ms": 69.02700000000004,
+          "received_to_submitted_ms": 1.5684160000000702,
+          "submitted_to_composed_ms": 1.9720420000012382
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 150, request: 150 }",
+          "observed_commit_to_picture_ms": 38.87450000000001,
+          "commit_to_request_ms": 0.11037500000020373,
+          "request_to_received_ms": 35.13799999999901,
+          "received_to_submitted_ms": 1.5079170000008162,
+          "submitted_to_composed_ms": 2.1182079999998678
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 152, request: 152 }",
+          "observed_commit_to_picture_ms": 19.117334,
+          "commit_to_request_ms": 0.1000000000003638,
+          "request_to_received_ms": 15.868208999998387,
+          "received_to_submitted_ms": 1.4481250000008004,
+          "submitted_to_composed_ms": 1.7009999999991123
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 154, request: 154 }",
+          "observed_commit_to_picture_ms": 57.954583000000014,
+          "commit_to_request_ms": 0.14266599999791651,
+          "request_to_received_ms": 54.424042000000554,
+          "received_to_submitted_ms": 1.6291249999994761,
+          "submitted_to_composed_ms": 1.7587500000008731
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 156, request: 156 }",
+          "observed_commit_to_picture_ms": 41.991333000000004,
+          "commit_to_request_ms": 0.13387499999953434,
+          "request_to_received_ms": 38.75083299999824,
+          "received_to_submitted_ms": 1.4984590000021853,
+          "submitted_to_composed_ms": 1.608165999998164
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 158, request: 158 }",
+          "observed_commit_to_picture_ms": 58.761584,
+          "commit_to_request_ms": 0.07016700000167475,
+          "request_to_received_ms": 54.979457999999795,
+          "received_to_submitted_ms": 1.5835420000003069,
+          "submitted_to_composed_ms": 2.1284169999998994
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 160, request: 160 }",
+          "observed_commit_to_picture_ms": 61.673083,
+          "commit_to_request_ms": 0.09258299999964947,
+          "request_to_received_ms": 58.34191700000156,
+          "received_to_submitted_ms": 1.5579999999990832,
+          "submitted_to_composed_ms": 1.6805830000012065
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 162, request: 162 }",
+          "observed_commit_to_picture_ms": 53.115375,
+          "commit_to_request_ms": 0.09183299999858718,
+          "request_to_received_ms": 50.39916700000322,
+          "received_to_submitted_ms": 1.2107919999980368,
+          "submitted_to_composed_ms": 1.4135830000013812
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 164, request: 164 }",
+          "observed_commit_to_picture_ms": 13.273999999999987,
+          "commit_to_request_ms": 0.08933299999625888,
+          "request_to_received_ms": 10.475000000002183,
+          "received_to_submitted_ms": 1.2050420000014128,
+          "submitted_to_composed_ms": 1.504624999997759
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 166, request: 166 }",
+          "observed_commit_to_picture_ms": 64.791708,
+          "commit_to_request_ms": 0.05537500000355067,
+          "request_to_received_ms": 61.963583000000654,
+          "received_to_submitted_ms": 1.400499999999738,
+          "submitted_to_composed_ms": 1.3722500000003492
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 168, request: 168 }",
+          "observed_commit_to_picture_ms": 50.062375,
+          "commit_to_request_ms": 0.03295799999978044,
+          "request_to_received_ms": 46.57341699999961,
+          "received_to_submitted_ms": 1.6314999999995052,
+          "submitted_to_composed_ms": 1.8245000000024447
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 170, request: 170 }",
+          "observed_commit_to_picture_ms": 56.18237499999999,
+          "commit_to_request_ms": 0.09724999999889405,
+          "request_to_received_ms": 51.96783299999879,
+          "received_to_submitted_ms": 1.649042000000918,
+          "submitted_to_composed_ms": 2.468249999998079
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 172, request: 172 }",
+          "observed_commit_to_picture_ms": 59.754791999999995,
+          "commit_to_request_ms": 0.0975830000024871,
+          "request_to_received_ms": 56.34654199999932,
+          "received_to_submitted_ms": 1.6222920000036538,
+          "submitted_to_composed_ms": 1.6883749999979045
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 174, request: 174 }",
+          "observed_commit_to_picture_ms": 30.953582999999995,
+          "commit_to_request_ms": 0.04275000000052387,
+          "request_to_received_ms": 28.376208000001498,
+          "received_to_submitted_ms": 1.3207079999992857,
+          "submitted_to_composed_ms": 1.2139169999973092
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 176, request: 176 }",
+          "observed_commit_to_picture_ms": 53.328041,
+          "commit_to_request_ms": 0.09812500000043656,
+          "request_to_received_ms": 49.57620799999859,
+          "received_to_submitted_ms": 1.6008750000000873,
+          "submitted_to_composed_ms": 2.0528330000015558
+        },
+        {
+          "ticket": "Ticket { transport: None, source: 178, request: 178 }",
+          "observed_commit_to_picture_ms": 44.548333,
+          "commit_to_request_ms": 0.11924999999973807,
+          "request_to_received_ms": 41.551125000001775,
+          "received_to_submitted_ms": 1.3362919999963196,
+          "submitted_to_composed_ms": 1.541666000000987
+        }
+      ]
+    }
+  }
+}

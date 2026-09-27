@@ -3,6 +3,9 @@ use eframe::egui::{Key, Modifiers};
 pub mod camera;
 pub mod command;
 pub mod duration;
+pub mod retime;
+#[cfg(any(test, feature = "ui-harness"))]
+pub mod shortcut_audit;
 pub use camera::route_camera_key;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -13,6 +16,7 @@ pub enum BeatEdit {
     WrapRepeat(u32),
     Delete,
     HoldDuration(deadpan_core::FrameDuration),
+    Retime(retime::RetimeInput),
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
@@ -67,6 +71,12 @@ pub enum Action {
     Undo,
     Redo,
     Playback,
+    Audition,
+    EnterGroup,
+    LeaveGroup,
+    VisualMoment,
+    CopyMoment,
+    PasteMoment { before: bool },
     Step { forward: bool, count: u32 },
     Beat { forward: bool, count: u32 },
     First,
@@ -127,6 +137,12 @@ impl Bindings {
         *self = Self::default();
     }
 
+    /// Original browsing may retain this prefix for explicit whole-source
+    /// reuse. Other pending edit operators remain non-destructive there.
+    pub fn reuse_pending(&self) -> bool {
+        self.comma && self.count.is_none() && !self.count_overflow
+    }
+
     pub fn pending(&self) -> String {
         format!(
             "{}{}",
@@ -152,7 +168,12 @@ impl Bindings {
         match self.operator {
             Some(Key::R) => Some("r completes the Repeat · Esc cancels"),
             Some(Key::D) => Some("d cuts this whole beat · Esc cancels"),
-            _ if self.comma => Some("h pause · f Camera · z punch in · c creep · Esc cancels"),
+            _ if self.comma && self.count.is_some() => {
+                Some("h inserts the counted pause · Esc cancels")
+            }
+            _ if self.comma => {
+                Some("i reuse Original · h pause · f Camera · z punch in · c creep · Esc cancels")
+            }
             _ if self.g => Some("g goes to the start · Esc cancels"),
             _ if self.count.is_some() => {
                 Some("Then h/l to move, rr to repeat, or ,h to pause · Esc cancels")
@@ -181,7 +202,6 @@ impl Bindings {
                 (Key::N, false) => Some(Action::New),
                 (Key::O, false) => Some(Action::Open),
                 (Key::I, false) => Some(Action::Import),
-                (Key::Enter, false) if !text => Some(Action::Insert),
                 (Key::Z, false) if !text => Some(Action::Undo),
                 (Key::Z, true) if !text => Some(Action::Redo),
                 _ => None,
@@ -221,7 +241,11 @@ impl Bindings {
                     _ => Action::Search,
                 });
             }
-            if !self.g
+            // Kestrel owns Option+1–5 and Shift+Option+1–5 globally. Do not
+            // start an editor count from Option-number keys if they reach us.
+            // Shift-only logical digits still support non-US layouts.
+            if !modifiers.alt
+                && !self.g
                 && let Some((_, digit)) = DIGITS.iter().find(|(bound, _)| *bound == key)
             {
                 if self.operator.is_some() || self.comma {
@@ -247,6 +271,19 @@ impl Bindings {
             self.clear();
             return Some(Action::Last);
         }
+        if key == Key::P && modifiers == Modifiers::SHIFT {
+            let standalone = self.pending().is_empty();
+            self.clear();
+            return Some(if standalone {
+                Action::PasteMoment { before: true }
+            } else {
+                Action::Invalid("Paste once with p or P, without a count or operator.")
+            });
+        }
+        if key == Key::Space && modifiers == Modifiers::SHIFT {
+            self.clear();
+            return Some(Action::Audition);
+        }
         if modifiers != Modifiers::NONE {
             self.clear();
             return None;
@@ -254,6 +291,14 @@ impl Bindings {
         if key == Key::Space {
             self.clear();
             return Some(Action::Playback);
+        }
+        if matches!(key, Key::Enter | Key::Backspace) {
+            self.clear();
+            return Some(if key == Key::Enter {
+                Action::EnterGroup
+            } else {
+                Action::LeaveGroup
+            });
         }
         if self.count_overflow {
             self.clear();
@@ -263,6 +308,8 @@ impl Bindings {
         }
         if self.comma {
             let action = match key {
+                Key::I if self.count.is_none() => Action::Insert,
+                Key::I => Action::Invalid("Reuse inserts once. Use ,i without a count."),
                 Key::H => Action::Edit(BeatEdit::InsertHold(
                     duration::DurationInput::half_seconds(self.count.unwrap_or(1)),
                 )),
@@ -276,7 +323,7 @@ impl Bindings {
                     Action::Invalid("Counts apply only to ,h. Use ,f, ,z, or ,c without a count.")
                 }
                 _ => Action::Invalid(
-                    "After comma, use h for a pause, f for Camera, z to punch in, or c to creep.",
+                    "After comma, use i to reuse the Original, h for a pause, f for Camera, z to punch in, or c to creep.",
                 ),
             };
             self.clear();
@@ -285,14 +332,14 @@ impl Bindings {
         if let Some(operator) = self.operator {
             let action = if key != operator {
                 Action::Invalid(
-                    "Only rr (repeat root beat) and dd (delete root beat) are available. Range and text-object operators are not ready.",
+                    "Only rr (repeat selected beat) and dd (delete selected beat) are available. Range and text-object operators are not ready.",
                 )
             } else if self.count == Some(0) {
                 Action::Invalid("An edit count must be positive; no edit was made.")
             } else if operator == Key::R {
                 Action::Edit(BeatEdit::WrapRepeat(self.count.unwrap_or(2)))
             } else if self.count.is_some_and(|count| count != 1) {
-                Action::Invalid("dd deletes one root beat. Counted deletion is not available.")
+                Action::Invalid("dd deletes one selected beat. Counted deletion is not available.")
             } else {
                 Action::Edit(BeatEdit::Delete)
             };
@@ -328,6 +375,12 @@ impl Bindings {
                 Key::Home => Some(Action::First),
                 Key::End => Some(Action::Last),
                 Key::U => Some(Action::Undo),
+                Key::V | Key::Y | Key::P if self.count.is_some() => Some(Action::Invalid(
+                    "Use v, y, p or P without a count. Move the range boundary with counted h/l.",
+                )),
+                Key::V => Some(Action::VisualMoment),
+                Key::Y => Some(Action::CopyMoment),
+                Key::P => Some(Action::PasteMoment { before: false }),
                 Key::S if self.count.is_none() => Some(Action::Edit(BeatEdit::Split)),
                 Key::S => Some(Action::Invalid(
                     "Split uses the current boundary. Move with a count first, for example 12l then s.",
@@ -399,6 +452,85 @@ pub fn text_action(
 #[cfg(test)]
 mod tests {
     #[test]
+    fn moment_keys_are_native_owned_and_never_counted_or_repeated_edits() {
+        for (key, modifiers, action) in [
+            (Key::V, Modifiers::NONE, Action::VisualMoment),
+            (Key::Y, Modifiers::NONE, Action::CopyMoment),
+            (
+                Key::P,
+                Modifiers::NONE,
+                Action::PasteMoment { before: false },
+            ),
+            (
+                Key::P,
+                Modifiers::SHIFT,
+                Action::PasteMoment { before: true },
+            ),
+        ] {
+            assert_eq!(
+                Bindings::default().key(key, modifiers, false, false),
+                Some(action)
+            );
+            assert_eq!(Bindings::default().key(key, modifiers, true, false), None);
+            assert_eq!(Bindings::default().key(key, modifiers, false, true), None);
+            assert!(!allows_key_repeat(key, modifiers));
+            let mut pending = Bindings::default();
+            pending.key(Key::Num3, Modifiers::NONE, false, false);
+            assert!(matches!(
+                pending.key(key, modifiers, false, false),
+                Some(Action::Invalid(_))
+            ));
+            assert!(pending.pending().is_empty());
+        }
+    }
+
+    #[test]
+    fn group_navigation_cancels_prefixes_and_respects_native_input_ownership() {
+        for (key, action) in [
+            (Key::Enter, Action::EnterGroup),
+            (Key::Backspace, Action::LeaveGroup),
+        ] {
+            for prefix in [
+                vec![Key::G],
+                vec![Key::R],
+                vec![Key::Comma],
+                vec![Key::Num3],
+            ] {
+                let mut bindings = Bindings::default();
+                for part in prefix {
+                    bindings.key(part, Modifiers::NONE, false, false);
+                }
+                assert_eq!(
+                    bindings.key(key, Modifiers::NONE, false, false),
+                    Some(action)
+                );
+                assert!(bindings.pending().is_empty());
+                assert_eq!(bindings.key(Key::G, Modifiers::NONE, false, false), None);
+                assert_eq!(bindings.pending(), "g");
+            }
+            for modifiers in [
+                Modifiers::SHIFT,
+                Modifiers::ALT,
+                Modifiers::CTRL,
+                Modifiers::COMMAND,
+                Modifiers::MAC_CMD,
+            ] {
+                let mut bindings = Bindings::default();
+                bindings.key(Key::G, Modifiers::NONE, false, false);
+                assert_eq!(bindings.key(key, modifiers, false, false), None);
+                assert!(bindings.pending().is_empty());
+            }
+            for (text, ime) in [(true, false), (false, true), (true, true)] {
+                let mut bindings = Bindings::default();
+                bindings.key(Key::R, Modifiers::NONE, false, false);
+                assert_eq!(bindings.key(key, Modifiers::NONE, text, ime), None);
+                assert!(bindings.pending().is_empty());
+            }
+            assert!(!allows_key_repeat(key, Modifiers::NONE));
+        }
+    }
+
+    #[test]
     fn space_is_one_normal_mode_toggle_and_clears_pending_edits() {
         use super::*;
         for prefix in [None, Some(Key::R), Some(Key::Comma), Some(Key::G)] {
@@ -419,7 +551,6 @@ mod tests {
             );
         }
         for modifiers in [
-            Modifiers::SHIFT,
             Modifiers::ALT,
             Modifiers::CTRL,
             Modifiers::COMMAND,
@@ -432,6 +563,45 @@ mod tests {
         }
         assert!(!allows_key_repeat(Key::Space, Modifiers::NONE));
     }
+
+    #[test]
+    fn shift_space_loops_once_and_preserves_native_and_global_ownership() {
+        for prefix in [
+            None,
+            Some(Key::R),
+            Some(Key::Comma),
+            Some(Key::G),
+            Some(Key::Num3),
+        ] {
+            let mut bindings = Bindings::default();
+            if let Some(key) = prefix {
+                bindings.key(key, Modifiers::NONE, false, false);
+            }
+            assert_eq!(
+                bindings.key(Key::Space, Modifiers::SHIFT, false, false),
+                Some(Action::Audition)
+            );
+            assert!(bindings.pending().is_empty());
+        }
+        for (text, ime) in [(true, false), (false, true), (true, true)] {
+            let mut bindings = Bindings::default();
+            bindings.key(Key::R, Modifiers::NONE, false, false);
+            assert_eq!(bindings.key(Key::Space, Modifiers::SHIFT, text, ime), None);
+            assert!(bindings.pending().is_empty());
+        }
+        for modifiers in [
+            Modifiers::SHIFT | Modifiers::ALT,
+            Modifiers::SHIFT | Modifiers::CTRL,
+            Modifiers::SHIFT | Modifiers::COMMAND,
+            Modifiers::SHIFT | Modifiers::MAC_CMD,
+        ] {
+            assert_eq!(
+                Bindings::default().key(Key::Space, modifiers, false, false),
+                None
+            );
+        }
+        assert!(!allows_key_repeat(Key::Space, Modifiers::SHIFT));
+    }
     use super::*;
 
     #[test]
@@ -443,7 +613,10 @@ mod tests {
             Some(Action::OfferInsert)
         );
         assert_eq!(bindings.pending(), "3,");
-        assert!(bindings.pending_hint().unwrap().contains("Camera"));
+        assert_eq!(
+            bindings.pending_hint(),
+            Some("h inserts the counted pause · Esc cancels")
+        );
         assert_eq!(
             bindings.key(Key::H, Modifiers::NONE, false, false),
             Some(Action::Edit(BeatEdit::InsertHold(
@@ -546,6 +719,47 @@ mod tests {
                 Some(Action::Invalid(_))
             ));
             assert!(bindings.pending().is_empty());
+        }
+    }
+
+    #[test]
+    fn comma_i_reuses_once_and_keeps_native_text_and_global_return_free() {
+        let mut bindings = Bindings::default();
+        assert!(!bindings.reuse_pending());
+        assert_eq!(
+            bindings.key(Key::Comma, Modifiers::NONE, false, false),
+            Some(Action::OfferInsert)
+        );
+        assert!(bindings.reuse_pending());
+        assert!(
+            bindings
+                .pending_hint()
+                .unwrap()
+                .contains("i reuse Original")
+        );
+        assert_eq!(
+            bindings.key(Key::I, Modifiers::NONE, false, false),
+            Some(Action::Insert)
+        );
+        assert!(!bindings.reuse_pending());
+        assert!(!allows_key_repeat(Key::I, Modifiers::NONE));
+        assert_eq!(bindings.key(Key::I, Modifiers::NONE, false, false), None);
+        assert!(matches!(
+            keys(&mut bindings, &[Key::Num3, Key::Comma, Key::I]),
+            Some(Action::Invalid(_))
+        ));
+        assert!(bindings.pending().is_empty());
+        for (text, ime) in [(true, false), (false, true), (true, true)] {
+            bindings.key(Key::Comma, Modifiers::NONE, false, false);
+            assert_eq!(bindings.key(Key::I, Modifiers::NONE, text, ime), None);
+            assert!(bindings.pending().is_empty());
+        }
+        for modifiers in [
+            Modifiers::COMMAND,
+            Modifiers::MAC_CMD,
+            Modifiers::MAC_CMD | Modifiers::COMMAND,
+        ] {
+            assert_eq!(bindings.key(Key::Enter, modifiers, false, false), None);
         }
     }
 
@@ -835,7 +1049,18 @@ mod tests {
                 bindings.key(Key::Slash, modifiers, false, false),
                 Some(Action::Search)
             );
-            bindings.key(Key::Num3, modifiers, false, false);
+            assert!(
+                bindings
+                    .key(Key::Semicolon, modifiers, false, false)
+                    .is_none()
+            );
+        }
+        // Logical digits can require Shift, while Option-number chords belong
+        // to Kestrel's Desktop navigation and cannot become editor counts.
+        for modifiers in [Modifiers::NONE, Modifiers::SHIFT] {
+            let mut bindings = Bindings::default();
+            assert_eq!(bindings.key(Key::Num3, modifiers, false, false), None);
+            assert_eq!(bindings.pending(), "3");
             assert_eq!(
                 bindings.key(Key::L, Modifiers::NONE, false, false),
                 Some(Action::Step {
@@ -843,11 +1068,20 @@ mod tests {
                     count: 3
                 })
             );
-            assert!(
-                bindings
-                    .key(Key::Semicolon, modifiers, false, false)
-                    .is_none()
-            );
+        }
+        for modifiers in [Modifiers::ALT, Modifiers::ALT | Modifiers::SHIFT] {
+            for key in [Key::Num1, Key::Num2, Key::Num3, Key::Num4, Key::Num5] {
+                let mut bindings = Bindings::default();
+                assert_eq!(bindings.key(key, modifiers, false, false), None);
+                assert!(bindings.pending().is_empty());
+                assert_eq!(
+                    bindings.key(Key::L, Modifiers::NONE, false, false),
+                    Some(Action::Step {
+                        forward: true,
+                        count: 1
+                    })
+                );
+            }
         }
     }
 
@@ -870,7 +1104,6 @@ mod tests {
                 }
             }
             for (key, modifiers, expected) in [
-                (Key::Enter, command, Action::Insert),
                 (Key::Z, command, Action::Undo),
                 (Key::Z, command | Modifiers::SHIFT, Action::Redo),
             ] {

@@ -2,7 +2,7 @@
 //! opens media. Private PCM survives original-path changes; every cache hit
 //! still checks the captured receipt and complete authored asset contract.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, VecDeque};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
@@ -33,11 +33,20 @@ pub struct Snapshot {
 /// Aggregate physical PCM on disk, separate from the DSP residency limit.
 const MAX_CACHE_BYTES: u64 = 1024 * 1024 * 1024;
 const MAX_CACHED_SOURCES: usize = 16;
+const MAX_CACHE_INDEX_FRAMES: u64 = 1_000_000;
+
+struct CachedSource {
+    prepared: PreparedSource,
+    bytes: u64,
+    index_frames: u64,
+}
 
 pub(crate) struct Sources {
     snapshot: Arc<Snapshot>,
-    cache: BTreeMap<AssetId, PreparedSource>,
+    cache: BTreeMap<AssetId, CachedSource>,
+    recency: VecDeque<AssetId>,
     cache_bytes: u64,
+    cache_index_frames: u64,
 }
 
 impl Sources {
@@ -45,7 +54,9 @@ impl Sources {
         Self {
             snapshot,
             cache: BTreeMap::new(),
+            recency: VecDeque::new(),
             cache_bytes: 0,
+            cache_index_frames: 0,
         }
     }
     pub(crate) fn matches(&self, snapshot: &Snapshot) -> bool {
@@ -114,7 +125,10 @@ impl AudioSourceProvider for Sources {
         {
             return Err(PreparationError::IndexMismatch);
         }
-        if !self.cache.contains_key(asset) {
+        if self.cache.contains_key(asset) {
+            check_cancel(cancelled)?;
+            mark_recent(&mut self.recency, asset);
+        } else {
             // Decoded physical samples include priming and padding. The opener
             // receives this exact reservation and must reproduce the receipt.
             let bytes = expected
@@ -123,18 +137,12 @@ impl AudioSourceProvider for Sources {
                 .and_then(|samples| samples.checked_mul(4))
                 .filter(|bytes| *bytes > 0)
                 .ok_or_else(|| unavailable("invalid physical PCM cache size"))?;
-            let reserved = self
-                .cache_bytes
-                .checked_add(bytes)
-                .filter(|sum| *sum <= MAX_CACHE_BYTES)
-                .ok_or_else(|| {
-                    unavailable("audition exceeds the 1 GiB aggregate source PCM cache")
-                })?;
-            if self.cache.len() >= MAX_CACHED_SOURCES {
-                return Err(unavailable("audition exceeds 16 retained audio sources"));
-            }
+            let index_frames = u64::try_from(expected.frames().len())
+                .map_err(|_| unavailable("invalid audio index cache size"))?;
+            validate_source_capacity(bytes, index_frames)?;
             let audio_limits = AudioSessionLimits {
                 maximum_cache_bytes: bytes,
+                maximum_index_frames: expected.frames().len(),
                 opening_timeout: Duration::from_secs(30),
                 ..AudioSessionLimits::default()
             };
@@ -151,6 +159,25 @@ impl AudioSourceProvider for Sources {
             if original.record() != &entry.original {
                 return Err(PreparationError::IndexMismatch);
             }
+            check_cancel(cancelled)?;
+            // Validate and snapshot originals before evicting a usable entry.
+            // A bad cold source must not disturb the current resident set.
+            make_room(
+                &mut self.cache,
+                &mut self.recency,
+                &mut self.cache_bytes,
+                &mut self.cache_index_frames,
+                bytes,
+                index_frames,
+            )?;
+            let reserved_bytes = self
+                .cache_bytes
+                .checked_add(bytes)
+                .ok_or_else(|| unavailable("source cache byte accounting overflow"))?;
+            let reserved_frames = self
+                .cache_index_frames
+                .checked_add(index_frames)
+                .ok_or_else(|| unavailable("source cache index accounting overflow"))?;
             let session = AudioSession::open_verified(
                 &mut original,
                 expected.content(),
@@ -160,14 +187,95 @@ impl AudioSourceProvider for Sources {
             )?;
             let prepared = PreparedSource::new(session, expected, cancelled)?;
             check_cancel(cancelled)?;
-            self.cache.insert(asset.clone(), prepared);
-            self.cache_bytes = reserved;
+            self.cache.insert(
+                asset.clone(),
+                CachedSource {
+                    prepared,
+                    bytes,
+                    index_frames,
+                },
+            );
+            self.recency.push_back(asset.clone());
+            self.cache_bytes = reserved_bytes;
+            self.cache_index_frames = reserved_frames;
         }
-        check_cancel(cancelled)?;
         self.cache
             .get(asset)
+            .map(|source| &source.prepared)
             .ok_or_else(|| unavailable("source cache is absent"))
     }
+}
+
+fn validate_source_capacity(bytes: u64, index_frames: u64) -> Result<(), PreparationError> {
+    if bytes == 0 {
+        return Err(unavailable("invalid physical PCM cache size"));
+    }
+    if bytes > MAX_CACHE_BYTES {
+        return Err(unavailable("source PCM exceeds the 1 GiB source cache"));
+    }
+    if index_frames == 0 {
+        return Err(unavailable("invalid audio index cache size"));
+    }
+    if index_frames > MAX_CACHE_INDEX_FRAMES {
+        return Err(unavailable(
+            "source audio index exceeds the 1,000,000-frame source cache",
+        ));
+    }
+    Ok(())
+}
+
+fn make_room(
+    cache: &mut BTreeMap<AssetId, CachedSource>,
+    recency: &mut VecDeque<AssetId>,
+    cache_bytes: &mut u64,
+    cache_index_frames: &mut u64,
+    bytes: u64,
+    index_frames: u64,
+) -> Result<(), PreparationError> {
+    validate_source_capacity(bytes, index_frames)?;
+    loop {
+        if cache.len() < MAX_CACHED_SOURCES
+            && source_capacity_fits(*cache_bytes, *cache_index_frames, bytes, index_frames)
+        {
+            return Ok(());
+        }
+        let oldest = recency
+            .front()
+            .ok_or_else(|| unavailable("source cache recency is inconsistent"))?;
+        let entry = cache
+            .get(oldest)
+            .ok_or_else(|| unavailable("source cache entry is absent"))?;
+        let remaining_bytes = cache_bytes
+            .checked_sub(entry.bytes)
+            .ok_or_else(|| unavailable("source cache byte accounting is inconsistent"))?;
+        let remaining_frames = cache_index_frames
+            .checked_sub(entry.index_frames)
+            .ok_or_else(|| unavailable("source cache index accounting is inconsistent"))?;
+        let oldest = oldest.clone();
+        recency.pop_front();
+        cache.remove(&oldest);
+        *cache_bytes = remaining_bytes;
+        *cache_index_frames = remaining_frames;
+    }
+}
+
+fn source_capacity_fits(
+    cached_bytes: u64,
+    cached_index_frames: u64,
+    bytes: u64,
+    index_frames: u64,
+) -> bool {
+    cached_bytes
+        .checked_add(bytes)
+        .is_some_and(|total| total <= MAX_CACHE_BYTES)
+        && cached_index_frames
+            .checked_add(index_frames)
+            .is_some_and(|total| total <= MAX_CACHE_INDEX_FRAMES)
+}
+
+fn mark_recent(recency: &mut VecDeque<AssetId>, asset: &AssetId) {
+    recency.retain(|cached| cached != asset);
+    recency.push_back(asset.clone());
 }
 
 fn check_cancel(cancelled: &AtomicBool) -> Result<(), PreparationError> {
@@ -180,3 +288,7 @@ fn check_cancel(cancelled: &AtomicBool) -> Result<(), PreparationError> {
 fn unavailable(error: impl std::fmt::Display) -> PreparationError {
     PreparationError::SourceUnavailable(error.to_string())
 }
+
+#[cfg(test)]
+#[path = "sources/cache_tests.rs"]
+mod cache_tests;

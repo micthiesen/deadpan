@@ -1,0 +1,598 @@
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 20.39s
+     Running unittests src/main.rs (/tmp/deadpan-ui-feedback-target/debug/deps/deadpan_app-6820b8824a0e132d)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 165 filtered out; finished in 0.00s
+
+     Running tests/headless.rs (/tmp/deadpan-ui-feedback-target/debug/deps/headless-b549945d3396b4eb)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (/tmp/deadpan-ui-feedback-target/debug/deps/deadpan_audio-650769edc03772c9)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 54 filtered out; finished in 0.00s
+
+     Running tests/audio_context.rs (/tmp/deadpan-ui-feedback-target/debug/deps/audio_context-5667c1db79d16315)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.00s
+
+     Running tests/audio_definition.rs (/tmp/deadpan-ui-feedback-target/debug/deps/audio_definition-01e58c9a33cc49d2)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 11 filtered out; finished in 0.00s
+
+     Running tests/audio_domain.rs (/tmp/deadpan-ui-feedback-target/debug/deps/audio_domain-be928cb41bc270b8)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 12 filtered out; finished in 0.00s
+
+     Running tests/gap_bindings.rs (/tmp/deadpan-ui-feedback-target/debug/deps/gap_bindings-342be7b5555555e1)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+     Running tests/gap_definition.rs (/tmp/deadpan-ui-feedback-target/debug/deps/gap_definition-301057538617b742)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s
+
+     Running tests/limiter.rs (/tmp/deadpan-ui-feedback-target/debug/deps/limiter-c5a6d2facb856b88)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.00s
+
+     Running tests/loudness.rs (/tmp/deadpan-ui-feedback-target/debug/deps/loudness-e15bb58af72b303f)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.00s
+
+     Running tests/reanchors.rs (/tmp/deadpan-ui-feedback-target/debug/deps/reanchors-44e191f91f17053e)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s
+
+     Running tests/reference_policy.rs (/tmp/deadpan-ui-feedback-target/debug/deps/reference_policy-aab2bb1d8bb55a89)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.00s
+
+     Running tests/resample.rs (/tmp/deadpan-ui-feedback-target/debug/deps/resample-c5abff6c52c81469)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.00s
+
+     Running tests/sequence.rs (/tmp/deadpan-ui-feedback-target/debug/deps/sequence-43c3e15c4129c9f2)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 12 filtered out; finished in 0.00s
+
+     Running tests/session.rs (/tmp/deadpan-ui-feedback-target/debug/deps/session-9e7115f7e6878bc7)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.00s
+
+     Running tests/signal_transfer.rs (/tmp/deadpan-ui-feedback-target/debug/deps/signal_transfer-24db6eadf8125dca)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.00s
+
+     Running tests/stages.rs (/tmp/deadpan-ui-feedback-target/debug/deps/stages-ac19ce5a8c9455cb)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 56 filtered out; finished in 0.00s
+
+     Running tests/true_peak.rs (/tmp/deadpan-ui-feedback-target/debug/deps/true_peak-6c759d162c5dd168)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (/tmp/deadpan-ui-feedback-target/debug/deps/deadpan_cli-bcc7ee8edbce4989)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (/tmp/deadpan-ui-feedback-target/debug/deps/deadpan_cli-01b99ac0a4ff7edb)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/audio_context.rs (/tmp/deadpan-ui-feedback-target/debug/deps/audio_context-9e8f6f5f4dd84d2b)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+
+     Running tests/audio_inspection.rs (/tmp/deadpan-ui-feedback-target/debug/deps/audio_inspection-0468975cd8f607bc)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 14 filtered out; finished in 0.00s
+
+     Running tests/doctor.rs (/tmp/deadpan-ui-feedback-target/debug/deps/doctor-7e3d4ca2d5f2a4de)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.00s
+
+     Running tests/original_commands.rs (/tmp/deadpan-ui-feedback-target/debug/deps/original_commands-06d5beebe4db7552)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.00s
+
+     Running tests/project_commands.rs (/tmp/deadpan-ui-feedback-target/debug/deps/project_commands-12680b7f6fceb6fd)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 16 filtered out; finished in 0.00s
+
+     Running tests/source_registration.rs (/tmp/deadpan-ui-feedback-target/debug/deps/source_registration-d88f476e69037f64)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (/tmp/deadpan-ui-feedback-target/debug/deps/deadpan_core-2dcf12ea8aa341da)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 82 filtered out; finished in 0.00s
+
+     Running tests/allocation_projection.rs (/tmp/deadpan-ui-feedback-target/debug/deps/allocation_projection-a0e5716cca9f8bf9)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.00s
+
+     Running tests/anchors.rs (/tmp/deadpan-ui-feedback-target/debug/deps/anchors-1bef0f6e2d04720a)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 26 filtered out; finished in 0.00s
+
+     Running tests/audio_binding_capture.rs (/tmp/deadpan-ui-feedback-target/debug/deps/audio_binding_capture-e7662ae95bb78ad5)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s
+
+     Running tests/audio_bindings.rs (/tmp/deadpan-ui-feedback-target/debug/deps/audio_bindings-e1f8150e2aa240b2)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 36 filtered out; finished in 0.00s
+
+     Running tests/audio_context.rs (/tmp/deadpan-ui-feedback-target/debug/deps/audio_context-c3827a1dacbe14ca)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.00s
+
+     Running tests/audio_edges.rs (/tmp/deadpan-ui-feedback-target/debug/deps/audio_edges-612e050ce3e2bda0)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+     Running tests/audio_lineage.rs (/tmp/deadpan-ui-feedback-target/debug/deps/audio_lineage-bd768f9565d8151e)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 10 filtered out; finished in 0.00s
+
+     Running tests/audio_reference.rs (/tmp/deadpan-ui-feedback-target/debug/deps/audio_reference-1e73c65a58bbcf9b)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.00s
+
+     Running tests/document.rs (/tmp/deadpan-ui-feedback-target/debug/deps/document-503c920598dd87ab)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 17 filtered out; finished in 0.00s
+
+     Running tests/framing.rs (/tmp/deadpan-ui-feedback-target/debug/deps/framing-ddc8848927340544)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 10 filtered out; finished in 0.00s
+
+     Running tests/gap_projection.rs (/tmp/deadpan-ui-feedback-target/debug/deps/gap_projection-d241dad51438b0eb)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.00s
+
+     Running tests/generated_holds.rs (/tmp/deadpan-ui-feedback-target/debug/deps/generated_holds-b9ea8d0c9d3b5ca3)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s
+
+     Running tests/insert_time.rs (/tmp/deadpan-ui-feedback-target/debug/deps/insert_time-131b9ef526bbda1f)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 13 filtered out; finished in 0.00s
+
+     Running tests/legacy_audio_lineage.rs (/tmp/deadpan-ui-feedback-target/debug/deps/legacy_audio_lineage-5456b3ba084e3f90)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.00s
+
+     Running tests/legacy_audio_selection.rs (/tmp/deadpan-ui-feedback-target/debug/deps/legacy_audio_selection-1770bf24763bceb4)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 21 filtered out; finished in 0.00s
+
+     Running tests/legacy_marks.rs (/tmp/deadpan-ui-feedback-target/debug/deps/legacy_marks-f25e5986c6fa3e18)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+     Running tests/legacy_split.rs (/tmp/deadpan-ui-feedback-target/debug/deps/legacy_split-d9903d7549a15431)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.00s
+
+     Running tests/mark_fragments.rs (/tmp/deadpan-ui-feedback-target/debug/deps/mark_fragments-eba131cdadd6f5e1)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.00s
+
+     Running tests/mark_resolution.rs (/tmp/deadpan-ui-feedback-target/debug/deps/mark_resolution-aa270e7c6483bdd3)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.00s
+
+     Running tests/marks.rs (/tmp/deadpan-ui-feedback-target/debug/deps/marks-0225a1e5731a663e)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 18 filtered out; finished in 0.00s
+
+     Running tests/occurrence_edits.rs (/tmp/deadpan-ui-feedback-target/debug/deps/occurrence_edits-443e51a8f16bdcd8)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.00s
+
+     Running tests/partitions.rs (/tmp/deadpan-ui-feedback-target/debug/deps/partitions-1d46d4d6c139b632)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+     Running tests/picture_context.rs (/tmp/deadpan-ui-feedback-target/debug/deps/picture_context-480b2d32e21a0d0f)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 20 filtered out; finished in 0.00s
+
+     Running tests/play_overrides.rs (/tmp/deadpan-ui-feedback-target/debug/deps/play_overrides-1cc415136f76b8c0)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.00s
+
+     Running tests/presentation_basis.rs (/tmp/deadpan-ui-feedback-target/debug/deps/presentation_basis-b7e54173f6ed70da)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.00s
+
+     Running tests/source_import.rs (/tmp/deadpan-ui-feedback-target/debug/deps/source_import-c531864a56638cff)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.00s
+
+     Running tests/split.rs (/tmp/deadpan-ui-feedback-target/debug/deps/split-61781d9f1baaf089)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 18 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (/tmp/deadpan-ui-feedback-target/debug/deps/deadpan_dsp-e20d9a32cd90d551)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/canonical.rs (/tmp/deadpan-ui-feedback-target/debug/deps/canonical-09f4240a9e3764a6)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 11 filtered out; finished in 0.00s
+
+     Running tests/finite_peak.rs (/tmp/deadpan-ui-feedback-target/debug/deps/finite_peak-979a6959e98b0411)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (/tmp/deadpan-ui-feedback-target/debug/deps/deadpan_fileclone-6887af3b803d82c1)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (/tmp/deadpan-ui-feedback-target/debug/deps/deadpan_jobs-8c5e8cb738bd2693)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+     Running tests/artifact.rs (/tmp/deadpan-ui-feedback-target/debug/deps/artifact-e7cdfb3273c79ea0)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.00s
+
+     Running tests/generation_plan.rs (/tmp/deadpan-ui-feedback-target/debug/deps/generation_plan-a47965ffdf25d94f)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 10 filtered out; finished in 0.00s
+
+     Running tests/lifecycle.rs (/tmp/deadpan-ui-feedback-target/debug/deps/lifecycle-a2527113838c1e42)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.00s
+
+     Running tests/protocol.rs (/tmp/deadpan-ui-feedback-target/debug/deps/protocol-65df475a3ed62f2c)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 11 filtered out; finished in 0.00s
+
+     Running tests/supervisor.rs (/tmp/deadpan-ui-feedback-target/debug/deps/supervisor-3628ae54e589865c)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 13 filtered out; finished in 0.00s
+
+     Running unittests examples/qualify_model_worker.rs (/tmp/deadpan-ui-feedback-target/debug/examples/qualify_model_worker-5b2adf81611ceb0f)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (/tmp/deadpan-ui-feedback-target/debug/deps/deadpan_media-5e8acdc419339752)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 19 filtered out; finished in 0.00s
+
+     Running tests/audio_session.rs (/tmp/deadpan-ui-feedback-target/debug/deps/audio_session-f5c659a4e34cc9e2)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s
+
+     Running tests/host_boundary.rs (/tmp/deadpan-ui-feedback-target/debug/deps/host_boundary-d1069244e8b9321b)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.00s
+
+     Running tests/source_import_timing.rs (/tmp/deadpan-ui-feedback-target/debug/deps/source_import_timing-861a4dff36a3b95d)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 18 filtered out; finished in 0.00s
+
+     Running tests/source_qualification.rs (/tmp/deadpan-ui-feedback-target/debug/deps/source_qualification-421db5460c7fb827)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 10 filtered out; finished in 0.00s
+
+     Running tests/source_session.rs (/tmp/deadpan-ui-feedback-target/debug/deps/source_session-7df736d68c4c2dbf)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (/tmp/deadpan-ui-feedback-target/debug/deps/deadpan_media_worker-2484028094de650a)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+
+     Running tests/bridge_real_media.rs (/tmp/deadpan-ui-feedback-target/debug/deps/bridge_real_media-82d992dc027b5684)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+
+     Running tests/bundle_qualification.rs (/tmp/deadpan-ui-feedback-target/debug/deps/bundle_qualification-5ea2bf5fc3411633)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+     Running tests/canonicalize_real_media.rs (/tmp/deadpan-ui-feedback-target/debug/deps/canonicalize_real_media-a99e49899c8fc0e9)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (/tmp/deadpan-ui-feedback-target/debug/deps/deadpan_models-612b66ccfc076c4f)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (/tmp/deadpan-ui-feedback-target/debug/deps/deadpan_native_process-d817522d2b6bad24)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.00s
+
+     Running tests/linux_ownership.rs (/tmp/deadpan-ui-feedback-target/debug/deps/linux_ownership-616f400d2ee0974c)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (/tmp/deadpan-ui-feedback-target/debug/deps/deadpan_output-25eb398392130426)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 12 filtered out; finished in 0.00s
+
+     Running tests/clock.rs (/tmp/deadpan-ui-feedback-target/debug/deps/clock-dc82177f40f776cd)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 10 filtered out; finished in 0.00s
+
+     Running tests/no_alloc.rs (/tmp/deadpan-ui-feedback-target/debug/deps/no_alloc-a6c1c744f7b19463)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.00s
+
+     Running tests/queue.rs (/tmp/deadpan-ui-feedback-target/debug/deps/queue-f0d1a729147f7884)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (/tmp/deadpan-ui-feedback-target/debug/deps/deadpan_plan-a06386990af331e9)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.00s
+
+     Running tests/audio_bindings.rs (/tmp/deadpan-ui-feedback-target/debug/deps/audio_bindings-4a8b28bdf7398416)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.00s
+
+     Running tests/audio_context.rs (/tmp/deadpan-ui-feedback-target/debug/deps/audio_context-ae965e1cf43719fa)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.00s
+
+     Running tests/audio_definition.rs (/tmp/deadpan-ui-feedback-target/debug/deps/audio_definition-e8f7b45468606cfa)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 18 filtered out; finished in 0.00s
+
+     Running tests/audio_domain.rs (/tmp/deadpan-ui-feedback-target/debug/deps/audio_domain-dbecb46d17818587)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.00s
+
+     Running tests/audio_fades.rs (/tmp/deadpan-ui-feedback-target/debug/deps/audio_fades-292bba000ca88367)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.00s
+
+     Running tests/audio_plan.rs (/tmp/deadpan-ui-feedback-target/debug/deps/audio_plan-f302fc4dabb112e6)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 22 filtered out; finished in 0.00s
+
+     Running tests/audio_policy.rs (/tmp/deadpan-ui-feedback-target/debug/deps/audio_policy-342a2c0a2faffba3)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.00s
+
+     Running tests/audio_reference.rs (/tmp/deadpan-ui-feedback-target/debug/deps/audio_reference-79ed650376f0456d)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.00s
+
+     Running tests/audio_signal.rs (/tmp/deadpan-ui-feedback-target/debug/deps/audio_signal-44997b4d205e5da0)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 17 filtered out; finished in 0.00s
+
+     Running tests/gap_bindings.rs (/tmp/deadpan-ui-feedback-target/debug/deps/gap_bindings-6f14599b4b6e207f)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+
+     Running tests/occurrence_edits.rs (/tmp/deadpan-ui-feedback-target/debug/deps/occurrence_edits-6db2b4527fdab725)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.00s
+
+     Running tests/picture_plan.rs (/tmp/deadpan-ui-feedback-target/debug/deps/picture_plan-fc4c76bb7dd1e4da)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 28 filtered out; finished in 0.00s
+
+     Running tests/play_overrides.rs (/tmp/deadpan-ui-feedback-target/debug/deps/play_overrides-a32ea016b8be08fb)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (/tmp/deadpan-ui-feedback-target/debug/deps/deadpan_playback-34f16a24a1d54369)
+
+running 1 test
+test tests::canonical_source_pcm_uses_fixed_monitor_gain_and_delivery_clock ... FAILED
+
+failures:
+
+---- tests::canonical_source_pcm_uses_fixed_monitor_gain_and_delivery_clock stdout ----
+
+thread 'tests::canonical_source_pcm_uses_fixed_monitor_gain_and_delivery_clock' (45007743) panicked at crates/deadpan-playback/src/tests.rs:234:9:
+timed out waiting for playback worker
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tests::canonical_source_pcm_uses_fixed_monitor_gain_and_delivery_clock
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 10 filtered out; finished in 25.49s
+
+error: test failed, to rerun pass `-p deadpan-playback --lib`

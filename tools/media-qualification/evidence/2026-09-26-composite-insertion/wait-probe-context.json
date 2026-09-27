@@ -1,0 +1,18 @@
+{
+  "rust": "1.97.1",
+  "build": [
+    "rustc",
+    "--edition",
+    "2024",
+    "-O",
+    "wait_probe.rs",
+    "-o",
+    "wait-probe"
+  ],
+  "environment": "macOS 26.5.2 arm64, restricted Codex sandbox",
+  "concurrent_work": "cargo test --workspace --locked --no-fail-fast compiling/running",
+  "source_sha256": "70a585c3fdac7c64df16dec10bbe6332063a6b571548dadf2c9011eaaa81c4c4",
+  "binary_sha256": "93631eb61dacb378689e46108d478ec1504a0a20f269f7dd9b71676db3b26627",
+  "measurements": "200 sleep calls and 200 acknowledged bounded channel deliveries; stdout aggregate summaries only",
+  "limits": "Separate process; uncontrolled load/power/scheduling; no product or historical worker-cost claim"
+}

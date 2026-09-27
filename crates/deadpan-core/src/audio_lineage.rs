@@ -89,6 +89,7 @@ pub(crate) fn reconcile(
             (Some(a), Some(b)) => {
                 same_raw_audio(&a.kind, &b.kind)
                     && before.overrides.get(id) == after.overrides.get(id)
+                    && before.gap_overrides.get(id) == after.gap_overrides.get(id)
             }
             _ => false,
         };

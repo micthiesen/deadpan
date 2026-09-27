@@ -11,8 +11,8 @@ use deadpan_output::{
     StopToken,
 };
 
-use crate::Snapshot;
 use crate::preparation::{self, Batch, Reply};
+use crate::{Snapshot, Target, Window};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Phase {
@@ -39,8 +39,10 @@ pub struct Update {
 pub enum RequestError {
     #[error("monitor gain must be finite and between zero and one")]
     InvalidGain,
-    #[error("playback start must be nonnegative")]
+    #[error("playback start must be nonnegative and inside the audition window")]
     InvalidStart,
+    #[error("audition window must be nonnegative and ordered, with a nonempty loop")]
+    InvalidWindow,
     #[error("playback engine has shut down")]
     Shutdown,
     #[error("playback request identities are exhausted")]
@@ -51,6 +53,8 @@ pub(crate) struct Job {
     pub epoch: u64,
     pub ticket: u64,
     pub snapshot: Arc<Snapshot>,
+    pub target: Target,
+    pub window: Option<Window>,
     pub start: AudioSample,
     pub gain: f32,
     pub cancelled: AtomicBool,
@@ -238,6 +242,51 @@ impl Engine {
         start: AudioSample,
         monitor_gain: f32,
     ) -> Result<(), RequestError> {
+        self.play_target(ticket, snapshot, Target::Sequence, start, monitor_gain)
+    }
+
+    pub fn play_target(
+        &self,
+        ticket: u64,
+        snapshot: Arc<Snapshot>,
+        target: Target,
+        start: AudioSample,
+        monitor_gain: f32,
+    ) -> Result<(), RequestError> {
+        self.request(ticket, snapshot, target, None, start, monitor_gain)
+    }
+
+    pub fn play_window(
+        &self,
+        ticket: u64,
+        snapshot: Arc<Snapshot>,
+        target: Target,
+        window: Window,
+        delivery_start: AudioSample,
+        monitor_gain: f32,
+    ) -> Result<(), RequestError> {
+        if window.sample(delivery_start).is_none() {
+            return Err(RequestError::InvalidStart);
+        }
+        self.request(
+            ticket,
+            snapshot,
+            target,
+            Some(window),
+            delivery_start,
+            monitor_gain,
+        )
+    }
+
+    fn request(
+        &self,
+        ticket: u64,
+        snapshot: Arc<Snapshot>,
+        target: Target,
+        window: Option<Window>,
+        start: AudioSample,
+        monitor_gain: f32,
+    ) -> Result<(), RequestError> {
         if !monitor_gain.is_finite() || !(0.0..=1.0).contains(&monitor_gain) {
             return Err(RequestError::InvalidGain);
         }
@@ -259,6 +308,8 @@ impl Engine {
             epoch,
             ticket,
             snapshot,
+            target,
+            window,
             start,
             gain: monitor_gain,
             cancelled: AtomicBool::new(false),

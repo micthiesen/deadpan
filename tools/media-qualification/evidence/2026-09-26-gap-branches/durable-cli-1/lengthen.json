@@ -1,0 +1,11 @@
+{
+  "protocol": 1,
+  "project_id": "e8c39a6d-58aa-4f49-8f3b-9ee65244b8de",
+  "expected_revision": "84dcb101-9dbd-48fb-8ab3-406048695ad1",
+  "new_revision": "lengthen",
+  "command": {
+    "command": "set_hold_duration",
+    "node": "independent",
+    "duration": 3
+  }
+}

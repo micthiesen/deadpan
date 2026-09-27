@@ -1,0 +1,44 @@
+{
+  "base": "origin/main",
+  "scope": "Current increment against saved before/ working-tree snapshot; prior dirty changes preserved",
+  "reviewers": [
+    "sound_routes_general_review",
+    "sound_routes_timing_review",
+    "sound_rules_cache_review"
+  ],
+  "source_sha256": {
+    "crates/deadpan-core/src/sound_route.rs": "b68f2ff6b780c894d96aadccfddf2316b414d96bb01865a4e66096ca10d24bc0",
+    "crates/deadpan-core/tests/sound_routes.rs": "3e8d1fd267761af81c1676ec9bdafdb25c51eaede6ad58ad0eb989f24093cc26",
+    "crates/deadpan-plan/src/audio_hold_policy.rs": "3be90f9d1f53d307cdf57ccba354676026521b8f10cf1fa83bea5f6c35e08e7e",
+    "crates/deadpan-plan/src/audio_sound_route.rs": "8aeed3f0eddf5d26c16df9a9859440a885857aea018791f7ff63eaf76af6ad13",
+    "crates/deadpan-plan/src/lib.rs": "5ff1258a51bfd457ee73083d2ed6edccba4c1c4a7605fe9b085ece6673952034",
+    "crates/deadpan-plan/src/plan.rs": "2b985f8933374b167e0e1f9c524efb128a9f8b863fb75fa64c01ce5ea317e672",
+    "crates/deadpan-plan/tests/hold_policy.rs": "c21a81961b4d2cf0483b2a98858413fab76fd6bd323ba2ed4e4c36c435cd146b",
+    "crates/deadpan-plan/tests/sound_route_sampling.rs": "3e988b5c67f71a99942a3e8ad4a954b8c22acb87656bc5c5644250797d80752e",
+    "crates/deadpan-playback/src/sources.rs": "96cb97691cd62a2845fc325a9cd48adac73841192694da941cb2525d784ccf2d",
+    "crates/deadpan-playback/src/sources/cache_tests.rs": "81d45d3fc519e3a95c7b6435f4cf1f7194890a250c23c55a715dcb63bbf7185e"
+  },
+  "applied": [
+    {
+      "issue": "Window/Keep could read a sample after the old selected cut when displaced rounding added an output sample",
+      "fix": "Pass the old selection physical half-open allocation through recursive evaluation; emit a gap beyond it while preserving complete recipe context",
+      "files": [
+        "crates/deadpan-plan/src/audio_sound_route.rs",
+        "crates/deadpan-plan/tests/sound_route_sampling.rs"
+      ],
+      "verification": "Endpoint regression for both operations, 375 signed/fractional grid combinations, timing reviewer and general reviewer re-review"
+    }
+  ],
+  "fixture_corrections": [
+    "No-audio Source fixture now has valid still-image content rather than invalid blank/no-media Source",
+    "Cache fixtures use 17 distinct MP4 byte objects with empty free atoms to avoid intentional registration deduplication; each read matches its own receipt"
+  ],
+  "dismissed": [
+    {
+      "issue": "Eviction before a later decode failure can remove usable warm entries",
+      "reason": "Required to reserve hard PCM/index limits before decode; verified originals precede eviction and failed preparation never charges candidate totals. Documented behavior, reviewer withdrew finding."
+    }
+  ],
+  "outstanding": [],
+  "final_review": "No outstanding actionable findings in scoped source"
+}

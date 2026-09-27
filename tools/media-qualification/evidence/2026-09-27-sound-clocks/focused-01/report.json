@@ -1,0 +1,44 @@
+{
+  "commands": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-core",
+        "--test",
+        "sound_routes"
+      ],
+      "exit_code": 0,
+      "seconds": 92.08956270897761,
+      "log": "0.log",
+      "tests": {
+        "passed": 19,
+        "failed": 0,
+        "ignored": 0
+      }
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-plan",
+        "--test",
+        "sound_route_sampling",
+        "--test",
+        "hold_policy"
+      ],
+      "exit_code": 101,
+      "seconds": 96.47337750019506,
+      "log": "1.log",
+      "tests": {
+        "passed": 7,
+        "failed": 3,
+        "ignored": 0
+      }
+    }
+  ]
+}

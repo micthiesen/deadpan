@@ -567,6 +567,7 @@ fn reference(gap: InputGap) -> Arc<AudioReferencePlan> {
         InputGap::SilentHold => BeatNode::hold(
             "Silent",
             HoldRecipe {
+                picture_context: None,
                 duration: duration(2),
                 video: HoldVideo::Background,
                 audio: HoldAudio::Silence,

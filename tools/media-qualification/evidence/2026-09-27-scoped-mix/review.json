@@ -1,0 +1,88 @@
+{
+  "review_base": "origin/main",
+  "subject": "increment against saved pre-sound working tree; previous pending work excluded",
+  "reviewers": [
+    "mix_general_review",
+    "mix_timing_review",
+    "mix_resource_review"
+  ],
+  "findings": [
+    {
+      "area": "silence metadata",
+      "failure": "OutsideSourcePlacement contributed zero PCM but no bus known-silence range",
+      "action": "Union explicit raw Leaf(Silence) spans into per-voice effective silence before intersection; retain opaque processed outputs",
+      "regression": "a_silent_hold_voice_does_not_suppress_the_other_voice",
+      "status": "fixed and re-reviewed; covered by final focused9-case run"
+    },
+    {
+      "area": "PCM residency",
+      "failure": "f64 accumulator plus voice output and overlapping span buffer requires4 frame equivalents, previously charged3",
+      "action": "Charge4 and test3 rejection before I/O plus4 success",
+      "status": "fixed and re-reviewed; covered by final focused9-case run"
+    },
+    {
+      "area": "dependency admission",
+      "failure": "1024 distinct asset limit was enforced only after provider calls",
+      "action": "Shared MAX_SOURCE_DEPENDENCIES and request-local preflight AssetId set on existing leaf/policy traversal; runtime provenance retained",
+      "status": "fixed and re-reviewed; covered by final focused9-case run"
+    }
+  ],
+  "test_oracle_correction": {
+    "failure": "44.1k voice reference used selected span endpoint4410 despite37-sample onset in4800-sample host",
+    "action": "Use physical support ceil((4800-37)*147/160)=4377; retain exact PCM assertions",
+    "result": "five of six PCM cases passed; only separately corrected silence metadata case still failed"
+  },
+  "remaining_review": null,
+  "final_review": "General and timing reviews accepted silence correction; resource review accepted final4-frame reservation and static dependency cap with their regression tests. No material finding remains.",
+  "source_sha256": {
+    "crates/deadpan-audio/src/signal_input.rs": "e1b9782f8730a19ce2fc46e393033f642d666d6109466b045146d747b8a08085",
+    "crates/deadpan-audio/src/signal_mix.rs": "a0d083a6b11287681b2d5bcbd6f21ce62baa11a1ed3e1322adeaeb31e5fb062d",
+    "crates/deadpan-audio/src/stage_projection.rs": "f942cf3e43e3e24660a79af16eb7f3fcb45b2edd0c264f12664453d3f4336369",
+    "crates/deadpan-audio/src/stages.rs": "66ed31cf60aa647ab0e6da9cbaa77ae68f982f488ec1570f08fd7d4411e8c571",
+    "crates/deadpan-audio/tests/audio_definition.rs": "806ed4c8e068e8da3eed67dab3f8ed1604988333b55b4c9f3058850a612263d4",
+    "crates/deadpan-audio/tests/audio_definition/mix.rs": "065678f241303f1bbc11e7afd55c3d5cd9e6e5888d30d37a136b3732d8d9ca19",
+    "crates/deadpan-audio/tests/audio_definition/mix_limits.rs": "8858f3d891f90bf5055e5f70d9675f77903a3c20d901959acdc1dc42feb4e5f7",
+    "crates/deadpan-audio/tests/audio_definition/projection.rs": "3d5082dfea4898aeca2cb0054a109c7f06af52a195280bc096c02f726b4d92b3",
+    "crates/deadpan-plan/src/audio_mix.rs": "fd0086865e01ffc11aa358935273e5a26619b7677957645ee82f1be6bc2ce693",
+    "crates/deadpan-plan/src/audio_projection.rs": "af7e4f4c6707fc871d49221b82827fb02aba5e5e1d5d00263fe27e5543c1eb34",
+    "crates/deadpan-plan/src/audio_tape.rs": "732e77a1a760232af2cd46948c729b7b1f3c1797606b21def04eb0217071dd6b",
+    "crates/deadpan-plan/src/lib.rs": "030e903ae48e78e234d4d018c3ee7cf54d78197ec44bdf31eea64a0ca33b8619",
+    "crates/deadpan-plan/tests/audio_definition/projection.rs": "834c1ea4ad0aba0e255b712e85dcfee13c264f75ca4669af785e788ef0c24f02",
+    "crates/deadpan-plan/tests/audio_tape.rs": "f54717da88d944622c07435a0cfdff34f2bd83967cf36685906184ba916a09a1",
+    "crates/deadpan-plan/tests/audio_tape/mix.rs": "d4f2eab9ac6f6728185d6bc6864220caf633e4209678d8bf8ceca8d7e4a45a66"
+  },
+  "integration_contract_correction": {
+    "source": "specification10.2 per-voice effect order; sound_attachment_map follow-up",
+    "finding": "Earlier design inference unnecessarily required distinct sound voices to share nonlinear Preserve; one bus mask cannot independently suppress Original decay and permit SFX",
+    "action": "Document separate continuous voice processing and scoped output gates before default group mix; retain new_mixed_input as explicit aggregate capability",
+    "further_required_work": "Durable voice/send subjects and Hold issuers with compact exact output-policy evaluation, plus authored events and all remaining integration",
+    "code_changed": false,
+    "review": "General reviewer re-read final docs against specification10.2/10.4; no findings. Authored events/UI remain explicitly unimplemented."
+  },
+  "playback_timeout_investigation": {
+    "reviewer": "mix_general_review",
+    "code_change": false,
+    "observations": [
+      "No definite lost wakeup or deadlock in mutex/condition-variable handoffs",
+      "playing_device observes only Fake.started and hides earlier preparation failures behind its generic 10 second timeout",
+      "Production preparation permits 60 seconds per batch",
+      "Playback does not call the new mixed reader",
+      "Same binary: default concurrency failed; four individual cases passed; all 17 serial tests passed"
+    ],
+    "conclusion": "Unresolved concurrency-sensitive test timeout; no product defect established and no timeout assertions weakened",
+    "serial_report": {
+      "command": [
+        "/Users/michael/Code/deadpan/target/debug/deps/deadpan_playback-34f16a24a1d54369",
+        "--test-threads=1"
+      ],
+      "binary_sha256": "0bdd60b9c3620a1a53576747e6edfb432caa12f41318b5d6bb3777a6debc930b",
+      "exit_code": 0,
+      "seconds": 104.77748441556469,
+      "tests": {
+        "passed": 17,
+        "failed": 0,
+        "ignored": 0
+      }
+    }
+  }
+}

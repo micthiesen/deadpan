@@ -18,10 +18,30 @@ use rusqlite::Connection;
 
 type Result<T = ()> = std::result::Result<T, Box<dyn Error>>;
 
+#[path = "migration/audio_gap_bindings.rs"]
+mod audio_gap_bindings;
+#[path = "migration/audio_reanchors.rs"]
+mod audio_reanchors;
+#[path = "migration/composite_insert.rs"]
+mod composite_insert;
 #[path = "migration/framing.rs"]
 mod framing;
+#[path = "migration/gap_branches.rs"]
+mod gap_branches;
 #[path = "migration/insert_time.rs"]
 mod insert_time;
+#[path = "migration/interior_insert.rs"]
+mod interior_insert;
+#[path = "migration/moment_splice.rs"]
+mod moment_splice;
+#[path = "migration/picture_context.rs"]
+mod picture_context;
+#[path = "migration/retime.rs"]
+mod retime;
+#[path = "migration/sequence_insert.rs"]
+mod sequence_insert;
+#[path = "migration/source_selection.rs"]
+mod source_selection;
 
 #[test]
 fn schema_twenty_one_retains_exact_lineage_and_does_not_invent_audio_bindings() -> Result {

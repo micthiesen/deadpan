@@ -18,6 +18,7 @@ fn ratio(n: i128, d: i128) -> ExactRatio {
 }
 fn recipe(frames: i64) -> HoldRecipe {
     HoldRecipe {
+        picture_context: None,
         duration: duration(frames),
         video: HoldVideo::Background,
         audio: HoldAudio::Silence,
@@ -86,6 +87,7 @@ fn tree(children: &[&str], nodes: Vec<(&str, BeatNode)>) -> ProjectDocument {
             index: 0,
             subtree: Subtree {
                 overrides: Default::default(),
+                gap_overrides: Default::default(),
                 root: node("group"),
                 nodes,
             },
@@ -212,6 +214,7 @@ fn biased_insertions_and_outside_edges_follow_original_content() {
         index,
         subtree: Subtree {
             overrides: Default::default(),
+            gap_overrides: Default::default(),
             root: node(id),
             nodes: BTreeMap::from([(node(id), hold(2))]),
         },
@@ -241,6 +244,7 @@ fn empty_hosts_retain_biased_edges_and_zero_children_do_not_capture_time() {
             index: 0,
             subtree: Subtree {
                 overrides: Default::default(),
+                gap_overrides: Default::default(),
                 root: node("a"),
                 nodes: BTreeMap::from([(node("a"), hold(5))]),
             },
@@ -256,6 +260,7 @@ fn empty_hosts_retain_biased_edges_and_zero_children_do_not_capture_time() {
             index: 0,
             subtree: Subtree {
                 overrides: Default::default(),
+                gap_overrides: Default::default(),
                 root: node("zero"),
                 nodes: BTreeMap::from([(node("zero"), BeatNode::sequence("Empty", vec![]))]),
             },
@@ -344,6 +349,7 @@ fn ownership_loss_is_independent_and_unresolved_requires_explicit_reattachment()
             index: 0,
             subtree: Subtree {
                 overrides: Default::default(),
+                gap_overrides: Default::default(),
                 root: node("a"),
                 nodes: BTreeMap::from([(node("a"), hold(3))]),
             },
@@ -944,6 +950,7 @@ fn named_source_and_authored_local_marks_require_explicit_repeat_scope() {
             index: 0,
             subtree: Subtree {
                 overrides: Default::default(),
+                gap_overrides: Default::default(),
                 root: node("source"),
                 nodes: BTreeMap::from([(
                     node("source"),

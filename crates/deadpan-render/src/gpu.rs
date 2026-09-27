@@ -3,6 +3,8 @@ use std::sync::{
     atomic::{AtomicBool, Ordering},
 };
 
+use deadpan_core::CapturedFraming;
+
 use crate::{FitMode, FramingLayer, PictureGeometry, Primaries, RenderError, Rgba8Frame, Transfer};
 use crate::{color::conversion, surface::validate_dimensions};
 
@@ -190,6 +192,20 @@ impl PictureRenderer {
         mode: FitMode,
         layers: &[FramingLayer],
     ) -> Result<wgpu::SubmissionIndex, RenderError> {
+        self.render_composed(frame, target, None, canvas, mode, layers)
+    }
+
+    /// Render a retained picture context before the current live scopes. The
+    /// composed geometry validates all captured canvases before any upload.
+    pub fn render_composed(
+        &mut self,
+        frame: &Rgba8Frame,
+        target: &RenderTarget,
+        context: Option<&CapturedFraming>,
+        canvas: [u32; 2],
+        mode: FitMode,
+        layers: &[FramingLayer],
+    ) -> Result<wgpu::SubmissionIndex, RenderError> {
         if !Arc::ptr_eq(&self.owner, &target.owner) {
             return Err(RenderError::ForeignTarget);
         }
@@ -198,8 +214,9 @@ impl PictureRenderer {
             return Err(RenderError::Busy);
         }
         let metadata = frame.metadata();
-        let geometry = PictureGeometry::framed(
+        let geometry = PictureGeometry::composed(
             metadata,
+            context,
             canvas,
             [target.width(), target.height()],
             mode,

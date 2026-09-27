@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/Users/michael/Code/deadpan/target/debug/deps/deadpan_playback-34f16a24a1d54369"
+  ],
+  "sha256": "164b98ea42232884dfa15bd5b9f5e90ed2a8f80231eadf1c8984786a8bceb284",
+  "exit_code": 0,
+  "seconds": 12.893360709305853,
+  "test_threads": "default",
+  "changed_timeouts_or_assertions": false,
+  "rust_backtrace": "unset as in the original full gate",
+  "reason": "Package-only Cargo retry compiled a different feature-unified binary; backtrace instrumentation timed out the intentionally panicking test. This runs the original exact workspace artifact."
+}

@@ -1,0 +1,68 @@
+{
+  "protocol": 1,
+  "project_id": "d038df46-94c6-4c0a-9d11-038b0e6da220",
+  "expected_revision": "be7d0fe2-e422-4fed-ac69-d3c7d4a93e55",
+  "new_revision": "core27-nested-splice",
+  "command": {
+    "command": "splice_source",
+    "parent": "core26-inner",
+    "index": 1,
+    "source": {
+      "duration": 30,
+      "video": {
+        "type": "blank"
+      },
+      "video_mapping": {
+        "type": "fit_beat"
+      },
+      "audio": {
+        "asset": "audio",
+        "span": {
+          "start": {
+            "ticks": 0,
+            "time_base": {
+              "numerator": 1,
+              "denominator": 48000
+            }
+          },
+          "end": {
+            "ticks": 48000,
+            "time_base": {
+              "numerator": 1,
+              "denominator": 48000
+            }
+          }
+        }
+      },
+      "audio_mapping": {
+        "type": "selected_placement",
+        "start": {
+          "numerator": "-2",
+          "denominator": "3"
+        },
+        "frames": {
+          "numerator": "30000",
+          "denominator": "1001"
+        },
+        "selection": {
+          "start": {
+            "numerator": "2",
+            "denominator": "1"
+          },
+          "end": {
+            "numerator": "20",
+            "denominator": "1"
+          }
+        }
+      },
+      "link": "independent",
+      "audio_offset": -31
+    },
+    "id": "core27-nested-paste",
+    "label": "Pasted selected audio",
+    "timing": {
+      "allocation": "core27-nested-splice",
+      "ordinal": 0
+    }
+  }
+}

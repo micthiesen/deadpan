@@ -81,6 +81,7 @@ fn hold(frames: i64, audio: HoldAudio) -> BeatNode {
     BeatNode::hold(
         "Hold",
         HoldRecipe {
+            picture_context: None,
             duration: duration(frames),
             video: HoldVideo::Background,
             audio,
@@ -769,6 +770,7 @@ fn hidden_room_tone_gap_keeps_its_loop_origin_and_rechecks_cached_admission() {
                         iterations: IterationOrder::new(RevisionId::new("plays").unwrap(), 3)
                             .unwrap(),
                         gap: Some(HoldRecipe {
+                            picture_context: None,
                             duration: duration(181),
                             video: HoldVideo::Background,
                             audio: HoldAudio::RoomTone {

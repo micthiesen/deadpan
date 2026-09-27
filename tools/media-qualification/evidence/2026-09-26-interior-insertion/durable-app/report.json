@@ -1,0 +1,10 @@
+{
+  "passed": true,
+  "binary_sha256": "547b18a2a44d92ab54958f86fbbaeb8c943861024eb9a6a6bb6b2815113680e0",
+  "entrypoint": "deadpan-app --headless",
+  "commands": 42,
+  "revisions": 10,
+  "history_entries": 5,
+  "final_revision": "f54edc4a-4736-4274-ac65-44c8b94e7da4",
+  "scope": "Ordinary Hold interior before Repeat, repeated fragment insertion, process reopen on every command, two atomic undo/redo edits, nested Repeat interior refusal"
+}

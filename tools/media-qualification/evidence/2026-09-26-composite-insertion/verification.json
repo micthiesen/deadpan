@@ -1,0 +1,244 @@
+{
+  "base_revision": "c03a5edde5f28d27074745eb15711cb28b1f2e50",
+  "committed": false,
+  "pushed": false,
+  "git_metadata_access": "read-only in this session",
+  "environment": {
+    "os": "macOS 26.5.2",
+    "build": "25F84",
+    "architecture": "arm64",
+    "rust": "1.97.1",
+    "ffmpeg_prefix": "/tmp/deadpan-ui-ffmpeg/prefix"
+  },
+  "core_schema": 24,
+  "database_schema": 30,
+  "audio_context_schema": 3,
+  "gate": {
+    "commands": [
+      {
+        "command": [
+          "cargo",
+          "fmt",
+          "--all",
+          "--",
+          "--check"
+        ],
+        "exit_code": 0,
+        "seconds": 2.924374499823898,
+        "log": "0.log"
+      },
+      {
+        "command": [
+          "cargo",
+          "clippy",
+          "--workspace",
+          "--all-targets",
+          "--locked",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "exit_code": 0,
+        "seconds": 424.69716216716915,
+        "log": "1.log"
+      },
+      {
+        "command": [
+          "cargo",
+          "test",
+          "--workspace",
+          "--locked",
+          "--no-fail-fast"
+        ],
+        "exit_code": 101,
+        "seconds": 1016.7725537498482,
+        "log": "2.log"
+      },
+      {
+        "command": [
+          "cargo",
+          "build",
+          "--workspace",
+          "--locked"
+        ],
+        "exit_code": 0,
+        "seconds": 0.9315829589031637,
+        "log": "3.log"
+      },
+      {
+        "command": [
+          "cargo",
+          "run",
+          "--locked",
+          "-p",
+          "deadpan-cli",
+          "--",
+          "doctor"
+        ],
+        "exit_code": 0,
+        "seconds": 33.04891441715881,
+        "log": "4.log"
+      },
+      {
+        "command": [
+          "cargo",
+          "clippy",
+          "-p",
+          "deadpan-app",
+          "--features",
+          "ui-harness",
+          "--all-targets",
+          "--locked",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "exit_code": 0,
+        "seconds": 127.99324304237962,
+        "log": "5.log"
+      },
+      {
+        "command": [
+          "cargo",
+          "test",
+          "-p",
+          "deadpan-app",
+          "--features",
+          "ui-harness",
+          "--locked"
+        ],
+        "exit_code": 0,
+        "seconds": 4.83178500039503,
+        "log": "6.log"
+      }
+    ],
+    "source_count": 490,
+    "source_unchanged": true,
+    "changed_sources": [],
+    "tests": {
+      "passed": 1548,
+      "failed": 2,
+      "ignored": 0
+    },
+    "passed": false
+  },
+  "expectation_followup": {
+    "commands": [
+      {
+        "command": [
+          "cargo",
+          "fmt",
+          "--all",
+          "--",
+          "--check"
+        ],
+        "exit_code": 0,
+        "seconds": 2.9597311657853425,
+        "log": "0.log"
+      },
+      {
+        "command": [
+          "cargo",
+          "clippy",
+          "-p",
+          "deadpan-core",
+          "--all-targets",
+          "--locked",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "exit_code": 0,
+        "seconds": 148.3591169998981,
+        "log": "1.log"
+      },
+      {
+        "command": [
+          "cargo",
+          "test",
+          "-p",
+          "deadpan-core",
+          "--test",
+          "audio_bindings",
+          "--locked"
+        ],
+        "exit_code": 0,
+        "seconds": 25.002506291959435,
+        "log": "2.log"
+      }
+    ],
+    "changed_since_full_gate": [
+      "crates/deadpan-core/tests/audio_bindings/gaps.rs"
+    ],
+    "source_count": 490,
+    "source_unchanged": true,
+    "production_sources_unchanged": true,
+    "passed": true
+  },
+  "durable_headless": {
+    "passed": true,
+    "binary_sha256": "77a06d877aab6d97d7a447b152ec12f048a2b3b2be0a0e17db7abf3256e5c0ac",
+    "entrypoint": "deadpan-app --headless",
+    "commands": 44,
+    "revisions": 11,
+    "history_entries": 6,
+    "final_revision": "605f5fff-5a5c-4438-b9cd-55fd62b85af7",
+    "scope": "Public-command split Repeat with isolated gap, two root-seam pauses, durable undo/redo, atomic interior refusal"
+  },
+  "reviews": {
+    "scope": "Composite root-seam InsertTime compared with the preserved core23/db29 source snapshot",
+    "base_git_revision": "c03a5edde5f28d27074745eb15711cb28b1f2e50",
+    "reviews": [
+      {
+        "agent": "composite_general_review",
+        "lens": "General correctness, invariants, integration and test coverage",
+        "findings": [],
+        "summary": "No findings after review against the preserved pre-increment sources."
+      },
+      {
+        "agent": "composite_audio_review",
+        "lens": "Exact audio timing, compact admission and Preserve boundaries",
+        "findings": [],
+        "summary": "No findings: current root-clock placements, bounded chronological steps, compact Repeat/gap handling."
+      },
+      {
+        "agent": "composite_migration_review",
+        "lens": "Migration safety and backward replay compatibility",
+        "findings": [],
+        "summary": "No findings: old contextual admission checked before replay; closed schema23 adapter; existing backup-before-promotion flow preserved."
+      }
+    ],
+    "complete": true,
+    "full_gate_followup": {
+      "finding": "An older gap-binding integration test still required rejection of the newly admitted root Repeat seam.",
+      "change": "The test now checks successful seam insertion, exact undo, and rejection of an interior Repeat boundary.",
+      "changed_source": "crates/deadpan-core/tests/audio_bindings/gaps.rs",
+      "review": "Main reviewed the positive and negative assertions against the admitted root-seam contract; no production change."
+    }
+  },
+  "visual": {
+    "failed": true,
+    "binary_sha256": "77a06d877aab6d97d7a447b152ec12f048a2b3b2be0a0e17db7abf3256e5c0ac",
+    "scenarios": [
+      {
+        "name": "kestrel-shortcuts",
+        "failed": false,
+        "findings": []
+      },
+      {
+        "name": "editing",
+        "failed": true,
+        "findings": [
+          {
+            "message": "Scenario panicked: Failed to create render state: CustomNativeAdapterSelectionError(\"No adapter found\")",
+            "severity": "failure"
+          }
+        ]
+      }
+    ]
+  },
+  "qualification": "docs/qualification/composite-insertion-2026-09-26.md",
+  "earlier_host_ui_evidence": "tools/ui-feedback/evidence/2026-09-26/summary.json",
+  "performance": "Not rerun: the required Metal adapter is unavailable; prior host timing does not cover added composite pause replay",
+  "native_lifecycle": "Not repeated: startup/shutdown unchanged"
+}

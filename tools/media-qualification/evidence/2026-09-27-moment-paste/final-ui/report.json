@@ -1,0 +1,56 @@
+{
+  "commands": [
+    {
+      "mode": "visual",
+      "command": [
+        "cargo",
+        "run",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--locked",
+        "--",
+        "--ui-check",
+        "--mode",
+        "visual",
+        "--scenario",
+        "original-moment",
+        "--kestrel-source",
+        "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+        "--output",
+        "/tmp/deadpan-moment-paste-20260926/ui-moment-final-visual"
+      ],
+      "exit_code": 1,
+      "seconds": 2.337865041103214,
+      "log": "visual.log"
+    },
+    {
+      "mode": "performance",
+      "command": [
+        "cargo",
+        "run",
+        "-p",
+        "deadpan-app",
+        "--release",
+        "--features",
+        "ui-harness",
+        "--locked",
+        "--",
+        "--ui-check",
+        "--mode",
+        "performance",
+        "--scenario",
+        "original-moment",
+        "--kestrel-source",
+        "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+        "--output",
+        "/tmp/deadpan-moment-paste-20260926/ui-moment-final-performance"
+      ],
+      "exit_code": 1,
+      "seconds": 1.1573517499491572,
+      "log": "performance.log"
+    }
+  ],
+  "source_unchanged": true
+}

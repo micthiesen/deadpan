@@ -112,6 +112,32 @@
       "referenced_images": [
         "boards/single-source-workspace-v1.png"
       ]
+    },
+    {
+      "image": "boards/original-moment-reuse-v1.png",
+      "status": "current-target",
+      "generated_on": "2026-09-26",
+      "sha256": "69cb6d24ce9e1ec052c5773c2b4451ba879356f1f62824673bbfb5d3c9a24b02",
+      "width": 1585,
+      "height": 992,
+      "prompt": "prompts/original-moment-reuse-v1.txt",
+      "prompt_sha256": "85d1ba47e62b22c453f71c8c0f51c246d4705140d9527dbc0911e5065d1b8d22",
+      "referenced_images": [
+        "boards/single-source-workspace-v1.png"
+      ]
+    },
+    {
+      "image": "boards/sound-audition-board-v1.png",
+      "status": "current-target",
+      "generated_on": "2026-09-27",
+      "sha256": "934f5db46d0452e2b64e43970f376d17baa3d0a4f009258c847299c602bdd331",
+      "width": 1513,
+      "height": 1040,
+      "prompt": "prompts/sound-audition-board-v1.txt",
+      "prompt_sha256": "7650d7ddb6118c5430bc8149b3041f454c111d5ebc900439310ad4da969b1914",
+      "referenced_images": [
+        "boards/single-source-workspace-v1.png"
+      ]
     }
   ]
 }

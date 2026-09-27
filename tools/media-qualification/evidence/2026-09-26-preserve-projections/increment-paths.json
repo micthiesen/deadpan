@@ -1,0 +1,17 @@
+[
+  "crates/deadpan-audio/src/signal_input.rs",
+  "crates/deadpan-audio/src/stage_projection.rs",
+  "crates/deadpan-audio/src/stages.rs",
+  "crates/deadpan-audio/tests/audio_definition.rs",
+  "crates/deadpan-audio/tests/audio_definition/projection.rs",
+  "crates/deadpan-plan/src/audio.rs",
+  "crates/deadpan-plan/src/audio_bound.rs",
+  "crates/deadpan-plan/src/audio_fades.rs",
+  "crates/deadpan-plan/src/audio_policy.rs",
+  "crates/deadpan-plan/src/audio_projection.rs",
+  "crates/deadpan-plan/src/audio_signal.rs",
+  "crates/deadpan-plan/src/audio_tape.rs",
+  "crates/deadpan-plan/src/lib.rs",
+  "crates/deadpan-plan/tests/audio_definition.rs",
+  "crates/deadpan-plan/tests/audio_definition/projection.rs"
+]

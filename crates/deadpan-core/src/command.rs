@@ -22,6 +22,12 @@ pub struct Subtree {
     pub nodes: BTreeMap<NodeId, BeatNode>,
     #[serde(default, deserialize_with = "unique_map")]
     pub overrides: BTreeMap<NodeId, PlayOverrides>,
+    #[serde(
+        default,
+        skip_serializing_if = "BTreeMap::is_empty",
+        deserialize_with = "unique_map"
+    )]
+    pub gap_overrides: BTreeMap<NodeId, PlayOverrides>,
 }
 
 /// One source beat inserted atomically with its immutable asset registration.
@@ -47,6 +53,16 @@ pub enum Command {
         hold: HoldRecipe,
         id: NodeId,
         identities: crate::SplitIdentities,
+        timing: crate::AudioTimingId,
+    },
+    /// Insert one Source at an explicit ordinary Sequence slot, preserving the
+    /// sampled entry of every shifted physical owner. Ancestors stay live.
+    SpliceSource {
+        parent: NodeId,
+        index: usize,
+        source: SourceNode,
+        id: NodeId,
+        label: String,
         timing: crate::AudioTimingId,
     },
     /// Split an interior local output boundary without changing rendered time.
@@ -93,6 +109,21 @@ pub enum Command {
         plays: u32,
         gap: Option<HoldRecipe>,
     },
+    /// Map the complete selected child's output into a new authored duration.
+    WrapRetime {
+        node: NodeId,
+        id: NodeId,
+        duration: FrameDuration,
+        pitch: crate::PitchPolicy,
+    },
+    /// Change an ordinary Retime's output, retaining its child selection.
+    /// A changed output starts on the current allocation clock; child timing
+    /// bindings remain intact. Identical parameters retain the old output clock.
+    SetRetime {
+        node: NodeId,
+        duration: FrameDuration,
+        pitch: crate::PitchPolicy,
+    },
     InsertPlays {
         node: NodeId,
         index: u32,
@@ -123,6 +154,10 @@ pub enum Command {
     SetHoldProvider {
         node: NodeId,
         video: HoldVideo,
+    },
+    SetHoldPictureContext {
+        node: NodeId,
+        context: Option<crate::CapturedFraming>,
     },
     AcceptGeneratedHold {
         node: NodeId,
@@ -186,6 +221,22 @@ pub enum Command {
         node: NodeId,
         iteration: IterationId,
     },
+    SetGapOverride {
+        node: NodeId,
+        iteration: IterationId,
+        subtree: Subtree,
+    },
+    /// Materialize one current default gap without changing its output clocks.
+    IsolateGap {
+        node: NodeId,
+        iteration: IterationId,
+        id: NodeId,
+        timing: crate::AudioTimingId,
+    },
+    ClearGapOverride {
+        node: NodeId,
+        iteration: IterationId,
+    },
     EditOccurrence {
         instance: InstancePath,
         edit: OccurrenceEdit,
@@ -233,6 +284,12 @@ pub struct DocumentPatch {
         skip_serializing_if = "BTreeMap::is_empty",
         deserialize_with = "unique_map"
     )]
+    pub gap_overrides: BTreeMap<NodeId, ValueChange<PlayOverrides>>,
+    #[serde(
+        default,
+        skip_serializing_if = "BTreeMap::is_empty",
+        deserialize_with = "unique_map"
+    )]
     pub audio_lineage: BTreeMap<NodeId, ValueChange<crate::AudioLineageId>>,
     /// One guarded replacement keeps binding ownership and timing records atomic.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -261,6 +318,7 @@ impl DocumentPatch {
             || self.assets.len() > MAX_DOCUMENT_NODES
             || self.marks.len() > MAX_DOCUMENT_MARKS
             || self.overrides.len() > MAX_DOCUMENT_NODES
+            || self.gap_overrides.len() > MAX_DOCUMENT_NODES
             || self.audio_lineage.len() > MAX_DOCUMENT_NODES
         {
             return Err(EditError::new(
@@ -277,6 +335,22 @@ impl DocumentPatch {
             self.nodes
                 .values()
                 .filter_map(|change| change.after.as_ref()),
+        )?;
+        crate::picture_context::validate_nodes(
+            self.nodes
+                .values()
+                .filter_map(|change| change.before.as_ref()),
+        )?;
+        crate::picture_context::validate_nodes(
+            self.nodes
+                .values()
+                .filter_map(|change| change.after.as_ref())
+                .chain(
+                    document
+                        .nodes
+                        .iter()
+                        .filter_map(|(id, node)| (!self.nodes.contains_key(id)).then_some(node)),
+                ),
         )?;
         let mut result = document.clone();
         if let Some(change) = &self.presentation {
@@ -303,6 +377,7 @@ impl DocumentPatch {
         apply_changes(&mut result.assets, &self.assets)?;
         apply_changes(&mut result.marks, &self.marks)?;
         apply_changes(&mut result.overrides, &self.overrides)?;
+        apply_changes(&mut result.gap_overrides, &self.gap_overrides)?;
         apply_changes(&mut result.audio_lineage, &self.audio_lineage)?;
         if let Some(change) = &self.audio_bindings {
             let (Some(before), Some(after)) = (&change.before, &change.after) else {
@@ -337,6 +412,7 @@ impl DocumentPatch {
             assets: inverse_changes(&self.assets),
             marks: inverse_changes(&self.marks),
             overrides: inverse_changes(&self.overrides),
+            gap_overrides: inverse_changes(&self.gap_overrides),
             audio_lineage: inverse_changes(&self.audio_lineage),
             audio_bindings: self.audio_bindings.as_ref().map(|change| ValueChange {
                 before: change.after.clone(),
@@ -368,6 +444,9 @@ pub fn apply(
         &request.expected_revision,
         &request.new_revision,
     )?;
+    // Validate caller-owned context before cloning either the document or an
+    // isolated occurrence. Public structs can be constructed without serde.
+    crate::picture_context::validate_command(&request.command)?;
     let before_duration = document.duration()?.frames();
     let mut result = match &request.command {
         Command::InsertTime {
@@ -385,11 +464,47 @@ pub fn apply(
             timing,
             &request.new_revision,
         )?,
+        Command::SpliceSource {
+            parent,
+            index,
+            source,
+            id,
+            label,
+            timing,
+        } => crate::insert_time::splice_source(
+            document,
+            parent,
+            *index,
+            id,
+            BeatNode {
+                label: label.clone(),
+                framing: None,
+                audio_edges: Default::default(),
+                kind: NodeKind::Source {
+                    source: source.clone(),
+                },
+            },
+            timing,
+            &request.new_revision,
+        )?,
         Command::Split {
             node,
             at,
             identities,
         } => crate::split::apply(document, node, *at, identities, &request.new_revision)?,
+        Command::IsolateGap {
+            node,
+            iteration,
+            id,
+            timing,
+        } => crate::gap_override::isolate(
+            document,
+            node,
+            iteration,
+            id,
+            timing,
+            &request.new_revision,
+        )?,
         Command::EditOccurrence {
             instance,
             edit,
@@ -432,6 +547,7 @@ pub fn apply(
         assets: diff(&document.assets, &result.assets),
         marks: diff(&document.marks, &result.marks),
         overrides: diff(&document.overrides, &result.overrides),
+        gap_overrides: diff(&document.gap_overrides, &result.gap_overrides),
         audio_lineage: diff(&document.audio_lineage, &result.audio_lineage),
         audio_bindings: (document.audio_bindings != result.audio_bindings).then(|| ValueChange {
             before: Some(document.audio_bindings.clone()),
@@ -445,6 +561,7 @@ pub fn apply(
             .nodes
             .keys()
             .chain(forward.overrides.keys())
+            .chain(forward.gap_overrides.keys())
             .chain(forward.audio_lineage.keys())
             .chain(binding_changed_ids.iter())
             .cloned()
@@ -477,26 +594,25 @@ fn changed_audio_binding_owners(
         )
         .collect();
     before
-        .bindings()
-        .keys()
-        .chain(after.bindings().keys())
-        .filter(|owner| {
-            let previous = before.bindings().get(*owner);
-            let next = after.bindings().get(*owner);
+        .owners()
+        .chain(after.owners())
+        .filter(|(kind, owner, _)| {
+            let (before, after) = match kind {
+                crate::AudioRecipeKind::Node => (before.bindings(), after.bindings()),
+                crate::AudioRecipeKind::RepeatGap => (before.gap_bindings(), after.gap_bindings()),
+            };
+            let previous = before.get(*owner);
+            let next = after.get(*owner);
             if previous != next {
                 return true;
             }
             previous.is_some_and(|binding| {
-                std::iter::once(&binding.lattice)
-                    .chain(
-                        binding.resume.iter().flat_map(|resume| {
-                            resume.phase.terms.iter().map(|term| &term.placement)
-                        }),
-                    )
+                binding
+                    .placements()
                     .any(|template| changed_timings.contains(&template.reference.timing))
             })
         })
-        .cloned()
+        .map(|(_, owner, _)| owner.clone())
         .collect()
 }
 
@@ -537,7 +653,13 @@ pub(crate) fn reduce(
     allocation: &RevisionId,
 ) -> Result<(), EditError> {
     match command {
-        Command::InsertTime { .. } => {
+        Command::IsolateGap { .. } => {
+            return Err(EditError::new(
+                EditErrorCode::InvalidCommand,
+                "gap isolation requires the retained-clock entrypoint",
+            ));
+        }
+        Command::InsertTime { .. } | Command::SpliceSource { .. } => {
             return Err(EditError::new(
                 EditErrorCode::InvalidCommand,
                 "time insertion requires the retained-clock entrypoint",
@@ -686,6 +808,81 @@ pub(crate) fn reduce(
                 remove_override(document, node, &identity);
                 remove_subtree(document, &root)?;
             }
+            let retired: Vec<_> = document
+                .gap_overrides
+                .get(node)
+                .into_iter()
+                .flat_map(|entries| entries.iter())
+                .filter(|(identity, _)| retained.position(identity).is_none())
+                .map(|(identity, root)| (identity.clone(), root.clone()))
+                .collect();
+            for (identity, root) in retired {
+                remove_gap_override(document, node, &identity);
+                remove_subtree(document, &root)?;
+            }
+        }
+        Command::WrapRetime {
+            node,
+            id,
+            duration,
+            pitch,
+        } => {
+            unused(document, id)?;
+            let parent = document.parent_of(node).ok_or_else(|| {
+                EditError::new(
+                    EditErrorCode::SelectionUnavailable,
+                    "wrap-retime requires an existing non-root node",
+                )
+            })?;
+            let selected = document.structural_durations()?[node];
+            let mapping = crate::FrameRange::new(
+                crate::ProjectFrame(0),
+                crate::ProjectFrame(selected.frames()),
+            )
+            .map_err(DocumentError::from)?;
+            replace_child(document, &parent, node, id.clone())?;
+            document.nodes.insert(
+                id.clone(),
+                BeatNode {
+                    framing: None,
+                    audio_edges: Default::default(),
+                    label: "Retime".into(),
+                    kind: NodeKind::Retime {
+                        child: node.clone(),
+                        duration: *duration,
+                        mapping,
+                        pitch: *pitch,
+                        purpose: crate::RetimePurpose::Edit,
+                    },
+                },
+            );
+        }
+        Command::SetRetime {
+            node,
+            duration,
+            pitch,
+        } => {
+            let NodeKind::Retime {
+                duration: current_duration,
+                pitch: current_pitch,
+                purpose: crate::RetimePurpose::Edit,
+                ..
+            } = &mut node_mut(document, node)?.kind
+            else {
+                return Err(EditError::new(
+                    EditErrorCode::WrongNodeKind,
+                    "set-retime updates an ordinary Retime; wrap a transparent partition to preserve its retained context",
+                ));
+            };
+            if *current_duration != *duration || *current_pitch != *pitch {
+                *current_duration = *duration;
+                *current_pitch = *pitch;
+                // The changed processing output starts on its current clock.
+                // Retained child recipes keep their own sampling lattices and
+                // resumes; an old output binding must not turn a policy change
+                // into reuse of the previous processing output's phase.
+                document.audio_bindings.bindings.remove(node);
+            }
         }
         Command::InsertPlays { node, index, count } => {
             let iterations = iterations_mut(document, node)?;
@@ -752,6 +949,9 @@ pub(crate) fn reduce(
                 ));
             }
             hold_mut(document, node)?.video = video.clone();
+        }
+        Command::SetHoldPictureContext { node, context } => {
+            hold_mut(document, node)?.picture_context = context.clone();
         }
         Command::AcceptGeneratedHold {
             node,
@@ -946,6 +1146,34 @@ pub(crate) fn reduce(
             })?;
             remove_subtree(document, &root)?;
         }
+        Command::SetGapOverride {
+            node,
+            iteration,
+            subtree,
+        } => {
+            require_play(document, node, iteration)?;
+            let prepared = prepare_subtree(document, subtree, allocation)?;
+            if let Some(old) = remove_gap_override(document, node, iteration) {
+                remove_subtree(document, &old)?;
+            }
+            let root = prepared.root.clone();
+            install_subtree(document, prepared);
+            document
+                .gap_overrides
+                .entry(node.clone())
+                .or_default()
+                .insert(iteration.clone(), root);
+        }
+        Command::ClearGapOverride { node, iteration } => {
+            require_play(document, node, iteration)?;
+            let root = remove_gap_override(document, node, iteration).ok_or_else(|| {
+                EditError::new(
+                    EditErrorCode::SelectionUnavailable,
+                    "selected gap has no override",
+                )
+            })?;
+            remove_subtree(document, &root)?;
+        }
 
         Command::SetMark {
             id,
@@ -989,7 +1217,10 @@ fn prepare_subtree(
             "inserted subtree root is missing",
         ));
     }
-    if subtree.nodes.len() > MAX_DOCUMENT_NODES || subtree.overrides.len() > MAX_DOCUMENT_NODES {
+    if subtree.nodes.len() > MAX_DOCUMENT_NODES
+        || subtree.overrides.len() > MAX_DOCUMENT_NODES
+        || subtree.gap_overrides.len() > MAX_DOCUMENT_NODES
+    {
         return Err(EditError::new(
             EditErrorCode::InvalidCommand,
             "inserted subtree exceeds node limit",
@@ -1000,7 +1231,17 @@ fn prepare_subtree(
     }
     crate::framing::validate_nodes(subtree.nodes.values())?;
     let mut prepared = subtree.clone();
-    for (id, entries) in &subtree.overrides {
+    for (is_gap, id, entries) in subtree
+        .overrides
+        .iter()
+        .map(|(id, entries)| (false, id, entries))
+        .chain(
+            subtree
+                .gap_overrides
+                .iter()
+                .map(|(id, entries)| (true, id, entries)),
+        )
+    {
         let Some(BeatNode {
             kind: NodeKind::Repeat { iterations, .. },
             ..
@@ -1025,9 +1266,12 @@ fn prepare_subtree(
                 root: root.clone(),
             });
         }
-        prepared
-            .overrides
-            .insert(id.clone(), PlayOverrides::try_from(remapped)?);
+        let destination = if is_gap {
+            &mut prepared.gap_overrides
+        } else {
+            &mut prepared.overrides
+        };
+        destination.insert(id.clone(), PlayOverrides::try_from(remapped)?);
     }
     for node in prepared.nodes.values_mut() {
         if let NodeKind::Repeat { iterations, .. } = &mut node.kind {
@@ -1039,6 +1283,7 @@ fn prepare_subtree(
 fn install_subtree(document: &mut ProjectDocument, subtree: Subtree) {
     document.nodes.extend(subtree.nodes);
     document.overrides.extend(subtree.overrides);
+    document.gap_overrides.extend(subtree.gap_overrides);
 }
 fn remove_subtree(document: &mut ProjectDocument, root: &NodeId) -> Result<(), EditError> {
     let mut pending = vec![root.clone()];
@@ -1046,6 +1291,7 @@ fn remove_subtree(document: &mut ProjectDocument, root: &NodeId) -> Result<(), E
         pending.extend(document.children(&id).cloned());
         document.nodes.remove(&id).ok_or_else(|| missing(&id))?;
         document.overrides.remove(&id);
+        document.gap_overrides.remove(&id);
     }
     Ok(())
 }
@@ -1081,6 +1327,19 @@ fn remove_override(
     let root = entries.remove(iteration);
     if entries.is_empty() {
         document.overrides.remove(node);
+    }
+    root
+}
+
+fn remove_gap_override(
+    document: &mut ProjectDocument,
+    node: &NodeId,
+    iteration: &IterationId,
+) -> Option<NodeId> {
+    let entries = document.gap_overrides.get_mut(node)?;
+    let root = entries.remove(iteration);
+    if entries.is_empty() {
+        document.gap_overrides.remove(node);
     }
     root
 }
@@ -1273,7 +1532,12 @@ pub(crate) fn replace_child(
     old: &NodeId,
     new: NodeId,
 ) -> Result<(), EditError> {
-    if let Some(entries) = document.overrides.get_mut(parent) {
+    for entries in document
+        .overrides
+        .get_mut(parent)
+        .into_iter()
+        .chain(document.gap_overrides.get_mut(parent))
+    {
         let identity = entries
             .iter()
             .find(|(_, root)| *root == old)
@@ -1372,6 +1636,7 @@ fn apply_changes<K: Ord + Clone, V: Eq + Clone>(
 fn description(command: &Command) -> &'static str {
     match command {
         Command::InsertTime { .. } => "Insert pause",
+        Command::SpliceSource { .. } => "Paste source moment",
         Command::Split { .. } => "Split beat",
         Command::Insert { .. } => "Insert beats",
         Command::Delete { .. } => "Delete beat",
@@ -1380,12 +1645,15 @@ fn description(command: &Command) -> &'static str {
         Command::Ungroup { .. } => "Ungroup beats",
         Command::WrapRepeat { .. } => "Wrap repeat",
         Command::SetRepeat { .. } => "Set repeat parameters",
+        Command::WrapRetime { .. } => "Wrap retime",
+        Command::SetRetime { .. } => "Set retime parameters",
         Command::InsertPlays { .. } => "Insert repeat plays",
         Command::MovePlays { .. } => "Move repeat plays",
         Command::SetHoldDuration { .. } => "Change hold duration",
         Command::SetSourceAudioMapping { .. } => "Change source audio mapping",
         Command::SetSourceVideoMapping { .. } => "Change source video mapping",
         Command::SetHoldProvider { .. } => "Change hold provider",
+        Command::SetHoldPictureContext { .. } => "Change captured picture context",
         Command::AcceptGeneratedHold { .. } => "Accept generated hold",
         Command::RevertGeneratedHold { .. } => "Revert generated hold",
         Command::Rename { .. } => "Rename beat",
@@ -1399,6 +1667,9 @@ fn description(command: &Command) -> &'static str {
         Command::DeleteMark { .. } => "Delete mark",
         Command::SetPlayOverride { .. } => "Set play override",
         Command::ClearPlayOverride { .. } => "Clear play override",
+        Command::SetGapOverride { .. } => "Set gap override",
+        Command::IsolateGap { .. } => "Isolate repeat gap",
+        Command::ClearGapOverride { .. } => "Clear gap override",
         Command::EditOccurrence { .. } => "Edit selected occurrence",
     }
 }
@@ -1514,6 +1785,7 @@ mod binding_patch_tests {
                 BeatNode::hold(
                     "Pause",
                     HoldRecipe {
+                        picture_context: None,
                         duration: FrameDuration::new(4).unwrap(),
                         video: crate::HoldVideo::Background,
                         audio: crate::HoldAudio::Silence,
@@ -1543,8 +1815,11 @@ mod binding_patch_tests {
                 (
                     owner.clone(),
                     crate::OwnedAudioBinding {
+                        reanchors: Vec::new(),
                         lattice: crate::AudioPlacementTemplate {
+                            gap_after: None,
                             reference: crate::AudioReferenceClock {
+                                recipe: crate::AudioRecipeKind::Node,
                                 timing: record.id.clone(),
                                 root: crate::AudioClockRoot::ProjectRootRoundEven,
                                 physical: owner,
@@ -1592,6 +1867,39 @@ mod binding_patch_tests {
         assert_eq!(
             changed_audio_binding_owners(before, &changed_clock),
             BTreeSet::from([first])
+        );
+    }
+
+    #[test]
+    fn changed_step_only_clock_marks_its_owner_as_changed() {
+        let document = bound_document();
+        let first = NodeId::new("first").unwrap();
+        let second = NodeId::new("second").unwrap();
+        let mut before = document.audio_bindings().clone();
+        let placement = before.bindings[&second].lattice.clone();
+        before
+            .bindings
+            .get_mut(&first)
+            .unwrap()
+            .reanchors
+            .push(crate::AudioReanchorStep {
+                placement: placement.clone(),
+                window: None,
+            });
+        let mut changed_document = document.clone();
+        let NodeKind::Hold { recipe } = &mut changed_document.nodes.get_mut(&second).unwrap().kind
+        else {
+            panic!("fixture is a Hold");
+        };
+        recipe.duration = FrameDuration::new(5).unwrap();
+        let mut after = before.clone();
+        after.timings.insert(
+            placement.reference.timing,
+            crate::FrozenAudioLayout::capture(&changed_document).unwrap(),
+        );
+        assert_eq!(
+            changed_audio_binding_owners(&before, &after),
+            BTreeSet::from([first, second])
         );
     }
 

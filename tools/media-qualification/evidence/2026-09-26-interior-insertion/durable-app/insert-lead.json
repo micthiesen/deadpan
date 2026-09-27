@@ -1,0 +1,33 @@
+{
+  "protocol": 1,
+  "project_id": "4d2f760f-3e30-464e-87d5-2730c09aafcc",
+  "expected_revision": "c88eabd5-8673-4af2-99fb-dbf1fb8f4145",
+  "new_revision": "insert-lead",
+  "command": {
+    "command": "insert",
+    "parent": "3a83fe9a-b01d-4ccb-988d-d5465ea0d7b2",
+    "index": 0,
+    "subtree": {
+      "root": "lead",
+      "nodes": {
+        "lead": {
+          "label": "lead",
+          "kind": {
+            "type": "hold",
+            "recipe": {
+              "duration": 4,
+              "video": {
+                "type": "background"
+              },
+              "audio": {
+                "type": "silence"
+              }
+            }
+          }
+        }
+      },
+      "overrides": {},
+      "gap_overrides": {}
+    }
+  }
+}

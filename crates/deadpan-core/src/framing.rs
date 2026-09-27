@@ -249,9 +249,21 @@ impl Framing {
         local: ExactRatio,
         duration: FrameDuration,
     ) -> Result<FramingPose, FramingError> {
+        self.evaluate_exact(local, ExactRatio::integer(duration.frames()))
+    }
+
+    /// Evaluate a derived owner clock without rounding its extent. This does
+    /// not change authored frame counts or introduce fractional project frames.
+    /// Both exact endpoints are accepted, as with `evaluate`.
+    pub fn evaluate_exact(
+        &self,
+        local: ExactRatio,
+        duration: ExactRatio,
+    ) -> Result<FramingPose, FramingError> {
         self.validate()?;
-        let frames = duration.frames();
-        if frames == 0 || local.compare_integer(0).is_lt() || local.compare_integer(frames).is_gt()
+        if !duration.compare_integer(0).is_gt()
+            || local.compare_integer(0).is_lt()
+            || numeric::compare(local, duration).is_gt()
         {
             return Err(FramingError::TimeRange);
         }
@@ -264,19 +276,22 @@ impl Framing {
         let mut start = ExactRatio::ZERO;
         let mut from = envelope.initial;
         for segment in &envelope.segments {
-            let end_frame = segment.end.checked_mul(ExactRatio::integer(frames))?;
-            match numeric::compare(local, end_frame) {
+            // Do not materialize `end * duration` or `local / duration` as an
+            // ExactRatio. Their intermediates can exceed i128 even when all
+            // inputs and the selected segment are valid.
+            match numeric::compare_progress(local, duration, segment.end)? {
                 std::cmp::Ordering::Equal => return Ok(segment.pose),
                 std::cmp::Ordering::Greater => {
                     start = segment.end;
                     from = segment.pose;
                 }
                 std::cmp::Ordering::Less => {
-                    let start_frame = start.checked_mul(ExactRatio::integer(frames))?;
-                    if local == start_frame || matches!(segment.curve, FramingCurve::Step) {
+                    if numeric::compare_progress(local, duration, start)?.is_eq()
+                        || matches!(segment.curve, FramingCurve::Step)
+                    {
                         return Ok(from);
                     }
-                    let progress = numeric::segment_progress(local, frames, start, segment.end)?;
+                    let progress = numeric::segment_progress(local, duration, start, segment.end)?;
                     return interpolate(from, segment.pose, segment.curve, progress);
                 }
             }

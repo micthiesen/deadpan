@@ -1,0 +1,59 @@
+{
+  "scope": [
+    "crates/deadpan-audio/src/lib.rs",
+    "crates/deadpan-audio/src/projected_root.rs",
+    "crates/deadpan-audio/src/stages.rs",
+    "crates/deadpan-audio/tests/audio_definition/projection.rs",
+    "crates/deadpan-plan/src/audio_policy.rs",
+    "crates/deadpan-plan/src/audio_projected_root.rs",
+    "crates/deadpan-plan/src/audio_signal.rs",
+    "crates/deadpan-plan/src/audio_tape.rs",
+    "crates/deadpan-plan/src/lib.rs",
+    "crates/deadpan-plan/tests/audio_definition.rs",
+    "crates/deadpan-plan/tests/audio_definition/projected_root.rs"
+  ],
+  "source_sha256": {
+    "crates/deadpan-audio/src/lib.rs": "8e1ced09b907e073d57fc65861c4999a74bfc723f4c77c9256423f479baaee0d",
+    "crates/deadpan-audio/src/projected_root.rs": "da282bd0f2e1e1407c5a8cc9bc85cab65f6b0a5b8e9a0bff4f8b0f586e9075f6",
+    "crates/deadpan-audio/src/stages.rs": "5db3eeebb04cdbb2aaeaf6ac6eaed5cc960aa3183e3b4342a77aafa2c04e52d9",
+    "crates/deadpan-audio/tests/audio_definition/projection.rs": "e9305deba2f3af85e99fea7ef2a92f1239afb3ad9b4d477ece4eea80c0294f82",
+    "crates/deadpan-plan/src/audio_policy.rs": "fffa41ff004c09b9e79498ef54f42f6b44a31d5d924bfc2df41bee0a3e35c8f2",
+    "crates/deadpan-plan/src/audio_projected_root.rs": "4b795ec5256af8556eee20f02843d490ff82e189389cf3fe72f3468635ac4637",
+    "crates/deadpan-plan/src/audio_signal.rs": "354104ba14ab0ddc9203b6431a7add445e7a9caea6bd672eda625bae41231c59",
+    "crates/deadpan-plan/src/audio_tape.rs": "0b0683483987b3e6b68bb406aa34b82d647dc3dd62abda494cd27754ea0ccffa",
+    "crates/deadpan-plan/src/lib.rs": "025f6956250839df83a14aa1cb3b81c1511eaa81d89207ed52ca8ce8a6708be3",
+    "crates/deadpan-plan/tests/audio_definition.rs": "fede0724db9e2050541e7953923919837eac161644236e8ee16f49824d61d826",
+    "crates/deadpan-plan/tests/audio_definition/projected_root.rs": "d8738f9eff958d429083c7d4fd37894ec8ab79924898e078375ff6c094650877"
+  },
+  "review_base": "preceding verified preserve-projection checkpoint; full pending work retained separately",
+  "reviewers": [
+    {
+      "agent": "interior_migration",
+      "independent": true,
+      "scope": "all 11 changed source/test paths",
+      "result": "no remaining findings; exact hashes match gate-1 source-before"
+    },
+    {
+      "agent": "interior_timing_review",
+      "independent": true,
+      "scope": "root timing/policy implementation and distinguishing tests",
+      "result": "no remaining timing or test-scope findings"
+    },
+    {
+      "agent": "interior_general_review",
+      "independent": false,
+      "scope": "plan implementation and read-only post-freeze audit",
+      "result": "implemented plan side; no additional issue identified"
+    }
+  ],
+  "resolved": [
+    "Move root resampler recipe rate/phase admission before source preparation; regression rejects scale 1/100 with zero source calls.",
+    "Correct Bound fixture to current local 3/2 Source vs retained reference 4/5 Hold.",
+    "Reject exact-empty crop while retaining positive exact extents that allocate no samples.",
+    "Keep projection output-policy providers strictly below their Preserve owner.",
+    "Correct inspection field count and checked arithmetic/type annotations."
+  ],
+  "remaining_findings": [],
+  "cargo_run_by_reviewers": false,
+  "full_project_complete": false
+}

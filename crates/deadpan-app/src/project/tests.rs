@@ -10,7 +10,10 @@ use deadpan_store::{AccessMode, ProjectStore};
 
 use super::*;
 
+mod moment;
 mod pause;
+mod retime;
+mod scope;
 
 const TIMEOUT: Duration = Duration::from_secs(20);
 
@@ -20,6 +23,7 @@ fn node(name: &str) -> NodeId {
 
 fn hold(frames: i64) -> HoldRecipe {
     HoldRecipe {
+        picture_context: None,
         duration: FrameDuration::new(frames).unwrap(),
         video: HoldVideo::Background,
         audio: HoldAudio::Silence,
@@ -56,6 +60,7 @@ fn seed_holds(path: &Path, names: &[&str]) -> ProjectStore {
                     root: node(name),
                     nodes: BTreeMap::from([(node(name), BeatNode::hold(*name, hold(10)))]),
                     overrides: BTreeMap::new(),
+                    gap_overrides: BTreeMap::new(),
                 },
             },
             &format!("insert-{name}"),
@@ -65,9 +70,20 @@ fn seed_holds(path: &Path, names: &[&str]) -> ProjectStore {
 }
 
 fn edit_request(workspace: &Workspace, edit: ProjectEdit) -> ProjectRequest {
+    edit_request_in(workspace, SequenceScope::default(), ProjectFrame(0), edit)
+}
+
+fn edit_request_in(
+    workspace: &Workspace,
+    scope: SequenceScope,
+    cursor: ProjectFrame,
+    edit: ProjectEdit,
+) -> ProjectRequest {
     ProjectRequest::Edit {
         expected_session: workspace.session,
         expected_revision: workspace.document.revision_id().clone(),
+        cursor,
+        scope,
         edit,
     }
 }
@@ -285,7 +301,12 @@ fn repeat_setter_preserves_gap_and_operator_wrap_is_distinct_and_durable() {
             },
         ),
     );
-    assert!(hidden.error.unwrap().contains("root beat"));
+    assert!(
+        hidden
+            .error
+            .unwrap()
+            .contains("direct child of the active Sequence")
+    );
     assert!(hidden.committed.is_none());
     assert_eq!(*hidden.workspace.unwrap().document, *wrapped.document);
     let undone = command(
@@ -531,7 +552,12 @@ fn native_framing_preserves_time_and_cursor_with_one_durable_undoable_commit() {
             },
         ),
     );
-    assert!(invalid.error.unwrap().contains("root beat"));
+    assert!(
+        invalid
+            .error
+            .unwrap()
+            .contains("direct child of the active Sequence")
+    );
     assert_eq!(*invalid.workspace.unwrap().document, *reopened.document);
 }
 
@@ -845,8 +871,10 @@ fn insert(service: &ProjectService, workspace: &Workspace, asset: &AssetId) -> P
     command(
         service,
         ProjectRequest::Insert {
+            expected_session: workspace.session,
             expected_revision: workspace.document.revision_id().clone(),
             asset: asset.clone(),
+            scope: SequenceScope::default(),
             parent: workspace.document.root().clone(),
             index: 0,
         },
@@ -1114,6 +1142,25 @@ fn sounds_are_audio_only_catalog_entries_and_bad_streams_leave_the_edit_intact()
     );
     assert_eq!(sound.document.nodes(), ready.document.nodes());
     assert_eq!(sound.sources.len(), 2);
+    let sound_source = sound
+        .sources
+        .values()
+        .find(|source| source.sound_audition.is_some())
+        .unwrap();
+    let sound_view = sound_source.sound_audition.as_ref().unwrap();
+    assert_eq!(sound_view.asset(), &sound_source.asset);
+    assert_eq!(sound_view.qualification_id(), sound_source.receipt.id());
+    assert_eq!(
+        sound_view.duration_samples(),
+        deadpan_core::AudioSample(8197)
+    );
+    assert!(sound_source.original_audition.is_none());
+    assert!(
+        ready
+            .sources
+            .values()
+            .all(|source| source.sound_audition.is_none())
+    );
     assert_eq!(
         sound
             .sources
@@ -1168,6 +1215,13 @@ fn sounds_are_audio_only_catalog_entries_and_bad_streams_leave_the_edit_intact()
     harness.finish(harness.job());
     harness.finish(harness.job());
     let mp4_sound = complete(&harness.service);
+    assert!(Arc::ptr_eq(
+        sound_view,
+        mp4_sound.sources[&sound_source.asset]
+            .sound_audition
+            .as_ref()
+            .unwrap()
+    ));
     assert_eq!(mp4_sound.document.nodes(), sound.document.nodes());
     assert!(mp4_sound.sources.values().any(|source| {
         source.receipt.snapshot().video().is_none()
@@ -1272,11 +1326,41 @@ fn real_import_registers_without_inserting_and_round_trips_entire_history() {
     assert!(source.receipt.snapshot().video().is_some());
     assert!(source.receipt.snapshot().audio().is_some());
     assert!(source.video_index.is_some());
+    let original_view = source.original_audition.as_ref().unwrap();
+    assert!(Arc::ptr_eq(
+        original_view.index(),
+        source.video_index.as_ref().unwrap()
+    ));
+    assert_eq!(
+        original_view.rate(),
+        registered.document.presentation_basis().frame_rate
+    );
+    assert_eq!(original_view.qualification(), source.receipt.id());
+    assert_eq!(
+        original_view.duration(),
+        source
+            .receipt
+            .snapshot()
+            .derive_timing(original_view.rate())
+            .unwrap()
+            .duration
+    );
     assert!(source.original.managed());
     let asset = source.asset.clone();
     let inserted = insert(&service, &registered, &asset);
     assert!(inserted.error.is_none(), "{:?}", inserted.error);
     let inserted = inserted.workspace.unwrap();
+    let inserted_view = inserted.sources[&asset].original_audition.as_ref().unwrap();
+    assert_eq!(
+        inserted_view.rate(),
+        inserted.document.presentation_basis().frame_rate
+    );
+    if original_view.rate() == inserted_view.rate() {
+        assert!(Arc::ptr_eq(original_view, inserted_view));
+    } else {
+        assert!(!Arc::ptr_eq(original_view, inserted_view));
+        assert_eq!(original_view.qualification(), inserted_view.qualification());
+    }
     assert!(inserted.document.duration().unwrap().frames() > 0);
     let duration = inserted.document.duration().unwrap();
     let undone = command(
@@ -1503,8 +1587,10 @@ fn insertion_completion_survives_import_progress_and_replaced_mailbox_updates() 
     harness
         .service
         .submit(ProjectRequest::Insert {
+            expected_session: registered.session,
             expected_revision: registered.document.revision_id().clone(),
             asset,
+            scope: SequenceScope::default(),
             parent: registered.document.root().clone(),
             index: 0,
         })

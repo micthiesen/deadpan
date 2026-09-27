@@ -1,0 +1,19 @@
+{
+  "commands": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-playback",
+        "tests::sound",
+        "--",
+        "--test-threads=1"
+      ],
+      "exit_code": 101,
+      "seconds": 201.34938637493178,
+      "log": "0.log"
+    }
+  ]
+}

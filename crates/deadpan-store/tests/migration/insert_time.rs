@@ -26,6 +26,7 @@ fn bound_initial() -> Result<ProjectDocument> {
             BeatNode::hold(
                 "Original hold",
                 HoldRecipe {
+                    picture_context: None,
                     duration: FrameDuration::new(6)?,
                     video: HoldVideo::Background,
                     audio: HoldAudio::Silence,
@@ -72,6 +73,7 @@ fn pause(document: &ProjectDocument, revision: &str, at: i64, frames: i64) -> Co
         Command::InsertTime {
             at: ProjectFrame(at),
             hold: HoldRecipe {
+                picture_context: None,
                 duration: FrameDuration::new(frames).unwrap(),
                 video: HoldVideo::Background,
                 audio: HoldAudio::Silence,

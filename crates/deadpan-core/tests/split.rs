@@ -16,6 +16,7 @@ fn hold(frames: i64) -> BeatNode {
     BeatNode::hold(
         "Beat",
         HoldRecipe {
+            picture_context: None,
             duration: duration(frames),
             video: HoldVideo::Background,
             audio: HoldAudio::Silence,

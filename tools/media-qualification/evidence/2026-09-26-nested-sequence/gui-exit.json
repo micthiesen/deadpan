@@ -1,0 +1,33 @@
+{
+  "command": [
+    "cargo",
+    "run",
+    "--locked",
+    "-p",
+    "deadpan-app",
+    "--features",
+    "ui-harness",
+    "--",
+    "--ui-check",
+    "--output",
+    "/tmp/deadpan-nested-sequence-20260926/gui",
+    "--scenario",
+    "nested-pause"
+  ],
+  "exit_code": 1,
+  "seconds": 2.390936625190079,
+  "scenario_checks": 0,
+  "scenario_steps": 0,
+  "scenario_failed_checks": 0,
+  "scenario_findings": [
+    {
+      "message": "Scenario panicked: Failed to create render state: CustomNativeAdapterSelectionError(\"No adapter found\")",
+      "severity": "failure"
+    }
+  ],
+  "screenshots": 0,
+  "shortcut_passed": true,
+  "shortcut_checked": 3472,
+  "shortcut_reservations": 62,
+  "shortcut_conflicts": []
+}

@@ -3,6 +3,13 @@ use std::collections::BTreeMap;
 use deadpan_core::*;
 use serde_json::json;
 
+#[path = "insert_time/interior.rs"]
+mod interior;
+#[path = "insert_time/nested_sequence.rs"]
+mod nested_sequence;
+#[path = "insert_time/source_splice.rs"]
+mod source_splice;
+
 fn id(name: &str) -> NodeId {
     NodeId::new(name).unwrap()
 }
@@ -14,6 +21,7 @@ fn duration(frames: i64) -> FrameDuration {
 }
 fn recipe(frames: i64) -> HoldRecipe {
     HoldRecipe {
+        picture_context: None,
         duration: duration(frames),
         video: HoldVideo::Background,
         audio: HoldAudio::Silence,
@@ -306,6 +314,46 @@ fn every_shifted_fragment_gets_its_own_old_entry_and_existing_lattice_survives()
 }
 
 #[test]
+fn insertion_after_compact_steps_appends_after_them_and_round_trips_atomically() {
+    let original = tree(&["original"], vec![("original", source(4))]);
+    let state = capture_unbound_audio_bindings(
+        &original,
+        AudioTimingId {
+            allocation: revision("captured"),
+            ordinal: 0,
+        },
+    )
+    .unwrap();
+    let step = AudioReanchorStep {
+        placement: state.bindings()[&id("original")].lattice.clone(),
+        window: Some(ExactFrameRange::new(ExactRatio::ONE, ExactRatio::integer(4)).unwrap()),
+    };
+    let mut wire = serde_json::to_value(&original).unwrap();
+    wire["audio_bindings"] = serde_json::to_value(state).unwrap();
+    wire["audio_bindings"]["bindings"]["original"]["reanchors"] =
+        serde_json::to_value(vec![step.clone()]).unwrap();
+    let before = ProjectDocument::from_json(&wire.to_string()).unwrap();
+    let after = edit(&before, insertion(&before, "after-step", 2, 1));
+    let suffix = owner(&after, &children(&after)[2]);
+    let binding = &after.audio_bindings().bindings()[&suffix];
+    assert!(binding.resume.is_none());
+    assert_eq!(binding.reanchors.len(), 2);
+    assert_eq!(binding.reanchors[0], step);
+    assert_eq!(
+        binding.reanchors[1].placement.reference.timing.allocation,
+        revision("after-step")
+    );
+    assert_eq!(
+        resolved(&after, &suffix).resume.unwrap().local_boundary,
+        ExactRatio::integer(2)
+    );
+    assert_eq!(
+        reference_at_anchor(&after, &suffix),
+        ExactRatio::integer(3203)
+    );
+}
+
+#[test]
 fn repeated_interior_insertion_composes_current_phase_on_one_immutable_lattice() {
     let before = tree(&["original"], vec![("original", source(4))]);
     let first = edit(&before, insertion(&before, "first", 1, 1));
@@ -506,7 +554,7 @@ fn zero_bounds_stale_revision_and_identity_errors_leave_input_unchanged() {
 }
 
 #[test]
-fn unsupported_shifted_structures_and_any_nonempty_gap_fail_atomically() {
+fn sequence_interiors_and_root_composite_seams_preserve_their_owners() {
     let nested = tree(
         &["nested", "last"],
         vec![
@@ -515,12 +563,9 @@ fn unsupported_shifted_structures_and_any_nonempty_gap_fail_atomically() {
             ("last", source(2)),
         ],
     );
-    assert_eq!(
-        apply(&nested, &insertion(&nested, "bad", 1, 1))
-            .unwrap_err()
-            .code,
-        EditErrorCode::InvalidCommand
-    );
+    let within = edit(&nested, insertion(&nested, "within", 1, 1));
+    assert_eq!(children(&within), children(&nested));
+    assert_eq!(within.node_duration(&id("nested")).unwrap(), duration(3));
     // A fully preceding gap-free nested scope is not shifted and is safe.
     edit(&nested, insertion(&nested, "suffix", 2, 1));
     let repeat = |gap| BeatNode {
@@ -537,23 +582,167 @@ fn unsupported_shifted_structures_and_any_nonempty_gap_fail_atomically() {
         &["repeat"],
         vec![("repeat", repeat(None)), ("inner", source(2))],
     );
-    assert!(
-        apply(&repeated, &insertion(&repeated, "bad", 0, 1))
-            .unwrap_err()
-            .message
-            .contains("cannot yet shift")
+    let moved = edit(&repeated, insertion(&repeated, "move-repeat", 0, 1));
+    assert_eq!(moved.duration().unwrap(), duration(5));
+    assert_eq!(
+        moved.audio_bindings().bindings()[&id("inner")]
+            .reanchors
+            .len(),
+        1
     );
     let gapped = tree(
         &["repeat"],
         vec![("repeat", repeat(Some(recipe(1)))), ("inner", source(2))],
     );
-    // Even an unaffected prefix gap is explicitly refused by full capture.
-    assert!(
-        apply(&gapped, &insertion(&gapped, "bad", 5, 1))
-            .unwrap_err()
-            .message
-            .contains("gap binding ownership")
+    let moved = edit(&gapped, insertion(&gapped, "move-gaps", 0, 1));
+    assert_eq!(moved.duration().unwrap(), duration(6));
+    assert_eq!(
+        moved.audio_bindings().gap_bindings()[&id("repeat")]
+            .reanchors
+            .len(),
+        1
     );
+    let appended = edit(&gapped, insertion(&gapped, "append", 5, 1));
+    assert!(
+        appended
+            .audio_bindings()
+            .gap_bindings()
+            .contains_key(&id("repeat"))
+    );
+}
+
+#[test]
+fn composite_seam_moves_root_marks_once_and_retains_occurrence_and_source_clocks() {
+    let before = tree(
+        &["lead", "repeat"],
+        vec![
+            ("lead", source(1)),
+            (
+                "repeat",
+                BeatNode {
+                    label: "Repeated Original".into(),
+                    framing: None,
+                    audio_edges: Default::default(),
+                    kind: NodeKind::Repeat {
+                        child: id("inner"),
+                        iterations: IterationOrder::new(revision("plays"), 3).unwrap(),
+                        gap: Some(recipe(1)),
+                    },
+                },
+            ),
+            ("inner", source(2)),
+        ],
+    );
+    let mut occurrence = mark(0, InsertionBias::Right, false);
+    occurrence.owner = id("inner");
+    occurrence.boundary.coordinate = Anchor::Occurrence {
+        instance: InstancePath {
+            node: id("inner"),
+            repeats: vec![RepeatInstance {
+                node: id("repeat"),
+                iteration: IterationId {
+                    allocation: revision("plays"),
+                    ordinal: 1,
+                },
+            }],
+        },
+        position: ExactRatio::ONE,
+    };
+    let mut source_mark = occurrence.clone();
+    source_mark.boundary.coordinate = Anchor::Source {
+        asset: AssetId::new("media").unwrap(),
+        moment: SourceMoment::Timestamp {
+            stream: SourceStream::Video,
+            timestamp: SourceTimestamp {
+                ticks: 5,
+                time_base: SourceTimeBase::new(1, 30).unwrap(),
+            },
+        },
+    };
+    let mut unresolved = mark(5, InsertionBias::Right, false);
+    unresolved.state = MarkState::Unresolved {
+        reason: MarkLossReason::WrapAmbiguous,
+    };
+    unresolved.loss_policy = AnchorLossPolicy::KeepUnresolved;
+    let mut wire = serde_json::to_value(&before).unwrap();
+    wire["marks"] = serde_json::to_value(BTreeMap::from([
+        ("left", mark(1, InsertionBias::Left, false)),
+        ("right", mark(1, InsertionBias::Right, false)),
+        ("content", mark(5, InsertionBias::Right, false)),
+        ("pinned", mark(5, InsertionBias::Right, true)),
+        ("occurrence", occurrence),
+        ("source", source_mark),
+        ("unresolved", unresolved),
+    ]))
+    .unwrap();
+    let before = ProjectDocument::from_json(&wire.to_string()).unwrap();
+    assert_eq!(mark_position(&before, "occurrence"), ExactRatio::integer(5));
+    let after = edit(&before, insertion(&before, "composite", 1, 2));
+    for (name, position) in [
+        ("left", 1),
+        ("right", 3),
+        ("content", 7),
+        ("pinned", 5),
+        ("occurrence", 7),
+    ] {
+        assert_eq!(
+            mark_position(&after, name),
+            ExactRatio::integer(position),
+            "{name}"
+        );
+    }
+    for name in ["occurrence", "source", "unresolved"] {
+        let key = MarkId::new(name).unwrap();
+        assert_eq!(after.marks()[&key], before.marks()[&key], "{name}");
+    }
+}
+
+#[test]
+fn billion_play_seam_insertion_keeps_one_step_per_owned_recipe() {
+    let before = tree(
+        &["repeat"],
+        vec![
+            (
+                "repeat",
+                BeatNode {
+                    label: "Repeat".into(),
+                    framing: None,
+                    audio_edges: Default::default(),
+                    kind: NodeKind::Repeat {
+                        child: id("inner"),
+                        iterations: IterationOrder::new(revision("plays"), 1_000_000_000).unwrap(),
+                        gap: Some(recipe(1)),
+                    },
+                },
+            ),
+            ("inner", source(2)),
+        ],
+    );
+    let after = edit(&before, insertion(&before, "pause", 0, 1));
+    assert_eq!(after.nodes().len(), 4);
+    assert_eq!(after.duration().unwrap(), duration(3_000_000_000));
+    assert_eq!(after.audio_bindings().bindings().len(), 1);
+    assert_eq!(after.audio_bindings().gap_bindings().len(), 1);
+    assert_eq!(after.audio_bindings().timings().len(), 1);
+    for binding in after
+        .audio_bindings()
+        .bindings()
+        .values()
+        .chain(after.audio_bindings().gap_bindings().values())
+    {
+        assert!(binding.resume.is_none());
+        assert_eq!(binding.reanchors.len(), 1);
+        assert_eq!(
+            binding.reanchors[0].window,
+            Some(
+                ExactFrameRange::new(ExactRatio::ZERO, ExactRatio::integer(2_999_999_999)).unwrap()
+            )
+        );
+    }
+    let NodeKind::Repeat { iterations, .. } = &after.nodes()[&id("repeat")].kind else {
+        panic!()
+    };
+    assert_eq!(iterations.segment_count(), 1);
 }
 
 #[test]

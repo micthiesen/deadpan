@@ -1,0 +1,17 @@
+{
+  "binary_sha256": "849b0d0b1129f488e90dbeb391c6be9633769aa88a91dbc250bca08d5520d2e3",
+  "input_fixture_sha256": "7429704f56c886610decc265d100fec07cbfb973455807084534b0fa0a47f3e2",
+  "sql_sha256": "c9c0d2ee68021d5b83fb0fff61e83a4f6c8af08beb93a1ea5d65203baa3663d8",
+  "counts": {
+    "revisions": 19,
+    "history": 11
+  },
+  "final_revision": "cab55398-82ac-41b4-af2f-2f10d8765170",
+  "core_schema": 19,
+  "database_schema": 25,
+  "producer_script": "produce-v25-captured-audio-history.py",
+  "producer_script_sha256": "7248ae617dd7a5a7c7f14d67c44300dcc7c6959a7547d2be72afd94a7533d096",
+  "producer_log": "/tmp/deadpan-source-range-20260926/old-binary/source-selection-commands.json",
+  "producer_log_sha256": "4bae61c449fac5e95a157922890ee8dee64e805bc5f9f9ec9493d1140eebf72c",
+  "method": "Restored actual core18/db24 SQL fixture, migrated with preserved core19/db25 CLI, then authored captured framing and source-audio history through that CLI; SQL dumped only after old binary validation."
+}

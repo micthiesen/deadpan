@@ -1,0 +1,182 @@
+[
+  {
+    "path": "AGENTS.md",
+    "sha256": "e132bdec62668e62003d6011b91565b98f0e1ed86b8ae1f884537d83075ed7ca",
+    "bytes": 74115
+  },
+  {
+    "path": "README.md",
+    "sha256": "fea3068c6d261c1e12949b2c70ae234fcd1dc2cb56b63c526e1d0fe4e35bad98",
+    "bytes": 11288
+  },
+  {
+    "path": "crates/deadpan-app/src/navigation.rs",
+    "sha256": "870aa469723475a23b3fe61df8f5bd7f71e7ce6e5c3f8f80c69f55313a19dbfc",
+    "bytes": 47405
+  },
+  {
+    "path": "crates/deadpan-app/src/navigation/command.rs",
+    "sha256": "f474e9090c56cc91beb1ed96389fcff6c05d6d6c29ff9917b53484ba6c78dee7",
+    "bytes": 12648
+  },
+  {
+    "path": "crates/deadpan-app/src/navigation/duration.rs",
+    "sha256": "2a866099a7dd35ebe7466c0dadbea987781c33da6e8755a22911b833c68be197",
+    "bytes": 8453
+  },
+  {
+    "path": "crates/deadpan-app/src/preview.rs",
+    "sha256": "1997dd44ec8caf6dccb3f11b1068a3578ec73ce0b74a80934c0862a0f9724cf0",
+    "bytes": 137742
+  },
+  {
+    "path": "crates/deadpan-app/src/preview/harness.rs",
+    "sha256": "6e7828dc62e0e196090ac8da194b7c0e1a9ee5f80889534b341f3cae5a7635e6",
+    "bytes": 29361
+  },
+  {
+    "path": "crates/deadpan-app/src/preview/harness/original_playback.rs",
+    "sha256": "a3cdc54e5f5d08d212220387cc29b81d9ffec612cb7d0ab3fb557939cd349b2c",
+    "bytes": 12189
+  },
+  {
+    "path": "crates/deadpan-app/src/preview/harness/scenarios.rs",
+    "sha256": "fa946ecf0ccf3807440cd0afce1f5b20739148f6f1e71f1bb2813fcadfebfabe",
+    "bytes": 36446
+  },
+  {
+    "path": "crates/deadpan-app/src/preview/playback.rs",
+    "sha256": "2f8585e6622c5dcf1728fab326563073434b7d3993d6d3cdc509c2aa18f5ae2d",
+    "bytes": 15866
+  },
+  {
+    "path": "crates/deadpan-app/src/project.rs",
+    "sha256": "4bdbe1f41f518bb5e5bf19e7a3bdc610ed5fde516d51418d6dd00672f9bfb9fc",
+    "bytes": 8580
+  },
+  {
+    "path": "crates/deadpan-app/src/project/service.rs",
+    "sha256": "ab3b3f64983eee9e9fad7cfc8a5526d3c008dec3505c59f2839fc42287744861",
+    "bytes": 39629
+  },
+  {
+    "path": "crates/deadpan-app/src/project/tests.rs",
+    "sha256": "de1698d444cbf3e70fb2bcc46fb2926e2d4980c3dac68465a4af577ddc3ab25e",
+    "bytes": 61077
+  },
+  {
+    "path": "crates/deadpan-app/src/transport.rs",
+    "sha256": "bf2319d5e26d89ae7ad81d37b72df5d0113c96e5e7b0971b26dafee206ed90be",
+    "bytes": 12306
+  },
+  {
+    "path": "crates/deadpan-app/src/transport/tests.rs",
+    "sha256": "f6636df1d70be7497c077e7d5fa03f776cd947c58c301178faf59d9ecbbfebf1",
+    "bytes": 12564
+  },
+  {
+    "path": "crates/deadpan-app/src/transport/tests/original.rs",
+    "sha256": "55422589c27eed5bd871e4061b9d2ca6ba49352fbee7bc8be882d52b586a47ba",
+    "bytes": 11857
+  },
+  {
+    "path": "crates/deadpan-app/src/ui_harness.rs",
+    "sha256": "ecf10ed629b6d5fe2f468c6f0bfd595e0d7dc8eaaaa2195bda8850e6f14433a3",
+    "bytes": 10902
+  },
+  {
+    "path": "crates/deadpan-app/src/worker/project_tests.rs",
+    "sha256": "702dabaf50dfbc21ff1f8bedcd81f6b62138871876c1fd0ecafa55fc5b2fb15f",
+    "bytes": 25611
+  },
+  {
+    "path": "crates/deadpan-core/src/document.rs",
+    "sha256": "c891362d7352fed82e41898350102d468ae6bb7fdd35bf86ec8523cd1f0ebb37",
+    "bytes": 47447
+  },
+  {
+    "path": "crates/deadpan-core/tests/source_view.rs",
+    "sha256": "f82e8c53446a8a8800242c2267f20f1c6514592a54a5d1f25a691b287710bb86",
+    "bytes": 2962
+  },
+  {
+    "path": "crates/deadpan-playback/src/controller.rs",
+    "sha256": "6ed8034316839151519bafa3ae3b8797bbfd6b9f362c856ed166d14ae7430fe5",
+    "bytes": 24779
+  },
+  {
+    "path": "crates/deadpan-playback/src/lib.rs",
+    "sha256": "a0cd39fc6561114185e58f4aaa9b283b91db16c551fd5cb8be54073a737ab40c",
+    "bytes": 397
+  },
+  {
+    "path": "crates/deadpan-playback/src/preparation.rs",
+    "sha256": "b8315ecb620ec50c6a1d7d979cac510745ea3367c69caa2caf2817e4eb21b65d",
+    "bytes": 7887
+  },
+  {
+    "path": "crates/deadpan-playback/src/target.rs",
+    "sha256": "a88edbdd36dd19c179e75f7bf276eca5e61684b8e059a29b7b22838cae46ebcd",
+    "bytes": 11432
+  },
+  {
+    "path": "crates/deadpan-playback/src/tests.rs",
+    "sha256": "e3ee2007e5916c33c243f3523c1e940d14614ddb58f98339b3ba5e0aae124b56",
+    "bytes": 26952
+  },
+  {
+    "path": "crates/deadpan-playback/src/tests/original.rs",
+    "sha256": "a1125f121388b9dc2de6efb8f1115c1e1b25f22968a4c4a5c8527d8bd42f214a",
+    "bytes": 15103
+  },
+  {
+    "path": "docs/ARCHITECTURE.md",
+    "sha256": "06956a09bdeddc940c2672a75cc3c2d5b656e45f1c694e0cebd6872b530f1f74",
+    "bytes": 21527
+  },
+  {
+    "path": "docs/AUDIO_MASTERING.md",
+    "sha256": "8ae4d89bd50876e6917f6e09f13b0320065e8d825c8ced0ba89fba48fd2c10f0",
+    "bytes": 9295
+  },
+  {
+    "path": "docs/DEVELOPMENT.md",
+    "sha256": "9fa41116c10d42d8d43756763fb7dc52ca73e40dab739e7f93cda65be9b82260",
+    "bytes": 20195
+  },
+  {
+    "path": "docs/NATIVE_WORKSPACE.md",
+    "sha256": "da5406c637c315018769d63567b3a65d75524a472cf94f15b683b9ea0d06e31c",
+    "bytes": 18021
+  },
+  {
+    "path": "docs/PLAYBACK.md",
+    "sha256": "6bebf4263c9af52b1aed7b1fa6e785227f85a73ef2cf6e26277c60f5949cc7e5",
+    "bytes": 9021
+  },
+  {
+    "path": "docs/REQUIREMENTS.md",
+    "sha256": "7898c9ceeda40d64d5d5ff884a1334adfa2eb9035e3f8d50950aaf59795cbaa9",
+    "bytes": 58254
+  },
+  {
+    "path": "docs/UI_FEEDBACK.md",
+    "sha256": "34dbf4876fe81bb5b4b73e636c9db84f7390cb95807d6d90ee65297867c2e34e",
+    "bytes": 27227
+  },
+  {
+    "path": "docs/design/README.md",
+    "sha256": "d03f889cb3d55816dcc0508699a4d8e7a9826c6e34260ab2493f188649e2db79",
+    "bytes": 14695
+  },
+  {
+    "path": "docs/qualification/original-audition-2026-09-27.md",
+    "sha256": "101945114c11f0485d9cff1b5cd4d1ded5b71ba654dca9c34b87da01b9a9d94e",
+    "bytes": 6286
+  },
+  {
+    "path": "docs/spec/AGENT_HANDOFF.md",
+    "sha256": "1d22b672a7c6a72c808dc88104da88d275d989fd000b666c40c57be07d2a183e",
+    "bytes": 13020
+  }
+]

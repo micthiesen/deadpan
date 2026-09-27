@@ -1,0 +1,177 @@
+    Blocking waiting for file lock on build directory
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 6m 12s
+     Running unittests src/lib.rs (target/debug/deps/deadpan_core-b32f8ce8c7bbc4ac)
+
+running 82 tests
+test framing::numeric::tests::comparison_handles_signed_extremes_without_products ... ok
+test exact::tests::exact_mapping_and_negative_boundaries_do_not_round_intermediate_frames ... ok
+test audio_mapping::tests::selection_translates_without_changing_full_span_rate ... ok
+test audio_reference::preflight::tests::malformed_nested_values_never_reach_the_materializing_typed_parser ... ok
+test exact::tests::cross_cancellation_and_wire_format_preserve_wide_values ... ok
+test framing::numeric::tests::wide_carries_borrows_and_failures ... ok
+test command::binding_patch_tests::changed_binding_owners_exclude_untouched_values_and_clocks ... ok
+test command::binding_patch_tests::binding_state_replacement_requires_both_guards_and_roundtrips ... ok
+test command::binding_patch_tests::changed_step_only_clock_marks_its_owner_as_changed ... ok
+test audio_mapping::tests::selected_wire_is_closed_and_requires_every_boundary ... ok
+test audio_binding_lifecycle::tests::occurrence_isolation_retains_the_selected_old_clock_and_undo_restores_state ... ok
+test command::binding_patch_tests::binding_patch_rejects_stale_before_state_without_mutation ... ok
+test audio_binding_lifecycle::tests::pruning_keeps_a_table_still_referenced_only_by_a_phase_term ... ok
+test document::serialization_tests::canonical_json_limit_counts_escaping_utf8_and_terminal_newline ... ok
+test audio_binding_lifecycle::tests::removing_the_last_owner_removes_its_tables_in_the_same_reversible_patch ... ok
+test framing::preflight::tests::scanner_rejects_the_extra_segment_before_reading_its_malformed_body ... ok
+test audio_mapping::tests::typed_and_wire_selection_validation_reject_the_same_invalid_intervals ... ok
+test audio_binding_lifecycle::tests::split_copies_live_scope_and_phase_arguments_but_keeps_historical_aliases ... ok
+test legacy_audio_binding_v20::tests::projection_rejects_gap_intent_and_decoder_retains_duplicate_detection ... ok
+test legacy_v3::tests::legacy_document_projection_rejects_even_empty_override_entries ... ok
+test legacy_v5::tests::every_legacy_command_rejects_audio_mapping_edits ... ok
+test legacy_v10::tests::legacy_documents_and_projections_cannot_hide_authored_edges ... ok
+test legacy_v10::tests::legacy_requests_reject_edges_in_every_subtree_and_new_commands ... ok
+test legacy_v5::tests::every_legacy_document_and_subtree_rejects_mapping_even_null ... ok
+test legacy_v10::tests::legacy_forward_and_inverse_patches_reject_edges_and_nondefault_projection ... ok
+test legacy_v6::tests::every_legacy_command_rejects_direct_and_occurrence_video_mapping_edits ... ok
+test legacy_v5::tests::every_legacy_source_upgrades_to_fit_beat_and_projection_rejects_new_mapping ... ok
+test legacy_v5::tests::every_legacy_patch_rejects_mapping_and_cannot_hide_non_fit_beat_output ... ok
+test legacy_v6::tests::schema_six_requires_audio_mapping_and_preserves_audio_commands ... ok
+test legacy_v6::tests::every_legacy_document_and_subtree_rejects_video_mapping_even_null ... ok
+test legacy_v6::tests::every_legacy_source_preserves_audio_and_projects_only_fit_beat_video ... ok
+test legacy_v7::tests::schema_seven_preserves_both_extent_commands_and_requires_strict_mapping_fields ... ok
+test legacy_v6::tests::every_legacy_patch_rejects_video_mapping_and_cannot_hide_new_intent ... ok
+test legacy_v7::tests::all_legacy_documents_subtrees_and_commands_reject_placements ... ok
+test legacy_v8::tests::generated_acceptance_asset_maps_use_frozen_vocabulary_in_commands_and_occurrences ... ok
+test legacy_v8::tests::every_pre_nine_document_and_asset_command_rejects_even_null_qualification ... ok
+test marks::tests::binding_rebuild_deduplicates_complete_identity_and_keeps_first_primary ... ok
+test legacy_v8::tests::schema_eight_retains_placements_offsets_generated_hashes_and_no_receipt ... ok
+test legacy_v8::tests::pre_nine_patches_reject_qualification_and_cannot_hide_current_bindings ... ok
+test occurrence::tests::billions_of_plays_stay_compact_and_removed_ids_do_not_return ... ok
+test occurrence::tests::high_ordinals_after_small_prefix_do_not_overflow_position ... ok
+test occurrence::tests::reorder_and_insertion_preserve_identity_and_round_trip ... ok
+test audio_reference::preflight::tests::duplicate_closed_record_fields_never_reach_the_materializing_typed_parser ... ok
+test legacy_v7::tests::all_legacy_patches_reject_placements_and_projection_cannot_hide_them ... ok
+test picture_context::preflight::tests::only_actual_recipe_paths_are_inspected ... ok
+test picture_context::tests::bounded_deserialization_rejects_per_context_overflows ... ok
+test picture_context::tests::capture_compacts_identity_clips_and_merges_same_size_fit_without_quantizing ... ok
+test picture_context::tests::capture_is_atomic_and_keeps_nontrivial_clip_order ... ok
+test picture_context::tests::merge_retains_implicit_fill_clip_before_new_pose_and_reuses_prior_clip ... ok
+test repeat_layout::tests::bounded_lookup_enforces_exact_comparison_allowance_on_sparse_runs ... ok
+test source_index::tests::malformed_presentation_and_seek_metadata_are_rejected ... ok
+test source_index::tests::selected_span_endpoints_hold_only_intersecting_presentation_intervals ... ok
+test source_index::tests::selected_span_requires_matching_clocks_and_complete_measured_coverage ... ok
+test source_index::tests::vfr_lookup_uses_pts_preserves_negative_origin_and_has_explicit_endpoints ... ok
+test source_mapping::tests::placement_wire_requires_every_field_and_rejects_unknown_even_null_fields ... ok
+test time::tests::boundaries_are_monotonic_and_symmetric ... ok
+test time::tests::duration_arithmetic_checks_each_overflow_path ... ok
+test time::tests::equivalent_rational_rates_produce_identical_boundaries ... ok
+test time::tests::half_open_ranges_reject_reversal_and_duration_overflow ... ok
+test legacy_audio_binding_v20::tests::schema20_rejects_new_binding_vocabulary ... ok
+test time::tests::rates_and_time_bases_are_positive_and_normalized ... ok
+test time::tests::repeats_count_total_plays_and_have_no_trailing_gap ... ok
+test time::tests::sample_boundaries_report_overflow_without_restricting_signed_positions ... ok
+test time::tests::ten_thousand_single_frame_edits_have_no_fractional_rate_drift ... ok
+test time::tests::ties_round_to_even_on_both_sides_of_zero ... ok
+test legacy_audio_binding_v20::tests::schema19_rejects_new_binding_vocabulary ... ok
+test legacy_audio_binding_v20::tests::schema18_rejects_new_binding_vocabulary ... ok
+test legacy_audio_binding_v20::tests::schema17_rejects_new_binding_vocabulary ... ok
+test legacy_audio_binding_v20::tests::schema16_rejects_new_binding_vocabulary ... ok
+test time::tests::partition_boundaries_telescope ... ok
+test framing::preflight::tests::scanner_counts_aggregate_controls_before_materializing_node_values ... ok
+test marks::tests::mark_count_limit_applies_to_retained_unresolved_records_too ... ok
+test legacy_audio_binding_v20::tests::schema17_rejects_nested_gap_vocabulary ... ok
+test legacy_audio_binding_v20::tests::schema19_rejects_nested_gap_vocabulary ... ok
+test legacy_audio_binding_v20::tests::schema16_rejects_nested_gap_vocabulary ... ok
+test legacy_audio_binding_v20::tests::schema20_rejects_nested_gap_vocabulary ... ok
+test legacy_audio_binding_v20::tests::schema18_rejects_nested_gap_vocabulary ... ok
+test legacy_audio_binding_v20::tests::schema21_rejects_nested_gap_vocabulary ... ok
+test framing::numeric::tests::fraction_matches_independent_small_integer_division ... ok
+test picture_context::preflight::tests::aggregate_bound_includes_gaps_and_decodes_escaped_recipe_keys ... ok
+test occurrence::tests::compact_moves_match_an_expanded_identity_model ... ok
+test occurrence_edit::tests::isolation_rejects_mark_and_node_growth_at_document_limits ... ok
+
+test result: ok. 82 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 9.82s
+
+     Running tests/audio_binding_capture.rs (target/debug/deps/audio_binding_capture-00c5ccb52c15929d)
+
+running 6 tests
+test captures_a_billion_plays_compactly_and_empty_projects_are_noops ... ok
+test source_capture_retains_its_current_placement_without_freezing_raw_assets ... ok
+test nested_preserve_resets_input_scope_after_capturing_its_output ... ok
+test captures_unplayed_defaults_and_closes_each_override_at_its_stable_play ... ok
+test an_existing_intrinsic_binding_survives_a_new_wrapper_and_more_capture ... ok
+test capture_includes_gaps_and_rejects_path_expansion_atomically ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.42s
+
+     Running tests/audio_bindings.rs (target/debug/deps/audio_bindings-0e4a5cba4e30697d)
+
+running 36 tests
+test every_template_clock_stays_inside_its_nearest_preserve_input ... ok
+test gaps::an_authored_gap_definition_has_no_preceding_play_or_outer_arguments ... ok
+test gaps::repeat_output_window_does_not_survive_same_id_gap_definition_birth ... ok
+test captured_arguments_survive_extraction_and_explicit_definition_exclusion_is_required ... ok
+test gaps::hidden_gap_has_no_reanchor_entry_and_later_visible_gap_starts_at_zero ... ok
+test clear_override_exposes_a_definition_birth_even_for_a_surviving_play_id ... ok
+test gaps::outer_birth_retains_surviving_inner_gap_and_own_birth_is_innermost ... ok
+test gaps::a_gap_own_argument_cannot_be_confused_with_its_outer_repeat_path ... ok
+test gaps::historical_child_override_does_not_turn_its_following_gap_into_a_birth ... ok
+test gaps::insertion_captures_a_gap_bearing_prefix_and_keeps_the_supported_suffix_scope ... ok
+test gaps::gap_admission_rejects_cross_kind_arguments_and_malformed_maps ... ok
+test gaps::gap_capture_and_resolution_are_bounded_for_a_billion_plays ... ok
+test gaps::shortening_a_gap_preserves_its_existing_resume_coordinate ... ok
+test gaps::transparent_partition_hidden_gap_does_not_gain_a_clamped_reanchor ... ok
+test outer_wrap_and_inner_birth_choose_their_captured_lexical_roots ... ok
+test live_validation_bounds_resume_anchors_without_narrowing_exact_phase ... ok
+test reanchors::born_play_drops_outer_cut_but_keeps_intrinsic_partition_entry ... ok
+test gaps::one_play_capture_retains_a_configured_gap_before_growth_and_direct_definition ... ok
+test reanchors::chronological_steps_extend_an_existing_phase_on_each_captured_clock ... ok
+test reanchors::outer_birth_at_the_same_retained_root_keeps_its_intrinsic_window ... ok
+test reanchors::preserve_input_selection_constrains_the_step_on_its_point_grid ... ok
+test reanchors::hidden_retained_plays_leave_the_previous_map_intact ... ok
+test gaps::gap_removal_prunes_intent_and_readding_does_not_resurrect_it ... ok
+test reanchors::reanchor_queries_stay_bounded_for_billion_play_and_birth_occurrences ... ok
+test reanchors::clipped_first_play_and_full_later_plays_have_distinct_resume_entries ... ok
+test gaps::surviving_preceding_plays_keep_gaps_and_former_final_or_new_plays_are_born ... ok
+test selected_point_clock_and_meaningful_edit_support_are_not_round_even_partitions ... ok
+test symbolic_phase_retains_each_play_rounding_and_composes_another_clock ... ok
+test gaps::split_and_occurrence_isolation_remap_live_gap_owner_and_restore_exact_inverse ... ok
+test state_round_trips_structured_ids_and_rejects_invalid_or_unbounded_intent ... ok
+test reanchors::aggregate_terms_steps_and_invalid_windows_fail_typed_and_wire_admission ... ok
+test programmatic_bindings_obey_the_same_individual_wire_cap ... ok
+test constructor_validation_charges_all_template_walks_together ... ok
+test near_limit_binding_round_trips_inside_a_pretty_project_document ... ok
+test gaps::gap_and_node_templates_share_the_aggregate_admission_budget ... ok
+test aggregate_wire_admission_precedes_any_typed_layout_body ... ok
+
+test result: ok. 36 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 25.29s
+
+     Running tests/insert_time.rs (target/debug/deps/insert_time-c54e507fd278fef7)
+
+running 13 tests
+test duration_overflow_and_nonfallback_provider_are_rejected_before_capture ... ok
+test first_pause_locks_an_automatic_empty_project_before_final_validation ... ok
+test zero_bounds_stale_revision_and_identity_errors_leave_input_unchanged ... ok
+test split_and_insertion_compose_mark_bias_and_keep_sequence_pins ... ok
+test existing_split_seam_reanchors_without_manufacturing_another_split ... ok
+test unsupported_shifted_structures_and_any_nonempty_gap_fail_atomically ... FAILED
+test insertion_after_compact_steps_appends_after_them_and_round_trips_atomically ... ok
+test start_interior_end_and_empty_project_insert_one_reversible_pause ... ok
+test fully_bound_input_keeps_a_phase_only_clock_until_terms_exist_and_prunes_unused_end_clock ... ok
+test ordinary_hold_interior_and_its_partition_can_be_inserted_into_again ... ok
+test repeated_interior_insertion_composes_current_phase_on_one_immutable_lattice ... ok
+test every_shifted_fragment_gets_its_own_old_entry_and_existing_lattice_survives ... ok
+test aggregate_identity_and_composed_phase_limits_fail_before_a_transaction ... ok
+
+failures:
+
+---- unsupported_shifted_structures_and_any_nonempty_gap_fail_atomically stdout ----
+
+thread 'unsupported_shifted_structures_and_any_nonempty_gap_fail_atomically' (44865533) panicked at crates/deadpan-core/tests/insert_time.rs:594:14:
+called `Result::unwrap_err()` on an `Ok` value: EditTransaction { forward: DocumentPatch { project_id: ProjectId("pause"), from_revision: RevisionId("initial"), to_revision: RevisionId("bad"), presentation: None, nodes: {NodeId("pause-bad"): ValueChange { before: None, after: Some(BeatNode { label: "Pause", kind: Hold { recipe: HoldRecipe { picture_context: None, duration: FrameDuration(1), video: Background, audio: Silence } }, audio_edges: AudioEdgePolicies { node_start: Automatic, node_end: Automatic, source_placement_start: Automatic, source_placement_end: Automatic, repeat_gap_start: Automatic, repeat_gap_end: Automatic }, framing: None }) }, NodeId("root"): ValueChange { before: Some(BeatNode { label: "Project", kind: Sequence { children: [NodeId("repeat")] }, audio_edges: AudioEdgePolicies { node_start: Automatic, node_end: Automatic, source_placement_start: Automatic, source_placement_end: Automatic, repeat_gap_start: Automatic, repeat_gap_end: Automatic }, framing: None }), after: Some(BeatNode { label: "Project", kind: Sequence { children: [NodeId("repeat"), NodeId("pause-bad")] }, audio_edges: AudioEdgePolicies { node_start: Automatic, node_end: Automatic, source_placement_start: Automatic, source_placement_end: Automatic, repeat_gap_start: Automatic, repeat_gap_end: Automatic }, framing: None }) }}, assets: {}, marks: {}, overrides: {}, audio_lineage: {}, audio_bindings: Some(ValueChange { before: Some(AudioBindingState { timings: {}, bindings: {}, gap_bindings: {} }), after: Some(AudioBindingState { timings: {AudioTimingId { allocation: RevisionId("bad"), ordinal: 0 }: FrozenAudioLayout { root: NodeId("root"), rate: FrameRate { numerator: 30000, denominator: 1001 }, nodes: {NodeId("inner"): FrozenAudioNode { duration: FrameDuration(2), edges: AudioEdgePolicies { node_start: Automatic, node_end: Automatic, source_placement_start: Automatic, source_placement_end: Automatic, repeat_gap_start: Automatic, repeat_gap_end: Automatic }, kind: Source { placement: None } }, NodeId("repeat"): FrozenAudioNode { duration: FrameDuration(5), edges: AudioEdgePolicies { node_start: Automatic, node_end: Automatic, source_placement_start: Automatic, source_placement_end: Automatic, repeat_gap_start: Automatic, repeat_gap_end: Automatic }, kind: Repeat { child: NodeId("inner"), iterations: IterationOrder { runs: [IterationRun { allocation: RevisionId("plays"), first: 0, count: 2 }] }, gap_duration: FrameDuration(1), gap_audio: Silence } }, NodeId("root"): FrozenAudioNode { duration: FrameDuration(5), edges: AudioEdgePolicies { node_start: Automatic, node_end: Automatic, source_placement_start: Automatic, source_placement_end: Automatic, repeat_gap_start: Automatic, repeat_gap_end: Automatic }, kind: Sequence { children: [NodeId("repeat")] } }}, overrides: {}, audio_lineage: {}, index: FrozenIndex { parents: {NodeId("inner"): (NodeId("repeat"), 0), NodeId("repeat"): (NodeId("root"), 0)}, repeats: {NodeId("repeat"): RepeatLayout { segments: [Segment { start: 0, end: 5, first_play: 0, count: 2, allocation: RevisionId("plays"), first: 0, child: NodeId("inner"), child_duration: FrameDuration(2) }], plays: 2, gap: FrameDuration(1), duration: FrameDuration(5) }} } }}, bindings: {NodeId("inner"): OwnedAudioBinding { lattice: AudioPlacementTemplate { reference: AudioReferenceClock { timing: AudioTimingId { allocation: RevisionId("bad"), ordinal: 0 }, root: ProjectRootRoundEven, physical: NodeId("inner"), recipe: Node }, gap_after: None, arguments: [AudioRepeatArgument { reference_repeat: NodeId("repeat"), value: Live { repeat: NodeId("repeat") } }], births: [AudioBirthClause { repeat: NodeId("repeat"), survivors: CapturedRepeat { repeat: NodeId("repeat") }, definition_root: NodeId("inner") }] }, resume: None, reanchors: [] }}, gap_bindings: {NodeId("repeat"): OwnedAudioBinding { lattice: AudioPlacementTemplate { reference: AudioReferenceClock { timing: AudioTimingId { allocation: RevisionId("bad"), ordinal: 0 }, root: ProjectRootRoundEven, physical: NodeId("repeat"), recipe: RepeatGap }, gap_after: Some(Live { repeat: NodeId("repeat") }), arguments: [], births: [] }, resume: None, reanchors: [] }} }) }) }, inverse: DocumentPatch { project_id: ProjectId("pause"), from_revision: RevisionId("bad"), to_revision: RevisionId("initial"), presentation: None, nodes: {NodeId("pause-bad"): ValueChange { before: Some(BeatNode { label: "Pause", kind: Hold { recipe: HoldRecipe { picture_context: None, duration: FrameDuration(1), video: Background, audio: Silence } }, audio_edges: AudioEdgePolicies { node_start: Automatic, node_end: Automatic, source_placement_start: Automatic, source_placement_end: Automatic, repeat_gap_start: Automatic, repeat_gap_end: Automatic }, framing: None }), after: None }, NodeId("root"): ValueChange { before: Some(BeatNode { label: "Project", kind: Sequence { children: [NodeId("repeat"), NodeId("pause-bad")] }, audio_edges: AudioEdgePolicies { node_start: Automatic, node_end: Automatic, source_placement_start: Automatic, source_placement_end: Automatic, repeat_gap_start: Automatic, repeat_gap_end: Automatic }, framing: None }), after: Some(BeatNode { label: "Project", kind: Sequence { children: [NodeId("repeat")] }, audio_edges: AudioEdgePolicies { node_start: Automatic, node_end: Automatic, source_placement_start: Automatic, source_placement_end: Automatic, repeat_gap_start: Automatic, repeat_gap_end: Automatic }, framing: None }) }}, assets: {}, marks: {}, overrides: {}, audio_lineage: {}, audio_bindings: Some(ValueChange { before: Some(AudioBindingState { timings: {AudioTimingId { allocation: RevisionId("bad"), ordinal: 0 }: FrozenAudioLayout { root: NodeId("root"), rate: FrameRate { numerator: 30000, denominator: 1001 }, nodes: {NodeId("inner"): FrozenAudioNode { duration: FrameDuration(2), edges: AudioEdgePolicies { node_start: Automatic, node_end: Automatic, source_placement_start: Automatic, source_placement_end: Automatic, repeat_gap_start: Automatic, repeat_gap_end: Automatic }, kind: Source { placement: None } }, NodeId("repeat"): FrozenAudioNode { duration: FrameDuration(5), edges: AudioEdgePolicies { node_start: Automatic, node_end: Automatic, source_placement_start: Automatic, source_placement_end: Automatic, repeat_gap_start: Automatic, repeat_gap_end: Automatic }, kind: Repeat { child: NodeId("inner"), iterations: IterationOrder { runs: [IterationRun { allocation: RevisionId("plays"), first: 0, count: 2 }] }, gap_duration: FrameDuration(1), gap_audio: Silence } }, NodeId("root"): FrozenAudioNode { duration: FrameDuration(5), edges: AudioEdgePolicies { node_start: Automatic, node_end: Automatic, source_placement_start: Automatic, source_placement_end: Automatic, repeat_gap_start: Automatic, repeat_gap_end: Automatic }, kind: Sequence { children: [NodeId("repeat")] } }}, overrides: {}, audio_lineage: {}, index: FrozenIndex { parents: {NodeId("inner"): (NodeId("repeat"), 0), NodeId("repeat"): (NodeId("root"), 0)}, repeats: {NodeId("repeat"): RepeatLayout { segments: [Segment { start: 0, end: 5, first_play: 0, count: 2, allocation: RevisionId("plays"), first: 0, child: NodeId("inner"), child_duration: FrameDuration(2) }], plays: 2, gap: FrameDuration(1), duration: FrameDuration(5) }} } }}, bindings: {NodeId("inner"): OwnedAudioBinding { lattice: AudioPlacementTemplate { reference: AudioReferenceClock { timing: AudioTimingId { allocation: RevisionId("bad"), ordinal: 0 }, root: ProjectRootRoundEven, physical: NodeId("inner"), recipe: Node }, gap_after: None, arguments: [AudioRepeatArgument { reference_repeat: NodeId("repeat"), value: Live { repeat: NodeId("repeat") } }], births: [AudioBirthClause { repeat: NodeId("repeat"), survivors: CapturedRepeat { repeat: NodeId("repeat") }, definition_root: NodeId("inner") }] }, resume: None, reanchors: [] }}, gap_bindings: {NodeId("repeat"): OwnedAudioBinding { lattice: AudioPlacementTemplate { reference: AudioReferenceClock { timing: AudioTimingId { allocation: RevisionId("bad"), ordinal: 0 }, root: ProjectRootRoundEven, physical: NodeId("repeat"), recipe: RepeatGap }, gap_after: Some(Live { repeat: NodeId("repeat") }), arguments: [], births: [] }, resume: None, reanchors: [] }} }), after: Some(AudioBindingState { timings: {}, bindings: {}, gap_bindings: {} }) }) }, changed_ids: [NodeId("inner"), NodeId("pause-bad"), NodeId("repeat"), NodeId("root")], duration_delta: 1, description: "Insert pause" }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    unsupported_shifted_structures_and_any_nonempty_gap_fail_atomically
+
+test result: FAILED. 12 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.38s
+
+error: test failed, to rerun pass `-p deadpan-core --test insert_time`

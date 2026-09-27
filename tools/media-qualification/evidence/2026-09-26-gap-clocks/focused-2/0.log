@@ -1,0 +1,14 @@
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 13.70s
+     Running tests/gap_definition.rs (target/debug/deps/gap_definition-471b52326501244a)
+
+running 6 tests
+test missing_and_zero_gaps_are_rejected_and_tail_remains_explicitly_unsupported ... ok
+test silence_policy_survives_a_zero_point_gap_and_later_expanded_placement ... ok
+test gap_reads_recheck_cached_admission_and_enforce_preparation_limits_and_cancellation ... ok
+test current_gap_recipe_changes_audio_while_preserving_explicit_clock ... ok
+test one_play_gap_renders_44100_pcm_without_child_leakage_or_loop_phase_rounding ... ok
+test root_and_point_gap_clocks_keep_signed_ntsc_phase_and_full_finite_filter_context ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.80s
+

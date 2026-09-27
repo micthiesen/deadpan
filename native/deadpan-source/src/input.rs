@@ -525,12 +525,12 @@ fn wave(r: &mut Reader<'_>, selected: u32) -> Result<()> {
         match &tag {
             b"fmt " => {
                 require(
-                    align.is_none() && !data && length == 16,
-                    "WAVE requires one plain fmt16 before data",
+                    align.is_none() && !data && matches!(length, 16 | 40),
+                    "WAVE requires one PCM fmt16 or extensible fmt40 before data",
                 )?;
                 let bytes = r.bytes::<16>(start)?;
                 let format = u16::from_le_bytes([bytes[0], bytes[1]]);
-                if format != 1 {
+                if !matches!((format, length), (1, 16) | (0xfffe, 40)) {
                     return Err(SourceDecodeError::Native {
                         code: "unsupported_codec".into(),
                         message: "only signed16 PCM WAVE is admitted".into(),
@@ -550,6 +550,9 @@ fn wave(r: &mut Reader<'_>, selected: u32) -> Result<()> {
                     || rate > r.limits.max_sample_rate
                 {
                     return Err(limit("WAVE channels or rate exceed configured bounds"));
+                }
+                if format == 0xfffe {
+                    wave_extensible_pcm16(r, start + 16, channels)?;
                 }
                 require(
                     block == channels * 2
@@ -580,6 +583,31 @@ fn wave(r: &mut Reader<'_>, selected: u32) -> Result<()> {
         cursor = start + length + (length & 1);
     }
     require(data && align.is_some(), "WAVE has no complete PCM stream")
+}
+
+fn wave_extensible_pcm16(r: &mut Reader<'_>, start: u64, channels: u32) -> Result<()> {
+    // A closed extension, not arbitrary WAVEFORMATEX extradata. The containing
+    // fmt40 has already been bounded before any of these fixed-size reads.
+    let bytes = r.bytes::<24>(start)?;
+    require(
+        u16::from_le_bytes([bytes[0], bytes[1]]) == 22
+            && u16::from_le_bytes([bytes[2], bytes[3]]) == 16,
+        "WAVE extensible PCM requires cbSize22 and sixteen valid bits",
+    )?;
+    let mask = u32::from_le_bytes(bytes[4..8].try_into().expect("four bytes"));
+    require(
+        mask != 0 && mask & !0x3ffff == 0 && mask.count_ones() == channels,
+        "WAVE extensible speaker mask is unspecified, reserved or inconsistent",
+    )?;
+    // KSDATAFORMAT_SUBTYPE_PCM in RIFF GUID byte order. Other codecs, float
+    // data and vendor-defined subtype namespaces remain unqualified.
+    require(
+        bytes[8..]
+            == [
+                1, 0, 0, 0, 0, 0, 0x10, 0, 0x80, 0, 0, 0xaa, 0, 0x38, 0x9b, 0x71,
+            ],
+        "WAVE extensible subtype is not signed16 PCM",
+    )
 }
 
 fn mp4(r: &mut Reader<'_>, policy: Selection) -> Result<Option<u32>> {
@@ -2028,6 +2056,111 @@ mod tests {
             "resource_limit"
         );
     }
+    #[test]
+    fn extensible_pcm16_requires_exact_fields_and_declared_speaker_positions() {
+        let source = std::fs::read(path("audio-fixtures", "pcm-mono-44100.wav")).unwrap();
+        let mut bytes = Vec::new();
+        bytes.extend_from_slice(b"RIFF");
+        bytes.extend_from_slice(&u32::try_from(source.len() + 16).unwrap().to_le_bytes());
+        bytes.extend_from_slice(b"WAVEfmt ");
+        bytes.extend_from_slice(&40_u32.to_le_bytes());
+        bytes.extend_from_slice(&0xfffe_u16.to_le_bytes());
+        bytes.extend_from_slice(&source[22..36]);
+        bytes.extend_from_slice(&22_u16.to_le_bytes());
+        bytes.extend_from_slice(&16_u16.to_le_bytes());
+        bytes.extend_from_slice(&4_u32.to_le_bytes());
+        bytes.extend_from_slice(&[
+            1, 0, 0, 0, 0, 0, 0x10, 0, 0x80, 0, 0, 0xaa, 0, 0x38, 0x9b, 0x71,
+        ]);
+        bytes.extend_from_slice(&source[36..]);
+        validate(&file(&bytes), 0, AudioDecodeLimits::default(), control()).unwrap();
+        // Fixed format/tag pairing, extension size, valid width and every GUID
+        // byte are admitted explicitly, before FFmpeg sees the container.
+        for (offset, value) in [
+            (16, 39),
+            (16, 41),
+            (20, 1),
+            (36, 21),
+            (36, 23),
+            (38, 15),
+            (38, 17),
+        ] {
+            let mut bad = bytes.clone();
+            bad[offset] = value;
+            assert!(
+                validate(&file(&bad), 0, AudioDecodeLimits::default(), control()).is_err(),
+                "offset {offset} value {value}"
+            );
+        }
+        for offset in 44..60 {
+            let mut bad = bytes.clone();
+            bad[offset] ^= 1;
+            assert!(
+                validate(&file(&bad), 0, AudioDecodeLimits::default(), control()).is_err(),
+                "GUID byte {offset}"
+            );
+        }
+        for mask in [0_u32, 3, 1 << 18, 1 << 31] {
+            let mut bad = bytes.clone();
+            bad[40..44].copy_from_slice(&mask.to_le_bytes());
+            assert!(
+                validate(&file(&bad), 0, AudioDecodeLimits::default(), control()).is_err(),
+                "mask {mask}"
+            );
+        }
+        // Every canonical WAVE speaker bit is bounded and admitted as declared;
+        // the downstream stereo matrix still rejects unsupported interpretations.
+        for speaker in 0..18 {
+            let mut declared = bytes.clone();
+            declared[40..44].copy_from_slice(&(1_u32 << speaker).to_le_bytes());
+            validate(&file(&declared), 0, AudioDecodeLimits::default(), control()).unwrap();
+        }
+        assert_eq!(
+            code(
+                validate(
+                    &file(&bytes),
+                    0,
+                    AudioDecodeLimits {
+                        max_sample_rate: 44_099,
+                        ..AudioDecodeLimits::default()
+                    },
+                    control()
+                )
+                .unwrap_err()
+            ),
+            "resource_limit"
+        );
+        assert_eq!(
+            code(
+                validate(
+                    &file(&bytes),
+                    0,
+                    AudioDecodeLimits {
+                        max_decoded_samples: 44_116,
+                        ..AudioDecodeLimits::default()
+                    },
+                    control()
+                )
+                .unwrap_err()
+            ),
+            "resource_limit"
+        );
+        assert!(validate(&file(&bytes), 1, AudioDecodeLimits::default(), control()).is_err());
+        let mut truncated = bytes;
+        truncated.truncate(59);
+        let declared = u32::try_from(truncated.len() - 8).unwrap();
+        truncated[4..8].copy_from_slice(&declared.to_le_bytes());
+        assert!(
+            validate(
+                &file(&truncated),
+                0,
+                AudioDecodeLimits::default(),
+                control()
+            )
+            .is_err()
+        );
+    }
+
     #[test]
     fn wav_lengths_block_alignment_and_metadata_are_checked_before_demux() {
         let bytes = std::fs::read(path("audio-fixtures", "pcm-stereo-48000.wav")).unwrap();

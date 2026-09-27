@@ -1,0 +1,31 @@
+{
+  "scope": "Composite root-seam InsertTime compared with the preserved core23/db29 source snapshot",
+  "base_git_revision": "c03a5edde5f28d27074745eb15711cb28b1f2e50",
+  "reviews": [
+    {
+      "agent": "composite_general_review",
+      "lens": "General correctness, invariants, integration and test coverage",
+      "findings": [],
+      "summary": "No findings after review against the preserved pre-increment sources."
+    },
+    {
+      "agent": "composite_audio_review",
+      "lens": "Exact audio timing, compact admission and Preserve boundaries",
+      "findings": [],
+      "summary": "No findings: current root-clock placements, bounded chronological steps, compact Repeat/gap handling."
+    },
+    {
+      "agent": "composite_migration_review",
+      "lens": "Migration safety and backward replay compatibility",
+      "findings": [],
+      "summary": "No findings: old contextual admission checked before replay; closed schema23 adapter; existing backup-before-promotion flow preserved."
+    }
+  ],
+  "complete": true,
+  "full_gate_followup": {
+    "finding": "An older gap-binding integration test still required rejection of the newly admitted root Repeat seam.",
+    "change": "The test now checks successful seam insertion, exact undo, and rejection of an interior Repeat boundary.",
+    "changed_source": "crates/deadpan-core/tests/audio_bindings/gaps.rs",
+    "review": "Main reviewed the positive and negative assertions against the admitted root-seam contract; no production change."
+  }
+}

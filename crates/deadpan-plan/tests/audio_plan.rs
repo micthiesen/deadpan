@@ -9,6 +9,9 @@ use deadpan_plan::{
 use proptest::prelude::*;
 use proptest::test_runner::RngSeed;
 
+#[path = "audio_plan/selection.rs"]
+mod selection;
+
 fn id(value: &str) -> NodeId {
     NodeId::new(value).unwrap()
 }
@@ -73,6 +76,7 @@ fn hold_recipe(frames: i64, audio: HoldAudio) -> HoldRecipe {
     HoldRecipe {
         duration: duration(frames),
         video: HoldVideo::Background,
+        picture_context: None,
         audio,
     }
 }

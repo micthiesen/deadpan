@@ -1,0 +1,78 @@
+   Compiling deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 43.46s
+     Running tests/migration.rs (target/debug/deps/migration-1ec6c371835407ea)
+
+running 69 tests
+test framing::frozen_v17_rejects_framing_in_commands_subtrees_occurrences_and_patches ... ok
+test earlier_occurrence_copy_history_gains_only_replayed_lineage ... ok
+test framing::schema23_cannot_smuggle_new_node_fields_and_failed_migration_keeps_original ... ok
+test framing::actual_old_binary_schema23_fixture_replays_every_snapshot_and_pending_redo ... ok
+test insert_time::atomic_insert_time_history_survives_reopen_undo_redo_and_rejected_requests ... ok
+test framing::schema23_keeps_insert_time_history_and_redo_then_persists_framing ... ok
+test legacy_projection_cannot_hide_empty_override_entries_from_faulty_replay ... ok
+test legacy_projection_cannot_hide_marks_added_by_a_faulty_replay ... ok
+test legacy_database_rejects_preexisting_qualification_inventory_without_losing_it ... ok
+test legacy_schema_cannot_smuggle_modern_original_records_through_migration ... ok
+test corruption_is_rejected_without_promoting_any_migrated_rows ... ok
+test insert_time::schema22_preserves_bindings_patches_and_redo_in_the_backed_up_migration ... ok
+test every_old_database_rejects_new_asset_hash_vocabulary_without_promotion ... ok
+test migration_promotes_with_a_live_wal_reader_without_replacing_its_snapshot ... ok
+test picture_context::schema24_rejects_injected_null_context_without_touching_original_or_backup ... ok
+test old_binary_history_migrates_with_stable_ids_and_pending_redo ... ok
+test schema_eight_retains_unqualified_bundle_json_and_pending_redo ... ok
+test picture_context::actual_schema24_binary_fixture_preserves_every_snapshot_history_backup_and_redo ... ok
+test schema_eighteen_replays_partitions_marks_branches_and_pending_redo ... ok
+test schema_eight_rejects_modern_evidence_and_corruption_without_promotion ... ok
+test insert_time::schema22_rejects_new_commands_and_nested_binding_vocabulary_without_promotion ... ok
+test schema_eleven_preserves_independent_audio_chronology_and_all_operational_rows ... ok
+test schema_five_preserves_requests_clocks_history_and_pending_redo ... ok
+test schema_eighteen_rejects_fragment_vocabulary_without_promotion ... ok
+test schema_five_invalid_requests_and_table_collisions_never_promote ... ok
+test schema_four_migrates_core_vocabulary_and_preserves_authored_history ... ok
+test old_schemas_reject_new_mark_vocabulary_without_changing_original ... ok
+test schema_nine_adds_empty_original_inventory_and_preserves_full_history ... ok
+test schema_four_rejects_corruption_and_operational_table_collisions_before_promotion ... ok
+test every_old_schema_rejects_override_vocabulary_before_promotion ... ok
+test schema_seven_preserves_legacy_core_history_and_selected_legacy_attempt ... ok
+test schema_nineteen_replays_fragment_loss_branches_and_pending_redo ... ok
+test schema_fifteen_preserves_presentation_chronology_and_all_operational_state ... ok
+test schema_nineteen_rejects_unknown_fragment_fields_in_all_history_positions ... ok
+test schema_sixteen_rejects_premature_profile_vocabulary_without_touching_original ... ok
+test insert_time::all_older_database_grammars_reject_insert_time_before_replay ... ok
+test schema_six_preserves_attempts_and_defers_recovery_until_writer_open ... ok
+test schema_seventeen_preserves_single_original_floor_and_authored_crop_history ... ok
+test schema_sixteen_retains_exact_core_eleven_history_and_stays_generic ... ok
+test schema_ten_preserves_source_audio_history_generated_receipts_and_originals ... ok
+test schema_fourteen_preserves_explicit_basis_and_qualified_source_branches ... ok
+test schema_six_corruption_preserves_original_history_jobs_and_backup ... ok
+test every_legacy_snapshot_retains_its_exact_explicit_presentation_basis ... ok
+test schema_three_mark_corruption_retains_original_and_backup ... ok
+test schema_three_history_preserves_every_mark_and_pending_redo ... ok
+test schema_eleven_rejects_video_vocabulary_and_corruption_without_promotion ... ok
+test schema_thirteen_preserves_exact_placements_without_inventing_qualification ... ok
+test schema_twenty_one_rejects_changed_lineage_without_promotion ... ok
+test schema_seventeen_rejects_new_purpose_everywhere_and_missing_profile_without_promotion ... ok
+test schema_two_duplicate_identities_are_rejected_before_promotion ... ok
+test every_legacy_snapshot_defaults_audio_edges_without_retiming ... ok
+test schema_twelve_preserves_stream_mappings_and_accepts_reversible_exact_placement ... ok
+test schema_twenty_replays_lineage_from_copy_history_and_preserves_navigation ... ok
+test schema_twenty_one_retains_exact_lineage_and_does_not_invent_audio_bindings ... ok
+test schema_fourteen_rejects_new_primary_fields_and_damaged_historical_receipts ... ok
+test schema_two_history_preserves_compact_identities_and_pending_redo ... ok
+test source_selection::schema25_rejects_new_mapping_variant_or_null_selection_without_touching_original ... ok
+test schema_ten_rejects_new_audio_vocabulary_and_corruption_without_promotion ... ok
+test every_legacy_database_retains_single_binding_marks_without_default_json_growth ... ok
+test source_selection::actual_schema25_binary_preserves_captured_views_audio_history_and_pending_redo ... ok
+test schema_twelve_rejects_placement_vocabulary_in_all_history_surfaces ... ok
+test writer_and_database_locks_prevent_migration_without_damage ... ok
+test schema_thirteen_rejects_registration_vocabulary_and_corrupt_placement_history ... ok
+test every_legacy_schema_rejects_presentation_vocabulary_without_promotion ... ok
+test every_legacy_database_rejects_split_ingress_without_promotion ... ok
+test every_legacy_schema_rejects_audio_edge_vocabulary_without_promotion ... ok
+test corrupt_old_tables_and_oversized_rows_retain_backup_before_validation ... ok
+test all_legacy_databases_reject_lineage_ingress_without_promotion ... ok
+test all_legacy_databases_reject_audio_binding_ingress_without_promotion ... ok
+
+test result: ok. 69 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 22.61s
+

@@ -1,0 +1,24 @@
+{
+  "workflow": "check",
+  "base": "origin/main",
+  "subject": "core21/database27 compact audio reanchor steps, allocation queries, lifecycle and history; earlier dirty increments retained as baseline",
+  "reviewers": [
+    {
+      "agent": "reanchor_general_review",
+      "scope": "correctness, errors, admission, compactness and tests",
+      "findings": []
+    },
+    {
+      "agent": "reanchor_migration_review",
+      "scope": "closed legacy vocabulary, complete chronological migration and identity retention",
+      "findings": []
+    },
+    {
+      "agent": "reanchor_timing_review",
+      "scope": "exact clocks, raw support, birth scopes and independent decoded-PCM oracle",
+      "findings": []
+    }
+  ],
+  "followup": "Timing reviewer independently verified corrected Preserve source support [100,218) and original full-output comparison",
+  "remaining_findings": []
+}

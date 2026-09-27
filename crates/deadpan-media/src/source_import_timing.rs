@@ -5,12 +5,13 @@
 //! not permission to remove samples. Original coordinates survive unchanged.
 
 use std::collections::BTreeMap;
+use std::ops::Range;
 
 use deadpan_core::{
-    AssetId, AudioSample, ColorPolicy, DocumentError, EndpointPolicy, ExactRatio, FrameDuration,
-    FrameRate, LinkRelation, PresentationBasis, SourceAudio, SourceAudioMapping, SourceNode,
-    SourceSpan, SourceTimeBase, SourceTimestamp, SourceVideo, SourceVideoMapping,
-    TerminalProvenance, TimeError,
+    AssetId, AudioSample, ColorPolicy, DocumentError, EndpointPolicy, ExactFrameRange, ExactRatio,
+    FrameDuration, FrameRate, LinkRelation, PresentationBasis, SourceAudio, SourceAudioMapping,
+    SourceFrameId, SourceNode, SourceSpan, SourceTimeBase, SourceTimestamp, SourceVideo,
+    SourceVideoMapping, TerminalProvenance, TimeError,
 };
 use deadpan_source::SourceStreamInfo;
 
@@ -35,6 +36,8 @@ pub enum ImportTimingError {
     UnavailableAudio,
     #[error("video requires a measured positive decoded terminal duration")]
     UnmeasuredVideoEnd,
+    #[error("source moment requires a nonempty half-open range of measured picture ordinals")]
+    InvalidMomentRange,
     #[error("source metadata does not match the measured video index")]
     VideoMetadataMismatch,
     #[error("observed cadence is ambiguous or exceeds the bounded cadence policy")]
@@ -119,19 +122,160 @@ impl ImportTiming {
     }
 }
 
+/// Full measured audio mapping with an exact audible selection in local frames.
+/// Original sample endpoints remain integral; selection never refits their rate.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct SelectedAudioPlacement {
+    pub placement: StreamPlacement,
+    pub selection: ExactFrameRange,
+}
+
+/// A pure selected-picture timing candidate, not registration or edit authority.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SourceMomentTiming {
+    /// Nonempty half-open original presentation ordinals, including the final
+    /// measured boundary when `end` equals the index's frame count.
+    pub ordinals: Range<u64>,
+    pub origin_seconds: ExactRatio,
+    pub project_rate: FrameRate,
+    pub video: StreamPlacement,
+    /// None means no selected audio stream or no measured overlap. It never
+    /// changes the immutable asset's stream inventory.
+    pub audio: Option<SelectedAudioPlacement>,
+    /// Ceiling of the selected picture duration, rounded only once. Picture
+    /// holds its selected endpoint in the slack; audio remains cropped exactly.
+    pub duration: FrameDuration,
+}
+
+impl SourceMomentTiming {
+    /// Construct candidate intent referring to an asset admitted by the host.
+    pub fn source_node(&self, asset: AssetId) -> SourceNode {
+        SourceNode {
+            duration: self.duration,
+            video: SourceVideo::Stream {
+                asset: asset.clone(),
+                span: self.video.span,
+            },
+            video_mapping: SourceVideoMapping::Placement {
+                start: self.video.start_frames,
+                frames: self.video.duration_frames,
+                endpoints: EndpointPolicy::HoldAdjacent,
+            },
+            audio: self.audio.map(|audio| SourceAudio {
+                asset,
+                span: audio.placement.span,
+            }),
+            audio_mapping: self.audio.map_or(SourceAudioMapping::FitBeat, |audio| {
+                SourceAudioMapping::SelectedPlacement {
+                    start: audio.placement.start_frames,
+                    frames: audio.placement.duration_frames,
+                    selection: audio.selection,
+                }
+            }),
+            link: if self.audio.is_some() {
+                LinkRelation::Linked
+            } else {
+                LinkRelation::Independent
+            },
+            audio_offset: AudioSample(0),
+        }
+    }
+}
+
+/// Select original picture intervals without changing their cadence or audio
+/// phase. This shares full-import evidence checks, including complete contiguous
+/// available audio coverage and measured video terminal duration. It performs
+/// no I/O and grants no media admission or permission to mutate a document.
+pub fn derive_source_moment(
+    video: &SourceIndexSnapshot,
+    audio: Option<&AudioIndexSnapshot>,
+    ordinals: Range<u64>,
+    project_rate: FrameRate,
+) -> Result<SourceMomentTiming, ImportTimingError> {
+    let index = video.index();
+    let frame_count = u64::try_from(index.frames().len()).map_err(|_| TimeError::Overflow)?;
+    if ordinals.start >= ordinals.end || ordinals.end > frame_count {
+        return Err(ImportTimingError::InvalidMomentRange);
+    }
+    let (_, measured_audio) = measured_spans(Some(video), audio)?;
+    let start = index.interval(SourceFrameId(ordinals.start))?.0;
+    let end = index.interval(SourceFrameId(ordinals.end - 1))?.1;
+    let selected = SourceSpan::new(
+        SourceTimestamp {
+            ticks: start,
+            time_base: index.time_base(),
+        },
+        SourceTimestamp {
+            ticks: end,
+            time_base: index.time_base(),
+        },
+    )?;
+    let origin_seconds = seconds(selected.start())?;
+    let video = stream_placement(selected, origin_seconds, project_rate)?;
+    let duration = FrameDuration::new(
+        i64::try_from(video.duration_frames.ceil()?).map_err(|_| TimeError::Overflow)?,
+    )?;
+    let audio = measured_audio
+        .map(
+            |span| -> Result<Option<SelectedAudioPlacement>, ImportTimingError> {
+                let placement = stream_placement(span, origin_seconds, project_rate)?;
+                let end = placement
+                    .start_frames
+                    .checked_add(placement.duration_frames)?;
+                let selected_start = if placement.start_frames.compare_integer(0).is_gt() {
+                    placement.start_frames
+                } else {
+                    ExactRatio::ZERO
+                };
+                let selected_end = if end
+                    .checked_sub(video.duration_frames)?
+                    .compare_integer(0)
+                    .is_lt()
+                {
+                    end
+                } else {
+                    video.duration_frames
+                };
+                if !selected_end
+                    .checked_sub(selected_start)?
+                    .compare_integer(0)
+                    .is_gt()
+                {
+                    return Ok(None);
+                }
+                let selection = ExactFrameRange::new(selected_start, selected_end)?;
+                // Check authored mapping bounds even when a small window hides a
+                // distant original origin or a much longer measured audio stream.
+                SourceAudioMapping::SelectedPlacement {
+                    start: placement.start_frames,
+                    frames: placement.duration_frames,
+                    selection,
+                }
+                .duration_frames(duration)?;
+                Ok(Some(SelectedAudioPlacement {
+                    placement,
+                    selection,
+                }))
+            },
+        )
+        .transpose()?
+        .flatten();
+    Ok(SourceMomentTiming {
+        ordinals,
+        origin_seconds,
+        project_rate,
+        video,
+        audio,
+        duration,
+    })
+}
+
 pub fn derive_import_timing(
     video: Option<&SourceIndexSnapshot>,
     audio: Option<&AudioIndexSnapshot>,
     project_rate: FrameRate,
 ) -> Result<ImportTiming, ImportTimingError> {
-    if let (Some(video), Some(audio)) = (video, audio)
-        && (video.content() != audio.content()
-            || video.stream_index() == audio.stream().stream_index)
-    {
-        return Err(ImportTimingError::StreamMismatch);
-    }
-    let video = video.map(video_span).transpose()?;
-    let audio = audio.map(audio_span).transpose()?;
+    let (video, audio) = measured_spans(video, audio)?;
     let mut spans = video.into_iter().chain(audio);
     let first = spans.next().ok_or(ImportTimingError::NoStreams)?;
     let mut origin = seconds(first.start())?;
@@ -146,29 +290,55 @@ pub fn derive_import_timing(
             end = candidate_end;
         }
     }
-    let rate = rate_ratio(project_rate)?;
-    let extent = end.checked_sub(origin)?.checked_mul(rate)?;
+    let extent = end
+        .checked_sub(origin)?
+        .checked_mul(rate_ratio(project_rate)?)?;
     let duration =
         FrameDuration::new(i64::try_from(extent.ceil()?).map_err(|_| TimeError::Overflow)?)?;
-    let placement = |span: SourceSpan| -> Result<StreamPlacement, ImportTimingError> {
-        Ok(StreamPlacement {
-            span,
-            start_frames: seconds(span.start())?
-                .checked_sub(origin)?
-                .checked_mul(rate)?,
-            duration_frames: seconds(span.end())?
-                .checked_sub(seconds(span.start())?)?
-                .checked_mul(rate)?,
-        })
-    };
     Ok(ImportTiming {
         origin_seconds: origin,
         project_rate,
-        video: video.map(placement).transpose()?,
-        audio: audio.map(placement).transpose()?,
+        video: video
+            .map(|span| stream_placement(span, origin, project_rate))
+            .transpose()?,
+        audio: audio
+            .map(|span| stream_placement(span, origin, project_rate))
+            .transpose()?,
         duration,
         video_endpoints: EndpointPolicy::HoldAdjacent,
         audio_policy: ImportAudioPolicy::MeasuredAvailableCoverage,
+    })
+}
+
+fn measured_spans(
+    video: Option<&SourceIndexSnapshot>,
+    audio: Option<&AudioIndexSnapshot>,
+) -> Result<(Option<SourceSpan>, Option<SourceSpan>), ImportTimingError> {
+    if let (Some(video), Some(audio)) = (video, audio)
+        && (video.content() != audio.content()
+            || video.stream_index() == audio.stream().stream_index)
+    {
+        return Err(ImportTimingError::StreamMismatch);
+    }
+    let video = video.map(video_span).transpose()?;
+    let audio = audio.map(audio_span).transpose()?;
+    Ok((video, audio))
+}
+
+fn stream_placement(
+    span: SourceSpan,
+    origin: ExactRatio,
+    project_rate: FrameRate,
+) -> Result<StreamPlacement, ImportTimingError> {
+    let rate = rate_ratio(project_rate)?;
+    Ok(StreamPlacement {
+        span,
+        start_frames: seconds(span.start())?
+            .checked_sub(origin)?
+            .checked_mul(rate)?,
+        duration_frames: seconds(span.end())?
+            .checked_sub(seconds(span.start())?)?
+            .checked_mul(rate)?,
     })
 }
 

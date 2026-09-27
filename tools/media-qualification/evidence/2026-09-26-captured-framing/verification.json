@@ -1,0 +1,61 @@
+{
+  "source_count": 423,
+  "source_unchanged_across_runs": true,
+  "required_checks": {
+    "format": "passed",
+    "clippy_all_targets": "passed",
+    "workspace_tests": "failed",
+    "workspace_build": "passed",
+    "doctor": "passed"
+  },
+  "tests": {
+    "passed": 1363,
+    "failed": 1,
+    "ignored": 0
+  },
+  "test_partition": {
+    "gate_2": {
+      "passed": 743,
+      "failed": 1,
+      "ignored": 0
+    },
+    "remaining_suites_and_doc_tests": {
+      "passed": 617,
+      "failed": 0,
+      "ignored": 0
+    },
+    "jobs_example": {
+      "passed": 3,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  "jobs_example_command": [
+    "cargo",
+    "test",
+    "-p",
+    "deadpan-jobs",
+    "--example",
+    "qualify_model_worker",
+    "--locked"
+  ],
+  "failure": {
+    "test": "directories_fifos_and_sockets_are_rejected_without_blocking",
+    "location": "crates/deadpan-jobs/tests/artifact.rs:200",
+    "operation": "UnixListener::bind for its socket fixture, before the tested assertion",
+    "error": "Operation not permitted (OS error 1)"
+  },
+  "metal": {
+    "status": "failed_before_comparisons",
+    "reason": "metal found no adapters"
+  },
+  "native_review": {
+    "status": "blocked",
+    "reason": "Computer Use was not approved to use Deadpan Captured Review"
+  },
+  "delivery": {
+    "status": "local_uncommitted",
+    "reason": "Current filesystem policy makes .git read-only; commit/push were not attempted."
+  },
+  "full_specification_complete": false
+}

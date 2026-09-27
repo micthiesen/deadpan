@@ -1,7 +1,8 @@
-# Sequence audition
+# Original, edit and sound audition
 
-Space and **Play edit** audition the current immutable sequence revision. Space
-pauses, or cancels preparation. `:monitor 25%` changes the independent monitor
+Space and **Play Original** / **Play edit** audition the current context. Space
+pauses, resumes the exact heard sample, or cancels preparation. `:play` is its
+command alias. `:monitor 25%` changes the independent monitor
 level by keyboard; `:monitor 12.5%` restores the initial value. Starting from the
 final boundary restarts at zero.
 The button, status and shortcut remain visible beside the picture. Native text,
@@ -11,10 +12,30 @@ project transitions and quit stop the current generation. Sleep and wake revoke
 it through an owned main-thread NSWorkspace observer; playback never resumes
 automatically.
 
-Explicit pause selects and reveals the beat under the last admitted audio
-position. The exact subframe sample is retained for resume; a seek or authored
+Explicit pause of ordinary edit playback selects and reveals the beat under the
+last admitted audio position. Original playback leaves the edit cursor, scope
+and selected beat alone. The exact subframe sample is retained for resume; a seek or authored
 edit discards it. Selection stays fixed while playing. Opening an inspector
 command pauses without changing its captured target.
+
+Entering a Sequence group does not change ordinary Space playback's range.
+The absolute heard cursor can leave that
+group; the footer then says so. Explicit Space pause and terminal playback
+updates return to the nearest containing scope before selecting a beat.
+Command entry, help and inspector stops preserve the current scope and target.
+Group navigation itself stops playback. See [group navigation](GROUP_NAVIGATION.md).
+
+Shift+Space, **Loop selection**, or `:audition` starts the selected Original
+moment or edited beat with 500 ms lead-in and 750 ms follow-through. Context is
+clamped to the captured source or full edit, including outside the viewed group.
+Use `:audition-context lead=0ms follow=0ms` for an exact half-open selection.
+Both arguments are required and may use milliseconds, seconds, clock notation
+or project frames. Seconds quantize directly to 48 kHz without an intermediate
+project-frame rounding. This app-session setting changes no project revision.
+Space pauses and resumes a loop's exact sample and lap; Shift+Space restarts the
+current selection when stopped. Playback does not extend an active Visual range.
+The selected beat remains fixed during a loop, including while its context plays.
+Navigation discards the paused delivery coordinate. A fault never restarts a loop.
 
 This is **limited audition**, with the full preview/export audio contract still open.
 It uses canonical source audio, structural Repeat/Retime/Hold semantics, room
@@ -24,8 +45,51 @@ sends and group mix remain required before this can be a final master.
 Monitor volume is independent of
 authored and export gain, defaults to 12.5%, and changes while stopped. PCM beyond
 the device's finite ±1 range fails explicitly; the application does not clip or
-normalize individual blocks. Original-view playback and sound-event placement
-remain open.
+normalize individual blocks. Sound-event placement remains open.
+
+[Speed edits](RETIME_EDITING.md) create or adjust the Retime structures already
+handled by this canonical path. Command entry stops playback; the committed
+revision invalidates old resume and picture identities. Original audition keeps
+using the unchanged source regardless of speed stages in the edit.
+
+Original playback derives the full measured A/V stream union from the registered
+receipt, including leading and trailing audio. It does not use the edited graph
+or truncate the Original to its picture span. An immutable descriptor is prepared
+by the project service and cached by asset, receipt and project rate. Its interior
+video boundaries use retained PTS minus the common origin; boundary zero and the
+final boundary include the complete stream union. Inversion searches those same
+rounded sample boundaries, independent of project-frame rate. The Source viewer
+holds its first/last picture through audio outside the picture span.
+Selection loops use separate measured picture endpoints: with zero context,
+selecting the first or final picture does not add audio lead/tail or rounded
+project-duration slack. Explicit lead-in/follow-through can include that audio,
+bounded by the full Original.
+
+## Sound catalog audition
+
+Selecting an audio-only sound in Sources gives audition its own sample clock.
+With Sources focused, `j/k` select sounds, Space plays, pauses or resumes, and
+Shift+Space loops the complete sound. The catalog shows the selected sound,
+elapsed/total seconds, playback state and visible key hints. Changing sound or
+leaving Sources stops audition and discards its resume coordinate. Native text,
+composition, dialogs and help continue to own their input.
+
+Sound audition does not retarget or cancel the stopped picture, caption or
+geometry. An already pending editor picture request may finish normally; sound
+delivery creates no new picture request. It preserves the Original cursor,
+edit cursor, selected beat and group. It creates no authored beat or history
+transaction. Its qualified `Sound` descriptor is cached by asset, receipt and
+project rate; a revision or session change invalidates the captured request.
+The preparation worker compiles a temporary audio-only Source view and uses the
+same source admission, canonical audio and limited device output as other
+audition targets. No blank-picture node is inserted into the project.
+
+The sound endpoint comes from the measured available source span on the 48 kHz
+mix clock. Whole-project-frame enclosure must not add silence to the end or loop
+seam. Unknown priming stays present unless the receipt has explicit exclusion
+evidence. A readable source with an unspecified speaker layout still fails
+playback qualification. This listening workflow does not implement sound-event
+placement, effects, scoped Hold allowances or mastering.
 
 ## Ownership and bounds
 
@@ -35,9 +99,16 @@ source receipts, original records and the connection-free original import
 handle. No playback worker opens SQLite or changes authored state. Plan
 compilation, byte verification, decoding, resampling and canonical DSP stay on
 the preparation worker. Its source cache contains private verified physical PCM,
-with a 1 GiB aggregate limit and at most 16 sources. Warm reuse requires the same
+with a 1 GiB aggregate limit, at most 16 resident sources and 1,000,000 indexed
+audio frames. Least recently used eviction permits larger catalogs. Cold opens
+verify original bytes before eviction, reserve both budgets before decoding,
+and publish counts only after successful source preparation. The decoder gets
+the exact qualified frame-count allowance. Warm reuse requires the same
 session, document and receipt identities and original records. A different
-revision rebuilds the cache.
+revision rebuilds the cache. Canonical audio caches also require the same
+Original/Sequence/Sound target. A temporary validated Source-only view compiles on the
+preparation worker, while source admission retains the actual authored snapshot.
+This view is never written to SQLite and creates no edit revision or history.
 
 Existing source-admission and StageAudio limits still apply. In particular,
 continuous Preserve input is bounded to 1,048,576 frames, approximately 21.8 s at
@@ -55,7 +126,11 @@ tile cache hit rechecks complete transitive source/layout provenance; read and
 seek boundaries do not reset gain history. Monitoring gain is applied only after
 the canonical limited samples. The queue reserves 32 PCM
 packet slots and one separate terminal slot so a full valid final prefix can
-carry EOS without racing its consumer. A fresh channel-scoped generation is
+carry EOS without racing its consumer. Loop reads end at the content seam and
+reuse the same full canonical plan, so reads and laps do not reset DSP context.
+One verified lap can be reused within the bounded batch for tiny loops. The
+device coordinate increases monotonically while the content coordinate wraps
+inside the captured half-open window. A fresh channel-scoped generation is
 prefilled before activation. A cloneable stop token revokes its callbacks and
 later submissions/activation immediately; stopping an older token cannot mute a
 newer generation. Already submitted hardware buffers cannot be retracted, so
@@ -79,6 +154,9 @@ explicit and hold the last picture position. No recovery silently resumes.
 
 The UI admits audio updates by request, session, project, revision and generation,
 and inverts exact ties-to-even frame/sample boundaries with integer arithmetic.
+It retains the playback domain and window as well as revision and generation.
+At a bounded nonloop end the cursor may name excluded Out, but the picture maps
+the final included sample, never Out's image.
 It schedules one decode/GPU picture at a time and coalesces later desired frames.
 Audio continues independently of a slow picture. Picture failure stops audition.
 Picture tickets retain the output generation; stop invalidates pending decode

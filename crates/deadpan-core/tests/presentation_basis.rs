@@ -129,6 +129,7 @@ fn hold() -> Command {
                 BeatNode::hold(
                     "Pause",
                     HoldRecipe {
+                        picture_context: None,
                         duration: FrameDuration::new(5).unwrap(),
                         video: HoldVideo::Background,
                         audio: HoldAudio::Silence,
@@ -136,6 +137,7 @@ fn hold() -> Command {
                 ),
             )]),
             overrides: BTreeMap::new(),
+            gap_overrides: BTreeMap::new(),
         },
     }
 }
@@ -301,6 +303,7 @@ fn labels_asset_registration_empty_structure_and_noops_do_not_lock_rate() {
                 root: node("empty"),
                 nodes: BTreeMap::from([(node("empty"), BeatNode::sequence("Empty", vec![]))]),
                 overrides: BTreeMap::new(),
+                gap_overrides: BTreeMap::new(),
             },
         },
     );

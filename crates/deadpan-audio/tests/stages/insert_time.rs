@@ -11,6 +11,7 @@ fn insert_pause(document: &ProjectDocument, at: i64, frames: i64, name: &str) ->
         command: Command::InsertTime {
             at: ProjectFrame(at),
             hold: HoldRecipe {
+                picture_context: None,
                 duration: duration(frames),
                 video: HoldVideo::Background,
                 audio: HoldAudio::Silence,
@@ -192,6 +193,38 @@ fn ntsc_44100_pause_at_an_existing_split_resumes_1602_and_exhausts_4804() {
         assert!(actual.suppressed[4804]);
         assert_eq!(record(&direct, &mut provider, faded, &[13, 256]), actual);
         assert_eq!(record(&inserted, &mut provider, faded, &[1, 239]), actual);
+    }
+}
+
+#[test]
+fn selected_original_window_survives_ntsc_split_pause_and_endpoint_exhaustion() {
+    let (original, mut provider) = mono_original(2);
+    let mut wire = serde_json::to_value(&original).unwrap();
+    let NodeKind::Source { source } = &original.nodes()[&id("source")].kind else {
+        unreachable!()
+    };
+    wire["nodes"]["source"]["kind"]["source"]["audio_mapping"] =
+        serde_json::to_value(SourceAudioMapping::SelectedPlacement {
+            start: ratio(-1, 7),
+            frames: source
+                .audio_mapping
+                .duration_frames(source.duration)
+                .unwrap(),
+            selection: ExactFrameRange::new(ratio(1, 4), ratio(7, 4)).unwrap(),
+        })
+        .unwrap();
+    wire["nodes"]["source"]["kind"]["source"]["audio_offset"] = serde_json::json!(-3);
+    let original = ProjectDocument::from_json(&wire.to_string()).unwrap();
+    let divided = split_command(&original, &id("source"), 1, "selected-split");
+    let inserted = insert_pause(&divided, 1, 1, "selected-pause");
+    for faded in [false, true] {
+        let old = record(&original, &mut provider, faded, &[256]);
+        assert_eq!(record(&divided, &mut provider, faded, &[7, 191]), old);
+        let actual = record(&inserted, &mut provider, faded, &[3, 251]);
+        assert_resumed(&actual, &old, 0..1602, 0);
+        assert_pause(&actual, 1602..3203);
+        assert_resumed(&actual, &old, 3203..4805, 1602);
+        assert_eq!(record(&inserted, &mut provider, faded, &[127, 1]), actual);
     }
 }
 

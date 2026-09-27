@@ -33,6 +33,7 @@ fn fixture(path: &Path) -> Result<ProjectDocument> {
             Command::InsertTime {
                 at: ProjectFrame(at),
                 hold: HoldRecipe {
+                    picture_context: None,
                     duration: FrameDuration::new(length)?,
                     video: HoldVideo::Background,
                     audio: HoldAudio::Silence,

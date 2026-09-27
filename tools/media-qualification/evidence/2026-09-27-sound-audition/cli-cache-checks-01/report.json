@@ -1,0 +1,23 @@
+{
+  "commands": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-cli",
+        "--lib",
+        "audio::cache_tests"
+      ],
+      "exit_code": 101,
+      "seconds": 19.412585833109915,
+      "log": "0.log",
+      "tests": {
+        "passed": 1,
+        "failed": 5,
+        "ignored": 0
+      }
+    }
+  ]
+}

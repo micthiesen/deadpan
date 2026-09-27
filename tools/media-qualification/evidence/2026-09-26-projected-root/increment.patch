@@ -1,0 +1,1366 @@
+--- before/crates/deadpan-audio/src/lib.rs
++++ crates/deadpan-audio/src/lib.rs
+@@ -55,8 +55,8 @@
+ #[cfg(any(target_os = "macos", target_os = "linux"))]
+ pub use stages::{
+     DefinitionAudioBlock, DomainAudioBlock, EdgeFadedBlock, MAX_EDGE_PREPARATION_FRAMES,
+-    PointDomainAudioBlock, StageAudio, StageAudioError, StageLimits, TapeAudioBlock,
+-    TimeMappedBlock, TransferredDomainBlock, TransferredRootBlock,
++    PointDomainAudioBlock, ProjectedRootBlock, StageAudio, StageAudioError, StageLimits,
++    TapeAudioBlock, TimeMappedBlock, TransferredDomainBlock, TransferredRootBlock,
+ };
+ pub use true_peak::{
+     MAX_TRUE_PEAK_FRAMES, TRUE_PEAK_ID, TruePeakError, TruePeakMeter, TruePeakReport,
+--- before/crates/deadpan-audio/src/projected_root.rs
++++ crates/deadpan-audio/src/projected_root.rs
+@@ -0,0 +1,105 @@
++//! Intrinsic Preserve preparation placed on an explicit absolute output grid.
++
++use super::*;
++use deadpan_plan::{AudioProjectedRoot, AudioRootPlacement, AudioSampleMap};
++
++/// One projected physical domain on the timeline's absolute RoundEven grid.
++/// This is raw time-mapped PCM, before edge fades, voice effects and mastering.
++/// Allocation and exact lookup phase are independent, including after a resume.
++#[derive(Debug, Clone, PartialEq, Serialize)]
++pub struct ProjectedRootBlock {
++    pub schema_version: u32,
++    pub stage: &'static str,
++    pub project_id: ProjectId,
++    pub revision_id: RevisionId,
++    #[serde(skip_serializing_if = "Option::is_none")]
++    pub definition: Option<AudioDefinitionSelector>,
++    pub instance: InstancePath,
++    pub placement: AudioRootPlacement,
++    pub extent: Range<ExactRatio>,
++    pub allocation: Range<AudioSample>,
++    pub sampling: AudioSampleMap<AudioSample>,
++    pub start: AudioSample,
++    pub samples: Vec<[f32; 2]>,
++    pub suppressed: Vec<Range<AudioSample>>,
++}
++
++impl StageAudio {
++    /// Prepare the full intrinsic history once, then sample it using a checked
++    /// root placement or continued phase. Re-evaluate exact output policy on its
++    /// owning RoundEven grid; do not stretch or relabel a PointCeil mask.
++    pub fn read_projected_root(
++        &mut self,
++        provider: &mut impl AudioSourceProvider,
++        domain: &AudioProjectedRoot<'_>,
++        start: AudioSample,
++        frames: u32,
++        timeout: Duration,
++        cancelled: &AtomicBool,
++    ) -> Result<ProjectedRootBlock, StageAudioError> {
++        check_cancel(cancelled)?;
++        if !domain.belongs_to(&self.plan) {
++            return Err(StageAudioError::ForeignDomain);
++        }
++        validate_timeout(timeout)?;
++        let end = AudioSample(
++            start
++                .0
++                .checked_add(i64::from(frames))
++                .ok_or(StageAudioError::Range)?,
++        );
++        let allocation = domain.samples();
++        if frames == 0
++            || frames > MAX_OUTPUT_FRAMES
++            || start < allocation.start
++            || end > allocation.end
++        {
++            return Err(StageAudioError::Range);
++        }
++        let work = RefCell::new(ReadWork::default());
++        let control = WorkControl {
++            cancelled,
++            deadline: Instant::now() + timeout,
++            work: &work,
++        };
++        let policy = domain.policy(start..end, control.query_limits()?)?;
++        control.spend_plan_work(policy.work)?;
++        for content in &policy.contents {
++            preflight(content, &self.plan)?;
++        }
++        // Placement can be valid exact geometry but exceed the resampler's
++        // admitted phase/rate range. Reject it before preparing any source PCM.
++        let sampling = domain.sampling();
++        let recipe = stage_recipe(
++            usize::try_from(domain.projection().output_policy().sample_count()?.0)
++                .map_err(|_| TimeError::Overflow)?,
++            allocation.clone(),
++            sampling.local_at(allocation.start)?,
++            sampling.local_frames_per_sample(),
++            self.plan.metadata().presentation_basis.frame_rate,
++        )?;
++        // A selected output window cannot conceal unsupported full preparation
++        // history. This admission also checks hidden ordinary and Bound stages.
++        self.preflight_projected(domain.projection(), control, 1)?;
++        let prepared = self.prepare_projected(domain.projection(), provider, control, 1)?;
++        let mut samples = sample_prepared(&prepared.samples, recipe, start, frames, cancelled)?;
++        apply_suppression(start, &mut samples, &policy.suppressed, |sample| sample.0)?;
++        control.check()?;
++        let descriptor = domain.projection().stage().descriptor();
++        Ok(ProjectedRootBlock {
++            schema_version: 1,
++            stage: "projected_root_pcm_before_effects",
++            project_id: self.plan.metadata().project_id.clone(),
++            revision_id: self.plan.metadata().revision_id.clone(),
++            definition: descriptor.definition.clone(),
++            instance: descriptor.instance.clone(),
++            placement: domain.placement().clone(),
++            extent: domain.extent(),
++            allocation,
++            sampling,
++            start,
++            samples,
++            suppressed: merged_suppression(policy.suppressed),
++        })
++    }
++}
+--- before/crates/deadpan-audio/src/stages.rs
++++ crates/deadpan-audio/src/stages.rs
+@@ -35,6 +35,10 @@
+ 
+ #[path = "stage_projection.rs"]
+ mod stage_projection;
++
++#[path = "projected_root.rs"]
++mod projected_root;
++pub use projected_root::ProjectedRootBlock;
+ 
+ /// Worker-owned bus preparation, including downstream finite DSP context.
+ /// Small inspection and source reads retain their separate 256-frame limit.
+--- before/crates/deadpan-audio/tests/audio_definition/projection.rs
++++ crates/deadpan-audio/tests/audio_definition/projection.rs
+@@ -1,8 +1,8 @@
+ use super::*;
+ 
+ use deadpan_plan::{
+-    AudioQueryLimits, AudioSignal, AudioSignalContent, AudioSignalTape, AudioSignalTapeRun,
+-    AudioStage, AudioStageProjection,
++    AudioProjectedRoot, AudioQueryLimits, AudioRootPlacement, AudioSignal, AudioSignalContent,
++    AudioSignalTape, AudioSignalTapeRun, AudioStage, AudioStageProjection,
+ };
+ 
+ fn stage(signal: AudioSignal<'_>) -> AudioStage<'_> {
+@@ -474,7 +474,7 @@
+     let actual = StageAudio::new(Arc::clone(&plan))
+         .read_tape(
+             &mut FixtureProvider::new(),
+-            &output(&plan, projection),
++            &output(&plan, Arc::clone(&projection)),
+             SignalSample(512),
+             256,
+             TIMEOUT,
+@@ -483,6 +483,348 @@
+         .unwrap();
+     assert_eq!(actual.samples, expected[512..768]);
+     assert!(actual.suppressed.is_empty());
++    let root = AudioProjectedRoot::new(
++        projection,
++        AudioRootPlacement::new(
++            ratio(-17, 1),
++            ExactRatio::ONE,
++            ExactRatio::ZERO..ratio(2048, 1),
++        )
++        .unwrap(),
++    )
++    .unwrap();
++    let actual = StageAudio::new(Arc::clone(&plan))
++        .read_projected_root(
++            &mut FixtureProvider::new(),
++            &root,
++            AudioSample(495),
++            256,
++            TIMEOUT,
++            &AtomicBool::new(false),
++        )
++        .unwrap();
++    assert_eq!(actual.samples, expected[512..768]);
++    assert!(actual.suppressed.is_empty());
++}
++
++fn unchanged_projection<'plan>(
++    plan: &'plan RenderPlan,
++    stage: AudioStage<'plan>,
++) -> Arc<AudioStageProjection<'plan>> {
++    let signal = stage.input_signal();
++    let duration = stage.descriptor().duration;
++    let input_extent = signal.support();
++    let tape = |length: ExactRatio| {
++        AudioSignalTape::new(
++            plan,
++            ExactRatio::ZERO..length,
++            vec![AudioSignalTapeRun::new(
++                ExactRatio::ZERO..length,
++                input_extent.clone(),
++                signal.clone(),
++            )],
++        )
++        .unwrap()
++    };
++    let input = tape(input_extent.end.checked_sub(input_extent.start).unwrap());
++    let policy = tape(ExactRatio::integer(duration.frames()));
++    AudioStageProjection::new(stage, input, policy, duration).unwrap()
++}
++
++#[test]
++fn projected_root_ntsc_resume_keeps_phase_and_later_domain_origin_independent() {
++    let rate = FrameRate::new(30_000, 1001).unwrap();
++    let doc = document(
++        rate,
++        &["a-stage", "b-stage"],
++        [
++            ("a", source(rate, 3, 0..4805)),
++            ("b", source(rate, 3, 3072..7877)),
++            ("a-stage", retime("a", 2, 0..3, PitchPolicy::Preserve)),
++            ("b-stage", retime("b", 2, 0..3, PitchPolicy::Preserve)),
++        ],
++        BTreeMap::new(),
++    );
++    let plan = compile(&doc, false);
++    let domain = |name: &str, origin: i128| {
++        let stage = stage(plan.audio_definition(node(name)).unwrap().signal());
++        AudioProjectedRoot::new(
++            unchanged_projection(&plan, stage),
++            AudioRootPlacement::new(
++                ratio(origin, 1),
++                ExactRatio::ONE,
++                ExactRatio::ZERO..ratio(2, 1),
++            )
++            .unwrap(),
++        )
++        .unwrap()
++    };
++    let a = domain("a-stage", 0);
++    let b = domain("b-stage", 2);
++    assert_eq!(a.samples(), AudioSample(0)..AudioSample(3203));
++    assert_eq!(b.samples(), AudioSample(3203)..AudioSample(6406));
++    let a_left = a.crop(ExactRatio::ZERO..ExactRatio::ONE).unwrap();
++    let a_resume = a
++        .resume(AudioSample(1602), ratio(2, 1)..ratio(3, 1))
++        .unwrap();
++    let b_moved = b
++        .resume(AudioSample(3203), ratio(3, 1)..ratio(5, 1))
++        .unwrap();
++    let a_twice = a_resume
++        .resume(AudioSample(4004), ratio(3, 1)..ratio(7, 2))
++        .unwrap();
++    let canonical = |offset: i64| {
++        stretch(
++            &sample_reference(
++                offset..offset + 4805,
++                ratio(i128::from(offset), 1),
++                ExactRatio::ONE,
++                4805,
++                fixture_sample,
++            ),
++            3204,
++            3,
++            2,
++        )
++    };
++    let original_a = canonical(0);
++    let original_b = canonical(3072);
++    let b_root = sample_reference(0..3204, ratio(-1, 5), ExactRatio::ONE, 3203, |sample| {
++        original_b[sample as usize]
++    });
++    let mut renderer = StageAudio::new(Arc::clone(&plan));
++    let mut provider = FixtureProvider::new();
++    // Includes disordered requests, independent B placement, and a second pause
++    // composed from A's already-resumed phase rather than original frame time.
++    for (domain, start, expected, suppression) in [
++        (
++            &a_resume,
++            4741,
++            [&original_a[3140..3203], &[[0.0; 2]]].concat(),
++            vec![AudioSample(4804)..AudioSample(4805)],
++        ),
++        (&a_left, 1538, original_a[1538..1602].to_vec(), vec![]),
++        (&b_moved, 4805, b_root[..127].to_vec(), vec![]),
++        (&a_resume, 3203, original_a[1602..1693].to_vec(), vec![]),
++        (&a_twice, 4805, original_a[2403..2467].to_vec(), vec![]),
++        (&a_left, 0, original_a[..64].to_vec(), vec![]),
++    ] {
++        let actual = renderer
++            .read_projected_root(
++                &mut provider,
++                domain,
++                AudioSample(start),
++                expected.len() as u32,
++                TIMEOUT,
++                &AtomicBool::new(false),
++            )
++            .unwrap();
++        assert_eq!(actual.samples, expected);
++        assert_eq!(actual.suppressed, suppression);
++        assert_eq!(actual.stage, "projected_root_pcm_before_effects");
++        assert_eq!(actual.allocation, domain.samples());
++    }
++    assert_eq!(renderer.cached_stage_count(), 0);
++    provider.unavailable = true;
++    assert!(matches!(
++        renderer.read_projected_root(
++            &mut provider,
++            &a_resume,
++            AudioSample(3203),
++            1,
++            TIMEOUT,
++            &AtomicBool::new(false)
++        ),
++        Err(StageAudioError::Preparation(
++            PreparationError::SourceUnavailable(_)
++        ))
++    ));
++}
++
++#[test]
++fn projected_root_regrids_a_hold_with_no_intrinsic_point_before_rounding() {
++    let rate = FrameRate::new(48_000, 1).unwrap();
++    let doc = document(
++        rate,
++        &["stage"],
++        [
++            ("a", source(rate, 1025, 0..1025)),
++            ("pause", hold(1, HoldAudio::Silence)),
++            ("b", source(rate, 3070, 4096..7166)),
++            (
++                "group",
++                BeatNode::sequence("Group", vec![id("a"), id("pause"), id("b")]),
++            ),
++            (
++                "stage",
++                retime("group", 2048, 0..4096, PitchPolicy::Preserve),
++            ),
++        ],
++        BTreeMap::new(),
++    );
++    let plan = compile(&doc, false);
++    let projection = unchanged_projection(&plan, stage(plan.audio_signal()));
++    assert!(
++        projection
++            .output_policy()
++            .policy_after_preserve(SignalSample(512)..SignalSample(514), Default::default())
++            .unwrap()
++            .suppressed
++            .is_empty()
++    );
++    let root = AudioProjectedRoot::new(
++        projection,
++        AudioRootPlacement::new(ratio(-3, 2), ratio(4, 1), ExactRatio::ZERO..ratio(2048, 1))
++            .unwrap(),
++    )
++    .unwrap();
++    let mut input = sample_reference(
++        0..1025,
++        ExactRatio::ZERO,
++        ExactRatio::ONE,
++        1025,
++        fixture_sample,
++    );
++    input.push([0.0; 2]);
++    input.extend(sample_reference(
++        4096..7166,
++        ratio(4096, 1),
++        ExactRatio::ONE,
++        3070,
++        fixture_sample,
++    ));
++    let canonical = stretch(&input, 2048, 2, 1);
++    let mut expected = sample_reference(0..2048, ratio(4083, 8), ratio(1, 4), 32, |sample| {
++        canonical[sample as usize]
++    });
++    assert!(expected[8..10].iter().any(|frame| *frame != [0.0; 2]));
++    expected[8..10].fill([0.0; 2]);
++    let block = StageAudio::new(Arc::clone(&plan))
++        .read_projected_root(
++            &mut FixtureProvider::new(),
++            &root,
++            AudioSample(2040),
++            32,
++            TIMEOUT,
++            &AtomicBool::new(false),
++        )
++        .unwrap();
++    assert_eq!(block.samples, expected);
++    assert_eq!(block.suppressed, vec![AudioSample(2048)..AudioSample(2050)]);
++}
++
++#[test]
++fn projected_root_admission_precedes_source_reads_and_failures_recover() {
++    let plan = compile(&fixture(), false);
++    let projection = nested(&plan);
++    let root = AudioProjectedRoot::new(
++        Arc::clone(&projection),
++        AudioRootPlacement::new(
++            ratio(-17, 1),
++            ExactRatio::ONE,
++            ExactRatio::ZERO..ratio(1024, 1),
++        )
++        .unwrap(),
++    )
++    .unwrap();
++    let mut provider = FixtureProvider::new();
++    let foreign = compile(&fixture(), false);
++    let mut other = StageAudio::new(foreign);
++    assert!(matches!(
++        other.read_projected_root(
++            &mut provider,
++            &root,
++            AudioSample(0),
++            1,
++            TIMEOUT,
++            &AtomicBool::new(false)
++        ),
++        Err(StageAudioError::ForeignDomain)
++    ));
++    let mut shallow = StageAudio::with_limits(
++        Arc::clone(&plan),
++        StageLimits {
++            maximum_depth: 1,
++            ..Default::default()
++        },
++    )
++    .unwrap();
++    assert!(matches!(
++        shallow.read_projected_root(
++            &mut provider,
++            &root,
++            AudioSample(0),
++            1,
++            TIMEOUT,
++            &AtomicBool::new(false)
++        ),
++        Err(StageAudioError::Limit("nested stage depth"))
++    ));
++    let mut renderer = StageAudio::new(Arc::clone(&plan));
++    let too_fast = AudioProjectedRoot::new(
++        projection,
++        AudioRootPlacement::new(
++            ExactRatio::ZERO,
++            ratio(1, 100),
++            ExactRatio::ZERO..ratio(1024, 1),
++        )
++        .unwrap(),
++    )
++    .unwrap();
++    assert!(matches!(
++        renderer.read_projected_root(
++            &mut provider,
++            &too_fast,
++            AudioSample(0),
++            1,
++            TIMEOUT,
++            &AtomicBool::new(false)
++        ),
++        Err(StageAudioError::Preparation(
++            PreparationError::InvalidRecipe(_)
++        ))
++    ));
++    for (start, count) in [(-18, 1), (-17, 0), (-17, 257), (1006, 2)] {
++        assert!(matches!(
++            renderer.read_projected_root(
++                &mut provider,
++                &root,
++                AudioSample(start),
++                count,
++                TIMEOUT,
++                &AtomicBool::new(false)
++            ),
++            Err(StageAudioError::Range)
++        ));
++    }
++    assert!(
++        renderer
++            .read_projected_root(
++                &mut provider,
++                &root,
++                AudioSample(-17),
++                1,
++                TIMEOUT,
++                &AtomicBool::new(true)
++            )
++            .unwrap_err()
++            .is_cancelled()
++    );
++    assert_eq!(provider.calls, 0);
++    let block = renderer
++        .read_projected_root(
++            &mut provider,
++            &root,
++            AudioSample(-17),
++            64,
++            TIMEOUT,
++            &AtomicBool::new(false),
++        )
++        .unwrap();
++    assert_eq!(
++        block.samples,
++        stretch(&original_inner(false), 1024, 2, 1)[..64]
++    );
+ }
+ 
+ #[test]
+--- before/crates/deadpan-plan/src/audio_policy.rs
++++ crates/deadpan-plan/src/audio_policy.rs
+@@ -153,11 +153,26 @@
+         limits: AudioQueryLimits,
+         source_endpoints: bool,
+     ) -> Result<AudioPolicyQuery<SignalSample>, PlanError> {
++        self.policy_on_grid(
++            samples,
++            limits,
++            AudioBoundaryRule::PointCeil,
++            source_endpoints,
++        )
++    }
++
++    pub(crate) fn policy_on_grid(
++        &self,
++        samples: Range<SignalSample>,
++        limits: AudioQueryLimits,
++        rule: AudioBoundaryRule,
++        source_endpoints: bool,
++    ) -> Result<AudioPolicyQuery<SignalSample>, PlanError> {
+         let mut work = PolicyWork::new(limits)?;
+         let suppressed = signal_policy(
+             self,
+             samples.start.0..samples.end.0,
+-            AudioBoundaryRule::PointCeil,
++            rule,
+             &mut work,
+             0,
+             source_endpoints,
+--- before/crates/deadpan-plan/src/audio_projected_root.rs
++++ crates/deadpan-plan/src/audio_projected_root.rs
+@@ -0,0 +1,387 @@
++//! A live intrinsic Preserve output placed on the absolute project sample grid.
++
++use std::fmt;
++use std::ops::Range;
++use std::sync::Arc;
++
++use deadpan_core::{AudioSample, ExactRatio, MIX_SAMPLE_RATE};
++use serde::{Serialize, Serializer, ser::SerializeStruct};
++
++use crate::{
++    AudioBoundaryRule, AudioPolicyQuery, AudioQueryLimits, AudioRootPlacement, AudioSampleGrid,
++    AudioSampleMap, AudioSignalTape, AudioStageProjection, PlanError, RenderPlan, SignalSample,
++};
++
++/// An intrinsic Preserve output placed on an absolute RoundEven project grid.
++///
++/// The projected PCM and policy retain their complete original context across
++/// crops and resumes. A resume changes the output allocation and continues the
++/// old exact map at `old_cut`; it does not restart the projection's phase.
++#[derive(Clone)]
++pub struct AudioProjectedRoot<'plan> {
++    projection: Arc<AudioStageProjection<'plan>>,
++    placement: AudioRootPlacement,
++    extent: Range<ExactRatio>,
++    meaningful_extent: Range<ExactRatio>,
++    samples: Range<AudioSample>,
++    meaningful_samples: Range<AudioSample>,
++    sampling: AudioSampleMap<AudioSample>,
++    /// Absolute root sample label represented by `sampling.anchor()` in the
++    /// original, unresumed policy context. Uses i128 for checked composition.
++    reference_sample_at_anchor: i128,
++    root_grid: AudioSampleGrid<AudioSample>,
++    /// Full-support output policy regridded directly onto the absolute root
++    /// RoundEven grid. Shared by crop/resume handles without tree expansion.
++    policy: Arc<AudioSignalTape<'plan>>,
++}
++
++impl fmt::Debug for AudioProjectedRoot<'_> {
++    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
++        formatter
++            .debug_struct("AudioProjectedRoot")
++            .field("projection", &self.projection)
++            .field("placement", &self.placement)
++            .field("extent", &self.extent)
++            .field("meaningful_extent", &self.meaningful_extent)
++            .field("samples", &self.samples)
++            .field("sampling", &self.sampling)
++            .finish()
++    }
++}
++
++impl PartialEq for AudioProjectedRoot<'_> {
++    fn eq(&self, other: &Self) -> bool {
++        self.projection == other.projection
++            && self.placement == other.placement
++            && self.extent == other.extent
++            && self.meaningful_extent == other.meaningful_extent
++            && self.samples == other.samples
++            && self.meaningful_samples == other.meaningful_samples
++            && self.sampling == other.sampling
++            && self.reference_sample_at_anchor == other.reference_sample_at_anchor
++    }
++}
++
++impl Eq for AudioProjectedRoot<'_> {}
++
++impl Serialize for AudioProjectedRoot<'_> {
++    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
++    where
++        S: Serializer,
++    {
++        let mut state = serializer.serialize_struct("AudioProjectedRoot", 7)?;
++        // AudioStageProjection's serializer deliberately emits only its stable
++        // stage descriptor and duration, never the borrowed policy/input DAG.
++        state.serialize_field("projection", self.projection.as_ref())?;
++        state.serialize_field("placement", &self.placement)?;
++        state.serialize_field("extent", &self.extent)?;
++        state.serialize_field("meaningful_extent", &self.meaningful_extent)?;
++        state.serialize_field("samples", &self.samples)?;
++        state.serialize_field("meaningful_samples", &self.meaningful_samples)?;
++        state.serialize_field("sampling", &self.sampling)?;
++        state.end()
++    }
++}
++
++impl<'plan> AudioProjectedRoot<'plan> {
++    pub fn new(
++        projection: Arc<AudioStageProjection<'plan>>,
++        placement: AudioRootPlacement,
++    ) -> Result<Self, PlanError> {
++        let output_end = ExactRatio::integer(projection.output_frames());
++        let local_support = placement.local_support();
++        if local_support.start.compare_integer(0).is_lt()
++            || local_support
++                .end
++                .checked_sub(output_end)?
++                .compare_integer(0)
++                .is_gt()
++        {
++            return Err(PlanError::InvalidAudioRootPlacement(
++                "support is outside the projected Preserve output",
++            ));
++        }
++        let rate = projection
++            .stage()
++            .plan()
++            .metadata()
++            .presentation_basis
++            .frame_rate;
++        let frames_per_sample = ExactRatio::new(
++            i128::from(rate.numerator()),
++            i128::from(MIX_SAMPLE_RATE) * i128::from(rate.denominator()),
++        )?;
++        let root_grid = AudioSampleGrid::<AudioSample>::new(
++            ExactRatio::ZERO,
++            frames_per_sample,
++            AudioBoundaryRule::RoundEven,
++        )?;
++        let project_at = |local: ExactRatio| {
++            placement
++                .origin()
++                .checked_add(local.checked_mul(placement.root_frames_per_local_frame())?)
++        };
++        let local_support = placement.local_support();
++        let extent = project_at(local_support.start)?..project_at(local_support.end)?;
++        let samples = root_grid.boundary(extent.start)?..root_grid.boundary(extent.end)?;
++        let sampling = sampling_for(&root_grid, &placement, samples.start)?;
++        let meaningful_samples = samples.clone();
++        let policy = Arc::new(projection.output_policy().remap_policy_window(
++            local_support,
++            extent.clone(),
++            ExactRatio::ZERO,
++            frames_per_sample,
++            AudioBoundaryRule::RoundEven,
++        )?);
++        let policy_support = policy.support();
++        // The retained full policy context is queried on this same signed
++        // carrier even when the selected root allocation is narrower.
++        root_grid.boundary(policy_support.start)?;
++        root_grid.boundary(policy_support.end)?;
++        Ok(Self {
++            projection,
++            placement,
++            extent: extent.clone(),
++            meaningful_extent: extent,
++            samples: samples.clone(),
++            meaningful_samples,
++            sampling,
++            reference_sample_at_anchor: i128::from(samples.start.0),
++            root_grid,
++            policy,
++        })
++    }
++
++    pub fn projection(&self) -> &AudioStageProjection<'plan> {
++        &self.projection
++    }
++
++    pub fn belongs_to(&self, plan: &RenderPlan) -> bool {
++        self.projection.belongs_to(plan)
++    }
++
++    pub fn placement(&self) -> &AudioRootPlacement {
++        &self.placement
++    }
++
++    /// Current exact project-frame allocation. This may extend beyond the
++    /// original meaningful support after a resume; policy then reports silence.
++    pub fn extent(&self) -> Range<ExactRatio> {
++        self.extent.clone()
++    }
++
++    pub fn samples(&self) -> Range<AudioSample> {
++        self.samples.clone()
++    }
++
++    pub fn sampling(&self) -> AudioSampleMap<AudioSample> {
++        self.sampling
++    }
++
++    /// Restrict allocation demand without changing the current sample map,
++    /// intrinsic support, or output-policy filter context.
++    pub fn crop(&self, extent: Range<ExactRatio>) -> Result<Self, PlanError> {
++        if extent
++            .start
++            .checked_sub(self.extent.start)?
++            .compare_integer(0)
++            .is_lt()
++            || extent
++                .end
++                .checked_sub(self.extent.end)?
++                .compare_integer(0)
++                .is_gt()
++            || extent
++                .end
++                .checked_sub(extent.start)?
++                .compare_integer(0)
++                .is_le()
++        {
++            return Err(PlanError::InvalidAudioRootPlacement(
++                "crop is outside the current projected root allocation",
++            ));
++        }
++        let samples =
++            self.root_grid.boundary(extent.start)?..self.root_grid.boundary(extent.end)?;
++        let mut cropped = self.clone();
++        cropped.extent = extent;
++        cropped.samples = samples;
++        Ok(cropped)
++    }
++
++    /// Continue the old local phase at `old_cut` on a new absolute allocation.
++    /// Repeated resumes compose integer reference offsets rather than recovering
++    /// a new phase from the placement's original coordinates.
++    pub fn resume(
++        &self,
++        old_cut: AudioSample,
++        extent: Range<ExactRatio>,
++    ) -> Result<Self, PlanError> {
++        if old_cut < self.samples.start
++            || old_cut > self.samples.end
++            || extent
++                .end
++                .checked_sub(extent.start)?
++                .compare_integer(0)
++                .is_le()
++        {
++            return Err(PlanError::InvalidAudioRootPlacement(
++                "resume cut or allocation is outside its valid range",
++            ));
++        }
++        let reference_cut = self.reference_at(old_cut)?;
++        let samples =
++            self.root_grid.boundary(extent.start)?..self.root_grid.boundary(extent.end)?;
++        let sampling = AudioSampleMap::new(
++            samples.start,
++            self.sampling.local_at(old_cut)?,
++            self.sampling.local_frames_per_sample(),
++        )?;
++        let mut resumed = self.clone();
++        resumed.extent = extent;
++        resumed.samples = samples;
++        resumed.sampling = sampling;
++        resumed.reference_sample_at_anchor = reference_cut;
++        Ok(resumed)
++    }
++
++    /// Re-evaluate explicit Hold policy on the original absolute RoundEven
++    /// grid. Source endpoint masks remain an input to Preserve, not output
++    /// silence. Samples beyond the old meaningful support are suppressed.
++    pub fn policy(
++        &self,
++        samples: Range<AudioSample>,
++        limits: AudioQueryLimits,
++    ) -> Result<AudioPolicyQuery<AudioSample>, PlanError> {
++        limits.validate()?;
++        if samples.start < self.samples.start
++            || samples.end < samples.start
++            || samples.end > self.samples.end
++        {
++            return Err(PlanError::AudioRangeOutOfRange);
++        }
++
++        let reference_start = self.reference_at(samples.start)?;
++        let reference_end = self.reference_at(samples.end)?;
++        let meaningful_start = i128::from(self.meaningful_samples.start.0);
++        let meaningful_end = i128::from(self.meaningful_samples.end.0);
++        let valid_reference =
++            reference_start.max(meaningful_start)..reference_end.min(meaningful_end);
++        let offset = self.reference_offset()?;
++        let valid_current = if valid_reference.start < valid_reference.end {
++            i64_label(
++                valid_reference
++                    .start
++                    .checked_sub(offset)
++                    .ok_or(deadpan_core::TimeError::Overflow)?,
++            )?
++                ..i64_label(
++                    valid_reference
++                        .end
++                        .checked_sub(offset)
++                        .ok_or(deadpan_core::TimeError::Overflow)?,
++                )?
++        } else {
++            samples.start.0..samples.start.0
++        };
++
++        let mut suppressed = Vec::new();
++        if samples.start.0 < valid_current.start {
++            suppressed.push(AudioSample(samples.start.0)..AudioSample(valid_current.start));
++        }
++        if valid_current.end < samples.end.0 {
++            suppressed.push(AudioSample(valid_current.end)..samples.end);
++        }
++
++        let mut contents = Vec::new();
++        let mut lookup = Default::default();
++        let mut work = 0;
++        if valid_current.start < valid_current.end {
++            let root_policy = self.policy.policy_after_preserve(
++                SignalSample(i64_label(
++                    i128::from(valid_current.start)
++                        .checked_add(offset)
++                        .ok_or(deadpan_core::TimeError::Overflow)?,
++                )?)
++                    ..SignalSample(i64_label(
++                        i128::from(valid_current.end)
++                            .checked_add(offset)
++                            .ok_or(deadpan_core::TimeError::Overflow)?,
++                    )?),
++                limits,
++            )?;
++            for range in root_policy.suppressed {
++                let start = i64_label(
++                    i128::from(range.start.0)
++                        .checked_sub(offset)
++                        .ok_or(deadpan_core::TimeError::Overflow)?,
++                )?;
++                let end = i64_label(
++                    i128::from(range.end.0)
++                        .checked_sub(offset)
++                        .ok_or(deadpan_core::TimeError::Overflow)?,
++                )?;
++                suppressed.push(AudioSample(start)..AudioSample(end));
++            }
++            contents = root_policy.contents;
++            lookup = root_policy.lookup;
++            work = root_policy.work;
++        }
++        merge_audio_ranges(&mut suppressed);
++        Ok(AudioPolicyQuery {
++            suppressed,
++            contents,
++            lookup,
++            work,
++        })
++    }
++
++    fn reference_offset(&self) -> Result<i128, PlanError> {
++        self.reference_sample_at_anchor
++            .checked_sub(i128::from(self.sampling.anchor().0))
++            .ok_or(deadpan_core::TimeError::Overflow.into())
++    }
++
++    fn reference_at(&self, sample: AudioSample) -> Result<i128, PlanError> {
++        self.reference_sample_at_anchor
++            .checked_add(i128::from(sample.0) - i128::from(self.sampling.anchor().0))
++            .ok_or(deadpan_core::TimeError::Overflow.into())
++    }
++}
++
++fn sampling_for(
++    grid: &AudioSampleGrid<AudioSample>,
++    placement: &AudioRootPlacement,
++    anchor: AudioSample,
++) -> Result<AudioSampleMap<AudioSample>, PlanError> {
++    AudioSampleMap::new(
++        anchor,
++        grid.at(anchor)?
++            .checked_sub(placement.origin())?
++            .checked_div(placement.root_frames_per_local_frame())?,
++        grid.frames_per_sample()
++            .checked_div(placement.root_frames_per_local_frame())?,
++    )
++}
++
++fn i64_label(value: i128) -> Result<i64, PlanError> {
++    i64::try_from(value).map_err(|_| deadpan_core::TimeError::Overflow.into())
++}
++
++fn merge_audio_ranges(ranges: &mut Vec<Range<AudioSample>>) {
++    ranges.sort_unstable_by_key(|range| range.start);
++    let mut merged: Vec<Range<AudioSample>> = Vec::with_capacity(ranges.len());
++    for range in ranges.drain(..) {
++        if range.start >= range.end {
++            continue;
++        }
++        if let Some(last) = merged.last_mut()
++            && range.start <= last.end
++        {
++            last.end = last.end.max(range.end);
++        } else {
++            merged.push(range);
++        }
++    }
++    *ranges = merged;
++}
+--- before/crates/deadpan-plan/src/audio_signal.rs
++++ crates/deadpan-plan/src/audio_signal.rs
+@@ -740,8 +740,9 @@
+     ) -> Result<AudioSignalQuery<'plan>, PlanError> {
+         limits.validate()?;
+         let grid = self.transform()?.grid(rule)?;
++        let first = grid.boundary(self.support.start)?;
+         let count = grid.boundary(self.support.end)?;
+-        if samples.start.0 < 0 || samples.end < samples.start || samples.end > count {
++        if samples.start < first || samples.end < samples.start || samples.end > count {
+             return Err(PlanError::AudioRangeOutOfRange);
+         }
+         if self.projection.is_some() {
+--- before/crates/deadpan-plan/src/audio_tape.rs
++++ crates/deadpan-plan/src/audio_tape.rs
+@@ -229,6 +229,7 @@
+                         run.destination.clone(),
+                         grid_origin,
+                         frames_per_sample,
++                        AudioBoundaryRule::PointCeil,
+                         &mut build_budget,
+                     )?));
+                     (signal, Some(projection), policy_override)
+@@ -413,11 +414,13 @@
+             };
+             let policy = if let Some(view) = &run.policy_override {
+                 view.policy_after_preserve(cursor..end, query_limits)?
+-            } else if after_preserve {
+-                run.signal
+-                    .policy_after_preserve(cursor..end, query_limits)?
+             } else {
+-                run.signal.policy(cursor..end, query_limits)?
++                run.signal.policy_on_grid(
++                    cursor..end,
++                    query_limits,
++                    self.grid.boundary_rule(),
++                    !after_preserve,
++                )?
+             };
+             charge(&mut work, policy.work, limits.maximum_work)?;
+             add_lookup(&mut lookup, policy.lookup)?;
+@@ -453,6 +456,7 @@
+         destination: Range<ExactRatio>,
+         grid_origin: ExactRatio,
+         frames_per_sample: ExactRatio,
++        boundary_rule: AudioBoundaryRule,
+         build_budget: &mut TapeBuildBudget,
+     ) -> Result<Self, PlanError> {
+         if !positive_range(&source_window)? || !positive_range(&destination)? {
+@@ -489,7 +493,7 @@
+         let semantic_support =
+             map_to_destination(self.support.start)?..map_to_destination(self.support.end)?;
+         let grid: AudioSampleGrid<SignalSample> =
+-            AudioSampleGrid::new(grid_origin, frames_per_sample, AudioBoundaryRule::PointCeil)?;
++            AudioSampleGrid::new(grid_origin, frames_per_sample, boundary_rule)?;
+         build_budget.charge(self.runs.len())?;
+         let mut placed = Vec::new();
+         let mut expected_start = destination.start;
+@@ -538,6 +542,7 @@
+                     destination_run.clone(),
+                     grid_origin,
+                     frames_per_sample,
++                    boundary_rule,
+                     build_budget,
+                 )?)),
+                 None => None,
+@@ -564,6 +569,25 @@
+             grid,
+             runs: placed,
+         })
++    }
++
++    pub(crate) fn remap_policy_window(
++        &self,
++        source_window: Range<ExactRatio>,
++        destination: Range<ExactRatio>,
++        grid_origin: ExactRatio,
++        frames_per_sample: ExactRatio,
++        boundary_rule: AudioBoundaryRule,
++    ) -> Result<Self, PlanError> {
++        let mut build_budget = TapeBuildBudget::default();
++        self.remap_window(
++            source_window,
++            destination,
++            grid_origin,
++            frames_per_sample,
++            boundary_rule,
++            &mut build_budget,
++        )
+     }
+ 
+     pub(crate) fn validate_projection_scope(
+--- before/crates/deadpan-plan/src/lib.rs
++++ crates/deadpan-plan/src/lib.rs
+@@ -7,6 +7,7 @@
+ //! pixel effects, audio processing, or external I/O.
+ 
+ mod audio_envelope;
++mod audio_projected_root;
+ mod audio_projection;
+ mod audio_reference;
+ mod audio_sampling;
+@@ -15,6 +16,7 @@
+ mod plan;
+ 
+ pub use audio_envelope::{AudioEnvelope, AudioEnvelopeEndpoint};
++pub use audio_projected_root::AudioProjectedRoot;
+ pub use audio_projection::{AudioProjectionIdentity, AudioStageProjection};
+ pub use audio_reference::{
+     AudioReferencePlan, ReferenceAudioClock, ReferenceAudioContent, ReferenceAudioQuery,
+--- before/crates/deadpan-plan/tests/audio_definition.rs
++++ crates/deadpan-plan/tests/audio_definition.rs
+@@ -6,6 +6,8 @@
+     AudioSignalContent, AudioStage, PlanError, RenderPlan, SignalSample,
+ };
+ 
++#[path = "audio_definition/projected_root.rs"]
++mod projected_root;
+ #[path = "audio_definition/projection.rs"]
+ mod projection;
+ #[path = "audio_definition/repeat_gap.rs"]
+--- before/crates/deadpan-plan/tests/audio_definition/projected_root.rs
++++ crates/deadpan-plan/tests/audio_definition/projected_root.rs
+@@ -0,0 +1,317 @@
++use super::*;
++use std::sync::Arc;
++
++use deadpan_plan::{AudioProjectedRoot, AudioSignalTape, AudioSignalTapeRun, AudioStageProjection};
++
++fn ratio(numerator: i128, denominator: i128) -> ExactRatio {
++    ExactRatio::new(numerator, denominator).unwrap()
++}
++
++fn preserve_projection<'plan>(
++    plan: &'plan RenderPlan,
++    stage: AudioStage<'plan>,
++) -> Arc<AudioStageProjection<'plan>> {
++    let input_signal = stage.input_signal();
++    let input_support = input_signal.support();
++    let input_length = input_support.end.checked_sub(input_support.start).unwrap();
++    let input = AudioSignalTape::new(
++        plan,
++        ExactRatio::ZERO..input_length,
++        vec![AudioSignalTapeRun::new(
++            ExactRatio::ZERO..input_length,
++            input_support.clone(),
++            input_signal.clone(),
++        )],
++    )
++    .unwrap();
++    let duration = stage.descriptor().duration;
++    let output_signal = stage.input_signal();
++    let output = AudioSignalTape::new(
++        plan,
++        ExactRatio::ZERO..ExactRatio::integer(duration.frames()),
++        vec![AudioSignalTapeRun::new(
++            ExactRatio::ZERO..ExactRatio::integer(duration.frames()),
++            input_support,
++            output_signal,
++        )],
++    )
++    .unwrap();
++    AudioStageProjection::new(stage, input, output, duration).unwrap()
++}
++
++fn grouped_hold_plan() -> RenderPlan {
++    compile(
++        &["stage"],
++        [
++            ("a", source(1)),
++            ("pause", hold(1)),
++            ("b", source(2)),
++            (
++                "group",
++                BeatNode::sequence("Group", vec![id("a"), id("pause"), id("b")]),
++            ),
++            (
++                "stage",
++                retime("group", 2, 0, 4, PitchPolicy::Preserve, RetimePurpose::Edit),
++            ),
++        ],
++    )
++}
++
++#[test]
++fn projected_root_regrids_subsample_hold_and_resumes_old_policy_phase() {
++    let plan = grouped_hold_plan();
++    let signal = plan.audio_definition(selection("stage")).unwrap().signal();
++    let projection = preserve_projection(&plan, first_stage(&signal));
++
++    // The child Hold maps to output [1/2, 1). Neither PointCeil label 0 nor 1
++    // owns it, but the root RoundEven probe for sample 0 is at frame 1/2.
++    assert!(
++        projection
++            .output_policy()
++            .policy_after_preserve(
++                SignalSample(0)..SignalSample(2),
++                AudioQueryLimits::default(),
++            )
++            .unwrap()
++            .suppressed
++            .is_empty()
++    );
++    let placement =
++        AudioRootPlacement::new(ratio(-1, 4), ExactRatio::ONE, ExactRatio::ZERO..ratio(2, 1))
++            .unwrap();
++    let root = AudioProjectedRoot::new(projection, placement).unwrap();
++    assert_eq!(root.samples(), AudioSample(0)..AudioSample(2));
++    assert_eq!(
++        root.policy(AudioSample(0)..AudioSample(1), Default::default())
++            .unwrap()
++            .suppressed,
++        vec![AudioSample(0)..AudioSample(1)]
++    );
++
++    // Resume three absolute samples later from old cut zero. The new label's
++    // parity differs, so this also proves policy follows old reference labels.
++    let resumed = root
++        .resume(AudioSample(0), ratio(3, 1)..ratio(5, 1))
++        .unwrap();
++    assert_eq!(
++        resumed
++            .policy(AudioSample(3)..AudioSample(4), Default::default())
++            .unwrap()
++            .suppressed,
++        vec![AudioSample(3)..AudioSample(4)]
++    );
++    assert_eq!(
++        resumed.sampling().local_at(AudioSample(3)).unwrap(),
++        root.sampling().local_at(AudioSample(0)).unwrap()
++    );
++    let exhausted = root
++        .resume(AudioSample(2), ratio(5, 1)..ratio(7, 1))
++        .unwrap();
++    assert_eq!(
++        exhausted
++            .policy(AudioSample(5)..AudioSample(7), Default::default())
++            .unwrap()
++            .suppressed,
++        vec![AudioSample(5)..AudioSample(7)]
++    );
++}
++
++#[test]
++fn projected_root_signed_roundeven_ties_allow_empty_allocations_and_bound_crop() {
++    let plan = grouped_hold_plan();
++    let signal = plan.audio_definition(selection("stage")).unwrap().signal();
++    let projection = preserve_projection(&plan, first_stage(&signal));
++    let tied_empty = AudioProjectedRoot::new(
++        Arc::clone(&projection),
++        AudioRootPlacement::new(
++            ratio(-5, 2),
++            ExactRatio::ONE,
++            ExactRatio::ZERO..ExactRatio::ONE,
++        )
++        .unwrap(),
++    )
++    .unwrap();
++    // Negative ties -2.5 and -1.5 both round to the even label -2.
++    assert_eq!(tied_empty.samples(), AudioSample(-2)..AudioSample(-2));
++    assert!(
++        tied_empty
++            .policy(AudioSample(-2)..AudioSample(-2), Default::default())
++            .unwrap()
++            .suppressed
++            .is_empty()
++    );
++
++    let tied_nonempty = AudioProjectedRoot::new(
++        Arc::clone(&projection),
++        AudioRootPlacement::new(
++            ratio(-7, 2),
++            ExactRatio::ONE,
++            ExactRatio::ZERO..ExactRatio::ONE,
++        )
++        .unwrap(),
++    )
++    .unwrap();
++    // -3.5 and -2.5 round to -4 and -2, respectively.
++    assert_eq!(tied_nonempty.samples(), AudioSample(-4)..AudioSample(-2));
++    assert_eq!(
++        tied_nonempty
++            .policy(AudioSample(-4)..AudioSample(-2), Default::default())
++            .unwrap()
++            .suppressed,
++        vec![AudioSample(-3)..AudioSample(-2)]
++    );
++    let resumed_empty = tied_empty
++        .resume(AudioSample(-2), ExactRatio::ZERO..ExactRatio::ONE)
++        .unwrap();
++    assert_eq!(
++        resumed_empty
++            .policy(AudioSample(0)..AudioSample(1), Default::default())
++            .unwrap()
++            .suppressed,
++        vec![AudioSample(0)..AudioSample(1)]
++    );
++
++    let root = AudioProjectedRoot::new(
++        Arc::clone(&projection),
++        AudioRootPlacement::new(ratio(-1, 4), ExactRatio::ONE, ExactRatio::ZERO..ratio(2, 1))
++            .unwrap(),
++    )
++    .unwrap();
++    let cropped = root.crop(ExactRatio::ZERO..ExactRatio::ONE).unwrap();
++    assert_eq!(cropped.samples(), AudioSample(0)..AudioSample(1));
++    assert_eq!(
++        cropped.sampling().local_at(AudioSample(0)).unwrap(),
++        root.sampling().local_at(AudioSample(0)).unwrap()
++    );
++    assert!(root.crop(ExactRatio::ZERO..ratio(3, 1)).is_err());
++    assert!(root.crop(ExactRatio::ONE..ExactRatio::ONE).is_err());
++    assert!(
++        root.resume(AudioSample(3), ratio(3, 1)..ratio(4, 1))
++            .is_err()
++    );
++
++    let overflow = AudioRootPlacement::new(
++        ExactRatio::integer(i64::MAX),
++        ExactRatio::ONE,
++        ExactRatio::ZERO..ExactRatio::ONE,
++    )
++    .unwrap();
++    assert!(AudioProjectedRoot::new(Arc::clone(&projection), overflow).is_err());
++
++    let value = serde_json::to_value(&root).unwrap();
++    assert!(value.get("policy").is_none());
++    assert!(value["projection"].get("input_tape").is_none());
++    assert!(value["projection"].get("output_policy").is_none());
++}
++
++#[test]
++fn projected_root_regrids_bound_retained_hold_context_on_absolute_grid() {
++    let old = document(
++        FrameRate::new(48_000, 1).unwrap(),
++        &["inner"],
++        [
++            ("hold", hold(2)),
++            ("source", source(14)),
++            (
++                "group",
++                BeatNode::sequence("Group", vec![id("hold"), id("source")]),
++            ),
++            (
++                "inner",
++                retime(
++                    "group",
++                    8,
++                    0,
++                    16,
++                    PitchPolicy::Preserve,
++                    RetimePurpose::Edit,
++                ),
++            ),
++        ],
++        BTreeMap::new(),
++    );
++    let timing = AudioTimingId {
++        allocation: RevisionId::new("root-bound-policy").unwrap(),
++        ordinal: 0,
++    };
++    let bindings = AudioBindingState::new(
++        vec![AudioTimingRecord {
++            id: timing.clone(),
++            layout: FrozenAudioLayout::capture(&old).unwrap(),
++        }],
++        BTreeMap::from([(
++            id("inner"),
++            OwnedAudioBinding {
++                reanchors: vec![],
++                resume: None,
++                lattice: AudioPlacementTemplate {
++                    gap_after: None,
++                    arguments: vec![],
++                    births: vec![],
++                    reference: AudioReferenceClock {
++                        recipe: AudioRecipeKind::Node,
++                        timing,
++                        root: AudioClockRoot::ProjectRootRoundEven,
++                        physical: id("inner"),
++                    },
++                },
++            },
++        )]),
++    )
++    .unwrap();
++    let mut wire = serde_json::to_value(&old).unwrap();
++    wire["nodes"]["outer"] = serde_json::to_value(retime(
++        "inner",
++        4,
++        0,
++        8,
++        PitchPolicy::Preserve,
++        RetimePurpose::Edit,
++    ))
++    .unwrap();
++    wire["nodes"]["root"] =
++        serde_json::to_value(BeatNode::sequence("Root", vec![id("outer")])).unwrap();
++    wire["audio_bindings"] = serde_json::to_value(bindings).unwrap();
++    let current = ProjectDocument::from_json(&wire.to_string()).unwrap();
++    let plan = RenderPlan::compile(&current).unwrap();
++    let outer = first_stage(&plan.audio_signal());
++    let input = AudioSignalTape::new(
++        &plan,
++        ExactRatio::ZERO..ratio(8, 1),
++        vec![AudioSignalTapeRun::new(
++            ExactRatio::ZERO..ratio(8, 1),
++            ExactRatio::ZERO..ratio(8, 1),
++            outer.input_signal(),
++        )],
++    )
++    .unwrap();
++    let output_policy_signal = outer.input_signal();
++    let output_policy = AudioSignalTape::new(
++        &plan,
++        ExactRatio::ZERO..ratio(4, 1),
++        vec![AudioSignalTapeRun::new(
++            ExactRatio::ZERO..ratio(4, 1),
++            ExactRatio::ZERO..ratio(8, 1),
++            output_policy_signal,
++        )],
++    )
++    .unwrap();
++    let projection = AudioStageProjection::new(outer, input, output_policy, frames(4)).unwrap();
++    let root = AudioProjectedRoot::new(
++        projection,
++        AudioRootPlacement::new(ratio(-11, 8), ratio(5, 2), ratio(11, 20)..ratio(2, 1)).unwrap(),
++    )
++    .unwrap();
++    assert_eq!(root.samples(), AudioSample(0)..AudioSample(4));
++    // Current root probe 1/2 reaches B-local 3/2 (Source), but B's rounded
++    // allocation begins at -1 and its retained sample step is 4/5. The old
++    // root label 4/5 still belongs to Hold sample zero. Cropping policy support
++    // to the routed window would lose that retained context.
++    assert_eq!(
++        root.policy(AudioSample(0)..AudioSample(1), Default::default())
++            .unwrap()
++            .suppressed,
++        vec![AudioSample(0)..AudioSample(1)]
++    );
++}

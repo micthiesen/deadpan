@@ -1,7 +1,7 @@
 //! Source interpretation and ordered canonical-canvas framing. This module has
 //! no plan, serialized envelope, media identity, or UI dependencies.
 
-use deadpan_core::{ExactRatio, FramingPose};
+use deadpan_core::{CapturedCanvas, CapturedFit, CapturedFraming, ExactRatio, FramingPose};
 
 use crate::surface::validate_dimensions;
 use crate::{FitMode, FrameMetadata, PictureGeometry, RenderError, Rotation};
@@ -13,6 +13,11 @@ pub const MAX_FRAMING_LAYERS: usize = deadpan_core::MAX_FRAMING_LAYERS;
 /// Structural depth counts edges, so retain the root as well as an optional
 /// synthetic provider scope for a Repeat gap.
 pub const MAX_FRAMING_SCOPES: usize = deadpan_core::MAX_DOCUMENT_DEPTH + 2;
+/// Retained collection limits share the authored grammar. Native dimensions and
+/// cumulative spatial precision have independent renderer admission checks.
+pub const MAX_CAPTURED_CANVASES: usize = deadpan_core::MAX_CAPTURED_CANVASES;
+pub const MAX_CAPTURED_SCOPES: usize = deadpan_core::MAX_CAPTURED_SCOPES;
+pub const MAX_CAPTURED_POSES: usize = deadpan_core::MAX_CAPTURED_POSES;
 
 /// An evaluated node operation, independent of the authored envelope grammar.
 /// Identity scopes remain meaningful: the first scope clips the provider after
@@ -83,6 +88,32 @@ impl Rect {
         ])
     }
 
+    fn fit_canvas(self, from: [u32; 2], to: [u32; 2], mode: FitMode) -> Result<Self, RenderError> {
+        let source_canvas = from.map(f64::from);
+        let target_canvas = to.map(f64::from);
+        let scale = match mode {
+            FitMode::Fit => {
+                (target_canvas[0] / source_canvas[0]).min(target_canvas[1] / source_canvas[1])
+            }
+            FitMode::Fill => {
+                (target_canvas[0] / source_canvas[0]).max(target_canvas[1] / source_canvas[1])
+            }
+        };
+        let offset = [
+            (target_canvas[0] - source_canvas[0] * scale) / 2.0,
+            (target_canvas[1] - source_canvas[1] * scale) / 2.0,
+        ];
+        let [x, y, width, height] = self.0;
+        let result = Self([
+            offset[0] + x * scale,
+            offset[1] + y * scale,
+            width * scale,
+            height * scale,
+        ]);
+        result.validate_spatial()?;
+        Ok(result)
+    }
+
     fn raster(self, scale: [f64; 2]) -> Self {
         let [x, y, width, height] = self.0;
         Self([
@@ -98,8 +129,25 @@ impl Rect {
         if !self.0.iter().all(|v| v.is_finite())
             || width <= 0.0
             || height <= 0.0
+            || !(x + width).is_finite()
+            || !(y + height).is_finite()
             || x + width == x
             || y + height == y
+        {
+            return Err(RenderError::FramingGeometry);
+        }
+        Ok(())
+    }
+
+    fn validate_spatial(self) -> Result<(), RenderError> {
+        let [x, y, width, height] = self.0;
+        if !self.0.iter().all(|v| v.is_finite())
+            || width < 0.0
+            || height < 0.0
+            || !(x + width).is_finite()
+            || !(y + height).is_finite()
+            || (width > 0.0 && x + width == x)
+            || (height > 0.0 && y + height == y)
         {
             return Err(RenderError::FramingGeometry);
         }
@@ -117,6 +165,112 @@ fn value(ratio: ExactRatio) -> f64 {
     ratio.numerator() as f64 / ratio.denominator() as f64
 }
 
+fn captured_fit(fit: CapturedFit) -> FitMode {
+    match fit {
+        CapturedFit::Fit => FitMode::Fit,
+        CapturedFit::Fill => FitMode::Fill,
+    }
+}
+
+fn initial_geometry(
+    dimensions: [f64; 2],
+    canvas: [u32; 2],
+    mode: FitMode,
+) -> Result<InputGeometry, RenderError> {
+    validate_dimensions(canvas[0], canvas[1])?;
+    if !dimensions
+        .iter()
+        .all(|value| value.is_finite() && *value > 0.0)
+    {
+        return Err(RenderError::FramingGeometry);
+    }
+    let c = canvas.map(f64::from);
+    let k = match mode {
+        FitMode::Fit => (c[0] / dimensions[0]).min(c[1] / dimensions[1]),
+        FitMode::Fill => (c[0] / dimensions[0]).max(c[1] / dimensions[1]),
+    };
+    let base = Rect([
+        (c[0] - dimensions[0] * k) / 2.0,
+        (c[1] - dimensions[1] * k) / 2.0,
+        dimensions[0] * k,
+        dimensions[1] * k,
+    ]);
+    base.validate()?;
+    Ok(InputGeometry {
+        source: base,
+        visible: base,
+    })
+}
+
+fn validate_captured(context: &CapturedFraming) -> Result<(), RenderError> {
+    if context.canvases.is_empty() || context.canvases.len() > MAX_CAPTURED_CANVASES {
+        return Err(RenderError::FramingLayers);
+    }
+    let mut scopes = 0usize;
+    let mut poses = 0usize;
+    for canvas in &context.canvases {
+        validate_dimensions(canvas.width, canvas.height)?;
+        if canvas.width < 2 || canvas.height < 2 || canvas.width % 2 != 0 || canvas.height % 2 != 0
+        {
+            return Err(RenderError::Dimensions);
+        }
+        if canvas.layers.len() > MAX_CAPTURED_SCOPES - scopes {
+            return Err(RenderError::FramingLayers);
+        }
+        scopes += canvas.layers.len();
+        for pose in canvas.layers.iter().flatten() {
+            poses += 1;
+            if poses > MAX_CAPTURED_POSES {
+                return Err(RenderError::FramingLayers);
+            }
+            pose.validate()?;
+        }
+    }
+    Ok(())
+}
+
+fn fit_canvas_geometry(
+    current: &mut InputGeometry,
+    from: [u32; 2],
+    to: [u32; 2],
+    mode: FitMode,
+) -> Result<(), RenderError> {
+    validate_dimensions(from[0], from[1])?;
+    validate_dimensions(to[0], to[1])?;
+    current.source = current.source.fit_canvas(from, to, mode)?;
+    current.visible = current.visible.fit_canvas(from, to, mode)?;
+    current.source.validate()?;
+    current.visible.validate_spatial()?;
+    Ok(())
+}
+
+fn apply_captured_layers(
+    current: &mut InputGeometry,
+    stage: &CapturedCanvas,
+    canvas: [u32; 2],
+) -> Result<(), RenderError> {
+    let c = canvas.map(f64::from);
+    let canvas_rect = Rect([0.0, 0.0, c[0], c[1]]);
+    let default = [None];
+    for pose in if stage.layers.is_empty() {
+        &default[..]
+    } else {
+        &stage.layers
+    } {
+        if let Some(pose) = pose {
+            let center = [value(pose.center_x), value(pose.center_y)];
+            let scale = value(pose.scale);
+            current.source = current.source.transform(center, scale, c);
+            current.visible = current.visible.transform(center, scale, c);
+            current.source.validate()?;
+            current.visible.validate_spatial()?;
+        }
+        current.visible = current.visible.intersect(canvas_rect);
+        current.visible.validate_spatial()?;
+    }
+    Ok(())
+}
+
 impl PictureGeometry {
     /// Layers run provider to root, including identity provider scopes. Repeat
     /// gaps have no provider node: prepend a render-only identity scope. Empty
@@ -124,6 +278,22 @@ impl PictureGeometry {
     /// authored canvas. All coverage and affine composition here use f64.
     pub fn framed(
         source: &FrameMetadata,
+        canvas: [u32; 2],
+        raster: [u32; 2],
+        mode: FitMode,
+        layers: &[FramingLayer],
+    ) -> Result<Self, RenderError> {
+        Self::composed(source, None, canvas, raster, mode, layers)
+    }
+
+    /// Replay bounded retained canvas geometry before the current provider-to-root
+    /// scopes. A retained context is a sequence of complete, clipped canvases:
+    /// Each stage fits its input and applies its first scope before clipping.
+    /// Later stages use the complete previously clipped canvas as that input.
+    /// Live input indices remain local to `layers` and exclude retained scopes.
+    pub fn composed(
+        source: &FrameMetadata,
+        context: Option<&CapturedFraming>,
         canvas: [u32; 2],
         raster: [u32; 2],
         mode: FitMode,
@@ -137,7 +307,6 @@ impl PictureGeometry {
         {
             return Err(RenderError::FramingLayers);
         }
-        let c = canvas.map(f64::from);
         let mut d = [
             f64::from(source.width) * source.sample_aspect_ratio.as_f64(),
             f64::from(source.height),
@@ -148,22 +317,34 @@ impl PictureGeometry {
         ) {
             d.swap(0, 1);
         }
-        let k = match mode {
-            FitMode::Fit => (c[0] / d[0]).min(c[1] / d[1]),
-            FitMode::Fill => (c[0] / d[0]).max(c[1] / d[1]),
-        };
-        let base = Rect([
-            (c[0] - d[0] * k) / 2.0,
-            (c[1] - d[1] * k) / 2.0,
-            d[0] * k,
-            d[1] * k,
-        ]);
-        base.validate()?;
+        let mut current;
+        if let Some(context) = context {
+            validate_captured(context)?;
+            let first = context
+                .canvases
+                .first()
+                .ok_or(RenderError::FramingGeometry)?;
+            let first_canvas = [first.width, first.height];
+            current = initial_geometry(d, first_canvas, captured_fit(first.fit))?;
+            apply_captured_layers(&mut current, first, first_canvas)?;
+            let mut previous_canvas = first_canvas;
+            for stage in context.canvases.iter().skip(1) {
+                let stage_canvas = [stage.width, stage.height];
+                fit_canvas_geometry(
+                    &mut current,
+                    previous_canvas,
+                    stage_canvas,
+                    captured_fit(stage.fit),
+                )?;
+                apply_captured_layers(&mut current, stage, stage_canvas)?;
+                previous_canvas = stage_canvas;
+            }
+            fit_canvas_geometry(&mut current, previous_canvas, canvas, mode)?;
+        } else {
+            current = initial_geometry(d, canvas, mode)?;
+        }
+        let c = canvas.map(f64::from);
         let canvas_rect = Rect([0.0, 0.0, c[0], c[1]]);
-        let mut current = InputGeometry {
-            source: base,
-            visible: base,
-        };
         let mut inputs = Vec::with_capacity(layers.len().max(1));
         let default = [FramingLayer::identity()];
         for layer in if layers.is_empty() {
@@ -178,8 +359,10 @@ impl PictureGeometry {
                 current.source = current.source.transform(center, scale, c);
                 current.visible = current.visible.transform(center, scale, c);
                 current.source.validate()?;
+                current.visible.validate_spatial()?;
             }
             current.visible = current.visible.intersect(canvas_rect);
+            current.visible.validate_spatial()?;
         }
         let raster_scale = [f64::from(raster[0]) / c[0], f64::from(raster[1]) / c[1]];
         let rectangle = current.source.raster(raster_scale).0;

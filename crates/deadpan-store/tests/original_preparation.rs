@@ -89,12 +89,14 @@ fn worker_prepares_without_borrowing_or_blocking_the_writer() -> Result {
             index: 0,
             subtree: Subtree {
                 overrides: Default::default(),
+                gap_overrides: Default::default(),
                 root: node.clone(),
                 nodes: BTreeMap::from([(
                     node,
                     BeatNode::hold(
                         "Pause",
                         HoldRecipe {
+                            picture_context: None,
                             duration: FrameDuration::new(12)?,
                             video: HoldVideo::Background,
                             audio: HoldAudio::Silence,

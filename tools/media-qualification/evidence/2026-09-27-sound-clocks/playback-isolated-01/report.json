@@ -1,0 +1,52 @@
+{
+  "commands": [
+    {
+      "command": [
+        "deadpan_playback-34f16a24a1d54369",
+        "--exact",
+        "tests::canonical_source_pcm_uses_fixed_monitor_gain_and_delivery_clock",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "seconds": 11.886111333034933,
+      "log": "0.log",
+      "tests": {
+        "passed": 1,
+        "failed": 0,
+        "ignored": 0
+      }
+    },
+    {
+      "command": [
+        "deadpan_playback-34f16a24a1d54369",
+        "--exact",
+        "tests::original::original_preserves_leading_audio_trailing_audio_and_exact_rounded_picture_clock",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "seconds": 20.557172834407538,
+      "log": "1.log",
+      "tests": {
+        "passed": 1,
+        "failed": 0,
+        "ignored": 0
+      }
+    },
+    {
+      "command": [
+        "deadpan_playback-34f16a24a1d54369",
+        "--exact",
+        "tests::original::original_pcm_ignores_edits_and_target_cache_never_reuses_sequence_pcm",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "seconds": 12.506149750202894,
+      "log": "2.log",
+      "tests": {
+        "passed": 1,
+        "failed": 0,
+        "ignored": 0
+      }
+    }
+  ]
+}

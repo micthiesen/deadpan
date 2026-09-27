@@ -1,0 +1,14 @@
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 12.77s
+     Running tests/reanchors.rs (target/debug/deps/reanchors-b01d6c03f08af9fb)
+
+running 6 tests
+test hidden_retained_occurrence_does_not_replace_its_legacy_resume_anchor ... ok
+test born_play_drops_outer_window_but_preserves_intrinsic_partition_entry ... ok
+test sequential_reanchors_compose_prior_resume_on_each_retained_ntsc_grid ... ok
+test insert_time_after_a_reanchor_resumes_the_pre_edit_bound_waveform ... ok
+test repeat_suffix_reanchors_first_partial_play_and_later_full_play_separately ... ok
+test opaque_preserve_reanchor_reads_full_history_and_enforces_full_preparation_budget ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.17s
+

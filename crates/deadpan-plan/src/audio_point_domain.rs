@@ -6,8 +6,8 @@ use std::ops::Range;
 use deadpan_core::{ExactRatio, MIX_SAMPLE_RATE, NodeId, TimeError};
 
 use super::{
-    AudioDefinitionSelector, AudioRootPlacement, AudioSignal, RenderPlan, SignalSample,
-    SignalTransform,
+    AudioDefinition, AudioDefinitionSelector, AudioRootPlacement, AudioSignal, RenderPlan,
+    SignalSample, SignalTransform,
 };
 use crate::{AudioBoundaryRule, AudioSampleGrid, AudioSampleMap, PlanError, ReferenceSample};
 
@@ -32,18 +32,17 @@ impl<'plan> AudioPointDomain<'plan> {
         &mut self,
         definition: Option<AudioDefinitionSelector>,
         repeats: Vec<deadpan_core::RepeatInstance>,
-        bypass_binding: Option<usize>,
+        bypass_binding: Option<super::audio_bound::BindingTarget>,
     ) {
         self.signal
             .set_evaluation(definition, repeats, bypass_binding);
     }
     pub(super) fn new(
-        plan: &'plan RenderPlan,
-        root: usize,
-        selector: AudioDefinitionSelector,
+        definition: &AudioDefinition<'plan>,
         placement: AudioRootPlacement,
         grid_origin: ExactRatio,
     ) -> Result<Self, PlanError> {
+        let plan = definition.plan;
         let rate = plan.metadata.presentation_basis.frame_rate;
         let spacing = ExactRatio::new(
             i128::from(rate.numerator()),
@@ -83,12 +82,11 @@ impl<'plan> AudioPointDomain<'plan> {
                 .checked_div(placement.root_frames_per_local_frame())?,
             spacing.checked_div(placement.root_frames_per_local_frame())?,
         )?;
-        let signal =
-            AudioSignal::for_placed_definition(plan, root, selector.clone(), support, transform);
+        let signal = AudioSignal::for_placed_definition(definition, support, transform);
         Ok(Self {
             plan,
-            selector,
-            root,
+            selector: definition.selector.clone(),
+            root: definition.root,
             placement,
             grid,
             sampling,
@@ -188,6 +186,7 @@ mod tests {
             HoldRecipe {
                 duration: FrameDuration::new(2).unwrap(),
                 video: HoldVideo::Background,
+                picture_context: None,
                 audio: HoldAudio::Silence,
             },
         ))

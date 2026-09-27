@@ -27,6 +27,9 @@ use deadpan_source::{
 };
 use sha2::{Digest, Sha256};
 
+#[path = "source_import_timing/moment.rs"]
+mod moment;
+
 fn ratio(numerator: i128, denominator: i128) -> ExactRatio {
     ExactRatio::new(numerator, denominator).unwrap()
 }
@@ -217,6 +220,7 @@ fn measured_av_candidates_drive_picture_plans_through_leading_and_trailing_holds
                     subtree: Subtree {
                         root: leaf.clone(),
                         overrides: Default::default(),
+                        gap_overrides: Default::default(),
                         nodes: BTreeMap::from([(
                             leaf,
                             BeatNode {

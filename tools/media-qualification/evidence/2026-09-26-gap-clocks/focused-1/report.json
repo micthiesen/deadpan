@@ -1,0 +1,55 @@
+[
+  {
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-core",
+      "--test",
+      "gap_projection",
+      "--test",
+      "audio_reference",
+      "--test",
+      "audio_bindings"
+    ],
+    "exit_code": 0,
+    "seconds": 14.424768041819334,
+    "log": "0.log"
+  },
+  {
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-plan",
+      "--test",
+      "audio_definition",
+      "--test",
+      "audio_domain",
+      "--lib"
+    ],
+    "exit_code": 0,
+    "seconds": 54.97206429205835,
+    "log": "1.log"
+  },
+  {
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-audio",
+      "--test",
+      "gap_definition",
+      "--test",
+      "audio_definition",
+      "--test",
+      "audio_domain"
+    ],
+    "exit_code": 101,
+    "seconds": 53.15120616694912,
+    "log": "2.log"
+  }
+]

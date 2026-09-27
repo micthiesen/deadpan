@@ -61,6 +61,15 @@ impl<S> AudioSampleGrid<S> {
         self.boundary_rule
     }
 
+    pub(crate) fn rebrand<T>(&self) -> AudioSampleGrid<T> {
+        AudioSampleGrid {
+            frame_origin: self.frame_origin,
+            frames_per_sample: self.frames_per_sample,
+            boundary_rule: self.boundary_rule,
+            sample_domain: PhantomData,
+        }
+    }
+
     fn boundary_index(&self, frame: ExactRatio) -> Result<i64, TimeError> {
         let exact = frame
             .checked_sub(self.frame_origin)?

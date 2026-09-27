@@ -1,0 +1,379 @@
+{
+  "runs": [
+    {
+      "run": "crop-tests",
+      "report": {
+        "commands": [
+          {
+            "command": [
+              "cargo",
+              "fmt",
+              "-p",
+              "deadpan-playback"
+            ],
+            "exit_code": 0,
+            "seconds": 0.24642158299684525,
+            "log": "0.log"
+          },
+          {
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "-p",
+              "deadpan-playback",
+              "source_voice"
+            ],
+            "exit_code": 0,
+            "seconds": 22.948184083215892,
+            "log": "1.log",
+            "tests": {
+              "passed": 4,
+              "failed": 0,
+              "ignored": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "run": "gate-01",
+      "report": {
+        "commands": [
+          {
+            "command": [
+              "cargo",
+              "fmt",
+              "--all",
+              "--",
+              "--check"
+            ],
+            "exit_code": 0,
+            "seconds": 3.2671873746439815,
+            "log": "0.log"
+          },
+          {
+            "command": [
+              "cargo",
+              "clippy",
+              "--workspace",
+              "--all-targets",
+              "--locked",
+              "--",
+              "-D",
+              "warnings"
+            ],
+            "exit_code": 0,
+            "seconds": 429.37005370808765,
+            "log": "1.log"
+          },
+          {
+            "command": [
+              "cargo",
+              "test",
+              "--workspace",
+              "--locked",
+              "--no-fail-fast"
+            ],
+            "exit_code": 101,
+            "seconds": 1166.3833834165707,
+            "log": "2.log",
+            "tests": {
+              "passed": 1791,
+              "failed": 4,
+              "ignored": 0
+            }
+          },
+          {
+            "command": [
+              "cargo",
+              "build",
+              "--workspace",
+              "--locked"
+            ],
+            "exit_code": 0,
+            "seconds": 0.6855938327498734,
+            "log": "3.log"
+          },
+          {
+            "command": [
+              "cargo",
+              "run",
+              "-p",
+              "deadpan-cli",
+              "--locked",
+              "--",
+              "doctor"
+            ],
+            "exit_code": 0,
+            "seconds": 44.73170925024897,
+            "log": "4.log"
+          },
+          {
+            "command": [
+              "cargo",
+              "clippy",
+              "-p",
+              "deadpan-app",
+              "--features",
+              "ui-harness",
+              "--all-targets",
+              "--locked",
+              "--",
+              "-D",
+              "warnings"
+            ],
+            "exit_code": 0,
+            "seconds": 90.33976733312011,
+            "log": "5.log"
+          },
+          {
+            "command": [
+              "cargo",
+              "test",
+              "-p",
+              "deadpan-app",
+              "--features",
+              "ui-harness",
+              "--all-targets",
+              "--locked"
+            ],
+            "exit_code": 0,
+            "seconds": 120.14964779186994,
+            "log": "6.log",
+            "tests": {
+              "passed": 236,
+              "failed": 0,
+              "ignored": 0
+            }
+          }
+        ],
+        "source_count": 581,
+        "source_unchanged": true,
+        "changed_sources": [],
+        "passed": false
+      }
+    },
+    {
+      "run": "initial-tests",
+      "report": {
+        "commands": [
+          {
+            "command": [
+              "cargo",
+              "fmt",
+              "-p",
+              "deadpan-plan"
+            ],
+            "exit_code": 0,
+            "seconds": 0.6090183751657605,
+            "log": "0.log"
+          },
+          {
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "-p",
+              "deadpan-plan",
+              "--test",
+              "source_voice",
+              "--test",
+              "source_voice_policy",
+              "--test",
+              "hold_policy"
+            ],
+            "exit_code": 101,
+            "seconds": 44.547429291997105,
+            "log": "1.log",
+            "tests": {
+              "passed": 17,
+              "failed": 3,
+              "ignored": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "run": "playback-isolated-01",
+      "report": {
+        "commands": [
+          {
+            "command": [
+              "deadpan_playback-e4a6c13c0209ba22",
+              "--exact",
+              "tests::canonical_source_pcm_uses_fixed_monitor_gain_and_delivery_clock",
+              "--test-threads=1"
+            ],
+            "exit_code": 0,
+            "seconds": 11.970452415756881,
+            "log": "0.log",
+            "tests": {
+              "passed": 1,
+              "failed": 0,
+              "ignored": 0
+            }
+          },
+          {
+            "command": [
+              "deadpan_playback-e4a6c13c0209ba22",
+              "--exact",
+              "tests::original::original_preserves_leading_audio_trailing_audio_and_exact_rounded_picture_clock",
+              "--test-threads=1"
+            ],
+            "exit_code": 0,
+            "seconds": 20.84463220788166,
+            "log": "1.log",
+            "tests": {
+              "passed": 1,
+              "failed": 0,
+              "ignored": 0
+            }
+          },
+          {
+            "command": [
+              "deadpan_playback-e4a6c13c0209ba22",
+              "--exact",
+              "tests::original::original_pcm_ignores_edits_and_target_cache_never_reuses_sequence_pcm",
+              "--test-threads=1"
+            ],
+            "exit_code": 0,
+            "seconds": 12.4855449590832,
+            "log": "2.log",
+            "tests": {
+              "passed": 1,
+              "failed": 0,
+              "ignored": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "run": "targeted-tests",
+      "report": {
+        "commands": [
+          {
+            "command": [
+              "cargo",
+              "fmt",
+              "-p",
+              "deadpan-plan",
+              "-p",
+              "deadpan-playback"
+            ],
+            "exit_code": 0,
+            "seconds": 0.6490772911347449,
+            "log": "0.log"
+          },
+          {
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "-p",
+              "deadpan-plan",
+              "--test",
+              "source_voice",
+              "--test",
+              "source_voice_policy",
+              "--test",
+              "hold_policy"
+            ],
+            "exit_code": 0,
+            "seconds": 18.063047083094716,
+            "log": "1.log",
+            "tests": {
+              "passed": 20,
+              "failed": 0,
+              "ignored": 0
+            }
+          },
+          {
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "-p",
+              "deadpan-playback",
+              "source_voice"
+            ],
+            "exit_code": 101,
+            "seconds": 47.47781529184431,
+            "log": "2.log",
+            "tests": {
+              "passed": 0,
+              "failed": 4,
+              "ignored": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "run": "wav-tests",
+      "report": {
+        "commands": [
+          {
+            "command": [
+              "cargo",
+              "fmt",
+              "-p",
+              "deadpan-plan",
+              "-p",
+              "deadpan-playback",
+              "-p",
+              "deadpan-source"
+            ],
+            "exit_code": 0,
+            "seconds": 0.7694181250408292,
+            "log": "0.log"
+          },
+          {
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "-p",
+              "deadpan-source",
+              "input::tests"
+            ],
+            "exit_code": 0,
+            "seconds": 40.948322583921254,
+            "log": "1.log",
+            "tests": {
+              "passed": 27,
+              "failed": 0,
+              "ignored": 0
+            }
+          },
+          {
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "-p",
+              "deadpan-playback",
+              "source_voice"
+            ],
+            "exit_code": 0,
+            "seconds": 76.33213295880705,
+            "log": "2.log",
+            "tests": {
+              "passed": 4,
+              "failed": 0,
+              "ignored": 0
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "goal_status": "active",
+  "core_schema": 28,
+  "database_schema": 34,
+  "no_requirement_or_gate_promoted": true,
+  "ui_replay": "not repeated; no GUI changes",
+  "contributed_harness": "preserved and feature checks included in gate"
+}

@@ -134,14 +134,48 @@ impl AudioSignal<'_> {
         samples: Range<SignalSample>,
         limits: AudioQueryLimits,
     ) -> Result<AudioPolicyQuery<SignalSample>, PlanError> {
+        self.policy_with_endpoints(samples, limits, true)
+    }
+
+    /// Policy applied after canonical Preserve processing. Source placement
+    /// endpoints must not erase processed decay; explicit silent Holds remain.
+    pub fn policy_after_preserve(
+        &self,
+        samples: Range<SignalSample>,
+        limits: AudioQueryLimits,
+    ) -> Result<AudioPolicyQuery<SignalSample>, PlanError> {
+        self.policy_with_endpoints(samples, limits, false)
+    }
+
+    fn policy_with_endpoints(
+        &self,
+        samples: Range<SignalSample>,
+        limits: AudioQueryLimits,
+        source_endpoints: bool,
+    ) -> Result<AudioPolicyQuery<SignalSample>, PlanError> {
+        self.policy_on_grid(
+            samples,
+            limits,
+            AudioBoundaryRule::PointCeil,
+            source_endpoints,
+        )
+    }
+
+    pub(crate) fn policy_on_grid(
+        &self,
+        samples: Range<SignalSample>,
+        limits: AudioQueryLimits,
+        rule: AudioBoundaryRule,
+        source_endpoints: bool,
+    ) -> Result<AudioPolicyQuery<SignalSample>, PlanError> {
         let mut work = PolicyWork::new(limits)?;
         let suppressed = signal_policy(
             self,
             samples.start.0..samples.end.0,
-            AudioBoundaryRule::PointCeil,
+            rule,
             &mut work,
             0,
-            true,
+            source_endpoints,
         )?;
         Ok(work.result(suppressed, SignalSample))
     }
@@ -164,6 +198,15 @@ fn is_suppressed(content: &AudioContent) -> bool {
         content,
         AudioContent::Silence {
             reason: SilenceReason::SilentHold
+        }
+    )
+}
+
+fn is_selected_endpoint(content: &AudioContent) -> bool {
+    matches!(
+        content,
+        AudioContent::Silence {
+            reason: SilenceReason::OutsideSourceSelection
         }
     )
 }
@@ -199,6 +242,7 @@ fn signal_policy(
     let current = signal.query_inner(range.clone(), work.limits()?, rule, false, false)?;
     work.observed(current.work, current.lookup)?;
     let mut suppressed = Vec::new();
+    let bindings = signal.has_audio_bindings();
     for span in current.spans {
         let AudioSignalContent::Leaf(content) = span.content else {
             return Err(PlanError::InvalidPlan("current policy retained processing"));
@@ -206,24 +250,51 @@ fn signal_policy(
         if is_suppressed(&content) {
             suppressed.push(span.samples.start.0..span.samples.end.0);
         }
+        if !bindings
+            && is_selected_endpoint(&content)
+            && endpoint_grid(endpoints, &span.retimes, work)?
+        {
+            suppressed.push(span.samples.start.0..span.samples.end.0);
+        }
         work.content(content)?;
     }
-    if !signal.has_audio_bindings() || samples.is_empty() {
+    if let Some(carrier) = signal.source_voice_hold_carrier() {
+        // Sound content keeps its complete independent recipe through input
+        // preparation. Only current explicit Hold issuers suppress its output;
+        // the carrier's Original source, endpoints and retained bindings do
+        // not describe this voice and must not enter its content inventory.
+        let holds = carrier.hold_policy_on_grid(range.clone(), work.limits()?, rule)?;
+        work.observed(holds.work, holds.lookup)?;
+        for hold in holds.rules {
+            work.spend(1)?;
+            suppressed.push(hold.samples.start.0..hold.samples.end.0);
+        }
+    }
+    if !bindings || samples.is_empty() {
         return Ok(suppressed);
     }
     let bindings = signal.query_inner(range, work.limits()?, rule, false, true)?;
     work.observed(bindings.work, bindings.lookup)?;
     for span in bindings.spans {
-        if let AudioSignalContent::Bound(bound) = span.content {
-            let endpoints = endpoint_grid(endpoints, &span.retimes, work)?;
-            suppressed.extend(bound_policy(
-                &bound,
-                span.samples.start.0..span.samples.end.0,
-                span.allocated_samples.start.0,
-                work,
-                depth + 1,
-                endpoints,
-            )?);
+        match span.content {
+            AudioSignalContent::Bound(bound) => {
+                let endpoints = endpoint_grid(endpoints, &span.retimes, work)?;
+                suppressed.extend(bound_policy(
+                    &bound,
+                    span.samples.start.0..span.samples.end.0,
+                    span.allocated_samples.start.0,
+                    work,
+                    depth + 1,
+                    endpoints,
+                )?);
+            }
+            AudioSignalContent::Leaf(content)
+                if is_selected_endpoint(&content)
+                    && endpoint_grid(endpoints, &span.retimes, work)? =>
+            {
+                suppressed.push(span.samples.start.0..span.samples.end.0);
+            }
+            _ => {}
         }
     }
     Ok(suppressed)
@@ -241,8 +312,15 @@ fn domain_policy(
     let current = domain.audio(range.clone(), work.limits()?)?;
     work.observed(current.work, current.lookup)?;
     let mut suppressed = Vec::new();
+    let bindings = domain.has_audio_bindings();
     for span in current.spans {
         if is_suppressed(&span.content) {
+            suppressed.push(span.samples.start.0..span.samples.end.0);
+        }
+        if !bindings
+            && is_selected_endpoint(&span.content)
+            && endpoint_grid(endpoints, &span.retimes, work)?
+        {
             suppressed.push(span.samples.start.0..span.samples.end.0);
         }
         // These are the retained raw operand's meaningful edges, independently
@@ -256,22 +334,31 @@ fn domain_policy(
         }
         work.content(span.content)?;
     }
-    if !domain.has_audio_bindings() || samples.is_empty() {
+    if !bindings || samples.is_empty() {
         return Ok(suppressed);
     }
     let bindings = domain.processing_inner(range, work.limits()?, false)?;
     work.observed(bindings.work, bindings.lookup)?;
     for span in bindings.spans {
-        if let AudioSignalContent::Bound(bound) = span.content {
-            let endpoints = endpoint_grid(endpoints, &span.retimes, work)?;
-            suppressed.extend(bound_policy(
-                &bound,
-                span.samples.start.0..span.samples.end.0,
-                span.allocated_samples.start.0,
-                work,
-                depth + 1,
-                endpoints,
-            )?);
+        match span.content {
+            AudioSignalContent::Bound(bound) => {
+                let endpoints = endpoint_grid(endpoints, &span.retimes, work)?;
+                suppressed.extend(bound_policy(
+                    &bound,
+                    span.samples.start.0..span.samples.end.0,
+                    span.allocated_samples.start.0,
+                    work,
+                    depth + 1,
+                    endpoints,
+                )?);
+            }
+            AudioSignalContent::Leaf(content)
+                if is_selected_endpoint(&content)
+                    && endpoint_grid(endpoints, &span.retimes, work)? =>
+            {
+                suppressed.push(span.samples.start.0..span.samples.end.0);
+            }
+            _ => {}
         }
     }
     Ok(suppressed)

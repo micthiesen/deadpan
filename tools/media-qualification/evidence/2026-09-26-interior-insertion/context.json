@@ -1,0 +1,13 @@
+{
+  "date": "2026-09-26",
+  "host": "macOS 26.5.2 (25F84), arm64",
+  "toolchain": "Rust 1.97.1",
+  "ffmpeg_prefix": "/tmp/deadpan-ui-ffmpeg/prefix",
+  "base_revision": "c03a5edde5f28d27074745eb15711cb28b1f2e50",
+  "previous_checkpoint": "/tmp/deadpan-ui-wake-20260926/checkpoint",
+  "scope": "Root Source/ordinary Hold fragment interior InsertTime before composite suffix; core25/database31 contextual migration boundary",
+  "concurrency": "Shared checkout preserved; Cargo runs serialized by parent",
+  "git_write_access": "read-only; no commit or push",
+  "native_startup_smoke": "Not repeated; no native startup or lifecycle production change",
+  "release_performance": "Not repeated after the affected visual replay failed before app construction with No adapter found; no new latency qualification"
+}

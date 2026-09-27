@@ -47,6 +47,7 @@ fn background(frames: i64) -> HoldRecipe {
     HoldRecipe {
         duration: duration(frames),
         video: HoldVideo::Background,
+        picture_context: None,
         audio: HoldAudio::Silence,
     }
 }
@@ -272,6 +273,7 @@ fn freeze_picture_identity_stays_fixed_while_its_framing_clock_advances() {
                     time_base: clock(),
                 },
             },
+            picture_context: None,
             audio: HoldAudio::Silence,
         },
     });
@@ -288,6 +290,98 @@ fn freeze_picture_identity_stays_fixed_while_its_framing_clock_advances() {
         last.framing[0].pose.unwrap().scale,
         ExactRatio::new(23, 8).unwrap()
     );
+}
+
+fn retained_picture_context() -> CapturedFraming {
+    CapturedFraming {
+        canvases: vec![CapturedCanvas {
+            width: 16,
+            height: 16,
+            fit: CapturedFit::Fit,
+            layers: vec![Some(FramingPose::identity()), None],
+        }],
+    }
+}
+
+#[test]
+fn hold_picture_context_is_provider_independent_shared_and_serializable() {
+    let context = retained_picture_context();
+    let mut recipe = background(2);
+    recipe.video = HoldVideo::Freeze {
+        asset: asset_id("video"),
+        timestamp: SourceTimestamp {
+            ticks: -37,
+            time_base: clock(),
+        },
+    };
+    recipe.picture_context = Some(context.clone());
+    let freeze_document = document(&["hold"], vec![("hold", node(NodeKind::Hold { recipe }))]);
+    let plan = RenderPlan::compile(&freeze_document).unwrap();
+    let first = plan.picture(ProjectFrame(0)).unwrap();
+    let second = plan.picture(ProjectFrame(1)).unwrap();
+    assert_eq!(
+        first.picture,
+        Picture::Freeze {
+            asset: asset_id("video"),
+            point: SourcePoint {
+                ticks: ExactRatio::integer(-37),
+                time_base: clock(),
+            },
+        }
+    );
+    let first_context = first.picture_context.as_ref().unwrap();
+    let second_context = second.picture_context.as_ref().unwrap();
+    assert!(std::sync::Arc::ptr_eq(first_context, second_context));
+    assert_eq!(
+        serde_json::to_value(&first).unwrap()["picture_context"],
+        serde_json::to_value(&context).unwrap()
+    );
+
+    let mut changed_provider = background(2);
+    changed_provider.picture_context = Some(retained_picture_context());
+    let changed = RenderPlan::compile(&document(
+        &["hold"],
+        vec![(
+            "hold",
+            node(NodeKind::Hold {
+                recipe: changed_provider,
+            }),
+        )],
+    ))
+    .unwrap()
+    .picture(ProjectFrame(0))
+    .unwrap();
+    assert_eq!(changed.picture, Picture::Background);
+    assert_eq!(changed.picture_context.as_deref(), Some(&context));
+}
+
+#[test]
+fn repeat_gap_retains_shared_picture_context() {
+    let mut gap = background(1);
+    gap.picture_context = Some(retained_picture_context());
+    let repeat = node(NodeKind::Repeat {
+        child: id("child"),
+        iterations: IterationOrder::new(revision("captured-gap-plays"), 3).unwrap(),
+        gap: Some(gap),
+    });
+    let document = document(
+        &["repeat"],
+        vec![("repeat", repeat), ("child", source(1, 0, 1))],
+    );
+    let plan = RenderPlan::compile(&document).unwrap();
+    let first_gap = plan.picture(ProjectFrame(1)).unwrap();
+    let second_gap = plan.picture(ProjectFrame(3)).unwrap();
+    assert!(first_gap.gap_after.is_some());
+    assert!(second_gap.gap_after.is_some());
+    assert_eq!(first_gap.picture, Picture::Background);
+    assert_eq!(
+        first_gap.picture_context.as_deref(),
+        second_gap.picture_context.as_deref()
+    );
+    assert!(std::sync::Arc::ptr_eq(
+        first_gap.picture_context.as_ref().unwrap(),
+        second_gap.picture_context.as_ref().unwrap()
+    ));
 }
 
 #[test]
@@ -356,6 +450,104 @@ fn fractional_source_centers_and_vfr_selection_preserve_original_pts() {
     assert_eq!(
         plan.metadata().presentation_basis.frame_rate,
         FrameRate::new(30000, 1001).unwrap()
+    );
+}
+
+#[test]
+fn spliced_moment_keeps_exact_pts_endpoint_hold_and_live_group_framing() {
+    let original = document(
+        &["prefix", "group", "suffix"],
+        vec![
+            ("prefix", source(1, 0, 1001)),
+            (
+                "group",
+                framed(BeatNode::sequence("Group", vec![id("old")]), 2),
+            ),
+            ("old", source(4, 0, 4004)),
+            ("suffix", source(2, 1001, 4004)),
+        ],
+    );
+    let NodeKind::Source { source } = source_with_mapping(
+        2,
+        1001,
+        2501,
+        SourceVideoMapping::natural_rate(
+            span(1001, 2501),
+            original.presentation_basis().frame_rate,
+            EndpointPolicy::HoldAdjacent,
+        )
+        .unwrap(),
+    )
+    .kind
+    else {
+        panic!()
+    };
+    let transaction = apply(
+        &original,
+        &CommandRequest {
+            project_id: original.project_id().clone(),
+            expected_revision: original.revision_id().clone(),
+            new_revision: revision("paste"),
+            command: Command::SpliceSource {
+                parent: id("group"),
+                index: 0,
+                source,
+                id: id("moment"),
+                label: "Original moment".into(),
+                timing: AudioTimingId {
+                    allocation: revision("paste"),
+                    ordinal: 0,
+                },
+            },
+        },
+    )
+    .unwrap();
+    let edited = transaction.forward.apply(&original).unwrap();
+    assert_eq!(transaction.inverse.apply(&edited).unwrap(), original);
+    let before = RenderPlan::compile(&original).unwrap();
+    let after = RenderPlan::compile(&edited).unwrap();
+    let measured = index("video", clock(), &[0, 1001, 1500, 2000, 2501, 4004], 5005);
+    for (frame, source_ticks, ordinal, local) in [(1, 3003, 2, 1), (2, 5005, 3, 3)] {
+        let picture = after.picture(ProjectFrame(frame)).unwrap();
+        assert_eq!(picture.instance.node, id("moment"));
+        assert_eq!(
+            ticks(&picture.picture),
+            ExactRatio::new(source_ticks, 2).unwrap()
+        );
+        assert_eq!(
+            picture
+                .picture
+                .select_source_frame(&measured)
+                .unwrap()
+                .identity,
+            SourceFrameId(ordinal)
+        );
+        assert_eq!(
+            picture
+                .framing
+                .iter()
+                .map(|layer| layer.instance.node.as_str())
+                .collect::<Vec<_>>(),
+            ["moment", "group", "root"]
+        );
+        let group = &picture.framing[1];
+        assert_eq!(group.duration, duration(6));
+        assert_eq!(group.local_position, ExactRatio::new(local, 2).unwrap());
+        assert!(group.pose.is_some());
+        assert!(picture.picture_context.is_none());
+    }
+    for frame in 3..9 {
+        let new = after.picture(ProjectFrame(frame)).unwrap();
+        let old = before.picture(ProjectFrame(frame - 2)).unwrap();
+        assert_eq!(new.picture, old.picture);
+        assert_eq!(new.instance, old.instance);
+        // Existing providers retain their own clock; the enclosing group's
+        // authored path is still evaluated over its changed live duration.
+        assert_eq!(new.framing[0].local_position, old.framing[0].local_position);
+    }
+    assert_eq!(
+        edited.nodes()[&id("group")].framing,
+        original.nodes()[&id("group")].framing
     );
 }
 
@@ -499,6 +691,143 @@ fn natural_video_duration_preserves_vfr_selection_after_beat_rounding() {
         SourceFrameId(1)
     );
     assert_eq!(natural.duration(), duration(30));
+}
+
+#[test]
+fn interior_pause_before_repeat_keeps_exact_vfr_picture_and_gap_occurrences() {
+    let source_index = index("video", clock(), &[-2002, -1001, 1001, 4004], 5005);
+    for kind in ["source", "hold", "fragment"] {
+        let lead = if kind == "hold" {
+            node(NodeKind::Hold {
+                recipe: HoldRecipe {
+                    video: HoldVideo::Freeze {
+                        asset: asset_id("video"),
+                        timestamp: SourceTimestamp {
+                            ticks: 1001,
+                            time_base: clock(),
+                        },
+                    },
+                    ..background(6)
+                },
+            })
+        } else {
+            source(6, -2002, 5005)
+        };
+        let mut document = document(
+            &["lead", "repeat"],
+            vec![
+                ("lead", framed(lead, 2)),
+                ("child", framed(source(4, -1001, 5005), 3)),
+                ("repeat", framed(repeat("child", 3, 2, "plays"), 2)),
+            ],
+        );
+        if kind == "fragment" {
+            let transaction = apply(
+                &document,
+                &CommandRequest {
+                    project_id: document.project_id().clone(),
+                    expected_revision: document.revision_id().clone(),
+                    new_revision: revision("initial-split"),
+                    command: Command::Split {
+                        node: id("lead"),
+                        at: duration(4),
+                        identities: SplitIdentities {
+                            nodes: (0..8).map(|n| id(&format!("split-{n}"))).collect(),
+                        },
+                    },
+                },
+            )
+            .unwrap();
+            document = transaction.forward.apply(&document).unwrap();
+        }
+        let before = RenderPlan::compile(&document).unwrap();
+        let entry = before.picture(ProjectFrame(1)).unwrap();
+        let frozen = entry.picture.select_source_frame(&source_index).unwrap();
+        let context = CapturedFraming::capture(
+            entry.picture_context.as_deref(),
+            CapturedCanvas {
+                width: 1920,
+                height: 1080,
+                fit: CapturedFit::Fit,
+                layers: entry.framing[..entry.framing.len() - 1]
+                    .iter()
+                    .map(|layer| layer.pose)
+                    .collect(),
+            },
+        )
+        .unwrap();
+        let transaction = apply(
+            &document,
+            &CommandRequest {
+                project_id: document.project_id().clone(),
+                expected_revision: document.revision_id().clone(),
+                new_revision: revision("interior-pause"),
+                command: Command::InsertTime {
+                    at: ProjectFrame(2),
+                    hold: HoldRecipe {
+                        duration: duration(3),
+                        video: HoldVideo::Freeze {
+                            asset: asset_id("video"),
+                            timestamp: SourceTimestamp {
+                                ticks: frozen.pts,
+                                time_base: source_index.time_base(),
+                            },
+                        },
+                        audio: HoldAudio::Silence,
+                        picture_context: Some(context.clone()),
+                    },
+                    id: id("pause"),
+                    identities: SplitIdentities {
+                        nodes: (0..12).map(|n| id(&format!("pause-{n}"))).collect(),
+                    },
+                    timing: AudioTimingId {
+                        allocation: revision("interior-pause"),
+                        ordinal: 0,
+                    },
+                },
+            },
+        )
+        .unwrap();
+        let edited = transaction.forward.apply(&document).unwrap();
+        assert_eq!(transaction.duration_delta, 3);
+        assert_eq!(transaction.inverse.apply(&edited).unwrap(), document);
+        let after = RenderPlan::compile(&edited).unwrap();
+        assert_eq!(after.duration().frames(), before.duration().frames() + 3);
+        assert_eq!(after.metadata().storage.iteration_run_entries, 1);
+        assert_eq!(after.metadata().storage.referenced_plays, 3);
+        for frame in 0..after.duration().frames() {
+            let actual = after.picture(ProjectFrame(frame)).unwrap();
+            actual.instance.validate(&edited).unwrap();
+            if (2..5).contains(&frame) {
+                assert_eq!(actual.instance.node, id("pause"));
+                assert_eq!(actual.picture_context.as_deref(), Some(&context));
+                assert_eq!(
+                    actual.picture.select_source_frame(&source_index).unwrap(),
+                    frozen
+                );
+            } else {
+                let original_frame = if frame < 2 { frame } else { frame - 3 };
+                let expected = before.picture(ProjectFrame(original_frame)).unwrap();
+                assert_eq!(actual.picture, expected.picture, "{kind} frame {frame}");
+                if original_frame >= 6 {
+                    assert_eq!(actual.instance, expected.instance, "{kind} frame {frame}");
+                    assert_eq!(actual.gap_after, expected.gap_after, "{kind} frame {frame}");
+                    assert_eq!(
+                        actual.framing[..actual.framing.len() - 1],
+                        expected.framing[..expected.framing.len() - 1],
+                        "{kind} retains Repeat/child clocks at frame {frame}"
+                    );
+                }
+                if actual.gap_after.is_none() {
+                    assert_eq!(
+                        actual.picture.select_source_frame(&source_index).unwrap(),
+                        expected.picture.select_source_frame(&source_index).unwrap(),
+                        "{kind} selects the original VFR frame at {frame}"
+                    );
+                }
+            }
+        }
+    }
 }
 
 #[test]
@@ -935,6 +1264,7 @@ fn still_blank_freeze_and_background_are_distinct_picture_requests() {
                     time_base: clock(),
                 },
             },
+            picture_context: None,
             audio: HoldAudio::Silence,
         },
     });
@@ -1197,6 +1527,7 @@ fn accepted_repeat_gap_maps_exact_fractional_positions_without_a_trailing_gap() 
             asset: asset_id("video"),
             frames: range(20, 23),
         },
+        picture_context: None,
         audio: HoldAudio::Silence,
     };
     let document = document(

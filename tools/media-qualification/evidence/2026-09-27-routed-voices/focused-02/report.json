@@ -1,0 +1,42 @@
+{
+  "commands": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "deadpan-audio",
+        "--test",
+        "audio_definition",
+        "projection::routed",
+        "--locked"
+      ],
+      "exit_code": 0,
+      "seconds": 25.4397614588961,
+      "log": "0.log",
+      "tests": {
+        "passed": 3,
+        "failed": 0,
+        "ignored": 0
+      }
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "deadpan-playback",
+        "source_voice::routed",
+        "--locked"
+      ],
+      "exit_code": 0,
+      "seconds": 81.48583370819688,
+      "log": "1.log",
+      "tests": {
+        "passed": 4,
+        "failed": 0,
+        "ignored": 0
+      }
+    }
+  ]
+}

@@ -1,12 +1,13 @@
 //! A current owned recipe evaluated on an explicitly retained sampling lattice.
 
 use deadpan_core::{
-    AudioBindingEnvironment, AudioBindingGridRule, ExactRatio, InstancePath, NodeId,
-    RepeatInstance, ResolvedAudioBinding,
+    AudioBindingEnvironment, AudioBindingGridRule, AudioDefinitionScope, ExactRatio, InstancePath,
+    NodeId, RepeatInstance, ResolvedAudioBinding,
 };
 use serde::Serialize;
 
 use super::audio::{Budget, EnvelopeConstraint, intersect};
+use super::audio_domain::DomainGap;
 use super::{
     AudioDefinition, AudioDefinitionSelector, AudioDomain, AudioPointDomain, AudioRootPlacement,
     CompiledKind, RenderPlan, SignalSample, SignalTransform,
@@ -22,6 +23,13 @@ pub enum AudioBoundDomain<'plan> {
     Empty,
 }
 
+/// A Repeat's gap recipe is a different operand from the Repeat's node output.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(super) enum BindingTarget {
+    Node(usize),
+    Gap(usize),
+}
+
 #[derive(Clone, Copy)]
 pub(super) struct BoundPlacement<'a> {
     pub transform: SignalTransform,
@@ -29,6 +37,7 @@ pub(super) struct BoundPlacement<'a> {
     pub allocated_start: SignalSample,
     pub support: Option<&'a std::ops::Range<ExactRatio>>,
     pub constraints: &'a [EnvelopeConstraint],
+    pub gap: Option<&'a DomainGap>,
 }
 
 /// A borrowed processing operand, never a deserializable media admission token.
@@ -41,6 +50,8 @@ pub struct AudioBound<'plan> {
     node: usize,
     definition: Option<AudioDefinitionSelector>,
     instance: InstancePath,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    gap: Option<DomainGap>,
     resolved: ResolvedAudioBinding,
     reference_at_anchor: ExactRatio,
     reference_step: ExactRatio,
@@ -56,6 +67,7 @@ impl PartialEq for AudioBound<'_> {
             && self.node == other.node
             && self.definition == other.definition
             && self.instance == other.instance
+            && self.gap == other.gap
             && self.resolved == other.resolved
             && self.reference_at_anchor == other.reference_at_anchor
             && self.reference_step == other.reference_step
@@ -104,9 +116,15 @@ impl RenderPlan {
             allocated_start,
             support,
             constraints,
+            gap,
         } = placement;
         let id = &self.nodes[node].inspection.id;
-        if !self.audio_bindings.bindings().contains_key(id) {
+        let bindings = if gap.is_some() {
+            self.audio_bindings.gap_bindings()
+        } else {
+            self.audio_bindings.bindings()
+        };
+        if !bindings.contains_key(id) {
             return Ok(None);
         }
         budget.spend(repeats.len() + 1)?;
@@ -117,20 +135,40 @@ impl RenderPlan {
         let excluded = definition
             .map(|selector| self.definition_exclusions(selector, budget))
             .transpose()?;
-        let environment = match &excluded {
-            Some((root, outside_repeats)) => AudioBindingEnvironment::Definition {
+        let environment = match (gap, &excluded) {
+            (Some(gap), Some((root, outside_repeats))) => AudioBindingEnvironment::GapDefinition {
+                root: if matches!(definition, Some(AudioDefinitionSelector::RepeatGap { .. })) {
+                    AudioDefinitionScope::RepeatGap(root)
+                } else {
+                    AudioDefinitionScope::NodeOutput(root)
+                },
+                instance: &instance,
+                outside_repeats,
+                after: gap.after.as_ref(),
+            },
+            (Some(gap), None) => AudioBindingEnvironment::GapOccurrence {
+                instance: &instance,
+                after: gap.after.as_ref().ok_or(PlanError::InvalidPlan(
+                    "bound gap occurrence has no preceding play",
+                ))?,
+            },
+            (None, Some((root, outside_repeats))) => AudioBindingEnvironment::Definition {
                 root,
                 instance: &instance,
                 outside_repeats,
             },
-            None => AudioBindingEnvironment::Occurrence(&instance),
+            (None, None) => AudioBindingEnvironment::Occurrence(&instance),
         };
         if budget.remaining == 0 {
             return Err(PlanError::AudioQueryLimit("binding resolution"));
         }
-        let resolved = self
-            .audio_bindings
-            .resolve_in(id, environment, budget.remaining)?;
+        let resolved = if gap.is_some() {
+            self.audio_bindings
+                .resolve_gap_in(id, environment, budget.remaining)?
+        } else {
+            self.audio_bindings
+                .resolve_in(id, environment, budget.remaining)?
+        };
         budget.spend(resolved.work)?;
         let lattice = &resolved.lattice;
         let unit = lattice.local_frames_per_sample()?;
@@ -160,12 +198,23 @@ impl RenderPlan {
         // its new tail without resetting the loop phase or other Repeat plays'
         // historical origins. The raw Source walker separately applies current
         // source placement; current meaningful ancestors constrain this extent.
-        let intrinsic =
-            ExactRatio::ZERO..ExactRatio::integer(self.nodes[node].inspection.duration.frames());
-        let support = match support {
+        let duration = gap.map_or(self.nodes[node].inspection.duration, |gap| gap.duration);
+        let intrinsic = ExactRatio::ZERO..ExactRatio::integer(duration.frames());
+        let mut support = match support {
             Some(current) => intersect(intrinsic, local(current.start)?..local(current.end)?)?,
             None => intrinsic,
         };
+        // A selected Source owns a narrower physical operand than its full
+        // measured mapping. Clip before transferring it onto the resumed grid,
+        // so interpolation cannot draw across the authored crop. Ordinary
+        // placement still denotes missing input, not an endpoint mask.
+        if let CompiledKind::Source {
+            audio: Some(audio), ..
+        } = &self.nodes[node].kind
+            && audio.selected
+        {
+            support = intersect(support, audio.selection.start..audio.selection.end)?;
+        }
         budget.spend(constraints.len())?;
         let project = |point| {
             lattice
@@ -189,6 +238,7 @@ impl RenderPlan {
             node,
             definition: definition.cloned(),
             instance,
+            gap: gap.cloned(),
             resolved,
             reference_at_anchor: reference.checked_add(offset.checked_mul(reference_step)?)?,
             reference_step,
@@ -205,6 +255,28 @@ impl<'plan> AudioBound<'plan> {
     }
     pub fn work(&self) -> usize {
         self.resolved.work
+    }
+
+    /// The full current Preserve operand behind this physical binding, if any.
+    /// Its own binding is bypassed, exactly as in `raw_domain`; descendants
+    /// retain their bindings and scoped identities. This admits policy
+    /// inspection of hidden canonical history without scanning a Source's PCM.
+    pub fn intrinsic_stage(&self) -> Result<Option<super::AudioStage<'plan>>, PlanError> {
+        if self.gap.is_none()
+            && matches!(&self.plan.nodes[self.node].kind,
+                CompiledKind::Retime { scale, pitch, .. }
+                if *scale != ExactRatio::ONE && *pitch == deadpan_core::PitchPolicy::Preserve)
+        {
+            return super::AudioStage::for_node(
+                self.plan,
+                self.node,
+                &self.instance.repeats,
+                self.definition.as_ref(),
+                Some(self.binding_target()),
+            )
+            .map(Some);
+        }
+        Ok(None)
     }
     pub fn reference_at_offset(&self, offset: i64) -> Result<ExactRatio, PlanError> {
         self.reference_at_wide_offset(i128::from(offset))
@@ -267,15 +339,30 @@ impl<'plan> AudioBound<'plan> {
         AudioDefinition {
             plan: self.plan,
             root: self.node,
-            selector: AudioDefinitionSelector::Node {
-                node: self.instance.node.clone(),
+            gap: self.gap.clone(),
+            selector: if self.gap.is_some() {
+                AudioDefinitionSelector::RepeatGap {
+                    repeat: self.instance.node.clone(),
+                }
+            } else {
+                AudioDefinitionSelector::Node {
+                    node: self.instance.node.clone(),
+                }
             },
+        }
+    }
+
+    fn binding_target(&self) -> BindingTarget {
+        if self.gap.is_some() {
+            BindingTarget::Gap(self.node)
+        } else {
+            BindingTarget::Node(self.node)
         }
     }
 
     fn set_domain_evaluation(&self, domain: &mut AudioDomain<'plan>) {
         domain.seed.definition = self.definition.clone();
-        domain.seed.bypass_binding = Some(self.node);
+        domain.seed.bypass_binding = Some(self.binding_target());
         domain.seed.repeats = self.instance.repeats.clone();
         domain
             .seed
@@ -309,7 +396,7 @@ impl<'plan> AudioBound<'plan> {
                 domain.set_evaluation(
                     self.definition.clone(),
                     self.instance.repeats.clone(),
-                    Some(self.node),
+                    Some(self.binding_target()),
                 );
                 AudioBoundDomain::Point(domain)
             }

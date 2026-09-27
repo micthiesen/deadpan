@@ -88,6 +88,52 @@ pub struct Presentation {
 }
 
 impl Presentation {
+    #[cfg(feature = "ui-harness")]
+    pub(crate) fn displayed_matches(
+        &self,
+        session: u64,
+        project: &ProjectId,
+        revision: &RevisionId,
+        view: &ProjectView,
+    ) -> bool {
+        self.displayed.as_ref().is_some_and(|picture| {
+            matches!(&picture.request.location, Location::Project {
+                session: current_session, project: current_project,
+                revision: current_revision, view: current_view, ..
+            } if *current_session == session && current_project == project
+                && current_revision == revision && current_view == view)
+        })
+    }
+
+    #[cfg(feature = "ui-harness")]
+    pub(crate) fn decoded_ticket(&self) -> Option<Ticket> {
+        self.decoded.as_ref().map(|picture| picture.request.ticket)
+    }
+
+    /// Developer observation only. These are app submission identities, not
+    /// timestamps from a physical display or a substitute for the render plan.
+    #[cfg(feature = "ui-harness")]
+    pub(crate) fn diagnostic_snapshot(&self) -> serde_json::Value {
+        fn request(request: &RequestedPicture) -> serde_json::Value {
+            serde_json::json!({
+                "ticket": format!("{:?}", request.ticket),
+                "location": format!("{:?}", request.location),
+                "label": request.label(),
+            })
+        }
+        serde_json::json!({
+            "requested": self.requested.as_ref().map(request),
+            "decoded": self.decoded.as_ref().map(|picture| request(&picture.request)),
+            "displayed": self.displayed.as_ref().map(|picture| request(&picture.request)),
+            "geometry_revision": self.displayed.as_ref().map(|picture| picture.geometry_revision),
+            "decoded_geometry_revision": self.decoded.as_ref().map(|picture| picture.geometry_revision),
+            "decoded_framing": self.decoded.as_ref().map(|picture| format!("{:?}", picture.picture.framing)),
+            "source_frame": self.displayed_source_frame().map(|frame| frame.0),
+            "loading": self.loading(), "needs_render": self.needs_render(),
+            "error": self.error(),
+        })
+    }
+
     pub fn clear(&mut self) {
         *self = Self::default();
     }

@@ -86,9 +86,10 @@ impl AudioRootPlacement {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub(super) struct DomainGap {
-    pub(super) after: IterationId,
+    /// A definition has no preceding play. Occurrences retain their stable ID.
+    pub(super) after: Option<IterationId>,
     pub(super) duration: FrameDuration,
 }
 
@@ -97,7 +98,7 @@ pub(super) struct DomainGap {
 #[derive(Debug, Clone)]
 pub(super) struct AudioWalkSeed {
     pub(super) definition: Option<AudioDefinitionSelector>,
-    pub(super) bypass_binding: Option<usize>,
+    pub(super) bypass_binding: Option<super::audio_bound::BindingTarget>,
     pub(super) node: usize,
     pub(super) transform: AudioTransform,
     pub(super) grid: crate::AudioSampleGrid<AudioSample>,
@@ -192,7 +193,7 @@ impl<'plan> AudioDomain<'plan> {
     }
 
     pub fn gap_after(&self) -> Option<&IterationId> {
-        self.seed.gap.as_ref().map(|gap| &gap.after)
+        self.seed.gap.as_ref().and_then(|gap| gap.after.as_ref())
     }
 
     pub fn belongs_to(&self, plan: &RenderPlan) -> bool {

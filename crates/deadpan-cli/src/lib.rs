@@ -39,9 +39,10 @@ const HELP: &str = "Deadpan headless commands:
   inspect-plan <project.deadpan> --audio-samples <START> <END>
   inspect-audio <project.deadpan> --samples <START> <END> [--time-mapped | --edge-faded | --limited]
   inspect-audio-domain <project.deadpan> --at <PROBE> --samples <START> <END>
-  inspect-audio-definition <project.deadpan> (--node <ID> | --repeat-default <ID>) --samples <START> <END> [--revision <ID>]
-  inspect-audio-placement <project.deadpan> (--node <ID> | --repeat-default <ID>) --clock <clock.json> --samples <START> <END> [--revision <ID>]
+  inspect-audio-definition <project.deadpan> (--node <ID> | --repeat-default <ID> | --repeat-gap <ID>) --samples <START> <END> [--revision <ID>]
+  inspect-audio-placement <project.deadpan> (--node <ID> | --repeat-default <ID> | --repeat-gap <ID>) --clock <clock.json> --samples <START> <END> [--revision <ID>]
   resolve-selection <project.deadpan> --json <selection.json>
+  locate-boundary <project.deadpan> --json <boundary.json>
   command <project.deadpan> --json <request.json> [--dry-run]
 
 Creation defaults to a provisional 1920x1080, 30 fps presentation basis.
@@ -247,6 +248,22 @@ struct SelectionEnvelope {
     request: deadpan_core::SelectionRequest,
 }
 
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct BoundaryEnvelope {
+    protocol: u32,
+    request: deadpan_core::BoundaryLocationRequest,
+    #[serde(default)]
+    limits: Option<BoundaryLimits>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct BoundaryLimits {
+    max_scopes: usize,
+    max_comparisons: usize,
+}
+
 /// Shared process entrypoint for the CLI and `deadpan-app --headless`.
 pub fn entry(arguments: impl IntoIterator<Item = String>) -> ExitCode {
     let arguments: Vec<String> = arguments.into_iter().collect();
@@ -315,7 +332,7 @@ fn run(arguments: &[String]) -> Result<(), CliError> {
             start,
             end,
             retained @ ..,
-        ] if matches!(*selector, "--node" | "--repeat-default") => {
+        ] if matches!(*selector, "--node" | "--repeat-default" | "--repeat-gap") => {
             let revision = inspection_revision(retained)?;
             let start = start
                 .parse::<i64>()
@@ -332,12 +349,7 @@ fn run(arguments: &[String]) -> Result<(), CliError> {
                 .ok_or(audio::ProjectAudioError::Stage(
                     deadpan_audio::StageAudioError::Range,
                 ))?;
-            let id = deadpan_core::NodeId::new(*id)?;
-            let selector = if *selector == "--node" {
-                deadpan_plan::AudioDefinitionSelector::Node { node: id }
-            } else {
-                deadpan_plan::AudioDefinitionSelector::RepeatDefault { repeat: id }
-            };
+            let selector = audio_definition_selector(selector, id)?;
             let mut session = match revision {
                 Some(revision) => {
                     audio::ProjectAudioSession::open_revision(Path::new(path), &revision)?
@@ -364,7 +376,7 @@ fn run(arguments: &[String]) -> Result<(), CliError> {
             start,
             end,
             retained @ ..,
-        ] if matches!(*selector, "--node" | "--repeat-default") => {
+        ] if matches!(*selector, "--node" | "--repeat-default" | "--repeat-gap") => {
             let revision = inspection_revision(retained)?;
             let start = start
                 .parse::<i64>()
@@ -380,12 +392,7 @@ fn run(arguments: &[String]) -> Result<(), CliError> {
                     deadpan_audio::StageAudioError::Range,
                 ))?;
             let placement = read_audio_clock(Path::new(clock))?;
-            let id = deadpan_core::NodeId::new(*id)?;
-            let selector = if *selector == "--node" {
-                deadpan_plan::AudioDefinitionSelector::Node { node: id }
-            } else {
-                deadpan_plan::AudioDefinitionSelector::RepeatDefault { repeat: id }
-            };
+            let selector = audio_definition_selector(selector, id)?;
             let mut session = match revision {
                 Some(revision) => {
                     audio::ProjectAudioSession::open_revision(Path::new(path), &revision)?
@@ -609,6 +616,27 @@ fn run(arguments: &[String]) -> Result<(), CliError> {
                 &serde_json::json!({ "protocol": 1, "resolved": index.resolve(&envelope.request)? }),
             )
         }
+        ["locate-boundary", path, "--json", request] => {
+            let envelope: BoundaryEnvelope =
+                serde_json::from_str(&read_request(Path::new(request))?)?;
+            if envelope.protocol != 1 {
+                return Err(CliError::Protocol(envelope.protocol));
+            }
+            let limits =
+                envelope
+                    .limits
+                    .map_or_else(deadpan_core::BoundaryQueryLimits::default, |limits| {
+                        deadpan_core::BoundaryQueryLimits {
+                            max_scopes: limits.max_scopes,
+                            max_comparisons: limits.max_comparisons,
+                        }
+                    });
+            let document = ProjectStore::open(Path::new(path), AccessMode::ReadOnly)?.snapshot()?;
+            let index = deadpan_core::AnchorIndex::new(&document)?;
+            write_json(
+                &serde_json::json!({ "protocol": 1, "location": index.locate_boundary(&envelope.request, limits)? }),
+            )
+        }
         ["command", path, "--json", request] => command(Path::new(path), Path::new(request), false),
         ["command", path, "--json", request, "--dry-run"] => {
             command(Path::new(path), Path::new(request), true)
@@ -669,6 +697,22 @@ fn read_request(request: &Path) -> Result<String, CliError> {
         ));
     }
     Ok(json)
+}
+
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+fn audio_definition_selector(
+    flag: &str,
+    id: &str,
+) -> Result<deadpan_plan::AudioDefinitionSelector, CliError> {
+    let id = NodeId::new(id)?;
+    match flag {
+        "--node" => Ok(deadpan_plan::AudioDefinitionSelector::Node { node: id }),
+        "--repeat-default" => {
+            Ok(deadpan_plan::AudioDefinitionSelector::RepeatDefault { repeat: id })
+        }
+        "--repeat-gap" => Ok(deadpan_plan::AudioDefinitionSelector::RepeatGap { repeat: id }),
+        _ => Err(CliError::Usage("invalid audio definition selector".into())),
+    }
 }
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]

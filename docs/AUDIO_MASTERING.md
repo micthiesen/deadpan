@@ -1,7 +1,7 @@
 # Mastering qualification boundary
 
 Deadpan's shared `LimitedAudio` reader applies a bounded finite oversampled
-limiter to the current edge-faded bus. [Sequence audition](PLAYBACK.md) and
+limiter to the current edge-faded bus. [Original/edit audition](PLAYBACK.md) and
 headless `inspect-audio --limited` use that reader. This is an implemented
 limited audition path, with voice effects, sends, the full group mix, listening
 qualification and encoded output still required before it becomes a final master.

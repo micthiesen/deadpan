@@ -165,6 +165,8 @@ pub struct FrozenAudioLayout {
     nodes: BTreeMap<NodeId, FrozenAudioNode>,
     overrides: BTreeMap<NodeId, PlayOverrides>,
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    gap_overrides: BTreeMap<NodeId, PlayOverrides>,
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     audio_lineage: BTreeMap<NodeId, AudioLineageId>,
     #[serde(skip)]
     index: FrozenIndex,
@@ -176,6 +178,7 @@ impl PartialEq for FrozenAudioLayout {
             && self.rate == other.rate
             && self.nodes == other.nodes
             && self.overrides == other.overrides
+            && self.gap_overrides == other.gap_overrides
             && self.audio_lineage == other.audio_lineage
     }
 }
@@ -191,6 +194,8 @@ struct LayoutWire {
     #[serde(deserialize_with = "unique_map")]
     overrides: BTreeMap<NodeId, PlayOverrides>,
     #[serde(default, deserialize_with = "unique_map")]
+    gap_overrides: BTreeMap<NodeId, PlayOverrides>,
+    #[serde(default, deserialize_with = "unique_map")]
     audio_lineage: BTreeMap<NodeId, AudioLineageId>,
 }
 
@@ -204,6 +209,13 @@ pub struct FrozenAudioProjection {
     pub gap_after: Option<IterationId>,
     /// Charged nodes and compact identity segments, not rendered play count.
     pub work: usize,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum ProjectionMode {
+    Affine,
+    MeaningfulSupport,
+    VisibleAllocation,
 }
 
 impl FrozenAudioLayout {
@@ -238,13 +250,11 @@ impl FrozenAudioLayout {
                         .audio
                         .as_ref()
                         .map(|_| {
-                            let start = source
-                                .audio_mapping
-                                .start_frames_with_offset(source.audio_offset, rate)?;
-                            let end = start.checked_add(
-                                source.audio_mapping.duration_frames(source.duration)?,
-                            )?;
-                            ExactFrameRange::new(start, end)
+                            source.audio_mapping.selection_frames_with_offset(
+                                source.duration,
+                                source.audio_offset,
+                                rate,
+                            )
                         })
                         .transpose()?;
                     FrozenAudioKind::Source { placement }
@@ -294,6 +304,7 @@ impl FrozenAudioLayout {
             rate,
             nodes,
             overrides: document.overrides().clone(),
+            gap_overrides: document.gap_overrides().clone(),
             audio_lineage: document.audio_lineage().clone(),
         })
     }
@@ -304,6 +315,7 @@ impl FrozenAudioLayout {
             rate: wire.rate,
             nodes: wire.nodes,
             overrides: wire.overrides,
+            gap_overrides: wire.gap_overrides,
             audio_lineage: wire.audio_lineage,
             index: FrozenIndex::default(),
         };
@@ -358,6 +370,9 @@ impl FrozenAudioLayout {
     pub fn overrides(&self) -> &BTreeMap<NodeId, PlayOverrides> {
         &self.overrides
     }
+    pub fn gap_overrides(&self) -> &BTreeMap<NodeId, PlayOverrides> {
+        &self.gap_overrides
+    }
     /// Authored copy provenance keyed by owned frozen aliases. Token origins
     /// are historical names, never live references or admission to media/PCM.
     pub fn audio_lineage(&self) -> &BTreeMap<NodeId, AudioLineageId> {
@@ -368,17 +383,28 @@ impl FrozenAudioLayout {
     }
 
     fn children<'a>(&'a self, id: &NodeId) -> impl DoubleEndedIterator<Item = &'a NodeId> {
-        self.nodes[id].kind.children().iter().chain(
-            self.overrides
-                .get(id)
-                .into_iter()
-                .flat_map(|entries| entries.iter().map(|(_, child)| child)),
-        )
+        self.nodes[id]
+            .kind
+            .children()
+            .iter()
+            .chain(
+                self.overrides
+                    .get(id)
+                    .into_iter()
+                    .flat_map(|entries| entries.iter().map(|(_, child)| child)),
+            )
+            .chain(
+                self.gap_overrides
+                    .get(id)
+                    .into_iter()
+                    .flat_map(|entries| entries.iter().map(|(_, child)| child)),
+            )
     }
 
     fn build_index(&self) -> Result<FrozenIndex, DocumentError> {
         if self.nodes.len() > MAX_DOCUMENT_NODES
             || self.overrides.len() > MAX_DOCUMENT_NODES
+            || self.gap_overrides.len() > MAX_DOCUMENT_NODES
             || self.audio_lineage.len() > MAX_DOCUMENT_NODES
         {
             return Err(limit("frozen audio layout exceeds node limit"));
@@ -396,7 +422,7 @@ impl FrozenAudioLayout {
         ) {
             return Err(invalid("frozen audio root must be a Sequence"));
         }
-        for (owner, entries) in &self.overrides {
+        for (owner, entries) in self.overrides.iter().chain(&self.gap_overrides) {
             if entries.is_empty()
                 || !matches!(
                     self.nodes.get(owner).map(|node| &node.kind),
@@ -461,11 +487,12 @@ impl FrozenAudioLayout {
                     gap_duration,
                     ..
                 } => {
-                    let repeat = RepeatLayout::compile(
+                    let repeat = RepeatLayout::compile_with_gap_overrides(
                         iterations,
                         child,
                         self.overrides.get(id),
                         *gap_duration,
+                        self.gap_overrides.get(id),
                         &durations,
                     )?;
                     let duration = repeat.duration();
@@ -528,8 +555,15 @@ impl FrozenAudioLayout {
         gap_after: Option<&IterationId>,
         maximum_work: usize,
     ) -> Result<FrozenAudioProjection, DocumentError> {
-        self.project_scoped_inner(root, instance, local, gap_after, maximum_work, false)
-            .map(|(projection, _)| projection)
+        self.project_scoped_inner(
+            root,
+            instance,
+            local,
+            gap_after,
+            maximum_work,
+            ProjectionMode::Affine,
+        )
+        .map(|(projection, _)| projection)
     }
 
     pub(crate) fn project_scoped_supported(
@@ -538,7 +572,58 @@ impl FrozenAudioLayout {
         instance: &InstancePath,
         maximum_work: usize,
     ) -> Result<(FrozenAudioProjection, std::ops::Range<ExactRatio>), DocumentError> {
-        self.project_scoped_inner(root, instance, ExactRatio::ZERO, None, maximum_work, true)
+        self.project_scoped_with_support(root, instance, None, maximum_work)
+    }
+
+    /// Project local zero and meaningful local support within one physical
+    /// audio clock. An ancestor nonunity Preserve is a clock boundary: use its
+    /// input child as the scope, or project the Preserve output itself.
+    /// Ordinary Edit crops constrain support; transparent Partitions retain it.
+    /// A gap names its owning Repeat and the stable play immediately before it,
+    /// with only outer Repeat occurrences in `instance.repeats`. Its intrinsic
+    /// support is the actual gap duration, never the whole Repeat duration.
+    pub fn project_scoped_with_support(
+        &self,
+        root: &NodeId,
+        instance: &InstancePath,
+        gap_after: Option<&IterationId>,
+        maximum_work: usize,
+    ) -> Result<(FrozenAudioProjection, std::ops::Range<ExactRatio>), DocumentError> {
+        self.project_scoped_inner(
+            root,
+            instance,
+            ExactRatio::ZERO,
+            gap_after,
+            maximum_work,
+            ProjectionMode::MeaningfulSupport,
+        )
+    }
+
+    /// Project local zero and the physical local allocation visible within one
+    /// lexical scope. Every ancestor Retime selection constrains the allocation,
+    /// including transparent Partitions. An empty or disjoint allocation is None.
+    /// The affine origin is retained even when it lies outside the visible scope.
+    /// As with meaningful support, crossing a nonunity Preserve is rejected.
+    /// Gap occurrences retain their stable preceding play and actual gap duration.
+    pub fn project_scoped_with_allocation(
+        &self,
+        root: &NodeId,
+        instance: &InstancePath,
+        gap_after: Option<&IterationId>,
+        maximum_work: usize,
+    ) -> Result<(FrozenAudioProjection, Option<std::ops::Range<ExactRatio>>), DocumentError> {
+        let (projection, allocation) = self.project_scoped_inner(
+            root,
+            instance,
+            ExactRatio::ZERO,
+            gap_after,
+            maximum_work,
+            ProjectionMode::VisibleAllocation,
+        )?;
+        Ok((
+            projection,
+            (allocation.start != allocation.end).then_some(allocation),
+        ))
     }
 
     fn project_scoped_inner(
@@ -548,7 +633,7 @@ impl FrozenAudioLayout {
         local: ExactRatio,
         gap_after: Option<&IterationId>,
         maximum_work: usize,
-        capture_support: bool,
+        mode: ProjectionMode,
     ) -> Result<(FrozenAudioProjection, std::ops::Range<ExactRatio>), DocumentError> {
         if maximum_work == 0 || maximum_work > MAX_DOCUMENT_NODES {
             return Err(limit("invalid frozen projection budget"));
@@ -565,7 +650,6 @@ impl FrozenAudioLayout {
         let mut origin = ExactRatio::ZERO;
         let mut scale = ExactRatio::ONE;
         let mut local_duration = target.duration;
-        let mut support = ExactRatio::ZERO..ExactRatio::integer(local_duration.frames());
         if let Some(gap) = gap_after {
             let layout = self
                 .index
@@ -576,13 +660,14 @@ impl FrozenAudioLayout {
             let play = layout
                 .play(gap)
                 .ok_or_else(|| invalid("frozen gap play is missing"))?;
-            if play.gap_after == FrameDuration::ZERO {
+            if play.gap_after == FrameDuration::ZERO || play.gap_child.is_some() {
                 return Err(invalid("frozen play has no following gap"));
             }
             origin = ExactRatio::integer(play.start)
                 .checked_add(ExactRatio::integer(play.duration.frames()))?;
             local_duration = play.gap_after;
         }
+        let mut support = ExactRatio::ZERO..ExactRatio::integer(local_duration.frames());
         let mut node = &instance.node;
         let mut step = instance.repeats.len();
         loop {
@@ -600,9 +685,21 @@ impl FrozenAudioLayout {
                     origin = origin.checked_add(ExactRatio::integer(*offset))?
                 }
                 FrozenAudioKind::Retime {
-                    mapping, purpose, ..
+                    mapping,
+                    pitch,
+                    purpose,
+                    ..
                 } => {
-                    if capture_support && *purpose != crate::RetimePurpose::Partition {
+                    if mode != ProjectionMode::Affine
+                        && *pitch == PitchPolicy::Preserve
+                        && mapping.duration() != self.nodes[parent].duration
+                    {
+                        return Err(invalid("frozen support scope crosses an opaque Preserve"));
+                    }
+                    if mode == ProjectionMode::VisibleAllocation
+                        || (mode == ProjectionMode::MeaningfulSupport
+                            && *purpose != RetimePurpose::Partition)
+                    {
                         let selected = ExactRatio::integer(mapping.start().0)
                             .checked_sub(origin)?
                             .checked_div(scale)?
@@ -633,12 +730,25 @@ impl FrozenAudioLayout {
                     let play = layout
                         .play(&selected.iteration)
                         .ok_or_else(|| invalid("frozen occurrence play is missing"))?;
-                    if &play.child != node {
+                    let offset = if &play.child == node {
+                        play.start
+                    } else if play.gap_child.as_ref() == Some(node) {
+                        // A retained dormant branch still has an affine clock
+                        // and meaningful recipe; it contributes no allocation.
+                        if mode == ProjectionMode::VisibleAllocation
+                            && play.gap_after == FrameDuration::ZERO
+                        {
+                            support.end = support.start;
+                        }
+                        play.start
+                            .checked_add(play.duration.frames())
+                            .ok_or(TimeError::Overflow)?
+                    } else {
                         return Err(invalid(
                             "frozen occurrence selects the wrong override child",
                         ));
-                    }
-                    origin = origin.checked_add(ExactRatio::integer(play.start))?;
+                    };
+                    origin = origin.checked_add(ExactRatio::integer(offset))?;
                 }
                 _ => return Err(invalid("frozen projection has a leaf parent")),
             }

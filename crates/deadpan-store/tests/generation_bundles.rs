@@ -74,6 +74,7 @@ fn document() -> Result<ProjectDocument> {
                         BeatNode::hold(
                             "Pause",
                             HoldRecipe {
+                                picture_context: None,
                                 duration: FrameDuration::new(12)?,
                                 video: HoldVideo::Background,
                                 audio: HoldAudio::Silence,
@@ -81,6 +82,7 @@ fn document() -> Result<ProjectDocument> {
                         ),
                     )]),
                     overrides: BTreeMap::new(),
+                    gap_overrides: BTreeMap::new(),
                 },
             },
         },
@@ -1457,6 +1459,7 @@ fn bridge_allocation_and_acceptance_require_one_concrete_occurrence() -> Result 
                     BeatNode::hold(
                         "One occurrence",
                         HoldRecipe {
+                            picture_context: None,
                             duration: FrameDuration::new(12)?,
                             video: HoldVideo::Background,
                             audio: HoldAudio::Silence,
@@ -1464,6 +1467,7 @@ fn bridge_allocation_and_acceptance_require_one_concrete_occurrence() -> Result 
                     ),
                 )]),
                 overrides: BTreeMap::new(),
+                gap_overrides: BTreeMap::new(),
             },
         },
     )?;
@@ -1498,6 +1502,7 @@ fn bridge_allocation_and_acceptance_require_one_concrete_occurrence() -> Result 
                     BeatNode::hold(
                         "Other occurrence",
                         HoldRecipe {
+                            picture_context: None,
                             duration: FrameDuration::new(12)?,
                             video: HoldVideo::Background,
                             audio: HoldAudio::Silence,
@@ -1505,6 +1510,7 @@ fn bridge_allocation_and_acceptance_require_one_concrete_occurrence() -> Result 
                     ),
                 )]),
                 overrides: BTreeMap::new(),
+                gap_overrides: BTreeMap::new(),
             },
         },
     )?;

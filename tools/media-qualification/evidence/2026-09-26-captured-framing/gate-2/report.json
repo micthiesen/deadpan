@@ -1,0 +1,51 @@
+{
+  "commands": [
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 2.3998416671529412,
+      "log": "0.log"
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 152.07853199960664,
+      "log": "1.log"
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked"
+      ],
+      "exit_code": 101,
+      "seconds": 538.5292730829678,
+      "log": "2.log"
+    }
+  ],
+  "source_count": 423,
+  "source_unchanged": true,
+  "changed_sources": [],
+  "tests": {
+    "passed": 743,
+    "failed": 1,
+    "ignored": 0
+  },
+  "passed": false
+}

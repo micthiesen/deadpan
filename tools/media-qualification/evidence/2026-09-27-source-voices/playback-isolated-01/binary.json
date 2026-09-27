@@ -1,0 +1,7 @@
+{
+  "path": "/Users/michael/Code/deadpan/target/debug/deps/deadpan_playback-e4a6c13c0209ba22",
+  "sha256_before": "caf707b1b962f1791c91452da3686d55212b38945a8095decd537dca64f88fb6",
+  "sha256_after": "caf707b1b962f1791c91452da3686d55212b38945a8095decd537dca64f88fb6",
+  "unchanged": true,
+  "scope": "Only the three workspace timeout cases. Isolated passes do not erase parallel failures or establish their cause."
+}

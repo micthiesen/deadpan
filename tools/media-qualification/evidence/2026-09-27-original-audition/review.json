@@ -1,0 +1,55 @@
+{
+  "git_review_base": "origin/main",
+  "increment_base": "preserved before/ matching preceding verified moment-paste checkpoint",
+  "source_sha256": {
+    "crates/deadpan-app/src/navigation/command.rs": "f474e9090c56cc91beb1ed96389fcff6c05d6d6c29ff9917b53484ba6c78dee7",
+    "crates/deadpan-app/src/navigation/duration.rs": "2a866099a7dd35ebe7466c0dadbea987781c33da6e8755a22911b833c68be197",
+    "crates/deadpan-app/src/navigation.rs": "870aa469723475a23b3fe61df8f5bd7f71e7ce6e5c3f8f80c69f55313a19dbfc",
+    "crates/deadpan-app/src/preview/harness/original_playback.rs": "a3cdc54e5f5d08d212220387cc29b81d9ffec612cb7d0ab3fb557939cd349b2c",
+    "crates/deadpan-app/src/preview/harness/scenarios.rs": "fa946ecf0ccf3807440cd0afce1f5b20739148f6f1e71f1bb2813fcadfebfabe",
+    "crates/deadpan-app/src/preview/harness.rs": "6e7828dc62e0e196090ac8da194b7c0e1a9ee5f80889534b341f3cae5a7635e6",
+    "crates/deadpan-app/src/preview/playback.rs": "2f8585e6622c5dcf1728fab326563073434b7d3993d6d3cdc509c2aa18f5ae2d",
+    "crates/deadpan-app/src/preview.rs": "1997dd44ec8caf6dccb3f11b1068a3578ec73ce0b74a80934c0862a0f9724cf0",
+    "crates/deadpan-app/src/project/service.rs": "ab3b3f64983eee9e9fad7cfc8a5526d3c008dec3505c59f2839fc42287744861",
+    "crates/deadpan-app/src/project/tests.rs": "de1698d444cbf3e70fb2bcc46fb2926e2d4980c3dac68465a4af577ddc3ab25e",
+    "crates/deadpan-app/src/project.rs": "4bdbe1f41f518bb5e5bf19e7a3bdc610ed5fde516d51418d6dd00672f9bfb9fc",
+    "crates/deadpan-app/src/transport/tests/original.rs": "55422589c27eed5bd871e4061b9d2ca6ba49352fbee7bc8be882d52b586a47ba",
+    "crates/deadpan-app/src/transport/tests.rs": "f6636df1d70be7497c077e7d5fa03f776cd947c58c301178faf59d9ecbbfebf1",
+    "crates/deadpan-app/src/transport.rs": "bf2319d5e26d89ae7ad81d37b72df5d0113c96e5e7b0971b26dafee206ed90be",
+    "crates/deadpan-app/src/ui_harness.rs": "ecf10ed629b6d5fe2f468c6f0bfd595e0d7dc8eaaaa2195bda8850e6f14433a3",
+    "crates/deadpan-app/src/worker/project_tests.rs": "702dabaf50dfbc21ff1f8bedcd81f6b62138871876c1fd0ecafa55fc5b2fb15f",
+    "crates/deadpan-core/src/document.rs": "c891362d7352fed82e41898350102d468ae6bb7fdd35bf86ec8523cd1f0ebb37",
+    "crates/deadpan-core/tests/source_view.rs": "f82e8c53446a8a8800242c2267f20f1c6514592a54a5d1f25a691b287710bb86",
+    "crates/deadpan-playback/src/controller.rs": "6ed8034316839151519bafa3ae3b8797bbfd6b9f362c856ed166d14ae7430fe5",
+    "crates/deadpan-playback/src/lib.rs": "a0cd39fc6561114185e58f4aaa9b283b91db16c551fd5cb8be54073a737ab40c",
+    "crates/deadpan-playback/src/preparation.rs": "b8315ecb620ec50c6a1d7d979cac510745ea3367c69caa2caf2817e4eb21b65d",
+    "crates/deadpan-playback/src/target.rs": "a88edbdd36dd19c179e75f7bf276eca5e61684b8e059a29b7b22838cae46ebcd",
+    "crates/deadpan-playback/src/tests/original.rs": "a1125f121388b9dc2de6efb8f1115c1e1b25f22968a4c4a5c8527d8bd42f214a",
+    "crates/deadpan-playback/src/tests.rs": "e3ee2007e5916c33c243f3523c1e940d14614ddb58f98339b3ba5e0aae124b56"
+  },
+  "reviews": [
+    {
+      "agent": "audition_general_review",
+      "lens": "General correctness and interface integration",
+      "finding": "Zero-context selection at first/last picture used full A/V union endpoints and included lead/tail audio.",
+      "action": "Added separate measured selection-boundary mapping, Domain selection-window construction, and real offset/VFR regression. Ordinary Original cursor endpoints retain complete A/V union.",
+      "followup": "Reviewer confirmed resolved; paused-loop label also explicitly says Resume loop."
+    },
+    {
+      "agent": "audition_clock_review",
+      "lens": "Exact clocks, monotonic loops, canonical PCM, source admission/cache and bounded failure",
+      "findings": []
+    },
+    {
+      "agent": "audition_interaction_review",
+      "lens": "Keyboard/focus semantics and harness quality",
+      "findings": []
+    }
+  ],
+  "limits": [
+    "Read-only static review, no native GUI or listening qualification.",
+    "Harness Original replay injects device updates; independent playback tests exercise real canonical PCM through a fake device queue."
+  ],
+  "discarded_findings": [],
+  "known_material_findings_remaining": []
+}

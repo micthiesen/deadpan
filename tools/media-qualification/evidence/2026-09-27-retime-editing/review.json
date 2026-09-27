@@ -1,0 +1,70 @@
+{
+  "git_review_base": "origin/main",
+  "increment_base": "preserved before/ matching preceding verified original-audition checkpoint",
+  "source_sha256": {
+    "crates/deadpan-app/src/navigation.rs": "29150f1ed3ac7e1a2262c0537ec55335274a8d9b4012bd6fd7190a847ada323b",
+    "crates/deadpan-app/src/navigation/command.rs": "fb9902f76e95e0693f3aa30d0c3f1d88cb4710377c5ebc57b3ee1a7ce3638dc4",
+    "crates/deadpan-app/src/navigation/duration.rs": "7560014d009c4791dbecd446175d05c14f632806cb710d3fb99dab6850aaa61e",
+    "crates/deadpan-app/src/navigation/retime.rs": "a592c783eba95a66d979a187764803d1cb0105735352ef53fb91b881801b0919",
+    "crates/deadpan-app/src/preview.rs": "639e679c74f9a93c522aecc7e0c7efbe0feb6fd11c30228db8ef18a016d49747",
+    "crates/deadpan-app/src/preview/harness.rs": "497568311e9cd3b65155dd820e3e1d461a3f7c6089e1c1e8dfcefe9c2bb97040",
+    "crates/deadpan-app/src/preview/harness/retime.rs": "07523ad19b43fed46167f9812b492d341e84a1104ace25d6220c1414a1168fde",
+    "crates/deadpan-app/src/preview/harness/scenarios.rs": "1a93593c1e5b04645f4c4432e5dd048f1538e22bc1c0c3c418dd0b01ba840e29",
+    "crates/deadpan-app/src/preview/inspector.rs": "ec52969a1cfe662500a6799cfc4ccdb3c1ac93a5f8c6e13f80e651006e5f4a67",
+    "crates/deadpan-app/src/project.rs": "d024fb046df0535b616eac606d96d090ffc90784e216841f00a5301de2799b72",
+    "crates/deadpan-app/src/project/retime.rs": "e0eb417f8f3897dd3790dd7db9065474ddd39ac98c61e3a9d4ad3dbe3c10ffc2",
+    "crates/deadpan-app/src/project/service.rs": "957a9988409511ebf2cf9fc4b2228d781494891a3d079f1387df694f30f60150",
+    "crates/deadpan-app/src/project/tests.rs": "d42545f82f9598960021ca2e79b16abd670876911cde9462cfce07d288e52a2d",
+    "crates/deadpan-app/src/project/tests/retime.rs": "ec7d22b55f80893e5e57f229be0bc402ee98f1115f5d8ea32845c665e112d0ba",
+    "crates/deadpan-app/src/ui_harness.rs": "655894a19d8e545a1a69d6b66172fdce68062d20a5f5ff23e2721e898de3bda3",
+    "crates/deadpan-audio/tests/stages.rs": "4be1e802a27e901f019006ed1a0f6aa56ea2c20904b2ce74ee2f991d0eeb7dfb",
+    "crates/deadpan-audio/tests/stages/retime_edits.rs": "aa3ff66c7dc6124f7be0066ab8efda81819b9b6316b81e3ae3173d76b7da0b72",
+    "crates/deadpan-cli/src/doctor.rs": "5522edf14d4d27595eaef56a79b25a584650f773cf270d2640211ee89b4904fa",
+    "crates/deadpan-cli/tests/project_commands.rs": "8d3fe8122cd6f291a934975d83d357bbbf1bfc6205b88f99f5d14a8a18fcb45a",
+    "crates/deadpan-core/src/command.rs": "7f16f5b59fb41f5ad853e7d46d1d93c02a9e99d05131b80f87960b52c18a885c",
+    "crates/deadpan-core/src/document.rs": "c52e5ab8dffc620f7ee377f9f0bed768b2dc4f6468d20cf0d8cf14f49ac3c1f4",
+    "crates/deadpan-core/src/legacy_v27.rs": "679b6d6dc97206f9390580acb81f963368b4c2c917485093a0b3cb8b4f7df2cc",
+    "crates/deadpan-core/src/lib.rs": "07c4483386850b6e73155ac321f834f0fff3b9fff154d80688a6fc05b494c26c",
+    "crates/deadpan-core/src/occurrence_edit.rs": "b705cb73696a5288bfdc23109b54d6ab9b8ee07f261cdf39eb99876fbd60fec7",
+    "crates/deadpan-core/tests/retime_edits.rs": "b05b1b41a59fed9c3401cb071fae506fee04db3b7c40f7d17fb0690a03bfb702",
+    "crates/deadpan-store/src/migration.rs": "ddfb16933200fc69fca3f7c84079aa9646679916482f03d48d1668e60106896e",
+    "crates/deadpan-store/src/schema.rs": "19ff4781910a38cfe56d28f8ca111d1621619d53d16300e49280f173b0511d8b",
+    "crates/deadpan-store/src/validation.rs": "2e459e5d4f4bfd504847b37806f11528e68f2be7e1244603658efc99b843d577",
+    "crates/deadpan-store/tests/migration.rs": "a12f4e7c2313a488c7d61040e5be8a297a36b9c326500b0a8137f74593804605",
+    "crates/deadpan-store/tests/migration/retime.rs": "10e74f8ce9995fd185b945ade76048b91a1bbf442ba93e3b5346f5255a38f9d4",
+    "crates/deadpan-store/tests/occurrence_edits.rs": "452d751ce7d45c139e5bd7c5519508aff01366774a550d4a87d8476ad3c16d53"
+  },
+  "reviews": [
+    {
+      "agent": "retime_general_review",
+      "lens": "Core/app command correctness, interface integration, marks and bindings",
+      "findings": []
+    },
+    {
+      "agent": "retime_timing_review",
+      "lens": "Exact timing, pitch policy, retained audio bindings and processing history",
+      "finding": "The split-Partition PCM test compared chunk sizes from the same plan, which did not independently establish retained processing history.",
+      "action": "Added direct canonical DSP/resampling expectations over the complete inner history, proved a restarted history differs for both pitch policies, and read the suffix first through a fresh StageAudio cache.",
+      "followup": "Reviewer confirmed the independent oracle detects lost child processing history for both pitch policies."
+    },
+    {
+      "agent": "retime_history_review",
+      "lens": "Strict legacy grammar, schema-33 replay, genuine old-CLI fixture provenance and durable history",
+      "findings": [],
+      "followup": "Reviewed the two late CLI doctor/test changes. Schemas 28/34 and partial capability labels match the implementation; full device/acoustic qualification remains open. No findings."
+    }
+  ],
+  "limits": [
+    "Independent reviewers inspected code and fixture evidence without running Cargo. Parent owns verification.",
+    "No native visual, acoustic or accessibility qualification is established by static review."
+  ],
+  "verification_findings": [
+    {
+      "finding": "The broad workspace run caught the previous schema numbers in the CLI doctor integration test and an outdated migration label in doctor output.",
+      "action": "Updated schemas to core 28/database 34, migration-through-33 label, and partial native speed/Original/loop audition capability labels. Historical old-CLI fixture output remains unchanged.",
+      "verification": "All 17 CLI project command tests rerun in final-checks; see retained report for actual results."
+    }
+  ],
+  "discarded_findings": [],
+  "known_material_findings_remaining": []
+}

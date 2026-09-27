@@ -1,0 +1,29 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 11.10s
+     Running tests/legacy_audio_selection.rs (target/debug/deps/legacy_audio_selection-1cdc0288b7e439e9)
+
+running 21 tests
+test schema19_retains_captured_hold_context_setters_in_both_command_scopes ... ok
+test strict_v2 ... ok
+test strict_v1 ... ok
+test strict_v3 ... ok
+test strict_v15 ... ok
+test strict_v5 ... ok
+test strict_v16 ... ok
+test strict_v11 ... ok
+test strict_v10 ... ok
+test strict_v4 ... ok
+test strict_v6 ... ok
+test strict_v17 ... ok
+test strict_v19 ... ok
+test strict_v14 ... ok
+test strict_v13 ... ok
+test strict_v18 ... ok
+test strict_v12 ... ok
+test strict_v7 ... ok
+test strict_v8 ... ok
+test strict_v9 ... ok
+test schema19_snapshot_preflight_bounds_captured_context_before_full_deserialization ... ok
+
+test result: ok. 21 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.45s
+

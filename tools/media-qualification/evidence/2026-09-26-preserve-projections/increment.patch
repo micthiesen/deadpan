@@ -1,0 +1,2807 @@
+--- before/crates/deadpan-audio/src/signal_input.rs
++++ crates/deadpan-audio/src/signal_input.rs
+@@ -8,9 +8,11 @@
+     SignalSample,
+ };
+ 
++#[derive(Clone, Copy)]
+ pub(super) enum SignalInput<'signal, 'plan> {
+     Signal(&'signal AudioSignal<'plan>),
+     Tape(&'signal AudioSignalTape<'plan>),
++    PreserveTape(&'signal AudioSignalTape<'plan>),
+ }
+ 
+ impl<'signal, 'plan> From<&'signal AudioSignal<'plan>> for SignalInput<'signal, 'plan> {
+@@ -33,7 +35,7 @@
+     ) -> Result<AudioSignalQuery<'plan>, PlanError> {
+         match self {
+             Self::Signal(signal) => signal.query(samples, limits),
+-            Self::Tape(tape) => tape.query(samples, limits),
++            Self::Tape(tape) | Self::PreserveTape(tape) => tape.query(samples, limits),
+         }
+     }
+ 
+@@ -45,6 +47,7 @@
+         match self {
+             Self::Signal(signal) => signal.policy(samples, limits),
+             Self::Tape(tape) => tape.policy(samples, limits),
++            Self::PreserveTape(tape) => tape.policy_after_preserve(samples, limits),
+         }
+     }
+ }
+--- before/crates/deadpan-audio/src/stage_projection.rs
++++ crates/deadpan-audio/src/stage_projection.rs
+@@ -0,0 +1,234 @@
++//! Request-local intrinsic preparations. Authored descriptors alone cannot key
++//! these results: independent projections can select different live inputs.
++
++use super::*;
++
++impl StageAudio {
++    pub(super) fn prepare_projected(
++        &mut self,
++        projection: &AudioStageProjection<'_>,
++        provider: &mut impl AudioSourceProvider,
++        control: WorkControl<'_>,
++        depth: usize,
++    ) -> Result<Arc<SignalBlock>, StageAudioError> {
++        control.check()?;
++        let identity = projection.identity();
++        let cached = control
++            .work
++            .borrow()
++            .projected
++            .iter()
++            .find(|(key, _)| *key == identity)
++            .map(|(_, block)| Arc::clone(block));
++        if let Some(block) = cached {
++            self.check_projected_depth(depth, block.relative_depth)?;
++            for (asset, fingerprint) in &block.dependencies {
++                control.check()?;
++                let source = resolve_source(provider, &self.plan, asset, control.cancelled)?;
++                if control.observe(asset, source)? != *fingerprint {
++                    return Err(
++                        PlanError::InvalidPlan("projected source changed within read").into(),
++                    );
++                }
++            }
++            return Ok(block);
++        }
++        self.preflight_projected(projection, control, depth)?;
++        if control.work.borrow().projected_active.contains(&identity) {
++            return Err(PlanError::InvalidPlan("recursive projected stage").into());
++        }
++        let input = projection.input_tape();
++        let output = projection.output_policy();
++        let input_frames = u32::try_from(input.sample_count()?.0)
++            .map_err(|_| StageAudioError::Limit("input frames"))?;
++        let output_frames = u32::try_from(output.sample_count()?.0)
++            .map_err(|_| StageAudioError::Limit("output frames"))?;
++        let rate = projection.stage().descriptor().rate;
++        let recipe = CanonicalRecipe::with_rate(
++            input_frames,
++            output_frames,
++            StretchRate::new(
++                u64::try_from(rate.numerator()).map_err(|_| TimeError::Overflow)?,
++                u64::try_from(rate.denominator()).map_err(|_| TimeError::Overflow)?,
++            )?,
++            0,
++        )?;
++        let reservation = self.reserve(input_frames, output_frames, control)?;
++        control
++            .work
++            .borrow_mut()
++            .projected_active
++            .push(identity.clone());
++        let result = self.build_stage(
++            input.into(),
++            SignalInput::PreserveTape(output),
++            recipe,
++            provider,
++            control,
++            depth,
++        );
++        control.work.borrow_mut().projected_active.pop();
++        self.active_frames -= reservation;
++        let block = result?;
++        let frames = block.samples.len() as u64;
++        self.make_room(frames, false, control)?;
++        let block = Arc::new(block);
++        let mut work = control.work.borrow_mut();
++        work.projected_resident_frames += frames;
++        work.projected.push((identity, Arc::clone(&block)));
++        Ok(block)
++    }
++
++    fn check_projected_depth(&self, depth: usize, relative: usize) -> Result<(), StageAudioError> {
++        if depth
++            .checked_add(relative)
++            .is_none_or(|maximum| maximum > self.limits.maximum_depth)
++        {
++            return Err(StageAudioError::Limit("nested stage depth"));
++        }
++        Ok(())
++    }
++
++    /// Input and output policy are independent. Inspect the complete input,
++    /// including projected descendants, before the first physical source read.
++    pub(super) fn preflight_projected(
++        &self,
++        projection: &AudioStageProjection<'_>,
++        control: WorkControl<'_>,
++        depth: usize,
++    ) -> Result<usize, StageAudioError> {
++        control.check()?;
++        self.check_projected_depth(depth, 0)?;
++        let identity = projection.identity();
++        if let Some((_, relative)) = control
++            .work
++            .borrow()
++            .projected_preflight
++            .iter()
++            .find(|(key, _)| *key == identity)
++        {
++            self.check_projected_depth(depth, *relative)?;
++            return Ok(*relative);
++        }
++        let input = projection.input_tape();
++        let input_end = input.sample_count()?;
++        let output_end = projection.output_policy().sample_count()?;
++        let relative_depth = self.preflight_intrinsic(
++            input.into(),
++            input_end,
++            SignalInput::PreserveTape(projection.output_policy()),
++            output_end,
++            control,
++            depth,
++        )?;
++        let mut work = control.work.borrow_mut();
++        if work.projected_preflight.len() + work.intrinsic_preflight.len()
++            >= self.limits.maximum_prepared_stages as usize
++        {
++            return Err(StageAudioError::Limit("preflight stages per read"));
++        }
++        work.projected_preflight.push((identity, relative_depth));
++        Ok(relative_depth)
++    }
++
++    fn preflight_current_stage(
++        &self,
++        stage: &AudioStage<'_>,
++        control: WorkControl<'_>,
++        depth: usize,
++    ) -> Result<usize, StageAudioError> {
++        control.check()?;
++        self.check_projected_depth(depth, 0)?;
++        if let Some((_, relative)) = control
++            .work
++            .borrow()
++            .intrinsic_preflight
++            .iter()
++            .find(|(key, _)| key == stage.descriptor())
++        {
++            self.check_projected_depth(depth, *relative)?;
++            return Ok(*relative);
++        }
++        let input = stage.input_signal();
++        let output = stage.output_signal();
++        let relative = self.preflight_intrinsic(
++            (&input).into(),
++            input.sample_count()?,
++            (&output).into(),
++            output.sample_count()?,
++            control,
++            depth,
++        )?;
++        let mut work = control.work.borrow_mut();
++        if work.projected_preflight.len() + work.intrinsic_preflight.len()
++            >= self.limits.maximum_prepared_stages as usize
++        {
++            return Err(StageAudioError::Limit("preflight stages per read"));
++        }
++        work.intrinsic_preflight
++            .push((stage.descriptor().clone(), relative));
++        Ok(relative)
++    }
++
++    fn preflight_intrinsic(
++        &self,
++        input: SignalInput<'_, '_>,
++        input_end: SignalSample,
++        output: SignalInput<'_, '_>,
++        output_end: SignalSample,
++        control: WorkControl<'_>,
++        depth: usize,
++    ) -> Result<usize, StageAudioError> {
++        if input_end.0 <= 0 || input_end.0 > i64::from(self.limits.maximum_input_frames) {
++            return Err(StageAudioError::Limit("input frames"));
++        }
++        if output_end.0 <= 0 || output_end.0 > i64::from(self.limits.maximum_output_frames) {
++            return Err(StageAudioError::Limit("output frames"));
++        }
++        let mut cursor = SignalSample(0);
++        let mut relative_depth = 0;
++        while cursor < input_end {
++            let end = SignalSample((cursor.0 + i64::from(MAX_OUTPUT_FRAMES)).min(input_end.0));
++            let policy = input.policy(cursor..end, control.query_limits()?)?;
++            control.spend_plan_work(policy.work)?;
++            for content in &policy.contents {
++                preflight(content, &self.plan)?;
++            }
++            let query = input.query(cursor..end, control.query_limits()?)?;
++            control.spend_plan_work(query.work)?;
++            for span in query.spans {
++                match span.content {
++                    AudioSignalContent::Leaf(content) => preflight(&content, &self.plan)?,
++                    AudioSignalContent::ProjectedStage(child) => {
++                        relative_depth = relative_depth
++                            .max(1 + self.preflight_projected(&child, control, depth + 1)?);
++                    }
++                    AudioSignalContent::Stage(child) => {
++                        relative_depth = relative_depth
++                            .max(1 + self.preflight_current_stage(&child, control, depth + 1)?);
++                    }
++                    AudioSignalContent::Bound(bound) => {
++                        self.check_projected_depth(depth, 1)?;
++                        relative_depth = relative_depth.max(1);
++                        if let Some(child) = bound.intrinsic_stage()? {
++                            relative_depth = relative_depth
++                                .max(2 + self.preflight_current_stage(&child, control, depth + 2)?);
++                        }
++                    }
++                }
++            }
++            cursor = end;
++        }
++        cursor = SignalSample(0);
++        while cursor < output_end {
++            let end = SignalSample((cursor.0 + i64::from(MAX_OUTPUT_FRAMES)).min(output_end.0));
++            let policy = output.policy(cursor..end, control.query_limits()?)?;
++            control.spend_plan_work(policy.work)?;
++            for content in &policy.contents {
++                preflight(content, &self.plan)?;
++            }
++            cursor = end;
++        }
++        Ok(relative_depth)
++    }
++}
+--- before/crates/deadpan-audio/src/stages.rs
++++ crates/deadpan-audio/src/stages.rs
+@@ -16,9 +16,9 @@
+ use deadpan_plan::{
+     AudioBound, AudioBoundDomain, AudioContent, AudioDefinition, AudioDefinitionSelector,
+     AudioDomain, AudioFadeQuery, AudioPointDomain, AudioPolicyQuery, AudioProcessingQuery,
+-    AudioProcessingSpan, AudioQuery, AudioQueryLimits, AudioSignal, AudioSignalContent,
+-    AudioSignalSpan, AudioSignalTape, AudioStage, AudioStageDescriptor, PlanError, ReferenceSample,
+-    RenderPlan, SignalSample, SilenceReason,
++    AudioProcessingSpan, AudioProjectionIdentity, AudioQuery, AudioQueryLimits, AudioSignalContent,
++    AudioSignalSpan, AudioSignalTape, AudioStage, AudioStageDescriptor, AudioStageProjection,
++    PlanError, ReferenceSample, RenderPlan, SignalSample, SilenceReason,
+ };
+ use serde::Serialize;
+ 
+@@ -32,6 +32,9 @@
+ #[path = "signal_input.rs"]
+ mod signal_input;
+ use signal_input::SignalInput;
++
++#[path = "stage_projection.rs"]
++mod stage_projection;
+ 
+ /// Worker-owned bus preparation, including downstream finite DSP context.
+ /// Small inspection and source reads retain their separate 256-frame limit.
+@@ -160,9 +163,9 @@
+     pub suppressed: Vec<Range<SignalSample>>,
+ }
+ 
+-/// Live structural input on one common point grid. Tape windows allocate
++/// Live structural or intrinsic-stage PCM on one common point grid. Tape windows allocate
+ /// reads; they do not restart resampling or create new filter edges. This is
+-/// preparation PCM, not a scheduled stage output or final timeline allocation.
++/// preparation PCM, not final timeline allocation.
+ #[derive(Debug, Clone, PartialEq, Serialize)]
+ pub struct TapeAudioBlock {
+     pub schema_version: u32,
+@@ -312,6 +315,13 @@
+     source_checks: u32,
+     observed: Dependencies,
+     plan_work: usize,
++    // Projection identity retains its allocation for this complete request.
++    // Different routes through the same authored stage must never alias PCM.
++    projected: Vec<(AudioProjectionIdentity, Arc<SignalBlock>)>,
++    projected_active: Vec<AudioProjectionIdentity>,
++    projected_preflight: Vec<(AudioProjectionIdentity, usize)>,
++    intrinsic_preflight: Vec<(AudioStageDescriptor, usize)>,
++    projected_resident_frames: u64,
+ }
+ 
+ const MAX_PLAN_WORK_PER_READ: usize = 16 * 1024 * 1024;
+@@ -654,8 +664,8 @@
+ 
+     /// Read a checked projection of current structural signals under one
+     /// deadline and shared source, work and recursive-stage admission. Existing
+-    /// Preserve children retain their complete intrinsic preparation and cache
+-    /// identity; a tape does not redefine their input or output clocks.
++    /// Preserve children retain their complete intrinsic preparation. Explicit
++    /// projections use a separate request-local memo, never descriptor caching.
+     pub fn read_tape(
+         &mut self,
+         provider: &mut impl AudioSourceProvider,
+@@ -688,7 +698,7 @@
+         control.check()?;
+         Ok(TapeAudioBlock {
+             schema_version: 1,
+-            stage: "projected_input_pcm_before_effects",
++            stage: "projected_preparation_pcm_before_effects",
+             project_id: self.plan.metadata().project_id.clone(),
+             revision_id: self.plan.metadata().revision_id.clone(),
+             support: tape.support(),
+@@ -1226,8 +1236,12 @@
+             preflight(&span.content, &plan)?;
+         }
+         for span in &queries.processing.spans {
+-            if let AudioSignalContent::Leaf(content) = &span.content {
+-                preflight(content, &plan)?;
++            match &span.content {
++                AudioSignalContent::Leaf(content) => preflight(content, &plan)?,
++                AudioSignalContent::ProjectedStage(stage) => {
++                    self.preflight_projected(stage, control, depth + 1)?;
++                }
++                AudioSignalContent::Stage(_) | AudioSignalContent::Bound(_) => {}
+             }
+         }
+         for content in &queries.policy.contents {
+@@ -1301,6 +1315,23 @@
+                         cancelled,
+                     )?
+                 }
++                AudioSignalContent::ProjectedStage(stage) => {
++                    let prepared = self.prepare_projected(stage, provider, control, depth + 1)?;
++                    dependencies.extend(prepared.dependencies.clone());
++                    relative_depth = relative_depth.max(1 + prepared.relative_depth);
++                    let recipe = root_stage_recipe(
++                        &span,
++                        prepared.samples.len(),
++                        plan.metadata().presentation_basis.frame_rate,
++                    )?;
++                    sample_prepared(
++                        &prepared.samples,
++                        recipe,
++                        span.samples.start,
++                        count(&span.samples)?,
++                        cancelled,
++                    )?
++                }
+                 AudioSignalContent::Bound(bound) => {
+                     let block = self.read_bound(
+                         bound,
+@@ -1388,8 +1419,8 @@
+         let reservation = self.reserve(input_frames, output_frames, control)?;
+         let result = recipe.map_err(StageAudioError::from).and_then(|recipe| {
+             self.build_stage(
+-                &input_signal,
+-                &output_signal,
++                (&input_signal).into(),
++                (&output_signal).into(),
+                 recipe,
+                 provider,
+                 control,
+@@ -1397,7 +1428,7 @@
+             )
+         });
+         self.active_frames -= reservation;
+-        self.publish(key, result?)
++        self.publish(key, result?, control)
+     }
+ 
+     fn cached(
+@@ -1455,7 +1486,7 @@
+         // Account for interleaved input and its planar conversion simultaneously,
+         // plus output. Recursive preparations share the same residency budget.
+         let reservation = u64::from(input_frames) * 2 + u64::from(output_frames);
+-        self.make_room(reservation, false)?;
++        self.make_room(reservation, false, control)?;
+         self.active_frames += reservation;
+         Ok(reservation)
+     }
+@@ -1464,8 +1495,9 @@
+         &mut self,
+         key: PreparedKey,
+         block: SignalBlock,
++        control: WorkControl<'_>,
+     ) -> Result<Arc<PreparedStage>, StageAudioError> {
+-        self.make_room(block.samples.len() as u64, true)?;
++        self.make_room(block.samples.len() as u64, true, control)?;
+         let entry = Arc::new(PreparedStage { key, block });
+         self.cache.push(Arc::clone(&entry));
+         Ok(entry)
+@@ -1521,17 +1553,25 @@
+             })
+         })();
+         self.active_frames -= reservation;
+-        self.publish(key, result?)
+-    }
+-
+-    fn make_room(&mut self, additional: u64, new_entry: bool) -> Result<(), StageAudioError> {
++        self.publish(key, result?, control)
++    }
++
++    fn make_room(
++        &mut self,
++        additional: u64,
++        new_entry: bool,
++        control: WorkControl<'_>,
++    ) -> Result<(), StageAudioError> {
+         loop {
+             let resident = self
+                 .cache
+                 .iter()
+                 .map(|entry| entry.block.samples.len() as u64)
+                 .sum::<u64>();
+-            if resident + self.active_frames + additional
++            if resident
++                + self.active_frames
++                + control.work.borrow().projected_resident_frames
++                + additional
+                 <= u64::from(self.limits.maximum_resident_frames)
+                 && (!new_entry || self.cache.len() < self.limits.maximum_cached_stages)
+             {
+@@ -1548,8 +1588,8 @@
+ 
+     fn build_stage(
+         &mut self,
+-        input: &AudioSignal<'_>,
+-        output: &AudioSignal<'_>,
++        input: SignalInput<'_, '_>,
++        output: SignalInput<'_, '_>,
+         recipe: CanonicalRecipe,
+         provider: &mut impl AudioSourceProvider,
+         control: WorkControl<'_>,
+@@ -1655,8 +1695,12 @@
+             preflight(content, &self.plan)?;
+         }
+         for span in &query.spans {
+-            if let AudioSignalContent::Leaf(content) = &span.content {
+-                preflight(content, &self.plan)?;
++            match &span.content {
++                AudioSignalContent::Leaf(content) => preflight(content, &self.plan)?,
++                AudioSignalContent::ProjectedStage(stage) => {
++                    self.preflight_projected(stage, control, depth + 1)?;
++                }
++                AudioSignalContent::Stage(_) | AudioSignalContent::Bound(_) => {}
+             }
+         }
+         let mut samples = Vec::with_capacity(frames as usize);
+@@ -1719,6 +1763,17 @@
+                     )?;
+                     sample_prepared(&prepared.block.samples, recipe, start, count, cancelled)?
+                 }
++                AudioSignalContent::ProjectedStage(stage) => {
++                    let prepared = self.prepare_projected(stage, provider, control, depth + 1)?;
++                    dependencies.extend(prepared.dependencies.clone());
++                    relative_depth = relative_depth.max(1 + prepared.relative_depth);
++                    let recipe = signal_stage_recipe(
++                        &span,
++                        prepared.samples.len(),
++                        self.plan.metadata().presentation_basis.frame_rate,
++                    )?;
++                    sample_prepared(&prepared.samples, recipe, start, count, cancelled)?
++                }
+                 AudioSignalContent::Bound(bound) => {
+                     let block = self.read_bound(
+                         bound,
+@@ -1863,7 +1918,7 @@
+ }
+ 
+ fn suppress_signal(
+-    signal: &AudioSignal<'_>,
++    signal: SignalInput<'_, '_>,
+     start: SignalSample,
+     samples: &mut [[f32; 2]],
+     plan: &RenderPlan,
+--- before/crates/deadpan-audio/tests/audio_definition.rs
++++ crates/deadpan-audio/tests/audio_definition.rs
+@@ -1465,6 +1465,8 @@
+     assert_eq!(renderer.cached_stage_count(), 0);
+ }
+ 
++#[path = "audio_definition/projection.rs"]
++mod projection;
+ #[path = "audio_definition/tape.rs"]
+ mod tape;
+ #[path = "audio_definition/tape_admission.rs"]
+--- before/crates/deadpan-audio/tests/audio_definition/projection.rs
++++ crates/deadpan-audio/tests/audio_definition/projection.rs
+@@ -0,0 +1,670 @@
++use super::*;
++
++use deadpan_plan::{
++    AudioQueryLimits, AudioSignal, AudioSignalContent, AudioSignalTape, AudioSignalTapeRun,
++    AudioStage, AudioStageProjection,
++};
++
++fn stage(signal: AudioSignal<'_>) -> AudioStage<'_> {
++    let query = signal
++        .query(
++            SignalSample(0)..SignalSample(1),
++            AudioQueryLimits::default(),
++        )
++        .unwrap();
++    let AudioSignalContent::Stage(stage) = query.spans.into_iter().next().unwrap().content else {
++        panic!("expected scoped Preserve stage");
++    };
++    stage
++}
++
++fn fixture() -> ProjectDocument {
++    let rate = FrameRate::new(48_000, 1).unwrap();
++    document(
++        rate,
++        &["outer"],
++        [
++            ("a", source(rate, 1024, 0..1024)),
++            ("pause", hold(768, HoldAudio::Silence)),
++            ("b", source(rate, 2048, 4096..6144)),
++            (
++                "group",
++                BeatNode::sequence("Group", vec![id("a"), id("pause"), id("b")]),
++            ),
++            (
++                "inner",
++                retime("group", 2560, 0..3840, PitchPolicy::Preserve),
++            ),
++            (
++                "outer",
++                retime("inner", 1280, 0..2560, PitchPolicy::Preserve),
++            ),
++        ],
++        BTreeMap::new(),
++    )
++}
++
++fn inner<'plan>(plan: &'plan RenderPlan, reverse: bool) -> Arc<AudioStageProjection<'plan>> {
++    let outer = stage(plan.audio_signal());
++    let inner = stage(outer.input_signal());
++    let signal = inner.input_signal();
++    let (first, second, split) = if reverse {
++        (1792..3840, 0..1024, 2048)
++    } else {
++        (0..1024, 1792..3840, 1024)
++    };
++    let tape = |length: i128| {
++        let seam = ratio(i128::from(split) * length, 3072);
++        AudioSignalTape::new(
++            plan,
++            ExactRatio::ZERO..ratio(length, 1),
++            vec![
++                AudioSignalTapeRun::new(
++                    ExactRatio::ZERO..seam,
++                    ratio(first.start, 1)..ratio(first.end, 1),
++                    signal.clone(),
++                ),
++                AudioSignalTapeRun::new(
++                    seam..ratio(length, 1),
++                    ratio(second.start, 1)..ratio(second.end, 1),
++                    signal.clone(),
++                ),
++            ],
++        )
++        .unwrap()
++    };
++    AudioStageProjection::new(inner, tape(3072), tape(2048), frames(2048)).unwrap()
++}
++
++fn nested(plan: &RenderPlan) -> Arc<AudioStageProjection<'_>> {
++    let child = inner(plan, false);
++    let tape = |length: i128| {
++        AudioSignalTape::new(
++            plan,
++            ExactRatio::ZERO..ratio(length, 1),
++            vec![AudioSignalTapeRun::intrinsic(
++                ExactRatio::ZERO..ratio(length, 1),
++                ExactRatio::ZERO..ratio(2048, 1),
++                Arc::clone(&child),
++            )],
++        )
++        .unwrap()
++    };
++    AudioStageProjection::new(
++        stage(plan.audio_signal()),
++        tape(2048),
++        tape(1024),
++        frames(1024),
++    )
++    .unwrap()
++}
++
++fn output<'plan>(
++    plan: &'plan RenderPlan,
++    projection: Arc<AudioStageProjection<'plan>>,
++) -> AudioSignalTape<'plan> {
++    let length = projection.output_policy().support().end;
++    AudioSignalTape::new(
++        plan,
++        ExactRatio::ZERO..length,
++        vec![AudioSignalTapeRun::intrinsic(
++            ExactRatio::ZERO..length,
++            ExactRatio::ZERO..length,
++            projection,
++        )],
++    )
++    .unwrap()
++}
++
++fn original_inner(reverse: bool) -> Vec<[f32; 2]> {
++    let a = sample_reference(
++        0..1024,
++        ExactRatio::ZERO,
++        ExactRatio::ONE,
++        1024,
++        fixture_sample,
++    );
++    let b = sample_reference(
++        4096..6144,
++        ratio(4096, 1),
++        ExactRatio::ONE,
++        2048,
++        fixture_sample,
++    );
++    let input: Vec<_> = if reverse {
++        b.into_iter().chain(a).collect()
++    } else {
++        a.into_iter().chain(b).collect()
++    };
++    stretch(&input, 2048, 3, 2)
++}
++
++#[test]
++fn nested_projection_prepares_each_intrinsic_once_and_places_pause_after_stretch() {
++    let doc = fixture();
++    let plan = compile(&doc, false);
++    let projection = nested(&plan);
++    let raw = stage(stage(plan.audio_signal()).input_signal()).input_signal();
++    let cut = ratio(1024, 3);
++    let resume = cut.checked_add(ratio(256, 1)).unwrap();
++    let schedule = AudioSignalTape::new(
++        &plan,
++        ExactRatio::ZERO..ratio(1280, 1),
++        vec![
++            AudioSignalTapeRun::intrinsic(
++                ExactRatio::ZERO..cut,
++                ExactRatio::ZERO..cut,
++                Arc::clone(&projection),
++            ),
++            AudioSignalTapeRun::new(cut..resume, ratio(1024, 1)..ratio(1792, 1), raw),
++            AudioSignalTapeRun::intrinsic(resume..ratio(1280, 1), cut..ratio(1024, 1), projection),
++        ],
++    )
++    .unwrap();
++    let intrinsic = stretch(&original_inner(false), 1024, 2, 1);
++    let mut expected = intrinsic[..342].to_vec();
++    expected.extend(vec![[0.0; 2]; 256]);
++    expected.extend_from_slice(&intrinsic[342..]);
++    let mut renderer = StageAudio::with_limits(
++        Arc::clone(&plan),
++        StageLimits {
++            maximum_prepared_stages: 2,
++            ..Default::default()
++        },
++    )
++    .unwrap();
++    let mut provider = FixtureProvider::new();
++    // Out-of-order reads must all use the complete canonical processing history.
++    for (start, count) in [(1024, 256), (256, 256), (512, 256), (0, 256)] {
++        let actual = renderer
++            .read_tape(
++                &mut provider,
++                &schedule,
++                SignalSample(start),
++                count,
++                TIMEOUT,
++                &AtomicBool::new(false),
++            )
++            .unwrap();
++        assert_eq!(
++            actual.samples,
++            expected[start as usize..start as usize + count as usize]
++        );
++        assert_eq!(
++            renderer.cached_stage_count(),
++            0,
++            "projections must not enter descriptor cache"
++        );
++    }
++    provider.unavailable = true;
++    assert!(matches!(
++        renderer.read_tape(
++            &mut provider,
++            &schedule,
++            SignalSample(0),
++            1,
++            TIMEOUT,
++            &AtomicBool::new(false)
++        ),
++        Err(StageAudioError::Preparation(
++            PreparationError::SourceUnavailable(_)
++        ))
++    ));
++}
++
++#[test]
++fn two_routes_through_one_stage_do_not_alias_prepared_pcm() {
++    let doc = fixture();
++    let plan = compile(&doc, false);
++    let first = inner(&plan, false);
++    let second = inner(&plan, true);
++    assert_eq!(first.stage().descriptor(), second.stage().descriptor());
++    assert_ne!(first.identity(), second.identity());
++    let tape = AudioSignalTape::new(
++        &plan,
++        ExactRatio::ZERO..ratio(4096, 1),
++        vec![
++            AudioSignalTapeRun::intrinsic(
++                ExactRatio::ZERO..ratio(2048, 1),
++                ExactRatio::ZERO..ratio(2048, 1),
++                first,
++            ),
++            AudioSignalTapeRun::intrinsic(
++                ratio(2048, 1)..ratio(4096, 1),
++                ExactRatio::ZERO..ratio(2048, 1),
++                second,
++            ),
++        ],
++    )
++    .unwrap();
++    let normal = original_inner(false);
++    let reversed = original_inner(true);
++    assert_ne!(&normal[..128], &reversed[..128]);
++    let actual = StageAudio::new(Arc::clone(&plan))
++        .read_tape(
++            &mut FixtureProvider::new(),
++            &tape,
++            SignalSample(1920),
++            256,
++            TIMEOUT,
++            &AtomicBool::new(false),
++        )
++        .unwrap();
++    let expected: Vec<_> = normal[1920..]
++        .iter()
++        .chain(&reversed[..128])
++        .copied()
++        .collect();
++    assert_eq!(actual.samples, expected);
++    let mut provider = FixtureProvider::new();
++    let mut bounded = StageAudio::with_limits(
++        Arc::clone(&plan),
++        StageLimits {
++            maximum_resident_frames: 10_239,
++            ..Default::default()
++        },
++    )
++    .unwrap();
++    assert!(matches!(
++        bounded.read_tape(
++            &mut provider,
++            &tape,
++            SignalSample(1920),
++            256,
++            TIMEOUT,
++            &AtomicBool::new(false)
++        ),
++        Err(StageAudioError::Limit("resident PCM or stage cache"))
++    ));
++    assert_eq!(
++        provider.calls, 12,
++        "second preparation must include the first memo's 2048 resident frames"
++    );
++}
++
++#[test]
++fn nested_projection_enforces_depth_and_residency_then_recovers() {
++    let doc = fixture();
++    let plan = compile(&doc, false);
++    let tape = output(&plan, nested(&plan));
++    let mut provider = FixtureProvider::new();
++    let mut shallow = StageAudio::with_limits(
++        Arc::clone(&plan),
++        StageLimits {
++            maximum_depth: 1,
++            ..Default::default()
++        },
++    )
++    .unwrap();
++    assert!(matches!(
++        shallow.read_tape(
++            &mut provider,
++            &tape,
++            SignalSample(0),
++            1,
++            TIMEOUT,
++            &AtomicBool::new(false)
++        ),
++        Err(StageAudioError::Limit("nested stage depth"))
++    ));
++    assert_eq!(provider.calls, 0);
++    // Parent reservation5120 + child8192 requires13312 frames. Memo residency
++    // must stay charged while subsequent input chunks consume the child result.
++    let mut bounded = StageAudio::with_limits(
++        Arc::clone(&plan),
++        StageLimits {
++            maximum_resident_frames: 13_311,
++            ..Default::default()
++        },
++    )
++    .unwrap();
++    assert!(matches!(
++        bounded.read_tape(
++            &mut provider,
++            &tape,
++            SignalSample(0),
++            1,
++            TIMEOUT,
++            &AtomicBool::new(false)
++        ),
++        Err(StageAudioError::Limit("resident PCM or stage cache"))
++    ));
++    let child = output(&plan, inner(&plan, false));
++    let recovered = bounded
++        .read_tape(
++            &mut provider,
++            &child,
++            SignalSample(0),
++            16,
++            TIMEOUT,
++            &AtomicBool::new(false),
++        )
++        .unwrap();
++    assert_eq!(recovered.samples, original_inner(false)[..16]);
++}
++
++#[test]
++fn projected_input_is_preflighted_even_when_output_policy_omits_unsupported_tail() {
++    let rate = FrameRate::new(48_000, 1).unwrap();
++    let doc = document(
++        rate,
++        &["stage"],
++        [
++            ("a", source(rate, 1024, 512..1536)),
++            (
++                "tail",
++                hold(
++                    1024,
++                    HoldAudio::Tail {
++                        source: audio(512..1536),
++                        maximum: frames(1024),
++                    },
++                ),
++            ),
++            (
++                "group",
++                BeatNode::sequence("Group", vec![id("a"), id("tail")]),
++            ),
++            (
++                "stage",
++                retime("group", 1024, 0..2048, PitchPolicy::Preserve),
++            ),
++        ],
++        BTreeMap::new(),
++    );
++    let plan = compile(&doc, false);
++    let current = stage(plan.audio_signal());
++    let signal = current.input_signal();
++    let tape = |length: i128, end: i128| {
++        AudioSignalTape::new(
++            &plan,
++            ExactRatio::ZERO..ratio(length, 1),
++            vec![AudioSignalTapeRun::new(
++                ExactRatio::ZERO..ratio(length, 1),
++                ExactRatio::ZERO..ratio(end, 1),
++                signal.clone(),
++            )],
++        )
++        .unwrap()
++    };
++    let projected =
++        AudioStageProjection::new(current, tape(2048, 2048), tape(1024, 1024), frames(1024))
++            .unwrap();
++    let tape = output(&plan, projected);
++    let mut provider = FixtureProvider::new();
++    assert!(matches!(
++        StageAudio::new(Arc::clone(&plan)).read_tape(
++            &mut provider,
++            &tape,
++            SignalSample(0),
++            1,
++            TIMEOUT,
++            &AtomicBool::new(false)
++        ),
++        Err(StageAudioError::Unsupported("effect tails"))
++    ));
++    assert_eq!(provider.calls, 0);
++}
++
++#[test]
++fn projected_output_preserves_processed_decay_past_the_source_selection() {
++    let rate = FrameRate::new(48_000, 1).unwrap();
++    let mut selected = source(rate, 1024, 512..1536);
++    let NodeKind::Source { source } = &mut selected.kind else {
++        unreachable!();
++    };
++    source.audio_mapping = SourceAudioMapping::SelectedPlacement {
++        start: ExactRatio::ZERO,
++        frames: ratio(1024, 1),
++        selection: ExactFrameRange::new(ExactRatio::ZERO, ratio(256, 1)).unwrap(),
++    };
++    let doc = document(
++        rate,
++        &["stage"],
++        [
++            ("source", selected),
++            (
++                "stage",
++                retime("source", 2048, 0..1024, PitchPolicy::Preserve),
++            ),
++        ],
++        BTreeMap::new(),
++    );
++    let plan = compile(&doc, false);
++    let current = stage(plan.audio_signal());
++    let signal = current.input_signal();
++    let tape = |length: i128| {
++        AudioSignalTape::new(
++            &plan,
++            ExactRatio::ZERO..ratio(length, 1),
++            vec![AudioSignalTapeRun::new(
++                ExactRatio::ZERO..ratio(length, 1),
++                ExactRatio::ZERO..ratio(1024, 1),
++                signal.clone(),
++            )],
++        )
++        .unwrap()
++    };
++    let output_policy = tape(2048);
++    assert_eq!(
++        output_policy
++            .policy(
++                SignalSample(512)..SignalSample(768),
++                AudioQueryLimits::default()
++            )
++            .unwrap()
++            .suppressed,
++        vec![SignalSample(512)..SignalSample(768)],
++        "raw Source selection policy would erase this processed decay"
++    );
++    let projection =
++        AudioStageProjection::new(current, tape(1024), output_policy, frames(2048)).unwrap();
++    let input = sample_reference(
++        512..768,
++        ratio(512, 1),
++        ExactRatio::ONE,
++        1024,
++        fixture_sample,
++    );
++    let expected = stretch(&input, 2048, 1, 2);
++    assert!(
++        expected[512..768].iter().any(|frame| *frame != [0.0; 2]),
++        "fixture must expose processed decay after the physical Source endpoint"
++    );
++    let actual = StageAudio::new(Arc::clone(&plan))
++        .read_tape(
++            &mut FixtureProvider::new(),
++            &output(&plan, projection),
++            SignalSample(512),
++            256,
++            TIMEOUT,
++            &AtomicBool::new(false),
++        )
++        .unwrap();
++    assert_eq!(actual.samples, expected[512..768]);
++    assert!(actual.suppressed.is_empty());
++}
++
++#[test]
++fn projected_memo_rechecks_source_admission_within_one_read() {
++    struct RevokingProvider {
++        fixture: FixtureProvider,
++        remaining: usize,
++    }
++    impl AudioSourceProvider for RevokingProvider {
++        fn source(
++            &mut self,
++            project: &ProjectId,
++            revision: &RevisionId,
++            asset: &AssetId,
++            cancelled: &AtomicBool,
++        ) -> Result<&PreparedSource, PreparationError> {
++            if self.remaining == 0 {
++                return Err(PreparationError::SourceUnavailable(
++                    "revoked during read".into(),
++                ));
++            }
++            self.remaining -= 1;
++            self.fixture.source(project, revision, asset, cancelled)
++        }
++    }
++    let doc = fixture();
++    let plan = compile(&doc, false);
++    let tape = output(&plan, nested(&plan));
++    // Twelve 256-point source blocks prepare the child's complete 3072-point input.
++    // The next source request is a memo-hit admission check in the parent.
++    let mut provider = RevokingProvider {
++        fixture: FixtureProvider::new(),
++        remaining: 12,
++    };
++    let mut renderer = StageAudio::new(Arc::clone(&plan));
++    assert!(matches!(
++        renderer.read_tape(
++            &mut provider,
++            &tape,
++            SignalSample(0),
++            1,
++            TIMEOUT,
++            &AtomicBool::new(false)
++        ),
++        Err(StageAudioError::Preparation(
++            PreparationError::SourceUnavailable(_)
++        ))
++    ));
++    assert_eq!(provider.fixture.calls, 12);
++    provider.remaining = usize::MAX;
++    let recovered = renderer
++        .read_tape(
++            &mut provider,
++            &tape,
++            SignalSample(0),
++            1,
++            TIMEOUT,
++            &AtomicBool::new(false),
++        )
++        .unwrap();
++    assert_eq!(
++        recovered.samples,
++        stretch(&original_inner(false), 1024, 2, 1)[..1]
++    );
++}
++
++#[test]
++fn projected_input_preflights_hidden_history_of_an_ordinary_nested_stage() {
++    assert_hidden_history_preflight(false);
++    assert_hidden_history_preflight(true);
++}
++
++fn assert_hidden_history_preflight(bound_child: bool) {
++    let rate = FrameRate::new(48_000, 1).unwrap();
++    let doc = document(
++        rate,
++        &["outer"],
++        [
++            ("prefix", source(rate, 256, 0..256)),
++            ("a", source(rate, 1024, 512..1536)),
++            (
++                "tail",
++                hold(
++                    1024,
++                    HoldAudio::Tail {
++                        source: audio(512..1536),
++                        maximum: frames(1024),
++                    },
++                ),
++            ),
++            (
++                "inside",
++                BeatNode::sequence("Inside", vec![id("a"), id("tail")]),
++            ),
++            (
++                "inner",
++                retime("inside", 1024, 0..2048, PitchPolicy::Preserve),
++            ),
++            (
++                "group",
++                BeatNode::sequence("Group", vec![id("prefix"), id("inner")]),
++            ),
++            (
++                "outer",
++                retime("group", 640, 0..1280, PitchPolicy::Preserve),
++            ),
++        ],
++        BTreeMap::new(),
++    );
++    let doc = if bound_child {
++        let captured = capture_unbound_audio_bindings(
++            &doc,
++            AudioTimingId {
++                allocation: RevisionId::new("projection-binding").unwrap(),
++                ordinal: 0,
++            },
++        )
++        .unwrap();
++        let binding = captured.bindings()[&id("inner")].clone();
++        let bindings = AudioBindingState::new(
++            captured
++                .timings()
++                .iter()
++                .map(|(id, layout)| AudioTimingRecord {
++                    id: id.clone(),
++                    layout: layout.clone(),
++                })
++                .collect(),
++            BTreeMap::from([(id("inner"), binding)]),
++        )
++        .unwrap();
++        let mut wire = serde_json::to_value(doc).unwrap();
++        wire["audio_bindings"] = serde_json::to_value(bindings).unwrap();
++        ProjectDocument::from_json(&wire.to_string()).unwrap()
++    } else {
++        doc
++    };
++    let plan = compile(&doc, false);
++    let current = stage(plan.audio_signal());
++    let signal = current.input_signal();
++    let input = AudioSignalTape::new(
++        &plan,
++        ExactRatio::ZERO..ratio(1280, 1),
++        vec![
++            AudioSignalTapeRun::new(
++                ExactRatio::ZERO..ratio(256, 1),
++                ExactRatio::ZERO..ratio(256, 1),
++                signal.clone(),
++            ),
++            AudioSignalTapeRun::new(
++                ratio(256, 1)..ratio(1280, 1),
++                ratio(256, 1)..ratio(512, 1),
++                signal.clone(),
++            ),
++        ],
++    )
++    .unwrap();
++    let policy = AudioSignalTape::new(
++        &plan,
++        ExactRatio::ZERO..ratio(640, 1),
++        vec![AudioSignalTapeRun::new(
++            ExactRatio::ZERO..ratio(640, 1),
++            ExactRatio::ZERO..ratio(256, 1),
++            signal,
++        )],
++    )
++    .unwrap();
++    let projection = AudioStageProjection::new(current, input, policy, frames(640)).unwrap();
++    let mut provider = FixtureProvider::new();
++    assert!(matches!(
++        StageAudio::new(Arc::clone(&plan)).read_tape(
++            &mut provider,
++            &output(&plan, projection),
++            SignalSample(0),
++            1,
++            TIMEOUT,
++            &AtomicBool::new(false)
++        ),
++        Err(StageAudioError::Unsupported("effect tails"))
++    ));
++    assert_eq!(
++        provider.calls, 0,
++        "hidden child history must preflight before the earlier raw prefix"
++    );
++}
+--- before/crates/deadpan-plan/src/audio.rs
++++ crates/deadpan-plan/src/audio.rs
+@@ -821,7 +821,9 @@
+                 .checked_div(transform.project_frames_per_local_frame)?,
+         )?;
+         let content = match content {
+-            content @ (AudioSignalContent::Stage(_) | AudioSignalContent::Bound(_)) => {
++            content @ (AudioSignalContent::Stage(_)
++            | AudioSignalContent::ProjectedStage(_)
++            | AudioSignalContent::Bound(_)) => {
+                 return Ok(AudioWalkSpan::Stage(AudioProcessingSpan {
+                     definition: definition.cloned(),
+                     samples: allocated_samples.clone(),
+--- before/crates/deadpan-plan/src/audio_bound.rs
++++ crates/deadpan-plan/src/audio_bound.rs
+@@ -256,6 +256,28 @@
+     pub fn work(&self) -> usize {
+         self.resolved.work
+     }
++
++    /// The full current Preserve operand behind this physical binding, if any.
++    /// Its own binding is bypassed, exactly as in `raw_domain`; descendants
++    /// retain their bindings and scoped identities. This admits policy
++    /// inspection of hidden canonical history without scanning a Source's PCM.
++    pub fn intrinsic_stage(&self) -> Result<Option<super::AudioStage<'plan>>, PlanError> {
++        if self.gap.is_none()
++            && matches!(&self.plan.nodes[self.node].kind,
++                CompiledKind::Retime { scale, pitch, .. }
++                if *scale != ExactRatio::ONE && *pitch == deadpan_core::PitchPolicy::Preserve)
++        {
++            return super::AudioStage::for_node(
++                self.plan,
++                self.node,
++                &self.instance.repeats,
++                self.definition.as_ref(),
++                Some(self.binding_target()),
++            )
++            .map(Some);
++        }
++        Ok(None)
++    }
+     pub fn reference_at_offset(&self, offset: i64) -> Result<ExactRatio, PlanError> {
+         self.reference_at_wide_offset(i128::from(offset))
+     }
+--- before/crates/deadpan-plan/src/audio_fades.rs
++++ crates/deadpan-plan/src/audio_fades.rs
+@@ -93,7 +93,7 @@
+                 AudioSignalContent::Bound(_) => {
+                     bound_fade(processing, cursor, samples.end, &mut budget)?
+                 }
+-                AudioSignalContent::Stage(_) => {
++                AudioSignalContent::Stage(_) | AudioSignalContent::ProjectedStage(_) => {
+                     // The first opaque output owns creative fades. Flatten its
+                     // current geometry in this output grid, retaining ancestor
+                     // constraints and deliberately ignoring input bindings.
+--- before/crates/deadpan-plan/src/audio_policy.rs
++++ crates/deadpan-plan/src/audio_policy.rs
+@@ -134,6 +134,25 @@
+         samples: Range<SignalSample>,
+         limits: AudioQueryLimits,
+     ) -> Result<AudioPolicyQuery<SignalSample>, PlanError> {
++        self.policy_with_endpoints(samples, limits, true)
++    }
++
++    /// Policy applied after canonical Preserve processing. Source placement
++    /// endpoints must not erase processed decay; explicit silent Holds remain.
++    pub fn policy_after_preserve(
++        &self,
++        samples: Range<SignalSample>,
++        limits: AudioQueryLimits,
++    ) -> Result<AudioPolicyQuery<SignalSample>, PlanError> {
++        self.policy_with_endpoints(samples, limits, false)
++    }
++
++    fn policy_with_endpoints(
++        &self,
++        samples: Range<SignalSample>,
++        limits: AudioQueryLimits,
++        source_endpoints: bool,
++    ) -> Result<AudioPolicyQuery<SignalSample>, PlanError> {
+         let mut work = PolicyWork::new(limits)?;
+         let suppressed = signal_policy(
+             self,
+@@ -141,7 +160,7 @@
+             AudioBoundaryRule::PointCeil,
+             &mut work,
+             0,
+-            true,
++            source_endpoints,
+         )?;
+         Ok(work.result(suppressed, SignalSample))
+     }
+--- before/crates/deadpan-plan/src/audio_projection.rs
++++ crates/deadpan-plan/src/audio_projection.rs
+@@ -0,0 +1,229 @@
++//! Immutable plan-local views of a Preserve stage's intrinsic input and output policy.
++
++use std::collections::HashMap;
++use std::fmt;
++use std::sync::Arc;
++
++use deadpan_core::{ExactRatio, FrameDuration};
++use serde::{Serialize, Serializer, ser::SerializeStruct};
++
++use crate::{AudioSignalTape, AudioStage, PlanError, RenderPlan};
++
++/// Opaque call-local identity for memoizing one immutable projection.
++#[derive(Debug, Clone)]
++pub struct AudioProjectionIdentity(Arc<ProjectionIdentityToken>);
++
++#[derive(Debug)]
++struct ProjectionIdentityToken {
++    _private: u8,
++}
++
++impl PartialEq for AudioProjectionIdentity {
++    fn eq(&self, other: &Self) -> bool {
++        Arc::ptr_eq(&self.0, &other.0)
++    }
++}
++
++impl Eq for AudioProjectionIdentity {}
++
++impl AudioProjectionIdentity {
++    pub(crate) fn key(&self) -> usize {
++        Arc::as_ptr(&self.0) as usize
++    }
++}
++
++/// A checked intrinsic projection of one live Preserve stage.
++///
++/// The input and output-policy tapes use independent exact frame domains. The
++/// input is normalized to zero and spans `duration * authored_rate`; output
++/// policy is normalized to zero and spans `duration`.
++pub struct AudioStageProjection<'plan> {
++    stage: AudioStage<'plan>,
++    input_tape: AudioSignalTape<'plan>,
++    output_policy: AudioSignalTape<'plan>,
++    duration: FrameDuration,
++    identity: AudioProjectionIdentity,
++}
++
++impl fmt::Debug for AudioStageProjection<'_> {
++    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
++        formatter
++            .debug_struct("AudioStageProjection")
++            .field("stage", self.stage.descriptor())
++            .field("duration", &self.duration)
++            .finish()
++    }
++}
++
++impl PartialEq for AudioStageProjection<'_> {
++    fn eq(&self, other: &Self) -> bool {
++        self.identity == other.identity
++    }
++}
++
++impl Eq for AudioStageProjection<'_> {}
++
++impl<'plan> AudioStageProjection<'plan> {
++    pub fn new(
++        stage: AudioStage<'plan>,
++        input_tape: AudioSignalTape<'plan>,
++        output_policy: AudioSignalTape<'plan>,
++        duration: FrameDuration,
++    ) -> Result<Arc<Self>, PlanError> {
++        if duration == FrameDuration::ZERO {
++            return Err(PlanError::InvalidPlan(
++                "projected Preserve duration must be positive",
++            ));
++        }
++        if duration.frames() > stage.descriptor().duration.frames() {
++            return Err(PlanError::InvalidPlan(
++                "projected Preserve duration exceeds its live stage",
++            ));
++        }
++        let plan = stage.plan();
++        if !input_tape.belongs_to(plan) || !output_policy.belongs_to(plan) {
++            return Err(PlanError::InvalidPlan(
++                "projected Preserve tapes belong to another plan",
++            ));
++        }
++        let input_frames =
++            ExactRatio::integer(duration.frames()).checked_mul(stage.descriptor().rate)?;
++        let expected_input = ExactRatio::ZERO..input_frames;
++        let expected_output = ExactRatio::ZERO..ExactRatio::integer(duration.frames());
++        if input_tape.support() != expected_input {
++            return Err(PlanError::InvalidPlan(
++                "projected Preserve input does not match its intrinsic rate and duration",
++            ));
++        }
++        if output_policy.support() != expected_output {
++            return Err(PlanError::InvalidPlan(
++                "projected Preserve output policy has the wrong intrinsic extent",
++            ));
++        }
++        let projection = Arc::new(Self {
++            stage,
++            input_tape,
++            output_policy,
++            duration,
++            identity: AudioProjectionIdentity(Arc::new(ProjectionIdentityToken { _private: 0 })),
++        });
++        let mut budget = ProjectionValidationBudget::default();
++        projection.validate_graph(&mut budget, 0)?;
++        Ok(projection)
++    }
++
++    pub fn stage(&self) -> &AudioStage<'plan> {
++        &self.stage
++    }
++
++    pub fn input_tape(&self) -> &AudioSignalTape<'plan> {
++        &self.input_tape
++    }
++
++    pub fn output_policy(&self) -> &AudioSignalTape<'plan> {
++        &self.output_policy
++    }
++
++    pub fn output_frames(&self) -> i64 {
++        self.duration.frames()
++    }
++
++    pub fn output_duration(&self) -> FrameDuration {
++        self.duration
++    }
++
++    pub fn identity(&self) -> AudioProjectionIdentity {
++        self.identity.clone()
++    }
++
++    pub fn belongs_to(&self, plan: &RenderPlan) -> bool {
++        self.stage.belongs_to(plan)
++    }
++
++    pub(crate) fn identity_key(&self) -> usize {
++        self.identity.key()
++    }
++
++    pub(crate) fn validate_graph(
++        &self,
++        budget: &mut ProjectionValidationBudget,
++        depth: usize,
++    ) -> Result<usize, PlanError> {
++        if depth > MAX_PROJECTION_DEPTH {
++            return Err(PlanError::AudioQueryLimit("projected Preserve depth"));
++        }
++        let key = self.identity_key();
++        if let Some(relative_depth) = budget.validated.get(&key).copied() {
++            if depth
++                .checked_add(relative_depth)
++                .is_none_or(|value| value > MAX_PROJECTION_DEPTH)
++            {
++                return Err(PlanError::AudioQueryLimit("projected Preserve depth"));
++            }
++            return Ok(relative_depth);
++        }
++        budget.unique = budget
++            .unique
++            .checked_add(1)
++            .ok_or(PlanError::AudioQueryLimit("projected Preserve count"))?;
++        if budget.unique > MAX_PROJECTED_STAGES {
++            return Err(PlanError::AudioQueryLimit("projected Preserve count"));
++        }
++        let mut child_depth = 0;
++        child_depth = child_depth.max(self.input_tape.validate_projection_scope(
++            &self.stage,
++            budget,
++            depth + 1,
++        )?);
++        child_depth = child_depth.max(self.output_policy.validate_projection_scope(
++            &self.stage,
++            budget,
++            depth + 1,
++        )?);
++        let relative_depth = 1 + child_depth;
++        if depth
++            .checked_add(relative_depth)
++            .is_none_or(|value| value > MAX_PROJECTION_DEPTH)
++        {
++            return Err(PlanError::AudioQueryLimit("projected Preserve depth"));
++        }
++        budget.validated.insert(key, relative_depth);
++        Ok(relative_depth)
++    }
++}
++
++const MAX_PROJECTED_STAGES: usize = 64;
++const MAX_PROJECTION_EDGES: usize = 65_536;
++const MAX_PROJECTION_DEPTH: usize = 64;
++
++#[derive(Debug, Default)]
++pub(crate) struct ProjectionValidationBudget {
++    unique: usize,
++    edges: usize,
++    validated: HashMap<usize, usize>,
++}
++
++impl ProjectionValidationBudget {
++    pub(crate) fn edge(&mut self) -> Result<(), PlanError> {
++        self.edges = self
++            .edges
++            .checked_add(1)
++            .ok_or(PlanError::AudioQueryLimit("projected Preserve edges"))?;
++        if self.edges > MAX_PROJECTION_EDGES {
++            return Err(PlanError::AudioQueryLimit("projected Preserve edges"));
++        }
++        Ok(())
++    }
++}
++
++impl Serialize for AudioStageProjection<'_> {
++    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
++    where
++        S: Serializer,
++    {
++        let mut state = serializer.serialize_struct("AudioStageProjection", 2)?;
++        state.serialize_field("stage", self.stage.descriptor())?;
++        state.serialize_field("duration", &self.duration)?;
++        state.end()
++    }
++}
+--- before/crates/deadpan-plan/src/audio_signal.rs
++++ crates/deadpan-plan/src/audio_signal.rs
+@@ -2,13 +2,14 @@
+ //! query renders DSP. Borrowed stages retain their own uncut input history.
+ 
+ use std::ops::Range;
++use std::sync::Arc;
+ 
+ use deadpan_core::{
+     AudioSample, ExactRatio, FrameDuration, InsertionBias, InstancePath, IterationId,
+     MIX_SAMPLE_RATE, NodeId, PitchPolicy, ProjectId, RepeatInstance, RetimePurpose, RevisionId,
+     SourcePoint, TimeError,
+ };
+-use serde::Serialize;
++use serde::{Serialize, Serializer, ser::SerializeStruct};
+ 
+ use super::audio::{Budget, intersect, maximum, minimum, source_point_from_local};
+ use super::audio_bound::BindingTarget;
+@@ -165,6 +166,58 @@
+         &self.descriptor
+     }
+ 
++    pub fn belongs_to(&self, plan: &RenderPlan) -> bool {
++        std::ptr::eq(self.plan, plan)
++    }
++
++    pub(crate) fn plan(&self) -> &'plan RenderPlan {
++        self.plan
++    }
++
++    pub(crate) fn accepts_projection_signal(&self, signal: &AudioSignal<'_>) -> bool {
++        self.belongs_to(signal.plan)
++            && self.descriptor.definition == signal.definition
++            && self
++                .descriptor
++                .instance
++                .repeats
++                .iter()
++                .zip(&signal.repeats)
++                .all(|(owner, provider)| owner == provider)
++            && signal.repeats.len() >= self.descriptor.instance.repeats.len()
++            && self.owns_descendant(signal.root)
++    }
++
++    pub(crate) fn accepts_projection_stage(&self, nested: &AudioStage<'_>) -> bool {
++        self.belongs_to(nested.plan)
++            && self.descriptor.definition == nested.descriptor.definition
++            && self
++                .descriptor
++                .instance
++                .repeats
++                .iter()
++                .zip(&nested.descriptor.instance.repeats)
++                .all(|(owner, provider)| owner == provider)
++            && nested.descriptor.instance.repeats.len() >= self.descriptor.instance.repeats.len()
++            && self.owns_descendant(nested.node)
++    }
++
++    fn owns_descendant(&self, mut node: usize) -> bool {
++        for _ in 0..=deadpan_core::MAX_DOCUMENT_DEPTH {
++            if node == self.child {
++                return true;
++            }
++            if node == self.node {
++                return false;
++            }
++            let Some(parent) = self.plan.parents.get(node).copied().flatten() else {
++                return false;
++            };
++            node = parent;
++        }
++        false
++    }
++
+     pub fn input_signal(&self) -> AudioSignal<'plan> {
+         AudioSignal {
+             plan: self.plan,
+@@ -177,6 +230,7 @@
+             placed_transform: None,
+             bypass_binding: None,
+             gap: None,
++            projection: None,
+         }
+     }
+ 
+@@ -197,16 +251,81 @@
+                 .bypass_binding
+                 .then_some(BindingTarget::Node(self.node)),
+             gap: None,
+-        }
+-    }
+-}
+-
+-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+-#[serde(tag = "type", content = "value", rename_all = "snake_case")]
++            projection: None,
++        }
++    }
++
++    /// A signal over a checked child-local window, retaining this stage's
++    /// definition and concrete enclosing Repeat scope. This is used to route
++    /// current descendants into an intrinsic Preserve projection.
++    pub fn child_signal(
++        &self,
++        support: Range<ExactRatio>,
++    ) -> Result<AudioSignal<'plan>, PlanError> {
++        if !positive_range(&support)?
++            || support.start.compare_integer(0).is_lt()
++            || support
++                .end
++                .checked_sub(ExactRatio::integer(
++                    self.plan.nodes[self.child].inspection.duration.frames(),
++                ))?
++                .compare_integer(0)
++                .is_gt()
++        {
++            return Err(PlanError::InvalidPlan(
++                "Preserve child signal is outside its child duration",
++            ));
++        }
++        Ok(AudioSignal {
++            plan: self.plan,
++            root: self.child,
++            support: support.clone(),
++            sampling_support: Some(support),
++            constrain_support: true,
++            repeats: self.descriptor.instance.repeats.clone(),
++            definition: self.descriptor.definition.clone(),
++            placed_transform: None,
++            bypass_binding: None,
++            gap: None,
++            projection: None,
++        })
++    }
++}
++
++#[derive(Debug, Clone, PartialEq, Eq)]
+ pub enum AudioSignalContent<'plan> {
+     Leaf(AudioContent),
+     Stage(AudioStage<'plan>),
+     Bound(Box<super::AudioBound<'plan>>),
++    ProjectedStage(Arc<crate::AudioStageProjection<'plan>>),
++}
++
++impl Serialize for AudioSignalContent<'_> {
++    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
++    where
++        S: Serializer,
++    {
++        let mut state = serializer.serialize_struct("AudioSignalContent", 2)?;
++        match self {
++            Self::Leaf(content) => {
++                state.serialize_field("type", "leaf")?;
++                state.serialize_field("value", content)?;
++            }
++            Self::Stage(stage) => {
++                state.serialize_field("type", "stage")?;
++                state.serialize_field("value", stage)?;
++            }
++            Self::Bound(bound) => {
++                state.serialize_field("type", "bound")?;
++                state.serialize_field("value", bound)?;
++            }
++            Self::ProjectedStage(projection) => {
++                state.serialize_field("type", "projected_stage")?;
++                state.serialize_field("value", projection.as_ref())?;
++            }
++        }
++        state.end()
++    }
+ }
+ 
+ #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+@@ -324,6 +443,7 @@
+     placed_transform: Option<SignalTransform>,
+     bypass_binding: Option<BindingTarget>,
+     gap: Option<DomainGap>,
++    projection: Option<Arc<crate::AudioStageProjection<'plan>>>,
+ }
+ 
+ impl RenderPlan {
+@@ -341,6 +461,7 @@
+             placed_transform: None,
+             bypass_binding: None,
+             gap: None,
++            projection: None,
+         }
+     }
+ 
+@@ -413,6 +534,7 @@
+             placed_transform: None,
+             bypass_binding: None,
+             gap: definition.gap.clone(),
++            projection: None,
+         }
+     }
+ 
+@@ -432,6 +554,7 @@
+             placed_transform: Some(transform),
+             bypass_binding: None,
+             gap: definition.gap.clone(),
++            projection: None,
+         }
+     }
+ 
+@@ -472,6 +595,7 @@
+         destination: Range<ExactRatio>,
+         source: Range<ExactRatio>,
+         frames_per_sample: ExactRatio,
++        grid_origin: ExactRatio,
+     ) -> Result<Self, PlanError> {
+         if !positive_range(&destination)? || !positive_range(&source)? {
+             return Err(PlanError::InvalidPlan(
+@@ -506,7 +630,7 @@
+             signal_frames_per_local_frame: old
+                 .signal_frames_per_local_frame
+                 .checked_div(source_per_destination)?,
+-            grid_origin: full_support.start,
++            grid_origin,
+             signal_frames_per_sample: frames_per_sample,
+         };
+         let project_source = |source_frame: ExactRatio| {
+@@ -537,6 +661,31 @@
+             placed_transform: Some(transform),
+             bypass_binding: self.bypass_binding,
+             gap: self.gap.clone(),
++            projection: self.projection.clone(),
++        })
++    }
++
++    pub(crate) fn for_projection(
++        plan: &'plan RenderPlan,
++        projection: Arc<crate::AudioStageProjection<'plan>>,
++    ) -> Result<Self, PlanError> {
++        if !projection.belongs_to(plan) {
++            return Err(PlanError::InvalidPlan(
++                "projected Preserve belongs to another plan",
++            ));
++        }
++        Ok(Self {
++            plan,
++            root: projection.stage().node,
++            support: ExactRatio::ZERO..ExactRatio::integer(projection.output_frames()),
++            sampling_support: None,
++            constrain_support: false,
++            repeats: projection.stage().descriptor.instance.repeats.clone(),
++            definition: projection.stage().descriptor.definition.clone(),
++            placed_transform: None,
++            bypass_binding: None,
++            gap: None,
++            projection: Some(projection),
+         })
+     }
+ 
+@@ -594,6 +743,23 @@
+         let count = grid.boundary(self.support.end)?;
+         if samples.start.0 < 0 || samples.end < samples.start || samples.end > count {
+             return Err(PlanError::AudioRangeOutOfRange);
++        }
++        if self.projection.is_some() {
++            let mut spans = Vec::new();
++            if samples.start < samples.end {
++                let mut span = self.projected_span(samples.start, grid)?;
++                span.samples = samples.start..span.allocated_samples.end.min(samples.end);
++                spans.push(span);
++            }
++            return Ok(AudioSignalQuery {
++                project_id: self.plan.metadata.project_id.clone(),
++                revision_id: self.plan.metadata.revision_id.clone(),
++                definition: self.definition.clone(),
++                samples,
++                spans,
++                lookup: LookupStats::default(),
++                work: 1,
++            });
+         }
+         let mut budget = Budget {
+             remaining: limits.maximum_work,
+@@ -624,6 +790,45 @@
+             spans,
+             lookup: budget.lookup,
+             work: limits.maximum_work - budget.remaining,
++        })
++    }
++
++    fn projected_span(
++        &self,
++        sample: SignalSample,
++        grid: AudioSampleGrid<SignalSample>,
++    ) -> Result<AudioSignalSpan<'plan>, PlanError> {
++        let projection = self
++            .projection
++            .as_ref()
++            .ok_or(PlanError::InvalidPlan("projected signal has no stage"))?;
++        let transform = self.transform()?;
++        let allocated_samples =
++            grid.boundary(self.support.start)?..grid.boundary(self.support.end)?;
++        if !allocated_samples.contains(&sample) {
++            return Err(PlanError::InvalidPlan(
++                "projected signal interval did not advance",
++            ));
++        }
++        let sampling = AudioSampleMap::new(
++            allocated_samples.start,
++            transform.local_at(allocated_samples.start)?,
++            transform
++                .signal_frames_per_sample
++                .checked_div(transform.signal_frames_per_local_frame)?,
++        )?;
++        Ok(AudioSignalSpan {
++            definition: self.definition.clone(),
++            samples: allocated_samples.clone(),
++            allocated_samples,
++            signal_extent: self.support.clone(),
++            instance: projection.stage().descriptor().instance.clone(),
++            gap_after: None,
++            transform,
++            grid,
++            sampling,
++            retimes: Vec::new(),
++            content: AudioSignalContent::ProjectedStage(Arc::clone(projection)),
+         })
+     }
+ 
+--- before/crates/deadpan-plan/src/audio_tape.rs
++++ crates/deadpan-plan/src/audio_tape.rs
+@@ -1,6 +1,7 @@
+ //! Exact borrowed projections of current audio signal contexts.
+ 
+ use std::ops::Range;
++use std::sync::Arc;
+ 
+ use deadpan_core::{ExactRatio, MIX_SAMPLE_RATE};
+ 
+@@ -8,6 +9,33 @@
+     AudioBoundaryRule, AudioPolicyQuery, AudioQueryLimits, AudioSampleGrid, AudioSignal,
+     AudioSignalQuery, LookupStats, PlanError, RenderPlan, SignalSample,
+ };
++
++const MAX_MATERIALIZED_TAPE_RUNS: usize = 65_536;
++
++#[derive(Debug)]
++struct TapeBuildBudget {
++    remaining_runs: usize,
++}
++
++impl Default for TapeBuildBudget {
++    fn default() -> Self {
++        Self {
++            remaining_runs: MAX_MATERIALIZED_TAPE_RUNS,
++        }
++    }
++}
++
++impl TapeBuildBudget {
++    fn charge(&mut self, runs: usize) -> Result<(), PlanError> {
++        self.remaining_runs =
++            self.remaining_runs
++                .checked_sub(runs)
++                .ok_or(PlanError::AudioQueryLimit(
++                    "audio tape projection expansion",
++                ))?;
++        Ok(())
++    }
++}
+ 
+ /// One exact destination run backed by a live signal window in the same plan.
+ /// Its increasing affine map sends destination coordinates to source signal
+@@ -17,7 +45,13 @@
+ pub struct AudioSignalTapeRun<'plan> {
+     destination: Range<ExactRatio>,
+     source: Range<ExactRatio>,
+-    signal: AudioSignal<'plan>,
++    provider: TapeProvider<'plan>,
++}
++
++#[derive(Debug, Clone)]
++enum TapeProvider<'plan> {
++    Signal(Box<AudioSignal<'plan>>),
++    Intrinsic(Arc<crate::AudioStageProjection<'plan>>),
+ }
+ 
+ impl<'plan> AudioSignalTapeRun<'plan> {
+@@ -29,7 +63,21 @@
+         Self {
+             destination,
+             source,
+-            signal,
++            provider: TapeProvider::Signal(Box::new(signal)),
++        }
++    }
++
++    /// Route a live projected Preserve stage's intrinsic output into this run.
++    /// `source` is measured in the projection's normalized output clock.
++    pub fn intrinsic(
++        destination: Range<ExactRatio>,
++        source: Range<ExactRatio>,
++        projection: Arc<crate::AudioStageProjection<'plan>>,
++    ) -> Self {
++        Self {
++            destination,
++            source,
++            provider: TapeProvider::Intrinsic(projection),
+         }
+     }
+ 
+@@ -44,8 +92,11 @@
+ 
+ #[derive(Debug, Clone)]
+ struct PlacedRun<'plan> {
++    destination: Range<ExactRatio>,
+     samples: Range<SignalSample>,
+     signal: AudioSignal<'plan>,
++    projection: Option<Arc<crate::AudioStageProjection<'plan>>>,
++    policy_override: Option<Box<AudioSignalTape<'plan>>>,
+ }
+ 
+ /// A bounded exact projection of current signal windows onto one PointCeil grid.
+@@ -53,7 +104,11 @@
+ #[derive(Debug, Clone)]
+ pub struct AudioSignalTape<'plan> {
+     plan: &'plan RenderPlan,
++    /// Full meaningful signal support, including filter and Bound context.
+     support: Range<ExactRatio>,
++    /// Exact interval covered by these runs. A remapped policy view can retain
++    /// wider semantic support while routing only one nested allocation window.
++    route: Range<ExactRatio>,
+     grid: AudioSampleGrid<SignalSample>,
+     runs: Vec<PlacedRun<'plan>>,
+ }
+@@ -66,6 +121,16 @@
+         full_support: Range<ExactRatio>,
+         runs: Vec<AudioSignalTapeRun<'plan>>,
+     ) -> Result<Self, PlanError> {
++        let grid_origin = full_support.start;
++        Self::build(plan, full_support, runs, grid_origin)
++    }
++
++    fn build(
++        plan: &'plan RenderPlan,
++        full_support: Range<ExactRatio>,
++        runs: Vec<AudioSignalTapeRun<'plan>>,
++        grid_origin: ExactRatio,
++    ) -> Result<Self, PlanError> {
+         if !positive_range(&full_support)? {
+             return Err(PlanError::InvalidPlan(
+                 "audio tape support must be positive",
+@@ -74,27 +139,21 @@
+         if runs.is_empty() || runs.len() > 4096 {
+             return Err(PlanError::AudioQueryLimit("audio tape run count"));
+         }
++        let mut build_budget = TapeBuildBudget::default();
++        build_budget.charge(runs.len())?;
+         let rate = plan.metadata().presentation_basis.frame_rate;
+         let frames_per_sample = ExactRatio::new(
+             i128::from(rate.numerator()),
+             i128::from(MIX_SAMPLE_RATE) * i128::from(rate.denominator()),
+         )?;
+-        let grid: AudioSampleGrid<SignalSample> = AudioSampleGrid::new(
+-            full_support.start,
+-            frames_per_sample,
+-            AudioBoundaryRule::PointCeil,
+-        )?;
++        let grid: AudioSampleGrid<SignalSample> =
++            AudioSampleGrid::new(grid_origin, frames_per_sample, AudioBoundaryRule::PointCeil)?;
+         let mut expected_start = full_support.start;
+         let mut placed = Vec::with_capacity(runs.len());
+         for run in runs {
+             if run.destination.start != expected_start || !positive_range(&run.destination)? {
+                 return Err(PlanError::InvalidPlan(
+                     "audio tape runs must be positive and exactly contiguous",
+-                ));
+-            }
+-            if !run.signal.belongs_to(plan) {
+-                return Err(PlanError::InvalidPlan(
+-                    "audio tape provider belongs to another plan",
+                 ));
+             }
+             if run
+@@ -114,16 +173,74 @@
+                     "audio tape run is outside full support",
+                 ));
+             }
+-            let signal = run.signal.remap_for_tape(
+-                full_support.clone(),
+-                run.destination.clone(),
+-                run.source.clone(),
+-                frames_per_sample,
+-            )?;
++            let (signal, projection, policy_override) = match run.provider {
++                TapeProvider::Signal(signal) => {
++                    if !signal.belongs_to(plan) {
++                        return Err(PlanError::InvalidPlan(
++                            "audio tape provider belongs to another plan",
++                        ));
++                    }
++                    (
++                        signal.remap_for_tape(
++                            full_support.clone(),
++                            run.destination.clone(),
++                            run.source.clone(),
++                            frames_per_sample,
++                            grid_origin,
++                        )?,
++                        None,
++                        None,
++                    )
++                }
++                TapeProvider::Intrinsic(projection) => {
++                    if !projection.belongs_to(plan) {
++                        return Err(PlanError::InvalidPlan(
++                            "projected Preserve belongs to another plan",
++                        ));
++                    }
++                    let projection_support = projection.output_policy().support();
++                    if run
++                        .source
++                        .start
++                        .checked_sub(projection_support.start)?
++                        .compare_integer(0)
++                        .is_lt()
++                        || run
++                            .source
++                            .end
++                            .checked_sub(projection_support.end)?
++                            .compare_integer(0)
++                            .is_gt()
++                    {
++                        return Err(PlanError::InvalidPlan(
++                            "projected Preserve source is outside its intrinsic output",
++                        ));
++                    }
++                    let signal = AudioSignal::for_projection(plan, Arc::clone(&projection))?
++                        .remap_for_tape(
++                            full_support.clone(),
++                            run.destination.clone(),
++                            run.source.clone(),
++                            frames_per_sample,
++                            grid_origin,
++                        )?;
++                    let policy_override = Some(Box::new(projection.output_policy().remap_window(
++                        run.source.clone(),
++                        run.destination.clone(),
++                        grid_origin,
++                        frames_per_sample,
++                        &mut build_budget,
++                    )?));
++                    (signal, Some(projection), policy_override)
++                }
++            };
+             placed.push(PlacedRun {
++                destination: run.destination.clone(),
+                 samples: grid.boundary(run.destination.start)?
+                     ..grid.boundary(run.destination.end)?,
+                 signal,
++                projection,
++                policy_override,
+             });
+             expected_start = run.destination.end;
+         }
+@@ -134,7 +251,8 @@
+         }
+         Ok(Self {
+             plan,
+-            support: full_support,
++            support: full_support.clone(),
++            route: full_support,
+             grid,
+             runs: placed,
+         })
+@@ -146,6 +264,10 @@
+ 
+     pub fn support(&self) -> Range<ExactRatio> {
+         self.support.clone()
++    }
++
++    fn sample_start(&self) -> Result<SignalSample, PlanError> {
++        Ok(self.grid.boundary(self.route.start)?)
+     }
+ 
+     /// Number of samples on the common PointCeil grid, independent of run splits.
+@@ -162,7 +284,12 @@
+     ) -> Result<AudioSignalQuery<'plan>, PlanError> {
+         limits.validate()?;
+         let count = self.sample_count()?;
+-        if samples.start.0 < 0 || samples.end < samples.start || samples.end > count {
++        let route_end = self.grid.boundary(self.route.end)?;
++        if samples.start < self.sample_start()?
++            || samples.end < samples.start
++            || samples.end > route_end
++            || samples.end > count
++        {
+             return Err(PlanError::AudioRangeOutOfRange);
+         }
+         let mut spans = Vec::new();
+@@ -227,9 +354,33 @@
+         samples: Range<SignalSample>,
+         limits: AudioQueryLimits,
+     ) -> Result<AudioPolicyQuery<SignalSample>, PlanError> {
++        self.policy_inner(samples, limits, false)
++    }
++
++    /// Resolve explicit silence after a Preserve stage. Physical Source
++    /// endpoint masks belong to its input; silent Holds remain output policy.
++    pub fn policy_after_preserve(
++        &self,
++        samples: Range<SignalSample>,
++        limits: AudioQueryLimits,
++    ) -> Result<AudioPolicyQuery<SignalSample>, PlanError> {
++        self.policy_inner(samples, limits, true)
++    }
++
++    fn policy_inner(
++        &self,
++        samples: Range<SignalSample>,
++        limits: AudioQueryLimits,
++        after_preserve: bool,
++    ) -> Result<AudioPolicyQuery<SignalSample>, PlanError> {
+         limits.validate()?;
+         let count = self.sample_count()?;
+-        if samples.start.0 < 0 || samples.end < samples.start || samples.end > count {
++        let route_end = self.grid.boundary(self.route.end)?;
++        if samples.start < self.sample_start()?
++            || samples.end < samples.start
++            || samples.end > route_end
++            || samples.end > count
++        {
+             return Err(PlanError::AudioRangeOutOfRange);
+         }
+         let mut suppressed = Vec::new();
+@@ -254,15 +405,20 @@
+             if remaining_work == 0 {
+                 return Err(PlanError::AudioQueryLimit("audio tape policy work"));
+             }
+-            let policy = run.signal.policy(
+-                cursor..end,
+-                AudioQueryLimits {
+-                    // Policy span limits apply to each logical provider query;
+-                    // recursive content and masks share the aggregate work cap.
+-                    maximum_spans: limits.maximum_spans,
+-                    maximum_work: remaining_work,
+-                },
+-            )?;
++            let query_limits = AudioQueryLimits {
++                // Policy span limits apply to each logical provider query;
++                // recursive content and masks share the aggregate work cap.
++                maximum_spans: limits.maximum_spans,
++                maximum_work: remaining_work,
++            };
++            let policy = if let Some(view) = &run.policy_override {
++                view.policy_after_preserve(cursor..end, query_limits)?
++            } else if after_preserve {
++                run.signal
++                    .policy_after_preserve(cursor..end, query_limits)?
++            } else {
++                run.signal.policy(cursor..end, query_limits)?
++            };
+             charge(&mut work, policy.work, limits.maximum_work)?;
+             add_lookup(&mut lookup, policy.lookup)?;
+             suppressed.extend(policy.suppressed);
+@@ -289,6 +445,155 @@
+             lookup,
+             work,
+         })
++    }
++
++    fn remap_window(
++        &self,
++        source_window: Range<ExactRatio>,
++        destination: Range<ExactRatio>,
++        grid_origin: ExactRatio,
++        frames_per_sample: ExactRatio,
++        build_budget: &mut TapeBuildBudget,
++    ) -> Result<Self, PlanError> {
++        if !positive_range(&source_window)? || !positive_range(&destination)? {
++            return Err(PlanError::InvalidPlan(
++                "audio tape remap ranges must be positive",
++            ));
++        }
++        if source_window
++            .start
++            .checked_sub(self.route.start)?
++            .compare_integer(0)
++            .is_lt()
++            || source_window
++                .end
++                .checked_sub(self.route.end)?
++                .compare_integer(0)
++                .is_gt()
++        {
++            return Err(PlanError::InvalidPlan(
++                "audio tape remap source is outside support",
++            ));
++        }
++        let rate = source_window
++            .end
++            .checked_sub(source_window.start)?
++            .checked_div(destination.end.checked_sub(destination.start)?)?;
++        let map_to_destination = |source_frame: ExactRatio| {
++            destination.start.checked_add(
++                source_frame
++                    .checked_sub(source_window.start)?
++                    .checked_div(rate)?,
++            )
++        };
++        let semantic_support =
++            map_to_destination(self.support.start)?..map_to_destination(self.support.end)?;
++        let grid: AudioSampleGrid<SignalSample> =
++            AudioSampleGrid::new(grid_origin, frames_per_sample, AudioBoundaryRule::PointCeil)?;
++        build_budget.charge(self.runs.len())?;
++        let mut placed = Vec::new();
++        let mut expected_start = destination.start;
++        for run in &self.runs {
++            let start = if run
++                .destination
++                .start
++                .checked_sub(source_window.start)?
++                .compare_integer(0)
++                .is_gt()
++            {
++                run.destination.start
++            } else {
++                source_window.start
++            };
++            let end = if run
++                .destination
++                .end
++                .checked_sub(source_window.end)?
++                .compare_integer(0)
++                .is_lt()
++            {
++                run.destination.end
++            } else {
++                source_window.end
++            };
++            if end.checked_sub(start)?.compare_integer(0).is_le() {
++                continue;
++            }
++            let destination_run = map_to_destination(start)?..map_to_destination(end)?;
++            if destination_run.start != expected_start {
++                return Err(PlanError::InvalidPlan(
++                    "audio tape remap did not preserve contiguous runs",
++                ));
++            }
++            let signal = run.signal.remap_for_tape(
++                semantic_support.clone(),
++                destination_run.clone(),
++                start..end,
++                frames_per_sample,
++                grid_origin,
++            )?;
++            let policy_override = match &run.policy_override {
++                Some(view) => Some(Box::new(view.remap_window(
++                    start..end,
++                    destination_run.clone(),
++                    grid_origin,
++                    frames_per_sample,
++                    build_budget,
++                )?)),
++                None => None,
++            };
++            placed.push(PlacedRun {
++                destination: destination_run.clone(),
++                samples: grid.boundary(destination_run.start)?
++                    ..grid.boundary(destination_run.end)?,
++                signal,
++                projection: run.projection.clone(),
++                policy_override,
++            });
++            expected_start = destination_run.end;
++        }
++        if expected_start != destination.end {
++            return Err(PlanError::InvalidPlan(
++                "audio tape remap did not cover destination",
++            ));
++        }
++        Ok(Self {
++            plan: self.plan,
++            support: semantic_support,
++            route: destination,
++            grid,
++            runs: placed,
++        })
++    }
++
++    pub(crate) fn validate_projection_scope(
++        &self,
++        owner: &crate::AudioStage<'_>,
++        budget: &mut crate::audio_projection::ProjectionValidationBudget,
++        depth: usize,
++    ) -> Result<usize, PlanError> {
++        let mut relative_depth = 0;
++        for run in &self.runs {
++            budget.edge()?;
++            match &run.projection {
++                Some(projection) => {
++                    if !owner.accepts_projection_stage(projection.stage()) {
++                        return Err(PlanError::InvalidPlan(
++                            "projected Preserve provider is outside its owner scope",
++                        ));
++                    }
++                    relative_depth = relative_depth.max(projection.validate_graph(budget, depth)?);
++                }
++                None => {
++                    if !owner.accepts_projection_signal(&run.signal) {
++                        return Err(PlanError::InvalidPlan(
++                            "audio signal provider is outside its Preserve owner scope",
++                        ));
++                    }
++                }
++            }
++        }
++        Ok(relative_depth)
+     }
+ 
+     fn run_for(
+--- before/crates/deadpan-plan/src/lib.rs
++++ crates/deadpan-plan/src/lib.rs
+@@ -7,6 +7,7 @@
+ //! pixel effects, audio processing, or external I/O.
+ 
+ mod audio_envelope;
++mod audio_projection;
+ mod audio_reference;
+ mod audio_sampling;
+ mod audio_tape;
+@@ -14,6 +15,7 @@
+ mod plan;
+ 
+ pub use audio_envelope::{AudioEnvelope, AudioEnvelopeEndpoint};
++pub use audio_projection::{AudioProjectionIdentity, AudioStageProjection};
+ pub use audio_reference::{
+     AudioReferencePlan, ReferenceAudioClock, ReferenceAudioContent, ReferenceAudioQuery,
+     ReferenceAudioSpan, ReferenceClockOwner, ReferenceProcessingDomain, ReferenceProcessingKind,
+--- before/crates/deadpan-plan/tests/audio_definition.rs
++++ crates/deadpan-plan/tests/audio_definition.rs
+@@ -6,6 +6,8 @@
+     AudioSignalContent, AudioStage, PlanError, RenderPlan, SignalSample,
+ };
+ 
++#[path = "audio_definition/projection.rs"]
++mod projection;
+ #[path = "audio_definition/repeat_gap.rs"]
+ mod repeat_gap;
+ 
+--- before/crates/deadpan-plan/tests/audio_definition/projection.rs
++++ crates/deadpan-plan/tests/audio_definition/projection.rs
+@@ -0,0 +1,449 @@
++use super::*;
++use std::ops::Range;
++use std::sync::Arc;
++
++use deadpan_plan::{AudioSignal, AudioSignalTape, AudioSignalTapeRun, AudioStageProjection};
++
++fn ratio(n: i128, d: i128) -> ExactRatio {
++    ExactRatio::new(n, d).unwrap()
++}
++
++fn tape<'plan>(
++    plan: &'plan RenderPlan,
++    destination: Range<ExactRatio>,
++    source: Range<ExactRatio>,
++    signal: AudioSignal<'plan>,
++) -> AudioSignalTape<'plan> {
++    AudioSignalTape::new(
++        plan,
++        destination.clone(),
++        vec![AudioSignalTapeRun::new(destination, source, signal)],
++    )
++    .unwrap()
++}
++
++fn stages(signal: AudioSignal<'_>) -> Vec<AudioStage<'_>> {
++    signal
++        .query(
++            SignalSample(0)..signal.sample_count().unwrap(),
++            AudioQueryLimits::default(),
++        )
++        .unwrap()
++        .spans
++        .into_iter()
++        .map(|span| {
++            let AudioSignalContent::Stage(stage) = span.content else {
++                panic!("expected stage");
++            };
++            stage
++        })
++        .collect()
++}
++
++#[test]
++fn intrinsic_policy_is_reclocked_before_rounding_a_hold_with_no_native_point() {
++    let rate = FrameRate::new(96_000, 1).unwrap();
++    let doc = document(
++        rate,
++        &["stage"],
++        [
++            ("a", source(1)),
++            ("pause", hold(1)),
++            ("b", source(2)),
++            (
++                "group",
++                BeatNode::sequence("Group", vec![id("a"), id("pause"), id("b")]),
++            ),
++            (
++                "stage",
++                retime("group", 2, 0, 4, PitchPolicy::Preserve, RetimePurpose::Edit),
++            ),
++        ],
++        BTreeMap::new(),
++    );
++    let plan = RenderPlan::compile(&doc).unwrap();
++    let stage = stages(plan.audio_signal()).remove(0);
++    let input = tape(
++        &plan,
++        ExactRatio::ZERO..ratio(4, 1),
++        ExactRatio::ZERO..ratio(4, 1),
++        stage.input_signal(),
++    );
++    let policy = tape(
++        &plan,
++        ExactRatio::ZERO..ratio(2, 1),
++        ExactRatio::ZERO..ratio(4, 1),
++        stage.input_signal(),
++    );
++    assert!(
++        input
++            .policy(
++                SignalSample(0)..SignalSample(2),
++                AudioQueryLimits::default()
++            )
++            .unwrap()
++            .suppressed
++            .is_empty()
++    );
++    assert!(
++        policy
++            .policy(
++                SignalSample(0)..SignalSample(1),
++                AudioQueryLimits::default()
++            )
++            .unwrap()
++            .suppressed
++            .is_empty()
++    );
++    let projection = AudioStageProjection::new(stage, input, policy, frames(2)).unwrap();
++    let schedule = AudioSignalTape::new(
++        &plan,
++        ExactRatio::ZERO..ratio(8, 1),
++        vec![AudioSignalTapeRun::intrinsic(
++            ExactRatio::ZERO..ratio(8, 1),
++            ExactRatio::ZERO..ratio(2, 1),
++            Arc::clone(&projection),
++        )],
++    )
++    .unwrap();
++    let policy = schedule
++        .policy(
++            SignalSample(0)..SignalSample(4),
++            AudioQueryLimits::default(),
++        )
++        .unwrap();
++    assert_eq!(policy.suppressed, vec![SignalSample(1)..SignalSample(2)]);
++    let query = schedule
++        .query(
++            SignalSample(1)..SignalSample(3),
++            AudioQueryLimits::default(),
++        )
++        .unwrap();
++    assert_eq!(query.spans.len(), 1);
++    assert_eq!(
++        query.spans[0].sampling.local_at(SignalSample(1)).unwrap(),
++        ratio(1, 2)
++    );
++    assert!(
++        matches!(&query.spans[0].content, AudioSignalContent::ProjectedStage(found) if found.identity() == projection.identity())
++    );
++    let wire = serde_json::to_value(&query).unwrap();
++    assert!(
++        !wire.to_string().contains("input_tape"),
++        "serialization is descriptor-only"
++    );
++}
++
++#[test]
++fn projection_rejects_foreign_scopes_clocks_and_self_providers() {
++    let rate = FrameRate::new(48_000, 1).unwrap();
++    let doc = document(
++        rate,
++        &["repeat"],
++        [
++            ("source", source(4)),
++            (
++                "stage",
++                retime(
++                    "source",
++                    2,
++                    0,
++                    4,
++                    PitchPolicy::Preserve,
++                    RetimePurpose::Edit,
++                ),
++            ),
++            ("repeat", repeat("stage", 2)),
++        ],
++        BTreeMap::new(),
++    );
++    let plan = RenderPlan::compile(&doc).unwrap();
++    let scoped = stages(plan.audio_signal());
++    assert_eq!(scoped.len(), 2);
++    let first = &scoped[0];
++    let second = &scoped[1];
++    let input = || {
++        tape(
++            &plan,
++            ExactRatio::ZERO..ratio(4, 1),
++            ExactRatio::ZERO..ratio(4, 1),
++            first.input_signal(),
++        )
++    };
++    let policy = || {
++        tape(
++            &plan,
++            ExactRatio::ZERO..ratio(2, 1),
++            ExactRatio::ZERO..ratio(4, 1),
++            first.input_signal(),
++        )
++    };
++    assert!(AudioStageProjection::new(first.clone(), input(), policy(), frames(2)).is_ok());
++    let wrong_play = tape(
++        &plan,
++        ExactRatio::ZERO..ratio(4, 1),
++        ExactRatio::ZERO..ratio(4, 1),
++        second.input_signal(),
++    );
++    assert!(AudioStageProjection::new(first.clone(), wrong_play, policy(), frames(2)).is_err());
++    let detached = tape(
++        &plan,
++        ExactRatio::ZERO..ratio(4, 1),
++        ExactRatio::ZERO..ratio(4, 1),
++        plan.audio_definition(selection("source")).unwrap().signal(),
++    );
++    assert!(AudioStageProjection::new(first.clone(), detached, policy(), frames(2)).is_err());
++    let self_provider = tape(
++        &plan,
++        ExactRatio::ZERO..ratio(4, 1),
++        ExactRatio::ZERO..ratio(2, 1),
++        first.output_signal(),
++    );
++    assert!(AudioStageProjection::new(first.clone(), self_provider, policy(), frames(2)).is_err());
++    let wrong_clock = tape(
++        &plan,
++        ExactRatio::ZERO..ratio(3, 1),
++        ExactRatio::ZERO..ratio(4, 1),
++        first.input_signal(),
++    );
++    assert!(AudioStageProjection::new(first.clone(), wrong_clock, policy(), frames(2)).is_err());
++    let foreign = RenderPlan::compile(&doc).unwrap();
++    let foreign_stage = stages(foreign.audio_signal()).remove(0);
++    let foreign_input = tape(
++        &foreign,
++        ExactRatio::ZERO..ratio(4, 1),
++        ExactRatio::ZERO..ratio(4, 1),
++        foreign_stage.input_signal(),
++    );
++    assert!(AudioStageProjection::new(first.clone(), foreign_input, policy(), frames(2)).is_err());
++}
++
++#[test]
++fn projection_keeps_nonzero_source_selection_on_a_normalized_input_clock() {
++    let rate = FrameRate::new(30_000, 1001).unwrap();
++    let doc = document(
++        rate,
++        &["stage"],
++        [
++            ("source", source(7)),
++            (
++                "stage",
++                retime(
++                    "source",
++                    2,
++                    3,
++                    7,
++                    PitchPolicy::Preserve,
++                    RetimePurpose::Edit,
++                ),
++            ),
++        ],
++        BTreeMap::new(),
++    );
++    let plan = RenderPlan::compile(&doc).unwrap();
++    let stage = stages(plan.audio_signal()).remove(0);
++    let input = tape(
++        &plan,
++        ExactRatio::ZERO..ratio(4, 1),
++        ratio(3, 1)..ratio(7, 1),
++        stage.input_signal(),
++    );
++    let policy = tape(
++        &plan,
++        ExactRatio::ZERO..ratio(2, 1),
++        ratio(3, 1)..ratio(7, 1),
++        stage.input_signal(),
++    );
++    let projection = AudioStageProjection::new(stage, input, policy, frames(2)).unwrap();
++    assert_eq!(
++        projection.input_tape().sample_count().unwrap(),
++        SignalSample(6407)
++    );
++    assert_eq!(
++        projection.output_policy().sample_count().unwrap(),
++        SignalSample(3204)
++    );
++    assert_eq!(plan.audio_duration().unwrap(), AudioSample(3203));
++    let query = projection
++        .input_tape()
++        .query(
++            SignalSample(0)..SignalSample(1),
++            AudioQueryLimits::default(),
++        )
++        .unwrap();
++    assert_eq!(
++        query.spans[0].sampling.local_at(SignalSample(0)).unwrap(),
++        ratio(3, 1)
++    );
++}
++
++#[test]
++fn mapped_policy_expansion_is_bounded_before_shared_children_are_duplicated() {
++    let doc = document(
++        FrameRate::new(48_000, 1).unwrap(),
++        &["outer"],
++        [
++            ("source", source(4)),
++            (
++                "inner",
++                retime(
++                    "source",
++                    2,
++                    0,
++                    4,
++                    PitchPolicy::Preserve,
++                    RetimePurpose::Edit,
++                ),
++            ),
++            (
++                "outer",
++                retime("inner", 1, 0, 2, PitchPolicy::Preserve, RetimePurpose::Edit),
++            ),
++        ],
++        BTreeMap::new(),
++    );
++    let plan = RenderPlan::compile(&doc).unwrap();
++    let outer = stages(plan.audio_signal()).remove(0);
++    let inner = stages(outer.input_signal()).remove(0);
++    let input = tape(
++        &plan,
++        ExactRatio::ZERO..ratio(4, 1),
++        ExactRatio::ZERO..ratio(4, 1),
++        inner.input_signal(),
++    );
++    let policy = AudioSignalTape::new(
++        &plan,
++        ExactRatio::ZERO..ratio(2, 1),
++        (0..256)
++            .map(|index| {
++                AudioSignalTapeRun::new(
++                    ratio(index, 128)..ratio(index + 1, 128),
++                    ExactRatio::ZERO..ratio(4, 1),
++                    inner.input_signal(),
++                )
++            })
++            .collect(),
++    )
++    .unwrap();
++    let child = AudioStageProjection::new(inner, input, policy, frames(2)).unwrap();
++    // Only one unique child projection, but 256*256 policy runs would unfold.
++    let expanded = AudioSignalTape::new(
++        &plan,
++        ExactRatio::ZERO..ratio(2, 1),
++        (0..256)
++            .map(|index| {
++                AudioSignalTapeRun::intrinsic(
++                    ratio(index, 128)..ratio(index + 1, 128),
++                    ExactRatio::ZERO..ratio(2, 1),
++                    Arc::clone(&child),
++                )
++            })
++            .collect(),
++    );
++    assert!(matches!(expanded, Err(PlanError::AudioQueryLimit(_))));
++}
++
++#[test]
++fn intrinsic_policy_window_preserves_bound_support_outside_the_visible_run() {
++    let old = document(
++        FrameRate::new(48_000, 1).unwrap(),
++        &["inner"],
++        [
++            ("hold", hold(2)),
++            ("source", source(14)),
++            (
++                "group",
++                BeatNode::sequence("Group", vec![id("hold"), id("source")]),
++            ),
++            (
++                "inner",
++                retime(
++                    "group",
++                    8,
++                    0,
++                    16,
++                    PitchPolicy::Preserve,
++                    RetimePurpose::Edit,
++                ),
++            ),
++        ],
++        BTreeMap::new(),
++    );
++    let timing = AudioTimingId {
++        allocation: RevisionId::new("bound-policy").unwrap(),
++        ordinal: 0,
++    };
++    let bindings = AudioBindingState::new(
++        vec![AudioTimingRecord {
++            id: timing.clone(),
++            layout: FrozenAudioLayout::capture(&old).unwrap(),
++        }],
++        BTreeMap::from([(
++            id("inner"),
++            OwnedAudioBinding {
++                reanchors: vec![],
++                resume: None,
++                lattice: AudioPlacementTemplate {
++                    gap_after: None,
++                    arguments: vec![],
++                    births: vec![],
++                    reference: AudioReferenceClock {
++                        recipe: AudioRecipeKind::Node,
++                        timing,
++                        root: AudioClockRoot::ProjectRootRoundEven,
++                        physical: id("inner"),
++                    },
++                },
++            },
++        )]),
++    )
++    .unwrap();
++    let mut wire = serde_json::to_value(&old).unwrap();
++    wire["nodes"]["outer"] = serde_json::to_value(retime(
++        "inner",
++        4,
++        0,
++        8,
++        PitchPolicy::Preserve,
++        RetimePurpose::Edit,
++    ))
++    .unwrap();
++    wire["nodes"]["root"] =
++        serde_json::to_value(BeatNode::sequence("Root", vec![id("outer")])).unwrap();
++    wire["audio_bindings"] = serde_json::to_value(bindings).unwrap();
++    let current = ProjectDocument::from_json(&wire.to_string()).unwrap();
++    let plan = RenderPlan::compile(&current).unwrap();
++    let outer = stages(plan.audio_signal()).remove(0);
++    let input = tape(
++        &plan,
++        ExactRatio::ZERO..ratio(8, 1),
++        ExactRatio::ZERO..ratio(8, 1),
++        outer.input_signal(),
++    );
++    let policy = tape(
++        &plan,
++        ExactRatio::ZERO..ratio(4, 1),
++        ExactRatio::ZERO..ratio(8, 1),
++        outer.input_signal(),
++    );
++    let projection = AudioStageProjection::new(outer, input, policy, frames(4)).unwrap();
++    let schedule = AudioSignalTape::new(
++        &plan,
++        ExactRatio::ZERO..ExactRatio::ONE,
++        vec![AudioSignalTapeRun::intrinsic(
++            ExactRatio::ZERO..ExactRatio::ONE,
++            ratio(11, 20)..ratio(7, 10),
++            projection,
++        )],
++    )
++    .unwrap();
++    let policy = schedule
++        .policy(
++            SignalSample(0)..SignalSample(1),
++            AudioQueryLimits::default(),
++        )
++        .unwrap();
++    // Current B-local1.1 is Source. Retained reference0.9 still owns Hold sample0.
++    // Cropping meaningful support to [1.1,1.4) rounds it empty and loses the mask.
++    assert_eq!(policy.suppressed, vec![SignalSample(0)..SignalSample(1)]);
++}

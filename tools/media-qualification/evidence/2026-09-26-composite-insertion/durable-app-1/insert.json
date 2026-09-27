@@ -1,0 +1,33 @@
+{
+  "protocol": 1,
+  "project_id": "9c88b275-f4da-44ab-b4d1-419a65d60a02",
+  "expected_revision": "6bdb48fb-6b6d-4706-8032-0c15daa33c02",
+  "new_revision": "insert",
+  "command": {
+    "command": "insert",
+    "parent": "759708f6-09e4-4143-b01a-0fb12882fe86",
+    "index": 0,
+    "subtree": {
+      "root": "child",
+      "nodes": {
+        "child": {
+          "label": "Child",
+          "kind": {
+            "type": "hold",
+            "recipe": {
+              "duration": 2,
+              "video": {
+                "type": "background"
+              },
+              "audio": {
+                "type": "silence"
+              }
+            }
+          }
+        }
+      },
+      "overrides": {},
+      "gap_overrides": {}
+    }
+  }
+}

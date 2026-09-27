@@ -1,0 +1,26 @@
+{
+  "scope": "Incremental harness wake and worker timing changes against before/; previous uncommitted work remains independently reviewed and preserved",
+  "base_revision": "c03a5edde5f28d27074745eb15711cb28b1f2e50",
+  "resolved_review_base": "origin/main",
+  "general": {
+    "agent": "wake_general_review",
+    "findings": [],
+    "result": "No actionable findings; notification handoff, finite deadline, native callback ownership, and first-success ordered phase admission reviewed"
+  },
+  "concurrency": {
+    "agent": "wake_concurrency_review",
+    "findings": [
+      {
+        "severity": "major",
+        "file": "crates/deadpan-app/src/preview/harness/wake.rs",
+        "line_at_review": 77,
+        "issue": "begin_step clears eligible future delayed requests before their deadlines",
+        "decision": "accepted",
+        "fix": "Consume only due entries, retaining future deadlines through completed-pass pruning; add deterministic one-intervening-step regression",
+        "status": "fixed and independently re-reviewed"
+      }
+    ],
+    "followup": "No actionable concurrency defects found in revised wake.rs and harness.rs; future deadlines survive early input and stale passes expire after the step."
+  },
+  "additional_fix": "Required Clippy manual_is_multiple_of finding corrected without suppression."
+}

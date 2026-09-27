@@ -15,7 +15,7 @@ use crate::{
     SourceAudioMapping,
 };
 
-const AUDIO_CONTEXT_SCHEMA: u32 = 1;
+const AUDIO_CONTEXT_SCHEMA: u32 = 3;
 
 /// Full authored audio input. Source mapping and signed mix offset are retained
 /// because their effective placement need not fit SourceAudioMapping::Placement.
@@ -30,6 +30,38 @@ pub enum FrozenAudioInput {
     Hold {
         source: SourceAudio,
     },
+}
+
+/// Version 1 predates exact selection windows. Its closed input grammar is
+/// independent of the current Source mapping enum, including nested keys.
+#[derive(Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
+enum LegacyInput {
+    Source {
+        source: SourceAudio,
+        mapping: crate::legacy_audio_mapping_v19::AudioMapping,
+        offset: AudioSample,
+    },
+    Hold {
+        source: SourceAudio,
+    },
+}
+
+impl LegacyInput {
+    fn upgrade(self) -> FrozenAudioInput {
+        match self {
+            Self::Source {
+                source,
+                mapping,
+                offset,
+            } => FrozenAudioInput::Source {
+                source,
+                mapping: mapping.upgrade(),
+                offset,
+            },
+            Self::Hold { source } => FrozenAudioInput::Hold { source },
+        }
+    }
 }
 
 impl FrozenAudioInput {
@@ -70,7 +102,7 @@ impl FrozenAudioContext {
         document.validate()?;
         if !document.audio_bindings().is_empty() {
             return Err(invalid(
-                "audio context schema 1 cannot retain authored audio timing bindings",
+                "audio contexts cannot retain authored audio timing bindings",
             ));
         }
         let layout = FrozenAudioLayout::capture(document)?;
@@ -147,7 +179,7 @@ impl FrozenAudioContext {
             return Err(limit("audio context JSON exceeds byte limit"));
         }
         let wire: ContextWire<'_> = serde_json::from_str(json).map_err(DocumentError::json)?;
-        if wire.schema_version != AUDIO_CONTEXT_SCHEMA {
+        if !(1..=AUDIO_CONTEXT_SCHEMA).contains(&wire.schema_version) {
             return Err(DocumentError::new(
                 DocumentErrorCode::UnsupportedSchema,
                 format!("unsupported audio context schema {}", wire.schema_version),
@@ -155,15 +187,23 @@ impl FrozenAudioContext {
         }
         // Layout ingress must use its own streaming preflight before typed
         // materialization. A generic nested Deserialize would bypass that gate.
+        if wire.schema_version < 3 {
+            crate::legacy_audio_binding_v21::validate_v22_layout(wire.layout.get())
+                .map_err(DocumentError::json)?;
+        }
         let mut inputs = BTreeMap::new();
         for (id, raw) in wire.inputs {
             if raw.get().len() > 64 * 1024 {
                 return Err(limit("audio context input exceeds byte limit"));
             }
-            inputs.insert(
-                id,
-                serde_json::from_str(raw.get()).map_err(DocumentError::json)?,
-            );
+            let input = if wire.schema_version == 1 {
+                serde_json::from_str::<LegacyInput>(raw.get())
+                    .map_err(DocumentError::json)?
+                    .upgrade()
+            } else {
+                serde_json::from_str(raw.get()).map_err(DocumentError::json)?
+            };
+            inputs.insert(id, input);
         }
         let context = Self {
             schema_version: wire.schema_version,
@@ -191,8 +231,18 @@ impl FrozenAudioContext {
             .map_err(|error| DocumentError::new(DocumentErrorCode::InvalidJson, error.to_string()))
     }
 
+    /// Authenticate every retained fact against a fresh capture. A valid
+    /// schema-1 input keeps its original serialization version; that version
+    /// alone must not make its unchanged historical body unavailable.
+    pub fn matches_document(&self, document: &ProjectDocument) -> Result<bool, DocumentError> {
+        self.validate()?;
+        let mut captured = Self::capture(document)?;
+        captured.schema_version = self.schema_version;
+        Ok(*self == captured)
+    }
+
     pub fn validate(&self) -> Result<(), DocumentError> {
-        if self.schema_version != AUDIO_CONTEXT_SCHEMA {
+        if !(1..=AUDIO_CONTEXT_SCHEMA).contains(&self.schema_version) {
             return Err(DocumentError::new(
                 DocumentErrorCode::UnsupportedSchema,
                 "unsupported audio context schema",
@@ -258,10 +308,20 @@ impl FrozenAudioContext {
                         mapping, offset, ..
                     },
                 ) => {
-                    let start = mapping.start_frames_with_offset(*offset, self.layout.rate())?;
-                    let end = start
-                        .checked_add(mapping.duration_frames(self.layout.nodes()[id].duration)?)?;
-                    if start != placement.start || end != placement.end {
+                    if self.schema_version == 1
+                        && crate::legacy_audio_mapping_v19::AudioMapping::project(*mapping)
+                            .is_none()
+                    {
+                        return Err(invalid(
+                            "schema-1 audio context contains a selected placement",
+                        ));
+                    }
+                    let selection = mapping.selection_frames_with_offset(
+                        self.layout.nodes()[id].duration,
+                        *offset,
+                        self.layout.rate(),
+                    )?;
+                    if selection != *placement {
                         return Err(invalid(
                             "source input mapping disagrees with frozen placement",
                         ));

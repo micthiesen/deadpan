@@ -1,0 +1,30 @@
+    Blocking waiting for file lock on build directory
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+   Compiling deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5m 21s
+     Running tests/migration.rs (target/debug/deps/migration-1ec6c371835407ea)
+
+running 3 tests
+test audio_gap_bindings::gap_bindings_survive_durable_commands_undo_redo_and_reopen ... FAILED
+test audio_gap_bindings::actual_schema27_binary_retains_reanchors_phase_terms_and_pending_redo ... ok
+test audio_gap_bindings::schema27_rejects_new_gap_intent_in_snapshots_and_both_patch_directions ... ok
+
+failures:
+
+---- audio_gap_bindings::gap_bindings_survive_durable_commands_undo_redo_and_reopen stdout ----
+
+thread 'audio_gap_bindings::gap_bindings_survive_durable_commands_undo_redo_and_reopen' (44840960) panicked at crates/deadpan-store/tests/migration/audio_gap_bindings.rs:263:5:
+assertion `left == right` failed
+  left: 2
+ right: 1
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    audio_gap_bindings::gap_bindings_survive_durable_commands_undo_redo_and_reopen
+
+test result: FAILED. 2 passed; 1 failed; 0 ignored; 0 measured; 72 filtered out; finished in 9.10s
+
+error: test failed, to rerun pass `-p deadpan-store --test migration`

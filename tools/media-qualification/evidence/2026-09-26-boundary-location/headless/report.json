@@ -1,0 +1,15 @@
+{
+  "passed": true,
+  "commands": 55,
+  "cases": 7,
+  "history": {
+    "revisions": 2,
+    "history": 1,
+    "redo": 0
+  },
+  "app_sha256": "8b2d6978c3f5b9cf48b92015f6d60525996fbaa996afe30e842cf988e718abd9",
+  "cli_sha256": "9ea6449a99c1a32dab2b0eba20bfeca9f3e1dbcde2615efff769a219948ec361",
+  "database_sha256": "f31db5355644b9ba490d835a19b5347425d17b0424f16e44cb3ac57f66ee8176",
+  "database_bytes_unchanged": true,
+  "scope": "native app headless / CLI parity, exact scope inverse coordinates, gap/seam/endpoint bias, failure no-write"
+}

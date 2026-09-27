@@ -1,6 +1,8 @@
-//! Exact text durations. Quantization happens once against the project rate.
+//! Exact text durations. Quantization happens once on the requested clock.
 
-use deadpan_core::{ExactRatio, FrameDuration, FrameRate};
+use deadpan_core::{
+    AudioSample, ExactRatio, FrameDuration, FrameRate, MIX_SAMPLE_RATE, ProjectFrame,
+};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum DurationInput {
@@ -74,6 +76,27 @@ impl DurationInput {
             }
         }
     }
+
+    /// Quantize once on the mix clock, without an intermediate frame boundary.
+    pub fn samples(self, rate: FrameRate) -> Result<AudioSample, String> {
+        match self {
+            Self::Frames(frames) => rate
+                .audio_boundary(ProjectFrame(frames.frames()))
+                .map_err(|error| error.to_string()),
+            Self::Seconds(seconds) => {
+                if seconds.compare_integer(0).is_lt() {
+                    return Err("Duration must be nonnegative, with explicit units.".into());
+                }
+                let samples = seconds
+                    .checked_mul(ExactRatio::integer(i64::from(MIX_SAMPLE_RATE)))
+                    .and_then(ExactRatio::round_even)
+                    .map_err(|error| error.to_string())?;
+                i64::try_from(samples)
+                    .map(AudioSample)
+                    .map_err(|_| "Duration exceeds the supported sample range.".into())
+            }
+        }
+    }
 }
 
 fn range_error() -> String {
@@ -87,7 +110,7 @@ fn digits(value: &str) -> Result<i128, String> {
     value.parse().map_err(|_| range_error())
 }
 
-fn decimal(value: &str) -> Result<ExactRatio, String> {
+pub(super) fn decimal(value: &str) -> Result<ExactRatio, String> {
     let Some((whole, fraction)) = value.split_once('.') else {
         return ExactRatio::new(digits(value)?, 1).map_err(|error| error.to_string());
     };
@@ -106,6 +129,54 @@ fn decimal(value: &str) -> Result<ExactRatio, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn sample_durations_keep_subframe_precision_and_exact_frame_boundaries() {
+        for (input, numerator, denominator, expected) in [
+            ("0f", 30, 1, 0),
+            ("0ms", 30, 1, 0),
+            ("500ms", 30_000, 1001, 24_000),
+            ("750ms", 24, 1, 36_000),
+            ("1f", 30_000, 1001, 1602),
+            ("5f", 30_000, 1001, 8008),
+            ("01:02.500", 25, 1, 3_000_000),
+            ("0.00003125s", 30, 1, 2),
+            ("0.00009375s", 30, 1, 4),
+            ("0.00001s", 30, 1, 0),
+        ] {
+            assert_eq!(
+                DurationInput::parse(input)
+                    .unwrap()
+                    .samples(FrameRate::new(numerator, denominator).unwrap()),
+                Ok(AudioSample(expected)),
+                "{input}"
+            );
+        }
+    }
+
+    #[test]
+    fn sample_durations_check_negative_values_and_all_overflow_boundaries() {
+        let rate = FrameRate::new(48_000, 1).unwrap();
+        assert_eq!(
+            DurationInput::Frames(FrameDuration::new(i64::MAX).unwrap()).samples(rate),
+            Ok(AudioSample(i64::MAX))
+        );
+        assert!(
+            DurationInput::Frames(FrameDuration::new(i64::MAX).unwrap())
+                .samples(FrameRate::new(24, 1).unwrap())
+                .is_err()
+        );
+        let maximum =
+            DurationInput::Seconds(ExactRatio::new(i128::from(i64::MAX), 48_000).unwrap());
+        assert_eq!(maximum.samples(rate), Ok(AudioSample(i64::MAX)));
+        for seconds in [
+            ExactRatio::new(i128::from(i64::MAX) + 1, 48_000).unwrap(),
+            ExactRatio::new(i128::MAX, 1).unwrap(),
+            ExactRatio::new(-1, 1).unwrap(),
+        ] {
+            assert!(DurationInput::Seconds(seconds).samples(rate).is_err());
+        }
+    }
 
     #[test]
     fn duration_inputs_quantize_once_with_ties_to_even() {

@@ -1,0 +1,63 @@
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 47.53s
+     Running tests/audio_definition.rs (target/debug/deps/audio_definition-145fb41405d441b3)
+
+running 11 tests
+test owned_root_domain_rejects_foreign_handles_ranges_cancellation_and_work_limits ... ok
+test definitions_reject_foreign_handles_invalid_ranges_cancel_and_bounded_work ... ok
+test historical_definition_survives_live_deletion_and_rechecks_cached_context_admission ... ok
+test all_overridden_repeat_still_renders_its_unheard_default_definition ... ok
+test owned_root_placements_share_intrinsic_preparation_without_rebinding_clocks ... ok
+test owned_root_placement_keeps_silent_hold_without_any_preserve_input_point ... ok
+test definition_preserve_retains_silent_policy_without_an_input_grid_point ... ok
+test owned_nested_preserve_uses_edited_room_tone_in_the_same_root_clock ... ok
+test definitions_keep_nested_history_silence_room_phase_and_distinct_cache_scopes ... ok
+test owned_source_root_clock_retains_signed_ntsc_phase_and_exact_filter_crop ... ok
+test ntsc_definition_uses_local_zero_and_point_ceil_instead_of_root_allocation ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.80s
+
+     Running tests/audio_domain.rs (target/debug/deps/audio_domain-1f3e28e768a49096)
+
+running 12 tests
+test domain_transfer_masks_outside_signed_support_before_returning_filtered_pcm ... ok
+test bounded_read_does_not_materialize_or_narrow_a_wide_signed_domain ... ok
+test transferred_domain_keeps_one_provenance_observation_across_halo_callbacks ... ok
+test moved_partition_reads_its_hidden_source_instead_of_the_colliding_root_voice ... ok
+test ordinary_edit_crop_keeps_excluded_source_filter_context_out_of_the_domain ... ok
+test hidden_room_tone_gap_keeps_its_loop_origin_and_rechecks_cached_admission ... ok
+test domain_reads_reject_foreign_plans_ranges_cancellation_and_preparation_overruns ... ok
+test hidden_nested_preserve_keeps_full_history_and_distinguishes_absence_from_silence ... ok
+test transferred_domain_rejects_foreign_context_and_uses_the_full_stage_budget ... ok
+test negative_hidden_domain_transfers_fractional_pcm_and_silence_into_a_new_preserve ... ok
+test domain_transfer_halo_callbacks_share_one_deadline ... ok
+test ntsc_hidden_44100_context_keeps_the_captured_fractional_root_origin ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.75s
+
+     Running tests/gap_definition.rs (target/debug/deps/gap_definition-471b52326501244a)
+
+running 6 tests
+test missing_and_zero_gaps_are_rejected_and_tail_remains_explicitly_unsupported ... FAILED
+test silence_policy_survives_a_zero_point_gap_and_later_expanded_placement ... ok
+test gap_reads_recheck_cached_admission_and_enforce_preparation_limits_and_cancellation ... ok
+test current_gap_recipe_changes_audio_while_preserving_explicit_clock ... ok
+test one_play_gap_renders_44100_pcm_without_child_leakage_or_loop_phase_rounding ... ok
+test root_and_point_gap_clocks_keep_signed_ntsc_phase_and_full_finite_filter_context ... ok
+
+failures:
+
+---- missing_and_zero_gaps_are_rejected_and_tail_remains_explicitly_unsupported stdout ----
+
+thread 'missing_and_zero_gaps_are_rejected_and_tail_remains_explicitly_unsupported' (44650146) panicked at crates/deadpan-audio/tests/gap_definition.rs:136:51:
+called `Result::unwrap()` on an `Err` value: DocumentError { code: InvalidDuration, message: "hold duration must be positive" }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    missing_and_zero_gaps_are_rejected_and_tail_remains_explicitly_unsupported
+
+test result: FAILED. 5 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.91s
+
+error: test failed, to rerun pass `-p deadpan-audio --test gap_definition`

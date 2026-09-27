@@ -6,7 +6,7 @@ Deadpan is a native macOS structural editor for massaging one original video int
 
 Read [the full specification](docs/spec/DEADPAN_SPEC.md) and [agent handoff](docs/spec/AGENT_HANDOFF.md) before feature work. The Markdown specification is normative; summaries here do not reduce its scope. [Requirements](docs/REQUIREMENTS.md) tracks DP-01 through DP-24 and Gates A through G. Keep code, tests, evidence, and remaining work current there.
 
-The current foundation includes validated beat documents, reversible structural commands, persistent marks with edit transforms, sparse per-play overrides and automatic nested occurrence isolation, stable repeat identities, exact indexed picture plans and boundary queries, SQLite project/history storage with schema migration, and a shared headless command entrypoint. The native UI creates one-Original projects in system Documents/Deadpan with an automatically initialized full-source baseline, opens legacy projects without changing their profile, registers audio into a separate sound catalog, reuses the whole Original, splits root beats at the cursor, wraps/updates root-beat Repeats, deletes root beats, changes existing root Hold durations, atomically inserts silent freezes into root Source/Hold beats and their fragments, navigates durable undo/redo, and inspects exact Source/Sequence frames through a persistent decoder and shared SDR GPU pipeline. It is not yet a usable video editor or release candidate. All product requirements remain open or partial. A button, mock worker, downloaded model, ignored test, or proposed target does not prove implementation.
+The current foundation includes validated beat documents, reversible structural commands, persistent marks with edit transforms, sparse per-play overrides and automatic nested occurrence isolation, stable repeat identities, exact indexed picture plans and boundary queries, SQLite project/history storage with schema migration, and a shared headless command entrypoint. The native UI creates one-Original projects in system Documents/Deadpan with an automatically initialized full-source baseline, opens legacy projects without changing their profile, registers audio into a separate sound catalog, reuses the whole Original, selects/copies half-open Original moments with v/y and atomically pastes with p/P at explicit Sequence slots, navigates ordinary Sequence groups with Enter/Backspace, splits their direct children at the cursor, wraps/updates Repeats, deletes selected beats, changes existing Hold durations, atomically inserts silent freezes into Source/Hold beats and their fragments under ordinary Sequence groups or at Sequence seams before composite suffixes, navigates durable undo/redo, and inspects exact Source/Sequence frames through a persistent decoder and shared SDR GPU pipeline. It is not yet a usable video editor or release candidate. All product requirements remain open or partial. A button, mock worker, downloaded model, ignored test, or proposed target does not prove implementation.
 
 ## Design philosophy
 
@@ -22,9 +22,10 @@ behavior. Review the coded GUI against the targets; generated labels, sample
 measurements and pictured controls do not authorize invented capabilities.
 
 - Preserve the editor's timing decisions. Use exact typed frame, sample, and source coordinates, half-open ranges, rational frame rates, checked arithmetic, and origin-based sample boundaries. Never accumulate rounded durations. Three plays means three total plays, with gaps only between them; a Hold inserts exactly its authored frames and preserves subsequent original speech.
-- Framing reshapes the Original without changing its timing. Evaluate camera paths in their declared owner clock and compose them from provider to root on the canonical canvas. Preserve intermediate clips, curve ownership and the distinction between source-percent motion and canvas-percent values. Temporary Camera state is visibly unsaved; Enter commits once and Escape restores the entry state. Never replace an existing path with a static pose as an incidental consequence of opening Camera.
+- Framing reshapes the Original without changing its timing. Evaluate camera paths in their declared owner clock and compose them from provider to root on the canonical canvas. Preserve intermediate clips, curve ownership and the distinction between source-percent motion and canvas-percent values. A pause retains the cropped view entering its parent; inherited group framing stays live and applies once. Captured geometry belongs to the Hold recipe independently of provider changes and new Camera settings. Temporary Camera state is visibly unsaved; Enter commits once and Escape restores the entry state. Never replace an existing path with a static pose as an incidental consequence of opening Camera.
 - Build composable structures. Source, Sequence, Hold, Repeat, and Retime form the small primitive set; attention, sound, captions, and cutaways attach to it. Gags expand to ordinary editable primitives. Keep repeats structural and occurrence identities stable.
 - Make the keyboard workflow native and discoverable. Picture dominates the interface; controls explain current mode, context, selection, units, and scope. Respect macOS text editing, IME composition, focus, accessibility, and non-US layouts. A user must be able to complete the workflow without a mouse.
+- Reserve Kestrel's global shortcuts. Whole-Original reuse is `,i` or `:insert`; Cmd+Return belongs to Kestrel. Keep plain Vim motions and visible pending prefixes while preserving native text editing. Any shortcut change must pass the production-router [compatibility audit](docs/KEYBINDING_COMPATIBILITY.md), compare the local Kestrel source when available, and update its controls, help and replay scenarios together. Treat keyboard, pointer, focus, layout, preview and response time as one interaction design.
 - Preserve intentional dynamics. Silence, room tone, and permitted tails are different policies. Do not normalize individual words or quietly level breaths and pauses. Monitoring volume is independent of export gain.
 - Route every input through typed commands, revision-aware resolution, validation, and atomic reversible transactions. Widgets, macros, CLI calls, and future agents share this path. No widget or background job mutates authored state directly.
 - Keep the core independent of UI, media handles, databases, workers, and networking. Use focused typed modules and narrow provider boundaries rather than a general plugin framework.
@@ -47,13 +48,13 @@ Current crates:
 - `native/deadpan-source`: separate persistent descriptor-only FFmpeg video/audio decoders, raw metadata, owned RGBA and original-rate interleaved f32. Unsafe code stays in this narrow adapter; unsupported interpretations fail explicitly.
 - `native/deadpan-dsp`: bounded owned planar PCM and the canonical pinned stretch schedule through a safe Rust/C++ boundary. Construct it on a preparation worker; no device output or media decoding.
 - `native/deadpan-output`: bounded prepared-PCM queue, delivery-clock intervals, generation-scoped stop tokens, owned sleep/wake observation and narrow macOS device boundary. Prepare a fresh channel-scoped generation, prefill, then explicitly activate; starvation and device faults never silently resume. No project/DSP ownership. See [output contract](docs/AUDIO_OUTPUT.md).
-- `crates/deadpan-playback`: immutable-revision limited audition. Separate preparation and control workers own canonical PCM and device delivery. The UI never opens source media or owns the device; full mastering and acoustic/performance qualification remain open. See [audition contract](docs/PLAYBACK.md).
+- `crates/deadpan-playback`: immutable-revision Original/edit/sound audition and bounded selection loops. Separate preparation and control workers own canonical PCM and monotonic device delivery. The UI never opens source media or owns the device; full mastering and acoustic/performance qualification remain open. See [audition contract](docs/PLAYBACK.md).
 - `crates/deadpan-audio`: exact-phase source resampling, explicit speaker matrices, qualified PCM access, continuous Preserve preparation, informational meters and bounded finite oversampled limiting of the current edge-faded bus. Preparation/analysis is worker work; the playback crate owns device integration. Full voice graph, group mix and encoded master qualification remain open.
 - `native/deadpan-fileclone`: bounded safe descriptor-clone interface around the macOS system call. The store owns copying, checksums, publication and durability.
 - `crates/deadpan-render`: bounded shared SDR picture pipeline, linear Rec.2020 working textures, explicit sRGB display transform, ordered framing/clipping, aspect and rotation. No decoding, document mutation or encoding.
 - `native/deadpan-media-worker`: process-isolated FFmpeg conversion and independent decode verification through bounded descriptor-only AVIO. Only the documented FFI call permits unsafe Rust. Requires the explicitly selected pinned LGPL FFmpeg development prefix.
 - `native/deadpan-process`: checked worker/leader teardown and Darwin group-membership adapter; unsafe is denied except for its documented bounded libproc call. Higher layers continue to forbid unsafe.
-- `crates/deadpan-app`: native `egui`/`eframe` project workspace using Metal. One service owns the writable store, one import worker prepares media, and a separate bounded preview worker consumes immutable workspaces. Native dialogs, source registration, explicit insertion, history, root-beat Camera previews and limited sequence audition are implemented; full editing, mastered playback and export remain open.
+- `crates/deadpan-app`: native `egui`/`eframe` project workspace using Metal. One service owns the writable store, one import worker prepares media, and a separate bounded preview worker consumes immutable workspaces. Native dialogs, source registration, explicit insertion, history, current-depth Camera previews and limited Original/edit/sound audition with selection loops are implemented; full editing, mastered playback and export remain open.
 - `crates/deadpan-cli`: versioned headless project/command API, reused by `deadpan-app --headless`.
 
 [Architecture](docs/ARCHITECTURE.md) records Section 24's full boundary map. Add crates only when an implemented responsibility needs isolation. Do not create empty crates or feature controls that pretend to work.
@@ -90,7 +91,7 @@ transition. Retain the old target until a resized replacement renders successful
 Picture errors belong to presentation and clear on successful recovery. These
 state transitions must remain testable without a native window.
 
-Sequence audition uses the device's reported content intervals, never producer
+Audition uses the device's reported content intervals, never producer
 progress as the heard clock. Retain past and future delivery reports; a terminal
 callback's nonempty prefix remains pending until its reported playback deadline.
 Tag pictures with the output generation and coalesce desired frames behind one
@@ -98,8 +99,28 @@ active decode/GPU submission. Stop invalidates pending work but retains the last
 submitted picture and geometry. Pause/resume preserves the exact sample estimate;
 navigation and edits discard it. Context-preserving stops never retarget an
 inspector command. Device faults, lost reports and sleep/wake cannot silently
-resume. Monitor gain follows canonical limiting and remains independent of
+resume. Capture a distinct Original/Sequence domain and immutable half-open
+window. Original descriptors are prepared off the UI thread from the full measured
+A/V union, including audio lead/tail; interior picture coordinates use retained
+PTS minus common origin, never project-frame ordinals. Keep selected-moment
+endpoints separate: exact selections use first PTS/terminal video end and add
+audio lead/tail only through explicit audition context. Cache descriptors by asset,
+receipt and project rate, and canonical PCM by target as well as authored snapshot.
+Loops keep monotonic delivery coordinates and wrap only the content coordinate;
+retain full canonical DSP context across seams. Original playback cannot move
+the edit cursor or grow Visual selection. Monitor gain follows canonical limiting and remains independent of
 authored/export gain; never clip or normalize PCM to conceal a preparation failure.
+
+Catalog Sound audition has a separate selected asset and exact sample cursor.
+Only focused Sources routes its playback keys to that sound. Keep the retained
+picture, caption, geometry, Original/edit cursors and beat/group selection intact;
+sound delivery never requests a picture. Stop and revoke resume on sound, pane,
+session or revision changes. Previously pending editor picture work may finish
+normally; sound selection must not cancel or strand it. Its measured audio
+endpoint, not the enclosing whole-frame beat, bounds ordinary playback and loops.
+Use the shared qualified
+playback service and temporary Source view; never persist an audition beat or
+infer a missing speaker layout. Sound audition does not authorize placement.
 
 The shared picture baseline accepts owned, bounded, full-range straight RGBA8
 with explicit transfer, primaries, SAR, rotation and source PTS. Decode transfer
@@ -112,9 +133,9 @@ display color, editorial effects, playback or an encoded export path.
 
 Every persisted edit, undo, and redo gets a never-reused revision ID. Core inverse patches can restore exact fixture identity; the store rebases them onto fresh revisions to prevent stale commands becoming valid after undo. Store writes use one transaction for the revision, history, and cursor. Keep `.writer.lock` held for the writable store lifetime; read-only inspection and dry runs may coexist. Take live database snapshots through SQLite's backup API, never copy only an open main database file.
 
-Repeat play IDs are scoped by Repeat node and allocation revision, with an ordinal inside that allocation. Preserve surviving IDs through resizing and reorder; allocate fresh IDs for growth and inserted subtrees. Imported initial snapshots reserve their allocation names even after plays are removed. Keep compact runs bounded and never expand a repeat merely to seek. Core schema 18 retains these runs, marks, sparse overrides, generated Hold metadata, independent source mappings, audio edge policies, transparent Retime partitions and owned timing bindings, and binds qualified assets to immutable source receipts. Database schemas 1 through 23 replay the complete chronology directly into the current schema on a consistent copy, compare every legacy snapshot/transaction, and promote through SQLite's backup transaction only after validation. Strict legacy adapters freeze nested provider vocabulary and reject new fields, commands, and unexpected mark or override changes. Preserve the pre-migration backup.
+Repeat play IDs are scoped by Repeat node and allocation revision, with an ordinal inside that allocation. Preserve surviving IDs through resizing and reorder; allocate fresh IDs for growth and inserted subtrees. Imported initial snapshots reserve their allocation names even after plays are removed. Keep compact runs bounded and never expand a repeat merely to seek. Core schema 28 retains these runs, marks, sparse overrides, generated Hold metadata, independent source mappings, audio edge policies, transparent Retime partitions and owned timing bindings, and binds qualified assets to immutable source receipts. Database schemas 1 through 33 replay the complete chronology directly into the current schema on a consistent copy, compare every legacy snapshot/transaction, and promote through SQLite's backup transaction only after validation. Strict legacy adapters freeze nested provider vocabulary and reject new fields, commands, and unexpected mark or override changes. Preserve the pre-migration backup.
 
-Database schema 24 stores core schema 18 and retains operational generation requests,
+Database schema 34 stores core schema 28 and retains operational generation requests,
 plus an optional validated single-Original workflow profile. Use the dedicated
 `create_single_source` / `initialize_prepared_source` path to bind the full measured
 Original, basis and protected baseline atomically. Undo never crosses that baseline;
@@ -198,7 +219,7 @@ Ready bundles alone do not authorize an edit. See [acceptance](docs/GENERATION_A
 See [generated Hold semantics](docs/GENERATED_HOLDS.md).
 
 Original byte ownership is operational and separate from stream readiness.
-Database schema 24 retains content-keyed original records with monotonic location
+Database schema 34 retains content-keyed original records with monotonic location
 versions introduced in schema 10; earlier schemas gain an empty inventory. Use the
 shared descriptor-relative object engine for `Media/Originals` and
 `Media/Generated`. Managed originals try APFS clone, then verified copy; retain
@@ -251,6 +272,26 @@ to picture duration implicitly. Legacy histories migrate to `FitBeat` to retain
 their original meaning. Mapping commands use normal reversible transactions and
 occurrence isolation. See [source audio mapping](docs/SOURCE_AUDIO_MAPPING.md).
 
+Selected audio placements retain the complete measured integer-sample span and
+its affine phase/rate, with a separate exact half-open selection before the mix
+offset. Validate containment and shifted endpoints for typed and JSON callers.
+Use measured video PTS boundaries to derive Original moments; round only their
+beat occupancy, never their selected audio interval. Root, signal and bound
+readers carry selection exhaustion on its physical clock, distinct from ordinary
+placement gaps and silent Holds. Frozen audio context schema 2 retains the mapping;
+schema 1 remains closed and matches historical content independently of version.
+Native moment selection binds half-open original ordinals to session, asset and
+receipt. Keep In/Out labels explicit and map the temporal bar through measured
+PTS, not ordinal percentages. Copy never edits. Paste uses an explicit ordinary
+Sequence owner/slot, including nested group edges, with one SpliceSource command.
+The new Source starts unbound on the project-origin sample grid; independently
+reanchor each old suffix owner. Admit the existing prepared receipt and final
+Original freshness in the same history/relevance transaction. Never replace this
+with generic child-index Insert or a separate receipt-registration preflight.
+Preserve captured revision/scope through async preparation and return explicit
+committed cursor/selection. Session-local copy is not persistent register support.
+See [Original moments](docs/SOURCE_MOMENTS.md).
+
 `SourceNode.video_mapping` independently chooses `FitBeat` or an exact duration
 with an explicit endpoint policy. Natural-rate import uses the unrounded source
 duration at project fps; integer beat rounding must not change picture speed.
@@ -298,7 +339,7 @@ for qualified limits and rejected grammars.
 
 The setup workflow's TypeScript/Bun/mitools/Biome defaults do not apply to this Rust-native product. The maintained Rust sibling `beastie` supplies the initial workspace conventions; consult maintained siblings for evolving personal tooling patterns. [Dependency decisions](docs/DEPENDENCIES.md) records the pins and qualification boundaries. Do not introduce Bun, Node, Python, or shell setup as an end-user requirement. Future model workers use an app-managed private runtime selected through measurement.
 
-The native UI submits typed project requests through one bounded service mailbox. Import preparation never owns SQLite. Cached insertion, root editing and history may proceed while a new import prepares; an uncached insertion preserves its captured revision/target and fails if stale. Root edits capture session and revision, reject hidden descendants, and resolve through core/store commands. Consume explicit committed revisions and resulting selection, including an explicit clear, never infer completion from progress text. Preserve these markers across background updates and deduplicate them by revision. Repeat setters retain omitted gap parameters; explicit wrap-repeat always nests. Cancel pending keyboard operators when context, pane, selection or revision changes. Keep Source context non-destructive. Preview requests carry their immutable workspace, so cancellation of an earlier open cannot strand a later frame. Construct native dialogs on the main application thread, poll without blocking, and retain text focus until same-frame text and IME events are processed.
+The native UI submits typed project requests through one bounded service mailbox. Import preparation never owns SQLite. Cached insertion, current-depth editing and history may proceed while a new import prepares; an uncached insertion preserves its captured revision/target and fails if stale. Beat edits capture session, revision, absolute cursor and Sequence scope; reject non-direct targets and resolve through core/store commands. Consume explicit committed revisions and resulting selection, including an explicit clear, never infer completion from progress text. Preserve these markers across background updates and deduplicate them by revision. Repeat setters retain omitted gap parameters; explicit wrap-repeat always nests. Cancel pending keyboard operators when context, pane, selection or revision changes. Keep Source context non-destructive. Preview requests carry their immutable workspace, so cancellation of an earlier open cannot strand a later frame. Construct native dialogs on the main application thread, poll without blocking, and retain text focus until same-frame text and IME events are processed.
 
 Keyboard routing precedes widget drawing. Use persistent `egui::Popup` state for
 menu ownership; the current-pass `Context::any_popup_open` is empty at that point.
@@ -306,7 +347,27 @@ Help owns ordered input until Escape, including when it opens within one batch.
 Discard its pointer/IME prefix on closing, preserve the command suffix, and keep
 popup/dialog composition observation without consuming their input.
 
+Native group navigation retains an ephemeral `SequenceScope` of direct ordinary
+Sequence children. Keep cursor/card positions on the absolute project clock and
+show the group-relative position separately. Restore captured scope before
+applying a committed selection, including asynchronous Original reuse. Reconcile
+history to the nearest surviving path without moving the cursor to the selected
+beat. Root and scope-edge InsertTime still use core boundary ownership; refuse
+an insertion above the viewed scope and teach Backspace. Full-edit audition may
+leave the group: explicit pause/terminal completion follows its heard cursor,
+while command/inspector stops preserve their target. Repeat/Retime occurrence
+navigation remains open. See [group navigation](docs/GROUP_NAVIGATION.md).
+
 ## Validation and delivery
+
+Retime edits keep input selection and output allocation distinct. WrapRetime
+maps the complete selected beat beneath a fresh ordinary Retime. SetRetime changes
+only duration and pitch on Edit purpose; wrap a Partition instead of rewriting
+its retained clocks. A changed stage discards only its own output binding,
+preserving descendant inputs and unrelated bindings. Identical parameters retain
+all binding state. Native speed is exact decimal/rational input, resolved once
+with ties-to-even against the retained input range, with explicit preserve/tape
+pitch and displayed quantized duration. See [speed editing](docs/RETIME_EDITING.md).
 
 Transparent Retime partitions are unity output selections over retained child
 domains, not ordinary authored trims. Keep allocation, source sampling support
@@ -335,9 +396,9 @@ bypass DSP.
 `RetainedRootPolicy` unions old `SilentHold` policy with current explicit
 suppression and outside-domain silence, validating fully before mutating PCM.
 Source absence and placement gaps must preserve existing processed decay.
-These APIs do not yet persist a Hold binding. Future bindings must transform
-live ownership separately from frozen placement and replace an edited policy's
-retained contribution. See [audio references](docs/AUDIO_REFERENCE.md).
+These read APIs do not persist a Hold binding. Authored bindings transform
+live ownership separately from frozen placement and evaluate current policy
+independently of retained timing. See [audio references](docs/AUDIO_REFERENCE.md).
 
 `FrozenAudioContext` adds exact Source mapping/offset, Hold/gap inputs and full
 referenced asset contracts to a frozen timing layout. Keep its standalone closed
@@ -370,7 +431,8 @@ Repeats. Its local-zero point-ceil signal is explicitly branded by its selector;
 relative paths and nested Preserve/RoomTone cache keys must retain that scope.
 Never invent an outer play or use a neighboring root probe as a prototype.
 Definition counts do not replace final root allocation. Retained sources still
-require historical admission. Authored birth bindings remain separate work.
+require historical admission. Authored birth bindings use these explicit scopes;
+definition inspection alone installs no binding.
 See [audio definitions](docs/AUDIO_DEFINITIONS.md).
 
 `AudioDefinition::in_root_clock` evaluates a current owned Source, Hold or
@@ -379,9 +441,9 @@ round-even grid, local support and definition scope explicit. A placement is
 coordinate metadata, never an old raw recipe or media admission. Read current
 policies from the selected plan; keep full intrinsic Preserve preparation and
 source re-admission on cache hits. Do not treat a Sequence/Repeat as one domain
-or infer authored bindings from this inspection API. The owned-tree approach
-must still separate intrinsic resume phase from enclosing Repeat placement and
-implement compact birth/survivor rules before a persistence schema is selected.
+or infer authored bindings from this inspection API. Owned-tree bindings
+separate intrinsic resume phase from enclosing Repeat placement and resolve
+compact birth/survivor rules on their retained clocks.
 See [owned audio clocks](docs/OWNED_AUDIO_CLOCKS.md).
 
 Reference processing lookup stops at the first nonunity Preserve and retains
@@ -450,6 +512,15 @@ an unresolved mark. Original source coordinates and sequence-pinned coordinates
 stay fixed in their respective clocks. Named-mark queries still require explicit
 occurrence scope when the stored coordinate is ambiguous.
 
+Use `AnchorIndex::locate_boundary` for project-to-content descent. Retain every
+owner's full clock, exact local boundary, authored Sequence slot, stable Repeat
+path and distinct play/gap entry. Implicit gaps have no authored node; report
+their Repeat owner and separate gap-local boundary. Outward project endpoints
+have no provider, while inward bias descends. Share scope and prefix-comparison
+budgets across the path, never expand plays, and never use picture centers or
+quantize fractional Retime coordinates. The query does not choose an insertion
+parent or isolate an occurrence. See [splice design](docs/STRUCTURAL_SPLICE_DESIGN.md).
+
 Logical marks retain one primary binding plus bounded `MarkFragment` bindings.
 Owner lifetime is independent of coordinate visibility. Transform loss per
 binding; preserve surviving bindings and never reattach unresolved ones. Actual
@@ -462,7 +533,7 @@ Database-18 history uses frozen core 12; all earlier mark wires reject fragments
 including empty arrays and null. Database 19 uses frozen core 13, including its
 multi-binding mark vocabulary but excluding Split. Database 20 uses frozen core 14
 including closed direct/occurrence Split identity pools. Database 21 uses frozen
-core 15. Database 22 uses frozen core 16, including closed binding vocabulary but excluding InsertTime. Database 23 uses frozen core 17, excluding framing. Current schema 24 stores core 18. Legacy initial snapshots gain empty audio lineage; replayed copies may
+core 15. Database 22 uses frozen core 16, including closed binding vocabulary but excluding InsertTime. Database 23 uses frozen core 17, excluding framing. Database 24 uses frozen core 18, excluding captured Hold geometry and its setter. Database 25 uses frozen core 19, excluding selected audio placements. Database 26 uses frozen core 20, excluding chronological reanchor steps. Database 27 uses frozen core 21, excluding gap binding maps and nested gap clock/placement vocabulary. Database 28 uses frozen core 22, excluding sparse gap branches and detached gap-clock references. Database 29 uses frozen core 23. Database 30 uses frozen core 24, retaining composite root-seam InsertTime admission but rejecting interiors before composite suffixes. Earlier replays check the stricter physical-suffix admission before modern apply. Database 31 uses frozen core 25, retaining root physical interiors but refusing nested Sequence insertion. Database 32 uses frozen core 26, retaining nested Sequence pause admission while rejecting SpliceSource. Database 33 uses frozen core 27, retaining SpliceSource while rejecting new Retime edits. Current schema 34 stores core 28. Legacy initial snapshots gain empty audio lineage; replayed copies may
 establish it. Compare every old projected patch and changed-ID summary exactly
 while retaining complete modern transactions for historical undo/redo.
 
@@ -485,29 +556,88 @@ Carry current Edit support and exact coincident
 Hard owners into retained evaluation. Share work and relative cached-depth
 admission across every nested read. Context-schema-1 capture and source-only
 SequenceAudio still reject nonempty bindings. Pure capture retains existing
-bindings and compact birth scope, but rejects nonempty Repeat gaps. InsertTime
-authors one atomic root Source/Hold splice, including existing fragments. Reanchor
-every shifted physical entry on the pre-edit clock, not only a newly cut suffix.
+bindings and compact birth scope, including configured positive Repeat gaps even when no play renders them. InsertTime
+authors one atomic Source/Hold splice under ordinary Sequence groups, including
+existing fragments, and accepts Sequence seams before composite suffixes. Keep the prior
+reducer for previously admitted inputs. For composite suffixes, capture fresh
+current placement templates and append one chronological windowed step per
+physical/default-gap owner, preserving prior lattice and resume intent. Stop
+movement at the first nonunity Preserve output, retaining its input preparation
+clock. Root Source/ordinary Hold interiors before composite suffixes capture
+sampling lattices before Split and current placements afterward, under two
+consecutive checked timing ordinals. Never overwrite an inherited lattice with
+the copied graph. Never expand plays. Reanchor every shifted physical entry on
+its own pre-edit clock, not only a newly cut suffix.
 Current raw recipe extent governs reads and fades independently of retained
 clock anchors; Hold duration edits must not reset RoomTone phase or captured
 Repeat origins. Keep new phase-only layouts private until referenced, then prune
-unused tables before validation. Nested/repeated/gapped insertion and the complete
-authoring lifecycle remain required. See [pause insertion](docs/INSERT_TIME.md).
+unused tables before validation. Nested Sequence insertion retains the actual parent and every live ancestor. Reanchor later siblings at each Sequence level; capture only picture scopes below the insertion parent. Native completion carries its exact cursor and scope and selects the visible enclosing child for a hidden Hold. Repeat/Retime and fractional cursor insertion,
+occurrence isolation, Visual replacement and the complete authoring lifecycle
+remain required. See [pause insertion](docs/INSERT_TIME.md).
 See [owned bindings](docs/OWNED_AUDIO_BINDINGS.md).
 
 Build the pinned FFmpeg developer prefix and export `DEADPAN_FFMPEG_PREFIX` as
-described in [Development](docs/DEVELOPMENT.md). Run the exact repository gate
-after implementation:
+described in [Development](docs/DEVELOPMENT.md). During implementation, run
+focused tests and strict Clippy for the changed crates and affected dependants.
+Finish independent review before one full workspace gate for a coherent delivery
+milestone. Do not run the full gate after each small increment:
 
 ```sh
 cargo fmt --all -- --check
 cargo clippy --workspace --all-targets --locked -- -D warnings
 cargo test --workspace --locked
-cargo build --workspace --locked
-cargo run -p deadpan-cli -- doctor
 ```
 
-Prefer unit tests, integration tests, and deterministic headless harnesses for most verification. Keep command resolution, keyboard state transitions, geometry, job lifecycle, and persistence testable without opening the app. Reserve computer use and live GUI testing for valuable evidence that those tests cannot provide: visual quality, native focus/IME, accessibility, natural keyboard navigation, and end-to-end interaction. Review GUI aesthetics and keyboard ergonomics explicitly as the interface develops.
+The workspace tests already build and exercise the normal app, CLI and media
+worker executables, including doctor. Use a separate build for packaging or
+native startup work, and doctor when diagnosing the environment. Preserve both
+base-app and optional `ui-harness` coverage when the app changes; their runtime
+branches differ. CI runs both. Pure backend changes do not require repeating
+unchanged app-feature tests or painted replay.
+
+Keep one owner for Cargo execution. Before starting another command after an
+interruption or quiet output, inspect the existing process and log; a harness
+yield is not a test timeout. Preserve completed results. After a small review
+fix, rerun the affected target and lint; do not restart unrelated passing suites
+or rerun focused tests already covered by the full gate. Record source changes
+and the scope of each result rather than discarding the entire run. Reproduce a
+failure once with useful state diagnostics, fix its cause, then verify; do not
+loop retries until green. Recheck an environment failure only when its relevant
+capability changes. Prefer a Git commit and concise validation record over
+repeated full-tree archives or new copies of gate scripts.
+
+Playback real-media tests acquire the shared PCM permit before fixture work and
+retain it through the engine's shared callback until both workers exit. Keep
+that reservation bounded and keep production deadlines and PCM assertions
+intact. `Engine::drop` and `Stopped` alone do not establish worker teardown.
+
+Use the [UI feedback loop](docs/UI_FEEDBACK.md) for every meaningful UI change.
+Add or update a scenario that replays real keyboard, pointer, wheel or text events
+through the application, then run visual mode and inspect its contact sheets and
+affected full-size frames against the [design targets](docs/design/README.md).
+Run the separate release performance mode when input, layout, rendering, decoding
+or service work can affect responsiveness. Preserve the actual input router,
+widgets, project service and shared GPU picture path, including real video;
+direct model calls or painted substitute screens do not establish UI behavior.
+Keep simulated replay time separate from monotonic latency measurements, and
+keep screenshots/readback out of measured performance samples. Never bless a
+new visual baseline automatically to make a failure pass. Record assertions,
+observed defects, artifact paths and untested boundaries; a green suite is not a
+usability score. Use native computer interaction for evidence beyond offscreen
+replay, including OS focus, dialogs, physical key delivery, IME, VoiceOver and
+physical display behavior. Pure command, geometry, lifecycle and persistence
+tests remain the fast foundation. [Interaction review](docs/INTERACTION_REVIEW.md)
+records concrete improvements and personal shortcut compatibility.
+
+The optional harness owns a repaint callback only on its fresh kittest context;
+never replace native eframe's callback from application construction. Keep wake
+state bounded, honor repaint delays/pass identity, preserve notifications during
+steps, and use finite condition-variable waits instead of timer polling. Worker
+start/finish/publication timestamps belong to feature-gated diagnostics, not
+authored state. Keep their tickets through held delivery and exclude failed,
+stale, repeated or invalid timing from successful phase distributions. Record the
+wait/timing version when comparing reports; a faster harness does not by itself
+establish improved application or physical display latency.
 
 Audio preparation owns the DSP call schedule; device/export consumer block sizes
 must not change it. Use origin-based input boundaries and explicit context/crops
@@ -557,6 +687,48 @@ its suppression metadata. Cache entries retain transitive source fingerprints
 including full qualified index and chosen matrix layout; verify them on hits.
 Share preparation work, residency and cancellation/deadline budgets across all
 nested stages. Never reset an inner history to satisfy an outer crop or budget.
+
+A `RepeatGap` audio definition selects the configured positive gap
+recipe even in a one-play Repeat, with no invented preceding-play identity.
+Its explicit root/PointCeil clocks keep gap duration separate from Repeat duration.
+Actual occurrence domains retain their stable `gap_after`. The frozen support
+projection stays inside one physical clock and rejects crossing a nonunity
+Preserve. These readers do not install authored gap bindings or authorize splice.
+
+Owned audio reanchor steps are chronological and retain each step's own clock
+and lexical birth scope. Visible allocation includes every Partition; meaningful
+raw support does not. An empty intersection has no entry and leaves the previous
+sampling map intact. A narrower definition birth drops an enclosing window while
+keeping intrinsic cuts; selecting the same retained root keeps its own window.
+Old phase terms remain the initial state. Later InsertTime edits append after
+existing steps rather than rewriting that initial state. Visit every step during
+Split/isolation, pruning, allocation reservation and changed-owner reporting.
+Terms and steps share the bounded count and aggregate work limits. Core-16-through-20
+history rejects even empty/null reanchor vocabulary. See
+[compact audio reanchors](docs/AUDIO_REANCHORS.md).
+
+Repeat-gap audio bindings use a separate owner map and own-gap argument; the
+gap's preceding play is not an outer `InstancePath` step. Clock scope includes
+`NodeOutput` versus `RepeatGap`, so an enclosing Repeat window cannot clip a
+new gap's canonical definition. Capture positive configured gaps even before
+they render. Preserve surviving stable-gap clocks through reorder and duration
+edits; former-final and new gaps use definition birth. Prune removed gaps and
+never revive their bindings on re-add. Both walkers must intercept dynamic and
+seeded gaps, retain current duration/policy and bypass only the selected recipe.
+Historical clocks supply timing, never stale media or policy. See
+[authored gap bindings](docs/GAP_AUDIO_BINDINGS.md).
+
+Repeat gap branches are sparse ordinary owned subtrees keyed by the preceding
+stable play. Keep final-play branches dormant, never append trailing time; retire
+them only with that play identity. Default gap changes do not rewrite explicit
+branches. An empty Sequence suppresses a gap; ClearGapOverride exposes the current
+default. IsolateGap copies the current recipe and preserves marks and exact audio
+clocks. Its Node-owned Hold may retain a historical RepeatGap reference with a
+closed own-gap argument. Keep current raw policy separate from that timing record;
+drop an enclosing reanchor window when closing a canonical born-gap dispatch.
+The target's unique owned ancestry disambiguates gap and play InstancePaths.
+Audio contexts are schema 3; legacy context layouts stay closed. See
+[editable Repeat gaps](docs/REPEAT_GAP_BRANCHES.md).
 
 Room tone uses an explicitly authored source range, never an inferred replacement
 for silence. Preserve its exact 48 kHz extent separately from ceil storage.
@@ -622,8 +794,14 @@ project/revision/asset and retain full receipt and original-byte verification.
 Preflight unsupported processing before source I/O; never omit a Preserve stage
 because another stage cancels its aggregate speed. Source-stage blocks explicitly
 identify `source_pcm_before_effects`; they cannot stand in for the final mix.
-The host currently retains one bounded decoded session and reopens on source
-switches. Full prepared-cache scheduling remains open. See
+The CLI and playback hosts each retain up to 16 private decoded PCM sessions under a 1 GiB aggregate
+physical-sample budget, including padding, with least-recently-used eviction.
+Bound aggregate indexed audio frames to 1,000,000 and retain compact receipt
+identity instead of duplicate full indexes. Reserve both budgets before decoding.
+Recheck captured asset, receipt and original contracts on every hit; verify cold
+original bytes before eviction and reserve before decoding. Playback retains
+shared immutable receipt identity and rebuilds on revision changes. Full
+prepared-cache scheduling remains open. See
 [source-stage audio](docs/SOURCE_STAGE_AUDIO.md).
 
 Store hard-edge exceptions on their exact node/placement/gap owner. Any explicit
@@ -690,5 +868,96 @@ identities and intermediate clips in the shared picture path. Camera modifies on
 evaluated operation on a matching retained picture; its geometry revision is
 separate from decode/request/display identity. Never decode source media on each
 Camera key, let stale drafts cross sessions, flatten existing curves implicitly,
-or freeze bare source pixels while dropping authored framing. See
+or freeze bare source pixels while dropping authored framing. Captured Hold
+geometry is a bounded sequence of canvas fits and static clipped operations,
+separate from both `HoldVideo` and the Hold's live `BeatNode.framing`. It introduces
+no media references or audio-context vocabulary. Provider changes, acceptance,
+fallback restoration and duration edits preserve it. Native insertion
+samples descendant operations at the frozen frame center and excludes its actual
+Sequence parent and all ancestor framing. Same-canvas recapture may compact redundant identity clips but must
+retain every meaningful intermediate clip, including an empty stage's implicit
+clip. Keep explicit identity poses. The renderer checks finite, nondegenerate
+cumulative geometry, independently of core collection limits. See
+[captured framing](docs/CAPTURED_FRAMING.md) and
 [framing](docs/FRAMING.md) for current bounds, migration and remaining work.
+
+Framing's integer evaluator delegates to `evaluate_exact` for bounded evaluation
+of derived rational owner extents. Keep segment selection exact; do not first
+form a potentially overflowing local/duration quotient or duration-times-endpoint
+product. The fixed 320-bit helper covers at most 294-bit products and Q32's
+one-bit remainder shift. This numerical API does not admit fractional authored
+durations or splice structure. Preserve integer document and command contracts
+until the separate effective-clock representation is implemented and qualified.
+
+`AudioSignalTape` is a borrowed input projection, not an authored edit or final
+output allocation. Keep every run on one intrinsic PointCeil grid. Run windows
+choose current providers; they must not reset sample phase, crop filter support
+at allocation seams, or replace a span's physical allocation/sampling anchor.
+Use the existing `StageAudio` reader with shared work, deadline and dependency
+admission. Unchanged nested stages retain their full canonical preparation.
+Use checked `AudioStageProjection` for changed intrinsic operands, retaining
+complete input and an independent output-policy tape. Parent inputs reference child
+intrinsic output; schedule inserted pauses separately. Reclock exact policy
+before allocation and preserve processed decay past physical Source endpoints.
+Use request-local retained projection identity for memoized PCM, re-admit
+dependencies/depth on reuse, and charge retained results to the shared residency
+budget. Do not put projected PCM into the ordinary descriptor cache. These
+borrowed views do not persist routes. `AudioProjectedRoot` separately allocates
+one physical projection on the absolute RoundEven grid; preserve its original
+policy/support clock, exact PCM map and independent later-domain anchors across
+crop/resume. Regrid exact policy before rounding, never scale prepared masks.
+Keep exhausted retained support explicitly silent. Reject an unsupported output
+sampling recipe before source preparation. These handles do not install authored
+routes or replace ordinary root-plan evaluation. See
+[input tapes](docs/AUDIO_INPUT_TAPES.md) and
+[projected root output](docs/AUDIO_PROJECTED_ROOT.md).
+
+`AudioSignalMix` combines complete scoped voices on one plan-local PointCeil
+grid before creative effects. Apply source policy and gates to their named
+voices; bus silence is the intersection of explicit raw silence and suppression,
+never a union across voices. Keep opaque processed decay intact. Admit every
+voice and nested history before media I/O, including fully gated contributions.
+Use ordered finite f64 accumulation without clipping or normalization. A declared
+aggregate processor may feed that sum to one Preserve. Default authored sound
+voices retain independent continuous time/pitch processing and scoped output
+gates before the group bus, as required by specification Section 10.2. Do not
+split the existing continuous Original voice into independent per-beat engines.
+Reuse the shared dependency, work, depth,
+deadline, cancellation and PCM residency limits. This borrowed preparation API
+does not persist a sound event or provide a final master; see
+[sound event integration](docs/SOUND_EVENTS.md).
+
+Retain every chronological sound-route sample grid. `AudioSoundRoute` resolves
+an old cut and a new anchor on their respective physical grids, then composes
+the preceding sampled output. Never flatten frame offsets to reconstruct PCM
+phase, infer speed from allocated counts, or restart recipe support or fades at
+a fragment. Keep/Window retain the old selection's half-open audible sample mask;
+extra samples from displaced rounding are silent, while full filter/DSP context
+remains available. Unity routes preserve grid spacing and rule; processing is separate.
+Current `audio_hold_policy` queries retain each Hold/Repeat-gap issuer and its
+definition/occurrence namespace without replacing the Original scalar policy.
+Those rules do not invent retained historical identities or grant allowances.
+These preparation interfaces are not persisted sound-event implementation.
+
+`AudioSourceVoice` derives an independent catalog operand from a checked structural
+owner. Keep its explicit natural-rate source mapping, signed mix offset, complete
+filter/DSP support and opaque identity. A qualification ID in the plan is not host
+admission: the media provider must still verify the revision, receipt, layout and
+original. Its input keeps sound through current silent Holds; its output applies
+only current scoped Hold rules on the consuming grid. Never inherit the Original's
+source absence, endpoints, retained sampling bindings or edges as sound policy.
+Preserve uses the existing checked descendant scope and independent output policy;
+do not loosen those checks to fit a catalog asset. These borrowed operands do not
+persist sound events or fill the final bus.
+
+Bind retained sample routes only to checked complete providers. `AudioRoutedSignal`
+uses independent source input or an immutable Preserve projection on PointCeil;
+`AudioRoutedRoot` retains a complete projected output on RoundEven. Match the
+original Recipe extent, grid origin/spacing/rule and allocation. Reject cropped
+or resumed captures, then select output through the route. Root Recipe frames
+are relative to its original extent start but preserve absolute sample labels.
+Resolve integral old sample labels and reuse the old provider's exact PCM under
+one preparation budget; never reconstruct phase from destination frame endpoints.
+Retain full filter/DSP support and admit dependencies even for a wholly masked
+query. Captured output policy follows its old samples; current consuming Hold
+gates, allowances and creative edges remain separate. See [routed preparation](docs/SOUND_EVENTS.md#routed-pcm-preparation).

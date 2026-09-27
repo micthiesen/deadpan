@@ -1,0 +1,31 @@
+{
+  "protocol": 1,
+  "project_id": "d038df46-94c6-4c0a-9d11-038b0e6da220",
+  "expected_revision": "core26-add-group",
+  "new_revision": "core26-nested-interior",
+  "command": {
+    "command": "insert_time",
+    "at": 2,
+    "hold": {
+      "duration": 2,
+      "video": {
+        "type": "background"
+      },
+      "audio": {
+        "type": "silence"
+      }
+    },
+    "id": "core26-pause",
+    "identities": {
+      "nodes": [
+        "core26-left",
+        "core26-right",
+        "core26-owner"
+      ]
+    },
+    "timing": {
+      "allocation": "core26-nested-interior",
+      "ordinal": 0
+    }
+  }
+}

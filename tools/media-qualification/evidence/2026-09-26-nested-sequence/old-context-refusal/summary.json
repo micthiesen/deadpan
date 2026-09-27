@@ -1,0 +1,151 @@
+{
+  "binary_sha256": "0d2b9ea0d1105c1ea66f4fc51d7e10f0e1c5d29a176223964f7c03896b3a0273",
+  "script": "/private/tmp/deadpan-nested-sequence-20260926/probe-core25-context.py",
+  "script_sha256": "d5a1bcd646a2a1165e7284326fea7171b4dd54bccece8a5671aefef9d24d9ee2",
+  "schema": [
+    25,
+    31
+  ],
+  "records": [
+    {
+      "command": [
+        "/tmp/deadpan-nested-sequence-20260926/deadpan-core25",
+        "doctor"
+      ],
+      "returncode": 0,
+      "stdout": "{\n  \"application\": \"deadpan\",\n  \"architecture\": \"aarch64\",\n  \"database_schema\": 31,\n  \"device_output\": \"macos-bounded-limited-sequence-audition\",\n  \"document_schema\": 25,\n  \"edge_faded_pcm\": \"authored-boundary-exceptions-after-time-mapping-before-voice-effects\",\n  \"internal_audio_sample_rate\": 48000,\n  \"limited_pcm\": \"canonical-edge-faded-bus-with-finite-oversampled-limiter-before-missing-voice-mix-stages\",\n  \"os\": \"macos\",\n  \"partial\": [\n    \"structural-editing-commands\",\n    \"sqlite-project-history\",\n    \"schema-1-through-30-migration\",\n    \"single-original-project-baseline\",\n    \"native-documents-project-library\",\n    \"indexed-picture-plan\",\n    \"indexed-audio-plan\",\n    \"worker-dsp-adapter\",\n    \"source-audio-preparation\",\n    \"plan-driven-source-pcm\",\n    \"transparent-audio-partitions\",\n    \"retained-context-split\",\n    \"atomic-root-pause-insertion\",\n    \"logical-mark-bindings\",\n    \"exact-boundary-selectors\",\n    \"persistent-marks\",\n    \"sparse-play-overrides\",\n    \"nested-occurrence-edits\",\n    \"persistent-generation-requests\",\n    \"persistent-generation-attempts\",\n    \"authored-generated-hold-semantics\",\n    \"generated-media-conversion\",\n    \"native-bridge-bundle-qualification\",\n    \"durable-generated-bundle-acceptance\",\n    \"durable-original-byte-ownership\",\n    \"identity-checked-relinking\",\n    \"persistent-source-decoding\",\n    \"measured-source-audio-indexes\",\n    \"independent-source-audio-mapping\",\n    \"independent-source-video-mapping\",\n    \"exact-source-stream-placement\",\n    \"measured-import-timing-candidates\",\n    \"measured-original-moment-candidates\",\n    \"exact-source-audio-selections\",\n    \"durable-source-qualification\",\n    \"atomic-source-registration-and-insertion\",\n    \"background-import-preparation\",\n    \"automatic-presentation-basis\",\n    \"timed-basis-locking\",\n    \"explicit-canvas-geometry\",\n    \"shared-sdr-picture-pipeline\",\n    \"authored-framing-envelopes\",\n    \"ordered-canvas-framing\",\n    \"captured-hold-framing\",\n    \"native-camera-draft\",\n    \"native-source-preview\",\n    \"native-project-workspace\",\n    \"native-sequence-audition\"\n  ],\n  \"room_tone_pcm\": \"explicit-source-range-exact-overlap-before-effects\",\n  \"schema_version\": 1,\n  \"sequence_audition\": \"immutable-revision-device-clock-pictures-exact-paused-sample-resume\",\n  \"sqlite_version\": \"3.53.2\",\n  \"stage\": \"development-foundation\",\n  \"time_mapped_pcm\": \"bounded-continuous-preserve-before-effects\",\n  \"timing_probe\": {\n    \"frame\": 1,\n    \"frame_rate_denominator\": 1001,\n    \"frame_rate_numerator\": 30000,\n    \"sample_boundary\": 1602\n  },\n  \"unimplemented\": [\n    \"mastered-preview-audio\",\n    \"original-view-playback\",\n    \"full-device-and-acoustic-qualification\",\n    \"full-keyboard-editor\",\n    \"analysis\",\n    \"ai-generation\",\n    \"youtube-import\",\n    \"export\",\n    \"distribution\"\n  ],\n  \"version\": \"0.1.0\"\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-sequence-20260926/deadpan-core25",
+        "project",
+        "create",
+        "/tmp/deadpan-nested-sequence-20260926/old-context-refusal/nested.deadpan"
+      ],
+      "returncode": 0,
+      "stdout": "{\n  \"basis_state\": {\n    \"geometry_origin\": \"default\",\n    \"primary\": null,\n    \"rate_origin\": \"provisional\"\n  },\n  \"duration_frames\": 0,\n  \"mark_count\": 0,\n  \"node_count\": 1,\n  \"presentation_basis\": {\n    \"color_policy\": \"sdr_rec709\",\n    \"frame_rate\": {\n      \"denominator\": 1,\n      \"numerator\": 30\n    },\n    \"height\": 1080,\n    \"width\": 1920\n  },\n  \"project_id\": \"c11cecb6-2308-451b-a3cf-d2920bdd2541\",\n  \"protocol\": 1,\n  \"revision_id\": \"2e66eda3-b90c-421d-92df-26e8660fabaa\",\n  \"root\": \"23ea72dd-71b8-4dd6-adf2-aac559bc0de2\",\n  \"valid\": true\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-sequence-20260926/deadpan-core25",
+        "project",
+        "dump",
+        "/tmp/deadpan-nested-sequence-20260926/old-context-refusal/nested.deadpan",
+        "--json"
+      ],
+      "returncode": 0,
+      "stdout": "{\n  \"schema_version\": 25,\n  \"project_id\": \"c11cecb6-2308-451b-a3cf-d2920bdd2541\",\n  \"revision_id\": \"2e66eda3-b90c-421d-92df-26e8660fabaa\",\n  \"presentation_basis\": {\n    \"width\": 1920,\n    \"height\": 1080,\n    \"frame_rate\": {\n      \"numerator\": 30,\n      \"denominator\": 1\n    },\n    \"color_policy\": \"sdr_rec709\"\n  },\n  \"basis_state\": {\n    \"rate_origin\": \"provisional\",\n    \"geometry_origin\": \"default\",\n    \"primary\": null\n  },\n  \"root\": \"23ea72dd-71b8-4dd6-adf2-aac559bc0de2\",\n  \"nodes\": {\n    \"23ea72dd-71b8-4dd6-adf2-aac559bc0de2\": {\n      \"label\": \"Sequence\",\n      \"kind\": {\n        \"type\": \"sequence\",\n        \"children\": []\n      }\n    }\n  },\n  \"assets\": {},\n  \"marks\": {},\n  \"overrides\": {}\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-sequence-20260926/deadpan-core25",
+        "project",
+        "dump",
+        "/tmp/deadpan-nested-sequence-20260926/old-context-refusal/nested.deadpan",
+        "--json"
+      ],
+      "returncode": 0,
+      "stdout": "{\n  \"schema_version\": 25,\n  \"project_id\": \"c11cecb6-2308-451b-a3cf-d2920bdd2541\",\n  \"revision_id\": \"2e66eda3-b90c-421d-92df-26e8660fabaa\",\n  \"presentation_basis\": {\n    \"width\": 1920,\n    \"height\": 1080,\n    \"frame_rate\": {\n      \"numerator\": 30,\n      \"denominator\": 1\n    },\n    \"color_policy\": \"sdr_rec709\"\n  },\n  \"basis_state\": {\n    \"rate_origin\": \"provisional\",\n    \"geometry_origin\": \"default\",\n    \"primary\": null\n  },\n  \"root\": \"23ea72dd-71b8-4dd6-adf2-aac559bc0de2\",\n  \"nodes\": {\n    \"23ea72dd-71b8-4dd6-adf2-aac559bc0de2\": {\n      \"label\": \"Sequence\",\n      \"kind\": {\n        \"type\": \"sequence\",\n        \"children\": []\n      }\n    }\n  },\n  \"assets\": {},\n  \"marks\": {},\n  \"overrides\": {}\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-sequence-20260926/deadpan-core25",
+        "command",
+        "/tmp/deadpan-nested-sequence-20260926/old-context-refusal/nested.deadpan",
+        "--json",
+        "/tmp/deadpan-nested-sequence-20260926/old-context-refusal/nested-seed.json"
+      ],
+      "returncode": 0,
+      "stdout": "{\n  \"committed\": true,\n  \"outcome\": {\n    \"edit\": {\n      \"changed_ids\": [\n        \"23ea72dd-71b8-4dd6-adf2-aac559bc0de2\",\n        \"first\",\n        \"inner\",\n        \"outer\",\n        \"second\"\n      ],\n      \"description\": \"Insert beats\",\n      \"duration_delta\": 7,\n      \"forward\": {\n        \"assets\": {},\n        \"from_revision\": \"2e66eda3-b90c-421d-92df-26e8660fabaa\",\n        \"marks\": {},\n        \"nodes\": {\n          \"23ea72dd-71b8-4dd6-adf2-aac559bc0de2\": {\n            \"after\": {\n              \"kind\": {\n                \"children\": [\n                  \"outer\"\n                ],\n                \"type\": \"sequence\"\n              },\n              \"label\": \"Sequence\"\n            },\n            \"before\": {\n              \"kind\": {\n                \"children\": [],\n                \"type\": \"sequence\"\n              },\n              \"label\": \"Sequence\"\n            }\n          },\n          \"first\": {\n            \"after\": {\n              \"kind\": {\n                \"recipe\": {\n                  \"audio\": {\n                    \"type\": \"silence\"\n                  },\n                  \"duration\": 4,\n                  \"video\": {\n                    \"type\": \"background\"\n                  }\n                },\n                \"type\": \"hold\"\n              },\n              \"label\": \"Hold\"\n            },\n            \"before\": null\n          },\n          \"inner\": {\n            \"after\": {\n              \"kind\": {\n                \"children\": [\n                  \"first\",\n                  \"second\"\n                ],\n                \"type\": \"sequence\"\n              },\n              \"label\": \"Group\"\n            },\n            \"before\": null\n          },\n          \"outer\": {\n            \"after\": {\n              \"kind\": {\n                \"children\": [\n                  \"inner\"\n                ],\n                \"type\": \"sequence\"\n              },\n              \"label\": \"Group\"\n            },\n            \"before\": null\n          },\n          \"second\": {\n            \"after\": {\n              \"kind\": {\n                \"recipe\": {\n                  \"audio\": {\n                    \"type\": \"silence\"\n                  },\n                  \"duration\": 3,\n                  \"video\": {\n                    \"type\": \"background\"\n                  }\n                },\n                \"type\": \"hold\"\n              },\n              \"label\": \"Hold\"\n            },\n            \"before\": null\n          }\n        },\n        \"overrides\": {},\n        \"presentation\": {\n          \"after\": {\n            \"basis\": {\n              \"color_policy\": \"sdr_rec709\",\n              \"frame_rate\": {\n                \"denominator\": 1,\n                \"numerator\": 30\n              },\n              \"height\": 1080,\n              \"width\": 1920\n            },\n            \"state\": {\n              \"geometry_origin\": \"default\",\n              \"primary\": null,\n              \"rate_origin\": \"timed_edit\"\n            }\n          },\n          \"before\": {\n            \"basis\": {\n              \"color_policy\": \"sdr_rec709\",\n              \"frame_rate\": {\n                \"denominator\": 1,\n                \"numerator\": 30\n              },\n              \"height\": 1080,\n              \"width\": 1920\n            },\n            \"state\": {\n              \"geometry_origin\": \"default\",\n              \"primary\": null,\n              \"rate_origin\": \"provisional\"\n            }\n          }\n        },\n        \"project_id\": \"c11cecb6-2308-451b-a3cf-d2920bdd2541\",\n        \"to_revision\": \"nested-seed\"\n      },\n      \"inverse\": {\n        \"assets\": {},\n        \"from_revision\": \"nested-seed\",\n        \"marks\": {},\n        \"nodes\": {\n          \"23ea72dd-71b8-4dd6-adf2-aac559bc0de2\": {\n            \"after\": {\n              \"kind\": {\n                \"children\": [],\n                \"type\": \"sequence\"\n              },\n              \"label\": \"Sequence\"\n            },\n            \"before\": {\n              \"kind\": {\n                \"children\": [\n                  \"outer\"\n                ],\n                \"type\": \"sequence\"\n              },\n              \"label\": \"Sequence\"\n            }\n          },\n          \"first\": {\n            \"after\": null,\n            \"before\": {\n              \"kind\": {\n                \"recipe\": {\n                  \"audio\": {\n                    \"type\": \"silence\"\n                  },\n                  \"duration\": 4,\n                  \"video\": {\n                    \"type\": \"background\"\n                  }\n                },\n                \"type\": \"hold\"\n              },\n              \"label\": \"Hold\"\n            }\n          },\n          \"inner\": {\n            \"after\": null,\n            \"before\": {\n              \"kind\": {\n                \"children\": [\n                  \"first\",\n                  \"second\"\n                ],\n                \"type\": \"sequence\"\n              },\n              \"label\": \"Group\"\n            }\n          },\n          \"outer\": {\n            \"after\": null,\n            \"before\": {\n              \"kind\": {\n                \"children\": [\n                  \"inner\"\n                ],\n                \"type\": \"sequence\"\n              },\n              \"label\": \"Group\"\n            }\n          },\n          \"second\": {\n            \"after\": null,\n            \"before\": {\n              \"kind\": {\n                \"recipe\": {\n                  \"audio\": {\n                    \"type\": \"silence\"\n                  },\n                  \"duration\": 3,\n                  \"video\": {\n                    \"type\": \"background\"\n                  }\n                },\n                \"type\": \"hold\"\n              },\n              \"label\": \"Hold\"\n            }\n          }\n        },\n        \"overrides\": {},\n        \"presentation\": {\n          \"after\": {\n            \"basis\": {\n              \"color_policy\": \"sdr_rec709\",\n              \"frame_rate\": {\n                \"denominator\": 1,\n                \"numerator\": 30\n              },\n              \"height\": 1080,\n              \"width\": 1920\n            },\n            \"state\": {\n              \"geometry_origin\": \"default\",\n              \"primary\": null,\n              \"rate_origin\": \"provisional\"\n            }\n          },\n          \"before\": {\n            \"basis\": {\n              \"color_policy\": \"sdr_rec709\",\n              \"frame_rate\": {\n                \"denominator\": 1,\n                \"numerator\": 30\n              },\n              \"height\": 1080,\n              \"width\": 1920\n            },\n            \"state\": {\n              \"geometry_origin\": \"default\",\n              \"primary\": null,\n              \"rate_origin\": \"timed_edit\"\n            }\n          }\n        },\n        \"project_id\": \"c11cecb6-2308-451b-a3cf-d2920bdd2541\",\n        \"to_revision\": \"2e66eda3-b90c-421d-92df-26e8660fabaa\"\n      }\n    },\n    \"revision_id\": \"nested-seed\"\n  },\n  \"protocol\": 1\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-sequence-20260926/deadpan-core25",
+        "project",
+        "dump",
+        "/tmp/deadpan-nested-sequence-20260926/old-context-refusal/nested.deadpan",
+        "--json"
+      ],
+      "returncode": 0,
+      "stdout": "{\n  \"schema_version\": 25,\n  \"project_id\": \"c11cecb6-2308-451b-a3cf-d2920bdd2541\",\n  \"revision_id\": \"nested-seed\",\n  \"presentation_basis\": {\n    \"width\": 1920,\n    \"height\": 1080,\n    \"frame_rate\": {\n      \"numerator\": 30,\n      \"denominator\": 1\n    },\n    \"color_policy\": \"sdr_rec709\"\n  },\n  \"basis_state\": {\n    \"rate_origin\": \"timed_edit\",\n    \"geometry_origin\": \"default\",\n    \"primary\": null\n  },\n  \"root\": \"23ea72dd-71b8-4dd6-adf2-aac559bc0de2\",\n  \"nodes\": {\n    \"23ea72dd-71b8-4dd6-adf2-aac559bc0de2\": {\n      \"label\": \"Sequence\",\n      \"kind\": {\n        \"type\": \"sequence\",\n        \"children\": [\n          \"outer\"\n        ]\n      }\n    },\n    \"first\": {\n      \"label\": \"Hold\",\n      \"kind\": {\n        \"type\": \"hold\",\n        \"recipe\": {\n          \"duration\": 4,\n          \"video\": {\n            \"type\": \"background\"\n          },\n          \"audio\": {\n            \"type\": \"silence\"\n          }\n        }\n      }\n    },\n    \"inner\": {\n      \"label\": \"Group\",\n      \"kind\": {\n        \"type\": \"sequence\",\n        \"children\": [\n          \"first\",\n          \"second\"\n        ]\n      }\n    },\n    \"outer\": {\n      \"label\": \"Group\",\n      \"kind\": {\n        \"type\": \"sequence\",\n        \"children\": [\n          \"inner\"\n        ]\n      }\n    },\n    \"second\": {\n      \"label\": \"Hold\",\n      \"kind\": {\n        \"type\": \"hold\",\n        \"recipe\": {\n          \"duration\": 3,\n          \"video\": {\n            \"type\": \"background\"\n          },\n          \"audio\": {\n            \"type\": \"silence\"\n          }\n        }\n      }\n    }\n  },\n  \"assets\": {},\n  \"marks\": {},\n  \"overrides\": {}\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-sequence-20260926/deadpan-core25",
+        "project",
+        "dump",
+        "/tmp/deadpan-nested-sequence-20260926/old-context-refusal/nested.deadpan",
+        "--json"
+      ],
+      "returncode": 0,
+      "stdout": "{\n  \"schema_version\": 25,\n  \"project_id\": \"c11cecb6-2308-451b-a3cf-d2920bdd2541\",\n  \"revision_id\": \"nested-seed\",\n  \"presentation_basis\": {\n    \"width\": 1920,\n    \"height\": 1080,\n    \"frame_rate\": {\n      \"numerator\": 30,\n      \"denominator\": 1\n    },\n    \"color_policy\": \"sdr_rec709\"\n  },\n  \"basis_state\": {\n    \"rate_origin\": \"timed_edit\",\n    \"geometry_origin\": \"default\",\n    \"primary\": null\n  },\n  \"root\": \"23ea72dd-71b8-4dd6-adf2-aac559bc0de2\",\n  \"nodes\": {\n    \"23ea72dd-71b8-4dd6-adf2-aac559bc0de2\": {\n      \"label\": \"Sequence\",\n      \"kind\": {\n        \"type\": \"sequence\",\n        \"children\": [\n          \"outer\"\n        ]\n      }\n    },\n    \"first\": {\n      \"label\": \"Hold\",\n      \"kind\": {\n        \"type\": \"hold\",\n        \"recipe\": {\n          \"duration\": 4,\n          \"video\": {\n            \"type\": \"background\"\n          },\n          \"audio\": {\n            \"type\": \"silence\"\n          }\n        }\n      }\n    },\n    \"inner\": {\n      \"label\": \"Group\",\n      \"kind\": {\n        \"type\": \"sequence\",\n        \"children\": [\n          \"first\",\n          \"second\"\n        ]\n      }\n    },\n    \"outer\": {\n      \"label\": \"Group\",\n      \"kind\": {\n        \"type\": \"sequence\",\n        \"children\": [\n          \"inner\"\n        ]\n      }\n    },\n    \"second\": {\n      \"label\": \"Hold\",\n      \"kind\": {\n        \"type\": \"hold\",\n        \"recipe\": {\n          \"duration\": 3,\n          \"video\": {\n            \"type\": \"background\"\n          },\n          \"audio\": {\n            \"type\": \"silence\"\n          }\n        }\n      }\n    }\n  },\n  \"assets\": {},\n  \"marks\": {},\n  \"overrides\": {}\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-sequence-20260926/deadpan-core25",
+        "command",
+        "/tmp/deadpan-nested-sequence-20260926/old-context-refusal/nested.deadpan",
+        "--json",
+        "/tmp/deadpan-nested-sequence-20260926/old-context-refusal/refused-2.json"
+      ],
+      "returncode": 1,
+      "stdout": "",
+      "stderr": "{\"error\":{\"code\":\"InvalidCommand\",\"current_revision\":null,\"message\":\"pause insertion cannot yet shift nested, repeated, retimed, or generated beats; use a Source or ordinary Hold boundary\",\"recovery_backup\":null},\"schema_version\":1}\n"
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-sequence-20260926/deadpan-core25",
+        "project",
+        "dump",
+        "/tmp/deadpan-nested-sequence-20260926/old-context-refusal/nested.deadpan",
+        "--json"
+      ],
+      "returncode": 0,
+      "stdout": "{\n  \"schema_version\": 25,\n  \"project_id\": \"c11cecb6-2308-451b-a3cf-d2920bdd2541\",\n  \"revision_id\": \"nested-seed\",\n  \"presentation_basis\": {\n    \"width\": 1920,\n    \"height\": 1080,\n    \"frame_rate\": {\n      \"numerator\": 30,\n      \"denominator\": 1\n    },\n    \"color_policy\": \"sdr_rec709\"\n  },\n  \"basis_state\": {\n    \"rate_origin\": \"timed_edit\",\n    \"geometry_origin\": \"default\",\n    \"primary\": null\n  },\n  \"root\": \"23ea72dd-71b8-4dd6-adf2-aac559bc0de2\",\n  \"nodes\": {\n    \"23ea72dd-71b8-4dd6-adf2-aac559bc0de2\": {\n      \"label\": \"Sequence\",\n      \"kind\": {\n        \"type\": \"sequence\",\n        \"children\": [\n          \"outer\"\n        ]\n      }\n    },\n    \"first\": {\n      \"label\": \"Hold\",\n      \"kind\": {\n        \"type\": \"hold\",\n        \"recipe\": {\n          \"duration\": 4,\n          \"video\": {\n            \"type\": \"background\"\n          },\n          \"audio\": {\n            \"type\": \"silence\"\n          }\n        }\n      }\n    },\n    \"inner\": {\n      \"label\": \"Group\",\n      \"kind\": {\n        \"type\": \"sequence\",\n        \"children\": [\n          \"first\",\n          \"second\"\n        ]\n      }\n    },\n    \"outer\": {\n      \"label\": \"Group\",\n      \"kind\": {\n        \"type\": \"sequence\",\n        \"children\": [\n          \"inner\"\n        ]\n      }\n    },\n    \"second\": {\n      \"label\": \"Hold\",\n      \"kind\": {\n        \"type\": \"hold\",\n        \"recipe\": {\n          \"duration\": 3,\n          \"video\": {\n            \"type\": \"background\"\n          },\n          \"audio\": {\n            \"type\": \"silence\"\n          }\n        }\n      }\n    }\n  },\n  \"assets\": {},\n  \"marks\": {},\n  \"overrides\": {}\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-sequence-20260926/deadpan-core25",
+        "command",
+        "/tmp/deadpan-nested-sequence-20260926/old-context-refusal/nested.deadpan",
+        "--json",
+        "/tmp/deadpan-nested-sequence-20260926/old-context-refusal/refused-4.json"
+      ],
+      "returncode": 1,
+      "stdout": "",
+      "stderr": "{\"error\":{\"code\":\"InvalidCommand\",\"current_revision\":null,\"message\":\"pause insertion cannot yet shift nested, repeated, retimed, or generated beats; use a Source or ordinary Hold boundary\",\"recovery_backup\":null},\"schema_version\":1}\n"
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-sequence-20260926/deadpan-core25",
+        "project",
+        "dump",
+        "/tmp/deadpan-nested-sequence-20260926/old-context-refusal/nested.deadpan",
+        "--json"
+      ],
+      "returncode": 0,
+      "stdout": "{\n  \"schema_version\": 25,\n  \"project_id\": \"c11cecb6-2308-451b-a3cf-d2920bdd2541\",\n  \"revision_id\": \"nested-seed\",\n  \"presentation_basis\": {\n    \"width\": 1920,\n    \"height\": 1080,\n    \"frame_rate\": {\n      \"numerator\": 30,\n      \"denominator\": 1\n    },\n    \"color_policy\": \"sdr_rec709\"\n  },\n  \"basis_state\": {\n    \"rate_origin\": \"timed_edit\",\n    \"geometry_origin\": \"default\",\n    \"primary\": null\n  },\n  \"root\": \"23ea72dd-71b8-4dd6-adf2-aac559bc0de2\",\n  \"nodes\": {\n    \"23ea72dd-71b8-4dd6-adf2-aac559bc0de2\": {\n      \"label\": \"Sequence\",\n      \"kind\": {\n        \"type\": \"sequence\",\n        \"children\": [\n          \"outer\"\n        ]\n      }\n    },\n    \"first\": {\n      \"label\": \"Hold\",\n      \"kind\": {\n        \"type\": \"hold\",\n        \"recipe\": {\n          \"duration\": 4,\n          \"video\": {\n            \"type\": \"background\"\n          },\n          \"audio\": {\n            \"type\": \"silence\"\n          }\n        }\n      }\n    },\n    \"inner\": {\n      \"label\": \"Group\",\n      \"kind\": {\n        \"type\": \"sequence\",\n        \"children\": [\n          \"first\",\n          \"second\"\n        ]\n      }\n    },\n    \"outer\": {\n      \"label\": \"Group\",\n      \"kind\": {\n        \"type\": \"sequence\",\n        \"children\": [\n          \"inner\"\n        ]\n      }\n    },\n    \"second\": {\n      \"label\": \"Hold\",\n      \"kind\": {\n        \"type\": \"hold\",\n        \"recipe\": {\n          \"duration\": 3,\n          \"video\": {\n            \"type\": \"background\"\n          },\n          \"audio\": {\n            \"type\": \"silence\"\n          }\n        }\n      }\n    }\n  },\n  \"assets\": {},\n  \"marks\": {},\n  \"overrides\": {}\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-sequence-20260926/deadpan-core25",
+        "project",
+        "validate",
+        "/tmp/deadpan-nested-sequence-20260926/old-context-refusal/nested.deadpan"
+      ],
+      "returncode": 0,
+      "stdout": "{\n  \"basis_state\": {\n    \"geometry_origin\": \"default\",\n    \"primary\": null,\n    \"rate_origin\": \"timed_edit\"\n  },\n  \"duration_frames\": 7,\n  \"mark_count\": 0,\n  \"node_count\": 5,\n  \"presentation_basis\": {\n    \"color_policy\": \"sdr_rec709\",\n    \"frame_rate\": {\n      \"denominator\": 1,\n      \"numerator\": 30\n    },\n    \"height\": 1080,\n    \"width\": 1920\n  },\n  \"project_id\": \"c11cecb6-2308-451b-a3cf-d2920bdd2541\",\n  \"protocol\": 1,\n  \"revision_id\": \"nested-seed\",\n  \"root\": \"23ea72dd-71b8-4dd6-adf2-aac559bc0de2\",\n  \"valid\": true\n}\n",
+      "stderr": ""
+    }
+  ],
+  "unchanged_after_refusals": true
+}

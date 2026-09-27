@@ -1,0 +1,442 @@
+Diff in /Users/michael/Code/deadpan/crates/deadpan-app/src/preview/harness.rs:32:
+         self.record_event(stage, None, None);
+     }
+ 
+-    fn record_event(&mut self, stage: &'static str, ticket: Option<Ticket>, outcome: Option<Outcome>) {
++    fn record_event(
++        &mut self,
++        stage: &'static str,
++        ticket: Option<Ticket>,
++        outcome: Option<Outcome>,
++    ) {
+         // Diagnostics must never introduce an unbounded queue in the app.
+         if self.events.len() < 4096 {
+             self.events.push(Event {
+Diff in /Users/michael/Code/deadpan/crates/deadpan-app/src/preview/harness.rs:88:
+ 
+ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioReport {
+     let mut report = ScenarioReport::new(name);
+-    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| -> Result<(), String> {
+-        let scratch = tempfile::Builder::new()
+-            .prefix("deadpan-ui-")
+-            .tempdir()
+-            .map_err(|e| e.to_string())?;
+-        let library =
+-            crate::library::ProjectLibrary::from_documents(scratch.path().join("Documents"))?;
+-        let mut construction_error = None;
+-        // The wrapper lets construction failures become evidence rather than a
+-        // panic that skips the scenario report.
+-        let harness = Harness::builder()
+-            .with_size(egui::vec2(1280.0, 820.0))
+-            .with_os(egui::os::OperatingSystem::Mac)
+-            .with_pixels_per_point(1.0)
+-            .with_step_dt(1.0 / options.hz as f32)
+-            .with_wait_for_pending_images(false)
+-            .with_render_options(egui_wgpu::RendererOptions::default())
+-            .wgpu()
+-            .build_eframe(|context| {
+-                let result = (|| {
+-                    let render = context
+-                        .wgpu_render_state
+-                        .clone()
+-                        .ok_or("Missing offscreen GPU")?;
+-                    if render.adapter.get_info().backend != eframe::wgpu::Backend::Metal {
+-                        return Err("UI qualification requires the Metal backend".to_owned());
++    let result =
++        std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| -> Result<(), String> {
++            let scratch = tempfile::Builder::new()
++                .prefix("deadpan-ui-")
++                .tempdir()
++                .map_err(|e| e.to_string())?;
++            let library =
++                crate::library::ProjectLibrary::from_documents(scratch.path().join("Documents"))?;
++            let mut construction_error = None;
++            // The wrapper lets construction failures become evidence rather than a
++            // panic that skips the scenario report.
++            let harness = Harness::builder()
++                .with_size(egui::vec2(1280.0, 820.0))
++                .with_os(egui::os::OperatingSystem::Mac)
++                .with_pixels_per_point(1.0)
++                .with_step_dt(1.0 / options.hz as f32)
++                .with_wait_for_pending_images(false)
++                .with_render_options(egui_wgpu::RendererOptions::default())
++                .wgpu()
++                .build_eframe(|context| {
++                    let result = (|| {
++                        let render = context
++                            .wgpu_render_state
++                            .clone()
++                            .ok_or("Missing offscreen GPU")?;
++                        if render.adapter.get_info().backend != eframe::wgpu::Backend::Metal {
++                            return Err("UI qualification requires the Metal backend".to_owned());
++                        }
++                        let mut app = DeadpanApp::new(
++                            context,
++                            render,
++                            false,
++                            Rc::new(Cell::new(false)),
++                            None,
++                            None,
++                        )
++                        .map_err(|e| e.to_string())?;
++                        let repaint = context.egui_ctx.clone();
++                        app.service = ProjectService::start(
++                            Arc::new(move || repaint.request_repaint()),
++                            Some(library),
++                        )
++                        .map_err(|e| e.to_string())?;
++                        app.dialogs = Dialogs::scripted(vec![(
++                            DialogKind::CreateProject,
++                            Some(fixture.to_owned()),
++                        )]);
++                        app.feedback.simulate_playback = true;
++                        Ok(app)
++                    })();
++                    match result {
++                        Ok(app) => ReplayApp(Some(app)),
++                        Err(error) => {
++                            construction_error = Some(error);
++                            ReplayApp(None)
++                        }
+                     }
+-                    let mut app = DeadpanApp::new(
+-                        context,
+-                        render,
+-                        false,
+-                        Rc::new(Cell::new(false)),
+-                        None,
+-                        None,
+-                    )
+-                    .map_err(|e| e.to_string())?;
+-                    let repaint = context.egui_ctx.clone();
+-                    app.service = ProjectService::start(
+-                        Arc::new(move || repaint.request_repaint()),
+-                        Some(library),
+-                    )
+-                    .map_err(|e| e.to_string())?;
+-                    app.dialogs = Dialogs::scripted(vec![(
+-                        DialogKind::CreateProject,
+-                        Some(fixture.to_owned()),
+-                    )]);
+-                    app.feedback.simulate_playback = true;
+-                    Ok(app)
+-                })();
+-                match result {
+-                    Ok(app) => ReplayApp(Some(app)),
+-                    Err(error) => {
+-                        construction_error = Some(error);
+-                        ReplayApp(None)
+-                    }
+-                }
++                });
++            if let Some(error) = construction_error {
++                return Err(error);
++            }
++            // kittest's static-snapshot defaults suppress dynamics. Restore the
++            // production settings before observing any scenario input.
++            harness.ctx.all_styles_mut(|style| {
++                let defaults = egui::Style::default();
++                style.scroll_animation = defaults.scroll_animation;
++                style.visuals.text_cursor.blink = defaults.visuals.text_cursor.blink;
+             });
+-        if let Some(error) = construction_error {
+-            return Err(error);
+-        }
+-        // kittest's static-snapshot defaults suppress dynamics. Restore the
+-        // production settings before observing any scenario input.
+-        harness.ctx.all_styles_mut(|style| {
+-            let defaults = egui::Style::default();
+-            style.scroll_animation = defaults.scroll_animation;
+-            style.visuals.text_cursor.blink = defaults.visuals.text_cursor.blink;
+-        });
+-        let render = harness.state().app()?.render_state.clone();
+-        report.checks.push(Check {
+-            name: "Metal renderer".into(),
+-            passed: true,
+-            expected: json!("Metal"),
+-            actual: json!(render.adapter.get_info().name),
+-        });
+-        let mut driver = Driver {
+-            harness,
+-            gpu: Offscreen::new(render),
+-            report: &mut report,
+-            options,
+-            started: Instant::now(),
+-            frame: 0,
+-            captures: 0,
+-            capture_limit_reported: false,
+-            capture_wall: Duration::ZERO,
+-            picture_telemetry: PictureTelemetry::default(),
+-            last_input: None,
+-            last_admitted: None,
+-        };
+-        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+-            driver.step("Initial workspace", true)?;
+-            driver.click("New project  ⌘N")?;
+-            driver.wait_for("Original initialized and displayed", |app| {
+-                app.workspace.as_ref().is_some_and(|w| {
+-                    matches!(w.single_source, Some(SingleSourceState::Ready { .. }))
+-                }) && app.presentation.has_displayed()
+-                    && !app.presentation.loading()
+-            })?;
+-            driver.capture("Original ready")?;
+-            scenarios::run(name, &mut driver)
+-        })).unwrap_or_else(|panic| Err(panic_message(panic)));
+-        if let Err(error) = &result {
+-            driver.report.findings.push(Finding {
+-                severity: Severity::Failure,
+-                message: error.clone(),
++            let render = harness.state().app()?.render_state.clone();
++            report.checks.push(Check {
++                name: "Metal renderer".into(),
++                passed: true,
++                expected: json!("Metal"),
++                actual: json!(render.adapter.get_info().name),
+             });
+-            // The final frame is still useful even when the assertion failed.
+-            if let Err(error) = driver.capture("Failure state") {
++            let mut driver = Driver {
++                harness,
++                gpu: Offscreen::new(render),
++                report: &mut report,
++                options,
++                started: Instant::now(),
++                frame: 0,
++                captures: 0,
++                capture_limit_reported: false,
++                capture_wall: Duration::ZERO,
++                picture_telemetry: PictureTelemetry::default(),
++                last_input: None,
++                last_admitted: None,
++            };
++            let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
++                driver.step("Initial workspace", true)?;
++                driver.click("New project  ⌘N")?;
++                driver.wait_for("Original initialized and displayed", |app| {
++                    app.workspace.as_ref().is_some_and(|w| {
++                        matches!(w.single_source, Some(SingleSourceState::Ready { .. }))
++                    }) && app.presentation.has_displayed()
++                        && !app.presentation.loading()
++                })?;
++                driver.capture("Original ready")?;
++                scenarios::run(name, &mut driver)
++            }))
++            .unwrap_or_else(|panic| Err(panic_message(panic)));
++            if let Err(error) = &result {
+                 driver.report.findings.push(Finding {
+                     severity: Severity::Failure,
+-                    message: format!("Failure capture: {error}"),
++                    message: error.clone(),
+                 });
++                // The final frame is still useful even when the assertion failed.
++                if let Err(error) = driver.capture("Failure state") {
++                    driver.report.findings.push(Finding {
++                        severity: Severity::Failure,
++                        message: format!("Failure capture: {error}"),
++                    });
++                }
+             }
+-        }
+-        driver.report.skipped.extend([
+-            "OS picker behavior: only its selected path is scripted".into(),
+-            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+-                .into(),
+-        ]);
+-        // Drop the app before its disposable project directory.
+-        drop(driver);
+-        drop(scratch);
+-        result
+-    })).unwrap_or_else(|panic| Err(panic_message(panic)));
++            driver.report.skipped.extend([
++                "OS picker behavior: only its selected path is scripted".into(),
++                "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
++                    .into(),
++            ]);
++            // Drop the app before its disposable project directory.
++            drop(driver);
++            drop(scratch);
++            result
++        }))
++        .unwrap_or_else(|panic| Err(panic_message(panic)));
+     if let Err(error) = result
+         && !report
+             .findings
+Diff in /Users/michael/Code/deadpan/crates/deadpan-app/src/preview/harness.rs:226:
+ }
+ 
+ fn panic_message(panic: Box<dyn std::any::Any + Send>) -> String {
+-    let message = panic.downcast_ref::<String>().map(String::as_str)
+-        .or_else(|| panic.downcast_ref::<&str>().copied()).unwrap_or("unknown panic");
++    let message = panic
++        .downcast_ref::<String>()
++        .map(String::as_str)
++        .or_else(|| panic.downcast_ref::<&str>().copied())
++        .unwrap_or("unknown panic");
+     format!("Scenario panicked: {message}")
+ }
+ 
+Diff in /Users/michael/Code/deadpan/crates/deadpan-app/src/preview/harness.rs:348:
+                 }
+                 _ => {}
+             }
+-            let input_origin = if has_input { self.last_input } else { committed_input };
++            let input_origin = if has_input {
++                self.last_input
++            } else {
++                committed_input
++            };
+             let observed = self.picture_telemetry.observe(event, input_origin);
+             for measurement in observed.measurements {
+-                self.metric(measurement.name, measurement.elapsed_ms, SampleOutcome::Completed);
++                self.metric(
++                    measurement.name,
++                    measurement.elapsed_ms,
++                    SampleOutcome::Completed,
++                );
+             }
+             events.extend(observed.events);
+         }
+Diff in /Users/michael/Code/deadpan/crates/deadpan-app/src/preview/harness.rs:368:
+         );
+         let observed = self.picture_telemetry.composed(Instant::now());
+         for measurement in observed.measurements {
+-            self.metric(measurement.name, measurement.elapsed_ms, SampleOutcome::Completed);
++            self.metric(
++                measurement.name,
++                measurement.elapsed_ms,
++                SampleOutcome::Completed,
++            );
+         }
+         events.extend(observed.events);
+         let mut semantic = self.snapshot();
+Diff in /Users/michael/Code/deadpan/crates/deadpan-app/src/preview/harness.rs:375:
+-        if capture && self.options.mode == RunMode::Visual && self.captures >= 120 && !self.capture_limit_reported {
++        if capture
++            && self.options.mode == RunMode::Visual
++            && self.captures >= 120
++            && !self.capture_limit_reported
++        {
+             self.capture_limit_reported = true;
+             self.report.findings.push(Finding {
+                 severity: Severity::Warning,
+Diff in /Users/michael/Code/deadpan/crates/deadpan-app/src/preview/harness.rs:467:
+         self.step(label, true)?;
+         // Named comparison checkpoints and failures retain reserved capacity
+         // even when a long transition uses the intermediate-image allowance.
+-        let missing = self.report.steps.last().is_some_and(|step| step.screenshot.is_none());
++        let missing = self
++            .report
++            .steps
++            .last()
++            .is_some_and(|step| step.screenshot.is_none());
+         if self.options.mode == RunMode::Visual && missing {
+             if self.captures >= 160 {
+                 return Err("Named checkpoint capture exceeded the 160-image hard limit".into());
+Diff in /Users/michael/Code/deadpan/crates/deadpan-app/src/preview/harness.rs:493:
+         let started = Instant::now();
+         let result = (|| {
+             let frame = self.harness.render()?;
+-            let file = std::fs::File::create(self.options.output.join(name)).map_err(|e| e.to_string())?;
+-            PngEncoder::new_with_quality(std::io::BufWriter::new(file), CompressionType::Fast, FilterType::Sub)
+-                .write_image(frame.as_raw(), frame.width(), frame.height(), image::ExtendedColorType::Rgba8)
+-                .map_err(|e| e.to_string())
++            let file =
++                std::fs::File::create(self.options.output.join(name)).map_err(|e| e.to_string())?;
++            PngEncoder::new_with_quality(
++                std::io::BufWriter::new(file),
++                CompressionType::Fast,
++                FilterType::Sub,
++            )
++            .write_image(
++                frame.as_raw(),
++                frame.width(),
++                frame.height(),
++                image::ExtendedColorType::Rgba8,
++            )
++            .map_err(|e| e.to_string())
+         })();
+         self.capture_wall += started.elapsed();
+         result
+Diff in /Users/michael/Code/deadpan/crates/deadpan-app/src/preview/harness.rs:574:
+         let capture_started = self.capture_wall;
+         let mut count = 0;
+         while !ready(self.app()) {
+-            if started.elapsed().saturating_sub(self.capture_wall - capture_started) > Duration::from_secs(15) {
++            if started
++                .elapsed()
++                .saturating_sub(self.capture_wall - capture_started)
++                > Duration::from_secs(15)
++            {
+                 self.metric(
+                     label,
+                     started.elapsed().as_secs_f64() * 1000.0,
+Diff in /Users/michael/Code/deadpan/crates/deadpan-app/src/preview.rs:539:
+             let ticket = reply.ticket;
+             let result = self.presentation.receive(reply);
+             #[cfg(feature = "ui-harness")]
+-            self.feedback.picture_received(ticket, result.as_ref().map(Result::is_ok));
++            self.feedback
++                .picture_received(ticket, result.as_ref().map(Result::is_ok));
+             result
+         });
+         if let Some(result) = result {
+Diff in /Users/michael/Code/deadpan/crates/deadpan-app/src/preview.rs:1943:
+             if self.presentation.needs_render() {
+                 self.forget_target();
+                 #[cfg(feature = "ui-harness")]
+-                self.feedback.picture_submitted(self.presentation.decoded_ticket());
++                self.feedback
++                    .picture_submitted(self.presentation.decoded_ticket());
+                 self.presentation.presented();
+                 context.request_repaint();
+             }
+Diff in /Users/michael/Code/deadpan/crates/deadpan-app/src/preview.rs:1956:
+             }
+             Err(error) => {
+                 #[cfg(feature = "ui-harness")]
+-                self.feedback.picture_failed(self.presentation.decoded_ticket());
++                self.feedback
++                    .picture_failed(self.presentation.decoded_ticket());
+                 self.presentation
+                     .render_failed(format!("Preview renderer: {error}"));
+                 return;
+Diff in /Users/michael/Code/deadpan/crates/deadpan-app/src/preview.rs:1979:
+                 Ok(target) => target,
+                 Err(error) => {
+                     #[cfg(feature = "ui-harness")]
+-                    self.feedback.picture_failed(self.presentation.decoded_ticket());
++                    self.feedback
++                        .picture_failed(self.presentation.decoded_ticket());
+                     self.presentation
+                         .render_failed(format!("Preview renderer: {error}"));
+                     return;
+Diff in /Users/michael/Code/deadpan/crates/deadpan-app/src/preview.rs:2005:
+                 ),
+                 Err(error) => {
+                     #[cfg(feature = "ui-harness")]
+-                    self.feedback.picture_failed(self.presentation.decoded_ticket());
++                    self.feedback
++                        .picture_failed(self.presentation.decoded_ticket());
+                     self.presentation.render_failed(error);
+                     return;
+                 }
+Diff in /Users/michael/Code/deadpan/crates/deadpan-app/src/preview.rs:2016:
+         match result {
+             Ok(_) => {
+                 #[cfg(feature = "ui-harness")]
+-                self.feedback.picture_submitted(self.presentation.decoded_ticket());
++                self.feedback
++                    .picture_submitted(self.presentation.decoded_ticket());
+                 if let Some(target) = replacement {
+                     let texture = self.render_state.renderer.write().register_native_texture(
+                         &self.render_state.device,
+Diff in /Users/michael/Code/deadpan/crates/deadpan-app/src/preview.rs:2031:
+             }
+             Err(error) => {
+                 #[cfg(feature = "ui-harness")]
+-                self.feedback.picture_failed(self.presentation.decoded_ticket());
++                self.feedback
++                    .picture_failed(self.presentation.decoded_ticket());
+                 self.presentation
+                     .render_failed(format!("Preview renderer: {error}"));
+             }

@@ -87,6 +87,7 @@ fn hold(length: i64, selected: HoldAudio) -> BeatNode {
     BeatNode::hold(
         "Hold",
         HoldRecipe {
+            picture_context: None,
             duration: frames(length),
             video: HoldVideo::Background,
             audio: selected,

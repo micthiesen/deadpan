@@ -1,0 +1,169 @@
+{
+  "final_gate": {
+    "commands": [
+      {
+        "command": [
+          "cargo",
+          "fmt",
+          "--all",
+          "--",
+          "--check"
+        ],
+        "exit_code": 0,
+        "seconds": 3.144782790914178,
+        "log": "0.log"
+      },
+      {
+        "command": [
+          "cargo",
+          "clippy",
+          "--workspace",
+          "--all-targets",
+          "--locked",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "exit_code": 0,
+        "seconds": 20.262948374729604,
+        "log": "1.log"
+      },
+      {
+        "command": [
+          "cargo",
+          "test",
+          "--workspace",
+          "--locked"
+        ],
+        "exit_code": 101,
+        "seconds": 187.52014779066667,
+        "log": "2.log",
+        "tests": {
+          "passed": 948,
+          "failed": 1,
+          "ignored": 0
+        }
+      },
+      {
+        "command": [
+          "cargo",
+          "build",
+          "--workspace",
+          "--locked"
+        ],
+        "exit_code": 0,
+        "seconds": 0.6369030000641942,
+        "log": "3.log"
+      },
+      {
+        "command": [
+          "cargo",
+          "run",
+          "-p",
+          "deadpan-cli",
+          "--",
+          "doctor"
+        ],
+        "exit_code": 0,
+        "seconds": 0.366307791788131,
+        "log": "4.log"
+      },
+      {
+        "command": [
+          "cargo",
+          "clippy",
+          "-p",
+          "deadpan-app",
+          "--features",
+          "ui-harness",
+          "--all-targets",
+          "--locked",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "exit_code": 0,
+        "seconds": 25.98513354221359,
+        "log": "5.log"
+      },
+      {
+        "command": [
+          "cargo",
+          "test",
+          "-p",
+          "deadpan-app",
+          "--features",
+          "ui-harness",
+          "--all-targets",
+          "--locked"
+        ],
+        "exit_code": 0,
+        "seconds": 4.5348368328996,
+        "log": "6.log",
+        "tests": {
+          "passed": 205,
+          "failed": 0,
+          "ignored": 0
+        }
+      }
+    ],
+    "source_count": 530,
+    "source_unchanged": true,
+    "changed_sources": [],
+    "passed": false
+  },
+  "prior_store_plan_render": {
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-store",
+      "-p",
+      "deadpan-plan",
+      "-p",
+      "deadpan-render"
+    ],
+    "exit_code": 0,
+    "seconds": 145.99324645800516,
+    "log": "5.log",
+    "tests": {
+      "passed": 417,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  "files_changed_since_prior_gate": [
+    "crates/deadpan-app/src/preview/harness/nested_pause.rs",
+    "crates/deadpan-app/src/preview/help_scroll.rs",
+    "crates/deadpan-app/src/preview/scope.rs",
+    "crates/deadpan-app/src/preview/selection.rs"
+  ],
+  "non_app_sources_unchanged": true,
+  "sources_match_final_gate": true,
+  "gui": {
+    "exit_code": 1,
+    "failed": true,
+    "scenario_checks": 0,
+    "scenario_steps": 0,
+    "screenshots": 0,
+    "findings": [
+      {
+        "message": "Scenario panicked: Failed to create render state: CustomNativeAdapterSelectionError(\"No adapter found\")",
+        "severity": "failure"
+      }
+    ],
+    "shortcut_passed": true,
+    "shortcut_checked": 3472,
+    "shortcut_reservations": 62,
+    "shortcut_conflicts": [],
+    "live_source_sha256": "2b10b5b9428ef9745829576267c2cc5478111c5839e728b6c19e79c5dc8e21a0",
+    "binary_sha256": "81c3f4dac16a8beebfa4492fa3ad86a36fba7266e3a029c320f75b04541c7e75",
+    "run_stage": "Before review cursor fix and keyboard regression additions; zero GUI assertions at any stage"
+  },
+  "document_schema": 26,
+  "database_schema": 32,
+  "reviewed_source_paths": 20,
+  "no_requirement_or_gate_promoted": true,
+  "other_agent_harness_preserved": true
+}

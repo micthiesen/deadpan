@@ -1,0 +1,24 @@
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 15.31s
+     Running tests/project_commands.rs (target/debug/deps/project_commands-014501bb02c3077d)
+
+running 16 tests
+test doctor_reports_gap_branch_document_and_migration_schemas ... ok
+test failed_migration_returns_retained_backup_and_preserves_original ... ok
+test malformed_or_future_protocol_is_rejected_before_mutation ... ok
+test writer_lock_is_enforced_between_processes_but_readers_and_dry_run_work ... ok
+test current_generation_requires_host_reconciliation_but_allows_cli_preview ... ok
+test selection_resolution_is_revision_checked_exact_and_read_only ... ok
+test history_dry_runs_work_with_a_writer_and_preserve_the_redo_path ... ok
+test headless_split_preview_commit_and_history_share_one_exact_command ... ok
+test dry_run_and_commit_preserve_actionable_domain_errors ... ok
+test headless_edit_dry_run_conflict_and_durable_history ... ok
+test headless_captured_view_is_inspectable_reversible_and_validated_before_commit ... ok
+test sparse_override_commands_and_inspection_share_revision_and_dry_run_guards ... ok
+test headless_migration_and_plan_inspection_are_explicit_and_read_only ... ok
+test nested_occurrence_command_is_atomic_and_uses_the_same_headless_plan ... ok
+test persistent_mark_queries_and_loss_states_share_the_headless_command_path ... ok
+test independent_stream_mappings_use_headless_commands_and_durable_undo ... ok
+
+test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.67s
+

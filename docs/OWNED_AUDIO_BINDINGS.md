@@ -1,12 +1,17 @@
 # Owned audio timing bindings
 
-Core 17/database 23 store bounded timing bindings separately from the raw owned
-tree. The normal plan and `StageAudio` paths evaluate these bindings with retained
+Core 25/database 31 store bounded timing bindings separately from the raw owned
+tree, including [chronological reanchor steps](AUDIO_REANCHORS.md). The normal
+plan and `StageAudio` paths evaluate these bindings with retained
 sampling, current owned policies and post-mapping fades. A pure capture helper
 can capture previously unbound physical owners without expanding Repeat plays.
 [Pause insertion](INSERT_TIME.md) authors these bindings and composes resume
 phases for root Source/Hold fragments. An empty project needs no retained clock.
 Arbitrary nested insertion and the complete authoring lifecycle remain open.
+
+[Gap materialization](REPEAT_GAP_BRANCHES.md) can transfer a default gap's timing
+to an independently owned Hold. Its current raw recipe stays live while the old
+preceding-play argument is closed to the selected identity.
 
 The [single-Original workflow](SINGLE_ORIGINAL.md) remains the product model:
 reshape the full source with reversible changes. Timing records are internal
@@ -14,7 +19,7 @@ authored state, not another source, media bin, or interface mode.
 
 ## One recipe, explicit clocks
 
-The current owned Source, Hold or nonunity Preserve supplies the raw recipe.
+The current owned Source, Hold, Repeat gap or nonunity Preserve supplies the raw recipe.
 Its current intrinsic extent and current meaningful crop constraints govern raw
 support and fade length. Its binding supplies the sampling lattice and retained
 reference anchor, so editing a Hold duration does not reset RoomTone phase.
@@ -181,9 +186,12 @@ override edges capture their exact play. Nonunity Preserve output uses the
 enclosing clock, then its input resets lexical scope at the exact selected
 origin. One shared frozen timing record is added only when needed.
 
-Repeat gaps still need their own binding ownership. Complete capture rejects a
-nonempty gap rather than claiming continuity while omitting it. Raw recipe/rate
-and support changes still need explicit command lifecycle rules, including
+Configured positive Repeat gaps now have a separate [binding map](GAP_AUDIO_BINDINGS.md).
+Capture includes their recipe even when no play currently has a gap. Existing
+gaps retain the historical preceding-play identity; new gaps use their own
+PointCeil definition clock. Gap bindings share reanchors, ownership transforms,
+pruning and the normal PCM path. Raw recipe/rate and support changes still need
+complete command lifecycle rules, including
 replacement of affected opaque ancestors and preservation of unaffected owners.
 
 After the complete lifecycle is verified, a typed

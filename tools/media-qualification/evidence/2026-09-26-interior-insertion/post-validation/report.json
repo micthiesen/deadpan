@@ -1,0 +1,73 @@
+{
+  "commands": [
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 2.9082149579189718,
+      "log": "0.log"
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "-p",
+        "deadpan-core",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 146.42959375027567,
+      "log": "1.log"
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-core",
+        "--test",
+        "audio_bindings"
+      ],
+      "exit_code": 0,
+      "seconds": 24.82696754205972,
+      "log": "2.log",
+      "tests": {
+        "passed": 36,
+        "failed": 0,
+        "ignored": 0
+      }
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked"
+      ],
+      "exit_code": 101,
+      "seconds": 175.43850925005972,
+      "log": "3.log",
+      "tests": {
+        "passed": 896,
+        "failed": 1,
+        "ignored": 0
+      }
+    }
+  ],
+  "source_count": 498,
+  "source_unchanged": true,
+  "changed_since_original_gate": [
+    "crates/deadpan-core/tests/audio_bindings/gaps.rs"
+  ],
+  "production_sources_unchanged": true
+}

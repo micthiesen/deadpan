@@ -6,7 +6,7 @@ use deadpan_core::{
 use serde::{Deserialize, Serialize};
 
 use super::audio::EnvelopeConstraint;
-use super::audio_domain::AudioWalkSeed;
+use super::audio_domain::{AudioWalkSeed, DomainGap};
 use super::{
     AudioBoundaryKind, AudioDomain, AudioRootPlacement, AudioSignal, AudioTransform, CompiledKind,
     RenderPlan,
@@ -15,11 +15,13 @@ use crate::{AudioBoundaryRule, AudioSampleGrid, PlanError};
 
 /// An authored alias request, not a rendered occurrence or a live binding.
 /// RepeatDefault selects the default child even when every play is overridden.
+/// RepeatGap selects a positive configured gap even when there is only one play.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
 pub enum AudioDefinitionSelector {
     Node { node: NodeId },
     RepeatDefault { repeat: NodeId },
+    RepeatGap { repeat: NodeId },
 }
 
 /// A definition's intrinsic output in its own local-zero 48 kHz point grid.
@@ -31,6 +33,7 @@ pub struct AudioDefinition<'plan> {
     pub(super) plan: &'plan RenderPlan,
     pub(super) selector: AudioDefinitionSelector,
     pub(super) root: usize,
+    pub(super) gap: Option<DomainGap>,
 }
 
 impl RenderPlan {
@@ -42,24 +45,46 @@ impl RenderPlan {
     ) -> Result<AudioDefinition<'_>, PlanError> {
         let alias = match &selector {
             AudioDefinitionSelector::Node { node } => node,
-            AudioDefinitionSelector::RepeatDefault { repeat } => repeat,
+            AudioDefinitionSelector::RepeatDefault { repeat }
+            | AudioDefinitionSelector::RepeatGap { repeat } => repeat,
         };
         let Some(&node) = self.by_id.get(alias) else {
             return Err(PlanError::InvalidAudioDefinitionSelector(selector));
         };
-        let root = match &selector {
-            AudioDefinitionSelector::Node { .. } => node,
+        let (root, gap) = match &selector {
+            AudioDefinitionSelector::Node { .. } => (node, None),
             AudioDefinitionSelector::RepeatDefault { .. } => {
                 let CompiledKind::Repeat { default_child, .. } = &self.nodes[node].kind else {
                     return Err(PlanError::InvalidAudioDefinitionSelector(selector));
                 };
-                *default_child
+                (*default_child, None)
+            }
+            AudioDefinitionSelector::RepeatGap { .. } => {
+                let CompiledKind::Repeat {
+                    gap_duration,
+                    gap_audio: Some(_),
+                    ..
+                } = &self.nodes[node].kind
+                else {
+                    return Err(PlanError::InvalidAudioDefinitionSelector(selector));
+                };
+                if *gap_duration == FrameDuration::ZERO {
+                    return Err(PlanError::InvalidAudioDefinitionSelector(selector));
+                }
+                (
+                    node,
+                    Some(DomainGap {
+                        after: None,
+                        duration: *gap_duration,
+                    }),
+                )
             }
         };
         Ok(AudioDefinition {
             plan: self,
             selector,
             root,
+            gap,
         })
     }
 }
@@ -74,16 +99,21 @@ impl<'plan> AudioDefinition<'plan> {
     }
 
     pub fn duration(&self) -> FrameDuration {
-        self.plan.nodes[self.root].inspection.duration
+        self.gap
+            .as_ref()
+            .map_or(self.plan.nodes[self.root].inspection.duration, |gap| {
+                gap.duration
+            })
     }
 
     pub fn signal(&self) -> AudioSignal<'plan> {
-        AudioSignal::for_definition(self.plan, self.root, self.selector.clone())
+        AudioSignal::for_definition(self)
     }
 
     /// Evaluate this current owned recipe in an explicit, possibly signed root
     /// clock. Only one physical leaf or opaque Preserve output can own a domain;
-    /// a Sequence, Repeat or transparent Retime needs per-domain placement.
+    /// a Sequence, whole Repeat or transparent Retime needs per-domain placement.
+    /// A RepeatGap selects its one physical Hold recipe without an outer play.
     ///
     /// Support constrains Source filter input and output envelope. Preserve
     /// preparation still owns its complete intrinsic input/output history.
@@ -105,26 +135,24 @@ impl<'plan> AudioDefinition<'plan> {
         grid_origin: ExactRatio,
     ) -> Result<super::AudioPointDomain<'plan>, PlanError> {
         self.validate_physical_placement(&placement)?;
-        super::AudioPointDomain::new(
-            self.plan,
-            self.root,
-            self.selector.clone(),
-            placement,
-            grid_origin,
-        )
+        super::AudioPointDomain::new(self, placement, grid_origin)
     }
 
     fn validate_physical_placement(&self, placement: &AudioRootPlacement) -> Result<(), PlanError> {
-        match &self.plan.nodes[self.root].kind {
-            CompiledKind::Source { .. } | CompiledKind::Hold { .. } => {}
-            CompiledKind::Retime {
-                pitch: PitchPolicy::Preserve,
-                scale,
-                ..
-            } if *scale != ExactRatio::ONE => {}
+        match (&self.plan.nodes[self.root].kind, &self.gap) {
+            (CompiledKind::Repeat { .. }, Some(_)) => {}
+            (CompiledKind::Source { .. } | CompiledKind::Hold { .. }, None) => {}
+            (
+                CompiledKind::Retime {
+                    pitch: PitchPolicy::Preserve,
+                    scale,
+                    ..
+                },
+                None,
+            ) if *scale != ExactRatio::ONE => {}
             _ => {
                 return Err(PlanError::InvalidAudioRootPlacement(
-                    "definition must be a Source, Hold or nonunity Preserve",
+                    "definition must be a Source, Hold, Repeat gap or nonunity Preserve",
                 ));
             }
         }
@@ -193,7 +221,7 @@ impl<'plan> AudioDefinition<'plan> {
                 }],
                 repeats: Vec::new(),
                 retimes: Vec::new(),
-                gap: None,
+                gap: self.gap.clone(),
             },
             samples: samples.clone(),
             visible: samples,

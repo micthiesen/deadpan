@@ -1,0 +1,71 @@
+{
+  "base_ref": "origin/main",
+  "subject": "Increment against saved pre-sound-audition working tree, including new files; prior reviewed dirty increments remain preserved",
+  "baseline": "/tmp/deadpan-authored-sounds-20260927/before",
+  "reviewers": [
+    {
+      "agent": "sound_backend_review",
+      "lens": "general backend correctness, timing, validation, tests",
+      "final": "No remaining actionable findings after serde repair; no Cargo or live UI run by reviewer"
+    },
+    {
+      "agent": "sound_ui_review",
+      "lens": "keyboard/focus and async Sound state preservation",
+      "final": "No actionable findings; no tests or live UI run by reviewer"
+    },
+    {
+      "agent": "sound_resource_review",
+      "lens": "route/cache resource bounds and coherence",
+      "final": "Metadata cache finding resolved; no remaining actionable findings on rereview"
+    }
+  ],
+  "applied": [
+    {
+      "finding": "RawValue cannot compose through serde internally tagged ContentDeserializer",
+      "fix": "Validated RippleWire and RouteWire deserialization; regression through from_value and containing tagged Envelope; bounded-input contract documented"
+    },
+    {
+      "finding": "Sixteen full receipt snapshots plus decoded audio indexes exceed meaningful metadata residency bounds despite PCM budget",
+      "fix": "Retain compact receipt identity, add aggregate 1,000,000 audio-index-frame cap, bound native decoder index, reserve/evict both budgets before decode and publish together after success"
+    },
+    {
+      "finding": "A catalog filter can hide the selected sound row while audition selection remains",
+      "fix": "Selected sound name stays visible in the preview card, with truncation and full hover text; focused UI reviewer found no issue"
+    }
+  ],
+  "dismissed": [
+    {
+      "finding": "Cancel an editor picture request when selecting Sound",
+      "reason": "An existing latest editor request still belongs to unchanged cursors. Cancelling would strand intended preview. Sound neither retargets nor requests pictures; prior legitimate work may complete. Reviewer withdrew finding; docs clarified."
+    }
+  ],
+  "constraints": [
+    "Generic serde is for bounded containing input; from_json performs pre-parse byte admission",
+    "No authored sound placement, schema migration, sample-grid integration, final master, or GUI appearance acceptance is established by these primitives"
+  ],
+  "source_sha256": {
+    "crates/deadpan-app/src/preview.rs": "e0867a200313f7ab38a7d1416b9b9cd21ca965a965b66f967ba4919865623d4f",
+    "crates/deadpan-app/src/preview/harness.rs": "bc412b6e334dd209f3d080892db1ea6254fa0864931fd74c3eea43a2e54fd6a1",
+    "crates/deadpan-app/src/preview/harness/scenarios.rs": "85773a1f283e26be5637373d8db780dd1116c8a0f840559614e74d8fee5c90fa",
+    "crates/deadpan-app/src/preview/harness/sound_playback.rs": "8b85d1d6c64d13394a1ef21b43db25cb7481e2c71f5829c40a0458808fe5783b",
+    "crates/deadpan-app/src/preview/playback.rs": "25bdf2179e91f44bfd3ee36d3cd984b21185f300695c78f08aa6f2a8f11048b7",
+    "crates/deadpan-app/src/project.rs": "c3f02c82b779edee0230d3bd5c2598befc2400f1b40795eebea2052dc0c003bf",
+    "crates/deadpan-app/src/project/service.rs": "d22d2c7b1fc4c0081022a2686cda2a491ab7baf5cec5d6662549694bf92f4081",
+    "crates/deadpan-app/src/project/tests.rs": "1b4b0cda3cfb0b13abcaeaf764740e00c2d3991e4fe5dde8a61367378cc9a184",
+    "crates/deadpan-app/src/transport.rs": "7f6e09b9e902d0aeca6d52d4cd04d4668afef94bed2732468bfd68b9e12a7761",
+    "crates/deadpan-app/src/transport/tests.rs": "f13678e2c70ac37750f46ef312a2fcfcaa00078a3b7d3108d075a68a940c819c",
+    "crates/deadpan-app/src/transport/tests/sound.rs": "2bc8b5c696e4858fd72ceb38b49bc8457f7e66566a3545a9cdf14a49c8a0a8f7",
+    "crates/deadpan-app/src/ui_harness.rs": "977f8846da6d65f5b64ebc1d8839fe91661051806c697a73a4b2bf9adad2c844",
+    "crates/deadpan-app/src/worker/project_tests.rs": "d9c1cc3e5337b9c5501f2fe06e9ab7dda200d0d0cfbdd74a9b1a49c5a5b0c9d6",
+    "crates/deadpan-cli/src/audio.rs": "14e98858e9e0c17fb4d4b5e8e63017bbfe2e629869cdcf13ef6a028c913ece8e",
+    "crates/deadpan-cli/src/audio/cache_tests.rs": "66d331a5e310b12b319bfa4584fe523071dc65ae71d04ce7135467f78306333e",
+    "crates/deadpan-core/src/lib.rs": "2df1c53305bcb3e1bf2ef098405b196611ebafd4e0d59f5c5e02998b6dbd5f65",
+    "crates/deadpan-core/src/sound_route.rs": "07b91b543bb2902380ede3639ae542d229cc85179153e86b9060907753448b43",
+    "crates/deadpan-core/tests/sound_routes.rs": "3ffaee67fc4a3c37afba4fd13f21b5f7571f6af670f36b84c485baed6546e041",
+    "crates/deadpan-playback/src/lib.rs": "2dd8a96807e7bc8d0cde9f744cb1c9f4e61f6e94d02038e062cb72ac72bfeb44",
+    "crates/deadpan-playback/src/preparation.rs": "3d5dca82a8bda18bd6ef447cabfccab4f732f6207e3d49bd6fa8517d7c018c1b",
+    "crates/deadpan-playback/src/target.rs": "5eb6de71cd89f246846cc5e643e8698ee315a66039c460bd86180ea67eaabb67",
+    "crates/deadpan-playback/src/tests.rs": "b5b97b52a209122cdfb06532ff60d210bd63150a1b64fa78206a5be76e304580",
+    "crates/deadpan-playback/src/tests/sound.rs": "21889ffe867dfd97de5c985680d887607a974f979665b577342bcbc1dad385cf"
+  }
+}

@@ -1,0 +1,81 @@
+{
+  "commands": [
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 3.5880824169144034,
+      "log": "0.log"
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "-p",
+        "deadpan-playback",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 84.22121891612187,
+      "log": "1.log"
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-playback",
+        "--lib",
+        "--",
+        "--exact",
+        "tests::canonical_source_pcm_uses_fixed_monitor_gain_and_delivery_clock",
+        "tests::seek_reuses_private_pcm_but_a_new_session_must_reopen_sources",
+        "tests::original::original_preserves_leading_audio_trailing_audio_and_exact_rounded_picture_clock",
+        "tests::original::original_pcm_ignores_edits_and_target_cache_never_reuses_sequence_pcm",
+        "tests::resources::pcm_slot_stays_owned_until_detached_engine_workers_exit",
+        "tests::worker_panic_is_reported_and_disables_further_requests"
+      ],
+      "exit_code": 0,
+      "seconds": 80.97799687506631,
+      "log": "2.log",
+      "tests": {
+        "passed": 6,
+        "failed": 0,
+        "ignored": 0
+      }
+    },
+    {
+      "command": [
+        "artifact-e7cdfb3273c79ea0",
+        "--exact",
+        "directories_fifos_and_sockets_are_rejected_without_blocking"
+      ],
+      "exit_code": 0,
+      "seconds": 0.02045862516388297,
+      "log": "3.log",
+      "tests": {
+        "passed": 1,
+        "failed": 0,
+        "ignored": 0
+      }
+    }
+  ],
+  "RUST_BACKTRACE": "full",
+  "source_count": 587,
+  "prior_workspace_gate": "gate-01",
+  "scope": "Final review bound affects only playback test resource helper; rerun six affected cases, not unchanged DSP cases; retry unchanged artifact binary after Unix socket access was restored",
+  "artifact_binary_sha256_before": "34cafef67b9059d652e183cb78741bf0807757cf8d2cd6f651c7ca104add8870",
+  "source_unchanged": true,
+  "artifact_binary_sha256_after": "34cafef67b9059d652e183cb78741bf0807757cf8d2cd6f651c7ca104add8870",
+  "passed": true
+}

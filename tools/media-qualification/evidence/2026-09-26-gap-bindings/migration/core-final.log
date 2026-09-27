@@ -1,0 +1,21 @@
+    Blocking waiting for file lock on build directory
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4m 31s
+     Running unittests src/lib.rs (target/debug/deps/deadpan_core-b32f8ce8c7bbc4ac)
+
+running 12 tests
+test legacy_audio_binding_v20::tests::projection_rejects_gap_intent_and_decoder_retains_duplicate_detection ... ok
+test legacy_audio_binding_v20::tests::schema17_rejects_new_binding_vocabulary ... ok
+test legacy_audio_binding_v20::tests::schema19_rejects_new_binding_vocabulary ... ok
+test legacy_audio_binding_v20::tests::schema18_rejects_new_binding_vocabulary ... ok
+test legacy_audio_binding_v20::tests::schema20_rejects_new_binding_vocabulary ... ok
+test legacy_audio_binding_v20::tests::schema16_rejects_new_binding_vocabulary ... ok
+test legacy_audio_binding_v20::tests::schema20_rejects_nested_gap_vocabulary ... ok
+test legacy_audio_binding_v20::tests::schema18_rejects_nested_gap_vocabulary ... ok
+test legacy_audio_binding_v20::tests::schema16_rejects_nested_gap_vocabulary ... ok
+test legacy_audio_binding_v20::tests::schema19_rejects_nested_gap_vocabulary ... ok
+test legacy_audio_binding_v20::tests::schema17_rejects_nested_gap_vocabulary ... ok
+test legacy_audio_binding_v20::tests::schema21_rejects_nested_gap_vocabulary ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 70 filtered out; finished in 0.94s
+

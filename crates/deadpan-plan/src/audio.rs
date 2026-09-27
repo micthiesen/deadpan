@@ -7,6 +7,7 @@ use deadpan_core::{
 };
 use serde::Serialize;
 
+use super::audio_bound::BindingTarget;
 use super::audio_boundary::{AudioExtent, BoundaryOwner};
 use super::audio_domain::{AudioDomainSeed, AudioWalkSeed, DomainGap};
 use super::{AudioBoundaries, AudioBoundaryKind, AudioDefinitionSelector};
@@ -49,6 +50,9 @@ impl Default for AudioQueryLimits {
 pub enum SilenceReason {
     NoSourceAudio,
     OutsideSourcePlacement,
+    /// An authored Source crop. Its endpoints constrain physical sampling,
+    /// but do not suppress the decay of a downstream Preserve stage.
+    OutsideSourceSelection,
     /// Unlike an absent source voice, an authored silent Hold suppresses tails.
     SilentHold,
 }
@@ -101,7 +105,8 @@ pub enum AudioContent {
     },
     Source {
         source: SourceAudio,
-        /// Exact local-frame placement after the independent 48 kHz offset.
+        /// Full measured-stream affine origin after the independent 48 kHz
+        /// offset. A selected audible window never restarts this phase.
         start: ExactRatio,
         duration: ExactRatio,
         support: SourceSamplingSupport,
@@ -445,16 +450,45 @@ impl RenderPlan {
                     range: gap_extent,
                     node: current,
                     repeat_count: repeats.len(),
-                    gap_after: Some(gap.after.clone()),
+                    gap_after: gap.after.clone(),
                     kinds: (
                         AudioBoundaryKind::RepeatGapStart,
                         AudioBoundaryKind::RepeatGapEnd,
                     ),
                 });
                 let after = gap.after.clone();
-                let content = AudioContent::from_hold(audio, gap.duration);
+                let content = if stop_at_bindings
+                    && bypass_binding != Some(BindingTarget::Gap(current))
+                    && let Some(bound) = self.bound_at(
+                        current,
+                        &repeats,
+                        definition,
+                        super::audio_bound::BoundPlacement {
+                            transform: super::SignalTransform {
+                                signal_origin: transform.project_origin,
+                                signal_frames_per_local_frame: transform
+                                    .project_frames_per_local_frame,
+                                grid_origin: grid.frame_origin(),
+                                signal_frames_per_sample: transform.project_frames_per_sample,
+                            },
+                            grid: AudioSampleGrid::new(
+                                grid.frame_origin(),
+                                transform.project_frames_per_sample,
+                                grid.boundary_rule(),
+                            )?,
+                            allocated_start: super::SignalSample(grid.boundary(extent.start)?.0),
+                            support: envelope.as_ref(),
+                            constraints: &constraints,
+                            gap: Some(&gap),
+                        },
+                        budget,
+                    )? {
+                    AudioSignalContent::Bound(Box::new(bound))
+                } else {
+                    AudioSignalContent::Leaf(AudioContent::from_hold(audio, gap.duration))
+                };
                 domain_gap = Some(gap);
-                break (AudioSignalContent::Leaf(content), Some(after));
+                break (content, after);
             }
             let node_extent = transform.project_origin
                 ..transform.project_at(ExactRatio::integer(node.inspection.duration.frames()))?;
@@ -485,7 +519,7 @@ impl RenderPlan {
                 }
             }
             if stop_at_bindings
-                && bypass_binding != Some(current)
+                && bypass_binding != Some(BindingTarget::Node(current))
                 && let Some(bound) = self.bound_at(
                     current,
                     &repeats,
@@ -505,6 +539,7 @@ impl RenderPlan {
                         allocated_start: super::SignalSample(grid.boundary(extent.start)?.0),
                         support: envelope.as_ref(),
                         constraints: &constraints,
+                        gap: None,
                     },
                     budget,
                 )?
@@ -526,8 +561,8 @@ impl RenderPlan {
                 CompiledKind::Source {
                     audio: Some(audio), ..
                 } => {
-                    let start = transform.project_at(audio.start)?;
-                    let end = transform.project_at(audio.start.checked_add(audio.duration)?)?;
+                    let start = transform.project_at(audio.selection.start)?;
+                    let end = transform.project_at(audio.selection.end)?;
                     let envelope = envelope
                         .as_mut()
                         .ok_or(PlanError::InvalidPlan("source has no envelope domain"))?;
@@ -550,7 +585,7 @@ impl RenderPlan {
                         placement_constraint.range.end = start;
                         placement_constraint.kinds.1 = AudioBoundaryKind::SourcePlacementStart;
                         AudioContent::Silence {
-                            reason: SilenceReason::OutsideSourcePlacement,
+                            reason: audio.outside_reason(),
                         }
                     } else if sample >= grid.boundary(end)? {
                         extent.start = maximum(extent.start, end)?;
@@ -558,7 +593,7 @@ impl RenderPlan {
                         placement_constraint.range.start = end;
                         placement_constraint.kinds.0 = AudioBoundaryKind::SourcePlacementEnd;
                         AudioContent::Silence {
-                            reason: SilenceReason::OutsideSourcePlacement,
+                            reason: audio.outside_reason(),
                         }
                     } else {
                         extent = intersect(extent, start..end)?;
@@ -655,9 +690,7 @@ impl RenderPlan {
                     )?;
                     current = *child;
                 }
-                CompiledKind::Repeat {
-                    layout, gap_audio, ..
-                } => {
+                CompiledKind::Repeat { layout, .. } => {
                     let location = layout
                         .locate_bounded(local, bias, budget.remaining)
                         .map_err(|error| {
@@ -670,9 +703,6 @@ impl RenderPlan {
                     budget.spend(location.comparisons)?;
                     budget.lookup.iteration_run_comparisons += location.comparisons;
                     if location.in_gap {
-                        let audio = gap_audio
-                            .as_ref()
-                            .ok_or(PlanError::InvalidPlan("audio repeat gap is missing"))?;
                         let start = location
                             .play
                             .start
@@ -680,39 +710,34 @@ impl RenderPlan {
                             .ok_or(TimeError::Overflow)?;
                         transform =
                             transform.child(ExactRatio::integer(start), ExactRatio::integer(1))?;
-                        let gap_extent = transform.project_origin
-                            ..transform.project_at(ExactRatio::integer(
-                                location.play.gap_after.frames(),
-                            ))?;
-                        inherited_envelope = envelope.clone();
-                        inherited_constraints = constraints.len();
-                        domain_gap = Some(DomainGap {
-                            after: location.play.iteration.clone(),
+                        if let Some(child) = location.play.gap_child {
+                            let gap_extent = transform.project_origin
+                                ..transform.project_at(ExactRatio::integer(
+                                    location.play.gap_after.frames(),
+                                ))?;
+                            constraints.push(EnvelopeConstraint {
+                                placement_support: false,
+                                range: gap_extent,
+                                node: current,
+                                repeat_count: repeats.len(),
+                                gap_after: Some(location.play.iteration.clone()),
+                                kinds: (
+                                    AudioBoundaryKind::RepeatGapStart,
+                                    AudioBoundaryKind::RepeatGapEnd,
+                                ),
+                            });
+                            repeats.push(RepeatInstance {
+                                node: node.inspection.id.clone(),
+                                iteration: location.play.iteration,
+                            });
+                            current = self.by_id[&child];
+                            continue;
+                        }
+                        seeded_gap = Some(DomainGap {
+                            after: Some(location.play.iteration),
                             duration: location.play.gap_after,
                         });
-                        extent = intersect(extent, gap_extent.clone())?;
-                        envelope = Some(match envelope {
-                            Some(previous) => intersect(previous, gap_extent.clone())?,
-                            None => gap_extent.clone(),
-                        });
-                        constraints.push(EnvelopeConstraint {
-                            placement_support: false,
-                            range: gap_extent,
-                            node: current,
-                            repeat_count: repeats.len(),
-                            gap_after: Some(location.play.iteration.clone()),
-                            kinds: (
-                                AudioBoundaryKind::RepeatGapStart,
-                                AudioBoundaryKind::RepeatGapEnd,
-                            ),
-                        });
-                        break (
-                            AudioSignalContent::Leaf(AudioContent::from_hold(
-                                audio,
-                                location.play.gap_after,
-                            )),
-                            Some(location.play.iteration),
-                        );
+                        continue;
                     }
                     transform = transform.child(
                         ExactRatio::integer(location.play.start),
@@ -796,7 +821,9 @@ impl RenderPlan {
                 .checked_div(transform.project_frames_per_local_frame)?,
         )?;
         let content = match content {
-            content @ (AudioSignalContent::Stage(_) | AudioSignalContent::Bound(_)) => {
+            content @ (AudioSignalContent::Stage(_)
+            | AudioSignalContent::ProjectedStage(_)
+            | AudioSignalContent::Bound(_)) => {
                 return Ok(AudioWalkSpan::Stage(AudioProcessingSpan {
                     definition: definition.cloned(),
                     samples: allocated_samples.clone(),

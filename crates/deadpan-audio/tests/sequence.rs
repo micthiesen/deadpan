@@ -77,6 +77,7 @@ fn source(rate: FrameRate, frames: i64, selected: Range<i64>, offset: i64) -> Be
 
 fn hold_recipe(frames: i64, audio: HoldAudio) -> HoldRecipe {
     HoldRecipe {
+        picture_context: None,
         duration: duration(frames),
         video: HoldVideo::Background,
         audio,

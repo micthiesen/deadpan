@@ -57,6 +57,14 @@ pub(super) fn observe_composition(events: &[Event], composing: &mut bool) -> boo
 }
 
 impl HelpScroll {
+    #[cfg(feature = "ui-harness")]
+    pub(super) fn diagnostic_snapshot(&self) -> serde_json::Value {
+        serde_json::json!({
+            "offset": self.offset, "viewport": self.viewport,
+            "content": self.content, "maximum": self.maximum(),
+        })
+    }
+
     fn maximum(&self) -> f32 {
         (self.content - self.viewport).max(0.0)
     }
@@ -300,6 +308,8 @@ mod tests {
                 vec![
                     event(Key::Questionmark, false, Modifiers::NONE),
                     event(Key::S, false, Modifiers::NONE),
+                    event(Key::Enter, false, Modifiers::NONE),
+                    event(Key::Backspace, false, Modifiers::NONE),
                 ],
                 vec![Action::Help],
             ),
@@ -547,6 +557,8 @@ mod tests {
             let (_, _, deferred) = replay.frame(
                 &context,
                 vec![
+                    event(Key::Backspace, false, Modifiers::NONE),
+                    event(Key::Enter, false, Modifiers::NONE),
                     event(Key::Escape, false, Modifiers::NONE),
                     event(Key::Colon, false, Modifiers::SHIFT),
                     event(Key::S, false, Modifiers::NONE),

@@ -1,0 +1,2 @@
+{"name":"requested_1ms_sleep","samples":200,"p50_ms":36.773374999999994,"p95_ms":63.66437499999999,"max_ms":67.371,"above_16_ms":159,"above_50_ms":64}
+{"name":"timestamp_before_send_to_blocking_receive","samples":200,"p50_ms":0.003125,"p95_ms":0.043792,"max_ms":5.619624999999999,"above_16_ms":0,"above_50_ms":0}

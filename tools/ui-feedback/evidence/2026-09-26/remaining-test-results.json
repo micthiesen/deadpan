@@ -1,0 +1,116 @@
+[
+  {
+    "package": "path+file:///Users/michael/Code/deadpan/crates/deadpan-store#0.1.0",
+    "target": "single_source",
+    "executable": "/tmp/deadpan-ui-feedback-target/debug/deps/single_source-c5a0de2e13742817",
+    "exit_code": 0
+  },
+  {
+    "package": "path+file:///Users/michael/Code/deadpan/crates/deadpan-store#0.1.0",
+    "target": "migration",
+    "executable": "/tmp/deadpan-ui-feedback-target/debug/deps/migration-8f7c953f697572ac",
+    "exit_code": 0
+  },
+  {
+    "package": "path+file:///Users/michael/Code/deadpan/crates/deadpan-store#0.1.0",
+    "target": "generation_attempts",
+    "executable": "/tmp/deadpan-ui-feedback-target/debug/deps/generation_attempts-60c4065e3a96cecc",
+    "exit_code": 0
+  },
+  {
+    "package": "path+file:///Users/michael/Code/deadpan/crates/deadpan-store#0.1.0",
+    "target": "persistence",
+    "executable": "/tmp/deadpan-ui-feedback-target/debug/deps/persistence-279507fd54f91da7",
+    "exit_code": 0
+  },
+  {
+    "package": "path+file:///Users/michael/Code/deadpan/crates/deadpan-store#0.1.0",
+    "target": "prepared_source_registration",
+    "executable": "/tmp/deadpan-ui-feedback-target/debug/deps/prepared_source_registration-303a1439c39a2cb3",
+    "exit_code": 0
+  },
+  {
+    "package": "path+file:///Users/michael/Code/deadpan/crates/deadpan-render#0.1.0",
+    "target": "deadpan_render",
+    "executable": "/tmp/deadpan-ui-feedback-target/debug/deps/deadpan_render-930f9827ec55eaea",
+    "exit_code": 0
+  },
+  {
+    "package": "path+file:///Users/michael/Code/deadpan/crates/deadpan-store#0.1.0",
+    "target": "generated_admission",
+    "executable": "/tmp/deadpan-ui-feedback-target/debug/deps/generated_admission-bc4afe4d931ab99c",
+    "exit_code": 0
+  },
+  {
+    "package": "path+file:///Users/michael/Code/deadpan/crates/deadpan-store#0.1.0",
+    "target": "original_media",
+    "executable": "/tmp/deadpan-ui-feedback-target/debug/deps/original_media-451f0f796693e152",
+    "exit_code": 0
+  },
+  {
+    "package": "path+file:///Users/michael/Code/deadpan/crates/deadpan-store#0.1.0",
+    "target": "generation",
+    "executable": "/tmp/deadpan-ui-feedback-target/debug/deps/generation-8811eaa22b3c0657",
+    "exit_code": 0
+  },
+  {
+    "package": "path+file:///Users/michael/Code/deadpan/crates/deadpan-store#0.1.0",
+    "target": "occurrence_edits",
+    "executable": "/tmp/deadpan-ui-feedback-target/debug/deps/occurrence_edits-379e2bd49df4d6b8",
+    "exit_code": 0
+  },
+  {
+    "package": "path+file:///Users/michael/Code/deadpan/crates/deadpan-store#0.1.0",
+    "target": "original_preparation",
+    "executable": "/tmp/deadpan-ui-feedback-target/debug/deps/original_preparation-c3862a027145cf4b",
+    "exit_code": 0
+  },
+  {
+    "package": "path+file:///Users/michael/Code/deadpan/crates/deadpan-store#0.1.0",
+    "target": "generated_media",
+    "executable": "/tmp/deadpan-ui-feedback-target/debug/deps/generated_media-9832455b8e2d6b77",
+    "exit_code": 0
+  },
+  {
+    "package": "path+file:///Users/michael/Code/deadpan/crates/deadpan-store#0.1.0",
+    "target": "presentation_basis",
+    "executable": "/tmp/deadpan-ui-feedback-target/debug/deps/presentation_basis-a0ea310056200a3e",
+    "exit_code": 0
+  },
+  {
+    "package": "path+file:///Users/michael/Code/deadpan/crates/deadpan-store#0.1.0",
+    "target": "source_registration",
+    "executable": "/tmp/deadpan-ui-feedback-target/debug/deps/source_registration-006cade22357c9ca",
+    "exit_code": 0
+  },
+  {
+    "package": "path+file:///Users/michael/Code/deadpan/crates/deadpan-store#0.1.0",
+    "target": "generation_bundles",
+    "executable": "/tmp/deadpan-ui-feedback-target/debug/deps/generation_bundles-8dec24ee5e39000f",
+    "exit_code": 0
+  },
+  {
+    "package": "path+file:///Users/michael/Code/deadpan/crates/deadpan-store#0.1.0",
+    "target": "deadpan_store",
+    "executable": "/tmp/deadpan-ui-feedback-target/debug/deps/deadpan_store-c57a20d94556e2b7",
+    "exit_code": 0
+  },
+  {
+    "package": "path+file:///Users/michael/Code/deadpan/native/deadpan-source#0.1.0",
+    "target": "persistent_decode",
+    "executable": "/tmp/deadpan-ui-feedback-target/debug/deps/persistent_decode-3890e12726b4b4ae",
+    "exit_code": 0
+  },
+  {
+    "package": "path+file:///Users/michael/Code/deadpan/native/deadpan-source#0.1.0",
+    "target": "audio_decode",
+    "executable": "/tmp/deadpan-ui-feedback-target/debug/deps/audio_decode-ae4aeb4fc465bb8f",
+    "exit_code": 0
+  },
+  {
+    "package": "path+file:///Users/michael/Code/deadpan/native/deadpan-source#0.1.0",
+    "target": "deadpan_source",
+    "executable": "/tmp/deadpan-ui-feedback-target/debug/deps/deadpan_source-941ea3114cb89212",
+    "exit_code": 0
+  }
+]

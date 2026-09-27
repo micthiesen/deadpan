@@ -28,6 +28,7 @@ fn compilation_never_silently_discards_persisted_sampling_clocks() {
         HoldRecipe {
             duration: FrameDuration::new(4).unwrap(),
             video: HoldVideo::Background,
+            picture_context: None,
             audio: HoldAudio::Silence,
         },
     ))
@@ -46,8 +47,11 @@ fn compilation_never_silently_discards_persisted_sampling_clocks() {
         BTreeMap::from([(
             node("hold"),
             OwnedAudioBinding {
+                reanchors: Vec::new(),
                 lattice: AudioPlacementTemplate {
+                    gap_after: None,
                     reference: AudioReferenceClock {
+                        recipe: AudioRecipeKind::Node,
                         timing,
                         root: AudioClockRoot::ProjectRootRoundEven,
                         physical: node("hold"),

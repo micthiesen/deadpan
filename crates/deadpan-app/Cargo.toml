@@ -8,6 +8,10 @@ license.workspace = true
 repository.workspace = true
 publish.workspace = true
 
+[features]
+# Developer-only whole-workspace replay. The shipped app does not include the runner.
+ui-harness = ["dep:egui_kittest", "dep:image", "dep:serde", "dep:serde_json", "dep:tempfile"]
+
 [dependencies]
 eframe.workspace = true
 deadpan-cli = { path = "../deadpan-cli" }
@@ -22,6 +26,11 @@ deadpan-source.workspace = true
 sha2.workspace = true
 rustix.workspace = true
 uuid.workspace = true
+egui_kittest = { version = "=0.36.2", default-features = false, features = ["eframe", "wgpu"], optional = true }
+image = { version = "=0.25.10", default-features = false, features = ["png"], optional = true }
+serde = { workspace = true, optional = true }
+serde_json = { workspace = true, optional = true }
+tempfile = { workspace = true, optional = true }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 rfd = { version = "=0.17.2", default-features = false }

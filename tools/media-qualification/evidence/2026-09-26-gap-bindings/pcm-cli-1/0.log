@@ -1,0 +1,14 @@
+   Compiling deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 37.73s
+     Running tests/gap_bindings.rs (target/debug/deps/gap_bindings-538a644e596b5214)
+
+running 5 tests
+test bound_silent_gap_with_zero_input_points_suppresses_nested_preserve_output ... ok
+test gaps_survive_overridden_preceding_children_and_follow_stable_play_reordering ... ok
+test interrupted_first_gap_and_later_full_gap_resume_distinct_ntsc_phases ... ok
+test moved_gap_uses_current_duration_media_and_policy_without_recapturing_phase ... ok
+test captured_one_play_gap_and_former_final_gap_are_born_on_the_definition_clock ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.98s
+

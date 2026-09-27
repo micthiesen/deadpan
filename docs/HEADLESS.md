@@ -67,17 +67,58 @@ never-reused revision rule as commit. A stale expected
 revision fails with `RevisionConflict` and the current revision, without writing.
 
 Supported commands are `insert`, `insert_time`, `split`, `delete`, `move`, `group`,
-`ungroup`, `wrap_repeat`, `set_repeat`, `insert_plays`, `move_plays`, `set_hold_duration`, `set_hold_provider`, `set_source_audio_mapping`, `set_source_video_mapping`,
-`rename`, `set_audio_edge`, `set_framing`, `add_asset`, `set_canvas`, `set_mark`, `delete_mark`, `set_play_override`, `clear_play_override`, and `edit_occurrence`. Their exact typed parameters are defined in
+`ungroup`, `splice_source`, `wrap_repeat`, `set_repeat`, `wrap_retime`, `set_retime`, `insert_plays`, `move_plays`, `set_hold_duration`, `set_hold_provider`, `set_hold_picture_context`, `set_source_audio_mapping`, `set_source_video_mapping`,
+`rename`, `set_audio_edge`, `set_framing`, `add_asset`, `set_canvas`, `set_mark`, `delete_mark`, `set_play_override`, `clear_play_override`, `set_gap_override`, `clear_gap_override`, `isolate_gap`, and `edit_occurrence`. Their exact typed parameters are defined in
 [`Command`](../crates/deadpan-core/src/command.rs). `set_repeat` changes an existing
 Repeat; `wrap_repeat` deliberately adds nesting. A three-play repeat includes
 three total plays and only two gaps. These are structural edits, not rendered
 media. Editing through range/text selectors, registers, macros, and effects
 remain required future work.
 
-Documents use schema 18. Optional per-node [framing](FRAMING.md) retains a static
+`wrap_retime` takes `node`, a fresh `id`, a positive frame `duration`, and
+`pitch` (`preserve` or `follow_speed`). `set_retime` takes `node`, `duration`
+and `pitch`, retaining the ordinary Retime's child/input range. Both also have
+occurrence forms. The native `:retime` speed grammar resolves to these same
+commands. See [speed editing](RETIME_EDITING.md) for output-binding lifecycle.
+
+Documents use schema 28. Sparse [gap branches](REPEAT_GAP_BRANCHES.md) retain an
+independent subtree after a stable Repeat play. `isolate_gap` copies the current
+rendered default into a Hold while preserving its audio clock; it requires fresh
+node and timing identities. `set_gap_override` replaces a gap with a supplied
+subtree, while `clear_gap_override` exposes the current default. Each has an
+occurrence form. A final play retains its branch without rendering a trailing
+gap. These commands do not yet plan insertion at an arbitrary cursor position.
+
+`insert_time` admits existing root Sequence seams before composite suffixes,
+including partially selected Repeats and owned gap branches. The new Hold,
+current placement reanchors, mark transforms and history commit are atomic.
+Root Source/ordinary Hold interiors and supported transparent fragments also
+admit composite suffixes. This branch reserves the supplied timing ordinal and
+its checked successor for pre-Split sampling and post-Split placement. These
+cuts also descend into unretimed Sequence groups and keep their actual parent
+live. Repeat/Retime interiors remain unsupported. See [pause insertion](INSERT_TIME.md).
+
+`splice_source` accepts `parent`, `index`, `source`, `id`, `label` and `timing`
+(`allocation` equal to the new revision and an ordinal). It inserts the supplied
+Source at an explicit ordinary Sequence child slot and preserves each shifted
+physical audio entry. The newly inserted Source starts on the canonical unbound
+project grid. Repeat/Retime ancestors are rejected. This generic command can
+reuse an existing asset offline; the native host instead derives the Source
+through prepared-receipt admission. See [Original moments](SOURCE_MOMENTS.md).
+
+Optional per-node [framing](FRAMING.md) retains a static
 pose or whole-owner envelope; `set_framing` sets it, and `framing: null` removes it.
 `inspect-plan --frame N` includes exact evaluated provider-to-root framing scopes.
+Hold recipes optionally retain a [captured view](CAPTURED_FRAMING.md) in
+`picture_context`. `set_hold_picture_context` takes a Hold `node` and optional
+`context`; `null` explicitly clears the retained composition. Ordinary Camera
+reset changes only the live framing, preserving that composition. The plan
+includes captured context separately from live scopes. Provider and duration
+changes preserve it, including generated acceptance and fallback restoration.
+`set_source_audio_mapping` also accepts `selected_placement` with full-span
+`start`/`frames` and a contained exact `selection: {start, end}`. It crops audible
+support without changing the original sample span or mapping phase. See
+[Original moments](SOURCE_MOMENTS.md). Native range reuse derives this mapping from the prepared Original receipt.
 Retime `purpose` defaults to ordinary `edit` and is
 omitted from canonical JSON. `partition` retains child audio context at unity
 speed and requires automatic edges; see [the partition contract](AUDIO_PARTITIONS.md).
@@ -287,8 +328,9 @@ not a final mix, export or an authored resume binding.
 
 Authored definition output is separately available with
 `inspect-audio-definition <project.deadpan> --repeat-default <ID> --samples <START> <END>`
-or `--node <ID>`. It reads 1..256 nonnegative samples on the selected definition's
-local-zero point grid, including a Repeat default that no current play uses.
+or `--node <ID>` or `--repeat-gap <ID>`. It reads 1..256 nonnegative samples on
+the selected definition's local-zero point grid, including a Repeat default
+that no current play uses or a configured gap in a one-play Repeat.
 Protocol 1 returns `definition_output_pcm_before_effects`. This is recipe
 inspection, not timeline allocation or a new-play edit. See
 [audio definitions](AUDIO_DEFINITIONS.md) for scope, exact grids and admission.
@@ -298,7 +340,7 @@ so deleting the current Repeat does not change its historical definition.
 
 `inspect-audio-placement <project.deadpan> --node <ID> --clock <clock.json> --samples <START> <END>`
 evaluates a physical definition's current recipe on an explicit signed root grid.
-`--repeat-default` and trailing `--revision <ID>` are also supported. The bounded
+`--repeat-default`, `--repeat-gap` and trailing `--revision <ID>` are also supported. The bounded
 clock JSON contains exact origin, scale and local support. The result includes
 the selector and placement, and uses current or requested historical source
 receipts without changing history. See [owned clocks](OWNED_AUDIO_CLOCKS.md) for
@@ -329,6 +371,53 @@ These commands work read-only alongside a writer and do not decode media,
 evaluate effects, mix audio, or render a file.
 
 ## Exact boundary selection
+
+`locate-boundary <project.deadpan> --json <boundary.json>` maps an exact project
+position into the nested structural scopes occupying that boundary. It reads the
+current immutable revision and works while a writer holds the package. For example:
+
+```json
+{
+  "protocol": 1,
+  "request": {
+    "project_id": "PROJECT_ID_FROM_DUMP",
+    "expected_revision": "REVISION_ID_FROM_DUMP",
+    "position": {"numerator": "33", "denominator": "4"},
+    "bias": "right"
+  }
+}
+```
+
+The response is `{ "protocol": 1, "location": ... }`. The location repeats the
+project/revision identity, exact position and bias, then returns ordered `scopes`
+from the project root inward. Each scope contains an `instance`, exact local
+`position`, integer authored `duration`, and an `entry` describing the edge from
+the preceding scope. Its `type` is `root`, `sequence`, `retime`, `repeat_play`, or
+`repeat_gap`. A `sequence` entry includes the original child `index`, counting
+empty children even though they contribute no content. `repeat_play` and
+`repeat_gap` distinguish the play child from an explicitly owned gap branch;
+their stable Repeat identity is retained in `instance.repeats`.
+Retime conversion retains fractions. The final `terminal.type` is `node`, `gap`,
+`project_start`, or `project_end`. A default `gap` retains its owning Repeat as
+the final scope and reports `after` (the preceding stable play ID), gap-local
+`position`, and `duration`. It does not create a Hold or invent a node identity.
+Explicit gap branches descend through their existing nodes.
+
+Bias chooses the adjoining content at an exact seam. Left at project zero and
+right at project duration return the outward project edge; the opposite biases
+descend inward. A returned node scope can be supplied as an `occurrence` target
+to `resolve-selection` below to map its exact local coordinate back to project
+time. The query does not round positions or choose a future edit scope.
+
+An optional top-level `limits` object accepts both `max_scopes` and
+`max_comparisons`; omitting it uses 257 scopes and 8192 comparisons. The response
+reports `comparisons` used. Exhaustion fails with `BoundaryQueryLimit` and no
+partial location. A zero comparison budget can still return an outward project
+edge with one permitted root scope. These limits bound the structural query,
+not loading/validating the stored revision or constructing its index. The envelope,
+request and limits reject unknown fields. A stale revision returns
+`RevisionConflict` with the current revision; a foreign project returns
+`ProjectConflict`. Queries never change authored state or history.
 
 `resolve-selection <project.deadpan> --json <selection.json>` resolves a point or
 nonempty range against one immutable revision without changing the project.
@@ -631,18 +720,42 @@ future-schema read-only inspection still needs a compatibility implementation.
 
 ## Schema migration
 
-Database schemas 1 through 18 return `MigrationRequired` when opened. Upgrade explicitly:
+Database schemas 1 through 33 return `MigrationRequired` when opened. Upgrade explicitly:
 
 ```sh
 cargo run --locked -p deadpan-cli -- project migrate /tmp/example.deadpan
 ```
 
 Migration holds the project writer lock, keeps a consistent SQLite backup under
-`Snapshots/before-schema-19-*.sqlite`, and upgrades a separate candidate. It
+`Snapshots/before-schema-33-*.sqlite`, and upgrades a separate candidate. It
 replays all commands, undo/redo revisions, and abandoned branches with their
 original revision IDs. Every snapshot and forward/inverse transaction is checked
 against its strict original schema meaning. Migration goes directly to database
-schema 19 and core document schema 13. Database-16/17 histories replay through
+schema 34 and core document schema 28. Database-33 replays frozen core 27,
+which admits SpliceSource but refuses the new Retime edit commands.
+Database-32 replays frozen core 26,
+retaining nested Sequence pause admission but rejecting `splice_source`. Database-31 histories retain root physical
+interiors through frozen core 25 but cannot acquire nested Sequence insertion.
+Database-30 histories retain composite
+root-seam edits through frozen core 24 but cannot acquire the new interior
+admission. Database-29 histories retain gap branches through frozen core 23.
+Every older InsertTime request also checks its historical Source/Hold suffix
+restriction before modern replay; neither broader admission can be backdated
+by supplying matching forged snapshots and patches.
+Database-28 histories replay through
+frozen core 22, retaining default-gap bindings while rejecting independent gap
+branches and detached gap-clock references. Database-27 histories replay through
+frozen core 21, retaining ordered reanchor steps while rejecting gap maps and
+nested gap clock/placement vocabulary. Database-26 histories replay through
+frozen core 20, retaining exact selected audio and old phase terms while rejecting
+chronological reanchor steps. Database-25 histories replay through
+frozen core 19, retaining captured Hold framing while rejecting selected audio
+placements. Database 24 retains authored framing through frozen core 18;
+database 23 retains InsertTime through frozen core 17; database 22 retains owned
+timing bindings through frozen core 16. Database 21 retains audio lineage through
+frozen core 15; database 20 retains Split through frozen core 14; database 19
+retains multiple logical mark bindings through frozen core 13.
+Database-16/17 histories replay through
 frozen core 11, retaining existing audio edges; older nodes gain automatic edges.
 Database-18 histories replay through frozen core 12, retaining Partition intent.
 Earlier Retimes gain ordinary `edit` purpose. All previous mark grammars reject

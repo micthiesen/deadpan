@@ -1,0 +1,44 @@
+{
+  "protocol": 1,
+  "project_id": "4d2f760f-3e30-464e-87d5-2730c09aafcc",
+  "expected_revision": "f54edc4a-4736-4274-ac65-44c8b94e7da4",
+  "new_revision": "repeat-interior-refused",
+  "command": {
+    "command": "insert_time",
+    "at": 7,
+    "hold": {
+      "duration": 1,
+      "video": {
+        "type": "background"
+      },
+      "audio": {
+        "type": "silence"
+      }
+    },
+    "id": "repeat-interior-refused",
+    "identities": {
+      "nodes": [
+        "repeat-interior-refused-part-0",
+        "repeat-interior-refused-part-1",
+        "repeat-interior-refused-part-2",
+        "repeat-interior-refused-part-3",
+        "repeat-interior-refused-part-4",
+        "repeat-interior-refused-part-5",
+        "repeat-interior-refused-part-6",
+        "repeat-interior-refused-part-7",
+        "repeat-interior-refused-part-8",
+        "repeat-interior-refused-part-9",
+        "repeat-interior-refused-part-10",
+        "repeat-interior-refused-part-11",
+        "repeat-interior-refused-part-12",
+        "repeat-interior-refused-part-13",
+        "repeat-interior-refused-part-14",
+        "repeat-interior-refused-part-15"
+      ]
+    },
+    "timing": {
+      "allocation": "repeat-interior-refused",
+      "ordinal": 0
+    }
+  }
+}

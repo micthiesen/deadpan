@@ -1,0 +1,20 @@
+{
+  "crates/deadpan-core/src/document.rs": "b71bd02b0373bb67f8bf8107fcd29fa72144e4a84f529875609cc84f095d05bf",
+  "crates/deadpan-core/src/lib.rs": "59457f78c38c6ca631ef2d899bdf47c972b1d8aeb8986fcfecd005bfb08a3c44",
+  "crates/deadpan-core/src/legacy_v26.rs": "797d390e0abfbd31570852212a3db8557e7f28e115477dc55a8f45a280567b3b",
+  "crates/deadpan-store/src/source_registration.rs": "a13a42b9514f7ae6c06f2bcc71518b03e717fd1a6cb90edc523c6fd7ce3e1ac3",
+  "crates/deadpan-store/src/schema.rs": "5f8510a9ac76ecb2e4073e74e18036669d2d3ad10e742505cc105db2f9cba98f",
+  "crates/deadpan-store/src/migration.rs": "587bc585c9351918ef9b6895fa17e4c98141b48ce9fe6026d1071d3d88b483c1",
+  "crates/deadpan-store/src/validation.rs": "7ad05839065b673916f1256e1eedc8fb7d902785ab59cb278016d855e041f5c6",
+  "crates/deadpan-cli/src/doctor.rs": "1730037747433e1e738254db0910fe2b31016c1f1fd15242f9fbd69235e4c2eb",
+  "crates/deadpan-cli/tests/project_commands.rs": "cacdd9584c64dd6633bd0d7b1031d007245f0bf038a6b532a86403215ce3bc2a",
+  "crates/deadpan-store/tests/prepared_source_registration.rs": "0d6a05faac70abe779465b97e57e804a90166b1a75b7a5a18c379b4d37783ead",
+  "crates/deadpan-store/tests/prepared_source_registration/moment.rs": "34ca2278bad774d21ba707c24f1f0cb407f0da914c72b9fc03bc63b23a46b52d",
+  "crates/deadpan-store/tests/migration.rs": "1d9d924385848bc68c44fecf19f33e3943eefaa0a83820cc65f6d374de63f37c",
+  "crates/deadpan-store/tests/migration/sequence_insert.rs": "a212a2ac37db877858468ce138ff9ef7edccfc498c024bc8682ad0d328e81108",
+  "crates/deadpan-store/tests/migration/moment_splice.rs": "c58cb8ff767e65e0f28dac67631217534efee29070be449c1889bfe83732cf34",
+  "crates/deadpan-store/tests/fixtures/produce-v32-moment-splice-history.py": "47ee3fde84852c40aa810df60b9c35345eaea68ee77fd5278a2d7c8fe9b2d98f",
+  "crates/deadpan-store/tests/fixtures/v32-moment-splice-history.sql": "6c6472ae0fed33417e186cd7cd964b5d1540f01e823fad10982c384e9f99ed8a",
+  "crates/deadpan-store/tests/fixtures/v32-moment-splice-history.commands.json": "b1a85cd095edd22dacb49dbfe5bb322062ec24748f95ca329496466ee6397195",
+  "crates/deadpan-store/tests/fixtures/v32-moment-splice-history.provenance.json": "88c08641bf36f3c197f8da3aab7a11ab775a273d7ebeb3cb9669f67f6fd998bd"
+}

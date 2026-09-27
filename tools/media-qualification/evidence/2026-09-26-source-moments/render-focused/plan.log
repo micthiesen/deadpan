@@ -1,0 +1,30 @@
+   Compiling deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 18.42s
+     Running tests/audio_plan.rs (target/debug/deps/audio_plan-5776a1c030beb87f)
+
+running 22 tests
+test short_partition_keeps_a_retained_envelope_wider_than_the_signed_sample_clock ... ok
+test coincident_boundary_capture_is_charged_before_returning_metadata ... ok
+test invalid_ranges_and_budgets_fail_and_empty_queries_allocate_nothing ... ok
+test selection::source_selection_uses_each_root_or_point_grid_without_rerounding ... ok
+test half_sample_ties_select_both_parities_and_skip_zero_sample_sequence_leaves ... ok
+test nested_repeat_trim_and_gap_boundaries_keep_each_owners_own_occurrence ... ok
+test hold_policies_and_absent_source_audio_remain_distinct ... ok
+test rounded_sample_equality_does_not_merge_different_exact_boundary_origins ... ok
+test half_sample_repeat_gaps_are_assigned_once_and_have_no_trailing_gap ... ok
+test nested_retimes_preserve_mixed_pitch_stages_and_exact_source_coordinates ... ok
+test partitioning_a_billion_play_repeat_keeps_compact_storage_and_bounded_last_seek ... ok
+test placement_edges_keep_their_original_side_in_adjacent_silence_and_query_crops ... ok
+test billion_play_override_and_final_seek_stay_bounded ... ok
+test boundary_policy_is_captured_from_its_exact_owner_in_one_immutable_revision ... ok
+test selection::source_selection_separates_affine_phase_filter_support_and_allocation ... ok
+test transparent_partitions_retain_filter_and_envelope_domains_at_ntsc_boundaries ... ok
+test standalone_partition_retains_signed_envelope_and_meaningful_parent_crop_still_trims ... ok
+test unrepresentable_sample_duration_and_nested_affines_fail_without_rounding ... ok
+test signed_audio_placement_clips_to_the_host_without_refitting_or_losing_source_origin ... ok
+test ntsc_sequence_boundaries_round_from_the_project_origin_without_drift ... ok
+test retimed_sequence_matches_independent_boundary_reference_and_query_partitions ... ok
+test retimed_repeat_override_matches_independently_expanded_intervals ... ok
+
+test result: ok. 22 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.20s
+

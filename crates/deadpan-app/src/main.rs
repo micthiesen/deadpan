@@ -7,6 +7,8 @@ mod presentation;
 mod preview;
 mod project;
 mod transport;
+#[cfg(feature = "ui-harness")]
+mod ui_harness;
 mod worker;
 
 use std::cell::Cell;
@@ -17,6 +19,15 @@ use preview::DeadpanApp;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let arguments: Vec<_> = std::env::args().skip(1).collect();
+    if arguments
+        .first()
+        .is_some_and(|argument| argument == "--ui-check")
+    {
+        #[cfg(feature = "ui-harness")]
+        return ui_harness::entry(&arguments[1..]).map_err(Into::into);
+        #[cfg(not(feature = "ui-harness"))]
+        return Err("UI replay requires the developer build: cargo run -p deadpan-app --features ui-harness -- --ui-check --help".into());
+    }
     if arguments
         .first()
         .is_some_and(|argument| argument == "--headless")
@@ -36,6 +47,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!(
                 "Usage: deadpan-app [--smoke-test | --project PATH | --preview-source PATH | --headless <command>]\n\nOpen a project workspace, preview a source, or run headless project commands."
             );
+            #[cfg(feature = "ui-harness")]
+            println!("Developer UI replay: deadpan-app --ui-check --help");
             return Ok(());
         }
         _ => {

@@ -18,6 +18,7 @@ fn hold(frames: i64) -> BeatNode {
     BeatNode::hold(
         "Pause",
         HoldRecipe {
+            picture_context: None,
             duration: FrameDuration::new(frames).unwrap(),
             video: HoldVideo::Background,
             audio: HoldAudio::Silence,
@@ -173,6 +174,7 @@ fn unresolved_binding_retains_its_last_identity_without_hiding_bound_siblings_or
                 root: node("a"),
                 nodes: BTreeMap::from([(node("a"), hold(4))]),
                 overrides: BTreeMap::new(),
+                gap_overrides: BTreeMap::new(),
             },
         },
     );
@@ -223,6 +225,7 @@ fn each_binding_uses_the_shared_bias_and_retains_exact_local_content_coordinates
                     root: node("inserted"),
                     nodes: BTreeMap::from([(node("inserted"), hold(2))]),
                     overrides: BTreeMap::new(),
+                    gap_overrides: BTreeMap::new(),
                 },
             },
         );

@@ -68,6 +68,7 @@ fn hold_recipe(frames: i64, audio: HoldAudio) -> HoldRecipe {
     HoldRecipe {
         duration: duration(frames),
         video: HoldVideo::Background,
+        picture_context: None,
         audio,
     }
 }

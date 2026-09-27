@@ -25,6 +25,9 @@ use serde_json::{Value, json};
 
 type Result<T = ()> = std::result::Result<T, Box<dyn Error>>;
 
+#[path = "audio_inspection/gap.rs"]
+mod gap;
+
 fn active() -> AtomicBool {
     AtomicBool::new(false)
 }
@@ -216,6 +219,7 @@ fn room_tone_inspection_loops_an_explicit_aac_range_and_retains_silent_time() ->
                         BeatNode::hold(
                             name,
                             HoldRecipe {
+                                picture_context: None,
                                 duration: FrameDuration::new(frames)?,
                                 video: HoldVideo::Background,
                                 audio,
@@ -223,6 +227,7 @@ fn room_tone_inspection_loops_an_explicit_aac_range_and_retains_silent_time() ->
                         ),
                     )]),
                     overrides: BTreeMap::new(),
+                    gap_overrides: BTreeMap::new(),
                 },
             },
         )?;
@@ -440,6 +445,7 @@ fn mapped_inspection_prepares_preserve_from_historical_aac_without_writing() -> 
                     ),
                 ]),
                 overrides: BTreeMap::new(),
+                gap_overrides: BTreeMap::new(),
             },
         },
     )?;
@@ -583,6 +589,7 @@ fn source_repeat_gaps_and_silent_hold_boundaries_follow_exact_sequence_allocatio
             id: node("repeat"),
             plays: 2,
             gap: Some(HoldRecipe {
+                picture_context: None,
                 duration: FrameDuration::new(1)?,
                 video: HoldVideo::Background,
                 audio: HoldAudio::Silence,
@@ -1068,6 +1075,7 @@ fn definition_cli_reads_unplayed_default_from_current_and_historical_media() -> 
                         BeatNode::hold(
                             "Silent override",
                             HoldRecipe {
+                                picture_context: None,
                                 duration: FrameDuration::new(1)?,
                                 video: HoldVideo::Background,
                                 audio: HoldAudio::Silence,
@@ -1075,6 +1083,7 @@ fn definition_cli_reads_unplayed_default_from_current_and_historical_media() -> 
                         ),
                     )]),
                     overrides: BTreeMap::new(),
+                    gap_overrides: BTreeMap::new(),
                 },
             },
         )?;

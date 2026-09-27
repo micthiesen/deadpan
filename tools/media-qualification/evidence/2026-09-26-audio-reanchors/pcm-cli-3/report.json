@@ -1,0 +1,30 @@
+[
+  {
+    "command": [
+      "cargo",
+      "test",
+      "-p",
+      "deadpan-audio",
+      "--test",
+      "reanchors",
+      "--locked"
+    ],
+    "exit_code": 0,
+    "seconds": 13.053617124911398,
+    "log": "0.log"
+  },
+  {
+    "command": [
+      "cargo",
+      "test",
+      "-p",
+      "deadpan-cli",
+      "--test",
+      "project_commands",
+      "--locked"
+    ],
+    "exit_code": 0,
+    "seconds": 32.61129358410835,
+    "log": "1.log"
+  }
+]

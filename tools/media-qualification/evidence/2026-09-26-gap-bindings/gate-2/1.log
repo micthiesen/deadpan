@@ -1,0 +1,26 @@
+    Checking deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+    Checking deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+    Checking deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+    Checking deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+    Checking deadpan-render v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-render)
+    Checking deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+    Checking deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+    Checking deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+    Checking deadpan-media-worker v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-media-worker)
+    Checking deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Checking deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+error[E0063]: missing field `recipe` in initializer of `deadpan_core::AudioReferenceClock`
+    --> crates/deadpan-store/tests/persistence.rs:1045:32
+     |
+1045 |                     reference: AudioReferenceClock {
+     |                                ^^^^^^^^^^^^^^^^^^^ missing `recipe`
+
+error[E0063]: missing field `gap_after` in initializer of `deadpan_core::AudioPlacementTemplate`
+    --> crates/deadpan-store/tests/persistence.rs:1044:26
+     |
+1044 |                 lattice: AudioPlacementTemplate {
+     |                          ^^^^^^^^^^^^^^^^^^^^^^ missing `gap_after`
+
+For more information about this error, try `rustc --explain E0063`.
+error: could not compile `deadpan-store` (test "persistence") due to 2 previous errors
+warning: build failed, waiting for other jobs to finish...

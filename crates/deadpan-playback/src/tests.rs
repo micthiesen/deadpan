@@ -10,6 +10,7 @@ use deadpan_core::*;
 use deadpan_media::audio_session::{AudioSession, AudioSessionLimits};
 use deadpan_media::source_index::SourceContentIdentity;
 use deadpan_media::source_qualification::DecodedSourceQualification;
+use deadpan_media::source_session::{SourceSession, SourceSessionLimits};
 use deadpan_output::{Callback, DeviceReport, Feed, RenderStatus, channel};
 use deadpan_plan::RenderPlan;
 use deadpan_store::ProjectStore;
@@ -62,6 +63,7 @@ fn hold(frames: i64) -> ProjectDocument {
         audio_edges: Default::default(),
         kind: NodeKind::Hold {
             recipe: HoldRecipe {
+                picture_context: None,
                 duration: FrameDuration::new(frames).unwrap(),
                 video: HoldVideo::Background,
                 audio: HoldAudio::Silence,
@@ -96,9 +98,12 @@ fn snapshot(store: &ProjectStore, session: u64) -> Arc<Snapshot> {
     })
 }
 fn register(store: &mut ProjectStore) {
+    register_media(store, "cfr-bframes.mp4", false);
+}
+fn register_media(store: &mut ProjectStore, name: &str, picture: bool) {
     let original = store
         .retain_original(
-            &fixture(),
+            &fixture().with_file_name(name),
             OriginalOwnership::Managed,
             limits(),
             &cancelled(),
@@ -116,7 +121,20 @@ fn register(store: &mut ProjectStore) {
         &cancelled(),
     )
     .unwrap();
-    let decoded = DecodedSourceQualification::from_sessions(None, Some(&audio)).unwrap();
+    let video = picture.then(|| {
+        let mut input = store
+            .snapshot_original(original.object().content(), limits(), &cancelled())
+            .unwrap();
+        SourceSession::open_verified(
+            &mut input,
+            SourceContentIdentity::new(original.sha256(), original.object().byte_length()).unwrap(),
+            AssetId::new("original").unwrap(),
+            SourceSessionLimits::default(),
+            &cancelled(),
+        )
+        .unwrap()
+    });
+    let decoded = DecodedSourceQualification::from_sessions(video.as_ref(), Some(&audio)).unwrap();
     store
         .register_source(
             &SourceRegistration {
@@ -140,6 +158,15 @@ fn register(store: &mut ProjectStore) {
         )
         .unwrap();
 }
+
+#[path = "tests/original.rs"]
+mod original;
+#[path = "tests/resources.rs"]
+pub(crate) mod resources;
+#[path = "tests/sound.rs"]
+mod sound;
+#[path = "tests/source_voice.rs"]
+mod source_voice;
 
 struct Fake {
     callback: Mutex<Callback>,
@@ -205,11 +232,11 @@ impl Device for FakeDevice {
         0
     }
 }
-fn engine() -> (Engine, Arc<Mutex<Vec<Arc<Fake>>>>) {
+fn engine(permit: &Arc<resources::PcmPermit>) -> (Engine, Arc<Mutex<Vec<Arc<Fake>>>>) {
     let devices = Arc::new(Mutex::new(Vec::new()));
     let registry = devices.clone();
     let engine = Engine::with_factory(
-        Arc::new(|| {}),
+        resources::repaint(permit),
         Box::new(move || {
             let (feed, callback) = channel().unwrap();
             let shared = Arc::new(Fake {
@@ -227,41 +254,52 @@ fn engine() -> (Engine, Arc<Mutex<Vec<Arc<Fake>>>>) {
     .unwrap();
     (engine, devices)
 }
-fn wait(mut condition: impl FnMut() -> bool) {
+fn wait(mut condition: impl FnMut() -> bool) -> bool {
     let deadline = Instant::now() + Duration::from_secs(10);
     while !condition() {
-        assert!(
-            Instant::now() < deadline,
-            "timed out waiting for playback worker"
-        );
+        if Instant::now() >= deadline {
+            return false;
+        }
         thread::sleep(Duration::from_millis(2));
     }
+    true
 }
-fn playing_device(devices: &Mutex<Vec<Arc<Fake>>>, index: usize) -> Arc<Fake> {
-    wait(|| {
+#[track_caller]
+fn playing_device(engine: &Engine, devices: &Mutex<Vec<Arc<Fake>>>, index: usize) -> Arc<Fake> {
+    let ready = wait(|| {
         devices
             .lock()
             .unwrap()
             .get(index)
             .is_some_and(|device| device.started.load(Ordering::Acquire))
     });
+    assert!(
+        ready,
+        "device {index} did not start; created devices: {}; update: {:?}",
+        devices.lock().unwrap().len(),
+        engine.poll(),
+    );
     devices.lock().unwrap()[index].clone()
 }
+#[track_caller]
 fn update(engine: &Engine, phase: Phase) -> Update {
-    let mut found = None;
-    wait(|| {
-        if let Some(value) = engine.poll()
-            && value.phase == phase
-        {
-            found = Some(value);
+    let mut last = None;
+    let ready = wait(|| {
+        if let Some(value) = engine.poll() {
+            last = Some(value);
         }
-        found.is_some()
+        last.as_ref()
+            .is_some_and(|value| value.phase == phase || value.phase == Phase::Failed)
     });
-    found.unwrap()
+    assert!(ready, "timed out awaiting {phase:?}; last update: {last:?}");
+    let value = last.unwrap();
+    assert_eq!(value.phase, phase, "unexpected playback update: {value:?}");
+    value
 }
 
 #[test]
 fn canonical_source_pcm_uses_fixed_monitor_gain_and_delivery_clock() {
+    let permit = crate::tests::resources::pcm();
     let directory = tempfile::tempdir().unwrap();
     let mut store =
         ProjectStore::create(&directory.path().join("project.deadpan"), &empty()).unwrap();
@@ -279,11 +317,11 @@ fn canonical_source_pcm_uses_fixed_monitor_gain_and_delivery_clock() {
             &cancelled(),
         )
         .unwrap();
-    let (engine, devices) = engine();
+    let (engine, devices) = engine(&permit);
     engine
         .play(21, snapshot.clone(), AudioSample(160), 0.25)
         .unwrap();
-    let device = playing_device(&devices, 0);
+    let device = playing_device(&engine, &devices, 0);
     store
         .commit(&CommandRequest {
             project_id: snapshot.document.project_id().clone(),
@@ -338,14 +376,15 @@ fn canonical_source_pcm_uses_fixed_monitor_gain_and_delivery_clock() {
 
 #[test]
 fn short_eos_waits_for_scheduled_prefix_and_seek_replaces_generation() {
+    let permit = crate::tests::resources::pcm();
     let directory = tempfile::tempdir().unwrap();
     let store = ProjectStore::create(&directory.path().join("project.deadpan"), &hold(1)).unwrap();
     let snapshot = snapshot(&store, 1);
-    let (engine, devices) = engine();
+    let (engine, devices) = engine(&permit);
     engine
         .play(1, snapshot.clone(), AudioSample(1590), 0.1)
         .unwrap();
-    let first = playing_device(&devices, 0);
+    let first = playing_device(&engine, &devices, 0);
     let (report, _) = first.render(256, 0, 10_000_000);
     assert_eq!(report.rendered_frames, 10);
     assert_eq!(report.status, RenderStatus::Ended);
@@ -360,7 +399,7 @@ fn short_eos_waits_for_scheduled_prefix_and_seek_replaces_generation() {
         Some(AudioSample(1600))
     );
     engine.play(2, snapshot, AudioSample(1500), 0.1).unwrap();
-    let second = playing_device(&devices, 1);
+    let second = playing_device(&engine, &devices, 1);
     let (next, _) = second.render(256, 0, 10_000_000);
     assert_ne!(next.generation, report.generation);
     assert_eq!(next.first_sample, Some(1500));
@@ -370,6 +409,7 @@ fn short_eos_waits_for_scheduled_prefix_and_seek_replaces_generation() {
 
 #[test]
 fn source_provider_rejects_foreign_contracts_and_revoked_cold_handles() {
+    let _permit = crate::tests::resources::pcm();
     let directory = tempfile::tempdir().unwrap();
     let mut store =
         ProjectStore::create(&directory.path().join("project.deadpan"), &empty()).unwrap();
@@ -453,17 +493,18 @@ fn source_provider_rejects_foreign_contracts_and_revoked_cold_handles() {
 
 #[test]
 fn stop_restart_and_failure_never_publish_an_old_session() {
+    let permit = crate::tests::resources::pcm();
     let directory = tempfile::tempdir().unwrap();
     let store = ProjectStore::create(&directory.path().join("project.deadpan"), &hold(60)).unwrap();
-    let (engine, devices) = engine();
+    let (engine, devices) = engine(&permit);
     engine
         .play(10, snapshot(&store, 10), AudioSample(0), 0.1)
         .unwrap();
-    let first = playing_device(&devices, 0);
+    let first = playing_device(&engine, &devices, 0);
     engine
         .play(11, snapshot(&store, 11), AudioSample(100), 0.1)
         .unwrap();
-    let second = playing_device(&devices, 1);
+    let second = playing_device(&engine, &devices, 1);
     let mut old_pcm = [1.0; 512];
     assert_eq!(
         first
@@ -493,9 +534,10 @@ fn stop_restart_and_failure_never_publish_an_old_session() {
 
 #[test]
 fn invalid_gain_and_outside_start_are_explicit() {
+    let permit = crate::tests::resources::pcm();
     let directory = tempfile::tempdir().unwrap();
     let store = ProjectStore::create(&directory.path().join("project.deadpan"), &hold(1)).unwrap();
-    let (engine, devices) = engine();
+    let (engine, devices) = engine(&permit);
     let snapshot = snapshot(&store, 1);
     for gain in [f32::NAN, f32::INFINITY, -0.1, 1.1] {
         assert_eq!(
@@ -513,29 +555,30 @@ fn invalid_gain_and_outside_start_are_explicit() {
         update(&engine, Phase::Failed)
             .error
             .unwrap()
-            .contains("past the sequence end")
+            .contains("outside the audition window")
     );
 }
 
 #[test]
 fn seek_reuses_private_pcm_but_a_new_session_must_reopen_sources() {
+    let permit = crate::tests::resources::pcm();
     let directory = tempfile::tempdir().unwrap();
     let mut store =
         ProjectStore::create(&directory.path().join("project.deadpan"), &empty()).unwrap();
     register(&mut store);
     let snapshot = snapshot(&store, 4);
-    let (engine, devices) = engine();
+    let (engine, devices) = engine(&permit);
     engine
         .play(1, snapshot.clone(), AudioSample(0), 0.1)
         .unwrap();
-    playing_device(&devices, 0);
+    playing_device(&engine, &devices, 0);
     engine.stop();
     update(&engine, Phase::Stopped);
     drop(store);
     engine
         .play(2, snapshot.clone(), AudioSample(100), 0.1)
         .unwrap();
-    let reused = playing_device(&devices, 1);
+    let reused = playing_device(&engine, &devices, 1);
     reused.render(256, 0, 10_000_000);
     reused.now.store(10_000_000, Ordering::Release);
     assert_eq!(update(&engine, Phase::Playing).ticket, 2);
@@ -554,13 +597,14 @@ fn seek_reuses_private_pcm_but_a_new_session_must_reopen_sources() {
 
 #[test]
 fn full_prefill_can_queue_eos_before_the_first_maximum_callback() {
+    let permit = crate::tests::resources::pcm();
     let directory = tempfile::tempdir().unwrap();
     let store = ProjectStore::create(&directory.path().join("project.deadpan"), &hold(6)).unwrap();
-    let (engine, devices) = engine();
+    let (engine, devices) = engine(&permit);
     engine
         .play(1, snapshot(&store, 1), AudioSample(9600 - 8192), 0.1)
         .unwrap();
-    let device = playing_device(&devices, 0);
+    let device = playing_device(&engine, &devices, 0);
     let (report, _) = device.render(8192, 0, 1_000_000);
     assert_eq!(report.status, RenderStatus::Playing);
     assert_eq!(report.rendered_frames, 8192);
@@ -576,13 +620,14 @@ fn full_prefill_can_queue_eos_before_the_first_maximum_callback() {
 
 #[test]
 fn starvation_keeps_its_submitted_prefix_clock_then_fails_without_resume() {
+    let permit = crate::tests::resources::pcm();
     let directory = tempfile::tempdir().unwrap();
     let store = ProjectStore::create(&directory.path().join("project.deadpan"), &hold(60)).unwrap();
-    let (engine, devices) = engine();
+    let (engine, devices) = engine(&permit);
     engine
         .play(1, snapshot(&store, 1), AudioSample(0), 0.1)
         .unwrap();
-    let device = playing_device(&devices, 0);
+    let device = playing_device(&engine, &devices, 0);
     let (report, _) = device.render(256, 0, 10_000_000);
     device.now.store(10_000_000, Ordering::Release);
     update(&engine, Phase::Playing);
@@ -618,14 +663,15 @@ fn starvation_keeps_its_submitted_prefix_clock_then_fails_without_resume() {
 
 #[test]
 fn route_change_and_backwards_clock_stop_output() {
+    let permit = crate::tests::resources::pcm();
     let directory = tempfile::tempdir().unwrap();
     let store = ProjectStore::create(&directory.path().join("project.deadpan"), &hold(60)).unwrap();
-    let (engine, devices) = engine();
+    let (engine, devices) = engine(&permit);
     let snapshot = snapshot(&store, 1);
     engine
         .play(1, snapshot.clone(), AudioSample(0), 0.1)
         .unwrap();
-    let first = playing_device(&devices, 0);
+    let first = playing_device(&engine, &devices, 0);
     first.route_failed.store(true, Ordering::Release);
     assert!(
         update(&engine, Phase::Failed)
@@ -634,7 +680,7 @@ fn route_change_and_backwards_clock_stop_output() {
             .contains("route changed")
     );
     engine.play(2, snapshot, AudioSample(0), 0.1).unwrap();
-    let second = playing_device(&devices, 1);
+    let second = playing_device(&engine, &devices, 1);
     second.render(256, 0, 10_000_000);
     second.now.store(10_000_000, Ordering::Release);
     update(&engine, Phase::Playing);
@@ -649,6 +695,7 @@ fn route_change_and_backwards_clock_stop_output() {
 
 #[test]
 fn canonical_playback_consumes_pause_bindings_and_a_real_preserve_stage() {
+    let permit = crate::tests::resources::pcm();
     let directory = tempfile::tempdir().unwrap();
     let mut store =
         ProjectStore::create(&directory.path().join("project.deadpan"), &empty()).unwrap();
@@ -662,6 +709,7 @@ fn canonical_playback_consumes_pause_bindings_and_a_real_preserve_stage() {
             command: Command::InsertTime {
                 at: ProjectFrame(1),
                 hold: HoldRecipe {
+                    picture_context: None,
                     duration: FrameDuration::new(1).unwrap(),
                     video: HoldVideo::Background,
                     audio: HoldAudio::Silence,
@@ -728,20 +776,23 @@ fn canonical_playback_consumes_pause_bindings_and_a_real_preserve_stage() {
         );
     }
     assert!(expected.iter().any(|value| value.abs() > 0.00001));
-    let (engine, devices) = engine();
+    let (engine, devices) = engine(&permit);
     engine.play(1, edited, AudioSample(0), 0.1).unwrap();
-    let device = playing_device(&devices, 0);
+    let device = playing_device(&engine, &devices, 0);
     let (_, actual) = device.render(2048, 0, 10_000_000);
     assert_eq!(actual, expected);
 }
 
 #[test]
 fn worker_panic_is_reported_and_disables_further_requests() {
+    let permit = crate::tests::resources::pcm();
     let directory = tempfile::tempdir().unwrap();
     let store = ProjectStore::create(&directory.path().join("project.deadpan"), &hold(1)).unwrap();
     let engine = Engine::with_factory(
-        Arc::new(|| {}),
-        Box::new(|| panic!("injected host failure")),
+        resources::repaint(&permit),
+        // Exercise catch_unwind without running a potentially expensive panic
+        // hook or changing the process-global hook used by other tests.
+        Box::new(|| std::panic::resume_unwind(Box::new("injected host failure"))),
     )
     .unwrap();
     let snapshot = snapshot(&store, 1);

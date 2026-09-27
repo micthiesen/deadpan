@@ -1,0 +1,41 @@
+    Checking deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+    Checking deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+    Checking deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+    Checking deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+    Checking deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+    Checking deadpan-media-worker v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-media-worker)
+    Checking deadpan-render v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-render)
+error[E0063]: missing field `gap_overrides` in initializer of `deadpan_core::Subtree`
+   --> crates/deadpan-core/tests/play_overrides.rs:352:20
+    |
+352 |     let fragment = Subtree {
+    |                    ^^^^^^^ missing `gap_overrides`
+
+error: used `assert_eq!` with a literal bool
+  --> crates/deadpan-core/tests/repeat_gap_layout.rs:88:5
+   |
+88 | /     assert_eq!(
+89 | |         layout
+90 | |             .locate(ExactRatio::integer(10), InsertionBias::Right)
+91 | |             .unwrap()
+92 | |             .in_gap,
+93 | |         true
+94 | |     );
+   | |_____^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#bool_assert_comparison
+   = note: `-D clippy::bool-assert-comparison` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::bool_assert_comparison)]`
+help: replace it with `assert!(..)`
+   |
+88 ~     assert!(
+89 |         layout
+90 |             .locate(ExactRatio::integer(10), InsertionBias::Right)
+91 |             .unwrap()
+92 ~             .in_gap
+   |
+
+For more information about this error, try `rustc --explain E0063`.
+error: could not compile `deadpan-core` (test "repeat_gap_layout") due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `deadpan-core` (test "play_overrides") due to 1 previous error

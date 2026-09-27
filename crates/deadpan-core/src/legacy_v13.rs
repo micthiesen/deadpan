@@ -5,11 +5,12 @@ use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
+use crate::SourceVideoMapping as VideoMapping;
 use crate::document::unique_map;
+use crate::legacy_audio_mapping_v19::AudioMapping;
 use crate::legacy_mark_v13::{LegacyMark, project_mark_changes, project_marks, upgrade_marks};
 use crate::legacy_v8::LegacySourceNode;
 use crate::*;
-use crate::{SourceAudioMapping as AudioMapping, SourceVideoMapping as VideoMapping};
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -35,11 +36,13 @@ enum LegacyNodeKind {
         children: Vec<NodeId>,
     },
     Hold {
+        #[serde(with = "crate::legacy_hold_v18::recipe")]
         recipe: HoldRecipe,
     },
     Repeat {
         child: NodeId,
         iterations: IterationOrder,
+        #[serde(default, with = "crate::legacy_hold_v18::optional")]
         gap: Option<HoldRecipe>,
     },
     Retime {
@@ -198,6 +201,7 @@ impl Document {
 
     pub fn upgrade(self) -> Result<ProjectDocument, DocumentError> {
         let document = ProjectDocument {
+            gap_overrides: BTreeMap::new(),
             audio_lineage: BTreeMap::new(),
             audio_bindings: crate::AudioBindingState::default(),
             schema_version: DOCUMENT_SCHEMA_VERSION,
@@ -220,6 +224,9 @@ impl Document {
     }
 
     pub fn matches(&self, document: &ProjectDocument) -> bool {
+        if !document.gap_overrides.is_empty() {
+            return false;
+        }
         if !document.audio_bindings.is_empty() {
             return false;
         }
@@ -263,6 +270,7 @@ struct OldSubtree {
 impl OldSubtree {
     fn upgrade(self) -> Subtree {
         Subtree {
+            gap_overrides: BTreeMap::new(),
             root: self.root,
             nodes: self
                 .nodes
@@ -292,12 +300,14 @@ enum OldOccurrenceEdit {
     WrapRepeat {
         id: NodeId,
         plays: u32,
+        #[serde(default, with = "crate::legacy_hold_v18::optional")]
         gap: Option<HoldRecipe>,
         #[serde(default)]
         anchor_policy: WrapAnchorPolicy,
     },
     SetRepeat {
         plays: u32,
+        #[serde(default, with = "crate::legacy_hold_v18::optional")]
         gap: Option<HoldRecipe>,
     },
     InsertPlays {
@@ -390,7 +400,10 @@ impl OldOccurrenceEdit {
                 OccurrenceEdit::SetSourceVideoMapping { mapping }
             }
             Self::SetSourceAudioMapping { mapping, offset } => {
-                OccurrenceEdit::SetSourceAudioMapping { mapping, offset }
+                OccurrenceEdit::SetSourceAudioMapping {
+                    mapping: mapping.upgrade(),
+                    offset,
+                }
             }
             Self::SetHoldDuration { duration } => OccurrenceEdit::SetHoldDuration { duration },
             Self::SetHoldProvider { video } => OccurrenceEdit::SetHoldProvider { video },
@@ -441,6 +454,7 @@ enum OldCommand {
         node: NodeId,
         id: NodeId,
         plays: u32,
+        #[serde(default, with = "crate::legacy_hold_v18::optional")]
         gap: Option<HoldRecipe>,
         #[serde(default)]
         anchor_policy: WrapAnchorPolicy,
@@ -448,6 +462,7 @@ enum OldCommand {
     SetRepeat {
         node: NodeId,
         plays: u32,
+        #[serde(default, with = "crate::legacy_hold_v18::optional")]
         gap: Option<HoldRecipe>,
     },
     InsertPlays {
@@ -645,7 +660,7 @@ pub fn upgrade_request(json: &str) -> Result<CommandRequest, DocumentError> {
             offset,
         } => Command::SetSourceAudioMapping {
             node,
-            mapping,
+            mapping: mapping.upgrade(),
             offset,
         },
         OldCommand::SetHoldDuration { node, duration } => {
@@ -746,6 +761,9 @@ struct Patch {
 
 impl Patch {
     fn project(patch: &DocumentPatch) -> Option<Self> {
+        if !patch.gap_overrides.is_empty() {
+            return None;
+        }
         Some(Self {
             project_id: patch.project_id.clone(),
             from_revision: patch.from_revision.clone(),

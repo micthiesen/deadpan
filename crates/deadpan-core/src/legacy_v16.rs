@@ -5,11 +5,13 @@ use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
+use crate::SourceVideoMapping as VideoMapping;
 use crate::document::unique_map;
+use crate::legacy_audio_binding_v20::{LegacyAudioBindingState, project_change};
+use crate::legacy_audio_mapping_v19::AudioMapping;
 use crate::legacy_mark_v13::{LegacyMark, project_mark_changes, project_marks, upgrade_marks};
 use crate::legacy_v8::LegacySourceNode;
 use crate::*;
-use crate::{SourceAudioMapping as AudioMapping, SourceVideoMapping as VideoMapping};
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -35,11 +37,13 @@ enum LegacyNodeKind {
         children: Vec<NodeId>,
     },
     Hold {
+        #[serde(with = "crate::legacy_hold_v18::recipe")]
         recipe: HoldRecipe,
     },
     Repeat {
         child: NodeId,
         iterations: IterationOrder,
+        #[serde(default, with = "crate::legacy_hold_v18::optional")]
         gap: Option<HoldRecipe>,
     },
     Retime {
@@ -186,8 +190,8 @@ pub struct Document {
         skip_serializing_if = "BTreeMap::is_empty"
     )]
     audio_lineage: BTreeMap<NodeId, AudioLineageId>,
-    #[serde(default, skip_serializing_if = "AudioBindingState::is_empty")]
-    audio_bindings: AudioBindingState,
+    #[serde(default, skip_serializing_if = "LegacyAudioBindingState::is_empty")]
+    audio_bindings: LegacyAudioBindingState,
 }
 
 impl Document {
@@ -206,8 +210,9 @@ impl Document {
 
     pub fn upgrade(self) -> Result<ProjectDocument, DocumentError> {
         let document = ProjectDocument {
+            gap_overrides: BTreeMap::new(),
             audio_lineage: self.audio_lineage,
-            audio_bindings: self.audio_bindings,
+            audio_bindings: self.audio_bindings.upgrade(),
             schema_version: DOCUMENT_SCHEMA_VERSION,
             project_id: self.project_id,
             revision_id: self.revision_id,
@@ -228,6 +233,13 @@ impl Document {
     }
 
     pub fn matches(&self, document: &ProjectDocument) -> bool {
+        if !document.gap_overrides.is_empty() {
+            return false;
+        }
+        let Some(audio_bindings) = LegacyAudioBindingState::project(&document.audio_bindings)
+        else {
+            return false;
+        };
         let Some(marks) = project_marks(&document.marks) else {
             return false;
         };
@@ -252,7 +264,7 @@ impl Document {
             marks,
             overrides: document.overrides.clone(),
             audio_lineage: document.audio_lineage.clone(),
-            audio_bindings: document.audio_bindings.clone(),
+            audio_bindings,
         }
     }
 }
@@ -270,6 +282,7 @@ struct OldSubtree {
 impl OldSubtree {
     fn upgrade(self) -> Subtree {
         Subtree {
+            gap_overrides: BTreeMap::new(),
             root: self.root,
             nodes: self
                 .nodes
@@ -315,12 +328,14 @@ enum OldOccurrenceEdit {
     WrapRepeat {
         id: NodeId,
         plays: u32,
+        #[serde(default, with = "crate::legacy_hold_v18::optional")]
         gap: Option<HoldRecipe>,
         #[serde(default)]
         anchor_policy: WrapAnchorPolicy,
     },
     SetRepeat {
         plays: u32,
+        #[serde(default, with = "crate::legacy_hold_v18::optional")]
         gap: Option<HoldRecipe>,
     },
     InsertPlays {
@@ -417,7 +432,10 @@ impl OldOccurrenceEdit {
                 OccurrenceEdit::SetSourceVideoMapping { mapping }
             }
             Self::SetSourceAudioMapping { mapping, offset } => {
-                OccurrenceEdit::SetSourceAudioMapping { mapping, offset }
+                OccurrenceEdit::SetSourceAudioMapping {
+                    mapping: mapping.upgrade(),
+                    offset,
+                }
             }
             Self::SetHoldDuration { duration } => OccurrenceEdit::SetHoldDuration { duration },
             Self::SetHoldProvider { video } => OccurrenceEdit::SetHoldProvider { video },
@@ -473,6 +491,7 @@ enum OldCommand {
         node: NodeId,
         id: NodeId,
         plays: u32,
+        #[serde(default, with = "crate::legacy_hold_v18::optional")]
         gap: Option<HoldRecipe>,
         #[serde(default)]
         anchor_policy: WrapAnchorPolicy,
@@ -480,6 +499,7 @@ enum OldCommand {
     SetRepeat {
         node: NodeId,
         plays: u32,
+        #[serde(default, with = "crate::legacy_hold_v18::optional")]
         gap: Option<HoldRecipe>,
     },
     InsertPlays {
@@ -686,7 +706,7 @@ pub fn upgrade_request(json: &str) -> Result<CommandRequest, DocumentError> {
             offset,
         } => Command::SetSourceAudioMapping {
             node,
-            mapping,
+            mapping: mapping.upgrade(),
             offset,
         },
         OldCommand::SetHoldDuration { node, duration } => {
@@ -786,11 +806,14 @@ struct Patch {
     #[serde(default, deserialize_with = "unique_map")]
     audio_lineage: BTreeMap<NodeId, ValueChange<AudioLineageId>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    audio_bindings: Option<ValueChange<AudioBindingState>>,
+    audio_bindings: Option<ValueChange<LegacyAudioBindingState>>,
 }
 
 impl Patch {
     fn project(patch: &DocumentPatch) -> Option<Self> {
+        if !patch.gap_overrides.is_empty() {
+            return None;
+        }
         Some(Self {
             project_id: patch.project_id.clone(),
             from_revision: patch.from_revision.clone(),
@@ -821,7 +844,7 @@ impl Patch {
             marks: project_mark_changes(&patch.marks)?,
             overrides: patch.overrides.clone(),
             audio_lineage: patch.audio_lineage.clone(),
-            audio_bindings: patch.audio_bindings.clone(),
+            audio_bindings: project_change(&patch.audio_bindings)?,
         })
     }
 }

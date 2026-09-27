@@ -300,11 +300,12 @@ impl AudioReferencePlan {
                 } => {
                     repeats.insert(
                         id.clone(),
-                        RepeatLayout::compile(
+                        RepeatLayout::compile_with_gap_overrides(
                             iterations,
                             child,
                             layout.overrides().get(id),
                             *gap_duration,
+                            layout.gap_overrides().get(id),
                             &durations,
                         )?,
                     );
@@ -710,6 +711,23 @@ impl<'plan> ReferenceAudioClock<'plan> {
                             .checked_add(location.play.duration.frames())
                             .ok_or(TimeError::Overflow)?;
                         transform = transform.child(ExactRatio::integer(start), ExactRatio::ONE)?;
+                        if let Some(child) = &location.play.gap_child {
+                            work.spend(1)?;
+                            repeats.push(RepeatInstance {
+                                node: current.clone(),
+                                iteration: location.play.iteration,
+                            });
+                            current = self
+                                .plan
+                                .layout
+                                .nodes()
+                                .get_key_value(child)
+                                .ok_or(PlanError::InvalidPlan(
+                                    "reference Repeat gap child missing",
+                                ))?
+                                .0;
+                            continue;
+                        }
                         let gap_extent = transform.origin
                             ..transform
                                 .at(ExactRatio::integer(location.play.gap_after.frames()))?;

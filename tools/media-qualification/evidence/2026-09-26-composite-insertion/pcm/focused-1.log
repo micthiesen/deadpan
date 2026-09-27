@@ -1,0 +1,13 @@
+    Blocking waiting for file lock on build directory
+   Compiling deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4m 36s
+     Running tests/composite_insert.rs (target/debug/deps/composite_insert-83f2643f39d161d3)
+
+running 3 tests
+test split_repeat_suffix_inserts_twice_and_resumes_each_old_ntsc_play ... ok
+test inserting_before_preserve_crop_keeps_full_history_and_exact_silence ... ok
+test inserted_composite_keeps_isolated_gap_phase_and_default_gap_births ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.73s
+

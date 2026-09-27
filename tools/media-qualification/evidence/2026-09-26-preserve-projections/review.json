@@ -1,0 +1,52 @@
+{
+  "scope": "15 source/test paths against before snapshot; existing harness and other changes preserved",
+  "independent_reviewers": [
+    "/root/interior_migration",
+    "/root/interior_timing_review"
+  ],
+  "implementation_peer_review": "/root/interior_general_review reviewed main-owned renderer additions",
+  "resolved_findings": [
+    "Reclock exact output-policy intervals before allocating each consuming grid.",
+    "Use post-Preserve policy to retain processed decay past selected Source endpoints.",
+    "Precharge scanned/materialized policy runs under one construction budget before recursive copies.",
+    "Keep full semantic support separate from routed windows, retaining Bound silent-Hold masks.",
+    "Preflight full hidden ordinary and bound Preserve histories before projected source I/O.",
+    "Use SelectedPlacement in the decay regression so it exercises actual endpoint suppression.",
+    "Limit projection Debug and serialization to descriptor/duration instead of traversing the DAG."
+  ],
+  "dismissed_findings": [
+    "Per-read source-observation cap is an intentional independent admission bound; memo reuse must still recheck revocable providers. A new regression revokes admission within one read."
+  ],
+  "compile_and_lint_fixes": [
+    "Explicit SignalSample grid type in remap_window.",
+    "Parent-module visibility on projected renderer methods.",
+    "Explicit test module path.",
+    "Box the large current-signal TapeProvider variant without a lint suppression."
+  ],
+  "final_findings": [],
+  "reviewers_ran_cargo": false,
+  "focused_result": {
+    "passed": 56,
+    "failed": 0,
+    "ignored": 0,
+    "new_pcm_tests": 7,
+    "new_plan_tests": 5
+  },
+  "source_sha256": {
+    "crates/deadpan-audio/src/signal_input.rs": "2718ceeffa9d6a3a0e52e90dde19f173e94cbfe213a3522c4fa2f4de6bd5bfa6",
+    "crates/deadpan-audio/src/stage_projection.rs": "346706bd4ffee30d43069c5c7b7949eefbdc08d1e982d4896e67f8de52930f67",
+    "crates/deadpan-audio/src/stages.rs": "8ac6479f115f6c41c47a14e28d83ad896ebcf2fc62ef17a478470175d1241065",
+    "crates/deadpan-audio/tests/audio_definition.rs": "7bf3baafe9614e083391f2232ad3b230f02029e0b080635a14be2497f3b4ca2a",
+    "crates/deadpan-audio/tests/audio_definition/projection.rs": "93307f9bb54f4772604b78d8394361acc2af49549c0d5d92d52aaf0fbf34b029",
+    "crates/deadpan-plan/src/audio.rs": "ae25313c08d0bd7f8a3ef4ccd836f8d504a50e85c38a4593041e270531b75c12",
+    "crates/deadpan-plan/src/audio_bound.rs": "9ad541fb5cb62eaf99d459fd84f1d15271055dce43b94a413a44b93d5fd06a7c",
+    "crates/deadpan-plan/src/audio_fades.rs": "226c42007215f5ea1e52c31deba3e676f234f603ab09a63c5d35a8dd93350115",
+    "crates/deadpan-plan/src/audio_policy.rs": "891b505091cb9f7f6f5d3a5741fc7546402b10dfb7285f97b0449062536a462e",
+    "crates/deadpan-plan/src/audio_projection.rs": "42aa86ca111f55b11c3128c4eafe3b21d890fc1ae70b39476cb97c38bcdfc7ca",
+    "crates/deadpan-plan/src/audio_signal.rs": "31978c848ba09a92d7b4f40b124ed9273f18f2e20cd9c2e8c4f25c963cd43e3f",
+    "crates/deadpan-plan/src/audio_tape.rs": "14bfd5fdbdd4c9c11b27c2a06dc3f0db3fb7d408ece3f7570550995d027ca69f",
+    "crates/deadpan-plan/src/lib.rs": "7ed19494459b5b71cb82224b4f88003a71d36a1affe6bb6c504d3e40c751d32d",
+    "crates/deadpan-plan/tests/audio_definition.rs": "570f6281cc47a5e646c7561872606d83faee060d5f03539bbb3386ff6da3f8e1",
+    "crates/deadpan-plan/tests/audio_definition/projection.rs": "abefedc5077b6c404a3016cd971090b231b85023b356a92896f6748cfedb85ef"
+  }
+}

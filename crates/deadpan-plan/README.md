@@ -44,6 +44,13 @@ starts with the actual Repeat scope and requires the renderer's separate identit
 provider clip. Keeping the full path lets a transient Camera replace the selected
 operation in place without appending it after ancestor effects.
 
+`PictureSample.picture_context` separately retains the Hold or gap recipe's
+captured canvases. Compilation allocates one `Arc<CapturedFraming>` per recipe;
+sampling shares that allocation without copying its layers for each frame.
+Serialized inspection emits the underlying geometry. Exact Freeze timestamps,
+provider selection and live framing scopes remain separate. Synthetic audio-only
+plan nodes have no picture context.
+
 The tests cover negative/fractional source origins, exact sequence boundaries,
 VFR lookup, nested retimes/repeats, accepted frame mapping, all picture provider
 variants, stable gap identities after reordering, binary iteration-run lookup,

@@ -27,6 +27,7 @@ fn hold(duration: i64) -> BeatNode {
     BeatNode::hold(
         "hold",
         HoldRecipe {
+            picture_context: None,
             duration: frames(duration),
             video: HoldVideo::Background,
             audio: HoldAudio::Silence,
@@ -405,10 +406,11 @@ fn captures_a_billion_plays_compactly_and_empty_projects_are_noops() {
 }
 
 #[test]
-fn capture_rejects_unrepresented_gaps_and_path_expansion_atomically() {
+fn capture_includes_gaps_and_rejects_path_expansion_atomically() {
     let mut r = repeat("a", 2);
     if let NodeKind::Repeat { gap, .. } = &mut r.kind {
         *gap = Some(HoldRecipe {
+            picture_context: None,
             duration: frames(1),
             video: HoldVideo::Background,
             audio: HoldAudio::Silence,
@@ -416,12 +418,8 @@ fn capture_rejects_unrepresented_gaps_and_path_expansion_atomically() {
     }
     let gaps = document(&["r"], [(id("r"), r), (id("a"), hold(2))]);
     let original = gaps.to_json().unwrap();
-    assert!(
-        capture_unbound_audio_bindings(&gaps, timing(0))
-            .unwrap_err()
-            .message
-            .contains("gap binding ownership")
-    );
+    let captured = capture_unbound_audio_bindings(&gaps, timing(0)).unwrap();
+    assert!(captured.gap_bindings().contains_key(&id("r")));
     assert_eq!(gaps.to_json().unwrap(), original);
     let mut nodes = BTreeMap::new();
     for index in 0..100 {

@@ -1,4 +1,4 @@
-//! Root-beat selection follows the requested project-frame boundary.
+//! Current-scope beat selection uses absolute project-frame boundaries.
 
 use super::BeatRow;
 
@@ -32,6 +32,46 @@ pub(super) fn after_refresh(
     rows.iter()
         .position(|row| Some(&row.id) == selected)
         .or_else(|| at_boundary(rows, cursor))
+}
+
+/// Select a committed visible node, or its visible containing group when it is
+/// deeper than the captured navigation scope. Use the command's own boundary;
+/// neither a moved UI cursor nor stale selection may retarget it.
+pub(super) fn after_commit(
+    rows: &[BeatRow],
+    selected: Option<&deadpan_core::NodeId>,
+    cursor: Option<deadpan_core::ProjectFrame>,
+) -> Option<usize> {
+    let selected = selected?;
+    rows.iter().position(|row| &row.id == selected).or_else(|| {
+        let cursor = u64::try_from(cursor?.0).ok()?;
+        // Unlike navigation, a committed hidden target cannot clamp to the
+        // last row when its supplied position is outside the visible sequence.
+        rows.iter().position(|row| {
+            row.start <= cursor
+                && row
+                    .start
+                    .checked_add(row.frames)
+                    .is_some_and(|end| cursor < end)
+        })
+    })
+}
+
+/// Entering chooses a boundary inside the new group. Leaving selects the exited
+/// group but preserves the absolute heard cursor, even when audition left its
+/// parent's extent before a context-preserving stop.
+pub(super) fn after_scope_change(
+    rows: &[BeatRow],
+    bounds: std::ops::RangeInclusive<u64>,
+    cursor: u64,
+    exited: Option<&deadpan_core::NodeId>,
+) -> (u64, Option<usize>) {
+    let cursor = if exited.is_some() {
+        cursor
+    } else {
+        cursor.clamp(*bounds.start(), *bounds.end())
+    };
+    (cursor, after_refresh(rows, exited, cursor))
 }
 
 pub(super) fn step(
@@ -99,6 +139,55 @@ mod tests {
     use super::*;
     use deadpan_core::NodeId;
 
+    #[test]
+    fn returning_from_a_group_preserves_a_heard_cursor_outside_its_parent() {
+        let mut rows = rows(&[10, 4]);
+        for row in &mut rows {
+            row.start += 5;
+        }
+        // Audition reached another root sibling; Backspace must select the
+        // exited child without seeking back to this parent's end (19).
+        let exited = &rows[0].id;
+        assert_eq!(
+            after_scope_change(&rows, 5..=19, 31, Some(exited)),
+            (31, Some(0))
+        );
+        assert_eq!(
+            after_scope_change(&rows, 5..=19, 2, Some(exited)),
+            (2, Some(0))
+        );
+        assert_eq!(
+            after_scope_change(&rows, 5..=19, 17, Some(exited)),
+            (17, Some(0))
+        );
+        // Entry may have a cursor outside the selected group's extent.
+        assert_eq!(after_scope_change(&rows, 5..=19, 31, None), (19, Some(1)));
+        assert_eq!(after_scope_change(&rows, 5..=19, 2, None), (5, Some(0)));
+        assert_eq!(after_scope_change(&[], 12..=12, 31, None), (12, None));
+    }
+
+    #[test]
+    fn nested_rows_keep_absolute_cursor_and_local_split_coordinates() {
+        let mut rows = rows(&[4, 0, 6]);
+        for row in &mut rows {
+            row.start += 17;
+        }
+        assert_eq!(at_boundary(&rows, 16), None);
+        assert_eq!(at_boundary(&rows, 17), Some(0));
+        assert_eq!(at_boundary(&rows, 21), Some(2));
+        assert_eq!(at_boundary(&rows, 27), Some(2));
+        assert_eq!(step(&rows, Some(&rows[0].id), 18, true, 1), Some(1));
+        assert_eq!(split_boundary(&rows, &rows[2].id, 24).unwrap().frames(), 3);
+        assert!(split_boundary(&rows, &rows[2].id, 21).is_none());
+        assert_eq!(after_refresh(&rows, Some(&rows[2].id), 18), Some(2));
+        assert_eq!(
+            after_refresh(&rows, Some(&NodeId::new("removed").unwrap()), 18),
+            Some(0)
+        );
+        assert!(cursor_marker(&rows, 16).is_none());
+        assert!(cursor_marker(&rows, 28).is_none());
+    }
+
     fn rows(durations: &[u64]) -> Vec<BeatRow> {
         let mut start = 0;
         durations
@@ -116,6 +205,31 @@ mod tests {
                 row
             })
             .collect()
+    }
+
+    #[test]
+    fn committed_nested_pause_selects_its_visible_group_at_the_captured_boundary() {
+        use deadpan_core::ProjectFrame;
+        let rows = rows(&[2, 7, 3]);
+        let hold = NodeId::new("nested-hold").unwrap();
+        assert_eq!(
+            after_commit(&rows, Some(&hold), Some(ProjectFrame(4))),
+            Some(1)
+        );
+        assert_eq!(
+            after_commit(&rows, Some(&hold), Some(ProjectFrame(9))),
+            Some(2)
+        );
+        for cursor in [
+            None,
+            Some(ProjectFrame(-1)),
+            Some(ProjectFrame(12)),
+            Some(ProjectFrame(100)),
+        ] {
+            assert_eq!(after_commit(&rows, Some(&hold), cursor), None);
+        }
+        assert_eq!(after_commit(&rows, None, Some(ProjectFrame(4))), None);
+        assert_eq!(after_commit(&rows, Some(&rows[1].id), None), Some(1));
     }
 
     #[test]

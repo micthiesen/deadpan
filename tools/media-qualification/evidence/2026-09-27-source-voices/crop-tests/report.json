@@ -1,0 +1,33 @@
+{
+  "commands": [
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "-p",
+        "deadpan-playback"
+      ],
+      "exit_code": 0,
+      "seconds": 0.24642158299684525,
+      "log": "0.log"
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-playback",
+        "source_voice"
+      ],
+      "exit_code": 0,
+      "seconds": 22.948184083215892,
+      "log": "1.log",
+      "tests": {
+        "passed": 4,
+        "failed": 0,
+        "ignored": 0
+      }
+    }
+  ]
+}

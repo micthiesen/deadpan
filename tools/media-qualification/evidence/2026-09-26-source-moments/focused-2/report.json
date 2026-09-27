@@ -1,0 +1,58 @@
+[
+  {
+    "command": [
+      "cargo",
+      "test",
+      "-p",
+      "deadpan-core",
+      "--test",
+      "legacy_audio_selection",
+      "--locked"
+    ],
+    "exit_code": 0,
+    "seconds": 11.65777362510562,
+    "log": "0.log"
+  },
+  {
+    "command": [
+      "cargo",
+      "test",
+      "-p",
+      "deadpan-media",
+      "--test",
+      "source_import_timing",
+      "--locked"
+    ],
+    "exit_code": 0,
+    "seconds": 10.229887374676764,
+    "log": "1.log"
+  },
+  {
+    "command": [
+      "cargo",
+      "test",
+      "-p",
+      "deadpan-store",
+      "--test",
+      "migration",
+      "--locked"
+    ],
+    "exit_code": 0,
+    "seconds": 66.22360458271578,
+    "log": "2.log"
+  },
+  {
+    "command": [
+      "cargo",
+      "test",
+      "-p",
+      "deadpan-cli",
+      "--test",
+      "audio_context",
+      "--locked"
+    ],
+    "exit_code": 0,
+    "seconds": 28.13979341695085,
+    "log": "3.log"
+  }
+]

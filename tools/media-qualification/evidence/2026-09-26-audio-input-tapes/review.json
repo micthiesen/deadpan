@@ -1,0 +1,37 @@
+{
+  "scope": "Source increment against before/ snapshot; earlier concurrent changes preserved",
+  "reviewer": "/root/interior_migration",
+  "independent_of_implementation": true,
+  "final_code_findings": [],
+  "resolved_findings": [
+    "Charge each binary-search comparison before dispatch, under shared query work.",
+    "Do not subtract silence-mask count from structural policy span allowance.",
+    "Keep mapped physical allocation distinct from global meaningful input support and prior genuine constraints.",
+    "Use explicit SignalSample grid type and exact checked ratio comparisons.",
+    "Fix test helper lifetime and shadowed fixture function.",
+    "Use regression-sensitive query/policy search budgets and aggregate query span rejection.",
+    "Add actual Bound seam PCM and transparent Partition sampling-support coverage.",
+    "Correct live raw mapping fixture to natural-rate Placement and independently clipped source taps."
+  ],
+  "contract_clarification": "Global tape support is a meaningful intrinsic input selection. Per-run windows are allocation only. A proposed objection to global crop was withdrawn after this distinction was made explicit.",
+  "reviewed_behaviors": [
+    "Existing non-tape signal constructors preserve prior sampling support.",
+    "Definition, repeat, bypass and intrinsic stage identities survive remapping.",
+    "Bound physical allocation anchors remain separate from run request slices.",
+    "Source admission, cancellation, work, preparation limits and cache dependencies remain shared."
+  ],
+  "test_changes_after_review": "Adopted reviewer refinement from policy work budget 3 to 4; no production changes.",
+  "reviewer_ran_cargo": false,
+  "source_sha256": {
+    "crates/deadpan-audio/src/lib.rs": "40977a377b84b24e9ab412ad7524529a0826d945c312deece868987afb9458f7",
+    "crates/deadpan-audio/src/signal_input.rs": "db2cbddb1cc3303944528bf36ac338e845b6754db1b9200dcedd27a47f96f703",
+    "crates/deadpan-audio/src/stages.rs": "b53c5552f1e0688f5e896aa7d4e1fc0352fa70a4283782dd6829ad03f58a5783",
+    "crates/deadpan-audio/tests/audio_definition.rs": "a96c1b254a0936ba1490790d8a7d3bf4353cb4b7b33625b8fd277c28cf32a1a8",
+    "crates/deadpan-audio/tests/audio_definition/tape.rs": "bcd8045ba978e33e9e24ff218e3466924eb1832116771229107560c76ed816b0",
+    "crates/deadpan-audio/tests/audio_definition/tape_admission.rs": "e053cbb6915845b34fe6c1c59026cb060d16bc72c0561093ba3abb843460d767",
+    "crates/deadpan-plan/src/audio_signal.rs": "50bbcc35a77fc7852543b9f1cbda188cf5f1a0e0b7f4242b8d1b8dca4b373101",
+    "crates/deadpan-plan/src/audio_tape.rs": "8f78352b677426f65ddd6152bf55186475f3d79b04f640ec3800c1ad5c308f76",
+    "crates/deadpan-plan/src/lib.rs": "505d89aa5076fe8fcb9eb9cd36420e3174492554d50c59f0ce33023a25fcf28e",
+    "crates/deadpan-plan/tests/audio_tape.rs": "49b072e58da0d1351c2ff4afcf8be349539f0ef385264f185c9f43112e79b0e2"
+  }
+}

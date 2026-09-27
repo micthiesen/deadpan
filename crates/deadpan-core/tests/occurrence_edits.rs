@@ -14,6 +14,7 @@ fn duration(n: i64) -> FrameDuration {
 }
 fn hold(n: i64) -> HoldRecipe {
     HoldRecipe {
+        picture_context: None,
         duration: duration(n),
         video: HoldVideo::Background,
         audio: HoldAudio::Silence,
@@ -63,6 +64,7 @@ fn fixture(outer: u32, inner: u32, frames: i64, gap: i64) -> ProjectDocument {
             subtree: Subtree {
                 root: node("group"),
                 overrides: BTreeMap::new(),
+                gap_overrides: BTreeMap::new(),
                 nodes: BTreeMap::from([
                     (
                         node("group"),

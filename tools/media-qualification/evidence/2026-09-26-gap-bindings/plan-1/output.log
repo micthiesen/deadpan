@@ -1,0 +1,101 @@
+    Blocking waiting for file lock on build directory
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+   Compiling deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3m 26s
+     Running tests/audio_bindings.rs (target/debug/deps/audio_bindings-53ae5a8268c33447)
+
+running 1 test
+test compilation_never_silently_discards_persisted_sampling_clocks ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/audio_definition.rs (target/debug/deps/audio_definition-1b723a1359760484)
+
+running 18 tests
+test nested_billion_repeat_queries_stay_compact_and_use_only_definition_relative_plays ... ok
+test owned_source_support_limits_filter_and_envelope_without_rebasing_its_clock ... ok
+test repeat_gap::billion_play_gap_definition_has_constant_work_and_occurrences_keep_their_identity ... ok
+test selector_scope_distinguishes_node_definition_from_repeat_default_definition ... ok
+test root_placed_preserve_keeps_full_nested_history_and_definition_scope ... ok
+test repeat_gap::one_play_gap_definition_exists_without_a_rendered_gap_or_child_audio ... ok
+test nested_preserve_signals_retain_scope_and_cannot_alias_project_stage_descriptors ... ok
+test repeat_gap::gap_positive_support_can_own_no_point_and_gain_points_under_explicit_placement ... ok
+test invalid_selectors_and_signal_requests_fail_without_guessing_an_occurrence ... ok
+test definition_output_uses_local_zero_and_point_ceil_at_ntsc ... ok
+test repeat_gap::gap_signed_root_and_point_clocks_keep_exact_support_and_phase ... ok
+test root_placement_is_closed_checked_and_rejects_nonphysical_definition_roots ... ok
+test placement_support_never_moves_a_noncoincident_hard_edge_into_the_crop ... ok
+test owned_source_uses_absolute_signed_root_phase_without_selecting_root_siblings ... ok
+test repeat_gap::gap_definition_stays_available_when_every_play_uses_an_override ... ok
+test repeat_gap::gap_definition_requires_a_positive_configured_repeat_gap ... ok
+test all_overridden_repeat_selects_its_authored_default_without_a_fabricated_play ... ok
+test repeat_gap::gap_policies_follow_current_recipe_and_exact_gap_edges_without_node_edges ... ok
+
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/audio_domain.rs (target/debug/deps/audio_domain-d9d53f0b0aacf751)
+
+running 8 tests
+test domain_queries_reject_outside_support_and_enforce_work_and_span_limits ... ok
+test room_tone_keeps_intrinsic_duration_and_origin_through_transparent_retimes ... ok
+test hidden_source_context_cannot_select_the_visible_root_sibling ... ok
+test ordinary_crop_and_source_placement_constrain_hidden_filter_support ... ok
+test cropped_nested_gap_keeps_its_outer_play_and_its_own_original_zero ... ok
+test billion_play_sparse_domains_and_gaps_keep_complete_occurrence_identity ... ok
+test preserve_retains_input_history_and_flattened_policies_from_its_own_subtree ... ok
+test negative_and_ntsc_domains_keep_the_absolute_root_phase ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/audio_fades.rs (target/debug/deps/audio_fades-e3c5000af0d803a8)
+
+running 7 tests
+test opaque_preserve_uses_output_geometry_and_does_not_transport_input_fades ... ok
+test fractional_progress_and_inverse_ceil_partitioning_are_request_independent ... ok
+test signed_domain_and_retained_negative_origin_keep_absolute_tie_parity ... ok
+test virtual_source_support_can_have_zero_or_one_fade_samples ... ok
+test current_coincident_hard_edges_survive_while_noncoincident_crop_edges_do_not_inherit_them ... ok
+test translated_output_retains_tiny_width_and_rate_changes_use_a_stable_virtual_origin ... ok
+test selected_origin_point_clock_uses_current_support_without_resetting_phase ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/audio_policy.rs (target/debug/deps/audio_policy-969bf15939c4a9eb)
+
+running 1 test
+test dense_bound_repeat_inventory_uses_shared_work_not_output_span_capacity ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running tests/audio_signal.rs (target/debug/deps/audio_signal-a376ec25e2a2aac2)
+
+running 17 tests
+test partition_support_is_shared_while_root_and_signal_grids_keep_different_allocations ... ok
+test root_half_sample_rounding_and_virtual_point_selection_use_different_probes ... ok
+test empty_invalid_and_budgeted_signal_queries_fail_without_partial_results ... ok
+test selected_child_grid_keeps_fractional_origin_and_signed_source_placement ... ok
+test mixed_pitch_policies_keep_their_order_even_when_net_speed_is_unity ... ok
+test compact_billion_play_stage_seek_obeys_structural_work_limits ... ok
+test virtual_input_retains_four_points_in_three_point_two_sample_extent ... ok
+test sampling_maps_change_pcm_coordinates_without_rewriting_picture_or_filter_support ... ok
+test room_tone_retains_intrinsic_duration_through_hold_and_repeat_gap_crops ... ok
+test stage_output_policy_grid_retains_silent_holds_with_no_input_grid_sample ... ok
+test point_grid_keeps_every_integer_position_in_fractional_source_support ... ok
+test preserve_over_sequence_is_one_stage_with_continuous_input_across_cuts ... ok
+test repeated_stages_and_sparse_overrides_retain_complete_occurrence_identity ... ok
+test outer_crop_does_not_shorten_an_inner_preserve_stages_canonical_history ... ok
+test hold_policies_and_repeat_gap_metadata_remain_explicit_in_signal_queries ... ok
+test point_and_root_queries_are_stable_under_paging_and_out_of_order_seeks ... ok
+test nested_preserve_stages_remain_distinct_and_unity_preserve_is_transparent ... ok
+
+test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/gap_bindings.rs (target/debug/deps/gap_bindings-855e9b6f847acf67)
+
+running 3 tests
+test billion_play_gap_binding_queries_stay_bounded_and_reject_insufficient_work ... ok
+test one_play_gap_definition_uses_its_own_point_clock_and_current_duration ... ok
+test moved_gap_is_bound_in_root_and_captured_domains_with_its_own_edges ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+

@@ -34,7 +34,7 @@ impl Component {
         match self {
             Self::CenterX => "Framing center X, percent of canvas",
             Self::CenterY => "Framing center Y, percent of canvas",
-            Self::Scale => "Framing scale, percent of original size",
+            Self::Scale => "Framing scale, percent of input size",
         }
     }
 

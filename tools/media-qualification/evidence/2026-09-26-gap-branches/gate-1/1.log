@@ -1,0 +1,23 @@
+    Blocking waiting for file lock on build directory
+   Compiling deadpan-source v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-source)
+    Checking deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+   Compiling deadpan-media-worker v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-media-worker)
+error: this function has too many arguments (9/7)
+   --> crates/deadpan-core/src/repeat_layout.rs:249:5
+    |
+249 | /     fn append(
+250 | |         &mut self,
+251 | |         allocation: &RevisionId,
+252 | |         first: u32,
+...   |
+258 | |         gap_duration: FrameDuration,
+259 | |     ) -> Result<(), DocumentError> {
+    | |__________________________________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#too_many_arguments
+    = note: `-D clippy::too-many-arguments` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::too_many_arguments)]`
+
+error: could not compile `deadpan-core` (lib) due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `deadpan-core` (lib test) due to 1 previous error

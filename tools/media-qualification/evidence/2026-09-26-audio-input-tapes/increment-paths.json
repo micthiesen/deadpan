@@ -1,0 +1,12 @@
+[
+  "crates/deadpan-audio/src/lib.rs",
+  "crates/deadpan-audio/src/signal_input.rs",
+  "crates/deadpan-audio/src/stages.rs",
+  "crates/deadpan-audio/tests/audio_definition.rs",
+  "crates/deadpan-audio/tests/audio_definition/tape.rs",
+  "crates/deadpan-audio/tests/audio_definition/tape_admission.rs",
+  "crates/deadpan-plan/src/audio_signal.rs",
+  "crates/deadpan-plan/src/audio_tape.rs",
+  "crates/deadpan-plan/src/lib.rs",
+  "crates/deadpan-plan/tests/audio_tape.rs"
+]

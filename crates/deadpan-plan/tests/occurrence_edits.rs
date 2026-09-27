@@ -28,6 +28,7 @@ fn gap(frames: i64) -> Option<HoldRecipe> {
     (frames > 0).then(|| HoldRecipe {
         duration: duration(frames),
         video: HoldVideo::Background,
+        picture_context: None,
         audio: HoldAudio::Silence,
     })
 }

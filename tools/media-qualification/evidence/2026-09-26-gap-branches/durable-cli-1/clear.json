@@ -1,0 +1,14 @@
+{
+  "protocol": 1,
+  "project_id": "e8c39a6d-58aa-4f49-8f3b-9ee65244b8de",
+  "expected_revision": "revive",
+  "new_revision": "clear",
+  "command": {
+    "command": "clear_gap_override",
+    "node": "repeat",
+    "iteration": {
+      "allocation": "repeat",
+      "ordinal": 0
+    }
+  }
+}

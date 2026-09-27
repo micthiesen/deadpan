@@ -45,7 +45,7 @@ impl ProjectStore {
                 backup: None,
             });
         }
-        if !matches!(version, 1..=23) {
+        if !matches!(version, 1..=33) {
             return Err(StoreError::UnsupportedSchema(version));
         }
         let lock = acquire_lock(&package)?;
@@ -202,6 +202,29 @@ fn migrate_candidate(
     // those values exactly but does not admit the new InsertTime command.
     // Schema 23 uses core schema 17, including InsertTime. It gains no framing,
     // and its closed node and command vocabulary rejects the new effect fields.
+    // Schema 24 uses core schema 18, including authored framing. Its frozen
+    // recipes reject captured picture context, including an explicit null.
+    // Schema 25 uses core schema 19, including captured framing. Its frozen
+    // audio mappings reject selected placements and new fields, even null.
+    // Schema 26 uses core schema 20, including selected audio placements. Its
+    // frozen owned bindings reject reanchors, including empty or null fields;
+    // replay retains the old lattice and resume phase terms exactly.
+    // Schema 27 uses core schema 21, including chronological reanchors. Its
+    // complete frozen binding grammar rejects gap maps, recipe discriminators,
+    // own-gap arguments and gap-definition clocks in snapshots and both patches.
+    // Schema 28 uses core schema 22 and retains Repeat-gap bindings. Its frozen
+    // document, subtree, patch and timing-layout schemas reject gap overrides,
+    // even when the new map is explicitly empty.
+    // Schema 29 uses core schema 23 and retains sparse gap branches, including
+    // detached Holds that still reference the original default-gap clocks.
+    // Its InsertTime retains pre-edit physical-suffix admission. Schema 30 uses
+    // core schema 24 and additionally admits root seams before composites, but
+    // not an interior split before a composite suffix. Matching modern patches
+    // cannot authorize a formerly inadmissible legacy command.
+    // Schema 31 uses core schema 25 and admits root physical interiors;
+    // schema 32 uses core schema 26 and admits nested Sequence InsertTime.
+    // Schema 33 uses core schema 27, retaining SpliceSource while its closed
+    // commands reject WrapRetime and SetRetime, including occurrence edits.
     // Replay all authored history, preserving operational rows and identities
     // while assigning FitBeat only to mappings absent in that legacy schema.
     // Schemas before 15 gain an explicit basis; schema 15 retains its policy.

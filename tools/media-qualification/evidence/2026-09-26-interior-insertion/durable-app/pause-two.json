@@ -1,0 +1,44 @@
+{
+  "protocol": 1,
+  "project_id": "4d2f760f-3e30-464e-87d5-2730c09aafcc",
+  "expected_revision": "pause-one",
+  "new_revision": "pause-two",
+  "command": {
+    "command": "insert_time",
+    "at": 3,
+    "hold": {
+      "duration": 1,
+      "video": {
+        "type": "background"
+      },
+      "audio": {
+        "type": "silence"
+      }
+    },
+    "id": "pause-two",
+    "identities": {
+      "nodes": [
+        "pause-two-part-0",
+        "pause-two-part-1",
+        "pause-two-part-2",
+        "pause-two-part-3",
+        "pause-two-part-4",
+        "pause-two-part-5",
+        "pause-two-part-6",
+        "pause-two-part-7",
+        "pause-two-part-8",
+        "pause-two-part-9",
+        "pause-two-part-10",
+        "pause-two-part-11",
+        "pause-two-part-12",
+        "pause-two-part-13",
+        "pause-two-part-14",
+        "pause-two-part-15"
+      ]
+    },
+    "timing": {
+      "allocation": "pause-two",
+      "ordinal": 0
+    }
+  }
+}

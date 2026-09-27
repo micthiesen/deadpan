@@ -1,0 +1,77 @@
+   Compiling deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 22.92s
+     Running unittests src/lib.rs (target/debug/deps/deadpan_playback-7fd4237bd37aeab0)
+
+running 11 tests
+test tests::invalid_gain_and_outside_start_are_explicit ... ok
+test tests::full_prefill_can_queue_eos_before_the_first_maximum_callback ... ok
+test tests::source_provider_rejects_foreign_contracts_and_revoked_cold_handles ... ok
+test tests::stop_restart_and_failure_never_publish_an_old_session ... ok
+test tests::starvation_keeps_its_submitted_prefix_clock_then_fails_without_resume ... ok
+test tests::short_eos_waits_for_scheduled_prefix_and_seek_replaces_generation ... ok
+test tests::route_change_and_backwards_clock_stop_output ... ok
+test tests::seek_reuses_private_pcm_but_a_new_session_must_reopen_sources ... ok
+test tests::worker_panic_is_reported_and_disables_further_requests ... FAILED
+test tests::canonical_playback_consumes_pause_bindings_and_a_real_preserve_stage ... ok
+test tests::canonical_source_pcm_uses_fixed_monitor_gain_and_delivery_clock ... ok
+
+failures:
+
+---- tests::worker_panic_is_reported_and_disables_further_requests stdout ----
+
+thread 'deadpan-playback-control' (45000323) panicked at crates/deadpan-playback/src/tests.rs:746:21:
+injected host failure
+stack backtrace:
+   0: __rustc::rust_begin_unwind
+             at /rustc/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library/std/src/panicking.rs:689:5
+   1: core::panicking::panic_fmt
+             at /rustc/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library/core/src/panicking.rs:80:14
+   2: deadpan_playback::tests::worker_panic_is_reported_and_disables_further_requests::{closure#1}
+             at ./src/tests.rs:746:21
+   3: <alloc::boxed::Box<dyn core::ops::function::FnMut<(), Output = core::result::Result<alloc::boxed::Box<dyn deadpan_playback::controller::Device>, alloc::string::String>> + core::marker::Send> as core::ops::function::FnMut<()>>::call_mut
+             at /rustc/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library/alloc/src/boxed.rs:2282:9
+   4: deadpan_playback::controller::run
+             at ./src/controller.rs:652:23
+   5: <deadpan_playback::controller::Engine>::with_factory::{closure#1}::{closure#0}
+             at ./src/controller.rs:222:53
+   6: <core::panic::unwind_safe::AssertUnwindSafe<<deadpan_playback::controller::Engine>::with_factory::{closure#1}::{closure#0}> as core::ops::function::FnOnce<()>>::call_once
+             at /rustc/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library/core/src/panic/unwind_safe.rs:275:9
+   7: std::panicking::catch_unwind::do_call::<core::panic::unwind_safe::AssertUnwindSafe<<deadpan_playback::controller::Engine>::with_factory::{closure#1}::{closure#0}>, ()>
+             at /rustc/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library/std/src/panicking.rs:581:40
+   8: ___rust_try
+   9: std::panicking::catch_unwind::<(), core::panic::unwind_safe::AssertUnwindSafe<<deadpan_playback::controller::Engine>::with_factory::{closure#1}::{closure#0}>>
+             at /rustc/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library/std/src/panicking.rs:544:19
+  10: std::panic::catch_unwind::<core::panic::unwind_safe::AssertUnwindSafe<<deadpan_playback::controller::Engine>::with_factory::{closure#1}::{closure#0}>, ()>
+             at /rustc/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library/std/src/panic.rs:359:14
+  11: <deadpan_playback::controller::Engine>::with_factory::{closure#1}
+             at ./src/controller.rs:222:20
+note: Some details are omitted, run with `RUST_BACKTRACE=full` for a verbose backtrace.
+
+thread 'tests::worker_panic_is_reported_and_disables_further_requests' (45000316) panicked at crates/deadpan-playback/src/tests.rs:234:9:
+timed out waiting for playback worker
+stack backtrace:
+   0: __rustc::rust_begin_unwind
+             at /rustc/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library/std/src/panicking.rs:689:5
+   1: core::panicking::panic_fmt
+             at /rustc/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library/core/src/panicking.rs:80:14
+   2: deadpan_playback::tests::wait::<deadpan_playback::tests::update::{closure#0}>
+             at ./src/tests.rs:234:9
+   3: deadpan_playback::tests::update
+             at ./src/tests.rs:253:5
+   4: deadpan_playback::tests::worker_panic_is_reported_and_disables_further_requests
+             at ./src/tests.rs:754:9
+   5: deadpan_playback::tests::worker_panic_is_reported_and_disables_further_requests::{closure#0}
+             at ./src/tests.rs:741:60
+   6: <deadpan_playback::tests::worker_panic_is_reported_and_disables_further_requests::{closure#0} as core::ops::function::FnOnce<()>>::call_once
+             at /rustc/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library/core/src/ops/function.rs:250:5
+   7: <fn() -> core::result::Result<(), alloc::string::String> as core::ops::function::FnOnce<()>>::call_once
+             at /rustc/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library/core/src/ops/function.rs:250:5
+note: Some details are omitted, run with `RUST_BACKTRACE=full` for a verbose backtrace.
+
+
+failures:
+    tests::worker_panic_is_reported_and_disables_further_requests
+
+test result: FAILED. 10 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 12.97s
+
+error: test failed, to rerun pass `-p deadpan-playback --lib`

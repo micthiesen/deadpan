@@ -1,0 +1,339 @@
+{
+  "final_gate": {
+    "commands": [
+      {
+        "command": [
+          "cargo",
+          "fmt",
+          "--all",
+          "--",
+          "--check"
+        ],
+        "exit_code": 0,
+        "seconds": 3.1154179158620536,
+        "log": "0.log"
+      },
+      {
+        "command": [
+          "cargo",
+          "clippy",
+          "--workspace",
+          "--all-targets",
+          "--locked",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "exit_code": 0,
+        "seconds": 19.48331466689706,
+        "log": "1.log"
+      },
+      {
+        "command": [
+          "cargo",
+          "test",
+          "--workspace",
+          "--locked"
+        ],
+        "exit_code": 101,
+        "seconds": 176.9524912922643,
+        "log": "2.log",
+        "tests": {
+          "passed": 965,
+          "failed": 1,
+          "ignored": 0
+        }
+      },
+      {
+        "command": [
+          "cargo",
+          "build",
+          "--workspace",
+          "--locked"
+        ],
+        "exit_code": 0,
+        "seconds": 0.6732791252434254,
+        "log": "3.log"
+      },
+      {
+        "command": [
+          "cargo",
+          "run",
+          "-p",
+          "deadpan-cli",
+          "--",
+          "doctor"
+        ],
+        "exit_code": 0,
+        "seconds": 0.3795400420203805,
+        "log": "4.log"
+      },
+      {
+        "command": [
+          "cargo",
+          "clippy",
+          "-p",
+          "deadpan-app",
+          "--features",
+          "ui-harness",
+          "--all-targets",
+          "--locked",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "exit_code": 0,
+        "seconds": 20.81424287520349,
+        "log": "5.log"
+      },
+      {
+        "command": [
+          "cargo",
+          "test",
+          "-p",
+          "deadpan-app",
+          "--features",
+          "ui-harness",
+          "--all-targets",
+          "--locked"
+        ],
+        "exit_code": 0,
+        "seconds": 31.20404391689226,
+        "log": "6.log",
+        "tests": {
+          "passed": 212,
+          "failed": 0,
+          "ignored": 0
+        }
+      }
+    ],
+    "source_count": 544,
+    "source_unchanged": true,
+    "changed_sources": [],
+    "passed": false
+  },
+  "remaining": {
+    "commands": [
+      {
+        "command": [
+          "cargo",
+          "test",
+          "--workspace",
+          "--locked",
+          "--no-fail-fast",
+          "--exclude",
+          "deadpan-app",
+          "--exclude",
+          "deadpan-audio",
+          "--exclude",
+          "deadpan-cli",
+          "--exclude",
+          "deadpan-core",
+          "--exclude",
+          "deadpan-dsp",
+          "--exclude",
+          "deadpan-fileclone"
+        ],
+        "exit_code": 101,
+        "seconds": 750.2967595001683,
+        "log": "0.log",
+        "tests": {
+          "passed": 709,
+          "failed": 1,
+          "ignored": 0
+        }
+      },
+      {
+        "command": [
+          "cargo",
+          "run",
+          "-p",
+          "deadpan-app",
+          "--features",
+          "ui-harness",
+          "--locked",
+          "--",
+          "--ui-check",
+          "--scenario",
+          "original-moment",
+          "--kestrel-source",
+          "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+          "--output",
+          "/tmp/deadpan-moment-paste-20260926/ui-moment"
+        ],
+        "exit_code": 1,
+        "seconds": 2.508075375109911,
+        "log": "1.log"
+      },
+      {
+        "command": [
+          "cargo",
+          "run",
+          "-p",
+          "deadpan-app",
+          "--release",
+          "--features",
+          "ui-harness",
+          "--locked",
+          "--",
+          "--ui-check",
+          "--mode",
+          "performance",
+          "--scenario",
+          "original-moment",
+          "--kestrel-source",
+          "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+          "--output",
+          "/tmp/deadpan-moment-paste-20260926/ui-moment-performance"
+        ],
+        "exit_code": 1,
+        "seconds": 774.9275533328764,
+        "log": "2.log"
+      }
+    ],
+    "source_count": 544,
+    "source_unchanged": false
+  },
+  "gui": {
+    "ui-moment": {
+      "failed": true,
+      "mode": "visual",
+      "scenario_checks": 0,
+      "scenario_steps": 0,
+      "screenshots": 0,
+      "findings": [
+        {
+          "message": "Scenario panicked: Failed to create render state: CustomNativeAdapterSelectionError(\"No adapter found\")",
+          "severity": "failure"
+        }
+      ],
+      "shortcut_passed": false,
+      "shortcut_checked": 3472,
+      "shortcut_reservations": 62,
+      "shortcut_conflicts": [],
+      "live_source_sha256": "368c01df72ae4fab2efa4d38b235b56c02251f8b895f7e6402c77f6a151723c2",
+      "binary_sha256": "3082f0a7c0682c3a078145756aa729177c7ed93502a9e375b6b7aaa83d688a91"
+    },
+    "ui-moment-performance": {
+      "failed": true,
+      "mode": "performance",
+      "scenario_checks": 0,
+      "scenario_steps": 0,
+      "screenshots": 0,
+      "findings": [
+        {
+          "message": "Scenario panicked: Failed to create render state: CustomNativeAdapterSelectionError(\"No adapter found\")",
+          "severity": "failure"
+        }
+      ],
+      "shortcut_passed": true,
+      "shortcut_checked": 3472,
+      "shortcut_reservations": 62,
+      "shortcut_conflicts": [],
+      "live_source_sha256": "368c01df72ae4fab2efa4d38b235b56c02251f8b895f7e6402c77f6a151723c2",
+      "binary_sha256": "48df714c94c1fda2bf513b99e0b3f0c53046c02818f8067065c4e66762846d7d"
+    },
+    "ui-moment-final-visual": {
+      "failed": true,
+      "mode": "visual",
+      "scenario_checks": 0,
+      "scenario_steps": 0,
+      "screenshots": 0,
+      "findings": [
+        {
+          "message": "Scenario panicked: Failed to create render state: CustomNativeAdapterSelectionError(\"No adapter found\")",
+          "severity": "failure"
+        }
+      ],
+      "shortcut_passed": true,
+      "shortcut_checked": 3472,
+      "shortcut_reservations": 62,
+      "shortcut_conflicts": [],
+      "live_source_sha256": "368c01df72ae4fab2efa4d38b235b56c02251f8b895f7e6402c77f6a151723c2",
+      "binary_sha256": "55c712b32bb903ee645b8fa2198868cd8d31cdc98621a8cdcebb97b530ec8c54"
+    },
+    "ui-moment-final-performance": {
+      "failed": true,
+      "mode": "performance",
+      "scenario_checks": 0,
+      "scenario_steps": 0,
+      "screenshots": 0,
+      "findings": [
+        {
+          "message": "Scenario panicked: Failed to create render state: CustomNativeAdapterSelectionError(\"No adapter found\")",
+          "severity": "failure"
+        }
+      ],
+      "shortcut_passed": true,
+      "shortcut_checked": 3472,
+      "shortcut_reservations": 62,
+      "shortcut_conflicts": [],
+      "live_source_sha256": "368c01df72ae4fab2efa4d38b235b56c02251f8b895f7e6402c77f6a151723c2",
+      "binary_sha256": "48df714c94c1fda2bf513b99e0b3f0c53046c02818f8067065c4e66762846d7d"
+    }
+  },
+  "final_ui": {
+    "commands": [
+      {
+        "mode": "visual",
+        "command": [
+          "cargo",
+          "run",
+          "-p",
+          "deadpan-app",
+          "--features",
+          "ui-harness",
+          "--locked",
+          "--",
+          "--ui-check",
+          "--mode",
+          "visual",
+          "--scenario",
+          "original-moment",
+          "--kestrel-source",
+          "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+          "--output",
+          "/tmp/deadpan-moment-paste-20260926/ui-moment-final-visual"
+        ],
+        "exit_code": 1,
+        "seconds": 2.337865041103214,
+        "log": "visual.log"
+      },
+      {
+        "mode": "performance",
+        "command": [
+          "cargo",
+          "run",
+          "-p",
+          "deadpan-app",
+          "--release",
+          "--features",
+          "ui-harness",
+          "--locked",
+          "--",
+          "--ui-check",
+          "--mode",
+          "performance",
+          "--scenario",
+          "original-moment",
+          "--kestrel-source",
+          "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+          "--output",
+          "/tmp/deadpan-moment-paste-20260926/ui-moment-final-performance"
+        ],
+        "exit_code": 1,
+        "seconds": 1.1573517499491572,
+        "log": "performance.log"
+      }
+    ],
+    "source_unchanged": true
+  },
+  "changed_after_gate2": [
+    "crates/deadpan-app/src/navigation/kestrel-reserved.tsv"
+  ],
+  "non_app_sources_unchanged_since_remaining_tests": true,
+  "sources_match_final_gate": true,
+  "source_count": 544,
+  "git_write_access": "read-only; no commit or push",
+  "no_requirement_or_gate_promoted": true
+}

@@ -39,12 +39,14 @@ fn insert(document: &ProjectDocument, revision: &str, node: &str) -> Result<Comm
             index: 0,
             subtree: Subtree {
                 overrides: Default::default(),
+                gap_overrides: Default::default(),
                 root: id.clone(),
                 nodes: BTreeMap::from([(
                     id,
                     BeatNode::hold(
                         "Pause",
                         HoldRecipe {
+                            picture_context: None,
                             duration: FrameDuration::new(12)?,
                             video: HoldVideo::Background,
                             audio: HoldAudio::Silence,
@@ -719,11 +721,13 @@ fn play_overrides_retire_with_identity_and_survive_durable_undo_redo() -> Result
             subtree: Subtree {
                 root: replacement.clone(),
                 overrides: Default::default(),
+                gap_overrides: Default::default(),
                 nodes: BTreeMap::from([(
                     replacement.clone(),
                     BeatNode::hold(
                         "Alternate pause",
                         HoldRecipe {
+                            picture_context: None,
                             duration: FrameDuration::new(5)?,
                             video: HoldVideo::Background,
                             audio: HoldAudio::Silence,
@@ -1038,12 +1042,15 @@ fn imported_audio_timing_namespaces_remain_reserved_after_bindings_are_removed()
         BTreeMap::from([(
             NodeId::new("hold")?,
             OwnedAudioBinding {
+                reanchors: Vec::new(),
                 lattice: AudioPlacementTemplate {
                     reference: AudioReferenceClock {
                         timing,
                         root: AudioClockRoot::ProjectRootRoundEven,
                         physical: NodeId::new("hold")?,
+                        recipe: Default::default(),
                     },
+                    gap_after: None,
                     arguments: vec![AudioRepeatArgument {
                         reference_repeat: NodeId::new("repeat")?,
                         value: AudioRepeatValue::Captured {

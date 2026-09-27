@@ -43,7 +43,9 @@ impl AudioMapping {
         match mapping {
             SourceAudioMapping::FitBeat => Some(Self::FitBeat),
             SourceAudioMapping::Duration { frames } => Some(Self::Duration { frames }),
-            SourceAudioMapping::Placement { .. } => None,
+            SourceAudioMapping::Placement { .. } | SourceAudioMapping::SelectedPlacement { .. } => {
+                None
+            }
         }
     }
 }

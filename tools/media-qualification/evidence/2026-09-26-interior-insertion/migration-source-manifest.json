@@ -1,0 +1,33 @@
+{
+  "owned_paths": {
+    "crates/deadpan-core/src/legacy_v24.rs": "ac51328932f72e044e8c1a9cd2c86f243ce69cd70b20ed0f151d46cc506238f8",
+    "crates/deadpan-core/src/lib.rs": "460af7231f3a3ceedf20504d3be54adb6a783d0dd8c6d6f699adf03f7b2c48ab",
+    "crates/deadpan-core/src/document.rs": "5dd4ef1a9b5f5e2c2a6b39e8744622f59ea262b8e32e204f6149cbf5d814730f",
+    "crates/deadpan-store/src/migration.rs": "ab02eca4c47d732cca82be33a158cab9cadf3aeb5f129671d62976cba98377c2",
+    "crates/deadpan-store/src/schema.rs": "5023494cf8a60632e47e32a6bbfe9958b097f0859ead91183b325616f8a1c7e5",
+    "crates/deadpan-store/src/validation.rs": "39e78affec76b34af2d9cef6aad1e1903e29381c1f0a43c71fbfed313cc80e75",
+    "crates/deadpan-store/tests/migration.rs": "6bc6b42f2999e3e029bb4f016d116027a4c6dc1bd52f5e7db69df677095bfe9e",
+    "crates/deadpan-store/tests/migration/interior_insert.rs": "2e470df2b437af05683add43f43040cf145bd882b15965ffe9695c7345161609",
+    "crates/deadpan-store/tests/fixtures/v30-interior-insert-history.provenance.json": "07e22ae9b2967aaf97b6e5193ad36f5ee9d2e7aea5bf108e5066f2526e040f92",
+    "crates/deadpan-store/tests/fixtures/v30-interior-insert-history.sql": "66475fabe8106d9264c2ee6a16a235c4dc2a1fa95677ff53af04e33bde961278",
+    "crates/deadpan-store/tests/fixtures/produce-v30-interior-insert-history.py": "4c3ffb555cb611f48d8e0d06814e35d81fc111bfb528bd8c2baff161e8c9eb94",
+    "crates/deadpan-store/tests/fixtures/v30-interior-insert-history.commands.json": "f8ccc6d24d44e61280a00cf6a64ce4c56b3a6b3c710c42d2c1ab2763527338b1"
+  },
+  "base_core": 24,
+  "base_database": 30,
+  "new_core": 25,
+  "new_database": 31,
+  "tests_run": true,
+  "verification": {
+    "command": "DEADPAN_FFMPEG_PREFIX=/tmp/deadpan-ui-ffmpeg/prefix cargo test --locked -p deadpan-store --test migration",
+    "passed": 88,
+    "failed": 0,
+    "ignored": 0,
+    "build_seconds": 46.61,
+    "test_seconds": 34.75,
+    "log": "migration.log",
+    "log_sha256": "0d1623efbb2f10a06f3714fe4f30f86babb16caa944b81fcbf2d2d3e16675e6e",
+    "diff_check": "passed",
+    "old_binary_refusal": "old-context-refusal-02/summary.json"
+  }
+}

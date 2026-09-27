@@ -1,0 +1,282 @@
+[
+  {
+    "path": "AGENTS.md",
+    "sha256": "3ebb408de9c8456c04da2c385ec136dda0814f10ea93a2ddb002dcf5c4c4116f",
+    "bytes": 73301
+  },
+  {
+    "path": "README.md",
+    "sha256": "59b41187a71c68418844db0208a5af75418a2095ed5fbd7801e5f79de3025b00",
+    "bytes": 11198
+  },
+  {
+    "path": "crates/deadpan-app/src/navigation.rs",
+    "sha256": "997cbf51cdb66369dd74f5d260d41f0a5e1d2732d64a59b6f1250d65d655eba9",
+    "bytes": 45843
+  },
+  {
+    "path": "crates/deadpan-app/src/navigation/command.rs",
+    "sha256": "bfa4c0d2ad839ab541682e6491c5af96aa8d0eb47ed5760a088f579e366a5993",
+    "bytes": 9717
+  },
+  {
+    "path": "crates/deadpan-app/src/navigation/kestrel-reserved.tsv",
+    "sha256": "ed5f30a61d9c1f506a7798c943e1d8633ae66fc6174c0d3a2879f488cb453cd1",
+    "bytes": 1988
+  },
+  {
+    "path": "crates/deadpan-app/src/preview.rs",
+    "sha256": "5d4f9a303d3e9fccd327b0cc50bfa32224eb03905686a54b781be73f8424a67b",
+    "bytes": 133817
+  },
+  {
+    "path": "crates/deadpan-app/src/preview/harness.rs",
+    "sha256": "805eb28ec842250811eb057784cc102784320879cbf5e7a9c416ca95b56c68cb",
+    "bytes": 29034
+  },
+  {
+    "path": "crates/deadpan-app/src/preview/harness/moment.rs",
+    "sha256": "f7bccdccd99da49fdddd83d38dc0a960c8a0d8703148577e18b0a53b59e4acd3",
+    "bytes": 4588
+  },
+  {
+    "path": "crates/deadpan-app/src/preview/harness/scenarios.rs",
+    "sha256": "831753222f151f309864cf6c5b836a8a5ab2dee7ede11b74b26170869225cd62",
+    "bytes": 36381
+  },
+  {
+    "path": "crates/deadpan-app/src/preview/moment.rs",
+    "sha256": "6d4fad4d465f478fd540dc7e820183f157a2b51b16c89e33f4e2c9742b246985",
+    "bytes": 19426
+  },
+  {
+    "path": "crates/deadpan-app/src/project.rs",
+    "sha256": "5c37cd2f930d5d047db9826cc1edc38fc24ee56b4758234c5256ad4e8d9799f1",
+    "bytes": 8428
+  },
+  {
+    "path": "crates/deadpan-app/src/project/service.rs",
+    "sha256": "4c96c05ba155b5e37a7ef075256983be89bbbd8cf1e34a8ffc05649b071b9fb9",
+    "bytes": 39266
+  },
+  {
+    "path": "crates/deadpan-app/src/project/service/moment.rs",
+    "sha256": "65aa081f1999b05762c8a3a9cbafc458066773b524a64c3e0542f8c373fffc83",
+    "bytes": 5744
+  },
+  {
+    "path": "crates/deadpan-app/src/project/tests.rs",
+    "sha256": "4bf87e09b300454218ee67eed6b7b46bf96fa24ce900a3e9e98b48e02cae2db7",
+    "bytes": 60036
+  },
+  {
+    "path": "crates/deadpan-app/src/project/tests/moment.rs",
+    "sha256": "53256e8b680cbf48b90d2882715fbe49ef89877294cd83afa37fe6f8e4a8c12f",
+    "bytes": 5581
+  },
+  {
+    "path": "crates/deadpan-app/src/ui_harness.rs",
+    "sha256": "15068f254ebc71aa41cc5e9fe3d51ee8e14bd3d59fd9828cfde3f59488b02b68",
+    "bytes": 10877
+  },
+  {
+    "path": "crates/deadpan-audio/tests/composite_insert.rs",
+    "sha256": "e7df3638ad5569bc54d1cf1e52ce4790b6d377490ca62d58ec621de2e9510175",
+    "bytes": 34307
+  },
+  {
+    "path": "crates/deadpan-audio/tests/composite_insert/source_splice.rs",
+    "sha256": "b447dc342f45573943fff01bdd430e982ce8b2e1f14e2f300588cf31cb851109",
+    "bytes": 9315
+  },
+  {
+    "path": "crates/deadpan-cli/src/doctor.rs",
+    "sha256": "1730037747433e1e738254db0910fe2b31016c1f1fd15242f9fbd69235e4c2eb",
+    "bytes": 3133
+  },
+  {
+    "path": "crates/deadpan-cli/tests/project_commands.rs",
+    "sha256": "cacdd9584c64dd6633bd0d7b1031d007245f0bf038a6b532a86403215ce3bc2a",
+    "bytes": 47713
+  },
+  {
+    "path": "crates/deadpan-core/src/command.rs",
+    "sha256": "a7e00094e50903ec429a2161628d6cf949ce8aaffdbb2331a2ced6566b63dbc3",
+    "bytes": 67944
+  },
+  {
+    "path": "crates/deadpan-core/src/document.rs",
+    "sha256": "b71bd02b0373bb67f8bf8107fcd29fa72144e4a84f529875609cc84f095d05bf",
+    "bytes": 45862
+  },
+  {
+    "path": "crates/deadpan-core/src/insert_time.rs",
+    "sha256": "52692be3acdd053104c988602354c121d24a96e35db7ad953bbeee6f8776a2e7",
+    "bytes": 20457
+  },
+  {
+    "path": "crates/deadpan-core/src/insert_time/composite.rs",
+    "sha256": "0db7c49a8bb1ec325aba5c046014fc7591275d1ecad9b54f3b2e964699b86bae",
+    "bytes": 6009
+  },
+  {
+    "path": "crates/deadpan-core/src/insert_time/source_splice.rs",
+    "sha256": "acbccb268daa0473262115ccbec72055f247f28ba2d8b4bb21dab281e73a3d3d",
+    "bytes": 4204
+  },
+  {
+    "path": "crates/deadpan-core/src/legacy_v26.rs",
+    "sha256": "797d390e0abfbd31570852212a3db8557e7f28e115477dc55a8f45a280567b3b",
+    "bytes": 29280
+  },
+  {
+    "path": "crates/deadpan-core/src/lib.rs",
+    "sha256": "59457f78c38c6ca631ef2d899bdf47c972b1d8aeb8986fcfecd005bfb08a3c44",
+    "bytes": 2516
+  },
+  {
+    "path": "crates/deadpan-core/tests/insert_time.rs",
+    "sha256": "a9c03611204cecd05b5370e950d88c79dbe1cc86bbeec0c8000bc5b78474bc22",
+    "bytes": 28686
+  },
+  {
+    "path": "crates/deadpan-core/tests/insert_time/source_splice.rs",
+    "sha256": "ce14e8b3083a6bd3e9836989b017c411cc2152533999a151ac2eb583a111a85e",
+    "bytes": 8689
+  },
+  {
+    "path": "crates/deadpan-plan/tests/picture_plan.rs",
+    "sha256": "d1873201722c4d3c104018aa4e3979b0bd1163524eaa2be2d23b30811dba8850",
+    "bytes": 59930
+  },
+  {
+    "path": "crates/deadpan-store/src/migration.rs",
+    "sha256": "587bc585c9351918ef9b6895fa17e4c98141b48ce9fe6026d1071d3d88b483c1",
+    "bytes": 15526
+  },
+  {
+    "path": "crates/deadpan-store/src/schema.rs",
+    "sha256": "5f8510a9ac76ecb2e4073e74e18036669d2d3ad10e742505cc105db2f9cba98f",
+    "bytes": 3513
+  },
+  {
+    "path": "crates/deadpan-store/src/source_registration.rs",
+    "sha256": "a13a42b9514f7ae6c06f2bcc71518b03e717fd1a6cb90edc523c6fd7ce3e1ac3",
+    "bytes": 35830
+  },
+  {
+    "path": "crates/deadpan-store/src/validation.rs",
+    "sha256": "7ad05839065b673916f1256e1eedc8fb7d902785ab59cb278016d855e041f5c6",
+    "bytes": 35852
+  },
+  {
+    "path": "crates/deadpan-store/tests/fixtures/produce-v32-moment-splice-history.py",
+    "sha256": "47ee3fde84852c40aa810df60b9c35345eaea68ee77fd5278a2d7c8fe9b2d98f",
+    "bytes": 6225
+  },
+  {
+    "path": "crates/deadpan-store/tests/fixtures/v32-moment-splice-history.commands.json",
+    "sha256": "b1a85cd095edd22dacb49dbfe5bb322062ec24748f95ca329496466ee6397195",
+    "bytes": 9712
+  },
+  {
+    "path": "crates/deadpan-store/tests/fixtures/v32-moment-splice-history.provenance.json",
+    "sha256": "88c08641bf36f3c197f8da3aab7a11ab775a273d7ebeb3cb9669f67f6fd998bd",
+    "bytes": 4420
+  },
+  {
+    "path": "crates/deadpan-store/tests/fixtures/v32-moment-splice-history.sql",
+    "sha256": "6c6472ae0fed33417e186cd7cd964b5d1540f01e823fad10982c384e9f99ed8a",
+    "bytes": 6202533
+  },
+  {
+    "path": "crates/deadpan-store/tests/migration.rs",
+    "sha256": "1d9d924385848bc68c44fecf19f33e3943eefaa0a83820cc65f6d374de63f37c",
+    "bytes": 160851
+  },
+  {
+    "path": "crates/deadpan-store/tests/migration/moment_splice.rs",
+    "sha256": "c58cb8ff767e65e0f28dac67631217534efee29070be449c1889bfe83732cf34",
+    "bytes": 8592
+  },
+  {
+    "path": "crates/deadpan-store/tests/migration/sequence_insert.rs",
+    "sha256": "a212a2ac37db877858468ce138ff9ef7edccfc498c024bc8682ad0d328e81108",
+    "bytes": 13384
+  },
+  {
+    "path": "crates/deadpan-store/tests/prepared_source_registration.rs",
+    "sha256": "0d6a05faac70abe779465b97e57e804a90166b1a75b7a5a18c379b4d37783ead",
+    "bytes": 27719
+  },
+  {
+    "path": "crates/deadpan-store/tests/prepared_source_registration/moment.rs",
+    "sha256": "34ca2278bad774d21ba707c24f1f0cb407f0da914c72b9fc03bc63b23a46b52d",
+    "bytes": 12779
+  },
+  {
+    "path": "docs/ARCHITECTURE.md",
+    "sha256": "ef7470bd7f944984dfbece1426b2ee7c1f0a780bdc8af9a0ba0da80c6cef6dfa",
+    "bytes": 21476
+  },
+  {
+    "path": "docs/DEVELOPMENT.md",
+    "sha256": "d66865cd073866bcfb4dc3c58f5e2c5ca24a988e8c82145fee035fe7c4333964",
+    "bytes": 20143
+  },
+  {
+    "path": "docs/GROUP_NAVIGATION.md",
+    "sha256": "6d543f94c0ed1f9ab5ddc47843a482a7cf562116cd7be537d07c5198bf6f94c5",
+    "bytes": 3560
+  },
+  {
+    "path": "docs/HEADLESS.md",
+    "sha256": "1b204171890eedb7acdb6c5bd1e30a917b7aa190196f0ba953f8b9117b0571ca",
+    "bytes": 44700
+  },
+  {
+    "path": "docs/INTERACTION_REVIEW.md",
+    "sha256": "ab58e13e4c8b0fe8a25db18a87cae3b5b3e8e651c1104f58967d4f49c1ea7900",
+    "bytes": 16167
+  },
+  {
+    "path": "docs/KEYBINDING_COMPATIBILITY.md",
+    "sha256": "1ae5e0cafb482086e3c005d72233726f6c982f5168de1b37ed54d7a9877868fa",
+    "bytes": 6172
+  },
+  {
+    "path": "docs/NATIVE_WORKSPACE.md",
+    "sha256": "69439e13012243d42286ca173a2bab69eed8d3ce67686d74a322add55488bc73",
+    "bytes": 17849
+  },
+  {
+    "path": "docs/REQUIREMENTS.md",
+    "sha256": "b17492f9d8c87ce00f799b364624f2596f68c45556d541cb9b1f0f456b9cf1aa",
+    "bytes": 57680
+  },
+  {
+    "path": "docs/SOURCE_MOMENTS.md",
+    "sha256": "cbb9ba4740a655ceccfbc3aada010470722b1b99125125cbaf570e75ef38ae63",
+    "bytes": 9650
+  },
+  {
+    "path": "docs/UI_FEEDBACK.md",
+    "sha256": "4a8a63b33ba3e9af1a92785d2eacf5dd4f462624ac89f981ed6d0b4edb763608",
+    "bytes": 26584
+  },
+  {
+    "path": "docs/design/README.md",
+    "sha256": "1d9902e58c3b7e92ef77058433ae341f92aef27e620d2e04059255407c28dc98",
+    "bytes": 14663
+  },
+  {
+    "path": "docs/qualification/moment-paste-2026-09-27.md",
+    "sha256": "e4e135500e8e1597512eae5105788ea0f77ad1873aca655aab08e01526b69ac5",
+    "bytes": 6064
+  },
+  {
+    "path": "docs/spec/AGENT_HANDOFF.md",
+    "sha256": "dc9a8ce1b11a98b2486b6aed383690452dca63e9762c97983f95d952f9ffe9af",
+    "bytes": 12851
+  }
+]

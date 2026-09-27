@@ -1,0 +1,23 @@
+{
+  "workflow": "check",
+  "base": "origin/main",
+  "subject": "RepeatGap definition clocks, scoped actual-gap support projection and headless inspection; earlier captured-framing and Original-moment changes retained as baseline",
+  "reviewers": [
+    {
+      "agent": "gap_clock_general_review",
+      "scope": "correctness, admission, compactness, API and tests",
+      "findings": []
+    },
+    {
+      "agent": "gap_clock_audio_review",
+      "scope": "exact clocks, support/policy masks, cache identity and current recipe semantics",
+      "findings": []
+    }
+  ],
+  "root_review": [
+    "No preceding-play identity invented for an unplayed gap definition",
+    "Actual-media current/historical CLI reads preserve source admission and history",
+    "Zero-duration fixture checks rejection before plan construction"
+  ],
+  "remaining_findings": []
+}

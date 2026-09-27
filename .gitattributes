@@ -3,3 +3,6 @@
 *.toml text eol=lf
 *.md text eol=lf
 *.pdf binary
+# Preserve captured output and unified-diff context bytes, including whitespace.
+tools/**/evidence/**/*.log -whitespace
+tools/**/evidence/**/*.patch -whitespace

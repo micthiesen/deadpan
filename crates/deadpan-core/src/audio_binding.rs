@@ -12,7 +12,7 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::value::RawValue;
 
 use crate::{
-    DocumentError, DocumentErrorCode, ExactRatio, FrameDuration, FrozenAudioKind,
+    DocumentError, DocumentErrorCode, ExactFrameRange, ExactRatio, FrameDuration, FrozenAudioKind,
     FrozenAudioLayout, InstancePath, IterationId, MAX_DOCUMENT_DEPTH, MAX_DOCUMENT_JSON_BYTES,
     MAX_DOCUMENT_NODES, MIX_SAMPLE_RATE, NodeId, NodeKind, PitchPolicy, ProjectDocument,
     RepeatInstance, RevisionId, TimeError,
@@ -35,6 +35,21 @@ pub enum AudioClockRoot {
     ProjectRootRoundEven,
     PreserveInputPointCeil { stage: NodeId },
     DefinitionPointCeil { root: NodeId },
+    GapDefinitionPointCeil { repeat: NodeId },
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum AudioRecipeKind {
+    #[default]
+    Node,
+    RepeatGap,
+}
+
+impl AudioRecipeKind {
+    fn is_node(&self) -> bool {
+        *self == Self::Node
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -43,6 +58,8 @@ pub struct AudioReferenceClock {
     pub timing: AudioTimingId,
     pub root: AudioClockRoot,
     pub physical: NodeId,
+    #[serde(default, skip_serializing_if = "AudioRecipeKind::is_node")]
+    pub recipe: AudioRecipeKind,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -84,6 +101,9 @@ pub struct AudioBirthClause {
 #[serde(deny_unknown_fields)]
 pub struct AudioPlacementTemplate {
     pub reference: AudioReferenceClock,
+    /// The gap's own preceding play is separate from its outer Repeat path.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub gap_after: Option<AudioRepeatValue>,
     #[serde(deserialize_with = "path_vec")]
     pub arguments: Vec<AudioRepeatArgument>,
     /// Outer-to-inner lexical order. The innermost matching birth wins.
@@ -123,11 +143,52 @@ pub struct AudioResume {
     pub phase: AudioLocalPhase,
 }
 
+/// A chronological reanchor on a retained allocation, evaluated separately for
+/// each effective occurrence. The window uses the placement's captured scope;
+/// an inner definition birth drops an enclosing window, not intrinsic crops.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct AudioReanchorStep {
+    pub placement: AudioPlacementTemplate,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub window: Option<ExactFrameRange>,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct OwnedAudioBinding {
     pub lattice: AudioPlacementTemplate,
     pub resume: Option<AudioResume>,
+    #[serde(
+        default,
+        skip_serializing_if = "Vec::is_empty",
+        deserialize_with = "term_vec"
+    )]
+    pub reanchors: Vec<AudioReanchorStep>,
+}
+
+impl OwnedAudioBinding {
+    pub(crate) fn placements(&self) -> impl Iterator<Item = &AudioPlacementTemplate> {
+        std::iter::once(&self.lattice)
+            .chain(
+                self.resume
+                    .iter()
+                    .flat_map(|resume| resume.phase.terms.iter().map(|term| &term.placement)),
+            )
+            .chain(self.reanchors.iter().map(|step| &step.placement))
+    }
+
+    pub(crate) fn placements_mut(&mut self) -> impl Iterator<Item = &mut AudioPlacementTemplate> {
+        std::iter::once(&mut self.lattice)
+            .chain(self.resume.iter_mut().flat_map(|resume| {
+                resume
+                    .phase
+                    .terms
+                    .iter_mut()
+                    .map(|term| &mut term.placement)
+            }))
+            .chain(self.reanchors.iter_mut().map(|step| &mut step.placement))
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -142,6 +203,21 @@ pub struct AudioTimingRecord {
 pub struct AudioBindingState {
     pub(crate) timings: BTreeMap<AudioTimingId, FrozenAudioLayout>,
     pub(crate) bindings: BTreeMap<NodeId, OwnedAudioBinding>,
+    pub(crate) gap_bindings: BTreeMap<NodeId, OwnedAudioBinding>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AudioDefinitionScope<'a> {
+    NodeOutput(&'a NodeId),
+    RepeatGap(&'a NodeId),
+}
+
+impl<'a> AudioDefinitionScope<'a> {
+    fn node(self) -> &'a NodeId {
+        match self {
+            Self::NodeOutput(node) | Self::RepeatGap(node) => node,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -154,35 +230,63 @@ pub enum AudioBindingEnvironment<'a> {
         instance: &'a InstancePath,
         outside_repeats: &'a [NodeId],
     },
+    GapOccurrence {
+        instance: &'a InstancePath,
+        after: &'a IterationId,
+    },
+    GapDefinition {
+        root: AudioDefinitionScope<'a>,
+        instance: &'a InstancePath,
+        outside_repeats: &'a [NodeId],
+        after: Option<&'a IterationId>,
+    },
 }
 
 impl AudioBindingEnvironment<'_> {
     fn lookup_work(&self) -> usize {
         self.instance().repeats.len()
             + match self {
-                Self::Occurrence(_) => 0,
+                Self::Occurrence(_) | Self::GapOccurrence { .. } => 0,
                 Self::Definition {
+                    outside_repeats, ..
+                }
+                | Self::GapDefinition {
                     outside_repeats, ..
                 } => outside_repeats.len(),
             }
     }
     fn instance(&self) -> &InstancePath {
         match self {
-            Self::Occurrence(instance) | Self::Definition { instance, .. } => instance,
+            Self::Occurrence(instance)
+            | Self::Definition { instance, .. }
+            | Self::GapOccurrence { instance, .. }
+            | Self::GapDefinition { instance, .. } => instance,
         }
     }
     fn excluded(&self, repeat: &NodeId) -> bool {
-        matches!(self, Self::Definition { outside_repeats, .. } if outside_repeats.contains(repeat))
+        matches!(self, Self::Definition { outside_repeats, .. } | Self::GapDefinition { outside_repeats, .. } if outside_repeats.contains(repeat))
     }
     fn validate(&self) -> Result<(), DocumentError> {
         self.instance().validate_depth()?;
+        let gap = matches!(
+            self,
+            Self::GapOccurrence { .. } | Self::GapDefinition { .. }
+        );
         let mut seen = BTreeSet::new();
         for repeat in &self.instance().repeats {
+            if gap && repeat.node == self.instance().node {
+                return Err(invalid(
+                    "own gap argument belongs outside the outer Repeat path",
+                ));
+            }
             if !seen.insert(&repeat.node) {
                 return Err(invalid("duplicate live Repeat argument"));
             }
         }
         if let Self::Definition {
+            outside_repeats, ..
+        }
+        | Self::GapDefinition {
             outside_repeats, ..
         } = self
         {
@@ -190,12 +294,25 @@ impl AudioBindingEnvironment<'_> {
                 return Err(limit("definition exclusion depth"));
             }
             for repeat in *outside_repeats {
+                if gap && repeat == &self.instance().node {
+                    return Err(invalid("gap owner cannot be an excluded outer Repeat"));
+                }
                 if !seen.insert(repeat) {
                     return Err(invalid("duplicate or present excluded Repeat"));
                 }
             }
         }
         Ok(())
+    }
+    fn gap_after(&self) -> Option<&IterationId> {
+        match self {
+            Self::GapOccurrence { after, .. } => Some(after),
+            Self::GapDefinition { after, .. } => *after,
+            _ => None,
+        }
+    }
+    fn gap_definition(&self) -> bool {
+        matches!(self, Self::GapDefinition { root: AudioDefinitionScope::RepeatGap(root), instance, after: None, .. } if *root == &instance.node)
     }
     fn iteration(&self, repeat: &NodeId) -> Option<&IterationId> {
         self.instance()
@@ -226,7 +343,9 @@ pub struct ResolvedAudioPlacement {
     /// placement and audibility still come from the current owned recipe.
     pub local_support: std::ops::Range<ExactRatio>,
     pub instance: InstancePath,
+    pub gap_after: Option<IterationId>,
     pub birth: Option<usize>,
+    pub gap_birth: bool,
     pub work: usize,
 }
 
@@ -294,7 +413,7 @@ impl Work {
 }
 
 struct ClockScope<'a> {
-    root: &'a NodeId,
+    root: AudioDefinitionScope<'a>,
     grid_origin: ExactRatio,
     rule: AudioBindingGridRule,
     support: Option<std::ops::Range<ExactRatio>>,
@@ -306,7 +425,7 @@ fn clock_scope<'a>(
 ) -> Result<ClockScope<'a>, DocumentError> {
     match clock {
         AudioClockRoot::ProjectRootRoundEven => Ok(ClockScope {
-            root: layout.root(),
+            root: AudioDefinitionScope::NodeOutput(layout.root()),
             grid_origin: ExactRatio::ZERO,
             rule: AudioBindingGridRule::RootRoundEven,
             support: None,
@@ -316,7 +435,7 @@ fn clock_scope<'a>(
                 return Err(invalid("definition clock root is missing"));
             }
             Ok(ClockScope {
-                root,
+                root: AudioDefinitionScope::NodeOutput(root),
                 grid_origin: ExactRatio::ZERO,
                 rule: AudioBindingGridRule::PointCeil,
                 support: None,
@@ -340,7 +459,7 @@ fn clock_scope<'a>(
                 return Err(invalid("unity Retime has no input preparation clock"));
             }
             Ok(ClockScope {
-                root: child,
+                root: AudioDefinitionScope::NodeOutput(child),
                 grid_origin: ExactRatio::integer(mapping.start().0),
                 rule: AudioBindingGridRule::PointCeil,
                 support: Some(
@@ -348,6 +467,93 @@ fn clock_scope<'a>(
                 ),
             })
         }
+        AudioClockRoot::GapDefinitionPointCeil { repeat } => {
+            gap_duration(layout, repeat)?;
+            Ok(ClockScope {
+                root: AudioDefinitionScope::RepeatGap(repeat),
+                grid_origin: ExactRatio::ZERO,
+                rule: AudioBindingGridRule::PointCeil,
+                support: None,
+            })
+        }
+    }
+}
+
+fn gap_duration(
+    layout: &FrozenAudioLayout,
+    repeat: &NodeId,
+) -> Result<FrameDuration, DocumentError> {
+    match layout.nodes().get(repeat).map(|node| &node.kind) {
+        Some(FrozenAudioKind::Repeat { gap_duration, .. })
+            if *gap_duration != FrameDuration::ZERO =>
+        {
+            Ok(*gap_duration)
+        }
+        _ => Err(invalid(
+            "audio gap binding requires a configured positive gap",
+        )),
+    }
+}
+
+impl ClockScope<'_> {
+    fn project(
+        &self,
+        layout: &FrozenAudioLayout,
+        instance: &InstancePath,
+        gap_after: Option<&IterationId>,
+        allocation: bool,
+        work: &mut Work,
+    ) -> Result<
+        (
+            crate::FrozenAudioProjection,
+            Option<std::ops::Range<ExactRatio>>,
+        ),
+        DocumentError,
+    > {
+        if let AudioDefinitionScope::RepeatGap(repeat) = self.root {
+            if repeat != &instance.node || !instance.repeats.is_empty() || gap_after.is_some() {
+                return Err(invalid("gap definition has occurrence arguments"));
+            }
+            work.spend(1)?;
+            let duration = gap_duration(layout, repeat)?;
+            return Ok((
+                crate::FrozenAudioProjection {
+                    origin: ExactRatio::ZERO,
+                    frames_per_local_frame: ExactRatio::ONE,
+                    point: ExactRatio::ZERO,
+                    local_duration: duration,
+                    instance: instance.clone(),
+                    gap_after: None,
+                    work: 0,
+                },
+                Some(ExactRatio::ZERO..ExactRatio::integer(duration.frames())),
+            ));
+        }
+        let result = if allocation {
+            layout.project_scoped_with_allocation(
+                self.root.node(),
+                instance,
+                gap_after,
+                work.remaining()?,
+            )?
+        } else {
+            let (projection, support) = match gap_after {
+                Some(after) => layout.project_scoped_with_support(
+                    self.root.node(),
+                    instance,
+                    Some(after),
+                    work.remaining()?,
+                )?,
+                None => layout.project_scoped_supported(
+                    self.root.node(),
+                    instance,
+                    work.remaining()?,
+                )?,
+            };
+            (projection, Some(support))
+        };
+        work.spend(result.0.work)?;
+        Ok(result)
     }
 }
 
@@ -372,17 +578,54 @@ impl AudioPlacementTemplate {
         if self.arguments.len() > MAX_DOCUMENT_DEPTH || self.births.len() > MAX_DOCUMENT_DEPTH {
             return Err(limit("audio binding lexical depth"));
         }
-        work.spend(self.arguments.len() + self.births.len() + 1)?;
+        work.spend(self.entry_count())?;
         let scope = clock_scope(layout, &self.reference.root)?;
         let target = layout
             .nodes()
             .get(&self.reference.physical)
             .ok_or_else(|| invalid("audio binding physical alias is missing"))?;
-        if !physical(&target.kind, target.duration) {
-            return Err(invalid("audio binding requires a physical recipe"));
+        match self.reference.recipe {
+            AudioRecipeKind::Node => {
+                if !physical(&target.kind, target.duration)
+                    || self.gap_after.is_some()
+                    || matches!(scope.root, AudioDefinitionScope::RepeatGap(_))
+                {
+                    return Err(invalid("audio binding requires a node physical recipe"));
+                }
+            }
+            AudioRecipeKind::RepeatGap => {
+                gap_duration(layout, &self.reference.physical)?;
+                if let AudioDefinitionScope::RepeatGap(repeat) = scope.root {
+                    if repeat != &self.reference.physical
+                        || self.gap_after.is_some()
+                        || !self.arguments.is_empty()
+                        || !self.births.is_empty()
+                    {
+                        return Err(invalid("gap definition arguments are not canonical"));
+                    }
+                } else if self.gap_after.is_none() {
+                    return Err(invalid("audio gap placement omits its preceding play"));
+                }
+                if let Some(AudioRepeatValue::Captured { iteration }) = &self.gap_after {
+                    let projected = layout.project_scoped(
+                        &self.reference.physical,
+                        &InstancePath {
+                            node: self.reference.physical.clone(),
+                            repeats: Vec::new(),
+                        },
+                        ExactRatio::ZERO,
+                        Some(iteration),
+                        work.remaining()?,
+                    )?;
+                    work.spend(projected.work)?;
+                }
+            }
         }
-        let (expected, used) =
-            layout.scoped_repeats(scope.root, &self.reference.physical, work.remaining()?)?;
+        let (expected, used) = layout.scoped_repeats(
+            scope.root.node(),
+            &self.reference.physical,
+            work.remaining()?,
+        )?;
         work.spend(used)?;
         if !expected.iter().eq(self
             .arguments
@@ -402,7 +645,7 @@ impl AudioPlacementTemplate {
             }
         }
         let mut clauses = BTreeSet::new();
-        let mut previous_root = scope.root;
+        let mut previous_root = scope.root.node();
         for clause in &self.births {
             if !clauses.insert(&clause.repeat) {
                 return Err(invalid("duplicate audio birth clause"));
@@ -481,6 +724,10 @@ impl AudioPlacementTemplate {
         Ok(())
     }
 
+    pub(crate) fn entry_count(&self) -> usize {
+        1 + self.arguments.len() + self.births.len() + usize::from(self.gap_after.is_some())
+    }
+
     fn resolve_with(
         &self,
         layout: &FrozenAudioLayout,
@@ -526,15 +773,63 @@ impl AudioPlacementTemplate {
                 birth = Some(index);
             }
         }
-        let clock = birth.map_or_else(
-            || self.reference.root.clone(),
-            |index| AudioClockRoot::DefinitionPointCeil {
-                root: self.births[index].definition_root.clone(),
-            },
-        );
+        let mut gap_birth = false;
+        let gap_after = match &self.gap_after {
+            Some(AudioRepeatValue::Captured { iteration }) => Some(iteration.clone()),
+            Some(AudioRepeatValue::Live { repeat }) => {
+                if repeat != &environment.instance().node {
+                    return Err(invalid("live gap argument names another Repeat owner"));
+                }
+                work.spend(environment.lookup_work() + 1)?;
+                match environment.gap_after() {
+                    Some(iteration) => {
+                        let FrozenAudioKind::Repeat {
+                            iterations,
+                            gap_duration,
+                            ..
+                        } = &layout.nodes()[&self.reference.physical].kind
+                        else {
+                            unreachable!("validated gap")
+                        };
+                        work.spend(iterations.segment_count())?;
+                        let survives = *gap_duration != FrameDuration::ZERO
+                            && layout
+                                .gap_overrides()
+                                .get(&self.reference.physical)
+                                .is_none_or(|entries| entries.get(iteration).is_none())
+                            && iterations
+                                .position(iteration)
+                                .is_some_and(|position| position + 1 < iterations.len());
+                        gap_birth = !survives;
+                        survives.then(|| iteration.clone())
+                    }
+                    None if environment.gap_definition() => {
+                        gap_birth = true;
+                        None
+                    }
+                    None => return Err(invalid("audio gap binding omits its live preceding play")),
+                }
+            }
+            None => None,
+        };
+        let clock = if gap_birth {
+            AudioClockRoot::GapDefinitionPointCeil {
+                repeat: self.reference.physical.clone(),
+            }
+        } else {
+            birth.map_or_else(
+                || self.reference.root.clone(),
+                |index| AudioClockRoot::DefinitionPointCeil {
+                    root: self.births[index].definition_root.clone(),
+                },
+            )
+        };
         let scope = clock_scope(layout, &clock)?;
-        let (required, used) =
-            layout.scoped_repeats(scope.root, &self.reference.physical, work.remaining()?)?;
+        let (required, used) = layout.scoped_repeats(
+            scope.root.node(),
+            &self.reference.physical,
+            work.remaining()?,
+        )?;
         work.spend(used)?;
         let mut repeats = Vec::with_capacity(required.len());
         for reference_repeat in required {
@@ -559,9 +854,9 @@ impl AudioPlacementTemplate {
             node: self.reference.physical.clone(),
             repeats,
         };
-        let (projection, mut local_support) =
-            layout.project_scoped_supported(scope.root, &instance, work.remaining()?)?;
-        work.spend(projection.work)?;
+        let (projection, local_support) =
+            scope.project(layout, &instance, gap_after.as_ref(), false, work)?;
+        let mut local_support = local_support.expect("meaningful projection retains empty ranges");
         if let Some(support) = &scope.support {
             let selected = support
                 .start
@@ -586,10 +881,55 @@ impl AudioPlacementTemplate {
             local_duration: projection.local_duration,
             local_support,
             instance,
+            gap_after,
             clock,
             birth,
+            gap_birth,
             work: work.used - before,
         })
+    }
+}
+
+impl AudioReanchorStep {
+    fn allocation_entry(
+        &self,
+        layout: &FrozenAudioLayout,
+        placement: &ResolvedAudioPlacement,
+        work: &mut Work,
+    ) -> Result<Option<ExactRatio>, DocumentError> {
+        let scope = clock_scope(layout, &placement.clock)?;
+        let (projection, mut allocation) = scope.project(
+            layout,
+            &placement.instance,
+            placement.gap_after.as_ref(),
+            true,
+            work,
+        )?;
+        let captured = clock_scope(layout, &self.placement.reference.root)?;
+        // A later outer wrapper can select the same definition root. Such a
+        // birth keeps this root's intrinsic window; only a narrower root drops
+        // a window authored in its enclosing captured scope.
+        let window = self.window.filter(|_| captured.root == scope.root);
+        for constraint in scope
+            .support
+            .into_iter()
+            .chain(window.map(|range| range.start..range.end))
+        {
+            let Some(range) = &mut allocation else { break };
+            let local = constraint
+                .start
+                .checked_sub(projection.origin)?
+                .checked_div(projection.frames_per_local_frame)?
+                ..constraint
+                    .end
+                    .checked_sub(projection.origin)?
+                    .checked_div(projection.frames_per_local_frame)?;
+            crate::audio_reference::clip_binding_support(range, local)?;
+            if range.start == range.end {
+                allocation = None;
+            }
+        }
+        Ok(allocation.map(|range| range.start))
     }
 }
 
@@ -597,6 +937,14 @@ impl AudioBindingState {
     pub fn new(
         timings: Vec<AudioTimingRecord>,
         bindings: BTreeMap<NodeId, OwnedAudioBinding>,
+    ) -> Result<Self, DocumentError> {
+        Self::new_with_gaps(timings, bindings, BTreeMap::new())
+    }
+
+    pub fn new_with_gaps(
+        timings: Vec<AudioTimingRecord>,
+        bindings: BTreeMap<NodeId, OwnedAudioBinding>,
+        gap_bindings: BTreeMap<NodeId, OwnedAudioBinding>,
     ) -> Result<Self, DocumentError> {
         if timings.len() > MAX_AUDIO_BINDING_ENTRIES {
             return Err(limit("audio timing record count"));
@@ -610,18 +958,34 @@ impl AudioBindingState {
         let state = Self {
             timings: unique,
             bindings,
+            gap_bindings,
         };
         state.to_json()?;
         Ok(state)
     }
     pub fn is_empty(&self) -> bool {
-        self.timings.is_empty() && self.bindings.is_empty()
+        self.timings.is_empty() && self.bindings.is_empty() && self.gap_bindings.is_empty()
     }
     pub fn timings(&self) -> &BTreeMap<AudioTimingId, FrozenAudioLayout> {
         &self.timings
     }
     pub fn bindings(&self) -> &BTreeMap<NodeId, OwnedAudioBinding> {
         &self.bindings
+    }
+    pub fn gap_bindings(&self) -> &BTreeMap<NodeId, OwnedAudioBinding> {
+        &self.gap_bindings
+    }
+    pub(crate) fn owners(
+        &self,
+    ) -> impl Iterator<Item = (AudioRecipeKind, &NodeId, &OwnedAudioBinding)> {
+        self.bindings
+            .iter()
+            .map(|(owner, binding)| (AudioRecipeKind::Node, owner, binding))
+            .chain(
+                self.gap_bindings
+                    .iter()
+                    .map(|(owner, binding)| (AudioRecipeKind::RepeatGap, owner, binding)),
+            )
     }
 
     /// Allocation names remain reserved even when no current Repeat uses them.
@@ -640,17 +1004,16 @@ impl AudioBindingState {
                 ids.insert(&lineage.allocation);
             }
         }
-        for binding in self.bindings.values() {
-            let terms = binding
-                .resume
-                .as_ref()
-                .map_or(&[][..], |resume| resume.phase.terms.as_slice());
-            for template in
-                std::iter::once(&binding.lattice).chain(terms.iter().map(|term| &term.placement))
-            {
+        for (_, _, binding) in self.owners() {
+            for template in binding.placements() {
                 ids.insert(&template.reference.timing.allocation);
-                for argument in &template.arguments {
-                    if let AudioRepeatValue::Captured { iteration } = &argument.value {
+                for value in template
+                    .arguments
+                    .iter()
+                    .map(|argument| &argument.value)
+                    .chain(template.gap_after.iter())
+                {
+                    if let AudioRepeatValue::Captured { iteration } = value {
                         ids.insert(&iteration.allocation);
                     }
                 }
@@ -672,6 +1035,7 @@ impl AudioBindingState {
         let mut work = Work::new(MAX_AUDIO_BINDING_ENTRIES)?;
         if self.timings.len() > MAX_AUDIO_BINDING_ENTRIES
             || self.bindings.len() > MAX_AUDIO_BINDING_ENTRIES
+            || self.gap_bindings.len() > MAX_AUDIO_BINDING_ENTRIES
         {
             return Err(limit("audio binding record count"));
         }
@@ -697,20 +1061,36 @@ impl AudioBindingState {
         }
         let mut used = BTreeSet::new();
         let mut entries = 0usize;
-        for binding in self.bindings.values() {
+        for (kind, _, binding) in self.owners() {
             binding_wire_size(binding)?;
             let terms = binding
                 .resume
                 .as_ref()
                 .map_or(&[][..], |resume| resume.phase.terms.as_slice());
-            if terms.len() > MAX_AUDIO_BINDING_TERMS {
-                return Err(limit("audio phase term count"));
-            }
-            for template in
-                std::iter::once(&binding.lattice).chain(terms.iter().map(|term| &term.placement))
+            if terms
+                .len()
+                .checked_add(binding.reanchors.len())
+                .is_none_or(|count| count > MAX_AUDIO_BINDING_TERMS)
             {
+                return Err(limit("audio phase term and reanchor count"));
+            }
+            for step in &binding.reanchors {
+                if let Some(window) = step.window {
+                    ExactFrameRange::new(window.start, window.end)?;
+                }
+            }
+            for template in binding.placements() {
+                if template.reference.recipe != kind
+                    && !(kind == AudioRecipeKind::Node
+                        && template.reference.recipe == AudioRecipeKind::RepeatGap
+                        && !matches!(template.gap_after, Some(AudioRepeatValue::Live { .. })))
+                {
+                    return Err(invalid(
+                        "audio binding placement recipe disagrees with its owner kind",
+                    ));
+                }
                 entries = entries
-                    .checked_add(1 + template.arguments.len() + template.births.len())
+                    .checked_add(template.entry_count())
                     .ok_or_else(|| limit("audio binding entry overflow"))?;
                 if entries > MAX_AUDIO_BINDING_ENTRIES {
                     return Err(limit("aggregate audio binding entries"));
@@ -748,12 +1128,16 @@ impl AudioBindingState {
                 parents.insert(child, parent);
             }
         }
-        for (owner, binding) in &self.bindings {
+        for (kind, owner, binding) in self.owners() {
             let node = document
                 .nodes()
                 .get(owner)
                 .ok_or_else(|| invalid("audio binding owner is missing"))?;
-            if !matches!(node.kind, NodeKind::Source { .. } | NodeKind::Hold { .. })
+            if kind == AudioRecipeKind::RepeatGap && !matches!(node.kind, NodeKind::Repeat { .. }) {
+                return Err(invalid("gap binding owner is not a Repeat"));
+            }
+            if kind == AudioRecipeKind::Node
+                && !matches!(node.kind, NodeKind::Source { .. } | NodeKind::Hold { .. })
                 && !matches!(&node.kind, NodeKind::Retime { duration, mapping, pitch: PitchPolicy::Preserve, .. } if mapping.duration() != *duration)
             {
                 return Err(invalid("audio binding owner is not a physical recipe"));
@@ -762,14 +1146,38 @@ impl AudioBindingState {
                 NodeKind::Source { source } => source.duration,
                 NodeKind::Hold { recipe } => recipe.duration,
                 NodeKind::Retime { duration, .. } => *duration,
-                _ => unreachable!("checked physical kind"),
+                NodeKind::Repeat { gap: Some(gap), .. }
+                    if kind == AudioRecipeKind::RepeatGap
+                        && gap.duration != FrameDuration::ZERO =>
+                {
+                    gap.duration
+                }
+                _ => {
+                    return Err(invalid(
+                        "audio binding owner has no positive physical recipe",
+                    ));
+                }
             };
+            if kind == AudioRecipeKind::Node
+                && !matches!(node.kind, NodeKind::Hold { .. })
+                && binding
+                    .placements()
+                    .any(|template| template.reference.recipe == AudioRecipeKind::RepeatGap)
+            {
+                return Err(invalid(
+                    "a retained gap clock requires a current Hold owner",
+                ));
+            }
+            // A shortened gap keeps its affine anchor; current raw support,
+            // rather than moving that retained coordinate, bounds its output.
             if binding.resume.as_ref().is_some_and(|resume| {
                 resume.local_boundary.compare_integer(0).is_lt()
-                    || resume
-                        .local_boundary
-                        .compare_integer(duration.frames())
-                        .is_gt()
+                    || (kind == AudioRecipeKind::Node
+                        && binding.lattice.reference.recipe == AudioRecipeKind::Node
+                        && resume
+                            .local_boundary
+                            .compare_integer(duration.frames())
+                            .is_gt())
             }) {
                 return Err(invalid(
                     "audio resume boundary is outside its physical owner",
@@ -790,13 +1198,12 @@ impl AudioBindingState {
                 node = parent;
             }
             ancestors.reverse();
-            let terms = binding
-                .resume
-                .as_ref()
-                .map_or(&[][..], |resume| resume.phase.terms.as_slice());
-            for template in
-                std::iter::once(&binding.lattice).chain(terms.iter().map(|term| &term.placement))
-            {
+            for template in binding.placements() {
+                if let Some(AudioRepeatValue::Live { repeat }) = &template.gap_after
+                    && repeat != owner
+                {
+                    return Err(invalid("live gap argument names another owner"));
+                }
                 let mut last = None;
                 for clause in &template.births {
                     work.spend(ancestors.len())?;
@@ -843,12 +1250,43 @@ impl AudioBindingState {
         environment: AudioBindingEnvironment<'_>,
         maximum_work: usize,
     ) -> Result<ResolvedAudioBinding, DocumentError> {
+        self.resolve_owner(owner, environment, maximum_work, AudioRecipeKind::Node)
+    }
+
+    pub fn resolve_gap_in(
+        &self,
+        owner: &NodeId,
+        environment: AudioBindingEnvironment<'_>,
+        maximum_work: usize,
+    ) -> Result<ResolvedAudioBinding, DocumentError> {
+        self.resolve_owner(owner, environment, maximum_work, AudioRecipeKind::RepeatGap)
+    }
+
+    fn resolve_owner(
+        &self,
+        owner: &NodeId,
+        environment: AudioBindingEnvironment<'_>,
+        maximum_work: usize,
+        kind: AudioRecipeKind,
+    ) -> Result<ResolvedAudioBinding, DocumentError> {
         environment.validate()?;
+        if (kind == AudioRecipeKind::RepeatGap)
+            != matches!(
+                environment,
+                AudioBindingEnvironment::GapOccurrence { .. }
+                    | AudioBindingEnvironment::GapDefinition { .. }
+            )
+        {
+            return Err(invalid("audio binding environment has another recipe kind"));
+        }
         if &environment.instance().node != owner {
             return Err(invalid("audio binding occurrence names another owner"));
         }
-        let binding = self
-            .bindings
+        let bindings = match kind {
+            AudioRecipeKind::Node => &self.bindings,
+            AudioRecipeKind::RepeatGap => &self.gap_bindings,
+        };
+        let binding = bindings
             .get(owner)
             .ok_or_else(|| invalid("audio binding owner is missing"))?;
         let mut work = Work::new(maximum_work)?;
@@ -861,7 +1299,7 @@ impl AudioBindingState {
             template.resolve_with(layout, environment, work)
         };
         let lattice = resolve(&binding.lattice, &mut work)?;
-        let resume = binding
+        let mut resume = binding
             .resume
             .as_ref()
             .map(|resume| {
@@ -881,6 +1319,27 @@ impl AudioBindingState {
                 })
             })
             .transpose()?;
+        for step in &binding.reanchors {
+            work.spend(1)?;
+            let placement = resolve(&step.placement, &mut work)?;
+            let layout = &self.timings[&step.placement.reference.timing];
+            let Some(entry) = step.allocation_entry(layout, &placement, &mut work)? else {
+                // Hidden retained context has no new anchor. A later edit may
+                // expose it, at which point the previous map must still apply.
+                continue;
+            };
+            let previous = resume.get_or_insert(ResolvedAudioResume {
+                local_boundary: lattice.local_support.start,
+                reference_local_delta: ExactRatio::ZERO,
+            });
+            let from = placement.sample_boundary(previous.local_boundary)?;
+            let to = placement.sample_boundary(entry)?;
+            let distance = ExactRatio::new(i128::from(to) - i128::from(from), 1)?;
+            previous.reference_local_delta = previous
+                .reference_local_delta
+                .checked_add(distance.checked_mul(placement.local_frames_per_sample()?)?)?;
+            previous.local_boundary = entry;
+        }
         Ok(ResolvedAudioBinding {
             lattice,
             resume,
@@ -899,6 +1358,8 @@ impl AudioBindingState {
             timings: &'a RawValue,
             #[serde(borrow)]
             bindings: &'a RawValue,
+            #[serde(default, borrow, deserialize_with = "present_raw")]
+            gap_bindings: Option<&'a RawValue>,
         }
         #[derive(Deserialize)]
         #[serde(deny_unknown_fields)]
@@ -920,7 +1381,12 @@ impl AudioBindingState {
             timing_wires.push(value);
         }
         let raws: BTreeMap<NodeId, &RawValue> = bounded_json_map(wire.bindings.get())?;
-        for raw in raws.values() {
+        let gaps = wire
+            .gap_bindings
+            .map(|raw| bounded_json_map(raw.get()))
+            .transpose()?
+            .unwrap_or_default();
+        for raw in raws.values().chain(gaps.values()) {
             preflight_binding(raw.get(), &mut budget)?;
         }
         // All aggregate collection counts are charged before any frozen tree
@@ -939,7 +1405,14 @@ impl AudioBindingState {
                 serde_json::from_str(raw.get()).map_err(DocumentError::json)?,
             );
         }
-        Self::new(timings, bindings)
+        let mut gap_bindings = BTreeMap::new();
+        for (owner, raw) in gaps {
+            gap_bindings.insert(
+                owner,
+                serde_json::from_str(raw.get()).map_err(DocumentError::json)?,
+            );
+        }
+        Self::new_with_gaps(timings, bindings, gap_bindings)
     }
 
     pub fn to_json(&self) -> Result<String, DocumentError> {
@@ -973,9 +1446,15 @@ impl Serialize for AudioBindingState {
                 sequence.end()
             }
         }
-        let mut state = serializer.serialize_struct("AudioBindingState", 2)?;
+        let mut state = serializer.serialize_struct(
+            "AudioBindingState",
+            2 + usize::from(!self.gap_bindings.is_empty()),
+        )?;
         state.serialize_field("timings", &Timings(&self.timings))?;
         state.serialize_field("bindings", &self.bindings)?;
+        if !self.gap_bindings.is_empty() {
+            state.serialize_field("gap_bindings", &self.gap_bindings)?;
+        }
         state.end()
     }
 }
@@ -999,6 +1478,8 @@ fn preflight_binding(json: &str, budget: &mut Work) -> Result<(), DocumentError>
         lattice: &'a RawValue,
         #[serde(borrow)]
         resume: Option<&'a RawValue>,
+        #[serde(borrow)]
+        reanchors: Option<&'a RawValue>,
     }
     #[derive(Deserialize)]
     struct Resume<'a> {
@@ -1021,28 +1502,46 @@ fn preflight_binding(json: &str, budget: &mut Work) -> Result<(), DocumentError>
         arguments: &'a RawValue,
         #[serde(borrow)]
         births: &'a RawValue,
+        #[serde(default, borrow, deserialize_with = "present_raw")]
+        gap_after: Option<&'a RawValue>,
     }
     let mut template = |raw: &RawValue| -> Result<(), DocumentError> {
         let value: Template<'_> = serde_json::from_str(raw.get()).map_err(DocumentError::json)?;
         let args: Vec<&RawValue> =
             bounded_json_sequence(value.arguments.get(), MAX_DOCUMENT_DEPTH)?;
         let births: Vec<&RawValue> = bounded_json_sequence(value.births.get(), MAX_DOCUMENT_DEPTH)?;
-        budget.spend(1 + args.len() + births.len())
+        budget.spend(1 + args.len() + births.len() + usize::from(value.gap_after.is_some()))
     };
     let binding: Binding<'_> = serde_json::from_str(json).map_err(DocumentError::json)?;
     template(binding.lattice)?;
+    let mut term_count = 0;
     if let Some(raw) = binding.resume {
         let resume: Resume<'_> = serde_json::from_str(raw.get()).map_err(DocumentError::json)?;
         let phase: Phase<'_> =
             serde_json::from_str(resume.phase.get()).map_err(DocumentError::json)?;
         let terms: Vec<&RawValue> =
             bounded_json_sequence(phase.terms.get(), MAX_AUDIO_BINDING_TERMS)?;
+        term_count = terms.len();
         for raw in terms {
             let term: Term<'_> = serde_json::from_str(raw.get()).map_err(DocumentError::json)?;
             template(term.placement)?;
         }
     }
+    if let Some(raw) = binding.reanchors {
+        let steps: Vec<&RawValue> =
+            bounded_json_sequence(raw.get(), MAX_AUDIO_BINDING_TERMS - term_count)?;
+        for raw in steps {
+            let step: Term<'_> = serde_json::from_str(raw.get()).map_err(DocumentError::json)?;
+            template(step.placement)?;
+        }
+    }
     Ok(())
+}
+
+fn present_raw<'de, D: Deserializer<'de>>(
+    deserializer: D,
+) -> Result<Option<&'de RawValue>, D::Error> {
+    <&RawValue>::deserialize(deserializer).map(Some)
 }
 
 /// Pretty document serialization changes indentation, never the string bytes.
@@ -1098,8 +1597,10 @@ fn path_vec<'de, D: Deserializer<'de>, T: Deserialize<'de>>(
     }
     .deserialize(deserializer)
 }
-fn term_vec<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Vec<AudioPhaseTerm>, D::Error> {
-    BoundedSequence::<AudioPhaseTerm> {
+fn term_vec<'de, D: Deserializer<'de>, T: Deserialize<'de>>(
+    deserializer: D,
+) -> Result<Vec<T>, D::Error> {
+    BoundedSequence::<T> {
         maximum: MAX_AUDIO_BINDING_TERMS,
         marker: std::marker::PhantomData,
     }

@@ -33,6 +33,8 @@ fn transport_stop_keeps_displayed_picture_but_revokes_unsubmitted_decode() {
     assert!(
         state
             .receive(Reply {
+                #[cfg(feature = "ui-harness")]
+                timing: None,
                 ticket: pending,
                 picture: Ok(picture(8))
             })
@@ -47,6 +49,8 @@ fn transport_stop_keeps_displayed_picture_but_revokes_unsubmitted_decode() {
     assert!(
         state
             .receive(Reply {
+                #[cfg(feature = "ui-harness")]
+                timing: None,
                 ticket: pending,
                 picture: Err("late error".into())
             })
@@ -86,6 +90,7 @@ fn picture(id: u64) -> Picture {
         canvas: None,
         framing: Vec::new(),
         framing_gap: false,
+        picture_context: None,
     }
 }
 
@@ -93,6 +98,8 @@ fn accept(state: &mut Presentation, ticket: Ticket, picture: Picture) {
     assert!(
         state
             .receive(Reply {
+                #[cfg(feature = "ui-harness")]
+                timing: None,
                 ticket,
                 picture: Ok(picture)
             })
@@ -260,6 +267,8 @@ fn late_decode_and_error_cannot_replace_the_newest_request() {
         assert!(
             state
                 .receive(Reply {
+                    #[cfg(feature = "ui-harness")]
+                    timing: None,
                     ticket: ticket(1, 2),
                     picture: result
                 })
@@ -290,6 +299,8 @@ fn clearing_rejects_old_success_and_failure_even_after_reopening() {
     assert!(
         state
             .receive(Reply {
+                #[cfg(feature = "ui-harness")]
+                timing: None,
                 ticket: ticket(1, 1),
                 picture: Ok(picture(4))
             })
@@ -299,6 +310,8 @@ fn clearing_rejects_old_success_and_failure_even_after_reopening() {
     assert!(
         state
             .receive(Reply {
+                #[cfg(feature = "ui-harness")]
+                timing: None,
                 ticket: ticket(1, 1),
                 picture: Err("old source".into())
             })
@@ -324,6 +337,8 @@ fn current_decode_failure_removes_the_old_picture_and_label() {
     assert!(
         state
             .receive(Reply {
+                #[cfg(feature = "ui-harness")]
+                timing: None,
                 ticket: ticket(1, 2),
                 picture: Err("missing media".into())
             })
@@ -393,6 +408,8 @@ fn successful_decode_clears_an_older_gpu_failure_while_waiting() {
     assert!(
         state
             .receive(Reply {
+                #[cfg(feature = "ui-harness")]
+                timing: None,
                 ticket: ticket(1, 1),
                 picture: Err("stale decoder error".into())
             })
@@ -435,6 +452,8 @@ fn repeated_original_picture_has_distinct_sequence_and_revision_identity() {
     assert!(
         state
             .receive(Reply {
+                #[cfg(feature = "ui-harness")]
+                timing: None,
                 ticket: ticket(1, 2),
                 picture: Ok(picture(4))
             })
@@ -462,6 +481,7 @@ fn background_and_empty_sequence_do_not_invent_source_frame_identity() {
                 canvas: Some((1920, 1080)),
                 framing: Vec::new(),
                 framing_gap: false,
+                picture_context: None,
             },
         );
         assert!(state.needs_render());

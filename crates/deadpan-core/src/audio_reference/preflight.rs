@@ -243,7 +243,7 @@ impl<'de> Visitor<'de> for Scan<'_> {
             }
             let (role, charge) = match (self.role, key.as_ref()) {
                 (Role::Root, "nodes") => (Role::Nodes, Charge::None),
-                (Role::Root, "overrides") => (Role::Overrides, Charge::None),
+                (Role::Root, "overrides" | "gap_overrides") => (Role::Overrides, Charge::None),
                 (Role::Root, "audio_lineage") => (Role::Lineages, Charge::None),
                 (Role::Lineages, _) => (Role::Lineage, Charge::Lineage),
                 (Role::Lineage, "allocation" | "origin") => (Role::String, Charge::None),
@@ -367,6 +367,7 @@ fn record_field_bit(key: &str) -> u64 {
         "repeat_gap_end" => 34,
         "audio_lineage" => 35,
         "origin" => 36,
+        "gap_overrides" => 37,
         _ => return 0,
     };
     1 << ordinal

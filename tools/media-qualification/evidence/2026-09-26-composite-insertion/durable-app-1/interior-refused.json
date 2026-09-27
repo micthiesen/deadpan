@@ -1,0 +1,27 @@
+{
+  "protocol": 1,
+  "project_id": "9c88b275-f4da-44ab-b4d1-419a65d60a02",
+  "expected_revision": "605f5fff-5a5c-4438-b9cd-55fd62b85af7",
+  "new_revision": "interior-refused",
+  "command": {
+    "command": "insert_time",
+    "at": 4,
+    "hold": {
+      "duration": 1,
+      "video": {
+        "type": "background"
+      },
+      "audio": {
+        "type": "silence"
+      }
+    },
+    "id": "interior-refused",
+    "identities": {
+      "nodes": []
+    },
+    "timing": {
+      "allocation": "interior-refused",
+      "ordinal": 0
+    }
+  }
+}

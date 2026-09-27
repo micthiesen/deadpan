@@ -14,7 +14,10 @@ interleaved f32 samples without resampling, downmixing, gain, clipping or automa
 padding removal. PCM16 conversion is exactly `sample / 32768`.
 
 The tested subset is AAC-LC in MP4 and signed 16-bit little-endian PCM in WAV.
-The opening guard admits a strict nonfragmented MP4 grammar and plain RIFF/WAV.
+The opening guard admits a strict nonfragmented MP4 grammar and PCM16 RIFF/WAV
+with either a plain format header or the closed extensible format described in
+[source admission](SOURCE_ADMISSION.md). The extensible form retains its explicit
+speaker mask; sixteen valid bits and the PCM subtype are checked before demuxing.
 Matroska, fragmented/encrypted/compressed container structures and unqualified
 metadata grammars are rejected before FFmpeg parsing. Other codecs, custom/ambisonic layouts, unsupported
 sample formats, corrupt frames and changed stream contracts fail explicitly.

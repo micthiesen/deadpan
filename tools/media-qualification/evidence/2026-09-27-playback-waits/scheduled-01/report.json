@@ -1,0 +1,16 @@
+{
+  "commands": [
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 1,
+      "seconds": 3.7836149157956243,
+      "log": "0.log"
+    }
+  ]
+}

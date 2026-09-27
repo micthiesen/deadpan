@@ -1,0 +1,70 @@
+Diff in /Users/michael/Code/deadpan/crates/deadpan-app/src/preview.rs:539:
+             let ticket = reply.ticket;
+             let result = self.presentation.receive(reply);
+             #[cfg(feature = "ui-harness")]
+-            self.feedback.picture_received(ticket, result.as_ref().map(Result::is_ok));
++            self.feedback
++                .picture_received(ticket, result.as_ref().map(Result::is_ok));
+             result
+         });
+         if let Some(result) = result {
+Diff in /Users/michael/Code/deadpan/crates/deadpan-app/src/preview.rs:1943:
+             if self.presentation.needs_render() {
+                 self.forget_target();
+                 #[cfg(feature = "ui-harness")]
+-                self.feedback.picture_submitted(self.presentation.decoded_ticket());
++                self.feedback
++                    .picture_submitted(self.presentation.decoded_ticket());
+                 self.presentation.presented();
+                 context.request_repaint();
+             }
+Diff in /Users/michael/Code/deadpan/crates/deadpan-app/src/preview.rs:1956:
+             }
+             Err(error) => {
+                 #[cfg(feature = "ui-harness")]
+-                self.feedback.picture_failed(self.presentation.decoded_ticket());
++                self.feedback
++                    .picture_failed(self.presentation.decoded_ticket());
+                 self.presentation
+                     .render_failed(format!("Preview renderer: {error}"));
+                 return;
+Diff in /Users/michael/Code/deadpan/crates/deadpan-app/src/preview.rs:1979:
+                 Ok(target) => target,
+                 Err(error) => {
+                     #[cfg(feature = "ui-harness")]
+-                    self.feedback.picture_failed(self.presentation.decoded_ticket());
++                    self.feedback
++                        .picture_failed(self.presentation.decoded_ticket());
+                     self.presentation
+                         .render_failed(format!("Preview renderer: {error}"));
+                     return;
+Diff in /Users/michael/Code/deadpan/crates/deadpan-app/src/preview.rs:2005:
+                 ),
+                 Err(error) => {
+                     #[cfg(feature = "ui-harness")]
+-                    self.feedback.picture_failed(self.presentation.decoded_ticket());
++                    self.feedback
++                        .picture_failed(self.presentation.decoded_ticket());
+                     self.presentation.render_failed(error);
+                     return;
+                 }
+Diff in /Users/michael/Code/deadpan/crates/deadpan-app/src/preview.rs:2016:
+         match result {
+             Ok(_) => {
+                 #[cfg(feature = "ui-harness")]
+-                self.feedback.picture_submitted(self.presentation.decoded_ticket());
++                self.feedback
++                    .picture_submitted(self.presentation.decoded_ticket());
+                 if let Some(target) = replacement {
+                     let texture = self.render_state.renderer.write().register_native_texture(
+                         &self.render_state.device,
+Diff in /Users/michael/Code/deadpan/crates/deadpan-app/src/preview.rs:2031:
+             }
+             Err(error) => {
+                 #[cfg(feature = "ui-harness")]
+-                self.feedback.picture_failed(self.presentation.decoded_ticket());
++                self.feedback
++                    .picture_failed(self.presentation.decoded_ticket());
+                 self.presentation
+                     .render_failed(format!("Preview renderer: {error}"));
+             }

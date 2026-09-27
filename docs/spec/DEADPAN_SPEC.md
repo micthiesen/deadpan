@@ -322,6 +322,11 @@ Modes: **Normal**, **Visual**, **Operator pending**, **Command/text entry**, **C
 
 Normal-mode bindings apply only when no text field or IME composition has focus. Standard macOS text editing, copy/paste, accessibility navigation, and Command-key menu shortcuts remain intact. Escape leaves a transient mode or cancels an uncommitted parameter preview; it does not discard already committed edits.
 
+Reserve the user's Kestrel global shortcuts. Validate shipped bindings against
+the reviewed global registry, including pending prefixes and Camera, and report
+registry drift. A shortcut that works only when the window manager is disabled
+does not satisfy keyboard accessibility. See [binding compatibility](../KEYBINDING_COMPATIBILITY.md).
+
 Use a declarative binding trie. Prefixes have no execution timeout; a help popup may appear after a delay, but typing slowly cannot change a command's meaning. Reject ambiguous bindings at configuration load with the conflicting paths shown.
 
 Teach the language in the interface. Put concise keycaps beside common actions, show the exact pending prefix and valid next keys, and identify both selected content and focused pane. A selected beat's highlight does not establish keyboard focus. Contextual searchable help is the secondary reference, not the only way to discover ordinary editing. The visible labels **Original** and **Your edit** correspond to Source and Sequence contexts; their clocks and positions must remain distinct.
@@ -397,6 +402,7 @@ These bindings are mnemonic accelerators for ordinary commands. All actions also
 | Keys | Default action |
 |---|---|
 | `,h` | Insert a 0.5 s freeze hold with silence. Count scales duration: `3,h` = 1.5 s. |
+| `,i` | Explicitly reuse the full Original after the selected beat; `:insert` is its command alias. No count. Range reuse retains `y`/`p` semantics. |
 | `,a` | Insert the same hold and request an AI candidate. Same count semantics. |
 | `,z` | Punch in to 1.35× on the selected target. |
 | `,c` | Creep from current framing to 1.35× over selection. |

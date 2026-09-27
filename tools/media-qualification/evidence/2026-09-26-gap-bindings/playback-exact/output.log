@@ -1,0 +1,16 @@
+
+running 11 tests
+test tests::worker_panic_is_reported_and_disables_further_requests ... ok
+test tests::invalid_gain_and_outside_start_are_explicit ... ok
+test tests::source_provider_rejects_foreign_contracts_and_revoked_cold_handles ... ok
+test tests::short_eos_waits_for_scheduled_prefix_and_seek_replaces_generation ... ok
+test tests::full_prefill_can_queue_eos_before_the_first_maximum_callback ... ok
+test tests::starvation_keeps_its_submitted_prefix_clock_then_fails_without_resume ... ok
+test tests::route_change_and_backwards_clock_stop_output ... ok
+test tests::stop_restart_and_failure_never_publish_an_old_session ... ok
+test tests::seek_reuses_private_pcm_but_a_new_session_must_reopen_sources ... ok
+test tests::canonical_playback_consumes_pause_bindings_and_a_real_preserve_stage ... ok
+test tests::canonical_source_pcm_uses_fixed_monitor_gain_and_delivery_clock ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 12.86s
+

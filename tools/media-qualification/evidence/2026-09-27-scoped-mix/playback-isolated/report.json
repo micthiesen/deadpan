@@ -1,0 +1,49 @@
+{
+  "binary_sha256": "0bdd60b9c3620a1a53576747e6edfb432caa12f41318b5d6bb3777a6debc930b",
+  "commands": [
+    {
+      "command": [
+        "/Users/michael/Code/deadpan/target/debug/deps/deadpan_playback-34f16a24a1d54369",
+        "--exact",
+        "tests::canonical_source_pcm_uses_fixed_monitor_gain_and_delivery_clock",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "seconds": 12.583712708204985,
+      "log": "0.log"
+    },
+    {
+      "command": [
+        "/Users/michael/Code/deadpan/target/debug/deps/deadpan_playback-34f16a24a1d54369",
+        "--exact",
+        "tests::original::original_preserves_leading_audio_trailing_audio_and_exact_rounded_picture_clock",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "seconds": 21.99236650019884,
+      "log": "1.log"
+    },
+    {
+      "command": [
+        "/Users/michael/Code/deadpan/target/debug/deps/deadpan_playback-34f16a24a1d54369",
+        "--exact",
+        "tests::original::original_pcm_ignores_edits_and_target_cache_never_reuses_sequence_pcm",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "seconds": 12.908510334324092,
+      "log": "2.log"
+    },
+    {
+      "command": [
+        "/Users/michael/Code/deadpan/target/debug/deps/deadpan_playback-34f16a24a1d54369",
+        "--exact",
+        "tests::worker_panic_is_reported_and_disables_further_requests",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "seconds": 0.13942487491294742,
+      "log": "3.log"
+    }
+  ]
+}

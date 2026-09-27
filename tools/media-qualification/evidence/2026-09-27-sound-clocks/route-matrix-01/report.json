@@ -1,0 +1,23 @@
+{
+  "commands": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-plan",
+        "--test",
+        "sound_route_sampling"
+      ],
+      "exit_code": 0,
+      "seconds": 16.8749782089144,
+      "log": "0.log",
+      "tests": {
+        "passed": 11,
+        "failed": 0,
+        "ignored": 0
+      }
+    }
+  ]
+}

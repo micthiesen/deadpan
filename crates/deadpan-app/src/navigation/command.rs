@@ -12,6 +12,10 @@ pub enum Entry {
     Help,
     /// Tenths of one percent, independent of authored or export gain.
     Monitor(u16),
+    AuditionContext {
+        lead: DurationInput,
+        follow: DurationInput,
+    },
     Empty,
 }
 
@@ -22,6 +26,13 @@ pub fn parse(input: &str) -> Result<Entry, String> {
         return Ok(Entry::Empty);
     };
     let verb = verb.to_ascii_lowercase();
+    if verb == "audition-context" {
+        return audition_context(words);
+    }
+    if verb == "retime" || verb == "wrap-retime" {
+        return super::retime::parse(words, verb == "wrap-retime")
+            .map(|input| Entry::Action(Action::Edit(BeatEdit::Retime(input))));
+    }
     let argument = words.next();
     if words.next().is_some() {
         return Err("Extra arguments are not supported by this command.".into());
@@ -70,6 +81,14 @@ pub fn parse(input: &str) -> Result<Entry, String> {
             ))));
         }
         "insert" => Action::Insert,
+        "play" => Action::Playback,
+        "audition" => Action::Audition,
+        "enter" => Action::EnterGroup,
+        "parent" => Action::LeaveGroup,
+        "select" => Action::VisualMoment,
+        "yank" => Action::CopyMoment,
+        "paste" => Action::PasteMoment { before: false },
+        "paste-before" => Action::PasteMoment { before: true },
         "split" => Action::Edit(BeatEdit::Split),
         "delete" => Action::Edit(BeatEdit::Delete),
         "undo" => Action::Undo,
@@ -97,6 +116,30 @@ pub fn parse(input: &str) -> Result<Entry, String> {
     Ok(Entry::Action(action))
 }
 
+fn audition_context<'a>(arguments: impl Iterator<Item = &'a str>) -> Result<Entry, String> {
+    let invalid = || {
+        "Use :audition-context lead=500ms follow=750ms with both durations exactly once.".to_owned()
+    };
+    let mut lead = None;
+    let mut follow = None;
+    for argument in arguments {
+        let (name, value) = argument.split_once('=').ok_or_else(invalid)?;
+        let slot = match name {
+            "lead" => &mut lead,
+            "follow" => &mut follow,
+            _ => return Err(invalid()),
+        };
+        if slot.is_some() {
+            return Err(invalid());
+        }
+        *slot = Some(DurationInput::parse(value)?);
+    }
+    Ok(Entry::AuditionContext {
+        lead: lead.ok_or_else(invalid)?,
+        follow: follow.ok_or_else(invalid)?,
+    })
+}
+
 fn monitor(argument: Option<&str>) -> Result<u16, String> {
     let invalid =
         || "Use :monitor 25% with a value from 0 to 100%, optionally one decimal place.".to_owned();
@@ -122,6 +165,49 @@ fn monitor(argument: Option<&str>) -> Result<u16, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn audition_context_requires_two_distinct_named_exact_durations() {
+        let expected = Entry::AuditionContext {
+            lead: DurationInput::parse("500ms").unwrap(),
+            follow: DurationInput::parse("750ms").unwrap(),
+        };
+        for input in [
+            ":audition-context lead=500ms follow=750ms",
+            "AUDITION-CONTEXT follow=750ms lead=500ms",
+        ] {
+            assert_eq!(parse(input), Ok(expected));
+        }
+        assert_eq!(
+            parse("audition-context lead=0f follow=01:02.500"),
+            Ok(Entry::AuditionContext {
+                lead: DurationInput::Frames(FrameDuration::ZERO),
+                follow: DurationInput::parse("01:02.500").unwrap(),
+            })
+        );
+        for input in [
+            "audition-context",
+            "audition-context lead=500ms",
+            "audition-context follow=750ms",
+            "audition-context lead=500ms lead=750ms",
+            "audition-context follow=500ms follow=750ms",
+            "audition-context lead=500ms follow=750ms lead=1s",
+            "audition-context lead=500ms follow=750ms extra=1s",
+            "audition-context lead=500ms follow=750ms extra",
+            "audition-context lead=500ms tail=750ms",
+            "audition-context Lead=500ms follow=750ms",
+            "audition-context lead=500 follow=750ms",
+            "audition-context lead=500ms follow=-1s",
+            "audition-context lead=500ms follow=",
+            "audition-context lead=500ms follow=750MS",
+            "audition-context lead=500ms follow=750ms=1s",
+            "audition-context lead =500ms follow=750ms",
+            "play 2",
+            "audition 2",
+        ] {
+            assert!(parse(input).is_err(), "{input}");
+        }
+    }
 
     #[test]
     fn monitor_command_preserves_bounded_percentages_without_authored_edits() {
@@ -174,6 +260,19 @@ mod tests {
 
     #[test]
     fn repeat_setter_and_explicit_wrapper_remain_distinct() {
+        assert_eq!(parse("enter"), Ok(Entry::Action(Action::EnterGroup)));
+        assert_eq!(parse(":parent"), Ok(Entry::Action(Action::LeaveGroup)));
+        assert_eq!(parse("select"), Ok(Entry::Action(Action::VisualMoment)));
+        assert_eq!(parse("yank"), Ok(Entry::Action(Action::CopyMoment)));
+        assert_eq!(
+            parse("paste"),
+            Ok(Entry::Action(Action::PasteMoment { before: false }))
+        );
+        assert_eq!(
+            parse("paste-before"),
+            Ok(Entry::Action(Action::PasteMoment { before: true }))
+        );
+        assert!(parse("paste 2").is_err());
         assert_eq!(
             parse(" :RePeAt 3 "),
             Ok(Entry::Action(Action::Edit(BeatEdit::Repeat(3))))
@@ -206,6 +305,8 @@ mod tests {
             "delete 2",
             "split 12f",
             "undo anything",
+            "enter anything",
+            "parent 2",
             "help extra",
             "source extra",
             "::delete",
@@ -242,6 +343,8 @@ mod tests {
     fn existing_commands_keep_their_explicit_actions() {
         for (input, expected) in [
             ("insert", Entry::Action(Action::Insert)),
+            ("play", Entry::Action(Action::Playback)),
+            (":audition", Entry::Action(Action::Audition)),
             ("split", Entry::Action(Action::Edit(BeatEdit::Split))),
             ("undo", Entry::Action(Action::Undo)),
             ("redo", Entry::Action(Action::Redo)),

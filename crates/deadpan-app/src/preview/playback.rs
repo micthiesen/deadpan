@@ -1,19 +1,103 @@
-use deadpan_core::{AudioSample, ProjectFrame};
-use deadpan_playback::{Phase, Snapshot, SourceEntry};
+use deadpan_core::AudioSample;
+use deadpan_playback::{Phase, Snapshot, SourceEntry, Target, Window};
 
 use super::*;
+use crate::transport::{Domain, Identity, Run};
+
+#[derive(Clone, Copy)]
+pub(super) struct AuditionContext {
+    pub lead: AudioSample,
+    pub follow: AudioSample,
+}
+
+impl Default for AuditionContext {
+    fn default() -> Self {
+        Self {
+            lead: AudioSample(24_000),
+            follow: AudioSample(36_000),
+        }
+    }
+}
+
+impl AuditionContext {
+    pub fn lead_label(self) -> String {
+        sample_label(self.lead)
+    }
+    pub fn follow_label(self) -> String {
+        sample_label(self.follow)
+    }
+
+    fn window(self, domain: &Domain, range: std::ops::Range<u64>) -> Result<Window, String> {
+        domain.selection_window(range, self.lead, self.follow)
+    }
+}
+
+fn sample_label(sample: AudioSample) -> String {
+    if sample.0 % 48 == 0 {
+        format!("{}ms", sample.0 / 48)
+    } else {
+        format!("{} samples", sample.0)
+    }
+}
+
+pub(super) fn sound_time(sample: u64) -> String {
+    let millis = sample / 48;
+    format!(
+        "{:02}:{:02}.{:03}",
+        millis / 60_000,
+        (millis / 1000) % 60,
+        millis % 1000
+    )
+}
 
 impl DeadpanApp {
-    /// Stop before changing the cursor. This method deliberately never restores
-    /// an old audio position over a new navigation or edit target.
+    pub(super) fn sound_focused(&self) -> bool {
+        self.pane == Pane::Sources && self.selected_sound.is_some()
+    }
+
+    pub(super) fn selected_sound_descriptor(&self) -> Option<Arc<deadpan_playback::Sound>> {
+        self.workspace
+            .as_ref()?
+            .sources
+            .get(self.selected_sound.as_ref()?)?
+            .sound_audition
+            .clone()
+    }
+
+    pub(super) fn reconcile_sound_playback(&mut self) {
+        let descriptor = self.selected_sound_descriptor();
+        if self.selected_sound.is_some() && descriptor.is_none() {
+            self.stop_playback();
+            self.selected_sound = None;
+            self.sound_cursor = 0;
+            self.bindings.clear();
+            return;
+        }
+        let captured = self
+            .transport
+            .as_ref()
+            .map(|run| run.domain())
+            .or_else(|| self.resume.as_ref().map(|resume| resume.domain()));
+        if let Some(Domain::Sound(sound)) = captured
+            && (!self.sound_focused() || descriptor.as_ref() != Some(sound))
+        {
+            self.stop_playback();
+            self.bindings.clear();
+        }
+    }
+
+    /// Revoke before navigation/editing; never restore an old audio position
+    /// over a new command target.
     pub(super) fn stop_playback(&mut self) -> bool {
         self.resume = None;
         self.playback.stop();
-        if self.transport.take().is_none() {
+        let Some(run) = self.transport.take() else {
             return false;
+        };
+        if !run.domain().is_sound() {
+            self.worker.cancel();
+            self.presentation.invalidate_pending();
         }
-        self.worker.cancel();
-        self.presentation.invalidate_pending();
         true
     }
 
@@ -21,58 +105,201 @@ impl DeadpanApp {
         let Some(run) = self.transport.as_ref() else {
             return;
         };
-        let resume = run.resume(self.sequence_cursor);
+        let Ok(position) = run.position() else {
+            self.stop_playback();
+            return;
+        };
+        let resume = run.resume(position.cursor);
+        let sound = run.domain().is_sound();
         if self.stop_playback() {
             self.resume = Some(resume);
-            self.request_picture_for_transport(false, None);
+            // Cursor can name excluded Out, but the picture must not.
+            if !sound {
+                self.request_picture_for_transport_at(false, None, Some(position.picture));
+            }
+        }
+    }
+
+    fn follow_stopped_playback(&mut self, looping: bool) {
+        if !self.sound_focused() && self.view == View::Sequence && !looping {
+            self.follow_playhead_scope();
+            self.select_at_cursor();
+            self.reveal_beat = true;
         }
     }
 
     pub(super) fn toggle_playback(&mut self) {
-        self.cancel_camera();
-        if self.transport.is_some() {
-            // Admit the latest device estimate before immediate revocation.
-            // Already submitted native buffers are not retractable.
+        if !self.sound_focused() {
+            self.cancel_camera();
+        }
+        if let Some(run) = &self.transport {
+            let looping = run.window().looping();
             self.receive_playback();
             self.pause_playback();
-            self.select_at_cursor();
-            self.reveal_beat = true;
-            return;
+            self.follow_stopped_playback(looping);
+        } else {
+            self.start_playback(false);
         }
-        if self.view != View::Sequence {
-            self.message = Some("Switch to Your edit (:sequence) to audition the sequence. Original playback is not available yet.".into());
-            return;
+    }
+
+    pub(super) fn audition_selection(&mut self) {
+        if !self.sound_focused() {
+            self.cancel_camera();
         }
+        if self
+            .transport
+            .as_ref()
+            .is_some_and(|run| run.window().looping())
+        {
+            self.receive_playback();
+            self.pause_playback();
+        } else {
+            self.stop_playback();
+            self.start_playback(true);
+        }
+    }
+
+    fn playback_domain(&self) -> Result<Domain, String> {
+        let workspace = self
+            .workspace
+            .as_ref()
+            .ok_or("Open a project to audition.")?;
+        if self.sound_focused() {
+            return self
+                .selected_sound_descriptor()
+                .map(Domain::Sound)
+                .ok_or_else(|| "Choose a qualified sound to audition.".into());
+        }
+        match self.view {
+            View::Sequence => Ok(Domain::Sequence {
+                rate: workspace.document.presentation_basis().frame_rate,
+                frames: workspace.plan.duration().frames(),
+            }),
+            View::Source => self
+                .selected_source
+                .as_ref()
+                .and_then(|asset| workspace.sources.get(asset))
+                .and_then(|source| source.original_audition.clone())
+                .map(Domain::Original)
+                .ok_or_else(|| "Choose a qualified Original to audition.".into()),
+        }
+    }
+
+    fn selected_playback_range(&self) -> Option<std::ops::Range<u64>> {
+        if self.sound_focused() {
+            return self.selected_sound_descriptor().and_then(|sound| {
+                u64::try_from(sound.duration_samples().0)
+                    .ok()
+                    .map(|end| 0..end)
+            });
+        }
+        match self.view {
+            View::Source => self.moment.range(),
+            View::Sequence => self
+                .beat_rows
+                .iter()
+                .find(|row| Some(&row.id) == self.selected_beat.as_ref())
+                .and_then(|row| row.start.checked_add(row.frames).map(|end| row.start..end)),
+        }
+    }
+
+    fn start_playback(&mut self, selected: bool) {
         let Some(workspace) = self.workspace.clone() else {
             return;
         };
-        if self.service.is_busy() || self.dialogs.is_open() || self.sequence_length() == 0 {
+        if self.service.is_busy() || self.dialogs.is_open() {
             return;
         }
-        if self.sequence_cursor >= self.sequence_length() {
-            self.sequence_cursor = 0;
+        if !self.sound_focused() {
+            self.reconcile_moment();
         }
-        let rate = workspace.document.presentation_basis().frame_rate;
-        let resumed = self.resume.as_ref().and_then(|resume| {
-            resume.sample_for(
-                workspace.session,
-                workspace.document.project_id(),
-                workspace.document.revision_id(),
-                self.sequence_cursor,
-            )
-        });
-        let start = match resumed.map_or_else(
-            || rate.audio_boundary(ProjectFrame(self.sequence_cursor as i64)),
-            Ok,
-        ) {
-            Ok(start) => start,
+        let prepared = (|| {
+            let domain = self.playback_domain()?;
+            let end = domain.end()?;
+            if end.0 == 0 {
+                return Err("There is no time to audition.".into());
+            }
+            let cursor = if domain.is_sound() {
+                self.sound_cursor
+            } else {
+                match self.view {
+                    View::Source => self.source_cursor,
+                    View::Sequence => self.sequence_cursor,
+                }
+            };
+            let (window, start) = if selected {
+                let range = self.selected_playback_range().ok_or(match self.view {
+                    View::Source => "Select an Original moment with v and h/l before looping.",
+                    View::Sequence => "Select a beat before looping.",
+                })?;
+                let window = if domain.is_sound() {
+                    Window::new(AudioSample(0), end, true).map_err(|e| e.to_string())?
+                } else {
+                    self.audition_context.window(&domain, range)?
+                };
+                (window, window.start())
+            } else {
+                let resumed = self.resume.as_ref().and_then(|resume| {
+                    resume
+                        .sample_for_domain(
+                            workspace.session,
+                            workspace.document.project_id(),
+                            workspace.document.revision_id(),
+                            &domain,
+                            resume.window(),
+                            cursor,
+                        )
+                        .map(|sample| (*resume.window(), sample))
+                });
+                if let Some(pair) =
+                    resumed.filter(|(window, sample)| window.looping() || *sample < end)
+                {
+                    pair
+                } else {
+                    let sample = domain.sample_at_boundary(cursor)?;
+                    (
+                        Window::new(AudioSample(0), end, false).map_err(|e| e.to_string())?,
+                        if sample >= end {
+                            AudioSample(0)
+                        } else {
+                            sample
+                        },
+                    )
+                }
+            };
+            Ok::<_, String>((domain, window, start))
+        })();
+        let (domain, window, start) = match prepared {
+            Ok(value) => value,
             Err(error) => {
                 self.error = Some(format!("Cannot start audition: {error}"));
                 return;
             }
         };
+        let target = match &domain {
+            Domain::Sequence { .. } => Target::Sequence,
+            Domain::Original(original) => Target::Original(original.clone()),
+            Domain::Sound(sound) => Target::Sound(sound.clone()),
+        };
         let Some(ticket) = self.next_serial() else {
             return;
+        };
+        let run = match Run::with_domain(
+            Identity {
+                ticket,
+                session: workspace.session,
+                project: workspace.document.project_id().clone(),
+                revision: workspace.document.revision_id().clone(),
+            },
+            domain,
+            window,
+            start,
+        ) {
+            Ok(run) => run,
+            Err(error) => {
+                self.error = Some(error);
+                return;
+            }
         };
         let snapshot = Arc::new(Snapshot {
             session: workspace.session,
@@ -92,23 +319,32 @@ impl DeadpanApp {
                 })
                 .collect(),
         });
-        match self
-            .playback
-            .play(ticket, snapshot, start, self.monitor_gain)
-        {
+        #[cfg(feature = "ui-harness")]
+        let result = if self.feedback.simulate_playback {
+            Ok(())
+        } else {
+            self.playback
+                .play_window(ticket, snapshot, target, window, start, self.monitor_gain)
+        };
+        #[cfg(not(feature = "ui-harness"))]
+        let result =
+            self.playback
+                .play_window(ticket, snapshot, target, window, start, self.monitor_gain);
+        match result {
             Ok(()) => {
                 self.resume = None;
-                self.worker.cancel();
-                self.presentation.invalidate_pending();
-                self.transport = Some(crate::transport::Run::new(
-                    ticket,
-                    workspace.session,
-                    workspace.document.project_id().clone(),
-                    workspace.document.revision_id().clone(),
-                    rate,
-                    workspace.plan.duration().frames(),
-                    start,
-                ));
+                if !run.domain().is_sound() {
+                    self.worker.cancel();
+                    self.presentation.invalidate_pending();
+                }
+                if let Ok(position) = run.position() {
+                    match run.domain() {
+                        Domain::Original(_) => self.source_cursor = position.cursor,
+                        Domain::Sequence { .. } => self.sequence_cursor = position.cursor,
+                        Domain::Sound(_) => self.sound_cursor = position.cursor,
+                    }
+                }
+                self.transport = Some(run);
                 self.error = None;
                 self.message = None;
                 self.bindings.clear();
@@ -118,7 +354,15 @@ impl DeadpanApp {
     }
 
     pub(super) fn receive_playback(&mut self) {
-        let Some(update) = self.playback.poll() else {
+        #[cfg(feature = "ui-harness")]
+        let update = if self.feedback.simulate_playback {
+            self.feedback.playback_updates.pop_front()
+        } else {
+            self.playback.poll()
+        };
+        #[cfg(not(feature = "ui-harness"))]
+        let update = self.playback.poll();
+        let Some(update) = update else {
             return;
         };
         let Some(run) = self.transport.as_mut() else {
@@ -137,21 +381,26 @@ impl DeadpanApp {
             return;
         };
         match run.receive(&update) {
-            Ok(Some(frame)) => self.sequence_cursor = frame,
+            Ok(Some(frame)) => match run.domain() {
+                Domain::Original(_) => self.source_cursor = frame,
+                Domain::Sequence { .. } => self.sequence_cursor = frame,
+                Domain::Sound(_) => self.sound_cursor = frame,
+            },
             Ok(None) => return,
             Err(error) => {
                 self.pause_playback();
+                self.resume = None;
                 self.error = Some(error);
                 return;
             }
         }
+        let looping = run.window().looping();
         match update.phase {
             Phase::Preparing | Phase::Playing => {}
             Phase::Stopped | Phase::Ended | Phase::Failed => {
                 self.pause_playback();
                 self.resume = None;
-                self.select_at_cursor();
-                self.reveal_beat = true;
+                self.follow_stopped_playback(looping);
                 if let Some(error) = update.error {
                     self.error = Some(format!("Audition stopped: {error}"));
                 }
@@ -160,6 +409,13 @@ impl DeadpanApp {
     }
 
     pub(super) fn schedule_playback_picture(&mut self) {
+        if self
+            .transport
+            .as_ref()
+            .is_some_and(|run| run.domain().is_sound())
+        {
+            return;
+        }
         if self.transport.is_some()
             && let Some(error) = self.presentation.error().map(str::to_owned)
         {
@@ -170,43 +426,125 @@ impl DeadpanApp {
             return;
         }
         let busy = self.presentation.loading() || self.presentation.needs_render();
-        let frame = self
-            .sequence_cursor
-            .min(self.sequence_length().saturating_sub(1));
-        if let Some(generation) = self
-            .transport
-            .as_mut()
-            .and_then(|run| run.picture(frame, busy))
+        if let Some(run) = self.transport.as_mut()
+            && let Ok(frame) = run.picture_frame()
+            && let Some(generation) = run.picture(frame, busy)
         {
-            self.request_picture_for_transport(false, Some(generation));
+            self.request_picture_for_transport_at(false, Some(generation), Some(frame));
         }
     }
 
     pub(super) fn playback_controls(&mut self, ui: &mut egui::Ui) {
-        if self.view != View::Sequence || self.workspace.is_none() {
+        if self.workspace.is_none() {
             self.monitor_control = None;
             return;
         }
-        ui.horizontal_wrapped(|ui| {
+        if !self.sound_focused() {
+            ui.horizontal_wrapped(|ui| {
             let active = self.transport.is_some();
             let preparing = self.transport.as_ref().is_some_and(|run| run.phase == Phase::Preparing);
-            let enabled = active || (self.sequence_length() > 0 && !self.service.is_busy());
-            let label = if preparing { "Cancel preparation  ·  Space" } else if active { "Pause  ·  Space" } else { "Play edit  ·  Space" };
-            if ui.add_enabled(enabled, egui::Button::new(label).fill(style::SELECTED)).clicked() {
-                self.toggle_playback();
-            }
-            ui.label(egui::RichText::new("Limited audition").size(10.5).color(style::MUTED))
-                .on_hover_text("Sequence sound with edge fades and a −1 dBTP safety limiter. Voice effects and the full mix remain unavailable. Monitor volume does not change the project or export gain.");
-            let monitor = ui.add_enabled(!active, egui::Slider::new(&mut self.monitor_gain, 0.0..=1.0)
-                .text("Monitor · :monitor").show_value(false))
-                .on_hover_text(format!("Monitor {:.1}%. Pause to change volume. The initial level is 12.5%.", self.monitor_gain * 100.0));
-            self.monitor_control = Some(monitor.id);
+            let enabled = active || (!self.service.is_busy() && self.playback_domain().and_then(|domain| domain.end()).is_ok_and(|end| end.0 > 0));
+            let label = if preparing { "Cancel preparation  ·  Space" } else if active { "Pause  ·  Space" } else if self.resume.as_ref().is_some_and(|resume| resume.window().looping()) { "Resume loop  ·  Space" } else if self.sound_focused() { "Play sound  ·  Space" } else if self.view == View::Source { "Play Original  ·  Space" } else { "Play edit  ·  Space" };
+            if ui.add_enabled(enabled, egui::Button::new(label).fill(style::SELECTED)).clicked() { self.toggle_playback(); }
+            let looping = self.transport.as_ref().is_some_and(|run| run.window().looping());
+            let label = if looping { "Pause loop  ·  ⇧Space" } else if self.sound_focused() { "Loop sound  ·  ⇧Space" } else { "Loop selection  ·  ⇧Space" };
+            if ui.add_enabled(enabled && (looping || self.selected_playback_range().is_some()), egui::Button::new(label)).on_hover_text("Loop the whole selected sound, or the selected Original moment or edited beat with context. Space pauses and resumes the exact heard position. Navigation stops the loop.").clicked() { self.audition_selection(); }
             if let Some(run) = &self.transport {
-                let AudioSample(sample) = run.sample;
-                let status = if preparing { "Preparing" } else { "Playing" };
+                let sample = run.content_sample().unwrap_or(run.sample).0;
                 let millis = sample / 48;
-                ui.label(egui::RichText::new(format!("{status} · {:02}:{:02}.{:03}", millis / 60_000, (millis / 1000) % 60, millis % 1000)).monospace().size(10.0).color(style::MUTED));
+                let status = if preparing { "Preparing" } else { "Playing" };
+                let lap = if looping { format!(" · loop {}", run.lap().unwrap_or(0) + 1) } else { String::new() };
+                ui.label(egui::RichText::new(format!("{status} · {:02}:{:02}.{:03}{lap}", millis / 60_000, (millis / 1000) % 60, millis % 1000)).monospace().size(10.0).color(style::MUTED));
             }
         });
+        }
+        ui.horizontal_wrapped(|ui| {
+            ui.label(egui::RichText::new(if self.sound_focused() { "Sound loop · complete measured audio".into() } else { format!("Loop context  {} / {}", self.audition_context.lead_label(), self.audition_context.follow_label()) }).size(10.5).color(style::MUTED))
+                .on_hover_text("Lead-in / follow-through, clamped to this source or edit. Change with :audition-context lead=500ms follow=750ms. Playback uses edge fades and a safety limiter; full voice effects and mastering remain unavailable.");
+            let monitor = ui.add_enabled(self.transport.is_none(), egui::Slider::new(&mut self.monitor_gain, 0.0..=1.0).text("Monitor · :monitor").show_value(false))
+                .on_hover_text(format!("Monitor {:.1}%. Pause to change volume. Does not change export gain.", self.monitor_gain * 100.0));
+            self.monitor_control = Some(monitor.id);
+        });
+    }
+
+    pub(super) fn sound_preview_controls(&mut self, ui: &mut egui::Ui) {
+        let Some(sound) = self.selected_sound_descriptor() else {
+            return;
+        };
+        let sound_label = self
+            .workspace
+            .as_ref()
+            .and_then(|workspace| workspace.sources.get(sound.asset()))
+            .map_or_else(|| sound.asset().to_string(), |source| source.label.clone());
+        let end = sound.duration_samples().0 as u64;
+        let active = self
+            .transport
+            .as_ref()
+            .is_some_and(|run| run.domain().is_sound());
+        let preparing = active
+            && self
+                .transport
+                .as_ref()
+                .is_some_and(|run| run.phase == Phase::Preparing);
+        let paused = self
+            .resume
+            .as_ref()
+            .is_some_and(|resume| resume.domain().is_sound());
+        let looping = active
+            && self
+                .transport
+                .as_ref()
+                .is_some_and(|run| run.window().looping());
+        egui::Frame::new().fill(style::PANEL).stroke(egui::Stroke::new(1.0, style::BORDER)).corner_radius(6).inner_margin(10).show(ui, |ui| {
+            ui.horizontal(|ui| {
+                ui.strong("Sound preview");
+                ui.colored_label(if active && !preparing { style::SAVED } else { style::MUTED }, if preparing { "Preparing" } else if active { "Playing" } else if paused { "Paused" } else { "Ready" });
+            });
+            ui.add(egui::Label::new(format!("Selected: {sound_label}")).truncate()).on_hover_text(&sound_label);
+            ui.label(egui::RichText::new(format!("{} / {}", sound_time(self.sound_cursor), sound_time(end))).monospace().size(12.0));
+            ui.add(egui::ProgressBar::new(if end == 0 { 0.0 } else { self.sound_cursor.min(end) as f32 / end as f32 }).desired_width(ui.available_width()).desired_height(4.0));
+            let enabled = active || (!self.service.is_busy() && end > 0);
+            let label = if preparing { "Cancel preparation  ·  Space" } else if active { "Pause sound  ·  Space" } else if paused { "Resume sound  ·  Space" } else { "Play sound  ·  Space" };
+            if ui.add_enabled(enabled, egui::Button::new(label).fill(style::SELECTED)).clicked() {
+                if !self.sound_focused() { self.stop_playback(); }
+                self.pane = Pane::Sources;
+                ui.memory_mut(|m| m.request_focus(pane_id(Pane::Sources)));
+                self.toggle_playback();
+            }
+            if ui.add_enabled(enabled, egui::Button::new(if looping { "Pause loop  ·  ⇧Space" } else { "Loop sound  ·  ⇧Space" })).on_hover_text("Loop the complete measured sound. Space pauses and resumes its exact heard position.").clicked() {
+                if !self.sound_focused() { self.stop_playback(); }
+                self.pane = Pane::Sources;
+                ui.memory_mut(|m| m.request_focus(pane_id(Pane::Sources)));
+                self.audition_selection();
+            }
+            ui.label(egui::RichText::new("Source-local audio · picture stays in place").size(10.5).color(style::MUTED));
+        });
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use deadpan_core::FrameRate;
+
+    #[test]
+    fn loop_context_is_exact_in_audio_samples_and_clamps_to_the_captured_domain() {
+        let domain = Domain::Sequence {
+            rate: FrameRate::new(30_000, 1001).unwrap(),
+            frames: 120,
+        };
+        let window = AuditionContext::default().window(&domain, 30..60).unwrap();
+        assert_eq!(window.start(), AudioSample(24_048));
+        assert_eq!(window.end(), AudioSample(132_096));
+        assert!(window.looping());
+        let context = AuditionContext {
+            lead: AudioSample(i64::MAX),
+            follow: AudioSample(i64::MAX),
+        };
+        let window = context.window(&domain, 30..60).unwrap();
+        assert_eq!(window.start(), AudioSample(0));
+        assert_eq!(window.end(), domain.end().unwrap());
+        assert!(context.window(&domain, 40..40).is_err());
+        assert!(context.window(&domain, 110..121).is_err());
     }
 }

@@ -1,0 +1,39 @@
+{
+  "base": "origin/main",
+  "scope": "Increment against saved before/ working-tree snapshot; prior dirty work preserved",
+  "reviewers": [
+    "routed_voice_general_review"
+  ],
+  "source_sha256": {
+    "crates/deadpan-audio/src/lib.rs": "19f69b8383b6074a578b9addcea98772d179c11319504b292438a7c3987b100b",
+    "crates/deadpan-audio/src/projected_root.rs": "0da2455a2b73a6e7fdc1e271a89d75335c3fa8a8e0d3e5a5df219f89311e312d",
+    "crates/deadpan-audio/src/routed.rs": "77af678ec8cc7f664d4806e78a481df784e39bcb4a0ca67e02bb22370ac3f1af",
+    "crates/deadpan-audio/src/stages.rs": "b04f4c888e7a6b7eddf39b9d4a540740f5a5ae60b313e2bbe838d941984f650c",
+    "crates/deadpan-audio/tests/audio_definition/projection.rs": "2bb820b1334b7bde63168763efdd1280d42e82a86a29f762a482a8f0bc1b3357",
+    "crates/deadpan-audio/tests/audio_definition/projection_routed.rs": "d0ca0bbfd9f4053302efdea345260643fa7e8c91d34d84fe5e5df23ee98bd440",
+    "crates/deadpan-plan/src/audio_projected_root.rs": "d586e3f9b4489c14364d9010f380113b123c156a3093979d3181fd6afbf3ce34",
+    "crates/deadpan-plan/src/audio_routed.rs": "cff7b8284c4985f92d98dcedaaa5a478aac8f8076563ea874a869a944cb74b92",
+    "crates/deadpan-plan/src/audio_sampling.rs": "566ae2b1e0c788b632783fefea9ad7b4d6e59220b441690ade4cc6ee478c0ef2",
+    "crates/deadpan-plan/src/audio_sound_route.rs": "600f341bf0d6b05539c04acd6cf79e168d68f6a7517c7ed7f28572ab36464bce",
+    "crates/deadpan-plan/src/audio_source_voice.rs": "205fc844f5e470ba48acb860b1b7ce0bd848bb360d82382bd3b4c60136df77c3",
+    "crates/deadpan-plan/src/lib.rs": "2047444766faead9740f16fbd7fecac1fe7923093b74eaccd8d55680d8050711",
+    "crates/deadpan-plan/tests/routed_voice.rs": "b939366d72b165c73a0921e416f36549da254ae78cf97784d664732a2dd68cd1",
+    "crates/deadpan-playback/src/tests/source_voice.rs": "c58a36404cd23ce03fda18fe9be221381cc8ab9cdb3ecb20887fe555da7a329a",
+    "crates/deadpan-playback/src/tests/source_voice/routed.rs": "b2910a3145aaebea0eeee17d84b71485dc5845f319586b7bdbdadb0018349fe7"
+  },
+  "final_review": "Independent reviewer returned no findings after checking final representation and test changes",
+  "limits": "Two additional focused reviewer launches rejected by collaboration agent thread limit; parent separately audited timing/capture, source admission and shared budgets",
+  "applied": [
+    "Parent strengthened multi-span preparation test with a source-call baseline; positive budget caps alone would not detect renewing budgets per fragment"
+  ],
+  "dismissed": [
+    "Potential dependency-count times route-span ceiling: 65,536 provenance checks is an intentional separate bound, independent of 1,024 distinct assets; no advertised limit violated"
+  ],
+  "outstanding": [],
+  "development_corrections": [
+    "Extracted root helper receives the owning engine frame rate instead of calling private AudioStage::plan",
+    "Nested playback test module has explicit source_voice/routed.rs path",
+    "Independent Preserve reference limits sinc support to the full declared nine-frame input selection, independently calculated as source endpoint 13118",
+    "Boxed Source variant avoids the strict Clippy large-enum warning without changing identity or timing"
+  ]
+}

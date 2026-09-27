@@ -1,0 +1,8 @@
+{
+  "images_verified": 10,
+  "new_board": "docs/design/boards/original-moment-reuse-v1.png",
+  "visual_review": "Temporal range, separate context/focus, paste destination, exact example arithmetic; limitations recorded in docs/design/README.md",
+  "tool": "image_gen.imagegen",
+  "model": null,
+  "native_ui_implemented": false
+}

@@ -1,0 +1,207 @@
+[
+  {
+    "command": [
+      "deadpan-core26-cli",
+      "doctor"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "424b7d64f161e4af59ace764ebf5e1c689c3cfe9540b52d175cfc44709f89177",
+    "stderr": "",
+    "stdout": "{\n  \"application\": \"deadpan\",\n  \"architecture\": \"aarch64\",\n  \"database_schema\": 32,\n  \"device_output\": \"macos-bounded-limited-sequence-audition\",\n  \"document_schema\": 26,\n  \"edge_faded_pcm\": \"authored-boundary-exceptions-after-time-mapping-before-voice-effects\",\n  \"internal_audio_sample_rate\": 48000,\n  \"limited_pcm\": \"canonical-edge-faded-bus-with-finite-oversampled-limiter-before-missing-voice-mix-stages\",\n  \"os\": \"macos\",\n  \"partial\": [\n    \"structural-editing-commands\",\n    \"sqlite-project-history\",\n    \"schema-1-through-31-migration\",\n    \"single-original-project-baseline\",\n    \"native-documents-project-library\",\n    \"indexed-picture-plan\",\n    \"indexed-audio-plan\",\n    \"worker-dsp-adapter\",\n    \"source-audio-preparation\",\n    \"plan-driven-source-pcm\",\n    \"transparent-audio-partitions\",\n    \"retained-context-split\",\n    \"atomic-sequence-pause-insertion\",\n    \"logical-mark-bindings\",\n    \"exact-boundary-selectors\",\n    \"persistent-marks\",\n    \"sparse-play-overrides\",\n    \"nested-occurrence-edits\",\n    \"persistent-generation-requests\",\n    \"persistent-generation-attempts\",\n    \"authored-generated-hold-semantics\",\n    \"generated-media-conversion\",\n    \"native-bridge-bundle-qualification\",\n    \"durable-generated-bundle-acceptance\",\n    \"durable-original-byte-ownership\",\n    \"identity-checked-relinking\",\n    \"persistent-source-decoding\",\n    \"measured-source-audio-indexes\",\n    \"independent-source-audio-mapping\",\n    \"independent-source-video-mapping\",\n    \"exact-source-stream-placement\",\n    \"measured-import-timing-candidates\",\n    \"measured-original-moment-candidates\",\n    \"exact-source-audio-selections\",\n    \"durable-source-qualification\",\n    \"atomic-source-registration-and-insertion\",\n    \"background-import-preparation\",\n    \"automatic-presentation-basis\",\n    \"timed-basis-locking\",\n    \"explicit-canvas-geometry\",\n    \"shared-sdr-picture-pipeline\",\n    \"authored-framing-envelopes\",\n    \"ordered-canvas-framing\",\n    \"captured-hold-framing\",\n    \"native-camera-draft\",\n    \"native-source-preview\",\n    \"native-project-workspace\",\n    \"native-sequence-audition\"\n  ],\n  \"room_tone_pcm\": \"explicit-source-range-exact-overlap-before-effects\",\n  \"schema_version\": 1,\n  \"sequence_audition\": \"immutable-revision-device-clock-pictures-exact-paused-sample-resume\",\n  \"sqlite_version\": \"3.53.2\",\n  \"stage\": \"development-foundation\",\n  \"time_mapped_pcm\": \"bounded-continuous-preserve-before-effects\",\n  \"timing_probe\": {\n    \"frame\": 1,\n    \"frame_rate_denominator\": 1001,\n    \"frame_rate_numerator\": 30000,\n    \"sample_boundary\": 1602\n  },\n  \"unimplemented\": [\n    \"mastered-preview-audio\",\n    \"original-view-playback\",\n    \"full-device-and-acoustic-qualification\",\n    \"full-keyboard-editor\",\n    \"analysis\",\n    \"ai-generation\",\n    \"youtube-import\",\n    \"export\",\n    \"distribution\"\n  ],\n  \"version\": \"0.1.0\"\n}\n"
+  },
+  {
+    "command": [
+      "deadpan-core26-cli",
+      "project",
+      "migrate",
+      "/tmp/deadpan-moment-paste-20260926/store/fixture/moment-splice-history.deadpan"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "d25b9119ab0798df1e06eb69ed874ba5c8fe3858bf7604f0018c9daf1b9a0756",
+    "stderr": "",
+    "stdout": "{\n  \"migration\": {\n    \"backup\": \"/private/tmp/deadpan-moment-paste-20260926/store/fixture/moment-splice-history.deadpan/Snapshots/before-schema-32-WSda31.sqlite\",\n    \"from_schema\": 31,\n    \"to_schema\": 32\n  },\n  \"protocol\": 1\n}\n"
+  },
+  {
+    "command": [
+      "deadpan-core26-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-moment-paste-20260926/store/fixture/moment-splice-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "d0f9e30029306c3776a43e74868b42681fd7f2395eba29b6d8cb29bf201125bf",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core26-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-moment-paste-20260926/store/fixture/moment-splice-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "d0f9e30029306c3776a43e74868b42681fd7f2395eba29b6d8cb29bf201125bf",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core26-cli",
+      "command",
+      "/tmp/deadpan-moment-paste-20260926/store/fixture/moment-splice-history.deadpan",
+      "--json",
+      "/tmp/deadpan-moment-paste-20260926/store/fixture/core26-add-group.json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "38dcb83322e11e5ea012a60860982b0071bcfcf3b11b86e9bfde19c35a042d85",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core26-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-moment-paste-20260926/store/fixture/moment-splice-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "8f1b04cbb89de9549e1dd8c6cb2023dca410bea12664c11cf47a3e11b88db38c",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core26-cli",
+      "command",
+      "/tmp/deadpan-moment-paste-20260926/store/fixture/moment-splice-history.deadpan",
+      "--json",
+      "/tmp/deadpan-moment-paste-20260926/store/fixture/core26-nested-interior.json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "a0634d95f5c5818ee4b039c56e7c4784e4b85daed1a4e879dab2d0d9cd2d492e",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core26-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-moment-paste-20260926/store/fixture/moment-splice-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "29365f8808524ef295bdc3a8894b70099865c0baddba62011f32d760134f4a37",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core26-cli",
+      "command",
+      "/tmp/deadpan-moment-paste-20260926/store/fixture/moment-splice-history.deadpan",
+      "--json",
+      "/tmp/deadpan-moment-paste-20260926/store/fixture/core26-nested-seam.json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "ad689a5d126ed1670a4f4076f1543c198aa9ab3e392b636d9a3a1e031c150b6c",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core26-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-moment-paste-20260926/store/fixture/moment-splice-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "fbb625955ba3977a6e89da12b736b51b0affdcdfd1a4e42cfce317a1a91bcd82",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core26-cli",
+      "project",
+      "undo",
+      "/tmp/deadpan-moment-paste-20260926/store/fixture/moment-splice-history.deadpan",
+      "--expected",
+      "core26-nested-seam"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "bf1883596c2eeccf9dfa4d7327b29579ad33c08f30c402582b091311cbd5ea1a",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core26-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-moment-paste-20260926/store/fixture/moment-splice-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "993b1811c15316791e12d99f27aef3a98a832afda53c7a7fe6fe947f5ee1e250",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core26-cli",
+      "project",
+      "redo",
+      "/tmp/deadpan-moment-paste-20260926/store/fixture/moment-splice-history.deadpan",
+      "--expected",
+      "ff1dfe21-f751-4225-9bbd-e339f7cbded1"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "efb5887a5374bd400fe584019dc975a8a36892c78ac44a4521a329017abf4055",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core26-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-moment-paste-20260926/store/fixture/moment-splice-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "0f14b70d41d5b5f07440a27ef11e3889dc0a88f6207e525a90749b154feea3ad",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core26-cli",
+      "project",
+      "undo",
+      "/tmp/deadpan-moment-paste-20260926/store/fixture/moment-splice-history.deadpan",
+      "--expected",
+      "dcf06875-ee8a-4458-a822-18ef843ff3bb"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "fc528a436ff44b912d1b6fae4d4a69b138c7aaee87f00444e4b95d465d422be4",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core26-cli",
+      "project",
+      "validate",
+      "/tmp/deadpan-moment-paste-20260926/store/fixture/moment-splice-history.deadpan"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "610c38cd472ec38b3bcac55f109b5313a68737f76068aaa93fe5580fdd260486",
+    "stderr": "",
+    "stdout": "{\n  \"basis_state\": {\n    \"geometry_origin\": \"explicit\",\n    \"primary\": null,\n    \"rate_origin\": \"explicit\"\n  },\n  \"duration_frames\": 74,\n  \"mark_count\": 0,\n  \"node_count\": 34,\n  \"presentation_basis\": {\n    \"color_policy\": \"sdr_rec709\",\n    \"frame_rate\": {\n      \"denominator\": 1001,\n      \"numerator\": 30000\n    },\n    \"height\": 16,\n    \"width\": 16\n  },\n  \"project_id\": \"d038df46-94c6-4c0a-9d11-038b0e6da220\",\n  \"protocol\": 1,\n  \"revision_id\": \"5305941b-2115-4846-aa8a-b6d7dcab25da\",\n  \"root\": \"b5903f58-0249-4a89-8af8-ed3d8a5cfe1f\",\n  \"valid\": true\n}\n"
+  },
+  {
+    "command": [
+      "deadpan-core26-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-moment-paste-20260926/store/fixture/moment-splice-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "54f2cdf8dcb0ee0479660700d135aa4cc8cf3d67d71213acf4462f161629c604",
+    "stderr": ""
+  }
+]

@@ -1,0 +1,36 @@
+{
+  "base_revision": {
+    "exit_code": 0,
+    "stdout": "c03a5edde5f28d27074745eb15711cb28b1f2e50",
+    "stderr": ""
+  },
+  "os": {
+    "exit_code": 0,
+    "stdout": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84",
+    "stderr": ""
+  },
+  "architecture": {
+    "exit_code": 0,
+    "stdout": "arm64",
+    "stderr": ""
+  },
+  "rust": {
+    "exit_code": 0,
+    "stdout": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+    "stderr": ""
+  },
+  "cargo": {
+    "exit_code": 0,
+    "stdout": "cargo 1.97.1 (c980f4866 2026-06-30)",
+    "stderr": ""
+  },
+  "ffmpeg_prefix": "/tmp/deadpan-ui-ffmpeg/prefix",
+  "core_schema": 28,
+  "database_schema": 34,
+  "git_write_access": "Restored to full access by user; .git write probe and GitHub ADMIN permission verified; Unix socket bind now succeeds",
+  "prior_checkpoint": "/tmp/deadpan-routed-voices-20260927/checkpoint",
+  "goal": "active; no requirement or gate promoted",
+  "gui": "No GUI change; no new painted replay or native qualification; application harness feature checks included",
+  "imagegen": "All11 boards and exact prompts verified unchanged",
+  "profiling": "macOS sample denied by sandbox; no profile obtained"
+}

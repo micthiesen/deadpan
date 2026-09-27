@@ -1,0 +1,65 @@
+{
+  "protocol": 1,
+  "project_id": "d038df46-94c6-4c0a-9d11-038b0e6da220",
+  "expected_revision": "cce57002-dfdc-4bea-b544-8bee3e31c792",
+  "new_revision": "core26-add-group",
+  "command": {
+    "command": "insert",
+    "parent": "b5903f58-0249-4a89-8af8-ed3d8a5cfe1f",
+    "index": 0,
+    "subtree": {
+      "root": "core26-outer",
+      "nodes": {
+        "core26-outer": {
+          "label": "Outer",
+          "kind": {
+            "type": "sequence",
+            "children": [
+              "core26-inner"
+            ]
+          }
+        },
+        "core26-inner": {
+          "label": "Inner",
+          "kind": {
+            "type": "sequence",
+            "children": [
+              "core26-first",
+              "core26-second"
+            ]
+          }
+        },
+        "core26-first": {
+          "label": "First",
+          "kind": {
+            "type": "hold",
+            "recipe": {
+              "duration": 4,
+              "video": {
+                "type": "background"
+              },
+              "audio": {
+                "type": "silence"
+              }
+            }
+          }
+        },
+        "core26-second": {
+          "label": "Second",
+          "kind": {
+            "type": "hold",
+            "recipe": {
+              "duration": 3,
+              "video": {
+                "type": "background"
+              },
+              "audio": {
+                "type": "silence"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

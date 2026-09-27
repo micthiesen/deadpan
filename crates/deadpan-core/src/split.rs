@@ -348,7 +348,10 @@ fn relative_position(
                 let play = index.repeats[parent]
                     .play(&step.iteration)
                     .ok_or_else(|| invalid("split occurrence play is missing"))?;
-                position.checked_add(ExactRatio::integer(play.start))
+                let offset = play
+                    .branch_offset(node)
+                    .ok_or_else(|| invalid("split occurrence has no rendered interval"))?;
+                position.checked_add(ExactRatio::integer(offset))
             }
             NodeKind::Retime {
                 mapping, duration, ..

@@ -23,21 +23,59 @@ libraries have not yet been assembled into a portable signed app bundle.
 CI builds the same pinned dependency before running the complete gate.
 These developer tools must never become end-user requirements.
 
-## Validation gate
+## Validation workflow
 
-Run from the repository root:
+During implementation, select the changed crate, relevant integration targets
+and affected dependants. For example, while changing playback:
+
+```sh
+cargo fmt --all -- --check
+cargo clippy -p deadpan-playback --all-targets --locked -- -D warnings
+cargo test -p deadpan-playback --lib --locked
+```
+
+After independent review, run one full gate for the completed milestone from
+the repository root:
 
 ```sh
 cargo fmt --all -- --check
 cargo clippy --workspace --all-targets --locked -- -D warnings
 cargo test --workspace --locked
-cargo build --workspace --locked
-cargo run -p deadpan-cli -- doctor
 ```
+
+Workspace integration tests already build and exercise the normal application,
+CLI and media-worker executables, including doctor. A separate workspace build
+and doctor invocation add no required coverage after those tests. Use builds
+for packaging/native startup work and doctor for environment diagnosis.
+
+For app changes, also run the optional harness lint/tests documented below.
+Keep base-app checks: `ui-harness` has different dialog, playback and reply paths,
+so combining everything into one feature-enabled run would lose coverage. CI
+checks both. Backend-only changes do not need another unchanged app-feature
+run or painted replay.
+
+One session owns Cargo execution. After an interruption, inspect the existing
+PID and log before launching anything else. A quiet command or yielded tool
+session is not a failed test. Preserve finished results and run only the
+affected targets after a small review fix. Do not rerun focused tests already
+covered by the workspace gate, or restart the whole gate for a documentation
+edit. Record exactly which source changes each later check covers. Repeat or
+broaden verification only for a changed behavior, failure or unresolved concern.
+Reproduce a failure once with phase/error diagnostics, fix the cause and verify;
+never keep retrying until green. Retry a capability failure only after that
+capability changes. Keep one concise result record and use Git checkpoints
+instead of creating another full archive and gate-script copy per iteration.
 
 Use `cargo fmt --all` to apply formatting. Keep `Cargo.lock` committed; dependency updates are explicit reviewed changes. Tests should establish meaningful behavior and failure modes rather than mirror implementation.
 
-Prefer meaningful unit tests, integration tests, and deterministic headless harnesses for most verification. Keep keyboard grammar, focus routing decisions, command transactions, geometry, and worker state transitions testable without live UI automation. Review GUI aesthetics and natural keyboard navigation explicitly. Use computer interaction when visual quality, native focus/IME, accessibility, or end-to-end ergonomics need observation.
+Use unit and integration tests for command transactions, grammar, geometry and
+worker state transitions. For meaningful UI changes, add or update an application
+replay scenario and use the [UI feedback loop](UI_FEEDBACK.md). Inspect the actual
+offscreen application images as part of the change, including mouse interaction,
+readability, focus, selection and intermediate feedback. Run its separate release
+performance mode when the change can affect responsiveness. Native interaction
+covers the OS behavior that replay cannot observe: file panels, physical key
+delivery, native focus/IME, VoiceOver and physical display presentation.
 
 The gate verifies only the implemented foundation. It does not establish media accuracy, AI quality, accessibility conformance, signed distribution, or performance budgets. Those require the evidence in the [requirement tracker](REQUIREMENTS.md) and specification.
 
@@ -54,6 +92,29 @@ measure decoding, a full mix, device deadlines or listening quality. The crate's
 integration tests separately exercise verified PCM/AAC sessions and explicit
 speaker interpretation. See [source preparation](AUDIO_PREPARATION.md).
 
+## Application UI feedback
+
+With the pinned FFmpeg prefix available, write each run to a new scratch directory:
+
+```sh
+cargo test -p deadpan-app --features ui-harness --locked
+cargo run -p deadpan-app --features ui-harness --locked -- --ui-check --output /tmp/deadpan-ui-visual-NEW
+cargo run -p deadpan-app --release --features ui-harness --locked -- --ui-check --mode performance --output /tmp/deadpan-ui-performance-NEW
+```
+
+Visual mode is the normal agent UI loop. It must use the production widgets,
+event routing, real project service and shared GPU video path. Read the report,
+inspect the contact sheets and affected full-size frames, then fix defects and
+repeat the affected scenarios. Compare with [the boards](design/README.md), not
+only the previous screenshot. Never automatically accept changed images as a new
+baseline. Performance mode measures monotonic stage latency independently of
+replay time and screenshot work. Neither mode establishes native accessibility or
+subjective ease of use. See [UI feedback](UI_FEEDBACK.md) for current coverage,
+measurement limits and the authoring contract; record unavailable checks as such.
+CI compiles, lints and tests the optional harness and shortcut contracts. Rendered
+replay requires a Metal-capable host; a missing adapter fails with a report rather
+than passing without images. Host GPU replay remains an agent verification step.
+
 ## Native application smoke test
 
 On a supported Apple Silicon Mac:
@@ -63,19 +124,40 @@ cargo run -p deadpan-app -- --smoke-test
 cargo run -p deadpan-app
 ```
 
-`--smoke-test` opens the native window, closes it after frames have rendered, and checks the shutdown callback. Run it for native startup or lifecycle changes. Where an interactive check adds evidence, confirm the affected layout, focus, keyboard navigation, and close behavior. Do not repeat GUI testing for unrelated pure-core changes. Confirm no media/import/render controls imply unavailable functionality. For lifecycle changes, verify the intended quit/SIGTERM behavior and exit status. Record the actual OS/hardware and what was observed; a successful compile is not a UI smoke test.
+`--smoke-test` opens the native window, closes it after frames have rendered, and
+checks the shutdown callback. Run it for native startup or lifecycle changes.
+Use the offscreen loop for routine layout and interaction review, then choose
+native checks for affected OS behavior or unresolved real-use questions. Confirm
+no media/import/render controls imply unavailable functionality. For lifecycle
+changes, verify the intended quit/SIGTERM behavior and exit status. Record the
+actual OS/hardware and what was observed; a successful compile is not a UI smoke
+test. Unrelated pure-core changes do not require GUI runs.
 
 The [native workspace](NATIVE_WORKSPACE.md) uses `⌘N`, `⌘O` and `⌘I` for
 project creation, project opening and media import through macOS panels. Import
-registers a source; `⌘Return` explicitly inserts the entire source after the
-selected beat, or at sequence end. `⌘Z` / `⌘Shift Z` navigate saved history.
+registers a source; `,i` explicitly inserts the entire source after the
+selected beat, or at sequence end. In Original, `v` plus h/l selects a
+half-open moment and `y` copies it. In Your edit, `p`/`P` paste after/before
+the selected beat in the current ordinary Sequence group. `⌘Z` / `⌘Shift Z` navigate saved history.
 Use `--project /absolute/project.deadpan` to reopen directly, or
 `--preview-source /absolute/video.mp4` for standalone source inspection.
 The source decoder retains the [admitted MP4/Matroska grammar](SOURCE_ADMISSION.md).
-Space plays/pauses [limited sequence audition](PLAYBACK.md). Run
+Space plays/pauses [limited Original/edit audition](PLAYBACK.md); Shift+Space loops the selected moment or beat. Run
 `cargo test -p deadpan-playback -p deadpan-output --locked` for canonical PCM,
 delivery-clock, cancellation and queue tests without a native device. Full
 mastering, range editing, generated-provider preview and export remain open.
+
+Playback unit tests reserve one real-media workload per test binary before
+fixture preparation. Pass that permit to the test engine helper: its shared
+repaint callback retains the reservation until both asynchronous workers exit.
+Dropping an engine or receiving `Stopped` only requests or acknowledges a stop;
+neither proves preparation teardown. Other PCM readers in the same binary use
+the same reservation. Admission waits at most ten minutes, including queueing
+behind complete scenarios, so a leaked worker fails instead of stranding the
+suite. Pure arithmetic tests remain parallel. This isolates
+debug DSP cost without changing playback prefill, watchdogs or test deadlines.
+It does not establish production throughput or device latency. See the
+[playback test scheduling record](qualification/playback-waits-2026-09-27.md).
 
 `h/l` or Left/Right move the boundary cursor, accepting counts such as `12l`.
 `j/k` choose sources or sequence beats according to pane focus. `gg/G` and
@@ -144,6 +226,12 @@ documents the boundary; these tests establish no native canvas-preview quality.
 
 ## Source audio checks
 
+Structural speed edits use `:retime 0.75 pitch=preserve` or `pitch=tape`, with
+exact fractional input also accepted. The inspector shows the final duration
+before Enter applies the command. Run the `retime` application replay alongside
+the core Retime, store migration/history and decoded audio tests when changing
+this path. See [speed editing](RETIME_EDITING.md) for its clock and history rules.
+
 `cargo test --locked -p deadpan-dsp` checks both legacy count-derived and explicit
 rational-rate recipes against all 50 prior reference hashes, plus independent
 allocation, replay and large-rational boundary cases. The
@@ -171,13 +259,52 @@ loop period differs from rounded storage. The host integration verifies an
 explicit AAC loop, separate silence and following speech without history writes.
 See [room-tone audio](ROOM_TONE_AUDIO.md).
 
+Scoped sound-mixing preparation is covered by the plan's `audio_tape` and
+`audio_definition` tests and the audio crate's `audio_definition` tests. The
+`mix::` PCM cases decode distinct 44.1 kHz mono and 48 kHz stereo sources, then
+compare exact placement, scoped gates, independent sums and one enclosing
+canonical Preserve. They also exercise hidden unsupported histories, dependency
+revocation and shared limits. These are headless preparation checks; they do not
+qualify sound placement, the complete final mix or acoustic output. See
+[sound events](SOUND_EVENTS.md).
+
+The plan's `source_voice` and `source_voice_policy` suites exercise catalog
+admission, exact source phase, separate input/output Hold policy and remapped
+issuer grids. `cargo test --locked -p deadpan-playback source_voice` registers
+real audio without insertion and reads it through production source admission,
+the existing tape reader and canonical Preserve preparation. The 44.1 kHz fixture
+is rewrapped in a temporary extensible WAV with an explicit mono-center layout;
+its PCM bytes stay unchanged. The original unspecified-layout file remains an
+explicit rejection case. These tests do not insert persisted sound events or
+qualify physical listening. See [source operands](SOUND_EVENTS.md#independent-catalog-source-operands).
+
+The plan's `routed_voice` tests check complete provider captures and exact grid
+identity for retained sample routes. Run `cargo test -p deadpan-audio --locked
+--test audio_definition projection::routed` for full hidden-history admission,
+shared preparation limits and recovery. Run `cargo test -p deadpan-playback
+--locked source_voice::routed` for real catalog PCM copied through successive
+NTSC insertions, cold Preserve suffixes, fractional windows, prior gaps and
+source revocation. The references use independent boundary arithmetic and dense
+sample-array copies. These routed reads precede current consuming Hold gates,
+creative effects and final mixing. See [routed preparation](SOUND_EVENTS.md#routed-pcm-preparation).
+
+`cargo test --locked -p deadpan-core --test sound_routes` checks exact route
+admission and indexed full-leaf point lookup. The plan's `sound_route_sampling`
+tests compare retained sample histories with dense sample-copy references,
+including repeated NTSC cuts, fractional windows, shifted origins, endpoint
+exhaustion, chunked reads and compact billion-period routes. Its `hold_policy`
+tests retain distinct current issuers across retimes, stable plays, scoped
+definitions and root/intrinsic grids. Playback's `sources::cache_tests` opens
+qualified AAC PCM to exercise a seventeenth cache entry, recency, reopening and
+revoked/cancelled cold reads. These tests do not place or mix authored sounds.
+
 `cargo test --locked -p deadpan-audio --test signal_transfer` compares bounded
 root-to-point reads with materialized masked PCM and canonical DSP. The `stages`
 suite adds decoded-source integration, preparation-budget and provenance checks
 across the complete transfer halo. See [signal transfer](AUDIO_SIGNAL_TRANSFER.md).
 
 `cargo test --locked -p deadpan-core --test audio_binding_capture` checks compact
-capture, existing-binding preservation and atomic rejection of unsupported gaps.
+capture, existing-binding preservation and configured Repeat-gap ownership.
 `cargo test --locked -p deadpan-plan --test audio_fades` checks retained virtual
 fade clocks without media. `cargo test --locked -p deadpan-audio --lib bound_reads`
 compares actual decoded PCM through moved/resumed bindings, stable Repeat scope,
@@ -185,6 +312,30 @@ current Edit support, Preserve input/output policies and shared preparation
 limits. See [owned audio bindings](OWNED_AUDIO_BINDINGS.md). These are engine
 tests. [Pause insertion](INSERT_TIME.md) connects retained clocks to a native
 command; playback and listening remain separate work.
+
+`cargo test --locked -p deadpan-core --test allocation_projection --test audio_bindings`
+checks retained visible allocation and chronological reanchors, including hidden
+occurrences, nested birth scopes and bounded billion-play layouts. The
+`deadpan-audio` integration test `reanchors` uses decoded 44.1 kHz PCM to check
+first/later NTSC plays, subsequent pause insertion, fresh seeks and opaque
+Preserve preparation. Store migration tests replay the actual core-20/database-26
+fixture through core 21/database 27. See [compact audio reanchors](AUDIO_REANCHORS.md)
+for the contract and retained verification logs.
+
+`cargo test --locked -p deadpan-core --test audio_bindings --test audio_binding_capture`
+checks gap ownership, survival/birth, copied scopes and bounded admission.
+The `gap_bindings` integration suites in `deadpan-plan` and `deadpan-audio`
+exercise exact root/point clocks, actual decoded PCM, current gap policies and
+fresh seeks. Store migration tests replay actual core-21/database-27 history
+through core 22/database 28 and reject new vocabulary in frozen histories.
+CLI `audio_inspection` checks the same gap path with qualified managed originals.
+See [authored Repeat-gap bindings](GAP_AUDIO_BINDINGS.md).
+
+`cargo test --locked -p deadpan-core --test repeat_gap_layout --test gap_overrides`
+checks sparse gap geometry, identity lifetime, occurrence isolation, marks and
+inverse patches. Plan `gap_branches` and audio `gap_bindings` cover current
+picture/audio paths and decoded PCM after materialization, including canonical
+born gaps and a real Preserve stage. See [editable Repeat gaps](REPEAT_GAP_BRANCHES.md).
 
 Run `cargo test --locked -p deadpan-audio --test loudness --test true_peak` for
 informational metering, generated standard cases, channel/EOF behavior and
@@ -221,7 +372,7 @@ dependency audit. Device probes are intentionally excluded from ordinary CI.
 1. Read [the specification](spec/DEADPAN_SPEC.md), [handoff](spec/AGENT_HANDOFF.md), and [AGENTS.md](../AGENTS.md). Sections 1–8 define semantics, 12–14 define AI/runtime contracts, 17–24 define architecture, and 26–31 define verification and command details.
 2. Consult [Architecture](ARCHITECTURE.md) for current responsibilities and planned boundaries. Keep the pure core independent; add a crate when working code benefits from isolation.
 3. Work on Gate A qualification alongside the pure Gate B domain foundation. Record decisions with exact dependency revisions, licenses, failures, fixture inputs, and reproducible measurements.
-4. Add meaningful tests at the relevant boundary, run the validation gate, and exercise the affected native behavior. Preserve concurrent changes and review the complete scoped diff.
+4. Add meaningful tests at the relevant boundary, use focused verification while implementing, review the complete scoped diff, then run one milestone gate. Exercise affected native behavior where it adds evidence and preserve concurrent changes.
 5. Update the requirement tracker with implementation links, tests, measured acceptance evidence, and outstanding work. Commit and push authorized scoped work to `main`.
 
 ## Evidence discipline

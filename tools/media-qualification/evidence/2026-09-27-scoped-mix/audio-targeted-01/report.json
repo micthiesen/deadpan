@@ -1,0 +1,14 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "-p",
+    "deadpan-audio",
+    "--test",
+    "audio_definition",
+    "mix::"
+  ],
+  "exit_code": 101,
+  "seconds": 45.5953007908538
+}

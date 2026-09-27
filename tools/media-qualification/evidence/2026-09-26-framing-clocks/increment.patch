@@ -1,0 +1,6159 @@
+--- before/crates/deadpan-core/src/framing.rs
++++ crates/deadpan-core/src/framing.rs
+@@ -249,9 +249,21 @@
+         local: ExactRatio,
+         duration: FrameDuration,
+     ) -> Result<FramingPose, FramingError> {
++        self.evaluate_exact(local, ExactRatio::integer(duration.frames()))
++    }
++
++    /// Evaluate a derived owner clock without rounding its extent. This does
++    /// not change authored frame counts or introduce fractional project frames.
++    /// Both exact endpoints are accepted, as with `evaluate`.
++    pub fn evaluate_exact(
++        &self,
++        local: ExactRatio,
++        duration: ExactRatio,
++    ) -> Result<FramingPose, FramingError> {
+         self.validate()?;
+-        let frames = duration.frames();
+-        if frames == 0 || local.compare_integer(0).is_lt() || local.compare_integer(frames).is_gt()
++        if !duration.compare_integer(0).is_gt()
++            || local.compare_integer(0).is_lt()
++            || numeric::compare(local, duration).is_gt()
+         {
+             return Err(FramingError::TimeRange);
+         }
+@@ -264,19 +276,22 @@
+         let mut start = ExactRatio::ZERO;
+         let mut from = envelope.initial;
+         for segment in &envelope.segments {
+-            let end_frame = segment.end.checked_mul(ExactRatio::integer(frames))?;
+-            match numeric::compare(local, end_frame) {
++            // Do not materialize `end * duration` or `local / duration` as an
++            // ExactRatio. Their intermediates can exceed i128 even when all
++            // inputs and the selected segment are valid.
++            match numeric::compare_progress(local, duration, segment.end)? {
+                 std::cmp::Ordering::Equal => return Ok(segment.pose),
+                 std::cmp::Ordering::Greater => {
+                     start = segment.end;
+                     from = segment.pose;
+                 }
+                 std::cmp::Ordering::Less => {
+-                    let start_frame = start.checked_mul(ExactRatio::integer(frames))?;
+-                    if local == start_frame || matches!(segment.curve, FramingCurve::Step) {
++                    if numeric::compare_progress(local, duration, start)?.is_eq()
++                        || matches!(segment.curve, FramingCurve::Step)
++                    {
+                         return Ok(from);
+                     }
+-                    let progress = numeric::segment_progress(local, frames, start, segment.end)?;
++                    let progress = numeric::segment_progress(local, duration, start, segment.end)?;
+                     return interpolate(from, segment.pose, segment.curve, progress);
+                 }
+             }
+--- before/crates/deadpan-core/src/framing/numeric.rs
++++ crates/deadpan-core/src/framing/numeric.rs
+@@ -1,7 +1,7 @@
+ //! Fixed bounded arithmetic for one framing interpolation fraction. This is not
+ //! an arbitrary precision API. Admitted progress denominators are <= 10^6;
+-//! local numerator/denominator are <= 127 bits and duration <= 63 bits.
+-//! The largest product below uses at most 231 bits, leaving room for the one-bit
++//! nonnegative local and positive duration numerator/denominator are <= 127 bits.
++//! The largest product below uses at most 294 bits, leaving room for the one-bit
+ //! shifts used by Q32 division. Every carry is still checked.
+ 
+ use std::cmp::Ordering;
+@@ -64,27 +64,50 @@
+ 
+ pub(super) fn segment_progress(
+     local: ExactRatio,
+-    frames: i64,
++    duration: ExactRatio,
+     start: ExactRatio,
+     end: ExactRatio,
+ ) -> Result<u64, FramingError> {
+-    // (local / D - a/A) / (b/B - a/A)
+-    // = ((n*A - D*d*a)*B) / (D*d*(b*A-a*B)).
++    // For local=n/d and duration=u/v:
++    // (local / duration - a/A) / (b/B - a/A)
++    // = ((n*v*A - u*d*a)*B) / (u*d*(b*A-a*B)).
+     let to_u64 = |v: i128| u64::try_from(v).map_err(|_| FramingError::Overflow);
+     let a = to_u64(start.numerator())?;
+     let a_den = to_u64(start.denominator())?;
+     let b = to_u64(end.numerator())?;
+     let b_den = to_u64(end.denominator())?;
+-    let duration = u64::try_from(frames).map_err(|_| FramingError::Overflow)?;
+     let n = u128::try_from(local.numerator()).map_err(|_| FramingError::Overflow)?;
+     let d = local.denominator() as u128;
++    let u = u128::try_from(duration.numerator()).map_err(|_| FramingError::Overflow)?;
++    let v = duration.denominator() as u128;
+     let delta = b
+         .checked_mul(a_den)
+         .and_then(|left| left.checked_sub(a.checked_mul(b_den)?))
+         .ok_or(FramingError::Overflow)?;
+-    let dd = Wide::from(d).mul(duration)?;
+-    let numerator = Wide::from(n).mul(a_den)?.sub(dd.mul(a)?)?.mul(b_den)?;
+-    fraction(numerator, dd.mul(delta)?)
++    let ud = Wide::from(u).mul_u128(d)?;
++    let numerator = Wide::from(n)
++        .mul_u128(v)?
++        .mul(a_den)?
++        .sub(ud.mul(a)?)?
++        .mul(b_den)?;
++    fraction(numerator, ud.mul(delta)?)
++}
++
++/// Compare local/duration with a validated envelope endpoint without creating
++/// either wide quotient or endpoint in the narrower ExactRatio representation.
++pub(super) fn compare_progress(
++    local: ExactRatio,
++    duration: ExactRatio,
++    progress: ExactRatio,
++) -> Result<Ordering, FramingError> {
++    let unsigned = |v| u128::try_from(v).map_err(|_| FramingError::Overflow);
++    let left = Wide::from(unsigned(local.numerator())?)
++        .mul_u128(duration.denominator() as u128)?
++        .mul(u64::try_from(progress.denominator()).map_err(|_| FramingError::Overflow)?)?;
++    let right = Wide::from(unsigned(duration.numerator())?)
++        .mul_u128(local.denominator() as u128)?
++        .mul(u64::try_from(progress.numerator()).map_err(|_| FramingError::Overflow)?)?;
++    Ok(left.cmp(&right))
+ }
+ 
+ fn fraction(mut numerator: Wide, denominator: Wide) -> Result<u64, FramingError> {
+@@ -111,13 +134,13 @@
+ }
+ 
+ #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+-struct Wide([u64; 4]);
++struct Wide([u64; 5]);
+ 
+ impl Wide {
+-    const ZERO: Self = Self([0; 4]);
++    const ZERO: Self = Self([0; 5]);
+ 
+     fn mul(self, value: u64) -> Result<Self, FramingError> {
+-        let mut output = [0; 4];
++        let mut output = [0; 5];
+         let mut carry = 0u128;
+         for (slot, limb) in output.iter_mut().zip(self.0) {
+             let product = u128::from(limb) * u128::from(value) + carry;
+@@ -130,8 +153,28 @@
+         Ok(Self(output))
+     }
+ 
++    fn mul_u128(self, value: u128) -> Result<Self, FramingError> {
++        let low = self.mul(value as u64)?;
++        let high = self.mul((value >> 64) as u64)?;
++        if high.0[4] != 0 {
++            return Err(FramingError::Overflow);
++        }
++        let mut output = low.0;
++        let mut carry = false;
++        for (slot, addend) in output[1..].iter_mut().zip(high.0) {
++            let (first, c1) = slot.overflowing_add(addend);
++            let (second, c2) = first.overflowing_add(u64::from(carry));
++            *slot = second;
++            carry = c1 || c2;
++        }
++        if carry {
++            return Err(FramingError::Overflow);
++        }
++        Ok(Self(output))
++    }
++
+     fn sub(self, other: Self) -> Result<Self, FramingError> {
+-        let mut output = [0; 4];
++        let mut output = [0; 5];
+         let mut borrow = false;
+         for (index, slot) in output.iter_mut().enumerate() {
+             let (first, b1) = self.0[index].overflowing_sub(other.0[index]);
+@@ -148,7 +191,7 @@
+ 
+ impl From<u128> for Wide {
+     fn from(value: u128) -> Self {
+-        Self([value as u64, (value >> 64) as u64, 0, 0])
++        Self([value as u64, (value >> 64) as u64, 0, 0, 0])
+     }
+ }
+ impl Ord for Wide {
+@@ -170,14 +213,20 @@
+     fn wide_carries_borrows_and_failures() {
+         assert_eq!(
+             Wide::from(u128::MAX).mul(u64::MAX).unwrap().0,
+-            [1, u64::MAX, u64::MAX - 1, 0]
+-        );
+-        assert_eq!(
+-            Wide([0, 0, 1, 0]).sub(Wide::from(1)).unwrap(),
++            [1, u64::MAX, u64::MAX - 1, 0, 0]
++        );
++        assert_eq!(
++            Wide([0, 0, 1, 0, 0]).sub(Wide::from(1)).unwrap(),
+             Wide::from(u128::MAX)
+         );
+         assert!(Wide::ZERO.sub(Wide::from(1)).is_err());
+-        assert!(Wide([u64::MAX; 4]).mul(2).is_err());
++        assert!(Wide([u64::MAX; 5]).mul(2).is_err());
++        assert_eq!(
++            Wide::from(u128::MAX).mul_u128(u128::MAX).unwrap().0,
++            [1, 0, u64::MAX - 1, u64::MAX, 0]
++        );
++        assert!(Wide([0, 0, 0, 0, 1]).mul_u128(1 << 64).is_err());
++        assert_eq!(Wide([u64::MAX; 5]).mul_u128(0).unwrap(), Wide::ZERO);
+     }
+ 
+     #[test]
+--- before/crates/deadpan-core/tests/fixtures/framing-clock-oracles.json
++++ crates/deadpan-core/tests/fixtures/framing-clock-oracles.json
+@@ -0,0 +1,5707 @@
++{
++  "generator": "Python standard-library fractions.Fraction; seed20260926; exact half-even rounding",
++  "quotient_overflow_cases": 58,
++  "endpoint_overflow_cases": 78,
++  "cases": [
++    {
++      "local": {
++        "numerator": "0",
++        "denominator": "1"
++      },
++      "duration": {
++        "numerator": "9",
++        "denominator": "2"
++      },
++      "start": {
++        "numerator": "0",
++        "denominator": "1"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 0
++    },
++    {
++      "local": {
++        "numerator": "9",
++        "denominator": "8"
++      },
++      "duration": {
++        "numerator": "9",
++        "denominator": "2"
++      },
++      "start": {
++        "numerator": "0",
++        "denominator": "1"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 1073741824
++    },
++    {
++      "local": {
++        "numerator": "9",
++        "denominator": "4"
++      },
++      "duration": {
++        "numerator": "9",
++        "denominator": "2"
++      },
++      "start": {
++        "numerator": "0",
++        "denominator": "1"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 2147483648
++    },
++    {
++      "local": {
++        "numerator": "9",
++        "denominator": "2"
++      },
++      "duration": {
++        "numerator": "9",
++        "denominator": "2"
++      },
++      "start": {
++        "numerator": "0",
++        "denominator": "1"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 4294967296
++    },
++    {
++      "local": {
++        "numerator": "0",
++        "denominator": "1"
++      },
++      "duration": {
++        "numerator": "1",
++        "denominator": "170141183460469231731687303715884105727"
++      },
++      "start": {
++        "numerator": "0",
++        "denominator": "1"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 0
++    },
++    {
++      "local": {
++        "numerator": "1",
++        "denominator": "170141183460469231731687303715884105727"
++      },
++      "duration": {
++        "numerator": "1",
++        "denominator": "170141183460469231731687303715884105727"
++      },
++      "start": {
++        "numerator": "0",
++        "denominator": "1"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 4294967296
++    },
++    {
++      "local": {
++        "numerator": "0",
++        "denominator": "1"
++      },
++      "duration": {
++        "numerator": "170141183460469231731687303715884105727",
++        "denominator": "170141183460469231731687303715884105726"
++      },
++      "start": {
++        "numerator": "0",
++        "denominator": "1"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 0
++    },
++    {
++      "local": {
++        "numerator": "170141183460469231731687303715884105727",
++        "denominator": "170141183460469231731687303715884105726"
++      },
++      "duration": {
++        "numerator": "170141183460469231731687303715884105727",
++        "denominator": "170141183460469231731687303715884105726"
++      },
++      "start": {
++        "numerator": "0",
++        "denominator": "1"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 4294967296
++    },
++    {
++      "local": {
++        "numerator": "0",
++        "denominator": "1"
++      },
++      "duration": {
++        "numerator": "170141183460469231731687303715884105727",
++        "denominator": "1"
++      },
++      "start": {
++        "numerator": "0",
++        "denominator": "1"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 0
++    },
++    {
++      "local": {
++        "numerator": "170141183460469231731687303715884105727",
++        "denominator": "4"
++      },
++      "duration": {
++        "numerator": "170141183460469231731687303715884105727",
++        "denominator": "1"
++      },
++      "start": {
++        "numerator": "0",
++        "denominator": "1"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 1073741824
++    },
++    {
++      "local": {
++        "numerator": "170141183460469231731687303715884105727",
++        "denominator": "2"
++      },
++      "duration": {
++        "numerator": "170141183460469231731687303715884105727",
++        "denominator": "1"
++      },
++      "start": {
++        "numerator": "0",
++        "denominator": "1"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 2147483648
++    },
++    {
++      "local": {
++        "numerator": "170141183460469231731687303715884105727",
++        "denominator": "1"
++      },
++      "duration": {
++        "numerator": "170141183460469231731687303715884105727",
++        "denominator": "1"
++      },
++      "start": {
++        "numerator": "0",
++        "denominator": "1"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 4294967296
++    },
++    {
++      "local": {
++        "numerator": "170141183460469231731687303715884105725",
++        "denominator": "170141183460469231731687303715884105726"
++      },
++      "duration": {
++        "numerator": "85070591730234615865843651857942052863",
++        "denominator": "85070591730234615865843651857942052862"
++      },
++      "start": {
++        "numerator": "999999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 4294967296
++    },
++    {
++      "local": {
++        "numerator": "85070591730234615865843651857942052863",
++        "denominator": "170141183460469231731687303715884105725"
++      },
++      "duration": {
++        "numerator": "85070591730234615865843651857942052863",
++        "denominator": "85070591730234615865843651857942052862"
++      },
++      "start": {
++        "numerator": "499999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "500001",
++        "denominator": "1000000"
++      },
++      "progress": 2147483648
++    },
++    {
++      "local": {
++        "numerator": "170141183460469231731687303715884105724",
++        "denominator": "170141183460469231731687303715884105725"
++      },
++      "duration": {
++        "numerator": "170141183460469231731687303715884105725",
++        "denominator": "170141183460469231731687303715884105723"
++      },
++      "start": {
++        "numerator": "999999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 4294967296
++    },
++    {
++      "local": {
++        "numerator": "1",
++        "denominator": "2"
++      },
++      "duration": {
++        "numerator": "170141183460469231731687303715884105725",
++        "denominator": "170141183460469231731687303715884105723"
++      },
++      "start": {
++        "numerator": "499999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "500001",
++        "denominator": "1000000"
++      },
++      "progress": 2147483648
++    },
++    {
++      "local": {
++        "numerator": "170141183460469231731687303715884105723",
++        "denominator": "170141183460469231731687303715884105724"
++      },
++      "duration": {
++        "numerator": "85070591730234615865843651857942052862",
++        "denominator": "85070591730234615865843651857942052861"
++      },
++      "start": {
++        "numerator": "999999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 4294967296
++    },
++    {
++      "local": {
++        "numerator": "85070591730234615865843651857942052862",
++        "denominator": "170141183460469231731687303715884105723"
++      },
++      "duration": {
++        "numerator": "85070591730234615865843651857942052862",
++        "denominator": "85070591730234615865843651857942052861"
++      },
++      "start": {
++        "numerator": "499999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "500001",
++        "denominator": "1000000"
++      },
++      "progress": 2147483648
++    },
++    {
++      "local": {
++        "numerator": "170141183460469231731687303715884105722",
++        "denominator": "170141183460469231731687303715884105723"
++      },
++      "duration": {
++        "numerator": "170141183460469231731687303715884105723",
++        "denominator": "170141183460469231731687303715884105721"
++      },
++      "start": {
++        "numerator": "999999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 4294967296
++    },
++    {
++      "local": {
++        "numerator": "1",
++        "denominator": "2"
++      },
++      "duration": {
++        "numerator": "170141183460469231731687303715884105723",
++        "denominator": "170141183460469231731687303715884105721"
++      },
++      "start": {
++        "numerator": "499999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "500001",
++        "denominator": "1000000"
++      },
++      "progress": 2147483648
++    },
++    {
++      "local": {
++        "numerator": "170141183460469231731687303715884105721",
++        "denominator": "170141183460469231731687303715884105722"
++      },
++      "duration": {
++        "numerator": "85070591730234615865843651857942052861",
++        "denominator": "85070591730234615865843651857942052860"
++      },
++      "start": {
++        "numerator": "999999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 4294967296
++    },
++    {
++      "local": {
++        "numerator": "85070591730234615865843651857942052861",
++        "denominator": "170141183460469231731687303715884105721"
++      },
++      "duration": {
++        "numerator": "85070591730234615865843651857942052861",
++        "denominator": "85070591730234615865843651857942052860"
++      },
++      "start": {
++        "numerator": "499999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "500001",
++        "denominator": "1000000"
++      },
++      "progress": 2147483648
++    },
++    {
++      "local": {
++        "numerator": "170141183460469231731687303715884105720",
++        "denominator": "170141183460469231731687303715884105721"
++      },
++      "duration": {
++        "numerator": "170141183460469231731687303715884105721",
++        "denominator": "170141183460469231731687303715884105719"
++      },
++      "start": {
++        "numerator": "999999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 4294967296
++    },
++    {
++      "local": {
++        "numerator": "1",
++        "denominator": "2"
++      },
++      "duration": {
++        "numerator": "170141183460469231731687303715884105721",
++        "denominator": "170141183460469231731687303715884105719"
++      },
++      "start": {
++        "numerator": "499999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "500001",
++        "denominator": "1000000"
++      },
++      "progress": 2147483648
++    },
++    {
++      "local": {
++        "numerator": "170141183460469231731687303715884105719",
++        "denominator": "170141183460469231731687303715884105720"
++      },
++      "duration": {
++        "numerator": "85070591730234615865843651857942052860",
++        "denominator": "85070591730234615865843651857942052859"
++      },
++      "start": {
++        "numerator": "999999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 4294967296
++    },
++    {
++      "local": {
++        "numerator": "85070591730234615865843651857942052860",
++        "denominator": "170141183460469231731687303715884105719"
++      },
++      "duration": {
++        "numerator": "85070591730234615865843651857942052860",
++        "denominator": "85070591730234615865843651857942052859"
++      },
++      "start": {
++        "numerator": "499999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "500001",
++        "denominator": "1000000"
++      },
++      "progress": 2147483648
++    },
++    {
++      "local": {
++        "numerator": "170141183460469231731687303715884105718",
++        "denominator": "170141183460469231731687303715884105719"
++      },
++      "duration": {
++        "numerator": "170141183460469231731687303715884105719",
++        "denominator": "170141183460469231731687303715884105717"
++      },
++      "start": {
++        "numerator": "999999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 4294967296
++    },
++    {
++      "local": {
++        "numerator": "1",
++        "denominator": "2"
++      },
++      "duration": {
++        "numerator": "170141183460469231731687303715884105719",
++        "denominator": "170141183460469231731687303715884105717"
++      },
++      "start": {
++        "numerator": "499999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "500001",
++        "denominator": "1000000"
++      },
++      "progress": 2147483648
++    },
++    {
++      "local": {
++        "numerator": "170141183460469231731687303715884105717",
++        "denominator": "170141183460469231731687303715884105718"
++      },
++      "duration": {
++        "numerator": "85070591730234615865843651857942052859",
++        "denominator": "85070591730234615865843651857942052858"
++      },
++      "start": {
++        "numerator": "999999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 4294967296
++    },
++    {
++      "local": {
++        "numerator": "85070591730234615865843651857942052859",
++        "denominator": "170141183460469231731687303715884105717"
++      },
++      "duration": {
++        "numerator": "85070591730234615865843651857942052859",
++        "denominator": "85070591730234615865843651857942052858"
++      },
++      "start": {
++        "numerator": "499999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "500001",
++        "denominator": "1000000"
++      },
++      "progress": 2147483648
++    },
++    {
++      "local": {
++        "numerator": "170141183460469231731687303715884105716",
++        "denominator": "170141183460469231731687303715884105717"
++      },
++      "duration": {
++        "numerator": "170141183460469231731687303715884105717",
++        "denominator": "170141183460469231731687303715884105715"
++      },
++      "start": {
++        "numerator": "999999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 4294967296
++    },
++    {
++      "local": {
++        "numerator": "1",
++        "denominator": "2"
++      },
++      "duration": {
++        "numerator": "170141183460469231731687303715884105717",
++        "denominator": "170141183460469231731687303715884105715"
++      },
++      "start": {
++        "numerator": "499999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "500001",
++        "denominator": "1000000"
++      },
++      "progress": 2147483648
++    },
++    {
++      "local": {
++        "numerator": "170141183460469231731687303715884105715",
++        "denominator": "170141183460469231731687303715884105716"
++      },
++      "duration": {
++        "numerator": "85070591730234615865843651857942052858",
++        "denominator": "85070591730234615865843651857942052857"
++      },
++      "start": {
++        "numerator": "999999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 4294967296
++    },
++    {
++      "local": {
++        "numerator": "85070591730234615865843651857942052858",
++        "denominator": "170141183460469231731687303715884105715"
++      },
++      "duration": {
++        "numerator": "85070591730234615865843651857942052858",
++        "denominator": "85070591730234615865843651857942052857"
++      },
++      "start": {
++        "numerator": "499999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "500001",
++        "denominator": "1000000"
++      },
++      "progress": 2147483648
++    },
++    {
++      "local": {
++        "numerator": "170141183460469231731687303715884105714",
++        "denominator": "170141183460469231731687303715884105715"
++      },
++      "duration": {
++        "numerator": "170141183460469231731687303715884105715",
++        "denominator": "170141183460469231731687303715884105713"
++      },
++      "start": {
++        "numerator": "999999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 4294967296
++    },
++    {
++      "local": {
++        "numerator": "1",
++        "denominator": "2"
++      },
++      "duration": {
++        "numerator": "170141183460469231731687303715884105715",
++        "denominator": "170141183460469231731687303715884105713"
++      },
++      "start": {
++        "numerator": "499999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "500001",
++        "denominator": "1000000"
++      },
++      "progress": 2147483648
++    },
++    {
++      "local": {
++        "numerator": "170141183460469231731687303715884105713",
++        "denominator": "170141183460469231731687303715884105714"
++      },
++      "duration": {
++        "numerator": "85070591730234615865843651857942052857",
++        "denominator": "85070591730234615865843651857942052856"
++      },
++      "start": {
++        "numerator": "999999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 4294967296
++    },
++    {
++      "local": {
++        "numerator": "85070591730234615865843651857942052857",
++        "denominator": "170141183460469231731687303715884105713"
++      },
++      "duration": {
++        "numerator": "85070591730234615865843651857942052857",
++        "denominator": "85070591730234615865843651857942052856"
++      },
++      "start": {
++        "numerator": "499999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "500001",
++        "denominator": "1000000"
++      },
++      "progress": 2147483648
++    },
++    {
++      "local": {
++        "numerator": "170141183460469231731687303715884105712",
++        "denominator": "170141183460469231731687303715884105713"
++      },
++      "duration": {
++        "numerator": "170141183460469231731687303715884105713",
++        "denominator": "170141183460469231731687303715884105711"
++      },
++      "start": {
++        "numerator": "999999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 4294967296
++    },
++    {
++      "local": {
++        "numerator": "1",
++        "denominator": "2"
++      },
++      "duration": {
++        "numerator": "170141183460469231731687303715884105713",
++        "denominator": "170141183460469231731687303715884105711"
++      },
++      "start": {
++        "numerator": "499999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "500001",
++        "denominator": "1000000"
++      },
++      "progress": 2147483648
++    },
++    {
++      "local": {
++        "numerator": "170141183460469231731687303715884105711",
++        "denominator": "170141183460469231731687303715884105712"
++      },
++      "duration": {
++        "numerator": "85070591730234615865843651857942052856",
++        "denominator": "85070591730234615865843651857942052855"
++      },
++      "start": {
++        "numerator": "999999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 4294967296
++    },
++    {
++      "local": {
++        "numerator": "85070591730234615865843651857942052856",
++        "denominator": "170141183460469231731687303715884105711"
++      },
++      "duration": {
++        "numerator": "85070591730234615865843651857942052856",
++        "denominator": "85070591730234615865843651857942052855"
++      },
++      "start": {
++        "numerator": "499999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "500001",
++        "denominator": "1000000"
++      },
++      "progress": 2147483648
++    },
++    {
++      "local": {
++        "numerator": "170141183460469231731687303715884105710",
++        "denominator": "170141183460469231731687303715884105711"
++      },
++      "duration": {
++        "numerator": "170141183460469231731687303715884105711",
++        "denominator": "170141183460469231731687303715884105709"
++      },
++      "start": {
++        "numerator": "999999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 4294967296
++    },
++    {
++      "local": {
++        "numerator": "1",
++        "denominator": "2"
++      },
++      "duration": {
++        "numerator": "170141183460469231731687303715884105711",
++        "denominator": "170141183460469231731687303715884105709"
++      },
++      "start": {
++        "numerator": "499999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "500001",
++        "denominator": "1000000"
++      },
++      "progress": 2147483648
++    },
++    {
++      "local": {
++        "numerator": "170141183460469231731687303715884105709",
++        "denominator": "170141183460469231731687303715884105710"
++      },
++      "duration": {
++        "numerator": "85070591730234615865843651857942052855",
++        "denominator": "85070591730234615865843651857942052854"
++      },
++      "start": {
++        "numerator": "999999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 4294967296
++    },
++    {
++      "local": {
++        "numerator": "85070591730234615865843651857942052855",
++        "denominator": "170141183460469231731687303715884105709"
++      },
++      "duration": {
++        "numerator": "85070591730234615865843651857942052855",
++        "denominator": "85070591730234615865843651857942052854"
++      },
++      "start": {
++        "numerator": "499999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "500001",
++        "denominator": "1000000"
++      },
++      "progress": 2147483648
++    },
++    {
++      "local": {
++        "numerator": "170141183460469231731687303715884105708",
++        "denominator": "170141183460469231731687303715884105709"
++      },
++      "duration": {
++        "numerator": "170141183460469231731687303715884105709",
++        "denominator": "170141183460469231731687303715884105707"
++      },
++      "start": {
++        "numerator": "999999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 4294967296
++    },
++    {
++      "local": {
++        "numerator": "1",
++        "denominator": "2"
++      },
++      "duration": {
++        "numerator": "170141183460469231731687303715884105709",
++        "denominator": "170141183460469231731687303715884105707"
++      },
++      "start": {
++        "numerator": "499999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "500001",
++        "denominator": "1000000"
++      },
++      "progress": 2147483648
++    },
++    {
++      "local": {
++        "numerator": "170141183460469231731687303715884105707",
++        "denominator": "170141183460469231731687303715884105708"
++      },
++      "duration": {
++        "numerator": "85070591730234615865843651857942052854",
++        "denominator": "85070591730234615865843651857942052853"
++      },
++      "start": {
++        "numerator": "999999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 4294967296
++    },
++    {
++      "local": {
++        "numerator": "85070591730234615865843651857942052854",
++        "denominator": "170141183460469231731687303715884105707"
++      },
++      "duration": {
++        "numerator": "85070591730234615865843651857942052854",
++        "denominator": "85070591730234615865843651857942052853"
++      },
++      "start": {
++        "numerator": "499999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "500001",
++        "denominator": "1000000"
++      },
++      "progress": 2147483648
++    },
++    {
++      "local": {
++        "numerator": "170141183460469231731687303715884105706",
++        "denominator": "170141183460469231731687303715884105707"
++      },
++      "duration": {
++        "numerator": "170141183460469231731687303715884105707",
++        "denominator": "170141183460469231731687303715884105705"
++      },
++      "start": {
++        "numerator": "999999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 4294967296
++    },
++    {
++      "local": {
++        "numerator": "1",
++        "denominator": "2"
++      },
++      "duration": {
++        "numerator": "170141183460469231731687303715884105707",
++        "denominator": "170141183460469231731687303715884105705"
++      },
++      "start": {
++        "numerator": "499999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "500001",
++        "denominator": "1000000"
++      },
++      "progress": 2147483648
++    },
++    {
++      "local": {
++        "numerator": "170141183460469231731687303715884105705",
++        "denominator": "170141183460469231731687303715884105706"
++      },
++      "duration": {
++        "numerator": "85070591730234615865843651857942052853",
++        "denominator": "85070591730234615865843651857942052852"
++      },
++      "start": {
++        "numerator": "999999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 4294967296
++    },
++    {
++      "local": {
++        "numerator": "85070591730234615865843651857942052853",
++        "denominator": "170141183460469231731687303715884105705"
++      },
++      "duration": {
++        "numerator": "85070591730234615865843651857942052853",
++        "denominator": "85070591730234615865843651857942052852"
++      },
++      "start": {
++        "numerator": "499999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "500001",
++        "denominator": "1000000"
++      },
++      "progress": 2147483648
++    },
++    {
++      "local": {
++        "numerator": "170141183460469231731687303715884105704",
++        "denominator": "170141183460469231731687303715884105705"
++      },
++      "duration": {
++        "numerator": "170141183460469231731687303715884105705",
++        "denominator": "170141183460469231731687303715884105703"
++      },
++      "start": {
++        "numerator": "999999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 4294967296
++    },
++    {
++      "local": {
++        "numerator": "1",
++        "denominator": "2"
++      },
++      "duration": {
++        "numerator": "170141183460469231731687303715884105705",
++        "denominator": "170141183460469231731687303715884105703"
++      },
++      "start": {
++        "numerator": "499999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "500001",
++        "denominator": "1000000"
++      },
++      "progress": 2147483648
++    },
++    {
++      "local": {
++        "numerator": "170141183460469231731687303715884105703",
++        "denominator": "170141183460469231731687303715884105704"
++      },
++      "duration": {
++        "numerator": "85070591730234615865843651857942052852",
++        "denominator": "85070591730234615865843651857942052851"
++      },
++      "start": {
++        "numerator": "999999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 4294967296
++    },
++    {
++      "local": {
++        "numerator": "85070591730234615865843651857942052852",
++        "denominator": "170141183460469231731687303715884105703"
++      },
++      "duration": {
++        "numerator": "85070591730234615865843651857942052852",
++        "denominator": "85070591730234615865843651857942052851"
++      },
++      "start": {
++        "numerator": "499999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "500001",
++        "denominator": "1000000"
++      },
++      "progress": 2147483648
++    },
++    {
++      "local": {
++        "numerator": "170141183460469231731687303715884105702",
++        "denominator": "170141183460469231731687303715884105703"
++      },
++      "duration": {
++        "numerator": "170141183460469231731687303715884105703",
++        "denominator": "170141183460469231731687303715884105701"
++      },
++      "start": {
++        "numerator": "999999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 4294967296
++    },
++    {
++      "local": {
++        "numerator": "1",
++        "denominator": "2"
++      },
++      "duration": {
++        "numerator": "170141183460469231731687303715884105703",
++        "denominator": "170141183460469231731687303715884105701"
++      },
++      "start": {
++        "numerator": "499999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "500001",
++        "denominator": "1000000"
++      },
++      "progress": 2147483648
++    },
++    {
++      "local": {
++        "numerator": "170141183460469231731687303715884105701",
++        "denominator": "170141183460469231731687303715884105702"
++      },
++      "duration": {
++        "numerator": "85070591730234615865843651857942052851",
++        "denominator": "85070591730234615865843651857942052850"
++      },
++      "start": {
++        "numerator": "999999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 4294967296
++    },
++    {
++      "local": {
++        "numerator": "85070591730234615865843651857942052851",
++        "denominator": "170141183460469231731687303715884105701"
++      },
++      "duration": {
++        "numerator": "85070591730234615865843651857942052851",
++        "denominator": "85070591730234615865843651857942052850"
++      },
++      "start": {
++        "numerator": "499999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "500001",
++        "denominator": "1000000"
++      },
++      "progress": 2147483648
++    },
++    {
++      "local": {
++        "numerator": "170141183460469231731687303715884105700",
++        "denominator": "170141183460469231731687303715884105701"
++      },
++      "duration": {
++        "numerator": "170141183460469231731687303715884105701",
++        "denominator": "170141183460469231731687303715884105699"
++      },
++      "start": {
++        "numerator": "999999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 4294967296
++    },
++    {
++      "local": {
++        "numerator": "1",
++        "denominator": "2"
++      },
++      "duration": {
++        "numerator": "170141183460469231731687303715884105701",
++        "denominator": "170141183460469231731687303715884105699"
++      },
++      "start": {
++        "numerator": "499999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "500001",
++        "denominator": "1000000"
++      },
++      "progress": 2147483648
++    },
++    {
++      "local": {
++        "numerator": "170141183460469231731687303715884105699",
++        "denominator": "170141183460469231731687303715884105700"
++      },
++      "duration": {
++        "numerator": "85070591730234615865843651857942052850",
++        "denominator": "85070591730234615865843651857942052849"
++      },
++      "start": {
++        "numerator": "999999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 4294967296
++    },
++    {
++      "local": {
++        "numerator": "85070591730234615865843651857942052850",
++        "denominator": "170141183460469231731687303715884105699"
++      },
++      "duration": {
++        "numerator": "85070591730234615865843651857942052850",
++        "denominator": "85070591730234615865843651857942052849"
++      },
++      "start": {
++        "numerator": "499999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "500001",
++        "denominator": "1000000"
++      },
++      "progress": 2147483648
++    },
++    {
++      "local": {
++        "numerator": "170141183460469231731687303715884105698",
++        "denominator": "170141183460469231731687303715884105699"
++      },
++      "duration": {
++        "numerator": "170141183460469231731687303715884105699",
++        "denominator": "170141183460469231731687303715884105697"
++      },
++      "start": {
++        "numerator": "999999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 4294967296
++    },
++    {
++      "local": {
++        "numerator": "1",
++        "denominator": "2"
++      },
++      "duration": {
++        "numerator": "170141183460469231731687303715884105699",
++        "denominator": "170141183460469231731687303715884105697"
++      },
++      "start": {
++        "numerator": "499999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "500001",
++        "denominator": "1000000"
++      },
++      "progress": 2147483648
++    },
++    {
++      "local": {
++        "numerator": "170141183460469231731687303715884105697",
++        "denominator": "170141183460469231731687303715884105698"
++      },
++      "duration": {
++        "numerator": "85070591730234615865843651857942052849",
++        "denominator": "85070591730234615865843651857942052848"
++      },
++      "start": {
++        "numerator": "999999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 4294967296
++    },
++    {
++      "local": {
++        "numerator": "85070591730234615865843651857942052849",
++        "denominator": "170141183460469231731687303715884105697"
++      },
++      "duration": {
++        "numerator": "85070591730234615865843651857942052849",
++        "denominator": "85070591730234615865843651857942052848"
++      },
++      "start": {
++        "numerator": "499999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "500001",
++        "denominator": "1000000"
++      },
++      "progress": 2147483648
++    },
++    {
++      "local": {
++        "numerator": "170141183460469231731687303715884105696",
++        "denominator": "170141183460469231731687303715884105697"
++      },
++      "duration": {
++        "numerator": "170141183460469231731687303715884105697",
++        "denominator": "170141183460469231731687303715884105695"
++      },
++      "start": {
++        "numerator": "999999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 4294967296
++    },
++    {
++      "local": {
++        "numerator": "1",
++        "denominator": "2"
++      },
++      "duration": {
++        "numerator": "170141183460469231731687303715884105697",
++        "denominator": "170141183460469231731687303715884105695"
++      },
++      "start": {
++        "numerator": "499999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "500001",
++        "denominator": "1000000"
++      },
++      "progress": 2147483648
++    },
++    {
++      "local": {
++        "numerator": "170141183460469231731687303715884105695",
++        "denominator": "170141183460469231731687303715884105696"
++      },
++      "duration": {
++        "numerator": "85070591730234615865843651857942052848",
++        "denominator": "85070591730234615865843651857942052847"
++      },
++      "start": {
++        "numerator": "999999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 4294967296
++    },
++    {
++      "local": {
++        "numerator": "85070591730234615865843651857942052848",
++        "denominator": "170141183460469231731687303715884105695"
++      },
++      "duration": {
++        "numerator": "85070591730234615865843651857942052848",
++        "denominator": "85070591730234615865843651857942052847"
++      },
++      "start": {
++        "numerator": "499999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "500001",
++        "denominator": "1000000"
++      },
++      "progress": 2147483648
++    },
++    {
++      "local": {
++        "numerator": "170141183460469231731687303715884105694",
++        "denominator": "170141183460469231731687303715884105695"
++      },
++      "duration": {
++        "numerator": "170141183460469231731687303715884105695",
++        "denominator": "170141183460469231731687303715884105693"
++      },
++      "start": {
++        "numerator": "999999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 4294967296
++    },
++    {
++      "local": {
++        "numerator": "1",
++        "denominator": "2"
++      },
++      "duration": {
++        "numerator": "170141183460469231731687303715884105695",
++        "denominator": "170141183460469231731687303715884105693"
++      },
++      "start": {
++        "numerator": "499999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "500001",
++        "denominator": "1000000"
++      },
++      "progress": 2147483648
++    },
++    {
++      "local": {
++        "numerator": "170141183460469231731687303715884105693",
++        "denominator": "170141183460469231731687303715884105694"
++      },
++      "duration": {
++        "numerator": "85070591730234615865843651857942052847",
++        "denominator": "85070591730234615865843651857942052846"
++      },
++      "start": {
++        "numerator": "999999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 4294967296
++    },
++    {
++      "local": {
++        "numerator": "85070591730234615865843651857942052847",
++        "denominator": "170141183460469231731687303715884105693"
++      },
++      "duration": {
++        "numerator": "85070591730234615865843651857942052847",
++        "denominator": "85070591730234615865843651857942052846"
++      },
++      "start": {
++        "numerator": "499999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "500001",
++        "denominator": "1000000"
++      },
++      "progress": 2147483648
++    },
++    {
++      "local": {
++        "numerator": "170141183460469231731687303715884105692",
++        "denominator": "170141183460469231731687303715884105693"
++      },
++      "duration": {
++        "numerator": "170141183460469231731687303715884105693",
++        "denominator": "170141183460469231731687303715884105691"
++      },
++      "start": {
++        "numerator": "999999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 4294967296
++    },
++    {
++      "local": {
++        "numerator": "1",
++        "denominator": "2"
++      },
++      "duration": {
++        "numerator": "170141183460469231731687303715884105693",
++        "denominator": "170141183460469231731687303715884105691"
++      },
++      "start": {
++        "numerator": "499999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "500001",
++        "denominator": "1000000"
++      },
++      "progress": 2147483648
++    },
++    {
++      "local": {
++        "numerator": "170141183460469231731687303715884105691",
++        "denominator": "170141183460469231731687303715884105692"
++      },
++      "duration": {
++        "numerator": "85070591730234615865843651857942052846",
++        "denominator": "85070591730234615865843651857942052845"
++      },
++      "start": {
++        "numerator": "999999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 4294967296
++    },
++    {
++      "local": {
++        "numerator": "85070591730234615865843651857942052846",
++        "denominator": "170141183460469231731687303715884105691"
++      },
++      "duration": {
++        "numerator": "85070591730234615865843651857942052846",
++        "denominator": "85070591730234615865843651857942052845"
++      },
++      "start": {
++        "numerator": "499999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "500001",
++        "denominator": "1000000"
++      },
++      "progress": 2147483648
++    },
++    {
++      "local": {
++        "numerator": "170141183460469231731687303715884105690",
++        "denominator": "170141183460469231731687303715884105691"
++      },
++      "duration": {
++        "numerator": "170141183460469231731687303715884105691",
++        "denominator": "170141183460469231731687303715884105689"
++      },
++      "start": {
++        "numerator": "999999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 4294967296
++    },
++    {
++      "local": {
++        "numerator": "1",
++        "denominator": "2"
++      },
++      "duration": {
++        "numerator": "170141183460469231731687303715884105691",
++        "denominator": "170141183460469231731687303715884105689"
++      },
++      "start": {
++        "numerator": "499999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "500001",
++        "denominator": "1000000"
++      },
++      "progress": 2147483648
++    },
++    {
++      "local": {
++        "numerator": "170141183460469231731687303715884105689",
++        "denominator": "170141183460469231731687303715884105690"
++      },
++      "duration": {
++        "numerator": "85070591730234615865843651857942052845",
++        "denominator": "85070591730234615865843651857942052844"
++      },
++      "start": {
++        "numerator": "999999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 4294967296
++    },
++    {
++      "local": {
++        "numerator": "85070591730234615865843651857942052845",
++        "denominator": "170141183460469231731687303715884105689"
++      },
++      "duration": {
++        "numerator": "85070591730234615865843651857942052845",
++        "denominator": "85070591730234615865843651857942052844"
++      },
++      "start": {
++        "numerator": "499999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "500001",
++        "denominator": "1000000"
++      },
++      "progress": 2147483648
++    },
++    {
++      "local": {
++        "numerator": "170141183460469231731687303715884105688",
++        "denominator": "170141183460469231731687303715884105689"
++      },
++      "duration": {
++        "numerator": "170141183460469231731687303715884105689",
++        "denominator": "170141183460469231731687303715884105687"
++      },
++      "start": {
++        "numerator": "999999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 4294967296
++    },
++    {
++      "local": {
++        "numerator": "1",
++        "denominator": "2"
++      },
++      "duration": {
++        "numerator": "170141183460469231731687303715884105689",
++        "denominator": "170141183460469231731687303715884105687"
++      },
++      "start": {
++        "numerator": "499999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "500001",
++        "denominator": "1000000"
++      },
++      "progress": 2147483648
++    },
++    {
++      "local": {
++        "numerator": "170141183460469231731687303715884105687",
++        "denominator": "170141183460469231731687303715884105688"
++      },
++      "duration": {
++        "numerator": "85070591730234615865843651857942052844",
++        "denominator": "85070591730234615865843651857942052843"
++      },
++      "start": {
++        "numerator": "999999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 4294967296
++    },
++    {
++      "local": {
++        "numerator": "85070591730234615865843651857942052844",
++        "denominator": "170141183460469231731687303715884105687"
++      },
++      "duration": {
++        "numerator": "85070591730234615865843651857942052844",
++        "denominator": "85070591730234615865843651857942052843"
++      },
++      "start": {
++        "numerator": "499999",
++        "denominator": "1000000"
++      },
++      "end": {
++        "numerator": "500001",
++        "denominator": "1000000"
++      },
++      "progress": 2147483648
++    },
++    {
++      "local": {
++        "numerator": "7",
++        "denominator": "167503724544"
++      },
++      "duration": {
++        "numerator": "7",
++        "denominator": "13"
++      },
++      "start": {
++        "numerator": "0",
++        "denominator": "1"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 0
++    },
++    {
++      "local": {
++        "numerator": "7",
++        "denominator": "111669149696"
++      },
++      "duration": {
++        "numerator": "7",
++        "denominator": "13"
++      },
++      "start": {
++        "numerator": "0",
++        "denominator": "1"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 0
++    },
++    {
++      "local": {
++        "numerator": "7",
++        "denominator": "83751862272"
++      },
++      "duration": {
++        "numerator": "7",
++        "denominator": "13"
++      },
++      "start": {
++        "numerator": "0",
++        "denominator": "1"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 1
++    },
++    {
++      "local": {
++        "numerator": "7",
++        "denominator": "41875931136"
++      },
++      "duration": {
++        "numerator": "7",
++        "denominator": "13"
++      },
++      "start": {
++        "numerator": "0",
++        "denominator": "1"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 1
++    },
++    {
++      "local": {
++        "numerator": "21",
++        "denominator": "111669149696"
++      },
++      "duration": {
++        "numerator": "7",
++        "denominator": "13"
++      },
++      "start": {
++        "numerator": "0",
++        "denominator": "1"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 2
++    },
++    {
++      "local": {
++        "numerator": "35",
++        "denominator": "167503724544"
++      },
++      "duration": {
++        "numerator": "7",
++        "denominator": "13"
++      },
++      "start": {
++        "numerator": "0",
++        "denominator": "1"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 2
++    },
++    {
++      "local": {
++        "numerator": "7",
++        "denominator": "3221225472"
++      },
++      "duration": {
++        "numerator": "7",
++        "denominator": "13"
++      },
++      "start": {
++        "numerator": "0",
++        "denominator": "1"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 17
++    },
++    {
++      "local": {
++        "numerator": "245",
++        "denominator": "111669149696"
++      },
++      "duration": {
++        "numerator": "7",
++        "denominator": "13"
++      },
++      "start": {
++        "numerator": "0",
++        "denominator": "1"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 18
++    },
++    {
++      "local": {
++        "numerator": "371",
++        "denominator": "167503724544"
++      },
++      "duration": {
++        "numerator": "7",
++        "denominator": "13"
++      },
++      "start": {
++        "numerator": "0",
++        "denominator": "1"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 18
++    },
++    {
++      "local": {
++        "numerator": "45097156615",
++        "denominator": "167503724544"
++      },
++      "duration": {
++        "numerator": "7",
++        "denominator": "13"
++      },
++      "start": {
++        "numerator": "0",
++        "denominator": "1"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 2147483648
++    },
++    {
++      "local": {
++        "numerator": "30064771079",
++        "denominator": "111669149696"
++      },
++      "duration": {
++        "numerator": "7",
++        "denominator": "13"
++      },
++      "start": {
++        "numerator": "0",
++        "denominator": "1"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 2147483648
++    },
++    {
++      "local": {
++        "numerator": "22548578311",
++        "denominator": "83751862272"
++      },
++      "duration": {
++        "numerator": "7",
++        "denominator": "13"
++      },
++      "start": {
++        "numerator": "0",
++        "denominator": "1"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 2147483649
++    },
++    {
++      "local": {
++        "numerator": "90194313181",
++        "denominator": "167503724544"
++      },
++      "duration": {
++        "numerator": "7",
++        "denominator": "13"
++      },
++      "start": {
++        "numerator": "0",
++        "denominator": "1"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 4294967294
++    },
++    {
++      "local": {
++        "numerator": "60129542123",
++        "denominator": "111669149696"
++      },
++      "duration": {
++        "numerator": "7",
++        "denominator": "13"
++      },
++      "start": {
++        "numerator": "0",
++        "denominator": "1"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 4294967294
++    },
++    {
++      "local": {
++        "numerator": "22548578297",
++        "denominator": "41875931136"
++      },
++      "duration": {
++        "numerator": "7",
++        "denominator": "13"
++      },
++      "start": {
++        "numerator": "0",
++        "denominator": "1"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 4294967295
++    },
++    {
++      "local": {
++        "numerator": "45097156601",
++        "denominator": "83751862272"
++      },
++      "duration": {
++        "numerator": "7",
++        "denominator": "13"
++      },
++      "start": {
++        "numerator": "0",
++        "denominator": "1"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 4294967295
++    },
++    {
++      "local": {
++        "numerator": "60129542137",
++        "denominator": "111669149696"
++      },
++      "duration": {
++        "numerator": "7",
++        "denominator": "13"
++      },
++      "start": {
++        "numerator": "0",
++        "denominator": "1"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 4294967296
++    },
++    {
++      "local": {
++        "numerator": "6938024093",
++        "denominator": "12884901888"
++      },
++      "duration": {
++        "numerator": "7",
++        "denominator": "13"
++      },
++      "start": {
++        "numerator": "0",
++        "denominator": "1"
++      },
++      "end": {
++        "numerator": "1",
++        "denominator": "1"
++      },
++      "progress": 4294967296
++    },
++    {
++      "local": {
++        "numerator": "159030153932272074479960123503",
++        "denominator": "2029209125296219688492825000000"
++      },
++      "duration": {
++        "numerator": "53470354578481595",
++        "denominator": "675943963157095702"
++      },
++      "start": {
++        "numerator": "31847",
++        "denominator": "34309"
++      },
++      "end": {
++        "numerator": "239497",
++        "denominator": "240163"
++      },
++      "progress": 3889771895
++    },
++    {
++      "local": {
++        "numerator": "3697415886893624703383304133727",
++        "denominator": "923724196231071921426250000000"
++      },
++      "duration": {
++        "numerator": "103297241869383548",
++        "denominator": "18977871978860719"
++      },
++      "start": {
++        "numerator": "259683",
++        "denominator": "389390"
++      },
++      "end": {
++        "numerator": "360401",
++        "denominator": "389390"
++      },
++      "progress": 1137240850
++    },
++    {
++      "local": {
++        "numerator": "48794814747003094261653010037",
++        "denominator": "259767076396079813616412500000"
++      },
++      "duration": {
++        "numerator": "260214084808375783",
++        "denominator": "794121522094324777"
++      },
++      "start": {
++        "numerator": "6496",
++        "denominator": "11895"
++      },
++      "end": {
++        "numerator": "152101",
++        "denominator": "261690"
++      },
++      "progress": 3319669558
++    },
++    {
++      "local": {
++        "numerator": "11066802871935217153298396404649",
++        "denominator": "13898030058184828250454800000000"
++      },
++      "duration": {
++        "numerator": "824890625631453285",
++        "denominator": "705261798732623654"
++      },
++      "start": {
++        "numerator": "70285",
++        "denominator": "295593"
++      },
++      "end": {
++        "numerator": "819098",
++        "denominator": "886779"
++      },
++      "progress": 2774152409
++    },
++    {
++      "local": {
++        "numerator": "1045014680616596191520744966347",
++        "denominator": "953663289252760067601000000000"
++      },
++      "duration": {
++        "numerator": "65015379239521523",
++        "denominator": "23520643056808845"
++      },
++      "start": {
++        "numerator": "32701",
++        "denominator": "202729"
++      },
++      "end": {
++        "numerator": "170116",
++        "denominator": "202729"
++      },
++      "progress": 1489813701
++    },
++    {
++      "local": {
++        "numerator": "1412808497230999932771827213793",
++        "denominator": "2743293733298042319524000000000"
++      },
++      "duration": {
++        "numerator": "144684106627167969",
++        "denominator": "193762800769744478"
++      },
++      "start": {
++        "numerator": "6937",
++        "denominator": "14158"
++      },
++      "end": {
++        "numerator": "4933",
++        "denominator": "7079"
++      },
++      "progress": 4146542645
++    },
++    {
++      "local": {
++        "numerator": "618765177358721999376867379367",
++        "denominator": "7203883152284579385465000000000"
++      },
++      "duration": {
++        "numerator": "96343677813952429",
++        "denominator": "283071364386992785"
++      },
++      "start": {
++        "numerator": "2927",
++        "denominator": "25449"
++      },
++      "end": {
++        "numerator": "8780",
++        "denominator": "25449"
++      },
++      "progress": 2565003393
++    },
++    {
++      "local": {
++        "numerator": "2619083686860780029638448041731",
++        "denominator": "4605754209998168260997920000000"
++      },
++      "duration": {
++        "numerator": "783725748094142685",
++        "denominator": "854804347745053574"
++      },
++      "start": {
++        "numerator": "183373",
++        "denominator": "808212"
++      },
++      "end": {
++        "numerator": "205433",
++        "denominator": "269404"
++      },
++      "progress": 3153843942
++    },
++    {
++      "local": {
++        "numerator": "19476590672410756572516326671",
++        "denominator": "39034736953796957332471875000"
++      },
++      "duration": {
++        "numerator": "316972591732421357",
++        "denominator": "230444967349751121"
++      },
++      "start": {
++        "numerator": "41109",
++        "denominator": "162613"
++      },
++      "end": {
++        "numerator": "64101",
++        "denominator": "162613"
++      },
++      "progress": 3339814415
++    },
++    {
++      "local": {
++        "numerator": "123985680699303094012558362826353",
++        "denominator": "28747227756372388444670000000000"
++      },
++      "duration": {
++        "numerator": "906484423668921927",
++        "denominator": "93825300861880370"
++      },
++      "start": {
++        "numerator": "128242",
++        "denominator": "306391"
++      },
++      "end": {
++        "numerator": "8377",
++        "denominator": "18023"
++      },
++      "progress": 2587350220
++    },
++    {
++      "local": {
++        "numerator": "18405732130007680687557600291251",
++        "denominator": "435192759653136912288543000000000"
++      },
++      "duration": {
++        "numerator": "69948979755866129",
++        "denominator": "937747686627471621"
++      },
++      "start": {
++        "numerator": "243557",
++        "denominator": "928166"
++      },
++      "end": {
++        "numerator": "527855",
++        "denominator": "928166"
++      },
++      "progress": 4270895855
++    },
++    {
++      "local": {
++        "numerator": "50657865949827026058274893079281",
++        "denominator": "114742890021930214367906000000000"
++      },
++      "duration": {
++        "numerator": "115142807339998638",
++        "denominator": "252585201930839569"
++      },
++      "start": {
++        "numerator": "439485",
++        "denominator": "454274"
++      },
++      "end": {
++        "numerator": "880249",
++        "denominator": "908548"
++      },
++      "progress": 3168956927
++    },
++    {
++      "local": {
++        "numerator": "68873314809162530200681536723",
++        "denominator": "826658311100347919102687500000"
++      },
++      "duration": {
++        "numerator": "73299668749429636",
++        "denominator": "201836275619257553"
++      },
++      "start": {
++        "numerator": "473",
++        "denominator": "3449"
++      },
++      "end": {
++        "numerator": "19269",
++        "denominator": "65531"
++      },
++      "progress": 2525854521
++    },
++    {
++      "local": {
++        "numerator": "7673307474409653486425948303",
++        "denominator": "127385879224988725979343750000"
++      },
++      "duration": {
++        "numerator": "5282435972851513",
++        "denominator": "71278534949022351"
++      },
++      "start": {
++        "numerator": "169321",
++        "denominator": "228756"
++      },
++      "end": {
++        "numerator": "203305",
++        "denominator": "228756"
++      },
++      "progress": 2099558694
++    },
++    {
++      "local": {
++        "numerator": "911011921730038286962391363577",
++        "denominator": "9837434330734657362444200000000"
++      },
++      "duration": {
++        "numerator": "114191506583396457",
++        "denominator": "217689791486300828"
++      },
++      "start": {
++        "numerator": "146773",
++        "denominator": "903803"
++      },
++      "end": {
++        "numerator": "180603",
++        "denominator": "903803"
++      },
++      "progress": 1623227630
++    },
++    {
++      "local": {
++        "numerator": "40381539380993910617608307796093",
++        "denominator": "60494035852319152153175000000000"
++      },
++      "duration": {
++        "numerator": "494932051641199404",
++        "denominator": "562196554485647725"
++      },
++      "start": {
++        "numerator": "122311",
++        "denominator": "215206"
++      },
++      "end": {
++        "numerator": "343191",
++        "denominator": "430412"
++      },
++      "progress": 3561598396
++    },
++    {
++      "local": {
++        "numerator": "10853707478281061131933934284043",
++        "denominator": "57889735489599731153181000000000"
++      },
++      "duration": {
++        "numerator": "359534097152536351",
++        "denominator": "593479137299444667"
++      },
++      "start": {
++        "numerator": "250",
++        "denominator": "4241"
++      },
++      "end": {
++        "numerator": "240103",
++        "denominator": "292629"
++      },
++      "progress": 1412969693
++    },
++    {
++      "local": {
++        "numerator": "115526859764160925635059035789",
++        "denominator": "397146806497886142617562500000"
++      },
++      "duration": {
++        "numerator": "195012207711797503",
++        "denominator": "458103157953008311"
++      },
++      "start": {
++        "numerator": "9418",
++        "denominator": "13871"
++      },
++      "end": {
++        "numerator": "9487",
++        "denominator": "13871"
++      },
++      "progress": 3767966356
++    },
++    {
++      "local": {
++        "numerator": "7022014897683250495556738741",
++        "denominator": "31772879074036957428797500000"
++      },
++      "duration": {
++        "numerator": "345704056771444640",
++        "denominator": "567448838220064427"
++      },
++      "start": {
++        "numerator": "24171",
++        "denominator": "89588"
++      },
++      "end": {
++        "numerator": "20137",
++        "denominator": "44794"
++      },
++      "progress": 2221376112
++    },
++    {
++      "local": {
++        "numerator": "437618122771485356119609527481",
++        "denominator": "22731304630199237077500000000"
++      },
++      "duration": {
++        "numerator": "698114569958576702",
++        "denominator": "25048269564957837"
++      },
++      "start": {
++        "numerator": "60821",
++        "denominator": "92565"
++      },
++      "end": {
++        "numerator": "71908",
++        "denominator": "92565"
++      },
++      "progress": 1208041856
++    },
++    {
++      "local": {
++        "numerator": "13293344221281325498593561752781",
++        "denominator": "14289543832007273982385040000000"
++      },
++      "duration": {
++        "numerator": "621062642859235171",
++        "denominator": "579595942293572647"
++      },
++      "start": {
++        "numerator": "260692",
++        "denominator": "308179"
++      },
++      "end": {
++        "numerator": "592429",
++        "denominator": "616358"
++      },
++      "progress": 829480140
++    },
++    {
++      "local": {
++        "numerator": "89860324699806932826671484231",
++        "denominator": "103437716735947776018453125000"
++      },
++      "duration": {
++        "numerator": "35608531842925592",
++        "denominator": "21609386259137969"
++      },
++      "start": {
++        "numerator": "107163",
++        "denominator": "612698"
++      },
++      "end": {
++        "numerator": "183566",
++        "denominator": "306349"
++      },
++      "progress": 3566121723
++    },
++    {
++      "local": {
++        "numerator": "487284630131598604802117991019",
++        "denominator": "1188599031418814026815800000000"
++      },
++      "duration": {
++        "numerator": "217235799810461926",
++        "denominator": "251534056676432477"
++      },
++      "start": {
++        "numerator": "43791",
++        "denominator": "94508"
++      },
++      "end": {
++        "numerator": "22643",
++        "denominator": "47254"
++      },
++      "progress": 3077658348
++    },
++    {
++      "local": {
++        "numerator": "1051241619449846999186469803577",
++        "denominator": "32584331165562276472754000000000"
++      },
++      "duration": {
++        "numerator": "23093099623988639",
++        "denominator": "703648737046326594"
++      },
++      "start": {
++        "numerator": "269493",
++        "denominator": "277846"
++      },
++      "end": {
++        "numerator": "276155",
++        "denominator": "277846"
++      },
++      "progress": 2345637801
++    },
++    {
++      "local": {
++        "numerator": "2169037850835832745726654196783",
++        "denominator": "3280824467798127145279100000000"
++      },
++      "duration": {
++        "numerator": "29214993651400983",
++        "denominator": "32946521227573397"
++      },
++      "start": {
++        "numerator": "655073",
++        "denominator": "995803"
++      },
++      "end": {
++        "numerator": "875770",
++        "denominator": "995803"
++      },
++      "progress": 1700241531
++    },
++    {
++      "local": {
++        "numerator": "8036574349363757826956075698837",
++        "denominator": "22523137809696306893928600000000"
++      },
++      "duration": {
++        "numerator": "401607621056156071",
++        "denominator": "832469851554798117"
++      },
++      "start": {
++        "numerator": "334601",
++        "denominator": "541116"
++      },
++      "end": {
++        "numerator": "403231",
++        "denominator": "541116"
++      },
++      "progress": 4106547673
++    },
++    {
++      "local": {
++        "numerator": "241504698687988503488130545657",
++        "denominator": "254194688367192622665000000000"
++      },
++      "duration": {
++        "numerator": "445981333579086849",
++        "denominator": "420087073817869150"
++      },
++      "start": {
++        "numerator": "14396",
++        "denominator": "18153"
++      },
++      "end": {
++        "numerator": "1934",
++        "denominator": "2017"
++      },
++      "progress": 2638894388
++    },
++    {
++      "local": {
++        "numerator": "3728373295456805268469747123",
++        "denominator": "12038061731318902406050000000"
++      },
++      "duration": {
++        "numerator": "40017145103355749",
++        "denominator": "107819630374553537"
++      },
++      "start": {
++        "numerator": "104221",
++        "denominator": "125048"
++      },
++      "end": {
++        "numerator": "117933",
++        "denominator": "125048"
++      },
++      "progress": 40320165
++    },
++    {
++      "local": {
++        "numerator": "1361559506401458727248039539719",
++        "denominator": "1639434751500597389483906250000"
++      },
++      "duration": {
++        "numerator": "956739585732552962",
++        "denominator": "705901748516787315"
++      },
++      "start": {
++        "numerator": "19756",
++        "denominator": "74319"
++      },
++      "end": {
++        "numerator": "48778",
++        "denominator": "74319"
++      },
++      "progress": 3815772950
++    },
++    {
++      "local": {
++        "numerator": "6835469621139609122781352358829",
++        "denominator": "13208316252396587142732500000000"
++      },
++      "duration": {
++        "numerator": "470049461009565229",
++        "denominator": "881639673281406970"
++      },
++      "start": {
++        "numerator": "407175",
++        "denominator": "419483"
++      },
++      "end": {
++        "numerator": "407187",
++        "denominator": "419483"
++      },
++      "progress": 578773768
++    },
++    {
++      "local": {
++        "numerator": "129410053745895226819298775673",
++        "denominator": "103694584876150070166000000000"
++      },
++      "duration": {
++        "numerator": "222315736620056959",
++        "denominator": "97871245753799028"
++      },
++      "start": {
++        "numerator": "33762",
++        "denominator": "74165"
++      },
++      "end": {
++        "numerator": "58384",
++        "denominator": "74165"
++      },
++      "progress": 1218440110
++    },
++    {
++      "local": {
++        "numerator": "592567108740190035432368419903",
++        "denominator": "3016979619411241298436500000000"
++      },
++      "duration": {
++        "numerator": "380477268340883317",
++        "denominator": "486173105772436785"
++      },
++      "start": {
++        "numerator": "13180",
++        "denominator": "186167"
++      },
++      "end": {
++        "numerator": "64550",
++        "denominator": "186167"
++      },
++      "progress": 2804473289
++    },
++    {
++      "local": {
++        "numerator": "84002738181237215882697555981",
++        "denominator": "79267809819890861802200000000"
++      },
++      "duration": {
++        "numerator": "31822024154456145",
++        "denominator": "19642978168782386"
++      },
++      "start": {
++        "numerator": "289754",
++        "denominator": "443897"
++      },
++      "end": {
++        "numerator": "290500",
++        "denominator": "443897"
++      },
++      "progress": 3571852098
++    },
++    {
++      "local": {
++        "numerator": "4472424579847888365811285914161",
++        "denominator": "2322892399535432947096450000000"
++      },
++      "duration": {
++        "numerator": "483503193990822165",
++        "denominator": "234055186334436619"
++      },
++      "start": {
++        "numerator": "554912",
++        "denominator": "595473"
++      },
++      "end": {
++        "numerator": "555638",
++        "denominator": "595473"
++      },
++      "progress": 535310782
++    },
++    {
++      "local": {
++        "numerator": "108285685150380121099696655849",
++        "denominator": "340212076519962551232000000000"
++      },
++      "duration": {
++        "numerator": "8661543238062933",
++        "denominator": "17225164784849408"
++      },
++      "start": {
++        "numerator": "598891",
++        "denominator": "948042"
++      },
++      "end": {
++        "numerator": "310726",
++        "denominator": "474021"
++      },
++      "progress": 228417974
++    },
++    {
++      "local": {
++        "numerator": "16955488918556579153732762519559",
++        "denominator": "12371181372325931519708500000000"
++      },
++      "duration": {
++        "numerator": "736144500631682052",
++        "denominator": "491925219091632961"
++      },
++      "start": {
++        "numerator": "733853",
++        "denominator": "905346"
++      },
++      "end": {
++        "numerator": "452396",
++        "denominator": "452673"
++      },
++      "progress": 2395205048
++    },
++    {
++      "local": {
++        "numerator": "82607976368560439739130029037",
++        "denominator": "33079877857245164391659375000"
++      },
++      "duration": {
++        "numerator": "663421928708844122",
++        "denominator": "185851798976744783"
++      },
++      "start": {
++        "numerator": "78197",
++        "denominator": "113914"
++      },
++      "end": {
++        "numerator": "79709",
++        "denominator": "113914"
++      },
++      "progress": 4245326579
++    },
++    {
++      "local": {
++        "numerator": "542664611412336993162069905973",
++        "denominator": "1674449081251352400787000000000"
++      },
++      "duration": {
++        "numerator": "564528632618620633",
++        "denominator": "962776630611335696"
++      },
++      "start": {
++        "numerator": "8493",
++        "denominator": "27827"
++      },
++      "end": {
++        "numerator": "20667",
++        "denominator": "27827"
++      },
++      "progress": 2429836963
++    },
++    {
++      "local": {
++        "numerator": "99617814864354174580430013493",
++        "denominator": "130282092582678139154550000000"
++      },
++      "duration": {
++        "numerator": "180321144913062924",
++        "denominator": "172296624456362017"
++      },
++      "start": {
++        "numerator": "32861",
++        "denominator": "45369"
++      },
++      "end": {
++        "numerator": "4784",
++        "denominator": "5041"
++      },
++      "progress": 120402240
++    },
++    {
++      "local": {
++        "numerator": "2063125174418800427553406763",
++        "denominator": "10065711075101531733105000000000"
++      },
++      "duration": {
++        "numerator": "605142156090713",
++        "denominator": "102667860804878870"
++      },
++      "start": {
++        "numerator": "4247",
++        "denominator": "196083"
++      },
++      "end": {
++        "numerator": "28855",
++        "denominator": "65361"
++      },
++      "progress": 134176449
++    },
++    {
++      "local": {
++        "numerator": "922362850106514652521000254597",
++        "denominator": "7001479910011223392142000000000"
++      },
++      "duration": {
++        "numerator": "170042821680471873",
++        "denominator": "437647200275735929"
++      },
++      "start": {
++        "numerator": "205363",
++        "denominator": "671916"
++      },
++      "end": {
++        "numerator": "21352",
++        "denominator": "55993"
++      },
++      "progress": 1896427597
++    },
++    {
++      "local": {
++        "numerator": "16965511264608825511382552042887",
++        "denominator": "284496750902850553518211000000000"
++      },
++      "duration": {
++        "numerator": "167839437754186201",
++        "denominator": "656525408406968603"
++      },
++      "start": {
++        "numerator": "55607",
++        "denominator": "866674"
++      },
++      "end": {
++        "numerator": "513673",
++        "denominator": "866674"
++      },
++      "progress": 1374159492
++    },
++    {
++      "local": {
++        "numerator": "473715729815952045996075876707153",
++        "denominator": "654312106820435457739948000000000"
++      },
++      "duration": {
++        "numerator": "722453414992514717",
++        "denominator": "977524825086255233"
++      },
++      "start": {
++        "numerator": "163572",
++        "denominator": "167339"
++      },
++      "end": {
++        "numerator": "665737",
++        "denominator": "669356"
++      },
++      "progress": 531267444
++    },
++    {
++      "local": {
++        "numerator": "513320353173635011952485097417",
++        "denominator": "603833478245898040087500000000"
++      },
++      "duration": {
++        "numerator": "895863615280924609",
++        "denominator": "904813089526123575"
++      },
++      "start": {
++        "numerator": "7947",
++        "denominator": "9343"
++      },
++      "end": {
++        "numerator": "40441",
++        "denominator": "46715"
++      },
++      "progress": 2276806123
++    },
++    {
++      "local": {
++        "numerator": "54313070931600701830945512659",
++        "denominator": "165327184232694670371452000000"
++      },
++      "duration": {
++        "numerator": "462174837650458613",
++        "denominator": "833453571377339993"
++      },
++      "start": {
++        "numerator": "36475",
++        "denominator": "99182"
++      },
++      "end": {
++        "numerator": "64125",
++        "denominator": "99182"
++      },
++      "progress": 3461315475
++    },
++    {
++      "local": {
++        "numerator": "9983190485048591611896580397",
++        "denominator": "39912406346677247463700000000"
++      },
++      "duration": {
++        "numerator": "125752711338436825",
++        "denominator": "179596848717611733"
++      },
++      "start": {
++        "numerator": "405",
++        "denominator": "6667"
++      },
++      "end": {
++        "numerator": "38741",
++        "denominator": "66670"
++      },
++      "progress": 2447187102
++    },
++    {
++      "local": {
++        "numerator": "2677286106443096230675992122447",
++        "denominator": "406489432333962231329600000000"
++      },
++      "duration": {
++        "numerator": "41091072927079015",
++        "denominator": "5470508714470541"
++      },
++      "start": {
++        "numerator": "152165",
++        "denominator": "185764"
++      },
++      "end": {
++        "numerator": "355783",
++        "denominator": "371528"
++      },
++      "progress": 1790063483
++    },
++    {
++      "local": {
++        "numerator": "8550677794589796835478693312343",
++        "denominator": "57811284936840138046464700000000"
++      },
++      "duration": {
++        "numerator": "774634545884873745",
++        "denominator": "781240970344856479"
++      },
++      "start": {
++        "numerator": "13047",
++        "denominator": "739993"
++      },
++      "end": {
++        "numerator": "205708",
++        "denominator": "739993"
++      },
++      "progress": 2169907561
++    },
++    {
++      "local": {
++        "numerator": "72579004336377805091379159171",
++        "denominator": "32631702609023866666400000000"
++      },
++      "duration": {
++        "numerator": "53016369910759855",
++        "denominator": "23297898725385242"
++      },
++      "start": {
++        "numerator": "23454",
++        "denominator": "24511"
++      },
++      "end": {
++        "numerator": "47991",
++        "denominator": "49022"
++      },
++      "progress": 3992502939
++    },
++    {
++      "local": {
++        "numerator": "284919749639636600110215446971",
++        "denominator": "1136024786169020130032000000000"
++      },
++      "duration": {
++        "numerator": "41246452752756623",
++        "denominator": "136919945301798256"
++      },
++      "start": {
++        "numerator": "82187",
++        "denominator": "99564"
++      },
++      "end": {
++        "numerator": "14443",
++        "denominator": "16594"
++      },
++      "progress": 678081895
++    },
++    {
++      "local": {
++        "numerator": "577004758214114181449265958371961",
++        "denominator": "402560938657146764307300000000000"
++      },
++      "duration": {
++        "numerator": "596035245656931659",
++        "denominator": "413230551496793985"
++      },
++      "start": {
++        "numerator": "968071",
++        "denominator": "974180"
++      },
++      "end": {
++        "numerator": "96863",
++        "denominator": "97418"
++      },
++      "progress": 4149716
++    },
++    {
++      "local": {
++        "numerator": "584660256173995833010340935887",
++        "denominator": "814314990151007789402000000000"
++      },
++      "duration": {
++        "numerator": "990391516275869423",
++        "denominator": "897811455513790286"
++      },
++      "start": {
++        "numerator": "14905",
++        "denominator": "23582"
++      },
++      "end": {
++        "numerator": "8334",
++        "denominator": "11791"
++      },
++      "progress": 1080791747
++    },
++    {
++      "local": {
++        "numerator": "452767127932932576926571173997",
++        "denominator": "3681968217012914757384400000000"
++      },
++      "duration": {
++        "numerator": "32084549781847029",
++        "denominator": "50987326687469566"
++      },
++      "start": {
++        "numerator": "51049",
++        "denominator": "722134"
++      },
++      "end": {
++        "numerator": "165387",
++        "denominator": "722134"
++      },
++      "progress": 3383289556
++    },
++    {
++      "local": {
++        "numerator": "1024432984785172951935144271359",
++        "denominator": "21266554327744817785397200000000"
++      },
++      "duration": {
++        "numerator": "45610732488606885",
++        "denominator": "836613754936892414"
++      },
++      "start": {
++        "numerator": "15742",
++        "denominator": "18157"
++      },
++      "end": {
++        "numerator": "249489",
++        "denominator": "254198"
++      },
++      "progress": 622157512
++    },
++    {
++      "local": {
++        "numerator": "856460815285518537309630213579",
++        "denominator": "352313377715861403136718750000"
++      },
++      "duration": {
++        "numerator": "113658901074855378",
++        "denominator": "45010592222407685"
++      },
++      "start": {
++        "numerator": "721732",
++        "denominator": "751425"
++      },
++      "end": {
++        "numerator": "145873",
++        "denominator": "150285"
++      },
++      "progress": 935533281
++    },
++    {
++      "local": {
++        "numerator": "165585154888794084975471731698527",
++        "denominator": "378411596966305768517887000000000"
++      },
++      "duration": {
++        "numerator": "771136547254778877",
++        "denominator": "851965600390635349"
++      },
++      "start": {
++        "numerator": "420479",
++        "denominator": "888326"
++      },
++      "end": {
++        "numerator": "419985",
++        "denominator": "444163"
++      },
++      "progress": 91925709
++    },
++    {
++      "local": {
++        "numerator": "100742607585766483660840484648477",
++        "denominator": "55317094312549421574011625000000"
++      },
++      "duration": {
++        "numerator": "912261288339362734",
++        "denominator": "480635270486009921"
++      },
++      "start": {
++        "numerator": "292614",
++        "denominator": "306911"
++      },
++      "end": {
++        "numerator": "912889",
++        "denominator": "920733"
++      },
++      "progress": 687740623
++    },
++    {
++      "local": {
++        "numerator": "305344226065697882446332494311",
++        "denominator": "284259194781140861093904000000"
++      },
++      "duration": {
++        "numerator": "986583271864692125",
++        "denominator": "708197623176660906"
++      },
++      "start": {
++        "numerator": "33002",
++        "denominator": "50173"
++      },
++      "end": {
++        "numerator": "42193",
++        "denominator": "50173"
++      },
++      "progress": 2656647009
++    },
++    {
++      "local": {
++        "numerator": "230583428530151925715271576831",
++        "denominator": "143429841790536063711525000000"
++      },
++      "duration": {
++        "numerator": "656991880669995733",
++        "denominator": "237265303514048202"
++      },
++      "start": {
++        "numerator": "20029",
++        "denominator": "96722"
++      },
++      "end": {
++        "numerator": "85059",
++        "denominator": "96722"
++      },
++      "progress": 2385972462
++    },
++    {
++      "local": {
++        "numerator": "4062534694317298145921905206451",
++        "denominator": "9039706725223219016983687500000"
++      },
++      "duration": {
++        "numerator": "614277418503948024",
++        "denominator": "668558639928868601"
++      },
++      "start": {
++        "numerator": "53225",
++        "denominator": "216339"
++      },
++      "end": {
++        "numerator": "597214",
++        "denominator": "649017"
++      },
++      "progress": 1548738655
++    },
++    {
++      "local": {
++        "numerator": "2246164370678389676000502926657",
++        "denominator": "1773778238457714199971500000000"
++      },
++      "duration": {
++        "numerator": "592390842481148046",
++        "denominator": "348175137591071587"
++      },
++      "start": {
++        "numerator": "135295",
++        "denominator": "213969"
++      },
++      "end": {
++        "numerator": "493882",
++        "denominator": "641907"
++      },
++      "progress": 3507758464
++    },
++    {
++      "local": {
++        "numerator": "9312833982313789200327886665257",
++        "denominator": "13835081223644176082856093750000"
++      },
++      "duration": {
++        "numerator": "468424258577782919",
++        "denominator": "456604753476561535"
++      },
++      "start": {
++        "numerator": "87694",
++        "denominator": "323199"
++      },
++      "end": {
++        "numerator": "641771",
++        "denominator": "969597"
++      },
++      "progress": 4231762832
++    },
++    {
++      "local": {
++        "numerator": "69778418543883017787961216302761",
++        "denominator": "182005091566775611910710000000000"
++      },
++      "duration": {
++        "numerator": "659421738856896574",
++        "denominator": "964101935389897405"
++      },
++      "start": {
++        "numerator": "41414",
++        "denominator": "94391"
++      },
++      "end": {
++        "numerator": "639275",
++        "denominator": "755128"
++      },
++      "progress": 1282485661
++    },
++    {
++      "local": {
++        "numerator": "2031503560541043142534006539201",
++        "denominator": "210938533895463885065000000000"
++      },
++      "duration": {
++        "numerator": "298937358943242994",
++        "denominator": "12419107088340529"
++      },
++      "start": {
++        "numerator": "15023",
++        "denominator": "61146"
++      },
++      "end": {
++        "numerator": "80236",
++        "denominator": "152865"
++      },
++      "progress": 2375422807
++    },
++    {
++      "local": {
++        "numerator": "1684092863234754433485060050371",
++        "denominator": "2613036845839717050573600000000"
++      },
++      "duration": {
++        "numerator": "237570119425469033",
++        "denominator": "160539476662184796"
++      },
++      "start": {
++        "numerator": "25188",
++        "denominator": "81383"
++      },
++      "end": {
++        "numerator": "153587",
++        "denominator": "325532"
++      },
++      "progress": 3334888534
++    },
++    {
++      "local": {
++        "numerator": "30719416126828131888416267036529",
++        "denominator": "86710301541406177610275000000000"
++      },
++      "duration": {
++        "numerator": "88677149316648199",
++        "denominator": "188391306657670825"
++      },
++      "start": {
++        "numerator": "345048",
++        "denominator": "460267"
++      },
++      "end": {
++        "numerator": "457811",
++        "denominator": "460267"
++      },
++      "progress": 52204971
++    },
++    {
++      "local": {
++        "numerator": "222753363841863439626810951",
++        "denominator": "450758814581489564594888000"
++      },
++      "duration": {
++        "numerator": "197696570414140707",
++        "denominator": "79552898436450269"
++      },
++      "start": {
++        "numerator": "91208",
++        "denominator": "708269"
++      },
++      "end": {
++        "numerator": "216208",
++        "denominator": "708269"
++      },
++      "progress": 1705444295
++    },
++    {
++      "local": {
++        "numerator": "15412107559438988430548652821",
++        "denominator": "61821982037758334542540000000"
++      },
++      "duration": {
++        "numerator": "16819800694701645",
++        "denominator": "65738693389930387"
++      },
++      "start": {
++        "numerator": "674222",
++        "denominator": "705315"
++      },
++      "end": {
++        "numerator": "693872",
++        "denominator": "705315"
++      },
++      "progress": 2843320229
++    },
++    {
++      "local": {
++        "numerator": "25613804459959152330027037884997",
++        "denominator": "22293087409250352998937000000000"
++      },
++      "duration": {
++        "numerator": "248583042247423007",
++        "denominator": "130713679993728213"
++      },
++      "start": {
++        "numerator": "201112",
++        "denominator": "511647"
++      },
++      "end": {
++        "numerator": "361289",
++        "denominator": "511647"
++      },
++      "progress": 2896051647
++    },
++    {
++      "local": {
++        "numerator": "97449972040118489898848315333573",
++        "denominator": "24624383732353489625962400000000"
++      },
++      "duration": {
++        "numerator": "834289147335515905",
++        "denominator": "150067791095247986"
++      },
++      "start": {
++        "numerator": "8149",
++        "denominator": "410221"
++      },
++      "end": {
++        "numerator": "707857",
++        "denominator": "820442"
++      },
++      "progress": 3525932300
++    },
++    {
++      "local": {
++        "numerator": "327384090039491837495638146081",
++        "denominator": "3451705687997658512675120000000"
++      },
++      "duration": {
++        "numerator": "176949311535016103",
++        "denominator": "390030292976783593"
++      },
++      "start": {
++        "numerator": "25157",
++        "denominator": "221246"
++      },
++      "end": {
++        "numerator": "38921",
++        "denominator": "110623"
++      },
++      "progress": 1719856754
++    },
++    {
++      "local": {
++        "numerator": "3318324152699758651958154489193",
++        "denominator": "10619353639632002237655000000000"
++      },
++      "duration": {
++        "numerator": "73840898739960338",
++        "denominator": "186865044952964195"
++      },
++      "start": {
++        "numerator": "106069",
++        "denominator": "227316"
++      },
++      "end": {
++        "numerator": "51647",
++        "denominator": "56829"
++      },
++      "progress": 3148464113
++    },
++    {
++      "local": {
++        "numerator": "656652481697123866356774302203",
++        "denominator": "1499682798434030323062000000000"
++      },
++      "duration": {
++        "numerator": "35260018158336289",
++        "denominator": "51257187724179039"
++      },
++      "start": {
++        "numerator": "419965",
++        "denominator": "702192"
++      },
++      "end": {
++        "numerator": "115213",
++        "denominator": "117032"
++      },
++      "progress": 427268054
++    },
++    {
++      "local": {
++        "numerator": "43720021518857330717304736367641",
++        "denominator": "63628637304276217933647500000000"
++      },
++      "duration": {
++        "numerator": "602387343674755237",
++        "denominator": "692990304727053317"
++      },
++      "start": {
++        "numerator": "130306",
++        "denominator": "183635"
++      },
++      "end": {
++        "numerator": "816733",
++        "denominator": "918175"
++      },
++      "progress": 1930340023
++    },
++    {
++      "local": {
++        "numerator": "9417484594680252110544152483321",
++        "denominator": "7943303480882817862652400000000"
++      },
++      "duration": {
++        "numerator": "415427957187058289",
++        "denominator": "300491726896360904"
++      },
++      "start": {
++        "numerator": "431789",
++        "denominator": "528687"
++      },
++      "end": {
++        "numerator": "479984",
++        "denominator": "528687"
++      },
++      "progress": 1924749238
++    },
++    {
++      "local": {
++        "numerator": "19459489706790650962424632789",
++        "denominator": "32573880373601280082368750000"
++      },
++      "duration": {
++        "numerator": "105089143237652180",
++        "denominator": "46754948459924149"
++      },
++      "start": {
++        "numerator": "24367",
++        "denominator": "222942"
++      },
++      "end": {
++        "numerator": "160903",
++        "denominator": "222942"
++      },
++      "progress": 1097454021
++    },
++    {
++      "local": {
++        "numerator": "16251329089122999414964371364333",
++        "denominator": "30427668749197513301785900000000"
++      },
++      "duration": {
++        "numerator": "617632319457576461",
++        "denominator": "796016961436066891"
++      },
++      "start": {
++        "numerator": "257366",
++        "denominator": "382249"
++      },
++      "end": {
++        "numerator": "280607",
++        "denominator": "382249"
++      },
++      "progress": 1063907766
++    },
++    {
++      "local": {
++        "numerator": "50353088133507300573955283839",
++        "denominator": "78035931204072783224625000000"
++      },
++      "duration": {
++        "numerator": "32667816791461358",
++        "denominator": "41986353050975531"
++      },
++      "start": {
++        "numerator": "97826",
++        "denominator": "163557"
++      },
++      "end": {
++        "numerator": "817228",
++        "denominator": "817785"
++      },
++      "progress": 2475039286
++    },
++    {
++      "local": {
++        "numerator": "520039516820423192501137265393",
++        "denominator": "851414241737183944528125000000"
++      },
++      "duration": {
++        "numerator": "17871725244628589",
++        "denominator": "27917394936070725"
++      },
++      "start": {
++        "numerator": "219580",
++        "denominator": "243981"
++      },
++      "end": {
++        "numerator": "79003",
++        "denominator": "81327"
++      },
++      "progress": 3254703986
++    },
++    {
++      "local": {
++        "numerator": "8118844799242741104022944893141",
++        "denominator": "11323767214097082911428000000000"
++      },
++      "duration": {
++        "numerator": "343546905799038971",
++        "denominator": "407124729060799702"
++      },
++      "start": {
++        "numerator": "16911",
++        "denominator": "27814"
++      },
++      "end": {
++        "numerator": "90079",
++        "denominator": "97349"
++      },
++      "progress": 3270875453
++    },
++    {
++      "local": {
++        "numerator": "23994237129764952130841036951",
++        "denominator": "33351892271164389354275390625"
++      },
++      "duration": {
++        "numerator": "104794629425977168",
++        "denominator": "117670111031885331"
++      },
++      "start": {
++        "numerator": "116504",
++        "denominator": "145119"
++      },
++      "end": {
++        "numerator": "139660",
++        "denominator": "145119"
++      },
++      "progress": 134613999
++    },
++    {
++      "local": {
++        "numerator": "768863399148045199419351095061",
++        "denominator": "175433142535568605600937500000"
++      },
++      "duration": {
++        "numerator": "163440931804059186",
++        "denominator": "10826240808147065"
++      },
++      "start": {
++        "numerator": "24050",
++        "denominator": "259271"
++      },
++      "end": {
++        "numerator": "100842",
++        "denominator": "259271"
++      },
++      "progress": 2864596827
++    },
++    {
++      "local": {
++        "numerator": "109752908329182463660829373847",
++        "denominator": "2668372316946314852454859375000"
++      },
++      "duration": {
++        "numerator": "200695992028774492",
++        "denominator": "947896228884755197"
++      },
++      "start": {
++        "numerator": "23710",
++        "denominator": "180163"
++      },
++      "end": {
++        "numerator": "68242",
++        "denominator": "180163"
++      },
++      "progress": 1088800546
++    },
++    {
++      "local": {
++        "numerator": "404076560749029170716733660363",
++        "denominator": "2098125516926542959502680000000"
++      },
++      "duration": {
++        "numerator": "249647928297138650",
++        "denominator": "977745967587443361"
++      },
++      "start": {
++        "numerator": "18881",
++        "denominator": "39016"
++      },
++      "end": {
++        "numerator": "179809",
++        "denominator": "214588"
++      },
++      "progress": 3280051973
++    },
++    {
++      "local": {
++        "numerator": "210039175049544134829469813711",
++        "denominator": "52566296771916318120006250000"
++      },
++      "duration": {
++        "numerator": "146125159130492390",
++        "denominator": "20233029860223223"
++      },
++      "start": {
++        "numerator": "181925",
++        "denominator": "415687"
++      },
++      "end": {
++        "numerator": "322349",
++        "denominator": "415687"
++      },
++      "progress": 1469880685
++    },
++    {
++      "local": {
++        "numerator": "1429212987365959957795172723363",
++        "denominator": "1381334315336356862895000000000"
++      },
++      "duration": {
++        "numerator": "189020656149910283",
++        "denominator": "147026709632533560"
++      },
++      "start": {
++        "numerator": "179876",
++        "denominator": "225483"
++      },
++      "end": {
++        "numerator": "64134",
++        "denominator": "75161"
++      },
++      "progress": 545710659
++    },
++    {
++      "local": {
++        "numerator": "8368446886881908667872187839",
++        "denominator": "37306290441456155302000000000"
++      },
++      "duration": {
++        "numerator": "125769012466571087",
++        "denominator": "369369212291645102"
++      },
++      "start": {
++        "numerator": "107",
++        "denominator": "202"
++      },
++      "end": {
++        "numerator": "371",
++        "denominator": "404"
++      },
++      "progress": 1426719777
++    },
++    {
++      "local": {
++        "numerator": "16151707035438506768839277302337",
++        "denominator": "14563067624538969180692000000000"
++      },
++      "duration": {
++        "numerator": "123571402387692097",
++        "denominator": "106608695449872764"
++      },
++      "start": {
++        "numerator": "643662",
++        "denominator": "683015"
++      },
++      "end": {
++        "numerator": "657667",
++        "denominator": "683015"
++      },
++      "progress": 3028532284
++    },
++    {
++      "local": {
++        "numerator": "3034018179138712371447150968659",
++        "denominator": "455024064068676393216500000000"
++      },
++      "duration": {
++        "numerator": "976013093917318149",
++        "denominator": "95583250513323473"
++      },
++      "start": {
++        "numerator": "165413",
++        "denominator": "342756"
++      },
++      "end": {
++        "numerator": "37927",
++        "denominator": "57126"
++      },
++      "progress": 4036229223
++    },
++    {
++      "local": {
++        "numerator": "62952861050977647724596439064",
++        "denominator": "53164395988468536948169921875"
++      },
++      "duration": {
++        "numerator": "352861233083259664",
++        "denominator": "292460442299011431"
++      },
++      "start": {
++        "numerator": "363757",
++        "denominator": "372292"
++      },
++      "end": {
++        "numerator": "369325",
++        "denominator": "372292"
++      },
++      "progress": 1249789682
++    },
++    {
++      "local": {
++        "numerator": "2745819266647716971745557263797",
++        "denominator": "772947269386359571082150000000"
++      },
++      "duration": {
++        "numerator": "248560381854536667",
++        "denominator": "51799000096257523"
++      },
++      "start": {
++        "numerator": "13505",
++        "denominator": "22957"
++      },
++      "end": {
++        "numerator": "228585",
++        "denominator": "298441"
++      },
++      "progress": 3675494461
++    },
++    {
++      "local": {
++        "numerator": "18117309374267996013384797062369",
++        "denominator": "5192253878919135456895500000000"
++      },
++      "duration": {
++        "numerator": "66750782565303797",
++        "denominator": "16319708192360523"
++      },
++      "start": {
++        "numerator": "43546",
++        "denominator": "57847"
++      },
++      "end": {
++        "numerator": "601573",
++        "denominator": "636317"
++      },
++      "progress": 2236660320
++    },
++    {
++      "local": {
++        "numerator": "31953799233934257585821428081",
++        "denominator": "32433533015723949504340800000"
++      },
++      "duration": {
++        "numerator": "986268633612542767",
++        "denominator": "328641852998937573"
++      },
++      "start": {
++        "numerator": "15945",
++        "denominator": "61681"
++      },
++      "end": {
++        "numerator": "20300",
++        "denominator": "61681"
++      },
++      "progress": 4244841270
++    },
++    {
++      "local": {
++        "numerator": "158045285541665153355055284863",
++        "denominator": "325359278000170606555500000000"
++      },
++      "duration": {
++        "numerator": "9354649035111052",
++        "denominator": "12875062939006771"
++      },
++      "start": {
++        "numerator": "29941",
++        "denominator": "50541"
++      },
++      "end": {
++        "numerator": "138491",
++        "denominator": "202164"
++      },
++      "progress": 3530718780
++    },
++    {
++      "local": {
++        "numerator": "1269767045755686254630619519051",
++        "denominator": "4376582947004605610391250000000"
++      },
++      "duration": {
++        "numerator": "242107709970412217",
++        "denominator": "767249497656064445"
++      },
++      "start": {
++        "numerator": "171425",
++        "denominator": "205353"
++      },
++      "end": {
++        "numerator": "66026",
++        "denominator": "68451"
++      },
++      "progress": 2800991423
++    },
++    {
++      "local": {
++        "numerator": "2851028607335073082025471872003",
++        "denominator": "6757999061015985509218875000000"
++      },
++      "duration": {
++        "numerator": "310596084529796648",
++        "denominator": "375558624693676855"
++      },
++      "start": {
++        "numerator": "310421",
++        "denominator": "719781"
++      },
++      "end": {
++        "numerator": "393218",
++        "denominator": "719781"
++      },
++      "progress": 2943697119
++    },
++    {
++      "local": {
++        "numerator": "475605590705747626767614217389",
++        "denominator": "749745412656661176292500000000"
++      },
++      "duration": {
++        "numerator": "5000887307899307",
++        "denominator": "6166100530519495"
++      },
++      "start": {
++        "numerator": "62314",
++        "denominator": "81061"
++      },
++      "end": {
++        "numerator": "205580",
++        "denominator": "243183"
++      },
++      "progress": 752732674
++    },
++    {
++      "local": {
++        "numerator": "776932311646425575538711778443",
++        "denominator": "12321782546089387601606500000000"
++      },
++      "duration": {
++        "numerator": "37078192489774727",
++        "denominator": "356582069181655106"
++      },
++      "start": {
++        "numerator": "115905",
++        "denominator": "276442"
++      },
++      "end": {
++        "numerator": "258153",
++        "denominator": "276442"
++      },
++      "progress": 1561793084
++    },
++    {
++      "local": {
++        "numerator": "3334666943085850342824256771547",
++        "denominator": "4042805982906835149655650000000"
++      },
++      "duration": {
++        "numerator": "319652924122519018",
++        "denominator": "189169424622536019"
++      },
++      "start": {
++        "numerator": "7629",
++        "denominator": "61061"
++      },
++      "end": {
++        "numerator": "426889",
++        "denominator": "427427"
++      },
++      "progress": 1785209191
++    },
++    {
++      "local": {
++        "numerator": "75931208325288373673470417527",
++        "denominator": "1056189518069053326880062500000"
++      },
++      "duration": {
++        "numerator": "104891938815746652",
++        "denominator": "289074946357359059"
++      },
++      "start": {
++        "numerator": "15855",
++        "denominator": "467672"
++      },
++      "end": {
++        "numerator": "233311",
++        "denominator": "467672"
++      },
++      "progress": 1516955983
++    },
++    {
++      "local": {
++        "numerator": "1306486476990221849148161620411",
++        "denominator": "1300250486260900362771180000000"
++      },
++      "duration": {
++        "numerator": "397568744741693803",
++        "denominator": "324096005229627726"
++      },
++      "start": {
++        "numerator": "105931",
++        "denominator": "133731"
++      },
++      "end": {
++        "numerator": "29827",
++        "denominator": "30861"
++      },
++      "progress": 664646833
++    },
++    {
++      "local": {
++        "numerator": "10166822082488058582302918230163",
++        "denominator": "29397751788921061577672250000000"
++      },
++      "duration": {
++        "numerator": "262272415936836052",
++        "denominator": "482739539456237079"
++      },
++      "start": {
++        "numerator": "316691",
++        "denominator": "974364"
++      },
++      "end": {
++        "numerator": "228173",
++        "denominator": "324788"
++      },
++      "progress": 3544289661
++    },
++    {
++      "local": {
++        "numerator": "4895994535979125118043691707179",
++        "denominator": "9250993982865959547240550000000"
++      },
++      "duration": {
++        "numerator": "277828617393866180",
++        "denominator": "375929064031759933"
++      },
++      "start": {
++        "numerator": "50224",
++        "denominator": "492167"
++      },
++      "end": {
++        "numerator": "375473",
++        "denominator": "492167"
++      },
++      "progress": 3990906456
++    },
++    {
++      "local": {
++        "numerator": "2980767410231687178748513579899",
++        "denominator": "1479682458733762469426387500000"
++      },
++      "duration": {
++        "numerator": "852766274311833849",
++        "denominator": "392904939744527102"
++      },
++      "start": {
++        "numerator": "540931",
++        "denominator": "602561"
++      },
++      "end": {
++        "numerator": "592073",
++        "denominator": "602561"
++      },
++      "progress": 1539756427
++    },
++    {
++      "local": {
++        "numerator": "590028167760537880560889789148891",
++        "denominator": "104594401912572366732276000000000"
++      },
++      "duration": {
++        "numerator": "893622724446747397",
++        "denominator": "134322184910383772"
++      },
++      "start": {
++        "numerator": "630049",
++        "denominator": "778683"
++      },
++      "end": {
++        "numerator": "244290",
++        "denominator": "259561"
++      },
++      "progress": 1262178545
++    },
++    {
++      "local": {
++        "numerator": "26222047346317612014211133637",
++        "denominator": "48143437834708619088666406250"
++      },
++      "duration": {
++        "numerator": "163416424176676848",
++        "denominator": "205349712015445423"
++      },
++      "start": {
++        "numerator": "19947",
++        "denominator": "54562"
++      },
++      "end": {
++        "numerator": "439177",
++        "denominator": "600182"
++      },
++      "progress": 3740008189
++    },
++    {
++      "local": {
++        "numerator": "1088110881481788427335800382417",
++        "denominator": "3480487183765971678543680000000"
++      },
++      "duration": {
++        "numerator": "534870944547713551",
++        "denominator": "840299564400904808"
++      },
++      "start": {
++        "numerator": "91485",
++        "denominator": "207098"
++      },
++      "end": {
++        "numerator": "208515",
++        "denominator": "414196"
++      },
++      "progress": 3440729482
++    },
++    {
++      "local": {
++        "numerator": "7581717666643718860691351125359",
++        "denominator": "1354700414215335084305000000000"
++      },
++      "duration": {
++        "numerator": "893309946314384531",
++        "denominator": "134989142601017384"
++      },
++      "start": {
++        "numerator": "9528",
++        "denominator": "16057"
++      },
++      "end": {
++        "numerator": "68697",
++        "denominator": "80285"
++      },
++      "progress": 4131946727
++    },
++    {
++      "local": {
++        "numerator": "2221303607152494565960515590439",
++        "denominator": "11182675823232880506157525000000"
++      },
++      "duration": {
++        "numerator": "167033681409230195",
++        "denominator": "826810633082099767"
++      },
++      "start": {
++        "numerator": "530533",
++        "denominator": "541003"
++      },
++      "end": {
++        "numerator": "532445",
++        "denominator": "541003"
++      },
++      "progress": 3163907239
++    },
++    {
++      "local": {
++        "numerator": "4706102336434070925430552689321",
++        "denominator": "920826547976030162143250000000"
++      },
++      "duration": {
++        "numerator": "432998912407997017",
++        "denominator": "39004232522400638"
++      },
++      "start": {
++        "numerator": "86916",
++        "denominator": "188867"
++      },
++      "end": {
++        "numerator": "12436",
++        "denominator": "26981"
++      },
++      "progress": 1041888152
++    },
++    {
++      "local": {
++        "numerator": "3391459309388830122562073226061",
++        "denominator": "47488642128669431789333000000000"
++      },
++      "duration": {
++        "numerator": "156245324336270803",
++        "denominator": "162795689265836719"
++      },
++      "start": {
++        "numerator": "10588",
++        "denominator": "291707"
++      },
++      "end": {
++        "numerator": "46765",
++        "denominator": "291707"
++      },
++      "progress": 1319938072
++    },
++    {
++      "local": {
++        "numerator": "3533354013651826186645700011",
++        "denominator": "11163824689814169559888671875"
++      },
++      "duration": {
++        "numerator": "177372304637744726",
++        "denominator": "411895816183963019"
++      },
++      "start": {
++        "numerator": "1735",
++        "denominator": "13877"
++      },
++      "end": {
++        "numerator": "13639",
++        "denominator": "13877"
++      },
++      "progress": 3053930302
++    },
++    {
++      "local": {
++        "numerator": "22016954884174827418991564708983",
++        "denominator": "145946997897123272185680000000000"
++      },
++      "duration": {
++        "numerator": "382326323202269207",
++        "denominator": "417029550979298885"
++      },
++      "start": {
++        "numerator": "28387",
++        "denominator": "174984"
++      },
++      "end": {
++        "numerator": "58223",
++        "denominator": "349968"
++      },
++      "progress": 2409254522
++    },
++    {
++      "local": {
++        "numerator": "11902739640472400526768921834091",
++        "denominator": "3252387654189626833023000000000"
++      },
++      "duration": {
++        "numerator": "283892784566698069",
++        "denominator": "75774814731217316"
++      },
++      "start": {
++        "numerator": "215605",
++        "denominator": "228916"
++      },
++      "end": {
++        "numerator": "681337",
++        "denominator": "686748"
++      },
++      "progress": 2987781939
++    },
++    {
++      "local": {
++        "numerator": "218775025142827841385973378383",
++        "denominator": "2486251317859375672463600000000"
++      },
++      "duration": {
++        "numerator": "19816493031485619",
++        "denominator": "134405766963059756"
++      },
++      "start": {
++        "numerator": "423265",
++        "denominator": "739924"
++      },
++      "end": {
++        "numerator": "483625",
++        "denominator": "739924"
++      },
++      "progress": 1304777877
++    },
++    {
++      "local": {
++        "numerator": "10350523587261155875865137329219",
++        "denominator": "2419684887557401051928000000000"
++      },
++      "duration": {
++        "numerator": "195190927794496548",
++        "denominator": "42678229285265293"
++      },
++      "start": {
++        "numerator": "418781",
++        "denominator": "453568"
++      },
++      "end": {
++        "numerator": "214285",
++        "denominator": "226784"
++      },
++      "progress": 2387044752
++    },
++    {
++      "local": {
++        "numerator": "420575981611391115011376689",
++        "denominator": "831877739341947586465500000"
++      },
++      "duration": {
++        "numerator": "10796949701869976",
++        "denominator": "15540257224235671"
++      },
++      "start": {
++        "numerator": "37115",
++        "denominator": "107061"
++      },
++      "end": {
++        "numerator": "249520",
++        "denominator": "321183"
++      },
++      "progress": 3803826748
++    },
++    {
++      "local": {
++        "numerator": "12088424243795094405236429633",
++        "denominator": "139621474991683298778010000000"
++      },
++      "duration": {
++        "numerator": "160772634179068775",
++        "denominator": "245533636964509138"
++      },
++      "start": {
++        "numerator": "7213",
++        "denominator": "227458"
++      },
++      "end": {
++        "numerator": "109425",
++        "denominator": "227458"
++      },
++      "progress": 960700192
++    },
++    {
++      "local": {
++        "numerator": "207510544809577875269258461095871",
++        "denominator": "25606458254531890323267000000000"
++      },
++      "duration": {
++        "numerator": "861820237389565093",
++        "denominator": "80300984550763107"
++      },
++      "start": {
++        "numerator": "224539",
++        "denominator": "318881"
++      },
++      "end": {
++        "numerator": "256758",
++        "denominator": "318881"
++      },
++      "progress": 2165240387
++    },
++    {
++      "local": {
++        "numerator": "3322504397812364201668705475703",
++        "denominator": "19648970577729766200703000000000"
++      },
++      "duration": {
++        "numerator": "923646408926733257",
++        "denominator": "926062875551355172"
++      },
++      "start": {
++        "numerator": "14352",
++        "denominator": "84871"
++      },
++      "end": {
++        "numerator": "14394",
++        "denominator": "84871"
++      },
++      "progress": 3747060886
++    },
++    {
++      "local": {
++        "numerator": "763143568873112307936760545979",
++        "denominator": "35365651350960083324081950000000"
++      },
++      "duration": {
++        "numerator": "29880079223445380",
++        "denominator": "915986706612778597"
++      },
++      "start": {
++        "numerator": "506420",
++        "denominator": "772187"
++      },
++      "end": {
++        "numerator": "557449",
++        "denominator": "772187"
++      },
++      "progress": 369009756
++    },
++    {
++      "local": {
++        "numerator": "46362772219261890475676118959579",
++        "denominator": "53720832136667248379017800000000"
++      },
++      "duration": {
++        "numerator": "721568604444209219",
++        "denominator": "620113818173569713"
++      },
++      "start": {
++        "numerator": "39593",
++        "denominator": "433153"
++      },
++      "end": {
++        "numerator": "54646",
++        "denominator": "61879"
++      },
++      "progress": 3527747173
++    },
++    {
++      "local": {
++        "numerator": "192071189153989105108702136615029",
++        "denominator": "200517755171057231917089000000000"
++      },
++      "duration": {
++        "numerator": "930914709863515967",
++        "denominator": "608539604441967706"
++      },
++      "start": {
++        "numerator": "275323",
++        "denominator": "659013"
++      },
++      "end": {
++        "numerator": "605029",
++        "denominator": "659013"
++      },
++      "progress": 1788917784
++    },
++    {
++      "local": {
++        "numerator": "111103178374657815670192046564841",
++        "denominator": "80850184018348143254264000000000"
++      },
++      "duration": {
++        "numerator": "854771064352449587",
++        "denominator": "528923471577203308"
++      },
++      "start": {
++        "numerator": "59190",
++        "denominator": "76429"
++      },
++      "end": {
++        "numerator": "130077",
++        "denominator": "152858"
++      },
++      "progress": 4259365535
++    },
++    {
++      "local": {
++        "numerator": "28881979842902532317372720960533",
++        "denominator": "58392112623132555626177250000000"
++      },
++      "duration": {
++        "numerator": "209797238055501988",
++        "denominator": "366582569112392859"
++      },
++      "start": {
++        "numerator": "549057",
++        "denominator": "637151"
++      },
++      "end": {
++        "numerator": "634714",
++        "denominator": "637151"
++      },
++      "progress": 80609136
++    },
++    {
++      "local": {
++        "numerator": "1153973046496341583696676152493",
++        "denominator": "8194560738889627760891750000000"
++      },
++      "duration": {
++        "numerator": "26434727574950599",
++        "denominator": "177128946602100539"
++      },
++      "start": {
++        "numerator": "172691",
++        "denominator": "185053"
++      },
++      "end": {
++        "numerator": "179337",
++        "denominator": "185053"
++      },
++      "progress": 1243192105
++    },
++    {
++      "local": {
++        "numerator": "286793601736892571682383590857",
++        "denominator": "26398208279511831212970000000000"
++      },
++      "duration": {
++        "numerator": "116731427072435437",
++        "denominator": "949106405267604376"
++      },
++      "start": {
++        "numerator": "1745",
++        "denominator": "22251"
++      },
++      "end": {
++        "numerator": "6338",
++        "denominator": "37085"
++      },
++      "progress": 460206588
++    },
++    {
++      "local": {
++        "numerator": "4637109034478593167842191622267",
++        "denominator": "23170839129929154086280000000000"
++      },
++      "duration": {
++        "numerator": "11433578264741213",
++        "denominator": "55062472683465588"
++      },
++      "start": {
++        "numerator": "39701",
++        "denominator": "42081"
++      },
++      "end": {
++        "numerator": "826187",
++        "denominator": "841620"
++      },
++      "progress": 2285707524
++    },
++    {
++      "local": {
++        "numerator": "846120558979903245428894995879",
++        "denominator": "4079299297661662507474250000000"
++      },
++      "duration": {
++        "numerator": "50188312085616132",
++        "denominator": "85745950754066801"
++      },
++      "start": {
++        "numerator": "106007",
++        "denominator": "570891"
++      },
++      "end": {
++        "numerator": "245936",
++        "denominator": "570891"
++      },
++      "progress": 2955822869
++    },
++    {
++      "local": {
++        "numerator": "3490430130472826521776772543327",
++        "denominator": "22528258644470560200184400000000"
++      },
++      "duration": {
++        "numerator": "87530335662640033",
++        "denominator": "431519622816770233"
++      },
++      "start": {
++        "numerator": "16855",
++        "denominator": "261034"
++      },
++      "end": {
++        "numerator": "402781",
++        "denominator": "522068"
++      },
++      "progress": 4248267644
++    },
++    {
++      "local": {
++        "numerator": "6573867664714280446478224818621",
++        "denominator": "15546326661071131964962000000000"
++      },
++      "duration": {
++        "numerator": "204493475591480991",
++        "denominator": "97430649092027174"
++      },
++      "start": {
++        "numerator": "26302",
++        "denominator": "478689"
++      },
++      "end": {
++        "numerator": "62905",
++        "denominator": "159563"
++      },
++      "progress": 1854812813
++    },
++    {
++      "local": {
++        "numerator": "41745731725159357379456468397",
++        "denominator": "512289969571310746334450000000"
++      },
++      "duration": {
++        "numerator": "8314978349506092",
++        "denominator": "39576032166010201"
++      },
++      "start": {
++        "numerator": "99719",
++        "denominator": "258889"
++      },
++      "end": {
++        "numerator": "472557",
++        "denominator": "517778"
++      },
++      "progress": 21761783
++    },
++    {
++      "local": {
++        "numerator": "870098695815680913992419374333",
++        "denominator": "11461312732537839175810562500000"
++      },
++      "duration": {
++        "numerator": "118574722919059972",
++        "denominator": "864160954731019367"
++      },
++      "start": {
++        "numerator": "82023",
++        "denominator": "212207"
++      },
++      "end": {
++        "numerator": "128211",
++        "denominator": "212207"
++      },
++      "progress": 3290376262
++    },
++    {
++      "local": {
++        "numerator": "32557910476890374752035412124",
++        "denominator": "57529427675242216831970703125"
++      },
++      "duration": {
++        "numerator": "148656440809656208",
++        "denominator": "241996327297945357"
++      },
++      "start": {
++        "numerator": "446581",
++        "denominator": "486868"
++      },
++      "end": {
++        "numerator": "452997",
++        "denominator": "486868"
++      },
++      "progress": 1312468064
++    },
++    {
++      "local": {
++        "numerator": "303082818810297845130790231721",
++        "denominator": "65891427592383889938750000000"
++      },
++      "duration": {
++        "numerator": "17678094454169747",
++        "denominator": "3812753124948075"
++      },
++      "start": {
++        "numerator": "681463",
++        "denominator": "691274"
++      },
++      "end": {
++        "numerator": "687983",
++        "denominator": "691274"
++      },
++      "progress": 2844854743
++    },
++    {
++      "local": {
++        "numerator": "77386590499723289534987509379327",
++        "denominator": "77818595381305237233759375000000"
++      },
++      "duration": {
++        "numerator": "806585161719081803",
++        "denominator": "770955356265477525"
++      },
++      "start": {
++        "numerator": "646634",
++        "denominator": "807503"
++      },
++      "end": {
++        "numerator": "781055",
++        "denominator": "807503"
++      },
++      "progress": 3863392799
++    },
++    {
++      "local": {
++        "numerator": "111640685452501918604948713",
++        "denominator": "1833630270725575317421875000"
++      },
++      "duration": {
++        "numerator": "1473576964987984",
++        "denominator": "10665563080203875"
++      },
++      "start": {
++        "numerator": "121169",
++        "denominator": "275073"
++      },
++      "end": {
++        "numerator": "121834",
++        "denominator": "275073"
++      },
++      "progress": 321047860
++    },
++    {
++      "local": {
++        "numerator": "655953734142237258251078333257",
++        "denominator": "1670917700766476225058593750000"
++      },
++      "duration": {
++        "numerator": "330954781222531952",
++        "denominator": "684302781326736875"
++      },
++      "start": {
++        "numerator": "59956",
++        "denominator": "78137"
++      },
++      "end": {
++        "numerator": "144683",
++        "denominator": "156274"
++      },
++      "progress": 1202657174
++    },
++    {
++      "local": {
++        "numerator": "8919059462585659074629814227167",
++        "denominator": "17886322566781931542023125000000"
++      },
++      "duration": {
++        "numerator": "686578416272328183",
++        "denominator": "983690564158964495"
++      },
++      "start": {
++        "numerator": "191263",
++        "denominator": "436389"
++      },
++      "end": {
++        "numerator": "425395",
++        "denominator": "436389"
++      },
++      "progress": 2210682881
++    },
++    {
++      "local": {
++        "numerator": "47645066750682424826678051258247",
++        "denominator": "15236045806705059827291000000000"
++      },
++      "duration": {
++        "numerator": "225772787689460997",
++        "denominator": "47911943065289291"
++      },
++      "start": {
++        "numerator": "421927",
++        "denominator": "636002"
++      },
++      "end": {
++        "numerator": "211222",
++        "denominator": "318001"
++      },
++      "progress": 1122215710
++    },
++    {
++      "local": {
++        "numerator": "864408174886039923180232594053",
++        "denominator": "2235749746312804314768500000000"
++      },
++      "duration": {
++        "numerator": "49193683148520281",
++        "denominator": "72676977510073443"
++      },
++      "start": {
++        "numerator": "104919",
++        "denominator": "184577"
++      },
++      "end": {
++        "numerator": "105597",
++        "denominator": "184577"
++      },
++      "progress": 3231787230
++    },
++    {
++      "local": {
++        "numerator": "106745160874083054656887907091",
++        "denominator": "135963798286515834506000000000"
++      },
++      "duration": {
++        "numerator": "71163814448795297",
++        "denominator": "43459740542277716"
++      },
++      "start": {
++        "numerator": "111861",
++        "denominator": "275308"
++      },
++      "end": {
++        "numerator": "251923",
++        "denominator": "275308"
++      },
++      "progress": 617536291
++    },
++    {
++      "local": {
++        "numerator": "16467205369320554575756720168357",
++        "denominator": "5176225471841485175681750000000"
++      },
++      "duration": {
++        "numerator": "441870249474837262",
++        "denominator": "84100286715568439"
++      },
++      "start": {
++        "numerator": "143504",
++        "denominator": "246193"
++      },
++      "end": {
++        "numerator": "225537",
++        "denominator": "246193"
++      },
++      "progress": 291324703
++    },
++    {
++      "local": {
++        "numerator": "135627946760756188177616297575203",
++        "denominator": "662746863072551818844272000000000"
++      },
++      "duration": {
++        "numerator": "914985761254377037",
++        "denominator": "956086688112373456"
++      },
++      "start": {
++        "numerator": "90573",
++        "denominator": "693187"
++      },
++      "end": {
++        "numerator": "196854",
++        "denominator": "693187"
++      },
++      "progress": 2329984535
++    },
++    {
++      "local": {
++        "numerator": "1172302461684868922575389584593",
++        "denominator": "38605120611297896060637200000000"
++      },
++      "duration": {
++        "numerator": "200862178945361605",
++        "denominator": "856433728615243742"
++      },
++      "start": {
++        "numerator": "28934",
++        "denominator": "225383"
++      },
++      "end": {
++        "numerator": "34307",
++        "denominator": "225383"
++      },
++      "progress": 198051340
++    },
++    {
++      "local": {
++        "numerator": "8199550354229513682379501646877",
++        "denominator": "95382657085930908484096000000000"
++      },
++      "duration": {
++        "numerator": "43690242569446263",
++        "denominator": "482003239640255642"
++      },
++      "start": {
++        "numerator": "22657",
++        "denominator": "24736"
++      },
++      "end": {
++        "numerator": "190709",
++        "denominator": "197888"
++      },
++      "progress": 2916304883
++    },
++    {
++      "local": {
++        "numerator": "9813553306885620812872195846033",
++        "denominator": "20996075386966907091276000000000"
++      },
++      "duration": {
++        "numerator": "152882097582330421",
++        "denominator": "294440009072788056"
++      },
++      "start": {
++        "numerator": "119888",
++        "denominator": "142617"
++      },
++      "end": {
++        "numerator": "822241",
++        "denominator": "855702"
++      },
++      "progress": 2126597445
++    },
++    {
++      "local": {
++        "numerator": "344812874897292194912400269207",
++        "denominator": "6176990561971005533416800000000"
++      },
++      "duration": {
++        "numerator": "7387825700841959",
++        "denominator": "32626661902179052"
++      },
++      "start": {
++        "numerator": "208349",
++        "denominator": "946617"
++      },
++      "end": {
++        "numerator": "88798",
++        "denominator": "315539"
++      },
++      "progress": 1851072051
++    },
++    {
++      "local": {
++        "numerator": "12940260645539539777085984788263",
++        "denominator": "95498261727923330121490000000000"
++      },
++      "duration": {
++        "numerator": "101129481783689041",
++        "denominator": "314513538252535355"
++      },
++      "start": {
++        "numerator": "65051",
++        "denominator": "303638"
++      },
++      "end": {
++        "numerator": "81266",
++        "denominator": "151819"
++      },
++      "progress": 2771624443
++    },
++    {
++      "local": {
++        "numerator": "6657563714152958579522823058061",
++        "denominator": "9997515273866723863176093750000"
++      },
++      "duration": {
++        "numerator": "794024482282886167",
++        "denominator": "689714212212560583"
++      },
++      "start": {
++        "numerator": "268108",
++        "denominator": "463845"
++      },
++      "end": {
++        "numerator": "15851",
++        "denominator": "27285"
++      },
++      "progress": 627771249
++    },
++    {
++      "local": {
++        "numerator": "11699555819213524738511337485027",
++        "denominator": "14777371325302137264268000000000"
++      },
++      "duration": {
++        "numerator": "127367706852549333",
++        "denominator": "134697299424856321"
++      },
++      "start": {
++        "numerator": "752947",
++        "denominator": "987372"
++      },
++      "end": {
++        "numerator": "51467",
++        "denominator": "54854"
++      },
++      "progress": 1826393907
++    },
++    {
++      "local": {
++        "numerator": "92779713587794503455843458070203",
++        "denominator": "32508228940496718206210000000000"
++      },
++      "duration": {
++        "numerator": "737997126117173113",
++        "denominator": "239473651850454405"
++      },
++      "start": {
++        "numerator": "9703",
++        "denominator": "10717"
++      },
++      "end": {
++        "numerator": "403633",
++        "denominator": "407246"
++      },
++      "progress": 1038198595
++    },
++    {
++      "local": {
++        "numerator": "430672507361221115858620717049519",
++        "denominator": "147930798364419177084816000000000"
++      },
++      "duration": {
++        "numerator": "879792047924862233",
++        "denominator": "157653611918667222"
++      },
++      "start": {
++        "numerator": "47195",
++        "denominator": "117291"
++      },
++      "end": {
++        "numerator": "600121",
++        "denominator": "938328"
++      },
++      "progress": 2160524298
++    },
++    {
++      "local": {
++        "numerator": "6986118553585218352275844806099",
++        "denominator": "20716506001067133624318500000000"
++      },
++      "duration": {
++        "numerator": "251527244197232291",
++        "denominator": "387256984252266707"
++      },
++      "start": {
++        "numerator": "154895",
++        "denominator": "641946"
++      },
++      "end": {
++        "numerator": "79578",
++        "denominator": "106991"
++      },
++      "progress": 2375379406
++    },
++    {
++      "local": {
++        "numerator": "33273527954856171794467173216013",
++        "denominator": "47203797064470362074907000000000"
++      },
++      "duration": {
++        "numerator": "809152759900840943",
++        "denominator": "623000284609968022"
++      },
++      "start": {
++        "numerator": "396371",
++        "denominator": "757685"
++      },
++      "end": {
++        "numerator": "539261",
++        "denominator": "757685"
++      },
++      "progress": 446161284
++    },
++    {
++      "local": {
++        "numerator": "126133053038124139329868678859",
++        "denominator": "220778499937439006931200000000"
++      },
++      "duration": {
++        "numerator": "236544425398628889",
++        "denominator": "230361540001501468"
++      },
++      "start": {
++        "numerator": "7857",
++        "denominator": "20366"
++      },
++      "end": {
++        "numerator": "150839",
++        "denominator": "244392"
++      },
++      "progress": 3166083551
++    },
++    {
++      "local": {
++        "numerator": "38967231625139174604530699667333",
++        "denominator": "62360385608861928040130000000000"
++      },
++      "duration": {
++        "numerator": "237805913412033674",
++        "denominator": "357386587247761637"
++      },
++      "start": {
++        "numerator": "162727",
++        "denominator": "174490"
++      },
++      "end": {
++        "numerator": "334821",
++        "denominator": "348980"
++      },
++      "progress": 1040376487
++    },
++    {
++      "local": {
++        "numerator": "77257907897697816559661521794899",
++        "denominator": "159026520263938320925390000000000"
++      },
++      "duration": {
++        "numerator": "290983601819465669",
++        "denominator": "545999743402104052"
++      },
++      "start": {
++        "numerator": "237417",
++        "denominator": "582515"
++      },
++      "end": {
++        "numerator": "540088",
++        "denominator": "582515"
++      },
++      "progress": 4166178415
++    },
++    {
++      "local": {
++        "numerator": "30852544189312855151892283303883",
++        "denominator": "20685836048711154210767750000000"
++      },
++      "duration": {
++        "numerator": "581157342361451266",
++        "denominator": "298691946021192109"
++      },
++      "start": {
++        "numerator": "148332",
++        "denominator": "277019"
++      },
++      "end": {
++        "numerator": "261718",
++        "denominator": "277019"
++      },
++      "progress": 2425040786
++    },
++    {
++      "local": {
++        "numerator": "12141924659736304959417958427351",
++        "denominator": "3219342909628157512836000000000"
++      },
++      "duration": {
++        "numerator": "65026303891968383",
++        "denominator": "16092369608346534"
++      },
++      "start": {
++        "numerator": "92950",
++        "denominator": "100027"
++      },
++      "end": {
++        "numerator": "187131",
++        "denominator": "200054"
++      },
++      "progress": 2872424680
++    },
++    {
++      "local": {
++        "numerator": "67492099132175144439219109173789",
++        "denominator": "69849422704706311216712000000000"
++      },
++      "duration": {
++        "numerator": "220495162626912621",
++        "denominator": "140514956275460497"
++      },
++      "start": {
++        "numerator": "3827",
++        "denominator": "62137"
++      },
++      "end": {
++        "numerator": "366997",
++        "denominator": "497096"
++      },
++      "progress": 3517339368
++    },
++    {
++      "local": {
++        "numerator": "163051438400484791160615541082899",
++        "denominator": "280480987225710911391930000000000"
++      },
++      "duration": {
++        "numerator": "484827553720658593",
++        "denominator": "736545609117794655"
++      },
++      "start": {
++        "numerator": "156467",
++        "denominator": "190403"
++      },
++      "end": {
++        "numerator": "373067",
++        "denominator": "380806"
++      },
++      "progress": 1669483299
++    },
++    {
++      "local": {
++        "numerator": "13483090835203095777844742196819",
++        "denominator": "10564564102823565908011400000000"
++      },
++      "duration": {
++        "numerator": "289253660319690819",
++        "denominator": "135884055863623706"
++      },
++      "start": {
++        "numerator": "292745",
++        "denominator": "777469"
++      },
++      "end": {
++        "numerator": "731735",
++        "denominator": "777469"
++      },
++      "progress": 1696392248
++    },
++    {
++      "local": {
++        "numerator": "141380470126688757760890295979",
++        "denominator": "697581309333855534213593750000"
++      },
++      "duration": {
++        "numerator": "42659513056175404",
++        "denominator": "163781517287379413"
++      },
++      "start": {
++        "numerator": "104821",
++        "denominator": "136295"
++      },
++      "end": {
++        "numerator": "114457",
++        "denominator": "136295"
++      },
++      "progress": 549187856
++    },
++    {
++      "local": {
++        "numerator": "2563635634430974301781672889877",
++        "denominator": "4485064799901034665002375000000"
++      },
++      "duration": {
++        "numerator": "130056120193090696",
++        "denominator": "175720371608975309"
++      },
++      "start": {
++        "numerator": "120882",
++        "denominator": "204191"
++      },
++      "end": {
++        "numerator": "172201",
++        "denominator": "204191"
++      },
++      "progress": 3080863617
++    },
++    {
++      "local": {
++        "numerator": "10426941809344382395610503785153",
++        "denominator": "77909905370161253956635250000000"
++      },
++      "duration": {
++        "numerator": "199517436186838323",
++        "denominator": "822144483496268413"
++      },
++      "start": {
++        "numerator": "18164",
++        "denominator": "54151"
++      },
++      "end": {
++        "numerator": "354506",
++        "denominator": "379057"
++      },
++      "progress": 1547063618
++    },
++    {
++      "local": {
++        "numerator": "10474322887850132904389073523617",
++        "denominator": "4284411728985270059914880000000"
++      },
++      "duration": {
++        "numerator": "436708279522967263",
++        "denominator": "142356664502014534"
++      },
++      "start": {
++        "numerator": "137791",
++        "denominator": "752408"
++      },
++      "end": {
++        "numerator": "326733",
++        "denominator": "376204"
++      },
++      "progress": 3846475288
++    },
++    {
++      "local": {
++        "numerator": "415039280615523960747556761179",
++        "denominator": "5789111722517119590730000000000"
++      },
++      "duration": {
++        "numerator": "131504206372815781",
++        "denominator": "285107693795474986"
++      },
++      "start": {
++        "numerator": "1162",
++        "denominator": "101525"
++      },
++      "end": {
++        "numerator": "20067",
++        "denominator": "101525"
++      },
++      "progress": 3321120995
++    },
++    {
++      "local": {
++        "numerator": "701342702231569628758462148499",
++        "denominator": "157098094947662289026000000000"
++      },
++      "duration": {
++        "numerator": "436222741528165001",
++        "denominator": "49943352201204228"
++      },
++      "start": {
++        "numerator": "117706",
++        "denominator": "245351"
++      },
++      "end": {
++        "numerator": "130997",
++        "denominator": "245351"
++      },
++      "progress": 2488082036
++    },
++    {
++      "local": {
++        "numerator": "24270442528218240226371168190671",
++        "denominator": "24570425737341017874886000000000"
++      },
++      "duration": {
++        "numerator": "217542003722583058",
++        "denominator": "140317440506556131"
++      },
++      "start": {
++        "numerator": "439191",
++        "denominator": "700424"
++      },
++      "end": {
++        "numerator": "145163",
++        "denominator": "175106"
++      },
++      "progress": 214831335
++    },
++    {
++      "local": {
++        "numerator": "2505727633353134978111980526781",
++        "denominator": "754124878335227182334600000000"
++      },
++      "duration": {
++        "numerator": "125011174108007541",
++        "denominator": "27279283416480151"
++      },
++      "start": {
++        "numerator": "94175",
++        "denominator": "138223"
++      },
++      "end": {
++        "numerator": "213615",
++        "denominator": "276446"
++      },
++      "progress": 2055310188
++    },
++    {
++      "local": {
++        "numerator": "2232083802918390603169778192843",
++        "denominator": "1235864402626294810534000000000"
++      },
++      "duration": {
++        "numerator": "21013756506361279",
++        "denominator": "6547660663771966"
++      },
++      "start": {
++        "numerator": "91992",
++        "denominator": "188749"
++      },
++      "end": {
++        "numerator": "180641",
++        "denominator": "188749"
++      },
++      "progress": 689340245
++    },
++    {
++      "local": {
++        "numerator": "6806575085405595715519852239689",
++        "denominator": "12065358983720075914706820000000"
++      },
++      "duration": {
++        "numerator": "938023325046159635",
++        "denominator": "925787220581718983"
++      },
++      "start": {
++        "numerator": "77446",
++        "denominator": "217209"
++      },
++      "end": {
++        "numerator": "33599",
++        "denominator": "38331"
++      },
++      "progress": 1653834736
++    },
++    {
++      "local": {
++        "numerator": "33854338064680860070235139068379",
++        "denominator": "40426654033445633152698125000000"
++      },
++      "duration": {
++        "numerator": "540122623794800276",
++        "denominator": "401136173917249595"
++      },
++      "start": {
++        "numerator": "498727",
++        "denominator": "806243"
++      },
++      "end": {
++        "numerator": "502634",
++        "denominator": "806243"
++      },
++      "progress": 2973479844
++    },
++    {
++      "local": {
++        "numerator": "519020537765636607590547357301",
++        "denominator": "581567939498764403826000000000"
++      },
++      "duration": {
++        "numerator": "60378483931773847",
++        "denominator": "51665077022055204"
++      },
++      "start": {
++        "numerator": "144095",
++        "denominator": "247643"
++      },
++      "end": {
++        "numerator": "206293",
++        "denominator": "247643"
++      },
++      "progress": 3108743659
++    },
++    {
++      "local": {
++        "numerator": "226962633214277695386987254866613",
++        "denominator": "187194764593943250767884000000000"
++      },
++      "duration": {
++        "numerator": "927130533898616951",
++        "denominator": "591075410303513242"
++      },
++      "start": {
++        "numerator": "411683",
++        "denominator": "950106"
++      },
++      "end": {
++        "numerator": "410957",
++        "denominator": "475053"
++      },
++      "progress": 3378764525
++    },
++    {
++      "local": {
++        "numerator": "32924509405952084626624858636283",
++        "denominator": "30202283577986160496152000000000"
++      },
++      "duration": {
++        "numerator": "99127458382028639",
++        "denominator": "57544161953583588"
++      },
++      "start": {
++        "numerator": "133475",
++        "denominator": "262427"
++      },
++      "end": {
++        "numerator": "363289",
++        "denominator": "524854"
++      },
++      "progress": 2906430238
++    },
++    {
++      "local": {
++        "numerator": "4327056344808852231813070163461",
++        "denominator": "19894808084431909749993000000000"
++      },
++      "duration": {
++        "numerator": "392551022035301203",
++        "denominator": "412763489828781060"
++      },
++      "start": {
++        "numerator": "209753",
++        "denominator": "963981"
++      },
++      "end": {
++        "numerator": "234058",
++        "denominator": "963981"
++      },
++      "progress": 1891745266
++    },
++    {
++      "local": {
++        "numerator": "623715832231445645580058422411",
++        "denominator": "188544220277751435306950000000"
++      },
++      "duration": {
++        "numerator": "462792693011005671",
++        "denominator": "104028702030567574"
++      },
++      "start": {
++        "numerator": "49460",
++        "denominator": "72497"
++      },
++      "end": {
++        "numerator": "54539",
++        "denominator": "72497"
++      },
++      "progress": 3762112866
++    },
++    {
++      "local": {
++        "numerator": "2184943384891948927001531555003",
++        "denominator": "1679047533925899031561875000000"
++      },
++      "duration": {
++        "numerator": "870971068552443533",
++        "denominator": "586471915959971205"
++      },
++      "start": {
++        "numerator": "314266",
++        "denominator": "389363"
++      },
++      "end": {
++        "numerator": "356869",
++        "denominator": "389363"
++      },
++      "progress": 2712651488
++    },
++    {
++      "local": {
++        "numerator": "129903840973397939375199599901",
++        "denominator": "92309190909092680863040000000"
++      },
++      "duration": {
++        "numerator": "117806015867501535",
++        "denominator": "70265498667214232"
++      },
++      "start": {
++        "numerator": "219423",
++        "denominator": "328430"
++      },
++      "end": {
++        "numerator": "596119",
++        "denominator": "656860"
++      },
++      "progress": 3072272141
++    },
++    {
++      "local": {
++        "numerator": "28298040994544127946987810159497",
++        "denominator": "21046852746138076636175000000000"
++      },
++      "duration": {
++        "numerator": "971178784411417493",
++        "denominator": "221436265701580025"
++      },
++      "start": {
++        "numerator": "27535",
++        "denominator": "760376"
++      },
++      "end": {
++        "numerator": "374691",
++        "denominator": "380188"
++      },
++      "progress": 1223121027
++    },
++    {
++      "local": {
++        "numerator": "2357648991178652587638404741",
++        "denominator": "2897059206939741198950000000"
++      },
++      "duration": {
++        "numerator": "442407348026126811",
++        "denominator": "280044389264353910"
++      },
++      "start": {
++        "numerator": "113672",
++        "denominator": "279315"
++      },
++      "end": {
++        "numerator": "167522",
++        "denominator": "279315"
++      },
++      "progress": 2409861568
++    },
++    {
++      "local": {
++        "numerator": "270929674721611811526241742143",
++        "denominator": "788510468762909449707600000000"
++      },
++      "duration": {
++        "numerator": "167866516226052499",
++        "denominator": "364842118815220192"
++      },
++      "start": {
++        "numerator": "18326",
++        "denominator": "172899"
++      },
++      "end": {
++        "numerator": "52250",
++        "denominator": "57633"
++      },
++      "progress": 3437572381
++    },
++    {
++      "local": {
++        "numerator": "1417545727791422853267858491",
++        "denominator": "1941353545032044656198650000"
++      },
++      "duration": {
++        "numerator": "36026765306304296",
++        "denominator": "44969604022947339"
++      },
++      "start": {
++        "numerator": "88784",
++        "denominator": "863407"
++      },
++      "end": {
++        "numerator": "804434",
++        "denominator": "863407"
++      },
++      "progress": 4189979183
++    },
++    {
++      "local": {
++        "numerator": "8518153709133345085077794001",
++        "denominator": "38388963658277091253010000000"
++      },
++      "duration": {
++        "numerator": "215012184081878325",
++        "denominator": "706248712278847751"
++      },
++      "start": {
++        "numerator": "86605",
++        "denominator": "141326"
++      },
++      "end": {
++        "numerator": "60614",
++        "denominator": "70663"
++      },
++      "progress": 2034337270
++    },
++    {
++      "local": {
++        "numerator": "18252864872625567350167547259487",
++        "denominator": "13297693621519462715173250000000"
++      },
++      "duration": {
++        "numerator": "347980528866911288",
++        "denominator": "197271010915124821"
++      },
++      "start": {
++        "numerator": "409835",
++        "denominator": "539266"
++      },
++      "end": {
++        "numerator": "238698",
++        "denominator": "269633"
++      },
++      "progress": 622657287
++    },
++    {
++      "local": {
++        "numerator": "3617025062273894606758730663",
++        "denominator": "23880443990380062020507812500"
++      },
++      "duration": {
++        "numerator": "13006960477592404",
++        "denominator": "55203930410659875"
++      },
++      "start": {
++        "numerator": "30385",
++        "denominator": "55371"
++      },
++      "end": {
++        "numerator": "35617",
++        "denominator": "55371"
++      },
++      "progress": 4276683354
++    },
++    {
++      "local": {
++        "numerator": "2306291483368619116619728376677",
++        "denominator": "19140916237430831604427250000000"
++      },
++      "duration": {
++        "numerator": "67529341618855948",
++        "denominator": "495112261135440131"
++      },
++      "start": {
++        "numerator": "136309",
++        "denominator": "154639"
++      },
++      "end": {
++        "numerator": "280605",
++        "denominator": "309278"
++      },
++      "progress": 323444822
++    },
++    {
++      "local": {
++        "numerator": "7317319558064819783216093184373",
++        "denominator": "20779030494677946633802500000000"
++      },
++      "duration": {
++        "numerator": "228704913568713998",
++        "denominator": "410502691598485665"
++      },
++      "start": {
++        "numerator": "7625",
++        "denominator": "12088"
++      },
++      "end": {
++        "numerator": "518621",
++        "denominator": "809896"
++      },
++      "progress": 575774709
++    },
++    {
++      "local": {
++        "numerator": "63612134854303735491059734487899",
++        "denominator": "94274413859183253908460000000000"
++      },
++      "duration": {
++        "numerator": "258133032093679178",
++        "denominator": "367885795126758971"
++      },
++      "start": {
++        "numerator": "404753",
++        "denominator": "512520"
++      },
++      "end": {
++        "numerator": "84831",
++        "denominator": "85420"
++      },
++      "progress": 3630619723
++    },
++    {
++      "local": {
++        "numerator": "802146363213285463389742779983",
++        "denominator": "906038339177010514145000000000"
++      },
++      "duration": {
++        "numerator": "784886739252918657",
++        "denominator": "700996780794592274"
++      },
++      "start": {
++        "numerator": "377",
++        "denominator": "660"
++      },
++      "end": {
++        "numerator": "1877",
++        "denominator": "2068"
++      },
++      "progress": 2802165281
++    }
++  ]
++}
+--- before/crates/deadpan-core/tests/fixtures/produce-framing-clock-oracles.py
++++ crates/deadpan-core/tests/fixtures/produce-framing-clock-oracles.py
+@@ -0,0 +1,74 @@
++"""Development-only exact oracle; the Rust tests consume the checked-in JSON."""
++
++from fractions import Fraction
++import json
++from pathlib import Path
++import random
++
++MAX = 2**127 - 1
++Q = 2**32
++random_source = random.Random(20260926)
++cases = []
++
++
++def add(local, duration, start, end):
++    assert 0 <= start <= local / duration <= end <= 1
++    assert start < end
++    values = (local, duration, start, end)
++    assert all(abs(v.numerator) <= MAX and v.denominator <= MAX for v in values)
++    progress = (local / duration - start) / (end - start)
++    # Fraction.__round__ specifies ties-to-even and uses unbounded integers.
++    cases.append({
++        **{name: {"numerator": str(value.numerator), "denominator": str(value.denominator)}
++           for name, value in zip(("local", "duration", "start", "end"), values)},
++        "progress": round(progress * Q),
++    })
++
++
++for duration in (Fraction(9, 2), Fraction(1, MAX), Fraction(MAX, MAX - 1), Fraction(MAX)):
++    for position in (Fraction(0), Fraction(1, 4), Fraction(1, 2), Fraction(1)):
++        local = position * duration
++        if local.numerator <= MAX and local.denominator <= MAX:
++            add(local, duration, Fraction(0), Fraction(1))
++
++# Neither local/duration nor several duration*endpoint products fit ExactRatio.
++for offset in range(1, 40):
++    duration = Fraction(MAX - offset, MAX - offset - 2)
++    local = Fraction(MAX - offset - 1, MAX - offset)
++    add(local, duration, Fraction(999_999, 1_000_000), Fraction(1))
++    duration = Fraction(MAX - offset, MAX - offset - 2)
++    local = Fraction((MAX - offset) // 2, MAX - offset - 1)
++    add(local, duration, Fraction(499_999, 1_000_000), Fraction(500_001, 1_000_000))
++
++# Half-even progress ties and their two neighbors.
++for lower in (0, 1, 17, Q // 2, Q - 2, Q - 1):
++    duration = Fraction(7, 13)
++    for epsilon in (-1, 0, 1):
++        progress = Fraction((2 * lower + 1) * 3 + epsilon, 6 * Q)
++        add(progress * duration, duration, Fraction(0), Fraction(1))
++
++for _ in range(192):
++    duration = Fraction(random_source.randrange(1, 10**18), random_source.randrange(1, 10**18))
++    denominator = random_source.randrange(2, 1_000_001)
++    a = random_source.randrange(denominator)
++    b = random_source.randrange(a + 1, denominator + 1)
++    start, end = Fraction(a, denominator), Fraction(b, denominator)
++    progress = Fraction(random_source.randrange(1, 10**9), 10**9)
++    local = duration * (start + (end - start) * progress)
++    add(local, duration, start, end)
++
++destination = Path(__file__).with_name("framing-clock-oracles.json")
++def read_ratio(value):
++    return Fraction(int(value["numerator"]), int(value["denominator"]))
++
++
++def exceeds_ratio(value):
++    return abs(value.numerator) > MAX or value.denominator > MAX
++
++
++destination.write_text(json.dumps({
++    "generator": "Python standard-library fractions.Fraction; seed20260926; exact half-even rounding",
++    "quotient_overflow_cases": sum(exceeds_ratio(read_ratio(c["local"]) / read_ratio(c["duration"])) for c in cases),
++    "endpoint_overflow_cases": sum(exceeds_ratio(read_ratio(c["duration"]) * read_ratio(c["start"])) for c in cases),
++    "cases": cases,
++}, indent=2) + "\n")
+--- before/crates/deadpan-core/tests/framing.rs
++++ crates/deadpan-core/tests/framing.rs
+@@ -5,6 +5,9 @@
+ 
+ use deadpan_core::*;
+ use serde_json::json;
++
++#[path = "framing/exact_clock.rs"]
++mod exact_clock;
+ 
+ fn ratio(n: i128, d: i128) -> ExactRatio {
+     ExactRatio::new(n, d).unwrap()
+--- before/crates/deadpan-core/tests/framing/exact_clock.rs
++++ crates/deadpan-core/tests/framing/exact_clock.rs
+@@ -0,0 +1,151 @@
++use super::*;
++
++#[test]
++fn derived_owner_extents_keep_all_curve_shapes_and_exact_segment_boundaries() {
++    for curve in [
++        FramingCurve::Step,
++        FramingCurve::Linear,
++        FramingCurve::Smoothstep,
++        FramingCurve::Cubic {
++            control1: pose(3),
++            control2: pose(1),
++        },
++    ] {
++        let framing = creep(curve);
++        for ticks in 0..=60 {
++            let local = ratio(ticks, 10);
++            let expected = framing.evaluate(local, duration(6)).unwrap();
++            for factor in [ratio(1, 7), ratio(3, 2), ratio(7, 3)] {
++                assert_eq!(
++                    framing
++                        .evaluate_exact(
++                            local.checked_mul(factor).unwrap(),
++                            ExactRatio::integer(6).checked_mul(factor).unwrap(),
++                        )
++                        .unwrap(),
++                    expected
++                );
++            }
++        }
++    }
++
++    let framing = Framing {
++        value: FramingValue::Envelope {
++            envelope: FramingEnvelope {
++                initial: pose(1),
++                segments: vec![
++                    FramingSegment {
++                        end: ratio(1, 3),
++                        pose: pose(2),
++                        curve: FramingCurve::Step,
++                    },
++                    FramingSegment {
++                        end: ExactRatio::ONE,
++                        pose: pose(3),
++                        curve: FramingCurve::Step,
++                    },
++                ],
++            },
++        },
++    };
++    for (local, expected) in [(ratio(149, 100), 1), (ratio(3, 2), 2), (ratio(151, 100), 2)] {
++        assert_eq!(
++            framing.evaluate_exact(local, ratio(9, 2)).unwrap(),
++            pose(expected)
++        );
++    }
++    assert_eq!(
++        framing.evaluate_exact(ratio(9, 2), ratio(9, 2)).unwrap(),
++        pose(3)
++    );
++}
++
++#[test]
++fn exact_clock_rejects_invalid_extents_and_positions_for_static_and_moving_framing() {
++    for framing in [
++        creep(FramingCurve::Linear),
++        Framing::static_pose(pose(1)).unwrap(),
++    ] {
++        for (local, extent) in [
++            (ExactRatio::ZERO, ExactRatio::ZERO),
++            (ExactRatio::ZERO, ratio(-1, 3)),
++            (ratio(-1, 7), ratio(3, 2)),
++            (ratio(16, 10), ratio(3, 2)),
++            (ratio(i128::MAX, i128::MAX - 1), ExactRatio::ONE),
++        ] {
++            assert_eq!(
++                framing.evaluate_exact(local, extent),
++                Err(FramingError::TimeRange)
++            );
++        }
++    }
++}
++
++#[test]
++fn exact_clock_matches_independent_unbounded_fraction_oracles() {
++    #[derive(serde::Deserialize)]
++    struct Case {
++        local: ExactRatio,
++        duration: ExactRatio,
++        start: ExactRatio,
++        end: ExactRatio,
++        progress: u64,
++    }
++    #[derive(serde::Deserialize)]
++    struct Fixture {
++        cases: Vec<Case>,
++        quotient_overflow_cases: usize,
++        endpoint_overflow_cases: usize,
++    }
++    let fixture: Fixture =
++        serde_json::from_str(include_str!("../fixtures/framing-clock-oracles.json")).unwrap();
++    assert!(fixture.cases.len() >= 300);
++    let mut quotient_overflows = 0;
++    let mut endpoint_overflows = 0;
++    for (index, case) in fixture.cases.into_iter().enumerate() {
++        quotient_overflows += usize::from(case.local.checked_div(case.duration).is_err());
++        endpoint_overflows += usize::from(case.duration.checked_mul(case.start).is_err());
++        let mut segments = Vec::new();
++        if case.start != ExactRatio::ZERO {
++            segments.push(FramingSegment {
++                end: case.start,
++                pose: pose(1),
++                curve: FramingCurve::Step,
++            });
++        }
++        segments.push(FramingSegment {
++            end: case.end,
++            pose: pose(2),
++            curve: FramingCurve::Linear,
++        });
++        if case.end != ExactRatio::ONE {
++            segments.push(FramingSegment {
++                end: ExactRatio::ONE,
++                pose: pose(2),
++                curve: FramingCurve::Step,
++            });
++        }
++        let framing = Framing {
++            value: FramingValue::Envelope {
++                envelope: FramingEnvelope {
++                    initial: pose(1),
++                    segments,
++                },
++            },
++        };
++        assert_eq!(
++            framing
++                .evaluate_exact(case.local, case.duration)
++                .unwrap()
++                .scale,
++            ratio(
++                i128::from(FRAMING_NUMERIC_SCALE) + i128::from(case.progress),
++                i128::from(FRAMING_NUMERIC_SCALE)
++            ),
++            "independent clock fixture {index}"
++        );
++    }
++    assert!(fixture.quotient_overflow_cases > 0 && fixture.endpoint_overflow_cases > 0);
++    assert!(quotient_overflows >= fixture.quotient_overflow_cases);
++    assert!(endpoint_overflows >= fixture.endpoint_overflow_cases);
++}

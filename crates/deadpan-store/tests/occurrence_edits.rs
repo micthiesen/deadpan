@@ -21,6 +21,7 @@ fn duration(frames: i64) -> FrameDuration {
 }
 fn recipe(frames: i64) -> HoldRecipe {
     HoldRecipe {
+        picture_context: None,
         duration: duration(frames),
         video: HoldVideo::Background,
         audio: HoldAudio::Silence,
@@ -163,6 +164,64 @@ fn assert_authored_equal(actual: &ProjectDocument, expected: &ProjectDocument) {
     assert_eq!(actual.marks(), expected.marks());
     assert_eq!(actual.assets(), expected.assets());
     assert_eq!(actual.duration().unwrap(), expected.duration().unwrap());
+}
+
+#[test]
+fn occurrence_retime_isolation_and_policy_update_survive_durable_navigation() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let path = scratch.path().join("occurrence-retime.deadpan");
+    let initial = initial()?;
+    let mut writer = ProjectStore::create(&path, &initial)?;
+    let mut wrap = request(&initial, "retime-wrap", 3, 2);
+    let Command::EditOccurrence { edit, .. } = &mut wrap.command else {
+        panic!("expected occurrence request");
+    };
+    *edit = OccurrenceEdit::WrapRetime {
+        id: id("retime"),
+        duration: duration(7),
+        pitch: PitchPolicy::Preserve,
+    };
+    let edit = writer.commit(&wrap)?.edit;
+    let wrapped = writer.snapshot()?;
+    assert_eq!(edit.duration_delta, 3);
+    assert_eq!(edit.inverse.apply(&wrapped)?, initial);
+    assert_eq!(wrapped.nodes()[&id("hold")], initial.nodes()[&id("hold")]);
+    assert_eq!(wrapped.nodes().len(), initial.nodes().len() + 4);
+    assert_eq!(stored(&path)?.edits, 1);
+    drop(writer);
+
+    let mut writer = ProjectStore::open(&path, AccessMode::ReadWrite)?;
+    assert_eq!(writer.snapshot()?, wrapped);
+    let command = CommandRequest {
+        project_id: wrapped.project_id().clone(),
+        expected_revision: wrapped.revision_id().clone(),
+        new_revision: revision("retime-set"),
+        command: Command::SetRetime {
+            node: id("retime"),
+            duration: duration(2),
+            pitch: PitchPolicy::FollowSpeed,
+        },
+    };
+    let edit = writer.commit(&command)?.edit;
+    let adjusted = writer.snapshot()?;
+    assert_eq!(edit.duration_delta, -5);
+    assert_eq!(edit.inverse.apply(&adjusted)?, wrapped);
+    assert_eq!(adjusted.nodes()[&id("hold")], initial.nodes()[&id("hold")]);
+    writer.undo(adjusted.revision_id(), revision("retime-undo-set"))?;
+    writer.undo(&revision("retime-undo-set"), revision("retime-undo-wrap"))?;
+    assert_authored_equal(&writer.snapshot()?, &initial);
+    drop(writer);
+
+    let mut writer = ProjectStore::open(&path, AccessMode::ReadWrite)?;
+    writer.redo(&revision("retime-undo-wrap"), revision("retime-redo-wrap"))?;
+    assert_authored_equal(&writer.snapshot()?, &wrapped);
+    writer.redo(&revision("retime-redo-wrap"), revision("retime-redo-set"))?;
+    assert_authored_equal(&writer.snapshot()?, &adjusted);
+    assert_eq!(stored(&path)?.edits, 2);
+    writer.validate()?;
+    drop(writer);
+    ProjectStore::open(&path, AccessMode::ReadOnly)?.validate()?;
+    Ok(())
 }
 
 #[test]

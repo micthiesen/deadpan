@@ -78,11 +78,24 @@ pub struct Picture {
     pub framing: Vec<deadpan_plan::PictureFraming>,
     /// A Repeat gap has a provider before its first authored (Repeat) scope.
     pub framing_gap: bool,
+    /// Static captured composition before current Hold and ancestor framing.
+    pub picture_context: Option<Arc<deadpan_core::CapturedFraming>>,
 }
 
 pub struct Reply {
     pub ticket: Ticket,
     pub picture: Result<Picture, String>,
+    #[cfg(feature = "ui-harness")]
+    pub timing: Option<WorkerTiming>,
+}
+
+/// Worker clock observations, independent of when the UI receives the reply.
+#[cfg(feature = "ui-harness")]
+#[derive(Clone, Copy, Debug)]
+pub struct WorkerTiming {
+    pub started: Instant,
+    pub finished: Instant,
+    pub published: Option<Instant>,
 }
 
 #[derive(Default)]
@@ -125,6 +138,14 @@ impl Mailbox {
         if self.shutdown || self.latest != Some(reply.ticket) {
             return false;
         }
+        #[cfg(feature = "ui-harness")]
+        let reply = {
+            let mut reply = reply;
+            if let Some(timing) = &mut reply.timing {
+                timing.published = Some(Instant::now());
+            }
+            reply
+        };
         self.reply = Some(reply);
         true
     }
@@ -253,7 +274,15 @@ fn run(shared: Arc<Shared>, context: egui::Context) {
             session = None;
             continue;
         };
+        #[cfg(feature = "ui-harness")]
+        let started = Instant::now();
         let picture = perform(&request, &mut session);
+        #[cfg(feature = "ui-harness")]
+        let timing = Some(WorkerTiming {
+            started,
+            finished: Instant::now(),
+            published: None,
+        });
         let publish = shared
             .mailbox
             .lock()
@@ -261,6 +290,8 @@ fn run(shared: Arc<Shared>, context: egui::Context) {
             .publish(Reply {
                 ticket: request.ticket,
                 picture,
+                #[cfg(feature = "ui-harness")]
+                timing,
             });
         if publish {
             context.request_repaint();
@@ -319,6 +350,7 @@ fn perform(request: &Request, retained: &mut Option<RetainedSession>) -> Result<
         canvas: None,
         framing: Vec::new(),
         framing_gap: false,
+        picture_context: None,
     })
 }
 
@@ -375,6 +407,7 @@ fn project_picture(
                 registered_picture(workspace, registered, frame, canvas, cancelled, retained)?;
             picture.framing = sample.framing;
             picture.framing_gap = sample.gap_after.is_some();
+            picture.picture_context = sample.picture_context;
             return Ok(picture);
         }
     };
@@ -390,6 +423,7 @@ fn background_picture(canvas: Option<(u32, u32)>) -> Picture {
         canvas,
         framing: Vec::new(),
         framing_gap: false,
+        picture_context: None,
     }
 }
 
@@ -514,6 +548,7 @@ fn registered_picture(
         canvas,
         framing: Vec::new(),
         framing_gap: false,
+        picture_context: None,
     })
 }
 
@@ -741,6 +776,8 @@ mod tests {
         assert!(!mailbox.publish(Reply {
             ticket: active.ticket,
             picture: Err("cancelled old decode".into()),
+            #[cfg(feature = "ui-harness")]
+            timing: None,
         }));
         assert!(mailbox.reply.is_none());
         let next = mailbox.start_next().unwrap();
@@ -757,12 +794,16 @@ mod tests {
         assert!(mailbox.publish(Reply {
             ticket: ticket(1, 1),
             picture: Err("old source error".into()),
+            #[cfg(feature = "ui-harness")]
+            timing: None,
         }));
         mailbox.submit(ticket(2, 2), Work::Open(PathBuf::from("new.mp4")));
         assert!(mailbox.reply.is_none());
         assert!(!mailbox.publish(Reply {
             ticket: ticket(1, 1),
             picture: Err("late reply".into()),
+            #[cfg(feature = "ui-harness")]
+            timing: None,
         }));
     }
 
@@ -779,7 +820,9 @@ mod tests {
         assert!(mailbox.start_next().is_none());
         assert!(!mailbox.publish(Reply {
             ticket: ticket(1, 2),
-            picture: Err("late".into())
+            picture: Err("late".into()),
+            #[cfg(feature = "ui-harness")]
+            timing: None,
         }));
         assert!(!mailbox.submit(ticket(2, 3), Work::Open(PathBuf::from("ignored"))));
     }

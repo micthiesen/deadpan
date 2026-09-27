@@ -1,0 +1,52 @@
+{
+  "base_revision": {
+    "exit_code": 0,
+    "stdout": "c03a5edde5f28d27074745eb15711cb28b1f2e50",
+    "stderr": ""
+  },
+  "os": {
+    "exit_code": 0,
+    "stdout": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84",
+    "stderr": ""
+  },
+  "architecture": {
+    "exit_code": 0,
+    "stdout": "arm64",
+    "stderr": ""
+  },
+  "hardware": {
+    "exit_code": 1,
+    "stdout": "",
+    "stderr": "sysctl: sysctl fmt -1 1024 1: Operation not permitted"
+  },
+  "rust": {
+    "exit_code": 0,
+    "stdout": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+    "stderr": ""
+  },
+  "cargo": {
+    "exit_code": 0,
+    "stdout": "cargo 1.97.1 (c980f4866 2026-06-30)",
+    "stderr": ""
+  },
+  "ffmpeg_prefix": "/tmp/deadpan-ui-ffmpeg/prefix",
+  "core_schema": 28,
+  "database_schema": 34,
+  "imagegen": {
+    "image": "boards/sound-audition-board-v1.png",
+    "status": "current-target",
+    "generated_on": "2026-09-27",
+    "sha256": "934f5db46d0452e2b64e43970f376d17baa3d0a4f009258c847299c602bdd331",
+    "width": 1513,
+    "height": 1040,
+    "prompt": "prompts/sound-audition-board-v1.txt",
+    "prompt_sha256": "7650d7ddb6118c5430bc8149b3041f454c111d5ebc900439310ad4da969b1914",
+    "referenced_images": [
+      "boards/single-source-workspace-v1.png"
+    ]
+  },
+  "imagegen_mode": "built-in image_gen.imagegen; model identifier not returned",
+  "git_write_access": "read-only; no commit or push",
+  "prior_checkpoint": "/tmp/deadpan-sound-events-20260927/checkpoint",
+  "goal": "active; no requirement or gate promoted"
+}

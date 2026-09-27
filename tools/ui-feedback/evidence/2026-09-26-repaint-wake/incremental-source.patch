@@ -1,0 +1,1044 @@
+--- before/crates/deadpan-app/src/presentation/tests.rs
++++ after/crates/deadpan-app/src/presentation/tests.rs
+@@ -33,6 +33,8 @@
+     assert!(
+         state
+             .receive(Reply {
++                #[cfg(feature = "ui-harness")]
++                timing: None,
+                 ticket: pending,
+                 picture: Ok(picture(8))
+             })
+@@ -47,6 +49,8 @@
+     assert!(
+         state
+             .receive(Reply {
++                #[cfg(feature = "ui-harness")]
++                timing: None,
+                 ticket: pending,
+                 picture: Err("late error".into())
+             })
+@@ -94,6 +98,8 @@
+     assert!(
+         state
+             .receive(Reply {
++                #[cfg(feature = "ui-harness")]
++                timing: None,
+                 ticket,
+                 picture: Ok(picture)
+             })
+@@ -261,6 +267,8 @@
+         assert!(
+             state
+                 .receive(Reply {
++                    #[cfg(feature = "ui-harness")]
++                    timing: None,
+                     ticket: ticket(1, 2),
+                     picture: result
+                 })
+@@ -291,6 +299,8 @@
+     assert!(
+         state
+             .receive(Reply {
++                #[cfg(feature = "ui-harness")]
++                timing: None,
+                 ticket: ticket(1, 1),
+                 picture: Ok(picture(4))
+             })
+@@ -300,6 +310,8 @@
+     assert!(
+         state
+             .receive(Reply {
++                #[cfg(feature = "ui-harness")]
++                timing: None,
+                 ticket: ticket(1, 1),
+                 picture: Err("old source".into())
+             })
+@@ -325,6 +337,8 @@
+     assert!(
+         state
+             .receive(Reply {
++                #[cfg(feature = "ui-harness")]
++                timing: None,
+                 ticket: ticket(1, 2),
+                 picture: Err("missing media".into())
+             })
+@@ -394,6 +408,8 @@
+     assert!(
+         state
+             .receive(Reply {
++                #[cfg(feature = "ui-harness")]
++                timing: None,
+                 ticket: ticket(1, 1),
+                 picture: Err("stale decoder error".into())
+             })
+@@ -436,6 +452,8 @@
+     assert!(
+         state
+             .receive(Reply {
++                #[cfg(feature = "ui-harness")]
++                timing: None,
+                 ticket: ticket(1, 2),
+                 picture: Ok(picture(4))
+             })
+--- before/crates/deadpan-app/src/preview.rs
++++ after/crates/deadpan-app/src/preview.rs
+@@ -536,11 +536,11 @@
+         let reply = self.worker.take_reply();
+         let result = reply.and_then(|reply| {
+             #[cfg(feature = "ui-harness")]
+-            let ticket = reply.ticket;
++            let (ticket, timing) = (reply.ticket, reply.timing);
+             let result = self.presentation.receive(reply);
+             #[cfg(feature = "ui-harness")]
+             self.feedback
+-                .picture_received(ticket, result.as_ref().map(Result::is_ok));
++                .picture_received(ticket, result.as_ref().map(Result::is_ok), timing);
+             result
+         });
+         if let Some(result) = result {
+--- before/crates/deadpan-app/src/preview/harness.rs
++++ after/crates/deadpan-app/src/preview/harness.rs
+@@ -14,8 +14,10 @@
+ mod scale;
+ mod scenarios;
+ mod telemetry;
++mod wake;
+ 
+ use telemetry::{Event, InputOrigins, Outcome, PictureTelemetry};
++use wake::RepaintWake;
+ 
+ #[derive(Default)]
+ pub(super) struct Feedback {
+@@ -30,7 +32,7 @@
+ 
+ impl Feedback {
+     pub fn record(&mut self, stage: &'static str) {
+-        self.record_event(stage, None, None);
++        self.record_event(stage, None, None, None);
+     }
+ 
+     fn record_event(
+@@ -38,6 +40,7 @@
+         stage: &'static str,
+         ticket: Option<Ticket>,
+         outcome: Option<Outcome>,
++        worker_timing: Option<crate::worker::WorkerTiming>,
+     ) {
+         // Diagnostics must never introduce an unbounded queue in the app.
+         if self.events.len() < 4096 {
+@@ -47,32 +50,53 @@
+                 ticket,
+                 outcome,
+                 request_elapsed_ms: None,
++                worker_timing,
+             });
+         }
+     }
+ 
+     pub fn picture_requested(&mut self, ticket: Ticket) {
+-        self.record_event("picture_requested", Some(ticket), Some(Outcome::Requested));
+-    }
+-
+-    pub fn picture_received(&mut self, ticket: Ticket, accepted_success: Option<bool>) {
++        self.record_event(
++            "picture_requested",
++            Some(ticket),
++            Some(Outcome::Requested),
++            None,
++        );
++    }
++
++    pub fn picture_received(
++        &mut self,
++        ticket: Ticket,
++        accepted_success: Option<bool>,
++        timing: Option<crate::worker::WorkerTiming>,
++    ) {
+         let outcome = match accepted_success {
+             Some(true) => Outcome::Decoded,
+             Some(false) => Outcome::Failed,
+             None => Outcome::Stale,
+         };
+-        self.record_event("picture_received", Some(ticket), Some(outcome));
++        self.record_event("picture_received", Some(ticket), Some(outcome), timing);
+     }
+ 
+     pub fn picture_submitted(&mut self, ticket: Option<Ticket>) {
+         if let Some(ticket) = ticket {
+-            self.record_event("picture_submitted", Some(ticket), Some(Outcome::Submitted));
++            self.record_event(
++                "picture_submitted",
++                Some(ticket),
++                Some(Outcome::Submitted),
++                None,
++            );
+         }
+     }
+ 
+     pub fn picture_failed(&mut self, ticket: Option<Ticket>) {
+         if let Some(ticket) = ticket {
+-            self.record_event("picture_render_failed", Some(ticket), Some(Outcome::Failed));
++            self.record_event(
++                "picture_render_failed",
++                Some(ticket),
++                Some(Outcome::Failed),
++                None,
++            );
+         }
+     }
+ 
+@@ -103,6 +127,7 @@
+             let library =
+                 crate::library::ProjectLibrary::from_documents(scratch.path().join("Documents"))?;
+             let mut construction_error = None;
++            let wake = Arc::new(RepaintWake::default());
+             // The wrapper lets construction failures become evidence rather than a
+             // panic that skips the scenario report.
+             let harness = Harness::builder()
+@@ -114,6 +139,9 @@
+                 .with_render_options(egui_wgpu::RendererOptions::default())
+                 .wgpu()
+                 .build_eframe(|context| {
++                    // kittest owns this fresh context; native eframe owns its
++                    // own callback, which must never be replaced by the app.
++                    wake.install(&context.egui_ctx);
+                     let result = (|| {
+                         let render = context
+                             .wgpu_render_state
+@@ -182,6 +210,7 @@
+                 picture_telemetry: PictureTelemetry::default(),
+                 input_origins: InputOrigins::default(),
+                 last_input: None,
++                wake,
+             };
+             let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                 driver.step("Initial workspace", true)?;
+@@ -274,6 +303,7 @@
+     picture_telemetry: PictureTelemetry<Ticket>,
+     input_origins: InputOrigins,
+     last_input: Option<Instant>,
++    wake: Arc<RepaintWake>,
+ }
+ 
+ impl Driver<'_> {
+@@ -337,9 +367,15 @@
+         self.frame += 1;
+         self.harness.input_mut().time = Some(self.frame as f64 / f64::from(self.options.hz));
+         let has_input = !self.harness.input().events.is_empty();
++        self.wake.begin_step(Instant::now());
+         let started = Instant::now();
+         self.harness.step();
+         let cpu_ms = started.elapsed().as_secs_f64() * 1000.0;
++        self.wake.finish_step(
++            self.harness.ctx.cumulative_pass_nr(),
++            self.harness.output().viewport_output[&egui::ViewportId::ROOT].repaint_delay,
++            Instant::now(),
++        );
+         self.metric("ui_frame_cpu_ms", cpu_ms, SampleOutcome::Completed);
+         if has_input {
+             self.metric("input_to_state_ms", cpu_ms, SampleOutcome::Completed);
+@@ -627,7 +663,13 @@
+             }
+             self.step(label, count < 3 || count == 8 || count == 24)?;
+             count += 1;
+-            std::thread::sleep(Duration::from_millis(1));
++            if !ready(self.app()) {
++                let elapsed = started
++                    .elapsed()
++                    .saturating_sub(self.capture_wall - capture_started);
++                let remaining = Duration::from_secs(15).saturating_sub(elapsed);
++                self.wake.wait_until(Instant::now() + remaining);
++            }
+         }
+         self.metric(
+             label,
+--- before/crates/deadpan-app/src/preview/harness/telemetry.rs
++++ after/crates/deadpan-app/src/preview/harness/telemetry.rs
+@@ -85,6 +85,7 @@
+     pub ticket: Option<T>,
+     pub outcome: Option<Outcome>,
+     pub request_elapsed_ms: Option<f64>,
++    pub worker_timing: Option<crate::worker::WorkerTiming>,
+ }
+ 
+ #[derive(Debug)]
+@@ -126,6 +127,8 @@
+             observed.events.push(event);
+             return observed;
+         };
++        let mut requested = None;
++        let mut first_decode = false;
+         if event.stage == "picture_requested" {
+             if let Some(previous) = self.active.take() {
+                 observed.events.push(Event {
+@@ -134,6 +137,7 @@
+                     ticket: Some(previous.ticket),
+                     outcome: Some(Outcome::Superseded),
+                     request_elapsed_ms: Some(milliseconds(event.at, previous.requested)),
++                    worker_timing: None,
+                 });
+             }
+             self.active = Some(Request {
+@@ -149,13 +153,18 @@
+                 .as_mut()
+                 .filter(|request| request.ticket == ticket);
+             if let Some(request) = active {
++                requested = Some(request.requested);
+                 event.request_elapsed_ms = Some(milliseconds(event.at, request.requested));
+                 if event.outcome == Some(Outcome::Failed) {
+                     // Expected injected failures remain explicit trace evidence,
+                     // and never enter successful latency distributions.
+                     self.active = None;
+-                } else if event.stage == "picture_received" && !request.decoded {
++                } else if event.stage == "picture_received"
++                    && event.outcome == Some(Outcome::Decoded)
++                    && !request.decoded
++                {
+                     request.decoded = true;
++                    first_decode = true;
+                     observed.measurements.push(Measurement {
+                         name: "request_to_decode_delivery_ms",
+                         elapsed_ms: milliseconds(event.at, request.requested),
+@@ -180,6 +189,9 @@
+                 });
+             }
+         }
++        if event.stage == "picture_received" {
++            observed.worker_timing(&event, requested, first_decode);
++        }
+         observed.events.push(event);
+         observed
+     }
+@@ -205,6 +217,7 @@
+             ticket: Some(request.ticket),
+             outcome: Some(Outcome::Completed),
+             request_elapsed_ms: Some(elapsed_ms),
++            worker_timing: None,
+         });
+         observed.measurements.push(Measurement {
+             name: "request_to_picture_complete_ms",
+@@ -217,6 +230,62 @@
+             });
+         }
+         observed
++    }
++}
++
++impl<T: Copy> Observation<T> {
++    fn worker_timing(
++        &mut self,
++        receipt: &Event<T>,
++        requested: Option<Instant>,
++        first_decode: bool,
++    ) {
++        let Some(timing) = receipt.worker_timing else {
++            return;
++        };
++        // Trace entries retain actual worker observations even for failed,
++        // stale, repeated or malformed timing. They arrive with the receipt,
++        // so trace insertion order is not necessarily timestamp order.
++        for (stage, at) in [
++            ("picture_worker_started", Some(timing.started)),
++            ("picture_worker_finished", Some(timing.finished)),
++            ("picture_worker_published", timing.published),
++        ] {
++            if let Some(at) = at {
++                self.events.push(Event {
++                    stage,
++                    at,
++                    ticket: receipt.ticket,
++                    outcome: receipt.outcome,
++                    request_elapsed_ms: requested
++                        .filter(|requested| *requested <= at)
++                        .map(|requested| milliseconds(at, requested)),
++                    worker_timing: None,
++                });
++            }
++        }
++        let (Some(requested), Some(published)) = (requested, timing.published) else {
++            return;
++        };
++        if !first_decode
++            || requested > timing.started
++            || timing.started > timing.finished
++            || timing.finished > published
++            || published > receipt.at
++        {
++            return;
++        }
++        for (name, start, end) in [
++            ("request_to_worker_start_ms", requested, timing.started),
++            ("worker_execution_ms", timing.started, timing.finished),
++            ("worker_publication_delay_ms", timing.finished, published),
++            ("publication_to_decode_delivery_ms", published, receipt.at),
++        ] {
++            self.measurements.push(Measurement {
++                name,
++                elapsed_ms: milliseconds(end, start),
++            });
++        }
+     }
+ }
+ 
+@@ -283,6 +352,7 @@
+             ticket: Some(ticket),
+             outcome: Some(outcome),
+             request_elapsed_ms: None,
++            worker_timing: None,
+         }
+     }
+ 
+@@ -412,4 +482,198 @@
+             );
+         }
+     }
+-}
++
++    fn timed_receipt(
++        base: Instant,
++        received: u64,
++        ticket: u64,
++        outcome: Outcome,
++        phases: [u64; 3],
++    ) -> Event<u64> {
++        let mut receipt = event(base, received, "picture_received", ticket, outcome);
++        receipt.worker_timing = Some(crate::worker::WorkerTiming {
++            started: base + Duration::from_millis(phases[0]),
++            finished: base + Duration::from_millis(phases[1]),
++            published: Some(base + Duration::from_millis(phases[2])),
++        });
++        receipt
++    }
++
++    fn measured(observed: &Observation<u64>) -> Vec<(&'static str, f64)> {
++        observed
++            .measurements
++            .iter()
++            .map(|measurement| (measurement.name, measurement.elapsed_ms))
++            .collect()
++    }
++
++    #[test]
++    fn worker_phases_decompose_delivery_and_retain_actual_ticket_timestamps() {
++        let base = Instant::now();
++        let mut telemetry = PictureTelemetry::default();
++        telemetry.observe(
++            event(base, 10, "picture_requested", 1, Outcome::Requested),
++            Some(base),
++        );
++        let decoded = telemetry.observe(
++            timed_receipt(base, 25, 1, Outcome::Decoded, [12, 17, 18]),
++            None,
++        );
++        assert_eq!(
++            measured(&decoded),
++            vec![
++                ("request_to_decode_delivery_ms", 15.0),
++                ("request_to_worker_start_ms", 2.0),
++                ("worker_execution_ms", 5.0),
++                ("worker_publication_delay_ms", 1.0),
++                ("publication_to_decode_delivery_ms", 7.0),
++            ]
++        );
++        assert_eq!(
++            decoded.measurements[1..]
++                .iter()
++                .map(|measurement| measurement.elapsed_ms)
++                .sum::<f64>(),
++            decoded.measurements[0].elapsed_ms
++        );
++        let expected = [
++            ("picture_worker_started", 12, 2.0),
++            ("picture_worker_finished", 17, 7.0),
++            ("picture_worker_published", 18, 8.0),
++            ("picture_received", 25, 15.0),
++        ];
++        assert_eq!(decoded.events.len(), expected.len());
++        for (event, (stage, ms, elapsed)) in decoded.events.iter().zip(expected) {
++            assert_eq!(event.stage, stage);
++            assert_eq!(event.at, base + Duration::from_millis(ms));
++            assert_eq!(event.ticket, Some(1));
++            assert_eq!(event.outcome, Some(Outcome::Decoded));
++            assert_eq!(event.request_elapsed_ms, Some(elapsed));
++        }
++        telemetry.observe(
++            event(base, 26, "picture_submitted", 1, Outcome::Submitted),
++            None,
++        );
++        assert_eq!(
++            measured(&telemetry.composed(base + Duration::from_millis(27))),
++            vec![
++                ("request_to_picture_complete_ms", 17.0),
++                ("input_to_picture_complete_ms", 27.0),
++            ]
++        );
++    }
++
++    #[test]
++    fn held_receipt_changes_observation_delay_without_changing_worker_phases() {
++        let base = Instant::now();
++        let mut observations = Vec::new();
++        for received in [25, 125] {
++            let mut telemetry = PictureTelemetry::default();
++            telemetry.observe(
++                event(base, 10, "picture_requested", 1, Outcome::Requested),
++                None,
++            );
++            observations.push(telemetry.observe(
++                timed_receipt(base, received, 1, Outcome::Decoded, [12, 17, 18]),
++                None,
++            ));
++        }
++        let direct = measured(&observations[0]);
++        let held = measured(&observations[1]);
++        assert_eq!(direct[1..4], held[1..4]);
++        assert_eq!(held[0].1 - direct[0].1, 100.0);
++        assert_eq!(held[4].1 - direct[4].1, 100.0);
++        for (direct, held) in observations[0].events[..3]
++            .iter()
++            .zip(&observations[1].events[..3])
++        {
++            assert_eq!(direct.at, held.at);
++        }
++    }
++
++    #[test]
++    fn unsuccessful_and_repeated_receipts_keep_trace_without_worker_samples() {
++        let base = Instant::now();
++        for (ticket, outcome, first_decoded, expected) in [
++            (2, Outcome::Decoded, false, Outcome::Stale),
++            (1, Outcome::Stale, false, Outcome::Stale),
++            (1, Outcome::Failed, false, Outcome::Failed),
++            (1, Outcome::Decoded, true, Outcome::Repeated),
++        ] {
++            let mut telemetry = PictureTelemetry::default();
++            telemetry.observe(
++                event(base, 10, "picture_requested", 1, Outcome::Requested),
++                None,
++            );
++            if first_decoded {
++                telemetry.observe(
++                    timed_receipt(base, 25, 1, Outcome::Decoded, [12, 17, 18]),
++                    None,
++                );
++            }
++            let observation =
++                telemetry.observe(timed_receipt(base, 30, ticket, outcome, [12, 17, 18]), None);
++            assert!(observation.measurements.is_empty());
++            assert_eq!(observation.events.len(), 4);
++            assert_eq!(observation.events[0].stage, "picture_worker_started");
++            for event in observation.events {
++                assert_eq!(event.ticket, Some(ticket));
++                assert_eq!(event.outcome, Some(expected));
++            }
++        }
++    }
++
++    #[test]
++    fn invalid_or_incomplete_worker_timing_never_produces_phase_samples() {
++        let base = Instant::now();
++        for (phases, published) in [
++            ([9, 17, 18], true),
++            ([12, 11, 18], true),
++            ([12, 17, 16], true),
++            ([12, 17, 26], true),
++            ([12, 17, 18], false),
++        ] {
++            let mut telemetry = PictureTelemetry::default();
++            telemetry.observe(
++                event(base, 10, "picture_requested", 1, Outcome::Requested),
++                None,
++            );
++            let mut receipt = timed_receipt(base, 25, 1, Outcome::Decoded, phases);
++            if !published {
++                receipt.worker_timing.as_mut().unwrap().published = None;
++            }
++            let observation = telemetry.observe(receipt, None);
++            assert_eq!(
++                measured(&observation),
++                vec![("request_to_decode_delivery_ms", 15.0)]
++            );
++            assert_eq!(observation.events.len(), if published { 4 } else { 3 });
++            assert_eq!(
++                observation.events[0].at,
++                base + Duration::from_millis(phases[0])
++            );
++            if phases[0] < 10 {
++                assert_eq!(observation.events[0].request_elapsed_ms, None);
++            }
++        }
++    }
++
++    #[test]
++    fn absent_worker_timing_preserves_existing_delivery_without_zero_samples() {
++        let base = Instant::now();
++        let mut telemetry = PictureTelemetry::default();
++        telemetry.observe(
++            event(base, 10, "picture_requested", 1, Outcome::Requested),
++            None,
++        );
++        let observation = telemetry.observe(
++            event(base, 25, "picture_received", 1, Outcome::Decoded),
++            None,
++        );
++        assert_eq!(
++            measured(&observation),
++            vec![("request_to_decode_delivery_ms", 15.0)]
++        );
++        assert_eq!(observation.events.len(), 1);
++    }
++}
+--- before/crates/deadpan-app/src/preview/harness/wake.rs
++++ after/crates/deadpan-app/src/preview/harness/wake.rs
+@@ -0,0 +1,245 @@
++//! Repaint-driven waits for the offscreen harness, without timer polling.
++
++use std::sync::{Arc, Condvar, Mutex};
++use std::time::{Duration, Instant};
++
++use eframe::egui;
++
++#[derive(Clone, Copy)]
++struct Pending {
++    pass: u64,
++    at: Instant,
++}
++
++#[derive(Default)]
++struct State {
++    completed: u64,
++    // Only the current and preceding pass can still require a repaint. Two
++    // slots also bound notifications while a multi-pass egui step is running.
++    pending: [Option<Pending>; 2],
++}
++
++impl State {
++    fn schedule(&mut self, pass: u64, delay: Duration, now: Instant) {
++        if pass < self.completed.saturating_sub(1) {
++            return;
++        }
++        let Some(at) = now.checked_add(delay) else {
++            return; // egui uses Duration::MAX for no scheduled repaint.
++        };
++        let slot = &mut self.pending[usize::from(!pass.is_multiple_of(2))];
++        match slot {
++            Some(previous) if previous.pass > pass => {}
++            Some(previous) if previous.pass == pass => previous.at = previous.at.min(at),
++            _ => *slot = Some(Pending { pass, at }),
++        }
++    }
++
++    fn next(&self) -> Option<Instant> {
++        self.pending
++            .iter()
++            .flatten()
++            .map(|pending| pending.at)
++            .min()
++    }
++}
++
++#[derive(Default)]
++pub(super) struct RepaintWake {
++    state: Mutex<State>,
++    changed: Condvar,
++}
++
++impl RepaintWake {
++    /// Only install on kittest's fresh context. Native eframe owns its callback.
++    pub fn install(self: &Arc<Self>, context: &egui::Context) {
++        let wake = Arc::clone(self);
++        context.set_request_repaint_callback(move |info| {
++            if info.viewport_id == egui::ViewportId::ROOT {
++                wake.request(info.current_cumulative_pass_nr, info.delay, Instant::now());
++            }
++        });
++    }
++
++    fn request(&self, pass: u64, delay: Duration, now: Instant) {
++        // egui invokes this under its context lock. Do not call egui or app code.
++        self.state
++            .lock()
++            .expect("harness repaint wake")
++            .schedule(pass, delay, now);
++        self.changed.notify_one();
++    }
++
++    pub fn begin_step(&self, now: Instant) {
++        // Service due notifications, retaining future deadlines until their
++        // pass expires. An input-driven step can precede a one-shot delayed
++        // repaint without replacing it. Requests arriving during this step
++        // also survive, including a worker finishing after the UI polls it.
++        let mut state = self.state.lock().expect("harness repaint wake");
++        for slot in &mut state.pending {
++            if slot.is_some_and(|pending| pending.at <= now) {
++                *slot = None;
++            }
++        }
++    }
++
++    pub fn finish_step(&self, completed: u64, repaint_delay: Duration, now: Instant) {
++        let mut state = self.state.lock().expect("harness repaint wake");
++        state.completed = completed;
++        for slot in &mut state.pending {
++            if slot.is_some_and(|pending| pending.pass < completed.saturating_sub(1)) {
++                *slot = None;
++            }
++        }
++        // The final output includes egui's outstanding immediate pass and
++        // delayed repaint requests, even when its callback was coalesced.
++        state.schedule(completed.saturating_sub(1), repaint_delay, now);
++    }
++
++    /// Returns true for a due repaint, false at the finite scenario deadline.
++    /// The mutex predicate covers notifications both before and during waiting.
++    pub fn wait_until(&self, deadline: Instant) -> bool {
++        let mut state = self.state.lock().expect("harness repaint wake");
++        loop {
++            let now = Instant::now();
++            if now >= deadline {
++                return false;
++            }
++            let next = state.next();
++            if next.is_some_and(|at| at <= now) {
++                return true;
++            }
++            let until = next.map_or(deadline, |at| at.min(deadline));
++            (state, _) = self
++                .changed
++                .wait_timeout(state, until - now)
++                .expect("harness repaint wake");
++        }
++    }
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++    use std::sync::mpsc;
++
++    #[test]
++    fn pending_before_wait_is_not_lost_and_step_consumes_it() {
++        let wake = RepaintWake::default();
++        wake.request(0, Duration::ZERO, Instant::now());
++        assert!(wake.wait_until(Instant::now() + Duration::from_secs(5)));
++        wake.begin_step(Instant::now());
++        wake.finish_step(1, Duration::MAX, Instant::now());
++        assert!(wake.state.lock().unwrap().next().is_none());
++        assert!(!wake.wait_until(Instant::now()));
++    }
++
++    #[test]
++    fn delayed_requests_coalesce_and_immediate_work_wins() {
++        let mut state = State::default();
++        let now = Instant::now();
++        state.schedule(0, Duration::from_secs(4), now);
++        state.schedule(0, Duration::from_secs(8), now);
++        assert_eq!(state.next(), Some(now + Duration::from_secs(4)));
++        state.schedule(0, Duration::from_secs(2), now);
++        assert_eq!(state.next(), Some(now + Duration::from_secs(2)));
++        state.schedule(0, Duration::ZERO, now);
++        assert_eq!(state.next(), Some(now));
++    }
++
++    #[test]
++    fn requests_during_step_and_final_output_survive_old_pass_pruning() {
++        let wake = RepaintWake::default();
++        let now = Instant::now();
++        wake.begin_step(now);
++        wake.request(0, Duration::ZERO, now); // discarded internal pass
++        wake.request(1, Duration::from_secs(2), now);
++        wake.request(2, Duration::from_secs(1), now); // after final pass
++        wake.finish_step(2, Duration::from_secs(3), now);
++        assert_eq!(
++            wake.state.lock().unwrap().next(),
++            Some(now + Duration::from_secs(1))
++        );
++        wake.request(0, Duration::ZERO, now); // stale callback cannot evict pass 2
++        assert_eq!(
++            wake.state.lock().unwrap().next(),
++            Some(now + Duration::from_secs(1))
++        );
++        wake.begin_step(now);
++        wake.finish_step(3, Duration::ZERO, now);
++        assert_eq!(wake.state.lock().unwrap().next(), Some(now));
++    }
++
++    #[test]
++    fn absent_or_late_repaint_obeys_finite_deadline() {
++        let wake = RepaintWake::default();
++        wake.request(0, Duration::from_secs(60), Instant::now());
++        assert!(!wake.wait_until(Instant::now() + Duration::from_millis(10)));
++        // The scenario timeout must not consume the still-pending repaint.
++        assert!(wake.state.lock().unwrap().next().is_some());
++    }
++
++    #[test]
++    fn future_deadline_survives_an_early_input_step_until_due_or_stale() {
++        let wake = RepaintWake::default();
++        let now = Instant::now();
++        let due = now + Duration::from_secs(5);
++        // A delayed callback at the end of pass 1 is still eligible after an
++        // input-driven pass 2, even if that pass does not reissue the timer.
++        wake.finish_step(1, Duration::MAX, now);
++        wake.request(1, Duration::from_secs(5), now);
++        wake.begin_step(now + Duration::from_secs(1));
++        wake.finish_step(2, Duration::MAX, now + Duration::from_secs(1));
++        assert_eq!(wake.state.lock().unwrap().next(), Some(due));
++        wake.begin_step(due);
++        assert!(wake.state.lock().unwrap().next().is_none());
++
++        // A future request must still expire once two passes supersede it.
++        wake.request(2, Duration::from_secs(5), due);
++        wake.begin_step(due);
++        wake.finish_step(4, Duration::MAX, due);
++        assert!(wake.state.lock().unwrap().next().is_none());
++    }
++
++    #[test]
++    fn notification_crossing_the_wait_handoff_is_not_lost() {
++        let wake = Arc::new(RepaintWake::default());
++        let (ready_tx, ready_rx) = mpsc::sync_channel(0);
++        let (done_tx, done_rx) = mpsc::sync_channel(0);
++        let producer = Arc::clone(&wake);
++        let thread = std::thread::spawn(move || {
++            ready_rx.recv_timeout(Duration::from_secs(5)).unwrap();
++            producer.request(0, Duration::ZERO, Instant::now());
++            done_tx.send(()).unwrap();
++        });
++        // The producer may notify either just before or after wait_timeout
++        // releases the predicate lock. Both orderings must wake the consumer.
++        ready_tx.send(()).unwrap();
++        assert!(wake.wait_until(Instant::now() + Duration::from_secs(5)));
++        done_rx.recv_timeout(Duration::from_secs(5)).unwrap();
++        thread.join().unwrap();
++    }
++
++    #[test]
++    fn actual_egui_context_wakes_from_cloned_background_context() {
++        let context = egui::Context::default();
++        let wake = Arc::new(RepaintWake::default());
++        wake.install(&context);
++        // Drain initial layout/egui settling repaints without a native window.
++        for _ in 0..4 {
++            wake.begin_step(Instant::now());
++            let mut output = context.run_ui(egui::RawInput::default(), |_ui| {});
++            output.textures_delta.clear();
++            wake.finish_step(
++                context.cumulative_pass_nr(),
++                output.viewport_output[&egui::ViewportId::ROOT].repaint_delay,
++                Instant::now(),
++            );
++        }
++        assert!(wake.state.lock().unwrap().next().is_none());
++        let producer = context.clone();
++        let thread = std::thread::spawn(move || producer.request_repaint());
++        assert!(wake.wait_until(Instant::now() + Duration::from_secs(5)));
++        thread.join().unwrap();
++    }
++}
+--- before/crates/deadpan-app/src/ui_harness.rs
++++ after/crates/deadpan-app/src/ui_harness.rs
+@@ -154,6 +154,8 @@
+             "fixture": "cfr-bframes.mp4", "fixture_sha256": fixture_hash,
+             "replay_hz": options.hz, "viewport_points": [1280,820],
+             "physical_display_measured": false, "gpu_readback_in_timing_run": false,
++            "wait_strategy": "egui_repaint_callback_v1",
++            "picture_worker_timing": "request_start_finish_publication_receipt_v1",
+             "cache_state": "first import/index cold, subsequent operations warm; OS file cache uncontrolled",
+             "power_thermal_state": "uncontrolled; compare on the same idle machine and power mode",
+         }),
+--- before/crates/deadpan-app/src/worker.rs
++++ after/crates/deadpan-app/src/worker.rs
+@@ -85,6 +85,17 @@
+ pub struct Reply {
+     pub ticket: Ticket,
+     pub picture: Result<Picture, String>,
++    #[cfg(feature = "ui-harness")]
++    pub timing: Option<WorkerTiming>,
++}
++
++/// Worker clock observations, independent of when the UI receives the reply.
++#[cfg(feature = "ui-harness")]
++#[derive(Clone, Copy, Debug)]
++pub struct WorkerTiming {
++    pub started: Instant,
++    pub finished: Instant,
++    pub published: Option<Instant>,
+ }
+ 
+ #[derive(Default)]
+@@ -127,6 +138,14 @@
+         if self.shutdown || self.latest != Some(reply.ticket) {
+             return false;
+         }
++        #[cfg(feature = "ui-harness")]
++        let reply = {
++            let mut reply = reply;
++            if let Some(timing) = &mut reply.timing {
++                timing.published = Some(Instant::now());
++            }
++            reply
++        };
+         self.reply = Some(reply);
+         true
+     }
+@@ -255,7 +274,15 @@
+             session = None;
+             continue;
+         };
++        #[cfg(feature = "ui-harness")]
++        let started = Instant::now();
+         let picture = perform(&request, &mut session);
++        #[cfg(feature = "ui-harness")]
++        let timing = Some(WorkerTiming {
++            started,
++            finished: Instant::now(),
++            published: None,
++        });
+         let publish = shared
+             .mailbox
+             .lock()
+@@ -263,6 +290,8 @@
+             .publish(Reply {
+                 ticket: request.ticket,
+                 picture,
++                #[cfg(feature = "ui-harness")]
++                timing,
+             });
+         if publish {
+             context.request_repaint();
+@@ -747,6 +776,8 @@
+         assert!(!mailbox.publish(Reply {
+             ticket: active.ticket,
+             picture: Err("cancelled old decode".into()),
++            #[cfg(feature = "ui-harness")]
++            timing: None,
+         }));
+         assert!(mailbox.reply.is_none());
+         let next = mailbox.start_next().unwrap();
+@@ -763,12 +794,16 @@
+         assert!(mailbox.publish(Reply {
+             ticket: ticket(1, 1),
+             picture: Err("old source error".into()),
++            #[cfg(feature = "ui-harness")]
++            timing: None,
+         }));
+         mailbox.submit(ticket(2, 2), Work::Open(PathBuf::from("new.mp4")));
+         assert!(mailbox.reply.is_none());
+         assert!(!mailbox.publish(Reply {
+             ticket: ticket(1, 1),
+             picture: Err("late reply".into()),
++            #[cfg(feature = "ui-harness")]
++            timing: None,
+         }));
+     }
+ 
+@@ -785,7 +820,9 @@
+         assert!(mailbox.start_next().is_none());
+         assert!(!mailbox.publish(Reply {
+             ticket: ticket(1, 2),
+-            picture: Err("late".into())
++            picture: Err("late".into()),
++            #[cfg(feature = "ui-harness")]
++            timing: None,
+         }));
+         assert!(!mailbox.submit(ticket(2, 3), Work::Open(PathBuf::from("ignored"))));
+     }
+--- before/crates/deadpan-app/src/worker/project_tests.rs
++++ after/crates/deadpan-app/src/worker/project_tests.rs
+@@ -392,6 +392,83 @@
+     worker.shutdown();
+ }
+ 
++#[cfg(feature = "ui-harness")]
++#[test]
++fn worker_timing_precedes_notification_and_preserves_decoder_across_revisions() {
++    let mut fixture = Fixture::source("cfr-bframes.mp4");
++    let before = fixture.workspace(1);
++    let context = egui::Context::default();
++    let (notified, notifications) = std::sync::mpsc::sync_channel(1);
++    context.set_request_repaint_callback(move |_| {
++        let _ = notified.try_send(Instant::now());
++    });
++    let worker = PreviewWorker::new(context.clone()).unwrap();
++    let submit = |request: Request| {
++        // Consume egui's settling repaints before submitting the next request.
++        // A fresh worker repaint then wakes this test without polling or sleeps.
++        for _ in 0..3 {
++            let mut output = context.run_ui(egui::RawInput::default(), |_| {});
++            output.textures_delta.clear();
++        }
++        while notifications.try_recv().is_ok() {}
++        let submitted = Instant::now();
++        let ticket = request.ticket;
++        worker.submit(ticket, request.work);
++        let notified = notifications
++            .recv_timeout(Duration::from_secs(15))
++            .expect("preview worker repaint deadline");
++        let reply = worker.take_reply().expect("reply published before repaint");
++        let received = Instant::now();
++        let timing = reply.timing.expect("real worker timing");
++        let published = timing.published.expect("accepted publication time");
++        assert_eq!(reply.ticket, ticket);
++        assert!(submitted <= timing.started);
++        assert!(timing.started <= timing.finished);
++        assert!(timing.finished <= published);
++        assert!(published <= notified);
++        assert!(notified <= received);
++        reply
++    };
++    let first = submit(request(&before, source(20), 1));
++    let first_timing = first.timing.unwrap();
++    let first = first.picture.unwrap();
++    assert_eq!(first.id, SourceFrameId(20));
++
++    fixture.append_hold(
++        "freeze",
++        1,
++        HoldVideo::Freeze {
++            asset: asset(),
++            timestamp: SourceTimestamp {
++                ticks: 20 * 1001,
++                time_base: before.sources[&asset()]
++                    .video_index
++                    .as_ref()
++                    .unwrap()
++                    .time_base(),
++            },
++        },
++    );
++    let after = fixture.workspace(1);
++    assert_ne!(before.document.revision_id(), after.document.revision_id());
++    // Closing the writer revokes its original-import handles. An attempted
++    // reopen would fail; the live decoder must survive the unrelated revision.
++    drop(fixture.store);
++    let mut next = request(&after, sequence(121), 2);
++    next.ticket.source = 2;
++    let second = submit(next);
++    assert!(first_timing.published.unwrap() <= second.timing.unwrap().started);
++    let second = second.picture.unwrap();
++    assert_eq!(second.id, first.id);
++    assert_eq!(second.canvas, Some((320, 180)));
++    assert_eq!(second.frame.unwrap().bytes(), first.frame.unwrap().bytes());
++
++    worker.clear();
++    let after_clear = submit(request(&after, sequence(121), 3));
++    assert!(after_clear.picture.is_err(), "cleared decoder must reopen");
++    worker.shutdown();
++}
++
+ #[test]
+ fn sequence_samples_exact_mapping_and_endpoint_policy_after_a_revision_change() {
+     let mut fixture = Fixture::source("cfr-bframes.mp4");
+@@ -565,7 +642,9 @@
+     assert!(result.is_err());
+     assert!(!mailbox.publish(Reply {
+         ticket: first.ticket,
+-        picture: result
++        picture: result,
++        #[cfg(feature = "ui-harness")]
++        timing: None,
+     }));
+     let latest = mailbox.start_next().unwrap();
+     let picture = perform(&latest, &mut retained).unwrap();

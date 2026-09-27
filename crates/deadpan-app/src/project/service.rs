@@ -22,10 +22,12 @@ use crate::library::ProjectLibrary;
 use super::worker::{Job, Prepared, Reply, Streams, Work};
 use super::{
     CommittedEdit, ImportMedia, ImportStage, ImportStatus, ProjectEdit, ProjectRequest,
-    ProjectUpdate, RegisteredSource, Shared, Workspace,
+    ProjectUpdate, RegisteredSource, SequenceScope, Shared, Workspace,
 };
 
 type Result<T> = std::result::Result<T, String>;
+
+mod moment;
 
 struct Pending {
     id: u64,
@@ -34,6 +36,8 @@ struct Pending {
     streams: Streams,
     insertion: Option<SourceRegistration>,
     initialization: Option<SingleSourceInitialization>,
+    moment: Option<moment::PendingMoment>,
+    scope: SequenceScope,
 }
 
 struct Service {
@@ -198,16 +202,28 @@ impl Service {
                 Ok(())
             }
             ProjectRequest::Insert {
+                expected_session,
                 expected_revision,
                 asset,
+                scope,
                 parent,
                 index,
-            } => self.insert(expected_revision, asset, parent, index),
+            } => self.insert(
+                expected_session,
+                expected_revision,
+                asset,
+                scope,
+                parent,
+                index,
+            ),
+            ProjectRequest::PasteMoment(request) => self.paste_moment(request),
             ProjectRequest::Edit {
                 expected_session,
                 expected_revision,
+                cursor,
+                scope,
                 edit,
-            } => self.edit(expected_session, expected_revision, edit),
+            } => self.edit(expected_session, expected_revision, cursor, scope, edit),
             ProjectRequest::Undo { expected_revision } => {
                 self.writer()?
                     .undo(&expected_revision, revision())
@@ -300,6 +316,7 @@ impl Service {
             Streams::Import(ImportMedia::Video),
             None,
             Some(initialization),
+            SequenceScope::default(),
             Work::Retain {
                 path,
                 ownership: OriginalOwnership::Managed,
@@ -311,6 +328,8 @@ impl Service {
         &mut self,
         expected_session: u64,
         expected_revision: RevisionId,
+        cursor: deadpan_core::ProjectFrame,
+        scope: SequenceScope,
         edit: ProjectEdit,
     ) -> Result<()> {
         let workspace = self
@@ -324,11 +343,16 @@ impl Service {
         if document.revision_id() != &expected_revision {
             return Err("Project changed before the edit".into());
         }
+        scope.resolve(workspace)?;
+        if cursor.0 < 0 || cursor.0 > workspace.plan.duration().frames() {
+            return Err("Edit cursor is outside the project".into());
+        }
         if let ProjectEdit::InsertTime { at, duration } = edit {
             if duration == deadpan_core::FrameDuration::ZERO {
                 self.message = Some("Pause resolves to 0 frames; no edit was made.".into());
                 return Ok(());
             }
+            scope.check_pause(workspace, at)?;
             let id = node();
             let request =
                 super::pause::prepare(workspace, at, duration, revision(), id.clone(), node)?;
@@ -340,6 +364,8 @@ impl Service {
                 revision: outcome.revision_id,
                 selected_node: Some(id),
                 preserve_cursor: false,
+                cursor: Some(at),
+                scope,
             });
             self.message = Some(format!(
                 "Inserted a {} frame silent pause at boundary {} and saved",
@@ -353,20 +379,21 @@ impl Service {
             ProjectEdit::Split { node, .. }
             | ProjectEdit::Repeat { node, .. }
             | ProjectEdit::WrapRepeat { node, .. }
+            | ProjectEdit::Retime { node, .. }
             | ProjectEdit::SetFraming { node, .. }
             | ProjectEdit::Delete { node }
             | ProjectEdit::HoldDuration { node, .. } => node,
         };
-        let NodeKind::Sequence { children } = &document.nodes()[document.root()].kind else {
-            return Err("Editing requires a root Sequence".into());
-        };
+        let view = scope.resolve(workspace)?;
+        let children = view.children;
         let position = children
             .iter()
             .position(|child| child == target)
-            .ok_or("Select a root beat; nested occurrence editing is not available yet")?;
+            .ok_or("Select a direct child of the active Sequence before editing")?;
         let selected = Some(target.clone());
         let split_position = matches!(edit, ProjectEdit::Split { .. }).then_some(position);
         let preserve_cursor = matches!(edit, ProjectEdit::SetFraming { .. });
+        let mut retime_message = None;
         let (command, selected_node, message) = match edit {
             ProjectEdit::SetFraming { node, framing } => (
                 Command::SetFraming { node, framing },
@@ -442,6 +469,48 @@ impl Service {
                     "Repeat created and saved",
                 )
             }
+            ProjectEdit::Retime {
+                node: target,
+                speed,
+                pitch,
+                wrap,
+            } => {
+                let change = super::retime::resolve(workspace, &target, speed, wrap)?;
+                if change.update {
+                    if matches!(&document.nodes()[&target].kind, NodeKind::Retime { duration, pitch: current, .. }
+                        if *duration == change.after && *current == pitch)
+                    {
+                        self.message = Some(format!(
+                            "Already set: {}. No edit was made.",
+                            change.describe(pitch)
+                        ));
+                        return Ok(());
+                    }
+                    retime_message = Some(format!("Saved: {}", change.describe(pitch)));
+                    (
+                        Command::SetRetime {
+                            node: target,
+                            duration: change.after,
+                            pitch,
+                        },
+                        selected,
+                        "Retime updated and saved",
+                    )
+                } else {
+                    let id = node();
+                    retime_message = Some(format!("Saved: {}", change.describe(pitch)));
+                    (
+                        Command::WrapRetime {
+                            node: target,
+                            id: id.clone(),
+                            duration: change.after,
+                            pitch,
+                        },
+                        Some(id),
+                        "Retime created and saved",
+                    )
+                }
+            }
             ProjectEdit::Delete { node } => {
                 let selected = children
                     .get(position + 1)
@@ -474,12 +543,12 @@ impl Service {
         // progress text or an identity-pool ordering. Its start is the cut.
         let selected_node = if let Some(position) = split_position {
             self.workspace.as_ref().and_then(|workspace| {
-                let document = &workspace.document;
-                let NodeKind::Sequence { children } = &document.nodes()[document.root()].kind
-                else {
-                    return None;
-                };
-                children.get(position + 1).cloned()
+                scope
+                    .resolve(workspace)
+                    .ok()?
+                    .children
+                    .get(position + 1)
+                    .cloned()
             })
         } else {
             selected_node
@@ -488,8 +557,10 @@ impl Service {
             revision: outcome.revision_id,
             selected_node,
             preserve_cursor,
+            cursor: preserve_cursor.then_some(cursor),
+            scope,
         });
-        self.message = Some(message.into());
+        self.message = Some(retime_message.unwrap_or_else(|| message.into()));
         Ok(())
     }
 
@@ -572,6 +643,7 @@ impl Service {
         streams: Streams,
         insertion: Option<SourceRegistration>,
         initialization: Option<SingleSourceInitialization>,
+        scope: SequenceScope,
         work: Work,
     ) -> Result<()> {
         if self.active.is_some() {
@@ -608,6 +680,8 @@ impl Service {
             streams,
             insertion,
             initialization,
+            moment: None,
+            scope,
         });
         self.serial = id;
         self.import = Some(ImportStatus {
@@ -645,14 +719,17 @@ impl Service {
             Streams::Import(media),
             None,
             None,
+            SequenceScope::default(),
             Work::Retain { path, ownership },
         )
     }
 
     fn insert(
         &mut self,
+        expected_session: u64,
         expected_revision: RevisionId,
         asset: AssetId,
+        scope: SequenceScope,
         parent: NodeId,
         index: usize,
     ) -> Result<()> {
@@ -660,11 +737,21 @@ impl Service {
             .workspace
             .as_ref()
             .ok_or("Open or create a project first")?;
+        if workspace.session != expected_session {
+            return Err("Project session changed before the insertion".into());
+        }
         if workspace.document.revision_id() != &expected_revision {
             return Err(display(StoreError::RevisionConflict {
                 expected: expected_revision.to_string(),
                 current: workspace.document.revision_id().to_string(),
             }));
+        }
+        let view = scope.resolve(workspace)?;
+        if view.owner != &parent {
+            return Err("Insertion parent must be the active Sequence scope".into());
+        }
+        if index > view.children.len() {
+            return Err("Insertion position is outside the active Sequence".into());
         }
         let source = workspace
             .sources
@@ -703,6 +790,8 @@ impl Service {
                                     revision: commit.revision_id,
                                     selected_node: Some(insertion.node.clone()),
                                     preserve_cursor: false,
+                                    cursor: None,
+                                    scope: scope.clone(),
                                 })
                         });
                         if self.active.is_none() {
@@ -748,6 +837,7 @@ impl Service {
             streams,
             Some(registration),
             None,
+            scope,
             Work::Qualify { record, streams },
         )
     }
@@ -816,6 +906,9 @@ impl Service {
     }
 
     fn register(&mut self, active: Pending, prepared: PreparedSourceRegistration) -> Result<()> {
+        if active.moment.is_some() {
+            return self.register_moment(active, prepared);
+        }
         if let Some(initialization) = active.initialization {
             if let Some(status) = &mut self.import {
                 status.stage = ImportStage::Registering;
@@ -831,6 +924,8 @@ impl Service {
                 revision: commit.revision_id,
                 selected_node: Some(initialization.node),
                 preserve_cursor: false,
+                cursor: None,
+                scope: active.scope.clone(),
             });
             if let Some(status) = &mut self.import {
                 status.stage = ImportStage::Complete;
@@ -891,6 +986,8 @@ impl Service {
                 revision: commit.revision_id.clone(),
                 selected_node: Some(insertion.node.clone()),
                 preserve_cursor: false,
+                cursor: None,
+                scope: active.scope.clone(),
             });
         }
         if let Some(status) = &mut self.import {
@@ -919,6 +1016,7 @@ fn snapshot(
 ) -> Result<Workspace> {
     let document = store.snapshot().map_err(display)?;
     let plan = RenderPlan::compile(&document).map_err(display)?;
+    let rate = document.presentation_basis().frame_rate;
     let mut sources = BTreeMap::new();
     for (asset, metadata) in document.assets() {
         let Some(qualification) = &metadata.source_qualification else {
@@ -943,16 +1041,36 @@ fn snapshot(
             source.receipt.id() == qualification
                 && source.label == metadata.label
                 && source.original == original
+                && source
+                    .original_audition
+                    .as_ref()
+                    .is_none_or(|view| view.rate() == rate)
+                && source
+                    .sound_audition
+                    .as_ref()
+                    .is_none_or(|view| view.rate() == rate)
         }) {
             sources.insert(asset.clone(), cached.clone());
             continue;
         }
-        let video_index = receipt
+        let original_audition = receipt
             .snapshot()
             .video()
-            .map(|_| store.source_video_index(document.revision_id(), asset))
+            .map(|_| {
+                deadpan_playback::Original::new(rate, asset.clone(), receipt.clone()).map(Arc::new)
+            })
             .transpose()
             .map_err(display)?;
+        let video_index = original_audition.as_ref().map(|view| view.index().clone());
+        let sound_audition =
+            if receipt.snapshot().video().is_none() && receipt.snapshot().audio().is_some() {
+                Some(Arc::new(
+                    deadpan_playback::Sound::new(rate, asset.clone(), receipt.clone())
+                        .map_err(display)?,
+                ))
+            } else {
+                None
+            };
         sources.insert(
             asset.clone(),
             Arc::new(RegisteredSource {
@@ -961,6 +1079,8 @@ fn snapshot(
                 receipt,
                 original,
                 video_index,
+                original_audition,
+                sound_audition,
             }),
         );
     }
@@ -971,11 +1091,10 @@ fn snapshot(
             sources
                 .get(asset)
                 .ok_or("Original qualification is missing")?
-                .receipt
-                .snapshot()
-                .derive_timing(document.presentation_basis().frame_rate)
-                .map_err(display)?
-                .duration,
+                .original_audition
+                .as_ref()
+                .ok_or("Original audition view is missing")?
+                .duration(),
         ),
         _ => None,
     };

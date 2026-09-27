@@ -29,7 +29,8 @@ pub enum SignalTransferError {
 
 /// Complete stereo PCM for exactly one requested root interval, before creative
 /// fades. Explicit suppression includes silent Holds and exhausted retained
-/// domains, but never inferred silence from zero samples or a missing voice.
+/// domains and authored Source selection endpoints, but never inferred silence
+/// from zero samples or an ordinary missing voice.
 /// Every suppression range must be nonempty and contained in this block.
 #[derive(Debug, Clone, PartialEq)]
 pub struct RootSignalBlock {

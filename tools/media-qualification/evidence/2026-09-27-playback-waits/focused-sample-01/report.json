@@ -1,0 +1,14 @@
+{
+  "command": [
+    "deadpan_playback-4ee185cb64a4515c",
+    "canonical_source_pcm_uses_fixed_monitor_gain_and_delivery_clock",
+    "original_preserves_leading_audio_trailing_audio_and_exact_rounded_picture_clock",
+    "original_pcm_ignores_edits_and_target_cache_never_reuses_sequence_pcm",
+    "seek_reuses_private_pcm_but_a_new_session_must_reopen_sources",
+    "--nocapture"
+  ],
+  "exit_code": 0,
+  "seconds": 22.052978791296482,
+  "sha256_before": "81a6a6a6755e61494567e98135050b07cd0ce31db8e908a90049d465a22b407a",
+  "sha256_after": "81a6a6a6755e61494567e98135050b07cd0ce31db8e908a90049d465a22b407a"
+}

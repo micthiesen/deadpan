@@ -1,0 +1,19 @@
+{
+  "protocol": 1,
+  "project_id": "fc859a41-ddde-4eb5-978f-cca00ce544b8",
+  "expected_revision": "repeat",
+  "new_revision": "isolate",
+  "command": {
+    "command": "isolate_gap",
+    "node": "repeat",
+    "iteration": {
+      "allocation": "repeat",
+      "ordinal": 0
+    },
+    "id": "independent",
+    "timing": {
+      "allocation": "isolate",
+      "ordinal": 0
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "passed": true,
+  "binary_sha256": "77a06d877aab6d97d7a447b152ec12f048a2b3b2be0a0e17db7abf3256e5c0ac",
+  "entrypoint": "deadpan-app --headless",
+  "commands": 44,
+  "revisions": 11,
+  "history_entries": 6,
+  "final_revision": "605f5fff-5a5c-4438-b9cd-55fd62b85af7",
+  "scope": "Public-command split Repeat with isolated gap, two root-seam pauses, durable undo/redo, atomic interior refusal"
+}

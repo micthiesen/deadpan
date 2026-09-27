@@ -69,6 +69,7 @@ fn hold(frames: i64, audio: HoldAudio) -> BeatNode {
         HoldRecipe {
             duration: duration(frames),
             video: HoldVideo::Background,
+            picture_context: None,
             audio,
         },
     )
@@ -834,6 +835,7 @@ fn copy_lineage_keeps_compact_repeat_paths_and_gap_identity_explicit() {
                         gap: Some(HoldRecipe {
                             duration: duration(4),
                             video: HoldVideo::Background,
+                            picture_context: None,
                             audio: HoldAudio::RoomTone { source: audio() },
                         }),
                     },
@@ -1056,6 +1058,7 @@ fn tail_maximum_retains_local_hold_and_gap_units_through_retime() {
                                 gap: Some(HoldRecipe {
                                     duration: duration(8),
                                     video: HoldVideo::Background,
+                                    picture_context: None,
                                     audio: tail.clone(),
                                 }),
                             },
@@ -1162,6 +1165,7 @@ fn billion_play_reference_keeps_old_order_gap_identity_after_current_edits() {
                         gap: Some(HoldRecipe {
                             duration: duration(1),
                             video: HoldVideo::Background,
+                            picture_context: None,
                             audio: HoldAudio::RoomTone { source: audio() },
                         }),
                     },
@@ -1329,6 +1333,7 @@ fn sparse_override_clock_validates_its_effective_play_and_retains_partition_allo
                     (id("quiet"), hold(4, HoldAudio::Silence)),
                 ]),
                 overrides: BTreeMap::new(),
+                gap_overrides: BTreeMap::new(),
             },
         },
     );

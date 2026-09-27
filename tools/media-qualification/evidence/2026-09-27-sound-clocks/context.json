@@ -1,0 +1,35 @@
+{
+  "base_revision": {
+    "exit_code": 0,
+    "stdout": "c03a5edde5f28d27074745eb15711cb28b1f2e50",
+    "stderr": ""
+  },
+  "os": {
+    "exit_code": 0,
+    "stdout": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84",
+    "stderr": ""
+  },
+  "architecture": {
+    "exit_code": 0,
+    "stdout": "arm64",
+    "stderr": ""
+  },
+  "rust": {
+    "exit_code": 0,
+    "stdout": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+    "stderr": ""
+  },
+  "cargo": {
+    "exit_code": 0,
+    "stdout": "cargo 1.97.1 (c980f4866 2026-06-30)",
+    "stderr": ""
+  },
+  "ffmpeg_prefix": "/tmp/deadpan-ui-ffmpeg/prefix",
+  "core_schema": 28,
+  "database_schema": 34,
+  "git_write_access": "read-only; no commit or push",
+  "prior_checkpoint": "/tmp/deadpan-authored-sounds-20260927/checkpoint",
+  "goal": "active; no requirement or gate promoted",
+  "gui": "No UI changes in this increment. GPU replay and native aesthetics/keyboard checks not repeated; prior audition replay failed No adapter found before scenarios.",
+  "imagegen": "All 11 existing boards and prompts retained; no new design requested for backend-only increment"
+}

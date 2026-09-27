@@ -7,18 +7,30 @@
 //! pixel effects, audio processing, or external I/O.
 
 mod audio_envelope;
+mod audio_mix;
+mod audio_projected_root;
+mod audio_projection;
 mod audio_reference;
+mod audio_routed;
 mod audio_sampling;
+mod audio_sound_route;
+mod audio_tape;
 mod picture;
 mod plan;
 
 pub use audio_envelope::{AudioEnvelope, AudioEnvelopeEndpoint};
+pub use audio_mix::{AudioMixGate, AudioMixQuery, AudioMixVoiceQuery, AudioSignalMix};
+pub use audio_projected_root::AudioProjectedRoot;
+pub use audio_projection::{AudioProjectionIdentity, AudioStageProjection};
 pub use audio_reference::{
     AudioReferencePlan, ReferenceAudioClock, ReferenceAudioContent, ReferenceAudioQuery,
     ReferenceAudioSpan, ReferenceClockOwner, ReferenceProcessingDomain, ReferenceProcessingKind,
     ReferenceSample, RetainedRootMap,
 };
+pub use audio_routed::{AudioRoutedRoot, AudioRoutedSignal, AudioRoutedSignalInput};
 pub use audio_sampling::{AudioBoundaryRule, AudioSampleGrid, AudioSampleMap};
+pub use audio_sound_route::{AudioSoundRoute, AudioSoundRouteQuery, AudioSoundRouteSpan};
+pub use audio_tape::{AudioSignalTape, AudioSignalTapeRun};
 
 pub use picture::{Picture, PictureFraming, PictureSample};
 pub use plan::{AudioBound, AudioBoundDomain, AudioFadeQuery, AudioFadeSpan, AudioPolicyQuery};
@@ -29,10 +41,12 @@ pub use plan::{
     StorageStats,
 };
 pub use plan::{AudioDefinition, AudioDefinitionSelector, AudioPointDomain, AudioRootPlacement};
+pub use plan::{AudioHoldIssuer, AudioHoldPolicyQuery, AudioHoldRule};
 pub use plan::{
     AudioProcessingQuery, AudioProcessingSpan, AudioSignal, AudioSignalContent, AudioSignalQuery,
     AudioSignalSpan, AudioStage, AudioStageDescriptor, SignalSample, SignalTransform,
 };
+pub use plan::{AudioSourceVoice, AudioSourceVoiceIdentity, AudioSourceVoiceRecipe};
 
 use deadpan_core::{
     AssetId, DocumentError, FrameDuration, ProjectFrame, SourceFrameId, SourceTimeBase, TimeError,

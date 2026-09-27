@@ -1,0 +1,17 @@
+{
+  "commands": [
+    {
+      "command": [
+        "deadpan_playback-e4a6c13c0209ba22"
+      ],
+      "exit_code": 101,
+      "seconds": 75.40025870781392,
+      "log": "0.log",
+      "tests": {
+        "passed": 29,
+        "failed": 5,
+        "ignored": 0
+      }
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "commands": [
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "-p",
+        "deadpan-plan"
+      ],
+      "exit_code": 0,
+      "seconds": 0.6090183751657605,
+      "log": "0.log"
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-plan",
+        "--test",
+        "source_voice",
+        "--test",
+        "source_voice_policy",
+        "--test",
+        "hold_policy"
+      ],
+      "exit_code": 101,
+      "seconds": 44.547429291997105,
+      "log": "1.log",
+      "tests": {
+        "passed": 17,
+        "failed": 3,
+        "ignored": 0
+      }
+    }
+  ]
+}

@@ -2,6 +2,11 @@ use std::collections::BTreeMap;
 
 use deadpan_core::*;
 
+#[path = "audio_bindings/gaps.rs"]
+mod gaps;
+#[path = "audio_bindings/reanchors.rs"]
+mod reanchors;
+
 fn id(name: &str) -> NodeId {
     NodeId::new(name).unwrap()
 }
@@ -30,6 +35,7 @@ fn hold(length: i64) -> BeatNode {
     BeatNode::hold(
         "hold",
         HoldRecipe {
+            picture_context: None,
             duration: frames(length),
             video: HoldVideo::Background,
             audio: HoldAudio::Silence,
@@ -111,7 +117,9 @@ fn instance(repeats: &[(&str, &str, u32)]) -> InstancePath {
 }
 fn plain(ordinal: u32) -> AudioPlacementTemplate {
     AudioPlacementTemplate {
+        gap_after: None,
         reference: AudioReferenceClock {
+            recipe: deadpan_core::AudioRecipeKind::Node,
             timing: timing(ordinal),
             root: AudioClockRoot::ProjectRootRoundEven,
             physical: id("a"),
@@ -147,6 +155,7 @@ fn state(layout: &ProjectDocument, template: AudioPlacementTemplate) -> AudioBin
         BTreeMap::from([(
             id("a"),
             OwnedAudioBinding {
+                reanchors: Vec::new(),
                 lattice: template,
                 resume: None,
             },
@@ -377,6 +386,7 @@ fn symbolic_phase_retains_each_play_rounding_and_composes_another_clock() {
         BTreeMap::from([(
             id("a"),
             OwnedAudioBinding {
+                reanchors: Vec::new(),
                 lattice: template.clone(),
                 resume: Some(AudioResume {
                     local_boundary: ExactRatio::ONE,
@@ -422,6 +432,7 @@ fn symbolic_phase_retains_each_play_rounding_and_composes_another_clock() {
         BTreeMap::from([(
             id("a"),
             OwnedAudioBinding {
+                reanchors: Vec::new(),
                 lattice: plain(0),
                 resume: Some(AudioResume {
                     local_boundary: ratio(2, 1),
@@ -511,6 +522,7 @@ fn every_template_clock_stays_inside_its_nearest_preserve_input() {
             BTreeMap::from([(
                 id("a"),
                 OwnedAudioBinding {
+                    reanchors: Vec::new(),
                     lattice: template,
                     resume: Some(AudioResume {
                         local_boundary: ExactRatio::ONE,
@@ -629,6 +641,7 @@ fn live_validation_bounds_resume_anchors_without_narrowing_exact_phase() {
     let before = document(&["a"], [("a", hold(4))]);
     for (boundary, admitted) in [(-1, false), (0, true), (4, true), (5, false)] {
         let binding = OwnedAudioBinding {
+            reanchors: Vec::new(),
             lattice: plain(0),
             resume: Some(AudioResume {
                 local_boundary: ratio(boundary, 1),
@@ -667,6 +680,7 @@ fn live_validation_bounds_resume_anchors_without_narrowing_exact_phase() {
         BTreeMap::from([(
             id("root"),
             OwnedAudioBinding {
+                reanchors: Vec::new(),
                 lattice: plain(0),
                 resume: None,
             },
@@ -698,6 +712,7 @@ fn programmatic_bindings_obey_the_same_individual_wire_cap() {
         });
     }
     let binding = OwnedAudioBinding {
+        reanchors: Vec::new(),
         lattice: plain(0),
         resume: Some(AudioResume {
             local_boundary: ExactRatio::ONE,
@@ -766,6 +781,7 @@ fn constructor_validation_charges_all_template_walks_together() {
             (
                 id(&format!("owner_{index}")),
                 OwnedAudioBinding {
+                    reanchors: Vec::new(),
                     lattice: plain(0),
                     resume: None,
                 },
@@ -807,6 +823,7 @@ fn near_limit_binding_round_trips_inside_a_pretty_project_document() {
         to_local: ExactRatio::ONE,
     };
     let mut binding = OwnedAudioBinding {
+        reanchors: Vec::new(),
         lattice: plain(0),
         resume: Some(AudioResume {
             local_boundary: ExactRatio::ONE,

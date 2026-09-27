@@ -1,0 +1,30 @@
+
+running 1 test
+
+thread 'captured_one_play_gap_and_former_final_gap_are_born_on_the_definition_clock' (44839210) panicked at crates/deadpan-audio/tests/gap_bindings.rs:394:13:
+sample 0, channel 0: -0.75776315 != -0.6566521
+stack backtrace:
+   0: __rustc::rust_begin_unwind
+             at /rustc/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library/std/src/panicking.rs:689:5
+   1: core::panicking::panic_fmt
+             at /rustc/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library/core/src/panicking.rs:80:14
+   2: gap_bindings::assert_close
+             at ./crates/deadpan-audio/tests/gap_bindings.rs:394:13
+   3: gap_bindings::captured_one_play_gap_and_former_final_gap_are_born_on_the_definition_clock
+             at ./crates/deadpan-audio/tests/gap_bindings.rs:583:5
+   4: gap_bindings::captured_one_play_gap_and_former_final_gap_are_born_on_the_definition_clock::{closure#0}
+             at ./crates/deadpan-audio/tests/gap_bindings.rs:515:81
+   5: <gap_bindings::captured_one_play_gap_and_former_final_gap_are_born_on_the_definition_clock::{closure#0} as core::ops::function::FnOnce<()>>::call_once
+             at /rustc/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library/core/src/ops/function.rs:250:5
+   6: <fn() -> core::result::Result<(), alloc::string::String> as core::ops::function::FnOnce<()>>::call_once
+             at /rustc/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library/core/src/ops/function.rs:250:5
+note: Some details are omitted, run with `RUST_BACKTRACE=full` for a verbose backtrace.
+test captured_one_play_gap_and_former_final_gap_are_born_on_the_definition_clock ... FAILED
+
+failures:
+
+failures:
+    captured_one_play_gap_and_former_final_gap_are_born_on_the_definition_clock
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 4 filtered out; finished in 17.22s
+

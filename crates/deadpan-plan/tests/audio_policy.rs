@@ -24,6 +24,7 @@ fn dense_bound_repeat_inventory_uses_shared_work_not_output_span_capacity() {
         HoldRecipe {
             duration: FrameDuration::new(1).unwrap(),
             video: HoldVideo::Background,
+            picture_context: None,
             audio: HoldAudio::Silence,
         },
     ))

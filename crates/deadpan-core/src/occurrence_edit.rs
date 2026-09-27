@@ -54,6 +54,15 @@ pub enum OccurrenceEdit {
         plays: u32,
         gap: Option<HoldRecipe>,
     },
+    WrapRetime {
+        id: NodeId,
+        duration: FrameDuration,
+        pitch: crate::PitchPolicy,
+    },
+    SetRetime {
+        duration: FrameDuration,
+        pitch: crate::PitchPolicy,
+    },
     InsertPlays {
         index: u32,
         count: u32,
@@ -76,6 +85,9 @@ pub enum OccurrenceEdit {
     SetHoldProvider {
         video: HoldVideo,
     },
+    SetHoldPictureContext {
+        context: Option<crate::CapturedFraming>,
+    },
     AcceptGeneratedHold {
         artifact: GeneratedArtifact,
         #[serde(deserialize_with = "crate::document::unique_map")]
@@ -97,6 +109,18 @@ pub enum OccurrenceEdit {
         subtree: Subtree,
     },
     ClearPlayOverride {
+        iteration: IterationId,
+    },
+    SetGapOverride {
+        iteration: IterationId,
+        subtree: Subtree,
+    },
+    IsolateGap {
+        iteration: IterationId,
+        id: NodeId,
+        timing: crate::AudioTimingId,
+    },
+    ClearGapOverride {
         iteration: IterationId,
     },
 }
@@ -145,6 +169,21 @@ impl OccurrenceEdit {
                 plays: *plays,
                 gap: gap.clone(),
             },
+            Self::WrapRetime {
+                id,
+                duration,
+                pitch,
+            } => Command::WrapRetime {
+                node,
+                id: id.clone(),
+                duration: *duration,
+                pitch: *pitch,
+            },
+            Self::SetRetime { duration, pitch } => Command::SetRetime {
+                node,
+                duration: *duration,
+                pitch: *pitch,
+            },
             Self::InsertPlays { index, count } => Command::InsertPlays {
                 node,
                 index: *index,
@@ -177,6 +216,10 @@ impl OccurrenceEdit {
                 node,
                 video: video.clone(),
             },
+            Self::SetHoldPictureContext { context } => Command::SetHoldPictureContext {
+                node,
+                context: context.clone(),
+            },
             Self::AcceptGeneratedHold { artifact, assets } => Command::AcceptGeneratedHold {
                 node,
                 artifact: artifact.clone(),
@@ -202,6 +245,25 @@ impl OccurrenceEdit {
                 subtree: subtree.clone(),
             },
             Self::ClearPlayOverride { iteration } => Command::ClearPlayOverride {
+                node,
+                iteration: iteration.clone(),
+            },
+            Self::SetGapOverride { iteration, subtree } => Command::SetGapOverride {
+                node,
+                iteration: iteration.clone(),
+                subtree: subtree.clone(),
+            },
+            Self::IsolateGap {
+                iteration,
+                id,
+                timing,
+            } => Command::IsolateGap {
+                node,
+                iteration: iteration.clone(),
+                id: id.clone(),
+                timing: timing.clone(),
+            },
+            Self::ClearGapOverride { iteration } => Command::ClearGapOverride {
                 node,
                 iteration: iteration.clone(),
             },
@@ -266,8 +328,32 @@ pub(crate) fn apply(
     let mut identities = Identities::new(document, supplied)?;
     let mut result = document.clone();
     let mut target = instance.clone();
+    let parents: BTreeMap<_, _> = document
+        .nodes()
+        .keys()
+        .flat_map(|id| document.children(id).map(move |child| (child, id)))
+        .collect();
+    // Ownership, rather than only the selected iteration, disambiguates a
+    // play child from that same play's separately owned gap branch.
+    let mut gap_ancestors = BTreeSet::new();
+    let mut owned = &instance.node;
+    while let Some(parent) = parents.get(owned) {
+        if document
+            .gap_overrides()
+            .get(*parent)
+            .is_some_and(|entries| entries.iter().any(|(_, root)| root == owned))
+        {
+            gap_ancestors.insert(*parent);
+        }
+        owned = parent;
+    }
     for index in 0..target.repeats.len() {
         let step = target.repeats[index].clone();
+        if gap_ancestors.contains(&instance.repeats[index].node) {
+            // The gap already owns an independent subtree. Any outer shared
+            // play was isolated earlier in this loop and copied this branch.
+            continue;
+        }
         if result
             .overrides
             .get(&step.node)
@@ -307,8 +393,17 @@ pub(crate) fn apply(
         remap_instance(&mut target, &mapping);
     }
     target.validate(&result)?;
-    result.validate()?;
+    result.validate_isolated_context()?;
     let command = edit.command(target.node);
+    if let Command::IsolateGap {
+        node,
+        iteration,
+        id,
+        timing,
+    } = &command
+    {
+        return crate::gap_override::isolate(&result, node, iteration, id, timing, allocation);
+    }
     if let Command::Split {
         node,
         at,
@@ -345,6 +440,15 @@ pub(crate) fn clone_nodes(
     mapping: &BTreeMap<NodeId, NodeId>,
     allocation: &RevisionId,
 ) -> Result<(), EditError> {
+    // Isolation and Split can duplicate existing contexts repeatedly. Check the
+    // combined set before copying any recipe, not after all ancestors expand.
+    crate::picture_context::validate_nodes_with_limit(
+        document
+            .nodes
+            .values()
+            .chain(mapping.keys().map(|id| &document.nodes[id])),
+        crate::picture_context::MAX_ISOLATED_FRAMING_RECORDS,
+    )?;
     for (old, new) in mapping {
         let mut node = document.nodes[old].clone();
         match &mut node.kind {
@@ -372,6 +476,18 @@ pub(crate) fn clone_nodes(
                 .collect();
             document
                 .overrides
+                .insert(new.clone(), PlayOverrides::try_from(copied)?);
+        }
+        if let Some(entries) = document.gap_overrides.get(old) {
+            let copied: Vec<_> = entries
+                .iter()
+                .map(|(iteration, root)| PlayOverride {
+                    iteration: iteration.clone(),
+                    root: mapping[root].clone(),
+                })
+                .collect();
+            document
+                .gap_overrides
                 .insert(new.clone(), PlayOverrides::try_from(copied)?);
         }
     }
@@ -443,6 +559,7 @@ mod tests {
             BeatNode::hold(
                 "hold",
                 HoldRecipe {
+                    picture_context: None,
                     duration: FrameDuration::new(1).unwrap(),
                     video: HoldVideo::Background,
                     audio: HoldAudio::Silence,

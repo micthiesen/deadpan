@@ -155,19 +155,26 @@ impl Fixture {
                     .original_record(receipt.original().content())
                     .unwrap()
                     .unwrap();
-                let video_index = Some(
-                    self.store
-                        .source_video_index(document.revision_id(), asset)
-                        .unwrap(),
+                let receipt = Arc::new(receipt);
+                let original_audition = Arc::new(
+                    deadpan_playback::Original::new(
+                        document.presentation_basis().frame_rate,
+                        asset.clone(),
+                        receipt.clone(),
+                    )
+                    .unwrap(),
                 );
+                let video_index = Some(original_audition.index().clone());
                 (
                     asset.clone(),
                     Arc::new(RegisteredSource {
                         asset: asset.clone(),
                         label: record.label.clone(),
-                        receipt: Arc::new(receipt),
+                        receipt,
                         original,
                         video_index,
+                        original_audition: Some(original_audition),
+                        sound_audition: None,
                     }),
                 )
             })
@@ -203,6 +210,7 @@ impl Fixture {
                             BeatNode::hold(
                                 name,
                                 HoldRecipe {
+                                    picture_context: None,
                                     duration: FrameDuration::new(3).unwrap(),
                                     video,
                                     audio: HoldAudio::Silence,
@@ -210,6 +218,7 @@ impl Fixture {
                             ),
                         )]),
                         overrides: BTreeMap::new(),
+                        gap_overrides: BTreeMap::new(),
                     },
                 },
             })
@@ -390,6 +399,83 @@ fn registered_source_and_sequence_decode_the_same_original_frame() {
     worker.shutdown();
 }
 
+#[cfg(feature = "ui-harness")]
+#[test]
+fn worker_timing_precedes_notification_and_preserves_decoder_across_revisions() {
+    let mut fixture = Fixture::source("cfr-bframes.mp4");
+    let before = fixture.workspace(1);
+    let context = egui::Context::default();
+    let (notified, notifications) = std::sync::mpsc::sync_channel(1);
+    context.set_request_repaint_callback(move |_| {
+        let _ = notified.try_send(Instant::now());
+    });
+    let worker = PreviewWorker::new(context.clone()).unwrap();
+    let submit = |request: Request| {
+        // Consume egui's settling repaints before submitting the next request.
+        // A fresh worker repaint then wakes this test without polling or sleeps.
+        for _ in 0..3 {
+            let mut output = context.run_ui(egui::RawInput::default(), |_| {});
+            output.textures_delta.clear();
+        }
+        while notifications.try_recv().is_ok() {}
+        let submitted = Instant::now();
+        let ticket = request.ticket;
+        worker.submit(ticket, request.work);
+        let notified = notifications
+            .recv_timeout(Duration::from_secs(15))
+            .expect("preview worker repaint deadline");
+        let reply = worker.take_reply().expect("reply published before repaint");
+        let received = Instant::now();
+        let timing = reply.timing.expect("real worker timing");
+        let published = timing.published.expect("accepted publication time");
+        assert_eq!(reply.ticket, ticket);
+        assert!(submitted <= timing.started);
+        assert!(timing.started <= timing.finished);
+        assert!(timing.finished <= published);
+        assert!(published <= notified);
+        assert!(notified <= received);
+        reply
+    };
+    let first = submit(request(&before, source(20), 1));
+    let first_timing = first.timing.unwrap();
+    let first = first.picture.unwrap();
+    assert_eq!(first.id, SourceFrameId(20));
+
+    fixture.append_hold(
+        "freeze",
+        1,
+        HoldVideo::Freeze {
+            asset: asset(),
+            timestamp: SourceTimestamp {
+                ticks: 20 * 1001,
+                time_base: before.sources[&asset()]
+                    .video_index
+                    .as_ref()
+                    .unwrap()
+                    .time_base(),
+            },
+        },
+    );
+    let after = fixture.workspace(1);
+    assert_ne!(before.document.revision_id(), after.document.revision_id());
+    // Closing the writer revokes its original-import handles. An attempted
+    // reopen would fail; the live decoder must survive the unrelated revision.
+    drop(fixture.store);
+    let mut next = request(&after, sequence(121), 2);
+    next.ticket.source = 2;
+    let second = submit(next);
+    assert!(first_timing.published.unwrap() <= second.timing.unwrap().started);
+    let second = second.picture.unwrap();
+    assert_eq!(second.id, first.id);
+    assert_eq!(second.canvas, Some((320, 180)));
+    assert_eq!(second.frame.unwrap().bytes(), first.frame.unwrap().bytes());
+
+    worker.clear();
+    let after_clear = submit(request(&after, sequence(121), 3));
+    assert!(after_clear.picture.is_err(), "cleared decoder must reopen");
+    worker.shutdown();
+}
+
 #[test]
 fn sequence_samples_exact_mapping_and_endpoint_policy_after_a_revision_change() {
     let mut fixture = Fixture::source("cfr-bframes.mp4");
@@ -418,6 +504,86 @@ fn sequence_samples_exact_mapping_and_endpoint_policy_after_a_revision_change() 
     assert_eq!(faster.frame.unwrap().metadata().pts.ticks, 41 * 1001);
     let endpoint = perform(&request(&after, sequence(119), 3), &mut retained).unwrap();
     assert_eq!(endpoint.id, SourceFrameId(119));
+}
+
+#[test]
+fn frozen_context_reaches_sequence_preview_without_leaking_into_original_view() {
+    use deadpan_core::{CapturedCanvas, CapturedFit, CapturedFraming, FramingPose};
+    let mut fixture = Fixture::source("cfr-bframes.mp4");
+    let workspace = fixture.workspace(1);
+    let time_base = workspace.sources[&asset()]
+        .video_index
+        .as_ref()
+        .unwrap()
+        .time_base();
+    fixture.append_hold(
+        "framed-freeze",
+        1,
+        HoldVideo::Freeze {
+            asset: asset(),
+            timestamp: SourceTimestamp {
+                ticks: 20 * 1001,
+                time_base,
+            },
+        },
+    );
+    let context = CapturedFraming::capture(
+        None,
+        CapturedCanvas {
+            width: 320,
+            height: 180,
+            fit: CapturedFit::Fit,
+            layers: vec![
+                Some(FramingPose {
+                    scale: ExactRatio::integer(2),
+                    ..Default::default()
+                }),
+                Some(FramingPose {
+                    scale: ExactRatio::new(1, 2).unwrap(),
+                    ..Default::default()
+                }),
+            ],
+        },
+    )
+    .unwrap();
+    let before = fixture.store.snapshot().unwrap();
+    fixture
+        .store
+        .commit(&CommandRequest {
+            project_id: before.project_id().clone(),
+            expected_revision: before.revision_id().clone(),
+            new_revision: revision("captured-view"),
+            command: Command::SetHoldPictureContext {
+                node: node("framed-freeze"),
+                context: Some(context.clone()),
+            },
+        })
+        .unwrap();
+    let workspace = fixture.workspace(1);
+    let sample = workspace.plan.picture(ProjectFrame(121)).unwrap();
+    let mut retained = None;
+    let frozen = perform(&request(&workspace, sequence(121), 1), &mut retained).unwrap();
+    assert_eq!(frozen.id, SourceFrameId(20));
+    assert_eq!(frozen.picture_context.as_deref(), Some(&context));
+    assert!(Arc::ptr_eq(
+        frozen.picture_context.as_ref().unwrap(),
+        sample.picture_context.as_ref().unwrap()
+    ));
+    assert_eq!(
+        frozen.frame.as_ref().unwrap().metadata().pts.ticks,
+        20 * 1001
+    );
+    let original = perform(&request(&workspace, source(20), 2), &mut retained).unwrap();
+    assert_eq!(original.id, frozen.id);
+    assert!(original.picture_context.is_none());
+    assert!(original.framing.is_empty());
+    let ordinary = perform(&request(&workspace, sequence(20), 3), &mut retained).unwrap();
+    assert!(ordinary.picture_context.is_none());
+    let frozen_again = perform(&request(&workspace, sequence(122), 4), &mut retained).unwrap();
+    assert!(Arc::ptr_eq(
+        frozen.picture_context.as_ref().unwrap(),
+        frozen_again.picture_context.as_ref().unwrap()
+    ));
 }
 
 #[test]
@@ -483,7 +649,9 @@ fn cancelled_open_does_not_leave_a_later_project_request_without_a_source() {
     assert!(result.is_err());
     assert!(!mailbox.publish(Reply {
         ticket: first.ticket,
-        picture: result
+        picture: result,
+        #[cfg(feature = "ui-harness")]
+        timing: None,
     }));
     let latest = mailbox.start_next().unwrap();
     let picture = perform(&latest, &mut retained).unwrap();

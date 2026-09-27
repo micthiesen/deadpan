@@ -1,0 +1,30 @@
+[
+  {
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-audio",
+      "--test",
+      "gap_bindings"
+    ],
+    "exit_code": 0,
+    "seconds": 40.81604745890945
+  },
+  {
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-cli",
+      "--test",
+      "project_commands",
+      "--test",
+      "audio_inspection"
+    ],
+    "exit_code": 0,
+    "seconds": 73.77450158400461
+  }
+]
