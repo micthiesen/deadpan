@@ -72,7 +72,7 @@ impl Resolution {
             deadpan_core::PitchPolicy::FollowSpeed => "tape pitch",
         };
         format!(
-            "{} → {} f · {}/{}× · {pitch} · {}",
+            "{} to {} f · {}/{}× · {pitch} · {}",
             self.before.frames(),
             self.after.frames(),
             speed.numerator(),

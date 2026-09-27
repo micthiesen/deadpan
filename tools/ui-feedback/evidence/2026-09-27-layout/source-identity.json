@@ -1,0 +1,17 @@
+{
+  "base": "872e50a045e16e53db616d5d2023c40156abf2a0",
+  "patch_sha256": "b408ce22202a808e5227c0644d2de8101a7fc3b1ce08f1d8680fc281074a2264",
+  "files": {
+    "crates/deadpan-app/src/preview.rs": "799d9a11bc53654e3d284c822df72bfa8ef9fc93d1d6a1873f58f3170fe57922",
+    "crates/deadpan-app/src/preview/harness/moment.rs": "6d4ae5db842badf4486491e70a13993bd91d09a14fa4b24e0a574fa3da855cdd",
+    "crates/deadpan-app/src/preview/harness/original_playback.rs": "3584ae4d62479c6ddd09a2d7a99b684d734b1ea511630bfe3c4f6a6ec138cb85",
+    "crates/deadpan-app/src/preview/harness/retime.rs": "540f57bde5275ff3d06992b0f6a05e0adb4a114ca5b9a431ebff614b3eb98bb0",
+    "crates/deadpan-app/src/preview/harness/scenarios.rs": "1ce29ec271ad2c7193352f82d0d3d9a9b5a3fdcde594386bdaeba8b489f81872",
+    "crates/deadpan-app/src/preview/harness/sound_playback.rs": "e34e94559fae6c18c7bc7e1c910cc1703e68c4cb7f723cb5a00b41cfeaf4057e",
+    "crates/deadpan-app/src/preview/playback.rs": "58a10892dd6af65f76ebc70cb12c2aea7ec5a4b1a499c769203a32b98e20dfd3",
+    "crates/deadpan-app/src/preview/style.rs": "87a54e31fd8bf60641644b0e3df0b44f2f3a1c0c2d69634c608eadcf5d351355",
+    "crates/deadpan-app/src/project/retime.rs": "8d268cf06069f43927e76297bb46758a1480ca196dbb192e91e97f91f41187ec",
+    "Cargo.lock": "b08a6300d22949cf7f5feebeba858b85b6776fd2956b8617325477c56ead0226",
+    "rust-toolchain.toml": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc"
+  }
+}

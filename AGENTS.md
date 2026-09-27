@@ -91,6 +91,11 @@ transition. Retain the old target until a resized replacement renders successful
 Picture errors belong to presentation and clear on successful recovery. These
 state transitions must remain testable without a native window.
 
+Measure changing bottom-panel text before its first paint, including wrapping
+after resize; reuse that text geometry when drawing it. Keep empty structural
+panels in the UI tree when omitting them would shift automatic widget IDs.
+Visibility checks must inspect actual paint clips as well as accessible controls.
+
 Audition uses the device's reported content intervals, never producer
 progress as the heard clock. Retain past and future delivery reports; a terminal
 callback's nonempty prefix remains pending until its reported playback deadline.

@@ -101,15 +101,14 @@ fn playback(d: &mut Driver<'_>) -> Result<(), String> {
         json!(failure_text),
         json!(entry_paint),
     )?;
-    if entry_paint
-        .iter()
-        .any(|paint| !paint["fully_visible"].as_bool().unwrap_or(false))
-    {
-        d.report.findings.push(Finding {
-            severity: Severity::Warning,
-            message: "The output device error notice is clipped on its first failure frame. That frame is retained; the next frame is checked for complete visibility.".into(),
-        });
-    }
+    d.check(
+        "Output failure notice is fully visible on its first frame",
+        entry_paint
+            .iter()
+            .all(|paint| paint["fully_visible"] == true),
+        json!("complete error text inside the actual paint clip and viewport"),
+        json!(entry_paint),
+    )?;
     // Keep both frames. A truthful stopped state is insufficient when the
     // user-facing notice falls outside its panel's retained first-frame size.
     d.capture("Output failure notice visible")?;
@@ -123,6 +122,31 @@ fn playback(d: &mut Driver<'_>) -> Result<(), String> {
         json!("complete error text inside the actual paint clip and viewport"),
         json!(visible_paint),
     )?;
+    let detail = format!(
+        "{failure_text}. {}",
+        "The device stopped; your edits remain saved. ".repeat(5)
+    );
+    d.app_mut().error = Some(detail.clone());
+    for (width, height) in [(960.0, 640.0), (1280.0, 820.0)] {
+        let rect = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(width, height));
+        let input = d.harness.input_mut();
+        input.screen_rect = Some(rect);
+        input
+            .viewports
+            .get_mut(&egui::ViewportId::ROOT)
+            .ok_or("Native resize has no root viewport")?
+            .inner_rect = Some(rect);
+        d.capture(&format!(
+            "Wrapped failure on first resize frame at {width}x{height}"
+        ))?;
+        let paint = text_paint_visibility(d, &detail);
+        d.check(
+            "Wrapped error remains fully visible on the first resize frame",
+            !paint.is_empty() && paint.iter().all(|paint| paint["fully_visible"] == true),
+            json!("complete notice at the new viewport size"),
+            json!(paint),
+        )?;
+    }
     d.click("Play edit  ·  Space")?;
     d.capture("Retry exposes preparation cancellation")?;
     d.click("Cancel preparation  ·  Space")?;
@@ -166,6 +190,7 @@ fn selected_visible(d: &mut Driver<'_>) -> Result<(), String> {
 }
 
 fn workspace(d: &mut Driver<'_>) -> Result<(), String> {
+    viewer_visible(d)?;
     let cursor = d.app().sequence_cursor;
     d.click("Next  l")?;
     d.settled()?;
@@ -230,6 +255,15 @@ fn workspace(d: &mut Driver<'_>) -> Result<(), String> {
             )?;
         }
         selected_visible(d)?;
+        viewer_visible(d)?;
+        if width == 960.0 {
+            d.command("source")?;
+            d.settled()?;
+            d.capture("Original viewer at the minimum window size")?;
+            viewer_visible(d)?;
+            d.command("sequence")?;
+            d.settled()?;
+        }
     }
     // Exercise actual pointer capture and dragging on a real continuous control.
     let before = d.revision();
@@ -273,6 +307,52 @@ fn workspace(d: &mut Driver<'_>) -> Result<(), String> {
         json!({"before_gain":initial,"after_gain":d.app().monitor_gain,"revision":d.revision()}),
     )?;
     d.capture("Workspace after pointer drag")
+}
+
+fn viewer_visible(d: &mut Driver<'_>) -> Result<(), String> {
+    let label = d
+        .app()
+        .presentation
+        .displayed_label()
+        .ok_or("No displayed picture")?;
+    let viewer = d.rect(&label)?;
+    let texture = d.app().target.as_ref().ok_or("No picture texture")?.texture;
+    let viewport = d.harness.ctx.content_rect();
+    let expected = d.app().presentation.canvas().map_or(viewer, |(w, h)| {
+        let scale = (viewer.width() / w as f32).min(viewer.height() / h as f32);
+        egui::Rect::from_center_size(viewer.center(), egui::vec2(w as f32, h as f32) * scale)
+    });
+    let picture = d.harness.output().shapes.iter().filter_map(|clipped| {
+        let egui::Shape::Mesh(mesh) = &clipped.shape else { return None; };
+        if mesh.texture_id != texture { return None; }
+        let bounds = mesh.calc_bounds();
+        Some(json!({"bounds":[bounds.min.x,bounds.min.y,bounds.max.x,bounds.max.y],
+            "fills_fitted_canvas":bounds.min.distance(expected.min) <= 0.5 && bounds.max.distance(expected.max) <= 0.5,
+            "visible":bounds.is_positive() && clipped.clip_rect.contains_rect(bounds) && viewer.contains_rect(bounds)}))
+    }).collect::<Vec<_>>();
+    d.check(
+        "Picture is actually painted inside the viewer and viewport",
+        viewport.contains_rect(viewer)
+            && !picture.is_empty()
+            && picture.iter().all(|p| p["visible"] == true && p["fills_fitted_canvas"] == true),
+        json!("unclipped fitted picture"),
+        json!({"viewer":[viewer.min.x,viewer.min.y,viewer.max.x,viewer.max.y],
+            "expected_canvas":[expected.min.x,expected.min.y,expected.max.x,expected.max.y],"picture":picture}),
+    )?;
+    for label in ["Start  gg", "Previous  h", "Next  l", "End  G"] {
+        let rect = d.rect(label)?;
+        let paint = text_paint_visibility(d, label);
+        d.check(
+            "Frame navigation is visible and does not overlap the picture",
+            viewport.contains_rect(rect)
+                && !rect.intersects(viewer)
+                && !paint.is_empty()
+                && paint.iter().all(|p| p["fully_visible"] == true),
+            json!(label),
+            json!({"rect":format!("{rect:?}"),"paint":paint}),
+        )?;
+    }
+    Ok(())
 }
 
 fn replace_text(d: &mut Driver<'_>, text: &str) -> Result<(), String> {
@@ -820,7 +900,7 @@ fn completed_samples(d: &Driver<'_>, name: &str) -> Vec<f64> {
         .unwrap_or_default()
 }
 
-fn text_paint_visibility(d: &Driver<'_>, needle: &str) -> Vec<Value> {
+pub(super) fn text_paint_visibility(d: &Driver<'_>, needle: &str) -> Vec<Value> {
     let viewport = d.harness.ctx.content_rect();
     d.harness.output().shapes.iter().filter_map(|clipped| {
         let egui::Shape::Text(text) = &clipped.shape else { return None; };

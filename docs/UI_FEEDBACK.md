@@ -11,18 +11,29 @@ The [specification](spec/DEADPAN_SPEC.md), [design targets](design/README.md) an
 
 ## Current status
 
+The [2026-09-27 layout qualification](qualification/workspace-layout-2026-09-27.md)
+records restored Metal access, the expanded fourteen-scenario coverage and
+focused follow-ups. It retains failed development runs as well as passing
+results. The new moment, Original audition, sound audition and Retime scenarios
+have now executed with actual paint. Camera visibility, command-hint clipping,
+first-frame errors and sound-control clipping are fixed. Rapid busy-edit
+rejection remains interaction work. Fresh release measurements now pass warm
+navigation (4.67 ms p95), Repeat (6.85 ms) and Hold (9.11 ms) against unchanged
+targets. The earlier records below retain their original run boundaries; they
+are not the current access or performance status.
+
 The optional `ui-harness` feature provides `--ui-check`. It drives production
 `DeadpanApp::ui` through egui events, real project/media services and Metal, using
 private disposable projects. The initial selected file path is scripted; it does
 not open a native picker or use the user's Documents directory. The complete
-visual run passed all nine scenarios and the shortcut audit. The final release
+2026-09-26 visual run passed all nine scenarios and the shortcut audit. Its release
 run passed navigation and large-project budgets but failed the edit-to-picture
 budgets: Repeat p95 was 75.26 ms against 50 ms; Hold p95 was 138.65 ms against
 100 ms. The [qualification record](qualification/ui-feedback-2026-09-26.md)
 retains the workload, results and playback-test timeout/retry history. The loop
 also found and fixed a selected-card resize defect; regression coverage now checks
-that selection stays visible. Camera scrolling and rapid-edit
-rejection remain explicit [interaction findings](INTERACTION_REVIEW.md#observed-development-findings).
+that selection stays visible. Rapid-edit rejection remains an explicit
+[interaction finding](INTERACTION_REVIEW.md#observed-development-findings).
 Existing qualification records keep their original scope.
 
 The [Original moment increment](qualification/moment-paste-2026-09-27.md) adds
@@ -32,8 +43,9 @@ The visual and release attempts stopped at Metal adapter creation before any
 scenario steps, assertions, captures or timing samples. The first audit detected
 Kestrel source drift; a reviewed help-description-only change required refreshing
 the digest, with every reservation row unchanged. Both final refreshed audits
-passed all 3,472 routing cases against 62 reservations. The new painted workflow,
-its design-board match and latency remain unverified.
+passed all 3,472 routing cases against 62 reservations. That increment left its
+painted workflow and design comparison unverified; the layout qualification
+above supplies the later visual evidence. Moment-specific latency remains open.
 
 The editing replay now also inserts and undoes a pause before a Repeat. Its
 2026-09-26 core-24 rerun stopped at Metal adapter creation in the current sandbox;
@@ -55,7 +67,8 @@ target; the qualification record distinguishes actual rendering from adapter
 failures and headless PCM tests. All 236 app/harness tests passed. Both visual
 and separately built release replay passed the live 3,472-case shortcut audit,
 then stopped at missing Metal before any sound scenario steps, captures or
-timings. The new painted interaction and design match remain unverified.
+timings. The layout qualification above now records the painted interaction and
+design comparison; native listening acceptance remains separate.
 
 The [structural speed increment](qualification/retime-editing-2026-09-27.md)
 adds `retime`, covering inspector entry/cancellation, exact duration feedback,
@@ -198,18 +211,18 @@ the real app. The initial viewport is 1280×820 points at 1×. The code lives in
 | Name | Current replay and assertions |
 | --- | --- |
 | `kestrel-shortcuts` | Always runs. Checks evaluated global reservations against Normal prefixes, Camera, text/IME and inspector routing. The Ghostty-only Cmd-N reservation is excluded from Deadpan. Optional source digest checking detects drift; physical interception remains native work. |
-| `workspace` | Pointer frame navigation, repeated `,i` Original reuse, selected-card visibility, resize transitions at 960×640/1×, 1492×929/2× and 1280×820/1×, and a real monitor-slider drag that must not create a revision. |
+| `workspace` | Pointer frame navigation, repeated `,i` Original reuse, selected-card visibility, resize transitions at 960×640/1×, 1492×929/2× and 1280×820/1×, and a real monitor-slider drag that must not create a revision. Checks actual picture mesh bounds against the fitted canvas and unclipped navigation text, including Original at the minimum size. |
 | `editing` | Counted Repeat, pointer opening of its setter, same-batch text submission, undo, exact pause insertion before a Repeat and before the Original, and Hold-duration editing. Checks duration and selection. Split, delete and redo are not yet part of this replay sequence. |
 | `camera` | Pointer opening and numeric preview, Cancel, keyboard reopening/zoom and pointer Apply. Reach clipped inspector controls with real wheel input before clicking. Checks unchanged revision during preview, restoration of the submitted entry framing/source frame after Cancel, and authored framing after Apply. |
 | `menus` | File-menu ownership of edit keys, help opening, keyboard/wheel changes to scroll offset and painted content, text containing edit keys and punctuation, and cancellation back to the exact active pane's focus. |
 | `delayed-preview` | Holds a real decoder reply at a controlled delivery boundary, advances intent, resizes, releases the stale reply, checks newest-picture recovery, then injects a decoder failure and recovers. |
 | `rapid-input` | Accounts for all eight Repeat intents in one batch as admitted or explicitly rejected; every admitted edit must have a distinct committed revision and exact result. Checks 30 frame-navigation inputs, final intent and idle repaint. Busy rejection remains a warning about friction. Performance mode warms 16 back/forward inputs, then measures exactly 120 more. |
-| `playback-feedback` | Pointer Play/Pause/Cancel with injected preparation, delivery, stale-update and device-failure states. Checks feedback and picture routing only; no device, PCM or listening claim. |
+| `playback-feedback` | Pointer Play/Pause/Cancel with injected preparation, delivery, stale-update and device-failure states. Requires complete error text on its first paint and wrapped errors on the first resize frame. Checks feedback and picture routing only; no device, PCM or listening claim. |
 | `large-project` | Opens a real SQLite fixture with 10,000 root Background/Silence Holds. Tests end navigation, pointer wheel/selection, minimum-size selection visibility and bounded rendered cards. Alternates near-end `j/k` 64 times visually or 160 times in performance mode. No media or large asset inventory is stressed. |
 | `edit-latency` | Dispatches cached `rr`, waits for its committed picture, then undoes; repeats with `:hold 11f` and undo. Checks one matching commit and picture completion per edit, the exact Repeat or Freeze/Silence structure, and restoration of the authored Original baseline with a fresh revision. Visual mode runs two cycles per type. Performance mode warms four cycles per type and measures 40 more per type. |
 | `original-moment` | Checks active-empty Visual guidance, selects Original [10,24) through v and counted h/l, copies with y, cancels selection with Escape, returns to Your edit, pastes after with p, undoes once, then pastes before with P. Also selects/copies and pastes through actual buttons. Checks exact range, unchanged copy revision, pane cues, destination, selected Source and exact restored structure. |
 | `original-playback` | Uses production Original Space and Shift+Space input, adjustable context, exact loop resume, pointer controls, stale update rejection, navigation stop and failure feedback. Injected device updates exercise UI routing only; actual canonical PCM has separate headless tests. |
-| `sound-playback` | Registers two measured audio-only sources, selects by pointer and j/k, exercises Space pause/resume and Shift+Space full-sound loops, rejects stale/faulted delivery, stops on pane/source changes and retains native text input. Asserts no sound-driven picture request or editor-clock/selection mutation. Delivery is explicitly simulated; separate backend tests compare real AAC PCM. |
+| `sound-playback` | Registers two measured audio-only sources, selects by pointer and j/k, exercises Space pause/resume and Shift+Space full-sound loops, rejects stale/faulted delivery, stops on pane/source changes and retains native text input. Pointer Pause must change state on release and paint Resume on the next frame. Pinned controls and status must remain fully painted on the first resize frame. Asserts no sound-driven picture request or editor-clock/selection mutation. Delivery is explicitly simulated; separate backend tests compare real AAC PCM. |
 | `retime` | Opens/cancels speed entry by pointer, checks the resolved-duration preview, creates a Preserve Retime by command, adjusts the same stage to tape pitch through ordinary text editing, explicitly nests another stage, undoes all three edits and confirms Original context stays unchanged. Uses real project history and picture preparation; it does not measure acoustic quality. |
 | `nested-pause` | Seeds two framed Sequence groups with typed store commands, reopens the actual project, navigates to frame 17 with keys, inserts `:hold 11f`, and checks the nested Hold, exact freeze, retained child crop, live ancestor scopes and cursor. Undo/redo compares nodes and audio bindings. Enter drills through breadcrumbs to the Hold; Inspector Enter changes its duration, history preserves scope, Camera commits only its framing, Backspace selects exited groups, and a group-edge pause fails without mutation. |
 
@@ -381,8 +394,10 @@ samples. Worker events arrive with the receipt, so consumers must use their
 
 Reports identify this behavior with `wait_strategy: egui_repaint_callback_v1` and
 `picture_worker_timing: request_start_finish_publication_receipt_v1`. Compare
-versions explicitly. A new host Metal performance run remains necessary before
-claiming improved application latency; the previous failed budgets remain open.
+versions explicitly. The [2026-09-27 host measurement](qualification/workspace-layout-2026-09-27.md#release-responsiveness)
+now passes navigation and edit budgets. Preserve the earlier failed reports;
+these runs are not a controlled attribution of the gain to one change, and
+small-fixture offscreen timings do not establish full-size or native latency.
 
 ## Native evidence
 

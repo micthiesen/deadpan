@@ -447,7 +447,7 @@ impl DeadpanApp {
             let label = if preparing { "Cancel preparation  ·  Space" } else if active { "Pause  ·  Space" } else if self.resume.as_ref().is_some_and(|resume| resume.window().looping()) { "Resume loop  ·  Space" } else if self.sound_focused() { "Play sound  ·  Space" } else if self.view == View::Source { "Play Original  ·  Space" } else { "Play edit  ·  Space" };
             if ui.add_enabled(enabled, egui::Button::new(label).fill(style::SELECTED)).clicked() { self.toggle_playback(); }
             let looping = self.transport.as_ref().is_some_and(|run| run.window().looping());
-            let label = if looping { "Pause loop  ·  ⇧Space" } else if self.sound_focused() { "Loop sound  ·  ⇧Space" } else { "Loop selection  ·  ⇧Space" };
+            let label = if looping { "Pause loop  ·  Shift+Space" } else if self.sound_focused() { "Loop sound  ·  Shift+Space" } else { "Loop selection  ·  Shift+Space" };
             if ui.add_enabled(enabled && (looping || self.selected_playback_range().is_some()), egui::Button::new(label)).on_hover_text("Loop the whole selected sound, or the selected Original moment or edited beat with context. Space pauses and resumes the exact heard position. Navigation stops the loop.").clicked() { self.audition_selection(); }
             if let Some(run) = &self.transport {
                 let sample = run.content_sample().unwrap_or(run.sample).0;
@@ -468,7 +468,14 @@ impl DeadpanApp {
     }
 
     pub(super) fn sound_preview_controls(&mut self, ui: &mut egui::Ui) {
+        // Keep the panel in the tree even without a selection, so the catalog
+        // retains its widget identities when audition controls appear.
+        let panel = egui::Panel::bottom("sound-preview")
+            .resizable(false)
+            .show_separator_line(false)
+            .frame(egui::Frame::NONE);
         let Some(sound) = self.selected_sound_descriptor() else {
+            panel.exact_size(0.0).show(ui, |_| {});
             return;
         };
         let sound_label = self
@@ -495,30 +502,128 @@ impl DeadpanApp {
                 .transport
                 .as_ref()
                 .is_some_and(|run| run.window().looping());
-        egui::Frame::new().fill(style::PANEL).stroke(egui::Stroke::new(1.0, style::BORDER)).corner_radius(6).inner_margin(10).show(ui, |ui| {
+        let enabled = active || (!self.service.is_busy() && end > 0);
+        let label = if preparing {
+            "Cancel preparation  ·  Space"
+        } else if active {
+            "Pause sound  ·  Space"
+        } else if paused {
+            "Resume sound  ·  Space"
+        } else {
+            "Play sound  ·  Space"
+        };
+        let loop_label = if looping {
+            "Pause loop  ·  Shift+Space"
+        } else {
+            "Loop sound  ·  Shift+Space"
+        };
+        let frame = egui::Frame::new()
+            .fill(style::PANEL)
+            .stroke(egui::Stroke::new(1.0, style::BORDER))
+            .corner_radius(6)
+            .inner_margin(8);
+        let width = (ui.available_width() - frame.total_margin().sum().x).max(1.0);
+        let text = |text: egui::RichText, wrap, width| {
+            egui::WidgetText::from(text).into_galley(ui, Some(wrap), width, egui::TextStyle::Body)
+        };
+        let title = text(
+            egui::RichText::new("Sound").strong(),
+            egui::TextWrapMode::Extend,
+            width,
+        );
+        let status = text(
+            egui::RichText::new(if preparing {
+                "Preparing"
+            } else if active {
+                "Playing"
+            } else if paused {
+                "Paused"
+            } else {
+                "Ready"
+            })
+            .color(if active && !preparing {
+                style::SAVED
+            } else {
+                style::MUTED
+            }),
+            egui::TextWrapMode::Wrap,
+            (width - title.size().x - ui.spacing().item_spacing.x).max(1.0),
+        );
+        let name = text(
+            egui::RichText::new(&sound_label),
+            egui::TextWrapMode::Truncate,
+            width,
+        );
+        let clock = text(
+            egui::RichText::new(format!(
+                "{} / {}",
+                sound_time(self.sound_cursor),
+                sound_time(end)
+            ))
+            .monospace()
+            .size(12.0),
+            egui::TextWrapMode::Wrap,
+            width,
+        );
+        let note = text(
+            egui::RichText::new("Source-local audio · picture stays in place")
+                .size(10.5)
+                .color(style::MUTED),
+            egui::TextWrapMode::Wrap,
+            width,
+        );
+        let padding = ui.spacing().button_padding * 2.0;
+        let play = text(
+            egui::RichText::new(label),
+            egui::TextWrapMode::Wrap,
+            (width - padding.x).max(1.0),
+        );
+        let looping_text = text(
+            egui::RichText::new(loop_label),
+            egui::TextWrapMode::Wrap,
+            (width - padding.x).max(1.0),
+        );
+        // Reuse these exact galleys for layout and paint. This bottom panel
+        // must fit on its first frame, including narrow windows and wrapped
+        // shortcut labels; it cannot inherit the previous selection's height.
+        let button_height =
+            |galley: &egui::Galley| (galley.size().y + padding.y).max(ui.spacing().interact_size.y);
+        let height = frame.total_margin().sum().y
+            + ui.spacing()
+                .interact_size
+                .y
+                .max(title.size().y)
+                .max(status.size().y)
+            + name.size().y
+            + clock.size().y
+            + 4.0
+            + button_height(&play)
+            + button_height(&looping_text)
+            + note.size().y
+            + 6.0 * 4.0;
+        panel.exact_size(height).show(ui, |ui| { frame.show(ui, |ui| {
+            ui.spacing_mut().item_spacing.y = 4.0;
             ui.horizontal(|ui| {
-                ui.strong("Sound preview");
-                ui.colored_label(if active && !preparing { style::SAVED } else { style::MUTED }, if preparing { "Preparing" } else if active { "Playing" } else if paused { "Paused" } else { "Ready" });
+                ui.add(egui::Label::new(title));
+                ui.add(egui::Label::new(status));
             });
-            ui.add(egui::Label::new(format!("Selected: {sound_label}")).truncate()).on_hover_text(&sound_label);
-            ui.label(egui::RichText::new(format!("{} / {}", sound_time(self.sound_cursor), sound_time(end))).monospace().size(12.0));
+            ui.add(egui::Label::new(name)).on_hover_text(&sound_label);
+            ui.add(egui::Label::new(clock));
             ui.add(egui::ProgressBar::new(if end == 0 { 0.0 } else { self.sound_cursor.min(end) as f32 / end as f32 }).desired_width(ui.available_width()).desired_height(4.0));
-            let enabled = active || (!self.service.is_busy() && end > 0);
-            let label = if preparing { "Cancel preparation  ·  Space" } else if active { "Pause sound  ·  Space" } else if paused { "Resume sound  ·  Space" } else { "Play sound  ·  Space" };
-            if ui.add_enabled(enabled, egui::Button::new(label).fill(style::SELECTED)).clicked() {
+            if ui.add_enabled(enabled, egui::Button::new(egui::WidgetText::from(play)).fill(style::SELECTED)).clicked() {
                 if !self.sound_focused() { self.stop_playback(); }
                 self.pane = Pane::Sources;
                 ui.memory_mut(|m| m.request_focus(pane_id(Pane::Sources)));
                 self.toggle_playback();
             }
-            if ui.add_enabled(enabled, egui::Button::new(if looping { "Pause loop  ·  ⇧Space" } else { "Loop sound  ·  ⇧Space" })).on_hover_text("Loop the complete measured sound. Space pauses and resumes its exact heard position.").clicked() {
+            if ui.add_enabled(enabled, egui::Button::new(egui::WidgetText::from(looping_text))).on_hover_text("Loop the complete measured sound. Space pauses and resumes its exact heard position.").clicked() {
                 if !self.sound_focused() { self.stop_playback(); }
                 self.pane = Pane::Sources;
                 ui.memory_mut(|m| m.request_focus(pane_id(Pane::Sources)));
                 self.audition_selection();
             }
-            ui.label(egui::RichText::new("Source-local audio · picture stays in place").size(10.5).color(style::MUTED));
-        });
+            ui.add(egui::Label::new(note));
+        }); });
     }
 }
 

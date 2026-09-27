@@ -1,0 +1,190 @@
+{
+  "README.md": {
+    "bytes": 2832,
+    "sha256": "2331e5801cd8bc718f1d824b1cd5f0ad9e5e75afbd8b3388dad5c385a8fff7b4"
+  },
+  "app-code.patch": {
+    "bytes": 42742,
+    "sha256": "b408ce22202a808e5227c0644d2de8101a7fc3b1ce08f1d8680fc281074a2264"
+  },
+  "app-feature-tests.log": {
+    "bytes": 23910,
+    "sha256": "6f5ba4538044b6df484ffc653225a3a1ac641562fbd8d102161b8616e4a702a6"
+  },
+  "base-clippy-validation-02.log": {
+    "bytes": 154,
+    "sha256": "8bda53f6175f4fd8bd20af57b868070baabd5468919b9b48a7c97a39a74f8108"
+  },
+  "base-clippy.log": {
+    "bytes": 1056,
+    "sha256": "6cb670c3b1efa202ab7ae02162eae41fcbe8d9d425e044faddd21465587c9db8"
+  },
+  "base-tests.log": {
+    "bytes": 20994,
+    "sha256": "56d8bdf6656a4597e15d37a4642cfe886572c71e8dbc1f099c612b6723d53369"
+  },
+  "baseline-workspace.png": {
+    "bytes": 261513,
+    "sha256": "0c7c627106dae6f1c61ad70383249af7d8ea44dbfd9c5ed55be5bb29f876e175"
+  },
+  "camera.png": {
+    "bytes": 270352,
+    "sha256": "ebfc898be51554d03591c6337ca50c063373718b421f95be31f23b1eff7b9280"
+  },
+  "check-sound-panel.log": {
+    "bytes": 1004,
+    "sha256": "24b15ed6c43568fe0099954e463f10e446b740514c71bbc6b00df035a128a300"
+  },
+  "error-first-resize.png": {
+    "bytes": 231476,
+    "sha256": "2eadba4b59670f72a0b7a448eb5df905dbaf1e8e7615b83364b7c27c3f5c4d49"
+  },
+  "feature-clippy-validation-02.log": {
+    "bytes": 154,
+    "sha256": "81a7650ce80285a5b020b70d1870d1c697ea86e11633863fd2a928262d9cb8d6"
+  },
+  "feature-tests.log": {
+    "bytes": 23910,
+    "sha256": "d77d048380d7403d70b5e1edaec57ec62a9bb4be5c23996e16af458a95b3eb13"
+  },
+  "fmt-validation-02.log": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "fmt.log": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "focused.json": {
+    "bytes": 970,
+    "sha256": "28d4cbb3d240578b67b19d058d1f81b9f46aa31c5bdeb1c98b1fc31052fd0578"
+  },
+  "original-minimum.png": {
+    "bytes": 246977,
+    "sha256": "caa0359e8948bea8e67374a6424c7ce0095160b369445dac8f1bef125b98a9f1"
+  },
+  "original-moment.png": {
+    "bytes": 275904,
+    "sha256": "5221ad46dcfea55461b77089c68c09225d6d909ff8b53378a7777cee572958be"
+  },
+  "perf-edit-latency-validation-02.log": {
+    "bytes": 393,
+    "sha256": "0ce62a7036d9edcf3e1cdcffbbbbb2f4746d0b6fbde84fb8aa06b1ea99bcb63b"
+  },
+  "perf-edit-latency.json.gz": {
+    "bytes": 125203,
+    "sha256": "ca620f9165cc13ca44460982867332881a7ae9d05c9152ee34011b8f5de3c14a"
+  },
+  "perf-rapid-input-validation-02.log": {
+    "bytes": 1322,
+    "sha256": "2f7b6df500eec1754c7a3c23c9719937edb89fe567fe822069105440411cc827"
+  },
+  "perf-rapid-input.json.gz": {
+    "bytes": 76863,
+    "sha256": "cb55f05790454af5fc8cf1776a76487fc81f1940490979d1a73689bec3ccbc69"
+  },
+  "retime-05-validation-02.log": {
+    "bytes": 354,
+    "sha256": "7810aa7e0be93765a8fa083943cca8bf0f840b691be615604ae212a0a2a7dc36"
+  },
+  "retime-05.json.gz": {
+    "bytes": 188904,
+    "sha256": "b02081dfd00677e7274c34fe32747912db1eb04188e649e4b7d214d36aa2dfe3"
+  },
+  "retime-entry.png": {
+    "bytes": 262396,
+    "sha256": "1298b51b94fe5cf4d15c253f74f7e039bd92239226cd6f1059367222daa2e327"
+  },
+  "sound-first-resize.png": {
+    "bytes": 201622,
+    "sha256": "de1c98ef605ea392a87aadbe27c0805e9ac9b8f8149644de9a8f9b1c92302bec"
+  },
+  "sound-paused.png": {
+    "bytes": 282760,
+    "sha256": "c54b90d8ea82c44af32a7fe44df81350eeb36160d462c13e278c39f01afc65d5"
+  },
+  "sound-playback-04.json.gz": {
+    "bytes": 295091,
+    "sha256": "297acf916bf8c5662663e5dfc5ccae415561c0d8320bcfc958604e14fe5f030d"
+  },
+  "sound-playback-04.log": {
+    "bytes": 468,
+    "sha256": "099aad3cc822ab5aa96d52932deaa1b32a356ee66d52b3862b4c850cdd560186"
+  },
+  "source-identity.json": {
+    "bytes": 1441,
+    "sha256": "383c016b418e507ce52de2dbbc5fab32d9880e97dbbe6826dbb861801b0f89ff"
+  },
+  "summary.json": {
+    "bytes": 788165,
+    "sha256": "98bf6cca582426d7c56abdb5958f3c7d4243ba06c62252652c6ebf6e0eafcdae"
+  },
+  "validation-02.json": {
+    "bytes": 2742,
+    "sha256": "91f36ef44cc79fee1781a85dbe47c7d89de059164cd25cd6fd5b894173a65cdd"
+  },
+  "validation.json": {
+    "bytes": 868,
+    "sha256": "f4f3ec853dd2678fcf60bca3960bdec0873d388d56c276a6e59fb99e527b5d93"
+  },
+  "visual-01-command.json": {
+    "bytes": 365,
+    "sha256": "fcf50c67a4fff9660607f6ffe55222c371855f4aea1541a67f5aaf3bcb23f8a5"
+  },
+  "visual-01.json.gz": {
+    "bytes": 3165627,
+    "sha256": "ca7e973d586b77028840b40286168db6e534b98c32eac4dac066a6ab7264550a"
+  },
+  "visual-01.log": {
+    "bytes": 652,
+    "sha256": "da9ac09b409800937d14802430a17689a35f91f14208899a8c6e93af1ea28d41"
+  },
+  "visual-02-command.json": {
+    "bytes": 367,
+    "sha256": "53b1fcc61d9f1436c772b4f3e6e9b7bd31e1c659af30c14f3081f94a64d3d1c3"
+  },
+  "visual-02.json.gz": {
+    "bytes": 2737836,
+    "sha256": "a8d9dd0d2a77499332c9a26f1abdfb592b788c525862ac8184fad6e6775d7cd0"
+  },
+  "visual-02.log": {
+    "bytes": 652,
+    "sha256": "de1c847c1774978f8f5b5f2f4eb6cd2a62e492efffe3d40bf34890c9342d1766"
+  },
+  "visual-03-command.json": {
+    "bytes": 366,
+    "sha256": "100ebc1eb32ba997929cb7526fa6b4ecfb807e33395bbd8beefd40f2139440d6"
+  },
+  "visual-03.json.gz": {
+    "bytes": 3456267,
+    "sha256": "5d7fae294aef385820f7295b6af558a3c6a6fe99686d269347114c4ed826e95e"
+  },
+  "visual-03.log": {
+    "bytes": 734,
+    "sha256": "8e15d2f7c78276b31363dfba06e426c24eda6119c394c2ada4155dcab09216e9"
+  },
+  "workspace-04.json.gz": {
+    "bytes": 310940,
+    "sha256": "6f1c80c6545298c44f7f8d383873b8ff8513042ddcd2bbad8e1537e8a11bc980"
+  },
+  "workspace-04.log": {
+    "bytes": 366,
+    "sha256": "18ede2f776f0c0d7dfb7ed6c85f13d80a471971fd86cdc94e400ca0a7cbfe40b"
+  },
+  "workspace-05-validation-02.log": {
+    "bytes": 448,
+    "sha256": "7a246d73a07e7d8e1247e8a93b484c618caf05c0c069d8b819aa32d1b7daf5b3"
+  },
+  "workspace-05.json.gz": {
+    "bytes": 311330,
+    "sha256": "9898b4a1592c9ad6cb91f1c6254ea8d2d1e28e058d4eec146e8e9c39092701c7"
+  },
+  "workspace-minimum.png": {
+    "bytes": 229455,
+    "sha256": "16a86c92299f84bcf2c422c4daf00c4d0b6c3c8c9ce3bee9ebe8eceee6385c17"
+  },
+  "workspace.png": {
+    "bytes": 268924,
+    "sha256": "ea980b89f77c488fd1d9a061c845fe208a673c5a0054c0aa0c07a0e3597be83c"
+  }
+}

@@ -1,0 +1,4 @@
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.39s
+     Running `target/debug/deadpan-app --ui-check --scenario retime --output /tmp/deadpan-ui-access-20260927/retime-05 --kestrel-source /Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift`
+retime: PASS
+UI feedback: /tmp/deadpan-ui-access-20260927/retime-05/report.html

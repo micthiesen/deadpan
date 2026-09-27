@@ -1,0 +1,18 @@
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.40s
+     Running `target/debug/deadpan-app --ui-check --output /tmp/deadpan-ui-access-20260927/visual-02 --kestrel-source /Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift`
+workspace: FAIL
+editing: PASS
+camera: FAIL
+menus: PASS
+delayed-preview: PASS
+rapid-input: PASS
+playback-feedback: FAIL
+large-project: PASS
+edit-latency: PASS
+nested-pause: PASS
+original-moment: FAIL
+original-playback: PASS
+sound-playback: FAIL
+retime: FAIL
+UI feedback: /tmp/deadpan-ui-access-20260927/visual-02/report.html
+Error: "UI feedback checks failed; inspect report.json and report.html"

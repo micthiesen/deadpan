@@ -17,14 +17,20 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     d.command("source")?;
     d.chord(&[Key::G, Key::G, Key::Num1, Key::Num0, Key::L, Key::V])?;
     d.capture("Empty Visual entry teaches boundary movement")?;
+    let guidance_paint = scenarios::text_paint_visibility(
+        d,
+        "Move with h/l to select a nonempty range. v finishes; Esc cancels.",
+    );
     d.check(
         "Active empty selection teaches movement instead of starting again",
         d.app().moment.active
             && d.app().moment.range().is_none()
-            && d.rect("Move with h/l to select a nonempty range. v finishes; Esc cancels.")
-                .is_ok(),
+            && !guidance_paint.is_empty()
+            && guidance_paint
+                .iter()
+                .all(|paint| paint["fully_visible"] == true),
         json!("active-empty selection with movement guidance"),
-        d.snapshot(),
+        json!({"state":d.snapshot(),"guidance_paint":guidance_paint}),
     )?;
     d.chord(&[Key::Num1, Key::Num4, Key::L])?;
     d.settled()?;
@@ -101,6 +107,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     )?;
     d.capture("Copied Original moment before the selected beat")?;
     d.command("source")?;
+    d.capture("Original controls on the frame after the context command")?;
     let before_pointer = d.revision();
     d.click("Select moment  v")?;
     d.key(Key::H)?;
@@ -118,6 +125,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         d.snapshot(),
     )?;
     d.command("sequence")?;
+    d.capture("Edit controls on the frame after the context command")?;
     d.click("Paste after  p")?;
     d.changed(&before_pointer)?;
     d.check(

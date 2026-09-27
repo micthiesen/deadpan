@@ -45,18 +45,16 @@ and policy were inspected; no Kestrel configuration or live state was changed.
 
 ## Observed development findings
 
-The replay has exposed concrete interaction problems:
+The replay has exposed concrete interaction problems. The
+[2026-09-27 layout qualification](qualification/workspace-layout-2026-09-27.md)
+records the latest fixes, review and retained failures:
 
-- **The retained workspace has a shallower viewer than the design target.** A
-  static comparison of the [visual06 workspace capture](../tools/ui-feedback/evidence/2026-09-26/workspace.png)
-  with the [enlarged ImageGen target](design/boards/single-source-workspace-v1.png)
-  shows several transport and status rows consuming vertical space beneath a
-  comparatively shallow image. The coded card strip also lacks the pictured
-  thumbnails. Reclaim vertical space for the viewer while keeping ordinary keys
-  visible, and measure the result in the production replay at the same viewport.
-  This comparison uses the retained harness build, not a new native GUI run;
-  generated proportions and pictured features are targets, not measured pixels
-  or proof of implementation.
+- **The viewer was shallower than the design target.** Compact status and beat
+  margins and frame navigation beside the context tabs increase its height from
+  about 242 to 330 points at 1280×820. The latest replay checks actual fitted
+  picture bounds and unclipped navigation at each size, including Original at
+  960×640. Static comparison against the enlarged ImageGen target confirms the
+  improved hierarchy. The card strip still lacks the pictured thumbnails.
 
 - **Selection disappeared after resizing.** In the 10,000-beat scenario, selected
   beat 9994 left the visible strip when the viewport changed from 1280×820 to
@@ -65,37 +63,44 @@ The replay has exposed concrete interaction problems:
   now reveals the selected card when card spacing or viewport width changes.
   The focused regression and the final visual large-project replay pass for this
   transition.
-- **Camera was partly below the inspector's visible area.** At the default
-  1280×820 viewport, reaching the common Camera action required scrolling.
-  Move common actions into an initially visible section, or provide a clear
-  overflow cue where scrolling is necessary. Keep real wheel input in replay:
-  clicking a clipped accessibility rectangle would hide the usability problem.
+- **Camera was partly below the inspector's visible area.** Camera and pause
+  actions now precede descriptive fields and are visible in default and minimum
+  captures. Duration and speed stay near the top; optional framing presets have
+  a disclosure. The real Camera replay passes without its former scroll warning.
+  Keep real wheel input for controls that need it; clicking a clipped
+  accessibility rectangle would hide the usability problem.
 - **Rapid edit input is rejected while busy.** Seven of eight Repeat intents in
   one batch were explicitly rejected in the final visual run. Every intent was
   accounted for and the admitted edit had the correct result, but this remains
   interaction friction. Review safe bounded handling of successive edit intent
   and make any rejection immediately clear; do not insert replay waits to hide it.
-- **Committed edits miss the picture feedback budgets.** In the final release
-  run, cached Repeat input-to-picture p95 was 75.26 ms against 50 ms, and the
-  11-frame Hold fallback was 138.65 ms against 100 ms. Their observed commit p95
-  values were 3.26 ms and 69.65 ms. Use the recorded stages and matched samples
-  to locate the work; preserve these misses until the actual path improves.
+- **The earlier replay missed edit feedback budgets.** On 2026-09-26, cached
+  Repeat input-to-picture p95 was 75.26 ms against 50 ms, and the 11-frame Hold
+  fallback was 138.65 ms against 100 ms. Their observed commit p95 values were
+  3.26 ms and 69.65 ms. Preserve those failed reports.
   A [paired analysis](qualification/composite-insertion-2026-09-26.md#retained-preview-latency-diagnostic)
   of those same 40 cycles places most post-commit time before receipt of the
   decoded picture: request-to-receipt p95 was 67.77/69.03 ms for Repeat/Hold.
   This interval includes worker work and UI delivery; it does not identify
   decoder time alone or prove a new performance result.
   A separate headless timer probe observed requested 1 ms sleeps taking 63.66 ms
-  at p95 in the current sandbox. The harness now uses repaint notifications and
-  distinguishes worker start, finish, publication and receipt. A fresh host
-  Metal run is still required before attributing the earlier replay misses to
-  application work or claiming that the budgets are met.
-- **An output error is clipped on its first painted frame.** The focused playback
-  follow-up found text at y=818..830 in an 820-point-high viewport. The next frame
-  moved it to y=795..807. Review dynamic status sizing so a new failure is fully
-  visible immediately; a later correct frame does not make the first one clear.
+  at p95 in the earlier sandbox. The harness now uses repaint notifications and
+  distinguishes worker start, finish, publication and receipt. The fresh
+  2026-09-27 host run passes: Repeat p95 is 6.85 ms and Hold is 9.11 ms, with
+  commit p95 of 3.08/4.95 ms. This qualifies the current small-fixture path;
+  it does not isolate how much gain came from the wait correction, host access
+  or other changes. Physical display and full-size workload latency remain open.
+- **An output error was clipped on its first painted frame.** A premeasured
+  notice panel now fits the exact text immediately, including wrapped errors on
+  the first resize frame. The replay makes clipping a failure. The empty panel
+  remains in the UI tree to preserve subsequent pointer widget identities.
+- **Sound controls scrolled out of view.** The expanded replay exposed a clipped
+  Loop button. Sound status, exact clock, Play/Pause/Resume and Loop now occupy
+  a measured panel below the scrolling catalog. First-resize checks at 960×640
+  and 1280×820 require their actual text to remain visible and paused context to
+  remain unchanged. Catalog content still scrolls in the available space.
 
-The [final visual run](qualification/ui-feedback-2026-09-26.md) passed all nine
+The [2026-09-26 visual run](qualification/ui-feedback-2026-09-26.md) passed all nine
 scenarios and the shortcut audit, with the Camera and rapid-input warnings retained.
 The release run passed navigation budgets and failed both edit-to-picture budgets.
 The [retained summary](../tools/ui-feedback/evidence/2026-09-26/summary.json) and
@@ -111,10 +116,10 @@ do not establish overall usability or native accessibility.
 | --- | --- | --- |
 | First | Every advertised shortcut reaches its action in the user's environment. | `,i` replaces Cmd+Return. The evaluated Kestrel reservation audit covers globals and the known Ghostty-specific exception; source drift fails explicitly when supplied. Complete native physical-delivery evidence and maintain the audit as bindings change. |
 | First | Focus, selected content, Original/Your edit context and requested/displayed positions remain distinguishable. | Replay checks selected-card visibility and exact pane focus after text cancellation. Inspect loaded, pending and error frames and confirm equivalent meaning through native accessibility. |
-| First | Common inspector actions are visible and reachable without discovery by scrolling. | Run05 found the Camera button partly clipped at 1280×820. Move it into the visible common-action section or add a clear overflow cue. Preserve pointer-wheel replay and verify actual clipped bounds before clicking. |
-| First | A committed edit reaches its picture feedback budget. | Final release Repeat/Hold p95 was 75.26/138.65 ms against 50/100 ms. Investigate the matched commit, decode and composition stages without weakening the targets. |
+| First | Common inspector actions are visible and reachable without discovery by scrolling. | Camera and pause now precede metadata; actual default/minimum captures and Camera replay qualify this change. Preserve pointer-wheel replay and verify actual clipped bounds as more actions arrive. |
+| First | A committed edit reaches its picture feedback budget. | Fresh release Repeat/Hold p95 is 6.85/9.11 ms against unchanged 50/100 ms targets. Preserve the earlier misses and qualify full-size workloads and physical display latency. |
 | First | Rapid commands preserve intent or make rejection clear. | Seven of eight batched Repeat intents were rejected while busy. Keep bounded work and revision-aware targets while reviewing whether successive edits can be retained safely. |
-| First | New errors are readable on the first painted frame. | Playback follow-up found the first output-error line partly below the viewport; the next frame was correct. Reserve or calculate the required status height before the error first paints. |
+| First | New errors are readable on the first painted frame. | Premeasured notices now pass first-paint and wrapped first-resize assertions. Preserve exact paint checks and stable widget identities as status content grows. |
 | First | Escape has one predictable meaning in the current owner. | Replay checks menu ownership and Camera cancellation restoring the submitted entry composition without a revision. Preserve pending-input, text and native-dialog ownership; Escape must not undo a committed edit. Extend mixed and same-frame coverage with new modes. |
 | First | Continuous navigation stays visually coherent. | Delayed-preview replay checks retained and stale pictures. Ticket-bound telemetry distinguishes completed, failed, superseded and repeated work. Inspect intermediate frames and the isolated warm input-to-GPU-completion measurements. |
 | Next | Parameters are quick to discover and adjust by mouse or keyboard. | Show units, current value, scope, valid range, Apply/Cancel policy and disabled reasons. Current Hold/Repeat command entry is not live preview; Camera is. Review field focus and pointer targets at supported sizes. |
@@ -173,8 +178,9 @@ scenario checks cached Repeat and an 11-frame silent-freeze Hold through the rea
 commit and offscreen GPU path, then undoes each to the exact authored Original
 baseline. Its 50 ms Repeat and 100 ms Hold p95 gates use 40 measured edits per
 type after four warm-up cycles; matching commit intervals remain separately
-inspectable. The final visual suite passes, while the release run preserves the
-two measured edit-latency failures in its report.
+inspectable. The 2026-09-26 release report preserves its two measured
+edit-latency failures. Later runs retain separate identities and results in the
+[layout qualification](qualification/workspace-layout-2026-09-27.md).
 
 Record extra keystrokes, unexpected mode changes, focus repairs and required
 mouse reaches as concrete friction. Treat lower counts as a useful comparison,

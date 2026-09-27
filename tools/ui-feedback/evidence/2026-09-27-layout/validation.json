@@ -1,0 +1,56 @@
+[
+  {
+    "name": "fmt",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all",
+      "--",
+      "--check"
+    ],
+    "exit_code": 0,
+    "seconds": 2.988146291580051
+  },
+  {
+    "name": "base-tests",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-app"
+    ],
+    "exit_code": 0,
+    "seconds": 28.815798583906144
+  },
+  {
+    "name": "feature-tests",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-app",
+      "--features",
+      "ui-harness"
+    ],
+    "exit_code": 0,
+    "seconds": 31.560195666737854
+  },
+  {
+    "name": "base-clippy",
+    "command": [
+      "cargo",
+      "clippy",
+      "--locked",
+      "-p",
+      "deadpan-app",
+      "--all-targets",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "exit_code": 101,
+    "seconds": 23.336108084302396
+  }
+]

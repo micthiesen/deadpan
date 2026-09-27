@@ -1,0 +1,4 @@
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.35s
+     Running `target/debug/deadpan-app --ui-check --scenario workspace --output /tmp/deadpan-ui-access-20260927/workspace-04 --kestrel-source /Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift`
+workspace: PASS
+UI feedback: /tmp/deadpan-ui-access-20260927/workspace-04/report.html

@@ -1,0 +1,140 @@
+[
+  {
+    "name": "fmt",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all"
+    ],
+    "exit_code": 0,
+    "seconds": 2.9775413749739528
+  },
+  {
+    "name": "base-clippy",
+    "command": [
+      "cargo",
+      "clippy",
+      "--locked",
+      "-p",
+      "deadpan-app",
+      "--all-targets",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "exit_code": 0,
+    "seconds": 21.026740917004645
+  },
+  {
+    "name": "feature-clippy",
+    "command": [
+      "cargo",
+      "clippy",
+      "--locked",
+      "-p",
+      "deadpan-app",
+      "--features",
+      "ui-harness",
+      "--all-targets",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "exit_code": 0,
+    "seconds": 21.946622125338763
+  },
+  {
+    "name": "workspace-05",
+    "command": [
+      "cargo",
+      "run",
+      "--locked",
+      "-p",
+      "deadpan-app",
+      "--features",
+      "ui-harness",
+      "--",
+      "--ui-check",
+      "--scenario",
+      "workspace",
+      "--output",
+      "/tmp/deadpan-ui-access-20260927/workspace-05",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+    ],
+    "exit_code": 0,
+    "seconds": 51.49457887466997
+  },
+  {
+    "name": "retime-05",
+    "command": [
+      "cargo",
+      "run",
+      "--locked",
+      "-p",
+      "deadpan-app",
+      "--features",
+      "ui-harness",
+      "--",
+      "--ui-check",
+      "--scenario",
+      "retime",
+      "--output",
+      "/tmp/deadpan-ui-access-20260927/retime-05",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+    ],
+    "exit_code": 0,
+    "seconds": 19.329440707806498
+  },
+  {
+    "name": "perf-rapid-input",
+    "command": [
+      "cargo",
+      "run",
+      "--release",
+      "--locked",
+      "-p",
+      "deadpan-app",
+      "--features",
+      "ui-harness",
+      "--",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "rapid-input",
+      "--output",
+      "/tmp/deadpan-ui-access-20260927/perf-rapid-input",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+    ],
+    "exit_code": 0,
+    "seconds": 680.5298918327317
+  },
+  {
+    "name": "perf-edit-latency",
+    "command": [
+      "cargo",
+      "run",
+      "--release",
+      "--locked",
+      "-p",
+      "deadpan-app",
+      "--features",
+      "ui-harness",
+      "--",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "edit-latency",
+      "--output",
+      "/tmp/deadpan-ui-access-20260927/perf-edit-latency",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+    ],
+    "exit_code": 0,
+    "seconds": 2.7370721250772476
+  }
+]

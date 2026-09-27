@@ -18,15 +18,19 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     d.click("Change speed…  ·  :retime")?;
     d.capture("Speed entry previews exact duration and pitch before applying")?;
     let hint = expected.describe(PitchPolicy::Preserve);
+    let hint_paint = scenarios::text_paint_visibility(d, &hint);
     d.check(
         "Inspector speed entry teaches command and quantized duration without a revision",
         d.app().command_open
             && d.app().command == "retime 0.75 pitch=preserve"
             && d.app().pane == Pane::Inspector
-            && d.rect(&hint).is_ok()
+            && !hint_paint.is_empty()
+            && hint_paint
+                .iter()
+                .all(|paint| paint["fully_visible"] == true)
             && d.revision() == revision,
         json!({"command":"retime 0.75 pitch=preserve", "preview":hint, "revision":revision}),
-        d.snapshot(),
+        json!({"state":d.snapshot(),"hint_paint":hint_paint}),
     )?;
     d.key(Key::Escape)?;
     d.check(

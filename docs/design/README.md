@@ -189,6 +189,15 @@ old multi-video creation flow.
 
 ## Implementation and review
 
+The [2026-09-27 layout review](../qualification/workspace-layout-2026-09-27.md)
+compares actual Metal captures with these targets. Compact status and beat rows
+give the default viewer about 36% more height. Frame navigation shares the
+Original / Your edit header; Camera and pause actions precede inspector details.
+Sound transport stays below the scrolling catalog, with measured text and
+buttons that fit on the first resize frame. Errors likewise reserve their actual
+wrapped height immediately. These changes improve hierarchy and discoverability;
+the boards' thumbnails and unfinished editorial workflows remain required.
+
 The initial native root-editing baseline is recorded in
 [its qualification](../qualification/native-editing-2026-09-23.md). The current
 design pass applies the single-Original workspace target to existing capabilities.

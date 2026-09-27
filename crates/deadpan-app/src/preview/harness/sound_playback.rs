@@ -158,13 +158,71 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     inject(d, pointer, "Pointer sound playback receives fake delivery")?;
     d.click("Pause sound  ·  Space")?;
     d.check(
+        "Pointer release pauses sound immediately at the retained sample",
+        d.app().transport.is_none()
+            && d.app().sound_cursor == 300
+            && d.app()
+                .resume
+                .as_ref()
+                .is_some_and(|resume| resume.domain().is_sound())
+            && editor_context(d) == baseline,
+        json!({"sample":300,"paused":true,"resume":true}),
+        d.snapshot(),
+    )?;
+    // The release is handled after the button is painted. Check its new label
+    // on the very next frame without waiting for an eventual settled state.
+    d.capture("Pointer sound pause paints Resume on the next frame")?;
+    let resume_paint = scenarios::text_paint_visibility(d, "Resume sound  ·  Space");
+    d.check(
         "Pointer pause exposes the retained sound clock and Resume control",
         d.app().transport.is_none()
             && d.app().sound_cursor == 300
-            && d.rect("Resume sound  ·  Space").is_ok(),
+            && d.app()
+                .resume
+                .as_ref()
+                .is_some_and(|resume| resume.domain().is_sound())
+            && d.rect("Resume sound  ·  Space").is_ok()
+            && !resume_paint.is_empty()
+            && resume_paint
+                .iter()
+                .all(|paint| paint["fully_visible"] == true),
         json!({"sample":300,"resume":true}),
-        d.snapshot(),
+        json!({"state":d.snapshot(),"resume_paint":resume_paint}),
     )?;
+    for (width, height) in [(960.0, 640.0), (1280.0, 820.0)] {
+        let rect = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(width, height));
+        let input = d.harness.input_mut();
+        input.screen_rect = Some(rect);
+        input
+            .viewports
+            .get_mut(&egui::ViewportId::ROOT)
+            .ok_or("Native resize has no root viewport")?
+            .inner_rect = Some(rect);
+        d.capture(&format!(
+            "Pinned sound controls on first resize frame at {width}x{height}"
+        ))?;
+        for label in [
+            "Resume sound  ·  Space",
+            "Loop sound  ·  Shift+Space",
+            "Paused",
+        ] {
+            let paint = scenarios::text_paint_visibility(d, label);
+            d.check(
+                "Sound transport remains fully painted without catalog scrolling",
+                !paint.is_empty() && paint.iter().all(|p| p["fully_visible"] == true),
+                json!(label),
+                json!(paint),
+            )?;
+        }
+        d.check(
+            "Resize preserves the paused sound and editor context",
+            d.app().sound_cursor == 300
+                && d.app().resume.is_some()
+                && editor_context(d) == baseline,
+            json!("sample 300, retained resume and unchanged editor"),
+            d.snapshot(),
+        )?;
+    }
     d.key_modified(Key::Space, Modifiers::SHIFT)?;
     let loop_generation = feed.restart(0).map_err(|e| e.to_string())?;
     let loop_update = update(
@@ -230,7 +288,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         json!("No pending operator"),
         d.snapshot(),
     )?;
-    d.click("Loop sound  ·  ⇧Space")?;
+    d.click("Loop sound  ·  Shift+Space")?;
     let fault_generation = feed.restart(0).map_err(|e| e.to_string())?;
     let fault = update(
         d,

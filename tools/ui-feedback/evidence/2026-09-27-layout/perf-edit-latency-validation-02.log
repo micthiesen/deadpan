@@ -1,0 +1,4 @@
+    Finished `release` profile [optimized] target(s) in 0.33s
+     Running `target/release/deadpan-app --ui-check --mode performance --scenario edit-latency --output /tmp/deadpan-ui-access-20260927/perf-edit-latency --kestrel-source /Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift`
+edit-latency: PASS
+UI feedback: /tmp/deadpan-ui-access-20260927/perf-edit-latency/report.html

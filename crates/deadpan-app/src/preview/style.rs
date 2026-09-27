@@ -69,13 +69,17 @@ pub(super) fn panel() -> egui::Frame {
         .inner_margin(egui::Margin::same(12))
 }
 
+pub(super) fn compact_panel() -> egui::Frame {
+    panel().inner_margin(egui::Margin::symmetric(12, 6))
+}
+
 pub(super) fn beat_panel(layout: Layout) -> egui::Panel {
     egui::Panel::bottom("workspace-sequence")
         .resizable(false)
         .default_size(layout.beats)
         .min_size(layout.beats)
         .max_size(layout.beats)
-        .frame(panel())
+        .frame(compact_panel())
 }
 
 pub(super) fn keycap(ui: &mut egui::Ui, text: &str) {
@@ -126,7 +130,7 @@ impl Layout {
             inspector,
             // Header, row spacing, cursor badge, horizontal scrollbar and frame
             // margins all need space outside the cards themselves.
-            beats: card_height + 92.0,
+            beats: card_height + 72.0,
             card_width: ((width - sources - 24.0) / 4.0).clamp(210.0, 340.0),
             card_height,
         }
@@ -156,7 +160,7 @@ mod tests {
             assert!((144.0..=196.0).contains(&layout.sources));
             assert!((192.0..=236.0).contains(&layout.inspector));
             assert!((210.0..=340.0).contains(&layout.card_width));
-            assert!((180.0..=184.0).contains(&layout.beats));
+            assert!((160.0..=164.0).contains(&layout.beats));
         }
     }
 }

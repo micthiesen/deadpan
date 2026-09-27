@@ -1,0 +1,801 @@
+diff --git a/crates/deadpan-app/src/preview.rs b/crates/deadpan-app/src/preview.rs
+index 8a16ea9..1cbcb36 100644
+--- a/crates/deadpan-app/src/preview.rs
++++ b/crates/deadpan-app/src/preview.rs
+@@ -946,6 +946,7 @@ impl DeadpanApp {
+         self.stop_playback();
+         self.bindings.clear();
+         self.selected_sound = Some(id);
++        self.reveal_source = true;
+         self.sound_cursor = 0;
+         self.pane = Pane::Sources;
+         self.error = None;
+@@ -1582,7 +1583,12 @@ impl DeadpanApp {
+     }
+ 
+     fn footer(&mut self, ui: &mut egui::Ui) {
+-        egui::Panel::bottom("workspace-status").resizable(false).frame(style::panel()).show(ui, |ui| {
++        self.notice(ui);
++        // Command entry adds a field and help beneath the status rows. Reserve
++        // that space on entry rather than inheriting Normal mode's short panel.
++        let minimum = if self.command_open { 144.0 } else { 0.0 };
++        egui::Panel::bottom("workspace-status").resizable(false).min_size(minimum).frame(style::compact_panel()).show(ui, |ui| {
++            ui.spacing_mut().item_spacing.y = 4.0;
+             if self.camera.is_some() && !self.sound_focused() {
+                 self.camera_footer(ui);
+                 return;
+@@ -1638,7 +1644,7 @@ impl DeadpanApp {
+                     if self.sound_focused() {
+                         style::key_hint(ui, "j k", "sound");
+                         style::key_hint(ui, "Space", "play / pause");
+-                        style::key_hint(ui, "⇧Space", "loop sound");
++                        style::key_hint(ui, "Shift+Space", "loop sound");
+                     } else if self.view == View::Sequence {
+                         style::key_hint(ui, "h l", "frame");
+                         style::key_hint(ui, "j k", "beat");
+@@ -1663,12 +1669,65 @@ impl DeadpanApp {
+                     style::key_hint(ui, ":", "command");
+                     style::key_hint(ui, "?", "keys");
+                 });
+-                if let Some(error) = self.error.as_deref().or(self.project_error.as_deref()).or(self.presentation.error()) { ui.colored_label(ui.visuals().error_fg_color, format!("Could not complete action: {error}")); }
+-                else if let Some(message) = &self.message { ui.label(egui::RichText::new(message).color(style::MUTED).size(12.0)); }
+             }
+         });
+     }
+ 
++    fn notice(&self, ui: &mut egui::Ui) {
++        let text = if self.command_open || (self.camera.is_some() && !self.sound_focused()) {
++            None
++        } else if let Some(error) = self
++            .error
++            .as_deref()
++            .or(self.project_error.as_deref())
++            .or(self.presentation.error())
++        {
++            Some(
++                egui::RichText::new(format!("Could not complete action: {error}"))
++                    .color(ui.visuals().error_fg_color),
++            )
++        } else {
++            self.message
++                .as_ref()
++                .map(|message| egui::RichText::new(message).color(style::MUTED).size(12.0))
++        };
++        // A bottom panel normally starts with last frame's height. Measure this
++        // notice before anchoring it so a new or newly wrapped error is visible
++        // on its first paint, including after a viewport resize.
++        let frame = if text.is_some() {
++            style::compact_panel()
++        } else {
++            egui::Frame::NONE
++        };
++        let margins = frame.total_margin().sum();
++        let width = (ui.available_width() - margins.x).max(1.0);
++        let galley = text.map(|text| {
++            egui::WidgetText::from(text).into_galley(
++                ui,
++                Some(egui::TextWrapMode::Wrap),
++                width,
++                egui::TextStyle::Body,
++            )
++        });
++        // Even an empty notice owns one panel in the UI tree. Omitting it
++        // would change subsequent automatic widget IDs and swallow the first
++        // pointer press after command entry or a notice clears.
++        egui::Panel::bottom("workspace-notice")
++            .resizable(false)
++            .show_separator_line(false)
++            .exact_size(
++                galley
++                    .as_ref()
++                    .map_or(0.0, |galley| galley.size().y + margins.y),
++            )
++            .frame(frame)
++            .show(ui, |ui| {
++                if let Some(galley) = galley {
++                    ui.add(egui::Label::new(galley));
++                }
++            });
++    }
++
+     fn import_dialog_kind(&self) -> DialogKind {
+         match self
+             .workspace
+@@ -1700,6 +1759,7 @@ impl DeadpanApp {
+                     self.pane = Pane::Sources;
+                 }
+                 ui.separator();
++                self.sound_preview_controls(ui);
+                 egui::ScrollArea::vertical().id_salt("original-rail").show(ui, |ui| {
+                     if matches!(profile, Some(SingleSourceState::AwaitingSource { .. })) {
+                         ui.label("Project created. Original not ready.");
+@@ -1728,7 +1788,7 @@ impl DeadpanApp {
+                         if search.changed() { self.filter_sources(); }
+                         let sources = Arc::clone(&self.source_rows);
+                         let mut scroll = egui::ScrollArea::vertical().id_salt("legacy-source-list").max_height(190.0);
+-                        if std::mem::take(&mut self.reveal_source) && let Some(index) = sources.iter().position(|source| Some(&source.0) == self.selected_source.as_ref()) { scroll = scroll.vertical_scroll_offset(index as f32 * (34.0 + ui.spacing().item_spacing.y)); }
++                        if std::mem::take(&mut self.reveal_source) && let Some(index) = sources.iter().position(|source| Some(&source.0) == self.selected_sound.as_ref().or(self.selected_source.as_ref())) { scroll = scroll.vertical_scroll_offset(index as f32 * (34.0 + ui.spacing().item_spacing.y)); }
+                         scroll.show_rows(ui, 34.0, sources.len(), |ui, range| {
+                             for index in range {
+                                 let (asset, label, video) = &sources[index];
+@@ -1756,7 +1816,12 @@ impl DeadpanApp {
+                         if search.changed() { self.filter_sources(); }
+                         let sounds = Arc::clone(&self.sound_rows);
+                         if sounds.is_empty() { ui.weak(if self.source_search.is_empty() { "No sounds added." } else { "No matching sounds." }); }
+-                        egui::ScrollArea::vertical().id_salt("sound-catalog").max_height(120.0).show_rows(ui, 32.0, sounds.len(), |ui, range| {
++                        let reveal = self.selected_sound.is_some() && std::mem::take(&mut self.reveal_source);
++                        let mut catalog = egui::ScrollArea::vertical().id_salt("sound-catalog").max_height(120.0);
++                        if reveal && let Some(index) = sounds.iter().position(|sound| Some(&sound.0) == self.selected_sound.as_ref()) {
++                            catalog = catalog.vertical_scroll_offset(index as f32 * (32.0 + ui.spacing().item_spacing.y));
++                        }
++                        let catalog = catalog.show_rows(ui, 32.0, sounds.len(), |ui, range| {
+                             for index in range {
+                                 let (asset, label, _) = &sounds[index];
+                                 if ui.selectable_label(self.selected_sound.as_ref() == Some(asset), label)
+@@ -1766,8 +1831,8 @@ impl DeadpanApp {
+                                 }
+                             }
+                         });
++                        if reveal { ui.scroll_to_rect(catalog.inner_rect, Some(egui::Align::Max)); }
+                         ui.label(egui::RichText::new("Retained sounds. Placement is not available yet.").size(11.0).color(style::MUTED));
+-                        self.sound_preview_controls(ui);
+                     }
+                     let available = self.workspace.is_some() && !matches!(profile, Some(SingleSourceState::AwaitingSource { .. })) && !self.service.is_busy() && !self.dialogs.is_open() && !self.importing();
+                     if self.workspace.is_some() && !matches!(profile, Some(SingleSourceState::AwaitingSource { .. })) {
+@@ -1807,6 +1872,7 @@ impl DeadpanApp {
+     fn timeline(&mut self, ui: &mut egui::Ui) {
+         let layout = self.workspace_layout(ui);
+         style::beat_panel(layout).show(ui, |ui| {
++            ui.spacing_mut().item_spacing.y = 4.0;
+             let heading = self.sequence_heading(ui);
+             let beats = Arc::clone(&self.beat_rows);
+             if pane_focus(
+@@ -2042,6 +2108,21 @@ impl DeadpanApp {
+                             self.pane = Pane::Inspector;
+                             self.open_command("retime 0.75 pitch=preserve".into(), ui.ctx());
+                         }
++                        ui.add_enabled_ui(ready, |ui| {
++                            if ui.add_sized([ui.available_width(), 28.0], egui::Button::new("Camera…  ·  ,f")).clicked() {
++                                self.framing_action(navigation::FramingAction::EnterCamera, ui.ctx());
++                            }
++                            if ui.add_sized([ui.available_width(), 28.0], egui::Button::new("Insert pause  ·  ,h"))
++                                .on_hover_text("Insert 0.5 s of frozen picture and silence at the cursor. A count scales the duration: 3,h adds 1.5 s.")
++                                .clicked()
++                            {
++                                self.edit(BeatEdit::InsertHold(navigation::duration::DurationInput::half_seconds(1)));
++                            }
++                            if ui.link("Choose pause duration…  :hold").clicked() {
++                                self.pane = Pane::Inspector;
++                                self.open_command("hold 0.5s".into(), ui.ctx());
++                            }
++                        });
+                         for (label, value) in &data.fields {
+                             inspector_value(ui, label, value);
+                         }
+@@ -2061,25 +2142,6 @@ impl DeadpanApp {
+                         );
+                         ui.add_space(8.0);
+                         ui.add_enabled_ui(ready, |ui| {
+-                            for (label, action) in [
+-                                ("Camera…  ·  ,f", navigation::FramingAction::EnterCamera),
+-                                ("Punch in 1.35×  ·  ,z", navigation::FramingAction::PunchIn),
+-                                ("Creep to 1.35×  ·  ,c", navigation::FramingAction::Creep),
+-                            ] {
+-                                if ui.add_sized([ui.available_width(), 28.0], egui::Button::new(label)).clicked() {
+-                                    self.framing_action(action, ui.ctx());
+-                                }
+-                            }
+-                            if ui.add_sized([ui.available_width(), 28.0], egui::Button::new("Insert pause  ·  ,h"))
+-                                .on_hover_text("Insert 0.5 s of frozen picture and silence at the cursor. A count scales the duration: 3,h adds 1.5 s.")
+-                                .clicked()
+-                            {
+-                                self.edit(BeatEdit::InsertHold(navigation::duration::DurationInput::half_seconds(1)));
+-                            }
+-                            if ui.link("Choose pause duration…  :hold").clicked() {
+-                                self.pane = Pane::Inspector;
+-                                self.open_command("hold 0.5s".into(), ui.ctx());
+-                            }
+                             let can_split = self.selected_beat.as_ref().is_some_and(|node| {
+                                 selection::split_boundary(&self.beat_rows, node, self.sequence_cursor).is_some()
+                             });
+@@ -2109,6 +2171,16 @@ impl DeadpanApp {
+                             {
+                                 self.edit(BeatEdit::Delete);
+                             }
++                            ui.collapsing("Framing presets", |ui| {
++                                for (label, action) in [
++                                    ("Punch in 1.35×  ·  ,z", navigation::FramingAction::PunchIn),
++                                    ("Creep to 1.35×  ·  ,c", navigation::FramingAction::Creep),
++                                ] {
++                                    if ui.add_sized([ui.available_width(), 28.0], egui::Button::new(label)).clicked() {
++                                        self.framing_action(action, ui.ctx());
++                                    }
++                                }
++                            });
+                         });
+                     });
+             });
+@@ -2116,6 +2188,7 @@ impl DeadpanApp {
+ 
+     fn viewer(&mut self, ui: &mut egui::Ui) {
+         egui::CentralPanel::default().frame(style::panel()).show(ui, |ui| {
++            ui.spacing_mut().item_spacing.y = 4.0;
+             ui.horizontal(|ui| {
+                 for (label, view) in [(if self.focused_workflow() { "Original" } else { "Source" }, View::Source), (if self.focused_workflow() { "Your edit" } else { "Sequence" }, View::Sequence)] {
+                     if ui.add_enabled(view == View::Source || self.workspace.is_some(), egui::Button::new(label).min_size(egui::vec2(88.0, 28.0)).selected(self.view == view)).clicked() {
+@@ -2127,13 +2200,16 @@ impl DeadpanApp {
+                         ui.memory_mut(|m| m.request_focus(pane_id(Pane::Viewer)));
+                     }
+                 }
+-                if self.view == View::Sequence { ui.add(egui::Label::new(egui::RichText::new(if self.focused_workflow() { "Same original. Your changes." } else { "Current sequence" }).color(style::MUTED).size(12.0)).truncate()); }
+-                else if let Some(source) = self.workspace.as_ref().and_then(|w| self.selected_source.as_ref().and_then(|id| w.sources.get(id))) { ui.add(egui::Label::new(egui::RichText::new(&source.label).color(style::MUTED).size(12.0)).truncate()).on_hover_text(&source.label); }
++                if self.camera.is_none() && (self.workspace.is_some() || self.raw_source.is_some()) {
++                    for (label, action) in [("Start  gg", Action::First), ("Previous  h", Action::Step { forward: false, count: 1 }), ("Next  l", Action::Step { forward: true, count: 1 }), ("End  G", Action::Last)] {
++                        if ui.small_button(label).clicked() { self.action(action, ui.ctx()); }
++                    }
++                }
+             });
+             if self.camera.is_some() {
+                 ui.label(egui::RichText::new("CAMERA · Draft preview").color(style::LAVENDER));
+             }
+-            let controls_height = if self.camera.is_some() { 88.0 } else if self.view == View::Sequence { if self.moment.copied.is_some() { 216.0 } else { 170.0 } } else { 238.0 };
++            let controls_height = if self.camera.is_some() { 76.0 } else if self.view == View::Sequence { if self.moment.copied.is_some() { 156.0 } else { 118.0 } } else { 174.0 };
+             let available = egui::vec2(ui.available_width().max(1.0), (ui.available_height() - controls_height).max(50.0));
+             let (_, rect) = ui.allocate_space(available);
+             let response = pane_focus(ui, Pane::Viewer, rect, "Picture viewer pane");
+@@ -2178,11 +2254,8 @@ impl DeadpanApp {
+                     if ui.button("New project  ⌘N").clicked() { self.begin_dialog(DialogKind::CreateProject, ui.ctx(), false); }
+                     if ui.button("Open project  ⌘O").clicked() { self.begin_dialog(DialogKind::OpenProject, ui.ctx(), false); }
+                     ui.weak("Saved in Documents/Deadpan");
+-                } else {
+-                    for (label, action) in [("Start  gg", Action::First), ("Previous  h", Action::Step { forward: false, count: 1 }), ("Next  l", Action::Step { forward: true, count: 1 }), ("End  G", Action::Last)] {
+-                        if ui.small_button(label).clicked() { self.action(action, ui.ctx()); }
+-                    }
+-                    if self.view == View::Source && ui.add_enabled(self.workspace.is_some() && self.selected_source.is_some() && !self.service.is_busy(), egui::Button::new(if self.focused_workflow() { "Reuse full Original  ,i" } else { "Insert source  ,i" }).fill(style::SELECTED)).on_hover_text("Insert the whole source after the selected beat in the current group. This creates an undoable edit.").clicked() { self.insert(); }
++                } else if self.view == View::Source && !self.focused_workflow()
++                    && ui.add_enabled(self.workspace.is_some() && self.selected_source.is_some() && !self.service.is_busy(), egui::Button::new("Insert source  ,i").fill(style::SELECTED)).on_hover_text("Insert the whole source after the selected beat in the current group. This creates an undoable edit.").clicked() { self.insert();
+                 }
+                 });
+             }
+diff --git a/crates/deadpan-app/src/preview/harness/moment.rs b/crates/deadpan-app/src/preview/harness/moment.rs
+index d297b16..6572ff4 100644
+--- a/crates/deadpan-app/src/preview/harness/moment.rs
++++ b/crates/deadpan-app/src/preview/harness/moment.rs
+@@ -17,14 +17,20 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
+     d.command("source")?;
+     d.chord(&[Key::G, Key::G, Key::Num1, Key::Num0, Key::L, Key::V])?;
+     d.capture("Empty Visual entry teaches boundary movement")?;
++    let guidance_paint = scenarios::text_paint_visibility(
++        d,
++        "Move with h/l to select a nonempty range. v finishes; Esc cancels.",
++    );
+     d.check(
+         "Active empty selection teaches movement instead of starting again",
+         d.app().moment.active
+             && d.app().moment.range().is_none()
+-            && d.rect("Move with h/l to select a nonempty range. v finishes; Esc cancels.")
+-                .is_ok(),
++            && !guidance_paint.is_empty()
++            && guidance_paint
++                .iter()
++                .all(|paint| paint["fully_visible"] == true),
+         json!("active-empty selection with movement guidance"),
+-        d.snapshot(),
++        json!({"state":d.snapshot(),"guidance_paint":guidance_paint}),
+     )?;
+     d.chord(&[Key::Num1, Key::Num4, Key::L])?;
+     d.settled()?;
+@@ -101,6 +107,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
+     )?;
+     d.capture("Copied Original moment before the selected beat")?;
+     d.command("source")?;
++    d.capture("Original controls on the frame after the context command")?;
+     let before_pointer = d.revision();
+     d.click("Select moment  v")?;
+     d.key(Key::H)?;
+@@ -118,6 +125,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
+         d.snapshot(),
+     )?;
+     d.command("sequence")?;
++    d.capture("Edit controls on the frame after the context command")?;
+     d.click("Paste after  p")?;
+     d.changed(&before_pointer)?;
+     d.check(
+diff --git a/crates/deadpan-app/src/preview/harness/original_playback.rs b/crates/deadpan-app/src/preview/harness/original_playback.rs
+index 78f380f..4aee0b2 100644
+--- a/crates/deadpan-app/src/preview/harness/original_playback.rs
++++ b/crates/deadpan-app/src/preview/harness/original_playback.rs
+@@ -226,9 +226,9 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
+         json!({"source_cursor":17,"sample":sample_after_resume.0,"range":[10,24]}),
+         d.snapshot(),
+     )?;
+-    d.click("Pause loop  ·  ⇧Space")?;
++    d.click("Pause loop  ·  Shift+Space")?;
+     d.capture("Pointer pause exposes the selection loop control")?;
+-    d.click("Loop selection  ·  ⇧Space")?;
++    d.click("Loop selection  ·  Shift+Space")?;
+     d.check(
+         "Pointer loop restarts the same half-open window selected by Shift Space",
+         d.app()
+diff --git a/crates/deadpan-app/src/preview/harness/retime.rs b/crates/deadpan-app/src/preview/harness/retime.rs
+index 7ddccf4..c2f9d14 100644
+--- a/crates/deadpan-app/src/preview/harness/retime.rs
++++ b/crates/deadpan-app/src/preview/harness/retime.rs
+@@ -18,15 +18,19 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
+     d.click("Change speed…  ·  :retime")?;
+     d.capture("Speed entry previews exact duration and pitch before applying")?;
+     let hint = expected.describe(PitchPolicy::Preserve);
++    let hint_paint = scenarios::text_paint_visibility(d, &hint);
+     d.check(
+         "Inspector speed entry teaches command and quantized duration without a revision",
+         d.app().command_open
+             && d.app().command == "retime 0.75 pitch=preserve"
+             && d.app().pane == Pane::Inspector
+-            && d.rect(&hint).is_ok()
++            && !hint_paint.is_empty()
++            && hint_paint
++                .iter()
++                .all(|paint| paint["fully_visible"] == true)
+             && d.revision() == revision,
+         json!({"command":"retime 0.75 pitch=preserve", "preview":hint, "revision":revision}),
+-        d.snapshot(),
++        json!({"state":d.snapshot(),"hint_paint":hint_paint}),
+     )?;
+     d.key(Key::Escape)?;
+     d.check(
+diff --git a/crates/deadpan-app/src/preview/harness/scenarios.rs b/crates/deadpan-app/src/preview/harness/scenarios.rs
+index 3f431f3..49b089f 100644
+--- a/crates/deadpan-app/src/preview/harness/scenarios.rs
++++ b/crates/deadpan-app/src/preview/harness/scenarios.rs
+@@ -101,15 +101,14 @@ fn playback(d: &mut Driver<'_>) -> Result<(), String> {
+         json!(failure_text),
+         json!(entry_paint),
+     )?;
+-    if entry_paint
+-        .iter()
+-        .any(|paint| !paint["fully_visible"].as_bool().unwrap_or(false))
+-    {
+-        d.report.findings.push(Finding {
+-            severity: Severity::Warning,
+-            message: "The output device error notice is clipped on its first failure frame. That frame is retained; the next frame is checked for complete visibility.".into(),
+-        });
+-    }
++    d.check(
++        "Output failure notice is fully visible on its first frame",
++        entry_paint
++            .iter()
++            .all(|paint| paint["fully_visible"] == true),
++        json!("complete error text inside the actual paint clip and viewport"),
++        json!(entry_paint),
++    )?;
+     // Keep both frames. A truthful stopped state is insufficient when the
+     // user-facing notice falls outside its panel's retained first-frame size.
+     d.capture("Output failure notice visible")?;
+@@ -123,6 +122,31 @@ fn playback(d: &mut Driver<'_>) -> Result<(), String> {
+         json!("complete error text inside the actual paint clip and viewport"),
+         json!(visible_paint),
+     )?;
++    let detail = format!(
++        "{failure_text}. {}",
++        "The device stopped; your edits remain saved. ".repeat(5)
++    );
++    d.app_mut().error = Some(detail.clone());
++    for (width, height) in [(960.0, 640.0), (1280.0, 820.0)] {
++        let rect = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(width, height));
++        let input = d.harness.input_mut();
++        input.screen_rect = Some(rect);
++        input
++            .viewports
++            .get_mut(&egui::ViewportId::ROOT)
++            .ok_or("Native resize has no root viewport")?
++            .inner_rect = Some(rect);
++        d.capture(&format!(
++            "Wrapped failure on first resize frame at {width}x{height}"
++        ))?;
++        let paint = text_paint_visibility(d, &detail);
++        d.check(
++            "Wrapped error remains fully visible on the first resize frame",
++            !paint.is_empty() && paint.iter().all(|paint| paint["fully_visible"] == true),
++            json!("complete notice at the new viewport size"),
++            json!(paint),
++        )?;
++    }
+     d.click("Play edit  ·  Space")?;
+     d.capture("Retry exposes preparation cancellation")?;
+     d.click("Cancel preparation  ·  Space")?;
+@@ -166,6 +190,7 @@ fn selected_visible(d: &mut Driver<'_>) -> Result<(), String> {
+ }
+ 
+ fn workspace(d: &mut Driver<'_>) -> Result<(), String> {
++    viewer_visible(d)?;
+     let cursor = d.app().sequence_cursor;
+     d.click("Next  l")?;
+     d.settled()?;
+@@ -230,6 +255,15 @@ fn workspace(d: &mut Driver<'_>) -> Result<(), String> {
+             )?;
+         }
+         selected_visible(d)?;
++        viewer_visible(d)?;
++        if width == 960.0 {
++            d.command("source")?;
++            d.settled()?;
++            d.capture("Original viewer at the minimum window size")?;
++            viewer_visible(d)?;
++            d.command("sequence")?;
++            d.settled()?;
++        }
+     }
+     // Exercise actual pointer capture and dragging on a real continuous control.
+     let before = d.revision();
+@@ -275,6 +309,52 @@ fn workspace(d: &mut Driver<'_>) -> Result<(), String> {
+     d.capture("Workspace after pointer drag")
+ }
+ 
++fn viewer_visible(d: &mut Driver<'_>) -> Result<(), String> {
++    let label = d
++        .app()
++        .presentation
++        .displayed_label()
++        .ok_or("No displayed picture")?;
++    let viewer = d.rect(&label)?;
++    let texture = d.app().target.as_ref().ok_or("No picture texture")?.texture;
++    let viewport = d.harness.ctx.content_rect();
++    let expected = d.app().presentation.canvas().map_or(viewer, |(w, h)| {
++        let scale = (viewer.width() / w as f32).min(viewer.height() / h as f32);
++        egui::Rect::from_center_size(viewer.center(), egui::vec2(w as f32, h as f32) * scale)
++    });
++    let picture = d.harness.output().shapes.iter().filter_map(|clipped| {
++        let egui::Shape::Mesh(mesh) = &clipped.shape else { return None; };
++        if mesh.texture_id != texture { return None; }
++        let bounds = mesh.calc_bounds();
++        Some(json!({"bounds":[bounds.min.x,bounds.min.y,bounds.max.x,bounds.max.y],
++            "fills_fitted_canvas":bounds.min.distance(expected.min) <= 0.5 && bounds.max.distance(expected.max) <= 0.5,
++            "visible":bounds.is_positive() && clipped.clip_rect.contains_rect(bounds) && viewer.contains_rect(bounds)}))
++    }).collect::<Vec<_>>();
++    d.check(
++        "Picture is actually painted inside the viewer and viewport",
++        viewport.contains_rect(viewer)
++            && !picture.is_empty()
++            && picture.iter().all(|p| p["visible"] == true && p["fills_fitted_canvas"] == true),
++        json!("unclipped fitted picture"),
++        json!({"viewer":[viewer.min.x,viewer.min.y,viewer.max.x,viewer.max.y],
++            "expected_canvas":[expected.min.x,expected.min.y,expected.max.x,expected.max.y],"picture":picture}),
++    )?;
++    for label in ["Start  gg", "Previous  h", "Next  l", "End  G"] {
++        let rect = d.rect(label)?;
++        let paint = text_paint_visibility(d, label);
++        d.check(
++            "Frame navigation is visible and does not overlap the picture",
++            viewport.contains_rect(rect)
++                && !rect.intersects(viewer)
++                && !paint.is_empty()
++                && paint.iter().all(|p| p["fully_visible"] == true),
++            json!(label),
++            json!({"rect":format!("{rect:?}"),"paint":paint}),
++        )?;
++    }
++    Ok(())
++}
++
+ fn replace_text(d: &mut Driver<'_>, text: &str) -> Result<(), String> {
+     d.key_modified(Key::A, egui::Modifiers::COMMAND)?;
+     d.events(
+@@ -820,7 +900,7 @@ fn completed_samples(d: &Driver<'_>, name: &str) -> Vec<f64> {
+         .unwrap_or_default()
+ }
+ 
+-fn text_paint_visibility(d: &Driver<'_>, needle: &str) -> Vec<Value> {
++pub(super) fn text_paint_visibility(d: &Driver<'_>, needle: &str) -> Vec<Value> {
+     let viewport = d.harness.ctx.content_rect();
+     d.harness.output().shapes.iter().filter_map(|clipped| {
+         let egui::Shape::Text(text) = &clipped.shape else { return None; };
+diff --git a/crates/deadpan-app/src/preview/harness/sound_playback.rs b/crates/deadpan-app/src/preview/harness/sound_playback.rs
+index 5961955..a114ff7 100644
+--- a/crates/deadpan-app/src/preview/harness/sound_playback.rs
++++ b/crates/deadpan-app/src/preview/harness/sound_playback.rs
+@@ -157,14 +157,72 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
+     )?;
+     inject(d, pointer, "Pointer sound playback receives fake delivery")?;
+     d.click("Pause sound  ·  Space")?;
++    d.check(
++        "Pointer release pauses sound immediately at the retained sample",
++        d.app().transport.is_none()
++            && d.app().sound_cursor == 300
++            && d.app()
++                .resume
++                .as_ref()
++                .is_some_and(|resume| resume.domain().is_sound())
++            && editor_context(d) == baseline,
++        json!({"sample":300,"paused":true,"resume":true}),
++        d.snapshot(),
++    )?;
++    // The release is handled after the button is painted. Check its new label
++    // on the very next frame without waiting for an eventual settled state.
++    d.capture("Pointer sound pause paints Resume on the next frame")?;
++    let resume_paint = scenarios::text_paint_visibility(d, "Resume sound  ·  Space");
+     d.check(
+         "Pointer pause exposes the retained sound clock and Resume control",
+         d.app().transport.is_none()
+             && d.app().sound_cursor == 300
+-            && d.rect("Resume sound  ·  Space").is_ok(),
++            && d.app()
++                .resume
++                .as_ref()
++                .is_some_and(|resume| resume.domain().is_sound())
++            && d.rect("Resume sound  ·  Space").is_ok()
++            && !resume_paint.is_empty()
++            && resume_paint
++                .iter()
++                .all(|paint| paint["fully_visible"] == true),
+         json!({"sample":300,"resume":true}),
+-        d.snapshot(),
++        json!({"state":d.snapshot(),"resume_paint":resume_paint}),
+     )?;
++    for (width, height) in [(960.0, 640.0), (1280.0, 820.0)] {
++        let rect = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(width, height));
++        let input = d.harness.input_mut();
++        input.screen_rect = Some(rect);
++        input
++            .viewports
++            .get_mut(&egui::ViewportId::ROOT)
++            .ok_or("Native resize has no root viewport")?
++            .inner_rect = Some(rect);
++        d.capture(&format!(
++            "Pinned sound controls on first resize frame at {width}x{height}"
++        ))?;
++        for label in [
++            "Resume sound  ·  Space",
++            "Loop sound  ·  Shift+Space",
++            "Paused",
++        ] {
++            let paint = scenarios::text_paint_visibility(d, label);
++            d.check(
++                "Sound transport remains fully painted without catalog scrolling",
++                !paint.is_empty() && paint.iter().all(|p| p["fully_visible"] == true),
++                json!(label),
++                json!(paint),
++            )?;
++        }
++        d.check(
++            "Resize preserves the paused sound and editor context",
++            d.app().sound_cursor == 300
++                && d.app().resume.is_some()
++                && editor_context(d) == baseline,
++            json!("sample 300, retained resume and unchanged editor"),
++            d.snapshot(),
++        )?;
++    }
+     d.key_modified(Key::Space, Modifiers::SHIFT)?;
+     let loop_generation = feed.restart(0).map_err(|e| e.to_string())?;
+     let loop_update = update(
+@@ -230,7 +288,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
+         json!("No pending operator"),
+         d.snapshot(),
+     )?;
+-    d.click("Loop sound  ·  ⇧Space")?;
++    d.click("Loop sound  ·  Shift+Space")?;
+     let fault_generation = feed.restart(0).map_err(|e| e.to_string())?;
+     let fault = update(
+         d,
+diff --git a/crates/deadpan-app/src/preview/playback.rs b/crates/deadpan-app/src/preview/playback.rs
+index fb40ecb..aee4099 100644
+--- a/crates/deadpan-app/src/preview/playback.rs
++++ b/crates/deadpan-app/src/preview/playback.rs
+@@ -447,7 +447,7 @@ impl DeadpanApp {
+             let label = if preparing { "Cancel preparation  ·  Space" } else if active { "Pause  ·  Space" } else if self.resume.as_ref().is_some_and(|resume| resume.window().looping()) { "Resume loop  ·  Space" } else if self.sound_focused() { "Play sound  ·  Space" } else if self.view == View::Source { "Play Original  ·  Space" } else { "Play edit  ·  Space" };
+             if ui.add_enabled(enabled, egui::Button::new(label).fill(style::SELECTED)).clicked() { self.toggle_playback(); }
+             let looping = self.transport.as_ref().is_some_and(|run| run.window().looping());
+-            let label = if looping { "Pause loop  ·  ⇧Space" } else if self.sound_focused() { "Loop sound  ·  ⇧Space" } else { "Loop selection  ·  ⇧Space" };
++            let label = if looping { "Pause loop  ·  Shift+Space" } else if self.sound_focused() { "Loop sound  ·  Shift+Space" } else { "Loop selection  ·  Shift+Space" };
+             if ui.add_enabled(enabled && (looping || self.selected_playback_range().is_some()), egui::Button::new(label)).on_hover_text("Loop the whole selected sound, or the selected Original moment or edited beat with context. Space pauses and resumes the exact heard position. Navigation stops the loop.").clicked() { self.audition_selection(); }
+             if let Some(run) = &self.transport {
+                 let sample = run.content_sample().unwrap_or(run.sample).0;
+@@ -468,7 +468,14 @@ impl DeadpanApp {
+     }
+ 
+     pub(super) fn sound_preview_controls(&mut self, ui: &mut egui::Ui) {
++        // Keep the panel in the tree even without a selection, so the catalog
++        // retains its widget identities when audition controls appear.
++        let panel = egui::Panel::bottom("sound-preview")
++            .resizable(false)
++            .show_separator_line(false)
++            .frame(egui::Frame::NONE);
+         let Some(sound) = self.selected_sound_descriptor() else {
++            panel.exact_size(0.0).show(ui, |_| {});
+             return;
+         };
+         let sound_label = self
+@@ -495,30 +502,128 @@ impl DeadpanApp {
+                 .transport
+                 .as_ref()
+                 .is_some_and(|run| run.window().looping());
+-        egui::Frame::new().fill(style::PANEL).stroke(egui::Stroke::new(1.0, style::BORDER)).corner_radius(6).inner_margin(10).show(ui, |ui| {
++        let enabled = active || (!self.service.is_busy() && end > 0);
++        let label = if preparing {
++            "Cancel preparation  ·  Space"
++        } else if active {
++            "Pause sound  ·  Space"
++        } else if paused {
++            "Resume sound  ·  Space"
++        } else {
++            "Play sound  ·  Space"
++        };
++        let loop_label = if looping {
++            "Pause loop  ·  Shift+Space"
++        } else {
++            "Loop sound  ·  Shift+Space"
++        };
++        let frame = egui::Frame::new()
++            .fill(style::PANEL)
++            .stroke(egui::Stroke::new(1.0, style::BORDER))
++            .corner_radius(6)
++            .inner_margin(8);
++        let width = (ui.available_width() - frame.total_margin().sum().x).max(1.0);
++        let text = |text: egui::RichText, wrap, width| {
++            egui::WidgetText::from(text).into_galley(ui, Some(wrap), width, egui::TextStyle::Body)
++        };
++        let title = text(
++            egui::RichText::new("Sound").strong(),
++            egui::TextWrapMode::Extend,
++            width,
++        );
++        let status = text(
++            egui::RichText::new(if preparing {
++                "Preparing"
++            } else if active {
++                "Playing"
++            } else if paused {
++                "Paused"
++            } else {
++                "Ready"
++            })
++            .color(if active && !preparing {
++                style::SAVED
++            } else {
++                style::MUTED
++            }),
++            egui::TextWrapMode::Wrap,
++            (width - title.size().x - ui.spacing().item_spacing.x).max(1.0),
++        );
++        let name = text(
++            egui::RichText::new(&sound_label),
++            egui::TextWrapMode::Truncate,
++            width,
++        );
++        let clock = text(
++            egui::RichText::new(format!(
++                "{} / {}",
++                sound_time(self.sound_cursor),
++                sound_time(end)
++            ))
++            .monospace()
++            .size(12.0),
++            egui::TextWrapMode::Wrap,
++            width,
++        );
++        let note = text(
++            egui::RichText::new("Source-local audio · picture stays in place")
++                .size(10.5)
++                .color(style::MUTED),
++            egui::TextWrapMode::Wrap,
++            width,
++        );
++        let padding = ui.spacing().button_padding * 2.0;
++        let play = text(
++            egui::RichText::new(label),
++            egui::TextWrapMode::Wrap,
++            (width - padding.x).max(1.0),
++        );
++        let looping_text = text(
++            egui::RichText::new(loop_label),
++            egui::TextWrapMode::Wrap,
++            (width - padding.x).max(1.0),
++        );
++        // Reuse these exact galleys for layout and paint. This bottom panel
++        // must fit on its first frame, including narrow windows and wrapped
++        // shortcut labels; it cannot inherit the previous selection's height.
++        let button_height =
++            |galley: &egui::Galley| (galley.size().y + padding.y).max(ui.spacing().interact_size.y);
++        let height = frame.total_margin().sum().y
++            + ui.spacing()
++                .interact_size
++                .y
++                .max(title.size().y)
++                .max(status.size().y)
++            + name.size().y
++            + clock.size().y
++            + 4.0
++            + button_height(&play)
++            + button_height(&looping_text)
++            + note.size().y
++            + 6.0 * 4.0;
++        panel.exact_size(height).show(ui, |ui| { frame.show(ui, |ui| {
++            ui.spacing_mut().item_spacing.y = 4.0;
+             ui.horizontal(|ui| {
+-                ui.strong("Sound preview");
+-                ui.colored_label(if active && !preparing { style::SAVED } else { style::MUTED }, if preparing { "Preparing" } else if active { "Playing" } else if paused { "Paused" } else { "Ready" });
++                ui.add(egui::Label::new(title));
++                ui.add(egui::Label::new(status));
+             });
+-            ui.add(egui::Label::new(format!("Selected: {sound_label}")).truncate()).on_hover_text(&sound_label);
+-            ui.label(egui::RichText::new(format!("{} / {}", sound_time(self.sound_cursor), sound_time(end))).monospace().size(12.0));
++            ui.add(egui::Label::new(name)).on_hover_text(&sound_label);
++            ui.add(egui::Label::new(clock));
+             ui.add(egui::ProgressBar::new(if end == 0 { 0.0 } else { self.sound_cursor.min(end) as f32 / end as f32 }).desired_width(ui.available_width()).desired_height(4.0));
+-            let enabled = active || (!self.service.is_busy() && end > 0);
+-            let label = if preparing { "Cancel preparation  ·  Space" } else if active { "Pause sound  ·  Space" } else if paused { "Resume sound  ·  Space" } else { "Play sound  ·  Space" };
+-            if ui.add_enabled(enabled, egui::Button::new(label).fill(style::SELECTED)).clicked() {
++            if ui.add_enabled(enabled, egui::Button::new(egui::WidgetText::from(play)).fill(style::SELECTED)).clicked() {
+                 if !self.sound_focused() { self.stop_playback(); }
+                 self.pane = Pane::Sources;
+                 ui.memory_mut(|m| m.request_focus(pane_id(Pane::Sources)));
+                 self.toggle_playback();
+             }
+-            if ui.add_enabled(enabled, egui::Button::new(if looping { "Pause loop  ·  ⇧Space" } else { "Loop sound  ·  ⇧Space" })).on_hover_text("Loop the complete measured sound. Space pauses and resumes its exact heard position.").clicked() {
++            if ui.add_enabled(enabled, egui::Button::new(egui::WidgetText::from(looping_text))).on_hover_text("Loop the complete measured sound. Space pauses and resumes its exact heard position.").clicked() {
+                 if !self.sound_focused() { self.stop_playback(); }
+                 self.pane = Pane::Sources;
+                 ui.memory_mut(|m| m.request_focus(pane_id(Pane::Sources)));
+                 self.audition_selection();
+             }
+-            ui.label(egui::RichText::new("Source-local audio · picture stays in place").size(10.5).color(style::MUTED));
+-        });
++            ui.add(egui::Label::new(note));
++        }); });
+     }
+ }
+ 
+diff --git a/crates/deadpan-app/src/preview/style.rs b/crates/deadpan-app/src/preview/style.rs
+index a0bd254..29dcb02 100644
+--- a/crates/deadpan-app/src/preview/style.rs
++++ b/crates/deadpan-app/src/preview/style.rs
+@@ -69,13 +69,17 @@ pub(super) fn panel() -> egui::Frame {
+         .inner_margin(egui::Margin::same(12))
+ }
+ 
++pub(super) fn compact_panel() -> egui::Frame {
++    panel().inner_margin(egui::Margin::symmetric(12, 6))
++}
++
+ pub(super) fn beat_panel(layout: Layout) -> egui::Panel {
+     egui::Panel::bottom("workspace-sequence")
+         .resizable(false)
+         .default_size(layout.beats)
+         .min_size(layout.beats)
+         .max_size(layout.beats)
+-        .frame(panel())
++        .frame(compact_panel())
+ }
+ 
+ pub(super) fn keycap(ui: &mut egui::Ui, text: &str) {
+@@ -126,7 +130,7 @@ impl Layout {
+             inspector,
+             // Header, row spacing, cursor badge, horizontal scrollbar and frame
+             // margins all need space outside the cards themselves.
+-            beats: card_height + 92.0,
++            beats: card_height + 72.0,
+             card_width: ((width - sources - 24.0) / 4.0).clamp(210.0, 340.0),
+             card_height,
+         }
+@@ -156,7 +160,7 @@ mod tests {
+             assert!((144.0..=196.0).contains(&layout.sources));
+             assert!((192.0..=236.0).contains(&layout.inspector));
+             assert!((210.0..=340.0).contains(&layout.card_width));
+-            assert!((180.0..=184.0).contains(&layout.beats));
++            assert!((160.0..=164.0).contains(&layout.beats));
+         }
+     }
+ }
+diff --git a/crates/deadpan-app/src/project/retime.rs b/crates/deadpan-app/src/project/retime.rs
+index e574f54..602a788 100644
+--- a/crates/deadpan-app/src/project/retime.rs
++++ b/crates/deadpan-app/src/project/retime.rs
+@@ -72,7 +72,7 @@ impl Resolution {
+             deadpan_core::PitchPolicy::FollowSpeed => "tape pitch",
+         };
+         format!(
+-            "{} → {} f · {}/{}× · {pitch} · {}",
++            "{} to {} f · {}/{}× · {pitch} · {}",
+             self.before.frames(),
+             self.after.frames(),
+             speed.numerator(),

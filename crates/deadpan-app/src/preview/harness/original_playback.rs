@@ -226,9 +226,9 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         json!({"source_cursor":17,"sample":sample_after_resume.0,"range":[10,24]}),
         d.snapshot(),
     )?;
-    d.click("Pause loop  ·  ⇧Space")?;
+    d.click("Pause loop  ·  Shift+Space")?;
     d.capture("Pointer pause exposes the selection loop control")?;
-    d.click("Loop selection  ·  ⇧Space")?;
+    d.click("Loop selection  ·  Shift+Space")?;
     d.check(
         "Pointer loop restarts the same half-open window selected by Shift Space",
         d.app()

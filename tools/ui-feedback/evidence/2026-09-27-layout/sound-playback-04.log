@@ -1,0 +1,5 @@
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 22.03s
+     Running `target/debug/deadpan-app --ui-check --scenario sound-playback --output /tmp/deadpan-ui-access-20260927/sound-playback-04 --kestrel-source /Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift`
+sound-playback: PASS
+UI feedback: /tmp/deadpan-ui-access-20260927/sound-playback-04/report.html
