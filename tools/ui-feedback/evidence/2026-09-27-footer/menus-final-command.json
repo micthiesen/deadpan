@@ -1,0 +1,14 @@
+{
+  "command": [
+    "target/debug/deadpan-app",
+    "--ui-check",
+    "--scenario",
+    "menus",
+    "--output",
+    "/tmp/deadpan-footer-20260927/menus-final",
+    "--kestrel-source",
+    "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+  ],
+  "exit_code": 1,
+  "elapsed_seconds": 28.15672737499699
+}

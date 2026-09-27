@@ -76,13 +76,16 @@ records the latest fixes, review and retained failures:
   and each has a separate undo. Replay sends all eight in one batch without
   inserted waits. Visible counts explain waiting, overflow and cancellation.
   Setters and unrelated commands retain their normal busy rejection.
-- **Closing command entry leaves a one-frame layout gap.** The first `rr`
-  batch after `:sequence` paints its notice correctly, but the status panel
-  starts at the previous command panel height before shrinking on the next
-  frame. This leaves a temporary blank band and moves the picture. The
-  [Repeat qualification](qualification/repeat-input-2026-09-27.md) retains both
-  frames. Correct the panel's initial geometry without hiding this transition
-  behind an extra replay wait.
+- **Command exit now resolves layout within the same frame.** The
+  [Repeat qualification](qualification/repeat-input-2026-09-27.md) retains the
+  old blank band after `:sequence`. The [footer increment](qualification/footer-layout-2026-09-27.md)
+  retries changed footer geometry before presentation and checks both its bottom
+  edge and painted command mode. Enter, Escape, pointer dismissal and combined
+  resize/text/cancellation do not rely on an extra replay wait. Independent
+  review also exposed clipped Original shortcuts at 960×640; complete measured
+  key-label pairs now wrap together. The minimum-size picture remains smaller
+  than the design target's emphasis, especially during command entry; responsive
+  beat and playback layout remains improvement work.
 - **The earlier replay missed edit feedback budgets.** On 2026-09-26, cached
   Repeat input-to-picture p95 was 75.26 ms against 50 ms, and the 11-frame Hold
   fallback was 138.65 ms against 100 ms. Their observed commit p95 values were

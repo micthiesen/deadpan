@@ -27,6 +27,8 @@ use wake::RepaintWake;
 
 #[derive(Default)]
 pub(super) struct Feedback {
+    pub footer_bottom: Option<(f32, f32)>,
+    pub footer_command_open: bool,
     pub hold_project_updates: bool,
     pub hold_preview: bool,
     pub held_reply: Option<crate::worker::Reply>,
@@ -504,6 +506,9 @@ impl Driver<'_> {
             "focused_widget":self.harness.ctx.memory(|memory| memory.focused().map(|id| format!("{id:?}"))),
             "viewport_points":[self.harness.ctx.content_rect().width(),self.harness.ctx.content_rect().height()],
             "pixels_per_point":self.harness.ctx.pixels_per_point(),
+            "layout_passes":self.harness.output().platform_output.num_completed_passes,
+            "footer_bottom":app.feedback.footer_bottom,
+            "footer_command_open":app.feedback.footer_command_open,
         })
     }
 

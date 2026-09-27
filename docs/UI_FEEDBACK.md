@@ -20,6 +20,10 @@ first-frame errors and sound-control clipping are fixed. The subsequent
 [Repeat increment](qualification/repeat-input-2026-09-27.md) adds a bounded queue
 for explicit wraps, matching completion guards, separate undo and visible
 cancellation/overflow counts. Its release run passes navigation p95 4.91 ms, Repeat 6.76 ms and Hold 8.98 ms. Other busy edits remain interaction work.
+The [footer increment](qualification/footer-layout-2026-09-27.md) adds same-frame
+command closure and bottom anchoring, complete shortcut-pair wrapping, and
+combined resize/text/cancellation checks. It retains one external update read
+per frame across layout retries.
 The layout release measurements pass warm
 navigation (4.67 ms p95), Repeat (6.85 ms) and Hold (9.11 ms) against unchanged
 targets. The earlier records below retain their original run boundaries; they
@@ -131,10 +135,10 @@ The first command is visual mode. Performance mode requires `--release` and
 submits the full UI and picture composition without screenshot readback. Both
 modes require Metal. The output directory must not already exist.
 
-The current Codex sandbox has failed to expose a Metal adapter. If a run reports
-no adapter, use host execution with Metal access and retain the failed run as an
-environment limitation. A software or mock renderer cannot satisfy this loop's
-GPU evidence requirement.
+The current unrestricted host exposes Metal; earlier sandboxed failures remain
+in qualification records. If a run reports no adapter, retain that result and
+resolve Metal access before retrying. A software or mock renderer cannot satisfy
+this loop's GPU evidence requirement.
 
 | Option | Meaning |
 | --- | --- |

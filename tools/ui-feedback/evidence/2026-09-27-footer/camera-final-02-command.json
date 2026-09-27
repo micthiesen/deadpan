@@ -1,0 +1,14 @@
+{
+  "command": [
+    "target/debug/deadpan-app",
+    "--ui-check",
+    "--scenario",
+    "camera",
+    "--output",
+    "/tmp/deadpan-footer-20260927/camera-final-02",
+    "--kestrel-source",
+    "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+  ],
+  "exit_code": 0,
+  "elapsed_seconds": 12.445788542274386
+}

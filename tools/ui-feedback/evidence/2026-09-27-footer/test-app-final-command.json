@@ -1,0 +1,11 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "-p",
+    "deadpan-app",
+    "--locked"
+  ],
+  "exit_code": 101,
+  "elapsed_seconds": 26.824288417119533
+}

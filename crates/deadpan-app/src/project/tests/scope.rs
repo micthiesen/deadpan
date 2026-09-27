@@ -375,14 +375,15 @@ fn nested_insert_checks_parent_and_retains_captured_scope_for_cached_and_async_p
     let scratch = tempfile::tempdir().unwrap();
     let path = scratch.path().join("nested-insert.deadpan");
     drop(nested_document(&path));
-    let service = ProjectService::new(Arc::new(|| {})).unwrap();
-    let opened = command(&service, ProjectRequest::Open(path.clone()))
+    let harness = Harness::new();
+    let service = &harness.service;
+    let opened = command(service, ProjectRequest::Open(path.clone()))
         .workspace
         .unwrap();
     let scope = nested_scope(&opened);
     let source_a_path = fixture("cfr-bframes.mp4");
     let import_a = command(
-        &service,
+        service,
         ProjectRequest::Import {
             path: source_a_path.clone(),
             media: ImportMedia::Video,
@@ -390,7 +391,9 @@ fn nested_insert_checks_parent_and_retains_captured_scope_for_cached_and_async_p
         },
     );
     assert!(import_a.error.is_none(), "{:?}", import_a.error);
-    let import_a = wait(&service, |update| {
+    harness.finish(harness.job());
+    harness.finish(harness.job());
+    let import_a = wait(service, |update| {
         update.import.as_ref().is_some_and(|status| {
             status.path == source_a_path && status.stage == ImportStage::Complete
         })
@@ -400,7 +403,7 @@ fn nested_insert_checks_parent_and_retains_captured_scope_for_cached_and_async_p
     let source_a_label = workspace.sources[&asset_a].label.clone();
 
     let invalid_parent = command(
-        &service,
+        service,
         ProjectRequest::Insert {
             expected_session: workspace.session,
             expected_revision: workspace.document.revision_id().clone(),
@@ -423,7 +426,7 @@ fn nested_insert_checks_parent_and_retains_captured_scope_for_cached_and_async_p
     );
 
     let cached = command(
-        &service,
+        service,
         ProjectRequest::Insert {
             expected_session: workspace.session,
             expected_revision: workspace.document.revision_id().clone(),
@@ -444,14 +447,16 @@ fn nested_insert_checks_parent_and_retains_captured_scope_for_cached_and_async_p
 
     let source_b_path = fixture("offset-bframes.mp4");
     command(
-        &service,
+        service,
         ProjectRequest::Import {
             path: source_b_path.clone(),
             media: ImportMedia::Video,
             ownership: OriginalOwnership::Managed,
         },
     );
-    let second_import = wait(&service, |update| {
+    harness.finish(harness.job());
+    harness.finish(harness.job());
+    let second_import = wait(service, |update| {
         update.import.as_ref().is_some_and(|status| {
             status.path == source_b_path && status.stage == ImportStage::Complete
         })
@@ -459,7 +464,7 @@ fn nested_insert_checks_parent_and_retains_captured_scope_for_cached_and_async_p
     assert!(second_import.error.is_none(), "{:?}", second_import.error);
     let workspace = second_import.workspace.unwrap();
     let async_insert = command(
-        &service,
+        service,
         ProjectRequest::Insert {
             expected_session: workspace.session,
             expected_revision: workspace.document.revision_id().clone(),
@@ -471,8 +476,12 @@ fn nested_insert_checks_parent_and_retains_captured_scope_for_cached_and_async_p
     );
     assert!(async_insert.error.is_none(), "{:?}", async_insert.error);
     assert!(async_insert.committed.is_none());
+    // Hold the real preparation result until after observing the pending state.
+    // A live worker can otherwise finish before command() reads the coalesced
+    // mailbox, legitimately returning the completed insert as its first update.
+    harness.finish(harness.job());
     let source_label_path = PathBuf::from(source_a_label);
-    let completed = wait(&service, |update| {
+    let completed = wait(service, |update| {
         update.import.as_ref().is_some_and(|status| {
             status.stage == ImportStage::Complete && status.path == source_label_path
         })
@@ -486,5 +495,5 @@ fn nested_insert_checks_parent_and_retains_captured_scope_for_cached_and_async_p
         scope.resolve(&workspace).unwrap().children.last(),
         Some(&selected)
     );
-    command(&service, ProjectRequest::Close);
+    command(service, ProjectRequest::Close);
 }

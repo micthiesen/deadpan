@@ -22,6 +22,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     let initial_revision = d.revision();
     let burst_start = d.report.steps.len();
     burst(d, 8)?;
+    super::scenarios::footer_anchored(d, "First Repeat burst after command exit")?;
     visible_status(d, "7 Repeats waiting")?;
     d.capture("Explicit Repeat wraps waiting")?;
     d.changed(&initial_revision)?;

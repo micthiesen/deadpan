@@ -1,0 +1,24 @@
+{
+  "command": [
+    "cargo",
+    "run",
+    "-p",
+    "deadpan-app",
+    "--features",
+    "ui-harness",
+    "--locked",
+    "--release",
+    "--",
+    "--ui-check",
+    "--mode",
+    "performance",
+    "--scenario",
+    "rapid-input",
+    "--output",
+    "/tmp/deadpan-footer-20260927/rapid-input-release",
+    "--kestrel-source",
+    "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+  ],
+  "exit_code": 0,
+  "elapsed_seconds": 366.43190545774996
+}

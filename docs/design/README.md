@@ -64,6 +64,13 @@ Use short unit-bearing values and visible keycaps. Error and pending states need
 words as well as distinct styling. Resize with the window and retain readable
 controls, a usable image and a visible status bar at the supported minimum.
 
+Opening or closing command entry must not leave a stale mode or a blank footer
+band for an extra frame. Wrap a keycap and its action label together; do not clip
+the final shortcuts to preserve a single line. Keep transient picture-loading
+feedback on the status row so it does not push ordinary navigation hints into
+another row. The [footer qualification](../qualification/footer-layout-2026-09-27.md)
+records first-frame checks and the remaining small-window picture limitation.
+
 Structural cards can have equal readable widths. Their durations and half-open
 frame boundaries must be explicit; do not put a continuous seconds ruler above
 such cards. A local cursor marker maps within its own card and must not imply

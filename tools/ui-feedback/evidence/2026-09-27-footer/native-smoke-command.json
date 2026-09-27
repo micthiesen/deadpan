@@ -1,0 +1,13 @@
+{
+  "command": [
+    "cargo",
+    "run",
+    "-p",
+    "deadpan-app",
+    "--locked",
+    "--",
+    "--smoke-test"
+  ],
+  "exit_code": 0,
+  "elapsed_seconds": 29.740651790983975
+}

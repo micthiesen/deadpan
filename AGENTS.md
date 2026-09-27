@@ -91,6 +91,12 @@ transition. Retain the old target until a resized replacement renders successful
 Picture errors belong to presentation and clear on successful recovery. These
 state transitions must remain testable without a native window.
 
+Footer layout retries must preserve one outer frame's external state. Consume
+service, playback and dialog updates once; defer Repeat continuation and picture
+scheduling to the final pass, and do not render a discarded viewer size. Process
+native text before closing command mode. Measure complete key-label pairs before
+wrapped layout. See [footer qualification](docs/qualification/footer-layout-2026-09-27.md).
+
 Measure changing bottom-panel text before its first paint, including wrapping
 after resize; reuse that text geometry when drawing it. Keep empty structural
 panels in the UI tree when omitting them would shift automatic widget IDs.

@@ -14,6 +14,10 @@ pub(super) const SAVED: Color32 = Color32::from_rgb(0xa7, 0xf3, 0xd0);
 
 pub(super) fn apply(context: &egui::Context) {
     context.set_theme(egui::Theme::Dark);
+    // TextEdit must consume its final input before command mode closes. Allow
+    // one pass for that transition and two to measure/reanchor the new footer.
+    // Stable frames still use one pass; external updates are read only once.
+    context.options_mut(|options| options.max_passes = std::num::NonZeroUsize::new(3).unwrap());
     context.all_styles_mut(|style| {
         style.visuals = egui::Visuals::dark();
         style.visuals.panel_fill = CANVAS;
@@ -83,22 +87,52 @@ pub(super) fn beat_panel(layout: Layout) -> egui::Panel {
 }
 
 pub(super) fn keycap(ui: &mut egui::Ui, text: &str) {
+    keycap_frame().show(ui, |ui| {
+        ui.label(RichText::new(text).monospace().size(11.0));
+    });
+}
+
+fn keycap_frame() -> egui::Frame {
     egui::Frame::new()
         .fill(PANEL)
         .stroke(Stroke::new(1.0, BORDER))
         .corner_radius(3)
         .inner_margin(egui::Margin::symmetric(5, 2))
-        .show(ui, |ui| {
-            ui.label(RichText::new(text).monospace().size(11.0));
-        });
 }
 
 pub(super) fn key_hint(ui: &mut egui::Ui, key: &str, label: &str) {
-    ui.horizontal(|ui| {
-        ui.spacing_mut().item_spacing.x = 4.0;
-        keycap(ui, key);
-        ui.label(RichText::new(label).color(MUTED).size(11.0));
-    });
+    let galley = |text: RichText| {
+        egui::WidgetText::from(text).into_galley(
+            ui,
+            Some(egui::TextWrapMode::Extend),
+            f32::INFINITY,
+            egui::TextStyle::Body,
+        )
+    };
+    let key = galley(RichText::new(key).monospace().size(11.0));
+    let label = galley(RichText::new(label).color(MUTED).size(11.0));
+    let frame = keycap_frame();
+    let key_size = key.size() + frame.total_margin().sum();
+    let size = egui::vec2(
+        key_size.x + 4.0 + label.size().x,
+        key_size
+            .y
+            .max(label.size().y)
+            .max(ui.spacing().interact_size.y),
+    );
+    // The wrapping parent needs the whole pair's width before allocating it.
+    // A nested horizontal UI otherwise grows past the right edge after layout.
+    ui.allocate_ui_with_layout(
+        size,
+        egui::Layout::left_to_right(egui::Align::Center),
+        |ui| {
+            ui.spacing_mut().item_spacing.x = 4.0;
+            frame.show(ui, |ui| {
+                ui.label(key);
+            });
+            ui.label(label);
+        },
+    );
 }
 
 #[derive(Clone, Copy)]
@@ -140,6 +174,47 @@ impl Layout {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn wrapped_shortcuts_keep_every_key_and_label_inside_the_panel() {
+        let context = egui::Context::default();
+        apply(&context);
+        let screen = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(320.0, 200.0));
+        let mut output = context.run_ui(
+            egui::RawInput {
+                screen_rect: Some(screen),
+                ..Default::default()
+            },
+            |ui| {
+                ui.horizontal_wrapped(|ui| {
+                    for (key, label) in [
+                        ("h l", "frame"),
+                        (":sequence", "Your edit"),
+                        (",i", "reuse Original"),
+                        ("Tab", "pane"),
+                        (":", "command"),
+                        ("?", "keys"),
+                    ] {
+                        key_hint(ui, key, label);
+                    }
+                });
+            },
+        );
+        output.textures_delta.clear();
+        let mut text_count = 0;
+        for clipped in output.shapes {
+            if let egui::Shape::Text(text) = clipped.shape {
+                text_count += 1;
+                let bounds = text.galley.rect.translate(text.pos.to_vec2());
+                assert!(
+                    screen.contains_rect(bounds) && clipped.clip_rect.contains_rect(bounds),
+                    "Clipped hint {:?} at {bounds:?}",
+                    text.galley.text()
+                );
+            }
+        }
+        assert_eq!(text_count, 12);
+    }
 
     #[test]
     fn supported_windows_keep_the_picture_larger_than_either_sidebar() {

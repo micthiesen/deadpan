@@ -1,0 +1,13 @@
+{
+  "command": [
+    "cargo",
+    "build",
+    "-p",
+    "deadpan-app",
+    "--features",
+    "ui-harness",
+    "--locked"
+  ],
+  "exit_code": 0,
+  "elapsed_seconds": 0.5411047078669071
+}

@@ -1,0 +1,5 @@
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 25.29s
+     Running `target/debug/deadpan-app --ui-check --scenario menus --output /tmp/deadpan-footer-20260927/menus-02 --kestrel-source /Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift`
+menus: PASS
+UI feedback: /tmp/deadpan-footer-20260927/menus-02/report.html

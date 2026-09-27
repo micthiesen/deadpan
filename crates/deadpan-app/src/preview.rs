@@ -1640,10 +1640,12 @@ impl DeadpanApp {
 
     fn footer(&mut self, ui: &mut egui::Ui) {
         self.notice(ui);
+        let available = ui.available_rect_before_wrap();
+        let available_bottom = available.bottom();
         // Command entry adds a field and help beneath the status rows. Reserve
         // that space on entry rather than inheriting Normal mode's short panel.
         let minimum = if self.command_open { 144.0 } else { 0.0 };
-        egui::Panel::bottom("workspace-status").resizable(false).min_size(minimum).frame(style::compact_panel()).show(ui, |ui| {
+        let panel = egui::Panel::bottom("workspace-status").resizable(false).min_size(minimum).frame(style::compact_panel()).show(ui, |ui| {
             ui.spacing_mut().item_spacing.y = 4.0;
             if self.camera.is_some() && !self.sound_focused() {
                 self.camera_footer(ui);
@@ -1656,6 +1658,7 @@ impl DeadpanApp {
                 ui.separator();
                 ui.label(egui::RichText::new(if self.sound_focused() { "SOUND" } else { match (self.focused_workflow(), self.view) { (true, View::Source) => "ORIGINAL", (true, View::Sequence) => "YOUR EDIT", (false, View::Source) => "SOURCE", (false, View::Sequence) => "SEQUENCE" } }).monospace());
                 ui.separator();
+                if self.presentation.loading() || self.presentation.needs_render() { ui.spinner(); ui.weak("Updating picture"); }
                 if self.sound_focused() {
                     ui.weak("Catalog audition");
                 } else if self.view == View::Sequence {
@@ -1694,9 +1697,8 @@ impl DeadpanApp {
                 }
             } else {
                 ui.horizontal_wrapped(|ui| {
-                    let clock = if self.sound_focused() { format!("Sound {}", playback::sound_time(self.sound_cursor)) } else if self.view == View::Source { format!("Original video boundary {} / {}", self.source_cursor, self.source_length()) } else { self.scope_clock_label() };
+                    let clock = if self.sound_focused() { format!("Sound {}", playback::sound_time(self.sound_cursor)) } else if self.view == View::Source { format!("Original boundary {}/{}", self.source_cursor, self.source_length()) } else { self.scope_clock_label() };
                     ui.label(egui::RichText::new(clock).monospace().color(style::CURSOR));
-                    if self.presentation.loading() || self.presentation.needs_render() { ui.spinner(); ui.weak("Updating picture"); }
                     if self.sound_focused() {
                         style::key_hint(ui, "j k", "sound");
                         style::key_hint(ui, "Space", "play / pause");
@@ -1719,7 +1721,7 @@ impl DeadpanApp {
                         style::key_hint(ui, "v", if self.moment.active { "finish selection" } else { "select moment" });
                         style::key_hint(ui, "y", "copy moment");
                         style::key_hint(ui, ":sequence", if self.focused_workflow() { "Your edit" } else { "Sequence" });
-                        if self.workspace.is_some() && self.selected_source.is_some() { style::key_hint(ui, ",i", if self.focused_workflow() { "reuse Original" } else { "insert source" }); }
+                        if self.workspace.is_some() && self.selected_source.is_some() { style::key_hint(ui, ",i", if self.focused_workflow() { "reuse all" } else { "insert source" }); }
                     }
                     style::key_hint(ui, "Tab", "pane");
                     style::key_hint(ui, ":", "command");
@@ -1727,6 +1729,19 @@ impl DeadpanApp {
                 });
             }
         });
+        // Bottom panels initially anchor using their previous height. If this
+        // content changed height, resolve the cached measurement in the same
+        // frame instead of painting a gap or clipped hints for one frame.
+        if panel.response.rect.height() <= available.height()
+            && (panel.response.rect.bottom() - available_bottom).abs() > 0.5
+        {
+            ui.ctx().request_discard("workspace footer height changed");
+        }
+        #[cfg(feature = "ui-harness")]
+        {
+            self.feedback.footer_bottom = Some((panel.response.rect.bottom(), available_bottom));
+            self.feedback.footer_command_open = self.command_open;
+        }
     }
 
     fn notice(&self, ui: &mut egui::Ui) {
@@ -2335,7 +2350,9 @@ impl DeadpanApp {
     }
 
     fn render_picture(&mut self, context: &egui::Context, size: egui::Vec2) {
-        if !self.presentation.can_render() {
+        // The final layout pass supplies the actual viewer dimensions. Keep
+        // the accepted target until then instead of submitting an unused size.
+        if context.will_discard() || !self.presentation.can_render() {
             return;
         }
         let Some(picture) = self.presentation.picture() else {
@@ -2504,6 +2521,7 @@ impl DeadpanApp {
 impl eframe::App for DeadpanApp {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         let context = ui.ctx().clone();
+        let first_pass = context.current_pass_index() == 0;
         if self.playback_interrupted.swap(false, Ordering::AcqRel) && self.transport.is_some() {
             self.pause_playback();
             self.message =
@@ -2512,10 +2530,16 @@ impl eframe::App for DeadpanApp {
         self.close_pending |= context.input(|i| i.viewport().close_requested());
         self.reconcile_repeats(&context);
         let previous_pane = self.pane;
-        self.receive();
+        // A layout retry reuses this frame's external state. In particular it
+        // must not consume a second Repeat completion between input and paint.
+        if first_pass {
+            self.receive();
+        }
         self.reconcile_sound_playback();
-        self.receive_playback();
-        self.reconcile_camera();
+        if first_pass {
+            self.receive_playback();
+            self.reconcile_camera();
+        }
         self.ensure_visible_pane(&context);
         if self.close_pending {
             self.stop_playback();
@@ -2528,7 +2552,7 @@ impl eframe::App for DeadpanApp {
                 context.send_viewport_cmd(egui::ViewportCommand::Close);
                 return;
             }
-        } else {
+        } else if first_pass {
             self.receive_dialog();
         }
         if self.pane != previous_pane {
@@ -2540,7 +2564,9 @@ impl eframe::App for DeadpanApp {
             focus_command_for_frame(&context, &mut self.command_focus_pending);
         }
         #[cfg(feature = "ui-harness")]
-        self.feedback.record("input_dispatch");
+        if first_pass {
+            self.feedback.record("input_dispatch");
+        }
         let text_result = if self.close_pending {
             None
         } else {
@@ -2554,14 +2580,16 @@ impl eframe::App for DeadpanApp {
             self.selected_sound.clone(),
         );
         self.header(ui);
+        let footer_mode = (self.command_open, self.camera.is_some());
         self.footer(ui);
         self.sources(ui);
         self.timeline(ui);
         self.inspector(ui);
         self.viewer(ui);
-        self.finish_camera_entry(&context);
+        if first_pass {
+            self.finish_camera_entry(&context);
+        }
         self.reconcile_sound_playback();
-        self.schedule_playback_picture();
         self.help(&context);
         if input_scope
             != (
@@ -2589,8 +2617,14 @@ impl eframe::App for DeadpanApp {
         if !self.command_focus_pending && close_command_on_blur(&context, &mut self.command_open) {
             self.bindings.clear();
         }
-        self.dispatch_waiting_repeat(&context);
-        if let Some(frames) = self.smoke_frames.as_mut() {
+        if footer_mode != (self.command_open, self.camera.is_some()) {
+            context.request_discard("workspace footer mode changed after input");
+        }
+        if !context.will_discard() {
+            self.schedule_playback_picture();
+            self.dispatch_waiting_repeat(&context);
+        }
+        if first_pass && let Some(frames) = self.smoke_frames.as_mut() {
             *frames += 1;
             if *frames >= 3 {
                 context.send_viewport_cmd(egui::ViewportCommand::Close);
@@ -2745,11 +2779,19 @@ fn inspector_value(ui: &mut egui::Ui, label: &str, value: &str) {
 
 type SourceRow = (AssetId, String, bool);
 fn retain_text_escape(ui: &egui::Ui, id: &str) {
+    // egui installs this filter only on an already-focused widget. Initialize
+    // it in the same outer frame as focus acquisition; otherwise an immediate
+    // Escape surrenders focus before TextEdit can consume that batch's text.
+    let id = egui::Id::new(id);
+    if ui.memory(|m| m.has_focus(id) && !m.had_focus_last_frame(id)) {
+        ui.ctx()
+            .request_discard("initialize text input focus filter");
+    }
     // Keep focus through the input pass so the application can leave text mode
     // after the TextEdit has processed this frame's final text/IME events.
     ui.memory_mut(|m| {
         m.set_focus_lock_filter(
-            egui::Id::new(id),
+            id,
             egui::EventFilter {
                 escape: true,
                 horizontal_arrows: true,
@@ -3296,7 +3338,6 @@ mod tests {
                 ui.memory_mut(|m| m.request_focus(egui::Id::new(COMMAND_ID)));
                 draw(ui);
             });
-            run_ui(&context, egui::RawInput::default(), &mut draw);
             let mut captured = None;
             run_ui(
                 &context,

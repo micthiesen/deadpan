@@ -1,0 +1,14 @@
+{
+  "command": [
+    "target/debug/deadpan-app",
+    "--ui-check",
+    "--scenario",
+    "rapid-input",
+    "--output",
+    "/tmp/deadpan-footer-20260927/rapid-input-final-02",
+    "--kestrel-source",
+    "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+  ],
+  "exit_code": 0,
+  "elapsed_seconds": 45.30451941723004
+}

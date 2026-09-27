@@ -1,0 +1,12 @@
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 23.09s
+     Running `target/debug/deadpan-app --ui-check --scenario menus --output /tmp/deadpan-footer-20260927/menus-diagnostic --kestrel-source /Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift`
+TRACE after-keyboard pass=0 focus=None command_open=true text="" result=Some((Leave, true))
+TRACE before-widget pass=0 focus=None text="" events=[Text("hold 0.5s"), Key { key: Escape, physical_key: None, pressed: false, repeat: false, modifiers: Modifiers::NONE }]
+TRACE after-widget pass=0 focus=None text=""
+TRACE after-keyboard pass=1 focus=Some(Id::new("viewer-pane")) command_open=false text="" result=None
+TRACE after-keyboard pass=2 focus=Some(Id::new("viewer-pane")) command_open=false text="" result=None
+TRACE after-keyboard pass=0 focus=Some(Id::new("viewer-pane")) command_open=false text="" result=None
+menus: FAIL
+UI feedback: /tmp/deadpan-footer-20260927/menus-diagnostic/report.html
+Error: "UI feedback checks failed; inspect report.json and report.html"

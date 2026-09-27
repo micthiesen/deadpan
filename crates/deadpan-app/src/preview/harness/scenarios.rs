@@ -240,6 +240,7 @@ fn workspace(d: &mut Driver<'_>) -> Result<(), String> {
                 &format!("Resize {width}x{height} at {scale}x, transition {frame}"),
                 true,
             )?;
+            footer_anchored(d, "Footer remains anchored across native resize")?;
             d.check(
                 "Native resize uses the requested logical viewport and monitor scale",
                 d.harness.ctx.content_rect().size() == egui::vec2(width, height)
@@ -516,6 +517,7 @@ fn camera(d: &mut Driver<'_>) -> Result<(), String> {
         app.camera.is_some()
     })?;
     d.step("Camera controls appear after mode entry", true)?;
+    footer_anchored(d, "Camera footer fits on its first mode-entry paint")?;
     d.click("Framing scale, percent of input size")?;
     replace_text(d, "135")?;
     d.settled()?;
@@ -530,6 +532,8 @@ fn camera(d: &mut Driver<'_>) -> Result<(), String> {
         adjusted,
     )?;
     d.click("Cancel  ·  Esc")?;
+    d.step("First paint after Camera cancellation", true)?;
+    footer_anchored(d, "Camera cancellation leaves no footer gap")?;
     d.settled()?;
     let restored = d.app().presentation.diagnostic_snapshot();
     d.check(
@@ -662,7 +666,132 @@ fn menus(d: &mut Driver<'_>) -> Result<(), String> {
         json!({"command_open":false,"focused_widget":format!("{expected_focus:?}")}),
         json!({"command_open":d.app().command_open,"focused_widget":actual_focus.map(|id|format!("{id:?}")),"pane":format!("{:?}",d.app().pane)}),
     )?;
-    d.capture("Focus after closing text")
+    d.capture("Focus after closing text")?;
+    footer_anchored(d, "First paint after Escape closes command entry")?;
+    footer_transitions(d)
+}
+
+fn footer_transitions(d: &mut Driver<'_>) -> Result<(), String> {
+    for (width, height) in [(960.0, 640.0), (1280.0, 820.0)] {
+        let rect = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(width, height));
+        let input = d.harness.input_mut();
+        input.screen_rect = Some(rect);
+        input
+            .viewports
+            .get_mut(&egui::ViewportId::ROOT)
+            .ok_or("Footer resize has no root viewport")?
+            .inner_rect = Some(rect);
+        d.key(Key::Colon)?;
+        footer_anchored(d, "Command opens on the first resized frame")?;
+        let before = d.revision();
+        d.events(
+            "Type exact speed and reveal its wrapped explanation",
+            vec![egui::Event::Text("retime 0.75 pitch=preserve".into())],
+        )?;
+        footer_anchored(d, "Dynamic speed hint fits on its first text-input frame")?;
+        d.check(
+            "Layout retries do not duplicate native text or commit an edit",
+            d.app().command == "retime 0.75 pitch=preserve" && d.revision() == before,
+            json!("one unchanged text entry and revision"),
+            d.snapshot(),
+        )?;
+        d.capture(&format!("Command explanation at {width}x{height}"))?;
+        d.key(Key::Escape)?;
+        footer_anchored(
+            d,
+            "Escape paints the closed command mode in the same input frame",
+        )?;
+        d.step("First paint after cancelling wrapped command", true)?;
+        footer_anchored(d, "Wrapped command cancellation leaves no layout gap")?;
+        d.key(Key::Colon)?;
+        d.click("Original")?;
+        d.step("First paint after pointer leaves command entry", true)?;
+        footer_anchored(d, "Pointer command dismissal leaves no layout gap")?;
+        for text in ["reuse all", "command", "keys"] {
+            let paint = text_paint_visibility(d, text);
+            d.check(
+                "Original keyboard hints wrap completely inside the viewport",
+                !paint.is_empty() && paint.iter().all(|part| part["fully_visible"] == true),
+                json!(text),
+                json!(paint),
+            )?;
+        }
+        d.check(
+            "First pointer action after command entry changes context",
+            !d.app().command_open && d.app().view == View::Source && d.revision() == before,
+            json!("Original context, command closed, unchanged revision"),
+            d.snapshot(),
+        )?;
+        d.command("sequence")?;
+        footer_anchored(
+            d,
+            "Enter paints the closed command mode in the same input frame",
+        )?;
+        d.key(Key::R)?;
+        footer_anchored(
+            d,
+            "Pending operator immediately after command submission stays anchored",
+        )?;
+        d.check(
+            "Layout retries preserve one pending operator",
+            d.app().bindings.pending() == "r" && d.revision() == before,
+            json!("r and unchanged revision"),
+            d.snapshot(),
+        )?;
+        d.key(Key::Escape)?;
+    }
+    let before = d.revision();
+    d.key(Key::Colon)?;
+    let rect = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(960.0, 640.0));
+    let input = d.harness.input_mut();
+    input.screen_rect = Some(rect);
+    input
+        .viewports
+        .get_mut(&egui::ViewportId::ROOT)
+        .ok_or("Command cancellation resize has no root viewport")?
+        .inner_rect = Some(rect);
+    d.events(
+        "Resize, final command text and Escape in one native batch",
+        vec![
+            egui::Event::Text("hold 0.5s".into()),
+            key_event(Key::Escape, egui::Modifiers::NONE, true),
+            key_event(Key::Escape, egui::Modifiers::NONE, false),
+        ],
+    )?;
+    footer_anchored(
+        d,
+        "Resizing and cancelling a changing command needs no later frame",
+    )?;
+    d.check(
+        "Same-batch cancellation retains final text exactly once without an edit",
+        d.app().command == "hold 0.5s" && !d.app().command_open && d.revision() == before,
+        json!("closed entry with final text; unchanged revision"),
+        d.snapshot(),
+    )?;
+    Ok(())
+}
+
+pub(super) fn footer_anchored(d: &mut Driver<'_>, label: &str) -> Result<(), String> {
+    let observed = d.app().feedback.footer_bottom;
+    let dispatches = d
+        .report
+        .steps
+        .last()
+        .and_then(|step| step.semantic["stages"].as_array())
+        .map(|events| {
+            events
+                .iter()
+                .filter(|event| event["stage"] == "input_dispatch")
+                .count()
+        });
+    d.check(
+        label,
+        observed.is_some_and(|(actual, expected)| (actual - expected).abs() <= 0.5)
+            && d.app().feedback.footer_command_open == d.app().command_open
+            && dispatches == Some(1),
+        json!("footer meets the notice panel on the first painted frame"),
+        json!({"bottom":observed,"passes":d.harness.output().platform_output.num_completed_passes,"painted_command_open":d.app().feedback.footer_command_open,"command_open":d.app().command_open,"input_dispatches":dispatches}),
+    )
 }
 
 fn delayed(d: &mut Driver<'_>) -> Result<(), String> {

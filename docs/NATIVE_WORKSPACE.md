@@ -20,6 +20,19 @@ selection loops with adjustable context, canonical pre-master audio and
 device-clock pictures. Full mastering, range operators,
 generated-provider rendering and export remain open.
 
+The footer measures its current content before the frame is presented. An egui
+layout retry resolves changed wrapping or a command/Camera mode transition in
+the same frame, with at most three passes. Native text consumes its final input
+before command closure; service, playback and dialog updates are consumed once
+per outer frame. Repeat continuation and picture scheduling wait for the final
+pass, and discarded geometry does not resize the GPU target. Pending Camera
+entry waits for a later repaint if the picture only becomes ready in a sizing
+retry. Newly focused command/search fields initialize their Escape filter in a
+same-frame retry, preserving text even when Escape is the next native input.
+Keycaps and their labels reserve their complete measured width together,
+so narrow layouts wrap the pair instead of clipping the last shortcuts.
+See the [footer qualification](qualification/footer-layout-2026-09-27.md).
+
 ## Project and media ownership
 
 `project::ProjectService` owns one writable `ProjectStore` on its service thread.

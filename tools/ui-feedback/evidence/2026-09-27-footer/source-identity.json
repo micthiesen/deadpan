@@ -1,0 +1,13 @@
+{
+  "base_commit": "2fd33e152e848c79896a16caef09938eebe7c83f",
+  "files": {
+    "Cargo.lock": "b08a6300d22949cf7f5feebeba858b85b6776fd2956b8617325477c56ead0226",
+    "crates/deadpan-app/src/preview.rs": "930d315220fd805f6b631d2b77ecc1c9c2e84dbb8a196d6ac9d26881a69b5b56",
+    "crates/deadpan-app/src/preview/harness.rs": "143baa477ae277364a3a710aadf3a7069d01e7beea63fba05ec1930f3620de6d",
+    "crates/deadpan-app/src/preview/harness/repeat_input.rs": "2d2627fdc5b8185b520230b1863c4daf78b375816f4ddd9221237c766b400171",
+    "crates/deadpan-app/src/preview/harness/scenarios.rs": "3b71029d08fa1ab4347a7c918d6ed48a9a5653a2f6984c87184efaeb2326f4c6",
+    "crates/deadpan-app/src/preview/style.rs": "a15d48300763baad8cfb3960326c8edda156418d6344f1c7279c8d3c7fcef1e3",
+    "crates/deadpan-app/src/project/tests/scope.rs": "99dd4efba55931b3106b530446dc3505aa036bb1cc7f00d974d1dfc40dcce526",
+    "rust-toolchain.toml": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc"
+  }
+}
