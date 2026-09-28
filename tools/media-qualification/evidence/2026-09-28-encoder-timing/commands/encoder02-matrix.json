@@ -1,0 +1,19 @@
+{
+  "command": [
+    "python3",
+    "tools/media-qualification/compatible/qualify_encoder.py",
+    "--build-report",
+    "/tmp/deadpan-ui-ffmpeg-build.json",
+    "--work",
+    "/tmp/deadpan-export-encoder-iogtzpzn/matrix",
+    "--output",
+    "/tmp/deadpan-export-encoder-iogtzpzn/matrix.json"
+  ],
+  "started": "2026-09-28T14:37:03.902907+00:00",
+  "base_commit": "1c509da1b44415daae98a711961aab2ad0d8252f",
+  "diff_sha256": "5eb14774c1fda23ea898c3161e6846b3e1080b4899848833835787da4bfa4faa",
+  "source_manifest_sha256": "e4b1e649bd8c9446824f9ec0a2d8091206f7d6f385bbb9d8d6b3a43a2ffd4368",
+  "pid": 37879,
+  "exit_code": 1,
+  "seconds": 18.047193583101034
+}

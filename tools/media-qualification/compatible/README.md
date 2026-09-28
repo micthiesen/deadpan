@@ -65,3 +65,45 @@ measured build; fresh scratch paths and toolchain details mean byte-identical
 binary reproducibility is not promised.
 
 See [measured results and limits](../../../docs/qualification/media-compatible-2026-09-20.md).
+
+## SDR encoder timing experiment
+
+`qualify_encoder.py` reuses an existing successful pinned build receipt and
+requires an empty scratch directory. It does not fetch rsmpeg or rebuild FFmpeg:
+
+```sh
+python3 -m unittest discover -s tools/media-qualification/compatible -p 'test_*.py' -v
+python3 tools/media-qualification/compatible/qualify_encoder.py \
+  --build-report /tmp/deadpan-media-compatible-build.json \
+  --work /tmp/deadpan-encoder-NEW \
+  --output /tmp/deadpan-encoder-NEW-report.json
+```
+
+The first five cases compare explicit hardware/software and zero/two requested
+B-frames, with the default edit-list reference and `use_editlist=0` candidates.
+A captured no-B path then receives edge-content, 60 fps, one-frame and exact
+AAC-block-boundary fixtures. Default and disabled-edit-list pairs retain their
+encoded packet hashes. Every case is recorded independently; no case silently
+switches encoder or repairs timestamps.
+
+The separate Python oracle uses exact rational frame times, origin-based
+ties-to-even audio allocation, known picture identities, independent Rec.709
+patch values and absolute decoded sample coordinates. Ordinary and manual-skip
+AAC decoding both drain to EOF. Exact-event checks remain visible diagnostics
+beside the declared encoded tolerance, which must be strictly below one output
+frame. The MP4 inspector traverses bounded structural boxes; it never searches
+arbitrary payload bytes for `elst`. Its fast-start observation alone is not a
+media-validity result.
+
+The report keeps full command logs, before-mux and demuxed packets, decoded
+frame metadata, PCM/MP4 hashes, actual byte/linkage admission and final file
+rechecks. Unknown command failures, timeouts, crashes and sanitizer failures
+fail the experiment even in an unselected mode. The known invalid reordered
+PTS/DTS rejection remains a separate measured capability result. Exit zero
+requires the selected path and its references to pass the scoped matrix.
+
+`--sanitizers` instruments this C probe, not FFmpeg or Apple frameworks. Fresh
+decoder GOP independence, a second native decoder stack, complete boundary
+content/quality acceptance, the renderer's encoder transform and product export
+integration remain separate requirements. No passing fixture is a complete
+export qualification.

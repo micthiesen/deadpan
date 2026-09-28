@@ -2,6 +2,14 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
+The [SDR encoder timing experiment](../qualification/encoder-timing-2026-09-28.md)
+finds native AAC events and the stream endpoint 1,024 samples late when edit
+lists are disabled, exceeding one frame at 60 fps. Default-edit-list references
+are sample-aligned, but are not an approved spec deviation. Retain the failed
+files and both decoder modes; do not hide priming by shifting/cropping PCM or
+widening tolerance. Independent native reading, closed GOPs and product export
+remain open.
+
 ## Product in one paragraph
 
 Build a native macOS, Rust-first, Vim-style instrument for massaging one original video into a weird YTP. A project chooses one local or YouTube video and starts with its full unedited timeline automatically. Cuts, repeats, pauses, reframing and effects remain reversible structures on that original. Reuse moments from the same video, add external audio-only effects, and explicitly accept local AI Hold extensions. Do not offer additional video imports. New native projects live in Documents/Deadpan regardless of launch or source location. The full product still includes analysis, recovery, actual local generation and one-action source-derived YouTube output without external end-user runtimes.

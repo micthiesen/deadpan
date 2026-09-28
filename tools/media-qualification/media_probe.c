@@ -46,14 +46,18 @@ static double monotonic_ms(void) {
 }
 
 /* Escape all control characters so library configuration strings remain JSON. */
-static void json_string(const char *value) {
-    putchar('"');
+static void json_string_to(FILE *output, const char *value) {
+    fputc('"', output);
     for (const unsigned char *p = (const unsigned char *)value; *p; p++) {
-        if (*p == '"' || *p == '\\') printf("\\%c", *p);
-        else if (*p < 0x20) printf("\\u%04x", *p);
-        else putchar(*p);
+        if (*p == '"' || *p == '\\') fprintf(output, "\\%c", *p);
+        else if (*p < 0x20) fprintf(output, "\\u%04x", *p);
+        else fputc(*p, output);
     }
-    putchar('"');
+    fputc('"', output);
+}
+
+static void json_string(const char *value) {
+    json_string_to(stdout, value);
 }
 
 static void inventory(void) {
@@ -139,8 +143,9 @@ static void write_packets(AVFormatContext *format, AVCodecContext *codec, AVStre
     av_packet_free(&packet);
 }
 
-static AVCodecContext *encoder(AVFormatContext *output, const char *name, int audio,
-                               int require_software, int b_frames, AVStream **stream) {
+static AVCodecContext *configured_encoder(AVFormatContext *output, const char *name, int audio,
+                               int require_software, int b_frames, AVStream **stream,
+                               void (*configure)(AVCodecContext *, int, void *), void *opaque) {
     const AVCodec *implementation = avcodec_find_encoder_by_name(name);
     require(implementation != NULL, "encoder exists");
     AVCodecContext *codec = avcodec_alloc_context3(implementation);
@@ -177,6 +182,7 @@ static AVCodecContext *encoder(AVFormatContext *output, const char *name, int au
             check(av_dict_set(&options, "profile", "high", 0), "VT profile");
         }
     }
+    if (configure) configure(codec, audio, opaque);
     if (output->oformat->flags & AVFMT_GLOBALHEADER) codec->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
     check(avcodec_open2(codec, implementation, &options), "open encoder");
     require(av_dict_count(options) == 0, "all encoder options consumed");
@@ -187,6 +193,11 @@ static AVCodecContext *encoder(AVFormatContext *output, const char *name, int au
     if (!audio) (*stream)->avg_frame_rate = codec->framerate;
     check(avcodec_parameters_from_context((*stream)->codecpar, codec), "encoder stream parameters");
     return codec;
+}
+
+static AVCodecContext *encoder(AVFormatContext *output, const char *name, int audio,
+                               int require_software, int b_frames, AVStream **stream) {
+    return configured_encoder(output, name, audio, require_software, b_frames, stream, NULL, NULL);
 }
 
 static void encode(const char *path, const char *name, const char *cadence, const char *mode, int swap_content) {
@@ -294,7 +305,8 @@ typedef struct {
     int draining;
 } Decoder;
 
-static Decoder open_decoder(const char *path, enum AVMediaType type) {
+static Decoder configured_decoder(const char *path, enum AVMediaType type,
+                                  void (*configure)(AVCodecContext *, AVStream *)) {
     Decoder decoder = {0};
     check(avformat_open_input(&decoder.format, path, NULL, NULL), "open input");
     check(avformat_find_stream_info(decoder.format, NULL), "probe streams");
@@ -307,6 +319,7 @@ static Decoder open_decoder(const char *path, enum AVMediaType type) {
     require(decoder.codec != NULL, "allocate decoder");
     check(avcodec_parameters_to_context(decoder.codec, parameters), "copy decoder parameters");
     decoder.codec->thread_count = 1;
+    if (configure) configure(decoder.codec, decoder.format->streams[decoder.stream_index]);
     check(avcodec_open2(decoder.codec, codec, NULL), "open decoder");
     decoder.packet = av_packet_alloc();
     decoder.frame = av_frame_alloc();
@@ -314,7 +327,11 @@ static Decoder open_decoder(const char *path, enum AVMediaType type) {
     return decoder;
 }
 
-static int next_frame(Decoder *decoder) {
+static Decoder open_decoder(const char *path, enum AVMediaType type) {
+    return configured_decoder(path, type, NULL);
+}
+
+static int next_frame_bounded(Decoder *decoder, uint32_t *remaining_packets) {
     for (;;) {
         int status = avcodec_receive_frame(decoder->codec, decoder->frame);
         if (status >= 0) return 1;
@@ -322,6 +339,10 @@ static int next_frame(Decoder *decoder) {
         require(status == AVERROR(EAGAIN), "decoder receive status");
         require(!decoder->draining, "drained decoder does not request input");
         do {
+            if (remaining_packets) {
+                require(*remaining_packets > 0, "decoder packet budget");
+                --*remaining_packets;
+            }
             status = av_read_frame(decoder->format, decoder->packet);
             if (status == AVERROR_EOF) {
                 check(avcodec_send_packet(decoder->codec, NULL), "drain decoder");
@@ -337,6 +358,10 @@ static int next_frame(Decoder *decoder) {
             av_packet_unref(decoder->packet);
         } while (1);
     }
+}
+
+static int next_frame(Decoder *decoder) {
+    return next_frame_bounded(decoder, NULL);
 }
 
 static void close_decoder(Decoder *decoder) {
