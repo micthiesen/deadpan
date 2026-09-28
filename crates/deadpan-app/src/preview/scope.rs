@@ -117,15 +117,36 @@ impl DeadpanApp {
         }
     }
 
-    pub(super) fn sequence_heading(&mut self, ui: &mut egui::Ui) -> egui::Response {
-        let (heading, destination) = draw_heading(
-            ui,
-            self.pane == Pane::Sequence,
-            self.focused_workflow(),
-            &self.scope_labels,
-            self.beat_rows.len(),
-            self.scope_end - self.scope_start,
-        );
+    pub(super) fn sequence_heading(
+        &mut self,
+        ui: &mut egui::Ui,
+        compact_empty_sounds: bool,
+    ) -> egui::Response {
+        let (heading, destination) = if compact_empty_sounds {
+            let (heading, destination, sounds) = draw_compact_heading(
+                ui,
+                self.pane == Pane::Sequence,
+                self.pane == Pane::Sounds,
+                &self.scope_labels,
+                self.beat_rows.len(),
+                self.scope_end - self.scope_start,
+            );
+            if pane_focus(ui, Pane::Sounds, sounds.rect, "Placed sounds pane").has_focus()
+                && self.pane != Pane::Sounds
+            {
+                self.focus_events(ui.ctx());
+            }
+            (heading, destination)
+        } else {
+            draw_heading(
+                ui,
+                self.pane == Pane::Sequence,
+                self.focused_workflow(),
+                &self.scope_labels,
+                self.beat_rows.len(),
+                self.scope_end - self.scope_start,
+            )
+        };
         if let Some(depth) = destination {
             let mut scope = self.sequence_scope.clone();
             let mut exited = None;
@@ -140,6 +161,56 @@ impl DeadpanApp {
         }
         heading
     }
+}
+
+fn draw_compact_heading(
+    ui: &mut egui::Ui,
+    focused: bool,
+    sounds_focused: bool,
+    labels: &[String],
+    beats: usize,
+    frames: u64,
+) -> (egui::Response, Option<usize>, egui::Response) {
+    let text = if sounds_focused {
+        "PLACED SOUNDS 0 · ,s place · FOCUS"
+    } else {
+        "PLACED SOUNDS 0 · ,s place"
+    };
+    let sounds = egui::WidgetText::from(egui::RichText::new(text).size(11.0).strong().color(
+        if sounds_focused {
+            style::LAVENDER
+        } else {
+            style::MUTED
+        },
+    ))
+    .into_galley(
+        ui,
+        Some(egui::TextWrapMode::Extend),
+        f32::INFINITY,
+        egui::TextStyle::Body,
+    );
+    let gap = 8.0;
+    let width = (ui.available_width() - sounds.size().x - gap).max(0.0);
+    // Measure the complete empty-state entry first. Only the breadcrumb strip
+    // scrolls; neither pane's focus target is covered by the other heading.
+    ui.horizontal(|ui| {
+        ui.spacing_mut().item_spacing.x = gap;
+        let (heading, destination) = ui
+            .allocate_ui_with_layout(
+                egui::vec2(width, ui.spacing().interact_size.y),
+                egui::Layout::top_down(egui::Align::Min),
+                |ui| {
+                    ui.set_max_width(width);
+                    draw_heading(ui, focused, true, labels, beats, frames)
+                },
+            )
+            .inner;
+        let sounds = ui.label(sounds).on_hover_text(
+            "Choose a catalog sound, then place it with ,s. Picture length stays the same.",
+        );
+        (heading, destination, sounds)
+    })
+    .inner
 }
 
 /// Shared with CPU-only layout checks; the caller owns navigation and repaint.
@@ -211,4 +282,134 @@ pub(super) fn draw_heading(
         })
         .inner;
     (heading, destination)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn compact_empty_sounds_stays_visible_beside_long_nested_breadcrumbs() {
+        for sounds_focused in [false, true] {
+            let context = egui::Context::default();
+            style::apply(&context);
+            let viewport = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(600.0, 128.0));
+            let labels = vec![
+                "A deliberately long outer group label".into(),
+                "Another deliberately long nested group label".into(),
+            ];
+            let mut targets = None;
+            let mut output = context.run_ui(
+                egui::RawInput {
+                    screen_rect: Some(viewport),
+                    ..Default::default()
+                },
+                |ui| {
+                    let (beats, _, sounds) = draw_compact_heading(
+                        ui,
+                        !sounds_focused,
+                        sounds_focused,
+                        &labels,
+                        100_000,
+                        u64::MAX,
+                    );
+                    targets = Some((beats.rect, sounds.rect));
+                },
+            );
+            output.textures_delta.clear();
+            let (beats, sounds) = targets.unwrap();
+            assert!(!beats.intersects(sounds));
+            assert!(viewport.contains_rect(beats));
+            assert!(viewport.contains_rect(sounds));
+            for clipped in &output.shapes {
+                let egui::Shape::Text(text) = &clipped.shape else {
+                    continue;
+                };
+                if !text.galley.text().starts_with("PLACED SOUNDS 0 · ,s place") {
+                    let painted = clipped.clip_rect.intersect(text.visual_bounding_rect());
+                    if painted.is_positive() {
+                        assert!(painted.right() <= sounds.left());
+                    }
+                }
+            }
+            let labels = output
+                .shapes
+                .iter()
+                .filter_map(|clipped| {
+                    let egui::Shape::Text(text) = &clipped.shape else {
+                        return None;
+                    };
+                    text.galley
+                        .text()
+                        .starts_with("PLACED SOUNDS 0 · ,s place")
+                        .then_some((clipped, text))
+                })
+                .collect::<Vec<_>>();
+            assert_eq!(labels.len(), 1);
+            let (clipped, text) = labels[0];
+            assert!(clipped.clip_rect.contains_rect(text.visual_bounding_rect()));
+            assert!(viewport.contains_rect(text.visual_bounding_rect()));
+            assert!(clipped.clip_rect.contains_rect(sounds));
+            assert_eq!(text.galley.text().contains("FOCUS"), sounds_focused);
+        }
+    }
+
+    #[test]
+    fn compact_empty_sounds_does_not_cover_parent_group_navigation() {
+        let context = egui::Context::default();
+        style::apply(&context);
+        let viewport = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(600.0, 128.0));
+        let labels = vec!["Outer group".into(), "Nested group".into()];
+        let mut output = context.run_ui(
+            egui::RawInput {
+                screen_rect: Some(viewport),
+                ..Default::default()
+            },
+            |ui| {
+                draw_compact_heading(ui, true, false, &labels, 2, 120);
+            },
+        );
+        output.textures_delta.clear();
+        let back = output
+            .shapes
+            .iter()
+            .find_map(|clipped| {
+                let egui::Shape::Text(text) = &clipped.shape else {
+                    return None;
+                };
+                (text.galley.text() == "‹  Backspace")
+                    .then_some(text.visual_bounding_rect().center())
+            })
+            .expect("The parent-group action remains painted");
+        let mut destination = None;
+        let mut output = context.run_ui(
+            egui::RawInput {
+                screen_rect: Some(viewport),
+                events: vec![
+                    egui::Event::PointerMoved(back),
+                    egui::Event::PointerButton {
+                        pos: back,
+                        button: egui::PointerButton::Primary,
+                        pressed: true,
+                        modifiers: egui::Modifiers::NONE,
+                    },
+                    egui::Event::PointerButton {
+                        pos: back,
+                        button: egui::PointerButton::Primary,
+                        pressed: false,
+                        modifiers: egui::Modifiers::NONE,
+                    },
+                ],
+                ..Default::default()
+            },
+            |ui| {
+                let (_, next, sounds) = draw_compact_heading(ui, true, false, &labels, 2, 120);
+                let sounds = pane_focus(ui, Pane::Sounds, sounds.rect, "Placed sounds pane");
+                assert!(!sounds.clicked());
+                destination = next;
+            },
+        );
+        output.textures_delta.clear();
+        assert_eq!(destination, Some(1));
+    }
 }

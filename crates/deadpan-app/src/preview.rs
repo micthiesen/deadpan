@@ -2143,7 +2143,7 @@ impl DeadpanApp {
             });
     }
 
-    fn timeline(&mut self, ui: &mut egui::Ui) {
+    fn timeline(&mut self, ui: &mut egui::Ui, compact_empty_sounds: bool) {
         let mut layout = self.workspace_layout(ui);
         if self.gain.is_some() {
             layout.beats = 42.0;
@@ -2160,7 +2160,7 @@ impl DeadpanApp {
                 }
                 return;
             }
-            let heading = self.sequence_heading(ui);
+            let heading = self.sequence_heading(ui, compact_empty_sounds);
             let beats = Arc::clone(&self.beat_rows);
             if pane_focus(
                 ui,
@@ -2486,7 +2486,7 @@ impl DeadpanApp {
             });
     }
 
-    fn viewer(&mut self, ui: &mut egui::Ui) {
+    fn viewer(&mut self, ui: &mut egui::Ui, compact_empty_sounds: bool) {
         egui::CentralPanel::default().frame(style::panel()).show(ui, |ui| {
             ui.spacing_mut().item_spacing.y = 4.0;
             ui.horizontal(|ui| {
@@ -2525,6 +2525,11 @@ impl DeadpanApp {
             ui.painter().rect_filled(rect, 2.0, egui::Color32::BLACK);
             let aspect = self.presentation.canvas().map(|(w, h)| w as f32 / h as f32);
             let canvas = aspect.map_or(rect, |aspect| fit_rect(rect, aspect));
+            // Earlier panes and this viewer's tabs can change view while
+            // painting. Reject their old panel allocation before GPU work.
+            if compact_empty_sounds != self.compact_empty_sounds(ui.ctx()) {
+                ui.ctx().request_discard("empty Sounds heading changed placement");
+            }
             self.render_picture(ui.ctx(), canvas.size());
             let displayed_label = self.presentation.displayed_label();
             response.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Image, true, displayed_label.as_deref().unwrap_or("No picture displayed")));
@@ -2818,6 +2823,11 @@ impl eframe::App for DeadpanApp {
         } else {
             self.keyboard(&context)
         };
+        if self.command_open && text_result.as_ref().is_some_and(|(_, command)| *command) {
+            // Native text is still processed and the command executed below.
+            // Its guaranteed footer close must precede any resized submission.
+            context.request_discard("native command footer will close");
+        }
         let input_scope = (
             self.pane,
             self.view,
@@ -2826,6 +2836,9 @@ impl eframe::App for DeadpanApp {
             self.selected_sound.clone(),
         );
         self.header(ui);
+        // A pointer activation can change views while the panes are painted.
+        // Use one placement decision for Sounds throughout this pass.
+        let compact_empty_sounds = self.compact_empty_sounds(&context);
         let footer_mode = (
             self.command_open,
             self.camera.is_some(),
@@ -2841,9 +2854,9 @@ impl eframe::App for DeadpanApp {
         }
         self.sources(ui);
         self.inspector(ui);
-        self.placed_sounds(ui);
-        self.timeline(ui);
-        self.viewer(ui);
+        self.placed_sounds(ui, compact_empty_sounds);
+        self.timeline(ui, compact_empty_sounds);
+        self.viewer(ui, compact_empty_sounds);
         if first_pass {
             self.finish_camera_entry(&context);
         }
@@ -2884,6 +2897,9 @@ impl eframe::App for DeadpanApp {
             )
         {
             context.request_discard("workspace footer mode changed after input");
+        }
+        if compact_empty_sounds != self.compact_empty_sounds(&context) {
+            context.request_discard("empty Sounds heading changed placement");
         }
         if !context.will_discard() {
             self.schedule_playback_picture();

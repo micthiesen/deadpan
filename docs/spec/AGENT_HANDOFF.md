@@ -112,6 +112,15 @@ CPU measurements retain their small-fixture/offscreen limits.
 Waveforms, physical keyboard/IME, VoiceOver, listening, complete audio processing
 and DP-09 acceptance remain open.
 
+The [compact workspace qualification](../qualification/compact-workspace-2026-09-28.md)
+records empty Sounds consolidation into the Beats heading in short
+single-Original edit views. Preserve its distinct focus target, measured label
+width, scrolling breadcrumbs and empty panel ID. Capture placement once per
+render pass and reject changed placement before picture submission. Room tone
+is an overlay over the same layout; Gain/Camera and populated sound lists retain
+their existing layouts. The final source passes app/painted checks within that
+record's scope; release performance is recorded separately.
+
 [Structural speed editing](../RETIME_EDITING.md) exposes `:retime` and
 `:wrap-retime` through exact speed resolution and the native inspector. Preserve
 the input range when adjusting an ordinary Retime; wrap split Partitions instead.

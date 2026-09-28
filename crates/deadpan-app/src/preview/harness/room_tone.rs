@@ -171,6 +171,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         d.snapshot(),
     )?;
     saved_layout(d, &chosen)?;
+    compact_workspace_scale(d)?;
     committed_audition(d, &target, &expected_hold, &editor, &applied)?;
     d.key(Key::U)?;
     d.changed(&applied)?;
@@ -544,9 +545,221 @@ fn saved_layout(d: &mut Driver<'_>, source: &SourceAudio) -> Result<(), String> 
         d.capture(&format!(
             "Saved room tone in Hold inspector at {width}x{height}"
         ))?;
+        if width == 960.0 {
+            compact_workspace_picture(d)?;
+            compact_room_tone_background(d)?;
+        }
         gain_inspector_reachable(d, width, height)?;
     }
     Ok(())
+}
+
+fn compact_workspace_picture(d: &mut Driver<'_>) -> Result<(), String> {
+    scenarios::viewer_visible(d)?;
+    let label = d
+        .app()
+        .presentation
+        .displayed_label()
+        .ok_or("Missing copied-range picture")?;
+    let viewer = d.rect(&label)?;
+    let mut labels = vec![
+        "Copied Original [10..20)",
+        "Paste after  p",
+        "Paste before  P",
+        "Monitor · :monitor",
+        "PLACED SOUNDS 0 · ,s place",
+        "Loop selection  ·  Shift+Space",
+        "Loop context",
+    ];
+    let action = if let Some(run) = &d.app().transport {
+        if run.phase == deadpan_playback::Phase::Preparing {
+            labels.extend(["Cancel preparation  ·  Space", "Preparing ·"]);
+            "Cancel preparation  ·  Space"
+        } else {
+            labels.extend(["Pause  ·  Space", "Playing ·"]);
+            "Pause  ·  Space"
+        }
+    } else {
+        labels.push("Play edit  ·  Space");
+        "Play edit  ·  Space"
+    };
+    let hits = super::sound_placement::control_hits(
+        d,
+        &[
+            "Paste after  p",
+            "Paste before  P",
+            "Loop selection  ·  Shift+Space",
+            "Monitor · :monitor",
+            action,
+        ],
+    );
+    let paint = labels
+        .iter()
+        .map(|label| (*label, scenarios::text_paint_visibility(d, label)))
+        .collect::<Vec<_>>();
+    d.check(
+        "Copied Original controls and empty Sounds retain at least 140 points of picture",
+        viewer.height() >= 140.0
+            && hits.iter().all(|hit| {
+                hit["complete_hit"] == true
+                    && hit["enabled"]
+                        == (hit["label"] != "Monitor · :monitor" || d.app().transport.is_none())
+            })
+            && paint.iter().all(|(_, items)| {
+                !items.is_empty() && items.iter().all(|item| item["fully_visible"] == true)
+            }),
+        json!({"minimum_picture_height":140,"fully_painted":labels}),
+        json!({"viewer_height":viewer.height(),"paint":paint,"hits":hits}),
+    )?;
+    scenarios::footer_anchored(
+        d,
+        "Copied-range compact workspace keeps its footer anchored",
+    )
+}
+
+fn compact_room_tone_background(d: &mut Driver<'_>) -> Result<(), String> {
+    let revision = d.revision();
+    let editor = editor_state(d);
+    let bounds = |d: &Driver<'_>| {
+        scenarios::text_paint_visibility(d, "PLACED SOUNDS 0 · ,s place")
+            .into_iter()
+            .map(|text| text["bounds"].clone())
+            .collect::<Vec<_>>()
+    };
+    let target = |d: &Driver<'_>| {
+        d.app()
+            .target
+            .as_ref()
+            .map(|target| (target.target.width(), target.target.height()))
+    };
+    let entry_bounds = bounds(d);
+    let entry_target = target(d);
+    let picture = d.app().presentation.diagnostic_snapshot()["displayed"].clone();
+    open(d)?;
+    d.settled()?;
+    for open in [true, false] {
+        if !open {
+            d.key(Key::Escape)?;
+            d.settled()?;
+        }
+        d.check(
+            "Opening and closing room tone preserves the compact background allocation",
+            !entry_bounds.is_empty() && bounds(d) == entry_bounds
+                && entry_target.is_some() && target(d) == entry_target
+                && d.app().presentation.diagnostic_snapshot()["displayed"] == picture
+                && d.app().room_tone.is_some() == open
+                && d.revision() == revision && editor_state(d) == editor,
+            json!({"sheet_open":open,"heading_bounds":entry_bounds,"target":entry_target,"picture":picture}),
+            json!({"sheet_open":d.app().room_tone.is_some(),"heading_bounds":bounds(d),"target":target(d),"state":d.snapshot()}),
+        )?;
+    }
+    Ok(())
+}
+
+fn compact_workspace_scale(d: &mut Driver<'_>) -> Result<(), String> {
+    let revision = d.revision();
+    let editor = editor_state(d);
+    d.command("sounds")?;
+    d.settled()?;
+    let picture = d.app().presentation.diagnostic_snapshot()["displayed"].clone();
+    let identities = compact_control_ids(d)?;
+    for (width, height, scale) in [
+        (960.0, 640.0, 1.0),
+        (960.0, 640.0, 2.0),
+        (960.0, 640.0, 1.0),
+        (1280.0, 820.0, 1.0),
+    ] {
+        let rect = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(width, height));
+        let input = d.harness.input_mut();
+        input.screen_rect = Some(rect);
+        let viewport = input
+            .viewports
+            .get_mut(&egui::ViewportId::ROOT)
+            .ok_or("Missing root viewport during compact workspace scale change")?;
+        viewport.inner_rect = Some(rect);
+        viewport.native_pixels_per_point = Some(scale);
+        for frame in 0..3 {
+            d.step(
+                &format!("Compact workspace {width}x{height} at {scale}x, frame {frame}"),
+                true,
+            )?;
+            d.check(
+                "Scale changes preserve pane/control IDs, focused Sounds and retained picture identity",
+                d.harness.ctx.content_rect().size() == egui::vec2(width, height)
+                    && (d.harness.ctx.pixels_per_point() - scale).abs() < f32::EPSILON
+                    && compact_control_ids(d)? == identities
+                    && d.app().pane == Pane::Sounds
+                    && d.harness.ctx.memory(|memory| memory.has_focus(pane_id(Pane::Sounds)))
+                    && d.app().presentation.diagnostic_snapshot()["displayed"] == picture
+                    && d.revision() == revision && editor_state(d) == editor,
+                json!({"size":[width,height],"scale":scale,"identities":identities,"picture":picture}),
+                json!({"identities":compact_control_ids(d)?,"picture":d.app().presentation.diagnostic_snapshot(),"state":d.snapshot()}),
+            )?;
+            scenarios::footer_anchored(d, "Scale change keeps the copied-range footer anchored")?;
+        }
+        d.settled()?;
+        if width == 960.0 {
+            compact_workspace_picture(d)?;
+            super::sound_placement::empty_heading(d)?;
+        } else {
+            scenarios::viewer_visible(d)?;
+            d.check(
+                "Default size restores the empty Sounds panel below Beats with the same identity",
+                d.rect("Placed sounds pane")?.top()
+                    > d.rect("Current group beat outline pane")?.bottom(),
+                json!("Separate full-height empty Sounds panel"),
+                d.widgets(),
+            )?;
+        }
+    }
+    d.command("sequence")?;
+    d.settled()
+}
+
+fn compact_control_ids(d: &Driver<'_>) -> Result<Vec<String>, String> {
+    [
+        "Placed sounds pane",
+        "Current group beat outline pane",
+        "Paste after  p",
+        "Paste before  P",
+    ]
+    .into_iter()
+    .map(|label| {
+        let ids = d
+            .harness
+            .root()
+            .children_recursive()
+            .filter_map(|node| {
+                let access = node.accesskit_node();
+                if access.role() == egui::accesskit::Role::Button
+                    && access.label().as_deref() == Some(label)
+                    && !access.is_hidden()
+                {
+                    Some(format!("{:?}", access.id()))
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<_>>();
+        match ids.as_slice() {
+            [id] => Ok(id.clone()),
+            _ => Err(format!("Expected one {label:?} identity, found {ids:?}")),
+        }
+    })
+    .collect()
+}
+
+fn resize_workspace(d: &mut Driver<'_>, width: f32, height: f32) -> Result<(), String> {
+    let rect = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(width, height));
+    let input = d.harness.input_mut();
+    input.screen_rect = Some(rect);
+    input
+        .viewports
+        .get_mut(&egui::ViewportId::ROOT)
+        .ok_or("Missing root viewport")?
+        .inner_rect = Some(rect);
+    d.step("Resize copied-range workspace for transport layout", true)?;
+    d.settled()
 }
 
 fn gain_inspector_reachable(d: &mut Driver<'_>, width: f32, height: f32) -> Result<(), String> {
@@ -670,6 +883,7 @@ fn committed_audition(
     editor: &Value,
     revision: &str,
 ) -> Result<(), String> {
+    resize_workspace(d, 960.0, 640.0)?;
     let rate = document(d)?.presentation_basis().frame_rate;
     let committed_revision = document(d)?.revision_id().clone();
     let frame = i64::try_from(d.app().sequence_cursor).map_err(|error| error.to_string())?;
@@ -708,6 +922,7 @@ fn committed_audition(
         json!({"domain":"sequence","start":start,"end":end,"revision":revision,"editor":editor}),
         d.snapshot(),
     )?;
+    compact_workspace_picture(d)?;
     let (mut feed, _callback) = deadpan_output::channel().map_err(|error| error.to_string())?;
     let generation = feed.restart(0).map_err(|error| error.to_string())?;
     let run = d
@@ -747,8 +962,12 @@ fn committed_audition(
         json!({"source":expected.audio,"editor":editor,"revision":revision,"sample":update.sample}),
         d.snapshot(),
     )?;
+    compact_workspace_picture(d)?;
     d.key(Key::Space)?;
-    d.app_mut().feedback.playback_updates.push_back(update);
+    d.app_mut()
+        .feedback
+        .playback_updates
+        .push_back(update.clone());
     d.step(
         "Ignore late committed Sequence delivery after Space pauses",
         true,
@@ -764,7 +983,66 @@ fn committed_audition(
             && editor_state(d) == *editor,
         json!({"paused":true,"editor":editor,"revision":revision}),
         d.snapshot(),
-    )
+    )?;
+    compact_workspace_picture(d)?;
+    d.key(Key::Space)?;
+    d.check(
+        "Copied-range Space resumes the exact paused sample with all controls visible",
+        d.app().transport.as_ref().is_some_and(|run| {
+            run.phase == deadpan_playback::Phase::Preparing
+                && Some(run.sample) == update.sample
+                && run.revision == committed_revision
+        }) && hold(d, target)? == *expected
+            && d.revision() == revision
+            && editor_state(d) == *editor,
+        json!({"resumed_sample":update.sample,"revision":revision,"editor":editor}),
+        d.snapshot(),
+    )?;
+    compact_workspace_picture(d)?;
+    let mut resumed = update;
+    let resumed_sample = resumed
+        .sample
+        .ok_or("Resumed delivery lost its exact sample")?;
+    let run = d
+        .app()
+        .transport
+        .as_ref()
+        .ok_or("Missing resumed copied-range transport")?;
+    resumed.ticket = run.ticket;
+    resumed.generation = Some(
+        feed.restart(run.sample.0)
+            .map_err(|error| error.to_string())?,
+    );
+    d.app_mut().feedback.playback_updates.push_back(resumed);
+    d.step(
+        "Resume copied-range playback with a new typed delivery generation",
+        true,
+    )?;
+    d.check(
+        "Resumed copied-range delivery enters Playing at the exact heard sample",
+        d.app().transport.as_ref().is_some_and(|run| {
+            run.phase == deadpan_playback::Phase::Playing
+                && run.sample == resumed_sample
+                && run.revision == committed_revision
+        }) && d.revision() == revision
+            && editor_state(d) == *editor,
+        json!({"sample":resumed_sample,"revision":revision,"editor":editor}),
+        d.snapshot(),
+    )?;
+    compact_workspace_picture(d)?;
+    d.key(Key::Space)?;
+    d.check(
+        "Resumed copied-range audition pauses without an authored edit or cursor change",
+        d.app().transport.is_none()
+            && d.app().resume.is_some()
+            && hold(d, target)? == *expected
+            && d.revision() == revision
+            && editor_state(d) == *editor,
+        json!({"paused":true,"revision":revision,"editor":editor}),
+        d.snapshot(),
+    )?;
+    compact_workspace_picture(d)?;
+    resize_workspace(d, 1280.0, 820.0)
 }
 
 fn ime(d: &mut Driver<'_>, field_label: &str, text: &str, revision: &str) -> Result<(), String> {

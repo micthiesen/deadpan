@@ -74,6 +74,29 @@ feedback on the status row so it does not push ordinary navigation hints into
 another row. The [footer qualification](../qualification/footer-layout-2026-09-27.md)
 records first-frame checks and the remaining small-window picture limitation.
 
+The implemented compact empty-Sounds layout addresses one specific minimum-size
+case: single-Original Your edit, window height below 700 logical points, with no
+placed events.
+Its visible `PLACED SOUNDS 0 · ,s place` entry shares the BEATS heading, keeps a
+distinct focus cue and the existing Sounds pane identity, and reserves its full
+measured width before the scrolling breadcrumbs. The empty panel remains in
+the UI tree at zero height. Copied-range, paste, audition and monitor controls
+keep their existing space. Room tone overlays the same compact background;
+its open/close does not restore the empty strip. Populated lists, default-size,
+Source, Camera and Gain layouts retain their existing treatment. Normal Tab
+still cycles visible panes. Scoped replay passes the 140-point minimum picture
+assertion and complete text/hit clips. The copied Hold viewer measures 143
+points at 960×640; this is not a general picture-height guarantee for populated
+sound lists or larger fonts. See the
+[compact-workspace qualification](../qualification/compact-workspace-2026-09-28.md).
+
+Changing pane placement during input must be detected before submitting a
+picture target. The implementation captures one placement per layout pass and
+checks it after viewer-tab actions, immediately before rendering. Native
+command closure also marks the guaranteed footer transition before rendering
+without moving command execution ahead of text processing. Preserve the
+accepted picture and caption until a valid replacement is submitted.
+
 Structural cards can have equal readable widths. Their durations and half-open
 frame boundaries must be explicit; do not put a continuous seconds ruler above
 such cards. A local cursor marker maps within its own card and must not imply
@@ -274,7 +297,25 @@ old multi-video creation flow.
 
 ## Implementation and review
 
-The native gain editor's focused Metal replay passes 266 gain checks plus the
+The compact empty-Sounds increment passes scoped correctness and visual checks.
+Final source `78395620` passes 217 sound-placement, 221 room-tone and 73
+nested-pause checks, each plus the Kestrel audit. Workspace's 81 checks and
+Gain's 266 checks, each plus the audit, passed on `54722ed2`; only shared-harness
+corrections followed. The 300 app/harness tests passed on `4a867916` before
+helper-only corrections; final base-app tests pass 265, with strict
+workspace/all-target lint in both configurations.
+
+Inspected final default, minimum, 2x, nested and populated captures retain
+readable controls and picture hierarchy. The minimum copied Hold viewer is
+143 points; other tested phases measure 169 or 175 points. The passing checks
+cover stable native-scale identities, room-tone background continuity, exact
+pause/resume, nested navigation, placement/undo and release-frame submissions.
+The release build and all 2,323 full performance replay checks pass. These results
+do not establish physical-input or listening qualification, and full-editor
+requirements remain open. See the
+[compact-workspace qualification](../qualification/compact-workspace-2026-09-28.md).
+
+The native gain checkpoint's focused Metal replay passes 266 gain checks plus the
 Kestrel audit; all 298 app/harness tests pass. The reviewed default and minimum
 captures retain a 270.1875/145-point painted viewer, full owner-axis graph,
 visible unsaved state and fixed comparison actions. Exact fields sit beside the

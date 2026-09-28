@@ -1,0 +1,20 @@
+{
+  "command": [
+    "target/debug/deadpan-app",
+    "--ui-check",
+    "--scenario",
+    "room-tone",
+    "--retain-projects",
+    "--output",
+    "/tmp/deadpan-native-gain-u891jpt2/compact05-visual-room-tone",
+    "--kestrel-source",
+    "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+  ],
+  "started": "2026-09-28T12:25:26.857761+00:00",
+  "base_commit": "f9b1a14a342ad37670b3f7cae5811987e1850067",
+  "diff_sha256": "ab82c94a73c10eee4dc2c0de7390eb6e66f0195f5c47c0af651a815acc44d3ec",
+  "source_manifest_sha256": "783956201811134574d665523081dbae2be239bfaf067ecb134cfcf6847932dc",
+  "pid": 18325,
+  "exit_code": 0,
+  "seconds": 60.226019124966115
+}

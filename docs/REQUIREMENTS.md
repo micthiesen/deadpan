@@ -316,6 +316,12 @@ The complete release replay passes 2,156 checks, retaining separate cold and
 warm timing populations and the small-fixture/offscreen qualification boundary.
 Measured waveforms, physical keyboard/IME and acoustic qualification, full voice
 processing and the complete DP-09 workflow remain required.
+The [compact workspace increment](qualification/compact-workspace-2026-09-28.md)
+also consolidates empty Placed sounds into a visible Beats-heading target at
+short window heights. Copied-range controls retain a measured 143-point minimum
+picture in the qualified Hold state; nested navigation, focus, scale changes
+and first placement/undo have actual painted replay evidence. Full UI and
+performance acceptance remain open.
 See the [authored-gain qualification](qualification/authored-gain-2026-09-28.md)
 for review corrections and verification limits, and the
 [earlier gain/clock record](qualification/gain-clocks-2026-09-27.md) for the pure

@@ -121,14 +121,33 @@ records the latest fixes, review and retained failures:
   pass confirms field reveal and cancellation without a project change. General
   gain controls follow node-specific inspector actions so they do not displace
   the saved Hold audio recipe. See the [gain qualification](qualification/native-gain-2026-09-28.md).
-- **Copied Original controls still crowd the minimum normal picture.** The
+- **Copied Original controls crowded the minimum normal picture.** The
   corrected room-tone capture at 960×640 shows the copied range, paste, audition
   and monitor controls plus an empty 64-point Placed sounds strip. Its picture
-  remains much smaller than the design target. The next bounded improvement is
-  to consolidate that empty sound focus entry into the existing beat heading,
-  retaining its pane identity and shortcuts. Require actual picture/controls
-  paint checks through playback, first sound placement, undo and resizing; this
-  proposal is not an implemented or measured improvement.
+  was approximately 77 points high. The implemented compact layout now puts
+  the empty Sounds entry beside the beat heading at window heights below 700
+  logical points in the single-Original Your edit view, retaining its visible focus cue, pane identity
+  and `,s` hint. Breadcrumbs scroll in the measured remaining width. The empty
+  panel stays in the UI tree at zero height; copied-range, paste, audition and
+  monitor rows keep their existing allocation. Room tone overlays this same
+  background without adding or removing 64 points. Populated sounds, default
+  size, Source, Camera and Gain retain their existing layouts. Scoped replay
+  passes the 140-point minimum assertion, complete text/hit clips, native scale
+  transitions, nested navigation, first placement/undo and exact pause/resume.
+  The copied Hold viewer measures 143 points at minimum size; other tested
+  phases measure 169 or 175 points. Final default, minimum, 2x, nested and
+  populated captures were inspected. These results do not guarantee that height
+  for all populated lists or larger fonts. See the
+  [compact-workspace qualification](qualification/compact-workspace-2026-09-28.md).
+- **A view change must not submit a picture for a discarded panel allocation.**
+  Compact Sounds placement is captured once per layout pass and rechecked
+  immediately before picture submission, including after viewer-tab actions.
+  A native command's guaranteed footer close marks its pass for discard before
+  rendering, while command execution still follows native text processing.
+  Passing release-frame checks inspect submission count, final target dimensions
+  and retained picture identity for pane/tab entry and command-plus-resize.
+  The release build and all 2,323 full performance replay checks pass. These scoped
+  layout results do not establish full-editor, device or listening qualification.
 
 The [2026-09-26 visual run](qualification/ui-feedback-2026-09-26.md) passed all nine
 scenarios and the shortcut audit, with the Camera and rapid-input warnings retained.

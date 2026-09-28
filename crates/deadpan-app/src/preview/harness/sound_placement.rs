@@ -36,6 +36,76 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         json!({"edit_frame":2,"selected_beat":true}),
         d.snapshot(),
     )?;
+    resize(d, 960.0, 640.0)?;
+    d.step("Paint compact empty Sounds after resize", true)?;
+    d.settled()?;
+    empty_heading(d)?;
+    let revision = d.revision();
+    d.command("source")?;
+    d.settled()?;
+    d.wait_for(
+        "Picture renderer is idle before compact pane entry",
+        |app| app.renderer.is_idle().is_ok_and(|idle| idle),
+    )?;
+    let picture = d.app().presentation.diagnostic_snapshot()["displayed"].clone();
+    d.click("Placed sounds pane")?;
+    final_picture_submission(d, &picture)?;
+    empty_heading(d)?;
+    d.check(
+        "Pointer entry from Original moves the empty Sounds target on the release frame",
+        d.app().view == View::Sequence
+            && d.app().pane == Pane::Sounds
+            && d.revision() == revision
+            && targets(d) == baseline,
+        json!({"view":"Sequence","pane":"Sounds","revision":revision,"targets":baseline}),
+        d.snapshot(),
+    )?;
+    for (label, view) in [("Original", View::Source), ("Your edit", View::Sequence)] {
+        d.settled()?;
+        d.wait_for("Picture renderer is idle before viewer tab entry", |app| {
+            app.renderer.is_idle().is_ok_and(|idle| idle)
+        })?;
+        d.click(label)?;
+        cleared_picture_transition(d, view)?;
+    }
+    d.command("source")?;
+    d.settled()?;
+    d.key(Key::Colon)?;
+    d.wait_for(
+        "Picture renderer is idle before command and resize",
+        |app| app.renderer.is_idle().is_ok_and(|idle| idle),
+    )?;
+    resize(d, 1000.0, 660.0)?;
+    d.events(
+        "Submit Sequence native text together with a compact resize",
+        vec![
+            egui::Event::Text("sequence".into()),
+            key_event(Key::Enter, Modifiers::NONE, true),
+            key_event(Key::Enter, Modifiers::NONE, false),
+        ],
+    )?;
+    cleared_picture_transition(d, View::Sequence)?;
+    resize(d, 960.0, 640.0)?;
+    d.step(
+        "Restore minimum viewport after combined command and resize",
+        true,
+    )?;
+    d.settled()?;
+    d.click("Current group beat outline pane")?;
+    d.key(Key::Tab)?;
+    empty_heading(d)?;
+    d.check(
+        "Normal Tab reaches the visible empty Sounds heading without changing editor targets",
+        d.app().pane == Pane::Sounds
+            && d.harness
+                .ctx
+                .memory(|memory| memory.has_focus(pane_id(Pane::Sounds)))
+            && d.revision() == revision
+            && targets(d) == baseline,
+        json!({"pane":"Sounds","revision":revision,"targets":baseline}),
+        d.snapshot(),
+    )?;
+    d.key_modified(Key::Tab, Modifiers::SHIFT)?;
     d.click(&catalog.1)?;
     // The catalog click changes selection on release; its dependent controls
     // enter the UI tree on the next paint, as in the native event loop.
@@ -56,6 +126,14 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         json!({"offset":onset,"targets":baseline,"unchanged_picture_nodes":true}),
         d.snapshot(),
     )?;
+    visible(d, "PLACED SOUNDS")?;
+    d.check(
+        "First placement restores the full Sounds pane below Beats",
+        d.rect("Placed sounds pane")?.top() > d.rect("Current group beat outline pane")?.bottom()
+            && scenarios::text_paint_visibility(d, "PLACED SOUNDS 0 · ,s place").is_empty(),
+        json!("Populated Sounds panel, with no compact empty entry"),
+        d.widgets(),
+    )?;
 
     let before = d.revision();
     d.key(Key::U)?;
@@ -68,6 +146,18 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         json!({"sounds":initial_sounds,"targets":baseline}),
         d.snapshot(),
     )?;
+    d.command("sounds")?;
+    empty_heading(d)?;
+    d.check(
+        "Undo returns the empty Sounds pane with its existing focus identity",
+        d.app().pane == Pane::Sounds
+            && d.harness
+                .ctx
+                .memory(|memory| memory.has_focus(pane_id(Pane::Sounds)))
+            && targets(d) == baseline,
+        json!({"pane":"Sounds","targets":baseline}),
+        d.snapshot(),
+    )?;
     let before = d.revision();
     d.key_modified(Key::R, Modifiers::CTRL)?;
     d.changed(&before)?;
@@ -78,6 +168,9 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         json!({"sound":first,"recipe":first_recipe}),
         d.snapshot(),
     )?;
+    resize(d, 1280.0, 820.0)?;
+    d.step("Restore default sound-placement workspace", true)?;
+    d.settled()?;
     focus_entry(d, &first, &baseline)?;
 
     // Exercise the actual text widget, including final native text and closing
@@ -444,6 +537,175 @@ fn document<'a>(d: &'a Driver<'_>) -> Result<&'a deadpan_core::ProjectDocument, 
         .ok_or_else(|| "Sound-placement replay lost its workspace".into())
 }
 
+fn release_picture_submissions(d: &Driver<'_>) -> Result<usize, String> {
+    let stages = &d
+        .report
+        .steps
+        .last()
+        .ok_or("Missing transition release frame")?
+        .semantic["stages"];
+    Ok(stages
+        .as_array()
+        .ok_or("Missing release-frame stages")?
+        .iter()
+        .filter(|stage| stage["stage"] == "picture_submitted")
+        .count())
+}
+
+fn cleared_picture_transition(d: &mut Driver<'_>, view: View) -> Result<(), String> {
+    let submissions = release_picture_submissions(d)?;
+    let app = d.app();
+    let workspace = app
+        .workspace
+        .as_ref()
+        .cloned()
+        .ok_or("Missing transition workspace")?;
+    let expected_view = match view {
+        View::Source => ProjectView::Source {
+            asset: app
+                .selected_source
+                .clone()
+                .ok_or("Missing transition Original")?,
+            frame: SourceFrameId(app.source_cursor),
+        },
+        View::Sequence => ProjectView::Sequence {
+            frame: ProjectFrame(
+                i64::try_from(app.sequence_cursor).map_err(|error| error.to_string())?,
+            ),
+        },
+    };
+    let expected_label = match view {
+        View::Source => format!("Showing source frame {}", u128::from(app.source_cursor) + 1),
+        View::Sequence => format!(
+            "Showing sequence frame {}",
+            u128::from(app.sequence_cursor) + 1
+        ),
+    };
+    let picture = app.presentation.diagnostic_snapshot();
+    d.check(
+        "A replacing view transition submits no discarded picture and requests the new view",
+        submissions == 0
+            && app.view == view
+            && app.target.is_none()
+            && picture["decoded"].is_null()
+            && picture["displayed"].is_null()
+            && picture["loading"] == true
+            && picture["requested"]["label"] == expected_label,
+        json!({"submissions":0,"requested_label":expected_label,"displayed":null}),
+        json!({"submissions":submissions,"picture":picture}),
+    )?;
+    d.settled()?;
+    let label = d
+        .app()
+        .presentation
+        .displayed_label()
+        .ok_or("Replacement picture was not displayed")?;
+    let viewer = d.rect(&label)?;
+    let canvas = d
+        .app()
+        .presentation
+        .canvas()
+        .map_or(viewer, |(width, height)| {
+            fit_rect(viewer, width as f32 / height as f32)
+        });
+    let expected = target_size(canvas.size(), d.harness.ctx.pixels_per_point());
+    let actual = d
+        .app()
+        .target
+        .as_ref()
+        .map(|target| (target.target.width(), target.target.height()));
+    d.check(
+        "The replacement picture settles at its exact view identity and final target size",
+        actual == Some(expected)
+            && d.app().presentation.displayed_matches(
+                workspace.session,
+                workspace.document.project_id(),
+                workspace.document.revision_id(),
+                &expected_view,
+            ),
+        json!({"target":expected,"view":format!("{expected_view:?}")}),
+        json!({"target":actual,"picture":d.app().presentation.diagnostic_snapshot()}),
+    )
+}
+
+fn final_picture_submission(d: &mut Driver<'_>, retained: &Value) -> Result<(), String> {
+    let submissions = release_picture_submissions(d)?;
+    let picture = d.app().presentation.diagnostic_snapshot();
+    let label = d
+        .app()
+        .presentation
+        .displayed_label()
+        .ok_or("Transition lost its picture label")?;
+    let viewer = d.rect(&label)?;
+    let canvas = d
+        .app()
+        .presentation
+        .canvas()
+        .map_or(viewer, |(width, height)| {
+            fit_rect(viewer, width as f32 / height as f32)
+        });
+    let expected = target_size(canvas.size(), d.harness.ctx.pixels_per_point());
+    let actual = d
+        .app()
+        .target
+        .as_ref()
+        .map(|target| (target.target.width(), target.target.height()));
+    d.check(
+        "The transition release frame submits only its final viewer size and retains picture identity",
+        submissions <= 1 && (submissions == 0 || actual == Some(expected))
+            && picture["displayed"] == *retained,
+        json!({"maximum_submissions":1,"submitted_target":expected,"retained":retained}),
+        json!({"submissions":submissions,"actual_target":actual,"picture":picture}),
+    )
+}
+
+pub(super) fn empty_heading(d: &mut Driver<'_>) -> Result<(), String> {
+    let sounds = d.rect("Placed sounds pane")?;
+    let beats = d.rect("Current group beat outline pane")?;
+    let paint = scenarios::text_paint_visibility(d, "PLACED SOUNDS 0 · ,s place");
+    let complete_hit = d.harness.output().shapes.iter().any(|clipped| {
+        matches!(&clipped.shape, egui::Shape::Text(text)
+            if text.galley.text().contains("PLACED SOUNDS 0 · ,s place"))
+            && clipped.clip_rect.contains_rect(sounds)
+    });
+    d.check(
+        "Compact empty Sounds has a fully painted separate focus target beside Beats",
+        document(d)?.sounds().is_empty()
+            && !sounds.intersects(beats)
+            && (sounds.center().y - beats.center().y).abs() <= 14.0
+            && complete_hit
+            && !paint.is_empty()
+            && paint.iter().all(|item| item["fully_visible"] == true)
+            && d.harness
+                .ctx
+                .input(|input| input.content_rect().contains_rect(sounds)),
+        json!("Separate visible Sounds and Beats headings on one row"),
+        json!({"sounds":format!("{sounds:?}"),"beats":format!("{beats:?}"),"paint":paint}),
+    )
+}
+
+pub(super) fn control_hits(d: &Driver<'_>, labels: &[&str]) -> Vec<Value> {
+    labels.iter().map(|label| {
+        let controls = d.harness.root().children_recursive().filter_map(|node| {
+            let access = node.accesskit_node();
+            (matches!(access.role(), egui::accesskit::Role::Button | egui::accesskit::Role::Slider)
+                && access.label().as_deref() == Some(*label)
+                && !access.is_hidden() && access.bounding_box().is_some())
+                .then(|| (node.rect(), !access.is_disabled()))
+        }).collect::<Vec<_>>();
+        let visible = match controls.as_slice() {
+            [(rect, _)] => rect.is_positive() && d.harness.ctx.content_rect().contains_rect(*rect)
+                && d.harness.output().shapes.iter().any(|clipped| {
+                    matches!(&clipped.shape, egui::Shape::Text(text) if text.galley.text() == *label)
+                        && clipped.clip_rect.contains_rect(*rect)
+                }),
+            _ => false,
+        };
+        let enabled = match controls.as_slice() { [(_, enabled)] => Some(*enabled), _ => None };
+        json!({"label":label,"complete_hit":visible,"enabled":enabled,"rects":format!("{controls:?}")})
+    }).collect()
+}
+
 fn compact_playback(d: &mut Driver<'_>) -> Result<(), String> {
     d.report.skipped.push(
         "Preparing/Playing at 960 pixels uses the real transport controls with simulated delivery reports only. It does not start a device or prepare PCM.".into(),
@@ -568,7 +830,7 @@ fn selected(d: &Driver<'_>) -> Result<SoundId, String> {
 
 fn focus_entry(d: &mut Driver<'_>, id: &SoundId, baseline: &Value) -> Result<(), String> {
     for pointer in [false, true] {
-        d.click("Browse  :source")?;
+        browse_original(d)?;
         d.settled()?;
         d.check(
             "Sound-pane entry starts with Original and no selected event",
@@ -705,7 +967,7 @@ fn command_targets(d: &mut Driver<'_>, id: &SoundId, baseline: &Value) -> Result
             |app| !app.service.is_busy(),
         )?;
         if !captured {
-            d.click("Browse  :source")?;
+            browse_original(d)?;
         }
         d.key(Key::Colon)?;
         d.events(
@@ -906,6 +1168,56 @@ fn visible(d: &mut Driver<'_>, label: &str) -> Result<(), String> {
         json!(label),
         json!(paint),
     )
+}
+
+fn browse_original(d: &mut Driver<'_>) -> Result<(), String> {
+    const LABEL: &str = "Browse  :source";
+    for attempt in 0..=3 {
+        let paint = scenarios::text_paint_visibility(d, LABEL);
+        let hits = control_hits(d, &[LABEL]);
+        if !paint.is_empty()
+            && paint.iter().all(|item| item["fully_visible"] == true)
+            && hits[0]["complete_hit"] == true
+            && hits[0]["enabled"] == true
+        {
+            let before = d.rect(LABEL)?;
+            for _ in 0..8 {
+                d.step("Visible Original Browse geometry settles", false)?;
+            }
+            let paint = scenarios::text_paint_visibility(d, LABEL);
+            let hits = control_hits(d, &[LABEL]);
+            if d.rect(LABEL)? == before
+                && !paint.is_empty()
+                && paint.iter().all(|item| item["fully_visible"] == true)
+                && hits[0]["complete_hit"] == true
+                && hits[0]["enabled"] == true
+            {
+                return d.click(LABEL);
+            }
+        }
+        if attempt == 3 {
+            return Err(format!(
+                "Original Browse did not settle visibly after bounded scrolling: paint={paint:?}, hits={hits:?}"
+            ));
+        }
+        let point = d.rect("Original and sounds pane")?.center() + egui::vec2(0.0, 100.0);
+        d.events(
+            "Scroll Original rail to reveal its Browse action",
+            vec![
+                egui::Event::PointerMoved(point),
+                egui::Event::MouseWheel {
+                    unit: egui::MouseWheelUnit::Point,
+                    delta: egui::vec2(0.0, 2_048.0),
+                    phase: egui::TouchPhase::Move,
+                    modifiers: Modifiers::NONE,
+                },
+            ],
+        )?;
+        for _ in 0..8 {
+            d.step("Original rail scroll settles", false)?;
+        }
+    }
+    unreachable!("bounded reveal returns at its final attempt")
 }
 
 fn reveal(d: &mut Driver<'_>, label: &str, direction: f32) -> Result<(), String> {

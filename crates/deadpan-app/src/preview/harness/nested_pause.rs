@@ -337,6 +337,7 @@ fn navigate_and_edit(
         d.widgets(),
     )?;
     d.capture("Nested Hold selected with group breadcrumbs")?;
+    compact_heading_navigation(d, outer, inner, hold)?;
 
     // Open the real inspector parameter field, then use native select-all and
     // submit. No harness mutation selects the Hold or changes authored state.
@@ -558,6 +559,104 @@ fn navigate_and_edit(
         json!(endpoint_revision),
         json!(d.revision()),
     )
+}
+
+fn compact_heading_navigation(
+    d: &mut Driver<'_>,
+    outer: &NodeId,
+    inner: &NodeId,
+    hold: &NodeId,
+) -> Result<(), String> {
+    let revision = d.revision();
+    let source_cursor = d.app().source_cursor;
+    let original_size = d.harness.ctx.content_rect().size();
+    let original_scale = d.harness.ctx.pixels_per_point();
+    let groups = [outer.clone(), inner.clone()];
+    let rect = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(960.0, 640.0));
+    let input = d.harness.input_mut();
+    input.screen_rect = Some(rect);
+    let viewport = input
+        .viewports
+        .get_mut(&egui::ViewportId::ROOT)
+        .ok_or("Missing nested minimum viewport")?;
+    viewport.inner_rect = Some(rect);
+    viewport.native_pixels_per_point = Some(1.0);
+    d.step("Paint nested groups in the compact minimum workspace", true)?;
+    d.settled()?;
+    d.click("Current group beat outline pane")?;
+    d.key(egui::Key::Tab)?;
+    super::sound_placement::empty_heading(d)?;
+    d.check(
+        "Normal Tab reaches empty Sounds inside a real nested group without retargeting",
+        d.app().pane == Pane::Sounds
+            && d.harness
+                .ctx
+                .memory(|memory| memory.has_focus(pane_id(Pane::Sounds)))
+            && d.app().sequence_scope.groups() == groups
+            && d.app().selected_beat.as_ref() == Some(hold)
+            && d.app().sequence_cursor == 17
+            && d.app().source_cursor == source_cursor
+            && d.revision() == revision,
+        json!({"pane":"Sounds","groups":groups,"selected":hold,"cursor":17,"revision":revision}),
+        d.snapshot(),
+    )?;
+    d.key_modified(egui::Key::Tab, egui::Modifiers::SHIFT)?;
+    for pointer in [false, true] {
+        let paint = scenarios::text_paint_visibility(d, "‹  Backspace");
+        let hits = super::sound_placement::control_hits(d, &["‹  Backspace"]);
+        d.check(
+            "Nested parent navigation is fully painted and hittable beside the empty Sounds heading",
+            !paint.is_empty() && paint.iter().all(|item| item["fully_visible"] == true)
+                && hits.iter().all(|item| item["complete_hit"] == true && item["enabled"] == true),
+            json!("Complete parent action text and hit rectangle"), json!({"paint":paint,"hits":hits}),
+        )?;
+        if pointer {
+            d.click("‹  Backspace")?;
+        } else {
+            d.key(egui::Key::Backspace)?;
+        }
+        d.settled()?;
+        check_scope(
+            d,
+            "Compact parent navigation returns to Outer at the retained cursor",
+            std::slice::from_ref(outer),
+            inner,
+            17,
+        )?;
+        super::sound_placement::empty_heading(d)?;
+        d.key(egui::Key::Enter)?;
+        d.settled()?;
+        check_scope(
+            d,
+            "Compact Enter restores Inner and its selected Hold",
+            &groups,
+            hold,
+            17,
+        )?;
+        d.check(
+            "Compact scope navigation preserves revision, Original cursor and native Beats focus",
+            d.revision() == revision
+                && d.app().source_cursor == source_cursor
+                && d.app().pane == Pane::Sequence
+                && d.harness
+                    .ctx
+                    .memory(|memory| memory.has_focus(pane_id(Pane::Sequence))),
+            json!({"revision":revision,"source_cursor":source_cursor,"pane":"Sequence"}),
+            d.snapshot(),
+        )?;
+    }
+    scenarios::viewer_visible(d)?;
+    let rect = egui::Rect::from_min_size(egui::Pos2::ZERO, original_size);
+    let input = d.harness.input_mut();
+    input.screen_rect = Some(rect);
+    let viewport = input
+        .viewports
+        .get_mut(&egui::ViewportId::ROOT)
+        .ok_or("Missing restored nested viewport")?;
+    viewport.inner_rect = Some(rect);
+    viewport.native_pixels_per_point = Some(original_scale);
+    d.step("Restore the nested-pause replay viewport", true)?;
+    d.settled()
 }
 
 fn check_scope(

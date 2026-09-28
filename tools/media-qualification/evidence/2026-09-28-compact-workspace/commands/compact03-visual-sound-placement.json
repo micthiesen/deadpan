@@ -1,0 +1,20 @@
+{
+  "command": [
+    "target/debug/deadpan-app",
+    "--ui-check",
+    "--scenario",
+    "sound-placement",
+    "--retain-projects",
+    "--output",
+    "/tmp/deadpan-native-gain-u891jpt2/compact03-visual-sound-placement",
+    "--kestrel-source",
+    "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+  ],
+  "started": "2026-09-28T12:12:44.613877+00:00",
+  "base_commit": "f9b1a14a342ad37670b3f7cae5811987e1850067",
+  "diff_sha256": "cab05ef8a320521d6bac800266a641046aed0066df22441cf78ac98489300e53",
+  "source_manifest_sha256": "98e1948a061cb7ffeafea8b02a586b924d2bfbf2a93e06aa9cb1d9cefe7d90b0",
+  "pid": 16693,
+  "exit_code": 1,
+  "seconds": 24.4108206667006
+}

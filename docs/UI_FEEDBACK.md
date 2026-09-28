@@ -11,7 +11,40 @@ The [specification](spec/DEADPAN_SPEC.md), [design targets](design/README.md) an
 
 ## Current status
 
-The native gain increment adds the `gain` replay and an exact envelope/mute
+The [compact empty-Sounds increment](qualification/compact-workspace-2026-09-28.md)
+passes scoped correctness and visual checks. At window heights below 700 logical
+points, the single-Original Your edit workspace places its empty Sounds focus
+entry beside the beat heading and retains the zero-height
+panel's identity. The complete entry is measured before allocating scrolling
+breadcrumbs. Copied-range, paste, audition and monitor controls keep their
+existing rows. Room tone remains an overlay over the same compact background;
+populated sounds, default-size, Source, Camera and Gain layouts are unchanged.
+The copied Hold viewer measures **143 points** at 960×640, exceeding the
+140-point assertion; other tested phases measure 169 or 175 points. Final
+default, minimum, 2x, nested and populated captures were inspected.
+
+Placement changes are checked before picture submission, including pointer
+actions in earlier panes and the viewer's Original/Your edit tabs. A pending
+native command close marks its pass for discard before rendering while keeping
+native text and command execution order. Extended `sound-placement`,
+`room-tone` and `nested-pause` replays check release-frame target dimensions,
+retained identity, full control text/hit clipping, real placement/undo, exact
+paused-sample resume, nested scope/focus, and 1x → 2x → 1x/default resize with
+stable AccessKit IDs. On source `78395620`, the final focused runs pass 217
+sound-placement, 221 room-tone and 73 nested-pause checks, each plus its Kestrel
+audit. Workspace's 81 checks and Gain's 266 checks, each plus the audit, passed
+on `54722ed2`; only shared-harness corrections followed that source.
+
+All 300 app/harness tests passed on `4a867916` before helper-only corrections.
+The final base-app run passes 265 tests, and strict workspace/all-target lint
+passes in both feature configurations. The release build and all 2,323 full
+performance replay checks pass; warm navigation-to-picture p95 is 6.699 ms.
+These scoped results do not guarantee a
+140-point picture for all populated sound lists or larger font settings, and
+do not establish physical-input, PCM, device or listening qualification.
+Full-editor requirements remain open.
+
+The committed native gain checkpoint `f9b1a14` adds the `gain` replay and an exact envelope/mute
 editor with revision-bound Before/Draft proposals. The scenario uses the real
 project service, qualified source evidence and durable gain commands, with
 typed delivery updates injected for comparison playback. It covers counted and
@@ -22,7 +55,7 @@ pending-text Pause and retained picture on unchanged Cancel. Final focused run
 routing cases, with 2,746 semantic frames and 123 captures. Four complete
 populated Tab/Shift+Tab circuits verify 136 focused controls' paint and hit clips
 at 960×640 and 1280×820 without wheel assistance. The graph captures were
-compared with the gain board. On the final source, all 298 app/harness tests and
+compared with the gain board. At that checkpoint, all 298 app/harness tests and
 263 base-app tests pass in their respective configurations, along with strict
 workspace/all-target lint in both configurations.
 
@@ -292,11 +325,11 @@ the real app. The initial viewport is 1280×820 points at 1×. The code lives in
 | `original-moment` | Checks active-empty Visual guidance, selects Original [10,24) through v and counted h/l, copies with y, cancels selection with Escape, returns to Your edit, pastes after with p, undoes once, then pastes before with P. Also selects/copies and pastes through actual buttons. Checks exact range, unchanged copy revision, pane cues, destination, selected Source and exact restored structure. |
 | `original-playback` | Uses production Original Space and Shift+Space input, adjustable context, exact loop resume, pointer controls, stale update rejection, navigation stop and failure feedback. Injected device updates exercise UI routing only; actual canonical PCM has separate headless tests. |
 | `sound-playback` | Registers two measured audio-only sources, selects by pointer and j/k, exercises Space pause/resume and Shift+Space full-sound loops, rejects stale/faulted delivery, stops on pane/source changes and retains native text input. Pointer Pause must change state on release and paint Resume on the next frame. Pinned controls and status must remain fully painted on the first resize frame. Asserts no sound-driven picture request or editor-clock/selection mutation. Delivery is explicitly simulated; separate backend tests compare real AAC PCM. |
-| `sound-placement` | Imports measured catalog audio, places by pointer and `,s`, preserves picture duration and editor targets, checks exact sample entry and frame-nudge count equivalence, gain/edges, event selection, deletion and undo. Tests Original-to-Sounds keyboard/pointer focus, absent/stale command targets across held real writer completions, overflow, both window sizes and route-preserving gain with rejected movement. Does not start PCM preparation or a device. |
-| `room-tone` | Copies an Original range with v/motions/y, opens the captured Hold's source-range sheet, edits exact native samples, prepares and auditions without history, then explicitly applies or cancels. Checks silence/undo, missing and stale targets, superseded range preparation, native text/IME and minimum-size paint clips. AccessKit Focus reveals saved Hold gain controls; :gain/Tab/Escape preserve room tone and history. The corrected run passes 103 scenario checks. Source delivery is explicitly injected; no device or listening claim. |
+| `sound-placement` | Imports measured catalog audio, places by pointer and `,s`, preserves picture duration and editor targets, checks exact sample entry and frame-nudge count equivalence, gain/edges, event selection, deletion and undo. Tests Original-to-Sounds keyboard/pointer focus, absent/stale command targets across held real writer completions, overflow, both window sizes and route-preserving gain with rejected movement. Compact-layout checks cover empty/placed/undo transitions and final-sized release-frame submissions for pane/tab entry and command-plus-resize. The final compact run passes 217 checks plus the audit on `78395620`. Does not start PCM preparation or a device. |
+| `room-tone` | Copies an Original range with v/motions/y, opens the captured Hold's source-range sheet, edits exact native samples, prepares and auditions without history, then explicitly applies or cancels. Checks silence/undo, missing and stale targets, superseded range preparation, native text/IME and minimum-size paint clips. AccessKit Focus reveals saved Hold gain controls; :gain/Tab/Escape preserve room tone and history. Compact assertions cover ≥140-point picture, complete control hits, stable overlay background, native scale/ID transitions and exact paused-sample resume. The final compact run passes 221 checks plus the audit on `78395620`. Source delivery is explicitly injected; no device or listening claim. |
 | `gain` | Counted/absolute beat gain and true mute, wrong-focus rejection, buffered exact trim/envelope/key/mute fields, coalesced writer proposals, Before/Draft at exact delivered samples, stale/faulted updates, one Apply/undo, unchanged Cancel picture continuity and native text/IME. Full populated Tab/Shift+Tab circuits check focused paint and hit clips at both sizes; pending text leaves Pause available. The corrected run passes 266 gain checks and its graph captures were reviewed. Uses real qualified source evidence/history; delivery is injected, with no PCM preparation, device or listening claim. |
 | `retime` | Opens/cancels speed entry by pointer, checks the resolved-duration preview, creates a Preserve Retime by command, adjusts the same stage to tape pitch through ordinary text editing, explicitly nests another stage, undoes all three edits and confirms Original context stays unchanged. Uses real project history and picture preparation; it does not measure acoustic quality. |
-| `nested-pause` | Seeds two framed Sequence groups with typed store commands, reopens the actual project, navigates to frame 17 with keys, inserts `:hold 11f`, and checks the nested Hold, exact freeze, retained child crop, live ancestor scopes and cursor. Undo/redo compares nodes and audio bindings. Enter drills through breadcrumbs to the Hold; Inspector Enter changes its duration, history preserves scope, Camera commits only its framing, Backspace selects exited groups, and a group-edge pause fails without mutation. |
+| `nested-pause` | Seeds two framed Sequence groups with typed store commands, reopens the actual project, navigates to frame 17 with keys, inserts `:hold 11f`, and checks the nested Hold, exact freeze, retained child crop, live ancestor scopes and cursor. Undo/redo compares nodes and audio bindings. Enter drills through breadcrumbs to the Hold; Inspector Enter changes its duration, history preserves scope, Camera commits only its framing, Backspace selects exited groups, and a group-edge pause fails without mutation. Minimum-size checks cover empty Sounds focus, strict parent-action text/hit clips and pointer/keyboard navigation preserving revision, scope, selection and both cursors. The final compact run passes 73 checks plus the audit on `78395620`. |
 
 The trace is bounded to 6,000 frames per scenario, with 15-second waits for real
 work and a 5-second GPU completion wait. Visual waits discount screenshot work

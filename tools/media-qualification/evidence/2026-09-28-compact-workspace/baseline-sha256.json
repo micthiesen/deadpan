@@ -1,0 +1,8 @@
+{
+  "crates/deadpan-app/src/preview.rs": "a7eb49ec1ae851dc834e00b5f42d54c6ece19784602cd87a9a6e68b8b810dcc7",
+  "crates/deadpan-app/src/preview/sound_events.rs": "4e52536082573913832aa976bf8bbe5d306905bdea0a15991ac69c4095c8736e",
+  "crates/deadpan-app/src/preview/scope.rs": "cbc9d83adf678d1e4a8d40b91c43332d2484b6c03d3ddce65b942c09efd52d5e",
+  "crates/deadpan-app/src/preview/harness/room_tone.rs": "ba26f5c558ca97039345ae06d0e62fbbb341dc7fa691498d9db2e0b4039e501d",
+  "crates/deadpan-app/src/preview/harness/sound_placement.rs": "9363e097569026746bfc3388321db345697a3c54bcad7702e199a6e2baf68664",
+  "crates/deadpan-app/src/preview/harness/nested_pause.rs": "8555c91863f10afbb78a78f2f2fb03ce5c2866dc237b0b9f64e70453df9b2a6c"
+}

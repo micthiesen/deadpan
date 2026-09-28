@@ -29,6 +29,18 @@ pub(super) struct CommandTarget {
 }
 
 impl DeadpanApp {
+    pub(super) fn compact_empty_sounds(&self, context: &egui::Context) -> bool {
+        self.view == View::Sequence
+            && self.focused_workflow()
+            && self.gain.is_none()
+            && self.camera.is_none()
+            && context.input(|input| input.content_rect().height() < 700.0)
+            && self
+                .workspace
+                .as_ref()
+                .is_some_and(|workspace| workspace.document.sounds().is_empty())
+    }
+
     pub(super) fn compact_sound_layout(&self, context: &egui::Context) -> bool {
         self.view == View::Sequence
             && context.input(|input| input.content_rect().height() < 700.0)
@@ -325,10 +337,11 @@ impl DeadpanApp {
         true
     }
 
-    pub(super) fn placed_sounds(&mut self, ui: &mut egui::Ui) {
-        if self.gain.is_some() {
+    pub(super) fn placed_sounds(&mut self, ui: &mut egui::Ui, compact_empty_sounds: bool) {
+        if self.gain.is_some() || compact_empty_sounds {
             // Preserve the panel's place in the ID tree while its inactive
-            // list gives the comparison picture room above the gain editor.
+            // list gives the picture room. In the compact normal workspace,
+            // the empty Sounds pane retains a visible focus target in Beats.
             egui::Panel::bottom("workspace-placed-sounds")
                 .resizable(false)
                 .exact_size(0.0)
