@@ -270,6 +270,52 @@ pub fn derive_source_moment(
     })
 }
 
+/// Select complete original audio samples inside measured picture intervals.
+/// The first boundary rounds inward with ceil and the last with floor, then
+/// both intersect the full contiguous measured audio coverage. No project
+/// clock, nominal frame rate, priming assumption, or audio tail is introduced.
+pub fn derive_source_audio_moment(
+    video: &SourceIndexSnapshot,
+    audio: &AudioIndexSnapshot,
+    ordinals: Range<u64>,
+) -> Result<SourceSpan, ImportTimingError> {
+    let index = video.index();
+    let count = u64::try_from(index.frames().len()).map_err(|_| TimeError::Overflow)?;
+    if ordinals.start >= ordinals.end || ordinals.end > count {
+        return Err(ImportTimingError::InvalidMomentRange);
+    }
+    let (_, measured) = measured_spans(Some(video), Some(audio))?;
+    let measured = measured.ok_or(ImportTimingError::UnavailableAudio)?;
+    let sample = |ticks| -> Result<ExactRatio, TimeError> {
+        seconds(SourceTimestamp {
+            ticks,
+            time_base: index.time_base(),
+        })?
+        .checked_mul(ExactRatio::integer(i64::from(audio.stream().sample_rate)))
+    };
+    let start = sample(index.interval(SourceFrameId(ordinals.start))?.0)?.ceil()?;
+    let end = sample(index.interval(SourceFrameId(ordinals.end - 1))?.1)?.floor();
+    let start = i64::try_from(start)
+        .map_err(|_| TimeError::Overflow)?
+        .max(measured.start().ticks);
+    let end = i64::try_from(end)
+        .map_err(|_| TimeError::Overflow)?
+        .min(measured.end().ticks);
+    if start >= end {
+        return Err(ImportTimingError::UnavailableAudio);
+    }
+    Ok(SourceSpan::new(
+        SourceTimestamp {
+            ticks: start,
+            time_base: measured.start().time_base,
+        },
+        SourceTimestamp {
+            ticks: end,
+            time_base: measured.end().time_base,
+        },
+    )?)
+}
+
 pub fn derive_import_timing(
     video: Option<&SourceIndexSnapshot>,
     audio: Option<&AudioIndexSnapshot>,

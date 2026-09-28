@@ -782,7 +782,15 @@ The overlap period and short linear crossfade remain rational; derive each phase
 from the absolute Hold origin without accumulating loop rounding. Full intrinsic
 Hold/gap duration and gap-after identity survive plan crops. Room-tone and
 Preserve preparation share cache provenance and work/residency admission. See
-[room-tone audio](docs/ROOM_TONE_AUDIO.md); selection UI and audition remain open.
+[room-tone audio](docs/ROOM_TONE_AUDIO.md). Native ordinary-Hold selection and
+source audition retain one exact inward-snapped source-sample span for display,
+audition and Apply. Success and failure preparation replies both carry the
+request ticket, session and revision. Preserve a newer draft when an older reply
+arrives. Source preview has its own zero-based audio clock and no implicit loop
+context; it cannot move editor cursors, select a beat or schedule a picture.
+Saved room-tone ranges win on reopen; replacing from a copied Original is
+explicit. Field edits revoke audition until prepared again. Only Apply authors
+the Hold, and native text/IME and focused-button ownership stay intact.
 
 Informational audio meters consume contiguous fixed 48 kHz stereo PCM on an
 analysis worker. Preserve filter history and zero-origin window alignment across
@@ -1045,8 +1053,8 @@ recreate removed permissions. Admit RoomTone/Tail sources against the expected
 revision's qualified asset, stored receipt, Original binding and measured
 integer sample span. Stored admission is not fresh byte verification; playback
 uses verified snapshots. Keep unrelated legacy recipes valid and freeze core31
-history before modern replay. Native range selection/audition and tail DSP remain
-open. See [room-tone authoring](docs/ROOM_TONE_AUDIO.md).
+history before modern replay. Native Repeat-gap/fragment controls and tail DSP
+remain open. See [room-tone authoring](docs/ROOM_TONE_AUDIO.md).
 
 Bind retained sample routes only to checked complete providers. `AudioRoutedSignal`
 uses independent source input or an immutable Preserve projection on PointCeil;

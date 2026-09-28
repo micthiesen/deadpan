@@ -1,0 +1,19 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "-p",
+    "deadpan-media",
+    "--test",
+    "source_import_timing",
+    "audio_moment::"
+  ],
+  "started": "2026-09-28T04:58:23.617141+00:00",
+  "base_commit": "938ab5ee32a64924e749204af249537e71e5f1e7",
+  "diff_sha256": "b573c7a68625722a0c8d137ba470b4b02efe60a10993ae709e272da47aec45c6",
+  "source_manifest_sha256": "71bf571e45d4eccc82c74a18d3fb1e5372e6462f178d17a60559cb7a50982c13",
+  "pid": 41833,
+  "exit_code": 0,
+  "seconds": 14.520309458021075
+}

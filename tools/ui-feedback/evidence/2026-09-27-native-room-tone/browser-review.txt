@@ -1,0 +1,10 @@
+Attempted to delegate the local replay HTML contact-sheet review to the required
+browser role with a fresh context. The collaboration tool returned exactly:
+
+agent type is currently not available
+
+No browser opened and no HTML contact-sheet inspection was completed. The
+mandatory routing skill forbids substituting another role or taking over the
+browser in the parent. Final full-size room-tone PNGs were separately inspected
+through the local image viewer at 960x640 and 1280x820. This blocked check is not
+evidence of a product failure and does not establish native OS interaction.

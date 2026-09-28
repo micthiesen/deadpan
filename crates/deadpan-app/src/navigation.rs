@@ -4,6 +4,7 @@ pub mod camera;
 pub mod command;
 pub mod duration;
 pub mod retime;
+pub mod room_tone;
 mod sound;
 pub use sound::SoundAction;
 #[cfg(any(test, feature = "ui-harness"))]

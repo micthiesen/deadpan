@@ -1,5 +1,8 @@
 //! Read-only playback views and exact content/delivery clock mappings.
 
+mod audio_range;
+pub use audio_range::AudioRange;
+
 use std::sync::Arc;
 
 use deadpan_core::{
@@ -346,6 +349,7 @@ pub enum Target {
     Sequence,
     Original(Arc<Original>),
     Sound(Arc<Sound>),
+    AudioRange(Arc<AudioRange>),
 }
 
 impl Target {
@@ -354,12 +358,14 @@ impl Target {
             Self::Sequence => Ok(snapshot.document.clone()),
             Self::Original(original) => original.document(snapshot).map(Arc::new),
             Self::Sound(sound) => sound.document(snapshot).map(Arc::new),
+            Self::AudioRange(range) => range.document(snapshot).map(Arc::new),
         }
     }
 
     pub(crate) fn effective_end(&self, plan_end: AudioSample) -> Result<AudioSample, String> {
         let end = match self {
             Self::Sound(sound) => sound.duration_samples(),
+            Self::AudioRange(range) => range.duration_samples(),
             Self::Sequence | Self::Original(_) => plan_end,
         };
         if end.0 < 0 || end > plan_end {

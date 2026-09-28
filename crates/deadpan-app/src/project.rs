@@ -7,8 +7,8 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, mpsc};
 
 use deadpan_core::{
-    AssetId, AudioEdgePolicy, AudioSample, FrameDuration, NodeId, ProjectDocument, ProjectFrame,
-    RevisionId, SoundId, SourceFrameIndex,
+    AssetId, AudioEdgePolicy, AudioSample, FrameDuration, HoldAudio, NodeId, ProjectDocument,
+    ProjectFrame, RevisionId, SoundId, SourceAudio, SourceFrameIndex, SourceQualificationId,
 };
 use deadpan_plan::RenderPlan;
 use deadpan_store::original_media::{OriginalImportHandle, OriginalMediaRecord, OriginalOwnership};
@@ -90,6 +90,42 @@ pub struct ProjectUpdate {
     /// Last selection-changing commit, retained through background progress.
     /// Cleared by the next user command; consumers deduplicate by revision.
     pub committed: Option<CommittedEdit>,
+    /// Read-only source-range preparation, bound to the captured request.
+    /// Consumers must admit its ticket, session and revision before using it.
+    pub room_tone: Option<PreparedRoomTone>,
+    /// A preparation rejection carries the request context, including stale
+    /// contexts. Generic service errors cannot complete a range request.
+    pub room_tone_error: Option<RoomToneFailure>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum RoomToneSelection {
+    Original {
+        asset: AssetId,
+        qualification: SourceQualificationId,
+        ordinals: std::ops::Range<u64>,
+    },
+    Exact {
+        source: SourceAudio,
+        qualification: SourceQualificationId,
+    },
+}
+
+#[derive(Clone)]
+pub struct PreparedRoomTone {
+    pub ticket: u64,
+    pub session: u64,
+    pub revision: RevisionId,
+    pub source: SourceAudio,
+    pub audition: Arc<deadpan_playback::AudioRange>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RoomToneFailure {
+    pub ticket: u64,
+    pub session: u64,
+    pub revision: RevisionId,
+    pub error: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -178,6 +214,10 @@ pub enum ProjectEdit {
         node: NodeId,
         duration: FrameDuration,
     },
+    HoldAudio {
+        node: NodeId,
+        audio: HoldAudio,
+    },
     Retime {
         node: NodeId,
         speed: deadpan_core::ExactRatio,
@@ -238,6 +278,14 @@ pub enum ProjectRequest {
         index: usize,
     },
     PasteMoment(MomentPaste),
+    /// Resolve source samples and prepare an audition descriptor off the UI.
+    /// This does not select a Hold, author a policy, or create history.
+    PrepareRoomTone {
+        expected_session: u64,
+        expected_revision: RevisionId,
+        ticket: u64,
+        selection: RoomToneSelection,
+    },
     Edit {
         expected_session: u64,
         expected_revision: RevisionId,

@@ -27,6 +27,8 @@ use deadpan_source::{
 };
 use sha2::{Digest, Sha256};
 
+#[path = "source_import_timing/audio_moment.rs"]
+mod audio_moment;
 #[path = "source_import_timing/moment.rs"]
 mod moment;
 

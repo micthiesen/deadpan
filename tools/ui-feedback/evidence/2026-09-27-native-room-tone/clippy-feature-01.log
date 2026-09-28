@@ -1,0 +1,37 @@
+    Checking deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+    Checking deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+    Checking deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+    Checking deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+    Checking deadpan-render v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-render)
+    Checking deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+    Checking deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+    Checking deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+    Checking deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Checking deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+error: this `if` statement can be collapsed
+   --> crates/deadpan-app/src/preview/room_tone.rs:559:9
+    |
+559 | /         if let Some(workspace) = &self.workspace
+560 | |             && let Some(node) = self
+561 | |                 .selected_beat
+562 | |                 .as_ref()
+...   |
+581 | |         }
+    | |_________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#collapsible_if
+    = note: `-D clippy::collapsible-if` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::collapsible_if)]`
+help: collapse nested if block
+    |
+564 ~             && let NodeKind::Hold { recipe } = &node.kind
+565 ~             && let HoldAudio::RoomTone { source } = &recipe.audio {
+566 |                 let label = workspace
+...
+578 |                 ui.weak("Crossfades stay inside this pause.");
+579 ~             }
+    |
+
+error: could not compile `deadpan-app` (bin "deadpan-app") due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `deadpan-app` (bin "deadpan-app" test) due to 1 previous error

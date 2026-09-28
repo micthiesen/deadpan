@@ -5,9 +5,10 @@ source range. It does not choose a range, classify it as non-speech, or replace
 silence automatically. The selected source remains ordinary retained media with
 revision-bound qualification and an explicit speaker interpretation. The current
 engineering command path can insert that Hold as an ordinary subtree or change
-an existing Hold with the atomic `SetHoldAudio` command. Native range selection,
-source audition, and an audio-policy inspector remain open; the
-[room-tone board](design/boards/room-tone-board-v2.png) is their visual target.
+an existing Hold with the atomic `SetHoldAudio` command. The native workflow
+uses copied Original moments, exact sample fields, source audition and explicit
+application to an ordinary selected Hold. The
+[room-tone board](design/boards/room-tone-board-v2.png) is its visual target.
 
 ```sh
 cargo run --locked -p deadpan-cli -- inspect-audio /tmp/example.deadpan --samples 0 256 --time-mapped
@@ -100,24 +101,43 @@ Hold output frames, with the shared depth, memory and per-read budgets in
 on a worker. It is not a callback algorithm or a long-input cache scheduler.
 Failed preparation publishes no partial PCM or cache entry.
 
-## Verification and remaining work
+## Native selection and audition
 
-The next native workflow must retain one resolved sample span for its display,
-source audition and Apply request. A copied Original moment is a picture-ordinal
-selection, not yet a room-tone source: its derived audio placement retains the
-complete measured source with a separate fractional selection. Never discard
-that selection and loop the complete source accidentally. Resolve sample
-endpoints directly against measured source time, display any boundary snapping,
-and reject an empty result. Source preview needs zero implicit audition context;
-the committed pause preview must exercise the actual room-tone loop.
+Copy a quiet Original range with `:source`, `v`, `h/l`, `y`. Return with
+`:sequence`, select an ordinary Hold, then use `:room-tone` or its inspector
+button. The sheet shows the source, rate, included In sample, excluded Out
+sample and actual seconds. The service converts measured picture PTS directly
+to source samples, rounding In upward and Out downward, intersecting available
+audio and rejecting empty results. It never converts through project frames.
+The complete source placement from a copied moment is not the selected range.
 
-Capture the Hold, Sequence scope, project session, revision, source receipt and
+Space previews this source range; Shift+Space loops it with no implicit context.
+Its separate zero-based clock leaves the retained picture, editor cursors and
+beat selection intact. `AudioRange` supports qualified Original A/V audio without
+weakening the catalog `Sound` descriptor's audio-only contract. Its temporary
+Source view retains complete filter context and exact phase, with a separate
+selection mask and measured rounded mix endpoint. Preparation and verified
+source reads run off the UI thread. This preview hears the source; auditioning
+the committed Hold hears its authored crossfaded loop.
+
+Native sample fields retain text editing and IME. Tab moves through the sheet.
+Changing fields invalidates audition and Apply until `Prepare range` or Enter
+prepares them again. Enter on ready fields applies one edit; Escape cancels.
+Reopening starts from the saved policy range. `Use copied Original range`
+explicitly replaces the draft from the copy captured at command entry.
+`:hold-silence` restores the selected Hold's silence policy in one undo step.
+No preparation or audition writes history; no automatic speech check is claimed.
+
+The UI captures the Hold, Sequence scope, project session, revision, source receipt and
 sample span before parameter entry or asynchronous preparation. Captured absence
 must remain an error rather than adopting a later selection. The sound catalog's
 audio-only audition descriptor cannot represent the Original's selected audio
-without an explicit extension. Preserve the edit cursor, picture and selected
-beat while auditioning source material. Apply remains an explicit undoable edit,
-and native text fields retain macOS composition and key ownership.
+without the explicit `AudioRange` extension. Success and failure replies both
+retain a request ticket and captured session/revision; older replies cannot
+consume a newer pending preparation. Apply revalidates the captured target and
+uses the same admitted sample span displayed and auditioned by the sheet.
+
+## Verification and remaining work
 
 Pure loop tests check exact phase, overlap weights, constant-level preservation,
 fractional periods, tiny ranges, cancellation, input validation and replay.
@@ -126,8 +146,11 @@ crop history and layout changes. The host test checks an explicit AAC range,
 separate silent time, untouched following source audio, and unchanged history.
 See [qualification](qualification/room-tone-audio-2026-09-21.md).
 
-Listening across a representative ambience corpus, native policy/range editing
-and dedicated source audition remain required. Existing Sequence audition can
-render an authored room-tone Hold, but does not implement the range-selection
-workflow. Effect tails, gain envelopes, the full voice graph and export remain
+The [native workflow qualification](qualification/native-room-tone-2026-09-27.md)
+records source-range PCM, transaction and stale-reply tests, keyboard/IME replay,
+the design comparison, and the limits of the offscreen evidence.
+
+Listening across a representative ambience corpus, waveform display and native
+Repeat-gap/fragment occurrence controls remain required. Effect tails, gain
+envelopes, the full voice graph and export remain
 unfinished. No requirement or release gate is complete because a setter exists.

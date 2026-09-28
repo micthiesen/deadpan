@@ -13,6 +13,7 @@ use super::*;
 mod moment;
 mod pause;
 mod retime;
+mod room_tone;
 mod scope;
 mod sound;
 

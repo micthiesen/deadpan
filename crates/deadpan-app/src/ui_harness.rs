@@ -24,6 +24,7 @@ pub(crate) const SCENARIOS: &[&str] = &[
     "original-playback",
     "sound-playback",
     "sound-placement",
+    "room-tone",
     "retime",
 ];
 

@@ -21,14 +21,15 @@ use crate::library::ProjectLibrary;
 
 use super::worker::{Job, Prepared, Reply, Streams, Work};
 use super::{
-    CommittedEdit, ImportMedia, ImportStage, ImportStatus, ProjectEdit, ProjectRequest,
-    ProjectSoundEdit, ProjectUpdate, RegisteredSource, SequenceScope, Shared, SoundCommit,
-    Workspace,
+    CommittedEdit, ImportMedia, ImportStage, ImportStatus, PreparedRoomTone, ProjectEdit,
+    ProjectRequest, ProjectSoundEdit, ProjectUpdate, RegisteredSource, RoomToneFailure,
+    SequenceScope, Shared, SoundCommit, Workspace,
 };
 
 type Result<T> = std::result::Result<T, String>;
 
 mod moment;
+mod room_tone;
 
 struct Pending {
     id: u64,
@@ -49,6 +50,8 @@ struct Service {
     error: Option<String>,
     message: Option<String>,
     committed: Option<CommittedEdit>,
+    room_tone: Option<PreparedRoomTone>,
+    room_tone_error: Option<RoomToneFailure>,
     active: Option<Pending>,
     // Exactly one complete-file token, never one per catalog asset.
     cached: Option<(AssetId, PreparedSourceRegistration)>,
@@ -74,6 +77,8 @@ pub(super) fn run(
         error: None,
         message: None,
         committed: None,
+        room_tone: None,
+        room_tone_error: None,
         active: None,
         cached: None,
         session: 0,
@@ -146,6 +151,17 @@ impl Service {
             error: self.error.clone(),
             message: self.message.clone(),
             committed: self.committed.clone(),
+            room_tone: self
+                .room_tone
+                .as_ref()
+                .filter(|prepared| {
+                    self.workspace.as_ref().is_some_and(|workspace| {
+                        workspace.session == prepared.session
+                            && workspace.document.revision_id() == &prepared.revision
+                    })
+                })
+                .cloned(),
+            room_tone_error: self.room_tone_error.clone(),
         };
         *self
             .shared
@@ -157,6 +173,8 @@ impl Service {
 
     fn command(&mut self, request: ProjectRequest) -> Result<()> {
         self.committed = None;
+        self.room_tone = None;
+        self.room_tone_error = None;
         match request {
             ProjectRequest::CreateFromSource { path } => self.create_from_source(path),
             ProjectRequest::InitializeSource {
@@ -218,6 +236,28 @@ impl Service {
                 index,
             ),
             ProjectRequest::PasteMoment(request) => self.paste_moment(request),
+            ProjectRequest::PrepareRoomTone {
+                expected_session,
+                expected_revision,
+                ticket,
+                selection,
+            } => {
+                let result = self.prepare_room_tone(
+                    expected_session,
+                    expected_revision.clone(),
+                    ticket,
+                    selection,
+                );
+                if let Err(error) = &result {
+                    self.room_tone_error = Some(RoomToneFailure {
+                        ticket,
+                        session: expected_session,
+                        revision: expected_revision,
+                        error: error.clone(),
+                    });
+                }
+                result
+            }
             ProjectRequest::Edit {
                 expected_session,
                 expected_revision,
@@ -511,7 +551,8 @@ impl Service {
             | ProjectEdit::Retime { node, .. }
             | ProjectEdit::SetFraming { node, .. }
             | ProjectEdit::Delete { node }
-            | ProjectEdit::HoldDuration { node, .. } => node,
+            | ProjectEdit::HoldDuration { node, .. }
+            | ProjectEdit::HoldAudio { node, .. } => node,
         };
         let view = scope.resolve(workspace)?;
         let children = view.children;
@@ -521,7 +562,10 @@ impl Service {
             .ok_or("Select a direct child of the active Sequence before editing")?;
         let selected = Some(target.clone());
         let split_position = matches!(edit, ProjectEdit::Split { .. }).then_some(position);
-        let preserve_cursor = matches!(edit, ProjectEdit::SetFraming { .. });
+        let preserve_cursor = matches!(
+            edit,
+            ProjectEdit::SetFraming { .. } | ProjectEdit::HoldAudio { .. }
+        );
         let mut retime_message = None;
         let (command, selected_node, message) = match edit {
             ProjectEdit::SetFraming { node, framing } => (
@@ -656,6 +700,16 @@ impl Service {
                 selected,
                 "Hold duration updated and saved",
             ),
+            ProjectEdit::HoldAudio { node, audio } => {
+                if !matches!(document.nodes()[&node].kind, NodeKind::Hold { .. }) {
+                    return Err("Select an ordinary Hold to change its sound policy".into());
+                }
+                (
+                    Command::SetHoldAudio { node, audio },
+                    selected,
+                    "Hold sound updated and saved",
+                )
+            }
         };
         let request = CommandRequest {
             project_id: document.project_id().clone(),

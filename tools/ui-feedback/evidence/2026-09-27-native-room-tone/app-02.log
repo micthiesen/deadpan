@@ -1,0 +1,18 @@
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 11.09s
+     Running unittests src/main.rs (target/debug/deps/deadpan_app-6820b8824a0e132d)
+
+running 4 tests
+test project::tests::room_tone::native_room_tone_preparation_is_sample_exact_and_creates_no_history_or_target ... ok
+test project::tests::room_tone::native_hold_audio_rejects_nonholds_wrong_scope_and_stale_session_without_retargeting ... ok
+test project::tests::room_tone::native_room_tone_preparation_rejects_stale_context_receipts_and_invalid_ranges ... ok
+test project::tests::room_tone::native_hold_audio_commits_once_preserves_scope_cursor_picture_and_reopens_history ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 233 filtered out; finished in 0.25s
+
+     Running tests/headless.rs (target/debug/deps/headless-b549945d3396b4eb)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.00s
+

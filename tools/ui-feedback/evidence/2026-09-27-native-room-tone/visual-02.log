@@ -1,0 +1,5 @@
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 7.73s
+     Running `target/debug/deadpan-app --ui-check --scenario room-tone --mode visual --kestrel-source /Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift --output /tmp/deadpan-native-room-tone-s4polk92/visual-02`
+room-tone: PASS
+UI feedback: /tmp/deadpan-native-room-tone-s4polk92/visual-02/report.html

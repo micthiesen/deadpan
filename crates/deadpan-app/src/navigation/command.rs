@@ -10,6 +10,8 @@ pub enum Entry {
     Source,
     Sequence,
     Help,
+    RoomTone,
+    HoldSilence,
     /// Tenths of one percent, independent of authored or export gain.
     Monitor(u16),
     AuditionContext {
@@ -101,14 +103,18 @@ pub fn parse(input: &str) -> Result<Entry, String> {
         "new" => Action::New,
         "open" => Action::Open,
         "import" => Action::Import,
-        "source" | "sequence" | "help" if argument.is_none() => {
+        "source" | "sequence" | "help" | "room-tone" | "hold-silence" if argument.is_none() => {
             return Ok(match verb.as_str() {
                 "source" => Entry::Source,
                 "sequence" => Entry::Sequence,
+                "room-tone" => Entry::RoomTone,
+                "hold-silence" => Entry::HoldSilence,
                 _ => Entry::Help,
             });
         }
-        "source" | "sequence" | "help" => return Err("This command takes no arguments.".into()),
+        "source" | "sequence" | "help" | "room-tone" | "hold-silence" => {
+            return Err("This command takes no arguments.".into());
+        }
         _ => {
             return Err(format!(
                 "Unknown command: {verb}. Use :help for available commands."
@@ -359,9 +365,14 @@ mod tests {
             ("source", Entry::Source),
             ("sequence", Entry::Sequence),
             ("help", Entry::Help),
+            ("room-tone", Entry::RoomTone),
+            (":HOLD-SILENCE", Entry::HoldSilence),
             (" : ", Entry::Empty),
         ] {
             assert_eq!(parse(input), Ok(expected));
+        }
+        for input in ["room-tone auto", "room-tone 12f", "hold-silence all"] {
+            assert!(parse(input).is_err(), "{input}");
         }
     }
 }

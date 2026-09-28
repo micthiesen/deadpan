@@ -94,6 +94,28 @@ evidence. A readable source with an unspecified speaker layout still fails
 playback qualification. This listening workflow does not implement sound-event
 placement, effects, scoped Hold allowances or mastering.
 
+## Selected-source room-tone audition
+
+`AudioRange` is a qualified audio-only view of an explicit source interval,
+including audio from the Original A/V asset. The separate catalog `Sound`
+descriptor still rejects video. Construct the range on the project service
+worker, checking exact integer source samples, contiguous measured coverage,
+receipt and immutable source contract. Playback rechecks those bindings against
+its captured revision and opens verified original bytes.
+
+The temporary Source retains the full measured source and its affine phase,
+with a separate exact selection starting at local zero. Its playback endpoint
+is the selected duration rounded once to the 48 kHz clock, excluding project
+frame enclosure slack. Cache identity includes the selected range. Loops reuse
+canonical context while delivery coordinates keep increasing. This is raw
+source audition through the shared safety-limited preparation, not the Hold's
+crossfaded room-tone recipe; committed Sequence audition hears that recipe.
+
+The native sheet applies no implicit lead/follow context. Source playback cannot
+move either editor cursor, change beat selection, request a picture or write
+history. Field changes, cancellation and stale project context revoke playback
+and resume. See [native room tone](ROOM_TONE_AUDIO.md#native-selection-and-audition).
+
 ## Ownership and bounds
 
 `deadpan-playback::Engine` owns a persistent preparation worker and a separate

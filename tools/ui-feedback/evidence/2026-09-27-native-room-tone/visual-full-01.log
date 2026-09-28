@@ -1,0 +1,20 @@
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 8.11s
+     Running `target/debug/deadpan-app --ui-check --mode visual --kestrel-source /Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift --output /tmp/deadpan-native-room-tone-s4polk92/visual-full-01`
+workspace: PASS
+editing: PASS
+camera: PASS
+menus: PASS
+delayed-preview: PASS
+rapid-input: PASS
+playback-feedback: PASS
+large-project: PASS
+edit-latency: PASS
+nested-pause: PASS
+original-moment: PASS
+original-playback: PASS
+sound-playback: PASS
+sound-placement: PASS
+room-tone: PASS
+retime: PASS
+UI feedback: /tmp/deadpan-native-room-tone-s4polk92/visual-full-01/report.html

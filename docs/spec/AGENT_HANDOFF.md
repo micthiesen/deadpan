@@ -76,9 +76,13 @@ permissions. Undo restores both policy and permissions. The store requires
 revision-bound qualification and measured sample endpoints for new source
 choices; unrelated legacy Hold recipes remain unchanged. Database-37 history
 uses frozen core 31 with exact allowance comparison. The
-[room-tone design board](../design/boards/room-tone-board-v2.png) guides the still
-required native range fields, explicit source audition/application and Silence
-action. Its proposed command names and waveform are not implemented controls.
+[room-tone design board](../design/boards/room-tone-board-v2.png) now guides
+`:room-tone` and `:hold-silence` for ordinary selected Holds. Copy Original time,
+inspect inward-snapped source samples, audition on a separate audio-only clock,
+then explicitly Apply. Native fields preserve IME and button/key ownership.
+Reopen the saved range; replacing it from the captured copy is explicit.
+Preparation successes and failures carry request/session/revision identities.
+Waveforms, occurrence controls and acoustic qualification remain open.
 
 [Structural speed editing](../RETIME_EDITING.md) exposes `:retime` and
 `:wrap-retime` through exact speed resolution and the native inspector. Preserve

@@ -28,6 +28,14 @@ pub(super) struct Selection {
 }
 
 impl Selection {
+    pub(super) fn copied_audio_selection(&self) -> Option<crate::project::RoomToneSelection> {
+        let copied = self.copied.as_ref()?;
+        Some(crate::project::RoomToneSelection::Original {
+            asset: copied.identity.asset.clone(),
+            qualification: copied.identity.qualification.clone(),
+            ordinals: copied.ordinals.clone(),
+        })
+    }
     fn reconcile(&mut self, identity: Option<Identity>) {
         if self.identity != identity {
             self.cancel();

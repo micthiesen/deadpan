@@ -1,0 +1,17 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "-p",
+    "deadpan-playback",
+    "audio_range::"
+  ],
+  "started": "2026-09-28T04:59:13.518955+00:00",
+  "base_commit": "938ab5ee32a64924e749204af249537e71e5f1e7",
+  "diff_sha256": "b573c7a68625722a0c8d137ba470b4b02efe60a10993ae709e272da47aec45c6",
+  "source_manifest_sha256": "903992166053691c89489a0ead5bf27ec0a345b9234a5c18639a8ea307dad422",
+  "pid": 42192,
+  "exit_code": 0,
+  "seconds": 19.77481612516567
+}

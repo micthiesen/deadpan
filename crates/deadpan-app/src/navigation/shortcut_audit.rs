@@ -126,6 +126,24 @@ fn audit_reservation(
             );
         }
         for repeat in [false, true] {
+            for background in [false, true] {
+                let action = super::room_tone::route_key(
+                    reservation.key,
+                    reservation.modifiers,
+                    text,
+                    background,
+                    ime,
+                    repeat,
+                );
+                record(
+                    report,
+                    reservation,
+                    format!(
+                        "Room tone text={text} background={background} ime={ime} repeat={repeat}"
+                    ),
+                    action.map(|action| format!("room-tone={action:?}")),
+                );
+            }
             let camera =
                 super::route_camera_key(reservation.key, reservation.modifiers, text, ime, repeat);
             record(
@@ -312,7 +330,7 @@ mod tests {
     fn shipped_routers_never_claim_a_kestrel_global_chord_or_prefix() {
         let report = audit().unwrap();
         assert_eq!(report.reserved_bindings, 62);
-        assert_eq!(report.routing_cases, 62 * 56);
+        assert_eq!(report.routing_cases, 62 * 72);
         assert!(report.passed(), "{report:#?}");
     }
 

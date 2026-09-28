@@ -94,7 +94,7 @@ impl DeadpanApp {
         let Some(run) = self.transport.take() else {
             return false;
         };
-        if !run.domain().is_sound() {
+        if !run.domain().is_audio_only() {
             self.worker.cancel();
             self.presentation.invalidate_pending();
         }
@@ -110,7 +110,7 @@ impl DeadpanApp {
             return;
         };
         let resume = run.resume(position.cursor);
-        let sound = run.domain().is_sound();
+        let sound = run.domain().is_audio_only();
         if self.stop_playback() {
             self.resume = Some(resume);
             // Cursor can name excluded Out, but the picture must not.
@@ -121,7 +121,11 @@ impl DeadpanApp {
     }
 
     fn follow_stopped_playback(&mut self, looping: bool) {
-        if !self.sound_focused() && self.view == View::Sequence && !looping {
+        if self.room_tone.is_none()
+            && !self.sound_focused()
+            && self.view == View::Sequence
+            && !looping
+        {
             self.follow_playhead_scope();
             self.select_at_cursor();
             self.reveal_beat = true;
@@ -276,10 +280,23 @@ impl DeadpanApp {
                 return;
             }
         };
+        self.start_domain_playback(domain, window, start);
+    }
+
+    pub(super) fn start_domain_playback(
+        &mut self,
+        domain: Domain,
+        window: Window,
+        start: AudioSample,
+    ) {
+        let Some(workspace) = self.workspace.clone() else {
+            return;
+        };
         let target = match &domain {
             Domain::Sequence { .. } => Target::Sequence,
             Domain::Original(original) => Target::Original(original.clone()),
             Domain::Sound(sound) => Target::Sound(sound.clone()),
+            Domain::AudioRange(range) => Target::AudioRange(range.clone()),
         };
         let Some(ticket) = self.next_serial() else {
             return;
@@ -333,7 +350,7 @@ impl DeadpanApp {
         match result {
             Ok(()) => {
                 self.resume = None;
-                if !run.domain().is_sound() {
+                if !run.domain().is_audio_only() {
                     self.worker.cancel();
                     self.presentation.invalidate_pending();
                 }
@@ -342,6 +359,11 @@ impl DeadpanApp {
                         Domain::Original(_) => self.source_cursor = position.cursor,
                         Domain::Sequence { .. } => self.sequence_cursor = position.cursor,
                         Domain::Sound(_) => self.sound_cursor = position.cursor,
+                        Domain::AudioRange(_) => {
+                            if let Some(draft) = &mut self.room_tone {
+                                draft.cursor = position.cursor;
+                            }
+                        }
                     }
                 }
                 self.transport = Some(run);
@@ -385,6 +407,11 @@ impl DeadpanApp {
                 Domain::Original(_) => self.source_cursor = frame,
                 Domain::Sequence { .. } => self.sequence_cursor = frame,
                 Domain::Sound(_) => self.sound_cursor = frame,
+                Domain::AudioRange(_) => {
+                    if let Some(draft) = &mut self.room_tone {
+                        draft.cursor = frame;
+                    }
+                }
             },
             Ok(None) => return,
             Err(error) => {
@@ -412,7 +439,7 @@ impl DeadpanApp {
         if self
             .transport
             .as_ref()
-            .is_some_and(|run| run.domain().is_sound())
+            .is_some_and(|run| run.domain().is_audio_only())
         {
             return;
         }

@@ -1,0 +1,27 @@
+{
+  "command": [
+    "cargo",
+    "run",
+    "--release",
+    "--locked",
+    "-p",
+    "deadpan-app",
+    "--features",
+    "ui-harness",
+    "--",
+    "--ui-check",
+    "--mode",
+    "performance",
+    "--kestrel-source",
+    "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+    "--output",
+    "/tmp/deadpan-native-room-tone-s4polk92/performance-final"
+  ],
+  "started": "2026-09-28T05:27:51.518231+00:00",
+  "base_commit": "938ab5ee32a64924e749204af249537e71e5f1e7",
+  "diff_sha256": "e25daf5affde5613d76908701b888b668fa213257544a1aab15e9819fde36803",
+  "source_manifest_sha256": "79ba9ff21c74a2e363f9d8ea2878ad903dd03f9a613953463a5a0eff9e417ba2",
+  "pid": 48812,
+  "exit_code": 0,
+  "seconds": 211.96882095793262
+}

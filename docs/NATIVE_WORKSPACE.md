@@ -20,6 +20,13 @@ selection loops with adjustable context, canonical pre-master audio and
 device-clock pictures. Full mastering, range operators,
 generated-provider rendering and export remain open.
 
+The [room-tone workflow](ROOM_TONE_AUDIO.md#native-selection-and-audition) adds
+`:room-tone` for an ordinary selected Hold, using a copied Original range or its
+saved room-tone selection. Exact source sample fields, separate source audition
+and explicit Apply preserve picture and timing. `:hold-silence` selects silence;
+Undo restores the prior policy. Waveform display and Repeat-gap/fragment
+authoring remain open.
+
 The footer measures its current content before the frame is presented. An egui
 layout retry resolves changed wrapping or a command/Camera mode transition in
 the same frame, with at most three passes. Native text consumes its final input

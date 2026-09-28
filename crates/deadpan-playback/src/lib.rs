@@ -8,7 +8,7 @@ mod target;
 
 pub use controller::{Engine, Phase, RequestError, StopHandle, Update};
 pub use sources::{Snapshot, SourceEntry};
-pub use target::{Original, Sound, Target, Window};
+pub use target::{AudioRange, Original, Sound, Target, Window};
 
 #[cfg(test)]
 mod tests;

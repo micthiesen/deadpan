@@ -31,6 +31,7 @@ mod moment;
 mod playback;
 mod repeat_queue;
 mod repeats;
+mod room_tone;
 mod scope;
 mod selection;
 mod sound_events;
@@ -114,6 +115,8 @@ pub struct DeadpanApp {
     sound_inspection: Option<sound_events::Inspection>,
     reveal_event: bool,
     sound_command_target: Option<sound_events::CommandTarget>,
+    hold_command_target: Option<room_tone::CommandTarget>,
+    room_tone: Option<room_tone::Draft>,
     sound_cursor: u64,
     selected_beat: Option<NodeId>,
     sequence_scope: SequenceScope,
@@ -214,6 +217,8 @@ impl DeadpanApp {
             sound_inspection: None,
             reveal_event: false,
             sound_command_target: None,
+            hold_command_target: None,
+            room_tone: None,
             sound_cursor: 0,
             selected_beat: None,
             sequence_scope: SequenceScope::default(),
@@ -456,6 +461,7 @@ impl DeadpanApp {
         #[cfg(not(feature = "ui-harness"))]
         let update = self.service.take_update();
         if let Some(update) = update {
+            self.receive_room_tone(update.room_tone, update.room_tone_error);
             let repeat_completion = match self.repeat_queue.matching_completion(
                 update.workspace.as_ref().map(|workspace| workspace.session),
                 update
@@ -969,6 +975,7 @@ impl DeadpanApp {
     }
 
     fn open_command(&mut self, command: String, context: &egui::Context) {
+        self.hold_command_target = Some(self.capture_hold_command());
         self.sound_command_target = self.capture_sound_command(&command);
         self.cancel_repeats("command entry was opened");
         self.pause_playback();
@@ -1372,6 +1379,10 @@ impl DeadpanApp {
     }
 
     fn keyboard(&mut self, context: &egui::Context) -> Option<(TextAction, bool)> {
+        if self.room_tone.is_some() {
+            self.room_tone_keyboard(context);
+            return None;
+        }
         if help_scroll::defer_popup_input(
             context,
             self.dialogs.is_open(),
@@ -1544,6 +1555,7 @@ impl DeadpanApp {
 
     fn run_command(&mut self, context: &egui::Context) {
         let command = navigation::command::parse(&self.command);
+        let hold_target = self.hold_command_target.take();
         let sound_target = self.sound_command_target.take();
         self.bindings.clear();
         self.command_open = false;
@@ -1591,6 +1603,8 @@ impl DeadpanApp {
             }
         }
         match command {
+            Ok(navigation::command::Entry::RoomTone) => self.open_room_tone(hold_target, context),
+            Ok(navigation::command::Entry::HoldSilence) => self.silence_hold(hold_target),
             Ok(navigation::command::Entry::Action(action)) => self.action(action, context),
             Ok(navigation::command::Entry::Source) => {
                 self.stop_playback();
@@ -2320,6 +2334,9 @@ impl DeadpanApp {
                         ui.add_space(12.0);
                         let ready = !self.service.is_busy() && !self.dialogs.is_open();
                         inspector_value(ui, "Duration", &data.duration);
+                        if data.kind == "Hold" {
+                            self.hold_audio_controls(ui, ready);
+                        }
                         if self.selected_group()
                             && ui.add_sized([ui.available_width(), 30.0], egui::Button::new("Enter group  ·  Enter").fill(style::SELECTED)).clicked()
                         {
@@ -2665,6 +2682,8 @@ impl DeadpanApp {
                         ("Sound +/− · :sound-gain -3", "Change the selected sound's gain by 3 dB, or enter a value from -96 to 24 dB, to three decimal places. Counts repeat the gain step; Monitor and Original levels stay unchanged."),
                         (":sound-edges soft / hard", "Set both endpoint fade policies on the selected sound. Gain and edge changes retain its timeline cuts."),
                         (":sound-allow / :sound-silence", "Allow or silence the selected sound in the identified pause at the retained Edit cursor. Exact occurrence only; never fills a timing gap."),
+                        (":room-tone", "Select a pause after copying a quiet Original range with v, h/l, y. The draft shows exact source samples: Space auditions, Shift+Space loops, Tab moves through controls, Enter applies and Escape cancels. Reopening starts from the saved range; Use copied Original range explicitly replaces it."),
+                        (":hold-silence", "Restore the selected ordinary pause to silence in one undoable edit. Explicit per-sound permissions remain separate. Room-tone changes preserve the pause's picture and duration."),
                         ("Sound dd / :sound-delete", "Remove only the selected placed sound. Undo restores it. Focus Beats to cut picture time."),
                         (",f", "Camera preview on the selected beat. Parent framing stays live. h/j/k/l move 1% of the uncropped Original; uppercase moves 5%."),
                         ("Camera + / −", "Scale by ×1.05 or its reciprocal. Counts repeat: 3+ is three steps."),
@@ -2706,6 +2725,7 @@ impl eframe::App for DeadpanApp {
         // must not consume a second Repeat completion between input and paint.
         if first_pass {
             self.receive();
+            self.reconcile_room_tone(&context);
         }
         self.reconcile_sound_playback();
         if first_pass {
@@ -2767,6 +2787,7 @@ impl eframe::App for DeadpanApp {
         }
         self.reconcile_sound_playback();
         self.help(&context);
+        self.room_tone_sheet(&context);
         if input_scope
             != (
                 self.pane,

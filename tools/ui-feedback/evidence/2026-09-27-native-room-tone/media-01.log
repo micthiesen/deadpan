@@ -1,0 +1,11 @@
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 14.49s
+     Running tests/source_import_timing.rs (target/debug/deps/source_import_timing-ebfa99e3c2736049)
+
+running 3 tests
+test audio_moment::inward_audio_ranges_require_a_measured_terminal_even_for_a_prefix ... ok
+test audio_moment::inward_audio_ranges_use_measured_pts_and_native_sample_clock ... ok
+test audio_moment::inward_audio_ranges_reject_empty_overlap_gaps_wrong_identity_and_overflow ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 18 filtered out; finished in 0.00s
+

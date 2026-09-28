@@ -159,6 +159,8 @@ fn register_media(store: &mut ProjectStore, name: &str, picture: bool) {
         .unwrap();
 }
 
+#[path = "tests/audio_range.rs"]
+mod audio_range;
 #[path = "tests/original.rs"]
 mod original;
 #[path = "tests/resources.rs"]

@@ -1,0 +1,17 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "-p",
+    "deadpan-app",
+    "room_tone"
+  ],
+  "started": "2026-09-28T05:01:20.503192+00:00",
+  "base_commit": "938ab5ee32a64924e749204af249537e71e5f1e7",
+  "diff_sha256": "2b66d3282b5eff4a509a31ce459ad8dc58ede6b3f39a1cbdadf754b29b2cd3d4",
+  "source_manifest_sha256": "f10ead7681ac5f4e2aec696e0ea403e5e6e881a8493d3993e63ba44327e8cabc",
+  "pid": 42755,
+  "exit_code": 0,
+  "seconds": 11.379970541223884
+}

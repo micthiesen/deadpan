@@ -257,6 +257,7 @@ the real app. The initial viewport is 1280×820 points at 1×. The code lives in
 | `original-playback` | Uses production Original Space and Shift+Space input, adjustable context, exact loop resume, pointer controls, stale update rejection, navigation stop and failure feedback. Injected device updates exercise UI routing only; actual canonical PCM has separate headless tests. |
 | `sound-playback` | Registers two measured audio-only sources, selects by pointer and j/k, exercises Space pause/resume and Shift+Space full-sound loops, rejects stale/faulted delivery, stops on pane/source changes and retains native text input. Pointer Pause must change state on release and paint Resume on the next frame. Pinned controls and status must remain fully painted on the first resize frame. Asserts no sound-driven picture request or editor-clock/selection mutation. Delivery is explicitly simulated; separate backend tests compare real AAC PCM. |
 | `sound-placement` | Imports measured catalog audio, places by pointer and `,s`, preserves picture duration and editor targets, checks exact sample entry and frame-nudge count equivalence, gain/edges, event selection, deletion and undo. Tests Original-to-Sounds keyboard/pointer focus, absent/stale command targets across held real writer completions, overflow, both window sizes and route-preserving gain with rejected movement. Does not start PCM preparation or a device. |
+| `room-tone` | Copies an Original range with v/motions/y, opens the captured Hold's source-range sheet, edits exact native samples, prepares and auditions without history, then explicitly applies or cancels. Checks silence/undo, missing and stale targets, superseded range preparation, native text/IME and minimum-size paint clips. Source delivery is explicitly injected; no device or listening claim. |
 | `retime` | Opens/cancels speed entry by pointer, checks the resolved-duration preview, creates a Preserve Retime by command, adjusts the same stage to tape pitch through ordinary text editing, explicitly nests another stage, undoes all three edits and confirms Original context stays unchanged. Uses real project history and picture preparation; it does not measure acoustic quality. |
 | `nested-pause` | Seeds two framed Sequence groups with typed store commands, reopens the actual project, navigates to frame 17 with keys, inserts `:hold 11f`, and checks the nested Hold, exact freeze, retained child crop, live ancestor scopes and cursor. Undo/redo compares nodes and audio bindings. Enter drills through breadcrumbs to the Hold; Inspector Enter changes its duration, history preserves scope, Camera commits only its framing, Backspace selects exited groups, and a group-edge pause fails without mutation. |
 
@@ -387,6 +388,13 @@ cargo test -p deadpan-app --features ui-harness --locked
 These check the harness, telemetry, report and shortcut contracts. They do not
 execute the full Metal scenario suite or inspect its images. Run the applicable
 visual and release performance modes separately and record the actual result.
+
+The [native room-tone qualification](qualification/native-room-tone-2026-09-27.md)
+records 909 full visual checks and 1,879 release performance checks on the same
+frozen source, including 90 new room-tone checks and the 4,464-case Kestrel audit.
+Full-size draft and saved-state captures were reviewed at both window sizes.
+The HTML contact-sheet check remains outstanding because the required browser
+role was unavailable; physical input and acoustic acceptance remain separate.
 
 ## Repaint waits and worker timing
 

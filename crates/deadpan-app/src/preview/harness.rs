@@ -16,6 +16,7 @@ mod nested_pause;
 mod original_playback;
 mod repeat_input;
 mod retime;
+mod room_tone;
 mod scale;
 mod scenarios;
 mod sound_placement;
@@ -247,6 +248,8 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                 driver.settled()?;
                 if name == "sound-placement" {
                     sound_placement::run(&mut driver)
+                } else if name == "room-tone" {
+                    room_tone::run(&mut driver)
                 } else {
                     scenarios::run(name, &mut driver)
                 }
@@ -505,7 +508,7 @@ impl Driver<'_> {
             "repeat_queue":{"active":app.repeat_queue.active(),"waiting":app.repeat_queue.waiting(),"status":app.repeat_queue.status()},
             "import":app.import.as_ref().map(|status| json!({"stage":format!("{:?}",status.stage),"error":status.error})),
             "help_open":app.help_open,"camera_open":app.camera.is_some(),"camera_pending":app.camera_pending.is_some(),
-            "playback": app.transport.as_ref().map(|run| json!({"phase":format!("{:?}",run.phase),"sample":run.sample.0,"content_sample":run.content_sample().ok().map(|sample|sample.0),"looping":run.window().looping(),"window":[run.window().start().0,run.window().end().0],"lap":run.lap().ok(),"domain":match run.domain(){crate::transport::Domain::Sequence{..}=>"sequence",crate::transport::Domain::Original(_)=>"original",crate::transport::Domain::Sound(_)=>"sound"},"generation":format!("{:?}",run.generation)})),
+            "playback": app.transport.as_ref().map(|run| json!({"phase":format!("{:?}",run.phase),"sample":run.sample.0,"content_sample":run.content_sample().ok().map(|sample|sample.0),"looping":run.window().looping(),"window":[run.window().start().0,run.window().end().0],"lap":run.lap().ok(),"domain":match run.domain(){crate::transport::Domain::Sequence{..}=>"sequence",crate::transport::Domain::Original(_)=>"original",crate::transport::Domain::Sound(_)=>"sound",crate::transport::Domain::AudioRange(_)=>"audio-range"},"generation":format!("{:?}",run.generation)})),
             "pending_keys":app.bindings.pending(),"picture":app.presentation.diagnostic_snapshot(),
             "error":app.error,"project_error":app.project_error,"message":app.message,
             "focused_widget":self.harness.ctx.memory(|memory| memory.focused().map(|id| format!("{id:?}"))),
@@ -518,6 +521,12 @@ impl Driver<'_> {
         snapshot["selected_event"] = json!(app.selected_event);
         snapshot["sound_events"] = json!(app.workspace.as_ref().map(|w| w.document.sounds()));
         snapshot["sound_routes"] = json!(app.workspace.as_ref().map(|w| w.document.sound_routes()));
+        snapshot["room_tone"] = json!(app.room_tone.as_ref().map(|draft| json!({
+            "prepared": draft.prepared.as_ref().map(|prepared| json!({
+                "ticket":prepared.ticket,"session":prepared.session,"revision":prepared.revision,
+                "source":prepared.source,"duration_samples":prepared.audition.duration_samples().0,
+            })),
+        })));
         snapshot
     }
 

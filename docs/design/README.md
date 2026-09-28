@@ -17,7 +17,7 @@ establish an implemented feature.
 | [Original moment reuse](boards/original-moment-reuse-v1.png) | Temporal Visual selection, copy without editing, explicit paste destination and one-step undo. | [Moment prompt](prompts/original-moment-reuse-v1.txt) |
 | [Sound audition](boards/sound-audition-board-v1.png) | Focused sound catalog, independent audition clock, visible play/pause/loop keys and retained edit context. | [Sound prompt](prompts/sound-audition-board-v1.txt) |
 | [Sound placement and adjustment](boards/sound-placement-board-v2.png) | Target for root placement and concrete pause allowances: separate event list, exact edit destination, inspector, visible keys and truthful silence/overflow feedback. | [Initial prompt](prompts/sound-placement-board-v1.txt), [precision and silence corrections](prompts/sound-placement-board-v2.txt) |
-| [Room-tone selection and pause audio](boards/room-tone-board-v2.png) | Future native target: exact source range, distinct source/pause audition, explicit application, silence and undo. | [Initial prompt](prompts/room-tone-board-v1.txt), [single-Original and clock corrections](prompts/room-tone-board-v2.txt) |
+| [Room-tone selection and pause audio](boards/room-tone-board-v2.png) | Native target: exact source range, distinct source/pause audition, explicit application, silence and undo. Waveform display remains open. | [Initial prompt](prompts/room-tone-board-v1.txt), [single-Original and clock corrections](prompts/room-tone-board-v2.txt) |
 
 The built-in `image_gen.imagegen` tool generated these assets on 2026-09-23 and
 the Camera companion on 2026-09-24, the moment-reuse companion on 2026-09-26
@@ -120,9 +120,9 @@ while text is active.
 Generated visual content is a composition reference. The following generated
 details are intentionally not implementation instructions:
 
-- The room-tone board is a future native interaction target. Its proposed
-  `:room-tone` and `:hold-silence` commands, sample fields, waveform and source
-  audition sheet are not implemented controls. Retain an explicit original
+- The room-tone board guides the native `:room-tone` and `:hold-silence`
+  commands, sample fields and source audition sheet. Its waveform remains a
+  target, not an implemented control. Retain an explicit original
   sample range and show its rate separately from the Hold's project-frame
   duration. Source audition hears that range; pause audition hears the authored
   loop. Both need the same admitted selection, with no implicit speech-free

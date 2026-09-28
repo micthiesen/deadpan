@@ -12,11 +12,16 @@ pub enum Domain {
     Sequence { rate: FrameRate, frames: i64 },
     Original(Arc<Original>),
     Sound(Arc<Sound>),
+    AudioRange(Arc<deadpan_playback::AudioRange>),
 }
 
 impl Domain {
     pub fn is_sound(&self) -> bool {
         matches!(self, Self::Sound(_))
+    }
+
+    pub fn is_audio_only(&self) -> bool {
+        matches!(self, Self::Sound(_) | Self::AudioRange(_))
     }
 
     pub fn end(&self) -> Result<AudioSample, String> {
@@ -30,6 +35,7 @@ impl Domain {
             }
             Self::Original(original) => Ok(original.end()),
             Self::Sound(sound) => Ok(sound.duration_samples()),
+            Self::AudioRange(range) => Ok(range.duration_samples()),
         }
     }
 
@@ -52,6 +58,13 @@ impl Domain {
                 }
                 Ok(AudioSample(sample))
             }
+            Self::AudioRange(range) => {
+                let sample = i64::try_from(frame).map_err(|e| e.to_string())?;
+                if sample > range.duration_samples().0 {
+                    return Err("Source range cursor exceeds its selected duration.".into());
+                }
+                Ok(AudioSample(sample))
+            }
         }
     }
 
@@ -65,12 +78,20 @@ impl Domain {
                 }
                 u64::try_from(sample.0).map_err(|e| e.to_string())
             }
+            Self::AudioRange(range) => {
+                if sample.0 < 0 || sample > range.duration_samples() {
+                    return Err("Source range position exceeds its selected duration.".into());
+                }
+                u64::try_from(sample.0).map_err(|e| e.to_string())
+            }
         }
     }
 
     pub fn sample_at_selection_boundary(&self, frame: u64) -> Result<AudioSample, String> {
         match self {
-            Self::Sequence { .. } | Self::Sound(_) => self.sample_at_boundary(frame),
+            Self::Sequence { .. } | Self::Sound(_) | Self::AudioRange(_) => {
+                self.sample_at_boundary(frame)
+            }
             Self::Original(original) => original.sample_at_selection_boundary(frame),
         }
     }
@@ -249,7 +270,7 @@ impl Run {
     }
 
     pub fn picture_frame(&self) -> Result<u64, String> {
-        if self.domain.is_sound() {
+        if self.domain.is_audio_only() {
             return Err("Sound audition has no picture.".into());
         }
         Ok(self.position()?.picture)
@@ -330,7 +351,7 @@ impl Run {
     /// Keep one decode/GPU submission in flight and coalesce intervening audio
     /// positions. Never repeatedly cancel a useful decode at the audio cadence.
     pub fn picture(&mut self, frame: u64, pipeline_busy: bool) -> Option<Generation> {
-        if self.domain.is_sound()
+        if self.domain.is_audio_only()
             || self.phase != Phase::Playing
             || pipeline_busy
             || self.requested_frame == Some(frame)

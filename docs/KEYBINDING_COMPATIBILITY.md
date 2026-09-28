@@ -16,6 +16,12 @@ physical fallback for an underscore cannot change gain. Command, Control and
 Option variants remain reserved. The `sound-placement` production replay covers
 pane entry, native command text and captured targets alongside this routing audit.
 
+The room-tone sheet adds no modified global shortcuts. Its production router
+uses plain Enter, Escape and Space, plus Shift+Space. Text fields keep Space;
+focused buttons keep native Enter/Space activation. Tab and Shift+Tab stay
+inside the modal. Composition and held activation keys cannot apply a draft.
+The same router is included in the reservation audit and `room-tone` replay.
+
 ## Automated audit
 
 The UI feedback runner includes a shortcut audit. The standalone routing tests
@@ -27,7 +33,7 @@ cargo test --locked -p deadpan-app navigation::
 
 [The audit](../crates/deadpan-app/src/navigation/shortcut_audit.rs) sends each of
 the 62 exact global Kestrel bindings through the actual `Bindings::key`, Camera,
-text-action, and inspector routers. Its 3,472 cases include all current pending
+text-action, inspector and room-tone routers. Its 4,464 cases include all current pending
 prefix states, counts and overflow, text/IME states, and Camera key repeat. A
 reservation fails if it dispatches an action or leaves an editor prefix pending.
 This catches shortcuts that seem harmless because they only start a count.
