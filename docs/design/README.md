@@ -18,10 +18,11 @@ establish an implemented feature.
 | [Sound audition](boards/sound-audition-board-v1.png) | Focused sound catalog, independent audition clock, visible play/pause/loop keys and retained edit context. | [Sound prompt](prompts/sound-audition-board-v1.txt) |
 | [Sound placement and adjustment](boards/sound-placement-board-v2.png) | Target for root placement and concrete pause allowances: separate event list, exact edit destination, inspector, visible keys and truthful silence/overflow feedback. | [Initial prompt](prompts/sound-placement-board-v1.txt), [precision and silence corrections](prompts/sound-placement-board-v2.txt) |
 | [Room-tone selection and pause audio](boards/room-tone-board-v2.png) | Native target: exact source range, distinct source/pause audition, explicit application, silence and undo. Waveform display remains open. | [Initial prompt](prompts/room-tone-board-v1.txt), [single-Original and clock corrections](prompts/room-tone-board-v2.txt) |
+| [Beat gain and selective emphasis](boards/clip-gain-board-v2.png) | Target for beat trim, exact gain/mute ranges, temporary envelope editing and same-window Before/Draft audition. Native implementation remains open. | [Initial prompt](prompts/clip-gain-board-v1.txt), [clock and focus corrections](prompts/clip-gain-board-v2.txt) |
 
 The built-in `image_gen.imagegen` tool generated these assets on 2026-09-23 and
 the Camera companion on 2026-09-24, the moment-reuse companion on 2026-09-26
-and the sound-audition, sound-placement and room-tone companions on 2026-09-27.
+and the sound-audition, sound-placement, room-tone and gain companions on 2026-09-27.
 The current boards implement the owner's single-original direction in specification
 1.1: begin with the complete video and gradually reshape it, reuse its moments,
 add audio effects and accept AI extensions. New projects belong in Documents/Deadpan.
@@ -80,6 +81,30 @@ that adjacent equal-width cards have equal duration. Repeat is one compact objec
 with a total-play count, never an expanded widget per occurrence.
 
 ## Interaction contract
+
+The gain board is a target for the next audio-authoring work. Its graph represents
+the envelope contribution in dB; the independent whole-beat trim adds to that
+curve without flattening it. Mute is explicit, never a very small finite gain.
+Show the exact owner and clock: a Source affects its Original contribution, while
+an implemented group bus must affect its contained voices once. Do not suggest
+that currently root-owned placed sounds belong to an arbitrary nested group.
+Quick Normal-mode `+` and `-` affect selected audio or the current beat by 3 dB;
+Camera and Placed sounds retain their own existing meanings. Focused text fields
+own typing and arrows. The pictured `:gain` label identifies the gain command,
+not a qualified bare-command shortcut for opening a graph. New bindings require
+the normal router/Kestrel audit before shipping.
+
+The proposed draft view retains the entry snapshot, owner, exact range and
+audition window. Before/Draft must compare that same window and heard position,
+with distinct draft playback identity; Enter commits once and Escape discards the
+draft. Waveforms, point controls and this comparison are targets, not implemented
+features. The corrected board's 30 fps clocks all show frame 246, 36 frames into
+the selected Answer after the 210-frame Opening. The large Original remains
+pinned and picture keeps priority. Generated thumbs, waveforms and measurements
+are illustrative. No native gain capability or measured playback result is
+inferred from this board. See [gain contracts](../AUDIO_GAIN.md).
+Preserve the actual project-canvas aspect and fitted picture; the generated
+interview's drawn crop does not authorize a framing change.
 
 Pause insertion adds a visible `,h` action and Choose pause duration entry to the
 selection inspector. Keep the picture dominant and reuse the existing command

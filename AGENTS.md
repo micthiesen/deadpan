@@ -1056,6 +1056,15 @@ uses verified snapshots. Keep unrelated legacy recipes valid and freeze core31
 history before modern replay. Native Repeat-gap/fragment controls and tail DSP
 remain open. See [room-tone authoring](docs/ROOM_TONE_AUDIO.md).
 
+Gain preparation uses exact fixed owner-output coordinates and independent trim,
+envelopes and mute ranges. Interpolate in dB; never normalize dynamics or use a
+finite attenuation as a mute sentinel. Preserve continuous time/pitch and edge
+processing, then apply gain before mixing/limiting. Owner-clock queries retain
+current outer scopes separately from bound recipe clocks and fail explicitly
+when retained support cannot establish a clock. These standalone APIs do not
+yet authorize a persisted gain edit or change PCM. Keep treatment evidence out
+of timing-only frozen layouts; see [gain contracts](docs/AUDIO_GAIN.md).
+
 Bind retained sample routes only to checked complete providers. `AudioRoutedSignal`
 uses independent source input or an immutable Preserve projection on PointCeil;
 `AudioRoutedRoot` retains a complete projected output or checked raw

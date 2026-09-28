@@ -298,6 +298,15 @@ silence and undo. Waveforms, Repeat-gap/fragment controls, physical input and
 listening acceptance, full mixing and export remain required. No DP or gate is
 promoted. See [native qualification](qualification/native-room-tone-2026-09-27.md).
 
+[Gain recipes and owner clocks](AUDIO_GAIN.md) now provide bounded standalone
+gain/mute evaluation and checked structural clock inspection. The
+[gain design board](design/boards/clip-gain-board-v2.png) defines the next native
+target. These APIs do not yet attach gain to document nodes, change PCM, persist
+gain commands or implement Before/Draft audition. Core 32/database 38 remain
+unchanged; gain envelopes and the complete DP-09 audio workflow remain required.
+See the [gain/clock qualification](qualification/gain-clocks-2026-09-27.md) for
+review corrections and the exact verified boundary.
+
 [Original and edit audition](PLAYBACK.md) connects immutable qualified originals and
 canonical limited PCM to the native device, with Space Play/Pause, a monitor
 level, exact audio-clock picture scheduling and explicit interruption. Bounded

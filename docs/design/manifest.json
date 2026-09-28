@@ -188,6 +188,30 @@
       "referenced_images": [
         "boards/room-tone-board-v1.png"
       ]
+    },
+    {
+      "image": "boards/clip-gain-board-v1.png",
+      "status": "superseded-exploration",
+      "generated_on": "2026-09-27",
+      "sha256": "1dea0f1a16ea6c0cc90f6614d8da92f674e4e04b60518f4a019b6e5441e6abd2",
+      "width": 1536,
+      "height": 1024,
+      "prompt": "prompts/clip-gain-board-v1.txt",
+      "prompt_sha256": "50b8c685f493dccc12af1f6a45dae353e66b41d8d30fab7848fb41329866a59b",
+      "referenced_images": []
+    },
+    {
+      "image": "boards/clip-gain-board-v2.png",
+      "status": "current-target",
+      "generated_on": "2026-09-27",
+      "sha256": "51df9dfa24cdc916c5cb64f9fe4381a2563f8cd2f7237003b7197655ffbf01cb",
+      "width": 1536,
+      "height": 1024,
+      "prompt": "prompts/clip-gain-board-v2.txt",
+      "prompt_sha256": "c4b3e8b8ad6236d53a6804f7db2391414645704fa199d32ac3197cbdad306b81",
+      "referenced_images": [
+        "boards/clip-gain-board-v1.png"
+      ]
     }
   ]
 }

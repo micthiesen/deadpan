@@ -1,0 +1,6 @@
+Use case: ui-mockup
+Asset type: corrected native macOS gain-editing target board.
+Edit target: clip-gain-board-v1.png. Preserve its composition, generated interview image, palette, typography, controls, graph, cards and proportions. Make only these precise corrections for truthful timing and keyboard ownership:
+1. The two main viewer clocks, and the two Before/Draft clocks in the lower comparison state, must ALL read exactly "00:00:08:06". The Original catalog duration remains "00:12.47" and 30 fps. The selected Answer starts after Opening at 210 frames and its selected envelope point is 36 local frames, so the clocks consistently show frame 246 at 30 fps. Do not change the 36 f field, card durations, or graph.
+2. Bottom key strip introductory phrase should read "Keys follow the focused control". Native text fields retain ordinary typing; the picture must not teach global beat-gain changes while a field is focused. Keep the key labels, but caption "+ / -" as "Normal: beat gain" and "Space" as "Audition button". Enter/Apply and Esc/Cancel belong to the draft surface.
+3. Replace the bottom-right focus note with "Selection and keyboard focus are separate" in clear compact text. No additional controls, no implementation claims, no extra video imports.

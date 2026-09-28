@@ -1,0 +1,480 @@
+//! Authored clip gain after complete voice time/pitch mapping and edge fades.
+//!
+//! A treatment's owner supplies its evaluation clock and contribution scope.
+//! These fixed owner-output coordinates are never normalized to an owner's
+//! duration. Cropping or extending its allocation does not rewrite the curve.
+//! Interior values use Q32 millidecibels; times and segment selection stay exact.
+//! Amplitude conversion, PCM processing and aggregate voice mixing belong to DSP.
+
+mod json;
+mod numeric;
+mod wire;
+
+use std::{error::Error, fmt};
+
+use serde::{Deserialize, Serialize};
+
+use crate::ExactRatio;
+
+pub const GAIN_NUMERIC_SCALE: u64 = 1 << 32;
+pub const MIN_GAIN_MILLIDECIBELS: i32 = -96_000;
+pub const MAX_GAIN_MILLIDECIBELS: i32 = 24_000;
+/// Per-owner work is at most 16 curves of 64 segments and 64 mute tests.
+pub const MAX_GAIN_ENVELOPES: usize = 16;
+pub const MAX_GAIN_SEGMENTS: usize = 64;
+pub const MAX_GAIN_MUTE_RANGES: usize = 64;
+/// Document/plan integration must charge these independent aggregate limits.
+pub const MAX_GAIN_LAYERS: usize = 16;
+pub const MAX_GAIN_RECORDS: usize = 100_000;
+pub const MAX_AUDIO_TREATMENT_STAGES: usize = 1;
+/// Standalone JSON input/output cap. Enclosing documents and commands must also
+/// impose their own byte limit when they deserialize these types directly.
+pub const MAX_AUDIO_TREATMENTS_JSON_BYTES: usize = 512 * 1024;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum GainError {
+    ValueRange,
+    TimeRange,
+    Segments,
+    StageOrder,
+    Limit,
+    Overflow,
+}
+
+impl fmt::Display for GainError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(match self {
+            Self::ValueRange => "gain must be between -96000 and 24000 millidecibels",
+            Self::TimeRange => "gain ranges require nonnegative increasing exact owner times",
+            Self::Segments => "gain segments must increase from the range start to its exact end",
+            Self::StageOrder => {
+                "treatment order must contain ClipGain exactly when its recipe exists"
+            }
+            Self::Limit => "gain exceeds its declared collection or aggregate record limit",
+            Self::Overflow => "gain arithmetic exceeds its bounded numeric representation",
+        })
+    }
+}
+impl Error for GainError {}
+impl From<crate::TimeError> for GainError {
+    fn from(_: crate::TimeError) -> Self {
+        Self::Overflow
+    }
+}
+
+/// Finite authored gain, never a mute sentinel. Zero means unity.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(try_from = "i32", into = "i32")]
+pub struct GainDb(i32);
+
+impl GainDb {
+    pub const UNITY: Self = Self(0);
+
+    pub fn new(millidecibels: i32) -> Result<Self, GainError> {
+        if !(MIN_GAIN_MILLIDECIBELS..=MAX_GAIN_MILLIDECIBELS).contains(&millidecibels) {
+            return Err(GainError::ValueRange);
+        }
+        Ok(Self(millidecibels))
+    }
+
+    pub const fn millidecibels(self) -> i32 {
+        self.0
+    }
+
+    pub fn adjusted(self, delta_millidecibels: i32) -> Result<Self, GainError> {
+        Self::new(
+            self.0
+                .checked_add(delta_millidecibels)
+                .ok_or(GainError::Overflow)?,
+        )
+    }
+
+    fn grid(self) -> i64 {
+        i64::from(self.0) * GAIN_NUMERIC_SCALE as i64
+    }
+}
+impl TryFrom<i32> for GainDb {
+    type Error = GainError;
+    fn try_from(value: i32) -> Result<Self, Self::Error> {
+        Self::new(value)
+    }
+}
+impl From<GainDb> for i32 {
+    fn from(value: GainDb) -> Self {
+        value.0
+    }
+}
+
+/// A closed evaluation-space contract. No implicit source clock or normalization.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum GainClock {
+    OwnerOutput,
+}
+
+/// Exact owner-local project-frame coordinates, including sample-derived ratios.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(try_from = "wire::Range", into = "wire::Range")]
+pub struct GainRange {
+    start: ExactRatio,
+    end: ExactRatio,
+}
+
+impl GainRange {
+    pub fn new(start: ExactRatio, end: ExactRatio) -> Result<Self, GainError> {
+        if start.compare_integer(0).is_lt() || !numeric::compare(start, end).is_lt() {
+            return Err(GainError::TimeRange);
+        }
+        Ok(Self { start, end })
+    }
+    pub const fn start(self) -> ExactRatio {
+        self.start
+    }
+    pub const fn end(self) -> ExactRatio {
+        self.end
+    }
+    pub fn contains(self, local: ExactRatio) -> bool {
+        !numeric::compare(local, self.start).is_lt() && numeric::compare(local, self.end).is_lt()
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum GainCurve {
+    Step,
+    Linear,
+    Smoothstep,
+    /// Bezier value controls in dB, with linear segment progress.
+    Cubic {
+        control1: GainDb,
+        control2: GainDb,
+    },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(try_from = "wire::Segment", into = "wire::Segment")]
+pub struct GainSegment {
+    end: ExactRatio,
+    value: GainDb,
+    curve: GainCurve,
+}
+
+impl GainSegment {
+    pub fn new(end: ExactRatio, value: GainDb, curve: GainCurve) -> Result<Self, GainError> {
+        if !end.compare_integer(0).is_gt() {
+            return Err(GainError::TimeRange);
+        }
+        Ok(Self { end, value, curve })
+    }
+    pub const fn end(&self) -> ExactRatio {
+        self.end
+    }
+    pub const fn value(&self) -> GainDb {
+        self.value
+    }
+    pub const fn curve(&self) -> GainCurve {
+        self.curve
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(try_from = "wire::Envelope", into = "wire::Envelope")]
+pub struct GainEnvelope {
+    clock: GainClock,
+    range: GainRange,
+    initial: GainDb,
+    segments: Vec<GainSegment>,
+}
+
+impl GainEnvelope {
+    pub fn new(
+        clock: GainClock,
+        range: GainRange,
+        initial: GainDb,
+        segments: Vec<GainSegment>,
+    ) -> Result<Self, GainError> {
+        let result = Self {
+            clock,
+            range,
+            initial,
+            segments,
+        };
+        result.validate()?;
+        Ok(result)
+    }
+
+    pub const fn clock(&self) -> GainClock {
+        self.clock
+    }
+    pub const fn range(&self) -> GainRange {
+        self.range
+    }
+    pub const fn initial(&self) -> GainDb {
+        self.initial
+    }
+    pub fn segments(&self) -> &[GainSegment] {
+        &self.segments
+    }
+
+    pub fn validate(&self) -> Result<(), GainError> {
+        if self.segments.is_empty() || self.segments.len() > MAX_GAIN_SEGMENTS {
+            return Err(GainError::Limit);
+        }
+        let mut previous = self.range.start;
+        for segment in &self.segments {
+            if !numeric::compare(previous, segment.end).is_lt()
+                || numeric::compare(segment.end, self.range.end).is_gt()
+            {
+                return Err(GainError::Segments);
+            }
+            previous = segment.end;
+        }
+        if previous != self.range.end {
+            return Err(GainError::Segments);
+        }
+        Ok(())
+    }
+
+    /// Initial value plus segment targets and explicit cubic controls.
+    pub fn record_count(&self) -> usize {
+        1 + self
+            .segments
+            .iter()
+            .map(|segment| 1 + 2 * usize::from(matches!(segment.curve, GainCurve::Cubic { .. })))
+            .sum::<usize>()
+    }
+
+    /// Half-open range; outside it the envelope contributes exactly zero dB.
+    pub fn evaluate(&self, local: ExactRatio) -> Result<ExactRatio, GainError> {
+        numeric::millidecibels(self.evaluate_grid(local)?)
+    }
+
+    fn evaluate_grid(&self, local: ExactRatio) -> Result<i64, GainError> {
+        if !self.range.contains(local) {
+            return Ok(0);
+        }
+        let mut start = self.range.start;
+        let mut from = self.initial;
+        for segment in &self.segments {
+            match numeric::compare(local, segment.end) {
+                std::cmp::Ordering::Equal => return Ok(segment.value.grid()),
+                std::cmp::Ordering::Greater => {
+                    start = segment.end;
+                    from = segment.value;
+                }
+                std::cmp::Ordering::Less => {
+                    if local == start || matches!(segment.curve, GainCurve::Step) {
+                        return Ok(from.grid());
+                    }
+                    let t = numeric::progress(local, start, segment.end)?;
+                    return numeric::interpolate(from, segment.value, segment.curve, t);
+                }
+            }
+        }
+        Err(GainError::Segments)
+    }
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(try_from = "wire::Clip", into = "wire::Clip")]
+pub struct ClipGain {
+    trim: GainDb,
+    muted: bool,
+    envelopes: Vec<GainEnvelope>,
+    mute_ranges: Vec<GainRange>,
+}
+
+impl ClipGain {
+    pub fn new(
+        trim: GainDb,
+        muted: bool,
+        envelopes: Vec<GainEnvelope>,
+        mute_ranges: Vec<GainRange>,
+    ) -> Result<Self, GainError> {
+        let result = Self {
+            trim,
+            muted,
+            envelopes,
+            mute_ranges,
+        };
+        result.validate()?;
+        Ok(result)
+    }
+    pub const fn trim(&self) -> GainDb {
+        self.trim
+    }
+    pub const fn muted(&self) -> bool {
+        self.muted
+    }
+    pub fn envelopes(&self) -> &[GainEnvelope] {
+        &self.envelopes
+    }
+    pub fn mute_ranges(&self) -> &[GainRange] {
+        &self.mute_ranges
+    }
+
+    pub fn validate(&self) -> Result<(), GainError> {
+        if self.envelopes.len() > MAX_GAIN_ENVELOPES
+            || self.mute_ranges.len() > MAX_GAIN_MUTE_RANGES
+        {
+            return Err(GainError::Limit);
+        }
+        for envelope in &self.envelopes {
+            envelope.validate()?;
+        }
+        Ok(())
+    }
+
+    /// Constant trim, whole-owner mute flag, curve values/controls and mute ranges.
+    pub fn record_count(&self) -> usize {
+        2 + self
+            .envelopes
+            .iter()
+            .map(GainEnvelope::record_count)
+            .sum::<usize>()
+            + self.mute_ranges.len()
+    }
+
+    pub fn with_trim(&self, trim: GainDb) -> Self {
+        Self {
+            trim,
+            ..self.clone()
+        }
+    }
+    pub fn adjust_trim(&self, delta_millidecibels: i32) -> Result<Self, GainError> {
+        Ok(self.with_trim(self.trim.adjusted(delta_millidecibels)?))
+    }
+
+    /// The caller establishes the owner's allocation. Whole-owner trim/mute
+    /// apply throughout that allocation; only range effects use `local`.
+    /// Overlapping envelopes add dB without clamping or normalization.
+    pub fn evaluate(&self, local: ExactRatio) -> Result<EvaluatedGain, GainError> {
+        let mut sum = self.trim.grid();
+        for envelope in &self.envelopes {
+            sum = sum
+                .checked_add(envelope.evaluate_grid(local)?)
+                .ok_or(GainError::Overflow)?;
+        }
+        Ok(EvaluatedGain {
+            millidecibels: numeric::millidecibels(sum)?,
+            muted: self.muted || self.mute_ranges.iter().any(|range| range.contains(local)),
+        })
+    }
+}
+
+/// The only admitted treatment stage. The order is serialized, never inferred
+/// from a UI widget's position; a future stage needs a new closed vocabulary.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum AudioTreatmentStage {
+    ClipGain,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(try_from = "wire::Treatments", into = "wire::Treatments")]
+/// A bounded recipe. For standalone JSON use `from_json`; direct serde ingress
+/// assumes a byte-bounded enclosing document/command. This also bounds inherited
+/// ExactRatio decimal strings before those strings are allocated and parsed.
+pub struct AudioTreatments {
+    order: Vec<AudioTreatmentStage>,
+    clip_gain: Option<ClipGain>,
+}
+
+impl AudioTreatments {
+    pub fn new(
+        order: Vec<AudioTreatmentStage>,
+        clip_gain: Option<ClipGain>,
+    ) -> Result<Self, GainError> {
+        let result = Self { order, clip_gain };
+        result.validate()?;
+        Ok(result)
+    }
+    pub fn from_clip_gain(clip_gain: ClipGain) -> Self {
+        Self {
+            order: vec![AudioTreatmentStage::ClipGain],
+            clip_gain: Some(clip_gain),
+        }
+    }
+    pub fn order(&self) -> &[AudioTreatmentStage] {
+        &self.order
+    }
+    pub fn clip_gain(&self) -> Option<&ClipGain> {
+        self.clip_gain.as_ref()
+    }
+    pub fn is_empty(&self) -> bool {
+        self.clip_gain.is_none()
+    }
+    pub fn validate(&self) -> Result<(), GainError> {
+        if self.order.len() > MAX_AUDIO_TREATMENT_STAGES {
+            return Err(GainError::Limit);
+        }
+        match (self.order.as_slice(), self.clip_gain.is_some()) {
+            ([], false) | ([AudioTreatmentStage::ClipGain], true) => {}
+            _ => return Err(GainError::StageOrder),
+        }
+        if let Some(gain) = &self.clip_gain {
+            gain.validate()?;
+        }
+        Ok(())
+    }
+    pub fn record_count(&self) -> usize {
+        self.clip_gain.as_ref().map_or(0, ClipGain::record_count)
+    }
+    pub fn evaluate(&self, local: ExactRatio) -> Result<EvaluatedGain, GainError> {
+        self.clip_gain
+            .as_ref()
+            .map_or(Ok(EvaluatedGain::UNITY), |gain| gain.evaluate(local))
+    }
+}
+
+/// Evaluated finite dB and exact mute remain separate. Values may exceed one
+/// authored factor's bounds because overlapping factors add without limiting.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+pub struct EvaluatedGain {
+    pub millidecibels: ExactRatio,
+    pub muted: bool,
+}
+
+impl EvaluatedGain {
+    pub const UNITY: Self = Self {
+        millidecibels: ExactRatio::ZERO,
+        muted: false,
+    };
+    pub fn decibels(self) -> Result<ExactRatio, GainError> {
+        Ok(self.millidecibels.checked_div(ExactRatio::integer(1000))?)
+    }
+}
+
+/// Charge a document, subtree or patch-side before cloning its gain records.
+/// Structural path depth is a separate plan/document responsibility.
+pub fn validate_audio_treatments<'a>(
+    treatments: impl IntoIterator<Item = &'a AudioTreatments>,
+) -> Result<usize, GainError> {
+    let mut records = 0usize;
+    for treatment in treatments {
+        treatment.validate()?;
+        records = records
+            .checked_add(treatment.record_count())
+            .ok_or(GainError::Limit)?;
+        if records > MAX_GAIN_RECORDS {
+            return Err(GainError::Limit);
+        }
+    }
+    Ok(records)
+}
+
+/// Charge one structural provider-to-root path independently of the document's
+/// aggregate record inventory. Explicit unity recipes still own a layer.
+pub fn validate_audio_treatment_layers<'a>(
+    treatments: impl IntoIterator<Item = &'a AudioTreatments>,
+) -> Result<usize, GainError> {
+    let mut layers = 0usize;
+    for treatment in treatments {
+        treatment.validate()?;
+        layers += usize::from(!treatment.is_empty());
+        if layers > MAX_GAIN_LAYERS {
+            return Err(GainError::Limit);
+        }
+    }
+    Ok(layers)
+}

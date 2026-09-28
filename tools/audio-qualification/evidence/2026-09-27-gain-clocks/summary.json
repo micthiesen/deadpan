@@ -1,0 +1,104 @@
+{
+  "schema_version": 1,
+  "records": [
+    {
+      "record": "clippy-workspace.json",
+      "log": "clippy-workspace.log.gz",
+      "exit_code": 0,
+      "seconds": 649.3182400418445,
+      "source_manifest_sha256": "c043a7401dc1d7551aa5e2eaaf027a5e6507a0adf12242f7ab366fd4c173c194",
+      "passing_test_groups": 0,
+      "tests_passed": 0,
+      "tests_failed": 0,
+      "tests_ignored": 0
+    },
+    {
+      "record": "format-final.json",
+      "log": "format-final.log.gz",
+      "exit_code": 0,
+      "seconds": 3.212263624649495,
+      "source_manifest_sha256": "c043a7401dc1d7551aa5e2eaaf027a5e6507a0adf12242f7ab366fd4c173c194",
+      "passing_test_groups": 0,
+      "tests_passed": 0,
+      "tests_failed": 0,
+      "tests_ignored": 0
+    },
+    {
+      "record": "gain-core-integration-fixed.json",
+      "log": "gain-core-integration-fixed.log.gz",
+      "exit_code": 0,
+      "seconds": 26.74561412492767,
+      "source_manifest_sha256": "d4da4f88bd17be89d7d71974a54f8b737c0d709ec1a32ea615da879ac31b0065",
+      "passing_test_groups": 1,
+      "tests_passed": 12,
+      "tests_failed": 0,
+      "tests_ignored": 0
+    },
+    {
+      "record": "gain-core-integration.json",
+      "log": "gain-core-integration.log.gz",
+      "exit_code": 101,
+      "seconds": 30.89140750002116,
+      "source_manifest_sha256": "8a2ca187cbcadc7f654f56d55030b002726836f747b25c83f5cb4088e29c5d60",
+      "passing_test_groups": 0,
+      "tests_passed": 10,
+      "tests_failed": 1,
+      "tests_ignored": 0
+    },
+    {
+      "record": "gain-core-streaming.json",
+      "log": "gain-core-streaming.log.gz",
+      "exit_code": 0,
+      "seconds": 30.7279967921786,
+      "source_manifest_sha256": "a28f96a70673ead106c0cf5a87741e1593a6023a9191630f5fb7513040951e5f",
+      "passing_test_groups": 1,
+      "tests_passed": 14,
+      "tests_failed": 0,
+      "tests_ignored": 0
+    },
+    {
+      "record": "gain-owner-clocks-fixed.json",
+      "log": "gain-owner-clocks-fixed.log.gz",
+      "exit_code": 0,
+      "seconds": 80.42829995881766,
+      "source_manifest_sha256": "a28f96a70673ead106c0cf5a87741e1593a6023a9191630f5fb7513040951e5f",
+      "passing_test_groups": 1,
+      "tests_passed": 14,
+      "tests_failed": 0,
+      "tests_ignored": 0
+    },
+    {
+      "record": "gain-owner-clocks.json",
+      "log": "gain-owner-clocks.log.gz",
+      "exit_code": 0,
+      "seconds": 32.02438295818865,
+      "source_manifest_sha256": "d4da4f88bd17be89d7d71974a54f8b737c0d709ec1a32ea615da879ac31b0065",
+      "passing_test_groups": 1,
+      "tests_passed": 12,
+      "tests_failed": 0,
+      "tests_ignored": 0
+    },
+    {
+      "record": "gain-selected-source.json",
+      "log": "gain-selected-source.log.gz",
+      "exit_code": 0,
+      "seconds": 14.601817000191659,
+      "source_manifest_sha256": "c043a7401dc1d7551aa5e2eaaf027a5e6507a0adf12242f7ab366fd4c173c194",
+      "passing_test_groups": 1,
+      "tests_passed": 1,
+      "tests_failed": 0,
+      "tests_ignored": 0
+    },
+    {
+      "record": "tests-workspace.json",
+      "log": "tests-workspace.log.gz",
+      "exit_code": 0,
+      "seconds": 2173.8729456248693,
+      "source_manifest_sha256": "c043a7401dc1d7551aa5e2eaaf027a5e6507a0adf12242f7ab366fd4c173c194",
+      "passing_test_groups": 154,
+      "tests_passed": 1973,
+      "tests_failed": 0,
+      "tests_ignored": 0
+    }
+  ]
+}

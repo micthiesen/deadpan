@@ -84,6 +84,17 @@ Reopen the saved range; replacing it from the captured copy is explicit.
 Preparation successes and failures carry request/session/revision identities.
 Waveforms, occurrence controls and acoustic qualification remain open.
 
+[Gain contracts](../AUDIO_GAIN.md) add standalone bounded dB/mute recipes and
+plan-bound owner-clock queries as the next audio foundation. There is no new
+persisted node field, gain command, PCM stage or native editor yet. Use the
+[gain board](../design/boards/clip-gain-board-v2.png) before implementing its UI.
+Keep gain after complete time/pitch mapping and edges, with exact independent
+owner clocks and unchanged continuous Preserve history. A future context schema
+retains treatments separately from timing-only `FrozenAudioLayout`; migration
+must freeze core 32/database 38 chronology before admitting gain edits. Inspect
+the integration checklist in that contract rather than treating the exported
+recipe/query APIs as a completed audio operation.
+
 [Structural speed editing](../RETIME_EDITING.md) exposes `:retime` and
 `:wrap-retime` through exact speed resolution and the native inspector. Preserve
 the input range when adjusting an ordinary Retime; wrap split Partitions instead.
