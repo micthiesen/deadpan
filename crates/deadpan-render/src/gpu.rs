@@ -1,12 +1,126 @@
 use std::sync::{
     Arc,
     atomic::{AtomicBool, Ordering},
+    mpsc,
 };
+use std::time::Instant;
 
 use deadpan_core::CapturedFraming;
 
+use crate::WorkingRgba16Frame;
+use crate::export::{allocated, readback_layout};
 use crate::{FitMode, FramingLayer, PictureGeometry, Primaries, RenderError, Rgba8Frame, Transfer};
 use crate::{color::conversion, surface::validate_dimensions};
+
+/// Single-flight allocation ownership survives both ticket cancellation and
+/// map cancellation until the submitted GPU copy has also completed.
+struct ReadbackPermit {
+    busy: Arc<AtomicBool>,
+}
+
+impl Drop for ReadbackPermit {
+    fn drop(&mut self) {
+        self.busy.store(false, Ordering::Release);
+    }
+}
+
+/// One same-queue snapshot of a working target. Poll from a preparation worker;
+/// this API creates no thread and performs no blocking device wait. A successful
+/// poll copies at most MAX_WORKING_FRAME_BYTES into owned CPU memory. The host
+/// owns the number of completed frames it retains and its polling schedule.
+///
+/// Deadline/cancellation are cooperative, checked before and after device
+/// polling and the bounded CPU copy; they cannot interrupt a driver call.
+/// Dropping a ticket cancels mapping, but does not cancel submitted GPU work.
+/// Its renderer keeps the single-flight permit until both GPU completion and
+/// the mapping callback have drained. Continue ordinary device polling (or
+/// attempt begin_working_readback again) to drain cancelled work.
+pub struct WorkingReadback {
+    device: wgpu::Device,
+    buffer: Option<wgpu::Buffer>,
+    receive: mpsc::Receiver<Result<(), String>>,
+    permit: Option<Arc<ReadbackPermit>>,
+    width: u32,
+    height: u32,
+    stride: u32,
+    length: u64,
+    deadline: Instant,
+}
+
+impl WorkingReadback {
+    /// None means mapping is pending. Success or failure consumes this ticket's
+    /// allocation; another poll then returns ReadbackFinished. Results are never
+    /// published after the captured deadline or an observed cancellation.
+    pub fn poll(
+        &mut self,
+        cancelled: &AtomicBool,
+    ) -> Result<Option<WorkingRgba16Frame>, RenderError> {
+        if self.buffer.is_none() {
+            return Err(RenderError::ReadbackFinished);
+        }
+        let result = self.poll_inner(cancelled);
+        if !matches!(result, Ok(None)) {
+            self.release();
+        }
+        result
+    }
+
+    fn poll_inner(
+        &self,
+        cancelled: &AtomicBool,
+    ) -> Result<Option<WorkingRgba16Frame>, RenderError> {
+        check_readback_control(cancelled, self.deadline)?;
+        self.device
+            .poll(wgpu::PollType::Poll)
+            .map_err(|error| RenderError::Poll(error.to_string()))?;
+        check_readback_control(cancelled, self.deadline)?;
+        match self.receive.try_recv() {
+            Ok(result) => result.map_err(RenderError::Readback)?,
+            Err(mpsc::TryRecvError::Empty) => return Ok(None),
+            Err(mpsc::TryRecvError::Disconnected) => {
+                return Err(RenderError::Readback(
+                    "mapping callback disconnected".into(),
+                ));
+            }
+        }
+        let buffer = self.buffer.as_ref().ok_or(RenderError::ReadbackFinished)?;
+        let view = buffer
+            .get_mapped_range(..)
+            .map_err(|error| RenderError::Readback(error.to_string()))?;
+        let length = usize::try_from(self.length).map_err(|_| RenderError::WorkingLayout)?;
+        if view.len() != length {
+            return Err(RenderError::WorkingLayout);
+        }
+        let mut bytes = allocated(length, 0_u8)?;
+        bytes.copy_from_slice(&view);
+        drop(view);
+        check_readback_control(cancelled, self.deadline)?;
+        WorkingRgba16Frame::new(self.width, self.height, self.stride, bytes).map(Some)
+    }
+
+    fn release(&mut self) {
+        if let Some(buffer) = self.buffer.take() {
+            buffer.unmap();
+        }
+        self.permit.take();
+    }
+}
+
+impl Drop for WorkingReadback {
+    fn drop(&mut self) {
+        self.release();
+    }
+}
+
+fn check_readback_control(cancelled: &AtomicBool, deadline: Instant) -> Result<(), RenderError> {
+    if cancelled.load(Ordering::Acquire) {
+        return Err(RenderError::ReadbackCancelled);
+    }
+    if Instant::now() >= deadline {
+        return Err(RenderError::ReadbackDeadline);
+    }
+    Ok(())
+}
 
 /// Reusable destination and its owned GPU textures. Views remain stable for
 /// egui registration or export readback until this target is dropped. The host
@@ -56,6 +170,7 @@ pub struct PictureRenderer {
     queue: wgpu::Queue,
     owner: Arc<()>,
     complete: Arc<AtomicBool>,
+    readback_busy: Arc<AtomicBool>,
     layout: wgpu::BindGroupLayout,
     interpret: wgpu::RenderPipeline,
     display: wgpu::RenderPipeline,
@@ -124,6 +239,7 @@ impl PictureRenderer {
             queue: queue.clone(),
             owner: Arc::new(()),
             complete: Arc::new(AtomicBool::new(true)),
+            readback_busy: Arc::new(AtomicBool::new(false)),
             layout,
             interpret,
             display,
@@ -167,6 +283,86 @@ impl PictureRenderer {
             .poll(wgpu::PollType::Poll)
             .map_err(|error| RenderError::Poll(error.to_string()))?;
         Ok(self.complete.load(Ordering::Acquire))
+    }
+
+    /// Snapshot the working texture after prior submissions on this renderer's
+    /// queue. Call after render/render_composed: a newly allocated target has no
+    /// authored picture. The copy precedes later renders on this same queue and
+    /// never changes or unregisters either preview texture. Only one readback
+    /// allocation may be outstanding per renderer, including cancelled work.
+    ///
+    /// Use on a preparation worker: submission and polling are cooperative GPU
+    /// operations, not a preemptive wall-time guarantee. No wait or thread is
+    /// hidden here. The captured monotonic deadline applies to all later polls.
+    pub fn begin_working_readback(
+        &mut self,
+        target: &RenderTarget,
+        cancelled: &AtomicBool,
+        deadline: Instant,
+    ) -> Result<WorkingReadback, RenderError> {
+        if !Arc::ptr_eq(&self.owner, &target.owner) {
+            return Err(RenderError::ForeignTarget);
+        }
+        check_readback_control(cancelled, deadline)?;
+        let (stride, length) = readback_layout(target.width(), target.height())?;
+        if length > self.device.limits().max_buffer_size {
+            return Err(RenderError::DeviceLimit);
+        }
+        // Also drains callbacks for a previously dropped/cancelled ticket.
+        self.device
+            .poll(wgpu::PollType::Poll)
+            .map_err(|error| RenderError::Poll(error.to_string()))?;
+        check_readback_control(cancelled, deadline)?;
+        if self.readback_busy.swap(true, Ordering::AcqRel) {
+            return Err(RenderError::ReadbackBusy);
+        }
+        let permit = Arc::new(ReadbackPermit {
+            busy: Arc::clone(&self.readback_busy),
+        });
+        let buffer = self.device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("Deadpan bounded working picture readback"),
+            size: length,
+            usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
+            mapped_at_creation: false,
+        });
+        let mut encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("Deadpan working picture snapshot"),
+            });
+        encoder.copy_texture_to_buffer(
+            target.working.as_image_copy(),
+            wgpu::TexelCopyBufferInfo {
+                buffer: &buffer,
+                layout: wgpu::TexelCopyBufferLayout {
+                    offset: 0,
+                    bytes_per_row: Some(stride),
+                    rows_per_image: Some(target.height()),
+                },
+            },
+            target.working.size(),
+        );
+        self.queue.submit([encoder.finish()]);
+        let submitted_permit = Arc::clone(&permit);
+        self.queue
+            .on_submitted_work_done(move || drop(submitted_permit));
+        let (send, receive) = mpsc::sync_channel(1);
+        let mapped_permit = Arc::clone(&permit);
+        buffer.map_async(wgpu::MapMode::Read, .., move |result| {
+            let _ = send.try_send(result.map_err(|error| error.to_string()));
+            drop(mapped_permit);
+        });
+        Ok(WorkingReadback {
+            device: self.device.clone(),
+            buffer: Some(buffer),
+            receive,
+            permit: Some(permit),
+            width: target.width(),
+            height: target.height(),
+            stride,
+            length,
+            deadline,
+        })
     }
 
     /// Upload a validated immutable source and encode both picture passes into
@@ -415,6 +611,50 @@ fn draw(
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+    use std::time::Duration;
+
+    #[test]
+    fn cancelled_ticket_cannot_release_inflight_copy_or_mapping_permits() {
+        for gpu_finishes_first in [false, true] {
+            let busy = Arc::new(AtomicBool::new(true));
+            let ticket = Arc::new(ReadbackPermit {
+                busy: Arc::clone(&busy),
+            });
+            let gpu_callback = Arc::clone(&ticket);
+            let mapping_callback = Arc::clone(&ticket);
+            drop(ticket);
+            assert!(busy.load(Ordering::Acquire));
+            if gpu_finishes_first {
+                drop(gpu_callback);
+                assert!(busy.load(Ordering::Acquire));
+                drop(mapping_callback);
+            } else {
+                drop(mapping_callback);
+                assert!(busy.load(Ordering::Acquire));
+                drop(gpu_callback);
+            }
+            assert!(!busy.load(Ordering::Acquire));
+        }
+    }
+
+    #[test]
+    fn readback_controls_reject_expired_deadlines_and_observed_cancellation() {
+        let cancelled = AtomicBool::new(false);
+        let expired = Instant::now();
+        assert!(matches!(
+            check_readback_control(&cancelled, expired),
+            Err(RenderError::ReadbackDeadline)
+        ));
+        let future = Instant::now() + Duration::from_secs(60);
+        assert!(check_readback_control(&cancelled, future).is_ok());
+        cancelled.store(true, Ordering::Release);
+        assert!(matches!(
+            check_readback_control(&cancelled, future),
+            Err(RenderError::ReadbackCancelled)
+        ));
+    }
+
     #[test]
     fn shared_shader_validates_without_a_gpu() {
         let module = wgpu::naga::front::wgsl::parse_str(include_str!("picture.wgsl"))

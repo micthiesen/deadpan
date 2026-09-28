@@ -78,6 +78,18 @@ pub(crate) fn decode(value: f64, transfer: Transfer) -> f64 {
     }
 }
 
+/// BT.709 OETF after the final SDR linear-light gamut/reference-white clip.
+/// Apply the primaries transform before this function; clipping the Rec.2020
+/// working channels first would change colors. This is not HDR tone mapping.
+pub(crate) fn encode_rec709(value: f64) -> f64 {
+    let value = value.clamp(0.0, 1.0);
+    if value < 0.018 {
+        4.5 * value
+    } else {
+        1.099 * value.powf(0.45) - 0.099
+    }
+}
+
 /// CPU reference source interpretation, using two f64 XYZ matrix operations.
 /// No clipping occurs here, including negative or above-reference working values.
 pub fn source_to_working(rgb: [f64; 3], color: SourceColor) -> [f64; 3] {
@@ -169,6 +181,15 @@ mod tests {
                 1e-12,
             );
         }
+    }
+
+    #[test]
+    fn encoder_oetf_uses_the_rec709_threshold_and_final_sdr_clip() {
+        assert_eq!(encode_rec709(-0.25), 0.0);
+        assert_eq!(encode_rec709(2.0), 1.0);
+        assert!((encode_rec709(0.017999) - 0.0809955).abs() < 1e-12);
+        assert!((encode_rec709(0.018) - 0.08124794403514049).abs() < 1e-12);
+        assert!((encode_rec709(0.5) - 0.7055150899221212).abs() < 1e-12);
     }
 
     #[test]

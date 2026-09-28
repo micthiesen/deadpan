@@ -1,7 +1,5 @@
 /* Developer-only CFR encoder experiment. No product runtime entrypoint. */
 #define _POSIX_C_SOURCE 200809L
-/* Darwin exposes O_NOFOLLOW only with its extension declarations enabled. */
-#define _DARWIN_C_SOURCE 1
 #define main original_fixture_main
 #include "../media_probe.c"
 #undef main

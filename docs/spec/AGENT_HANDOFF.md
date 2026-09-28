@@ -13,6 +13,18 @@ disabled-edit-list file; the default reference aligns. A concrete mux-policy
 revision is awaiting the user's answer. Closed GOPs, native video and product
 export remain open.
 
+The [shared SDR encoder pixel boundary](../SDR_ENCODER_PIXELS.md) snapshots
+the composed linear working target into bounded owned memory and converts it
+to explicit Rec.709 limited-range, left-sited I420. Preserve its signed working
+values until the output transform and keep output timestamps separate from
+source PTS. Cancelled GPU work retains its permit until callbacks drain.
+The synthetic video-only encoder experiment is independent of the pending AAC
+mux-policy decision; neither boundary supplies a project export worker.
+Its [qualification](../qualification/sdr-encoder-pixels-2026-09-28.md) retains
+the full workspace pass, 22 actual Metal checks and normal/sanitized H.264
+pixel comparisons. Continue with fixed-revision project picture preparation;
+qualified accepted-media/Still readers and final-render isolation remain open.
+
 ## Product in one paragraph
 
 Build a native macOS, Rust-first, Vim-style instrument for massaging one original video into a weird YTP. A project chooses one local or YouTube video and starts with its full unedited timeline automatically. Cuts, repeats, pauses, reframing and effects remain reversible structures on that original. Reuse moments from the same video, add external audio-only effects, and explicitly accept local AI Hold extensions. Do not offer additional video imports. New native projects live in Documents/Deadpan regardless of launch or source location. The full product still includes analysis, recovery, actual local generation and one-action source-derived YouTube output without external end-user runtimes.

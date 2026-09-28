@@ -1,0 +1,13 @@
+{
+  "command": [
+    "python3",
+    "/tmp/deadpan-sdr-pixels-3JwYsBqt/run-metal.py"
+  ],
+  "started": "2026-09-28T15:54:38.828072+00:00",
+  "base_commit": "31e28647df6b1c5e088bca0d073336df0aef74d3",
+  "diff_sha256": "0a1134e0ac4bcda30f5014ee753cf4d3e80b8eb0fefda0bd1931da40f713d667",
+  "source_manifest_sha256": "870d757db36e1903617663003d6cc144af4ae8e71fdb5e15d7beeca143c54fcd",
+  "pid": 51172,
+  "exit_code": 0,
+  "seconds": 3.2037858748808503
+}

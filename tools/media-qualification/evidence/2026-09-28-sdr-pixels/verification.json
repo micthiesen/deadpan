@@ -1,0 +1,303 @@
+{
+  "workspace": {
+    "targets_with_test_result": 155,
+    "passed": 2070,
+    "failed": 0,
+    "ignored": 0,
+    "measured": 0,
+    "filtered": 0,
+    "seconds": 1353.8333011246286
+  },
+  "rust_and_cargo_sources_unchanged_between_checks": true,
+  "source_comparisons": [
+    "sdr02-clippy",
+    "sdr03-workspace",
+    "sdr04-artifacts",
+    "sdr05-metal",
+    "sdr06-python",
+    "sdr11-format"
+  ],
+  "python": {
+    "tests": 101,
+    "seconds": 6.558724666014314
+  },
+  "metal": {
+    "checks": 22,
+    "adapter": {
+      "backend": "Metal",
+      "device": 0,
+      "device_type": "IntegratedGpu",
+      "driver": "",
+      "driver_info": "",
+      "name": "Apple M5 Max",
+      "vendor": 0
+    },
+    "codes_compared": 172260,
+    "maximum_code_error": 0
+  },
+  "native": {
+    "picture-fixed": {
+      "result": "passed scoped renderer-plane H.264 checks",
+      "admission_assertions": 105,
+      "checks": 20,
+      "final_file_admission": {
+        "checks": 170,
+        "all_passed": true
+      },
+      "cases": [
+        {
+          "name": "linear-rec709-patches-chroma-320x180",
+          "status": "passed",
+          "decoded_vs_actual": {
+            "passed": true,
+            "compared_codes": 86400,
+            "maximum_tolerance_codes": 12,
+            "mean_tolerance_codes": 2,
+            "planes": [
+              {
+                "plane": "Y",
+                "width": 320,
+                "height": 180,
+                "compared_codes": 57600,
+                "maximum_error": 3,
+                "mean_absolute_error": 0.21479166666666666,
+                "out_of_tolerance_codes": 0,
+                "first_failures": [],
+                "passed": true
+              },
+              {
+                "plane": "Cb",
+                "width": 160,
+                "height": 90,
+                "compared_codes": 14400,
+                "maximum_error": 2,
+                "mean_absolute_error": 0.0375,
+                "out_of_tolerance_codes": 0,
+                "first_failures": [],
+                "passed": true
+              },
+              {
+                "plane": "Cr",
+                "width": 160,
+                "height": 90,
+                "compared_codes": 14400,
+                "maximum_error": 2,
+                "mean_absolute_error": 0.0475,
+                "out_of_tolerance_codes": 0,
+                "first_failures": [],
+                "passed": true
+              }
+            ]
+          }
+        },
+        {
+          "name": "linear-rec709-patches-chroma-318x180",
+          "status": "passed",
+          "decoded_vs_actual": {
+            "passed": true,
+            "compared_codes": 85860,
+            "maximum_tolerance_codes": 12,
+            "mean_tolerance_codes": 2,
+            "planes": [
+              {
+                "plane": "Y",
+                "width": 318,
+                "height": 180,
+                "compared_codes": 57240,
+                "maximum_error": 3,
+                "mean_absolute_error": 0.22569881201956674,
+                "out_of_tolerance_codes": 0,
+                "first_failures": [],
+                "passed": true
+              },
+              {
+                "plane": "Cb",
+                "width": 159,
+                "height": 90,
+                "compared_codes": 14310,
+                "maximum_error": 2,
+                "mean_absolute_error": 0.03759608665269042,
+                "out_of_tolerance_codes": 0,
+                "first_failures": [],
+                "passed": true
+              },
+              {
+                "plane": "Cr",
+                "width": 159,
+                "height": 90,
+                "compared_codes": 14310,
+                "maximum_error": 2,
+                "mean_absolute_error": 0.05101327742837177,
+                "out_of_tolerance_codes": 0,
+                "first_failures": [],
+                "passed": true
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "picture-sanitizers": {
+      "result": "passed scoped renderer-plane H.264 checks",
+      "admission_assertions": 105,
+      "checks": 20,
+      "final_file_admission": {
+        "checks": 170,
+        "all_passed": true
+      },
+      "cases": [
+        {
+          "name": "linear-rec709-patches-chroma-320x180",
+          "status": "passed",
+          "decoded_vs_actual": {
+            "passed": true,
+            "compared_codes": 86400,
+            "maximum_tolerance_codes": 12,
+            "mean_tolerance_codes": 2,
+            "planes": [
+              {
+                "plane": "Y",
+                "width": 320,
+                "height": 180,
+                "compared_codes": 57600,
+                "maximum_error": 3,
+                "mean_absolute_error": 0.21479166666666666,
+                "out_of_tolerance_codes": 0,
+                "first_failures": [],
+                "passed": true
+              },
+              {
+                "plane": "Cb",
+                "width": 160,
+                "height": 90,
+                "compared_codes": 14400,
+                "maximum_error": 2,
+                "mean_absolute_error": 0.0375,
+                "out_of_tolerance_codes": 0,
+                "first_failures": [],
+                "passed": true
+              },
+              {
+                "plane": "Cr",
+                "width": 160,
+                "height": 90,
+                "compared_codes": 14400,
+                "maximum_error": 2,
+                "mean_absolute_error": 0.0475,
+                "out_of_tolerance_codes": 0,
+                "first_failures": [],
+                "passed": true
+              }
+            ]
+          }
+        },
+        {
+          "name": "linear-rec709-patches-chroma-318x180",
+          "status": "passed",
+          "decoded_vs_actual": {
+            "passed": true,
+            "compared_codes": 85860,
+            "maximum_tolerance_codes": 12,
+            "mean_tolerance_codes": 2,
+            "planes": [
+              {
+                "plane": "Y",
+                "width": 318,
+                "height": 180,
+                "compared_codes": 57240,
+                "maximum_error": 3,
+                "mean_absolute_error": 0.22569881201956674,
+                "out_of_tolerance_codes": 0,
+                "first_failures": [],
+                "passed": true
+              },
+              {
+                "plane": "Cb",
+                "width": 159,
+                "height": 90,
+                "compared_codes": 14310,
+                "maximum_error": 2,
+                "mean_absolute_error": 0.03759608665269042,
+                "out_of_tolerance_codes": 0,
+                "first_failures": [],
+                "passed": true
+              },
+              {
+                "plane": "Cr",
+                "width": 159,
+                "height": 90,
+                "compared_codes": 14310,
+                "maximum_error": 2,
+                "mean_absolute_error": 0.05101327742837177,
+                "out_of_tolerance_codes": 0,
+                "first_failures": [],
+                "passed": true
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "encoder-control": {
+      "result": "passed existing encoder dispatch control",
+      "admission_assertions": 105,
+      "checks": 105,
+      "final_file_admission": {
+        "checks": 160,
+        "all_passed": true
+      },
+      "cases": [
+        {
+          "name": "existing-default-60",
+          "status": "passed scoped checks"
+        }
+      ]
+    }
+  },
+  "commands": {
+    "sdr01-clippy": {
+      "exit_code": 101,
+      "seconds": 65.69046424981207
+    },
+    "sdr02-clippy": {
+      "exit_code": 0,
+      "seconds": 17.52153554186225
+    },
+    "sdr03-workspace": {
+      "exit_code": 0,
+      "seconds": 1353.8333011246286
+    },
+    "sdr04-artifacts": {
+      "exit_code": 0,
+      "seconds": 0.8492554998956621
+    },
+    "sdr05-metal": {
+      "exit_code": 0,
+      "seconds": 3.2037858748808503
+    },
+    "sdr06-python": {
+      "exit_code": 0,
+      "seconds": 6.558724666014314
+    },
+    "sdr07-picture": {
+      "exit_code": 1,
+      "seconds": 2.6115304166451097
+    },
+    "sdr08-picture-fixed": {
+      "exit_code": 0,
+      "seconds": 4.948498459067196
+    },
+    "sdr09-sanitizers": {
+      "exit_code": 0,
+      "seconds": 6.892245250288397
+    },
+    "sdr10-control": {
+      "exit_code": 0,
+      "seconds": 4.692567416001111
+    },
+    "sdr11-format": {
+      "exit_code": 0,
+      "seconds": 4.480163541156799
+    }
+  }
+}

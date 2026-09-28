@@ -1,0 +1,2898 @@
+{
+  "commands": [
+    {
+      "name": "sdr01-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "started": "2026-09-28T15:29:14.098134+00:00",
+      "base_commit": "31e28647df6b1c5e088bca0d073336df0aef74d3",
+      "diff_sha256": "b793078ddefa0382a6b6672147de0b49d6c89247f086cd103ae1be578d5a503a",
+      "source_manifest_sha256": "b572b09936d36508d73338807570569801d3b1e7d83a658643599cb0feb41268",
+      "pid": 47393,
+      "exit_code": 101,
+      "seconds": 65.69046424981207
+    },
+    {
+      "name": "sdr02-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "started": "2026-09-28T15:31:11.346647+00:00",
+      "base_commit": "31e28647df6b1c5e088bca0d073336df0aef74d3",
+      "diff_sha256": "d5c4dfb22a6f571de4a32cda31382aafa15a09785eca2189ca493ed72301082e",
+      "source_manifest_sha256": "996f80234505fce866f329b6248a5edfb24b8e45bc0f66b848ce251c91b87563",
+      "pid": 47641,
+      "exit_code": 0,
+      "seconds": 17.52153554186225
+    },
+    {
+      "name": "sdr03-workspace",
+      "command": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked",
+        "--no-fail-fast"
+      ],
+      "started": "2026-09-28T15:31:43.559349+00:00",
+      "base_commit": "31e28647df6b1c5e088bca0d073336df0aef74d3",
+      "diff_sha256": "d5c4dfb22a6f571de4a32cda31382aafa15a09785eca2189ca493ed72301082e",
+      "source_manifest_sha256": "996f80234505fce866f329b6248a5edfb24b8e45bc0f66b848ce251c91b87563",
+      "pid": 47681,
+      "exit_code": 0,
+      "seconds": 1353.8333011246286
+    },
+    {
+      "name": "sdr04-artifacts",
+      "command": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked",
+        "--no-run",
+        "--message-format=json"
+      ],
+      "started": "2026-09-28T15:54:23.329195+00:00",
+      "base_commit": "31e28647df6b1c5e088bca0d073336df0aef74d3",
+      "diff_sha256": "0a1134e0ac4bcda30f5014ee753cf4d3e80b8eb0fefda0bd1931da40f713d667",
+      "source_manifest_sha256": "870d757db36e1903617663003d6cc144af4ae8e71fdb5e15d7beeca143c54fcd",
+      "pid": 51074,
+      "exit_code": 0,
+      "seconds": 0.8492554998956621
+    },
+    {
+      "name": "sdr05-metal",
+      "command": [
+        "python3",
+        "/tmp/deadpan-sdr-pixels-3JwYsBqt/run-metal.py"
+      ],
+      "started": "2026-09-28T15:54:38.828072+00:00",
+      "base_commit": "31e28647df6b1c5e088bca0d073336df0aef74d3",
+      "diff_sha256": "0a1134e0ac4bcda30f5014ee753cf4d3e80b8eb0fefda0bd1931da40f713d667",
+      "source_manifest_sha256": "870d757db36e1903617663003d6cc144af4ae8e71fdb5e15d7beeca143c54fcd",
+      "pid": 51172,
+      "exit_code": 0,
+      "seconds": 3.2037858748808503
+    },
+    {
+      "name": "sdr06-python",
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools/media-qualification/compatible",
+        "-p",
+        "test_*.py",
+        "-v"
+      ],
+      "started": "2026-09-28T15:54:49.376938+00:00",
+      "base_commit": "31e28647df6b1c5e088bca0d073336df0aef74d3",
+      "diff_sha256": "0a1134e0ac4bcda30f5014ee753cf4d3e80b8eb0fefda0bd1931da40f713d667",
+      "source_manifest_sha256": "870d757db36e1903617663003d6cc144af4ae8e71fdb5e15d7beeca143c54fcd",
+      "pid": 51195,
+      "exit_code": 0,
+      "seconds": 6.558724666014314
+    },
+    {
+      "name": "sdr07-picture",
+      "command": [
+        "python3",
+        "tools/media-qualification/compatible/qualify_picture_export.py",
+        "--build-report",
+        "/tmp/deadpan-ui-ffmpeg-build.json",
+        "--renderer-report",
+        "/tmp/deadpan-sdr-pixels-3JwYsBqt/metal.json",
+        "--work",
+        "/tmp/deadpan-sdr-pixels-3JwYsBqt/picture",
+        "--output",
+        "/tmp/deadpan-sdr-pixels-3JwYsBqt/picture.json"
+      ],
+      "started": "2026-09-28T15:55:03.287664+00:00",
+      "base_commit": "31e28647df6b1c5e088bca0d073336df0aef74d3",
+      "diff_sha256": "0a1134e0ac4bcda30f5014ee753cf4d3e80b8eb0fefda0bd1931da40f713d667",
+      "source_manifest_sha256": "870d757db36e1903617663003d6cc144af4ae8e71fdb5e15d7beeca143c54fcd",
+      "pid": 51290,
+      "exit_code": 1,
+      "seconds": 2.6115304166451097
+    },
+    {
+      "name": "sdr08-picture-fixed",
+      "command": [
+        "python3",
+        "tools/media-qualification/compatible/qualify_picture_export.py",
+        "--build-report",
+        "/tmp/deadpan-ui-ffmpeg-build.json",
+        "--renderer-report",
+        "/tmp/deadpan-sdr-pixels-3JwYsBqt/metal.json",
+        "--work",
+        "/tmp/deadpan-sdr-pixels-3JwYsBqt/picture-fixed",
+        "--output",
+        "/tmp/deadpan-sdr-pixels-3JwYsBqt/picture-fixed.json"
+      ],
+      "started": "2026-09-28T15:55:54.842653+00:00",
+      "base_commit": "31e28647df6b1c5e088bca0d073336df0aef74d3",
+      "diff_sha256": "408055286ef694fbc1c082634ef923113a9deb878e0844ab828d237b56e627f4",
+      "source_manifest_sha256": "827debed2bf110d0a5e91c6842f4728fe1d9a21bb6ea7d0dfdd3f6b3eb6d024e",
+      "pid": 51656,
+      "exit_code": 0,
+      "seconds": 4.948498459067196
+    },
+    {
+      "name": "sdr09-sanitizers",
+      "command": [
+        "python3",
+        "tools/media-qualification/compatible/qualify_picture_export.py",
+        "--build-report",
+        "/tmp/deadpan-ui-ffmpeg-build.json",
+        "--renderer-report",
+        "/tmp/deadpan-sdr-pixels-3JwYsBqt/metal.json",
+        "--work",
+        "/tmp/deadpan-sdr-pixels-3JwYsBqt/picture-sanitizers",
+        "--output",
+        "/tmp/deadpan-sdr-pixels-3JwYsBqt/picture-sanitizers.json",
+        "--sanitizers"
+      ],
+      "started": "2026-09-28T15:57:06.897593+00:00",
+      "base_commit": "31e28647df6b1c5e088bca0d073336df0aef74d3",
+      "diff_sha256": "408055286ef694fbc1c082634ef923113a9deb878e0844ab828d237b56e627f4",
+      "source_manifest_sha256": "827debed2bf110d0a5e91c6842f4728fe1d9a21bb6ea7d0dfdd3f6b3eb6d024e",
+      "pid": 51933,
+      "exit_code": 0,
+      "seconds": 6.892245250288397
+    },
+    {
+      "name": "sdr10-control",
+      "command": [
+        "python3",
+        "/tmp/deadpan-sdr-pixels-3JwYsBqt/check-encoder-control.py"
+      ],
+      "started": "2026-09-28T15:57:30.042015+00:00",
+      "base_commit": "31e28647df6b1c5e088bca0d073336df0aef74d3",
+      "diff_sha256": "408055286ef694fbc1c082634ef923113a9deb878e0844ab828d237b56e627f4",
+      "source_manifest_sha256": "827debed2bf110d0a5e91c6842f4728fe1d9a21bb6ea7d0dfdd3f6b3eb6d024e",
+      "pid": 52023,
+      "exit_code": 0,
+      "seconds": 4.692567416001111
+    },
+    {
+      "name": "sdr11-format",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "started": "2026-09-28T15:58:17.076992+00:00",
+      "base_commit": "31e28647df6b1c5e088bca0d073336df0aef74d3",
+      "diff_sha256": "408055286ef694fbc1c082634ef923113a9deb878e0844ab828d237b56e627f4",
+      "source_manifest_sha256": "827debed2bf110d0a5e91c6842f4728fe1d9a21bb6ea7d0dfdd3f6b3eb6d024e",
+      "pid": 52117,
+      "exit_code": 0,
+      "seconds": 4.480163541156799
+    }
+  ],
+  "metal": {
+    "adapter": {
+      "backend": "Metal",
+      "device": 0,
+      "device_type": "IntegratedGpu",
+      "driver": "",
+      "driver_info": "",
+      "name": "Apple M5 Max",
+      "vendor": 0
+    },
+    "case_count": 2,
+    "cases": [
+      {
+        "actual_sha256": "7794d9fd29711b02bffc69778a07c3c92e2e4c87c3bb5c022348f8a7135b2b14",
+        "byte_count": 86400,
+        "chroma_stride_bytes": 160,
+        "color": {
+          "chroma_location": "left",
+          "matrix": "bt709",
+          "primaries": "bt709",
+          "range": "tv",
+          "transfer": "bt709"
+        },
+        "comparison": {
+          "compared_codes": 86400,
+          "first_failures": [],
+          "maximum_plane_difference": [
+            0,
+            0,
+            0
+          ],
+          "out_of_tolerance_codes": 0,
+          "passed": true,
+          "tolerance_codes": 1
+        },
+        "elapsed_seconds": 0.263855041,
+        "frame_count": 1,
+        "frame_rate": [
+          30,
+          1
+        ],
+        "height": 180,
+        "name": "linear-rec709-patches-chroma-320x180",
+        "pixel_format": "yuv420p",
+        "plane_order": [
+          "Y",
+          "Cb",
+          "Cr"
+        ],
+        "raw_path": "/private/tmp/deadpan-sdr-pixels-3JwYsBqt/metal-fixtures/linear-rec709-patches-chroma-320x180.i420",
+        "reference_path": "/private/tmp/deadpan-sdr-pixels-3JwYsBqt/metal-fixtures/linear-rec709-patches-chroma-320x180-reference.i420",
+        "reference_sha256": "7794d9fd29711b02bffc69778a07c3c92e2e4c87c3bb5c022348f8a7135b2b14",
+        "width": 320,
+        "working_stride_bytes": 2560,
+        "y_stride_bytes": 320
+      },
+      {
+        "actual_sha256": "61d03e0ed627d88abb464750718dacf4d140b8bbb5ba3c867d493a2adbcd15d1",
+        "byte_count": 85860,
+        "chroma_stride_bytes": 159,
+        "color": {
+          "chroma_location": "left",
+          "matrix": "bt709",
+          "primaries": "bt709",
+          "range": "tv",
+          "transfer": "bt709"
+        },
+        "comparison": {
+          "compared_codes": 85860,
+          "first_failures": [],
+          "maximum_plane_difference": [
+            0,
+            0,
+            0
+          ],
+          "out_of_tolerance_codes": 0,
+          "passed": true,
+          "tolerance_codes": 1
+        },
+        "elapsed_seconds": 0.35657825,
+        "frame_count": 1,
+        "frame_rate": [
+          30,
+          1
+        ],
+        "height": 180,
+        "name": "linear-rec709-patches-chroma-318x180",
+        "pixel_format": "yuv420p",
+        "plane_order": [
+          "Y",
+          "Cb",
+          "Cr"
+        ],
+        "raw_path": "/private/tmp/deadpan-sdr-pixels-3JwYsBqt/metal-fixtures/linear-rec709-patches-chroma-318x180.i420",
+        "reference_path": "/private/tmp/deadpan-sdr-pixels-3JwYsBqt/metal-fixtures/linear-rec709-patches-chroma-318x180-reference.i420",
+        "reference_sha256": "61d03e0ed627d88abb464750718dacf4d140b8bbb5ba3c867d493a2adbcd15d1",
+        "width": 318,
+        "working_stride_bytes": 2560,
+        "y_stride_bytes": 318
+      }
+    ],
+    "checks": [
+      {
+        "details": {
+          "actual_ycbcr": [
+            16,
+            128,
+            128
+          ],
+          "expected_ycbcr": [
+            16,
+            128,
+            128
+          ],
+          "rgba8": [
+            0,
+            0,
+            0,
+            255
+          ]
+        },
+        "label": "independent known Rec709 color anchor",
+        "passed": true
+      },
+      {
+        "details": {
+          "actual_ycbcr": [
+            235,
+            128,
+            128
+          ],
+          "expected_ycbcr": [
+            235,
+            128,
+            128
+          ],
+          "rgba8": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        "label": "independent known Rec709 color anchor",
+        "passed": true
+      },
+      {
+        "details": {
+          "actual_ycbcr": [
+            63,
+            102,
+            240
+          ],
+          "expected_ycbcr": [
+            63,
+            102,
+            240
+          ],
+          "rgba8": [
+            255,
+            0,
+            0,
+            255
+          ]
+        },
+        "label": "independent known Rec709 color anchor",
+        "passed": true
+      },
+      {
+        "details": {
+          "actual_ycbcr": [
+            173,
+            42,
+            26
+          ],
+          "expected_ycbcr": [
+            173,
+            42,
+            26
+          ],
+          "rgba8": [
+            0,
+            255,
+            0,
+            255
+          ]
+        },
+        "label": "independent known Rec709 color anchor",
+        "passed": true
+      },
+      {
+        "details": {
+          "actual_ycbcr": [
+            32,
+            240,
+            118
+          ],
+          "expected_ycbcr": [
+            32,
+            240,
+            118
+          ],
+          "rgba8": [
+            0,
+            0,
+            255,
+            255
+          ]
+        },
+        "label": "independent known Rec709 color anchor",
+        "passed": true
+      },
+      {
+        "details": {
+          "width": 320
+        },
+        "label": "second simultaneous readback rejected",
+        "passed": true
+      },
+      {
+        "details": {
+          "width": 320
+        },
+        "label": "completed ticket cannot be reused",
+        "passed": true
+      },
+      {
+        "details": {
+          "row_bytes": 2560,
+          "stride_bytes": 2560,
+          "width": 320
+        },
+        "label": "working readback dimensions and padded rows",
+        "passed": true
+      },
+      {
+        "details": {
+          "byte_count": 86400,
+          "width": 320
+        },
+        "label": "tight limited-range left-sited I420 contract",
+        "passed": true
+      },
+      {
+        "details": {
+          "width": 320
+        },
+        "label": "all I420 codes match independent pixel reference",
+        "passed": true
+      },
+      {
+        "details": {},
+        "label": "cancelled readback rejected before admission",
+        "passed": true
+      },
+      {
+        "details": {},
+        "label": "expired monotonic deadline rejected before admission",
+        "passed": true
+      },
+      {
+        "details": {},
+        "label": "in-flight cancellation publishes no frame",
+        "passed": true
+      },
+      {
+        "details": {},
+        "label": "cancelled ticket cannot be reused",
+        "passed": true
+      },
+      {
+        "details": {},
+        "label": "cancelled GPU work drains before successful recovery",
+        "passed": true
+      },
+      {
+        "details": {},
+        "label": "dropped ticket releases allocation after GPU callbacks drain",
+        "passed": true
+      },
+      {
+        "details": {
+          "width": 318
+        },
+        "label": "second simultaneous readback rejected",
+        "passed": true
+      },
+      {
+        "details": {
+          "width": 318
+        },
+        "label": "completed ticket cannot be reused",
+        "passed": true
+      },
+      {
+        "details": {
+          "row_bytes": 2544,
+          "stride_bytes": 2560,
+          "width": 318
+        },
+        "label": "working readback dimensions and padded rows",
+        "passed": true
+      },
+      {
+        "details": {
+          "byte_count": 85860,
+          "width": 318
+        },
+        "label": "tight limited-range left-sited I420 contract",
+        "passed": true
+      },
+      {
+        "details": {
+          "padding_bytes_per_row": 16
+        },
+        "label": "nonfinite row padding is ignored",
+        "passed": true
+      },
+      {
+        "details": {
+          "width": 318
+        },
+        "label": "all I420 codes match independent pixel reference",
+        "passed": true
+      }
+    ],
+    "crate_version": "0.1.0",
+    "elapsed_seconds": 2.8126977909999997,
+    "fixture_directory": "/private/tmp/deadpan-sdr-pixels-3JwYsBqt/metal-fixtures",
+    "input": {
+      "format": "full-range opaque RGBA8",
+      "geometry": "same-size source, canonical canvas and target; identity composed framing",
+      "neutral_levels": [
+        "1/255",
+        "4/255",
+        "5/255",
+        "46/255",
+        "128/255"
+      ],
+      "palette_rgba8": [
+        [
+          0,
+          0,
+          0,
+          255
+        ],
+        [
+          255,
+          255,
+          255,
+          255
+        ],
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          1,
+          1,
+          1,
+          255
+        ],
+        [
+          4,
+          4,
+          4,
+          255
+        ],
+        [
+          5,
+          5,
+          5,
+          255
+        ],
+        [
+          46,
+          46,
+          46,
+          255
+        ],
+        [
+          128,
+          128,
+          128,
+          255
+        ]
+      ],
+      "patterns": [
+        "ten broad color/neutral patches",
+        "one-column red/blue alternation",
+        "one-row red/green alternation",
+        "two-axis four-color chroma pattern"
+      ],
+      "primaries": "Rec709 D65",
+      "transfer": "linear"
+    },
+    "limitations": [
+      "synthetic SDR input",
+      "no encoded-file or decoder verification",
+      "no timeline/export-product integration",
+      "no HDR, display, playback or listening claim",
+      "cooperative GPU cancellation/deadline, no preemptive driver timeout",
+      "external host records source/build/library hashes and process timeout"
+    ],
+    "platform": {
+      "arch": "aarch64",
+      "os": "macos"
+    },
+    "reference": {
+      "chroma_sampling": "left: horizontal1/4,1/2,1/4 at even luma column with edge clamp; vertical1/2,1/2",
+      "code_tolerance": 1,
+      "luma_weights": [
+        0.2126,
+        0.7152,
+        0.0722
+      ],
+      "oetf": "4.5L below0.018;1.099*L^0.45-0.099 otherwise",
+      "quantization": "nearest nonnegative code, ties upward, after unquantized chroma filtering",
+      "source": "independent f64 calculation from known linear Rec709 RGBA8",
+      "tolerance_reason": "one code for GPU matrix arithmetic and the binary16 working-texture round trip"
+    },
+    "schema_version": 1,
+    "scope": "offscreen Metal canonical working picture to tight Rec709 limited-range I420",
+    "status": "passed"
+  },
+  "reports": [
+    {
+      "name": "picture-fixed",
+      "result": "passed scoped renderer-plane H.264 checks",
+      "experiment_completed": true,
+      "process_faults": [],
+      "source_unchanged_during_run": true,
+      "final_file_admission": {
+        "checks": 170,
+        "all_passed": true
+      },
+      "cases": [
+        {
+          "name": "linear-rec709-patches-chroma-320x180",
+          "status": "passed",
+          "checks": [
+            {
+              "label": "one owned frame encoded and fully drained without audio",
+              "passed": true
+            },
+            {
+              "label": "faststart and structurally absent edit lists",
+              "passed": true
+            },
+            {
+              "label": "complete one-frame video-only decoder drain",
+              "passed": true,
+              "actual": null
+            },
+            {
+              "label": "High-profile 8-bit 4:2:0 exact geometry",
+              "passed": true,
+              "actual": null
+            },
+            {
+              "label": "Rec709 matrix, transfer, primaries, limited range and left chroma",
+              "passed": true,
+              "actual": null
+            },
+            {
+              "label": "progressive uncorrupted decoded frame",
+              "passed": true,
+              "actual": null
+            },
+            {
+              "label": "explicit square pixels",
+              "passed": true,
+              "actual": {
+                "field": "stream",
+                "value": [
+                  1,
+                  1
+                ]
+              }
+            },
+            {
+              "label": "exact one-frame 30fps presentation interval",
+              "passed": true,
+              "actual": null
+            },
+            {
+              "label": "complete decoded tight plane count",
+              "passed": true,
+              "actual": null
+            },
+            {
+              "label": "every decoded plane code within declared lossy bounds",
+              "passed": true
+            }
+          ],
+          "decoded_vs_actual": {
+            "passed": true,
+            "compared_codes": 86400,
+            "maximum_tolerance_codes": 12,
+            "mean_tolerance_codes": 2,
+            "planes": [
+              {
+                "plane": "Y",
+                "width": 320,
+                "height": 180,
+                "compared_codes": 57600,
+                "maximum_error": 3,
+                "mean_absolute_error": 0.21479166666666666,
+                "out_of_tolerance_codes": 0,
+                "first_failures": [],
+                "passed": true
+              },
+              {
+                "plane": "Cb",
+                "width": 160,
+                "height": 90,
+                "compared_codes": 14400,
+                "maximum_error": 2,
+                "mean_absolute_error": 0.0375,
+                "out_of_tolerance_codes": 0,
+                "first_failures": [],
+                "passed": true
+              },
+              {
+                "plane": "Cr",
+                "width": 160,
+                "height": 90,
+                "compared_codes": 14400,
+                "maximum_error": 2,
+                "mean_absolute_error": 0.0475,
+                "out_of_tolerance_codes": 0,
+                "first_failures": [],
+                "passed": true
+              }
+            ]
+          }
+        },
+        {
+          "name": "linear-rec709-patches-chroma-318x180",
+          "status": "passed",
+          "checks": [
+            {
+              "label": "one owned frame encoded and fully drained without audio",
+              "passed": true
+            },
+            {
+              "label": "faststart and structurally absent edit lists",
+              "passed": true
+            },
+            {
+              "label": "complete one-frame video-only decoder drain",
+              "passed": true,
+              "actual": null
+            },
+            {
+              "label": "High-profile 8-bit 4:2:0 exact geometry",
+              "passed": true,
+              "actual": null
+            },
+            {
+              "label": "Rec709 matrix, transfer, primaries, limited range and left chroma",
+              "passed": true,
+              "actual": null
+            },
+            {
+              "label": "progressive uncorrupted decoded frame",
+              "passed": true,
+              "actual": null
+            },
+            {
+              "label": "explicit square pixels",
+              "passed": true,
+              "actual": {
+                "field": "stream",
+                "value": [
+                  1,
+                  1
+                ]
+              }
+            },
+            {
+              "label": "exact one-frame 30fps presentation interval",
+              "passed": true,
+              "actual": null
+            },
+            {
+              "label": "complete decoded tight plane count",
+              "passed": true,
+              "actual": null
+            },
+            {
+              "label": "every decoded plane code within declared lossy bounds",
+              "passed": true
+            }
+          ],
+          "decoded_vs_actual": {
+            "passed": true,
+            "compared_codes": 85860,
+            "maximum_tolerance_codes": 12,
+            "mean_tolerance_codes": 2,
+            "planes": [
+              {
+                "plane": "Y",
+                "width": 318,
+                "height": 180,
+                "compared_codes": 57240,
+                "maximum_error": 3,
+                "mean_absolute_error": 0.22569881201956674,
+                "out_of_tolerance_codes": 0,
+                "first_failures": [],
+                "passed": true
+              },
+              {
+                "plane": "Cb",
+                "width": 159,
+                "height": 90,
+                "compared_codes": 14310,
+                "maximum_error": 2,
+                "mean_absolute_error": 0.03759608665269042,
+                "out_of_tolerance_codes": 0,
+                "first_failures": [],
+                "passed": true
+              },
+              {
+                "plane": "Cr",
+                "width": 159,
+                "height": 90,
+                "compared_codes": 14310,
+                "maximum_error": 2,
+                "mean_absolute_error": 0.05101327742837177,
+                "out_of_tolerance_codes": 0,
+                "first_failures": [],
+                "passed": true
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "picture-sanitizers",
+      "result": "passed scoped renderer-plane H.264 checks",
+      "experiment_completed": true,
+      "process_faults": [],
+      "source_unchanged_during_run": true,
+      "final_file_admission": {
+        "checks": 170,
+        "all_passed": true
+      },
+      "cases": [
+        {
+          "name": "linear-rec709-patches-chroma-320x180",
+          "status": "passed",
+          "checks": [
+            {
+              "label": "one owned frame encoded and fully drained without audio",
+              "passed": true
+            },
+            {
+              "label": "faststart and structurally absent edit lists",
+              "passed": true
+            },
+            {
+              "label": "complete one-frame video-only decoder drain",
+              "passed": true,
+              "actual": null
+            },
+            {
+              "label": "High-profile 8-bit 4:2:0 exact geometry",
+              "passed": true,
+              "actual": null
+            },
+            {
+              "label": "Rec709 matrix, transfer, primaries, limited range and left chroma",
+              "passed": true,
+              "actual": null
+            },
+            {
+              "label": "progressive uncorrupted decoded frame",
+              "passed": true,
+              "actual": null
+            },
+            {
+              "label": "explicit square pixels",
+              "passed": true,
+              "actual": {
+                "field": "stream",
+                "value": [
+                  1,
+                  1
+                ]
+              }
+            },
+            {
+              "label": "exact one-frame 30fps presentation interval",
+              "passed": true,
+              "actual": null
+            },
+            {
+              "label": "complete decoded tight plane count",
+              "passed": true,
+              "actual": null
+            },
+            {
+              "label": "every decoded plane code within declared lossy bounds",
+              "passed": true
+            }
+          ],
+          "decoded_vs_actual": {
+            "passed": true,
+            "compared_codes": 86400,
+            "maximum_tolerance_codes": 12,
+            "mean_tolerance_codes": 2,
+            "planes": [
+              {
+                "plane": "Y",
+                "width": 320,
+                "height": 180,
+                "compared_codes": 57600,
+                "maximum_error": 3,
+                "mean_absolute_error": 0.21479166666666666,
+                "out_of_tolerance_codes": 0,
+                "first_failures": [],
+                "passed": true
+              },
+              {
+                "plane": "Cb",
+                "width": 160,
+                "height": 90,
+                "compared_codes": 14400,
+                "maximum_error": 2,
+                "mean_absolute_error": 0.0375,
+                "out_of_tolerance_codes": 0,
+                "first_failures": [],
+                "passed": true
+              },
+              {
+                "plane": "Cr",
+                "width": 160,
+                "height": 90,
+                "compared_codes": 14400,
+                "maximum_error": 2,
+                "mean_absolute_error": 0.0475,
+                "out_of_tolerance_codes": 0,
+                "first_failures": [],
+                "passed": true
+              }
+            ]
+          }
+        },
+        {
+          "name": "linear-rec709-patches-chroma-318x180",
+          "status": "passed",
+          "checks": [
+            {
+              "label": "one owned frame encoded and fully drained without audio",
+              "passed": true
+            },
+            {
+              "label": "faststart and structurally absent edit lists",
+              "passed": true
+            },
+            {
+              "label": "complete one-frame video-only decoder drain",
+              "passed": true,
+              "actual": null
+            },
+            {
+              "label": "High-profile 8-bit 4:2:0 exact geometry",
+              "passed": true,
+              "actual": null
+            },
+            {
+              "label": "Rec709 matrix, transfer, primaries, limited range and left chroma",
+              "passed": true,
+              "actual": null
+            },
+            {
+              "label": "progressive uncorrupted decoded frame",
+              "passed": true,
+              "actual": null
+            },
+            {
+              "label": "explicit square pixels",
+              "passed": true,
+              "actual": {
+                "field": "stream",
+                "value": [
+                  1,
+                  1
+                ]
+              }
+            },
+            {
+              "label": "exact one-frame 30fps presentation interval",
+              "passed": true,
+              "actual": null
+            },
+            {
+              "label": "complete decoded tight plane count",
+              "passed": true,
+              "actual": null
+            },
+            {
+              "label": "every decoded plane code within declared lossy bounds",
+              "passed": true
+            }
+          ],
+          "decoded_vs_actual": {
+            "passed": true,
+            "compared_codes": 85860,
+            "maximum_tolerance_codes": 12,
+            "mean_tolerance_codes": 2,
+            "planes": [
+              {
+                "plane": "Y",
+                "width": 318,
+                "height": 180,
+                "compared_codes": 57240,
+                "maximum_error": 3,
+                "mean_absolute_error": 0.22569881201956674,
+                "out_of_tolerance_codes": 0,
+                "first_failures": [],
+                "passed": true
+              },
+              {
+                "plane": "Cb",
+                "width": 159,
+                "height": 90,
+                "compared_codes": 14310,
+                "maximum_error": 2,
+                "mean_absolute_error": 0.03759608665269042,
+                "out_of_tolerance_codes": 0,
+                "first_failures": [],
+                "passed": true
+              },
+              {
+                "plane": "Cr",
+                "width": 159,
+                "height": 90,
+                "compared_codes": 14310,
+                "maximum_error": 2,
+                "mean_absolute_error": 0.05101327742837177,
+                "out_of_tolerance_codes": 0,
+                "first_failures": [],
+                "passed": true
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "picture",
+      "result": "failed: picture export experiment",
+      "experiment_completed": false,
+      "process_faults": [],
+      "source_unchanged_during_run": true,
+      "final_file_admission": {
+        "checks": 158,
+        "all_passed": true
+      },
+      "cases": []
+    },
+    {
+      "name": "encoder-control",
+      "result": "passed existing encoder dispatch control",
+      "experiment_completed": true,
+      "process_faults": [],
+      "source_unchanged_during_run": true,
+      "final_file_admission": {
+        "checks": 160,
+        "all_passed": true
+      },
+      "cases": [
+        {
+          "name": "existing-default-60",
+          "status": "passed scoped checks",
+          "checks": [
+            {
+              "label": "timing: declared encoded tolerance strictly below one frame",
+              "passed": true,
+              "details": {
+                "tolerance_samples": 799,
+                "one_frame_samples": "800"
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "input: exact frame_count",
+              "passed": true,
+              "details": {
+                "expected": 120,
+                "actual": 120
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "input: exact start_pts",
+              "passed": true,
+              "details": {
+                "expected": 0,
+                "actual": 0
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "input: exact duration_ticks",
+              "passed": true,
+              "details": {
+                "expected": 120,
+                "actual": 120
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "input: exact audio_samples",
+              "passed": true,
+              "details": {
+                "expected": 96000,
+                "actual": 96000
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "input: exact audio_offset_samples",
+              "passed": true,
+              "details": {
+                "expected": 0,
+                "actual": 0
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "input: exact movie_timescale",
+              "passed": true,
+              "details": {
+                "expected": 48000,
+                "actual": 48000
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "input: exact width",
+              "passed": true,
+              "details": {
+                "expected": 320,
+                "actual": 320
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "input: exact height",
+              "passed": true,
+              "details": {
+                "expected": 180,
+                "actual": 180
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "input: exact requested_b_frames",
+              "passed": true,
+              "details": {
+                "expected": 0,
+                "actual": 0
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "input: exact time_base",
+              "passed": true,
+              "details": {
+                "expected": [
+                  1,
+                  60
+                ],
+                "actual": [
+                  1,
+                  60
+                ]
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "input: exact frame_rate",
+              "passed": true,
+              "details": {
+                "expected": [
+                  60,
+                  1
+                ],
+                "actual": [
+                  60,
+                  1
+                ]
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "input: PCM fixture",
+              "passed": true,
+              "details": null,
+              "diagnostic": false
+            },
+            {
+              "label": "input: exact authored impulses",
+              "passed": true,
+              "details": {
+                "expected": [
+                  100,
+                  48000,
+                  95800
+                ],
+                "actual": [
+                  100,
+                  48000,
+                  95800
+                ]
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "color: declared independent linear levels",
+              "passed": true,
+              "details": null,
+              "diagnostic": false
+            },
+            {
+              "label": "color: exact pre-encode color_yuv_patches",
+              "passed": true,
+              "details": {
+                "expected": [
+                  [
+                    16,
+                    128,
+                    128
+                  ],
+                  [
+                    235,
+                    128,
+                    128
+                  ],
+                  [
+                    63,
+                    102,
+                    240
+                  ],
+                  [
+                    173,
+                    42,
+                    26
+                  ],
+                  [
+                    32,
+                    240,
+                    118
+                  ]
+                ],
+                "actual": [
+                  [
+                    16,
+                    128,
+                    128
+                  ],
+                  [
+                    235,
+                    128,
+                    128
+                  ],
+                  [
+                    63,
+                    102,
+                    240
+                  ],
+                  [
+                    173,
+                    42,
+                    26
+                  ],
+                  [
+                    32,
+                    240,
+                    118
+                  ]
+                ]
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "color: decoded color_yuv_patches within four codes",
+              "passed": true,
+              "details": {
+                "maximum_error": 0,
+                "actual": [
+                  [
+                    16,
+                    128,
+                    128
+                  ],
+                  [
+                    235,
+                    128,
+                    128
+                  ],
+                  [
+                    63,
+                    102,
+                    240
+                  ],
+                  [
+                    173,
+                    42,
+                    26
+                  ],
+                  [
+                    32,
+                    240,
+                    118
+                  ]
+                ],
+                "expected": [
+                  [
+                    16,
+                    128,
+                    128
+                  ],
+                  [
+                    235,
+                    128,
+                    128
+                  ],
+                  [
+                    63,
+                    102,
+                    240
+                  ],
+                  [
+                    173,
+                    42,
+                    26
+                  ],
+                  [
+                    32,
+                    240,
+                    118
+                  ]
+                ]
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "color: exact pre-encode neutral_yuv_patches",
+              "passed": true,
+              "details": {
+                "expected": [
+                  [
+                    17,
+                    128,
+                    128
+                  ],
+                  [
+                    26,
+                    128,
+                    128
+                  ],
+                  [
+                    34,
+                    128,
+                    128
+                  ],
+                  [
+                    106,
+                    128,
+                    128
+                  ],
+                  [
+                    171,
+                    128,
+                    128
+                  ]
+                ],
+                "actual": [
+                  [
+                    17,
+                    128,
+                    128
+                  ],
+                  [
+                    26,
+                    128,
+                    128
+                  ],
+                  [
+                    34,
+                    128,
+                    128
+                  ],
+                  [
+                    106,
+                    128,
+                    128
+                  ],
+                  [
+                    171,
+                    128,
+                    128
+                  ]
+                ]
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "color: decoded neutral_yuv_patches within four codes",
+              "passed": true,
+              "details": {
+                "maximum_error": 0,
+                "actual": [
+                  [
+                    17,
+                    128,
+                    128
+                  ],
+                  [
+                    26,
+                    128,
+                    128
+                  ],
+                  [
+                    34,
+                    128,
+                    128
+                  ],
+                  [
+                    106,
+                    128,
+                    128
+                  ],
+                  [
+                    171,
+                    128,
+                    128
+                  ]
+                ],
+                "expected": [
+                  [
+                    17,
+                    128,
+                    128
+                  ],
+                  [
+                    26,
+                    128,
+                    128
+                  ],
+                  [
+                    34,
+                    128,
+                    128
+                  ],
+                  [
+                    106,
+                    128,
+                    128
+                  ],
+                  [
+                    171,
+                    128,
+                    128
+                  ]
+                ]
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "metadata: exactly one video and audio stream",
+              "passed": true,
+              "details": null,
+              "diagnostic": false
+            },
+            {
+              "label": "metadata: video codec_name",
+              "passed": true,
+              "details": {
+                "expected": "h264",
+                "actual": "h264"
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "metadata: video profile",
+              "passed": true,
+              "details": {
+                "expected": "High",
+                "actual": "High"
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "metadata: video pix_fmt",
+              "passed": true,
+              "details": {
+                "expected": "yuv420p",
+                "actual": "yuv420p"
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "metadata: video field_order",
+              "passed": true,
+              "details": {
+                "expected": "progressive",
+                "actual": "progressive"
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "metadata: video color_range",
+              "passed": true,
+              "details": {
+                "expected": "tv",
+                "actual": "tv"
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "metadata: video color_space",
+              "passed": true,
+              "details": {
+                "expected": "bt709",
+                "actual": "bt709"
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "metadata: video color_transfer",
+              "passed": true,
+              "details": {
+                "expected": "bt709",
+                "actual": "bt709"
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "metadata: video color_primaries",
+              "passed": true,
+              "details": {
+                "expected": "bt709",
+                "actual": "bt709"
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "metadata: video chroma_location",
+              "passed": true,
+              "details": {
+                "expected": "left",
+                "actual": "left"
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "metadata: video width",
+              "passed": true,
+              "details": null,
+              "diagnostic": false
+            },
+            {
+              "label": "metadata: video height",
+              "passed": true,
+              "details": null,
+              "diagnostic": false
+            },
+            {
+              "label": "metadata: square pixels",
+              "passed": true,
+              "details": null,
+              "diagnostic": false
+            },
+            {
+              "label": "metadata: audio codec_name",
+              "passed": true,
+              "details": {
+                "expected": "aac",
+                "actual": "aac"
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "metadata: audio profile",
+              "passed": true,
+              "details": {
+                "expected": "LC",
+                "actual": "LC"
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "metadata: audio channel_layout",
+              "passed": true,
+              "details": {
+                "expected": "stereo",
+                "actual": "stereo"
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "metadata: audio 48000 Hz",
+              "passed": true,
+              "details": null,
+              "diagnostic": false
+            },
+            {
+              "label": "metadata: audio stereo",
+              "passed": true,
+              "details": null,
+              "diagnostic": false
+            },
+            {
+              "label": "video: exact frame count",
+              "passed": true,
+              "details": {
+                "expected": 120,
+                "actual": 120
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "video: every visible authored identity",
+              "passed": true,
+              "details": {
+                "actual": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8,
+                  9,
+                  10,
+                  11,
+                  12,
+                  13,
+                  14,
+                  15,
+                  16,
+                  17,
+                  18,
+                  19,
+                  20,
+                  21,
+                  22,
+                  23,
+                  24,
+                  25,
+                  26,
+                  27,
+                  28,
+                  29,
+                  30,
+                  31,
+                  32,
+                  33,
+                  34,
+                  35,
+                  36,
+                  37,
+                  38,
+                  39,
+                  40,
+                  41,
+                  42,
+                  43,
+                  44,
+                  45,
+                  46,
+                  47,
+                  48,
+                  49,
+                  50,
+                  51,
+                  52,
+                  53,
+                  54,
+                  55,
+                  56,
+                  57,
+                  58,
+                  59,
+                  60,
+                  61,
+                  62,
+                  63,
+                  64,
+                  65,
+                  66,
+                  67,
+                  68,
+                  69,
+                  70,
+                  71,
+                  72,
+                  73,
+                  74,
+                  75,
+                  76,
+                  77,
+                  78,
+                  79,
+                  80,
+                  81,
+                  82,
+                  83,
+                  84,
+                  85,
+                  86,
+                  87,
+                  88,
+                  89,
+                  90,
+                  91,
+                  92,
+                  93,
+                  94,
+                  95,
+                  96,
+                  97,
+                  98,
+                  99,
+                  100,
+                  101,
+                  102,
+                  103,
+                  104,
+                  105,
+                  106,
+                  107,
+                  108,
+                  109,
+                  110,
+                  111,
+                  112,
+                  113,
+                  114,
+                  115,
+                  116,
+                  117,
+                  118,
+                  119
+                ]
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "video: exact rational CFR PTS",
+              "passed": true,
+              "details": {
+                "actual": [
+                  "0",
+                  "1/60",
+                  "1/30",
+                  "1/20",
+                  "1/15",
+                  "1/12",
+                  "1/10",
+                  "7/60",
+                  "2/15",
+                  "3/20",
+                  "1/6",
+                  "11/60",
+                  "1/5",
+                  "13/60",
+                  "7/30",
+                  "1/4",
+                  "4/15",
+                  "17/60",
+                  "3/10",
+                  "19/60",
+                  "1/3",
+                  "7/20",
+                  "11/30",
+                  "23/60",
+                  "2/5",
+                  "5/12",
+                  "13/30",
+                  "9/20",
+                  "7/15",
+                  "29/60",
+                  "1/2",
+                  "31/60",
+                  "8/15",
+                  "11/20",
+                  "17/30",
+                  "7/12",
+                  "3/5",
+                  "37/60",
+                  "19/30",
+                  "13/20",
+                  "2/3",
+                  "41/60",
+                  "7/10",
+                  "43/60",
+                  "11/15",
+                  "3/4",
+                  "23/30",
+                  "47/60",
+                  "4/5",
+                  "49/60",
+                  "5/6",
+                  "17/20",
+                  "13/15",
+                  "53/60",
+                  "9/10",
+                  "11/12",
+                  "14/15",
+                  "19/20",
+                  "29/30",
+                  "59/60",
+                  "1",
+                  "61/60",
+                  "31/30",
+                  "21/20",
+                  "16/15",
+                  "13/12",
+                  "11/10",
+                  "67/60",
+                  "17/15",
+                  "23/20",
+                  "7/6",
+                  "71/60",
+                  "6/5",
+                  "73/60",
+                  "37/30",
+                  "5/4",
+                  "19/15",
+                  "77/60",
+                  "13/10",
+                  "79/60",
+                  "4/3",
+                  "27/20",
+                  "41/30",
+                  "83/60",
+                  "7/5",
+                  "17/12",
+                  "43/30",
+                  "29/20",
+                  "22/15",
+                  "89/60",
+                  "3/2",
+                  "91/60",
+                  "23/15",
+                  "31/20",
+                  "47/30",
+                  "19/12",
+                  "8/5",
+                  "97/60",
+                  "49/30",
+                  "33/20",
+                  "5/3",
+                  "101/60",
+                  "17/10",
+                  "103/60",
+                  "26/15",
+                  "7/4",
+                  "53/30",
+                  "107/60",
+                  "9/5",
+                  "109/60",
+                  "11/6",
+                  "37/20",
+                  "28/15",
+                  "113/60",
+                  "19/10",
+                  "23/12",
+                  "29/15",
+                  "39/20",
+                  "59/30",
+                  "119/60"
+                ],
+                "expected": [
+                  "0",
+                  "1/60",
+                  "1/30",
+                  "1/20",
+                  "1/15",
+                  "1/12",
+                  "1/10",
+                  "7/60",
+                  "2/15",
+                  "3/20",
+                  "1/6",
+                  "11/60",
+                  "1/5",
+                  "13/60",
+                  "7/30",
+                  "1/4",
+                  "4/15",
+                  "17/60",
+                  "3/10",
+                  "19/60",
+                  "1/3",
+                  "7/20",
+                  "11/30",
+                  "23/60",
+                  "2/5",
+                  "5/12",
+                  "13/30",
+                  "9/20",
+                  "7/15",
+                  "29/60",
+                  "1/2",
+                  "31/60",
+                  "8/15",
+                  "11/20",
+                  "17/30",
+                  "7/12",
+                  "3/5",
+                  "37/60",
+                  "19/30",
+                  "13/20",
+                  "2/3",
+                  "41/60",
+                  "7/10",
+                  "43/60",
+                  "11/15",
+                  "3/4",
+                  "23/30",
+                  "47/60",
+                  "4/5",
+                  "49/60",
+                  "5/6",
+                  "17/20",
+                  "13/15",
+                  "53/60",
+                  "9/10",
+                  "11/12",
+                  "14/15",
+                  "19/20",
+                  "29/30",
+                  "59/60",
+                  "1",
+                  "61/60",
+                  "31/30",
+                  "21/20",
+                  "16/15",
+                  "13/12",
+                  "11/10",
+                  "67/60",
+                  "17/15",
+                  "23/20",
+                  "7/6",
+                  "71/60",
+                  "6/5",
+                  "73/60",
+                  "37/30",
+                  "5/4",
+                  "19/15",
+                  "77/60",
+                  "13/10",
+                  "79/60",
+                  "4/3",
+                  "27/20",
+                  "41/30",
+                  "83/60",
+                  "7/5",
+                  "17/12",
+                  "43/30",
+                  "29/20",
+                  "22/15",
+                  "89/60",
+                  "3/2",
+                  "91/60",
+                  "23/15",
+                  "31/20",
+                  "47/30",
+                  "19/12",
+                  "8/5",
+                  "97/60",
+                  "49/30",
+                  "33/20",
+                  "5/3",
+                  "101/60",
+                  "17/10",
+                  "103/60",
+                  "26/15",
+                  "7/4",
+                  "53/30",
+                  "107/60",
+                  "9/5",
+                  "109/60",
+                  "11/6",
+                  "37/20",
+                  "28/15",
+                  "113/60",
+                  "19/10",
+                  "23/12",
+                  "29/15",
+                  "39/20",
+                  "59/30",
+                  "119/60"
+                ]
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "video: strictly increasing presentation PTS",
+              "passed": true,
+              "details": null,
+              "diagnostic": false
+            },
+            {
+              "label": "video: exact per-frame durations",
+              "passed": true,
+              "details": {
+                "actual": [
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60",
+                  "1/60"
+                ]
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "video: exact terminal boundary",
+              "passed": true,
+              "details": {
+                "actual": "2",
+                "expected": "2"
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "video: no concealed decode/timestamp errors",
+              "passed": true,
+              "details": [],
+              "diagnostic": false
+            },
+            {
+              "label": "video: progressive square-pixel frames",
+              "passed": true,
+              "details": [],
+              "diagnostic": false
+            },
+            {
+              "label": "video: decoded color interpretation",
+              "passed": true,
+              "details": [],
+              "diagnostic": false
+            },
+            {
+              "label": "video: starts with a key picture",
+              "passed": true,
+              "details": null,
+              "diagnostic": false
+            },
+            {
+              "label": "video: actual B run within requested maximum",
+              "passed": true,
+              "details": {
+                "requested": 0,
+                "actual": 0
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "packets: complete CFR video packet inventory",
+              "passed": true,
+              "details": null,
+              "diagnostic": false
+            },
+            {
+              "label": "packets: strictly increasing video DTS",
+              "passed": true,
+              "details": null,
+              "diagnostic": false
+            },
+            {
+              "label": "packets: video PTS retain authored presentation set",
+              "passed": true,
+              "details": null,
+              "diagnostic": false
+            },
+            {
+              "label": "ordinary: explicit decoder mode",
+              "passed": true,
+              "details": null,
+              "diagnostic": false
+            },
+            {
+              "label": "ordinary: 48000 Hz stereo",
+              "passed": true,
+              "details": null,
+              "diagnostic": false
+            },
+            {
+              "label": "ordinary: declared PCM count",
+              "passed": true,
+              "details": null,
+              "diagnostic": false
+            },
+            {
+              "label": "ordinary: declared decoded frame count",
+              "passed": true,
+              "details": null,
+              "diagnostic": false
+            },
+            {
+              "label": "ordinary: nonempty decoded PCM",
+              "passed": true,
+              "details": null,
+              "diagnostic": false
+            },
+            {
+              "label": "ordinary: contiguous absolute sample frames",
+              "passed": true,
+              "details": {
+                "bad_frames": [],
+                "accounted_samples": 96256,
+                "pcm_samples": 96256
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "ordinary: exact sample grid and no decode errors",
+              "passed": true,
+              "details": [],
+              "diagnostic": false
+            },
+            {
+              "label": "ordinary: first-sample summary agrees with raw PTS",
+              "passed": true,
+              "details": null,
+              "diagnostic": false
+            },
+            {
+              "label": "ordinary: exact authored stream endpoint",
+              "passed": true,
+              "details": {
+                "error_samples": 0
+              },
+              "diagnostic": true
+            },
+            {
+              "label": "ordinary: stream endpoint within declared sub-frame tolerance",
+              "passed": true,
+              "details": {
+                "error_samples": 0,
+                "declared_tolerance_samples": 799
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "ordinary: independent event diagnostic windows",
+              "passed": true,
+              "details": {
+                "expected_samples": [
+                  100,
+                  48000,
+                  95800
+                ],
+                "search_radius_samples": 4096
+              },
+              "diagnostic": true
+            },
+            {
+              "label": "ordinary: left event 100 exact",
+              "passed": true,
+              "details": {
+                "channel": "left",
+                "expected_sample": 100,
+                "actual_peak_sample": 100,
+                "error_samples": 0,
+                "error_seconds": "0",
+                "peak_amplitude": 0.5068195462226868,
+                "searched_samples": 4197,
+                "search_radius_samples": 4096,
+                "exact": true,
+                "within_tolerance": true
+              },
+              "diagnostic": true
+            },
+            {
+              "label": "ordinary: left event 100 within declared sub-frame tolerance",
+              "passed": true,
+              "details": {
+                "channel": "left",
+                "expected_sample": 100,
+                "actual_peak_sample": 100,
+                "error_samples": 0,
+                "error_seconds": "0",
+                "peak_amplitude": 0.5068195462226868,
+                "searched_samples": 4197,
+                "search_radius_samples": 4096,
+                "exact": true,
+                "within_tolerance": true
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "ordinary: left event 48000 exact",
+              "passed": true,
+              "details": {
+                "channel": "left",
+                "expected_sample": 48000,
+                "actual_peak_sample": 48000,
+                "error_samples": 0,
+                "error_seconds": "0",
+                "peak_amplitude": 0.749076783657074,
+                "searched_samples": 8193,
+                "search_radius_samples": 4096,
+                "exact": true,
+                "within_tolerance": true
+              },
+              "diagnostic": true
+            },
+            {
+              "label": "ordinary: left event 48000 within declared sub-frame tolerance",
+              "passed": true,
+              "details": {
+                "channel": "left",
+                "expected_sample": 48000,
+                "actual_peak_sample": 48000,
+                "error_samples": 0,
+                "error_seconds": "0",
+                "peak_amplitude": 0.749076783657074,
+                "searched_samples": 8193,
+                "search_radius_samples": 4096,
+                "exact": true,
+                "within_tolerance": true
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "ordinary: left event 95800 exact",
+              "passed": true,
+              "details": {
+                "channel": "left",
+                "expected_sample": 95800,
+                "actual_peak_sample": 95800,
+                "error_samples": 0,
+                "error_seconds": "0",
+                "peak_amplitude": 0.694223165512085,
+                "searched_samples": 4552,
+                "search_radius_samples": 4096,
+                "exact": true,
+                "within_tolerance": true
+              },
+              "diagnostic": true
+            },
+            {
+              "label": "ordinary: left event 95800 within declared sub-frame tolerance",
+              "passed": true,
+              "details": {
+                "channel": "left",
+                "expected_sample": 95800,
+                "actual_peak_sample": 95800,
+                "error_samples": 0,
+                "error_seconds": "0",
+                "peak_amplitude": 0.694223165512085,
+                "searched_samples": 4552,
+                "search_radius_samples": 4096,
+                "exact": true,
+                "within_tolerance": true
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "ordinary: left events select distinct measured peaks",
+              "passed": true,
+              "details": {
+                "selected_samples": [
+                  100,
+                  48000,
+                  95800
+                ]
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "ordinary: right event 100 exact",
+              "passed": true,
+              "details": {
+                "channel": "right",
+                "expected_sample": 100,
+                "actual_peak_sample": 100,
+                "error_samples": 0,
+                "error_seconds": "0",
+                "peak_amplitude": -0.367975652217865,
+                "searched_samples": 4197,
+                "search_radius_samples": 4096,
+                "exact": true,
+                "within_tolerance": true
+              },
+              "diagnostic": true
+            },
+            {
+              "label": "ordinary: right event 100 within declared sub-frame tolerance",
+              "passed": true,
+              "details": {
+                "channel": "right",
+                "expected_sample": 100,
+                "actual_peak_sample": 100,
+                "error_samples": 0,
+                "error_seconds": "0",
+                "peak_amplitude": -0.367975652217865,
+                "searched_samples": 4197,
+                "search_radius_samples": 4096,
+                "exact": true,
+                "within_tolerance": true
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "ordinary: right event 48000 exact",
+              "passed": true,
+              "details": {
+                "channel": "right",
+                "expected_sample": 48000,
+                "actual_peak_sample": 48000,
+                "error_samples": 0,
+                "error_seconds": "0",
+                "peak_amplitude": -0.649470865726471,
+                "searched_samples": 8193,
+                "search_radius_samples": 4096,
+                "exact": true,
+                "within_tolerance": true
+              },
+              "diagnostic": true
+            },
+            {
+              "label": "ordinary: right event 48000 within declared sub-frame tolerance",
+              "passed": true,
+              "details": {
+                "channel": "right",
+                "expected_sample": 48000,
+                "actual_peak_sample": 48000,
+                "error_samples": 0,
+                "error_seconds": "0",
+                "peak_amplitude": -0.649470865726471,
+                "searched_samples": 8193,
+                "search_radius_samples": 4096,
+                "exact": true,
+                "within_tolerance": true
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "ordinary: right event 95800 exact",
+              "passed": true,
+              "details": {
+                "channel": "right",
+                "expected_sample": 95800,
+                "actual_peak_sample": 95800,
+                "error_samples": 0,
+                "error_seconds": "0",
+                "peak_amplitude": -0.5861328840255737,
+                "searched_samples": 4552,
+                "search_radius_samples": 4096,
+                "exact": true,
+                "within_tolerance": true
+              },
+              "diagnostic": true
+            },
+            {
+              "label": "ordinary: right event 95800 within declared sub-frame tolerance",
+              "passed": true,
+              "details": {
+                "channel": "right",
+                "expected_sample": 95800,
+                "actual_peak_sample": 95800,
+                "error_samples": 0,
+                "error_seconds": "0",
+                "peak_amplitude": -0.5861328840255737,
+                "searched_samples": 4552,
+                "search_radius_samples": 4096,
+                "exact": true,
+                "within_tolerance": true
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "ordinary: right events select distinct measured peaks",
+              "passed": true,
+              "details": {
+                "selected_samples": [
+                  100,
+                  48000,
+                  95800
+                ]
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "manual: explicit decoder mode",
+              "passed": true,
+              "details": null,
+              "diagnostic": false
+            },
+            {
+              "label": "manual: 48000 Hz stereo",
+              "passed": true,
+              "details": null,
+              "diagnostic": false
+            },
+            {
+              "label": "manual: declared PCM count",
+              "passed": true,
+              "details": null,
+              "diagnostic": false
+            },
+            {
+              "label": "manual: declared decoded frame count",
+              "passed": true,
+              "details": null,
+              "diagnostic": false
+            },
+            {
+              "label": "manual: nonempty decoded PCM",
+              "passed": true,
+              "details": null,
+              "diagnostic": false
+            },
+            {
+              "label": "manual: contiguous absolute sample frames",
+              "passed": true,
+              "details": {
+                "bad_frames": [],
+                "accounted_samples": 97280,
+                "pcm_samples": 97280
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "manual: exact sample grid and no decode errors",
+              "passed": true,
+              "details": [],
+              "diagnostic": false
+            },
+            {
+              "label": "manual: first-sample summary agrees with raw PTS",
+              "passed": true,
+              "details": null,
+              "diagnostic": false
+            },
+            {
+              "label": "manual: exact authored stream endpoint",
+              "passed": true,
+              "details": {
+                "error_samples": 0
+              },
+              "diagnostic": true
+            },
+            {
+              "label": "manual: stream endpoint within declared sub-frame tolerance",
+              "passed": true,
+              "details": {
+                "error_samples": 0,
+                "declared_tolerance_samples": 799
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "manual: independent event diagnostic windows",
+              "passed": true,
+              "details": {
+                "expected_samples": [
+                  100,
+                  48000,
+                  95800
+                ],
+                "search_radius_samples": 4096
+              },
+              "diagnostic": true
+            },
+            {
+              "label": "manual: left event 100 exact",
+              "passed": true,
+              "details": {
+                "channel": "left",
+                "expected_sample": 100,
+                "actual_peak_sample": 100,
+                "error_samples": 0,
+                "error_seconds": "0",
+                "peak_amplitude": 0.5068195462226868,
+                "searched_samples": 5221,
+                "search_radius_samples": 4096,
+                "exact": true,
+                "within_tolerance": true
+              },
+              "diagnostic": true
+            },
+            {
+              "label": "manual: left event 100 within declared sub-frame tolerance",
+              "passed": true,
+              "details": {
+                "channel": "left",
+                "expected_sample": 100,
+                "actual_peak_sample": 100,
+                "error_samples": 0,
+                "error_seconds": "0",
+                "peak_amplitude": 0.5068195462226868,
+                "searched_samples": 5221,
+                "search_radius_samples": 4096,
+                "exact": true,
+                "within_tolerance": true
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "manual: left event 48000 exact",
+              "passed": true,
+              "details": {
+                "channel": "left",
+                "expected_sample": 48000,
+                "actual_peak_sample": 48000,
+                "error_samples": 0,
+                "error_seconds": "0",
+                "peak_amplitude": 0.749076783657074,
+                "searched_samples": 8193,
+                "search_radius_samples": 4096,
+                "exact": true,
+                "within_tolerance": true
+              },
+              "diagnostic": true
+            },
+            {
+              "label": "manual: left event 48000 within declared sub-frame tolerance",
+              "passed": true,
+              "details": {
+                "channel": "left",
+                "expected_sample": 48000,
+                "actual_peak_sample": 48000,
+                "error_samples": 0,
+                "error_seconds": "0",
+                "peak_amplitude": 0.749076783657074,
+                "searched_samples": 8193,
+                "search_radius_samples": 4096,
+                "exact": true,
+                "within_tolerance": true
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "manual: left event 95800 exact",
+              "passed": true,
+              "details": {
+                "channel": "left",
+                "expected_sample": 95800,
+                "actual_peak_sample": 95800,
+                "error_samples": 0,
+                "error_seconds": "0",
+                "peak_amplitude": 0.694223165512085,
+                "searched_samples": 4552,
+                "search_radius_samples": 4096,
+                "exact": true,
+                "within_tolerance": true
+              },
+              "diagnostic": true
+            },
+            {
+              "label": "manual: left event 95800 within declared sub-frame tolerance",
+              "passed": true,
+              "details": {
+                "channel": "left",
+                "expected_sample": 95800,
+                "actual_peak_sample": 95800,
+                "error_samples": 0,
+                "error_seconds": "0",
+                "peak_amplitude": 0.694223165512085,
+                "searched_samples": 4552,
+                "search_radius_samples": 4096,
+                "exact": true,
+                "within_tolerance": true
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "manual: left events select distinct measured peaks",
+              "passed": true,
+              "details": {
+                "selected_samples": [
+                  100,
+                  48000,
+                  95800
+                ]
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "manual: right event 100 exact",
+              "passed": true,
+              "details": {
+                "channel": "right",
+                "expected_sample": 100,
+                "actual_peak_sample": 100,
+                "error_samples": 0,
+                "error_seconds": "0",
+                "peak_amplitude": -0.367975652217865,
+                "searched_samples": 5221,
+                "search_radius_samples": 4096,
+                "exact": true,
+                "within_tolerance": true
+              },
+              "diagnostic": true
+            },
+            {
+              "label": "manual: right event 100 within declared sub-frame tolerance",
+              "passed": true,
+              "details": {
+                "channel": "right",
+                "expected_sample": 100,
+                "actual_peak_sample": 100,
+                "error_samples": 0,
+                "error_seconds": "0",
+                "peak_amplitude": -0.367975652217865,
+                "searched_samples": 5221,
+                "search_radius_samples": 4096,
+                "exact": true,
+                "within_tolerance": true
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "manual: right event 48000 exact",
+              "passed": true,
+              "details": {
+                "channel": "right",
+                "expected_sample": 48000,
+                "actual_peak_sample": 48000,
+                "error_samples": 0,
+                "error_seconds": "0",
+                "peak_amplitude": -0.649470865726471,
+                "searched_samples": 8193,
+                "search_radius_samples": 4096,
+                "exact": true,
+                "within_tolerance": true
+              },
+              "diagnostic": true
+            },
+            {
+              "label": "manual: right event 48000 within declared sub-frame tolerance",
+              "passed": true,
+              "details": {
+                "channel": "right",
+                "expected_sample": 48000,
+                "actual_peak_sample": 48000,
+                "error_samples": 0,
+                "error_seconds": "0",
+                "peak_amplitude": -0.649470865726471,
+                "searched_samples": 8193,
+                "search_radius_samples": 4096,
+                "exact": true,
+                "within_tolerance": true
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "manual: right event 95800 exact",
+              "passed": true,
+              "details": {
+                "channel": "right",
+                "expected_sample": 95800,
+                "actual_peak_sample": 95800,
+                "error_samples": 0,
+                "error_seconds": "0",
+                "peak_amplitude": -0.5861328840255737,
+                "searched_samples": 4552,
+                "search_radius_samples": 4096,
+                "exact": true,
+                "within_tolerance": true
+              },
+              "diagnostic": true
+            },
+            {
+              "label": "manual: right event 95800 within declared sub-frame tolerance",
+              "passed": true,
+              "details": {
+                "channel": "right",
+                "expected_sample": 95800,
+                "actual_peak_sample": 95800,
+                "error_samples": 0,
+                "error_seconds": "0",
+                "peak_amplitude": -0.5861328840255737,
+                "searched_samples": 4552,
+                "search_radius_samples": 4096,
+                "exact": true,
+                "within_tolerance": true
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "manual: right events select distinct measured peaks",
+              "passed": true,
+              "details": {
+                "selected_samples": [
+                  100,
+                  48000,
+                  95800
+                ]
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "one fast-start movie and two tracks",
+              "passed": true
+            },
+            {
+              "label": "exact movie timescale",
+              "passed": true,
+              "details": [
+                {
+                  "type": "mvhd",
+                  "offset": 40,
+                  "size": 108,
+                  "header_size": 8,
+                  "parent_offset": 32,
+                  "path": [
+                    "moov",
+                    "mvhd"
+                  ],
+                  "version": 0,
+                  "timescale": 48000,
+                  "duration_ticks": 96000,
+                  "duration_unknown": false
+                }
+              ]
+            },
+            {
+              "label": "video: raw packet payload equality across mux",
+              "passed": false,
+              "diagnostic": true,
+              "details": {
+                "before_count": 120,
+                "after_count": 120,
+                "scope": "H.264 mux framing may change; raw video bytes are observational. AAC equality is required."
+              }
+            },
+            {
+              "label": "audio: raw packet payload equality across mux",
+              "passed": true,
+              "diagnostic": false,
+              "details": {
+                "before_count": 95,
+                "after_count": 95,
+                "scope": "H.264 mux framing may change; raw video bytes are observational. AAC equality is required."
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

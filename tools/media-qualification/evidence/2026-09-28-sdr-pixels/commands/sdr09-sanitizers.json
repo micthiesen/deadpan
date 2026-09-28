@@ -1,0 +1,22 @@
+{
+  "command": [
+    "python3",
+    "tools/media-qualification/compatible/qualify_picture_export.py",
+    "--build-report",
+    "/tmp/deadpan-ui-ffmpeg-build.json",
+    "--renderer-report",
+    "/tmp/deadpan-sdr-pixels-3JwYsBqt/metal.json",
+    "--work",
+    "/tmp/deadpan-sdr-pixels-3JwYsBqt/picture-sanitizers",
+    "--output",
+    "/tmp/deadpan-sdr-pixels-3JwYsBqt/picture-sanitizers.json",
+    "--sanitizers"
+  ],
+  "started": "2026-09-28T15:57:06.897593+00:00",
+  "base_commit": "31e28647df6b1c5e088bca0d073336df0aef74d3",
+  "diff_sha256": "408055286ef694fbc1c082634ef923113a9deb878e0844ab828d237b56e627f4",
+  "source_manifest_sha256": "827debed2bf110d0a5e91c6842f4728fe1d9a21bb6ea7d0dfdd3f6b3eb6d024e",
+  "pid": 51933,
+  "exit_code": 0,
+  "seconds": 6.892245250288397
+}

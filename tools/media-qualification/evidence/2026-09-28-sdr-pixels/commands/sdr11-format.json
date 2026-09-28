@@ -1,0 +1,16 @@
+{
+  "command": [
+    "cargo",
+    "fmt",
+    "--all",
+    "--",
+    "--check"
+  ],
+  "started": "2026-09-28T15:58:17.076992+00:00",
+  "base_commit": "31e28647df6b1c5e088bca0d073336df0aef74d3",
+  "diff_sha256": "408055286ef694fbc1c082634ef923113a9deb878e0844ab828d237b56e627f4",
+  "source_manifest_sha256": "827debed2bf110d0a5e91c6842f4728fe1d9a21bb6ea7d0dfdd3f6b3eb6d024e",
+  "pid": 52117,
+  "exit_code": 0,
+  "seconds": 4.480163541156799
+}

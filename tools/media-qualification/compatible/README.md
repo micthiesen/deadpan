@@ -138,3 +138,36 @@ The 799-sample tolerance stays strictly below the 800-sample video frame.
 `--sanitizers` instruments the observer, not the Apple decoder/frameworks.
 This is a second audio reader comparison, not acoustic playback, native video
 qualification or approval of a nonconforming export path.
+
+## Shared renderer encoder planes
+
+`qualify_picture_export.py` consumes the successful real Metal report from
+`crates/deadpan-render/examples/qualify_sdr_export.rs`. Build that example with
+the normal locked workspace graph, then run its recorded Cargo artifact with
+a new report path and a new fixture directory. It writes separate actual and
+independent-reference tight I420 frames at 320×180 and 318×180, with their
+SHA-256 identities. The [pixel contract](../../../docs/SDR_ENCODER_PIXELS.md)
+defines the color transform, left-sited filter, bounds and readback lifetime.
+
+```sh
+python3 tools/media-qualification/compatible/qualify_picture_export.py \
+  --build-report /tmp/deadpan-media-compatible-build.json \
+  --renderer-report /tmp/deadpan-renderer-NEW.json \
+  --work /tmp/deadpan-picture-export-NEW \
+  --output /tmp/deadpan-picture-export-NEW-report.json
+```
+
+The runner rechecks both input hashes, compares every renderer code with the
+independent reference, and passes only the actual renderer planes to hardware
+H.264. The C probe hashes the bytes it owns before encoding and records the
+consumed identity. Fresh full-frame decoding must retain the geometry, explicit
+Rec.709 limited-range/left-chroma metadata, square pixels and exact one-frame
+30 fps interval. Every decoded plane code is compared with the actual input;
+maximum error 12 codes and mean error 2 codes per plane are fixed before
+measurement. Spatial failures and per-plane statistics remain in the report.
+
+These fixtures are video-only and disable edit lists. They neither resolve nor
+relax the AAC timing constraint. The experiment does not qualify multi-frame
+closed GOPs, real footage, full resolution, HDR, physical viewing or product
+export. `--sanitizers` instruments the C probe only. Preserve failed observations
+and process faults; correct metadata alone does not establish correct pixels.

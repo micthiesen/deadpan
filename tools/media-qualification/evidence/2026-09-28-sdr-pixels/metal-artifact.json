@@ -1,0 +1,45 @@
+{
+  "cargo_artifact": {
+    "reason": "compiler-artifact",
+    "package_id": "path+file:///Users/michael/Code/deadpan/crates/deadpan-render#0.1.0",
+    "manifest_path": "/Users/michael/Code/deadpan/crates/deadpan-render/Cargo.toml",
+    "target": {
+      "kind": [
+        "example"
+      ],
+      "crate_types": [
+        "bin"
+      ],
+      "name": "qualify_sdr_export",
+      "src_path": "/Users/michael/Code/deadpan/crates/deadpan-render/examples/qualify_sdr_export.rs",
+      "edition": "2024",
+      "doc": false,
+      "doctest": false,
+      "test": false
+    },
+    "profile": {
+      "opt_level": "0",
+      "debuginfo": 2,
+      "debug_assertions": true,
+      "overflow_checks": true,
+      "test": false
+    },
+    "features": [],
+    "filenames": [
+      "/Users/michael/Code/deadpan/target/debug/examples/qualify_sdr_export"
+    ],
+    "executable": "/Users/michael/Code/deadpan/target/debug/examples/qualify_sdr_export",
+    "fresh": true
+  },
+  "sha256": "899cb3ea9f3e7e1505547794815837e59221d1300ecc334f4607866592c26f0f",
+  "command": [
+    "/Users/michael/Code/deadpan/target/debug/examples/qualify_sdr_export",
+    "/private/tmp/deadpan-sdr-pixels-3JwYsBqt/metal.json",
+    "/private/tmp/deadpan-sdr-pixels-3JwYsBqt/metal-fixtures"
+  ],
+  "cwd": "/Users/michael/Code/deadpan",
+  "timeout_seconds": 90,
+  "exit_code": 0,
+  "sha256_after": "899cb3ea9f3e7e1505547794815837e59221d1300ecc334f4607866592c26f0f",
+  "binary_unchanged": true
+}
