@@ -1,0 +1,78 @@
+{
+  "README.md": {
+    "bytes": 1107,
+    "sha256": "6d4c98959a00a1493e9793acacb5b0a25fd224388f6645de40499771554d7bbd"
+  },
+  "actual-pcm-01-command.json": {
+    "bytes": 565,
+    "sha256": "317177148ab519b27688258a970c6f64c75ef5cb23420f46c9276deaab150ae9"
+  },
+  "actual-pcm-01.log": {
+    "bytes": 540,
+    "sha256": "33052c967078248a775961ddb0af5569491ec5d7b15123f082f4e53a8ebb75c0"
+  },
+  "clippy-workspace-command.json": {
+    "bytes": 495,
+    "sha256": "3b44489d37dd6b2a55ad4e03c70746d535b1733c13d81be978fdd74a930135ec"
+  },
+  "clippy-workspace.log": {
+    "bytes": 1103,
+    "sha256": "46eed0261674d7a115a0c178460db67c7e32bb964332aed008f5a1ed8c83108f"
+  },
+  "core-01-command.json": {
+    "bytes": 520,
+    "sha256": "788d8191a91acba3288f144a3d6f3da2cc35bc722217ef33f227bedf59559910"
+  },
+  "core-01.log": {
+    "bytes": 1760,
+    "sha256": "c60ebb9d3764f257423cb76546edbea07af2624689f94c07811b0aa37c51f10f"
+  },
+  "format-final-command.json": {
+    "bytes": 432,
+    "sha256": "b110d49c91b17e1cf9b71eac890b65b38cd843b00354b01bf6525dce6c723503"
+  },
+  "format-final.log": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "retained-pcm-01-command.json": {
+    "bytes": 535,
+    "sha256": "78b5ac6e34a024ed97fb099f852546fd987f665431065cfbd6e283a0ee547716"
+  },
+  "retained-pcm-01.log": {
+    "bytes": 536,
+    "sha256": "c8ddde37dd71344b27e414075f7f4833f971b808643d6623584372bfe6b8d60b"
+  },
+  "source-03ed74897913607779415545484fa6fbc089bab4dc51a68c6517252c28761d21.json": {
+    "bytes": 121289,
+    "sha256": "03ed74897913607779415545484fa6fbc089bab4dc51a68c6517252c28761d21"
+  },
+  "source-b45764a6b7749946b9f3ea94b7c38058518ddb27d6135f845d4f0257594cba25.json": {
+    "bytes": 121289,
+    "sha256": "b45764a6b7749946b9f3ea94b7c38058518ddb27d6135f845d4f0257594cba25"
+  },
+  "source-d0b8fa7e9a3d900d59c4d5599331070c120c9116983c995ab211a7ab92917576.json": {
+    "bytes": 121289,
+    "sha256": "d0b8fa7e9a3d900d59c4d5599331070c120c9116983c995ab211a7ab92917576"
+  },
+  "store-01-command.json": {
+    "bytes": 544,
+    "sha256": "674726a135ce5ac6e24c1399f842d02a737054a4d3890cbd64b58c9a4438789c"
+  },
+  "store-01.log": {
+    "bytes": 2098,
+    "sha256": "5224c52580a4a9abecf3d5f97eca712c815853e9ff08a85b18a55ff3b49b5aca"
+  },
+  "summary.json": {
+    "bytes": 4533,
+    "sha256": "d70f2fcea4e48f8db9a4ac816032a13462d41feca503210971043649d08f1f20"
+  },
+  "tests-workspace-command.json": {
+    "bytes": 439,
+    "sha256": "b303f3a6e31a8d26e79189fe6c157218b49802b5fca9c32ba250103ac111d88c"
+  },
+  "tests-workspace.log": {
+    "bytes": 195503,
+    "sha256": "6874accf326418f48cdfa372766d87ed00c714a8475d783a6e3147574654348c"
+  }
+}

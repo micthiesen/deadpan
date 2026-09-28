@@ -1160,20 +1160,9 @@ fn bound_preserve_evaluates_changed_room_tone_without_old_silence() {
     else {
         unreachable!()
     };
-    let mut changed_hold = hold(128);
-    let NodeKind::Hold { recipe } = &mut changed_hold.kind else {
-        unreachable!()
-    };
-    recipe.audio = HoldAudio::RoomTone {
-        source: room_source.audio.unwrap(),
-    };
-    let mut wire = serde_json::to_value(&old).unwrap();
-    wire["nodes"]["silent"] = serde_json::to_value(changed_hold).unwrap();
-    wire["revision_id"] = serde_json::to_value(revision("room-policy")).unwrap();
-    let changed = ProjectDocument::from_json(&wire.to_string()).unwrap();
-    let bound = bind(
+    let before = bind(
         &old,
-        &changed,
+        &old,
         vec![
             (
                 "inner",
@@ -1193,6 +1182,18 @@ fn bound_preserve_evaluates_changed_room_tone_without_old_silence() {
             ),
         ],
     );
+    let bound = edit(
+        &before,
+        "room-policy",
+        Command::SetHoldAudio {
+            node: id("silent"),
+            audio: HoldAudio::RoomTone {
+                source: room_source.audio.unwrap(),
+            },
+        },
+    );
+    assert_eq!(bound.audio_bindings(), before.audio_bindings());
+    assert_eq!(bound.duration().unwrap(), before.duration().unwrap());
     let room_input = decoded(&provider, 1024..1152);
     let room = RoomTone::new(
         RoomToneRecipe::new(ExactRatio::integer(128), 128).unwrap(),

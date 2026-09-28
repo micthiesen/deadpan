@@ -7,11 +7,11 @@ use crate::document::unique_map;
 use crate::{
     AcceptedGeneration, AnchorLossPolicy, AssetId, AssetRecord, AudioSample, BeatNode,
     BoundaryAnchor, DocumentError, DocumentErrorCode, FrameDuration, FrameRateOrigin,
-    GeneratedArtifact, GeometryOrigin, HoldFallback, HoldRecipe, HoldVideo, InstancePath,
-    IterationId, IterationOrder, MAX_DOCUMENT_MARKS, MAX_DOCUMENT_NODES, Mark, MarkId, MarkState,
-    NodeId, NodeKind, OccurrenceEdit, OccurrenceIdentities, PlayOverrides, PresentationChange,
-    PrimarySource, PrimarySourceImport, ProjectDocument, ProjectId, RevisionId, SourceAudioMapping,
-    SourceNode, SourceVideo, SourceVideoMapping, WrapAnchorPolicy,
+    GeneratedArtifact, GeometryOrigin, HoldAudio, HoldFallback, HoldRecipe, HoldVideo,
+    InstancePath, IterationId, IterationOrder, MAX_DOCUMENT_MARKS, MAX_DOCUMENT_NODES, Mark,
+    MarkId, MarkState, NodeId, NodeKind, OccurrenceEdit, OccurrenceIdentities, PlayOverrides,
+    PresentationChange, PrimarySource, PrimarySourceImport, ProjectDocument, ProjectId, RevisionId,
+    SourceAudioMapping, SourceNode, SourceVideo, SourceVideoMapping, WrapAnchorPolicy,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -158,6 +158,11 @@ pub enum Command {
     SetHoldDuration {
         node: NodeId,
         duration: FrameDuration,
+    },
+    /// Replace one Hold's audio recipe without changing its picture or timing.
+    SetHoldAudio {
+        node: NodeId,
+        audio: HoldAudio,
     },
     /// Changes picture rate and endpoint behavior without changing beat or audio time.
     SetSourceVideoMapping {
@@ -509,7 +514,7 @@ pub fn apply(
         structural.sound_allowances.clear();
     }
     let input = structural.as_ref().unwrap_or(document);
-    let context = EditContext {
+    let mut context = EditContext {
         allocation: &request.new_revision,
         allowances: allowance_edit.as_mut(),
     };
@@ -565,6 +570,9 @@ pub fn apply(
         command => {
             let mut result = input.clone();
             reduce(&mut result, command, &request.new_revision)?;
+            if let Some(allowances) = context.allowances.as_deref_mut() {
+                allowances.apply_hold_audio_command(command);
+            }
             crate::audio_lineage::reconcile(input, &mut result, command)?;
             if !matches!(
                 command,
@@ -1086,6 +1094,9 @@ pub(crate) fn reduce(
                 recipe.video = fallback_video(&accepted.fallback);
             }
             recipe.duration = *duration;
+        }
+        Command::SetHoldAudio { node, audio } => {
+            hold_mut(document, node)?.audio = audio.clone();
         }
         Command::SetHoldProvider { node, video } => {
             if matches!(video, HoldVideo::Generated { .. }) {
@@ -1800,6 +1811,7 @@ fn description(command: &Command) -> &'static str {
         Command::InsertPlays { .. } => "Insert repeat plays",
         Command::MovePlays { .. } => "Move repeat plays",
         Command::SetHoldDuration { .. } => "Change hold duration",
+        Command::SetHoldAudio { .. } => "Change hold audio",
         Command::SetSourceAudioMapping { .. } => "Change source audio mapping",
         Command::SetSourceVideoMapping { .. } => "Change source video mapping",
         Command::SetHoldProvider { .. } => "Change hold provider",

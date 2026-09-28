@@ -164,6 +164,30 @@
       "referenced_images": [
         "boards/sound-placement-board-v1.png"
       ]
+    },
+    {
+      "image": "boards/room-tone-board-v1.png",
+      "status": "superseded-exploration",
+      "generated_on": "2026-09-27",
+      "sha256": "d0ee7f7e53a8a1d5b4c695b5e262d960034a6a3351f61db211393f13cf531ea7",
+      "width": 1536,
+      "height": 1024,
+      "prompt": "prompts/room-tone-board-v1.txt",
+      "prompt_sha256": "b40c30ebb37ad9fd9b046f0b4759e02a47f17051cc8ae2660895bb55038b371a",
+      "referenced_images": []
+    },
+    {
+      "image": "boards/room-tone-board-v2.png",
+      "status": "current-target",
+      "generated_on": "2026-09-27",
+      "sha256": "624ebd0247dfbb6a2d3226640640304dba20edbf2eda2ce8e402ccd742977d18",
+      "width": 1536,
+      "height": 1024,
+      "prompt": "prompts/room-tone-board-v2.txt",
+      "prompt_sha256": "89580caed3c0341a8844ef64e34f20a6715928ec177e690a2b6809e1577471f9",
+      "referenced_images": [
+        "boards/room-tone-board-v1.png"
+      ]
     }
   ]
 }

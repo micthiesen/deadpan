@@ -1,0 +1,29 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 33.68s
+     Running tests/hold_audio.rs (target/debug/deps/hold_audio-1203f4e828452e57)
+
+running 5 tests
+test invalid_audio_and_targets_fail_without_mutating_the_document ... ok
+test existing_tail_validation_and_revision_guards_still_apply ... ok
+test exact_room_tone_and_silence_preserve_picture_timing_and_round_trip ... ok
+test policy_replacement_keeps_retained_sampling_lattice ... ok
+test every_frozen_request_grammar_rejects_direct_and_occurrence_audio_setters ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/sound_allowances.rs (target/debug/deps/sound_allowances-733f7e83d07c64be)
+
+running 10 tests
+test invalid_scope_and_gap_addresses_fail_without_changing_history ... ok
+test allowance_is_reversible_guarded_and_independent_of_recipe_parameters ... ok
+test audio_setter_retires_only_its_hold_permissions_and_undo_restores_them ... ok
+test splitting_a_repeat_remaps_its_gap_owner_and_all_enclosing_play_identities ... ok
+test splice_retains_policy_and_deleting_the_issuer_prunes_it_without_removing_surviving_sound ... ok
+test nested_occurrence_isolation_moves_selected_addresses_and_preserves_other_plays ... ok
+test occurrence_audio_setter_retires_only_the_isolated_hold_permission ... ok
+test split_and_internal_insertion_split_copy_only_existing_hold_issuers_once ... ok
+test wire_is_closed_canonical_and_bounded_before_document_traversal ... ok
+test document_aggregate_limit_is_shared_by_individually_valid_event_sets ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s
+

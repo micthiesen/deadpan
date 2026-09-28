@@ -283,6 +283,16 @@ gate is promoted by this subset.
 The [allowance qualification](qualification/sound-allowances-2026-09-27.md)
 records review corrections, migration provenance, actual PCM and UI evidence.
 
+Core 32/database 38 add [atomic Hold audio policy changes](ROOM_TONE_AUDIO.md).
+The direct and occurrence setters retain timing and picture, validate new
+source choices against measured admission, and retire obsolete silence
+permissions with exact undo. Frozen core-31 replay preserves prior allowances
+without admitting the new command. The [authoring record](qualification/hold-audio-2026-09-27.md)
+tracks migration, source admission and actual PCM verification. The
+[room-tone board](design/boards/room-tone-board-v2.png) supplies the target for
+native range selection, distinct source/pause audition and explicit application;
+these controls, listening and export remain required. No DP or gate is promoted.
+
 [Original and edit audition](PLAYBACK.md) connects immutable qualified originals and
 canonical limited PCM to the native device, with Space Play/Pause, a monitor
 level, exact audio-clock picture scheduling and explicit interruption. Bounded

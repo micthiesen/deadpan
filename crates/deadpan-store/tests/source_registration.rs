@@ -22,6 +22,8 @@ use rusqlite::Connection;
 
 type Result<T = ()> = std::result::Result<T, Box<dyn Error>>;
 
+#[path = "source_registration/hold_audio.rs"]
+mod hold_audio;
 #[path = "source_registration/sounds.rs"]
 mod sounds;
 

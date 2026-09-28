@@ -1,0 +1,19 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "-p",
+    "deadpan-cli",
+    "--test",
+    "audio_inspection",
+    "authored_room_tone_range_and_silence_share_cli_history_and_actual_pcm"
+  ],
+  "started": "2026-09-28T04:27:08.901740+00:00",
+  "base_commit": "464a7843f9bd8e91e0fc6d7b30a6e92ea424fc81",
+  "diff_sha256": "77a8b23342fe5f2066c3c8a43b0faa787dd94141c48dbbb53dc0b05388521755",
+  "source_manifest_sha256": "b45764a6b7749946b9f3ea94b7c38058518ddb27d6135f845d4f0257594cba25",
+  "pid": 35021,
+  "exit_code": 0,
+  "seconds": 24.827986124902964
+}

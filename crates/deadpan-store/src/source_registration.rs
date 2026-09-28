@@ -888,6 +888,102 @@ pub(crate) fn validate_sound_sources(
     Ok(())
 }
 
+/// Explicit Hold policy changes use evidence already admitted in their expected
+/// revision. Do not reinterpret historical Holds on unrelated edits. This checks
+/// stored admission and original ownership, not current byte availability;
+/// playback still opens a fresh verified source snapshot before using the media.
+pub(crate) fn validate_hold_audio_source(
+    connection: &Connection,
+    current: &ProjectDocument,
+    next: &ProjectDocument,
+    request: &CommandRequest,
+) -> Result<(), StoreError> {
+    let audio = match &request.command {
+        Command::SetHoldAudio { audio, .. }
+        | Command::EditOccurrence {
+            edit: deadpan_core::OccurrenceEdit::SetHoldAudio { audio },
+            ..
+        } => audio,
+        _ => return Ok(()),
+    };
+    let source = match audio {
+        deadpan_core::HoldAudio::Silence => return Ok(()),
+        deadpan_core::HoldAudio::RoomTone { source }
+        | deadpan_core::HoldAudio::Tail { source, .. } => source,
+    };
+    let record = current
+        .assets()
+        .get(&source.asset)
+        .ok_or_else(|| invalid("Hold audio asset is absent from the selected revision"))?;
+    if next.assets().get(&source.asset) != Some(record) {
+        return Err(invalid(
+            "Hold audio edit changes its admitted asset contract",
+        ));
+    }
+    let id = record
+        .source_qualification
+        .as_ref()
+        .ok_or_else(|| invalid("Hold audio asset has no measured source qualification"))?;
+    let receipt = read_receipt(connection, id)?
+        .ok_or_else(|| invalid("Hold audio source qualification is missing"))?;
+    if receipt.asset_record(record.label.clone())? != *record {
+        return Err(invalid(
+            "Hold audio asset metadata disagrees with selected source qualification",
+        ));
+    }
+    check_original_binding(connection, &receipt)?;
+    let audio = receipt
+        .snapshot
+        .audio()
+        .ok_or_else(|| invalid("Hold audio source has no measured audio"))?;
+    let mut endpoints = [0_i64; 2];
+    for (sample, point) in endpoints
+        .iter_mut()
+        .zip([source.span.start(), source.span.end()])
+    {
+        let exact = deadpan_core::ExactRatio::new(
+            i128::from(point.time_base.numerator()),
+            i128::from(point.time_base.denominator()),
+        )
+        .and_then(|base| base.checked_mul(deadpan_core::ExactRatio::integer(point.ticks)))
+        .and_then(|seconds| {
+            seconds.checked_mul(deadpan_core::ExactRatio::integer(i64::from(
+                audio.stream().sample_rate,
+            )))
+        })
+        .map_err(|error| invalid(&error.to_string()))?;
+        if exact.denominator() != 1 {
+            return Err(invalid(
+                "Hold audio trim is not on original sample boundaries",
+            ));
+        }
+        *sample = i64::try_from(exact.numerator())
+            .map_err(|_| invalid("Hold audio sample endpoint is not representable"))?;
+    }
+    let mut available = audio
+        .frames()
+        .iter()
+        .filter(|frame| frame.valid_start < frame.valid_end);
+    let first = available
+        .next()
+        .ok_or_else(|| invalid("Hold audio source has no available samples"))?;
+    let mut end = first.valid_end;
+    for frame in available {
+        if frame.valid_start != end {
+            return Err(invalid(
+                "Hold audio source has noncontiguous measured samples",
+            ));
+        }
+        end = frame.valid_end;
+    }
+    if endpoints[0] < first.valid_start || endpoints[1] > end || endpoints[0] >= endpoints[1] {
+        return Err(invalid(
+            "Hold audio selection exceeds measured available samples",
+        ));
+    }
+    Ok(())
+}
+
 pub(crate) fn validate_store(connection: &Connection) -> Result<(), StoreError> {
     check_stored_sizes(connection)?;
     let mut metadata = BTreeMap::new();

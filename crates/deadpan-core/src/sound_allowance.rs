@@ -226,6 +226,24 @@ impl SoundAllowanceEdit {
         })
     }
 
+    /// Only the explicit audio setter retires permissions made obsolete by its
+    /// resolved Hold target. Occurrence callers invoke this after isolation has
+    /// remapped addresses; unrelated plays and default gaps remain untouched.
+    pub(crate) fn apply_hold_audio_command(&mut self, command: &Command) {
+        let Command::SetHoldAudio { node, audio } = command else {
+            return;
+        };
+        if matches!(audio, HoldAudio::Silence) {
+            return;
+        }
+        self.values.retain(|_, allowances| {
+            allowances.0.retain(|issuer| {
+                !matches!(issuer, SoundHoldIssuer::Node { instance } if &instance.node == node)
+            });
+            !allowances.is_empty()
+        });
+    }
+
     /// A transparent Split retains both complete contexts, including hidden
     /// definitions. It does not grant anything to newly inserted Hold nodes.
     pub(crate) fn split(&mut self, mapping: &BTreeMap<NodeId, NodeId>) -> Result<(), EditError> {

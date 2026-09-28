@@ -95,7 +95,7 @@ release gate.
 ## Persisted root sounds
 
 Core schema 29 and database 35 introduced `SoundEvent` recipes keyed by `SoundId`.
-The current schemas are core 31 and database 37. `SetSound` creates an event or
+The current schemas are core 32 and database 38. `SetSound` creates an event or
 updates it under the retained-route rules below; `DeleteSound` removes it. The
 shared headless command entrypoint supports preview and atomic commit, followed
 by ordinary durable undo/redo. Migration replays old chronology through closed

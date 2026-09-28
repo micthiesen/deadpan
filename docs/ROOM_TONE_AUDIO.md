@@ -4,8 +4,10 @@
 source range. It does not choose a range, classify it as non-speech, or replace
 silence automatically. The selected source remains ordinary retained media with
 revision-bound qualification and an explicit speaker interpretation. The current
-engineering command path inserts that Hold as an ordinary subtree. Native range
-selection, audition, and an audio-policy inspector remain open.
+engineering command path can insert that Hold as an ordinary subtree or change
+an existing Hold with the atomic `SetHoldAudio` command. Native range selection,
+source audition, and an audio-policy inspector remain open; the
+[room-tone board](design/boards/room-tone-board-v2.png) is their visual target.
 
 ```sh
 cargo run --locked -p deadpan-cli -- inspect-audio /tmp/example.deadpan --samples 0 256 --time-mapped
@@ -14,6 +16,39 @@ cargo run --locked -p deadpan-cli -- inspect-audio /tmp/example.deadpan --sample
 The output remains `time_mapped_pcm_before_effects`. The source-only inspector
 still rejects looping, and effect tails remain unsupported by both inspectors.
 Room tone and digital silence retain distinct authored and rendered behavior.
+
+## Authored policy changes
+
+Core 32/database 38 add `SetHoldAudio { node, audio }` and the corresponding
+occurrence edit. Change only the Hold's audio policy and exact source range.
+Its duration, picture/provider, captured framing, marks and retained sample
+clocks stay intact. Changing raw audio invalidates its copy lineage and affected
+processing ancestors through the existing reconciliation; it does not reset
+their sampling clocks. A concrete occurrence edit isolates only the selected
+play before applying the same setter.
+
+Changing Silence to RoomTone or Tail removes that Hold's now-obsolete sound
+allowances in the same reversible patch. Other Holds, plays and gaps keep their
+permissions. Explicitly choosing Silence later does not recreate removed
+permissions; Undo restores the exact prior policy and permissions together.
+Tail remains authorable vocabulary but the renderer still rejects unsupported
+tail processing. This command does not implement effects or sends.
+
+The store admits a new RoomTone/Tail choice only from the expected revision's
+qualified asset. It checks the immutable receipt, Original ownership binding,
+measured contiguous audio and exact original sample endpoints. The generic
+command API, dry run and chronological history replay use this validation.
+This is stored source admission, not fresh byte verification; playback opens a
+verified snapshot. Silence needs no new media admission. Unchanged legacy Hold
+recipes remain valid on unrelated edits, while an explicit new source-policy
+edit cannot reuse an unqualified legacy asset. Existing generation relevance
+requirements remain unchanged.
+
+Database-37 migration uses a closed core-31 grammar that preserves allowances
+and rejects the new direct/occurrence setter. All snapshots and both patch
+directions are compared before promotion, including abandoned history and redo.
+See the [headless grammar](HEADLESS.md#hold-audio-policy) and
+[authoring qualification](qualification/hold-audio-2026-09-27.md).
 
 ## Loop construction
 
@@ -67,6 +102,23 @@ Failed preparation publishes no partial PCM or cache entry.
 
 ## Verification and remaining work
 
+The next native workflow must retain one resolved sample span for its display,
+source audition and Apply request. A copied Original moment is a picture-ordinal
+selection, not yet a room-tone source: its derived audio placement retains the
+complete measured source with a separate fractional selection. Never discard
+that selection and loop the complete source accidentally. Resolve sample
+endpoints directly against measured source time, display any boundary snapping,
+and reject an empty result. Source preview needs zero implicit audition context;
+the committed pause preview must exercise the actual room-tone loop.
+
+Capture the Hold, Sequence scope, project session, revision, source receipt and
+sample span before parameter entry or asynchronous preparation. Captured absence
+must remain an error rather than adopting a later selection. The sound catalog's
+audio-only audition descriptor cannot represent the Original's selected audio
+without an explicit extension. Preserve the edit cursor, picture and selected
+beat while auditioning source material. Apply remains an explicit undoable edit,
+and native text fields retain macOS composition and key ownership.
+
 Pure loop tests check exact phase, overlap weights, constant-level preservation,
 fractional periods, tiny ranges, cancellation, input validation and replay.
 Real PCM tests cover a 44.1 kHz mono source, repeats/overrides/gaps, nested retimes,
@@ -74,6 +126,8 @@ crop history and layout changes. The host test checks an explicit AAC range,
 separate silent time, untouched following source audio, and unchanged history.
 See [qualification](qualification/room-tone-audio-2026-09-21.md).
 
-Listening across a representative ambience corpus, authored policy/range editing
-and native audition remain required. Ordinary edge fades, effect tails, gain,
-effects, mastering, native playback and export are separate unfinished work.
+Listening across a representative ambience corpus, native policy/range editing
+and dedicated source audition remain required. Existing Sequence audition can
+render an authored room-tone Hold, but does not implement the range-selection
+workflow. Effect tails, gain envelopes, the full voice graph and export remain
+unfinished. No requirement or release gate is complete because a setter exists.

@@ -28,6 +28,8 @@ mod composite_insert;
 mod framing;
 #[path = "migration/gap_branches.rs"]
 mod gap_branches;
+#[path = "migration/hold_audio.rs"]
+mod hold_audio;
 #[path = "migration/insert_time.rs"]
 mod insert_time;
 #[path = "migration/interior_insert.rs"]

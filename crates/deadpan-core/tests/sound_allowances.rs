@@ -628,3 +628,138 @@ fn document_aggregate_limit_is_shared_by_individually_valid_event_sets() {
         DocumentErrorCode::LimitExceeded
     );
 }
+
+#[test]
+fn audio_setter_retires_only_its_hold_permissions_and_undo_restores_them() {
+    let original = fixture(false);
+    let mut wire = serde_json::to_value(&original).unwrap();
+    wire["nodes"]["other-hold"] =
+        serde_json::to_value(BeatNode::hold("Other pause", hold(10))).unwrap();
+    wire["nodes"]["root"]["kind"]["children"] = json!(["hold", "other-hold"]);
+    let original = ProjectDocument::from_json(&wire.to_string()).unwrap();
+    let second = SoundId::new("second").unwrap();
+    let original = edit(
+        &original,
+        Command::SetSound {
+            id: second.clone(),
+            event: original.sounds()[&sound()].clone(),
+        },
+    )
+    .0;
+    let target = address("hold", vec![]);
+    let other = address("other-hold", vec![]);
+    let allowed = allow(&allow(&original, target.clone()), other.clone());
+    let allowed = edit(
+        &allowed,
+        Command::SetSoundAllowance {
+            sound: second.clone(),
+            issuer: target,
+            allowed: true,
+        },
+    )
+    .0;
+    let unchanged = edit(
+        &allowed,
+        Command::SetHoldAudio {
+            node: node("hold"),
+            audio: HoldAudio::Silence,
+        },
+    )
+    .0;
+    assert_eq!(unchanged.sound_allowances(), allowed.sound_allowances());
+    let (room, transaction) = edit(
+        &allowed,
+        Command::SetHoldAudio {
+            node: node("hold"),
+            audio: HoldAudio::RoomTone {
+                source: allowed.sounds()[&sound()].source.clone(),
+            },
+        },
+    );
+    assert_eq!(transaction.duration_delta, 0);
+    assert_eq!(room.sounds(), allowed.sounds());
+    assert_eq!(room.sound_routes(), allowed.sound_routes());
+    assert_eq!(room.sound_allowances().len(), 1);
+    assert_eq!(room.sound_allowances()[&sound()].len(), 1);
+    assert!(room.sound_allowances()[&sound()].contains(&other));
+    assert!(!room.sound_allowances().contains_key(&second));
+}
+
+#[test]
+fn occurrence_audio_setter_retires_only_the_isolated_hold_permission() {
+    let original = fixture(true);
+    let outer0 = play(&original, "outer", 0);
+    let outer1 = play(&original, "outer", 1);
+    let inner0 = play(&original, "inner", 0);
+    let inner1 = play(&original, "inner", 1);
+    let selected = address("hold", vec![outer0.clone(), inner0.clone()]);
+    let sibling = address("hold", vec![outer0.clone(), inner1.clone()]);
+    let other = address("hold", vec![outer1, inner0.clone()]);
+    let gap = SoundHoldIssuer::RepeatGap {
+        instance: InstancePath {
+            node: node("inner"),
+            repeats: vec![outer0.clone()],
+        },
+        gap_after: inner0.iteration.clone(),
+    };
+    let mut allowed = original.clone();
+    for issuer in [&selected, &sibling, &other, &gap] {
+        allowed = allow(&allowed, issuer.clone());
+    }
+    let room_audio = HoldAudio::RoomTone {
+        source: allowed.sounds()[&sound()].source.clone(),
+    };
+    let (isolated, transaction) = edit(
+        &allowed,
+        Command::EditOccurrence {
+            instance: selected.instance().clone(),
+            edit: OccurrenceEdit::SetHoldAudio {
+                audio: room_audio.clone(),
+            },
+            identities: OccurrenceIdentities {
+                nodes: (0..16)
+                    .map(|index| node(&format!("audio-isolate-{index}")))
+                    .collect(),
+                marks: vec![],
+            },
+        },
+    );
+    let copied_repeat = isolated.overrides()[&node("outer")]
+        .get(&outer0.iteration)
+        .unwrap();
+    let copied_hold = isolated.overrides()[copied_repeat]
+        .get(&inner0.iteration)
+        .unwrap();
+    let NodeKind::Hold { recipe } = &isolated.nodes()[copied_hold].kind else {
+        panic!("isolated Hold")
+    };
+    assert_eq!(recipe.audio, room_audio);
+    assert_eq!(
+        isolated.nodes()[&node("hold")],
+        allowed.nodes()[&node("hold")]
+    );
+    let values = &isolated.sound_allowances()[&sound()];
+    assert_eq!(values.len(), 3);
+    assert!(values.contains(&other));
+    assert!(
+        values
+            .iter()
+            .all(|issuer| &issuer.instance().node != copied_hold)
+    );
+    assert!(values.iter().any(|issuer| matches!(issuer,
+        SoundHoldIssuer::RepeatGap { instance, gap_after }
+            if &instance.node == copied_repeat && gap_after == &inner0.iteration
+    )));
+    assert!(values.iter().any(|issuer| matches!(issuer,
+        SoundHoldIssuer::Node { instance }
+            if instance.repeats.last().is_some_and(|step|
+                &step.node == copied_repeat && step.iteration == inner1.iteration)
+    )));
+    for issuer in values.iter() {
+        issuer.validate(&isolated).unwrap();
+    }
+    assert_eq!(transaction.duration_delta, 0);
+    assert_eq!(isolated.duration().unwrap(), allowed.duration().unwrap());
+    assert_eq!(isolated.sounds(), allowed.sounds());
+    assert_eq!(isolated.sound_routes(), allowed.sound_routes());
+}

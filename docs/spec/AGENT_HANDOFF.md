@@ -69,6 +69,17 @@ an allowance cannot create sound in a retained route gap. Split and occurrence
 isolation remap exact identities; database-36 histories replay through frozen
 core 30 and gain no permission. See [sound allowances](../SOUND_EVENTS.md#persisted-root-sound-allowances).
 
+Core 32/database 38 add [atomic Hold audio authoring](../ROOM_TONE_AUDIO.md).
+`SetHoldAudio` and its occurrence form retain picture, duration and sample clocks,
+reconcile changed audio lineage, and remove only that Hold's obsolete silence
+permissions. Undo restores both policy and permissions. The store requires
+revision-bound qualification and measured sample endpoints for new source
+choices; unrelated legacy Hold recipes remain unchanged. Database-37 history
+uses frozen core 31 with exact allowance comparison. The
+[room-tone design board](../design/boards/room-tone-board-v2.png) guides the still
+required native range fields, explicit source audition/application and Silence
+action. Its proposed command names and waveform are not implemented controls.
+
 [Structural speed editing](../RETIME_EDITING.md) exposes `:retime` and
 `:wrap-retime` through exact speed resolution and the native inspector. Preserve
 the input range when adjusting an ordinary Retime; wrap split Partitions instead.

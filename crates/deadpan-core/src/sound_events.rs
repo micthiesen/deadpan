@@ -147,6 +147,7 @@ fn preserves_sound_clocks(command: &Command) -> bool {
         | Command::SetSoundAllowance { .. }
         | Command::SetSourceVideoMapping { .. }
         | Command::SetSourceAudioMapping { .. }
+        | Command::SetHoldAudio { .. }
         | Command::SetHoldProvider { .. }
         | Command::SetHoldPictureContext { .. }
         | Command::AcceptGeneratedHold { .. }
@@ -165,6 +166,7 @@ fn preserves_sound_clocks(command: &Command) -> bool {
         Command::EditOccurrence { edit, .. } => match edit {
             OccurrenceEdit::SetSourceVideoMapping { .. }
             | OccurrenceEdit::SetSourceAudioMapping { .. }
+            | OccurrenceEdit::SetHoldAudio { .. }
             | OccurrenceEdit::SetHoldProvider { .. }
             | OccurrenceEdit::SetHoldPictureContext { .. }
             | OccurrenceEdit::AcceptGeneratedHold { .. }

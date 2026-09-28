@@ -7,10 +7,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     AssetId, AssetRecord, AudioSample, Command, DocumentError, DocumentErrorCode, EditError,
-    EditErrorCode, FrameDuration, GeneratedArtifact, HoldRecipe, HoldVideo, InstancePath,
-    IterationId, MAX_DOCUMENT_MARKS, MAX_DOCUMENT_NODES, MarkId, NodeId, NodeKind, PlayOverride,
-    PlayOverrides, ProjectDocument, RevisionId, SourceAudioMapping, SourceVideoMapping, Subtree,
-    WrapAnchorPolicy,
+    EditErrorCode, FrameDuration, GeneratedArtifact, HoldAudio, HoldRecipe, HoldVideo,
+    InstancePath, IterationId, MAX_DOCUMENT_MARKS, MAX_DOCUMENT_NODES, MarkId, NodeId, NodeKind,
+    PlayOverride, PlayOverrides, ProjectDocument, RevisionId, SourceAudioMapping,
+    SourceVideoMapping, Subtree, WrapAnchorPolicy,
 };
 
 /// A bounded pool supplied by the host. Unused identities do not enter the document.
@@ -74,6 +74,9 @@ pub enum OccurrenceEdit {
     },
     SetHoldDuration {
         duration: FrameDuration,
+    },
+    SetHoldAudio {
+        audio: HoldAudio,
     },
     SetSourceVideoMapping {
         mapping: SourceVideoMapping,
@@ -202,6 +205,10 @@ impl OccurrenceEdit {
             Self::SetHoldDuration { duration } => Command::SetHoldDuration {
                 node,
                 duration: *duration,
+            },
+            Self::SetHoldAudio { audio } => Command::SetHoldAudio {
+                node,
+                audio: audio.clone(),
             },
             Self::SetSourceVideoMapping { mapping } => Command::SetSourceVideoMapping {
                 node,
@@ -418,6 +425,9 @@ pub(crate) fn apply(
     }
     let isolated = result.clone();
     crate::command::reduce(&mut result, &command, allocation)?;
+    if let Some(allowances) = context.allowances.as_deref_mut() {
+        allowances.apply_hold_audio_command(&command);
+    }
     crate::audio_lineage::reconcile(&isolated, &mut result, &command)?;
     result.marks = crate::marks::transform_marks(&isolated, &result, &command)?;
     Ok(result)

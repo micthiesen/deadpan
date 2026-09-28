@@ -1,0 +1,166 @@
+[
+  {
+    "base_commit": "464a7843f9bd8e91e0fc6d7b30a6e92ea424fc81",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-cli",
+      "--test",
+      "audio_inspection",
+      "authored_room_tone_range_and_silence_share_cli_history_and_actual_pcm"
+    ],
+    "diff_sha256": "77a8b23342fe5f2066c3c8a43b0faa787dd94141c48dbbb53dc0b05388521755",
+    "exit_code": 0,
+    "name": "actual-pcm-01",
+    "pid": 35021,
+    "seconds": 24.827986124902964,
+    "source_manifest_sha256": "b45764a6b7749946b9f3ea94b7c38058518ddb27d6135f845d4f0257594cba25",
+    "started": "2026-09-28T04:27:08.901740+00:00",
+    "test_groups": 1,
+    "test_totals": {
+      "failed": 0,
+      "ignored": 0,
+      "passed": 1
+    }
+  },
+  {
+    "base_commit": "464a7843f9bd8e91e0fc6d7b30a6e92ea424fc81",
+    "command": [
+      "cargo",
+      "clippy",
+      "--workspace",
+      "--all-targets",
+      "--locked",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "diff_sha256": "d9010b998de157b093d27b36a737b161aaa3e4a77b9c7d63d973953689a5be1c",
+    "exit_code": 0,
+    "name": "clippy-workspace",
+    "pid": 35248,
+    "seconds": 275.8861442497,
+    "source_manifest_sha256": "b45764a6b7749946b9f3ea94b7c38058518ddb27d6135f845d4f0257594cba25",
+    "started": "2026-09-28T04:28:28.331119+00:00"
+  },
+  {
+    "base_commit": "464a7843f9bd8e91e0fc6d7b30a6e92ea424fc81",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-core",
+      "--test",
+      "hold_audio",
+      "--test",
+      "sound_allowances"
+    ],
+    "diff_sha256": "693298d7d8b558a7ffc956810a6874084cd9c867622ea0d3c2b895930db30378",
+    "exit_code": 0,
+    "name": "core-01",
+    "pid": 33737,
+    "seconds": 33.88186337472871,
+    "source_manifest_sha256": "03ed74897913607779415545484fa6fbc089bab4dc51a68c6517252c28761d21",
+    "started": "2026-09-28T04:23:26.326112+00:00",
+    "test_groups": 2,
+    "test_totals": {
+      "failed": 0,
+      "ignored": 0,
+      "passed": 15
+    }
+  },
+  {
+    "base_commit": "464a7843f9bd8e91e0fc6d7b30a6e92ea424fc81",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all",
+      "--check"
+    ],
+    "diff_sha256": "d9010b998de157b093d27b36a737b161aaa3e4a77b9c7d63d973953689a5be1c",
+    "exit_code": 0,
+    "name": "format-final",
+    "pid": 35241,
+    "seconds": 0.9339362923055887,
+    "source_manifest_sha256": "b45764a6b7749946b9f3ea94b7c38058518ddb27d6135f845d4f0257594cba25",
+    "started": "2026-09-28T04:28:27.239201+00:00"
+  },
+  {
+    "base_commit": "464a7843f9bd8e91e0fc6d7b30a6e92ea424fc81",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-audio",
+      "--lib",
+      "bound_preserve_evaluates_changed_room_tone_without_old_silence"
+    ],
+    "diff_sha256": "004de1a776aa0573654217e02ce384fc89702a28a41524a3e64a6faa215d98e1",
+    "exit_code": 0,
+    "name": "retained-pcm-01",
+    "pid": 34637,
+    "seconds": 15.434472457971424,
+    "source_manifest_sha256": "b45764a6b7749946b9f3ea94b7c38058518ddb27d6135f845d4f0257594cba25",
+    "started": "2026-09-28T04:25:36.241893+00:00",
+    "test_groups": 1,
+    "test_totals": {
+      "failed": 0,
+      "ignored": 0,
+      "passed": 1
+    }
+  },
+  {
+    "base_commit": "464a7843f9bd8e91e0fc6d7b30a6e92ea424fc81",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-store",
+      "--test",
+      "migration",
+      "--test",
+      "source_registration",
+      "hold_audio"
+    ],
+    "diff_sha256": "004de1a776aa0573654217e02ce384fc89702a28a41524a3e64a6faa215d98e1",
+    "exit_code": 101,
+    "name": "store-01",
+    "pid": 34119,
+    "seconds": 48.254271041136235,
+    "source_manifest_sha256": "d0b8fa7e9a3d900d59c4d5599331070c120c9116983c995ab211a7ab92917576",
+    "started": "2026-09-28T04:24:15.307776+00:00",
+    "test_groups": 2,
+    "test_totals": {
+      "failed": 1,
+      "ignored": 0,
+      "passed": 7
+    }
+  },
+  {
+    "base_commit": "464a7843f9bd8e91e0fc6d7b30a6e92ea424fc81",
+    "command": [
+      "cargo",
+      "test",
+      "--workspace",
+      "--locked"
+    ],
+    "diff_sha256": "1394bc26b03aacc497c5dd5b3a49e01891503630685c28baf45086a3b8692534",
+    "exit_code": 0,
+    "name": "tests-workspace",
+    "pid": 36514,
+    "seconds": 740.3673715419136,
+    "source_manifest_sha256": "b45764a6b7749946b9f3ea94b7c38058518ddb27d6135f845d4f0257594cba25",
+    "started": "2026-09-28T04:33:04.319406+00:00",
+    "test_groups": 153,
+    "test_totals": {
+      "failed": 0,
+      "ignored": 0,
+      "passed": 1927
+    }
+  }
+]

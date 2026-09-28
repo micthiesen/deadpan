@@ -1,0 +1,9 @@
+Use case: precise-object-edit
+Edit target: room-tone-board-v1.png. Preserve the complete elegant design, layout, spacing, picture, typography, colors, range values, workflow panels and all other controls.
+
+Make only these three usability corrections:
+1. In the top-left source column remove the + button entirely and change 'Original (1)' to 'Original · pinned'. There is exactly one immutable Original. Never suggest adding or replacing a video.
+2. In the lower-left 'Choose a quiet moment' panel, change the playback clock below the waveform from '00:02:08.417' to '0.000 / 0.250 s' and place the small label 'Source preview' beside it. This is elapsed/total inside the selected 2.000–2.250 second range, not the unrelated main picture clock.
+3. In the lower-right small Silence explanation replace 'No room tone or incoming audio during this pause.' with 'Digital silence. Per-sound permissions remain explicit.' Keep it compact, legible and inside the panel. This avoids contradicting separately authored sound exceptions.
+
+Do not alter the sample range [96000, 108000), 48,000 Hz, 0.250 s source duration or 11 f Hold duration. Do not add any other features or decorative elements.

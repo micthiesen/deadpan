@@ -34,6 +34,9 @@ mod sounds;
 #[path = "audio_inspection/sound_allowances.rs"]
 mod sound_allowances;
 
+#[path = "audio_inspection/hold_audio.rs"]
+mod hold_audio;
+
 fn active() -> AtomicBool {
     AtomicBool::new(false)
 }

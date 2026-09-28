@@ -1107,7 +1107,13 @@ pub fn validate_request_context(
         || !document.sound_allowances().is_empty()
         || matches!(
             request.command,
-            Command::ReplaceSound { .. } | Command::SetSoundAllowance { .. }
+            Command::ReplaceSound { .. }
+                | Command::SetSoundAllowance { .. }
+                | Command::SetHoldAudio { .. }
+                | Command::EditOccurrence {
+                    edit: OccurrenceEdit::SetHoldAudio { .. },
+                    ..
+                }
         )
         || (!document.sounds().is_empty() && !preserves_sound_clocks(&request.command))
     {
@@ -1150,7 +1156,8 @@ fn preserves_sound_clocks(command: &Command) -> bool {
             | OccurrenceEdit::Rename { .. }
             | OccurrenceEdit::SetAudioEdge { .. }
             | OccurrenceEdit::SetFraming { .. } => true,
-            OccurrenceEdit::Split { .. }
+            OccurrenceEdit::SetHoldAudio { .. }
+            | OccurrenceEdit::Split { .. }
             | OccurrenceEdit::Insert { .. }
             | OccurrenceEdit::Delete
             | OccurrenceEdit::Group { .. }
@@ -1168,7 +1175,8 @@ fn preserves_sound_clocks(command: &Command) -> bool {
             | OccurrenceEdit::IsolateGap { .. }
             | OccurrenceEdit::ClearGapOverride { .. } => false,
         },
-        Command::SetSoundAllowance { .. }
+        Command::SetHoldAudio { .. }
+        | Command::SetSoundAllowance { .. }
         | Command::ReplaceSound { .. }
         | Command::InsertTime { .. }
         | Command::SpliceSource { .. }

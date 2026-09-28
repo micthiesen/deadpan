@@ -1,0 +1,574 @@
+[
+  {
+    "command": [
+      "deadpan-core31-cli",
+      "doctor"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "ebc14fb342303ed85826016bf57c41fc114c8a1403a476e3218c50e97b5c317c",
+    "stderr": "",
+    "stdout": "{\n  \"application\": \"deadpan\",\n  \"architecture\": \"aarch64\",\n  \"database_schema\": 37,\n  \"device_output\": \"macos-bounded-limited-sequence-audition\",\n  \"document_schema\": 31,\n  \"edge_faded_pcm\": \"authored-boundary-exceptions-after-time-mapping-before-voice-effects\",\n  \"internal_audio_sample_rate\": 48000,\n  \"limited_pcm\": \"original-and-root-sound-bus-with-finite-oversampled-limiter-before-missing-voice-effects\",\n  \"os\": \"macos\",\n  \"partial\": [\n    \"structural-editing-commands\",\n    \"sqlite-project-history\",\n    \"schema-1-through-36-migration\",\n    \"single-original-project-baseline\",\n    \"native-documents-project-library\",\n    \"indexed-picture-plan\",\n    \"indexed-audio-plan\",\n    \"worker-dsp-adapter\",\n    \"source-audio-preparation\",\n    \"plan-driven-source-pcm\",\n    \"transparent-audio-partitions\",\n    \"retained-context-split\",\n    \"atomic-sequence-pause-insertion\",\n    \"logical-mark-bindings\",\n    \"exact-boundary-selectors\",\n    \"persistent-marks\",\n    \"sparse-play-overrides\",\n    \"nested-occurrence-edits\",\n    \"persistent-generation-requests\",\n    \"persistent-generation-attempts\",\n    \"authored-generated-hold-semantics\",\n    \"generated-media-conversion\",\n    \"native-bridge-bundle-qualification\",\n    \"durable-generated-bundle-acceptance\",\n    \"durable-original-byte-ownership\",\n    \"identity-checked-relinking\",\n    \"persistent-source-decoding\",\n    \"measured-source-audio-indexes\",\n    \"independent-source-audio-mapping\",\n    \"independent-source-video-mapping\",\n    \"exact-source-stream-placement\",\n    \"measured-import-timing-candidates\",\n    \"measured-original-moment-candidates\",\n    \"exact-source-audio-selections\",\n    \"durable-source-qualification\",\n    \"atomic-source-registration-and-insertion\",\n    \"background-import-preparation\",\n    \"automatic-presentation-basis\",\n    \"timed-basis-locking\",\n    \"explicit-canvas-geometry\",\n    \"shared-sdr-picture-pipeline\",\n    \"authored-framing-envelopes\",\n    \"ordered-canvas-framing\",\n    \"captured-hold-framing\",\n    \"native-camera-draft\",\n    \"native-source-preview\",\n    \"native-project-workspace\",\n    \"native-sequence-audition\",\n    \"native-original-audition\",\n    \"selection-loop-audition\",\n    \"native-structural-speed-editing\",\n    \"root-sound-event-commands-and-mixing\",\n    \"root-sound-ripple-edit-history\"\n  ],\n  \"room_tone_pcm\": \"explicit-source-range-exact-overlap-before-effects\",\n  \"schema_version\": 1,\n  \"sequence_audition\": \"immutable-revision-device-clock-pictures-exact-paused-sample-resume\",\n  \"sqlite_version\": \"3.53.2\",\n  \"stage\": \"development-foundation\",\n  \"time_mapped_pcm\": \"bounded-continuous-preserve-before-effects\",\n  \"timing_probe\": {\n    \"frame\": 1,\n    \"frame_rate_denominator\": 1001,\n    \"frame_rate_numerator\": 30000,\n    \"sample_boundary\": 1602\n  },\n  \"unimplemented\": [\n    \"mastered-preview-audio\",\n    \"full-device-and-acoustic-qualification\",\n    \"full-keyboard-editor\",\n    \"analysis\",\n    \"ai-generation\",\n    \"youtube-import\",\n    \"export\",\n    \"distribution\"\n  ],\n  \"version\": \"0.1.0\"\n}\n"
+  },
+  {
+    "command": [
+      "deadpan-core31-cli",
+      "project",
+      "create",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/hold-audio-history.deadpan",
+      "--fps",
+      "30000/1001",
+      "--size",
+      "320x180"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "3b756ab9624b3661bb16b09a03e549c4d0ffffc009a7c5f798f40cf2ab0bf259",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core31-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/hold-audio-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "418796335e73a6dbb6f54c1eec14d9b0defa9856d470c6565428b55df53860ec",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core31-cli",
+      "project",
+      "retain-original",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/hold-audio-history.deadpan",
+      "/Users/michael/Code/deadpan/native/deadpan-source/tests/fixtures/offset-bframes.mp4"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "70bb7e16da785fb75fde4c033a4fc39388814e00ed9e812caa3ab6b9b6b9f3ca",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core31-cli",
+      "project",
+      "register-source",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/hold-audio-history.deadpan",
+      "--request-json",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/registration.json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "4a8c92dd2f53528668fdb316e4d5b1d0118554ee65175653f3f02107bbfb5eba",
+    "stderr": "",
+    "stdout": "{\n  \"committed\": true,\n  \"outcome\": {\n    \"asset_id\": \"camera\",\n    \"commit\": {\n      \"edit\": {\n        \"changed_ids\": [\n          \"5d7081ea-48bb-478e-8ad4-d343319e2532\",\n          \"clip\"\n        ],\n        \"description\": \"Import source media\",\n        \"duration_delta\": 121,\n        \"forward\": {\n          \"assets\": {\n            \"camera\": {\n              \"after\": {\n                \"audio\": {\n                  \"end\": {\n                    \"ticks\": 288288,\n                    \"time_base\": {\n                      \"denominator\": 48000,\n                      \"numerator\": 1\n                    }\n                  },\n                  \"start\": {\n                    \"ticks\": 95072,\n                    \"time_base\": {\n                      \"denominator\": 48000,\n                      \"numerator\": 1\n                    }\n                  }\n                },\n                \"content_hash\": \"blake3:2a71661b9ab6925c88996ee355b96cd96c3041ee775c3ccbe2681513397a613f\",\n                \"frame_count\": 120,\n                \"label\": \"Measured camera\",\n                \"source_qualification\": \"38776b6eae9a3ce89f1126abbcd6e3cd74a68bb05d09489ee58a548f3499dfe4\",\n                \"still_image\": false,\n                \"video\": {\n                  \"end\": {\n                    \"ticks\": 180180,\n                    \"time_base\": {\n                      \"denominator\": 30000,\n                      \"numerator\": 1\n                    }\n                  },\n                  \"start\": {\n                    \"ticks\": 60060,\n                    \"time_base\": {\n                      \"denominator\": 30000,\n                      \"numerator\": 1\n                    }\n                  }\n                }\n              },\n              \"before\": null\n            }\n          },\n          \"from_revision\": \"20bc3687-0f5f-4759-bcd5-34887651ecf0\",\n          \"marks\": {},\n          \"nodes\": {\n            \"5d7081ea-48bb-478e-8ad4-d343319e2532\": {\n              \"after\": {\n                \"kind\": {\n                  \"children\": [\n                    \"clip\"\n                  ],\n                  \"type\": \"sequence\"\n                },\n                \"label\": \"Sequence\"\n              },\n              \"before\": {\n                \"kind\": {\n                  \"children\": [],\n                  \"type\": \"sequence\"\n                },\n                \"label\": \"Sequence\"\n              }\n            },\n            \"clip\": {\n              \"after\": {\n                \"kind\": {\n                  \"source\": {\n                    \"audio\": {\n                      \"asset\": \"camera\",\n                      \"span\": {\n                        \"end\": {\n                          \"ticks\": 288288,\n                          \"time_base\": {\n                            \"denominator\": 48000,\n                            \"numerator\": 1\n                          }\n                        },\n                        \"start\": {\n                          \"ticks\": 95072,\n                          \"time_base\": {\n                            \"denominator\": 48000,\n                            \"numerator\": 1\n                          }\n                        }\n                      }\n                    },\n                    \"audio_mapping\": {\n                      \"frames\": {\n                        \"denominator\": \"1001\",\n                        \"numerator\": \"120760\"\n                      },\n                      \"start\": {\n                        \"denominator\": \"1\",\n                        \"numerator\": \"0\"\n                      },\n                      \"type\": \"placement\"\n                    },\n                    \"audio_offset\": 0,\n                    \"duration\": 121,\n                    \"link\": \"linked\",\n                    \"video\": {\n                      \"asset\": \"camera\",\n                      \"span\": {\n                        \"end\": {\n                          \"ticks\": 180180,\n                          \"time_base\": {\n                            \"denominator\": 30000,\n                            \"numerator\": 1\n                          }\n                        },\n                        \"start\": {\n                          \"ticks\": 60060,\n                          \"time_base\": {\n                            \"denominator\": 30000,\n                            \"numerator\": 1\n                          }\n                        }\n                      },\n                      \"type\": \"stream\"\n                    },\n                    \"video_mapping\": {\n                      \"endpoints\": \"hold_adjacent\",\n                      \"frames\": {\n                        \"denominator\": \"1\",\n                        \"numerator\": \"120\"\n                      },\n                      \"start\": {\n                        \"denominator\": \"1001\",\n                        \"numerator\": \"640\"\n                      },\n                      \"type\": \"placement\"\n                    }\n                  },\n                  \"type\": \"source\"\n                },\n                \"label\": \"Original\"\n              },\n              \"before\": null\n            }\n          },\n          \"overrides\": {},\n          \"presentation\": {\n            \"after\": {\n              \"basis\": {\n                \"color_policy\": \"sdr_rec709\",\n                \"frame_rate\": {\n                  \"denominator\": 1001,\n                  \"numerator\": 30000\n                },\n                \"height\": 180,\n                \"width\": 320\n              },\n              \"state\": {\n                \"geometry_origin\": \"explicit\",\n                \"primary\": {\n                  \"asset\": \"camera\",\n                  \"qualification\": \"38776b6eae9a3ce89f1126abbcd6e3cd74a68bb05d09489ee58a548f3499dfe4\"\n                },\n                \"rate_origin\": \"explicit\"\n              }\n            },\n            \"before\": {\n              \"basis\": {\n                \"color_policy\": \"sdr_rec709\",\n                \"frame_rate\": {\n                  \"denominator\": 1001,\n                  \"numerator\": 30000\n                },\n                \"height\": 180,\n                \"width\": 320\n              },\n              \"state\": {\n                \"geometry_origin\": \"explicit\",\n                \"primary\": null,\n                \"rate_origin\": \"explicit\"\n              }\n            }\n          },\n          \"project_id\": \"f8de9523-bf28-4193-9e50-ea81f4e26f81\",\n          \"to_revision\": \"core31-import\"\n        },\n        \"inverse\": {\n          \"assets\": {\n            \"camera\": {\n              \"after\": null,\n              \"before\": {\n                \"audio\": {\n                  \"end\": {\n                    \"ticks\": 288288,\n                    \"time_base\": {\n                      \"denominator\": 48000,\n                      \"numerator\": 1\n                    }\n                  },\n                  \"start\": {\n                    \"ticks\": 95072,\n                    \"time_base\": {\n                      \"denominator\": 48000,\n                      \"numerator\": 1\n                    }\n                  }\n                },\n                \"content_hash\": \"blake3:2a71661b9ab6925c88996ee355b96cd96c3041ee775c3ccbe2681513397a613f\",\n                \"frame_count\": 120,\n                \"label\": \"Measured camera\",\n                \"source_qualification\": \"38776b6eae9a3ce89f1126abbcd6e3cd74a68bb05d09489ee58a548f3499dfe4\",\n                \"still_image\": false,\n                \"video\": {\n                  \"end\": {\n                    \"ticks\": 180180,\n                    \"time_base\": {\n                      \"denominator\": 30000,\n                      \"numerator\": 1\n                    }\n                  },\n                  \"start\": {\n                    \"ticks\": 60060,\n                    \"time_base\": {\n                      \"denominator\": 30000,\n                      \"numerator\": 1\n                    }\n                  }\n                }\n              }\n            }\n          },\n          \"from_revision\": \"core31-import\",\n          \"marks\": {},\n          \"nodes\": {\n            \"5d7081ea-48bb-478e-8ad4-d343319e2532\": {\n              \"after\": {\n                \"kind\": {\n                  \"children\": [],\n                  \"type\": \"sequence\"\n                },\n                \"label\": \"Sequence\"\n              },\n              \"before\": {\n                \"kind\": {\n                  \"children\": [\n                    \"clip\"\n                  ],\n                  \"type\": \"sequence\"\n                },\n                \"label\": \"Sequence\"\n              }\n            },\n            \"clip\": {\n              \"after\": null,\n              \"before\": {\n                \"kind\": {\n                  \"source\": {\n                    \"audio\": {\n                      \"asset\": \"camera\",\n                      \"span\": {\n                        \"end\": {\n                          \"ticks\": 288288,\n                          \"time_base\": {\n                            \"denominator\": 48000,\n                            \"numerator\": 1\n                          }\n                        },\n                        \"start\": {\n                          \"ticks\": 95072,\n                          \"time_base\": {\n                            \"denominator\": 48000,\n                            \"numerator\": 1\n                          }\n                        }\n                      }\n                    },\n                    \"audio_mapping\": {\n                      \"frames\": {\n                        \"denominator\": \"1001\",\n                        \"numerator\": \"120760\"\n                      },\n                      \"start\": {\n                        \"denominator\": \"1\",\n                        \"numerator\": \"0\"\n                      },\n                      \"type\": \"placement\"\n                    },\n                    \"audio_offset\": 0,\n                    \"duration\": 121,\n                    \"link\": \"linked\",\n                    \"video\": {\n                      \"asset\": \"camera\",\n                      \"span\": {\n                        \"end\": {\n                          \"ticks\": 180180,\n                          \"time_base\": {\n                            \"denominator\": 30000,\n                            \"numerator\": 1\n                          }\n                        },\n                        \"start\": {\n                          \"ticks\": 60060,\n                          \"time_base\": {\n                            \"denominator\": 30000,\n                            \"numerator\": 1\n                          }\n                        }\n                      },\n                      \"type\": \"stream\"\n                    },\n                    \"video_mapping\": {\n                      \"endpoints\": \"hold_adjacent\",\n                      \"frames\": {\n                        \"denominator\": \"1\",\n                        \"numerator\": \"120\"\n                      },\n                      \"start\": {\n                        \"denominator\": \"1001\",\n                        \"numerator\": \"640\"\n                      },\n                      \"type\": \"placement\"\n                    }\n                  },\n                  \"type\": \"source\"\n                },\n                \"label\": \"Original\"\n              }\n            }\n          },\n          \"overrides\": {},\n          \"presentation\": {\n            \"after\": {\n              \"basis\": {\n                \"color_policy\": \"sdr_rec709\",\n                \"frame_rate\": {\n                  \"denominator\": 1001,\n                  \"numerator\": 30000\n                },\n                \"height\": 180,\n                \"width\": 320\n              },\n              \"state\": {\n                \"geometry_origin\": \"explicit\",\n                \"primary\": null,\n                \"rate_origin\": \"explicit\"\n              }\n            },\n            \"before\": {\n              \"basis\": {\n                \"color_policy\": \"sdr_rec709\",\n                \"frame_rate\": {\n                  \"denominator\": 1001,\n                  \"numerator\": 30000\n                },\n                \"height\": 180,\n                \"width\": 320\n              },\n              \"state\": {\n                \"geometry_origin\": \"explicit\",\n                \"primary\": {\n                  \"asset\": \"camera\",\n                  \"qualification\": \"38776b6eae9a3ce89f1126abbcd6e3cd74a68bb05d09489ee58a548f3499dfe4\"\n                },\n                \"rate_origin\": \"explicit\"\n              }\n            }\n          },\n          \"project_id\": \"f8de9523-bf28-4193-9e50-ea81f4e26f81\",\n          \"to_revision\": \"20bc3687-0f5f-4759-bcd5-34887651ecf0\"\n        }\n      },\n      \"revision_id\": \"core31-import\"\n    },\n    \"qualification\": \"38776b6eae9a3ce89f1126abbcd6e3cd74a68bb05d09489ee58a548f3499dfe4\"\n  },\n  \"protocol\": 1\n}\n"
+  },
+  {
+    "command": [
+      "deadpan-core31-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/hold-audio-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "6f74ce3488f21d52a18f8f72148dc9826bcd30b3a2b4520be6cc3c1e1d3934e9",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core31-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/hold-audio-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "6f74ce3488f21d52a18f8f72148dc9826bcd30b3a2b4520be6cc3c1e1d3934e9",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core31-cli",
+      "command",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/hold-audio-history.deadpan",
+      "--json",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/core31-add-impact.json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "bb52f8ac5e361b2b4179e3a986b05aac7374a3965dbd1bff611ea5acbed7241d",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core31-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/hold-audio-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "e416341f4bfc79931d2ad5d131a10afccb0681d186a56039fa9500b543c466a8",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core31-cli",
+      "command",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/hold-audio-history.deadpan",
+      "--json",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/core31-add-bed.json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "e143db2fb6bbce11361da2e9e6ec43b03e7be9c76fdd43c5eccf8c33fc84479e",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core31-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/hold-audio-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "ae40c64c0abd4eac06d8c61b5489a5ab28715a8e762d0c85bce8f22e3c1d80d3",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core31-cli",
+      "command",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/hold-audio-history.deadpan",
+      "--json",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/core31-first-pause.json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "ba1cf0a292727663826106d6d3db1f4a67c4602bd859db3ae3eeaeb34c31bb5c",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core31-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/hold-audio-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "ce913bff86092ae51e94f5e6e7dad4e37a8322b9210f642aeb105d875e031908",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core31-cli",
+      "command",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/hold-audio-history.deadpan",
+      "--json",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/core31-second-pause.json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "5953c784e3aa7bf70b29853f028e13c4259e1c3d74740049ac23b3df9a791894",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core31-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/hold-audio-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "4486a6ac286e7fdf0f8dcab6ab479cb21ff24fada0247c2c477566ac67429465",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core31-cli",
+      "command",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/hold-audio-history.deadpan",
+      "--json",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/core31-grant-impact.json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "b27939b2ee2a3f91ac192ad6e8f71c85c8b1a2dd5c34a39ef7c7ac782a88825f",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core31-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/hold-audio-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "aba60d86bfb43e92ebae406590a06e3629b49ad4ed536d88d4cda581a8a73233",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core31-cli",
+      "command",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/hold-audio-history.deadpan",
+      "--json",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/core31-grant-bed.json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "a8fd191f2a26cbd750d0a08cdcae5a2aa1408d8adbffd7e8990f4f61c5d3752c",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core31-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/hold-audio-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "7d996f738ccb626768832dc20b97a9e560dc37eb8d89e8df906d6c94e19028b2",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core31-cli",
+      "command",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/hold-audio-history.deadpan",
+      "--json",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/core31-abandoned-revoke.json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "fe9421cfa95547168f81755772af48300b166d3e27c5809b5592ca410b644927",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core31-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/hold-audio-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "812ca0b3a7ed02d422cb68ab904a42a816831a0427107f9fe92709240ae916f9",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core31-cli",
+      "project",
+      "undo",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/hold-audio-history.deadpan",
+      "--expected",
+      "core31-abandoned-revoke"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "c723a7b76e4ff55e1bc9d3aba99a52c4d635f0cdc2f0b96f2eb72a2a649336b9",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core31-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/hold-audio-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "eb6755f4b60e3e82af568f9569d4469107424bfc645b24b6ccd50735740aa322",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core31-cli",
+      "command",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/hold-audio-history.deadpan",
+      "--json",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/core31-rename-pause.json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "686933c0d239a4f4d5216f941744f20ad5d423665311e831bf08b23ae02e0bc1",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core31-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/hold-audio-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "44df145c1cd8071420be8f4db0bb760308e38a5cabd3e162c9db4f4a585d414a",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core31-cli",
+      "command",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/hold-audio-history.deadpan",
+      "--json",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/core31-update-impact.json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "d9869db75e2c39f937dd4f7f350d13ab6568d3cfb275d03af436477068f023ed",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core31-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/hold-audio-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "0e6e21f0a299fe9aedae5fc1428be5b8d1b985ef8466faabb508c01f2313cec9",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core31-cli",
+      "command",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/hold-audio-history.deadpan",
+      "--json",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/core31-abandoned-replacement.json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "96131e0575d05f992bfff1f197e8450e9dec06530c515b9c7c674fc30ae8d017",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core31-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/hold-audio-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "4510554b3e5876455a84c7a48709036c3459b7f9f30f6fcf60d976466a1f4025",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core31-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/hold-audio-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "4510554b3e5876455a84c7a48709036c3459b7f9f30f6fcf60d976466a1f4025",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core31-cli",
+      "project",
+      "undo",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/hold-audio-history.deadpan",
+      "--expected",
+      "core31-abandoned-replacement"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "72ea8cb2db254215fd3f6b492b744326f5be112e5e7f7a7de1c9a48bbd7dd339",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core31-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/hold-audio-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "c9751361784588f61450f6a327cd866652bfd59bf8c57c3c620583352c1466c4",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core31-cli",
+      "command",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/hold-audio-history.deadpan",
+      "--json",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/core31-split.json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "1c06dd9279d8327e3921b098b62c49c639cab7ce7f1295af8b5c152125c340b7",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core31-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/hold-audio-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "ab10f0a6c0e1d7a2970ddd25ef0612361b14201ac0d3629aca40c4b0d4c7c2d8",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core31-cli",
+      "command",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/hold-audio-history.deadpan",
+      "--json",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/core31-delete-pause.json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "2df0a32dc87f7fdfb58e5083d158abdbd3c681d657c965e3487345a0c09e38e8",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core31-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/hold-audio-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "e8e7a05d82f965f536652c7656f4969b89a0629576baf24a5e2e00ab1d806b25",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core31-cli",
+      "command",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/hold-audio-history.deadpan",
+      "--json",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/core31-replace-bed.json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "d221277e219a3fe720b25e30c6ca1ab9e005b168c5eb08bf9a593211ea131d3c",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core31-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/hold-audio-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "807bb3a9e201a773131afd25867a46accb9f069293115c01f258de0495337022",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core31-cli",
+      "project",
+      "undo",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/hold-audio-history.deadpan",
+      "--expected",
+      "core31-replace-bed"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "3922d06b17c8838b76cfed00b780ea8c9bfd6784445857993385b9cbebdb39c9",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core31-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/hold-audio-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "4a3c58eee8049cb12513d14c2c298d74c4bf4b4af8bb7d6a46b74edd74f6f149",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core31-cli",
+      "project",
+      "redo",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/hold-audio-history.deadpan",
+      "--expected",
+      "e98f3550-f54e-47ed-9d54-817c10d151c7"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "bb806e70271af56792ef0231afbae1eaa0e701cfb1076638a474ea2a9c1fec32",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core31-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/hold-audio-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "784fa2564d17000a2fe2b93156123417c54db25b341067c5af8a2fb0cb110e12",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core31-cli",
+      "project",
+      "undo",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/hold-audio-history.deadpan",
+      "--expected",
+      "019a75da-42a7-4898-a833-b4cca723e2a9"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "60ee03537dad5ecff64ffd7fefe52dc22cb5f8875b0191694981ae8c3ba5dc90",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core31-cli",
+      "project",
+      "validate",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/hold-audio-history.deadpan"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "ffbc8d2ea66ea305c43eb71b96580450f836ced9cbfd2a633c4079fbc99ec749",
+    "stderr": "",
+    "stdout": "{\n  \"basis_state\": {\n    \"geometry_origin\": \"explicit\",\n    \"primary\": {\n      \"asset\": \"camera\",\n      \"qualification\": \"38776b6eae9a3ce89f1126abbcd6e3cd74a68bb05d09489ee58a548f3499dfe4\"\n    },\n    \"rate_origin\": \"explicit\"\n  },\n  \"duration_frames\": 122,\n  \"mark_count\": 0,\n  \"node_count\": 6,\n  \"presentation_basis\": {\n    \"color_policy\": \"sdr_rec709\",\n    \"frame_rate\": {\n      \"denominator\": 1001,\n      \"numerator\": 30000\n    },\n    \"height\": 180,\n    \"width\": 320\n  },\n  \"project_id\": \"f8de9523-bf28-4193-9e50-ea81f4e26f81\",\n  \"protocol\": 1,\n  \"revision_id\": \"69e37622-5171-44f0-91a6-433c8ee3dd00\",\n  \"root\": \"5d7081ea-48bb-478e-8ad4-d343319e2532\",\n  \"valid\": true\n}\n"
+  },
+  {
+    "command": [
+      "deadpan-core31-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/hold-audio-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "2a141218223a86c1b448f88383c0595a4aa48eeb2afc18d62b22d79e5de05010",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core31-cli",
+      "project",
+      "validate",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/reopened-sql.deadpan"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "ffbc8d2ea66ea305c43eb71b96580450f836ced9cbfd2a633c4079fbc99ec749",
+    "stderr": "",
+    "stdout": "{\n  \"basis_state\": {\n    \"geometry_origin\": \"explicit\",\n    \"primary\": {\n      \"asset\": \"camera\",\n      \"qualification\": \"38776b6eae9a3ce89f1126abbcd6e3cd74a68bb05d09489ee58a548f3499dfe4\"\n    },\n    \"rate_origin\": \"explicit\"\n  },\n  \"duration_frames\": 122,\n  \"mark_count\": 0,\n  \"node_count\": 6,\n  \"presentation_basis\": {\n    \"color_policy\": \"sdr_rec709\",\n    \"frame_rate\": {\n      \"denominator\": 1001,\n      \"numerator\": 30000\n    },\n    \"height\": 180,\n    \"width\": 320\n  },\n  \"project_id\": \"f8de9523-bf28-4193-9e50-ea81f4e26f81\",\n  \"protocol\": 1,\n  \"revision_id\": \"69e37622-5171-44f0-91a6-433c8ee3dd00\",\n  \"root\": \"5d7081ea-48bb-478e-8ad4-d343319e2532\",\n  \"valid\": true\n}\n"
+  },
+  {
+    "command": [
+      "deadpan-core31-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-hold-audio-xj_72qgi/legacy-fixture/reopened-sql.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "2a141218223a86c1b448f88383c0595a4aa48eeb2afc18d62b22d79e5de05010",
+    "stderr": ""
+  }
+]

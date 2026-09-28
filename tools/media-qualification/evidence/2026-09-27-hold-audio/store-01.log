@@ -1,0 +1,35 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+   Compiling deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 47.39s
+     Running tests/migration.rs (target/debug/deps/migration-1ec6c371835407ea)
+
+running 4 tests
+test hold_audio::schema31_rejects_hold_policy_patches_forged_under_an_old_command ... ok
+test hold_audio::schema31_compares_allowances_in_snapshots_and_both_patch_directions ... ok
+test hold_audio::schema31_rejects_direct_and_occurrence_setters_even_with_matching_modern_history ... ok
+test hold_audio::actual_schema37_history_preserves_allowances_routes_branches_receipts_and_pending_redo ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 112 filtered out; finished in 0.62s
+
+     Running tests/source_registration.rs (target/debug/deps/source_registration-6682ef6b7c54f360)
+
+running 4 tests
+test hold_audio::legacy_unqualified_hold_survives_unrelated_edits_but_cannot_author_a_new_source_policy ... FAILED
+test hold_audio::hold_audio_rejects_outside_and_fractional_source_sample_spans_without_history ... ok
+test hold_audio::direct_and_occurrence_policy_commands_recheck_receipt_and_original_binding ... ok
+test hold_audio::hold_audio_policy_history_is_atomic_durable_and_timing_neutral ... ok
+
+failures:
+
+---- hold_audio::legacy_unqualified_hold_survives_unrelated_edits_but_cannot_author_a_new_source_policy stdout ----
+Error: Edit(EditError { code: InvalidCommand, message: "asset camera requires a lowercase SHA-256 or typed BLAKE3 content hash", current_revision: None })
+
+
+failures:
+    hold_audio::legacy_unqualified_hold_survives_unrelated_edits_but_cannot_author_a_new_source_policy
+
+test result: FAILED. 3 passed; 1 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.21s
+
+error: test failed, to rerun pass `-p deadpan-store --test source_registration`

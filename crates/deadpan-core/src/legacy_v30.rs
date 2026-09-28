@@ -1120,7 +1120,15 @@ pub fn validate_request_context(
 ) -> Result<(), EditError> {
     let command = &request.command;
     if !document.sound_allowances().is_empty()
-        || matches!(command, Command::SetSoundAllowance { .. })
+        || matches!(
+            command,
+            Command::SetSoundAllowance { .. }
+                | Command::SetHoldAudio { .. }
+                | Command::EditOccurrence {
+                    edit: OccurrenceEdit::SetHoldAudio { .. },
+                    ..
+                }
+        )
     {
         return Err(EditError::new(
             EditErrorCode::InvalidCommand,
@@ -1175,7 +1183,8 @@ fn preserves_sound_clocks(command: &Command) -> bool {
             | OccurrenceEdit::Rename { .. }
             | OccurrenceEdit::SetAudioEdge { .. }
             | OccurrenceEdit::SetFraming { .. } => true,
-            OccurrenceEdit::Split { .. }
+            OccurrenceEdit::SetHoldAudio { .. }
+            | OccurrenceEdit::Split { .. }
             | OccurrenceEdit::Insert { .. }
             | OccurrenceEdit::Delete
             | OccurrenceEdit::Group { .. }
@@ -1193,7 +1202,8 @@ fn preserves_sound_clocks(command: &Command) -> bool {
             | OccurrenceEdit::IsolateGap { .. }
             | OccurrenceEdit::ClearGapOverride { .. } => false,
         },
-        Command::SetSoundAllowance { .. }
+        Command::SetHoldAudio { .. }
+        | Command::SetSoundAllowance { .. }
         | Command::InsertTime { .. }
         | Command::SpliceSource { .. }
         | Command::Split { .. }

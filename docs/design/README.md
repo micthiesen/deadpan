@@ -17,10 +17,11 @@ establish an implemented feature.
 | [Original moment reuse](boards/original-moment-reuse-v1.png) | Temporal Visual selection, copy without editing, explicit paste destination and one-step undo. | [Moment prompt](prompts/original-moment-reuse-v1.txt) |
 | [Sound audition](boards/sound-audition-board-v1.png) | Focused sound catalog, independent audition clock, visible play/pause/loop keys and retained edit context. | [Sound prompt](prompts/sound-audition-board-v1.txt) |
 | [Sound placement and adjustment](boards/sound-placement-board-v2.png) | Target for root placement and concrete pause allowances: separate event list, exact edit destination, inspector, visible keys and truthful silence/overflow feedback. | [Initial prompt](prompts/sound-placement-board-v1.txt), [precision and silence corrections](prompts/sound-placement-board-v2.txt) |
+| [Room-tone selection and pause audio](boards/room-tone-board-v2.png) | Future native target: exact source range, distinct source/pause audition, explicit application, silence and undo. | [Initial prompt](prompts/room-tone-board-v1.txt), [single-Original and clock corrections](prompts/room-tone-board-v2.txt) |
 
 The built-in `image_gen.imagegen` tool generated these assets on 2026-09-23 and
 the Camera companion on 2026-09-24, the moment-reuse companion on 2026-09-26
-and the sound-audition and sound-placement companions on 2026-09-27.
+and the sound-audition, sound-placement and room-tone companions on 2026-09-27.
 The current boards implement the owner's single-original direction in specification
 1.1: begin with the complete video and gradually reshape it, reuse its moments,
 add audio effects and accept AI extensions. New projects belong in Documents/Deadpan.
@@ -118,6 +119,21 @@ while text is active.
 
 Generated visual content is a composition reference. The following generated
 details are intentionally not implementation instructions:
+
+- The room-tone board is a future native interaction target. Its proposed
+  `:room-tone` and `:hold-silence` commands, sample fields, waveform and source
+  audition sheet are not implemented controls. Retain an explicit original
+  sample range and show its rate separately from the Hold's project-frame
+  duration. Source audition hears that range; pause audition hears the authored
+  loop. Both need the same admitted selection, with no implicit speech-free
+  guarantee or normalization. Native field editing owns its keys; Tab moves
+  between fields inside the sheet and panes in Normal mode. Applying changes
+  only the captured Hold in one reversible transaction. Changing Silence to
+  room tone removes that Hold's now-obsolete per-sound silence permissions;
+  switching back does not silently restore them, while Undo does. The v2 board
+  removes the invented extra-video import button, fixes the source-preview
+  clock, and keeps explicit sound permissions distinct from the silence policy.
+  Sample labels and clocks are illustrative, not measured media evidence.
 
 - The sound-placement board now guides the native root placement subset. A compact
   placed-sounds list preserves picture priority and distinguishes each event

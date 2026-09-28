@@ -81,7 +81,7 @@ and `pitch`, retaining the ordinary Retime's child/input range. Both also have
 occurrence forms. The native `:retime` speed grammar resolves to these same
 commands. See [speed editing](RETIME_EDITING.md) for output-binding lifecycle.
 
-Documents use schema 31 in database schema 37. `set_sound` and `replace_sound`
+Documents use schema 32 in database schema 38. `set_sound` and `replace_sound`
 take an `id` and complete `event`; `delete_sound` takes its `id`.
 Events require a qualified source, root owner,
 natural-rate mapping, contained selection plus sample offset, explicit gain,
@@ -93,6 +93,38 @@ route when changing label, gain or endpoint policy. Changing a routed recipe,
 mapping, owner or offset requires `replace_sound`, the explicit reversible reset
 of its retained routing. Root Split, temporal occurrence edits and Repeat/Retime
 sound transforms remain guarded. See [root sound events](SOUND_EVENTS.md#persisted-root-ripple-edits).
+
+### Hold audio policy
+
+`set_hold_audio` changes an existing Hold's `audio` without changing its picture,
+duration or retained timing. The selected source must already have measured
+qualification in the expected revision. For example, a 48 kHz original range:
+
+```json
+{
+  "command": "set_hold_audio",
+  "node": "hold-id",
+  "audio": {
+    "type": "room_tone",
+    "source": {
+      "asset": "original",
+      "span": {
+        "start": { "ticks": 96000, "time_base": { "numerator": 1, "denominator": 48000 } },
+        "end": { "ticks": 108000, "time_base": { "numerator": 1, "denominator": 48000 } }
+      }
+    }
+  }
+}
+```
+
+Use `audio: { "type": "silence" }` for digital silence. `edit_occurrence` accepts
+the same operation as `edit: { "type": "set_hold_audio", "audio": ... }` with
+the normal explicit instance and identity pool. Obsolete permissions belonging
+to a Hold changed away from Silence are removed atomically; Undo restores them.
+The command's existing Tail vocabulary does not imply implemented tail DSP.
+See [room-tone authoring](ROOM_TONE_AUDIO.md#authored-policy-changes).
+
+### Sound permissions
 
 `set_sound_allowance` takes `sound`, a concrete `issuer`, and boolean `allowed`.
 It grants or revokes one root contribution's permission through one current
@@ -762,18 +794,21 @@ future-schema read-only inspection still needs a compatibility implementation.
 
 ## Schema migration
 
-Database schemas 1 through 36 return `MigrationRequired` when opened. Upgrade explicitly:
+Database schemas 1 through 37 return `MigrationRequired` when opened. Upgrade explicitly:
 
 ```sh
 cargo run --locked -p deadpan-cli -- project migrate /tmp/example.deadpan
 ```
 
 Migration holds the project writer lock, keeps a consistent SQLite backup under
-`Snapshots/before-schema-37-*.sqlite`, named for the destination schema, and upgrades a separate candidate. It
+`Snapshots/before-schema-38-*.sqlite`, named for the destination schema, and upgrades a separate candidate. It
 replays all commands, undo/redo revisions, and abandoned branches with their
 original revision IDs. Every snapshot and forward/inverse transaction is checked
 against its strict original schema meaning. Migration goes directly to database
-schema 37 and core document schema 31. Database-36 replays frozen core 30,
+schema 38 and core document schema 32. Database-37 replays frozen core 31,
+retaining exact sound allowances in snapshots and both patch directions. It
+rejects direct and occurrence `set_hold_audio` requests, even when forged modern
+patches and snapshots agree. Database-36 replays frozen core 30,
 retaining sound routes and `replace_sound` with their original contextual
 command admission. It rejects `sound_allowances` in snapshots and patches,
 including empty or null maps, and rejects `set_sound_allowance`. Older snapshots

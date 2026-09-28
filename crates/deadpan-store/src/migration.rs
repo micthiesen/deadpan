@@ -45,7 +45,7 @@ impl ProjectStore {
                 backup: None,
             });
         }
-        if !matches!(version, 1..=36) {
+        if !matches!(version, 1..=37) {
             return Err(StoreError::UnsupportedSchema(version));
         }
         let lock = acquire_lock(&package)?;
@@ -233,6 +233,9 @@ fn migrate_candidate(
     // Schema 36 uses core schema 30 and retains chronological root sound
     // routes. Its closed vocabulary rejects Hold allowances in documents,
     // requests and patches; its original root-ripple admission stays frozen.
+    // Schema 37 uses core schema 31, including concrete sound allowances.
+    // Its closed direct and occurrence grammars reject Hold audio setters;
+    // every allowance in snapshots and both patches is compared exactly.
     // Replay all authored history, preserving operational rows and identities
     // while assigning FitBeat only to mappings absent in that legacy schema.
     // Schemas before 15 gain an explicit basis; schema 15 retains its policy.
