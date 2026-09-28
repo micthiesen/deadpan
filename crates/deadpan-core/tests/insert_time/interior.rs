@@ -8,6 +8,7 @@ fn composite_suffix(lead: BeatNode, plays: u32) -> ProjectDocument {
             (
                 "repeat",
                 BeatNode {
+                    audio_treatments: Default::default(),
                     label: "Repeated Original".into(),
                     framing: None,
                     audio_edges: Default::default(),

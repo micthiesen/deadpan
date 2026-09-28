@@ -35,11 +35,11 @@ fn success(arguments: &[&str]) -> Result<Value> {
 #[test]
 fn doctor_reports_hold_audio_document_and_migration_schemas() -> Result {
     let report = success(&["doctor"])?;
-    assert_eq!(report["document_schema"], 32);
-    assert_eq!(report["database_schema"], 38);
+    assert_eq!(report["document_schema"], 33);
+    assert_eq!(report["database_schema"], 39);
     let partial = report["partial"].as_array().unwrap();
     for capability in [
-        "schema-1-through-37-migration",
+        "schema-1-through-38-migration",
         "hold-audio-policy-commands",
         "native-original-audition",
         "selection-loop-audition",
@@ -431,6 +431,7 @@ fn independent_stream_mappings_use_headless_commands_and_durable_undo() -> Resul
                 nodes: BTreeMap::from([(
                     source.clone(),
                     BeatNode {
+                        audio_treatments: Default::default(),
                         framing: None,
                         audio_edges: Default::default(),
                         label: "Two-second picture, one-second audio".into(),

@@ -38,6 +38,9 @@ mod selection;
 #[path = "stages/retime_edits.rs"]
 mod retime_edits;
 
+#[path = "stages/gain.rs"]
+mod gain;
+
 fn id(value: &str) -> NodeId {
     NodeId::new(value).unwrap()
 }
@@ -76,6 +79,7 @@ fn source(rate: FrameRate, frames: i64, selected: Range<i64>) -> BeatNode {
     let audio = audio(selected.start, selected.end);
     BeatNode {
         framing: None,
+        audio_treatments: Default::default(),
         audio_edges: Default::default(),
         label: "Original speech".into(),
         kind: NodeKind::Source {
@@ -119,6 +123,7 @@ fn room_tone(frames: i64, source: SourceAudio) -> BeatNode {
 fn retime(child: &str, frames: i64, selected: Range<i64>, pitch: PitchPolicy) -> BeatNode {
     BeatNode {
         framing: None,
+        audio_treatments: Default::default(),
         audio_edges: Default::default(),
         label: "Explicit retime".into(),
         kind: NodeKind::Retime {
@@ -1203,6 +1208,7 @@ fn repeat_and_override_occurrences_do_not_alias_prepared_history() {
     let rate = FrameRate::new(48_000, 1).unwrap();
     let repeated = BeatNode {
         framing: None,
+        audio_treatments: Default::default(),
         audio_edges: Default::default(),
         label: "Three plays".into(),
         kind: NodeKind::Repeat {
@@ -1461,6 +1467,7 @@ fn nested_depth_and_native_long_input_limits_fail_without_decoding_originals() {
 
     let repeated = BeatNode {
         framing: None,
+        audio_treatments: Default::default(),
         audio_edges: Default::default(),
         label: "Long speech".into(),
         kind: NodeKind::Repeat {
@@ -1577,6 +1584,7 @@ fn repeated_stage_plan() -> Arc<RenderPlan> {
                 "repeat",
                 BeatNode {
                     framing: None,
+                    audio_treatments: Default::default(),
                     audio_edges: Default::default(),
                     label: "Nine stage occurrences".into(),
                     kind: NodeKind::Repeat {
@@ -1808,6 +1816,7 @@ fn repeated_room_tone_and_override_restart_locally_with_two_distinct_gap_caches(
     let rate = FrameRate::new(48_000, 1).unwrap();
     let repeated = BeatNode {
         framing: None,
+        audio_treatments: Default::default(),
         audio_edges: Default::default(),
         label: "Three room-tone plays".into(),
         kind: NodeKind::Repeat {
@@ -2328,6 +2337,7 @@ fn partition_inside_a_repeat_gap_keeps_its_full_room_tone_origin() {
     let repeated = |child: &str| BeatNode {
         framing: None,
         label: "Repeated room tone".into(),
+        audio_treatments: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Repeat {
             child: id(child),
@@ -2546,6 +2556,7 @@ fn one_hard_repeat_override_and_room_tone_gap_edges_preserve_silence_masks() {
     alternate.audio_edges.node_end = AudioEdgePolicy::Hard;
     let repeated = BeatNode {
         framing: None,
+        audio_treatments: Default::default(),
         audio_edges: AudioEdgePolicies {
             repeat_gap_start: AudioEdgePolicy::Hard,
             ..Default::default()

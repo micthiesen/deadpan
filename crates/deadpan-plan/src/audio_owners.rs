@@ -24,6 +24,14 @@ pub enum AudioOwnerKind {
     DefaultGap,
 }
 
+/// Meaningful retained support of the Original contribution, independent of
+/// silence policy or mute. Inactive spans keep their resolved outer owners.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AudioOwnerSupport {
+    Active,
+    Inactive,
+}
+
 /// The nearest binding that changed this owner's evaluation clock. Ancestors
 /// collected before the binding retain their independently evaluated clocks.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -74,11 +82,18 @@ impl<S: Copy> AudioOwnerClock<'_, S> {
     pub fn origin(&self) -> &AudioOwnerClockOrigin {
         &self.origin
     }
+    /// The treatment is borrowed from this checked immutable owner. A Repeat
+    /// default gap has a clock but no separate BeatNode treatment.
+    pub fn treatments(&self) -> Option<&deadpan_core::AudioTreatments> {
+        (self.kind == AudioOwnerKind::Node)
+            .then(|| &self.plan.nodes[self.plan.by_id[&self.instance.node]].audio_treatments)
+    }
 }
 
 pub struct AudioOwnerSpan<'plan, S = AudioSample> {
     samples: Range<S>,
     owners: Vec<AudioOwnerClock<'plan, S>>,
+    support: AudioOwnerSupport,
 }
 
 impl<'plan, S: Copy> AudioOwnerSpan<'plan, S> {
@@ -88,6 +103,9 @@ impl<'plan, S: Copy> AudioOwnerSpan<'plan, S> {
     /// Outer to inner. A whole Repeat and its default gap are distinct owners.
     pub fn owners(&self) -> &[AudioOwnerClock<'plan, S>] {
         &self.owners
+    }
+    pub fn support(&self) -> AudioOwnerSupport {
+        self.support
     }
 }
 
@@ -118,6 +136,36 @@ impl<'plan, S: Copy> AudioOwnerQuery<'plan, S> {
 }
 
 impl RenderPlan {
+    pub fn root_audio_treatments(&self) -> &deadpan_core::AudioTreatments {
+        &self.nodes[self.root].audio_treatments
+    }
+
+    pub fn has_audio_treatments(&self) -> bool {
+        self.has_audio_treatments
+    }
+
+    /// Gain evaluation may encounter an absent Original contribution beside
+    /// independent sounds. Report known empty/exhausted retained support rather
+    /// than inventing descendant clocks; other clock failures still reject.
+    pub fn audio_gain_owners(
+        &self,
+        samples: Range<AudioSample>,
+        limits: AudioQueryLimits,
+    ) -> Result<AudioOwnerQuery<'_>, PlanError> {
+        if samples.start.0 < 0 || samples.end > self.audio_duration()? {
+            return Err(PlanError::AudioRangeOutOfRange);
+        }
+        let mut seed = Walk::root(self)?;
+        seed.allow_inactive = true;
+        query(
+            self,
+            samples.start.0..samples.end.0,
+            limits,
+            seed,
+            AudioSample,
+        )
+    }
+
     /// Resolve structural owner clocks, including nominal traversal through
     /// Preserve, without modifying its continuous DSP input or edge treatment.
     ///
@@ -236,6 +284,7 @@ struct Walk {
     binding: BindingClock,
     extent: Range<ExactRatio>,
     support: Option<Range<ExactRatio>>,
+    allow_inactive: bool,
 }
 
 impl Walk {
@@ -261,6 +310,7 @@ impl Walk {
             binding: BindingClock { grid, placement },
             extent: ExactRatio::ZERO..ExactRatio::integer(plan.duration().frames()),
             support: None,
+            allow_inactive: false,
         })
     }
 
@@ -283,6 +333,7 @@ impl Walk {
             },
             extent: seed.extent.clone(),
             support: seed.envelope.clone(),
+            allow_inactive: false,
         }
     }
 
@@ -313,6 +364,7 @@ struct WalkOutput {
     start: i64,
     end: i64,
     owners: Vec<RawOwner>,
+    support: AudioOwnerSupport,
 }
 
 fn query<'plan, S: Copy>(
@@ -340,6 +392,7 @@ fn query<'plan, S: Copy>(
             start: cursor,
             end: samples.end,
             owners: Vec::new(),
+            support: AudioOwnerSupport::Active,
         };
         walk(
             plan,
@@ -353,7 +406,9 @@ fn query<'plan, S: Copy>(
             &mut budget,
             0,
         )?;
-        if output.end <= cursor || output.owners.is_empty() {
+        if output.end <= cursor
+            || (output.owners.is_empty() && output.support == AudioOwnerSupport::Active)
+        {
             return Err(PlanError::InvalidPlan("owner interval did not advance"));
         }
         let owners = output
@@ -378,6 +433,7 @@ fn query<'plan, S: Copy>(
         spans.push(AudioOwnerSpan {
             samples: label(cursor)..label(output.end),
             owners,
+            support: output.support,
         });
         cursor = output.end;
     }
@@ -447,6 +503,13 @@ fn walk(
         let allocated =
             state.grid.boundary(state.extent.start)?..state.grid.boundary(state.extent.end)?;
         if !allocated.contains(&probe_label) {
+            if state.allow_inactive && matches!(origin, AudioOwnerClockOrigin::Retained { .. }) {
+                if probe_label < allocated.start {
+                    restrict_end(position, allocated.start.0, output.start, &mut output.end)?;
+                }
+                output.support = AudioOwnerSupport::Inactive;
+                return Ok(());
+            }
             return Err(PlanError::InvalidPlan(
                 "owner coordinate is outside its allocated interval",
             ));
@@ -502,11 +565,15 @@ fn walk(
                 },
                 budget,
             )? {
-                let domain = bound
-                    .envelope_domain(budget)?
-                    .ok_or(PlanError::InvalidPlan(
+                let Some(domain) = bound.envelope_domain(budget)? else {
+                    if state.allow_inactive {
+                        output.support = AudioOwnerSupport::Inactive;
+                        return Ok(());
+                    }
+                    return Err(PlanError::InvalidPlan(
                         "owner binding has empty meaningful support",
-                    ))?;
+                    ));
+                };
                 let physical_at = state
                     .binding
                     .placement
@@ -525,9 +592,11 @@ fn walk(
                     )?,
                     step: physical_step.checked_mul(bound.reference_samples_per_output_sample())?,
                 };
+                let mut retained = Walk::from_seed(&domain.seed);
+                retained.allow_inactive = state.allow_inactive;
                 return walk(
                     plan,
-                    Walk::from_seed(&domain.seed),
+                    retained,
                     reference,
                     output,
                     AudioOwnerClockOrigin::Retained {

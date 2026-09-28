@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "fixture": "crates/deadpan-store/tests/fixtures/v38-gain-history.sql",
+  "fixture_sha256": "ab6641e84fa687f2beb52b18fc24a257d5f3ebeb3790de193af9928b9eedd88e",
+  "database_schema": 38,
+  "document_schema": 32,
+  "revision_count": 30,
+  "history_count": 21,
+  "files": {
+    "fixture-generation-2.json.gz": "886e5a51e569351e170ae1ac7aafb4944fb2e0dad51ded7e108cb5a6a7cc994d",
+    "fixture-generation-3.json.gz": "9cb1b560281d1aaff802ef1deae27ae42a7bb9f0ca0a57c4b7d4f9ca33af7393",
+    "fixture-generation.json.gz": "4a99a984f7bf051b4b5db4b74867f4845c8bd36f622e50847a9661609acbb2c4",
+    "generate.py": "d457cedbd64af56cc71ef688a6edbd7acb40200e056f02644164c04a37553089",
+    "old-cli-provenance.json": "ebc6a45441f758626e08bcde6f8a2411554a6e3a886a36718f4bca115259607b"
+  }
+}

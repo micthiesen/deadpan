@@ -3,8 +3,10 @@
 `FrozenAudioContext` retains the media-bearing body of one immutable audio
 context. It combines a [frozen timing layout](AUDIO_REFERENCE.md) with exact
 Source, RoomTone and Tail inputs and their full immutable asset records. The
-standalone wire uses schema 3, including [exact audio selections](SOURCE_MOMENTS.md)
-and [sparse gap branches](REPEAT_GAP_BRANCHES.md). Schema 2 retains selected audio
+standalone wire uses schema 4, including [node treatments](AUDIO_GAIN.md),
+[exact audio selections](SOURCE_MOMENTS.md) and [sparse gap branches](REPEAT_GAP_BRANCHES.md).
+Schema 3 retains the previous timing/input vocabulary; schemas 1 through 3 reject
+the new treatment field even when explicitly null or empty. Schema 2 retains selected audio
 placements but rejects gap-branch layout fields; schema 1 also retains its older
 closed audio-mapping grammar.
 Schema 1 retains its closed historical source mapping vocabulary and remains
@@ -32,6 +34,13 @@ overrides. Full asset records retain qualification IDs, content identities and
 stream bounds. Picture-only assets, picture providers, live node labels, marks
 and presentation policy are omitted. No generated picture objects or model
 runtime are needed to interpret these audio facts.
+
+A separate sparse `audio_treatments` map retains every nonempty node recipe,
+including group and picture-only owners. Configured unity remains authored
+intent. The map must name existing owners and cannot store empty recipes.
+Its streaming ingress enforces 100000 aggregate gain records, and validation
+limits each structural path to 16 treated owners without expanding Repeats.
+Treatment evidence stays out of the timing-only layout and raw-audio lineage.
 
 The closed JSON root, exact input/asset inventory, selected stream ranges and
 node/policy agreement are validated. The complete wire is bounded to 64 MiB;
@@ -74,7 +83,7 @@ abandoned branch, without moving the history cursor. The headless host's
 `ProjectAudioSession::open_context` resolves that revision and compares the
 complete supplied context with a fresh capture of its retained document. The
 comparison ignores only the supported context serialization version. It
-rejects altered timing, inputs or asset contracts even when the claimed project
+rejects altered timing, treatments, inputs or asset contracts even when the claimed project
 and revision names match.
 
 For every source request, the host compares the expected retained asset record

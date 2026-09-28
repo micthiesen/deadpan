@@ -271,6 +271,7 @@ fn inserted_repeat_cannot_reserve_a_future_revision_and_revive_retired_plays() {
                     (
                         id("repeat"),
                         BeatNode {
+                            audio_treatments: Default::default(),
                             framing: None,
                             audio_edges: Default::default(),
                             label: "Imported".into(),
@@ -375,11 +376,11 @@ fn dump_is_deterministic_and_unknown_schemas_are_rejected() {
         .is_err()
     );
     let duplicate = empty().to_json().unwrap().replace("\"nodes\": {", "\"nodes\": {\"root\": {\"label\":\"Other\",\"kind\":{\"type\":\"sequence\",\"children\":[]}},");
+    let error = ProjectDocument::from_json(&duplicate).unwrap_err();
+    assert_eq!(error.code, DocumentErrorCode::InvalidJson);
     assert!(
-        ProjectDocument::from_json(&duplicate)
-            .unwrap_err()
-            .message
-            .contains("duplicate identity key")
+        error.message.contains("duplicate node identities"),
+        "{error}"
     );
 }
 
@@ -686,6 +687,7 @@ fn source_streams_retain_timestamps_and_validate_bounds_independently() {
             nodes: BTreeMap::from([(
                 id("source"),
                 BeatNode {
+                    audio_treatments: Default::default(),
                     framing: None,
                     audio_edges: Default::default(),
                     label: "Source".into(),
@@ -835,6 +837,7 @@ fn retime_range_is_in_child_clock_and_overflow_is_rejected() {
     nodes.insert(
         id("retime"),
         BeatNode {
+            audio_treatments: Default::default(),
             framing: None,
             audio_edges: Default::default(),
             label: "Slow".into(),

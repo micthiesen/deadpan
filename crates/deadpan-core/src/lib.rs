@@ -59,6 +59,7 @@ pub mod legacy_v29;
 pub mod legacy_v3;
 pub mod legacy_v30;
 pub mod legacy_v31;
+pub mod legacy_v32;
 pub mod legacy_v4;
 pub mod legacy_v5;
 pub mod legacy_v6;

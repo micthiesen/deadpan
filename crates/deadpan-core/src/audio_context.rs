@@ -9,13 +9,13 @@ use serde_json::value::RawValue;
 
 use crate::document::unique_map;
 use crate::{
-    AssetId, AssetRecord, AudioSample, DocumentError, DocumentErrorCode, FrozenAudioKind,
-    FrozenAudioLayout, HoldAudio, MAX_DOCUMENT_ASSETS, MAX_DOCUMENT_JSON_BYTES, MAX_DOCUMENT_NODES,
-    NodeId, NodeKind, ProjectDocument, ProjectId, ReferenceAudibility, RevisionId, SourceAudio,
-    SourceAudioMapping,
+    AssetId, AssetRecord, AudioSample, AudioTreatments, DocumentError, DocumentErrorCode,
+    FrozenAudioKind, FrozenAudioLayout, HoldAudio, MAX_DOCUMENT_ASSETS, MAX_DOCUMENT_JSON_BYTES,
+    MAX_DOCUMENT_NODES, NodeId, NodeKind, ProjectDocument, ProjectId, ReferenceAudibility,
+    RevisionId, SourceAudio, SourceAudioMapping,
 };
 
-const AUDIO_CONTEXT_SCHEMA: u32 = 3;
+const AUDIO_CONTEXT_SCHEMA: u32 = 4;
 
 /// Full authored audio input. Source mapping and signed mix offset are retained
 /// because their effective placement need not fit SourceAudioMapping::Placement.
@@ -80,6 +80,8 @@ pub struct FrozenAudioContext {
     revision_id: RevisionId,
     layout: FrozenAudioLayout,
     inputs: BTreeMap<NodeId, FrozenAudioInput>,
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    audio_treatments: BTreeMap<NodeId, AudioTreatments>,
     assets: BTreeMap<AssetId, AssetRecord>,
 }
 
@@ -93,6 +95,8 @@ struct ContextWire<'a> {
     layout: &'a RawValue,
     #[serde(borrow, deserialize_with = "unique_map")]
     inputs: BTreeMap<NodeId, &'a RawValue>,
+    #[serde(default, borrow, deserialize_with = "present_raw")]
+    audio_treatments: Option<&'a RawValue>,
     #[serde(deserialize_with = "unique_map")]
     assets: BTreeMap<AssetId, AssetRecord>,
 }
@@ -172,6 +176,12 @@ impl FrozenAudioContext {
             revision_id: document.revision_id().clone(),
             layout,
             inputs,
+            audio_treatments: document
+                .nodes()
+                .iter()
+                .filter(|(_, node)| !node.audio_treatments.is_empty())
+                .map(|(id, node)| (id.clone(), node.audio_treatments.clone()))
+                .collect(),
             assets,
         };
         context.validate()?;
@@ -192,6 +202,19 @@ impl FrozenAudioContext {
         }
         // Layout ingress must use its own streaming preflight before typed
         // materialization. A generic nested Deserialize would bypass that gate.
+        if wire.schema_version < 4 && wire.audio_treatments.is_some() {
+            return Err(invalid(
+                "legacy audio context cannot contain audio treatments",
+            ));
+        }
+        let audio_treatments = match wire.audio_treatments {
+            Some(raw) => {
+                serde_json::from_str::<TreatmentMap>(raw.get())
+                    .map_err(DocumentError::json)?
+                    .0
+            }
+            None => BTreeMap::new(),
+        };
         if wire.schema_version < 3 {
             crate::legacy_audio_binding_v21::validate_v22_layout(wire.layout.get())
                 .map_err(DocumentError::json)?;
@@ -216,6 +239,7 @@ impl FrozenAudioContext {
             revision_id: wire.revision_id,
             layout: FrozenAudioLayout::from_json(wire.layout.get())?,
             inputs,
+            audio_treatments,
             assets: wire.assets,
         };
         context.validate()?;
@@ -254,6 +278,7 @@ impl FrozenAudioContext {
             ));
         }
         self.layout.validate()?;
+        self.validate_treatments()?;
         if self.inputs.len() > MAX_DOCUMENT_NODES || self.assets.len() > MAX_DOCUMENT_ASSETS {
             return Err(limit("audio context inventory exceeds document limits"));
         }
@@ -360,8 +385,86 @@ impl FrozenAudioContext {
     pub fn inputs(&self) -> &BTreeMap<NodeId, FrozenAudioInput> {
         &self.inputs
     }
+    pub fn audio_treatments(&self) -> &BTreeMap<NodeId, AudioTreatments> {
+        &self.audio_treatments
+    }
     pub fn assets(&self) -> &BTreeMap<AssetId, AssetRecord> {
         &self.assets
+    }
+
+    fn validate_treatments(&self) -> Result<(), DocumentError> {
+        if self.schema_version < 4 && !self.audio_treatments.is_empty() {
+            return Err(invalid(
+                "legacy audio context cannot contain audio treatments",
+            ));
+        }
+        crate::validate_audio_treatments(self.audio_treatments.values())
+            .map_err(crate::audio_gain::invalid)?;
+        for (id, treatments) in &self.audio_treatments {
+            if !self.layout.nodes().contains_key(id) || treatments.is_empty() {
+                return Err(invalid(
+                    "audio context treatment requires a retained owner and nonempty recipe",
+                ));
+            }
+        }
+        if self.audio_treatments.is_empty() {
+            return Ok(());
+        }
+        let mut pending = vec![(self.layout.root(), 0usize)];
+        while let Some((id, parent_layers)) = pending.pop() {
+            let layers = parent_layers + usize::from(self.audio_treatments.contains_key(id));
+            if layers > crate::MAX_GAIN_LAYERS {
+                return Err(limit("audio context treatment layer limit exceeded"));
+            }
+            pending.extend(self.layout.children(id).map(|child| (child, layers)));
+        }
+        Ok(())
+    }
+}
+
+// Option alone would turn an explicit null into absence and reopen the old
+// wire vocabulary. Preserve field presence before dispatching the version.
+fn present_raw<'de, D: serde::Deserializer<'de>>(
+    decoder: D,
+) -> Result<Option<&'de RawValue>, D::Error> {
+    <&RawValue>::deserialize(decoder).map(Some)
+}
+
+struct TreatmentMap(BTreeMap<NodeId, AudioTreatments>);
+impl<'de> Deserialize<'de> for TreatmentMap {
+    fn deserialize<D: serde::Deserializer<'de>>(decoder: D) -> Result<Self, D::Error> {
+        struct Visitor;
+        impl<'de> serde::de::Visitor<'de> for Visitor {
+            type Value = TreatmentMap;
+            fn expecting(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                f.write_str("bounded unique audio treatment owners")
+            }
+            fn visit_map<A: serde::de::MapAccess<'de>>(
+                self,
+                mut access: A,
+            ) -> Result<Self::Value, A::Error> {
+                use serde::de::Error;
+                let mut treatments = BTreeMap::new();
+                let mut records = 0usize;
+                while let Some(id) = access.next_key::<NodeId>()? {
+                    if treatments.len() == MAX_DOCUMENT_NODES || treatments.contains_key(&id) {
+                        return Err(A::Error::custom(
+                            "excess or duplicate audio treatment owners",
+                        ));
+                    }
+                    let recipe = access.next_value::<AudioTreatments>()?;
+                    records = records
+                        .checked_add(recipe.record_count())
+                        .ok_or_else(|| A::Error::custom("audio treatment record overflow"))?;
+                    if records > crate::MAX_GAIN_RECORDS {
+                        return Err(A::Error::custom("audio treatment record limit exceeded"));
+                    }
+                    treatments.insert(id, recipe);
+                }
+                Ok(TreatmentMap(treatments))
+            }
+        }
+        decoder.deserialize_map(Visitor)
     }
 }
 

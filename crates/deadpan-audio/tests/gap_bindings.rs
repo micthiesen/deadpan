@@ -94,6 +94,7 @@ fn repeated(plays: u32, recipe: HoldRecipe) -> BeatNode {
     BeatNode {
         framing: None,
         label: "Gapped plays".into(),
+        audio_treatments: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Repeat {
             child: id("child"),
@@ -106,6 +107,7 @@ fn partition(child: &str, selected: Range<i64>) -> BeatNode {
     BeatNode {
         framing: None,
         label: "Visible suffix".into(),
+        audio_treatments: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Retime {
             child: id(child),

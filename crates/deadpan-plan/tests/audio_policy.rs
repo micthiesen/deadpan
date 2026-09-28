@@ -32,6 +32,7 @@ fn dense_bound_repeat_inventory_uses_shared_work_not_output_span_capacity() {
     wire["nodes"]["repeat"] = serde_json::to_value(BeatNode {
         label: "Dense repeat".into(),
         framing: None,
+        audio_treatments: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Repeat {
             child: node("voice"),

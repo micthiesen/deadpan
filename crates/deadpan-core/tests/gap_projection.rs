@@ -42,6 +42,7 @@ fn hold(frames: i64) -> BeatNode {
 }
 fn repeat(child: &str, allocation: &str, plays: u32, gap: i64) -> BeatNode {
     BeatNode {
+        audio_treatments: Default::default(),
         framing: None,
         label: "repeat".into(),
         audio_edges: Default::default(),
@@ -61,6 +62,7 @@ fn retime(
     purpose: RetimePurpose,
 ) -> BeatNode {
     BeatNode {
+        audio_treatments: Default::default(),
         framing: None,
         label: "retime".into(),
         audio_edges: Default::default(),

@@ -169,13 +169,15 @@ impl LimitedAudio {
         budget.check()?;
         Ok(LimitedAudioBlock {
             schema_version: 1,
-            stage: if self.plan().sounds().is_empty() {
+            stage: if self.plan().sounds().is_empty() && !self.plan().has_audio_treatments() {
                 "limited_edge_faded_pcm"
             } else {
                 "limited_authored_bus_pcm"
             },
             engine: LIMITER_ID,
-            processing_order: if self.plan().sounds().is_empty() {
+            processing_order: if self.plan().sounds().is_empty()
+                && !self.plan().has_audio_treatments()
+            {
                 ["time_pitch_mapping", "edge_fades", "stereo_limiter"]
             } else {
                 [

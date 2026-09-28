@@ -45,6 +45,7 @@ fn document() -> ProjectDocument {
     wire["nodes"]["blank"] = serde_json::to_value(BeatNode {
         label: "blank".into(),
         framing: None,
+        audio_treatments: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Source {
             source: SourceNode {

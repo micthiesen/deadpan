@@ -80,6 +80,7 @@ fn fixture(offset: AudioSample, mapping: SourceAudioMapping) -> ProjectDocument 
         span: span(),
     };
     let source_node = BeatNode {
+        audio_treatments: Default::default(),
         framing: None,
         label: "private source label".into(),
         audio_edges: AudioEdgePolicies {
@@ -102,6 +103,7 @@ fn fixture(offset: AudioSample, mapping: SourceAudioMapping) -> ProjectDocument 
         },
     };
     let picture_only = BeatNode {
+        audio_treatments: Default::default(),
         framing: None,
         label: "picture only".into(),
         audio_edges: Default::default(),
@@ -133,6 +135,7 @@ fn fixture(offset: AudioSample, mapping: SourceAudioMapping) -> ProjectDocument 
         },
     );
     let repeat = BeatNode {
+        audio_treatments: Default::default(),
         framing: None,
         label: "repeat".into(),
         audio_edges: Default::default(),
@@ -286,7 +289,7 @@ fn selected_context_keeps_full_phase_mapping_and_captures_only_its_audible_exten
         context
     );
     let mut wire = serde_json::to_value(context).unwrap();
-    assert_eq!(wire["schema_version"], json!(3));
+    assert_eq!(wire["schema_version"], json!(4));
     wire["schema_version"] = json!(1);
     assert!(FrozenAudioContext::from_json(&wire.to_string()).is_err());
     let escaped = wire
@@ -319,7 +322,7 @@ fn ingress_rejects_open_or_inconsistent_inventory() {
         FrozenAudioContext::capture(&fixture(AudioSample(0), SourceAudioMapping::FitBeat)).unwrap();
     let mut value: Value = serde_json::from_str(&context.to_json().unwrap()).unwrap();
     let baseline = value.clone();
-    value["schema_version"] = json!(4);
+    value["schema_version"] = json!(5);
     assert_eq!(
         FrozenAudioContext::from_json(&value.to_string())
             .unwrap_err()
@@ -368,8 +371,8 @@ fn ingress_rejects_open_or_inconsistent_inventory() {
         DocumentErrorCode::LimitExceeded
     );
     let duplicate = context.to_json().unwrap().replacen(
-        "\"schema_version\":3",
-        "\"schema_version\":3,\"schema_version\":3",
+        "\"schema_version\":4",
+        "\"schema_version\":4,\"schema_version\":4",
         1,
     );
     assert!(FrozenAudioContext::from_json(&duplicate).is_err());
@@ -382,6 +385,170 @@ fn ingress_rejects_open_or_inconsistent_inventory() {
     let oversize = " ".repeat(MAX_DOCUMENT_JSON_BYTES + 1);
     assert_eq!(
         FrozenAudioContext::from_json(&oversize).unwrap_err().code,
+        DocumentErrorCode::LimitExceeded
+    );
+}
+
+fn gain_treatment(millidecibels: i32) -> AudioTreatments {
+    AudioTreatments::from_clip_gain(
+        ClipGain::new(GainDb::new(millidecibels).unwrap(), false, vec![], vec![]).unwrap(),
+    )
+}
+
+#[test]
+fn frozen_context_rejects_aggregate_gain_records_during_ingress() {
+    let segments = (1..=MAX_GAIN_SEGMENTS)
+        .map(|end| {
+            GainSegment::new(ratio(end as i128, 1), GainDb::UNITY, GainCurve::Linear).unwrap()
+        })
+        .collect::<Vec<_>>();
+    let envelope = GainEnvelope::new(
+        GainClock::OwnerOutput,
+        GainRange::new(ratio(0, 1), ratio(MAX_GAIN_SEGMENTS as i128, 1)).unwrap(),
+        GainDb::UNITY,
+        segments,
+    )
+    .unwrap();
+    let treatments = AudioTreatments::from_clip_gain(
+        ClipGain::new(
+            GainDb::UNITY,
+            false,
+            vec![envelope; MAX_GAIN_ENVELOPES],
+            vec![],
+        )
+        .unwrap(),
+    );
+    let owners = MAX_GAIN_RECORDS / treatments.record_count() + 1;
+    let context =
+        FrozenAudioContext::capture(&fixture(AudioSample(0), SourceAudioMapping::FitBeat)).unwrap();
+    let mut wire = serde_json::to_value(context).unwrap();
+    wire["audio_treatments"] = json!({});
+    for index in 0..owners {
+        wire["audio_treatments"][format!("gain-{index}")] = json!(treatments);
+    }
+    let error = FrozenAudioContext::from_json(&wire.to_string()).unwrap_err();
+    assert!(
+        error
+            .to_string()
+            .contains("audio treatment record limit exceeded"),
+        "{error}"
+    );
+}
+
+#[test]
+fn frozen_gain_retains_group_and_picture_only_owners_and_authenticates_every_recipe() {
+    let original = fixture(AudioSample(0), SourceAudioMapping::FitBeat);
+    let mut document = original.clone();
+    for (owner, db) in [("root", -3000), ("sequence", 6000), ("pictureonly", 0)] {
+        document = edit(
+            &document,
+            Command::SetAudioTreatments {
+                node: node(owner),
+                treatments: gain_treatment(db),
+            },
+        );
+    }
+    let context = FrozenAudioContext::capture(&document).unwrap();
+    assert_eq!(context.audio_treatments().len(), 3);
+    assert_eq!(
+        context.audio_treatments()[&node("pictureonly")],
+        gain_treatment(0)
+    );
+    assert_eq!(
+        context.layout(),
+        FrozenAudioContext::capture(&original).unwrap().layout()
+    );
+    assert!(context.matches_document(&document).unwrap());
+    assert_eq!(
+        FrozenAudioContext::from_json(&context.to_json().unwrap()).unwrap(),
+        context
+    );
+    for mutation in ["missing", "changed"] {
+        let mut wire = serde_json::to_value(&context).unwrap();
+        if mutation == "missing" {
+            wire["audio_treatments"]
+                .as_object_mut()
+                .unwrap()
+                .remove("pictureonly");
+        } else {
+            wire["audio_treatments"]["root"] = serde_json::to_value(gain_treatment(-6000)).unwrap();
+        }
+        let forged = FrozenAudioContext::from_json(&wire.to_string()).unwrap();
+        assert!(!forged.matches_document(&document).unwrap());
+    }
+}
+
+#[test]
+fn legacy_context_gain_vocabulary_is_closed_even_for_null_empty_or_escaped_names() {
+    let document = fixture(AudioSample(0), SourceAudioMapping::FitBeat);
+    let context = FrozenAudioContext::capture(&document).unwrap();
+    let current = serde_json::to_value(&context).unwrap();
+    assert!(current.get("audio_treatments").is_none());
+    for version in 1..=3 {
+        let mut wire = current.clone();
+        wire["schema_version"] = json!(version);
+        let old = FrozenAudioContext::from_json(&wire.to_string()).unwrap();
+        assert!(old.matches_document(&document).unwrap());
+        for value in [Value::Null, json!({}), json!({"root":gain_treatment(0)})] {
+            wire["audio_treatments"] = value;
+            let encoded = wire.to_string();
+            assert!(FrozenAudioContext::from_json(&encoded).is_err());
+            assert!(
+                FrozenAudioContext::from_json(
+                    &encoded.replace("audio_treatments", "audio_treatm\\u0065nts")
+                )
+                .is_err()
+            );
+        }
+    }
+}
+
+#[test]
+fn frozen_gain_rejects_unknown_empty_duplicate_and_overlayered_owners() {
+    let document = fixture(AudioSample(0), SourceAudioMapping::FitBeat);
+    let context = FrozenAudioContext::capture(&document).unwrap();
+    for value in [
+        json!({"missing":gain_treatment(0)}),
+        json!({"root":AudioTreatments::default()}),
+        Value::Null,
+    ] {
+        let mut wire = serde_json::to_value(&context).unwrap();
+        wire["audio_treatments"] = value;
+        assert!(FrozenAudioContext::from_json(&wire.to_string()).is_err());
+    }
+    let mut wire = serde_json::to_value(&context).unwrap();
+    wire["audio_treatments"] = json!({"root":gain_treatment(0)});
+    let recipe = wire["audio_treatments"]["root"].to_string();
+    let duplicate = wire.to_string().replace(
+        &format!("\"audio_treatments\":{{\"root\":{recipe}}}"),
+        &format!("\"audio_treatments\":{{\"root\":{recipe},\"root\":{recipe}}}"),
+    );
+    assert_ne!(duplicate, wire.to_string());
+    assert!(FrozenAudioContext::from_json(&duplicate).is_err());
+
+    // A valid timing-only context can have more depth than the gain-layer cap.
+    let mut deep = document;
+    for index in 0..MAX_GAIN_LAYERS {
+        deep = edit(
+            &deep,
+            Command::Group {
+                parent: node("root"),
+                start: 0,
+                end: 1,
+                id: node(&format!("gain-group-{index}")),
+                label: "gain owner".into(),
+            },
+        );
+    }
+    let mut wire = serde_json::to_value(FrozenAudioContext::capture(&deep).unwrap()).unwrap();
+    wire["audio_treatments"] = json!({"root": gain_treatment(0)});
+    for index in 0..MAX_GAIN_LAYERS {
+        wire["audio_treatments"][format!("gain-group-{index}")] = json!(gain_treatment(0));
+    }
+    assert_eq!(
+        FrozenAudioContext::from_json(&wire.to_string())
+            .unwrap_err()
+            .code,
         DocumentErrorCode::LimitExceeded
     );
 }

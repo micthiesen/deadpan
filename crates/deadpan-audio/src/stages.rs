@@ -43,6 +43,9 @@ mod signal_mix;
 #[path = "sound_events.rs"]
 mod sound_events;
 
+#[path = "authored_gain.rs"]
+mod authored_gain;
+
 #[path = "projected_root.rs"]
 mod projected_root;
 pub use projected_root::ProjectedRootBlock;
@@ -106,6 +109,8 @@ pub enum StageAudioError {
     Plan(#[from] PlanError),
     #[error(transparent)]
     Time(#[from] TimeError),
+    #[error(transparent)]
+    Gain(#[from] deadpan_core::GainError),
     #[error(transparent)]
     Dsp(#[from] deadpan_dsp::DspError),
     #[error(transparent)]
@@ -247,8 +252,9 @@ pub struct TransferredDomainBlock {
     pub suppressed: Vec<Range<SignalSample>>,
 }
 
-/// Per-voice edge treatment after continuous time/pitch mapping. This is still
-/// before gain, voice effects, sends, mixing and mastering.
+/// Prepared pre-master PCM. Inspect `stage` and `processing_order`: edge-only
+/// reads omit node gain, whereas authored bus preparation includes gain and
+/// the independent root sound mix. Neither includes the final limiter.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct EdgeFadedBlock {
     pub schema_version: u32,
@@ -585,6 +591,23 @@ impl StageAudio {
         cancelled: &AtomicBool,
     ) -> Result<EdgeFadedBlock, StageAudioError> {
         let budget = PreparationBudget::new(timeout, cancelled)?;
+        Ok(self
+            .prepare_bus_inner(provider, start, frames, &budget, false)?
+            .block)
+    }
+
+    /// Canonical authored PCM after complete time/pitch mapping, voice edges
+    /// and owner gain, before the common limiter. Gain mute remains distinct
+    /// from silence policy and never bypasses source admission.
+    pub fn prepare_authored_bus(
+        &mut self,
+        provider: &mut impl AudioSourceProvider,
+        start: AudioSample,
+        frames: u32,
+        timeout: Duration,
+        cancelled: &AtomicBool,
+    ) -> Result<EdgeFadedBlock, StageAudioError> {
+        let budget = PreparationBudget::new(timeout, cancelled)?;
         Ok(self.prepare_bus(provider, start, frames, &budget)?.block)
     }
 
@@ -594,6 +617,17 @@ impl StageAudio {
         start: AudioSample,
         frames: u32,
         budget: &PreparationBudget<'_>,
+    ) -> Result<PreparedBus, StageAudioError> {
+        self.prepare_bus_inner(provider, start, frames, budget, true)
+    }
+
+    fn prepare_bus_inner(
+        &mut self,
+        provider: &mut impl AudioSourceProvider,
+        start: AudioSample,
+        frames: u32,
+        budget: &PreparationBudget<'_>,
+        authored_gain: bool,
     ) -> Result<PreparedBus, StageAudioError> {
         budget.check()?;
         let end = start
@@ -615,7 +649,7 @@ impl StageAudio {
         while cursor.0 < end {
             let count = u32::try_from((end - cursor.0).min(i64::from(MAX_OUTPUT_FRAMES)))
                 .map_err(|_| StageAudioError::PreparationRange)?;
-            let block = self.read_authored_bus(provider, cursor, count, control)?;
+            let block = self.read_authored_bus(provider, cursor, count, control, authored_gain)?;
             samples.extend(block.samples);
             suppressed.extend(block.suppressed);
             dependencies.extend(block.dependencies);
@@ -623,7 +657,8 @@ impl StageAudio {
         }
         let suppressed = merged_suppression(suppressed);
         control.check()?;
-        let has_sounds = !self.plan.sounds().is_empty();
+        let has_sounds =
+            !self.plan.sounds().is_empty() || (authored_gain && self.plan.has_audio_treatments());
         let block = EdgeFadedBlock {
             schema_version: 1,
             stage: if has_sounds {
@@ -2313,6 +2348,7 @@ mod controlled_reads {
         let source = |start, end| BeatNode {
             framing: None,
             label: "Source".into(),
+            audio_treatments: Default::default(),
             audio_edges: Default::default(),
             kind: NodeKind::Source {
                 source: SourceNode {
@@ -2368,6 +2404,7 @@ mod controlled_reads {
                 BeatNode {
                     framing: None,
                     label: "Preserve".into(),
+                    audio_treatments: Default::default(),
                     audio_edges: Default::default(),
                     kind: NodeKind::Retime {
                         child: id("b"),
@@ -2733,6 +2770,7 @@ mod controlled_reads {
         let source = |at| BeatNode {
             framing: None,
             label: "Source".into(),
+            audio_treatments: Default::default(),
             audio_edges: Default::default(),
             kind: NodeKind::Source {
                 source: SourceNode {
@@ -2750,6 +2788,7 @@ mod controlled_reads {
         let retime = |child: &str, output, selected| BeatNode {
             framing: None,
             label: "Preserve".into(),
+            audio_treatments: Default::default(),
             audio_edges: Default::default(),
             kind: NodeKind::Retime {
                 child: id(child),

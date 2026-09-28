@@ -37,6 +37,9 @@ mod sound_allowances;
 #[path = "audio_inspection/hold_audio.rs"]
 mod hold_audio;
 
+#[path = "audio_inspection/gain.rs"]
+mod gain;
+
 fn active() -> AtomicBool {
     AtomicBool::new(false)
 }
@@ -440,6 +443,7 @@ fn mapped_inspection_prepares_preserve_from_historical_aac_without_writing() -> 
                     (
                         node("slow"),
                         BeatNode {
+                            audio_treatments: Default::default(),
                             framing: None,
                             audio_edges: Default::default(),
                             label: "Preserve speech pitch".into(),
@@ -514,6 +518,8 @@ fn mapped_inspection_prepares_preserve_from_historical_aac_without_writing() -> 
         ("-1", "1", "--time-mapped"),
         ("0", "257", "--edge-faded"),
         ("-1", "1", "--edge-faded"),
+        ("0", "257", "--authored-bus"),
+        ("-1", "1", "--authored-bus"),
     ] {
         let invalid = ProcessCommand::new(env!("CARGO_BIN_EXE_deadpan-cli"))
             .args([
@@ -692,6 +698,26 @@ fn invalid_ranges_and_cancellation_fail_without_returning_partial_pcm() -> Resul
     assert!(session.read(AudioSample(0), 0, &active()).is_err());
     assert!(session.read(AudioSample(0), 257, &active()).is_err());
     assert!(session.read(AudioSample(-1), 1, &active()).is_err());
+    let end = session.plan().audio_duration()?;
+    for (start, frames) in [
+        (AudioSample(-1), 1),
+        (AudioSample(0), 0),
+        (AudioSample(0), 257),
+        (end, 1),
+        (AudioSample(i64::MAX), 256),
+    ] {
+        assert!(matches!(
+            session.read_authored_bus(start, frames, &active()),
+            Err(deadpan_cli::audio::ProjectAudioError::Stage(
+                deadpan_audio::StageAudioError::Range
+            ))
+        ));
+    }
+    assert!(
+        session
+            .read_authored_bus(AudioSample(0), 1, &AtomicBool::new(true))
+            .is_err()
+    );
     assert!(
         session
             .read(AudioSample(0), 1, &AtomicBool::new(true))

@@ -1,0 +1,193 @@
+{
+  "schema_version": 1,
+  "notes": [
+    "core-01 is diagnostic: one later test-source addition is outside its start manifest; corrected focused and final checks supersede it.",
+    "core-01 stopped at two stale context-test fixtures; both were corrected.",
+    "clippy-workspace stopped at two missing default fields inside playback json! fixtures; corrected in clippy-workspace-02.",
+    "tests-workspace stopped at an outdated duplicate-key diagnostic assertion; only that test file changed. Production code is unchanged.",
+    "format-final-03 recorded the required multiline assertion formatting; format-final-04 verifies the correction.",
+    "tests-artifacts rebuilds only the changed document test and inventories exact workspace executables. The continuation retains completed fresh targets and runs the failed/remaining targets in their package working directories. Cargo runs doctests separately.",
+    "Durations include compilation and are not product performance measurements.",
+    "No compiler or test process was restarted; every listed run reached its terminal status."
+  ],
+  "qualified_workspace": {
+    "source_manifest_sha256": "7e99880521776d6ef6156c95be7a6b8dc2f2b66bfb153a10fd6d9ec2ae8e26e6",
+    "source_changes_since_initial_run": [
+      "crates/deadpan-core/tests/document.rs"
+    ],
+    "native_test_targets": 140,
+    "retained_successful_targets": 39,
+    "resumed_targets": 101,
+    "doc_test_groups": 15,
+    "tests_passed": 2006,
+    "tests_failed": 0,
+    "tests_ignored": 0
+  },
+  "records": [
+    {
+      "record": "core-01.json",
+      "log": "core-01.log.gz",
+      "exit_code": 101,
+      "seconds": 444.5659620841034,
+      "source_manifest_sha256": "67145837f831396f1b8127c2c055628a971501c91e5b10903b1b72ddb06e5f5f",
+      "passing_test_groups": 5,
+      "tests_passed": 184,
+      "tests_failed": 2,
+      "tests_ignored": 0
+    },
+    {
+      "record": "core-02.json",
+      "log": "core-02.log.gz",
+      "exit_code": 0,
+      "seconds": 100.40601791627705,
+      "source_manifest_sha256": "fe1c42732c79cc35459d16b2179bbbde54bfd0cc2a7aaa254f5a1911daccc5a7",
+      "passing_test_groups": 2,
+      "tests_passed": 23,
+      "tests_failed": 0,
+      "tests_ignored": 0
+    },
+    {
+      "record": "plan-01.json",
+      "log": "plan-01.log.gz",
+      "exit_code": 0,
+      "seconds": 190.8568995827809,
+      "source_manifest_sha256": "13764fe2e679cb11957c9fae961ef65e29165af70f3c9c27bb8b09316ccd29d4",
+      "passing_test_groups": 2,
+      "tests_passed": 28,
+      "tests_failed": 0,
+      "tests_ignored": 0
+    },
+    {
+      "record": "integration-gain-01.json",
+      "log": "integration-gain-01.log.gz",
+      "exit_code": 0,
+      "seconds": 299.90818045893684,
+      "source_manifest_sha256": "13764fe2e679cb11957c9fae961ef65e29165af70f3c9c27bb8b09316ccd29d4",
+      "passing_test_groups": 3,
+      "tests_passed": 17,
+      "tests_failed": 0,
+      "tests_ignored": 0
+    },
+    {
+      "record": "format-final.json",
+      "log": "format-final.log.gz",
+      "exit_code": 0,
+      "seconds": 4.312341125216335,
+      "source_manifest_sha256": "880dc6b7501cb8c410be4a82b3ae63b2301b28f38ef01ad0c59153491c996566",
+      "passing_test_groups": 0,
+      "tests_passed": 0,
+      "tests_failed": 0,
+      "tests_ignored": 0
+    },
+    {
+      "record": "clippy-workspace.json",
+      "log": "clippy-workspace.log.gz",
+      "exit_code": 101,
+      "seconds": 566.9147012908943,
+      "source_manifest_sha256": "880dc6b7501cb8c410be4a82b3ae63b2301b28f38ef01ad0c59153491c996566",
+      "passing_test_groups": 0,
+      "tests_passed": 0,
+      "tests_failed": 0,
+      "tests_ignored": 0
+    },
+    {
+      "record": "clippy-workspace-02.json",
+      "log": "clippy-workspace-02.log.gz",
+      "exit_code": 0,
+      "seconds": 354.53387862537056,
+      "source_manifest_sha256": "43fdb0202a0cb4c4df2e8071c0c825cb4a4dd3b0742521b9e70c8a0ec9c1e83f",
+      "passing_test_groups": 0,
+      "tests_passed": 0,
+      "tests_failed": 0,
+      "tests_ignored": 0
+    },
+    {
+      "record": "format-final-02.json",
+      "log": "format-final-02.log.gz",
+      "exit_code": 0,
+      "seconds": 4.304021667223424,
+      "source_manifest_sha256": "43fdb0202a0cb4c4df2e8071c0c825cb4a4dd3b0742521b9e70c8a0ec9c1e83f",
+      "passing_test_groups": 0,
+      "tests_passed": 0,
+      "tests_failed": 0,
+      "tests_ignored": 0
+    },
+    {
+      "record": "tests-workspace.json",
+      "log": "tests-workspace.log.gz",
+      "exit_code": 101,
+      "seconds": 1229.0703251250088,
+      "source_manifest_sha256": "43fdb0202a0cb4c4df2e8071c0c825cb4a4dd3b0742521b9e70c8a0ec9c1e83f",
+      "passing_test_groups": 39,
+      "tests_passed": 835,
+      "tests_failed": 1,
+      "tests_ignored": 0
+    },
+    {
+      "record": "format-final-03.json",
+      "log": "format-final-03.log.gz",
+      "exit_code": 1,
+      "seconds": 4.291328624822199,
+      "source_manifest_sha256": "2605d22c3f4b3479b0339b625f424021435aa6399bdfbfa10cece12c6a398ce1",
+      "passing_test_groups": 0,
+      "tests_passed": 0,
+      "tests_failed": 0,
+      "tests_ignored": 0
+    },
+    {
+      "record": "tests-artifacts.json",
+      "log": "tests-artifacts.log.gz",
+      "exit_code": 0,
+      "seconds": 31.46934387506917,
+      "source_manifest_sha256": "7e99880521776d6ef6156c95be7a6b8dc2f2b66bfb153a10fd6d9ec2ae8e26e6",
+      "passing_test_groups": 0,
+      "tests_passed": 0,
+      "tests_failed": 0,
+      "tests_ignored": 0
+    },
+    {
+      "record": "tests-workspace-resume.json",
+      "log": "tests-workspace-resume.log.gz",
+      "exit_code": 0,
+      "seconds": 606.0369613748044,
+      "source_manifest_sha256": "7e99880521776d6ef6156c95be7a6b8dc2f2b66bfb153a10fd6d9ec2ae8e26e6",
+      "passing_test_groups": 101,
+      "tests_passed": 1185,
+      "tests_failed": 0,
+      "tests_ignored": 0
+    },
+    {
+      "record": "format-final-04.json",
+      "log": "format-final-04.log.gz",
+      "exit_code": 0,
+      "seconds": 4.350112874992192,
+      "source_manifest_sha256": "7e99880521776d6ef6156c95be7a6b8dc2f2b66bfb153a10fd6d9ec2ae8e26e6",
+      "passing_test_groups": 0,
+      "tests_passed": 0,
+      "tests_failed": 0,
+      "tests_ignored": 0
+    },
+    {
+      "record": "clippy-workspace-03.json",
+      "log": "clippy-workspace-03.log.gz",
+      "exit_code": 0,
+      "seconds": 32.556748415809125,
+      "source_manifest_sha256": "7e99880521776d6ef6156c95be7a6b8dc2f2b66bfb153a10fd6d9ec2ae8e26e6",
+      "passing_test_groups": 0,
+      "tests_passed": 0,
+      "tests_failed": 0,
+      "tests_ignored": 0
+    },
+    {
+      "record": "tests-doc.json",
+      "log": "tests-doc.log.gz",
+      "exit_code": 0,
+      "seconds": 440.039076667279,
+      "source_manifest_sha256": "7e99880521776d6ef6156c95be7a6b8dc2f2b66bfb153a10fd6d9ec2ae8e26e6",
+      "passing_test_groups": 15,
+      "tests_passed": 2,
+      "tests_failed": 0,
+      "tests_ignored": 0
+    }
+  ]
+}

@@ -9,7 +9,7 @@ use crate::{
     TimeError,
 };
 
-pub const DOCUMENT_SCHEMA_VERSION: u32 = 32;
+pub const DOCUMENT_SCHEMA_VERSION: u32 = 33;
 /// Bounds apply before traversal. Structure is walked iteratively, never recursively.
 pub const MAX_DOCUMENT_NODES: usize = 100_000;
 pub const MAX_DOCUMENT_ASSETS: usize = 100_000;
@@ -367,6 +367,8 @@ impl NodeKind {
 pub struct BeatNode {
     pub label: String,
     pub kind: NodeKind,
+    #[serde(default, skip_serializing_if = "crate::AudioTreatments::is_empty")]
+    pub audio_treatments: crate::AudioTreatments,
     #[serde(
         default,
         skip_serializing_if = "crate::AudioEdgePolicies::is_automatic"
@@ -381,6 +383,7 @@ impl BeatNode {
         Self {
             label: label.into(),
             kind: NodeKind::Sequence { children },
+            audio_treatments: Default::default(),
             audio_edges: crate::AudioEdgePolicies::default(),
             framing: None,
         }
@@ -389,6 +392,7 @@ impl BeatNode {
         Self {
             label: label.into(),
             kind: NodeKind::Hold { recipe },
+            audio_treatments: Default::default(),
             audio_edges: crate::AudioEdgePolicies::default(),
             framing: None,
         }
@@ -435,7 +439,7 @@ struct DocumentWire {
     presentation_basis: PresentationBasis,
     basis_state: BasisState,
     root: NodeId,
-    #[serde(deserialize_with = "unique_map")]
+    #[serde(deserialize_with = "crate::audio_gain::node_map")]
     nodes: BTreeMap<NodeId, BeatNode>,
     #[serde(deserialize_with = "unique_map")]
     assets: BTreeMap<AssetId, AssetRecord>,
@@ -556,6 +560,7 @@ impl ProjectDocument {
         view.nodes.insert(
             node,
             BeatNode {
+                audio_treatments: Default::default(),
                 label: record.label.clone(),
                 framing: None,
                 audio_edges: Default::default(),
@@ -692,26 +697,32 @@ impl ProjectDocument {
 
     /// Validate once and return every authored duration for plan compilation.
     pub fn durations(&self) -> Result<BTreeMap<NodeId, FrameDuration>, DocumentError> {
-        self.durations_with_picture_context_limit(crate::MAX_CAPTURED_FRAMING_RECORDS)
+        self.durations_with_context_limits(
+            crate::MAX_CAPTURED_FRAMING_RECORDS,
+            crate::MAX_GAIN_RECORDS,
+        )
     }
 
     /// Private intermediate state only: the pending edit can retire copied
     /// context. Public validation still enforces the ordinary document budget.
     pub(crate) fn validate_isolated_context(&self) -> Result<(), DocumentError> {
-        self.durations_with_picture_context_limit(
+        self.durations_with_context_limits(
             crate::picture_context::MAX_ISOLATED_FRAMING_RECORDS,
+            crate::audio_gain::MAX_ISOLATED_GAIN_RECORDS,
         )
         .map(|_| ())
     }
 
-    fn durations_with_picture_context_limit(
+    fn durations_with_context_limits(
         &self,
         context_limit: usize,
+        gain_limit: usize,
     ) -> Result<BTreeMap<NodeId, FrameDuration>, DocumentError> {
         let durations = self.structural_durations()?;
         crate::sound_events::validate(self, &durations)?;
         crate::sound_allowance::validate(self)?;
         crate::framing::validate_document(self)?;
+        crate::audio_gain::validate_document(self, gain_limit)?;
         crate::picture_context::validate_nodes_with_limit(self.nodes.values(), context_limit)?;
         self.validate_basis_state(&durations)?;
         crate::audio_lineage::validate(self)?;

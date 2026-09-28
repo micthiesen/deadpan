@@ -382,7 +382,10 @@ impl FrozenAudioLayout {
         self.nodes[&self.root].duration
     }
 
-    fn children<'a>(&'a self, id: &NodeId) -> impl DoubleEndedIterator<Item = &'a NodeId> {
+    pub(crate) fn children<'a>(
+        &'a self,
+        id: &NodeId,
+    ) -> impl DoubleEndedIterator<Item = &'a NodeId> {
         self.nodes[id]
             .kind
             .children()

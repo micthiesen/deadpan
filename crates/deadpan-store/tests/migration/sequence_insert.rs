@@ -164,6 +164,7 @@ pub(super) fn nested_initial(source: bool) -> Result<ProjectDocument> {
             },
         )]))?;
         BeatNode {
+            audio_treatments: Default::default(),
             framing: None,
             label: "Original".into(),
             audio_edges: AudioEdgePolicies::default(),

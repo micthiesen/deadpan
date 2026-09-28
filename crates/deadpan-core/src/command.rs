@@ -18,7 +18,7 @@ use crate::{
 #[serde(deny_unknown_fields)]
 pub struct Subtree {
     pub root: NodeId,
-    #[serde(deserialize_with = "unique_map")]
+    #[serde(deserialize_with = "crate::audio_gain::node_map")]
     pub nodes: BTreeMap<NodeId, BeatNode>,
     #[serde(default, deserialize_with = "unique_map")]
     pub overrides: BTreeMap<NodeId, PlayOverrides>,
@@ -206,6 +206,11 @@ pub enum Command {
         node: NodeId,
         framing: Option<crate::Framing>,
     },
+    /// Replace postmapping gain intent without changing any raw audio clock.
+    SetAudioTreatments {
+        node: NodeId,
+        treatments: crate::AudioTreatments,
+    },
     AddAsset {
         id: AssetId,
         asset: AssetRecord,
@@ -295,7 +300,7 @@ pub struct DocumentPatch {
     pub to_revision: RevisionId,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub presentation: Option<PresentationChange>,
-    #[serde(deserialize_with = "unique_map")]
+    #[serde(deserialize_with = "crate::audio_gain::node_map")]
     pub nodes: BTreeMap<NodeId, ValueChange<BeatNode>>,
     #[serde(deserialize_with = "unique_map")]
     pub assets: BTreeMap<AssetId, ValueChange<AssetRecord>>,
@@ -387,6 +392,22 @@ impl DocumentPatch {
                 .filter_map(|change| change.before.as_ref()),
         )?;
         crate::picture_context::validate_nodes(
+            self.nodes
+                .values()
+                .filter_map(|change| change.after.as_ref())
+                .chain(
+                    document
+                        .nodes
+                        .iter()
+                        .filter_map(|(id, node)| (!self.nodes.contains_key(id)).then_some(node)),
+                ),
+        )?;
+        crate::audio_gain::validate_nodes(
+            self.nodes
+                .values()
+                .filter_map(|change| change.before.as_ref()),
+        )?;
+        crate::audio_gain::validate_nodes(
             self.nodes
                 .values()
                 .filter_map(|change| change.after.as_ref())
@@ -498,6 +519,7 @@ pub fn apply(
     // Validate caller-owned context before cloning either the document or an
     // isolated occurrence. Public structs can be constructed without serde.
     crate::picture_context::validate_command(&request.command)?;
+    crate::audio_gain::validate_command(&request.command)?;
     crate::sound_events::validate_command(document, &request.command)?;
     let before_duration = document.duration()?.frames();
     let sound_edit =
@@ -539,6 +561,7 @@ pub fn apply(
             *index,
             id,
             BeatNode {
+                audio_treatments: Default::default(),
                 label: label.clone(),
                 framing: None,
                 audio_edges: Default::default(),
@@ -898,6 +921,12 @@ pub(crate) fn reduce(
                     "ungroup cannot yet preserve this Sequence's framing; retain the group or explicitly clear its framing",
                 ));
             }
+            if !beat.audio_treatments.is_empty() {
+                return Err(EditError::new(
+                    EditErrorCode::InvalidCommand,
+                    "ungroup cannot yet preserve this Sequence's audio treatments; retain the group or explicitly clear its treatments",
+                ));
+            }
             let siblings = children_mut(document, &parent)?;
             let position = siblings
                 .iter()
@@ -924,6 +953,7 @@ pub(crate) fn reduce(
             document.nodes.insert(
                 id.clone(),
                 BeatNode {
+                    audio_treatments: Default::default(),
                     framing: None,
                     audio_edges: Default::default(),
                     label: "Repeat".into(),
@@ -998,6 +1028,7 @@ pub(crate) fn reduce(
             document.nodes.insert(
                 id.clone(),
                 BeatNode {
+                    audio_treatments: Default::default(),
                     framing: None,
                     audio_edges: Default::default(),
                     label: "Retime".into(),
@@ -1224,6 +1255,7 @@ pub(crate) fn reduce(
                 document.nodes.insert(
                     insertion.node.clone(),
                     BeatNode {
+                        audio_treatments: Default::default(),
                         framing: None,
                         audio_edges: Default::default(),
                         label: insertion.label.clone(),
@@ -1241,6 +1273,10 @@ pub(crate) fn reduce(
                 })?;
             }
             node_mut(document, node)?.framing = framing.clone();
+        }
+        Command::SetAudioTreatments { node, treatments } => {
+            treatments.validate().map_err(crate::audio_gain::invalid)?;
+            node_mut(document, node)?.audio_treatments = treatments.clone();
         }
         Command::SetAudioEdge { node, edge, policy } => {
             let beat = node_mut(document, node)?;
@@ -1387,6 +1423,9 @@ fn prepare_subtree(
         unused(document, id)?;
     }
     crate::framing::validate_nodes(subtree.nodes.values())?;
+    // A replacement can retire old context. Bound the incoming inventory before
+    // cloning it; final document validation charges the exact retained union.
+    crate::audio_gain::validate_nodes(subtree.nodes.values())?;
     let mut prepared = subtree.clone();
     for (is_gap, id, entries) in subtree
         .overrides
@@ -1821,6 +1860,7 @@ fn description(command: &Command) -> &'static str {
         Command::Rename { .. } => "Rename beat",
         Command::SetAudioEdge { .. } => "Change audio edge policy",
         Command::SetFraming { .. } => "Change framing",
+        Command::SetAudioTreatments { .. } => "Change audio treatments",
         Command::AddAsset { .. } => "Register media asset",
         Command::ImportSource { .. } => "Import source media",
         Command::SetCanvas { .. } => "Change canvas geometry",

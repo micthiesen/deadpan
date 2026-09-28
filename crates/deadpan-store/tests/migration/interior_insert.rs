@@ -163,6 +163,7 @@ fn interior_initial(source: bool) -> Result<ProjectDocument> {
             },
         )]))?;
         BeatNode {
+            audio_treatments: Default::default(),
             framing: None,
             label: "Original".into(),
             audio_edges: AudioEdgePolicies::default(),
@@ -190,6 +191,7 @@ fn interior_initial(source: bool) -> Result<ProjectDocument> {
         (
             repeat,
             BeatNode {
+                audio_treatments: Default::default(),
                 framing: None,
                 label: "Repeat".into(),
                 audio_edges: AudioEdgePolicies::default(),

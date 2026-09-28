@@ -27,6 +27,7 @@ fn retime(child: &str, length: i64, start: i64, end: i64, pitch: PitchPolicy) ->
     BeatNode {
         label: "Timing".into(),
         framing: None,
+        audio_treatments: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Retime {
             child: id(child),
@@ -524,6 +525,7 @@ fn virtual_source_support_can_have_zero_or_one_fade_samples() {
         let source = BeatNode {
             label: "Voice".into(),
             framing: None,
+            audio_treatments: Default::default(),
             audio_edges: Default::default(),
             kind: NodeKind::Source {
                 source: SourceNode {

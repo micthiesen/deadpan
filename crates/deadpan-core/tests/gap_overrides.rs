@@ -123,6 +123,7 @@ fn with_source_base(document: &ProjectDocument) -> ProjectDocument {
     )
     .unwrap();
     let source = BeatNode {
+        audio_treatments: Default::default(),
         label: "Original".into(),
         framing: None,
         audio_edges: Default::default(),

@@ -287,6 +287,7 @@ fn moving_an_owner_does_not_retarget_a_binding_hosted_elsewhere() {
 #[test]
 fn retained_copy_ownership_depends_on_authored_nodes_not_visible_matching_plays() {
     let repeated = |child| BeatNode {
+        audio_treatments: Default::default(),
         framing: None,
         label: "Repeated pair".into(),
         audio_edges: Default::default(),
@@ -297,6 +298,7 @@ fn retained_copy_ownership_depends_on_authored_nodes_not_visible_matching_plays(
         },
     };
     let partition = |child, start, end| BeatNode {
+        audio_treatments: Default::default(),
         framing: None,
         label: "Retained partition".into(),
         audio_edges: Default::default(),

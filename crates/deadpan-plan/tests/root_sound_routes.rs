@@ -106,6 +106,7 @@ fn document(
             label: name.clone(),
             kind,
             framing: None,
+            audio_treatments: Default::default(),
             audio_edges: Default::default()
         });
     }

@@ -155,6 +155,7 @@ fn preserves_sound_clocks(command: &Command) -> bool {
         | Command::Rename { .. }
         | Command::SetAudioEdge { .. }
         | Command::SetFraming { .. }
+        | Command::SetAudioTreatments { .. }
         | Command::AddAsset { .. }
         | Command::SetCanvas { .. }
         | Command::AdoptPrimaryGeometry { .. }
@@ -173,6 +174,7 @@ fn preserves_sound_clocks(command: &Command) -> bool {
             | OccurrenceEdit::RevertGeneratedHold
             | OccurrenceEdit::Rename { .. }
             | OccurrenceEdit::SetAudioEdge { .. }
+            | OccurrenceEdit::SetAudioTreatments { .. }
             | OccurrenceEdit::SetFraming { .. } => true,
             OccurrenceEdit::Split { .. }
             | OccurrenceEdit::Insert { .. }

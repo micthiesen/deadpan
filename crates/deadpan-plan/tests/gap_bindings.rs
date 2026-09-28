@@ -53,6 +53,7 @@ fn captured(plays: u32) -> ProjectDocument {
             BeatNode {
                 label: "Repeat".into(),
                 framing: None,
+                audio_treatments: Default::default(),
                 audio_edges: AudioEdgePolicies {
                     node_start: AudioEdgePolicy::Hard,
                     node_end: AudioEdgePolicy::Hard,

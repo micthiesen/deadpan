@@ -107,6 +107,9 @@ pub enum OccurrenceEdit {
     SetFraming {
         framing: Option<crate::Framing>,
     },
+    SetAudioTreatments {
+        treatments: crate::AudioTreatments,
+    },
     SetPlayOverride {
         iteration: IterationId,
         subtree: Subtree,
@@ -240,6 +243,10 @@ impl OccurrenceEdit {
             Self::SetFraming { framing } => Command::SetFraming {
                 node,
                 framing: framing.clone(),
+            },
+            Self::SetAudioTreatments { treatments } => Command::SetAudioTreatments {
+                node,
+                treatments: treatments.clone(),
             },
             Self::SetAudioEdge { edge, policy } => Command::SetAudioEdge {
                 node,
@@ -456,6 +463,13 @@ pub(crate) fn clone_nodes(
 ) -> Result<(), EditError> {
     // Isolation and Split can duplicate existing contexts repeatedly. Check the
     // combined set before copying any recipe, not after all ancestors expand.
+    crate::audio_gain::validate_nodes_with_limit(
+        document
+            .nodes
+            .values()
+            .chain(mapping.keys().map(|id| &document.nodes[id])),
+        crate::audio_gain::MAX_ISOLATED_GAIN_RECORDS,
+    )?;
     crate::picture_context::validate_nodes_with_limit(
         document
             .nodes
@@ -558,6 +572,7 @@ mod tests {
         document.nodes.insert(
             repeat.clone(),
             BeatNode {
+                audio_treatments: Default::default(),
                 framing: None,
                 audio_edges: Default::default(),
                 label: "repeat".into(),

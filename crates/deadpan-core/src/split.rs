@@ -67,7 +67,9 @@ pub(crate) fn apply(
             mapping,
             purpose: RetimePurpose::Partition,
             ..
-        } if original.framing.is_none() => Some((child, *mapping)),
+        } if original.framing.is_none() && original.audio_treatments.is_empty() => {
+            Some((child, *mapping))
+        }
         _ => None,
     };
     let context = refinement.map_or(target, |(child, _)| child);
@@ -204,6 +206,7 @@ fn partition(
     let mapping =
         FrameRange::new(ProjectFrame(start), ProjectFrame(end)).map_err(DocumentError::from)?;
     Ok(BeatNode {
+        audio_treatments: Default::default(),
         framing: None,
         label: label.into(),
         kind: NodeKind::Retime {

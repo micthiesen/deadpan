@@ -1,0 +1,10 @@
+{
+  "binary": "/tmp/deadpan-authored-gain-289_gcj6/old-deadpan-cli",
+  "sha256": "afb9d77a02884102990c6e8b544f855bd924d404ba9d8f56e49eb1b64b9902b2",
+  "size": 132183584,
+  "commit": "5fd8b23365df0d203e3a9ae8f5c0c14cc69b6040",
+  "source_manifest": "c043a7401dc1d7551aa5e2eaaf027a5e6507a0adf12242f7ab366fd4c173c194",
+  "core_schema": 32,
+  "database_schema": 38,
+  "recorded_at": "2026-09-28T07:06:30.792619+00:00"
+}

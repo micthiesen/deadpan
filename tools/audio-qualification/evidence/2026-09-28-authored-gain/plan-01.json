@@ -1,0 +1,19 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "-p",
+    "deadpan-plan",
+    "--lib",
+    "--test",
+    "audio_context"
+  ],
+  "started": "2026-09-28T07:26:36.008482+00:00",
+  "base_commit": "5fd8b23365df0d203e3a9ae8f5c0c14cc69b6040",
+  "diff_sha256": "20610207645f5ec8162416845f4787fb90a8f4ef3f581ad9f9fd5038167f7219",
+  "source_manifest_sha256": "13764fe2e679cb11957c9fae961ef65e29165af70f3c9c27bb8b09316ccd29d4",
+  "pid": 73019,
+  "exit_code": 0,
+  "seconds": 190.8568995827809
+}

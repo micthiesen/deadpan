@@ -93,6 +93,7 @@ fn fixture() -> ProjectDocument {
                 nodes: BTreeMap::from([(
                     node("hold"),
                     BeatNode {
+                        audio_treatments: Default::default(),
                         label: "Picture time".into(),
                         framing: None,
                         audio_edges: Default::default(),

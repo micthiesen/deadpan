@@ -152,6 +152,7 @@ fn materialized_gap_retains_distinct_outer_play_clocks_and_definition_birth() {
     let outer = BeatNode {
         label: "Outer".into(),
         framing: None,
+        audio_treatments: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Repeat {
             child: id("repeat"),

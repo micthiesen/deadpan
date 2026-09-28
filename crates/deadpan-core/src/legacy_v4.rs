@@ -196,6 +196,7 @@ pub(crate) struct LegacyBeatNode {
 impl LegacyBeatNode {
     pub(crate) fn upgrade(self) -> BeatNode {
         BeatNode {
+            audio_treatments: Default::default(),
             framing: None,
             label: self.label,
             audio_edges: AudioEdgePolicies::default(),
@@ -233,6 +234,9 @@ impl LegacyBeatNode {
     }
 
     pub(crate) fn project(value: &BeatNode) -> Option<Self> {
+        if !value.audio_treatments.is_empty() {
+            return None;
+        }
         if value.framing.is_some() {
             return None;
         }

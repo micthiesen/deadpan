@@ -68,7 +68,7 @@ revision fails with `RevisionConflict` and the current revision, without writing
 
 Supported commands are `insert`, `insert_time`, `split`, `delete`, `move`, `group`,
 `ungroup`, `splice_source`, `wrap_repeat`, `set_repeat`, `wrap_retime`, `set_retime`, `insert_plays`, `move_plays`, `set_hold_duration`, `set_hold_provider`, `set_hold_picture_context`, `set_source_audio_mapping`, `set_source_video_mapping`,
-`rename`, `set_audio_edge`, `set_framing`, `set_sound`, `replace_sound`, `delete_sound`, `set_sound_allowance`, `add_asset`, `set_canvas`, `set_mark`, `delete_mark`, `set_play_override`, `clear_play_override`, `set_gap_override`, `clear_gap_override`, `isolate_gap`, and `edit_occurrence`. Their exact typed parameters are defined in
+`rename`, `set_audio_edge`, `set_audio_treatments`, `set_hold_audio`, `set_framing`, `set_sound`, `replace_sound`, `delete_sound`, `set_sound_allowance`, `add_asset`, `set_canvas`, `set_mark`, `delete_mark`, `set_play_override`, `clear_play_override`, `set_gap_override`, `clear_gap_override`, `isolate_gap`, and `edit_occurrence`. Their exact typed parameters are defined in
 [`Command`](../crates/deadpan-core/src/command.rs). `set_repeat` changes an existing
 Repeat; `wrap_repeat` deliberately adds nesting. A three-play repeat includes
 three total plays and only two gaps. These are structural edits, not rendered
@@ -81,7 +81,7 @@ and `pitch`, retaining the ordinary Retime's child/input range. Both also have
 occurrence forms. The native `:retime` speed grammar resolves to these same
 commands. See [speed editing](RETIME_EDITING.md) for output-binding lifecycle.
 
-Documents use schema 32 in database schema 38. `set_sound` and `replace_sound`
+Documents use schema 33 in database schema 39. `set_sound` and `replace_sound`
 take an `id` and complete `event`; `delete_sound` takes its `id`.
 Events require a qualified source, root owner,
 natural-rate mapping, contained selection plus sample offset, explicit gain,
@@ -93,6 +93,38 @@ route when changing label, gain or endpoint policy. Changing a routed recipe,
 mapping, owner or offset requires `replace_sound`, the explicit reversible reset
 of its retained routing. Root Split, temporal occurrence edits and Repeat/Retime
 sound transforms remain guarded. See [root sound events](SOUND_EVENTS.md#persisted-root-ripple-edits).
+
+### Node gain and mute
+
+`set_audio_treatments` replaces one node's complete bounded treatment recipe.
+The occurrence form uses `edit: { "type": "set_audio_treatments", "treatments": ... }`
+and isolates the selected play atomically. Preserve existing envelopes and mute
+ranges when constructing a trim adjustment. This command does not change timing,
+raw-audio lineage, source admission or placed sound recipes.
+
+```json
+{
+  "command": "set_audio_treatments",
+  "node": "NODE_ID_FROM_DUMP",
+  "treatments": {
+    "order": ["clip_gain"],
+    "clip_gain": {
+      "trim": -6000,
+      "muted": false,
+      "envelopes": [],
+      "mute_ranges": []
+    }
+  }
+}
+```
+
+Trim is integer millidecibels. Zero remains an explicitly configured unity stage;
+`muted: true` is distinct from finite attenuation and Hold silence policy. Clear
+the complete stage with `treatments: { "order": [], "clip_gain": null }`.
+See [gain recipes and owner clocks](AUDIO_GAIN.md) for envelopes and bounds.
+`inspect-audio <package> --samples <START> <END> --authored-bus` returns at most
+256 canonical samples after node/root-sound gain and before limiting. Existing
+raw, time-mapped and edge-only inspection stages retain their meanings.
 
 ### Hold audio policy
 
@@ -794,18 +826,20 @@ future-schema read-only inspection still needs a compatibility implementation.
 
 ## Schema migration
 
-Database schemas 1 through 37 return `MigrationRequired` when opened. Upgrade explicitly:
+Database schemas 1 through 38 return `MigrationRequired` when opened. Upgrade explicitly:
 
 ```sh
 cargo run --locked -p deadpan-cli -- project migrate /tmp/example.deadpan
 ```
 
 Migration holds the project writer lock, keeps a consistent SQLite backup under
-`Snapshots/before-schema-38-*.sqlite`, named for the destination schema, and upgrades a separate candidate. It
+`Snapshots/before-schema-39-*.sqlite`, named for the destination schema, and upgrades a separate candidate. It
 replays all commands, undo/redo revisions, and abandoned branches with their
 original revision IDs. Every snapshot and forward/inverse transaction is checked
 against its strict original schema meaning. Migration goes directly to database
-schema 38 and core document schema 32. Database-37 replays frozen core 31,
+schema 39 and core document schema 33. Database-38 replays frozen core 32,
+including direct/occurrence Hold audio setters, while rejecting modern node
+treatments and gain setters. Database-37 replays frozen core 31,
 retaining exact sound allowances in snapshots and both patch directions. It
 rejects direct and occurrence `set_hold_audio` requests, even when forged modern
 patches and snapshots agree. Database-36 replays frozen core 30,

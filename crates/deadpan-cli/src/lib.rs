@@ -37,7 +37,7 @@ const HELP: &str = "Deadpan headless commands:
   project relink-original <project.deadpan> <blake3-digest> <absolute-source> --expected-version <N>
   inspect-plan <project.deadpan> [--frame <N>]
   inspect-plan <project.deadpan> --audio-samples <START> <END>
-  inspect-audio <project.deadpan> --samples <START> <END> [--time-mapped | --edge-faded | --limited]
+  inspect-audio <project.deadpan> --samples <START> <END> [--time-mapped | --edge-faded | --authored-bus | --limited]
   inspect-audio-domain <project.deadpan> --at <PROBE> --samples <START> <END>
   inspect-audio-definition <project.deadpan> (--node <ID> | --repeat-default <ID> | --repeat-gap <ID>) --samples <START> <END> [--revision <ID>]
   inspect-audio-placement <project.deadpan> (--node <ID> | --repeat-default <ID> | --repeat-gap <ID>) --clock <clock.json> --samples <START> <END> [--revision <ID>]
@@ -48,7 +48,7 @@ const HELP: &str = "Deadpan headless commands:
 Creation defaults to a provisional 1920x1080, 30 fps presentation basis.
 Document dumps are inspection output; SQLite remains authoritative.
 Original retention preserves complete bytes; stream qualification and authored import remain separate.
-Audio inspection returns at most 256 stereo source samples before effects and mastering.
+Audio inspection returns at most 256 stereo samples at the explicitly selected processing stage.
 Domain inspection reads raw physical context; signed START/END use its captured root grid.
 Definition inspection reads a local-zero point grid, not final timeline allocation.
 Placement inspection evaluates the selected revision's recipe on an explicit signed root clock.";
@@ -426,6 +426,14 @@ fn run(arguments: &[String]) -> Result<(), CliError> {
             end,
             "--edge-faded",
         ]
+        | [
+            "inspect-audio",
+            path,
+            "--samples",
+            start,
+            end,
+            "--authored-bus",
+        ]
         | ["inspect-audio", path, "--samples", start, end, "--limited"] => {
             let start = start
                 .parse::<i64>()
@@ -443,6 +451,12 @@ fn run(arguments: &[String]) -> Result<(), CliError> {
             let cancelled = std::sync::atomic::AtomicBool::new(false);
             let block = if arguments.last() == Some(&"--limited") {
                 serde_json::to_value(session.read_limited(
+                    deadpan_core::AudioSample(start),
+                    frames,
+                    &cancelled,
+                )?)?
+            } else if arguments.last() == Some(&"--authored-bus") {
+                serde_json::to_value(session.read_authored_bus(
                     deadpan_core::AudioSample(start),
                     frames,
                     &cancelled,

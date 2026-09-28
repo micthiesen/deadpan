@@ -66,6 +66,7 @@ fn source(rate: FrameRate, duration: i64) -> BeatNode {
     BeatNode {
         framing: None,
         label: "Original samples".into(),
+        audio_treatments: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Source {
             source: SourceNode {
@@ -97,6 +98,7 @@ fn repeat(child: &str, plays: u32) -> BeatNode {
     BeatNode {
         framing: None,
         label: "Repeated source".into(),
+        audio_treatments: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Repeat {
             child: id(child),
@@ -110,6 +112,7 @@ fn partition(child: &str, selected: Range<i64>) -> BeatNode {
     BeatNode {
         framing: None,
         label: "Retained allocation".into(),
+        audio_treatments: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Retime {
             child: id(child),

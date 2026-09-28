@@ -610,6 +610,7 @@ fn grouping_preserves_content_but_removed_host_has_explicit_loss() {
 #[test]
 fn nested_retimes_preserve_exact_fractions_and_report_crop_loss() {
     let retime = |child: &str, frames, start, end| BeatNode {
+        audio_treatments: Default::default(),
         framing: None,
         audio_edges: Default::default(),
         label: "Retime".into(),
@@ -955,6 +956,7 @@ fn named_source_and_authored_local_marks_require_explicit_repeat_scope() {
                 nodes: BTreeMap::from([(
                     node("source"),
                     BeatNode {
+                        audio_treatments: Default::default(),
                         framing: None,
                         audio_edges: Default::default(),
                         label: "Source".into(),

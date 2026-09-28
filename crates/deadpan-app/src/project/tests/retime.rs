@@ -207,6 +207,7 @@ fn nested_scope_and_split_partition_are_preserved_by_retime() {
     let path = scratch.path().join("fragment.deadpan");
     let mut store = seed_holds(&path, &[]);
     let fragment = BeatNode {
+        audio_treatments: Default::default(),
         label: "Fragment".into(),
         audio_edges: Default::default(),
         framing: None,

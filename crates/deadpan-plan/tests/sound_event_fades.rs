@@ -73,6 +73,7 @@ fn document(parts: &[(i64, bool)], rate: u32) -> ProjectDocument {
             label: name.clone(),
             kind,
             framing: None,
+            audio_treatments: Default::default(),
             audio_edges: Default::default()
         });
     }
@@ -109,6 +110,7 @@ fn custom_allowances_select_one_contribution_and_exact_repeat_issuers() {
     wire["nodes"]["repeat"] = json!(BeatNode {
         label: "Three silent plays".into(),
         framing: None,
+        audio_treatments: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Repeat {
             child: node("part0"),

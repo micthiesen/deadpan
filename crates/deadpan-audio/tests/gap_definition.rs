@@ -90,6 +90,7 @@ fn document(rate: FrameRate, recipe: Option<HoldRecipe>, revision: &str) -> Proj
     let child = BeatNode {
         framing: None,
         label: "Audible child that is not the gap".into(),
+        audio_treatments: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Source {
             source: SourceNode {
@@ -106,6 +107,7 @@ fn document(rate: FrameRate, recipe: Option<HoldRecipe>, revision: &str) -> Proj
     let repeat = BeatNode {
         framing: None,
         label: "One play, configured gap".into(),
+        audio_treatments: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Repeat {
             child: id("child"),

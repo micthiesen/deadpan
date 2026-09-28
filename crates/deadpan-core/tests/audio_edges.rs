@@ -119,6 +119,7 @@ fn source_and_gap_choices_are_kind_checked_and_retained_when_not_audible() {
                 nodes: BTreeMap::from([(
                     id("source"),
                     BeatNode {
+                        audio_treatments: Default::default(),
                         framing: None,
                         label: "Unvoiced source".into(),
                         kind: NodeKind::Source {

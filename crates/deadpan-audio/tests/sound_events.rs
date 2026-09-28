@@ -144,6 +144,7 @@ fn many_original_dependencies(count: u32, routed: bool) -> Arc<RenderPlan> {
             BeatNode {
                 label: name.clone(),
                 framing: None,
+                audio_treatments: Default::default(),
                 audio_edges: Default::default(),
                 kind: NodeKind::Source {
                     source: SourceNode {
@@ -174,6 +175,7 @@ fn many_original_dependencies(count: u32, routed: bool) -> Arc<RenderPlan> {
         BeatNode {
             label: "Complete Original processing history".into(),
             framing: None,
+            audio_treatments: Default::default(),
             audio_edges: Default::default(),
             kind: NodeKind::Retime {
                 child: node("inputs"),

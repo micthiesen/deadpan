@@ -34,10 +34,14 @@ impl LegacyBeatNode {
     }
 
     fn project(node: &BeatNode) -> Option<Self> {
+        if !node.audio_treatments.is_empty() {
+            return None;
+        }
         if node.framing.is_some() {
             return None;
         }
         let old = crate::legacy_v8::LegacyBeatNode::project(&BeatNode {
+            audio_treatments: Default::default(),
             framing: None,
             label: node.label.clone(),
             kind: node.kind.clone(),

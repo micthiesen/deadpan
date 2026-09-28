@@ -1,0 +1,81 @@
+import hashlib
+import json
+import os
+from pathlib import Path
+import re
+import subprocess
+import sys
+import time
+from urllib.parse import unquote
+
+root = Path('/Users/michael/Code/deadpan')
+scratch = Path(__file__).parent
+old = json.loads((scratch / 'tests-workspace.json').read_text())
+build = json.loads((scratch / 'tests-artifacts.json').read_text())
+assert old['exit_code'] == 101 and build['exit_code'] == 0
+old_sources = json.loads((scratch / ('source-' + old['source_manifest_sha256'] + '.json')).read_text())
+new_sources = json.loads((scratch / ('source-' + build['source_manifest_sha256'] + '.json')).read_text())
+assert old_sources.keys() == new_sources.keys()
+changed = [name for name in old_sources if old_sources[name] != new_sources[name]]
+assert changed == ['crates/deadpan-core/tests/document.rs'], changed
+
+completed = {}
+current = None
+for line in (scratch / 'tests-workspace.log').read_text().splitlines():
+    match = re.search(r'Running .+ \((target/debug/deps/[^)]+)\)', line)
+    if match:
+        current = str((root / match.group(1)).resolve())
+    result = re.search(r'test result: (ok|FAILED)\. (\d+) passed; (\d+) failed; (\d+) ignored', line)
+    if result:
+        assert current is not None and current not in completed
+        completed[current] = {'status': result[1], 'passed': int(result[2]),
+                              'failed': int(result[3]), 'ignored': int(result[4])}
+        current = None
+assert current is None
+assert sum(value['status'] == 'FAILED' for value in completed.values()) == 1
+
+artifacts = {}
+finished = False
+for line in (scratch / 'tests-artifacts.log').read_text().splitlines():
+    if not line.startswith('{'):
+        continue
+    item = json.loads(line)
+    if item.get('reason') == 'build-finished':
+        finished = item['success']
+    if (item.get('reason') != 'compiler-artifact' or not item.get('executable')
+            or not item['profile']['test']):
+        continue
+    executable = str(Path(item['executable']).resolve())
+    assert executable not in artifacts
+    package = unquote(item['package_id'].split('#', 1)[0].removeprefix('path+file://'))
+    assert Path(package).is_relative_to(root), package
+    artifacts[executable] = {'package': package, 'target': item['target']['name'],
+                            'source': item['target']['src_path'], 'fresh': item['fresh'],
+                            'sha256': hashlib.sha256(Path(executable).read_bytes()).hexdigest()}
+assert finished and set(completed) <= set(artifacts)
+selected = [path for path in artifacts if completed.get(path, {}).get('status') != 'ok']
+for path, result in completed.items():
+    if result['status'] == 'ok':
+        assert artifacts[path]['fresh'], path
+selected.sort(key=lambda path: (completed.get(path, {}).get('status') != 'FAILED',
+                                artifacts[path]['package'], artifacts[path]['target'], path))
+inventory = {'source_changes_since_first_run': changed, 'completed': completed,
+             'artifacts': artifacts, 'selected': selected, 'results': []}
+inventory_path = scratch / 'resume-inventory.json'
+inventory_path.write_text(json.dumps(inventory, indent=2) + '\n')
+print(f'Resuming {len(selected)} test targets; retaining {len(artifacts) - len(selected)} completed targets.', flush=True)
+failed = False
+environment = dict(os.environ, DEADPAN_FFMPEG_PREFIX='/tmp/deadpan-ui-ffmpeg/prefix')
+for path in selected:
+    artifact = artifacts[path]
+    assert hashlib.sha256(Path(path).read_bytes()).hexdigest() == artifact['sha256']
+    print(f'Running {artifact["package"]}::{artifact["target"]} ({path})', flush=True)
+    started = time.monotonic()
+    result = subprocess.run([path], cwd=artifact['package'], env=environment)
+    inventory['results'].append({'executable': path, 'exit_code': result.returncode,
+                                 'seconds': time.monotonic() - started})
+    inventory_path.write_text(json.dumps(inventory, indent=2) + '\n')
+    if result.returncode:
+        failed = True
+        print(f'Target failed with exit {result.returncode}; continuing independent remaining targets.', flush=True)
+sys.exit(1 if failed else 0)

@@ -59,6 +59,7 @@ fn source(rate: FrameRate, frames: i64, selected: Range<i64>, offset: i64) -> Be
     let audio = audio(selected.start, selected.end);
     BeatNode {
         framing: None,
+        audio_treatments: Default::default(),
         audio_edges: Default::default(),
         label: "Original speech".into(),
         kind: NodeKind::Source {
@@ -91,6 +92,7 @@ fn hold(frames: i64) -> BeatNode {
 fn retime(child: &str, frames: i64, selected: Range<i64>, pitch: PitchPolicy) -> BeatNode {
     BeatNode {
         framing: None,
+        audio_treatments: Default::default(),
         audio_edges: Default::default(),
         label: "Explicit retime".into(),
         kind: NodeKind::Retime {
@@ -120,6 +122,7 @@ fn partition(child: &str, selected: Range<i64>) -> BeatNode {
 fn repeat(child: &str, plays: u32, gap: i64) -> BeatNode {
     BeatNode {
         framing: None,
+        audio_treatments: Default::default(),
         audio_edges: Default::default(),
         label: "Repeated speech".into(),
         kind: NodeKind::Repeat {

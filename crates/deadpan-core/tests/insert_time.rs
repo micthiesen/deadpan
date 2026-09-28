@@ -29,6 +29,7 @@ fn recipe(frames: i64) -> HoldRecipe {
 }
 fn source(frames: i64) -> BeatNode {
     BeatNode {
+        audio_treatments: Default::default(),
         framing: None,
         label: "Original".into(),
         kind: NodeKind::Source {
@@ -569,6 +570,7 @@ fn sequence_interiors_and_root_composite_seams_preserve_their_owners() {
     // A fully preceding gap-free nested scope is not shifted and is safe.
     edit(&nested, insertion(&nested, "suffix", 2, 1));
     let repeat = |gap| BeatNode {
+        audio_treatments: Default::default(),
         framing: None,
         label: "Repeat".into(),
         audio_edges: Default::default(),
@@ -620,6 +622,7 @@ fn composite_seam_moves_root_marks_once_and_retains_occurrence_and_source_clocks
             (
                 "repeat",
                 BeatNode {
+                    audio_treatments: Default::default(),
                     label: "Repeated Original".into(),
                     framing: None,
                     audio_edges: Default::default(),
@@ -705,6 +708,7 @@ fn billion_play_seam_insertion_keeps_one_step_per_owned_recipe() {
             (
                 "repeat",
                 BeatNode {
+                    audio_treatments: Default::default(),
                     label: "Repeat".into(),
                     framing: None,
                     audio_edges: Default::default(),

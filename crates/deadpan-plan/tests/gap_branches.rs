@@ -83,6 +83,7 @@ fn fixture(plays: u32, branches: &[(u32, &str)]) -> ProjectDocument {
                     )
                     .unwrap(),
                 ),
+                audio_treatments: Default::default(),
                 audio_edges: AudioEdgePolicies {
                     repeat_gap_start: AudioEdgePolicy::Hard,
                     ..Default::default()
@@ -112,6 +113,7 @@ fn fixture(plays: u32, branches: &[(u32, &str)]) -> ProjectDocument {
             BeatNode {
                 label: "Nested".into(),
                 framing: None,
+                audio_treatments: Default::default(),
                 audio_edges: Default::default(),
                 kind: NodeKind::Repeat {
                     child: id("branch-hold"),

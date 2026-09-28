@@ -56,6 +56,7 @@ fn source_audio() -> SourceAudio {
 fn source(frames: i64, mapping: SourceAudioMapping, offset: i64) -> BeatNode {
     BeatNode {
         framing: None,
+        audio_treatments: Default::default(),
         audio_edges: Default::default(),
         label: "Original audio".into(),
         kind: NodeKind::Source {
@@ -88,6 +89,7 @@ fn hold(frames: i64) -> BeatNode {
 fn retime(child: &str, frames: i64, start: i64, end: i64, pitch: PitchPolicy) -> BeatNode {
     BeatNode {
         framing: None,
+        audio_treatments: Default::default(),
         audio_edges: Default::default(),
         label: "Retime".into(),
         kind: NodeKind::Retime {
@@ -103,6 +105,7 @@ fn retime(child: &str, frames: i64, start: i64, end: i64, pitch: PitchPolicy) ->
 fn repeat(child: &str, plays: u32, gap: i64) -> BeatNode {
     BeatNode {
         framing: None,
+        audio_treatments: Default::default(),
         audio_edges: Default::default(),
         label: "Repeat".into(),
         kind: NodeKind::Repeat {
@@ -939,6 +942,7 @@ fn half_sample_repeat_gaps_are_assigned_once_and_have_no_trailing_gap() {
 fn hold_policies_and_absent_source_audio_remain_distinct() {
     let still = BeatNode {
         framing: None,
+        audio_treatments: Default::default(),
         audio_edges: Default::default(),
         label: "Still".into(),
         kind: NodeKind::Source {

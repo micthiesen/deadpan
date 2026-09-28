@@ -58,6 +58,7 @@ fn fixture(root: &Path) -> Result<(PathBuf, ProjectStore)> {
     };
     let retime = |child, duration, start, end| -> Result<BeatNode> {
         Ok(BeatNode {
+            audio_treatments: Default::default(),
             framing: None,
             label: "Retime".into(),
             audio_edges: Default::default(),
@@ -71,6 +72,7 @@ fn fixture(root: &Path) -> Result<(PathBuf, ProjectStore)> {
         })
     };
     let repeat = BeatNode {
+        audio_treatments: Default::default(),
         framing: None,
         label: "Repeat".into(),
         audio_edges: Default::default(),

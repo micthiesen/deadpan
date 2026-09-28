@@ -58,6 +58,7 @@ fn source(rate: FrameRate, duration: i64, selected: Range<i64>) -> BeatNode {
     BeatNode {
         framing: None,
         label: "Measured source".into(),
+        audio_treatments: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Source {
             source: SourceNode {
@@ -89,6 +90,7 @@ fn retime(child: &str, duration: i64, selection: Range<i64>, pitch: PitchPolicy)
     BeatNode {
         framing: None,
         label: "Retime".into(),
+        audio_treatments: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Retime {
             purpose: RetimePurpose::Edit,
@@ -352,6 +354,7 @@ fn all_overridden_repeat_still_renders_its_unheard_default_definition() {
                 BeatNode {
                     framing: None,
                     label: "All plays overridden".into(),
+                    audio_treatments: Default::default(),
                     audio_edges: Default::default(),
                     kind: NodeKind::Repeat {
                         child: id("default-stage"),
@@ -1061,6 +1064,7 @@ fn owned_nested_preserve_uses_edited_room_tone_in_the_same_root_clock() {
                 BeatNode {
                     framing: None,
                     label: "Editable gap".into(),
+                    audio_treatments: Default::default(),
                     audio_edges: Default::default(),
                     kind: NodeKind::Repeat {
                         child: id("a"),

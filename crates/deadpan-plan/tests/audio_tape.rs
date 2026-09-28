@@ -40,6 +40,7 @@ fn source(length: i64) -> BeatNode {
     BeatNode {
         label: "Current source".into(),
         framing: None,
+        audio_treatments: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Source {
             source: SourceNode {
@@ -94,6 +95,7 @@ fn make_plan(rate: FrameRate, source_frames: i64) -> RenderPlan {
             BeatNode {
                 label: "Retained input".into(),
                 framing: None,
+                audio_treatments: Default::default(),
                 audio_edges: Default::default(),
                 kind: NodeKind::Retime {
                     child: id("partition-source"),

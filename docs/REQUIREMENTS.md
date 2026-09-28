@@ -299,13 +299,18 @@ listening acceptance, full mixing and export remain required. No DP or gate is
 promoted. See [native qualification](qualification/native-room-tone-2026-09-27.md).
 
 [Gain recipes and owner clocks](AUDIO_GAIN.md) now provide bounded standalone
-gain/mute evaluation and checked structural clock inspection. The
+gain/mute evaluation and checked structural clock inspection. Core 33/database
+39 now attach those recipes to nodes with direct/occurrence reversible commands,
+frozen core-32 history replay and context-schema-4 treatment evidence. The
+canonical authored bus applies gain after time/pitch and edges, before the
+limiter; `inspect-audio --authored-bus` exposes bounded pre-limiter PCM. The
 [gain design board](design/boards/clip-gain-board-v2.png) defines the next native
-target. These APIs do not yet attach gain to document nodes, change PCM, persist
-gain commands or implement Before/Draft audition. Core 32/database 38 remain
-unchanged; gain envelopes and the complete DP-09 audio workflow remain required.
-See the [gain/clock qualification](qualification/gain-clocks-2026-09-27.md) for
-review corrections and the exact verified boundary.
+target. Native gain authoring, Before/Draft audition, waveform/keyboard/aesthetic
+qualification, full voice processing and the complete DP-09 workflow remain required.
+See the [authored-gain qualification](qualification/authored-gain-2026-09-28.md)
+for review corrections and verification limits, and the
+[earlier gain/clock record](qualification/gain-clocks-2026-09-27.md) for the pure
+recipe/query checkpoint.
 
 [Original and edit audition](PLAYBACK.md) connects immutable qualified originals and
 canonical limited PCM to the native device, with Space Play/Pause, a monitor

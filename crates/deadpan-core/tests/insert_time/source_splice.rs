@@ -202,6 +202,7 @@ fn malformed_splice_is_atomic_for_typed_and_closed_json_callers() {
 fn repeat_or_retime_ancestry_never_silently_changes_scope() {
     for container in [
         BeatNode {
+            audio_treatments: Default::default(),
             label: "Repeat".into(),
             framing: None,
             audio_edges: Default::default(),
@@ -212,6 +213,7 @@ fn repeat_or_retime_ancestry_never_silently_changes_scope() {
             },
         },
         BeatNode {
+            audio_treatments: Default::default(),
             label: "Unity Retime".into(),
             framing: None,
             audio_edges: Default::default(),

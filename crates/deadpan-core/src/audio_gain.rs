@@ -6,9 +6,15 @@
 //! Interior values use Q32 millidecibels; times and segment selection stay exact.
 //! Amplitude conversion, PCM processing and aggregate voice mixing belong to DSP.
 
+mod admission;
 mod json;
 mod numeric;
 mod wire;
+
+pub(crate) use admission::{
+    MAX_ISOLATED_GAIN_RECORDS, invalid, node_map, validate_command, validate_document,
+    validate_nodes, validate_nodes_with_limit,
+};
 
 use std::{error::Error, fmt};
 
@@ -450,13 +456,20 @@ impl EvaluatedGain {
 pub fn validate_audio_treatments<'a>(
     treatments: impl IntoIterator<Item = &'a AudioTreatments>,
 ) -> Result<usize, GainError> {
+    validate_audio_treatments_with_limit(treatments, MAX_GAIN_RECORDS)
+}
+
+fn validate_audio_treatments_with_limit<'a>(
+    treatments: impl IntoIterator<Item = &'a AudioTreatments>,
+    limit: usize,
+) -> Result<usize, GainError> {
     let mut records = 0usize;
     for treatment in treatments {
         treatment.validate()?;
         records = records
             .checked_add(treatment.record_count())
             .ok_or(GainError::Limit)?;
-        if records > MAX_GAIN_RECORDS {
+        if records > limit {
             return Err(GainError::Limit);
         }
     }

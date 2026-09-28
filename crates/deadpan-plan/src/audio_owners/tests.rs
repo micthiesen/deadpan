@@ -714,6 +714,30 @@ fn exhausted_bound_descendants_are_rejected_instead_of_inventing_a_clock() {
             "owner coordinate is outside its allocated interval"
         ))
     ));
+    let gain = plan
+        .audio_gain_owners(AudioSample(0)..AudioSample(3), Default::default())
+        .unwrap();
+    assert_eq!(gain.spans().len(), 1);
+    assert_eq!(gain.spans()[0].support(), AudioOwnerSupport::Inactive);
+    assert_eq!(gain.spans()[0].owners().len(), 1);
+    assert_eq!(gain.spans()[0].owners()[0].instance().node, id("root"));
+}
+
+#[test]
+fn gain_query_does_not_treat_invalid_current_coordinates_as_inactive_support() {
+    let doc = document(48_000, &["voice"], vec![("voice", hold(3))]);
+    let plan = RenderPlan::compile(&doc).unwrap();
+    let mut seed = Walk::root(&plan).unwrap();
+    seed.allow_inactive = true;
+    // Only retained bound support may be inactive. An inconsistent current
+    // walk remains an error even when the caller requests gain-support spans.
+    seed.extent = ratio(1, 1)..ratio(3, 1);
+    assert!(matches!(
+        query(&plan, 0..1, Default::default(), seed, AudioSample),
+        Err(PlanError::InvalidPlan(
+            "owner coordinate is outside its allocated interval"
+        ))
+    ));
 }
 
 #[test]
@@ -1018,6 +1042,7 @@ fn selected_source_resume_retains_owner_clock_and_rejects_exhausted_selection() 
     let source = BeatNode {
         label: "Selected Original audio".into(),
         framing: None,
+        audio_treatments: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Source {
             source: SourceNode {
@@ -1117,4 +1142,49 @@ fn selected_source_resume_retains_owner_clock_and_rejects_exhausted_selection() 
             "owner coordinate is outside its allocated interval"
         ))
     ));
+    let gain = plan
+        .audio_gain_owners(AudioSample(1)..AudioSample(5), Default::default())
+        .unwrap();
+    assert_eq!(gain.spans().len(), 2);
+    assert_eq!(gain.spans()[0].samples(), AudioSample(1)..AudioSample(3));
+    assert_eq!(gain.spans()[0].support(), AudioOwnerSupport::Active);
+    assert_eq!(gain.spans()[1].samples(), AudioSample(3)..AudioSample(5));
+    assert_eq!(gain.spans()[1].support(), AudioOwnerSupport::Inactive);
+    assert_eq!(gain.spans()[1].owners().len(), 1);
+    assert_eq!(gain.spans()[1].owners()[0].instance().node, id("root"));
+}
+
+#[test]
+fn treatments_are_checked_plan_owners_and_default_gap_never_duplicates_repeat_gain() {
+    use deadpan_core::{AudioTreatments, ClipGain, GainDb};
+    let treatment = AudioTreatments::from_clip_gain(
+        ClipGain::new(GainDb::new(3000).unwrap(), false, vec![], vec![]).unwrap(),
+    );
+    let mut repeated = repeat("voice", 2, 2);
+    repeated.audio_treatments = treatment.clone();
+    let doc = document(
+        48_000,
+        &["repeat"],
+        vec![("voice", hold(2)), ("repeat", repeated)],
+    );
+    let plan = RenderPlan::compile(&doc).unwrap();
+    assert!(plan.has_audio_treatments());
+    let query = plan
+        .audio_gain_owners(AudioSample(2)..AudioSample(4), Default::default())
+        .unwrap();
+    let owners = query.spans()[0].owners();
+    assert_eq!(owners.len(), 3);
+    assert_eq!(owners[1].treatments(), Some(&treatment));
+    assert_eq!(owners[2].kind(), AudioOwnerKind::DefaultGap);
+    assert_eq!(owners[2].treatments(), None);
+    let frozen =
+        RenderPlan::compile_audio_context(&FrozenAudioContext::capture(&doc).unwrap()).unwrap();
+    assert!(frozen.has_audio_treatments());
+    let retained = frozen
+        .audio_gain_owners(AudioSample(2)..AudioSample(4), Default::default())
+        .unwrap();
+    let owner = &retained.spans()[0].owners()[1];
+    assert!(owner.belongs_to(&frozen));
+    assert!(!owner.belongs_to(&plan));
+    assert_eq!(owner.treatments(), Some(&treatment));
 }

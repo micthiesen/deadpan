@@ -46,6 +46,7 @@ fn document(hold_start: i64) -> ProjectDocument {
     let source = |frames| BeatNode {
         framing: None,
         label: "Synthetic input region".into(),
+        audio_treatments: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Source {
             source: SourceNode {
@@ -79,6 +80,7 @@ fn document(hold_start: i64) -> ProjectDocument {
             BeatNode {
                 framing: None,
                 label: "Whole history".into(),
+                audio_treatments: Default::default(),
                 audio_edges: Default::default(),
                 kind: NodeKind::Retime {
                     child: id("input"),

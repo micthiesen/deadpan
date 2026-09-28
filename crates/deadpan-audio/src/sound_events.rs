@@ -26,9 +26,26 @@ impl StageAudio {
         start: AudioSample,
         frames: u32,
         control: WorkControl<'_>,
+        authored_gain: bool,
     ) -> Result<ReadBlock, StageAudioError> {
         if self.plan.sounds().is_empty() {
-            return self.read_controlled(provider, start, frames, control, true, 0);
+            if !authored_gain || !self.plan.has_audio_treatments() {
+                return self.read_controlled(provider, start, frames, control, true, 0);
+            }
+            // The f64 gain output coexists with the Original f32 buffer, which
+            // is reused for final conversion under the common residency cap.
+            let reservation = u64::from(frames) * 3;
+            self.make_room(reservation, false, control)?;
+            self.active_frames += reservation;
+            let result = (|| {
+                let mut original =
+                    self.read_controlled(provider, start, frames, control, true, 0)?;
+                let gained = authored_gain::original_samples(&self.plan, &original, control, true)?;
+                authored_gain::write_finite_samples(&mut original.samples, gained)?;
+                Ok(original)
+            })();
+            self.active_frames -= reservation;
+            return result;
         }
         let plan = Arc::clone(&self.plan);
         let mut voices = Vec::with_capacity(plan.sounds().len());
@@ -80,7 +97,7 @@ impl StageAudio {
             // All sound dependencies and static work are admitted first. The
             // Original's own preflight then sees the same cumulative budget.
             let original = self.read_controlled(provider, start, frames, control, true, 0)?;
-            self.render_root_sounds(provider, original, voices, control)
+            self.render_root_sounds(provider, original, voices, control, authored_gain)
         })();
         self.active_frames -= reservation;
         result
@@ -92,12 +109,10 @@ impl StageAudio {
         mut original: ReadBlock,
         voices: Vec<PreparedSoundQuery<'_>>,
         control: WorkControl<'_>,
+        authored_gain: bool,
     ) -> Result<ReadBlock, StageAudioError> {
-        let mut sum: Vec<_> = original
-            .samples
-            .iter()
-            .map(|s| [f64::from(s[0]), f64::from(s[1])])
-            .collect();
+        let mut sum =
+            authored_gain::original_samples(&self.plan, &original, control, authored_gain)?;
         for PreparedSoundQuery {
             voice,
             input,
@@ -144,7 +159,6 @@ impl StageAudio {
             if block.samples.len() != sum.len() {
                 return Err(PlanError::InvalidPlan("incomplete authored sound PCM").into());
             }
-            let gain = 10.0_f64.powf(f64::from(event.gain_millidecibels) / 20_000.0);
             let edges = fades.into_iter().flat_map(|span| {
                 (0..span.samples.end.0 - span.samples.start.0).map(move |index| {
                     crate::edges::edge_gain(
@@ -155,30 +169,34 @@ impl StageAudio {
                     )
                 })
             });
-            for ((total, sample), edge) in sum.iter_mut().zip(block.samples).zip(edges) {
+            for (offset, ((total, sample), edge)) in
+                sum.iter_mut().zip(block.samples).zip(edges).enumerate()
+            {
+                let at = AudioSample(
+                    original
+                        .start
+                        .0
+                        .checked_add(i64::try_from(offset).map_err(|_| StageAudioError::Range)?)
+                        .ok_or(StageAudioError::Range)?,
+                );
+                let gain = authored_gain::sound_gain(
+                    &self.plan,
+                    at,
+                    event.gain_millidecibels,
+                    control,
+                    authored_gain,
+                )?;
+                // Existing edges remain f32 and precede one conversion of the
+                // complete sound-event plus root dB sum to amplitude.
+                let gained = gain.apply(sample.map(|value| value * edge))?;
                 for channel in 0..2 {
-                    if !sample[channel].is_finite() {
-                        return Err(PreparationError::InvalidSamples.into());
-                    }
-                    // Preserve the documented edge-before-gain order and make
-                    // only one f32 conversion after the ordered bus sum.
-                    total[channel] += f64::from(sample[channel] * edge) * gain;
+                    total[channel] += gained[channel];
                 }
             }
             original.suppressed = intersect_suppression(&original.suppressed, &block.suppressed);
             original.dependencies.extend(block.dependencies);
         }
-        original.samples = sum
-            .into_iter()
-            .map(|frame| {
-                let value = [frame[0] as f32, frame[1] as f32];
-                if value.iter().any(|sample| !sample.is_finite()) {
-                    Err(PreparationError::InvalidSamples)
-                } else {
-                    Ok(value)
-                }
-            })
-            .collect::<Result<Vec<_>, _>>()?;
+        authored_gain::write_finite_samples(&mut original.samples, sum)?;
         // Exhaustion belongs to each contribution. There is no common source
         // endpoint mask after adding independent sound voices.
         original.exhausted.clear();

@@ -124,6 +124,7 @@ fn composite_initial() -> Result<ProjectDocument> {
         (
             repeat,
             BeatNode {
+                audio_treatments: Default::default(),
                 framing: None,
                 label: "Repeat".into(),
                 audio_edges: AudioEdgePolicies::default(),

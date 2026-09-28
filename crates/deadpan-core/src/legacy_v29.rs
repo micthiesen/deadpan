@@ -68,6 +68,7 @@ struct LegacyBeatNode {
 impl LegacyBeatNode {
     fn upgrade(self) -> BeatNode {
         BeatNode {
+            audio_treatments: Default::default(),
             framing: self.framing,
             label: self.label,
             audio_edges: self.audio_edges,
@@ -105,6 +106,9 @@ impl LegacyBeatNode {
     }
 
     fn project(node: &BeatNode) -> Option<Self> {
+        if !node.audio_treatments.is_empty() {
+            return None;
+        }
         Some(Self {
             framing: node.framing.clone(),
             label: node.label.clone(),
@@ -1110,8 +1114,10 @@ pub fn validate_request_context(
             Command::ReplaceSound { .. }
                 | Command::SetSoundAllowance { .. }
                 | Command::SetHoldAudio { .. }
+                | Command::SetAudioTreatments { .. }
                 | Command::EditOccurrence {
-                    edit: OccurrenceEdit::SetHoldAudio { .. },
+                    edit: OccurrenceEdit::SetHoldAudio { .. }
+                        | OccurrenceEdit::SetAudioTreatments { .. },
                     ..
                 }
         )
@@ -1156,7 +1162,8 @@ fn preserves_sound_clocks(command: &Command) -> bool {
             | OccurrenceEdit::Rename { .. }
             | OccurrenceEdit::SetAudioEdge { .. }
             | OccurrenceEdit::SetFraming { .. } => true,
-            OccurrenceEdit::SetHoldAudio { .. }
+            OccurrenceEdit::SetAudioTreatments { .. }
+            | OccurrenceEdit::SetHoldAudio { .. }
             | OccurrenceEdit::Split { .. }
             | OccurrenceEdit::Insert { .. }
             | OccurrenceEdit::Delete
@@ -1175,7 +1182,8 @@ fn preserves_sound_clocks(command: &Command) -> bool {
             | OccurrenceEdit::IsolateGap { .. }
             | OccurrenceEdit::ClearGapOverride { .. } => false,
         },
-        Command::SetHoldAudio { .. }
+        Command::SetAudioTreatments { .. }
+        | Command::SetHoldAudio { .. }
         | Command::SetSoundAllowance { .. }
         | Command::ReplaceSound { .. }
         | Command::InsertTime { .. }

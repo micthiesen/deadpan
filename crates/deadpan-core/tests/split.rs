@@ -25,6 +25,7 @@ fn hold(frames: i64) -> BeatNode {
 }
 fn repeat(child: &str, plays: u32) -> BeatNode {
     BeatNode {
+        audio_treatments: Default::default(),
         framing: None,
         label: "Repeat".into(),
         kind: NodeKind::Repeat {
@@ -37,6 +38,7 @@ fn repeat(child: &str, plays: u32) -> BeatNode {
 }
 fn retime(child: &str, start: i64, end: i64, output: i64, purpose: RetimePurpose) -> BeatNode {
     BeatNode {
+        audio_treatments: Default::default(),
         framing: None,
         label: "Retime".into(),
         kind: NodeKind::Retime {

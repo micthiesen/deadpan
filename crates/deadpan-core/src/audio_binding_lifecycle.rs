@@ -523,6 +523,7 @@ mod tests {
         document.nodes.insert(
             node("repeat"),
             BeatNode {
+                audio_treatments: Default::default(),
                 framing: None,
                 label: "Repeat".into(),
                 audio_edges: Default::default(),
@@ -638,6 +639,7 @@ mod tests {
 
     fn capture_repeat(child: &str, count: u32, gap_duration: i64) -> BeatNode {
         BeatNode {
+            audio_treatments: Default::default(),
             framing: None,
             label: "repeat".into(),
             audio_edges: Default::default(),
@@ -823,6 +825,7 @@ mod tests {
     #[test]
     fn composite_capture_moves_preserve_output_but_keeps_intrinsic_recipes_on_input_clock() {
         let preserve = |child, duration, start, end| BeatNode {
+            audio_treatments: Default::default(),
             framing: None,
             label: "preserve".into(),
             audio_edges: Default::default(),

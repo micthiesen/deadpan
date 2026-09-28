@@ -84,16 +84,21 @@ Reopen the saved range; replacing it from the captured copy is explicit.
 Preparation successes and failures carry request/session/revision identities.
 Waveforms, occurrence controls and acoustic qualification remain open.
 
-[Gain contracts](../AUDIO_GAIN.md) add standalone bounded dB/mute recipes and
-plan-bound owner-clock queries as the next audio foundation. There is no new
-persisted node field, gain command, PCM stage or native editor yet. Use the
+[Gain contracts](../AUDIO_GAIN.md) add persisted node treatments, direct and
+occurrence setters, exact owner clocks and canonical post-mapping PCM gain.
+Core 33/database 39 replay database 38 through the closed core-32 adapter.
+Context schema 4 retains a sparse treatment map separately from timing-only
+`FrozenAudioLayout`. CLI `inspect-audio --authored-bus` exposes the pre-limiter
+result. Native gain controls and Before/Draft audition remain open. Use the
 [gain board](../design/boards/clip-gain-board-v2.png) before implementing its UI.
 Keep gain after complete time/pitch mapping and edges, with exact independent
-owner clocks and unchanged continuous Preserve history. A future context schema
-retains treatments separately from timing-only `FrozenAudioLayout`; migration
-must freeze core 32/database 38 chronology before admitting gain edits. Inspect
-the integration checklist in that contract rather than treating the exported
-recipe/query APIs as a completed audio operation.
+owner clocks and unchanged continuous Preserve history. Root-owned sounds receive
+only their own gain and root treatments, never an unrelated Source's gain.
+Temporary drafts need explicit content identity and the same delivered sample
+window; a matching base revision alone cannot authorize cache/resume reuse.
+Follow the [native gain integration design](../GAIN_EDITOR_DESIGN.md) for the
+proposal/admission boundary and production-router verification.
+The backend does not complete DP-09 or its native editing workflow.
 
 [Structural speed editing](../RETIME_EDITING.md) exposes `:retime` and
 `:wrap-retime` through exact speed resolution and the native inspector. Preserve

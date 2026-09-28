@@ -168,9 +168,9 @@ display color, editorial effects, playback or an encoded export path.
 
 Every persisted edit, undo, and redo gets a never-reused revision ID. Core inverse patches can restore exact fixture identity; the store rebases them onto fresh revisions to prevent stale commands becoming valid after undo. Store writes use one transaction for the revision, history, and cursor. Keep `.writer.lock` held for the writable store lifetime; read-only inspection and dry runs may coexist. Take live database snapshots through SQLite's backup API, never copy only an open main database file.
 
-Repeat play IDs are scoped by Repeat node and allocation revision, with an ordinal inside that allocation. Preserve surviving IDs through resizing and reorder; allocate fresh IDs for growth and inserted subtrees. Imported initial snapshots reserve their allocation names even after plays are removed. Keep compact runs bounded and never expand a repeat merely to seek. Core schema 32 retains these runs, marks, sparse overrides, generated Hold metadata, independent source mappings, audio edge policies, transparent Retime partitions and owned timing bindings, and binds qualified assets to immutable source receipts. Database schemas 1 through 37 replay the complete chronology directly into the current schema on a consistent copy, compare every legacy snapshot/transaction, and promote through SQLite's backup transaction only after validation. Strict legacy adapters freeze nested provider vocabulary and reject new fields, commands, and unexpected mark or override changes. Preserve the pre-migration backup.
+Repeat play IDs are scoped by Repeat node and allocation revision, with an ordinal inside that allocation. Preserve surviving IDs through resizing and reorder; allocate fresh IDs for growth and inserted subtrees. Imported initial snapshots reserve their allocation names even after plays are removed. Keep compact runs bounded and never expand a repeat merely to seek. Core schema 33 retains these runs, marks, sparse overrides, generated Hold metadata, independent source mappings, audio edge policies, transparent Retime partitions and owned timing bindings, and binds qualified assets to immutable source receipts. Database schemas 1 through 38 replay the complete chronology directly into the current schema on a consistent copy, compare every legacy snapshot/transaction, and promote through SQLite's backup transaction only after validation. Strict legacy adapters freeze nested provider vocabulary and reject new fields, commands, and unexpected mark or override changes. Preserve the pre-migration backup.
 
-Database schema 38 stores core schema 32 and retains operational generation requests,
+Database schema 39 stores core schema 33 and retains operational generation requests,
 plus an optional validated single-Original workflow profile. Use the dedicated
 `create_single_source` / `initialize_prepared_source` path to bind the full measured
 Original, basis and protected baseline atomically. Undo never crosses that baseline;
@@ -254,7 +254,7 @@ Ready bundles alone do not authorize an edit. See [acceptance](docs/GENERATION_A
 See [generated Hold semantics](docs/GENERATED_HOLDS.md).
 
 Original byte ownership is operational and separate from stream readiness.
-Database schema 38 retains content-keyed original records with monotonic location
+Database schema 39 retains content-keyed original records with monotonic location
 versions introduced in schema 10; earlier schemas gain an empty inventory. Use the
 shared descriptor-relative object engine for `Media/Originals` and
 `Media/Generated`. Managed originals try APFS clone, then verified copy; retain
@@ -579,7 +579,7 @@ Database-18 history uses frozen core 12; all earlier mark wires reject fragments
 including empty arrays and null. Database 19 uses frozen core 13, including its
 multi-binding mark vocabulary but excluding Split. Database 20 uses frozen core 14
 including closed direct/occurrence Split identity pools. Database 21 uses frozen
-core 15. Database 22 uses frozen core 16, including closed binding vocabulary but excluding InsertTime. Database 23 uses frozen core 17, excluding framing. Database 24 uses frozen core 18, excluding captured Hold geometry and its setter. Database 25 uses frozen core 19, excluding selected audio placements. Database 26 uses frozen core 20, excluding chronological reanchor steps. Database 27 uses frozen core 21, excluding gap binding maps and nested gap clock/placement vocabulary. Database 28 uses frozen core 22, excluding sparse gap branches and detached gap-clock references. Database 29 uses frozen core 23. Database 30 uses frozen core 24, retaining composite root-seam InsertTime admission but rejecting interiors before composite suffixes. Earlier replays check the stricter physical-suffix admission before modern apply. Database 31 uses frozen core 25, retaining root physical interiors but refusing nested Sequence insertion. Database 32 uses frozen core 26, retaining nested Sequence pause admission while rejecting SpliceSource. Database 33 uses frozen core 27, retaining SpliceSource while rejecting new Retime edits. Database 34 uses frozen core 28, retaining Retime commands but rejecting sound state and commands. Database 35 uses frozen core 29, retaining sound recipes while rejecting routed state, ReplaceSound and formerly forbidden sound-bearing temporal commands. Database 36 uses frozen core 30, retaining sound routes and ReplaceSound with their original contextual admission while rejecting allowance state and commands. Database 37 uses frozen core 31, preserving exact allowances but rejecting direct and occurrence Hold audio setters. Current schema 38 stores core 32. Legacy initial snapshots gain empty audio lineage; replayed copies may
+core 15. Database 22 uses frozen core 16, including closed binding vocabulary but excluding InsertTime. Database 23 uses frozen core 17, excluding framing. Database 24 uses frozen core 18, excluding captured Hold geometry and its setter. Database 25 uses frozen core 19, excluding selected audio placements. Database 26 uses frozen core 20, excluding chronological reanchor steps. Database 27 uses frozen core 21, excluding gap binding maps and nested gap clock/placement vocabulary. Database 28 uses frozen core 22, excluding sparse gap branches and detached gap-clock references. Database 29 uses frozen core 23. Database 30 uses frozen core 24, retaining composite root-seam InsertTime admission but rejecting interiors before composite suffixes. Earlier replays check the stricter physical-suffix admission before modern apply. Database 31 uses frozen core 25, retaining root physical interiors but refusing nested Sequence insertion. Database 32 uses frozen core 26, retaining nested Sequence pause admission while rejecting SpliceSource. Database 33 uses frozen core 27, retaining SpliceSource while rejecting new Retime edits. Database 34 uses frozen core 28, retaining Retime commands but rejecting sound state and commands. Database 35 uses frozen core 29, retaining sound recipes while rejecting routed state, ReplaceSound and formerly forbidden sound-bearing temporal commands. Database 36 uses frozen core 30, retaining sound routes and ReplaceSound with their original contextual admission while rejecting allowance state and commands. Database 37 uses frozen core 31, preserving exact allowances but rejecting direct and occurrence Hold audio setters. Database 38 uses frozen core 32, retaining Hold audio setters while rejecting node audio treatments and their commands. Current schema 39 stores core 33. Legacy initial snapshots gain empty audio lineage; replayed copies may
 establish it. Compare every old projected patch and changed-ID summary exactly
 while retaining complete modern transactions for historical undo/redo.
 
@@ -631,7 +631,7 @@ milestone. Do not run the full gate after each small increment:
 ```sh
 cargo fmt --all -- --check
 cargo clippy --workspace --all-targets --locked -- -D warnings
-cargo test --workspace --locked
+cargo test --workspace --locked --no-fail-fast
 ```
 
 The workspace tests already build and exercise the normal app, CLI and media
@@ -640,6 +640,10 @@ native startup work, and doctor when diagnosing the environment. Preserve both
 base-app and optional `ui-harness` coverage when the app changes; their runtime
 branches differ. CI runs both. Pure backend changes do not require repeating
 unchanged app-feature tests or painted replay.
+
+Keep `--no-fail-fast` on full milestone runs so one failed target does not
+prevent independent targets and doctests from producing their results. The
+command still fails if any target fails; fix and recheck the affected scope.
 
 Keep one owner for Cargo execution. Before starting another command after an
 interruption or quiet output, inspect the existing process and log; a harness
@@ -651,6 +655,22 @@ failure once with useful state diagnostics, fix its cause, then verify; do not
 loop retries until green. Recheck an environment failure only when its relevant
 capability changes. Prefer a Git commit and concise validation record over
 repeated full-tree archives or new copies of gate scripts.
+
+For cross-crate milestones, keep Cargo's package, target and feature selection
+stable and narrow runtime test-name filters, for example
+`cargo test --workspace --locked gain`. This retains the final workspace gate's
+build graph while selecting the relevant assertions. Switching individual `-p`
+or `--test` selections can recompile the large core against different
+Serde/proc-macro dependency builds even when its source is unchanged. Preserve
+those in-progress compilations; batch remaining checks instead of restarting
+them. A small isolated change may still justify a narrower initial build.
+
+After a test-only correction to a failed full run, preserve passing
+targets whose source and Cargo artifacts are unchanged. A bounded continuation
+may use the exact `--no-run --message-format=json` workspace inventory, package
+working directories and required environment; never glob stale target binaries.
+Record complete target coverage, source differences and exits, and run doctests
+through Cargo separately. Do not describe the original failed invocation as green.
 
 Playback real-media tests acquire the shared PCM permit before fixture work and
 retain it through the engine's shared callback until both workers exit. Keep
@@ -1060,10 +1080,18 @@ Gain preparation uses exact fixed owner-output coordinates and independent trim,
 envelopes and mute ranges. Interpolate in dB; never normalize dynamics or use a
 finite attenuation as a mute sentinel. Preserve continuous time/pitch and edge
 processing, then apply gain before mixing/limiting. Owner-clock queries retain
-current outer scopes separately from bound recipe clocks and fail explicitly
-when retained support cannot establish a clock. These standalone APIs do not
-yet authorize a persisted gain edit or change PCM. Keep treatment evidence out
-of timing-only frozen layouts; see [gain contracts](docs/AUDIO_GAIN.md).
+current outer scopes separately from bound recipe clocks. Strict inspection
+rejects missing clock support; the authored query explicitly marks known exhausted
+retained support inactive and requires zero Original PCM there. Root sounds keep
+their own current root gain. Default Repeat gaps never duplicate Repeat gain.
+Persist node recipes through SetAudioTreatments and occurrence isolation; preserve
+raw lineage, sample clocks, curves and configured unity intent. Retain treated
+Partitions through refinement; reject unsupported treated Ungroup. Frozen context
+schema 4 authenticates every nonempty owner recipe separately from timing-only
+layouts; legacy context schemas 1 through 3 reject its field even null or empty.
+Muted cached dependencies remain subject to admission. Native drafts need a distinct
+content identity, captured owner/revision and same delivered-sample window; no
+native gain editor is implemented yet. See [gain contracts](docs/AUDIO_GAIN.md).
 
 Bind retained sample routes only to checked complete providers. `AudioRoutedSignal`
 uses independent source input or an immutable Preserve projection on PointCeil;

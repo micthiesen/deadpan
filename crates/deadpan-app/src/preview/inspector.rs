@@ -203,6 +203,7 @@ mod tests {
     #[test]
     fn hold_facts_and_duration_entry_preserve_actual_policy_and_frame_units() {
         let node = BeatNode {
+            audio_treatments: Default::default(),
             label: "Pause".into(),
             framing: None,
             audio_edges: Default::default(),
@@ -231,6 +232,7 @@ mod tests {
     #[test]
     fn repeat_inspection_is_compact_and_edits_the_existing_repeat() {
         let node = BeatNode {
+            audio_treatments: Default::default(),
             label: "Again".into(),
             framing: None,
             audio_edges: Default::default(),
@@ -265,6 +267,7 @@ mod tests {
     #[test]
     fn retime_entry_uses_the_exact_retained_input_speed_and_current_pitch() {
         let mut node = BeatNode {
+            audio_treatments: Default::default(),
             label: "Delivery".into(),
             framing: None,
             audio_edges: Default::default(),

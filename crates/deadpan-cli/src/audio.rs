@@ -240,6 +240,34 @@ impl ProjectAudioSession {
         )?)
     }
 
+    /// Inspect the canonical bus after authored node and sound gain, before
+    /// limiting. Raw, time-mapped and edge-only inspection retain their order.
+    pub fn read_authored_bus(
+        &mut self,
+        start: AudioSample,
+        frames: u32,
+        cancelled: &AtomicBool,
+    ) -> Result<EdgeFadedBlock, ProjectAudioError> {
+        let end = start
+            .0
+            .checked_add(i64::from(frames))
+            .ok_or(StageAudioError::Range)?;
+        if start.0 < 0
+            || frames == 0
+            || frames > deadpan_audio::MAX_OUTPUT_FRAMES
+            || end > self.plan().audio_duration()?.0
+        {
+            return Err(StageAudioError::Range.into());
+        }
+        Ok(self.stages.prepare_authored_bus(
+            &mut self.sources,
+            start,
+            frames,
+            Duration::from_secs(10),
+            cancelled,
+        )?)
+    }
+
     /// The same canonical limited bus used by audition, with informational gain.
     /// Inspection keeps its 256-frame response limit; preparation includes the
     /// full real halo and shares one deadline across any crossed cache tiles.

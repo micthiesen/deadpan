@@ -231,6 +231,7 @@ fn tape_keeps_repeat_default_and_actual_room_tone_occurrence_scopes_distinct() {
     let repeat = BeatNode {
         framing: None,
         label: "Two RoomTone plays".into(),
+        audio_treatments: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Repeat {
             child: id("room"),

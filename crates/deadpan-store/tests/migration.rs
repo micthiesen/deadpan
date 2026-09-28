@@ -26,6 +26,8 @@ mod audio_reanchors;
 mod composite_insert;
 #[path = "migration/framing.rs"]
 mod framing;
+#[path = "migration/gain.rs"]
+mod gain;
 #[path = "migration/gap_branches.rs"]
 mod gap_branches;
 #[path = "migration/hold_audio.rs"]

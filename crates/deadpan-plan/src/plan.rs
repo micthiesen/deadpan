@@ -47,6 +47,7 @@ pub use audio_fades::{AudioFadeQuery, AudioFadeSpan};
 mod audio_owners;
 pub use audio_owners::{
     AudioOwnerClock, AudioOwnerClockOrigin, AudioOwnerKind, AudioOwnerQuery, AudioOwnerSpan,
+    AudioOwnerSupport,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize)]
@@ -119,6 +120,7 @@ pub struct RenderPlan {
     compiled_sounds: BTreeMap<deadpan_core::SoundId, crate::audio_sound_event::CompiledRootSound>,
     // Frozen admission stays distinct even when its catalog is empty.
     audio_context: bool,
+    has_audio_treatments: bool,
     audio_bindings: deadpan_core::AudioBindingState,
     parents: Vec<Option<usize>>,
 }
@@ -128,6 +130,7 @@ struct PlanNode {
     inspection: NodeInspection,
     kind: CompiledKind,
     audio_edges: deadpan_core::AudioEdgePolicies,
+    audio_treatments: deadpan_core::AudioTreatments,
     framing: Option<deadpan_core::Framing>,
 }
 
@@ -428,6 +431,7 @@ impl RenderPlan {
                 },
                 kind,
                 audio_edges: node.audio_edges,
+                audio_treatments: node.audio_treatments.clone(),
                 framing: node.framing.clone(),
             });
         }
@@ -458,6 +462,10 @@ impl RenderPlan {
             sound_allowances: document.sound_allowances().clone(),
             compiled_sounds: BTreeMap::new(),
             audio_context: false,
+            has_audio_treatments: document
+                .nodes()
+                .values()
+                .any(|node| !node.audio_treatments.is_empty()),
         };
         plan.compiled_sounds = plan.compile_root_sounds()?;
         Ok(plan)

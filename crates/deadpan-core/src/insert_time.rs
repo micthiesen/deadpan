@@ -287,7 +287,7 @@ fn split_node_count(document: &ProjectDocument, target: &NodeId) -> Result<usize
             child,
             purpose: RetimePurpose::Partition,
             ..
-        } if node.framing.is_none() => child,
+        } if node.framing.is_none() && node.audio_treatments.is_empty() => child,
         _ => target,
     };
     Ok(
@@ -503,10 +503,10 @@ fn physical<'a>(
     let mut owner = node;
     let mut start = 0i64;
     let mut partitions = 0usize;
-    let mut framed = false;
+    let mut treated = false;
     loop {
         let node = &document.nodes()[owner];
-        framed |= node.framing.is_some();
+        treated |= node.framing.is_some() || !node.audio_treatments.is_empty();
         let NodeKind::Retime {
             child,
             mapping,
@@ -523,10 +523,10 @@ fn physical<'a>(
         start = start.checked_add(mapping.start().0).ok_or_else(overflow)?;
         owner = child;
     }
-    // A framed Partition is a meaningful retained effect scope. A subsequent
-    // Split must keep it, so modern framing can introduce transparent nesting.
-    // Old unframed nested inputs keep core17's refusal and frozen replay grammar.
-    if partitions > 1 && !framed {
+    // A treated Partition is a meaningful retained effect scope. A subsequent
+    // Split must keep it, so modern treatments can introduce transparent nesting.
+    // Old untreated nested inputs keep core17's refusal and frozen replay grammar.
+    if partitions > 1 && !treated {
         return Err(invalid(
             "pause insertion cannot yet shift unframed nested beats",
         ));

@@ -31,6 +31,7 @@ fn nested_document(path: &Path) -> ProjectStore {
         (
             node("repeat"),
             BeatNode {
+                audio_treatments: Default::default(),
                 label: "repeat".into(),
                 kind: NodeKind::Repeat {
                     child: repeat_body.clone(),
@@ -49,6 +50,7 @@ fn nested_document(path: &Path) -> ProjectStore {
         (
             node("retime"),
             BeatNode {
+                audio_treatments: Default::default(),
                 label: "retime".into(),
                 kind: NodeKind::Retime {
                     child: retime_body.clone(),
