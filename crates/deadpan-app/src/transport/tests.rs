@@ -3,12 +3,98 @@ use super::*;
 mod original;
 mod sound;
 
+#[test]
+fn proposed_updates_and_resume_require_exact_base_draft_and_change_identity() {
+    let mut identity = identity();
+    identity.content = ContentIdentity::Proposed {
+        base_revision: RevisionId::new("captured-base").unwrap(),
+        draft: 41,
+        change: 3,
+    };
+    let domain = Domain::Sequence {
+        rate: FrameRate::new(30, 1).unwrap(),
+        frames: 60,
+    };
+    let window = Window::new(AudioSample(16_000), AudioSample(38_400), false).unwrap();
+    let mut run = Run::with_domain(identity, domain, window, AudioSample(16_000)).unwrap();
+    let (mut feed, _callback) = deadpan_output::channel().unwrap();
+    run.generation = Some(feed.restart(run.sample.0).unwrap());
+    assert_eq!(run.receive(&update(&run, 16_099)).unwrap(), Some(10));
+    let resume = run.resume(10);
+    assert_eq!(
+        resume.sample_for_domain(
+            ContentRef {
+                session: run.session,
+                project: &run.project,
+                revision: &run.revision,
+                content: &run.content,
+            },
+            run.domain(),
+            run.window(),
+            10,
+        ),
+        Some(AudioSample(16_099))
+    );
+    assert!(resume.matches(&update(&run, 16_099)));
+    for content in [
+        ContentIdentity::Committed,
+        ContentIdentity::Proposed {
+            base_revision: RevisionId::new("captured-base").unwrap(),
+            draft: 42,
+            change: 3,
+        },
+        ContentIdentity::Proposed {
+            base_revision: RevisionId::new("captured-base").unwrap(),
+            draft: 41,
+            change: 4,
+        },
+        ContentIdentity::Proposed {
+            base_revision: RevisionId::new("other-base").unwrap(),
+            draft: 41,
+            change: 3,
+        },
+    ] {
+        assert_eq!(
+            resume.sample_for_domain(
+                ContentRef {
+                    session: run.session,
+                    project: &run.project,
+                    revision: &run.revision,
+                    content: &content,
+                },
+                run.domain(),
+                run.window(),
+                10,
+            ),
+            None
+        );
+        let mut stale = update(&run, 17_000);
+        stale.content = content;
+        assert!(!resume.matches(&stale));
+        assert_eq!(run.receive(&stale).unwrap(), None);
+        stale.phase = Phase::Failed;
+        stale.sample = None;
+        stale.generation = None;
+        stale.error = Some("late foreign draft failure".into());
+        assert!(!resume.matches(&stale));
+        assert_eq!(run.receive(&stale).unwrap(), None);
+        assert_eq!(run.sample, AudioSample(16_099));
+        assert_eq!(run.phase, Phase::Playing);
+    }
+    assert_eq!(
+        resume.sample_for(run.session, &run.project, &run.revision, 10),
+        None
+    );
+    assert_eq!(run.receive(&update(&run, 17_000)).unwrap(), Some(10));
+}
+
 fn identity() -> Identity {
     Identity {
         ticket: 7,
         session: 3,
         project: ProjectId::new("project").unwrap(),
         revision: RevisionId::new("revision").unwrap(),
+        content: ContentIdentity::Committed,
     }
 }
 
@@ -46,6 +132,7 @@ fn update(run: &Run, sample: i64) -> Update {
         session: run.session,
         project_id: run.project.clone(),
         revision_id: run.revision.clone(),
+        content: run.content.clone(),
         phase: Phase::Playing,
         sample: Some(AudioSample(sample)),
         generation: run.generation,
@@ -273,9 +360,12 @@ fn loop_laps_map_content_backwards_without_accepting_backwards_delivery() {
     let resume = run.resume(10);
     assert_eq!(
         resume.sample_for_domain(
-            run.session,
-            &run.project,
-            &run.revision,
+            ContentRef {
+                session: run.session,
+                project: &run.project,
+                revision: &run.revision,
+                content: &run.content,
+            },
             run.domain(),
             run.window(),
             10,
@@ -316,9 +406,12 @@ fn resume_checks_window_domain_rate_duration_and_actual_position() {
     let resume = run.resume(10);
     let sample = |domain: &Domain, window: &Window, frame| {
         resume.sample_for_domain(
-            run.session,
-            &run.project,
-            &run.revision,
+            ContentRef {
+                session: run.session,
+                project: &run.project,
+                revision: &run.revision,
+                content: &run.content,
+            },
             domain,
             window,
             frame,
@@ -350,9 +443,12 @@ fn resume_checks_window_domain_rate_duration_and_actual_position() {
     assert_eq!(sample(run.domain(), run.window(), 11), None);
     assert_eq!(
         run.resume(11).sample_for_domain(
-            run.session,
-            &run.project,
-            &run.revision,
+            ContentRef {
+                session: run.session,
+                project: &run.project,
+                revision: &run.revision,
+                content: &run.content,
+            },
             run.domain(),
             run.window(),
             11,

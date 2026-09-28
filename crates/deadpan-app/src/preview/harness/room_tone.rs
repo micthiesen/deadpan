@@ -437,6 +437,7 @@ fn audition(d: &mut Driver<'_>, editor: &Value, revision: &str) -> Result<(), St
             session: run.session,
             project_id: run.project.clone(),
             revision_id: run.revision.clone(),
+            content: run.content.clone(),
             phase: deadpan_playback::Phase::Playing,
             sample: Some(AudioSample(heard)),
             generation: Some(generation),
@@ -543,6 +544,121 @@ fn saved_layout(d: &mut Driver<'_>, source: &SourceAudio) -> Result<(), String> 
         d.capture(&format!(
             "Saved room tone in Hold inspector at {width}x{height}"
         ))?;
+        gain_inspector_reachable(d, width, height)?;
+    }
+    Ok(())
+}
+
+fn gain_inspector_reachable(d: &mut Driver<'_>, width: f32, height: f32) -> Result<(), String> {
+    let revision = d.revision();
+    let nodes = document(d)?.nodes().clone();
+    let editor = editor_state(d);
+    for label in ["−  ·  -", "+  ·  +", "Mute", "Edit envelope… · :gain"] {
+        // Use the accessibility input route, not direct egui memory or scroll
+        // mutation. Normal workspace Tab intentionally cycles visible panes.
+        {
+            let root = d.harness.root();
+            let controls = root
+                .children_recursive()
+                .filter(|node| {
+                    let access = node.accesskit_node();
+                    access.role() == egui::accesskit::Role::Button
+                        && access.label().as_deref() == Some(label)
+                        && !access.is_disabled()
+                        && !access.is_hidden()
+                })
+                .collect::<Vec<_>>();
+            let [control] = controls.as_slice() else {
+                return Err(format!(
+                    "Expected one accessible gain inspector button {label:?}, found {}",
+                    controls.len()
+                ));
+            };
+            control.focus();
+        }
+        for _ in 0..3 {
+            d.step(
+                "Accessibility focus reveals the saved Hold's gain control",
+                false,
+            )?;
+        }
+        let rect = d.rect(label)?;
+        let focused = d.harness.root().children_recursive().any(|node| {
+            let access = node.accesskit_node();
+            access.label().as_deref() == Some(label) && access.is_focused()
+        });
+        let paint = scenarios::text_paint_visibility(d, label);
+        let complete_hit = d.harness.output().shapes.iter().any(|clipped| {
+            matches!(&clipped.shape, egui::Shape::Text(text) if text.galley.text() == label)
+                && clipped.clip_rect.contains_rect(rect)
+        });
+        d.check(
+            "Accessibility focus reveals the complete gain inspector control without an edit",
+            focused
+                && d.harness.ctx.content_rect().contains_rect(rect)
+                && complete_hit
+                && !paint.is_empty()
+                && paint.iter().all(|item| item["fully_visible"] == true)
+                && d.revision() == revision
+                && document(d)?.nodes() == &nodes
+                && editor_state(d) == editor,
+            json!({"label":label,"viewport":[width,height],"fully_painted":true,"revision":revision}),
+            json!({"focused":focused,"complete_hit":complete_hit,"rect":format!("{rect:?}"),"paint":paint,"state":d.snapshot()}),
+        )?;
+    }
+
+    d.command("gain")?;
+    d.wait_for("Captured Hold opens its full gain keyboard editor", |app| {
+        !app.service.is_busy()
+            && app
+                .gain
+                .as_ref()
+                .is_some_and(|draft| draft.prepared_snapshot().is_some())
+    })?;
+    d.key(Key::Tab)?;
+    let trim_focused = d.harness.root().children_recursive().any(|node| {
+        let access = node.accesskit_node();
+        access.role() == egui::accesskit::Role::TextInput
+            && access.label().as_deref() == Some("Whole beat trim · dB")
+            && access.is_focused()
+    });
+    d.check(
+        "The captured Hold's gain command opens native keyboard fields without changing history",
+        trim_focused
+            && d.app().gain.is_some()
+            && d.revision() == revision
+            && document(d)?.nodes() == &nodes
+            && editor_state(d) == editor,
+        json!({"focused":"Whole beat trim · dB","revision":revision,"editor":editor}),
+        d.snapshot(),
+    )?;
+    d.key(Key::Escape)?;
+    d.check(
+        "Cancelling the unchanged Hold gain editor retains room tone and entry targeting",
+        d.app().gain.is_none()
+            && d.revision() == revision
+            && document(d)?.nodes() == &nodes
+            && editor_state(d) == editor,
+        json!({"revision":revision,"editor":editor}),
+        d.snapshot(),
+    )?;
+    // Restore the saved-inspector view for the next resize using real wheel
+    // input only, after the gain focus assertions have already completed.
+    let point = d.rect("Selected beat inspector pane")?.center() + egui::vec2(0.0, 100.0);
+    d.events(
+        "Return saved Hold inspector to its primary controls",
+        vec![
+            egui::Event::PointerMoved(point),
+            egui::Event::MouseWheel {
+                unit: egui::MouseWheelUnit::Point,
+                delta: egui::vec2(0.0, 1000.0),
+                phase: egui::TouchPhase::Move,
+                modifiers: Modifiers::NONE,
+            },
+        ],
+    )?;
+    for _ in 0..8 {
+        d.step("Saved Hold inspector restoration settles", false)?;
     }
     Ok(())
 }
@@ -604,6 +720,7 @@ fn committed_audition(
         session: run.session,
         project_id: run.project.clone(),
         revision_id: run.revision.clone(),
+        content: run.content.clone(),
         phase: deadpan_playback::Phase::Playing,
         // Five samples advance the exact heard clock inside this same frame.
         sample: Some(AudioSample(

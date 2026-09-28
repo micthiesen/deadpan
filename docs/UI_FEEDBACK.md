@@ -11,6 +11,41 @@ The [specification](spec/DEADPAN_SPEC.md), [design targets](design/README.md) an
 
 ## Current status
 
+The native gain increment adds the `gain` replay and an exact envelope/mute
+editor with revision-bound Before/Draft proposals. The scenario uses the real
+project service, qualified source evidence and durable gain commands, with
+typed delivery updates injected for comparison playback. It covers counted and
+absolute trim, true mute, draft buffering and coalescing, captured-target
+rejection, Apply/undo, field/IME routing, Tab containment, stale delivery,
+pending-text Pause and retained picture on unchanged Cancel. Final focused run
+`corrected-visual-gain` passes 266 gain checks plus one Kestrel check covering 5,456
+routing cases, with 2,746 semantic frames and 123 captures. Four complete
+populated Tab/Shift+Tab circuits verify 136 focused controls' paint and hit clips
+at 960×640 and 1280×820 without wheel assistance. The graph captures were
+compared with the gain board. On the final source, all 298 app/harness tests and
+263 base-app tests pass in their respective configurations, along with strict
+workspace/all-target lint in both configurations.
+
+The screenshot-budget warning only limits intermediate images; semantic checks
+and named captures continue. The earlier full visual suite retains its 1,123
+checks and two failures. Corrected follow-ups pass 81 workspace, 103 room-tone,
+266 gain and 16 retime checks, each with an independent passing Kestrel check.
+The room-tone follow-up checks inspector gain controls through AccessKit Focus;
+Normal Tab still cycles panes. Picture containment allows only 0.01 physical
+pixels of numerical residue; text/control clipping remains strict.
+
+This scenario does not prepare PCM, open an output device or establish listening
+quality. A separate native CUA pass exercised exact trim/key editing, keyboard
+focus reveal and cancellation, with byte-identical before/after project dumps.
+It does not certify physical keyboard layouts, OS IME, VoiceOver or listening.
+The separate release replay passes all 2,156 checks. Warm navigation, Repeat
+and silent Hold picture p95 values are 6.356, 9.438 and 10.769 ms; 10,000-beat
+navigation CPU p95 is 1.792 ms. These are small-fixture offscreen measurements,
+with all original failed visual invocations retained separately. See the
+[gain integration contract](GAIN_EDITOR_DESIGN.md) and
+[native-gain qualification](qualification/native-gain-2026-09-28.md) for final
+gates, source identities and native/performance limits.
+
 The [sound allowance increment](qualification/sound-allowances-2026-09-27.md)
 extends `sound-placement` with one sound's permission in a concrete pause,
 including scoped pointer/command edits, durable undo, gap rejection, delayed
@@ -173,6 +208,7 @@ this loop's GPU evidence requirement.
 | `--hz 60` or `--hz 120` | Simulated replay timestep; default 60. This does not pace execution or prove display frame rate. |
 | `--kestrel-source /path/to/Shortcuts.swift` | Compare the current Swift source digest with the checked-in evaluated reservation fixture as well as auditing production routers. Source drift fails until the fixture is deliberately reviewed and refreshed. |
 | `--baseline /path/to/previous-output` | Visual mode only. Compare matching named checkpoints with a previous report; baseline/output directories must be separate and non-nested. Differences produce review warnings and images, never automatic baseline acceptance. |
+| `--retain-projects` | Keep each scenario's private `Documents` root at `OUTPUT/projects/SCENARIO/Documents` for native QA after replay releases its writer. The report records the absolute root; packages are beneath its `Deadpan` directory. Default: temporary storage is deleted when the scenario ends. |
 | `--help` | Print usage without running scenarios. |
 
 For local shortcut drift checks, the current source is
@@ -243,7 +279,7 @@ the real app. The initial viewport is 1280×820 points at 1×. The code lives in
 
 | Name | Current replay and assertions |
 | --- | --- |
-| `kestrel-shortcuts` | Always runs. Checks evaluated global reservations against Normal prefixes, Camera, text/IME and inspector routing. The Ghostty-only Cmd-N reservation is excluded from Deadpan. Optional source digest checking detects drift; physical interception remains native work. |
+| `kestrel-shortcuts` | Always runs. Checks evaluated global reservations against Normal prefixes, Camera, text/IME, inspector, room-tone and Gain routing. The four corrected visual runs each pass all 5,456 cases without live-source drift. The Ghostty-only Cmd-N reservation is excluded from Deadpan. Optional source digest checking detects drift; physical interception remains native work. |
 | `workspace` | Pointer frame navigation, repeated `,i` Original reuse, selected-card visibility, resize transitions at 960×640/1×, 1492×929/2× and 1280×820/1×, and a real monitor-slider drag that must not create a revision. Checks actual picture mesh bounds against the fitted canvas and unclipped navigation text, including Original at the minimum size. |
 | `editing` | Counted Repeat, pointer opening of its setter, same-batch text submission, undo, exact pause insertion before a Repeat and before the Original, and Hold-duration editing. Checks duration and selection. Split, delete and redo are not yet part of this replay sequence. |
 | `camera` | Pointer opening and numeric preview, Cancel, keyboard reopening/zoom and pointer Apply. Reach clipped inspector controls with real wheel input before clicking. Checks unchanged revision during preview, restoration of the submitted entry framing/source frame after Cancel, and authored framing after Apply. |
@@ -257,7 +293,8 @@ the real app. The initial viewport is 1280×820 points at 1×. The code lives in
 | `original-playback` | Uses production Original Space and Shift+Space input, adjustable context, exact loop resume, pointer controls, stale update rejection, navigation stop and failure feedback. Injected device updates exercise UI routing only; actual canonical PCM has separate headless tests. |
 | `sound-playback` | Registers two measured audio-only sources, selects by pointer and j/k, exercises Space pause/resume and Shift+Space full-sound loops, rejects stale/faulted delivery, stops on pane/source changes and retains native text input. Pointer Pause must change state on release and paint Resume on the next frame. Pinned controls and status must remain fully painted on the first resize frame. Asserts no sound-driven picture request or editor-clock/selection mutation. Delivery is explicitly simulated; separate backend tests compare real AAC PCM. |
 | `sound-placement` | Imports measured catalog audio, places by pointer and `,s`, preserves picture duration and editor targets, checks exact sample entry and frame-nudge count equivalence, gain/edges, event selection, deletion and undo. Tests Original-to-Sounds keyboard/pointer focus, absent/stale command targets across held real writer completions, overflow, both window sizes and route-preserving gain with rejected movement. Does not start PCM preparation or a device. |
-| `room-tone` | Copies an Original range with v/motions/y, opens the captured Hold's source-range sheet, edits exact native samples, prepares and auditions without history, then explicitly applies or cancels. Checks silence/undo, missing and stale targets, superseded range preparation, native text/IME and minimum-size paint clips. Source delivery is explicitly injected; no device or listening claim. |
+| `room-tone` | Copies an Original range with v/motions/y, opens the captured Hold's source-range sheet, edits exact native samples, prepares and auditions without history, then explicitly applies or cancels. Checks silence/undo, missing and stale targets, superseded range preparation, native text/IME and minimum-size paint clips. AccessKit Focus reveals saved Hold gain controls; :gain/Tab/Escape preserve room tone and history. The corrected run passes 103 scenario checks. Source delivery is explicitly injected; no device or listening claim. |
+| `gain` | Counted/absolute beat gain and true mute, wrong-focus rejection, buffered exact trim/envelope/key/mute fields, coalesced writer proposals, Before/Draft at exact delivered samples, stale/faulted updates, one Apply/undo, unchanged Cancel picture continuity and native text/IME. Full populated Tab/Shift+Tab circuits check focused paint and hit clips at both sizes; pending text leaves Pause available. The corrected run passes 266 gain checks and its graph captures were reviewed. Uses real qualified source evidence/history; delivery is injected, with no PCM preparation, device or listening claim. |
 | `retime` | Opens/cancels speed entry by pointer, checks the resolved-duration preview, creates a Preserve Retime by command, adjusts the same stage to tape pitch through ordinary text editing, explicitly nests another stage, undoes all three edits and confirms Original context stays unchanged. Uses real project history and picture preparation; it does not measure acoustic quality. |
 | `nested-pause` | Seeds two framed Sequence groups with typed store commands, reopens the actual project, navigates to frame 17 with keys, inserts `:hold 11f`, and checks the nested Hold, exact freeze, retained child crop, live ancestor scopes and cursor. Undo/redo compares nodes and audio bindings. Enter drills through breadcrumbs to the Hold; Inspector Enter changes its duration, history preserves scope, Camera commits only its framing, Backspace selects exited groups, and a group-edge pause fails without mutation. |
 

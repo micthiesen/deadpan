@@ -85,9 +85,12 @@ fn sound_uses_exact_sample_cursor_and_never_schedules_a_picture() {
     let resume = run.resume(1703);
     assert_eq!(
         resume.sample_for_domain(
-            run.session,
-            &run.project,
-            &run.revision,
+            ContentRef {
+                session: run.session,
+                project: &run.project,
+                revision: &run.revision,
+                content: &run.content,
+            },
             &domain,
             &window,
             1703
@@ -96,9 +99,12 @@ fn sound_uses_exact_sample_cursor_and_never_schedules_a_picture() {
     );
     assert_eq!(
         resume.sample_for_domain(
-            run.session,
-            &run.project,
-            &run.revision,
+            ContentRef {
+                session: run.session,
+                project: &run.project,
+                revision: &run.revision,
+                content: &run.content,
+            },
             &domain,
             &window,
             1704

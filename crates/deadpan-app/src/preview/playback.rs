@@ -1,8 +1,8 @@
 use deadpan_core::AudioSample;
-use deadpan_playback::{Phase, Snapshot, SourceEntry, Target, Window};
+use deadpan_playback::{ContentIdentity, Phase, Snapshot, Target, Window};
 
 use super::*;
-use crate::transport::{Domain, Identity, Run};
+use crate::transport::{ContentRef, Domain, Identity, Run};
 
 #[derive(Clone, Copy)]
 pub(super) struct AuditionContext {
@@ -122,6 +122,7 @@ impl DeadpanApp {
 
     fn follow_stopped_playback(&mut self, looping: bool) {
         if self.room_tone.is_none()
+            && self.gain.is_none()
             && !self.sound_focused()
             && self.view == View::Sequence
             && !looping
@@ -246,9 +247,12 @@ impl DeadpanApp {
                 let resumed = self.resume.as_ref().and_then(|resume| {
                     resume
                         .sample_for_domain(
-                            workspace.session,
-                            workspace.document.project_id(),
-                            workspace.document.revision_id(),
+                            ContentRef {
+                                session: workspace.session,
+                                project: workspace.document.project_id(),
+                                revision: workspace.document.revision_id(),
+                                content: &ContentIdentity::Committed,
+                            },
                             &domain,
                             resume.window(),
                             cursor,
@@ -292,6 +296,21 @@ impl DeadpanApp {
         let Some(workspace) = self.workspace.clone() else {
             return;
         };
+        self.start_snapshot_playback(
+            Arc::new(workspace.playback_snapshot()),
+            domain,
+            window,
+            start,
+        );
+    }
+
+    pub(super) fn start_snapshot_playback(
+        &mut self,
+        snapshot: Arc<Snapshot>,
+        domain: Domain,
+        window: Window,
+        start: AudioSample,
+    ) {
         let target = match &domain {
             Domain::Sequence { .. } => Target::Sequence,
             Domain::Original(original) => Target::Original(original.clone()),
@@ -304,9 +323,10 @@ impl DeadpanApp {
         let run = match Run::with_domain(
             Identity {
                 ticket,
-                session: workspace.session,
-                project: workspace.document.project_id().clone(),
-                revision: workspace.document.revision_id().clone(),
+                session: snapshot.session,
+                project: snapshot.document.project_id().clone(),
+                revision: snapshot.document.revision_id().clone(),
+                content: snapshot.content.clone(),
             },
             domain,
             window,
@@ -318,24 +338,6 @@ impl DeadpanApp {
                 return;
             }
         };
-        let snapshot = Arc::new(Snapshot {
-            session: workspace.session,
-            document: Arc::clone(&workspace.document),
-            originals: workspace.originals.clone(),
-            sources: workspace
-                .sources
-                .iter()
-                .map(|(asset, source)| {
-                    (
-                        asset.clone(),
-                        SourceEntry {
-                            receipt: Arc::clone(&source.receipt),
-                            original: source.original.clone(),
-                        },
-                    )
-                })
-                .collect(),
-        });
         #[cfg(feature = "ui-harness")]
         let result = if self.feedback.simulate_playback {
             Ok(())
@@ -357,7 +359,11 @@ impl DeadpanApp {
                 if let Ok(position) = run.position() {
                     match run.domain() {
                         Domain::Original(_) => self.source_cursor = position.cursor,
-                        Domain::Sequence { .. } => self.sequence_cursor = position.cursor,
+                        Domain::Sequence { .. } => {
+                            if self.gain.is_none() {
+                                self.sequence_cursor = position.cursor;
+                            }
+                        }
                         Domain::Sound(_) => self.sound_cursor = position.cursor,
                         Domain::AudioRange(_) => {
                             if let Some(draft) = &mut self.room_tone {
@@ -405,7 +411,11 @@ impl DeadpanApp {
         match run.receive(&update) {
             Ok(Some(frame)) => match run.domain() {
                 Domain::Original(_) => self.source_cursor = frame,
-                Domain::Sequence { .. } => self.sequence_cursor = frame,
+                Domain::Sequence { .. } => {
+                    if self.gain.is_none() {
+                        self.sequence_cursor = frame;
+                    }
+                }
                 Domain::Sound(_) => self.sound_cursor = frame,
                 Domain::AudioRange(_) => {
                     if let Some(draft) = &mut self.room_tone {
@@ -422,6 +432,11 @@ impl DeadpanApp {
             }
         }
         let looping = run.window().looping();
+        if let Some(draft) = &mut self.gain
+            && let Ok(position) = run.content_sample()
+        {
+            draft.position = position;
+        }
         match update.phase {
             Phase::Preparing | Phase::Playing => {}
             Phase::Stopped | Phase::Ended | Phase::Failed => {
@@ -463,6 +478,10 @@ impl DeadpanApp {
 
     pub(super) fn playback_controls(&mut self, ui: &mut egui::Ui) {
         if self.workspace.is_none() {
+            self.monitor_control = None;
+            return;
+        }
+        if self.gain.is_some() {
             self.monitor_control = None;
             return;
         }

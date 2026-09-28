@@ -516,12 +516,12 @@ fn masked_routes_still_admit_complete_live_dependencies_and_reject_foreign_plans
         .source_voice(recipe(&saved, &asset, 44_117, 137))
         .unwrap();
     let signal = AudioRoutedSignal::source(voice, point_route(gap_route())).unwrap();
-    let mut missing = Snapshot {
-        session: captured.session,
-        document: captured.document.clone(),
-        sources: captured.sources.clone(),
-        originals: store.original_import_handle().unwrap(),
-    };
+    let mut missing = Snapshot::committed(
+        captured.session,
+        captured.document.clone(),
+        captured.sources.clone(),
+        store.original_import_handle().unwrap(),
+    );
     missing.sources.remove(&asset);
     let missing = Arc::new(missing);
     assert!(

@@ -17,6 +17,7 @@ use deadpan_store::source_registration::SourceQualificationReceipt;
 
 use crate::library::ProjectLibrary;
 
+pub mod gain;
 mod pause;
 pub mod retime;
 mod scope;
@@ -54,6 +55,30 @@ pub struct Workspace {
     /// Full measured Original stream union in the current project-frame clock.
     /// This is not the video's decoded presentation-frame count.
     pub original_duration: Option<FrameDuration>,
+}
+
+impl Workspace {
+    /// Media capabilities stay anchored in this committed workspace, even when
+    /// an independently validated gain proposal uses them for audition.
+    pub fn playback_snapshot(&self) -> deadpan_playback::Snapshot {
+        deadpan_playback::Snapshot::committed(
+            self.session,
+            self.document.clone(),
+            self.sources
+                .iter()
+                .map(|(asset, source)| {
+                    (
+                        asset.clone(),
+                        deadpan_playback::SourceEntry {
+                            receipt: source.receipt.clone(),
+                            original: source.original.clone(),
+                        },
+                    )
+                })
+                .collect(),
+            self.originals.clone(),
+        )
+    }
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -96,6 +121,8 @@ pub struct ProjectUpdate {
     /// A preparation rejection carries the request context, including stale
     /// contexts. Generic service errors cannot complete a range request.
     pub room_tone_error: Option<RoomToneFailure>,
+    /// Both success and failure retain the exact uncommitted proposal identity.
+    pub gain: Option<gain::ProposalUpdate>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -186,6 +213,10 @@ pub enum ProjectSoundEdit {
 /// InsertTime remains project-boundary based and resolves its actual owner.
 #[derive(Clone, Debug)]
 pub enum ProjectEdit {
+    SetAudioTreatments {
+        node: NodeId,
+        treatments: deadpan_core::AudioTreatments,
+    },
     SetFraming {
         node: NodeId,
         framing: Option<deadpan_core::Framing>,
@@ -286,6 +317,7 @@ pub enum ProjectRequest {
         ticket: u64,
         selection: RoomToneSelection,
     },
+    PrepareGain(gain::Proposal),
     Edit {
         expected_session: u64,
         expected_revision: RevisionId,

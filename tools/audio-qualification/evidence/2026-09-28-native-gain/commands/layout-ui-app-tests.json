@@ -1,0 +1,14 @@
+{
+  "command": [
+    "python3",
+    "/tmp/deadpan-native-gain-u891jpt2/feature_tests.py",
+    "layout-ui-artifacts"
+  ],
+  "started": "2026-09-28T10:23:43.705295+00:00",
+  "base_commit": "565ea9d07d8044816f423fec6b299763f84d7d47",
+  "diff_sha256": "1584fb24882ace105780cedc4541eee146868de355ffcb3cea8b967a35f396ce",
+  "source_manifest_sha256": "6ae61bbedde1c918c8ce3e99cbd151ca44145fdd02306ca9a407ccc2c936721d",
+  "pid": 97507,
+  "exit_code": 0,
+  "seconds": 8.040412832982838
+}

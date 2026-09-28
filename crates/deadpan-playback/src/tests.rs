@@ -91,12 +91,12 @@ fn snapshot(store: &ProjectStore, session: u64) -> Arc<Snapshot> {
             (asset.clone(), SourceEntry { receipt, original })
         })
         .collect();
-    Arc::new(Snapshot {
+    Arc::new(Snapshot::committed(
         session,
         document,
         sources,
-        originals: store.original_import_handle().unwrap(),
-    })
+        store.original_import_handle().unwrap(),
+    ))
 }
 fn register(store: &mut ProjectStore) {
     register_media(store, "cfr-bframes.mp4", false);
@@ -164,6 +164,8 @@ fn register_media(store: &mut ProjectStore, name: &str, picture: bool) {
 mod audio_range;
 #[path = "tests/original.rs"]
 mod original;
+#[path = "tests/proposed.rs"]
+mod proposed;
 #[path = "tests/resources.rs"]
 pub(crate) mod resources;
 #[path = "tests/sound.rs"]
@@ -585,12 +587,12 @@ fn seek_reuses_private_pcm_but_a_new_session_must_reopen_sources() {
     reused.render(256, 0, 10_000_000);
     reused.now.store(10_000_000, Ordering::Release);
     assert_eq!(update(&engine, Phase::Playing).ticket, 2);
-    let next_session = Arc::new(Snapshot {
-        session: 5,
-        document: snapshot.document.clone(),
-        sources: snapshot.sources.clone(),
-        originals: snapshot.originals.clone(),
-    });
+    let next_session = Arc::new(Snapshot::committed(
+        5,
+        snapshot.document.clone(),
+        snapshot.sources.clone(),
+        snapshot.originals.clone(),
+    ));
     engine.play(3, next_session, AudioSample(0), 0.1).unwrap();
     let failed = update(&engine, Phase::Failed);
     assert_eq!(failed.ticket, 3);
@@ -753,12 +755,12 @@ fn canonical_playback_consumes_pause_bindings_and_a_real_preserve_stage() {
             purpose: RetimePurpose::Edit,
         },
     });
-    let edited = Arc::new(Snapshot {
-        session: captured.session,
-        document: Arc::new(ProjectDocument::from_json(&wire.to_string()).unwrap()),
-        sources: captured.sources.clone(),
-        originals: captured.originals.clone(),
-    });
+    let edited = Arc::new(Snapshot::committed(
+        captured.session,
+        Arc::new(ProjectDocument::from_json(&wire.to_string()).unwrap()),
+        captured.sources.clone(),
+        captured.originals.clone(),
+    ));
     let mut sources = Sources::new(edited.clone());
     let mut canonical = LimitedAudio::new(Arc::new(RenderPlan::compile(&edited.document).unwrap()));
     let mut expected = Vec::new();

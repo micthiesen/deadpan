@@ -1,4 +1,4 @@
-//! Developer-only replay of the production app, with private disposable projects.
+//! Developer-only replay of the production app, with private project storage.
 
 mod comparison;
 pub(crate) mod gpu;
@@ -25,6 +25,7 @@ pub(crate) const SCENARIOS: &[&str] = &[
     "sound-playback",
     "sound-placement",
     "room-tone",
+    "gain",
     "retime",
 ];
 
@@ -35,6 +36,7 @@ pub(crate) struct Options {
     pub kestrel_source: Option<PathBuf>,
     pub hz: u32,
     pub baseline: Option<PathBuf>,
+    pub retain_projects: bool,
 }
 
 impl Options {
@@ -45,8 +47,16 @@ impl Options {
         let mut kestrel_source = None;
         let mut hz = 60;
         let mut baseline = None;
+        let mut retain_projects = false;
         let mut args = arguments.iter();
         while let Some(flag) = args.next() {
+            if flag == "--retain-projects" {
+                if retain_projects {
+                    return Err("Specify --retain-projects only once".into());
+                }
+                retain_projects = true;
+                continue;
+            }
             let value = args
                 .next()
                 .ok_or_else(|| format!("Missing value for {flag}"))?;
@@ -84,7 +94,18 @@ impl Options {
             kestrel_source,
             hz,
             baseline,
+            retain_projects,
         })
+    }
+
+    pub(crate) fn retained_project_root(&self, scenario: &str) -> Result<Option<PathBuf>, String> {
+        if !self.retain_projects {
+            return Ok(None);
+        }
+        if !SCENARIOS.contains(&scenario) {
+            return Err(format!("Unknown retained-project scenario: {scenario}"));
+        }
+        Ok(Some(self.output.join("projects").join(scenario)))
     }
 }
 
@@ -126,7 +147,7 @@ fn binary_sha256() -> Option<String> {
 pub(crate) fn entry(arguments: &[String]) -> Result<(), String> {
     if arguments == ["--help"] {
         println!(
-            "Usage: deadpan-app --ui-check --output NEW_DIRECTORY [--mode visual|performance] [--scenario NAME] [--hz 60|120] [--kestrel-source Shortcuts.swift] [--baseline PRIOR_DIRECTORY]\n\nScenarios: {}\nVisual mode writes report.json, report.html and actual offscreen PNG frames.\nPerformance mode submits full UI + picture GPU work without screenshot readback.\nUse --release for performance. All projects live in private temporary storage.\nNative pickers are scripted; audio output and the desktop are not opened.",
+            "Usage: deadpan-app --ui-check --output NEW_DIRECTORY [--mode visual|performance] [--scenario NAME] [--hz 60|120] [--kestrel-source Shortcuts.swift] [--baseline PRIOR_DIRECTORY] [--retain-projects]\n\nScenarios: {}\nVisual mode writes report.json, report.html and actual offscreen PNG frames.\nPerformance mode submits full UI + picture GPU work without screenshot readback.\nUse --release for performance. Projects use private temporary storage by default.\n--retain-projects keeps each scenario's Documents root under output/projects/NAME for native QA after replay exits.\nNative pickers are scripted; audio output and the desktop are not opened.",
             SCENARIOS.join(", ")
         );
         return Ok(());
@@ -258,9 +279,84 @@ mod tests {
             vec!["--output"],
             vec!["--output", "/tmp/example", "--scenario", "typo"],
             vec!["--output", "/tmp/example", "--hz", "4"],
+            vec![
+                "--retain-projects",
+                "--output",
+                "/tmp/example",
+                "--scenario",
+                "../gain",
+            ],
+            vec![
+                "--output",
+                "/tmp/example",
+                "--retain-projects",
+                "--retain-projects",
+            ],
+            vec!["--output", "/tmp/example", "--retain-projects", "false"],
         ] {
             assert!(
                 Options::parse(&args.into_iter().map(str::to_owned).collect::<Vec<_>>()).is_err()
+            );
+        }
+    }
+
+    #[test]
+    fn project_retention_is_explicit_and_does_not_consume_the_next_option() {
+        let temporary = Options::parse(&["--output".into(), "relative-output".into()]).unwrap();
+        assert!(!temporary.retain_projects);
+        assert_eq!(temporary.retained_project_root("gain").unwrap(), None);
+        for args in [
+            vec![
+                "--retain-projects",
+                "--output",
+                "relative-output",
+                "--scenario",
+                "gain",
+            ],
+            vec![
+                "--output",
+                "relative-output",
+                "--scenario",
+                "gain",
+                "--retain-projects",
+            ],
+        ] {
+            let options =
+                Options::parse(&args.into_iter().map(str::to_owned).collect::<Vec<_>>()).unwrap();
+            assert!(options.retain_projects);
+            assert_eq!(options.scenario.as_deref(), Some("gain"));
+            assert_eq!(
+                options.retained_project_root("gain").unwrap(),
+                Some(PathBuf::from("relative-output/projects/gain"))
+            );
+        }
+    }
+
+    #[test]
+    fn retained_project_paths_accept_only_known_scenario_names() {
+        let options = Options::parse(&[
+            "--output".into(),
+            "/tmp/example".into(),
+            "--retain-projects".into(),
+        ])
+        .unwrap();
+        for scenario in SCENARIOS {
+            assert_eq!(
+                options.retained_project_root(scenario).unwrap(),
+                Some(PathBuf::from("/tmp/example/projects").join(scenario))
+            );
+        }
+        for scenario in [
+            "",
+            "..",
+            "../gain",
+            "gain/../../outside",
+            "/tmp/outside",
+            "unknown",
+        ] {
+            assert!(
+                options.retained_project_root(scenario).is_err(),
+                "{scenario}"
             );
         }
     }

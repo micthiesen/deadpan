@@ -1,6 +1,7 @@
 //! Native source preview and the shared headless command entrypoint.
 
 mod dialogs;
+mod gain;
 mod library;
 mod navigation;
 mod presentation;

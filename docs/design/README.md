@@ -18,7 +18,7 @@ establish an implemented feature.
 | [Sound audition](boards/sound-audition-board-v1.png) | Focused sound catalog, independent audition clock, visible play/pause/loop keys and retained edit context. | [Sound prompt](prompts/sound-audition-board-v1.txt) |
 | [Sound placement and adjustment](boards/sound-placement-board-v2.png) | Target for root placement and concrete pause allowances: separate event list, exact edit destination, inspector, visible keys and truthful silence/overflow feedback. | [Initial prompt](prompts/sound-placement-board-v1.txt), [precision and silence corrections](prompts/sound-placement-board-v2.txt) |
 | [Room-tone selection and pause audio](boards/room-tone-board-v2.png) | Native target: exact source range, distinct source/pause audition, explicit application, silence and undo. Waveform display remains open. | [Initial prompt](prompts/room-tone-board-v1.txt), [single-Original and clock corrections](prompts/room-tone-board-v2.txt) |
-| [Beat gain and selective emphasis](boards/clip-gain-board-v2.png) | Target for beat trim, exact gain/mute ranges, temporary envelope editing and same-window Before/Draft audition. Native implementation remains open. | [Initial prompt](prompts/clip-gain-board-v1.txt), [clock and focus corrections](prompts/clip-gain-board-v2.txt) |
+| [Beat gain and selective emphasis](boards/clip-gain-board-v2.png) | Target for implemented beat trim, exact envelope/mute fields and same-window Before/Draft audition. Focused Metal captures reviewed at default/minimum sizes; physical input, listening, point dragging and measured waveforms remain open. | [Initial prompt](prompts/clip-gain-board-v1.txt), [clock and focus corrections](prompts/clip-gain-board-v2.txt) |
 
 The built-in `image_gen.imagegen` tool generated these assets on 2026-09-23 and
 the Camera companion on 2026-09-24, the moment-reuse companion on 2026-09-26
@@ -82,7 +82,7 @@ with a total-play count, never an expanded widget per occurrence.
 
 ## Interaction contract
 
-The gain board is a target for the next audio-authoring work. Its graph represents
+The gain board guides the current native gain editor. Its graph represents
 the envelope contribution in dB; the independent whole-beat trim adds to that
 curve without flattening it. Mute is explicit, never a very small finite gain.
 Show the exact owner and clock: a Source affects its Original contribution, while
@@ -90,19 +90,29 @@ an implemented group bus must affect its contained voices once. Do not suggest
 that currently root-owned placed sounds belong to an arbitrary nested group.
 Quick Normal-mode `+` and `-` affect selected audio or the current beat by 3 dB;
 Camera and Placed sounds retain their own existing meanings. Focused text fields
-own typing and arrows. The pictured `:gain` label identifies the gain command,
-not a qualified bare-command shortcut for opening a graph. New bindings require
-the normal router/Kestrel audit before shipping.
+own typing and arrows. Bare `:gain` now opens the complete existing recipe;
+`:gain VALUE` sets exact trim and `:gain-mute` toggles explicit mute. The expanded
+router/Kestrel audit passes 5,456 routing cases without conflicts or live-source
+drift in the focused gain replay.
 
-The proposed draft view retains the entry snapshot, owner, exact range and
+The implemented draft view retains the entry snapshot, owner, exact range and
 audition window. Before/Draft must compare that same window and heard position,
 with distinct draft playback identity; Enter commits once and Escape discards the
-draft. Waveforms, point controls and this comparison are targets, not implemented
-features. The corrected board's 30 fps clocks all show frame 246, 36 frames into
+draft. Exact key/range fields, clickable keys, multiple envelopes, cubic controls
+and separate mute ranges are implemented. Point dragging and measured waveforms
+remain open. The panel marks unsaved state and uses explicit row actions for
+buffered fields; its Apply row stays outside the scrolling controls. Tab remains
+within the draft and reveals each focused control while the surrounding
+workspace is disabled at full picture opacity. Complete populated forward and
+reverse circuits pass at both window sizes. Reviewed Metal captures preserve
+the picture, unsaved owner, readable curve and fixed comparison row; physical
+input and listening acceptance remain separate.
+The corrected board's 30 fps clocks all show frame 246, 36 frames into
 the selected Answer after the 210-frame Opening. The large Original remains
 pinned and picture keeps priority. Generated thumbs, waveforms and measurements
 are illustrative. No native gain capability or measured playback result is
-inferred from this board. See [gain contracts](../AUDIO_GAIN.md).
+inferred from this board. See [gain contracts](../AUDIO_GAIN.md) and the
+[native integration boundary](../GAIN_EDITOR_DESIGN.md).
 Preserve the actual project-canvas aspect and fitted picture; the generated
 interview's drawn crop does not authorize a framing change.
 
@@ -263,6 +273,21 @@ manifest. Preserve useful styling and backend capabilities without reviving the
 old multi-video creation flow.
 
 ## Implementation and review
+
+The native gain editor's focused Metal replay passes 266 gain checks plus the
+Kestrel audit; all 298 app/harness tests pass. The reviewed default and minimum
+captures retain a 270.1875/145-point painted viewer, full owner-axis graph,
+visible unsaved state and fixed comparison actions. Exact fields sit beside the
+curve at 1280×820 and stack in the scroller at 960×640. Quarter-duration ticks
+make the authored frame axis readable without inventing a waveform. This
+comparison uses `corrected-visual-gain` captures 122 and 121 against the gain
+board. Corrected room-tone captures 090 and 098 retain its primary Hold controls
+at both sizes; gain controls below them reveal through accessibility focus.
+Normal Tab still cycles panes. Native CUA verified exact trim/key edits,
+keyboard focus reveal and cancellation with an unchanged saved project.
+The [native-gain qualification](../qualification/native-gain-2026-09-28.md)
+records the earlier full suite's two retained failures, passing corrected
+follow-ups and separate performance, physical-input and listening limits.
 
 The [2026-09-27 layout review](../qualification/workspace-layout-2026-09-27.md)
 compares actual Metal captures with these targets. Compact status and beat rows

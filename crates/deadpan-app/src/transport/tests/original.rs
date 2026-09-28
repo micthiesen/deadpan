@@ -206,7 +206,17 @@ fn original_resume_checks_source_receipt_view_rate_and_loop_window() {
     let run = Run::with_domain(identity(), domain.clone(), window, delivery).unwrap();
     let resume = run.resume(10);
     let sample = |domain: &Domain, window: &Window| {
-        resume.sample_for_domain(run.session, &run.project, &run.revision, domain, window, 10)
+        resume.sample_for_domain(
+            ContentRef {
+                session: run.session,
+                project: &run.project,
+                revision: &run.revision,
+                content: &run.content,
+            },
+            domain,
+            window,
+            10,
+        )
     };
     assert_eq!(run.lap().unwrap(), 2);
     assert_eq!(run.content_sample().unwrap(), AudioSample(start.0 + 17));

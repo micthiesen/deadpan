@@ -480,6 +480,7 @@ fn compact_playback(d: &mut Driver<'_>) -> Result<(), String> {
         session: run.session,
         project_id: run.project.clone(),
         revision_id: run.revision.clone(),
+        content: run.content.clone(),
         phase: deadpan_playback::Phase::Playing,
         sample: Some(run.sample),
         generation: Some(generation),

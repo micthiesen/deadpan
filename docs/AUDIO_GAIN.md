@@ -15,13 +15,19 @@ schema 4 retains complete treatment evidence in a separate sparse owner map.
 The canonical authored bus evaluates gain after complete time/pitch and existing
 edges, before mixing and the shared limiter. CLI `command` accepts the typed
 setter; `inspect-audio --authored-bus` exposes at most 256 pre-limiter samples.
-Original/root sound scopes remain independent. Native gain controls, temporary
-Before/Draft audition, measured waveforms and an encoded export path remain open.
+Original/root sound scopes remain independent. The native app now implements
+captured beat gain commands, an unsaved exact envelope/mute editor and
+same-window Before/Draft audition. Its focused Metal replay passes 266 gain
+checks and the 5,456-case shortcut audit; all 298 app/harness tests pass.
+The [native-gain qualification](qualification/native-gain-2026-09-28.md)
+records corrected visual runs, native CUA editing/cancellation, retained failures
+and the separate performance and listening limits.
+Measured waveforms and an encoded export path remain open.
 The [earlier foundation qualification](qualification/gain-clocks-2026-09-27.md)
 records the pure recipe and owner-query checkpoint; it does not qualify this
 later persistence and PCM integration.
-The [authored-gain record](qualification/authored-gain-2026-09-28.md) tracks this
-checkpoint's review, verification and remaining limits.
+The [authored-gain record](qualification/authored-gain-2026-09-28.md) tracks the
+persisted treatment and PCM increment's review, verification and remaining limits.
 
 ## Recipe and numerical contract
 
@@ -121,20 +127,42 @@ conceal a preparation error. Gain precedes the shared limiter and its halo/cache
 calculations. Muted dependencies still need source admission, including cache
 hits; gain mute does not grant silence/tail policy.
 
-## Required native integration and qualification
+## Native editor and qualification
 
 The [native integration design](GAIN_EDITOR_DESIGN.md) records captured command
 targets, service-issued proposals, source admission and same-window audition.
-It is implementation guidance, not evidence of a native gain editor.
+Normal `+`/`-` adjusts the selected beat by counted 3 dB steps, with Placed sounds
+retaining event precedence. Original and catalog Sound focus cannot change a
+retained beat. `:gain -3.125` sets absolute trim; `:gain-mute` toggles true mute;
+`:gain` or the inspector opens the complete existing recipe without changing it.
+Command entry captures a result, including an absent target, before typing begins.
 
-Native temporary editing must bind the owner, session, base revision, draft
-identity and audition window. Before/Draft compares the same heard position.
-Distinct draft PCM must never share a canonical cache or resume token merely
-because the base revision matches. Enter commits once; Escape restores entry
-state. Normal `+`/`-` change selected audio or the current beat by 3 dB, with scope
-and result shown; native text, Camera and Placed sounds retain their own keys.
+The draft edits trim, whole-beat mute, multiple envelopes and separate mute
+ranges. Native fields accept exact millidecibels and nonnegative decimal or
+rational owner frames. Explicit row buttons apply buffered values to the draft;
+pending or invalid fields block Apply. The graph shows the selected envelope's
+dB contribution, with clickable keys and exact key/range fields. Each ending key
+owns its incoming Step, Linear, Smoothstep or Cubic segment, including both cubic
+controls. Range edits retain interior keys or reject; they do not discard hidden
+keys after a duration shrink. Point dragging and measured waveforms remain open.
 
-Native routing, keyboard/IME behavior, temporary audition identity, measured
-waveforms, aesthetic comparison, long-source performance, listening acceptance
-and export remain required. The persisted backend and generated board do not
-close the complete DP-09 audio workflow.
+Temporary editing binds the owner, scope, cursor, session, base revision and
+draft/change identity. The writer validates a proposal without writing history.
+Before/Draft uses one captured beat window in the full Sequence mix and the
+admitted heard sample; distinct proposals carry distinct PCM/cache/resume
+identities. Edits stop older
+draft playback. Apply uses the ordinary revision-checked command and one undo;
+unchanged Apply creates no history. Cancel restores entry targeting only while
+its session/base remain current and retains the accepted picture during recovery.
+
+Tab and Shift+Tab traverse and reveal draft controls while the surrounding
+workspace is disabled. Boundary traversal wraps between Cancel and the heading.
+Enter/Space on the heading apply/audition; native fields and focused buttons keep
+their own input. Escape cancels outside active IME or popup ownership. The
+focused replay checks complete populated keyboard circuits and actual paint/hit
+clips at 960×640 and 1280×820; those captures were compared with the gain board.
+Injected delivery proves UI handling, not device output. Physical keyboard/IME
+and VoiceOver acceptance, long-source performance, listening and export remain
+required. Native CUA also exercised exact trim/key edits, focus reveal, literal
+shortcut text and Escape; the before/after project dumps were identical. This
+increment does not close the complete DP-09 audio workflow.

@@ -1,0 +1,19 @@
+{
+  "command": [
+    "target/release/deadpan-app",
+    "--ui-check",
+    "--mode",
+    "performance",
+    "--output",
+    "/tmp/deadpan-native-gain-u891jpt2/full-ui-performance",
+    "--kestrel-source",
+    "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+  ],
+  "started": "2026-09-28T11:48:33.938659+00:00",
+  "base_commit": "565ea9d07d8044816f423fec6b299763f84d7d47",
+  "diff_sha256": "c4e450b6a40e4852c96a63253e93bb1f8f45af5194a456a574ccd071197f4e54",
+  "source_manifest_sha256": "533439a4ece260aa1ee56751987ff765d8cd3601c52eafa0f323743a29b41dbe",
+  "pid": 12703,
+  "exit_code": 0,
+  "seconds": 26.880489708390087
+}

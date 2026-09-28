@@ -89,16 +89,28 @@ occurrence setters, exact owner clocks and canonical post-mapping PCM gain.
 Core 33/database 39 replay database 38 through the closed core-32 adapter.
 Context schema 4 retains a sparse treatment map separately from timing-only
 `FrozenAudioLayout`. CLI `inspect-audio --authored-bus` exposes the pre-limiter
-result. Native gain controls and Before/Draft audition remain open. Use the
-[gain board](../design/boards/clip-gain-board-v2.png) before implementing its UI.
+result. Native `+`/`-`, `:gain <dB>` and `:gain-mute` capture a selected ordinary
+beat; Placed sounds retain their separate gain target. `:gain` opens a buffered
+editor for trim, mute, exact owner-output envelopes and mute ranges, with a
+single explicit Apply. Use the [gain board](../design/boards/clip-gain-board-v2.png)
+for the panel hierarchy and retained picture.
 Keep gain after complete time/pitch mapping and edges, with exact independent
 owner clocks and unchanged continuous Preserve history. Root-owned sounds receive
 only their own gain and root treatments, never an unrelated Source's gain.
-Temporary drafts need explicit content identity and the same delivered sample
+Temporary drafts retain explicit content identity and the same delivered sample
 window; a matching base revision alone cannot authorize cache/resume reuse.
+Writer previews produce validated, unstored documents while media admission
+remains anchored to the committed entry snapshot. Apply rechecks the captured
+target and commits once; cancellation retains the accepted picture and restores
+entry context only in the same session and revision.
 Follow the [native gain integration design](../GAIN_EDITOR_DESIGN.md) for the
 proposal/admission boundary and production-router verification.
-The backend does not complete DP-09 or its native editing workflow.
+See the [native-gain qualification](../qualification/native-gain-2026-09-28.md)
+for actual verification, including native macOS command/focus/text/cancellation
+and the separate 2,156-check release replay. The warm picture and 10,000-beat
+CPU measurements retain their small-fixture/offscreen limits.
+Waveforms, physical keyboard/IME, VoiceOver, listening, complete audio processing
+and DP-09 acceptance remain open.
 
 [Structural speed editing](../RETIME_EDITING.md) exposes `:retime` and
 `:wrap-retime` through exact speed resolution and the native inspector. Preserve

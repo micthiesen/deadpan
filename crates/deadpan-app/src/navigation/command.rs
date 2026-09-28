@@ -12,6 +12,8 @@ pub enum Entry {
     Help,
     RoomTone,
     HoldSilence,
+    Gain(Option<deadpan_core::GainDb>),
+    GainMute,
     /// Tenths of one percent, independent of authored or export gain.
     Monitor(u16),
     AuditionContext {
@@ -40,6 +42,13 @@ pub fn parse(input: &str) -> Result<Entry, String> {
         return Err("Extra arguments are not supported by this command.".into());
     }
     let action = match verb.as_str() {
+        "gain" => {
+            return argument
+                .map(crate::gain::parse_db)
+                .transpose()
+                .map(Entry::Gain);
+        }
+        "gain-mute" if argument.is_none() => return Ok(Entry::GainMute),
         "monitor" => return monitor(argument).map(Entry::Monitor),
         "sound-place" | "sounds" | "sound-at" | "sound-gain" | "sound-edges" | "sound-delete"
         | "sound-allow" | "sound-silence" => {
@@ -176,6 +185,25 @@ fn monitor(argument: Option<&str>) -> Result<u16, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn gain_commands_distinguish_draft_absolute_trim_and_true_mute() {
+        assert_eq!(parse(":gain"), Ok(Entry::Gain(None)));
+        assert_eq!(
+            parse("gain -4.125"),
+            Ok(Entry::Gain(Some(deadpan_core::GainDb::new(-4125).unwrap())))
+        );
+        assert_eq!(parse("gain-mute"), Ok(Entry::GainMute));
+        for input in [
+            "gain 3 extra",
+            "gain NaN",
+            "gain -96.001",
+            "gain 24.001",
+            "gain-mute true",
+        ] {
+            assert!(parse(input).is_err(), "{input}");
+        }
+    }
 
     #[test]
     fn audition_context_requires_two_distinct_named_exact_durations() {

@@ -10,6 +10,7 @@ use deadpan_store::{AccessMode, ProjectStore};
 
 use super::*;
 
+mod gain;
 mod moment;
 mod pause;
 mod retime;

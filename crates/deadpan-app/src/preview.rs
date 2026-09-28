@@ -23,6 +23,7 @@ use crate::worker::{PreviewWorker, ProjectView, SourceSummary, Ticket, Work};
 mod camera;
 mod camera_fields;
 mod cards;
+mod gain;
 #[cfg(feature = "ui-harness")]
 pub(crate) mod harness;
 mod help_scroll;
@@ -117,6 +118,8 @@ pub struct DeadpanApp {
     sound_command_target: Option<sound_events::CommandTarget>,
     hold_command_target: Option<room_tone::CommandTarget>,
     room_tone: Option<room_tone::Draft>,
+    gain_command_target: Option<Result<crate::project::gain::Target, String>>,
+    gain: Option<gain::Draft>,
     sound_cursor: u64,
     selected_beat: Option<NodeId>,
     sequence_scope: SequenceScope,
@@ -219,6 +222,8 @@ impl DeadpanApp {
             sound_command_target: None,
             hold_command_target: None,
             room_tone: None,
+            gain_command_target: None,
+            gain: None,
             sound_cursor: 0,
             selected_beat: None,
             sequence_scope: SequenceScope::default(),
@@ -461,7 +466,9 @@ impl DeadpanApp {
         #[cfg(not(feature = "ui-harness"))]
         let update = self.service.take_update();
         if let Some(update) = update {
+            self.finish_gain_commit(&update);
             self.receive_room_tone(update.room_tone, update.room_tone_error);
+            self.receive_gain(update.gain);
             let repeat_completion = match self.repeat_queue.matching_completion(
                 update.workspace.as_ref().map(|workspace| workspace.session),
                 update
@@ -975,6 +982,7 @@ impl DeadpanApp {
     }
 
     fn open_command(&mut self, command: String, context: &egui::Context) {
+        self.gain_command_target = Some(self.capture_gain_target());
         self.hold_command_target = Some(self.capture_hold_command());
         self.sound_command_target = self.capture_sound_command(&command);
         self.cancel_repeats("command entry was opened");
@@ -1174,6 +1182,7 @@ impl DeadpanApp {
         }
         match action {
             Action::Sound(action) => self.sound_action(action, context),
+            Action::GainStep(delta) => self.gain_step(delta, context),
             Action::Framing(action) => self.framing_action(action, context),
             Action::New => self.begin_dialog(DialogKind::CreateProject, context, false),
             Action::Open => self.begin_dialog(DialogKind::OpenProject, context, false),
@@ -1379,6 +1388,10 @@ impl DeadpanApp {
     }
 
     fn keyboard(&mut self, context: &egui::Context) -> Option<(TextAction, bool)> {
+        if self.gain.is_some() {
+            self.gain_keyboard(context);
+            return None;
+        }
         if self.room_tone.is_some() {
             self.room_tone_keyboard(context);
             return None;
@@ -1557,6 +1570,7 @@ impl DeadpanApp {
         let command = navigation::command::parse(&self.command);
         let hold_target = self.hold_command_target.take();
         let sound_target = self.sound_command_target.take();
+        let gain_target = self.gain_command_target.take();
         self.bindings.clear();
         self.command_open = false;
         self.command_focus_pending = false;
@@ -1603,6 +1617,10 @@ impl DeadpanApp {
             }
         }
         match command {
+            Ok(navigation::command::Entry::Gain(value)) => {
+                self.gain_command(gain_target, value, context)
+            }
+            Ok(navigation::command::Entry::GainMute) => self.gain_mute(gain_target),
             Ok(navigation::command::Entry::RoomTone) => self.open_room_tone(hold_target, context),
             Ok(navigation::command::Entry::HoldSilence) => self.silence_hold(hold_target),
             Ok(navigation::command::Entry::Action(action)) => self.action(action, context),
@@ -1684,6 +1702,10 @@ impl DeadpanApp {
             .resizable(false)
             .frame(style::panel())
             .show(ui, |ui| {
+                if self.gain.is_some() {
+                    ui.disable();
+                    ui.set_opacity(1.0);
+                }
                 let title = self
                     .workspace
                     .as_ref()
@@ -1802,6 +1824,17 @@ impl DeadpanApp {
                 self.camera_footer(ui);
                 return;
             }
+            if self.gain.is_some() {
+                ui.horizontal_wrapped(|ui| {
+                    ui.colored_label(style::LAVENDER, "GAIN DRAFT · UNSAVED");
+                    ui.weak(self.beat_scope_label());
+                    style::key_hint(ui, "Tab", "reveal controls");
+                    style::key_hint(ui, "Space", "audition on heading");
+                    style::key_hint(ui, "Enter", "apply on heading");
+                    style::key_hint(ui, "Esc", "cancel");
+                });
+                return;
+            }
             let pending = self.bindings.pending();
             let mode = if self.command_open { "COMMAND" } else if text_input_active(ui.ctx(), false) { "TEXT" } else if self.moment.active && self.view == View::Source { "VISUAL" } else if pending.is_empty() { "NORMAL" } else { "PENDING" };
             ui.horizontal_wrapped(|ui| {
@@ -1872,6 +1905,7 @@ impl DeadpanApp {
                         if self.selected_group() { style::key_hint(ui, "Enter", "open group"); }
                         if !self.sequence_scope.groups().is_empty() { style::key_hint(ui, "Backspace", "parent"); }
                         style::key_hint(ui, "s", "split");
+                        style::key_hint(ui, "+ / −", "gain 3 dB");
                         style::key_hint(ui, ",h", "pause");
                         style::key_hint(ui, ",f", "camera");
                         style::key_hint(ui, "rr", "repeat");
@@ -2110,9 +2144,22 @@ impl DeadpanApp {
     }
 
     fn timeline(&mut self, ui: &mut egui::Ui) {
-        let layout = self.workspace_layout(ui);
+        let mut layout = self.workspace_layout(ui);
+        if self.gain.is_some() {
+            layout.beats = 42.0;
+        }
         style::beat_panel(layout).show(ui, |ui| {
             ui.spacing_mut().item_spacing.y = 4.0;
+            if self.gain.is_some() {
+                if let Some(beat) = self.beat_rows.iter().find(|beat| self.selected_beat.as_ref() == Some(&beat.id)) {
+                    ui.horizontal(|ui| {
+                        ui.weak("GAIN OWNER");
+                        ui.add(egui::Label::new(format!("{} · {} f · {}", beat.label, beat.frames, self.beat_scope_label())).truncate())
+                            .on_hover_text(&beat.label);
+                    });
+                }
+                return;
+            }
             let heading = self.sequence_heading(ui);
             let beats = Arc::clone(&self.beat_rows);
             if pane_focus(
@@ -2351,6 +2398,7 @@ impl DeadpanApp {
                             self.pane = Pane::Inspector;
                             self.open_command(command.clone(), ui.ctx());
                         }
+                        self.gain_inspector(ui, ready);
                         if data.kind != "Retime"
                             && ui.add_enabled(ready && can_retime, egui::Button::new("Change speed…  ·  :retime")
                                 .min_size(egui::vec2(ui.available_width(), 28.0)))
@@ -2469,7 +2517,7 @@ impl DeadpanApp {
             if self.camera.is_some() {
                 ui.label(egui::RichText::new("CAMERA · Draft preview").color(style::LAVENDER));
             }
-            let controls_height = if self.camera.is_some() { 76.0 } else if self.view == View::Sequence { if self.moment.copied.is_some() { 156.0 } else if self.compact_sound_layout(ui.ctx()) && self.transport.is_none() { 86.0 } else { 118.0 } } else { 174.0 };
+            let controls_height = if self.gain.is_some() { 54.0 } else if self.camera.is_some() { 76.0 } else if self.view == View::Sequence { if self.moment.copied.is_some() { 156.0 } else if self.compact_sound_layout(ui.ctx()) && self.transport.is_none() { 86.0 } else { 118.0 } } else { 174.0 };
             let available = egui::vec2(ui.available_width().max(1.0), (ui.available_height() - controls_height).max(50.0));
             let (_, rect) = ui.allocate_space(available);
             let response = pane_focus(ui, Pane::Viewer, rect, "Picture viewer pane");
@@ -2507,7 +2555,7 @@ impl DeadpanApp {
             if self.camera.is_some() {
                 ui.weak("Apply or cancel Camera to resume navigation and playback.");
             } else {
-                self.moment_controls(ui);
+                if self.gain.is_none() { self.moment_controls(ui); }
                 self.playback_controls(ui);
                 ui.horizontal_wrapped(|ui| {
                 if self.workspace.is_none() && self.raw_source.is_none() {
@@ -2680,6 +2728,8 @@ impl DeadpanApp {
                         (":sounds · Tab", "Focus Placed sounds. j/k selects an event; the retained beat and both editor cursors stay in place."),
                         ("Sound h/l · Enter", "Move an uncut sound by exact project frames without accumulated rounding, or choose an exact sample onset with :sound-at 137. Escape cancels entry. Sounds with retained timeline cuts cannot be moved yet."),
                         ("Sound +/− · :sound-gain -3", "Change the selected sound's gain by 3 dB, or enter a value from -96 to 24 dB, to three decimal places. Counts repeat the gain step; Monitor and Original levels stay unchanged."),
+                        ("Beat +/− · :gain -3", "Change the selected beat by 3 dB per count, or enter exact absolute trim. Existing envelopes stay intact. Placed sounds take precedence when focused; Original and catalog sound focus never change a retained beat."),
+                        (":gain · :gain-mute", "Open a reversible gain draft, or toggle true mute. The draft edits exact owner-output envelopes and mute ranges. Before/Draft compares the same full-mix loop at its heard sample. Tab moves through fields and buttons. Enter on the heading applies once; Escape cancels."),
                         (":sound-edges soft / hard", "Set both endpoint fade policies on the selected sound. Gain and edge changes retain its timeline cuts."),
                         (":sound-allow / :sound-silence", "Allow or silence the selected sound in the identified pause at the retained Edit cursor. Exact occurrence only; never fills a timing gap."),
                         (":room-tone", "Select a pause after copying a quiet Original range with v, h/l, y. The draft shows exact source samples: Space auditions, Shift+Space loops, Tab moves through controls, Enter applies and Escape cancels. Reopening starts from the saved range; Use copied Original range explicitly replaces it."),
@@ -2726,6 +2776,7 @@ impl eframe::App for DeadpanApp {
         if first_pass {
             self.receive();
             self.reconcile_room_tone(&context);
+            self.reconcile_gain(&context);
         }
         self.reconcile_sound_playback();
         if first_pass {
@@ -2775,8 +2826,19 @@ impl eframe::App for DeadpanApp {
             self.selected_sound.clone(),
         );
         self.header(ui);
-        let footer_mode = (self.command_open, self.camera.is_some());
+        let footer_mode = (
+            self.command_open,
+            self.camera.is_some(),
+            self.gain.is_some(),
+        );
         self.footer(ui);
+        self.gain_panel(ui);
+        if self.gain.is_some() {
+            // Only draft controls participate in native Tab focus while the
+            // comparison is open. Keep the retained picture at full opacity.
+            ui.disable();
+            ui.set_opacity(1.0);
+        }
         self.sources(ui);
         self.inspector(ui);
         self.placed_sounds(ui);
@@ -2814,12 +2876,19 @@ impl eframe::App for DeadpanApp {
         if !self.command_focus_pending && close_command_on_blur(&context, &mut self.command_open) {
             self.bindings.clear();
         }
-        if footer_mode != (self.command_open, self.camera.is_some()) {
+        if footer_mode
+            != (
+                self.command_open,
+                self.camera.is_some(),
+                self.gain.is_some(),
+            )
+        {
             context.request_discard("workspace footer mode changed after input");
         }
         if !context.will_discard() {
             self.schedule_playback_picture();
             self.dispatch_waiting_repeat(&context);
+            self.dispatch_gain_proposal(&context);
         }
         if first_pass && let Some(frames) = self.smoke_frames.as_mut() {
             *frames += 1;

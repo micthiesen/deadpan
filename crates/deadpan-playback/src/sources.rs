@@ -21,13 +21,136 @@ pub struct SourceEntry {
     pub original: OriginalMediaRecord,
 }
 
-/// A capability issued by the live project service, with receipts resolved for
-/// this exact document revision. It contains no SQLite connection or writer.
+/// Authored content is separate from the stored revision providing its media
+/// evidence. A proposed document still has its own never-reused revision ID.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ContentIdentity {
+    Committed,
+    Proposed {
+        base_revision: RevisionId,
+        draft: u64,
+        change: u64,
+    },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+pub enum SnapshotError {
+    #[error("proposed playback requires a committed base snapshot")]
+    BaseNotCommitted,
+    #[error("draft and change identities must be nonzero")]
+    InvalidIdentity,
+    #[error("proposed playback requires a fresh revision distinct from its base")]
+    ReusedRevision,
+    #[error("proposed playback document belongs to another project")]
+    ForeignProject,
+    #[error("proposed playback changed the captured asset contracts")]
+    ChangedAssetContracts,
+    #[error("invalid proposed playback document: {0}")]
+    InvalidDocument(String),
+    #[error("playback content differs from its captured proposal admission")]
+    InvalidAdmission,
+}
+
+struct ProposalAdmission {
+    session: u64,
+    base: Arc<ProjectDocument>,
+    proposed: Arc<ProjectDocument>,
+    content: ContentIdentity,
+}
+
+/// A capability issued by the live project service. Committed receipts belong
+/// to that document revision; proposals retain their committed base evidence.
+/// It contains no SQLite connection or writer.
 pub struct Snapshot {
     pub session: u64,
+    pub content: ContentIdentity,
     pub document: Arc<ProjectDocument>,
     pub sources: BTreeMap<AssetId, SourceEntry>,
     pub originals: OriginalImportHandle,
+    admission: Option<ProposalAdmission>,
+}
+
+impl Snapshot {
+    /// The project service supplies media evidence resolved from this committed
+    /// document. Actual source bytes and receipts are rechecked on admission.
+    pub fn committed(
+        session: u64,
+        document: Arc<ProjectDocument>,
+        sources: BTreeMap<AssetId, SourceEntry>,
+        originals: OriginalImportHandle,
+    ) -> Self {
+        Self {
+            session,
+            content: ContentIdentity::Committed,
+            document,
+            sources,
+            originals,
+            admission: None,
+        }
+    }
+
+    /// Admit a service-issued, uncommitted document against captured committed
+    /// asset contracts. This never looks up or asserts a stored proposal revision.
+    /// The service owns fresh revision/draft allocation and monotonic changes.
+    pub fn proposed(
+        base: &Snapshot,
+        document: Arc<ProjectDocument>,
+        draft: u64,
+        change: u64,
+    ) -> Result<Self, SnapshotError> {
+        base.validate_admission()?;
+        if base.content != ContentIdentity::Committed {
+            return Err(SnapshotError::BaseNotCommitted);
+        }
+        if draft == 0 || change == 0 {
+            return Err(SnapshotError::InvalidIdentity);
+        }
+        if document.project_id() != base.document.project_id() {
+            return Err(SnapshotError::ForeignProject);
+        }
+        if document.revision_id() == base.document.revision_id() {
+            return Err(SnapshotError::ReusedRevision);
+        }
+        if document.assets() != base.document.assets() {
+            return Err(SnapshotError::ChangedAssetContracts);
+        }
+        document
+            .validate()
+            .map_err(|error| SnapshotError::InvalidDocument(error.to_string()))?;
+        let content = ContentIdentity::Proposed {
+            base_revision: base.document.revision_id().clone(),
+            draft,
+            change,
+        };
+        Ok(Self {
+            session: base.session,
+            content: content.clone(),
+            document: document.clone(),
+            sources: base.sources.clone(),
+            originals: base.originals.clone(),
+            admission: Some(ProposalAdmission {
+                session: base.session,
+                base: base.document.clone(),
+                proposed: document,
+                content,
+            }),
+        })
+    }
+
+    pub(crate) fn validate_admission(&self) -> Result<(), SnapshotError> {
+        match (&self.content, &self.admission) {
+            (ContentIdentity::Committed, None) => Ok(()),
+            (ContentIdentity::Proposed { base_revision, .. }, Some(admission))
+                if self.session == admission.session
+                    && self.content == admission.content
+                    && Arc::ptr_eq(&self.document, &admission.proposed)
+                    && base_revision == admission.base.revision_id() =>
+            {
+                Ok(())
+            }
+            _ => Err(SnapshotError::InvalidAdmission),
+        }
+    }
 }
 
 /// Aggregate physical PCM on disk, separate from the DSP residency limit.
@@ -60,7 +183,10 @@ impl Sources {
         }
     }
     pub(crate) fn matches(&self, snapshot: &Snapshot) -> bool {
-        self.snapshot.session == snapshot.session
+        self.snapshot.validate_admission().is_ok()
+            && snapshot.validate_admission().is_ok()
+            && self.snapshot.content == snapshot.content
+            && self.snapshot.session == snapshot.session
             && Arc::ptr_eq(&self.snapshot.document, &snapshot.document)
             && self.snapshot.sources.len() == snapshot.sources.len()
             && self.snapshot.sources.iter().all(|(asset, before)| {
@@ -95,6 +221,7 @@ impl AudioSourceProvider for Sources {
         cancelled: &AtomicBool,
     ) -> Result<&PreparedSource, PreparationError> {
         check_cancel(cancelled)?;
+        self.snapshot.validate_admission().map_err(unavailable)?;
         let document = &self.snapshot.document;
         if project != document.project_id() || revision != document.revision_id() {
             return Err(unavailable(

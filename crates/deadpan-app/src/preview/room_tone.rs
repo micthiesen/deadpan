@@ -4,7 +4,7 @@ use deadpan_core::{AudioSample, HoldAudio, SourceAudio, SourceSpan, SourceTimest
 
 use super::*;
 use crate::project::{PreparedRoomTone, RoomToneFailure, RoomToneSelection};
-use crate::transport::Domain;
+use crate::transport::{ContentRef, Domain};
 
 const IN_ID: &str = "room-tone-in";
 const OUT_ID: &str = "room-tone-out";
@@ -542,9 +542,12 @@ impl DeadpanApp {
             .and_then(|resume| {
                 let workspace = self.workspace.as_ref()?;
                 resume.sample_for_domain(
-                    workspace.session,
-                    workspace.document.project_id(),
-                    &draft.target.revision,
+                    ContentRef {
+                        session: workspace.session,
+                        project: workspace.document.project_id(),
+                        revision: &draft.target.revision,
+                        content: &deadpan_playback::ContentIdentity::Committed,
+                    },
                     &domain,
                     &window,
                     draft.cursor,

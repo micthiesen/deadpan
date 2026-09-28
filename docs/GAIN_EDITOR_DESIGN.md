@@ -1,14 +1,19 @@
 # Native gain editor integration
 
-This is the implementation design for the next native gain increment, not a
-claim that its controls or temporary audition exist. The normative behavior is
-in specification sections 6, 9.4, 9.5 and 10. Use the
+The native app implements the captured commands, exact recipe editor and
+temporary audition described here. The focused Metal replay and app/harness
+tests pass; [native-gain qualification](qualification/native-gain-2026-09-28.md)
+records corrected visual runs, native CUA checks, retained failures and separate
+performance and listening limits. The normative behavior is in specification
+sections 6, 9.4, 9.5 and 10. Use the
 [gain board](design/boards/clip-gain-board-v2.png) and
 [authored gain contract](AUDIO_GAIN.md) together.
 
 ## Target and command capture
 
-Normal `+` / `-` changes gain by 3 dB, multiplied by an accepted count. Resolve
+Normal `+` / `-` changes gain by 3 dB, multiplied by an accepted count. `:gain`
+opens the draft, `:gain -3.125` sets absolute trim and `:gain-mute` toggles the
+explicit whole-beat mute. The inspector exposes the same actions. Resolve
 Placed sounds first when that pane owns focus; an empty selection rejects there
 and must not fall through to a retained picture beat. Otherwise resolve the
 selected direct child of the active ordinary Sequence in Your edit. Original
@@ -28,8 +33,9 @@ redirect its mute key to a beat.
 
 The writer service resolves the captured direct-child scope and cursor through
 the existing `ProjectEdit` path. Gain edits preserve the Edit cursor and selected
-owner. Status and inspector show the actual scope and previous/resulting dB or
-mute state. UI code does not directly mutate a document or write SQLite.
+owner. The inspector shows the current trim and envelope/mute-range counts;
+the draft names its owner and marks its unsaved state. UI code does not directly
+mutate a document or write SQLite.
 
 ## Proposed content and admission
 
@@ -37,8 +43,9 @@ A draft retains the immutable entry workspace, captured target, unique draft
 token, monotonically increasing change number and complete proposed treatment.
 Every preparation result and failure carries the same token/change/session/base
 revision tuple. Only its current tuple may replace the prepared draft. Keep one
-replaceable pending preparation and bounded results rather than queueing every
-slider movement.
+pending preparation and coalesce subsequent draft changes into the latest
+complete recipe. A superseded reply releases its pending slot but cannot replace
+the prepared current change.
 
 The project service creates an ordinary `CommandRequest` with a fresh proposed
 revision ID, calls `ProjectStore::preview`, and applies the returned forward
@@ -64,10 +71,10 @@ token/change number as well as the proposed document identity. Compare it when
 accepting success, failure, cached preparation, pause/resume and device updates.
 A matching base revision, selection or duration alone is insufficient.
 
-The current `Sources::matches` uses document Arc identity and receipt/Original
-equality. Retain those checks when adding proposal identity. Do not weaken media
-admission merely to reuse canonical PCM across Before/Draft switches. Any later
-decoded-source reuse must be separate from proposed processing caches.
+`Sources::matches` compares proposal identity alongside document Arc identity
+and receipt/Original equality. Do not weaken media admission merely to reuse
+canonical PCM across Before/Draft switches. Any later decoded-source reuse must
+be separate from proposed processing caches.
 
 ## Same-window audition
 
@@ -79,6 +86,7 @@ whole Sequence mix is needed, including applicable group gain, sounds, Hold
 allowances and the limiter. Catalog Sound audition is not an event-mix preview.
 
 Before/Draft switches retain that same window and its heard content position.
+Reselecting the active tab preserves its running generation and exact position.
 Read `Run::content_sample()` from admitted device delivery updates, stop/revoke
 the previous generation, then begin the chosen content at that exact sample.
 Do not use producer progress, rounded picture frames or the monotonically
@@ -100,21 +108,68 @@ never restore an old project's state into a newly opened one.
 
 ## Interaction and visual structure
 
-Keep the viewer dominant and show an unmistakable unsaved Draft label. The
-inspector carries owner name, owner-local units, trim, true mute, existing
-envelope summary, Before/Draft, Apply and Cancel. Show keycaps where actions
-live. Commit once with Enter when the sheet owns that action; Escape cancels.
-Focused text fields, native buttons and IME retain their own event ownership.
-Opening and closing an unchanged draft creates no history.
+The inspector shows trim, true mute and the existing envelope/mute-range counts.
+The bottom draft panel names the owner, marks `UNSAVED DRAFT` and keeps its
+heading and Before/Draft, audition, Restart, Apply and Cancel controls outside
+the scrolling fields. The surrounding workspace is disabled while the draft is
+open, with the retained picture painted at full opacity. Tab and Shift+Tab use
+native control traversal within the draft and scroll newly focused controls
+fully into view. Cancel wraps forward to the heading; the heading wraps backward
+to Cancel. Enter applies and Space auditions when the heading owns focus;
+focused buttons retain native activation. Text
+fields keep typing and arrows. Popup/dialog input and IME batches defer draft
+shortcuts; Escape otherwise cancels. Unchanged Apply or Cancel creates no history.
 
-Envelope keys remain exact owner-output positions. A graph must use those
-coordinates and explicit In/Out boundaries; it cannot stretch hidden keys into
-the current visible owner duration or shift fixed Sequence keys on insertion.
-Keyboard range/keyframe editing is required alongside pointer manipulation.
-Draw only measured waveforms. A decorative waveform, editable-looking graph or
-unimplemented control is not an acceptable intermediate feature.
+The pure `GainEdit` model preserves the complete recipe, including configured
+unity, unrelated envelopes and cubic controls. Each successful row action
+validates a replacement before changing the draft. `Set trim`, `Update range`,
+`Update key` and mute-range actions apply buffered native text explicitly.
+Pending or invalid fields stay visible and block project Apply and new audition;
+Pause remains available. Reset fields discards buffered text without reverting
+already accepted draft edits. No field edit directly commits a document.
+
+Trim and values accept exact thousandths of a dB from -96 to 24. Local frames
+accept bounded nonnegative integers, decimals or integer ratios without authored
+floats. Envelope selection, add/remove, previous/next key, insertion and interior
+key removal accompany exact time/value and Step, Linear, Smoothstep or Cubic
+controls. The initial key is the range start; every later key ends its incoming
+segment. Both cubic value controls remain explicit. Changing a range moves its
+boundary keys and rejects a range that would drop an interior key. Separate
+half-open mute ranges have add/update/remove controls.
+
+The graph plots the selected envelope's actual contribution on the current
+owner-output frame axis. Visible key buttons select exact keys; hidden keys
+remain accessible through the selector and exact fields. Floating-point values
+are used only for painting. Duration shrink does not normalize keys into the
+visible range. Pointer point dragging and measured waveform display remain open;
+the graph does not draw a decorative waveform. Reviewed captures show the full
+graph and fixed actions at 960×640 and 1280×820, with a painted viewer measuring
+145 and 270.1875 points respectively.
 
 ## Verification boundary
+
+The final `corrected-visual-gain` run passes 266 gain checks plus the Kestrel
+check covering 5,456 routing cases and 62 reservations. On the same final source,
+all 298 app/harness tests and 263 base-app tests pass in their respective
+configurations, as does strict workspace/all-target lint in both configurations.
+The replay exercises captured commands, buffered exact trim/envelope/mute fields,
+coalesced writer proposals, simulated Before/Draft delivery, stale updates,
+Apply/undo, native field/IME routing, pending-text Pause and unchanged Cancel
+picture continuity. Four full populated Tab/Shift+Tab circuits at the minimum
+and default viewports check 136 focused controls' actual paint and complete hit
+clips without wheel assistance. Captures were compared with the gain board.
+Delivery injection does not prepare PCM or open a device. The earlier full
+visual run retains its 1,123 checks and two failures. Corrected follow-ups pass
+81 workspace, 103 room-tone, 266 gain and 16 retime checks, each with its own
+passing Kestrel check. They do not relabel the earlier failed run.
+
+Native CUA exercised `:gain`, both boundary wraps, -3.125 dB trim, keyboard
+envelope insertion, focus-driven scrolling to the key value, a 1.5 dB key update
+and literal `dd + y` text. Escape restored the baseline; complete project dumps
+before and after were byte-identical. CUA keyboard injection does not certify
+physical keyboard layouts, OS IME delivery, VoiceOver or listening. Release
+performance verification is separate; see the qualification record for its
+status, final source identities and retained evidence.
 
 Use unit tests for routing precedence, absent/stale capture, count overflow,
 recipe preservation, true mute, draft state transitions and delivered-position
@@ -127,5 +182,7 @@ cache separation, delayed success/failure, pause/resume, loops and generation
 revocation. Retain the real-media permit through worker exit. Replay production
 keys, pointer, text and focus through the UI harness for command capture,
 Before/Draft, Enter/Escape and restored selection. Reserve native GUI testing
-for the painted board comparison, focus/IME, accessibility and real listening
-that a headless test cannot establish. Keep open limits explicit until measured.
+for OS focus/IME delivery, accessibility, physical presentation and real listening
+that the painted replay cannot establish. Point dragging, measured waveforms,
+long-source response measurements and encoded export remain open. Keep those
+limits explicit until implemented and measured.

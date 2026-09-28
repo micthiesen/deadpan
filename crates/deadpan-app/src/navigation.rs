@@ -3,6 +3,7 @@ use eframe::egui::{Key, Modifiers};
 pub mod camera;
 pub mod command;
 pub mod duration;
+pub mod gain;
 pub mod retime;
 pub mod room_tone;
 mod sound;
@@ -97,6 +98,7 @@ pub enum Action {
     Edit(BeatEdit),
     Framing(FramingAction),
     Sound(SoundAction),
+    GainStep(i32),
     Invalid(&'static str),
 }
 
@@ -183,30 +185,28 @@ impl Bindings {
                 "i reuse Original · s place sound · h pause · f Camera · z punch in · c creep · Esc cancels",
             ),
             _ if self.g => Some("g goes to the start · Esc cancels"),
-            _ if self.count.is_some() => Some(
-                "Then h/l to move, rr to repeat, +/- for sound gain, or ,h to pause · Esc cancels",
-            ),
+            _ if self.count.is_some() => {
+                Some("Then h/l to move, rr to repeat, +/- for gain, or ,h to pause · Esc cancels")
+            }
             _ => None,
         }
     }
 
-    fn sound_gain_step(&mut self, increase: bool) -> Action {
+    fn gain_step(&mut self, increase: bool) -> Action {
         let action = if self.g || self.comma || self.operator.is_some() {
-            Action::Invalid("Use + or - for sound gain without an operator or comma prefix.")
+            Action::Invalid("Use + or - for gain without an operator or comma prefix.")
         } else if self.count_overflow {
             Action::Invalid("Count exceeds 4294967295; no edit was made.")
         } else if self.count == Some(0) {
-            Action::Invalid("A sound gain count must be positive; no edit was made.")
+            Action::Invalid("A gain count must be positive; no edit was made.")
         } else {
             let step = if increase { 3000 } else { -3000 };
             match i32::try_from(self.count.unwrap_or(1))
                 .ok()
                 .and_then(|count| count.checked_mul(step))
             {
-                Some(delta) => Action::Sound(SoundAction::GainStep(delta)),
-                None => Action::Invalid(
-                    "Sound gain step exceeds the supported range; no edit was made.",
-                ),
+                Some(delta) => Action::GainStep(delta),
+                None => Action::Invalid("Gain step exceeds the supported range; no edit was made."),
             }
         };
         self.clear();
@@ -276,7 +276,7 @@ impl Bindings {
             // unrecognized underscore to physical Minus, so Shift+Minus stays
             // unclaimed, as in Camera. Never infer Plus from physical Equals.
             if !modifiers.alt && (key == Key::Plus || (key == Key::Minus && !modifiers.shift)) {
-                return Some(self.sound_gain_step(key == Key::Plus));
+                return Some(self.gain_step(key == Key::Plus));
             }
             // Kestrel owns Option+1–5 and Shift+Option+1–5 globally. Do not
             // start an editor count from Option-number keys if they reach us.
@@ -1446,7 +1446,7 @@ mod tests {
             }
             assert_eq!(
                 bindings.key(key, Modifiers::NONE, false, false),
-                Some(Action::Sound(SoundAction::GainStep(expected)))
+                Some(Action::GainStep(expected))
             );
             assert!(bindings.pending().is_empty());
         }
@@ -1489,7 +1489,7 @@ mod tests {
                 let expected = if key == Key::Minus && modifiers.shift {
                     None
                 } else {
-                    Some(Action::Sound(SoundAction::GainStep(delta)))
+                    Some(Action::GainStep(delta))
                 };
                 assert_eq!(
                     Bindings::default().key(key, modifiers, false, false),

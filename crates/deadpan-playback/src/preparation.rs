@@ -91,6 +91,9 @@ fn prepare(shared: &Shared, job: &Job, retained: &mut Option<Prepared>) -> Resul
     if job.cancelled.load(Ordering::Acquire) {
         return Ok(());
     }
+    job.snapshot
+        .validate_admission()
+        .map_err(|error| error.to_string())?;
     if !retained.as_ref().is_some_and(|prepared| {
         prepared.target == job.target && prepared.sources.matches(&job.snapshot)
     }) {

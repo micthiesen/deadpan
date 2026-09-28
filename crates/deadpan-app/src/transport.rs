@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use deadpan_core::{AudioSample, FrameRate, ProjectFrame, ProjectId, RevisionId};
 use deadpan_output::Generation;
-use deadpan_playback::{Original, Phase, Sound, Update, Window};
+use deadpan_playback::{ContentIdentity, Original, Phase, Sound, Update, Window};
 
 /// The immutable clock and picture identity captured when audition starts.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -119,6 +119,15 @@ pub struct Identity {
     pub session: u64,
     pub project: ProjectId,
     pub revision: RevisionId,
+    pub content: ContentIdentity,
+}
+
+/// Borrowed authored-content identity for checked resume admission.
+pub struct ContentRef<'a> {
+    pub session: u64,
+    pub project: &'a ProjectId,
+    pub revision: &'a RevisionId,
+    pub content: &'a ContentIdentity,
 }
 
 /// A cursor may name the excluded terminal boundary while the picture remains
@@ -134,6 +143,7 @@ pub struct Run {
     pub session: u64,
     pub project: ProjectId,
     pub revision: RevisionId,
+    pub content: ContentIdentity,
     domain: Domain,
     window: Window,
     /// Monotonic device delivery coordinate. In a loop this can exceed the
@@ -151,6 +161,7 @@ pub struct Resume {
     session: u64,
     project: ProjectId,
     revision: RevisionId,
+    content: ContentIdentity,
     domain: Domain,
     window: Window,
     frame: u64,
@@ -172,6 +183,7 @@ impl Resume {
             && self.session == update.session
             && self.project == update.project_id
             && self.revision == update.revision_id
+            && self.content == update.content
             && !matches!((self.generation, update.generation), (Some(previous), Some(next)) if previous != next)
     }
     #[cfg(test)]
@@ -186,9 +198,12 @@ impl Resume {
             return None;
         }
         self.sample_for_domain(
-            session,
-            project,
-            revision,
+            ContentRef {
+                session,
+                project,
+                revision,
+                content: &ContentIdentity::Committed,
+            },
             &self.domain,
             &self.window,
             frame,
@@ -197,21 +212,20 @@ impl Resume {
 
     pub fn sample_for_domain(
         &self,
-        session: u64,
-        project: &ProjectId,
-        revision: &RevisionId,
+        identity: ContentRef<'_>,
         domain: &Domain,
         window: &Window,
         frame: u64,
     ) -> Option<AudioSample> {
-        let content = window.sample(self.sample)?;
-        (self.session == session
-            && &self.project == project
-            && &self.revision == revision
+        let content_sample = window.sample(self.sample)?;
+        (self.session == identity.session
+            && &self.project == identity.project
+            && &self.revision == identity.revision
+            && &self.content == identity.content
             && &self.domain == domain
             && &self.window == window
             && self.frame == frame
-            && domain.frame_at_sample(content).ok() == Some(frame))
+            && domain.frame_at_sample(content_sample).ok() == Some(frame))
         .then_some(self.sample)
     }
 }
@@ -234,6 +248,7 @@ impl Run {
             session: identity.session,
             project: identity.project,
             revision: identity.revision,
+            content: identity.content,
             domain,
             window,
             sample: delivery_start,
@@ -301,6 +316,7 @@ impl Run {
             session: self.session,
             project: self.project.clone(),
             revision: self.revision.clone(),
+            content: self.content.clone(),
             domain: self.domain.clone(),
             window: self.window,
             frame,
@@ -316,6 +332,7 @@ impl Run {
             || self.session != update.session
             || self.project != update.project_id
             || self.revision != update.revision_id
+            || self.content != update.content
         {
             return Ok(None);
         }
@@ -381,6 +398,7 @@ impl Run {
                 session,
                 project,
                 revision,
+                content: ContentIdentity::Committed,
             },
             domain,
             window,

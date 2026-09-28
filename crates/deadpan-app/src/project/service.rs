@@ -28,6 +28,7 @@ use super::{
 
 type Result<T> = std::result::Result<T, String>;
 
+mod gain;
 mod moment;
 mod room_tone;
 
@@ -52,6 +53,7 @@ struct Service {
     committed: Option<CommittedEdit>,
     room_tone: Option<PreparedRoomTone>,
     room_tone_error: Option<RoomToneFailure>,
+    gain: Option<super::gain::ProposalUpdate>,
     active: Option<Pending>,
     // Exactly one complete-file token, never one per catalog asset.
     cached: Option<(AssetId, PreparedSourceRegistration)>,
@@ -79,6 +81,7 @@ pub(super) fn run(
         committed: None,
         room_tone: None,
         room_tone_error: None,
+        gain: None,
         active: None,
         cached: None,
         session: 0,
@@ -162,6 +165,7 @@ impl Service {
                 })
                 .cloned(),
             room_tone_error: self.room_tone_error.clone(),
+            gain: self.gain.clone(),
         };
         *self
             .shared
@@ -175,6 +179,7 @@ impl Service {
         self.committed = None;
         self.room_tone = None;
         self.room_tone_error = None;
+        self.gain = None;
         match request {
             ProjectRequest::CreateFromSource { path } => self.create_from_source(path),
             ProjectRequest::InitializeSource {
@@ -236,6 +241,16 @@ impl Service {
                 index,
             ),
             ProjectRequest::PasteMoment(request) => self.paste_moment(request),
+            ProjectRequest::PrepareGain(proposal) => {
+                let result = self.prepare_gain(&proposal);
+                self.gain = Some(super::gain::ProposalUpdate {
+                    id: proposal.id(),
+                    result,
+                });
+                // Proposal failures are exclusively identity-tagged. A stale
+                // failure must not escape through the generic workspace error.
+                Ok(())
+            }
             ProjectRequest::PrepareRoomTone {
                 expected_session,
                 expected_revision,
@@ -550,6 +565,7 @@ impl Service {
             | ProjectEdit::WrapRepeat { node, .. }
             | ProjectEdit::Retime { node, .. }
             | ProjectEdit::SetFraming { node, .. }
+            | ProjectEdit::SetAudioTreatments { node, .. }
             | ProjectEdit::Delete { node }
             | ProjectEdit::HoldDuration { node, .. }
             | ProjectEdit::HoldAudio { node, .. } => node,
@@ -564,10 +580,23 @@ impl Service {
         let split_position = matches!(edit, ProjectEdit::Split { .. }).then_some(position);
         let preserve_cursor = matches!(
             edit,
-            ProjectEdit::SetFraming { .. } | ProjectEdit::HoldAudio { .. }
+            ProjectEdit::SetFraming { .. }
+                | ProjectEdit::HoldAudio { .. }
+                | ProjectEdit::SetAudioTreatments { .. }
         );
         let mut retime_message = None;
         let (command, selected_node, message) = match edit {
+            ProjectEdit::SetAudioTreatments { node, treatments } => {
+                if document.nodes()[&node].audio_treatments == treatments {
+                    self.message = Some("Gain is unchanged. No edit was made.".into());
+                    return Ok(());
+                }
+                (
+                    Command::SetAudioTreatments { node, treatments },
+                    selected,
+                    "Gain updated and saved",
+                )
+            }
             ProjectEdit::SetFraming { node, framing } => (
                 Command::SetFraming { node, framing },
                 selected,

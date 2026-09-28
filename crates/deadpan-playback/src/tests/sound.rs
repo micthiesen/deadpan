@@ -256,12 +256,12 @@ fn sound_contract_rejects_wrong_receipt_rate_asset_revision_and_extended_windows
             .document(&captured)
             .is_err()
     );
-    let mut mismatched = Snapshot {
-        session: captured.session,
-        document: captured.document.clone(),
-        sources: captured.sources.clone(),
-        originals: captured.originals.clone(),
-    };
+    let mut mismatched = Snapshot::committed(
+        captured.session,
+        captured.document.clone(),
+        captured.sources.clone(),
+        captured.originals.clone(),
+    );
     mismatched.sources.get_mut(&first).unwrap().receipt = captured.sources[&second].receipt.clone();
     assert!(target.document(&mismatched).is_err());
     mismatched.sources.remove(&first);

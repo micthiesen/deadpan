@@ -21,10 +21,13 @@ raise Ghostty. Routing, prefix hints, buttons and help now use `,i`; `:insert`
 remains available. The `workspace` replay covers that insertion path, and every
 UI run audits production routing against the checked-in evaluated Kestrel
 reservation fixture. `--kestrel-source` additionally checks source drift.
-The complete visual run passed 3,472 routing cases against 62 reservations with
+The 2026-09-26 complete visual run passed 3,472 routing cases against 62 reservations with
 no source drift. Configuration and injected events do not prove physical key
 delivery. [Qualification](qualification/ui-feedback-2026-09-26.md) records the
 executed builds, measurements and remaining evidence boundaries.
+The [native gain increment](qualification/native-gain-2026-09-28.md) extends the
+passing audit to 5,456 cases against the same 62 reservations and separately
+checks native macOS command, focus, field and cancellation behavior.
 
 Personal configuration is evidence for familiar behavior, not a runtime dependency
 or permission to import all its bindings. These sources were reviewed on
@@ -111,6 +114,21 @@ records the latest fixes, review and retained failures:
   a measured panel below the scrolling catalog. First-resize checks at 960×640
   and 1280×820 require their actual text to remain visible and paused context to
   remain unchanged. Catalog content still scrolls in the available space.
+- **Gain fields could receive focus outside their paint clip.** The gain draft
+  now reveals the complete newly focused label/input, keeps comparison and
+  Apply/Cancel fixed, and wraps heading/Cancel without an empty Tab stop. Four
+  populated forward/reverse circuits pass at both window sizes. A native macOS
+  pass confirms field reveal and cancellation without a project change. General
+  gain controls follow node-specific inspector actions so they do not displace
+  the saved Hold audio recipe. See the [gain qualification](qualification/native-gain-2026-09-28.md).
+- **Copied Original controls still crowd the minimum normal picture.** The
+  corrected room-tone capture at 960×640 shows the copied range, paste, audition
+  and monitor controls plus an empty 64-point Placed sounds strip. Its picture
+  remains much smaller than the design target. The next bounded improvement is
+  to consolidate that empty sound focus entry into the existing beat heading,
+  retaining its pane identity and shortcuts. Require actual picture/controls
+  paint checks through playback, first sound placement, undo and resizing; this
+  proposal is not an implemented or measured improvement.
 
 The [2026-09-26 visual run](qualification/ui-feedback-2026-09-26.md) passed all nine
 scenarios and the shortcut audit, with the Camera and rapid-input warnings retained.

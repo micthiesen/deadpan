@@ -1,14 +1,22 @@
 # Revision-bound audition
 
 `Engine` connects the canonical `LimitedAudio` renderer to the prepared output
-queue. It applies a finite oversampled limiter after the current edge-faded bus;
-voice effects, sends and the full group mix remain outside this path. A fixed
+queue. It applies a finite oversampled limiter after the authored bus, including
+complete time/pitch mapping, edges, node gain and independent root sounds.
+Other voice effects, sends and nested sound mixing remain outside this path. A fixed
 monitor gain in `[0,1]` is applied to
 canonical PCM; nonfinite or out-of-range results fail instead of being clipped
 or normalized.
 
-The application supplies one immutable `Snapshot`, with source receipts resolved
-at its document revision and a connection-free `OriginalImportHandle`. No worker
+The application supplies one immutable `Snapshot` and a connection-free
+`OriginalImportHandle`. `Snapshot::committed` receives source receipts resolved
+at its document revision. `Snapshot::proposed` accepts a separately revised,
+uncommitted document against one captured committed snapshot, requiring the same
+project and complete asset contracts plus nonzero draft/change identities. It
+retains the base media evidence and a private admission witness bound to the exact
+proposed document, content identity and session. It never queries a nonexistent
+stored proposal revision. The service owns fresh revision allocation and
+monotonically increasing changes. No worker
 opens SQLite or acquires the writer lock. The application must stop on project
 close, revision changes, navigation, and lifecycle interruption. `StopHandle`
 performs the same bounded cancellation and atomic generation revocation as
@@ -20,7 +28,8 @@ Two persistent threads own separate responsibilities:
   and decodes sources, and prepares verified canonical 8192-frame limited tiles.
   The bounded real input halo uses internal bus reads of at most 256 frames.
   A single immutable session's source and complete DSP caches survive seeks.
-  Reuse requires identical document and receipt objects, session identity, and
+  Reuse requires identical committed/proposed content identity, document and
+  receipt objects, session identity, and
   original records. New sessions/revisions replace the cache before preparation.
 - Control owns the native device, prefills 8192 frames (or the complete shorter
   sequence), activates a fresh channel generation, and drains delivery reports.
@@ -52,3 +61,8 @@ restart, stale preparation replies, short EOS and fault behavior are tested with
 a headless device using the real queue. Ordinary tests do not activate hardware.
 `shutdown` revokes output immediately and requests worker exit; it does not block
 the calling UI thread while cooperative media teardown finishes.
+
+Every `Update`, including preparation, stopped and failure updates, carries the
+captured `ContentIdentity`. Consumers must compare that identity alongside the
+project/session/revision, ticket and generation before accepting audio position
+or resuming a draft.

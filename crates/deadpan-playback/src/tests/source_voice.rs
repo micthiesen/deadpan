@@ -587,12 +587,12 @@ fn catalog_voice_keeps_plan_receipt_layout_and_live_original_admission() {
         ),
         Err(deadpan_audio::StageAudioError::ForeignDomain)
     ));
-    let mut missing = Snapshot {
-        session: captured.session,
-        document: captured.document.clone(),
-        sources: captured.sources.clone(),
-        originals: store.original_import_handle().unwrap(),
-    };
+    let mut missing = Snapshot::committed(
+        captured.session,
+        captured.document.clone(),
+        captured.sources.clone(),
+        store.original_import_handle().unwrap(),
+    );
     missing.sources.remove(&asset);
     assert!(
         StageAudio::new(plan.clone())

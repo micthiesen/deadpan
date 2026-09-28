@@ -46,6 +46,7 @@ fn playback(d: &mut Driver<'_>) -> Result<(), String> {
             session: run.session,
             project_id: run.project.clone(),
             revision_id: run.revision.clone(),
+            content: run.content.clone(),
             phase,
             sample: Some(deadpan_core::AudioSample(sample)),
             generation: Some(generation),
@@ -310,6 +311,36 @@ fn workspace(d: &mut Driver<'_>) -> Result<(), String> {
     d.capture("Workspace after pointer drag")
 }
 
+pub(super) const PICTURE_TOLERANCE_PIXELS: f64 = 0.01;
+
+/// Fitted f32 mesh bounds can exceed their container by numerical residue.
+/// Compare in physical pixels without weakening text or control visibility.
+pub(super) fn picture_contains_rect(
+    outer: egui::Rect,
+    inner: egui::Rect,
+    pixels_per_point: f32,
+) -> bool {
+    if !outer.is_finite()
+        || !outer.is_positive()
+        || !inner.is_finite()
+        || !inner.is_positive()
+        || !pixels_per_point.is_finite()
+        || pixels_per_point <= 0.0
+    {
+        return false;
+    }
+    // Widen before subtracting or scaling: finite f32 edges and scales cannot
+    // overflow f64, and expanding an f32 rectangle can round the allowance up.
+    [
+        f64::from(outer.min.x) - f64::from(inner.min.x),
+        f64::from(outer.min.y) - f64::from(inner.min.y),
+        f64::from(inner.max.x) - f64::from(outer.max.x),
+        f64::from(inner.max.y) - f64::from(outer.max.y),
+    ]
+    .into_iter()
+    .all(|overflow| overflow * f64::from(pixels_per_point) <= PICTURE_TOLERANCE_PIXELS)
+}
+
 pub(super) fn viewer_visible(d: &mut Driver<'_>) -> Result<(), String> {
     let label = d
         .app()
@@ -319,6 +350,8 @@ pub(super) fn viewer_visible(d: &mut Driver<'_>) -> Result<(), String> {
     let viewer = d.rect(&label)?;
     let texture = d.app().target.as_ref().ok_or("No picture texture")?.texture;
     let viewport = d.harness.ctx.content_rect();
+    let pixels_per_point = d.harness.ctx.pixels_per_point();
+    let viewer_in_viewport = picture_contains_rect(viewport, viewer, pixels_per_point);
     let expected = d.app().presentation.canvas().map_or(viewer, |(w, h)| {
         let scale = (viewer.width() / w as f32).min(viewer.height() / h as f32);
         egui::Rect::from_center_size(viewer.center(), egui::vec2(w as f32, h as f32) * scale)
@@ -327,17 +360,24 @@ pub(super) fn viewer_visible(d: &mut Driver<'_>) -> Result<(), String> {
         let egui::Shape::Mesh(mesh) = &clipped.shape else { return None; };
         if mesh.texture_id != texture { return None; }
         let bounds = mesh.calc_bounds();
+        let inside_clip = picture_contains_rect(clipped.clip_rect, bounds, pixels_per_point);
+        let inside_viewer = picture_contains_rect(viewer, bounds, pixels_per_point);
+        let inside_viewport = picture_contains_rect(viewport, bounds, pixels_per_point);
         Some(json!({"bounds":[bounds.min.x,bounds.min.y,bounds.max.x,bounds.max.y],
+            "clip":[clipped.clip_rect.min.x,clipped.clip_rect.min.y,clipped.clip_rect.max.x,clipped.clip_rect.max.y],
+            "inside_clip":inside_clip,"inside_viewer":inside_viewer,"inside_viewport":inside_viewport,
             "fills_fitted_canvas":bounds.min.distance(expected.min) <= 0.5 && bounds.max.distance(expected.max) <= 0.5,
-            "visible":bounds.is_positive() && clipped.clip_rect.contains_rect(bounds) && viewer.contains_rect(bounds)}))
+            "visible":inside_clip && inside_viewer && inside_viewport}))
     }).collect::<Vec<_>>();
     d.check(
         "Picture is actually painted inside the viewer and viewport",
-        viewport.contains_rect(viewer)
+        viewer_in_viewport
             && !picture.is_empty()
             && picture.iter().all(|p| p["visible"] == true && p["fills_fitted_canvas"] == true),
         json!("unclipped fitted picture"),
         json!({"viewer":[viewer.min.x,viewer.min.y,viewer.max.x,viewer.max.y],
+            "viewer_in_viewport":viewer_in_viewport,"pixels_per_point":pixels_per_point,
+            "containment_tolerance_pixels":PICTURE_TOLERANCE_PIXELS,
             "expected_canvas":[expected.min.x,expected.min.y,expected.max.x,expected.max.y],"picture":picture}),
     )?;
     for label in ["Start  gg", "Previous  h", "Next  l", "End  G"] {
@@ -1097,4 +1137,69 @@ fn visible_help_markers(d: &Driver<'_>) -> Vec<(String, [f32; 4])> {
             )
         })
         .collect()
+}
+
+#[cfg(test)]
+mod picture_geometry_tests {
+    use super::picture_contains_rect;
+    use eframe::egui::{Rect, pos2};
+
+    #[test]
+    fn fitted_canvas_rounding_residue_is_visible_at_one_and_two_times_scale() {
+        let viewer = Rect::from_min_max(pos2(208.0, 97.0), pos2(1244.0, 497.0));
+        let bounds = Rect::from_min_max(pos2(370.444_43, 96.999_985), pos2(1_081.555_5, 497.0));
+        assert_eq!(f64::from(bounds.min.y), 96.999_984_741_210_94);
+        assert!(!viewer.contains_rect(bounds));
+        for pixels_per_point in [1.0, 2.0] {
+            assert!(picture_contains_rect(viewer, bounds, pixels_per_point));
+        }
+    }
+
+    #[test]
+    fn a_quarter_pixel_overflow_is_rejected_on_every_edge() {
+        let outer = Rect::from_min_max(pos2(208.0, 97.0), pos2(1244.0, 497.0));
+        for pixels_per_point in [1.0, 2.0] {
+            let overflow = 0.25 / pixels_per_point;
+            for edge in 0..4 {
+                let mut inner = outer;
+                match edge {
+                    0 => inner.min.x -= overflow,
+                    1 => inner.min.y -= overflow,
+                    2 => inner.max.x += overflow,
+                    _ => inner.max.y += overflow,
+                }
+                assert!(!picture_contains_rect(outer, inner, pixels_per_point));
+            }
+        }
+    }
+
+    #[test]
+    fn allowance_is_measured_in_physical_pixels() {
+        let outer = Rect::from_min_max(pos2(0.0, 0.0), pos2(100.0, 100.0));
+        for pixels_per_point in [1.0, 2.0] {
+            let mut inner = outer;
+            inner.max.x += 0.005 / pixels_per_point;
+            assert!(picture_contains_rect(outer, inner, pixels_per_point));
+            inner.max.x = outer.max.x + 0.015 / pixels_per_point;
+            assert!(!picture_contains_rect(outer, inner, pixels_per_point));
+        }
+    }
+
+    #[test]
+    fn invalid_rectangles_and_pixel_scales_cannot_pass_visibility() {
+        let valid = Rect::from_min_max(pos2(0.0, 0.0), pos2(100.0, 100.0));
+        for invalid in [
+            Rect::from_min_max(pos2(f32::NAN, 0.0), pos2(100.0, 100.0)),
+            Rect::from_min_max(pos2(0.0, 0.0), pos2(f32::INFINITY, 100.0)),
+            Rect::from_min_max(pos2(0.0, 0.0), pos2(0.0, 100.0)),
+            Rect::from_min_max(pos2(100.0, 0.0), pos2(0.0, 100.0)),
+        ] {
+            assert!(!picture_contains_rect(valid, invalid, 1.0));
+            assert!(!picture_contains_rect(invalid, valid, 1.0));
+        }
+        for scale in [0.0, -1.0, f32::NAN, f32::INFINITY, f32::NEG_INFINITY] {
+            assert!(!picture_contains_rect(valid, valid, scale));
+        }
+        assert!(picture_contains_rect(valid, valid, 1.0));
+    }
 }

@@ -12,7 +12,7 @@ use deadpan_output::{
 };
 
 use crate::preparation::{self, Batch, Reply};
-use crate::{Snapshot, Target, Window};
+use crate::{ContentIdentity, Snapshot, Target, Window};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Phase {
@@ -29,6 +29,7 @@ pub struct Update {
     pub session: u64,
     pub project_id: ProjectId,
     pub revision_id: RevisionId,
+    pub content: ContentIdentity,
     pub phase: Phase,
     pub sample: Option<AudioSample>,
     pub generation: Option<Generation>,
@@ -73,6 +74,7 @@ impl Job {
             session: self.snapshot.session,
             project_id: self.snapshot.document.project_id().clone(),
             revision_id: self.snapshot.document.revision_id().clone(),
+            content: self.snapshot.content.clone(),
             phase,
             sample,
             generation,

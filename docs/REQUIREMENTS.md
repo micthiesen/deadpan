@@ -304,9 +304,18 @@ gain/mute evaluation and checked structural clock inspection. Core 33/database
 frozen core-32 history replay and context-schema-4 treatment evidence. The
 canonical authored bus applies gain after time/pitch and edges, before the
 limiter; `inspect-audio --authored-bus` exposes bounded pre-limiter PCM. The
-[gain design board](design/boards/clip-gain-board-v2.png) defines the next native
-target. Native gain authoring, Before/Draft audition, waveform/keyboard/aesthetic
-qualification, full voice processing and the complete DP-09 workflow remain required.
+[gain design board](design/boards/clip-gain-board-v2.png) defines the native target.
+The native increment adds captured beat trim/mute commands and an unsaved editor
+for exact owner-output envelopes and mute ranges. Before/Draft comparison uses
+separate proposed-content identities and one retained heard-sample window; only
+Apply writes history. Verification is recorded separately in the
+[native-gain qualification](qualification/native-gain-2026-09-28.md).
+Exact-field and comparison replay, both app configurations and a native macOS
+command/focus/text/cancellation pass are verified within that recorded scope.
+The complete release replay passes 2,156 checks, retaining separate cold and
+warm timing populations and the small-fixture/offscreen qualification boundary.
+Measured waveforms, physical keyboard/IME and acoustic qualification, full voice
+processing and the complete DP-09 workflow remain required.
 See the [authored-gain qualification](qualification/authored-gain-2026-09-28.md)
 for review corrections and verification limits, and the
 [earlier gain/clock record](qualification/gain-clocks-2026-09-27.md) for the pure

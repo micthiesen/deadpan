@@ -1089,9 +1089,21 @@ raw lineage, sample clocks, curves and configured unity intent. Retain treated
 Partitions through refinement; reject unsupported treated Ungroup. Frozen context
 schema 4 authenticates every nonempty owner recipe separately from timing-only
 layouts; legacy context schemas 1 through 3 reject its field even null or empty.
-Muted cached dependencies remain subject to admission. Native drafts need a distinct
-content identity, captured owner/revision and same delivered-sample window; no
-native gain editor is implemented yet. See [gain contracts](docs/AUDIO_GAIN.md).
+Muted cached dependencies remain subject to admission. Native gain drafts retain
+a distinct content identity, captured owner/revision and same delivered-sample
+window. Writer previews never become the authoritative workspace or history;
+receipts remain anchored to the committed entry snapshot. Admit preparation and
+playback updates by their complete draft/change/session/revision identity.
+Before/Draft switches retain heard content samples, including loop wraps, and
+paused comparisons remain paused. Invalid text cannot disable Pause. Apply
+rechecks the captured target and commits once; failures retain the draft.
+Keep Apply/Cancel outside the scrollable editor and native Tab within its
+enabled controls. Newly focused fields reveal their complete label/input pair;
+forward and reverse traversal must reveal populated controls at both window
+sizes without a pointer scroll. Reselecting the active comparison preserves its
+generation and heard position. Cancellation preserves the accepted picture and restores
+entry context only in the same session and revision. See
+[gain contracts](docs/AUDIO_GAIN.md).
 
 Bind retained sample routes only to checked complete providers. `AudioRoutedSignal`
 uses independent source input or an immutable Preserve projection on PointCeil;

@@ -11,6 +11,7 @@ use super::*;
 use crate::ui_harness::{Options, gpu::Offscreen, report::*};
 
 mod edit_latency;
+mod gain;
 mod moment;
 mod nested_pause;
 mod original_playback;
@@ -142,12 +143,28 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
     let mut report = ScenarioReport::new(name);
     let result =
         std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| -> Result<(), String> {
-            let scratch = tempfile::Builder::new()
-                .prefix("deadpan-ui-")
-                .tempdir()
-                .map_err(|e| e.to_string())?;
-            let library =
-                crate::library::ProjectLibrary::from_documents(scratch.path().join("Documents"))?;
+            let retained = options.retained_project_root(name)?;
+            let scratch = if retained.is_none() {
+                Some(tempfile::Builder::new().prefix("deadpan-ui-").tempdir().map_err(|error| error.to_string())?)
+            } else { None };
+            let documents = if let Some(root) = retained {
+                let parent = root.parent().ok_or("Retained replay root has no parent")?;
+                std::fs::create_dir_all(parent).map_err(|error| format!("Create retained project parent {}: {error}", parent.display()))?;
+                std::fs::create_dir(&root).map_err(|error| format!("Create exclusive retained scenario root {}: {error}", root.display()))?;
+                let documents = root.join("Documents");
+                std::fs::create_dir(&documents).map_err(|error| format!("Create retained Documents root {}: {error}", documents.display()))?;
+                let documents = documents.canonicalize().map_err(|error| format!("Resolve retained Documents root {}: {error}", documents.display()))?;
+                report.checks.push(Check {
+                    name: "Private replay project root retained for native QA after worker shutdown".into(),
+                    passed: true,
+                    expected: json!({"scenario":name,"exclusive_creation":true,"cleanup_on_exit":false}),
+                    actual: json!({"scenario":name,"documents_root":documents,"exclusive_creation":true,"cleanup_on_exit":false}),
+                });
+                documents
+            } else {
+                scratch.as_ref().ok_or("Missing temporary replay root")?.path().join("Documents")
+            };
+            let library = crate::library::ProjectLibrary::from_documents(documents)?;
             let mut construction_error = None;
             let wake = Arc::new(RepaintWake::default());
             // The wrapper lets construction failures become evidence rather than a
@@ -250,6 +267,8 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                     sound_placement::run(&mut driver)
                 } else if name == "room-tone" {
                     room_tone::run(&mut driver)
+                } else if name == "gain" {
+                    gain::run(&mut driver)
                 } else {
                     scenarios::run(name, &mut driver)
                 }
@@ -273,7 +292,8 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                 "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
                     .into(),
             ]);
-            // Drop the app before its disposable project directory.
+            // Drop the app and its writer before cleaning temporary storage.
+            // Requested retained project roots remain in the report output.
             drop(driver);
             drop(scratch);
             result

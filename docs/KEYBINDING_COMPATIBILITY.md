@@ -22,6 +22,26 @@ focused buttons keep native Enter/Space activation. Tab and Shift+Tab stay
 inside the modal. Composition and held activation keys cannot apply a draft.
 The same router is included in the reservation audit and `room-tone` replay.
 
+Beat gain uses the same logical `+` / `-` keys for counted 3 dB steps, with
+Placed sounds taking precedence. Camera keeps its scale keys; Original and
+catalog Sound focus cannot edit a retained beat. `:gain VALUE`, `:gain-mute`
+and bare `:gain` use the existing native command field and its captured target.
+The Gain draft adds no modified shortcut. Plain Enter/Space on its heading
+apply/audition; native text fields and focused buttons retain their own input.
+Escape cancels outside active composition or popup ownership. Tab and Shift+Tab
+use native traversal inside the draft and reveal each newly focused control.
+At the boundary, Cancel wraps forward to the heading and the heading wraps
+backward to Cancel; surrounding workspace controls remain disabled. The focused
+`gain` production replay passes complete populated circuits in both directions
+at 960×640 and 1280×820, including actual paint and hit clipping. These injected
+events do not qualify physical keyboard layouts or OS IME delivery.
+
+Normal workspace Tab continues to cycle panes. The saved Hold inspector's gain
+controls are separately checked through AccessKit Focus events with strict
+paint and complete hit-target clips. Native CUA also verified gain boundary
+wrapping, keyboard envelope/key editing, field reveal, literal shortcut text and
+Escape cancellation without changing the saved project.
+
 ## Automated audit
 
 The UI feedback runner includes a shortcut audit. The standalone routing tests
@@ -33,9 +53,14 @@ cargo test --locked -p deadpan-app navigation::
 
 [The audit](../crates/deadpan-app/src/navigation/shortcut_audit.rs) sends each of
 the 62 exact global Kestrel bindings through the actual `Bindings::key`, Camera,
-text-action, inspector and room-tone routers. Its 4,464 cases include all current pending
-prefix states, counts and overflow, text/IME states, and Camera key repeat. A
-reservation fails if it dispatches an action or leaves an editor prefix pending.
+text-action, inspector, room-tone and Gain routers. The current source expects
+88 routing cases per reservation, or 5,456 total, including pending prefix
+states, counts and overflow, text/IME states, and repeat/focus combinations.
+The corrected workspace, room-tone, gain and retime runs each pass all 5,456
+cases with no conflicts or live-source drift; all 298 app/harness tests also
+pass. The [native-gain qualification](qualification/native-gain-2026-09-28.md) retains
+source identities, native CUA evidence and remaining physical-input limits.
+A reservation fails if it dispatches an action or leaves an editor prefix pending.
 This catches shortcuts that seem harmless because they only start a count.
 
 The checked [reservation fixture](../crates/deadpan-app/src/navigation/kestrel-reserved.tsv)

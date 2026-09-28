@@ -304,6 +304,7 @@ fn update(
         session: run.session,
         project_id: run.project.clone(),
         revision_id: run.revision.clone(),
+        content: run.content.clone(),
         phase,
         sample: Some(sample),
         generation: Some(generation),

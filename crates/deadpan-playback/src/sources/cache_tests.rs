@@ -116,12 +116,12 @@ fn captured(store: &ProjectStore) -> Arc<Snapshot> {
             (asset.clone(), SourceEntry { receipt, original })
         })
         .collect();
-    Arc::new(Snapshot {
-        session: 1,
+    Arc::new(Snapshot::committed(
+        1,
         document,
         sources,
-        originals: store.original_import_handle().unwrap(),
-    })
+        store.original_import_handle().unwrap(),
+    ))
 }
 
 fn read(

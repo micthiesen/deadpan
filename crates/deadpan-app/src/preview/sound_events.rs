@@ -326,6 +326,16 @@ impl DeadpanApp {
     }
 
     pub(super) fn placed_sounds(&mut self, ui: &mut egui::Ui) {
+        if self.gain.is_some() {
+            // Preserve the panel's place in the ID tree while its inactive
+            // list gives the comparison picture room above the gain editor.
+            egui::Panel::bottom("workspace-placed-sounds")
+                .resizable(false)
+                .exact_size(0.0)
+                .frame(egui::Frame::NONE)
+                .show(ui, |_| {});
+            return;
+        }
         let sounds = self
             .workspace
             .as_ref()
