@@ -18,11 +18,14 @@ establish an implemented feature.
 | [Sound audition](boards/sound-audition-board-v1.png) | Focused sound catalog, independent audition clock, visible play/pause/loop keys and retained edit context. | [Sound prompt](prompts/sound-audition-board-v1.txt) |
 | [Sound placement and adjustment](boards/sound-placement-board-v2.png) | Target for root placement and concrete pause allowances: separate event list, exact edit destination, inspector, visible keys and truthful silence/overflow feedback. | [Initial prompt](prompts/sound-placement-board-v1.txt), [precision and silence corrections](prompts/sound-placement-board-v2.txt) |
 | [Room-tone selection and pause audio](boards/room-tone-board-v2.png) | Native target: exact source range, distinct source/pause audition, explicit application, silence and undo. Waveform display remains open. | [Initial prompt](prompts/room-tone-board-v1.txt), [single-Original and clock corrections](prompts/room-tone-board-v2.txt) |
-| [Beat gain and selective emphasis](boards/clip-gain-board-v2.png) | Target for implemented beat trim, exact envelope/mute fields and same-window Before/Draft audition. Focused Metal captures reviewed at default/minimum sizes; physical input, listening, point dragging and measured waveforms remain open. | [Initial prompt](prompts/clip-gain-board-v1.txt), [clock and focus corrections](prompts/clip-gain-board-v2.txt) |
+| [Beat gain and selective emphasis](boards/clip-gain-board-v2.png) | Target for implemented beat trim, exact envelope/mute fields and same-window Before/Draft audition. Focused Metal captures reviewed at default/minimum sizes; physical input, listening and point dragging remain open. See the measured-audio companion below. | [Initial prompt](prompts/clip-gain-board-v1.txt), [clock and focus corrections](prompts/clip-gain-board-v2.txt) |
+| [Measured beat audio and gain](boards/gain-waveform-board-v3.png) | Target for implemented separate signed stereo amplitude and editable dB curves, bounded measured coverage, unknown regions and keyboard-accessible recovery. Final minimum/default captures reviewed; wide exact fields remain beside the curve. | [Initial prompt](prompts/gain-waveform-board-v1.txt), [semantic corrections](prompts/gain-waveform-board-v2.txt), [axis alignment](prompts/gain-waveform-board-v3.txt) |
 
 The built-in `image_gen.imagegen` tool generated these assets on 2026-09-23 and
 the Camera companion on 2026-09-24, the moment-reuse companion on 2026-09-26
 and the sound-audition, sound-placement, room-tone and gain companions on 2026-09-27.
+The measured gain-waveform board and its two corrections were generated on
+2026-09-28.
 The current boards implement the owner's single-original direction in specification
 1.1: begin with the complete video and gradually reshape it, reuse its moments,
 add audio effects and accept AI extensions. New projects belong in Documents/Deadpan.
@@ -122,8 +125,11 @@ The implemented draft view retains the entry snapshot, owner, exact range and
 audition window. Before/Draft must compare that same window and heard position,
 with distinct draft playback identity; Enter commits once and Escape discards the
 draft. Exact key/range fields, clickable keys, multiple envelopes, cubic controls
-and separate mute ranges are implemented. Point dragging and measured waveforms
-remain open. The panel marks unsaved state and uses explicit row actions for
+and separate mute ranges are implemented. Point dragging remains open.
+The [measured-audio companion](../WAVEFORMS.md) keeps signed stereo extrema
+separate from the dB curve and shares exact horizontal owner coordinates. It
+does not draw amplitude behind the gain curve or imply a final-mix measurement.
+The panel marks unsaved state and uses explicit row actions for
 buffered fields; its Apply row stays outside the scrolling controls. Tab remains
 within the draft and reveals each focused control while the surrounding
 workspace is disabled at full picture opacity. Complete populated forward and

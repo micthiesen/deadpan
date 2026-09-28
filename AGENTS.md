@@ -1105,6 +1105,17 @@ generation and heard position. Cancellation preserves the accepted picture and r
 entry context only in the same session and revision. See
 [gain contracts](docs/AUDIO_GAIN.md).
 
+Measured gain waveforms belong to the captured committed beat before effects,
+independently of Before/Draft mix audition. Keep signed stereo extrema, exact
+owner clocks, terminal PointCeil clipping and unknown coverage distinct from
+silence. Use one cumulative canonical preparation budget and one shared peak
+allocation ledger whose reservations survive retained results. Analysis shares
+the playback preparation owner; do not duplicate its media/DSP caches. Playback
+cancels analysis, and only controller-confirmed device quiescence, including a
+scheduled terminal prefix, permits new analysis. Admit every request afresh;
+reject stale success and failure by complete identity. Analysis errors cannot
+disable valid gain Apply or Pause. See [waveform contracts](docs/WAVEFORMS.md).
+
 Bind retained sample routes only to checked complete providers. `AudioRoutedSignal`
 uses independent source input or an immutable Preserve projection on PointCeil;
 `AudioRoutedRoot` retains a complete projected output or checked raw

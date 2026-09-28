@@ -1,0 +1,20 @@
+{
+  "command": [
+    "target/debug/deadpan-app",
+    "--ui-check",
+    "--scenario",
+    "gain",
+    "--retain-projects",
+    "--output",
+    "/tmp/deadpan-gain-waveform-4apg6qx9/waveform07-visual-gain",
+    "--kestrel-source",
+    "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+  ],
+  "started": "2026-09-28T13:44:13.225869+00:00",
+  "base_commit": "e3f25dbb4fd5b542cdc9016dee6725187d3ad2fd",
+  "diff_sha256": "f6eb9cb74354c555a51ca85ebea74372d30bb4193c4e44a668be88903f252271",
+  "source_manifest_sha256": "2c38d03b5b86dce7c84051b4b3732b77a582d6f560439296ccc742a7ec6a642f",
+  "pid": 30685,
+  "exit_code": 1,
+  "seconds": 129.49371129181236
+}

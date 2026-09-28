@@ -1,0 +1,19 @@
+{
+  "command": [
+    "target/release/deadpan-app",
+    "--ui-check",
+    "--mode",
+    "performance",
+    "--output",
+    "/tmp/deadpan-gain-waveform-4apg6qx9/waveform12-performance",
+    "--kestrel-source",
+    "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+  ],
+  "started": "2026-09-28T14:11:20.425666+00:00",
+  "base_commit": "e3f25dbb4fd5b542cdc9016dee6725187d3ad2fd",
+  "diff_sha256": "a8e6b15774989e43640c4603bc4b09a0bf2a24ace89e7814d9c5e7343658f1b8",
+  "source_manifest_sha256": "71d2f31fd90bfdf5d5adc92b9555c3461a9d4536fffdab99d2a657d9ca2022c2",
+  "pid": 33783,
+  "exit_code": 0,
+  "seconds": 33.09157062508166
+}

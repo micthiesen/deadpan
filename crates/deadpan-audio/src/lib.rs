@@ -24,6 +24,7 @@ mod signal_transfer;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 mod stages;
 mod true_peak;
+mod waveform;
 
 pub use domain_transfer::{DomainSignalTransfer, DomainTransferDescriptor};
 #[cfg(any(target_os = "macos", target_os = "linux"))]
@@ -61,6 +62,11 @@ pub use stages::{
 };
 pub use true_peak::{
     MAX_TRUE_PEAK_FRAMES, TRUE_PEAK_ID, TruePeakError, TruePeakMeter, TruePeakReport,
+};
+pub use waveform::{
+    DefinitionWaveform, MAX_WAVEFORM_BYTES, MAX_WAVEFORM_LEAVES, MAX_WAVEFORM_SAMPLES,
+    StereoExtrema, WAVEFORM_STAGE, WaveformCompletion, WaveformControl, WaveformDescriptor,
+    WaveformError, WaveformLimits, WaveformMeasurement, WaveformMemory, WaveformStopReason,
 };
 
 use std::sync::atomic::{AtomicBool, Ordering};

@@ -101,3 +101,52 @@ fn pcm_slot_stays_owned_until_detached_engine_workers_exit() {
     // A completed worker lifetime releases the reservation for the next test.
     drop(slot.acquire_with_timeout(Duration::ZERO).unwrap());
 }
+
+#[test]
+fn waveform_shutdown_keeps_pcm_permit_until_its_preparation_owner_exits() {
+    use crate::preparation::PreparationEvent;
+    use std::sync::mpsc;
+
+    let slot = Arc::new(PcmSlot::default());
+    let permit = slot.acquire();
+    let (entered, admitted) = mpsc::channel();
+    let (release, released) = mpsc::channel();
+    let released = Mutex::new(released);
+    let directory = tempfile::tempdir().unwrap();
+    let store = deadpan_store::ProjectStore::create(
+        &directory.path().join("waveform-resources.deadpan"),
+        &super::hold(1),
+    )
+    .unwrap();
+    let engine = crate::Engine::with_factory(
+        repaint(&permit),
+        Box::new(|| panic!("analysis must not open a device")),
+    )
+    .unwrap();
+    *engine.shared.preparation_observer.lock().unwrap() =
+        Some(Arc::new(move |event, cancelled| {
+            if event == PreparationEvent::WaveformAdmitted {
+                entered.send(()).unwrap();
+                released
+                    .lock()
+                    .unwrap()
+                    .recv_timeout(Duration::from_secs(10))
+                    .unwrap();
+                assert!(cancelled.load(std::sync::atomic::Ordering::Acquire));
+            }
+        }));
+    engine
+        .request_waveform(crate::WaveformRequest {
+            snapshot: super::snapshot(&store, 109),
+            owner: super::node("pause"),
+        })
+        .unwrap();
+    admitted.recv_timeout(Duration::from_secs(10)).unwrap();
+    drop(engine);
+    drop(permit);
+    assert!(*slot.occupied.lock().unwrap());
+    assert!(slot.acquire_with_timeout(Duration::ZERO).is_none());
+    release.send(()).unwrap();
+    assert!(super::wait(|| !*slot.occupied.lock().unwrap()));
+    drop(slot.acquire_with_timeout(Duration::ZERO).unwrap());
+}

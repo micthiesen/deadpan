@@ -172,6 +172,8 @@ pub(crate) mod resources;
 mod sound;
 #[path = "tests/source_voice.rs"]
 mod source_voice;
+#[path = "tests/waveform.rs"]
+mod waveform;
 
 struct Fake {
     callback: Mutex<Callback>,

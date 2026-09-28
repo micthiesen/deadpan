@@ -212,6 +212,45 @@
       "referenced_images": [
         "boards/clip-gain-board-v1.png"
       ]
+    },
+    {
+      "image": "boards/gain-waveform-board-v1.png",
+      "status": "superseded-exploration",
+      "generated_on": "2026-09-28",
+      "sha256": "0ad37f7d38495034ce96ae017042339f85492371635e8270a958e58f7ff84914",
+      "width": 1536,
+      "height": 1024,
+      "prompt": "prompts/gain-waveform-board-v1.txt",
+      "prompt_sha256": "061ff2e774b1ad746335efc39a323320bd936185b000ddb785227d93669b6306",
+      "referenced_images": [
+        "boards/clip-gain-board-v2.png"
+      ]
+    },
+    {
+      "image": "boards/gain-waveform-board-v2.png",
+      "status": "superseded-exploration",
+      "generated_on": "2026-09-28",
+      "sha256": "78538552367d0ced517b9a23eecb895f6fb1511bf2620adcb3d2c369934fad3c",
+      "width": 1536,
+      "height": 1024,
+      "prompt": "prompts/gain-waveform-board-v2.txt",
+      "prompt_sha256": "765808ec544423d7b075455f486fc953058493b48d0b5ade8908881c2584f7f6",
+      "referenced_images": [
+        "boards/gain-waveform-board-v1.png"
+      ]
+    },
+    {
+      "image": "boards/gain-waveform-board-v3.png",
+      "status": "current-target",
+      "generated_on": "2026-09-28",
+      "sha256": "c909a8ad38f9b3e95686e52b0029f3bc8c374cd806e1e669a782626a120fe95f",
+      "width": 1536,
+      "height": 1024,
+      "prompt": "prompts/gain-waveform-board-v3.txt",
+      "prompt_sha256": "d2f701ab2dfcd4900aa60428e1913d37404173e0478f7e199849dbd81ee3be62",
+      "referenced_images": [
+        "boards/gain-waveform-board-v2.png"
+      ]
     }
   ]
 }

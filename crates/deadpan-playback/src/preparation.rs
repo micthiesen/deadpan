@@ -6,13 +6,28 @@ use std::sync::Arc;
 use std::sync::atomic::Ordering;
 use std::time::{Duration, Instant};
 
-use deadpan_audio::{LimitedAudio, StageAudio, StageLimits};
+use deadpan_audio::{
+    LimitedAudio, StageAudio, StageLimits, WaveformCompletion, WaveformControl, WaveformLimits,
+    WaveformMemory,
+};
 use deadpan_core::AudioSample;
-use deadpan_plan::RenderPlan;
+use deadpan_plan::{AudioDefinitionSelector, RenderPlan};
 
 use crate::controller::{Job, Shared};
 use crate::sources::Sources;
-use crate::{Target, Window};
+use crate::{Target, WaveformStatus, Window};
+
+#[cfg(test)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum PreparationEvent {
+    PlaybackAdmitted,
+    WaveformAdmitted,
+    WaveformReleased,
+}
+
+#[cfg(test)]
+pub(crate) type Observer =
+    Arc<dyn Fn(PreparationEvent, &std::sync::atomic::AtomicBool) + Send + Sync>;
 
 pub(crate) const BATCH_FRAMES: usize = 8192;
 pub(crate) struct Batch {
@@ -27,6 +42,11 @@ pub(crate) enum Reply {
     Failed { epoch: u64, error: String },
 }
 
+enum Task {
+    Playback(Arc<Job>),
+    Waveform(Arc<crate::waveform::Job>, WaveformMemory),
+}
+
 pub(crate) fn run(shared: Arc<Shared>) {
     let mut retained = None;
     loop {
@@ -37,7 +57,12 @@ pub(crate) fn run(shared: Arc<Shared>) {
                     return;
                 }
                 if let Some(job) = state.prep.take() {
-                    break job;
+                    break Task::Playback(job);
+                }
+                if state.can_analyze()
+                    && let Some(job) = state.waveform.take_pending()
+                {
+                    break Task::Waveform(job, state.waveform.memory.clone());
                 }
                 state = shared
                     .wake
@@ -45,17 +70,24 @@ pub(crate) fn run(shared: Arc<Shared>) {
                     .unwrap_or_else(|error| error.into_inner());
             }
         };
-        if let Err(error) = prepare(&shared, &job, &mut retained)
-            && !job.cancelled.load(Ordering::Acquire)
-        {
-            publish(
-                &shared,
-                &job,
-                Reply::Failed {
-                    epoch: job.epoch,
-                    error,
-                },
-            );
+        match job {
+            Task::Playback(job) => {
+                if let Err(error) = prepare(&shared, &job, &mut retained)
+                    && !job.cancelled.load(Ordering::Acquire)
+                {
+                    publish(
+                        &shared,
+                        &job,
+                        Reply::Failed {
+                            epoch: job.epoch,
+                            error,
+                        },
+                    );
+                }
+            }
+            Task::Waveform(job, memory) => {
+                measure(&shared, &job, &memory, &mut retained);
+            }
         }
     }
 }
@@ -87,14 +119,28 @@ struct Prepared {
     end: AudioSample,
 }
 
-fn prepare(shared: &Shared, job: &Job, retained: &mut Option<Prepared>) -> Result<(), String> {
+struct AnalysisPrepared {
+    plan: Arc<RenderPlan>,
+    sources: Sources,
+    audio: StageAudio,
+}
+
+enum Retained {
+    Playback(Prepared),
+    Waveform(AnalysisPrepared),
+}
+
+fn prepare(shared: &Shared, job: &Job, retained: &mut Option<Retained>) -> Result<(), String> {
     if job.cancelled.load(Ordering::Acquire) {
         return Ok(());
     }
     job.snapshot
         .validate_admission()
         .map_err(|error| error.to_string())?;
-    if !retained.as_ref().is_some_and(|prepared| {
+    if !retained.as_ref().is_some_and(|retained| {
+        let Retained::Playback(prepared) = retained else {
+            return false;
+        };
         prepared.target == job.target && prepared.sources.matches(&job.snapshot)
     }) {
         // Drop the old cache before any new media admission, preserving the
@@ -111,14 +157,18 @@ fn prepare(shared: &Shared, job: &Job, retained: &mut Option<Prepared>) -> Resul
         let audio = LimitedAudio::from_stages(
             StageAudio::with_limits(plan, StageLimits::default()).map_err(|e| e.to_string())?,
         );
-        *retained = Some(Prepared {
+        *retained = Some(Retained::Playback(Prepared {
             target: job.target.clone(),
             sources,
             audio,
             end,
-        });
+        }));
+        #[cfg(test)]
+        shared.observe_preparation(PreparationEvent::PlaybackAdmitted, &job.cancelled);
     }
-    let prepared = retained.as_mut().ok_or("preparation cache is absent")?;
+    let Some(Retained::Playback(prepared)) = retained.as_mut() else {
+        return Err("playback preparation cache is absent".into());
+    };
     let window = job
         .window
         .unwrap_or(Window::new(AudioSample(0), prepared.end, false).map_err(|e| e.to_string())?);
@@ -221,4 +271,100 @@ fn prepare(shared: &Shared, job: &Job, retained: &mut Option<Prepared>) -> Resul
             return Ok(());
         }
     }
+}
+
+fn measure(
+    shared: &Shared,
+    job: &crate::waveform::Job,
+    memory: &WaveformMemory,
+    retained: &mut Option<Retained>,
+) {
+    let mut update = job.update(WaveformStatus::Measuring);
+    shared.publish_waveform(job, update.clone(), false);
+    let result = measure_inner(shared, job, memory, retained);
+    // Peaks retain their own bounded allocation; media and DSP are never kept
+    // alive by a completed/cancelled overview or its UI-held result.
+    *retained = None;
+    #[cfg(test)]
+    shared.observe_preparation(PreparationEvent::WaveformReleased, &job.cancelled);
+    match result {
+        Ok(measurement) => {
+            update.waveform = Some(measurement.waveform);
+            update.examined_samples = measurement.examined_samples;
+            match measurement.completion {
+                WaveformCompletion::Complete => update.status = WaveformStatus::Complete,
+                WaveformCompletion::Partial(reason) => {
+                    update.status = WaveformStatus::Partial;
+                    update.error = Some(reason.to_string());
+                }
+            }
+        }
+        Err(error) => {
+            update.status = WaveformStatus::Unavailable;
+            update.error = Some(error);
+        }
+    }
+    shared.publish_waveform(job, update, true);
+}
+
+fn measure_inner(
+    shared: &Shared,
+    job: &crate::waveform::Job,
+    memory: &WaveformMemory,
+    retained: &mut Option<Retained>,
+) -> Result<deadpan_audio::WaveformMeasurement, String> {
+    if job.cancelled.load(Ordering::Acquire) {
+        return Err("Waveform analysis was interrupted".into());
+    }
+    job.snapshot
+        .validate_admission()
+        .map_err(|error| error.to_string())?;
+    if job.snapshot.content != crate::ContentIdentity::Committed {
+        return Err("waveform analysis requires a committed base snapshot".into());
+    }
+    // A new request admits its captured evidence anew. No playback and analysis
+    // source/stage owners may coexist, even while a cold replacement opens.
+    *retained = None;
+    let plan =
+        Arc::new(RenderPlan::compile(&job.snapshot.document).map_err(|error| error.to_string())?);
+    let selector = AudioDefinitionSelector::Node {
+        node: job.owner.clone(),
+    };
+    plan.audio_definition(selector.clone())
+        .map_err(|error| error.to_string())?;
+    let audio = StageAudio::with_limits(plan.clone(), StageLimits::default())
+        .map_err(|error| error.to_string())?;
+    *retained = Some(Retained::Waveform(AnalysisPrepared {
+        plan,
+        sources: Sources::new(job.snapshot.clone()),
+        audio,
+    }));
+    #[cfg(test)]
+    shared.observe_preparation(PreparationEvent::WaveformAdmitted, &job.cancelled);
+    let Some(Retained::Waveform(prepared)) = retained.as_mut() else {
+        return Err("waveform preparation cache is absent".into());
+    };
+    let definition = prepared
+        .plan
+        .audio_definition(selector)
+        .map_err(|error| error.to_string())?;
+    prepared
+        .audio
+        .measure_definition(
+            &mut prepared.sources,
+            &definition,
+            WaveformControl {
+                limits: WaveformLimits::default(),
+                cancelled: &job.cancelled,
+                memory,
+            },
+            |waveform| {
+                let mut update = job.update(WaveformStatus::Measuring);
+                update.examined_samples = u64::try_from(waveform.measured_end().0)
+                    .expect("validated waveform coverage starts at sample zero");
+                update.waveform = Some(waveform);
+                shared.publish_waveform(job, update, false);
+            },
+        )
+        .map_err(|error| error.to_string())
 }

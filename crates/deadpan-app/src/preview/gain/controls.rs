@@ -111,7 +111,12 @@ impl Controls {
         })
     }
 
-    pub(super) fn show(&mut self, ui: &mut egui::Ui, edit: &mut GainEdit) -> bool {
+    pub(super) fn show(
+        &mut self,
+        ui: &mut egui::Ui,
+        edit: &mut GainEdit,
+        mut waveform: impl FnMut(&mut egui::Ui, i64),
+    ) -> bool {
         let before = edit.recipe().clone();
         ui.vertical(|ui| {
             self.trim_row(ui, edit);
@@ -122,11 +127,17 @@ impl Controls {
             // measured width cannot push its hit target past the viewport.
             if ui.available_width() >= 1_100.0 && !edit.envelopes().is_empty() {
                 ui.columns(2, |columns| {
+                    waveform(&mut columns[0], self.owner_frames);
+                });
+                // Keep exact key fields beside their curve as the editor
+                // scrolls. Waveform height belongs to the preceding row.
+                ui.columns(2, |columns| {
                     self.graph(&mut columns[0], edit);
                     self.range_row(&mut columns[1], edit);
                     self.key_rows(&mut columns[1], edit);
                 });
             } else {
+                waveform(ui, self.owner_frames);
                 self.graph(ui, edit);
                 if !edit.envelopes().is_empty() {
                     self.range_row(ui, edit);
@@ -758,10 +769,7 @@ impl Controls {
                 "Gain envelope graph · owner-output frames",
             )
         });
-        let plot = Rect::from_min_max(
-            rect.min + Vec2::new(47.0, 8.0),
-            rect.max - Vec2::new(12.0, 20.0),
-        );
+        let plot = plot_rect(rect);
         if plot.width() <= 1.0 {
             return;
         }
@@ -964,6 +972,13 @@ impl Controls {
             ));
         }
     }
+}
+
+pub(super) fn plot_rect(rect: Rect) -> Rect {
+    Rect::from_min_max(
+        rect.min + Vec2::new(47.0, 8.0),
+        rect.max - Vec2::new(12.0, 20.0),
+    )
 }
 
 fn field_id(name: &str) -> Id {

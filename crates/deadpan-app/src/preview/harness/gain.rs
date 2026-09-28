@@ -6,7 +6,7 @@ use deadpan_core::{
     AudioSample, AudioTreatments, ClipGain, ExactRatio, GainClock, GainCurve, GainDb, GainEnvelope,
     GainRange, GainSegment,
 };
-use deadpan_playback::{ContentIdentity, Phase, Snapshot, Update};
+use deadpan_playback::{ContentIdentity, Phase, Snapshot, Update, WaveformStatus, WaveformUpdate};
 use egui::{Key, Modifiers};
 
 const TRIM: &str = "Whole beat trim · dB";
@@ -18,9 +18,10 @@ const PAUSE: &str = "Pause · Space";
 const BEATS: &str = "Current group beat outline pane";
 const DRAFT_FOCUS: &str = "Gain draft keyboard focus";
 const GRAPH: &str = "Gain envelope graph · owner-output frames";
+const WAVEFORM: &str = "Measured stereo waveform · owner-output frames · before effects";
 
 pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
-    d.report.skipped.push("Gain uses real qualified source evidence, writer previews and durable commands. Audio delivery is injected through typed playback updates; this replay does not prepare PCM, open an audio device or establish acoustic quality. Canonical Before/Draft PCM and cache separation belong to the playback tests.".into());
+    d.report.skipped.push("Gain uses real qualified source evidence, writer previews, durable commands and canonical PCM for measured waveforms. Comparison audio delivery and labelled waveform failure replies are injected; this replay does not open an audio device or establish acoustic quality. Canonical Before/Draft mix and scheduling qualification belong to playback tests.".into());
     d.click(BEATS)?;
     d.chord(&[Key::G, Key::G, Key::Num7, Key::L])?;
     d.settled()?;
@@ -113,6 +114,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     let editor = editor_state(d);
     let base_revision = d.revision();
     open(d)?;
+    let waveform = measured_waveform(d, &owner, &base_revision)?;
     let initial_proposal = prepared(d)?.clone();
     d.check(
         "Opening Gain creates a proposed identity without authoring history",
@@ -148,10 +150,12 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     coalesced_trim(d, &owner, &base_revision)?;
     envelope_and_mute(d, &owner, &base_revision)?;
     gain_layout(d, &base_revision)?;
+    waveform_unchanged(d, &waveform, &base_revision)?;
     let chosen = prepared(d)?.clone();
     let expected_nodes = chosen.document.nodes().clone();
     d.capture("Unsaved gain draft ready for Before and Draft comparison")?;
     audition(d, &chosen, &editor, &base_revision)?;
+    waveform_unchanged(d, &waveform, &base_revision)?;
     d.click(APPLY)?;
     d.changed(&base_revision)?;
     let applied = d.revision();
@@ -205,6 +209,177 @@ fn wrong_focus(
             && document(d)?.nodes() == nodes
             && d.app().gain.is_none(),
         json!({"pane":"Sources","revision":revision,"draft":false}),
+        d.snapshot(),
+    )
+}
+
+type MeasuredWaveform = (
+    deadpan_playback::WaveformTicket,
+    Arc<deadpan_audio::DefinitionWaveform>,
+);
+
+fn wait_waveform(d: &mut Driver<'_>) -> Result<MeasuredWaveform, String> {
+    d.wait_for(
+        "Measure canonical selected-beat PCM on the preparation worker",
+        |app| {
+            app.gain.as_ref().is_some_and(|draft| {
+                matches!(
+                    draft.waveform_state().1,
+                    WaveformStatus::Complete
+                        | WaveformStatus::Partial
+                        | WaveformStatus::Unavailable
+                )
+            })
+        },
+    )?;
+    let (ticket, status, data) = d
+        .app()
+        .gain
+        .as_ref()
+        .ok_or("Gain closed while measuring")?
+        .waveform_state();
+    if status != WaveformStatus::Complete {
+        return Err(format!("Fixture waveform did not complete: {status:?}"));
+    }
+    Ok((
+        ticket.ok_or("Measured waveform lost its ticket")?,
+        data.cloned().ok_or("No measured waveform")?,
+    ))
+}
+
+fn measured_waveform(
+    d: &mut Driver<'_>,
+    owner: &NodeId,
+    revision: &str,
+) -> Result<MeasuredWaveform, String> {
+    let measured = wait_waveform(d)?;
+    let descriptor = measured.1.descriptor();
+    let bins = measured.1.level(0).ok_or("No waveform leaves")?;
+    d.check(
+        "Gain receives real signed PCM extrema for its committed owner without creating history",
+        descriptor.root == *owner && descriptor.revision_id.as_str() == revision
+            && measured.1.measured_end() == descriptor.total_samples
+            && !bins.is_empty()
+            && bins.iter().any(|peak| peak.minimum()[0] < 0.0 && peak.maximum()[0] > 0.0)
+            && d.revision() == revision,
+        json!({"complete":true,"signed_measured_audio":true,"committed_revision":revision}),
+        json!({"stage":descriptor.stage,"samples":descriptor.total_samples.0,"leaves":bins.len(),"ticket":measured.0.value()}),
+    )?;
+    for (width, height) in [(1280.0, 820.0), (960.0, 640.0)] {
+        resize_waveform_view(d, width, height)?;
+        d.settled()?;
+        frame_plot(d, WAVEFORM)?;
+        toolbar_visible(d, width, height)?;
+        d.capture("Measured stereo waveform at its fixed amplitude scale")?;
+    }
+    // Failure injection tests admission and native recovery only. It never
+    // manufactures peaks; the retained payload came from the real PCM worker.
+    let workspace = d.app().workspace.as_ref().ok_or("Missing workspace")?;
+    let failure = WaveformUpdate {
+        ticket: measured.0,
+        session: workspace.session,
+        project_id: workspace.document.project_id().clone(),
+        revision_id: workspace.document.revision_id().clone(),
+        owner: owner.clone(),
+        status: WaveformStatus::Unavailable,
+        waveform: None,
+        examined_samples: 0,
+        error: Some("Injected waveform failure for recovery verification".into()),
+    };
+    d.app_mut()
+        .gain
+        .as_mut()
+        .ok_or("No gain draft")?
+        .receive_waveform_for_check(failure.clone());
+    d.step(
+        "Inject a matching analysis failure without affecting gain readiness",
+        true,
+    )?;
+    d.check(
+        "An analysis failure preserves measured data and leaves Apply and audition available",
+        d.rect(APPLY).is_ok()
+            && d.rect(PLAY).is_ok()
+            && d.app()
+                .gain
+                .as_ref()
+                .and_then(|draft| draft.waveform_state().2)
+                .is_some_and(|data| Arc::ptr_eq(data, &measured.1))
+            && d.revision() == revision,
+        json!({"data_retained":true,"apply_enabled":true,"audition_enabled":true}),
+        d.snapshot(),
+    )?;
+    // Actual native traversal reveals Retry in the scroller without a wheel.
+    d.click(DRAFT_FOCUS)?;
+    let mut retry_reached = false;
+    for _ in 0..30 {
+        d.key(Key::Tab)?;
+        settle_keyboard_focus(d)?;
+        if control_focused(d, "Retry waveform") {
+            retry_reached = painted_control(d, "Retry waveform").is_some();
+            break;
+        }
+    }
+    d.check(
+        "Native Tab reveals the Retry waveform action with its full text and hit target",
+        retry_reached,
+        json!(true),
+        control_diagnostic(d, "Retry waveform"),
+    )?;
+    d.capture("Keyboard-focused waveform Retry after an injected analysis failure")?;
+    d.key(Key::Enter)?;
+    let refreshed = wait_waveform(d)?;
+    d.check(
+        "Retry re-admits PCM with a fresh request and restores draft keyboard focus",
+        refreshed.0 != measured.0
+            && !Arc::ptr_eq(&refreshed.1, &measured.1)
+            && control_focused(d, DRAFT_FOCUS)
+            && d.revision() == revision,
+        json!({"fresh_ticket":true,"fresh_measurement":true,"focus":DRAFT_FOCUS}),
+        d.snapshot(),
+    )?;
+    d.app_mut()
+        .gain
+        .as_mut()
+        .ok_or("No gain draft")?
+        .receive_waveform_for_check(failure);
+    d.step(
+        "Deliver a stale failure from the retired waveform request",
+        false,
+    )?;
+    waveform_unchanged(d, &refreshed, revision)?;
+    resize_waveform_view(d, 1280.0, 820.0)?;
+    d.settled()?;
+    wheel_controls(d, 2048.0)?;
+    Ok(refreshed)
+}
+
+fn resize_waveform_view(d: &mut Driver<'_>, width: f32, height: f32) -> Result<(), String> {
+    let viewport = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(width, height));
+    let input = d.harness.input_mut();
+    input.screen_rect = Some(viewport);
+    input
+        .viewports
+        .get_mut(&egui::ViewportId::ROOT)
+        .ok_or("Missing waveform replay viewport")?
+        .inner_rect = Some(viewport);
+    d.step("Resize the measured gain waveform viewport", true)
+}
+
+fn waveform_unchanged(
+    d: &mut Driver<'_>,
+    measured: &MeasuredWaveform,
+    revision: &str,
+) -> Result<(), String> {
+    let unchanged = d.app().gain.as_ref().is_some_and(|draft| {
+        let (ticket, status, data) = draft.waveform_state();
+        ticket == Some(measured.0)
+            && status == WaveformStatus::Complete
+            && data.is_some_and(|data| Arc::ptr_eq(data, &measured.1))
+    });
+    d.check(
+        "Gain edits, comparison and stale analysis replies preserve the captured measured waveform",
+        unchanged && d.revision() == revision,
+        json!({"ticket":measured.0.value(),"same_measurement":true,"revision":revision}),
         d.snapshot(),
     )
 }
@@ -490,6 +665,18 @@ fn gain_layout(d: &mut Driver<'_>, revision: &str) -> Result<(), String> {
         }
         toolbar_visible(d, width, height)?;
         frame_graph(d)?;
+        if width >= 1_100.0 {
+            let graph = control_rect(d, GRAPH).ok_or("Missing gain curve allocation")?;
+            let labels = ["Time · owner frames", "Value · dB"];
+            d.check(
+                "Wide gain layout keeps exact Time and Value fields fully painted beside their curve",
+                labels.iter().all(|label| {
+                    painted_control(d, label).is_some_and(|rect| rect.left() >= graph.right())
+                }),
+                json!({"fields":labels,"beside_curve":true,"fully_painted":true}),
+                json!(labels.map(|label| control_diagnostic(d, label))),
+            )?;
+        }
         d.capture(&format!(
             "Complete owner gain envelope and fixed comparison actions at {width}x{height}"
         ))?;
@@ -519,11 +706,7 @@ fn populated_tab_visibility(
         let mut completed = false;
         for step in 1..=60 {
             d.key_modified(Key::Tab, modifiers)?;
-            // Give ordinary focus-driven scrolling its animation time at both
-            // supported replay rates. No pointer wheel or reveal helper runs.
-            for _ in 0..(d.options.hz / 5) {
-                d.step("Settle native gain keyboard focus", false)?;
-            }
+            settle_keyboard_focus(d)?;
             let focused = d
                 .harness
                 .root()
@@ -597,6 +780,10 @@ fn populated_tab_visibility(
 }
 
 fn frame_graph(d: &mut Driver<'_>) -> Result<(), String> {
+    frame_plot(d, GRAPH)
+}
+
+fn frame_plot(d: &mut Driver<'_>, label: &str) -> Result<(), String> {
     wheel_controls(d, 2_048.0)?;
     // The trim label uses the one scroller's full clip. The graph's own painter
     // intersects that clip with its allocation, so use the outer clip to place
@@ -617,7 +804,7 @@ fn frame_graph(d: &mut Driver<'_>) -> Result<(), String> {
         .ok_or("Cannot find the painted gain scroller after returning to its top")?;
     let viewport = d.harness.ctx.content_rect();
     for attempt in 0..=4 {
-        let graph = control_rect(d, GRAPH).ok_or("Gain graph has no accessible allocation")?;
+        let graph = control_rect(d, label).ok_or("Audio graph has no accessible allocation")?;
         if clip.contains_rect(graph) && viewport.contains_rect(graph) {
             let axes = d
                 .harness
@@ -630,19 +817,20 @@ fn frame_graph(d: &mut Driver<'_>) -> Result<(), String> {
                     };
                     let label = text.galley.text();
                     let bounds = text.visual_bounding_rect();
-                    (label == "0 f"
-                        || label
-                            .strip_suffix(" owner frames")
-                            .is_some_and(|value| value.parse::<u64>().is_ok()))
+                    (graph.contains_rect(bounds)
+                        && (label == "0 f"
+                            || label
+                                .strip_suffix(" owner frames")
+                                .is_some_and(|value| value.parse::<u64>().is_ok())))
                     .then(|| (label.to_owned(), bounds, clipped.clip_rect))
                 })
                 .collect::<Vec<_>>();
             return d.check(
-                "The complete gain graph and both owner-axis labels fit the real paint clip",
+                "The complete audio graph and both owner-axis labels fit the real paint clip",
                 axes.len() == 2 && axes.iter().all(|(_, bounds, axis_clip)| {
                     graph.contains_rect(*bounds) && axis_clip.contains_rect(*bounds) && viewport.contains_rect(*bounds)
                 }),
-                json!({"complete_graph":true,"owner_axis_labels":2}),
+                json!({"graph":label,"complete_graph":true,"owner_axis_labels":2}),
                 json!({"graph_height":graph.height(),"scroll_height":clip.height(),"axis_labels":axes.iter().map(|(label,_,_)|label.as_str()).collect::<Vec<_>>()}),
             );
         }
@@ -661,7 +849,7 @@ fn frame_graph(d: &mut Driver<'_>) -> Result<(), String> {
     }
     Err(format!(
         "Gain graph did not fit after bounded measured scrolling: {}",
-        control_diagnostic(d, GRAPH)
+        control_diagnostic(d, label)
     ))
 }
 
@@ -1155,6 +1343,7 @@ fn tab_containment(d: &mut Driver<'_>) -> Result<(), String> {
         let mut contained = true;
         for _ in 0..20 {
             d.key_modified(Key::Tab, modifiers)?;
+            settle_keyboard_focus(d)?;
             let current = d
                 .harness
                 .root()
@@ -1171,9 +1360,9 @@ fn tab_containment(d: &mut Driver<'_>) -> Result<(), String> {
                         && rect.center().y >= top
                         && d.harness.ctx.content_rect().contains(rect.center())
                 });
-            focused.push(json!(
-                current.iter().map(|(label, _)| label).collect::<Vec<_>>()
-            ));
+            focused.push(json!(current.iter().map(|(label, rect)| {
+                json!({"label":label,"rect":[rect.left(),rect.top(),rect.right(),rect.bottom()]})
+            }).collect::<Vec<_>>()));
         }
         d.check(
             "Forward and reverse Tab traversal stay inside the gain draft",
@@ -1181,6 +1370,15 @@ fn tab_containment(d: &mut Driver<'_>) -> Result<(), String> {
             json!({"direction":direction,"focus_contained":true,"proposal_unchanged":true,"revision":revision}),
             json!(focused),
         )?;
+    }
+    Ok(())
+}
+
+fn settle_keyboard_focus(d: &mut Driver<'_>) -> Result<(), String> {
+    // The nonanimated native focus scroll is applied after layout. Observe
+    // settled paint through ordinary frames, without a wheel or reveal helper.
+    for _ in 0..(d.options.hz / 5).max(1) {
+        d.step("Settle native gain keyboard focus", false)?;
     }
     Ok(())
 }

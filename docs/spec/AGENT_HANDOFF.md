@@ -109,8 +109,22 @@ See the [native-gain qualification](../qualification/native-gain-2026-09-28.md)
 for actual verification, including native macOS command/focus/text/cancellation
 and the separate 2,156-check release replay. The warm picture and 10,000-beat
 CPU measurements retain their small-fixture/offscreen limits.
-Waveforms, physical keyboard/IME, VoiceOver, listening, complete audio processing
+Waveform editing, physical keyboard/IME, VoiceOver, listening, complete audio processing
 and DP-09 acceptance remain open.
+
+The [measured beat overview](../WAVEFORMS.md) is implemented with scoped
+[qualification](../qualification/gain-waveform-2026-09-28.md). Preserve the captured
+committed owner independently of gain proposals, complete signed min/max bins,
+unknown coverage and exact terminal owner clipping. Analysis uses the same
+preparation owner as playback and waits for controller-confirmed output
+quiescence. Retained peaks keep their memory reservations; a new request admits
+source evidence afresh. Stale errors cannot disable a valid gain edit, and Retry
+remains in the native modal keyboard circuit.
+Wide layouts pair exact fields with the editable curve below the overview;
+minimum-size layouts retain one scroller and fixed comparison/commit actions.
+The image review caught and corrected fields scrolling away from their curve.
+The final full release replay passes 2,348 checks across 18 scenarios; retain
+the qualification's small-fixture and offscreen measurement boundaries.
 
 The [compact workspace qualification](../qualification/compact-workspace-2026-09-28.md)
 records empty Sounds consolidation into the Beats heading in short

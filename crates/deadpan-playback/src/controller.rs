@@ -97,10 +97,15 @@ pub(crate) struct State {
     pub prep: Option<Arc<Job>>,
     pub reply: Option<Reply>,
     update: Option<Update>,
+    output_quiescent: bool,
+    pub waveform: crate::waveform::State,
 }
 impl State {
     pub(crate) fn shutdown(&self) -> bool {
         self.shutdown
+    }
+    pub(crate) fn can_analyze(&self) -> bool {
+        self.output_quiescent && self.intent.is_none() && self.prep.is_none() && !self.shutdown
     }
 }
 
@@ -108,11 +113,31 @@ pub(crate) struct Shared {
     state: Mutex<State>,
     pub wake: Condvar,
     repaint: Arc<dyn Fn() + Send + Sync>,
+    #[cfg(test)]
+    pub preparation_observer: Mutex<Option<preparation::Observer>>,
 }
 
 impl Shared {
     pub(crate) fn lock(&self) -> MutexGuard<'_, State> {
         self.state.lock().unwrap_or_else(|error| error.into_inner())
+    }
+    pub(crate) fn repaint(&self) {
+        (self.repaint)();
+    }
+    #[cfg(test)]
+    pub(crate) fn observe_preparation(
+        &self,
+        event: preparation::PreparationEvent,
+        cancelled: &AtomicBool,
+    ) {
+        let observer = self
+            .preparation_observer
+            .lock()
+            .unwrap_or_else(|error| error.into_inner())
+            .clone();
+        if let Some(observer) = observer {
+            observer(event, cancelled);
+        }
     }
     pub(crate) fn publish(&self, job: &Job, update: Update) {
         let mut state = self.lock();
@@ -131,7 +156,7 @@ impl Shared {
             }
         }
     }
-    fn stop(&self, shutdown: bool) {
+    fn stop(&self, shutdown: bool, interrupt_analysis: bool) {
         let mut state = self.lock();
         if let Some(job) = &state.current {
             job.cancelled.store(true, Ordering::Release);
@@ -140,11 +165,25 @@ impl Shared {
             token.stop();
         }
         state.shutdown |= shutdown;
+        let analysis_changed = if shutdown {
+            state.waveform.shutdown();
+            false
+        } else if interrupt_analysis {
+            state
+                .waveform
+                .interrupt("Waveform analysis stopped by a lifecycle interruption")
+        } else {
+            false
+        };
+        state.output_quiescent = false;
         state.intent = Some(Intent::Stop);
         state.prep = None;
         state.reply = None;
         drop(state);
         self.wake.notify_all();
+        if analysis_changed {
+            self.repaint();
+        }
     }
     fn worker_failed(&self, worker: &str) {
         let mut state = self.lock();
@@ -160,7 +199,11 @@ impl Shared {
                 Some(format!("{worker} worker terminated unexpectedly")),
             ));
         }
+        state
+            .waveform
+            .fail(&format!("{worker} worker terminated unexpectedly"));
         state.shutdown = true;
+        state.output_quiescent = false;
         state.intent = Some(Intent::Stop);
         state.prep = None;
         state.reply = None;
@@ -178,7 +221,7 @@ pub struct StopHandle {
 }
 impl StopHandle {
     pub fn stop(&self) {
-        self.shared.stop(false);
+        self.shared.stop(false, true);
     }
 }
 
@@ -186,7 +229,7 @@ impl StopHandle {
 /// generation immediately; cooperative media teardown completes on its worker.
 /// Dropping the engine requests shutdown without blocking a native UI thread.
 pub struct Engine {
-    shared: Arc<Shared>,
+    pub(crate) shared: Arc<Shared>,
 }
 
 impl Engine {
@@ -208,9 +251,13 @@ impl Engine {
                 prep: None,
                 reply: None,
                 update: None,
+                output_quiescent: true,
+                waveform: Default::default(),
             }),
             wake: Condvar::new(),
             repaint,
+            #[cfg(test)]
+            preparation_observer: Mutex::new(None),
         });
         let prep_shared = shared.clone();
         thread::Builder::new()
@@ -231,7 +278,7 @@ impl Engine {
                 }
             })
         {
-            shared.stop(true);
+            shared.stop(true, true);
             return Err(error);
         }
         Ok(Self { shared })
@@ -300,6 +347,12 @@ impl Engine {
             return Err(RequestError::Shutdown);
         }
         let epoch = state.epoch.checked_add(1).ok_or(RequestError::Exhausted)?;
+        // Close the analysis gate before publishing the play intent. The
+        // controller cannot reopen it until its device owner has gone away.
+        state.output_quiescent = false;
+        state
+            .waveform
+            .interrupt("Waveform analysis interrupted by audition");
         if let Some(job) = &state.current {
             job.cancelled.store(true, Ordering::Release);
         }
@@ -328,7 +381,7 @@ impl Engine {
         Ok(())
     }
     pub fn stop(&self) {
-        self.shared.stop(false);
+        self.shared.stop(false, false);
     }
     pub fn stop_handle(&self) -> StopHandle {
         StopHandle {
@@ -339,7 +392,7 @@ impl Engine {
         self.shared.lock().update.take()
     }
     pub fn shutdown(&self) {
-        self.shared.stop(true);
+        self.shared.stop(true, true);
     }
 }
 impl Drop for Engine {
@@ -736,7 +789,16 @@ fn run(shared: Arc<Shared>, mut factory: Factory) {
                 }
             }
         }
-        let state = shared.lock();
+        let mut state = shared.lock();
+        // `Active` survives terminal reports until the delivery clock reaches
+        // their submitted prefix deadline. Only its actual teardown opens the
+        // idle analysis lane. A newer play/stop intent closes it under this lock.
+        let quiescent = active.is_none() && state.intent.is_none() && !state.shutdown;
+        let changed = state.output_quiescent != quiescent;
+        state.output_quiescent = quiescent;
+        if changed {
+            shared.wake.notify_all();
+        }
         if state.intent.is_none() && !state.shutdown {
             let timeout = if active.is_some() {
                 Duration::from_millis(2)

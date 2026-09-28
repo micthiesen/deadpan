@@ -22,7 +22,10 @@ checks and the 5,456-case shortcut audit; all 298 app/harness tests pass.
 The [native-gain qualification](qualification/native-gain-2026-09-28.md)
 records corrected visual runs, native CUA editing/cancellation, retained failures
 and the separate performance and listening limits.
-Measured waveforms and an encoded export path remain open.
+The [measured beat overview](WAVEFORMS.md) now has scoped
+[qualification](qualification/gain-waveform-2026-09-28.md). It measures the
+committed owner before effects, separately from full-mix Before/Draft audition.
+Waveform editing and an encoded export path remain open.
 The [earlier foundation qualification](qualification/gain-clocks-2026-09-27.md)
 records the pure recipe and owner-query checkpoint; it does not qualify this
 later persistence and PCM integration.
@@ -144,7 +147,9 @@ pending or invalid fields block Apply. The graph shows the selected envelope's
 dB contribution, with clickable keys and exact key/range fields. Each ending key
 owns its incoming Step, Linear, Smoothstep or Cubic segment, including both cubic
 controls. Range edits retain interior keys or reject; they do not discard hidden
-keys after a duration shrink. Point dragging and measured waveforms remain open.
+keys after a duration shrink. Point dragging remains open. The separate
+[measured beat overview](WAVEFORMS.md) retains the committed beat's audio before
+effects throughout the draft; it is independent of full-mix Before/Draft audition.
 
 Temporary editing binds the owner, scope, cursor, session, base revision and
 draft/change identity. The writer validates a proposal without writing history.

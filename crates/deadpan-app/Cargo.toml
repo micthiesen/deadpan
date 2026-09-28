@@ -15,6 +15,7 @@ ui-harness = ["dep:deadpan-native-process", "dep:egui_kittest", "dep:image", "de
 [dependencies]
 eframe.workspace = true
 deadpan-cli = { path = "../deadpan-cli" }
+deadpan-audio.workspace = true
 deadpan-core.workspace = true
 deadpan-store.workspace = true
 deadpan-plan.workspace = true

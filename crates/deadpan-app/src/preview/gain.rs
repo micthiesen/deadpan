@@ -9,6 +9,7 @@ use crate::project::gain::{Proposal, ProposalId, ProposalUpdate, Target};
 use crate::transport::Domain;
 
 mod controls;
+mod waveform;
 use controls::FocusReveal;
 
 const FOCUS_ID: &str = "gain-draft-focus";
@@ -35,6 +36,7 @@ pub(super) struct Draft {
     change: u64,
     edit: GainEdit,
     controls: controls::Controls,
+    waveform: waveform::Display,
     pending: Option<ProposalId>,
     requested: Option<u64>,
     prepared: Option<Arc<Snapshot>>,
@@ -61,6 +63,26 @@ impl Draft {
     #[cfg(feature = "ui-harness")]
     pub(super) fn window(&self) -> Window {
         self.window
+    }
+
+    #[cfg(feature = "ui-harness")]
+    pub(super) fn waveform_state(
+        &self,
+    ) -> (
+        Option<deadpan_playback::WaveformTicket>,
+        deadpan_playback::WaveformStatus,
+        Option<&Arc<deadpan_audio::DefinitionWaveform>>,
+    ) {
+        (
+            self.waveform.ticket,
+            self.waveform.status,
+            self.waveform.data.as_ref(),
+        )
+    }
+
+    #[cfg(feature = "ui-harness")]
+    pub(super) fn receive_waveform_for_check(&mut self, update: deadpan_playback::WaveformUpdate) {
+        self.waveform.receive(&self.target, update);
     }
 
     fn proposal(&self) -> Proposal {
@@ -297,6 +319,8 @@ impl DeadpanApp {
         self.error = None;
         let edit = GainEdit::new(target.entry.clone());
         let controls = controls::Controls::new(&edit, frames);
+        let mut waveform = waveform::Display::default();
+        waveform.request(&self.playback, &base, &target.node);
         self.gain = Some(Draft {
             target,
             base,
@@ -304,6 +328,7 @@ impl DeadpanApp {
             change: 1,
             edit,
             controls,
+            waveform,
             pending: None,
             requested: None,
             prepared: None,
@@ -329,6 +354,20 @@ impl DeadpanApp {
         }
     }
 
+    pub(super) fn receive_gain_waveform(&mut self) {
+        if let Some(update) = self.playback.poll_waveform()
+            && let Some(draft) = &mut self.gain
+        {
+            draft.waveform.receive(&draft.target, update);
+        }
+    }
+
+    pub(super) fn cancel_gain_waveform(&mut self) {
+        if let Some(draft) = &mut self.gain {
+            draft.waveform.cancel(&self.playback);
+        }
+    }
+
     pub(super) fn finish_gain_commit(&mut self, update: &crate::project::ProjectUpdate) {
         let Some(draft) = &mut self.gain else {
             return;
@@ -341,6 +380,7 @@ impl DeadpanApp {
             .as_ref()
             .is_some_and(|committed| committed.selected_node.as_ref() == Some(&draft.target.node))
         {
+            draft.waveform.cancel(&self.playback);
             self.gain = None;
         } else if let Some(error) = &update.error {
             draft.applying = false;
@@ -380,6 +420,7 @@ impl DeadpanApp {
             .and_then(|draft| self.check_gain_target(&draft.target).err());
         if let Some(error) = failure {
             self.stop_playback();
+            self.cancel_gain_waveform();
             self.gain = None;
             self.error = Some(error);
             context.request_repaint();
@@ -388,6 +429,7 @@ impl DeadpanApp {
 
     fn close_gain(&mut self, context: &egui::Context) {
         self.stop_playback();
+        self.cancel_gain_waveform();
         if let Some(draft) = self.gain.take()
             && self
                 .workspace
@@ -511,6 +553,7 @@ impl DeadpanApp {
         };
         let mut action = draft.key.take();
         let mut changed = false;
+        let mut retry_waveform = false;
         let height = (ui.ctx().content_rect().height() * 0.34).clamp(224.0, 300.0);
         panel.exact_size(height).show(ui, |ui| {
             let title_width = (ui.available_width() - 350.0).clamp(120.0, 480.0);
@@ -580,7 +623,11 @@ impl DeadpanApp {
                         playback::sound_time(draft.window.end().0 as u64)
                     ));
                     ui.add_enabled_ui(!draft.applying, |ui| {
-                        changed = draft.controls.show(ui, &mut draft.edit);
+                        changed = draft
+                            .controls
+                            .show(ui, &mut draft.edit, |ui, owner_frames| {
+                                retry_waveform |= draft.waveform.show(ui, owner_frames);
+                            });
                     });
                     if let Some(error) = &draft.error {
                         ui.colored_label(ui.visuals().error_fg_color, error);
@@ -641,6 +688,12 @@ impl DeadpanApp {
                 }
             });
         });
+        if retry_waveform && !draft.applying {
+            draft
+                .waveform
+                .request(&self.playback, &draft.base, &draft.target.node);
+            draft.focus_pending = true;
+        }
         if changed {
             if let Some(run) = &self.transport
                 && let Ok(position) = run.content_sample()
@@ -704,6 +757,7 @@ impl DeadpanApp {
                 },
             }) && let Some(draft) = &mut self.gain
             {
+                draft.waveform.cancel(&self.playback);
                 draft.applying = true;
             }
             return;
@@ -842,6 +896,7 @@ mod tests {
             token: 10,
             change: 1,
             controls: controls::Controls::new(&edit, 10),
+            waveform: waveform::Display::default(),
             edit,
             pending: None,
             requested: None,

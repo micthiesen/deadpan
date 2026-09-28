@@ -314,8 +314,16 @@ Exact-field and comparison replay, both app configurations and a native macOS
 command/focus/text/cancellation pass are verified within that recorded scope.
 The complete release replay passes 2,156 checks, retaining separate cold and
 warm timing populations and the small-fixture/offscreen qualification boundary.
-Measured waveforms, physical keyboard/IME and acoustic qualification, full voice
+Waveform editing, physical keyboard/IME and acoustic qualification, full voice
 processing and the complete DP-09 workflow remain required.
+The [measured beat overview](WAVEFORMS.md) has scoped
+[qualification](qualification/gain-waveform-2026-09-28.md), with 32 focused
+waveform tests and all 2,062 normal workspace tests passing. After an app-only
+visual alignment fix, final normal/optional app tests pass 267/302 cases,
+and painted Gain/room-tone replays pass 291/221 checks plus their routing audits.
+The full release replay passes 2,348 checks across 18 scenarios. This is a bounded
+pre-effects reference for one
+captured committed owner, not a final-mix or timeline-wide waveform editor.
 The [compact workspace increment](qualification/compact-workspace-2026-09-28.md)
 also consolidates empty Placed sounds into a visible Beats-heading target at
 short window heights. Copied-range controls retain a measured 143-point minimum

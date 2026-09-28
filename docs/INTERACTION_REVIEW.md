@@ -121,6 +121,14 @@ records the latest fixes, review and retained failures:
   pass confirms field reveal and cancellation without a project change. General
   gain controls follow node-specific inspector actions so they do not displace
   the saved Hold audio recipe. See the [gain qualification](qualification/native-gain-2026-09-28.md).
+- **Waveform placement separated exact fields from their gain curve.** Initial
+  wide captures showed the fields above the visible curve, leaving empty space
+  beside it. The waveform now occupies an earlier row; curve and fields share
+  the next row. Final captures and a direct simultaneous-paint assertion verify
+  the correction. The measured stereo reference retains separate amplitude
+  scales and committed-owner identity. Native Retry and both keyboard directions
+  pass after normal layout settling, with complete paint/hit checks. See the
+  [waveform qualification](qualification/gain-waveform-2026-09-28.md).
 - **Copied Original controls crowded the minimum normal picture.** The
   corrected room-tone capture at 960×640 shows the copied range, paste, audition
   and monitor controls plus an empty 64-point Placed sounds strip. Its picture

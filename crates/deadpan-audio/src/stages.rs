@@ -46,6 +46,9 @@ mod sound_events;
 #[path = "authored_gain.rs"]
 mod authored_gain;
 
+#[path = "definition_waveform.rs"]
+mod definition_waveform;
+
 #[path = "projected_root.rs"]
 mod projected_root;
 pub use projected_root::ProjectedRootBlock;
@@ -717,7 +720,33 @@ impl StageAudio {
         if !definition.belongs_to(&self.plan) {
             return Err(StageAudioError::ForeignDefinition);
         }
-        validate_timeout(timeout)?;
+        let budget = PreparationBudget::new(timeout, cancelled)?;
+        let block =
+            self.read_definition_controlled(provider, definition, start, frames, &budget)?;
+        Ok(DefinitionAudioBlock {
+            schema_version: 1,
+            stage: "definition_output_pcm_before_effects",
+            project_id: self.plan.metadata().project_id.clone(),
+            revision_id: self.plan.metadata().revision_id.clone(),
+            definition: definition.selector().clone(),
+            root: definition.root().clone(),
+            start,
+            samples: block.samples,
+            suppressed: block.suppressed,
+        })
+    }
+
+    fn read_definition_controlled(
+        &mut self,
+        provider: &mut impl AudioSourceProvider,
+        definition: &AudioDefinition<'_>,
+        start: SignalSample,
+        frames: u32,
+        budget: &PreparationBudget<'_>,
+    ) -> Result<SignalBlock, StageAudioError> {
+        if !definition.belongs_to(&self.plan) {
+            return Err(StageAudioError::ForeignDefinition);
+        }
         let signal = definition.signal();
         let end = start
             .0
@@ -730,25 +759,11 @@ impl StageAudio {
         {
             return Err(StageAudioError::Range);
         }
-        let work = RefCell::new(ReadWork::default());
-        let control = WorkControl {
-            cancelled,
-            deadline: Instant::now() + timeout,
-            work: &work,
-        };
+        budget.check()?;
+        let control = budget.control();
         let block = self.read_signal(&signal, provider, start, frames, control, 0)?;
         control.check()?;
-        Ok(DefinitionAudioBlock {
-            schema_version: 1,
-            stage: "definition_output_pcm_before_effects",
-            project_id: self.plan.metadata().project_id.clone(),
-            revision_id: self.plan.metadata().revision_id.clone(),
-            definition: definition.selector().clone(),
-            root: definition.root().clone(),
-            start,
-            samples: block.samples,
-            suppressed: block.suppressed,
-        })
+        Ok(block)
     }
 
     /// Read a checked projection of current structural signals under one

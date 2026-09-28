@@ -141,8 +141,10 @@ The graph plots the selected envelope's actual contribution on the current
 owner-output frame axis. Visible key buttons select exact keys; hidden keys
 remain accessible through the selector and exact fields. Floating-point values
 are used only for painting. Duration shrink does not normalize keys into the
-visible range. Pointer point dragging and measured waveform display remain open;
-the graph does not draw a decorative waveform. Reviewed captures show the full
+visible range. Pointer point dragging remains open. The separate
+[measured beat overview](WAVEFORMS.md) uses actual canonical PCM and shares the
+horizontal owner-frame geometry; amplitude and editable dB keep separate scales.
+The gain graph does not draw a decorative waveform. Reviewed captures show the full
 graph and fixed actions at 960×640 and 1280×820, with a painted viewer measuring
 145 and 270.1875 points respectively.
 
@@ -183,6 +185,6 @@ revocation. Retain the real-media permit through worker exit. Replay production
 keys, pointer, text and focus through the UI harness for command capture,
 Before/Draft, Enter/Escape and restored selection. Reserve native GUI testing
 for OS focus/IME delivery, accessibility, physical presentation and real listening
-that the painted replay cannot establish. Point dragging, measured waveforms,
+that the painted replay cannot establish. Point dragging, waveform editing,
 long-source response measurements and encoded export remain open. Keep those
 limits explicit until implemented and measured.

@@ -365,6 +365,75 @@ fn source_mute_leaves_independent_sound_and_root_gain_composes_with_event_gain_o
 }
 
 #[test]
+fn definition_waveform_ignores_gain_edges_and_independent_placed_sound_mix() {
+    use deadpan_audio::{WaveformCompletion, WaveformControl, WaveformLimits, WaveformMemory};
+    use deadpan_plan::AudioDefinitionSelector;
+    let base = source_document(1024);
+    let sounded = with_sound(&base);
+    let treated = changed(
+        &sounded,
+        &[
+            (
+                "source",
+                treatment(
+                    6000,
+                    false,
+                    vec![constant_envelope(0, 1024, -12000)],
+                    vec![range(256, 512)],
+                ),
+            ),
+            ("root", treatment(-6000, false, vec![], vec![])),
+        ],
+    );
+    let muted = changed(&treated, &[("source", treatment(0, true, vec![], vec![]))]);
+    let memory = WaveformMemory::default();
+    let mut provider = FixtureProvider::new();
+    let mut reference = None;
+    for document in [&base, &sounded, &treated, &muted] {
+        let plan = Arc::new(RenderPlan::compile(document).unwrap());
+        let definition = plan
+            .audio_definition(AudioDefinitionSelector::Node { node: id("source") })
+            .unwrap();
+        let result = StageAudio::new(Arc::clone(&plan))
+            .measure_definition(
+                &mut provider,
+                &definition,
+                WaveformControl {
+                    limits: WaveformLimits::default(),
+                    cancelled: &AtomicBool::new(false),
+                    memory: &memory,
+                },
+                |_| {},
+            )
+            .unwrap();
+        assert_eq!(result.completion, WaveformCompletion::Complete);
+        let levels: Vec<_> = (0..result.waveform.level_count())
+            .map(|level| result.waveform.level(level).unwrap().to_vec())
+            .collect();
+        if let Some(reference) = &reference {
+            assert_eq!(&levels, reference);
+        } else {
+            reference = Some(levels);
+        }
+    }
+    let original_pcm = authored_all(&base, &mut provider, &[256]);
+    let sounded_pcm = authored_all(&sounded, &mut provider, &[31, 241]);
+    let treated_pcm = authored_all(&treated, &mut provider, &[37, 219]);
+    let muted_pcm = authored_all(&muted, &mut provider, &[256]);
+    assert_ne!(original_pcm, sounded_pcm);
+    assert_ne!(sounded_pcm, treated_pcm);
+    assert_ne!(treated_pcm, muted_pcm);
+    assert!(
+        muted_pcm[..256]
+            .iter()
+            .flatten()
+            .any(|value| value.abs() > 0.01)
+    );
+    assert_eq!(muted_pcm[256..], vec![[0.0; 2]; 768]);
+    assert_eq!(memory.resident_bytes(), 0);
+}
+
+#[test]
 fn limiter_halos_use_authored_gain_for_whole_and_cold_shuffled_reads() {
     let base = source_document(4096);
     let treated = changed(

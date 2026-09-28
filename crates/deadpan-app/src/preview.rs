@@ -2782,6 +2782,7 @@ impl eframe::App for DeadpanApp {
             self.receive();
             self.reconcile_room_tone(&context);
             self.reconcile_gain(&context);
+            self.receive_gain_waveform();
         }
         self.reconcile_sound_playback();
         if first_pass {
@@ -2791,6 +2792,7 @@ impl eframe::App for DeadpanApp {
         self.ensure_visible_pane(&context);
         if self.close_pending {
             self.stop_playback();
+            self.cancel_gain_waveform();
             if self.service.is_busy() {
                 context.send_viewport_cmd(egui::ViewportCommand::CancelClose);
                 context.request_repaint_after(Duration::from_millis(16));

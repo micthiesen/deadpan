@@ -90,6 +90,120 @@ fn bound_document() -> ProjectDocument {
 }
 
 #[test]
+fn definition_waveform_retains_odd_phase_bindings_through_split_partitions() {
+    use deadpan_audio::{WaveformCompletion, WaveformControl, WaveformLimits, WaveformMemory};
+    use deadpan_plan::AudioDefinitionSelector;
+    let before = bound_document();
+    let (split, _) = edit(
+        &before,
+        Command::Split {
+            node: id("rate"),
+            at: duration(1),
+            identities: SplitIdentities {
+                nodes: (0..12)
+                    .map(|n| id(&format!("waveform-split-{n}")))
+                    .collect(),
+            },
+        },
+        "waveform-split",
+    );
+    let NodeKind::Sequence { children } = &split.nodes()[&id("root")].kind else {
+        unreachable!()
+    };
+    let mut owners = vec![(&before, id("rate"))];
+    owners.extend(
+        children
+            .iter()
+            .filter(|owner| {
+                matches!(
+                    split.nodes()[*owner].kind,
+                    NodeKind::Retime {
+                        purpose: RetimePurpose::Partition,
+                        ..
+                    }
+                )
+            })
+            .cloned()
+            .map(|owner| (&split, owner)),
+    );
+    assert_eq!(owners.len(), 3);
+    let memory = WaveformMemory::default();
+    let mut provider = FixtureProvider::new();
+    for (document, owner) in owners {
+        provider.revisions.insert(document.revision_id().clone());
+        let plan = Arc::new(RenderPlan::compile(document).unwrap());
+        let definition = plan
+            .audio_definition(AudioDefinitionSelector::Node { node: owner })
+            .unwrap();
+        let mut reference = StageAudio::new(Arc::clone(&plan));
+        let total = usize::try_from(definition.signal().sample_count().unwrap().0).unwrap();
+        let mut expected = Vec::new();
+        for count in [1, 137, 53, 256].into_iter().cycle() {
+            if expected.len() == total {
+                break;
+            }
+            let count = count.min(u32::try_from(total - expected.len()).unwrap());
+            expected.extend(
+                reference
+                    .read_definition(
+                        &mut provider,
+                        &definition,
+                        SignalSample(i64::try_from(expected.len()).unwrap()),
+                        count,
+                        TIMEOUT,
+                        &AtomicBool::new(false),
+                    )
+                    .unwrap()
+                    .samples,
+            );
+        }
+        let result = StageAudio::new(Arc::clone(&plan))
+            .measure_definition(
+                &mut provider,
+                &definition,
+                WaveformControl {
+                    limits: WaveformLimits::default(),
+                    cancelled: &AtomicBool::new(false),
+                    memory: &memory,
+                },
+                |_| {},
+            )
+            .unwrap();
+        assert_eq!(result.completion, WaveformCompletion::Complete);
+        assert_eq!(
+            result.waveform.measured_end(),
+            SignalSample(i64::try_from(total).unwrap())
+        );
+        for level in 0..result.waveform.level_count() {
+            for (index, peak) in result.waveform.level(level).unwrap().iter().enumerate() {
+                let range = result.waveform.bin_samples(level, index).unwrap();
+                let samples = &expected[usize::try_from(range.start.0).unwrap()
+                    ..usize::try_from(range.end.0).unwrap()];
+                for channel in 0..2 {
+                    assert_eq!(
+                        peak.minimum()[channel],
+                        samples
+                            .iter()
+                            .map(|sample| sample[channel])
+                            .min_by(f32::total_cmp)
+                            .unwrap()
+                    );
+                    assert_eq!(
+                        peak.maximum()[channel],
+                        samples
+                            .iter()
+                            .map(|sample| sample[channel])
+                            .max_by(f32::total_cmp)
+                            .unwrap()
+                    );
+                }
+            }
+        }
+    }
+    assert_eq!(memory.resident_bytes(), 0);
+}
+
+#[test]
 fn rate_and_pitch_changes_use_fresh_output_but_keep_bound_child_pcm() {
     let before = bound_document();
     let mut provider = FixtureProvider::new();

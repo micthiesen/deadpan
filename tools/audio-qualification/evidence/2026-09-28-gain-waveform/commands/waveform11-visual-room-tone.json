@@ -1,0 +1,20 @@
+{
+  "command": [
+    "target/debug/deadpan-app",
+    "--ui-check",
+    "--scenario",
+    "room-tone",
+    "--retain-projects",
+    "--output",
+    "/tmp/deadpan-gain-waveform-4apg6qx9/waveform11-visual-room-tone",
+    "--kestrel-source",
+    "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+  ],
+  "started": "2026-09-28T14:00:04.121783+00:00",
+  "base_commit": "e3f25dbb4fd5b542cdc9016dee6725187d3ad2fd",
+  "diff_sha256": "00b459b7e89f46bcd20c196641bc35bdc93256bc6bb314fd98bb6a0ada06091e",
+  "source_manifest_sha256": "71d2f31fd90bfdf5d5adc92b9555c3461a9d4536fffdab99d2a657d9ca2022c2",
+  "pid": 32836,
+  "exit_code": 0,
+  "seconds": 61.91328345797956
+}
