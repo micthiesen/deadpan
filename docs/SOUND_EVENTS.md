@@ -83,15 +83,70 @@ limits never introduce a fade or erase a genuine fractional endpoint.
 time-mapped and `--edge-faded` diagnostic readers retain their Original-only
 meaning. With no events, previous PCM and metadata stay unchanged.
 
-Nested ownership, structural interval transforms, custom Hold allowances,
-creative treatments and native event controls remain open. Temporal commands
-explicitly reject documents containing sound events until those transforms
-exist; removing the events permits those edits again. Capturing an unsupported
-frozen audio context also fails explicitly. Renaming, framing, audio mapping,
+Nested ownership, the remaining structural interval transforms, custom Hold
+allowances, creative treatments and native event controls remain open. The
+root ripple subset below preserves sounds through supported edits. Other
+temporal commands and unsupported frozen audio captures still fail explicitly.
+Renaming, framing, audio mapping,
 edge choices and other clock-preserving edits retain their normal transactions.
 This guarded backend is not full sound editing or a completed audio master.
 See the [qualification record](qualification/root-sounds-2026-09-27.md) for
 review findings, real-PCM comparisons, resource limits and verification evidence.
+
+## Persisted root ripple edits
+
+Core 30/database 36 retain `sound_routes` separately from complete `SoundEvent`
+recipes. Each journal stores the original root extent and RoundEven grid, then
+each Insert/Delete operation, its grid and genuine cut policies in chronological
+order. Never combine adjacent edits into one frame offset. `InsertTime` and
+`SpliceSource` introduce sound-free time; Delete through ordinary Sequence
+ancestors removes the intersecting interval while preserving a surviving suffix.
+Survival follows the retained integral selected support through each physical
+Keep, including destination clipping. An initially sampleless selection uses
+exact logical support so unrelated edits preserve its accepted intent. Removing
+all selected support deletes the event. Internal helper Splits do not apply the
+transformation twice. Non-root Split retains the root bus unchanged.
+
+`SetSound` changes label, gain or endpoint policy without discarding the journal.
+Changing a routed recipe, mapping, owner or offset requires `ReplaceSound`, which
+explicitly clears the previous route in the same reversible transaction. Stored
+recipe containment is checked against its original extent, not today's shorter
+root. Route-only changes recheck their unchanged source receipts too.
+
+The raw `AudioRootSource` capture binds the full original recipe directly to its
+RoundEven grid. Routed reads copy old physical samples using the caller's shared
+work, deadline, dependency and PCM budgets. Current silent Holds stay live and
+are applied once to the routed output. They never become frozen input silence.
+Recipe endpoints retain both exact semantic coordinates and integral physical
+labels: move the labels by the retained sample shift, never reround them after
+an odd shift. Genuine cuts replace affected envelope boundaries; transparent
+Split and query boundaries supply none. Intersect current Hold boundaries with
+these retained boundaries and evaluate one envelope. Exact coincidence combines
+Hard intent while the current Hold owns its clipping sample label.
+Virtual envelope labels use widened integers; clip translated physical support
+before narrowing it to an output sample label. A valid clipped allocation can
+retain a virtual envelope endpoint outside the output integer range.
+
+The journal has a hard 1,024-edit bound and all document journals share a 1 MiB
+serialized bound. Existing compiled arena caps can apply earlier: 819 interior
+insertions fit the 4,096-node cap. History traversal is iterative and bounded;
+each Ripple map still has structural depth at most 64. Root Split, temporal
+occurrence edits, nested sound ownership, Repeat/Retime transformations and
+general retained sound-bus captures remain required. Their guards stay closed.
+
+The immutable render plan compiles sampled routes and transported envelope
+islands once. Construction has aggregate ceilings of 16,777,216 visits and
+16,384 retained islands. A read seeks intersecting islands by index and combines
+only their boundaries with current Hold policy. Audio blocks must not rebuild
+or forward-project every chronological island on each query.
+
+Database 35 replays through frozen core 29. Its original sound-bearing command
+restrictions are checked before modern apply, including a formerly forbidden
+Split whose modern snapshots and patches contain no new route field. The actual
+old-CLI fixture retains qualified media, two sounds, abandoned sound parameters
+and pending redo. Migration adds no journals to old snapshots.
+See the [routing qualification](qualification/root-sound-routing-2026-09-27.md)
+for review corrections, decoded-PCM comparisons and verification scope.
 
 ## Structural edit contract
 
@@ -214,8 +269,10 @@ event's beginning keeps the surviving recipe suffix and its original phase.
 
 Both arenas require a final root, earlier-only references and complete reachability.
 Admission memoizes extents, monotone input footprints, depth and Sequence indexes.
-Combined routes admit at most 4,096 nodes, 16,384 edges and depth 64, with a 1 MiB
-serialized bound. Use `from_json` to reject oversized wire input before parsing;
+Combined routes admit at most 4,096 nodes and 16,384 edges, with a 1 MiB
+serialized bound. Ripple maps have structural depth at most 64; chronological
+route history uses a bounded iterative traversal independently of that depth.
+Use `from_json` to reject oversized wire input before parsing;
 embedding callers using serde must bound their containing input too. Queries
 default to 65,536 work units and 4,096 result spans, with hard caps of 1,000,000
 and 16,384. Short queries seek directly to a Repeat ordinal or Sequence prefix;
@@ -310,12 +367,13 @@ measured fixture, verification results and remaining acceptance limits.
 
 `AudioRoutedSignal` binds a retained PointCeil sample route to either a complete
 independent source input or a shared intrinsic Preserve projection.
-`AudioRoutedRoot` binds a RoundEven route to a complete captured projected root.
+`AudioRoutedRoot` binds a RoundEven route to a complete captured projected root
+or an explicitly checked raw `AudioRootSource`.
 Construction checks the original Recipe extent, grid origin, spacing, rule and
 allocation against that provider. Equal durations or sample counts are not enough.
 Cropped, transformed or resumed captures are rejected; select later output with
-the route while retaining the complete provider. An independently placed raw root
-source requires its own checked capture and is not inferred from a point signal.
+the route while retaining the complete provider. The independently placed raw root
+source has its own checked capture and is never inferred from sampled PointCeil PCM.
 
 Root Recipe frames are relative to the complete output's start, while its sample
 labels remain absolute. The grid therefore retains the negative of that start as
@@ -336,7 +394,8 @@ on its old grid and copied with those samples. Current consuming Hold gates,
 scoped allowances and creative edges still belong after this routed preparation;
 moving an old gate does not implement a current allowance. The source case always
 uses the input view, preserving the sound beneath current structural Holds.
-These APIs do not yet feed persisted events or the final voice bus. See
+Raw root routes now feed persisted root events into the shared pre-master bus.
+The broader projected APIs remain preparation interfaces. See
 [routed-voice qualification](qualification/routed-voices-2026-09-27.md) for
 decoded-PCM witnesses, review, verification and acceptance limits.
 
@@ -344,21 +403,10 @@ decoded-PCM witnesses, review, verification and acceptance limits.
 
 The remaining integration is required, not optional follow-up scope:
 
-The immediate dependency is persisted routing. Keep the complete sound recipe,
-original owner extent, selected support, sample-clock history and envelope
-progress separate from live fragments. A final offset or a collection of trimmed
-sources cannot preserve successive rounded edits. `SetSound` parameter changes
-must retain routing unless an explicit command replaces that intent.
-
-The raw root-source provider also needs a checked retained RoundEven capture.
-The existing `AudioRoutedRoot` accepts a processed root; a unity Preserve stage
-must not stand in for this missing raw boundary. Routed bus reads must reuse the
-caller's work budget and return dependencies for cache validation, including
-fully masked sounds. Current Hold gates remain separate from the retained input.
-
-InsertTime/SpliceSource/Delete should each capture and transform the root sound
-clock once, outside any helper Split. Non-root Split leaves that owner clock
-unchanged. Root Split instead needs retained owned contexts and shared logical
+The supported root ripple journal and raw RoundEven capture establish the
+current subset. Keep complete recipes, sample clocks, selection support and
+envelope progress separate from fragments while extending it. Root Split needs
+retained owned contexts and shared logical
 sound identity so the replacement root never doubles the contribution. Do not
 open public frozen-context guards until those captures include their sound bus.
 

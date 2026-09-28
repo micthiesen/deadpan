@@ -95,6 +95,23 @@ impl<'plan> AudioSourceVoice<'plan> {
 }
 
 impl<'plan> AudioSignal<'plan> {
+    /// Build a complete historical raw root input without borrowing the live
+    /// owner's duration or Hold policy. Only the checked root capture uses this.
+    pub(crate) fn source_voice_capture(
+        plan: &'plan RenderPlan,
+        recipe: AudioSourceVoiceRecipe,
+        extent: ExactRatio,
+    ) -> Result<AudioSourceVoice<'plan>, PlanError> {
+        if !extent.compare_integer(0).is_gt() {
+            return Err(PlanError::InvalidPlan(
+                "raw root capture extent must be positive",
+            ));
+        }
+        let mut signal = plan.audio_signal();
+        signal.support = ExactRatio::ZERO..extent;
+        signal.source_voice(recipe)
+    }
+
     /// Attach an independent natural-rate catalog source to this checked owner.
     /// Metadata admission is necessary but not sufficient: the existing media
     /// provider must still admit the exact revision, receipt and original bytes.

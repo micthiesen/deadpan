@@ -5,8 +5,8 @@ use std::{ops::Range, sync::Arc};
 use deadpan_core::{AudioSample, ExactRatio, MIX_SAMPLE_RATE};
 
 use crate::{
-    AudioBoundaryRule, AudioProjectedRoot, AudioSampleGrid, AudioSoundRoute, AudioSourceVoice,
-    AudioStageProjection, PlanError, RenderPlan, SignalSample,
+    AudioBoundaryRule, AudioProjectedRoot, AudioRootSource, AudioSampleGrid, AudioSoundRoute,
+    AudioSourceVoice, AudioStageProjection, PlanError, RenderPlan, SignalSample,
 };
 
 /// The closed set of complete intrinsic providers that can retain sampled
@@ -116,8 +116,14 @@ fn validate_signal_capture(
 /// the retained root supplies the original phase, support and policy.
 #[derive(Debug, Clone)]
 pub struct AudioRoutedRoot<'plan> {
-    root: AudioProjectedRoot<'plan>,
-    route: AudioSoundRoute<AudioSample>,
+    input: AudioRoutedRootInput<'plan>,
+    route: Arc<AudioSoundRoute<AudioSample>>,
+}
+
+#[derive(Debug, Clone)]
+pub enum AudioRoutedRootInput<'plan> {
+    Source(Box<AudioRootSource<'plan>>),
+    Projected(Box<AudioProjectedRoot<'plan>>),
 }
 
 impl<'plan> AudioRoutedRoot<'plan> {
@@ -135,11 +141,46 @@ impl<'plan> AudioRoutedRoot<'plan> {
                 "sound route does not match its complete projected root capture",
             ));
         }
-        Ok(Self { root, route })
+        Ok(Self {
+            input: AudioRoutedRootInput::Projected(Box::new(root)),
+            route: Arc::new(route),
+        })
     }
 
-    pub fn root(&self) -> &AudioProjectedRoot<'plan> {
-        &self.root
+    pub fn source(
+        root: AudioRootSource<'plan>,
+        route: AudioSoundRoute<AudioSample>,
+    ) -> Result<Self, PlanError> {
+        Self::source_shared(root, Arc::new(route))
+    }
+
+    pub(crate) fn source_shared(
+        root: AudioRootSource<'plan>,
+        route: Arc<AudioSoundRoute<AudioSample>>,
+    ) -> Result<Self, PlanError> {
+        if route.recipe_grid() != root.grid()
+            || route.route().recipe_extent() != root.extent()
+            || route.recipe_samples() != root.samples()?
+        {
+            return Err(PlanError::InvalidPlan(
+                "sound route does not match its complete raw root capture",
+            ));
+        }
+        Ok(Self {
+            input: AudioRoutedRootInput::Source(Box::new(root)),
+            route,
+        })
+    }
+
+    pub fn input(&self) -> &AudioRoutedRootInput<'plan> {
+        &self.input
+    }
+
+    pub fn root(&self) -> Option<&AudioProjectedRoot<'plan>> {
+        match &self.input {
+            AudioRoutedRootInput::Projected(root) => Some(root),
+            AudioRoutedRootInput::Source(_) => None,
+        }
     }
 
     pub fn route(&self) -> &AudioSoundRoute<AudioSample> {
@@ -151,10 +192,13 @@ impl<'plan> AudioRoutedRoot<'plan> {
     }
 
     pub fn plan(&self) -> &'plan RenderPlan {
-        self.root.projection().stage().plan()
+        match &self.input {
+            AudioRoutedRootInput::Source(root) => root.plan(),
+            AudioRoutedRootInput::Projected(root) => root.projection().stage().plan(),
+        }
     }
 
     pub fn belongs_to(&self, plan: &RenderPlan) -> bool {
-        self.root.belongs_to(plan)
+        std::ptr::eq(self.plan(), plan)
     }
 }

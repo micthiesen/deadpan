@@ -308,7 +308,7 @@ fn root_capture_preserves_fractional_signed_origins_and_old_sample_maps() {
         assert_eq!(routed.route().recipe_samples(), root.samples());
         assert!(routed.belongs_to(&plan));
         assert!(!routed.belongs_to(&plan.clone()));
-        assert_eq!(routed.root().sampling(), root.sampling());
+        assert_eq!(routed.root().unwrap().sampling(), root.sampling());
         let sampled = routed
             .route()
             .query(routed.samples(), Default::default())

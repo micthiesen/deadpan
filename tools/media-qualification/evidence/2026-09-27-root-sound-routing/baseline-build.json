@@ -1,0 +1,12 @@
+{
+  "command": [
+    "cargo",
+    "build",
+    "--locked",
+    "-p",
+    "deadpan-cli"
+  ],
+  "exit_code": 0,
+  "seconds": 21.32920162472874,
+  "base_commit": "d6e931c8c57f5684302ca9bc903d43ea84fed1a8"
+}

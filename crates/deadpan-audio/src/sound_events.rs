@@ -7,9 +7,16 @@ use super::*;
 
 struct PreparedSoundQuery<'plan> {
     voice: deadpan_plan::AudioRootSound<'plan>,
-    signal: AudioSignalQuery<'plan>,
-    policy: AudioPolicyQuery<SignalSample>,
+    input: PreparedSoundInput<'plan>,
     fades: Vec<deadpan_plan::AudioSoundGateSpan>,
+}
+
+enum PreparedSoundInput<'plan> {
+    Direct {
+        signal: AudioSignalQuery<'plan>,
+        policy: AudioPolicyQuery<SignalSample>,
+    },
+    Routed(super::routed::PreparedRoutedRootQuery<'plan>),
 }
 
 impl StageAudio {
@@ -33,32 +40,40 @@ impl StageAudio {
             control.check()?;
             let voice = plan.root_sound(id)?;
             control.admit_dependency(&voice.event().source.asset)?;
-            let range = SignalSample(start.0)..SignalSample(end);
-            let signal = voice
-                .root_output_tape()
-                .query(range.clone(), control.query_limits()?)?;
-            control.spend_plan_work(signal.work)?;
-            let policy = voice
-                .root_output_tape()
-                .policy(range, control.query_limits()?)?;
-            control.spend_plan_work(policy.work)?;
+            let input = if let Some(routed) = voice.routed_input() {
+                PreparedSoundInput::Routed(
+                    self.preflight_routed_root(routed, start, frames, control)?,
+                )
+            } else {
+                let tape = voice
+                    .root_output_tape()
+                    .ok_or(PlanError::InvalidPlan("sound input is absent"))?;
+                let range = SignalSample(start.0)..SignalSample(end);
+                let signal = tape.query(range.clone(), control.query_limits()?)?;
+                control.spend_plan_work(signal.work)?;
+                let policy = tape.policy(range, control.query_limits()?)?;
+                control.spend_plan_work(policy.work)?;
+                for content in &policy.contents {
+                    control.preflight_content(content, &plan)?;
+                }
+                self.preflight_signal_query(&signal, control, 0)?;
+                PreparedSoundInput::Direct { signal, policy }
+            };
             let fades = voice.gate_fades(start..AudioSample(end), control.query_limits()?)?;
             control.spend_plan_work(fades.work)?;
             validate_gate_envelopes(&fades.spans, start..AudioSample(end))?;
-            for content in &policy.contents {
-                control.preflight_content(content, &plan)?;
-            }
-            self.preflight_signal_query(&signal, control, 0)?;
             voices.push(PreparedSoundQuery {
                 voice,
-                signal,
-                policy,
+                input,
                 fades: fades.spans,
             });
         }
         // Reserve the retained Original, the f64 sum and the source reader's
         // two transient PCM buffers under the existing shared residency limit.
-        let reservation = u64::from(frames) * 5;
+        let routed = voices
+            .iter()
+            .any(|voice| matches!(&voice.input, PreparedSoundInput::Routed(_)));
+        let reservation = u64::from(frames) * if routed { 6 } else { 5 };
         self.make_room(reservation, false, control)?;
         self.active_frames += reservation;
         let result = (|| {
@@ -85,8 +100,7 @@ impl StageAudio {
             .collect();
         for PreparedSoundQuery {
             voice,
-            signal,
-            policy,
+            input,
             fades,
         } in voices
         {
@@ -100,7 +114,33 @@ impl StageAudio {
                 event.source.asset.clone(),
                 control.observe(&event.source.asset, source)?,
             );
-            let block = self.read_signal_queries(signal, policy, provider, control, 0)?;
+            let mut block = match input {
+                PreparedSoundInput::Direct { signal, policy } => {
+                    let block = self.read_signal_queries(signal, policy, provider, control, 0)?;
+                    ReadBlock {
+                        start: original.start,
+                        samples: block.samples,
+                        dependencies: block.dependencies,
+                        relative_depth: block.relative_depth,
+                        suppressed: block
+                            .suppressed
+                            .into_iter()
+                            .map(|range| AudioSample(range.start.0)..AudioSample(range.end.0))
+                            .collect(),
+                        exhausted: Vec::new(),
+                    }
+                }
+                PreparedSoundInput::Routed(prepared) => {
+                    self.read_routed_root_controlled(provider, prepared, control)?
+                }
+            };
+            block.suppressed.extend(
+                fades
+                    .iter()
+                    .filter(|span| span.length == 0)
+                    .map(|span| span.samples.clone()),
+            );
+            block.suppressed = merged_suppression(block.suppressed);
             if block.samples.len() != sum.len() {
                 return Err(PlanError::InvalidPlan("incomplete authored sound PCM").into());
             }
@@ -125,12 +165,7 @@ impl StageAudio {
                     total[channel] += f64::from(sample[channel] * edge) * gain;
                 }
             }
-            let suppressed = block
-                .suppressed
-                .into_iter()
-                .map(|range| AudioSample(range.start.0)..AudioSample(range.end.0))
-                .collect::<Vec<_>>();
-            original.suppressed = intersect_suppression(&original.suppressed, &suppressed);
+            original.suppressed = intersect_suppression(&original.suppressed, &block.suppressed);
             original.dependencies.extend(block.dependencies);
         }
         original.samples = sum

@@ -238,7 +238,11 @@ store `migration sounds::` and `source_registration sounds::`, audio
 These cover durable commands, strict old histories, exact RoundEven placement,
 independent decoded PCM sums, the shared limiter, source revocation and bounded
 preparation. Original and catalog audition remain independent source views.
-Structural sound editing and native event placement remain open. See
+Root ripple history adds core `sound_routing`, plan `root_sound_routes` and
+`sound_route_sampling`, store `migration sound_routes::`, and real playback
+`source_voice::events` coverage. Retain the actual old-CLI fixture provenance;
+use schema relabeling only in negative forgery tests. Remaining structural sound
+editing and native event placement stay open. See
 [root sound events](SOUND_EVENTS.md#persisted-root-sounds).
 
 Structural speed edits use `:retime 0.75 pitch=preserve` or `pitch=tape`, with

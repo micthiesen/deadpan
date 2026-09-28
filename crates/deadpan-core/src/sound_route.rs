@@ -403,7 +403,6 @@ pub enum SoundRouteNode {
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct RouteIndex {
     extent: ExactRatio,
-    depth: usize,
 }
 
 /// Validated immutable route. The retained recipe extent never changes when
@@ -445,7 +444,6 @@ impl SoundRoute {
             let entry = match node {
                 SoundRouteNode::Recipe {} => RouteIndex {
                     extent: recipe_extent,
-                    depth: 1,
                 },
                 SoundRouteNode::Window { input, selection } => {
                     add_count(&mut edges, 1, MAX_SOUND_ROUTE_EDGES)?;
@@ -453,7 +451,6 @@ impl SoundRoute {
                     contained(*selection, child.extent, false)?;
                     RouteIndex {
                         extent: length(*selection)?,
-                        depth: child.depth + 1,
                     }
                 }
                 SoundRouteNode::Ripple { input, map } => {
@@ -478,11 +475,9 @@ impl SoundRoute {
                     }
                     RouteIndex {
                         extent: map.output_extent,
-                        depth: child.depth + map.index[map.root as usize].depth + 1,
                     }
                 }
             };
-            check_depth(entry.depth)?;
             index.push(entry);
         }
         let root_index = root_index(root, index.len())?;
@@ -598,132 +593,205 @@ impl SoundRoute {
         destination_shift: ExactRatio,
         work: &mut QueryWork,
     ) -> Result<()> {
-        work.visit()?;
-        match &self.nodes[id as usize] {
-            SoundRouteNode::Recipe {} => work.push(shift(range, destination_shift)?, Some(range)),
-            SoundRouteNode::Window { input, selection } => self.query_node(
-                *input,
-                shift(range, selection.start)?,
-                destination_shift.checked_sub(selection.start)?,
-                work,
-            ),
-            SoundRouteNode::Ripple { input, map } => self.query_map(
-                RippleQuery { input: *input, map },
-                map.root,
-                range,
-                ExactRatio::ZERO,
-                destination_shift,
-                work,
-            ),
-        }
-    }
-
-    fn query_map(
-        &self,
-        query: RippleQuery<'_>,
-        id: u32,
-        range: ExactFrameRange,
-        input_shift: ExactRatio,
-        destination_shift: ExactRatio,
-        work: &mut QueryWork,
-    ) -> Result<()> {
-        work.visit()?;
-        let map = query.map;
-        if map.index[id as usize].footprint.is_none() {
-            return work.push(shift(range, destination_shift)?, None);
-        }
-        match &map.nodes[id as usize] {
-            SoundRippleNode::Keep { range: kept } => {
-                let offset = kept.start.checked_add(input_shift)?;
-                self.query_node(
-                    query.input,
-                    shift(range, offset)?,
-                    destination_shift.checked_sub(offset)?,
-                    work,
-                )
-            }
-            SoundRippleNode::Gap { .. } => work.push(shift(range, destination_shift)?, None),
-            SoundRippleNode::Sequence { parts } => {
-                let ends = &map.index[id as usize].ends;
-                let mut low = 0;
-                let mut high = ends.len();
-                while low < high {
-                    work.spend()?;
-                    let mid = low + (high - low) / 2;
-                    if compare(ends[mid], range.start)?.is_le() {
-                        low = mid + 1;
-                    } else {
-                        high = mid;
+        // History is a reachable linear chain bounded by the arena count, not
+        // Ripple's structural nesting limit. Continuations visit one Sequence
+        // child or Repeat ordinal at a time; a long play run cannot fill this
+        // stack before the shared query-work budget is checked.
+        let mut pending = vec![RouteTask::Route {
+            id,
+            range,
+            destination_shift,
+        }];
+        while let Some(task) = pending.pop() {
+            match task {
+                RouteTask::Route {
+                    id,
+                    range,
+                    destination_shift,
+                } => {
+                    work.visit()?;
+                    match &self.nodes[id as usize] {
+                        SoundRouteNode::Recipe {} => {
+                            work.push(shift(range, destination_shift)?, Some(range))?
+                        }
+                        SoundRouteNode::Window { input, selection } => {
+                            pending.push(RouteTask::Route {
+                                id: *input,
+                                range: shift(range, selection.start)?,
+                                destination_shift: destination_shift
+                                    .checked_sub(selection.start)?,
+                            })
+                        }
+                        SoundRouteNode::Ripple { input, map } => pending.push(RouteTask::Map {
+                            query: RippleQuery { input: *input, map },
+                            id: map.root,
+                            range,
+                            input_shift: ExactRatio::ZERO,
+                            destination_shift,
+                        }),
                     }
                 }
-                let mut cursor = range.start;
-                for position in low..parts.len() {
-                    if compare(cursor, range.end)?.is_ge() {
-                        break;
+                RouteTask::Map {
+                    query,
+                    id,
+                    range,
+                    input_shift,
+                    destination_shift,
+                } => {
+                    work.visit()?;
+                    let map = query.map;
+                    if map.index[id as usize].footprint.is_none() {
+                        work.push(shift(range, destination_shift)?, None)?;
+                        continue;
                     }
+                    match &map.nodes[id as usize] {
+                        SoundRippleNode::Keep { range: kept } => {
+                            let offset = kept.start.checked_add(input_shift)?;
+                            pending.push(RouteTask::Route {
+                                id: query.input,
+                                range: shift(range, offset)?,
+                                destination_shift: destination_shift.checked_sub(offset)?,
+                            });
+                        }
+                        SoundRippleNode::Gap { .. } => {
+                            work.push(shift(range, destination_shift)?, None)?
+                        }
+                        SoundRippleNode::Sequence { .. } => {
+                            let ends = &map.index[id as usize].ends;
+                            let mut low = 0;
+                            let mut high = ends.len();
+                            while low < high {
+                                work.spend()?;
+                                let mid = low + (high - low) / 2;
+                                if compare(ends[mid], range.start)?.is_le() {
+                                    low = mid + 1;
+                                } else {
+                                    high = mid;
+                                }
+                            }
+                            pending.push(RouteTask::Sequence {
+                                query,
+                                id,
+                                position: low,
+                                range,
+                                input_shift,
+                                destination_shift,
+                            });
+                        }
+                        SoundRippleNode::Repeat { body, .. } => {
+                            let period = map.index[*body as usize].extent;
+                            let iteration = u32::try_from(range.start.checked_div(period)?.floor())
+                                .map_err(|_| DocumentError::from(TimeError::Overflow))?;
+                            pending.push(RouteTask::Repeat {
+                                query,
+                                id,
+                                iteration,
+                                range,
+                                input_shift,
+                                destination_shift,
+                            });
+                        }
+                    }
+                }
+                RouteTask::Sequence {
+                    query,
+                    id,
+                    position,
+                    range,
+                    input_shift,
+                    destination_shift,
+                } => {
                     work.spend()?;
+                    let SoundRippleNode::Sequence { parts } = &query.map.nodes[id as usize] else {
+                        unreachable!("Sequence continuation");
+                    };
+                    let ends = &query.map.index[id as usize].ends;
                     let origin = if position == 0 {
                         ExactRatio::ZERO
                     } else {
                         ends[position - 1]
                     };
                     let end = minimum(ends[position], range.end)?;
-                    self.query_map(
+                    if compare(end, range.end)?.is_lt() {
+                        pending.push(RouteTask::Sequence {
+                            query,
+                            id,
+                            position: position + 1,
+                            range: ExactFrameRange {
+                                start: end,
+                                end: range.end,
+                            },
+                            input_shift,
+                            destination_shift,
+                        });
+                    }
+                    pending.push(RouteTask::Map {
                         query,
-                        parts[position],
-                        ExactFrameRange {
-                            start: cursor.checked_sub(origin)?,
+                        id: parts[position],
+                        range: ExactFrameRange {
+                            start: range.start.checked_sub(origin)?,
                             end: end.checked_sub(origin)?,
                         },
                         input_shift,
-                        destination_shift.checked_add(origin)?,
-                        work,
-                    )?;
-                    cursor = end;
+                        destination_shift: destination_shift.checked_add(origin)?,
+                    });
                 }
-                Ok(())
-            }
-            SoundRippleNode::Repeat {
-                body,
-                count,
-                input_stride,
-            } => {
-                let period = map.index[*body as usize].extent;
-                let mut iteration = u32::try_from(range.start.checked_div(period)?.floor())
-                    .map_err(|_| DocumentError::from(TimeError::Overflow))?;
-                let mut cursor = range.start;
-                while compare(cursor, range.end)?.is_lt() {
+                RouteTask::Repeat {
+                    query,
+                    id,
+                    iteration,
+                    range,
+                    input_shift,
+                    destination_shift,
+                } => {
                     work.spend()?;
+                    let SoundRippleNode::Repeat {
+                        body,
+                        count,
+                        input_stride,
+                    } = &query.map.nodes[id as usize]
+                    else {
+                        unreachable!("Repeat continuation");
+                    };
                     if iteration >= *count {
                         return Err(invalid("sound route Repeat query escaped its extent"));
                     }
+                    let period = query.map.index[*body as usize].extent;
                     let ordinal = ExactRatio::integer(i64::from(iteration));
                     let origin = period.checked_mul(ordinal)?;
                     let end = minimum(origin.checked_add(period)?, range.end)?;
-                    let shifted_input = if map.index[*body as usize].footprint.is_some() {
-                        input_shift.checked_add(input_stride.checked_mul(ordinal)?)?
-                    } else {
-                        input_shift
-                    };
-                    self.query_map(
+                    if compare(end, range.end)?.is_lt() {
+                        pending.push(RouteTask::Repeat {
+                            query,
+                            id,
+                            iteration: iteration.checked_add(1).ok_or(TimeError::Overflow)?,
+                            range: ExactFrameRange {
+                                start: end,
+                                end: range.end,
+                            },
+                            input_shift,
+                            destination_shift,
+                        });
+                    }
+                    let shifted_input =
+                        input_shift.checked_add(input_stride.checked_mul(ordinal)?)?;
+                    pending.push(RouteTask::Map {
                         query,
-                        *body,
-                        ExactFrameRange {
-                            start: cursor.checked_sub(origin)?,
+                        id: *body,
+                        range: ExactFrameRange {
+                            start: range.start.checked_sub(origin)?,
                             end: end.checked_sub(origin)?,
                         },
-                        shifted_input,
-                        destination_shift.checked_add(origin)?,
-                        work,
-                    )?;
-                    cursor = end;
-                    if cursor != range.end {
-                        iteration = iteration.checked_add(1).ok_or(TimeError::Overflow)?;
-                    }
+                        input_shift: shifted_input,
+                        destination_shift: destination_shift.checked_add(origin)?,
+                    });
                 }
-                Ok(())
+            }
+            if pending.len() > MAX_SOUND_ROUTE_NODES + MAX_SOUND_ROUTE_DEPTH {
+                return Err(limit("sound route query stack limit"));
             }
         }
+        Ok(())
     }
 }
 
@@ -810,6 +878,38 @@ struct QueryWork {
 struct RippleQuery<'a> {
     input: u32,
     map: &'a SoundRippleMap,
+}
+
+// Every entry is constant-sized; lazy continuations retain no expanded plays.
+enum RouteTask<'a> {
+    Route {
+        id: u32,
+        range: ExactFrameRange,
+        destination_shift: ExactRatio,
+    },
+    Map {
+        query: RippleQuery<'a>,
+        id: u32,
+        range: ExactFrameRange,
+        input_shift: ExactRatio,
+        destination_shift: ExactRatio,
+    },
+    Sequence {
+        query: RippleQuery<'a>,
+        id: u32,
+        position: usize,
+        range: ExactFrameRange,
+        input_shift: ExactRatio,
+        destination_shift: ExactRatio,
+    },
+    Repeat {
+        query: RippleQuery<'a>,
+        id: u32,
+        iteration: u32,
+        range: ExactFrameRange,
+        input_shift: ExactRatio,
+        destination_shift: ExactRatio,
+    },
 }
 
 impl QueryWork {

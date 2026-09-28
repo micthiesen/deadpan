@@ -857,7 +857,10 @@ pub(crate) fn validate_sound_sources(
     let assets = next
         .sounds()
         .iter()
-        .filter(|(id, event)| current.sounds().get(*id) != Some(*event))
+        .filter(|(id, event)| {
+            current.sounds().get(*id) != Some(*event)
+                || current.sound_routes().get(*id) != next.sound_routes().get(*id)
+        })
         .map(|(_, event)| &event.source.asset)
         .collect::<std::collections::BTreeSet<_>>();
     for asset in assets {

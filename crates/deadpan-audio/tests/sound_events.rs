@@ -63,6 +63,7 @@ fn planned(
     mut assets: BTreeMap<AssetId, AssetRecord>,
     child: &str,
     sound_samples: i64,
+    route: Option<RootSoundRoute>,
 ) -> Arc<RenderPlan> {
     let rate = FrameRate::new(48_000, 1).unwrap();
     let empty = ProjectDocument::new(
@@ -102,6 +103,9 @@ fn planned(
     wire["assets"] = serde_json::to_value(assets).unwrap();
     wire["sounds"] =
         serde_json::to_value(BTreeMap::from([(SoundId::new("effect").unwrap(), sound)])).unwrap();
+    if let Some(route) = route {
+        wire["sound_routes"] = serde_json::json!({"effect": route});
+    }
     let document = ProjectDocument::from_json(&wire.to_string()).unwrap();
     Arc::new(RenderPlan::compile(&document).unwrap())
 }
@@ -123,10 +127,11 @@ fn held_sound() -> Arc<RenderPlan> {
         BTreeMap::new(),
         "silence",
         256,
+        None,
     )
 }
 
-fn many_original_dependencies(count: u32) -> Arc<RenderPlan> {
+fn many_original_dependencies(count: u32, routed: bool) -> Arc<RenderPlan> {
     let mut nodes = BTreeMap::new();
     let mut assets = BTreeMap::new();
     let mut children = Vec::new();
@@ -179,7 +184,18 @@ fn many_original_dependencies(count: u32) -> Arc<RenderPlan> {
             },
         },
     );
-    planned(nodes, assets, "preserve", 1)
+    planned(
+        nodes,
+        assets,
+        "preserve",
+        1,
+        routed.then(|| {
+            RootSoundRoute::identity(
+                duration(i64::from(count) * 2),
+                FrameRate::new(48_000, 1).unwrap(),
+            )
+        }),
+    )
 }
 
 #[derive(Default)]
@@ -225,7 +241,7 @@ fn original_and_sound_dependencies_share_one_limit_before_provider_resolution() 
     // A one-sample output read needs the Original's complete Preserve history.
     // Those 1024 sources fit alone, but the independently authored effect adds
     // the 1025th dependency even before any of its samples are requested.
-    let mut renderer = StageAudio::new(many_original_dependencies(1024));
+    let mut renderer = StageAudio::new(many_original_dependencies(1024, false));
     assert!(matches!(
         renderer.prepare_edge_faded(&mut provider, AudioSample(0), 1, TIMEOUT, &active),
         Err(StageAudioError::Limit("source dependencies"))
@@ -235,7 +251,7 @@ fn original_and_sound_dependencies_share_one_limit_before_provider_resolution() 
 
     // The exact boundary must pass static admission and reach the decoder
     // provider rather than accidentally counting the same source twice.
-    let mut boundary = StageAudio::new(many_original_dependencies(1023));
+    let mut boundary = StageAudio::new(many_original_dependencies(1023, false));
     reached_provider(
         boundary
             .prepare_edge_faded(&mut provider, AudioSample(0), 1, TIMEOUT, &active)
@@ -318,5 +334,103 @@ fn initial_and_inflight_cancellation_leave_the_same_sound_renderer_reusable() {
             .unwrap_err(),
     );
     assert_eq!(provider.calls, [asset("effect"), asset("effect")]);
+    assert_eq!(renderer.cached_stage_count(), 0);
+}
+
+fn gap_masked_sound() -> Arc<RenderPlan> {
+    let rate = FrameRate::new(48_000, 1).unwrap();
+    planned(
+        BTreeMap::from([(
+            node("silence"),
+            BeatNode::hold(
+                "Current Hold",
+                HoldRecipe {
+                    duration: duration(512),
+                    video: HoldVideo::Background,
+                    audio: HoldAudio::Silence,
+                    picture_context: None,
+                },
+            ),
+        )]),
+        BTreeMap::new(),
+        "silence",
+        256,
+        Some(RootSoundRoute {
+            recipe_extent: duration(256),
+            recipe_grid: RootSoundGrid::root(rate),
+            edits: vec![RootSoundEdit {
+                grid: RootSoundGrid::root(rate),
+                operation: RootSoundOperation::Insert {
+                    at: ProjectFrame(0),
+                    duration: duration(256),
+                },
+                cuts: Default::default(),
+            }],
+        }),
+    )
+}
+
+#[test]
+fn routed_sound_and_original_admit_dependencies_under_one_budget() {
+    let active = AtomicBool::new(false);
+    let mut provider = SentinelProvider::default();
+    let mut renderer = StageAudio::new(many_original_dependencies(1024, true));
+    assert!(matches!(
+        renderer.prepare_edge_faded(&mut provider, AudioSample(0), 1, TIMEOUT, &active),
+        Err(StageAudioError::Limit("source dependencies"))
+    ));
+    assert!(provider.calls.is_empty());
+    let mut boundary = StageAudio::new(many_original_dependencies(1023, true));
+    reached_provider(
+        boundary
+            .prepare_edge_faded(&mut provider, AudioSample(0), 1, TIMEOUT, &active)
+            .unwrap_err(),
+    );
+    assert_eq!(provider.calls, [asset("original-0000")]);
+}
+
+#[test]
+fn gap_masked_sound_keeps_dependency_and_releases_failed_and_cancelled_reservations() {
+    let mut renderer = StageAudio::with_limits(
+        gap_masked_sound(),
+        StageLimits {
+            maximum_resident_frames: 768,
+            ..Default::default()
+        },
+    )
+    .unwrap();
+    let mut provider = SentinelProvider::default();
+    let cancelled = AtomicBool::new(false);
+    assert!(matches!(
+        renderer.prepare_edge_faded(&mut provider, AudioSample(0), 256, TIMEOUT, &cancelled),
+        Err(StageAudioError::Limit("resident PCM or stage cache"))
+    ));
+    assert!(provider.calls.is_empty());
+    // This block is entirely inside an inserted route gap and a current Hold.
+    // The sound survives later in the revision and must still be admitted.
+    for expected in 1..=2 {
+        reached_provider(
+            renderer
+                .prepare_edge_faded(&mut provider, AudioSample(0), 128, TIMEOUT, &cancelled)
+                .unwrap_err(),
+        );
+        assert_eq!(provider.calls.len(), expected);
+        assert_eq!(provider.calls.last(), Some(&asset("effect")));
+    }
+    provider.cancel_on_call = true;
+    assert!(
+        renderer
+            .prepare_edge_faded(&mut provider, AudioSample(0), 128, TIMEOUT, &cancelled)
+            .unwrap_err()
+            .is_cancelled()
+    );
+    cancelled.store(false, Ordering::Relaxed);
+    provider.cancel_on_call = false;
+    reached_provider(
+        renderer
+            .prepare_edge_faded(&mut provider, AudioSample(0), 128, TIMEOUT, &cancelled)
+            .unwrap_err(),
+    );
+    assert_eq!(provider.calls.len(), 4);
     assert_eq!(renderer.cached_stage_count(), 0);
 }

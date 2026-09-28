@@ -9,7 +9,7 @@ use crate::{
     TimeError,
 };
 
-pub const DOCUMENT_SCHEMA_VERSION: u32 = 29;
+pub const DOCUMENT_SCHEMA_VERSION: u32 = 30;
 /// Bounds apply before traversal. Structure is walked iteratively, never recursively.
 pub const MAX_DOCUMENT_NODES: usize = 100_000;
 pub const MAX_DOCUMENT_ASSETS: usize = 100_000;
@@ -411,6 +411,8 @@ pub struct ProjectDocument {
     pub(crate) marks: BTreeMap<MarkId, Mark>,
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub(crate) sounds: BTreeMap<SoundId, crate::SoundEvent>,
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub(crate) sound_routes: BTreeMap<SoundId, crate::RootSoundRoute>,
     pub(crate) overrides: BTreeMap<NodeId, PlayOverrides>,
     /// Independently owned gap subtrees, keyed by the stable preceding play.
     /// A final play retains its override without rendering trailing time.
@@ -439,6 +441,8 @@ struct DocumentWire {
     marks: BTreeMap<MarkId, Mark>,
     #[serde(default, deserialize_with = "unique_map")]
     sounds: BTreeMap<SoundId, crate::SoundEvent>,
+    #[serde(default, deserialize_with = "unique_map")]
+    sound_routes: BTreeMap<SoundId, crate::RootSoundRoute>,
     #[serde(deserialize_with = "unique_map")]
     overrides: BTreeMap<NodeId, PlayOverrides>,
     #[serde(default, deserialize_with = "unique_map")]
@@ -463,6 +467,7 @@ impl TryFrom<DocumentWire> for ProjectDocument {
             assets: value.assets,
             marks: value.marks,
             sounds: value.sounds,
+            sound_routes: value.sound_routes,
             overrides: value.overrides,
             gap_overrides: value.gap_overrides,
             audio_lineage: value.audio_lineage,
@@ -491,6 +496,7 @@ impl ProjectDocument {
             assets: BTreeMap::new(),
             marks: BTreeMap::new(),
             sounds: BTreeMap::new(),
+            sound_routes: BTreeMap::new(),
             overrides: BTreeMap::new(),
             gap_overrides: BTreeMap::new(),
             audio_lineage: BTreeMap::new(),
@@ -580,6 +586,10 @@ impl ProjectDocument {
     pub fn marks(&self) -> &BTreeMap<MarkId, Mark> {
         &self.marks
     }
+    pub fn sound_routes(&self) -> &BTreeMap<SoundId, crate::RootSoundRoute> {
+        &self.sound_routes
+    }
+
     pub fn sounds(&self) -> &BTreeMap<SoundId, crate::SoundEvent> {
         &self.sounds
     }

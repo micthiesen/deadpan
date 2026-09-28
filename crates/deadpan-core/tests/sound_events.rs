@@ -358,7 +358,6 @@ fn temporal_and_occurrence_edits_fail_before_transforming_retained_context() {
     let document = fixture();
     let (document, _) = place(&document, event(&document));
     let commands = [
-        Command::Delete { node: node("hold") },
         Command::SetHoldDuration {
             node: node("hold"),
             duration: FrameDuration::new(101).unwrap(),

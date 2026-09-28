@@ -35,11 +35,11 @@ fn success(arguments: &[&str]) -> Result<Value> {
 #[test]
 fn doctor_reports_speed_editing_document_and_migration_schemas() -> Result {
     let report = success(&["doctor"])?;
-    assert_eq!(report["document_schema"], 29);
-    assert_eq!(report["database_schema"], 35);
+    assert_eq!(report["document_schema"], 30);
+    assert_eq!(report["database_schema"], 36);
     let partial = report["partial"].as_array().unwrap();
     for capability in [
-        "schema-1-through-34-migration",
+        "schema-1-through-35-migration",
         "native-original-audition",
         "selection-loop-audition",
         "native-structural-speed-editing",

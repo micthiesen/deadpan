@@ -109,6 +109,8 @@ pub struct RenderPlan {
     // These contracts still require explicit host admission.
     audio_assets: BTreeMap<AssetId, deadpan_core::AssetRecord>,
     sounds: BTreeMap<deadpan_core::SoundId, deadpan_core::SoundEvent>,
+    sound_routes: BTreeMap<deadpan_core::SoundId, deadpan_core::RootSoundRoute>,
+    compiled_sounds: BTreeMap<deadpan_core::SoundId, crate::audio_sound_event::CompiledRootSound>,
     // Frozen admission stays distinct even when its catalog is empty.
     audio_context: bool,
     audio_bindings: deadpan_core::AudioBindingState,
@@ -430,7 +432,7 @@ impl RenderPlan {
                 parents[by_id[child]] = Some(by_id[id]);
             }
         }
-        Ok(Self {
+        let mut plan = Self {
             metadata: PlanMetadata {
                 project_id: document.project_id().clone(),
                 revision_id: document.revision_id().clone(),
@@ -446,8 +448,12 @@ impl RenderPlan {
             audio_bindings: document.audio_bindings().clone(),
             audio_assets: document.assets().clone(),
             sounds: document.sounds().clone(),
+            sound_routes: document.sound_routes().clone(),
+            compiled_sounds: BTreeMap::new(),
             audio_context: false,
-        })
+        };
+        plan.compiled_sounds = plan.compile_root_sounds()?;
+        Ok(plan)
     }
 
     pub fn metadata(&self) -> &PlanMetadata {
@@ -456,6 +462,17 @@ impl RenderPlan {
 
     pub fn sounds(&self) -> &BTreeMap<deadpan_core::SoundId, deadpan_core::SoundEvent> {
         &self.sounds
+    }
+
+    pub fn sound_routes(&self) -> &BTreeMap<deadpan_core::SoundId, deadpan_core::RootSoundRoute> {
+        &self.sound_routes
+    }
+
+    pub(crate) fn compiled_root_sound(
+        &self,
+        id: &deadpan_core::SoundId,
+    ) -> Option<&crate::audio_sound_event::CompiledRootSound> {
+        self.compiled_sounds.get(id)
     }
 
     /// Retained contracts are serialized intent, not permission to read media.

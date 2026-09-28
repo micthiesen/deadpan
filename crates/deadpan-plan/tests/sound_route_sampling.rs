@@ -105,6 +105,79 @@ fn two_ntsc_insertions_resume_the_current_sample_phase() {
 }
 
 #[test]
+fn sixty_four_ntsc_edits_match_successive_physical_sample_copies() {
+    let grid = ntsc();
+    let boundary = |frame| grid.boundary(ExactRatio::integer(frame)).unwrap().0;
+    let mut route = SoundRoute::identity(ExactRatio::integer(6)).unwrap();
+    let mut expected: Vec<_> = (0..boundary(6))
+        .map(|sample| Some(grid.at(AudioSample(sample)).unwrap()))
+        .collect();
+    for edit in 0..64 {
+        let extent = 6 + edit;
+        let at = 1 + edit;
+        route = route.ripple(insert(extent, at, 1)).unwrap();
+        let mut next = expected[..boundary(at) as usize].to_vec();
+        next.resize(boundary(at + 1) as usize, None);
+        for sample in boundary(at + 1)..boundary(extent + 1) {
+            next.push(
+                expected
+                    .get((boundary(at) + sample - boundary(at + 1)) as usize)
+                    .copied()
+                    .flatten(),
+            );
+        }
+        expected = next;
+    }
+    let sampled = AudioSoundRoute::<AudioSample>::new(route, vec![grid; 65]).unwrap();
+    assert_eq!(
+        values(
+            sampled
+                .query(sampled.samples(), AudioQueryLimits::default())
+                .unwrap()
+        ),
+        expected
+    );
+    // A cold suffix read follows every retained clock, without walking all
+    // earlier output or reverting to a final-offset frame calculation.
+    let start = boundary(66);
+    let end = (start + 137).min(sampled.samples().end.0);
+    let query = sampled
+        .query(
+            AudioSample(start)..AudioSample(end),
+            AudioQueryLimits::default(),
+        )
+        .unwrap();
+    assert!(query.stats.work < 1024);
+    assert_eq!(values(query), expected[start as usize..end as usize]);
+}
+
+#[test]
+fn deep_chronology_uses_bounded_query_work_without_recursive_history() {
+    let mut route = SoundRoute::identity(ExactRatio::integer(4)).unwrap();
+    for _ in 0..512 {
+        route = route.window(frames(0, 4)).unwrap();
+    }
+    let grid = root_grid(ExactRatio::ZERO, ExactRatio::ONE);
+    let sampled = AudioSoundRoute::<AudioSample>::new(route, vec![grid; 513]).unwrap();
+    let query = sampled
+        .query(AudioSample(1)..AudioSample(2), AudioQueryLimits::default())
+        .unwrap();
+    assert_eq!(query.stats.node_visits, 513);
+    assert_eq!(query.stats.work, 514);
+    assert_eq!(values(query), vec![Some(ExactRatio::ONE)]);
+    assert!(matches!(
+        sampled.query(
+            AudioSample(1)..AudioSample(2),
+            AudioQueryLimits {
+                maximum_work: 513,
+                maximum_spans: 1,
+            }
+        ),
+        Err(PlanError::AudioQueryLimit("sound route work"))
+    ));
+}
+
+#[test]
 fn shuffled_partial_reads_keep_the_same_phase_and_gap_samples() {
     let route = SoundRoute::identity(ExactRatio::integer(6))
         .unwrap()

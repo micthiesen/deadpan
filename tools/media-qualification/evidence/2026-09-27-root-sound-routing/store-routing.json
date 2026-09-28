@@ -1,0 +1,18 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "-p",
+    "deadpan-store",
+    "--test",
+    "migration",
+    "sound_routes"
+  ],
+  "started": "2026-09-28T01:22:16.519591+00:00",
+  "base_commit": "d6e931c8c57f5684302ca9bc903d43ea84fed1a8",
+  "diff_sha256": "2d64c370c7b330f66a815ec12dfcf3dfd69b03f3ebce4ba687966f8e4aa7878c",
+  "pid": 77664,
+  "exit_code": 101,
+  "seconds": 24.239479042124003
+}

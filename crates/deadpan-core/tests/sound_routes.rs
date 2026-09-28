@@ -957,16 +957,26 @@ fn construction_bounds_depth_nodes_edges_and_checked_arithmetic() {
         .code,
         DocumentErrorCode::TimingOverflow
     );
-    let mut route = SoundRoute::identity(number(1)).unwrap();
-    for _ in 1..MAX_SOUND_ROUTE_DEPTH {
-        route = route.window(range(0, 1)).unwrap();
+    // Chronological history is separately bounded by arena capacity, not the
+    // structural nesting limit of one ripple pattern.
+    let mut history = vec![SoundRouteNode::Recipe {}];
+    for input in 0..MAX_SOUND_ROUTE_NODES - 1 {
+        history.push(SoundRouteNode::Window {
+            input: input as u32,
+            selection: range(0, 1),
+        });
     }
+    let route = SoundRoute::new(number(1), (history.len() - 1) as u32, history).unwrap();
     let prior = route.to_json().unwrap();
     assert_eq!(
         route.window(range(0, 1)).unwrap_err().code,
         DocumentErrorCode::LimitExceeded
     );
     assert_eq!(route.to_json().unwrap(), prior);
+    assert_eq!(
+        query(&route, range(0, 1)).slices,
+        [slice(range(0, 1), Some(range(0, 1)))]
+    );
 }
 
 #[test]

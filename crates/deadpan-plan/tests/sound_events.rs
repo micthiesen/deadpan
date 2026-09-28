@@ -100,6 +100,7 @@ fn root_sounds_use_round_even_boundaries_and_keep_exact_source_phase() {
     assert_eq!(sound.audible_samples(), AudioSample(2)..AudioSample(34));
     let query = sound
         .root_output_tape()
+        .unwrap()
         .query(
             SignalSample(0)..SignalSample(64),
             AudioQueryLimits::default(),
@@ -169,6 +170,7 @@ fn root_sound_hold_policy_uses_current_project_clock_and_not_original_exhaustion
     let sound = plan.root_sound(&SoundId::new("event").unwrap()).unwrap();
     let policy = sound
         .root_output_tape()
+        .unwrap()
         .policy(
             SignalSample(0)..SignalSample(64),
             AudioQueryLimits::default(),

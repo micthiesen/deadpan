@@ -51,6 +51,11 @@ pub enum Command {
         id: crate::SoundId,
         event: crate::SoundEvent,
     },
+    /// Explicitly replace a sound recipe and discard its previous routing intent.
+    ReplaceSound {
+        id: crate::SoundId,
+        event: crate::SoundEvent,
+    },
     DeleteSound {
         id: crate::SoundId,
     },
@@ -291,6 +296,12 @@ pub struct DocumentPatch {
         deserialize_with = "unique_map"
     )]
     pub sounds: BTreeMap<crate::SoundId, ValueChange<crate::SoundEvent>>,
+    #[serde(
+        default,
+        skip_serializing_if = "BTreeMap::is_empty",
+        deserialize_with = "unique_map"
+    )]
+    pub sound_routes: BTreeMap<crate::SoundId, ValueChange<crate::RootSoundRoute>>,
     #[serde(deserialize_with = "unique_map")]
     pub overrides: BTreeMap<NodeId, ValueChange<PlayOverrides>>,
     #[serde(
@@ -332,6 +343,7 @@ impl DocumentPatch {
             || self.assets.len() > MAX_DOCUMENT_NODES
             || self.marks.len() > MAX_DOCUMENT_MARKS
             || self.sounds.len() > 2 * crate::MAX_DOCUMENT_SOUNDS
+            || self.sound_routes.len() > 2 * crate::MAX_DOCUMENT_SOUNDS
             || self.overrides.len() > MAX_DOCUMENT_NODES
             || self.gap_overrides.len() > MAX_DOCUMENT_NODES
             || self.audio_lineage.len() > MAX_DOCUMENT_NODES
@@ -392,6 +404,7 @@ impl DocumentPatch {
         apply_changes(&mut result.assets, &self.assets)?;
         apply_changes(&mut result.marks, &self.marks)?;
         apply_changes(&mut result.sounds, &self.sounds)?;
+        apply_changes(&mut result.sound_routes, &self.sound_routes)?;
         apply_changes(&mut result.overrides, &self.overrides)?;
         apply_changes(&mut result.gap_overrides, &self.gap_overrides)?;
         apply_changes(&mut result.audio_lineage, &self.audio_lineage)?;
@@ -428,6 +441,7 @@ impl DocumentPatch {
             assets: inverse_changes(&self.assets),
             marks: inverse_changes(&self.marks),
             sounds: inverse_changes(&self.sounds),
+            sound_routes: inverse_changes(&self.sound_routes),
             overrides: inverse_changes(&self.overrides),
             gap_overrides: inverse_changes(&self.gap_overrides),
             audio_lineage: inverse_changes(&self.audio_lineage),
@@ -466,6 +480,12 @@ pub fn apply(
     crate::picture_context::validate_command(&request.command)?;
     crate::sound_events::validate_command(document, &request.command)?;
     let before_duration = document.duration()?.frames();
+    let sound_edit =
+        crate::sound_routing::RootSoundEditCapture::prepare(document, &request.command)?;
+    let structural = sound_edit
+        .as_ref()
+        .map(|capture| capture.structural_document(document));
+    let input = structural.as_ref().unwrap_or(document);
     let mut result = match &request.command {
         Command::InsertTime {
             at,
@@ -474,7 +494,7 @@ pub fn apply(
             identities,
             timing,
         } => crate::insert_time::apply(
-            document,
+            input,
             *at,
             hold,
             id,
@@ -490,7 +510,7 @@ pub fn apply(
             label,
             timing,
         } => crate::insert_time::splice_source(
-            document,
+            input,
             parent,
             *index,
             id,
@@ -509,44 +529,38 @@ pub fn apply(
             node,
             at,
             identities,
-        } => crate::split::apply(document, node, *at, identities, &request.new_revision)?,
+        } => crate::split::apply(input, node, *at, identities, &request.new_revision)?,
         Command::IsolateGap {
             node,
             iteration,
             id,
             timing,
-        } => crate::gap_override::isolate(
-            document,
-            node,
-            iteration,
-            id,
-            timing,
-            &request.new_revision,
-        )?,
+        } => {
+            crate::gap_override::isolate(input, node, iteration, id, timing, &request.new_revision)?
+        }
         Command::EditOccurrence {
             instance,
             edit,
             identities,
-        } => crate::occurrence_edit::apply(
-            document,
-            instance,
-            edit,
-            identities,
-            &request.new_revision,
-        )?,
+        } => {
+            crate::occurrence_edit::apply(input, instance, edit, identities, &request.new_revision)?
+        }
         command => {
-            let mut result = document.clone();
+            let mut result = input.clone();
             reduce(&mut result, command, &request.new_revision)?;
-            crate::audio_lineage::reconcile(document, &mut result, command)?;
+            crate::audio_lineage::reconcile(input, &mut result, command)?;
             if !matches!(
                 command,
                 Command::SetMark { .. } | Command::DeleteMark { .. }
             ) {
-                result.marks = crate::marks::transform_marks(document, &result, command)?;
+                result.marks = crate::marks::transform_marks(input, &result, command)?;
             }
             result
         }
     };
+    if let Some(capture) = sound_edit {
+        capture.restore(&mut result)?;
+    }
     crate::audio_binding_lifecycle::prune(&mut result);
     result.lock_timed_basis(document)?;
     result.revision_id = request.new_revision.clone();
@@ -565,6 +579,7 @@ pub fn apply(
         assets: diff(&document.assets, &result.assets),
         marks: diff(&document.marks, &result.marks),
         sounds: diff(&document.sounds, &result.sounds),
+        sound_routes: diff(&document.sound_routes, &result.sound_routes),
         overrides: diff(&document.overrides, &result.overrides),
         gap_overrides: diff(&document.gap_overrides, &result.gap_overrides),
         audio_lineage: diff(&document.audio_lineage, &result.audio_lineage),
@@ -583,6 +598,13 @@ pub fn apply(
             .chain(forward.gap_overrides.keys())
             .chain(forward.audio_lineage.keys())
             .chain(binding_changed_ids.iter())
+            .chain(
+                forward
+                    .sound_routes
+                    .keys()
+                    .filter_map(|id| document.sounds.get(id).or_else(|| result.sounds.get(id)))
+                    .map(|event| &event.owner),
+            )
             .chain(forward.sounds.values().flat_map(|change| {
                 change
                     .before
@@ -679,7 +701,27 @@ pub(crate) fn reduce(
     allocation: &RevisionId,
 ) -> Result<(), EditError> {
     match command {
-        Command::SetSound { id, event } => {
+        Command::SetSound { id, event } | Command::ReplaceSound { id, event } => {
+            let replace = matches!(command, Command::ReplaceSound { .. });
+            if replace && !document.sounds.contains_key(id) {
+                return Err(EditError::new(
+                    EditErrorCode::SelectionUnavailable,
+                    "sound event is absent",
+                ));
+            }
+            if !replace
+                && document.sound_routes.contains_key(id)
+                && let Some(old) = document.sounds.get(id)
+                && (old.owner != event.owner
+                    || old.source != event.source
+                    || old.mapping != event.mapping
+                    || old.offset != event.offset)
+            {
+                return Err(EditError::new(
+                    EditErrorCode::InvalidCommand,
+                    "use ReplaceSound to replace a routed sound recipe or placement",
+                ));
+            }
             if event.owner != document.root {
                 return Err(EditError::new(
                     EditErrorCode::InvalidCommand,
@@ -694,9 +736,13 @@ pub(crate) fn reduce(
                     "document exceeds 64 live sound events",
                 ));
             }
+            if replace {
+                document.sound_routes.remove(id);
+            }
             document.sounds.insert(id.clone(), event.clone());
         }
         Command::DeleteSound { id } => {
+            document.sound_routes.remove(id);
             if document.sounds.remove(id).is_none() {
                 return Err(EditError::new(
                     EditErrorCode::SelectionUnavailable,
@@ -1687,6 +1733,7 @@ fn apply_changes<K: Ord + Clone, V: Eq + Clone>(
 fn description(command: &Command) -> &'static str {
     match command {
         Command::SetSound { .. } => "Set sound event",
+        Command::ReplaceSound { .. } => "Replace sound recipe",
         Command::DeleteSound { .. } => "Delete sound event",
         Command::InsertTime { .. } => "Insert pause",
         Command::SpliceSource { .. } => "Paste source moment",

@@ -1,0 +1,64 @@
+import gzip
+import hashlib
+import json
+from pathlib import Path
+import re
+import shutil
+import subprocess
+
+scratch = Path(__file__).parent
+repository = Path('/Users/michael/Code/deadpan')
+destination = repository / 'tools/media-qualification/evidence/2026-09-27-root-sound-routing'
+gate = json.loads((scratch / 'workspace-tests.json').read_text())
+assert 'exit_code' in gate, 'The workspace test process must be terminal.'
+
+paths = subprocess.check_output(
+    ['git', '-c', 'core.fsmonitor=false', 'ls-files', '--cached', '--others', '--exclude-standard', '-z'],
+    cwd=repository,
+).decode().split('\0')
+sources = {name: hashlib.sha256((repository / name).read_bytes()).hexdigest()
+           for name in sorted(set(paths)) if name and (repository / name).is_file()
+           and ((repository / name).suffix in ('.rs', '.toml', '.lock', '.cpp', '.h', '.hpp', '.c', '.py')
+                or name.startswith('.cargo/'))}
+wire = json.dumps(sources, sort_keys=True, indent=2) + '\n'
+assert hashlib.sha256(wire.encode()).hexdigest() == gate['source_manifest_sha256'], 'Source changed during the final gate.'
+destination.mkdir(parents=True, exist_ok=True)
+commands = {}
+pattern = re.compile(r'test result: (\w+)\. (\d+) passed; (\d+) failed; (\d+) ignored; (\d+) measured; (\d+) filtered out;')
+for logfile in sorted(scratch.glob('*.log')):
+    name = logfile.stem
+    record = scratch / (name + '.json')
+    if not record.exists():
+        raise ValueError(f'Missing command record: {name}')
+    report = json.loads(record.read_text())
+    if 'exit_code' not in report:
+        raise ValueError(f'Nonterminal command: {name}')
+    raw = logfile.read_bytes()
+    (destination / (name + '.log.gz')).write_bytes(gzip.compress(raw, mtime=0))
+    shutil.copyfile(record, destination / record.name)
+    results = [dict(zip(('status', 'passed', 'failed', 'ignored', 'measured', 'filtered'),
+                        (match[0], *map(int, match[1:])))) for match in pattern.findall(raw.decode())]
+    commands[name] = {
+        'report': record.name,
+        'log_sha256': hashlib.sha256(raw).hexdigest(),
+        'groups': len(results),
+        **{key: sum(row[key] for row in results) for key in ('passed', 'failed', 'ignored')},
+        'test_summaries': results,
+    }
+for source in scratch.glob('source-*.json'):
+    shutil.copyfile(source, destination / source.name)
+shutil.copyfile(scratch / 'baseline.json', destination / 'baseline.json')
+shutil.copyfile(scratch / 'run.py', destination / 'runner.py.txt')
+shutil.copyfile(Path(__file__), destination / 'retain-evidence.py.txt')
+verification = {
+    'base_commit': gate['base_commit'],
+    'environment': {'os': 'macOS 26.5.2 (25F84)', 'hardware': 'Apple M5 Max, 128 GB',
+                    'toolchain': 'Rust/Cargo 1.97.1', 'ffmpeg_prefix': '/tmp/deadpan-ui-ffmpeg/prefix'},
+    'final_source_manifest_sha256': gate['source_manifest_sha256'],
+    'source_identity_unchanged_after_workspace_gate': True,
+    'commands': commands,
+    'skipped': ['Painted UI replay and native GUI: no widget or input behavior changed',
+                'Physical device, acoustic listening, export equivalence and performance qualification'],
+}
+(destination / 'verification.json').write_text(json.dumps(verification, indent=2) + '\n')
+print(json.dumps({'destination': str(destination), 'workspace': commands['workspace-tests']}, indent=2))

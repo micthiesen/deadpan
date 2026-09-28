@@ -1,7 +1,7 @@
 //! Independent authored sound recipes in their owner's output clock.
 //!
 //! This first persisted vocabulary admits the root bus only. Structural edits
-//! that need interval and retained-sample transforms remain explicitly rejected.
+//! outside ordinary root-clock ripple edits remain explicitly rejected.
 
 use std::collections::BTreeMap;
 
@@ -52,7 +52,7 @@ pub(crate) fn validate(
         ));
     }
     let rate = document.presentation_basis.frame_rate;
-    for event in document.sounds.values() {
+    for (id, event) in &document.sounds {
         if event.owner != document.root {
             return Err(invalid(
                 "sound events currently require the root Sequence owner",
@@ -81,7 +81,10 @@ pub(crate) fn validate(
         {
             return Err(invalid("sound selection exceeds its qualified audio span"));
         }
-        let extent = durations[&event.owner];
+        let extent = document
+            .sound_routes
+            .get(id)
+            .map_or(durations[&event.owner], |route| route.recipe_extent);
         let natural = SourceAudioMapping::natural_rate(event.source.span, rate)?;
         if event.mapping == SourceAudioMapping::FitBeat
             || event.mapping.duration_frames(extent)? != natural.duration_frames(extent)?
@@ -106,6 +109,7 @@ pub(crate) fn validate(
             ));
         }
     }
+    crate::sound_routing::validate(document, durations[&document.root])?;
     Ok(())
 }
 
@@ -119,7 +123,14 @@ pub(crate) fn validate_command(
     document: &ProjectDocument,
     command: &Command,
 ) -> Result<(), EditError> {
-    if document.sounds.is_empty() || preserves_sound_clocks(command) {
+    if document.sounds.is_empty()
+        || preserves_sound_clocks(command)
+        || matches!(
+            command,
+            Command::InsertTime { .. } | Command::SpliceSource { .. } | Command::Delete { .. }
+        )
+        || matches!(command, Command::Split { node, .. } if node != document.root())
+    {
         return Ok(());
     }
     Err(EditError::new(
@@ -131,6 +142,7 @@ pub(crate) fn validate_command(
 fn preserves_sound_clocks(command: &Command) -> bool {
     match command {
         Command::SetSound { .. }
+        | Command::ReplaceSound { .. }
         | Command::DeleteSound { .. }
         | Command::SetSourceVideoMapping { .. }
         | Command::SetSourceAudioMapping { .. }

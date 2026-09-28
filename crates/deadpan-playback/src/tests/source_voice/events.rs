@@ -439,3 +439,173 @@ fn authored_sound_fades_only_at_its_own_ends_and_silent_hold_edges_without_resta
         assert_eq!(cold.samples, selected, "cold sound gate at {start}");
     }
 }
+
+#[test]
+fn authored_sound_two_ntsc_pauses_preserve_real_sample_phase_and_transported_end() {
+    let _permit = crate::tests::resources::pcm();
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("ripple-events.deadpan");
+    let initial = ProjectDocument::new(
+        ProjectId::new("ripple-events").unwrap(),
+        revision("initial"),
+        PresentationBasis {
+            width: 16,
+            height: 16,
+            frame_rate: FrameRate::new(30_000, 1001).unwrap(),
+            color_policy: ColorPolicy::SdrRec709,
+        },
+        node("root"),
+    )
+    .unwrap();
+    let mut store = ProjectStore::create(&path, &initial).unwrap();
+    register(&mut store);
+    let asset = register_mono(&mut store, directory.path());
+    let before = store.snapshot().unwrap();
+    let recipe = recipe(&before, &asset, 10_000, 0);
+    let mut sound = event(&before, &asset, 0, 0);
+    sound.source = recipe.source;
+    sound.mapping = recipe.mapping;
+    commit(
+        &mut store,
+        "sound",
+        Command::SetSound {
+            id: SoundId::new("effect").unwrap(),
+            event: sound,
+        },
+    );
+    for (name, at) in [("first-pause", 1), ("second-pause", 3)] {
+        commit(
+            &mut store,
+            name,
+            Command::InsertTime {
+                at: ProjectFrame(at),
+                hold: HoldRecipe {
+                    duration: FrameDuration::new(1).unwrap(),
+                    video: HoldVideo::Background,
+                    audio: HoldAudio::Silence,
+                    picture_context: None,
+                },
+                id: node(name),
+                identities: SplitIdentities {
+                    nodes: (0..8)
+                        .map(|index| node(&format!("{name}-split-{index}")))
+                        .collect(),
+                },
+                timing: AudioTimingId {
+                    allocation: revision(name),
+                    ordinal: 0,
+                },
+            },
+        );
+    }
+    let edited = store.snapshot().unwrap();
+    assert_eq!(
+        edited.sound_routes().values().next().unwrap().edits.len(),
+        2
+    );
+    store
+        .undo(edited.revision_id(), revision("undo-second"))
+        .unwrap();
+    drop(store);
+    let mut store = ProjectStore::open(&path, deadpan_store::AccessMode::ReadWrite).unwrap();
+    store
+        .redo(
+            store.snapshot().unwrap().revision_id(),
+            revision("redo-second"),
+        )
+        .unwrap();
+    assert_eq!(
+        store.snapshot().unwrap().sound_routes(),
+        edited.sound_routes()
+    );
+    let captured = snapshot(&store, 1);
+    let plan = Arc::new(RenderPlan::compile(&captured.document).unwrap());
+
+    // Independent oracle: copy the decoded/resampled raw recipe from the old
+    // rounded boundaries, then apply each surviving island's one envelope.
+    // The two suffix shifts are 1601 samples each. Rerounding the semantic
+    // endpoint after two frame insertions would incorrectly extend the sound.
+    let raw = reference(10_000, 0, 11_000);
+    assert_ne!(
+        raw[3203], raw[3204],
+        "adjacent PCM must distinguish the NTSC witness"
+    );
+    let islands = [
+        (0usize, 1602usize, 0usize),
+        (3203, 4805, 1602),
+        (6406, 14086, 3204),
+    ];
+    let mut expected = vec![[0.0_f32; 2]; 14_200];
+    for (start, end, old) in islands {
+        for index in start..end {
+            let gain = ((2 * (index - start) + 1)
+                .min(192)
+                .min(2 * (end - 1 - index) + 1)) as f32
+                / 192.0;
+            let sample = raw[old + index - start];
+            expected[index] = [sample[0] * gain, sample[1] * gain];
+        }
+    }
+    // Use the same committed structural edit for the continuous Original, with
+    // only the independent sound bus omitted from this scalar reference.
+    let mut wire = serde_json::to_value(captured.document.as_ref()).unwrap();
+    wire.as_object_mut().unwrap().remove("sounds");
+    wire.as_object_mut().unwrap().remove("sound_routes");
+    let original_document = ProjectDocument::from_json(&wire.to_string()).unwrap();
+    let mut original = StageAudio::new(Arc::new(RenderPlan::compile(&original_document).unwrap()));
+    let base = original
+        .prepare_edge_faded(
+            &mut Sources::new(captured.clone()),
+            AudioSample(0),
+            u32::try_from(expected.len()).unwrap(),
+            TIMEOUT,
+            &cancelled(),
+        )
+        .unwrap()
+        .samples;
+    for (expected, original) in expected.iter_mut().zip(base) {
+        *expected = [
+            (f64::from(original[0]) + f64::from(expected[0])) as f32,
+            (f64::from(original[1]) + f64::from(expected[1])) as f32,
+        ];
+    }
+    let mut renderer = StageAudio::new(plan.clone());
+    let mut sources = Sources::new(captured.clone());
+    for (start, count) in [
+        (6406, 256),
+        (13_980, 220),
+        (4700, 256),
+        (1500, 256),
+        (3100, 256),
+        (0, 137),
+    ] {
+        let warm = renderer
+            .prepare_edge_faded(
+                &mut sources,
+                AudioSample(start),
+                count,
+                TIMEOUT,
+                &cancelled(),
+            )
+            .unwrap();
+        let cold = StageAudio::new(plan.clone())
+            .prepare_edge_faded(
+                &mut Sources::new(captured.clone()),
+                AudioSample(start),
+                count,
+                TIMEOUT,
+                &cancelled(),
+            )
+            .unwrap();
+        let selected = &expected[start as usize..start as usize + count as usize];
+        assert_eq!(
+            warm.samples, selected,
+            "retained sound phase/envelope at {start}"
+        );
+        assert_eq!(
+            cold.samples, selected,
+            "cold retained sound phase/envelope at {start}"
+        );
+    }
+    store.validate().unwrap();
+}

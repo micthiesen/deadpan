@@ -15,14 +15,15 @@ picture and edit selection untouched. Follow the
 selection, visible Space/Shift+Space keys and explicit state. It does not place
 sound events. The [sound integration contract](../SOUND_EVENTS.md) distinguishes
 node-owned clocks, continuous per-voice processing and scoped Hold allowances.
-Its exact route kernel and CLI LRU PCM cache are prerequisites; persisted event
-commands, edit transforms, voice effects and final mixing remain required.
+Its exact route kernel and CLI LRU PCM cache support the persisted root subset;
+nested ownership, the remaining edit transforms, voice effects and full final
+mixing remain required.
 The [retained sample-route evaluator](../SOUND_EVENTS.md#retained-sample-routes)
 now composes each edit's physical-grid cut and new anchor. Keep the old selected
 audible mask separate from complete recipe/filter/DSP support. Current Hold
 queries retain issuer identity; they grant no allowance and invent no historical
-policy. Playback also uses bounded LRU source eviction. Authored event
-persistence and per-voice processing remain required. See
+policy. Playback also uses bounded LRU source eviction. Complete per-voice
+processing remains required. See
 [sound-clock qualification](../qualification/sound-clocks-2026-09-27.md).
 The [independent source operand](../SOUND_EVENTS.md#independent-catalog-source-operands)
 now feeds qualified catalog audio through the existing tape and PCM engine without
@@ -36,8 +37,17 @@ RoundEven clocks. They read the old sample labels with full filter/DSP support,
 including cold suffixes, and admit dependencies even for entirely masked output.
 Captured provider policy stays separate from current consuming Hold gates. See
 [routed-voice qualification](../qualification/routed-voices-2026-09-27.md).
-Persisted events, allowances, effects and final bus integration remain required.
-Core 28 and database 34 are unchanged by these increments.
+Core 29/database 35 added qualified persisted root events and the shared
+pre-master bus. Core 30/database 36 now retain chronological root sound routes
+through InsertTime, SpliceSource and ordinary Sequence Delete. Non-root Split
+is neutral; root Split and temporal occurrence edits remain guarded. Preserve
+the complete recipe and old physical sample labels while current Hold gates
+stay live. Parameter changes keep routing; explicit ReplaceSound discards it.
+Frozen core 29 checks historical contextual admission before modern replay.
+See [persisted root ripple edits](../SOUND_EVENTS.md#persisted-root-ripple-edits).
+Nested ownership, allowances, effects, the remaining structural transforms and
+native event placement are still required. Use the
+[placement board](../design/boards/sound-placement-board-v2.png) for that UI.
 
 [Structural speed editing](../RETIME_EDITING.md) exposes `:retime` and
 `:wrap-retime` through exact speed resolution and the native inspector. Preserve

@@ -40,6 +40,7 @@ impl Document {
     pub fn upgrade(self) -> Result<ProjectDocument, DocumentError> {
         let document = ProjectDocument {
             sounds: BTreeMap::new(),
+            sound_routes: BTreeMap::new(),
             gap_overrides: BTreeMap::new(),
             audio_lineage: BTreeMap::new(),
             audio_bindings: crate::AudioBindingState::default(),
@@ -66,7 +67,7 @@ impl Document {
         Ok(document)
     }
     pub fn matches(&self, document: &ProjectDocument) -> bool {
-        if !document.sounds.is_empty() {
+        if !document.sounds.is_empty() || !document.sound_routes.is_empty() {
             return false;
         }
         if !document.gap_overrides.is_empty() {
@@ -329,7 +330,7 @@ struct Patch {
 }
 impl Patch {
     fn project(patch: &DocumentPatch) -> Option<Self> {
-        if !patch.sounds.is_empty() {
+        if !patch.sounds.is_empty() || !patch.sound_routes.is_empty() {
             return None;
         }
         if !patch.gap_overrides.is_empty() {

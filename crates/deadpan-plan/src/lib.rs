@@ -15,6 +15,7 @@ mod audio_routed;
 mod audio_sampling;
 mod audio_sound_event;
 mod audio_sound_route;
+mod audio_source_root;
 mod audio_tape;
 mod picture;
 mod plan;
@@ -28,10 +29,13 @@ pub use audio_reference::{
     ReferenceAudioSpan, ReferenceClockOwner, ReferenceProcessingDomain, ReferenceProcessingKind,
     ReferenceSample, RetainedRootMap,
 };
-pub use audio_routed::{AudioRoutedRoot, AudioRoutedSignal, AudioRoutedSignalInput};
+pub use audio_routed::{
+    AudioRoutedRoot, AudioRoutedRootInput, AudioRoutedSignal, AudioRoutedSignalInput,
+};
 pub use audio_sampling::{AudioBoundaryRule, AudioSampleGrid, AudioSampleMap};
 pub use audio_sound_event::{AudioRootSound, AudioSoundGateQuery, AudioSoundGateSpan};
 pub use audio_sound_route::{AudioSoundRoute, AudioSoundRouteQuery, AudioSoundRouteSpan};
+pub use audio_source_root::AudioRootSource;
 pub use audio_tape::{AudioSignalTape, AudioSignalTapeRun};
 
 pub use picture::{Picture, PictureFraming, PictureSample};

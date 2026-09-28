@@ -7,8 +7,8 @@
 use std::{marker::PhantomData, ops::Range};
 
 use deadpan_core::{
-    AudioSample, ExactRatio, SoundRoute, SoundRouteNode, SoundRouteQueryLimits,
-    SoundRouteQueryStats, TimeError,
+    AudioSample, ExactRatio, MAX_SOUND_ROUTE_EDGES, SoundRoute, SoundRouteNode,
+    SoundRouteQueryLimits, SoundRouteQueryStats, TimeError,
 };
 
 use crate::{
@@ -55,6 +55,24 @@ struct QueryWork {
     stats: SoundRouteQueryStats,
     step: ExactRatio,
     spans: Vec<RawSpan>,
+}
+
+enum QueryTask {
+    Walk {
+        id: usize,
+        samples: Range<i64>,
+        allocation: Range<i64>,
+        shift: i128,
+    },
+    Silence {
+        samples: Range<i64>,
+        shift: i128,
+    },
+    Ripple {
+        id: usize,
+        samples: Range<i64>,
+        shift: i128,
+    },
 }
 
 impl<S> AudioSoundRoute<S> {
@@ -123,8 +141,9 @@ impl<S> AudioSoundRoute<S> {
         Ok(work)
     }
 
-    // SoundRoute admission bounds total history/map depth to 64. Only intervals
-    // reached by this query recurse; compact Repeat periods are located directly.
+    // Retain chronological sample clocks without consuming the call stack.
+    // Ripple continuations locate only the next reached piece, so a compact
+    // Repeat remains bounded by query work rather than its expanded play count.
     fn walk(
         &self,
         id: usize,
@@ -133,67 +152,79 @@ impl<S> AudioSoundRoute<S> {
         destination_shift: i128,
         work: &mut QueryWork,
     ) -> Result<(), PlanError> {
-        if samples.is_empty() {
-            return Ok(());
-        }
-        work.spend(1)?;
-        work.stats.node_visits += 1;
-        // Different rounded placements can request one sample beyond the old
-        // selected output. Its audible mask is independent of full recipe/DSP
-        // support. Never expose adjacent output excluded by this Window/Keep.
-        if samples.start < allocation.start {
-            work.push(
-                samples.start..samples.end.min(allocation.start),
-                destination_shift,
-                None,
-            )?;
-        }
-        let inside = samples.start.max(allocation.start)..samples.end.min(allocation.end);
-        if !inside.is_empty() {
-            self.walk_inside(id, inside, destination_shift, work)?;
-        }
-        if samples.end > allocation.end {
-            work.push(
-                samples.start.max(allocation.end)..samples.end,
-                destination_shift,
-                None,
-            )?;
-        }
-        Ok(())
-    }
-
-    fn walk_inside(
-        &self,
-        id: usize,
-        samples: Range<i64>,
-        destination_shift: i128,
-        work: &mut QueryWork,
-    ) -> Result<(), PlanError> {
-        let grid = &self.grids[id];
-        match &self.route.nodes()[id] {
-            SoundRouteNode::Recipe {} => work.push(
-                samples.clone(),
-                destination_shift,
-                Some(grid.at(ReferenceSample(samples.start))?),
-            ),
-            SoundRouteNode::Window { input, selection } => {
-                let input = *input as usize;
-                let old_start = self.grids[input].boundary(selection.start)?.0;
-                let old_end = self.grids[input].boundary(selection.end)?.0;
-                let new_start = self.allocations[id].start;
-                let delta = i128::from(old_start) - i128::from(new_start);
-                self.walk(
-                    input,
-                    shifted(samples, delta)?,
-                    old_start..old_end,
-                    destination_shift - delta,
-                    work,
-                )
-            }
-            SoundRouteNode::Ripple { input, map } => {
-                let input = *input as usize;
-                let mut cursor = samples.start;
-                while cursor < samples.end {
+        let mut tasks = vec![QueryTask::Walk {
+            id,
+            samples,
+            allocation,
+            shift: destination_shift,
+        }];
+        while let Some(task) = tasks.pop() {
+            match task {
+                QueryTask::Silence { samples, shift } => work.push(samples, shift, None)?,
+                QueryTask::Walk {
+                    id,
+                    samples,
+                    allocation,
+                    shift,
+                } => {
+                    if samples.is_empty() {
+                        continue;
+                    }
+                    work.spend(1)?;
+                    work.stats.node_visits += 1;
+                    // Allocation masks do not narrow the complete recipe/DSP
+                    // support. Never expose a rounded sample past an old cut.
+                    if samples.start < allocation.start {
+                        work.push(
+                            samples.start..samples.end.min(allocation.start),
+                            shift,
+                            None,
+                        )?;
+                    }
+                    if samples.end > allocation.end {
+                        tasks.push(QueryTask::Silence {
+                            samples: samples.start.max(allocation.end)..samples.end,
+                            shift,
+                        });
+                    }
+                    let samples =
+                        samples.start.max(allocation.start)..samples.end.min(allocation.end);
+                    if samples.is_empty() {
+                        continue;
+                    }
+                    match &self.route.nodes()[id] {
+                        SoundRouteNode::Recipe {} => work.push(
+                            samples.clone(),
+                            shift,
+                            Some(self.grids[id].at(ReferenceSample(samples.start))?),
+                        )?,
+                        SoundRouteNode::Window { input, selection } => {
+                            let input = *input as usize;
+                            let old_start = self.grids[input].boundary(selection.start)?.0;
+                            let old_end = self.grids[input].boundary(selection.end)?.0;
+                            let delta =
+                                i128::from(old_start) - i128::from(self.allocations[id].start);
+                            tasks.push(QueryTask::Walk {
+                                id: input,
+                                samples: shifted(samples, delta)?,
+                                allocation: old_start..old_end,
+                                shift: shift - delta,
+                            });
+                        }
+                        SoundRouteNode::Ripple { .. } => {
+                            tasks.push(QueryTask::Ripple { id, samples, shift })
+                        }
+                    }
+                }
+                QueryTask::Ripple { id, samples, shift } => {
+                    let SoundRouteNode::Ripple { input, map } = &self.route.nodes()[id] else {
+                        return Err(PlanError::InvalidPlan(
+                            "sound route continuation is not a Ripple",
+                        ));
+                    };
+                    let input = *input as usize;
+                    let grid = &self.grids[id];
+                    let cursor = samples.start;
                     let remaining = work.limits.maximum_work - work.stats.work;
                     if remaining == 0 {
                         return Err(PlanError::AudioQueryLimit("sound route work"));
@@ -220,25 +251,33 @@ impl<S> AudioSoundRoute<S> {
                         ));
                     }
                     let piece = cursor..end.min(samples.end);
+                    if piece.end < samples.end {
+                        tasks.push(QueryTask::Ripple {
+                            id,
+                            samples: piece.end..samples.end,
+                            shift,
+                        });
+                    }
                     if let Some(recipe) = slice.recipe {
                         let old_start = self.grids[input].boundary(recipe.start)?.0;
                         let old_end = self.grids[input].boundary(recipe.end)?.0;
                         let delta = i128::from(old_start) - i128::from(start);
-                        self.walk(
-                            input,
-                            shifted(piece.clone(), delta)?,
-                            old_start..old_end,
-                            destination_shift - delta,
-                            work,
-                        )?;
+                        tasks.push(QueryTask::Walk {
+                            id: input,
+                            samples: shifted(piece, delta)?,
+                            allocation: old_start..old_end,
+                            shift: shift - delta,
+                        });
                     } else {
-                        work.push(piece.clone(), destination_shift, None)?;
+                        work.push(piece, shift, None)?;
                     }
-                    cursor = piece.end;
                 }
-                Ok(())
+            }
+            if tasks.len() > MAX_SOUND_ROUTE_EDGES {
+                return Err(PlanError::AudioQueryLimit("sound route pending intervals"));
             }
         }
+        Ok(())
     }
 }
 

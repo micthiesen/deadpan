@@ -1,0 +1,393 @@
+[
+  {
+    "command": [
+      "core29-deadpan-cli",
+      "doctor"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "0e7471252def3a61dad68648074aadca125e7ef86632023c4eeb9055e2e4f224",
+    "stderr": "",
+    "stdout": "{\n  \"application\": \"deadpan\",\n  \"architecture\": \"aarch64\",\n  \"database_schema\": 35,\n  \"device_output\": \"macos-bounded-limited-sequence-audition\",\n  \"document_schema\": 29,\n  \"edge_faded_pcm\": \"authored-boundary-exceptions-after-time-mapping-before-voice-effects\",\n  \"internal_audio_sample_rate\": 48000,\n  \"limited_pcm\": \"original-and-root-sound-bus-with-finite-oversampled-limiter-before-missing-voice-effects\",\n  \"os\": \"macos\",\n  \"partial\": [\n    \"structural-editing-commands\",\n    \"sqlite-project-history\",\n    \"schema-1-through-34-migration\",\n    \"single-original-project-baseline\",\n    \"native-documents-project-library\",\n    \"indexed-picture-plan\",\n    \"indexed-audio-plan\",\n    \"worker-dsp-adapter\",\n    \"source-audio-preparation\",\n    \"plan-driven-source-pcm\",\n    \"transparent-audio-partitions\",\n    \"retained-context-split\",\n    \"atomic-sequence-pause-insertion\",\n    \"logical-mark-bindings\",\n    \"exact-boundary-selectors\",\n    \"persistent-marks\",\n    \"sparse-play-overrides\",\n    \"nested-occurrence-edits\",\n    \"persistent-generation-requests\",\n    \"persistent-generation-attempts\",\n    \"authored-generated-hold-semantics\",\n    \"generated-media-conversion\",\n    \"native-bridge-bundle-qualification\",\n    \"durable-generated-bundle-acceptance\",\n    \"durable-original-byte-ownership\",\n    \"identity-checked-relinking\",\n    \"persistent-source-decoding\",\n    \"measured-source-audio-indexes\",\n    \"independent-source-audio-mapping\",\n    \"independent-source-video-mapping\",\n    \"exact-source-stream-placement\",\n    \"measured-import-timing-candidates\",\n    \"measured-original-moment-candidates\",\n    \"exact-source-audio-selections\",\n    \"durable-source-qualification\",\n    \"atomic-source-registration-and-insertion\",\n    \"background-import-preparation\",\n    \"automatic-presentation-basis\",\n    \"timed-basis-locking\",\n    \"explicit-canvas-geometry\",\n    \"shared-sdr-picture-pipeline\",\n    \"authored-framing-envelopes\",\n    \"ordered-canvas-framing\",\n    \"captured-hold-framing\",\n    \"native-camera-draft\",\n    \"native-source-preview\",\n    \"native-project-workspace\",\n    \"native-sequence-audition\",\n    \"native-original-audition\",\n    \"selection-loop-audition\",\n    \"native-structural-speed-editing\",\n    \"root-sound-event-commands-and-mixing\"\n  ],\n  \"room_tone_pcm\": \"explicit-source-range-exact-overlap-before-effects\",\n  \"schema_version\": 1,\n  \"sequence_audition\": \"immutable-revision-device-clock-pictures-exact-paused-sample-resume\",\n  \"sqlite_version\": \"3.53.2\",\n  \"stage\": \"development-foundation\",\n  \"time_mapped_pcm\": \"bounded-continuous-preserve-before-effects\",\n  \"timing_probe\": {\n    \"frame\": 1,\n    \"frame_rate_denominator\": 1001,\n    \"frame_rate_numerator\": 30000,\n    \"sample_boundary\": 1602\n  },\n  \"unimplemented\": [\n    \"mastered-preview-audio\",\n    \"full-device-and-acoustic-qualification\",\n    \"full-keyboard-editor\",\n    \"analysis\",\n    \"ai-generation\",\n    \"youtube-import\",\n    \"export\",\n    \"distribution\"\n  ],\n  \"version\": \"0.1.0\"\n}\n"
+  },
+  {
+    "command": [
+      "core29-deadpan-cli",
+      "project",
+      "create",
+      "/tmp/deadpan-authored-sound-routing-8wcpeljx/fixture-author/sound-route-history.deadpan",
+      "--fps",
+      "30000/1001",
+      "--size",
+      "320x180"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "4052a00ba4ae1fbb215740eafd3dd42fee496a5530f06525986a299dd0f43243",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "core29-deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-authored-sound-routing-8wcpeljx/fixture-author/sound-route-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "da747a290a915644f033f6c1e1843c61833ce6c6a464d5e1b9b3909a0131926f",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "core29-deadpan-cli",
+      "project",
+      "retain-original",
+      "/tmp/deadpan-authored-sound-routing-8wcpeljx/fixture-author/sound-route-history.deadpan",
+      "/Users/michael/Code/deadpan/native/deadpan-source/tests/fixtures/offset-bframes.mp4"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "70bb7e16da785fb75fde4c033a4fc39388814e00ed9e812caa3ab6b9b6b9f3ca",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "core29-deadpan-cli",
+      "project",
+      "register-source",
+      "/tmp/deadpan-authored-sound-routing-8wcpeljx/fixture-author/sound-route-history.deadpan",
+      "--request-json",
+      "/tmp/deadpan-authored-sound-routing-8wcpeljx/fixture-author/registration.json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "29c5b683e1ffc97fdd5bd7d9f42f872620c740b82c71862a847f8d83ba3c66b8",
+    "stderr": "",
+    "stdout": "{\n  \"committed\": true,\n  \"outcome\": {\n    \"asset_id\": \"camera\",\n    \"commit\": {\n      \"edit\": {\n        \"changed_ids\": [\n          \"9ad8a1de-32dd-4182-8df7-319f6dee8b91\",\n          \"clip\"\n        ],\n        \"description\": \"Import source media\",\n        \"duration_delta\": 121,\n        \"forward\": {\n          \"assets\": {\n            \"camera\": {\n              \"after\": {\n                \"audio\": {\n                  \"end\": {\n                    \"ticks\": 288288,\n                    \"time_base\": {\n                      \"denominator\": 48000,\n                      \"numerator\": 1\n                    }\n                  },\n                  \"start\": {\n                    \"ticks\": 95072,\n                    \"time_base\": {\n                      \"denominator\": 48000,\n                      \"numerator\": 1\n                    }\n                  }\n                },\n                \"content_hash\": \"blake3:2a71661b9ab6925c88996ee355b96cd96c3041ee775c3ccbe2681513397a613f\",\n                \"frame_count\": 120,\n                \"label\": \"Measured camera\",\n                \"source_qualification\": \"38776b6eae9a3ce89f1126abbcd6e3cd74a68bb05d09489ee58a548f3499dfe4\",\n                \"still_image\": false,\n                \"video\": {\n                  \"end\": {\n                    \"ticks\": 180180,\n                    \"time_base\": {\n                      \"denominator\": 30000,\n                      \"numerator\": 1\n                    }\n                  },\n                  \"start\": {\n                    \"ticks\": 60060,\n                    \"time_base\": {\n                      \"denominator\": 30000,\n                      \"numerator\": 1\n                    }\n                  }\n                }\n              },\n              \"before\": null\n            }\n          },\n          \"from_revision\": \"974a704c-762f-46fa-b908-0d3f0eddf2cd\",\n          \"marks\": {},\n          \"nodes\": {\n            \"9ad8a1de-32dd-4182-8df7-319f6dee8b91\": {\n              \"after\": {\n                \"kind\": {\n                  \"children\": [\n                    \"clip\"\n                  ],\n                  \"type\": \"sequence\"\n                },\n                \"label\": \"Sequence\"\n              },\n              \"before\": {\n                \"kind\": {\n                  \"children\": [],\n                  \"type\": \"sequence\"\n                },\n                \"label\": \"Sequence\"\n              }\n            },\n            \"clip\": {\n              \"after\": {\n                \"kind\": {\n                  \"source\": {\n                    \"audio\": {\n                      \"asset\": \"camera\",\n                      \"span\": {\n                        \"end\": {\n                          \"ticks\": 288288,\n                          \"time_base\": {\n                            \"denominator\": 48000,\n                            \"numerator\": 1\n                          }\n                        },\n                        \"start\": {\n                          \"ticks\": 95072,\n                          \"time_base\": {\n                            \"denominator\": 48000,\n                            \"numerator\": 1\n                          }\n                        }\n                      }\n                    },\n                    \"audio_mapping\": {\n                      \"frames\": {\n                        \"denominator\": \"1001\",\n                        \"numerator\": \"120760\"\n                      },\n                      \"start\": {\n                        \"denominator\": \"1\",\n                        \"numerator\": \"0\"\n                      },\n                      \"type\": \"placement\"\n                    },\n                    \"audio_offset\": 0,\n                    \"duration\": 121,\n                    \"link\": \"linked\",\n                    \"video\": {\n                      \"asset\": \"camera\",\n                      \"span\": {\n                        \"end\": {\n                          \"ticks\": 180180,\n                          \"time_base\": {\n                            \"denominator\": 30000,\n                            \"numerator\": 1\n                          }\n                        },\n                        \"start\": {\n                          \"ticks\": 60060,\n                          \"time_base\": {\n                            \"denominator\": 30000,\n                            \"numerator\": 1\n                          }\n                        }\n                      },\n                      \"type\": \"stream\"\n                    },\n                    \"video_mapping\": {\n                      \"endpoints\": \"hold_adjacent\",\n                      \"frames\": {\n                        \"denominator\": \"1\",\n                        \"numerator\": \"120\"\n                      },\n                      \"start\": {\n                        \"denominator\": \"1001\",\n                        \"numerator\": \"640\"\n                      },\n                      \"type\": \"placement\"\n                    }\n                  },\n                  \"type\": \"source\"\n                },\n                \"label\": \"Original\"\n              },\n              \"before\": null\n            }\n          },\n          \"overrides\": {},\n          \"presentation\": {\n            \"after\": {\n              \"basis\": {\n                \"color_policy\": \"sdr_rec709\",\n                \"frame_rate\": {\n                  \"denominator\": 1001,\n                  \"numerator\": 30000\n                },\n                \"height\": 180,\n                \"width\": 320\n              },\n              \"state\": {\n                \"geometry_origin\": \"explicit\",\n                \"primary\": {\n                  \"asset\": \"camera\",\n                  \"qualification\": \"38776b6eae9a3ce89f1126abbcd6e3cd74a68bb05d09489ee58a548f3499dfe4\"\n                },\n                \"rate_origin\": \"explicit\"\n              }\n            },\n            \"before\": {\n              \"basis\": {\n                \"color_policy\": \"sdr_rec709\",\n                \"frame_rate\": {\n                  \"denominator\": 1001,\n                  \"numerator\": 30000\n                },\n                \"height\": 180,\n                \"width\": 320\n              },\n              \"state\": {\n                \"geometry_origin\": \"explicit\",\n                \"primary\": null,\n                \"rate_origin\": \"explicit\"\n              }\n            }\n          },\n          \"project_id\": \"e57fe5e8-ab20-4de1-828a-b7fd56372b7d\",\n          \"to_revision\": \"core29-import\"\n        },\n        \"inverse\": {\n          \"assets\": {\n            \"camera\": {\n              \"after\": null,\n              \"before\": {\n                \"audio\": {\n                  \"end\": {\n                    \"ticks\": 288288,\n                    \"time_base\": {\n                      \"denominator\": 48000,\n                      \"numerator\": 1\n                    }\n                  },\n                  \"start\": {\n                    \"ticks\": 95072,\n                    \"time_base\": {\n                      \"denominator\": 48000,\n                      \"numerator\": 1\n                    }\n                  }\n                },\n                \"content_hash\": \"blake3:2a71661b9ab6925c88996ee355b96cd96c3041ee775c3ccbe2681513397a613f\",\n                \"frame_count\": 120,\n                \"label\": \"Measured camera\",\n                \"source_qualification\": \"38776b6eae9a3ce89f1126abbcd6e3cd74a68bb05d09489ee58a548f3499dfe4\",\n                \"still_image\": false,\n                \"video\": {\n                  \"end\": {\n                    \"ticks\": 180180,\n                    \"time_base\": {\n                      \"denominator\": 30000,\n                      \"numerator\": 1\n                    }\n                  },\n                  \"start\": {\n                    \"ticks\": 60060,\n                    \"time_base\": {\n                      \"denominator\": 30000,\n                      \"numerator\": 1\n                    }\n                  }\n                }\n              }\n            }\n          },\n          \"from_revision\": \"core29-import\",\n          \"marks\": {},\n          \"nodes\": {\n            \"9ad8a1de-32dd-4182-8df7-319f6dee8b91\": {\n              \"after\": {\n                \"kind\": {\n                  \"children\": [],\n                  \"type\": \"sequence\"\n                },\n                \"label\": \"Sequence\"\n              },\n              \"before\": {\n                \"kind\": {\n                  \"children\": [\n                    \"clip\"\n                  ],\n                  \"type\": \"sequence\"\n                },\n                \"label\": \"Sequence\"\n              }\n            },\n            \"clip\": {\n              \"after\": null,\n              \"before\": {\n                \"kind\": {\n                  \"source\": {\n                    \"audio\": {\n                      \"asset\": \"camera\",\n                      \"span\": {\n                        \"end\": {\n                          \"ticks\": 288288,\n                          \"time_base\": {\n                            \"denominator\": 48000,\n                            \"numerator\": 1\n                          }\n                        },\n                        \"start\": {\n                          \"ticks\": 95072,\n                          \"time_base\": {\n                            \"denominator\": 48000,\n                            \"numerator\": 1\n                          }\n                        }\n                      }\n                    },\n                    \"audio_mapping\": {\n                      \"frames\": {\n                        \"denominator\": \"1001\",\n                        \"numerator\": \"120760\"\n                      },\n                      \"start\": {\n                        \"denominator\": \"1\",\n                        \"numerator\": \"0\"\n                      },\n                      \"type\": \"placement\"\n                    },\n                    \"audio_offset\": 0,\n                    \"duration\": 121,\n                    \"link\": \"linked\",\n                    \"video\": {\n                      \"asset\": \"camera\",\n                      \"span\": {\n                        \"end\": {\n                          \"ticks\": 180180,\n                          \"time_base\": {\n                            \"denominator\": 30000,\n                            \"numerator\": 1\n                          }\n                        },\n                        \"start\": {\n                          \"ticks\": 60060,\n                          \"time_base\": {\n                            \"denominator\": 30000,\n                            \"numerator\": 1\n                          }\n                        }\n                      },\n                      \"type\": \"stream\"\n                    },\n                    \"video_mapping\": {\n                      \"endpoints\": \"hold_adjacent\",\n                      \"frames\": {\n                        \"denominator\": \"1\",\n                        \"numerator\": \"120\"\n                      },\n                      \"start\": {\n                        \"denominator\": \"1001\",\n                        \"numerator\": \"640\"\n                      },\n                      \"type\": \"placement\"\n                    }\n                  },\n                  \"type\": \"source\"\n                },\n                \"label\": \"Original\"\n              }\n            }\n          },\n          \"overrides\": {},\n          \"presentation\": {\n            \"after\": {\n              \"basis\": {\n                \"color_policy\": \"sdr_rec709\",\n                \"frame_rate\": {\n                  \"denominator\": 1001,\n                  \"numerator\": 30000\n                },\n                \"height\": 180,\n                \"width\": 320\n              },\n              \"state\": {\n                \"geometry_origin\": \"explicit\",\n                \"primary\": null,\n                \"rate_origin\": \"explicit\"\n              }\n            },\n            \"before\": {\n              \"basis\": {\n                \"color_policy\": \"sdr_rec709\",\n                \"frame_rate\": {\n                  \"denominator\": 1001,\n                  \"numerator\": 30000\n                },\n                \"height\": 180,\n                \"width\": 320\n              },\n              \"state\": {\n                \"geometry_origin\": \"explicit\",\n                \"primary\": {\n                  \"asset\": \"camera\",\n                  \"qualification\": \"38776b6eae9a3ce89f1126abbcd6e3cd74a68bb05d09489ee58a548f3499dfe4\"\n                },\n                \"rate_origin\": \"explicit\"\n              }\n            }\n          },\n          \"project_id\": \"e57fe5e8-ab20-4de1-828a-b7fd56372b7d\",\n          \"to_revision\": \"974a704c-762f-46fa-b908-0d3f0eddf2cd\"\n        }\n      },\n      \"revision_id\": \"core29-import\"\n    },\n    \"qualification\": \"38776b6eae9a3ce89f1126abbcd6e3cd74a68bb05d09489ee58a548f3499dfe4\"\n  },\n  \"protocol\": 1\n}\n"
+  },
+  {
+    "command": [
+      "core29-deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-authored-sound-routing-8wcpeljx/fixture-author/sound-route-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "67695b63f7f4b05e0bbcfdc170d92997bb15b4800b2d4ea9969270161dbf11fc",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "core29-deadpan-cli",
+      "command",
+      "/tmp/deadpan-authored-sound-routing-8wcpeljx/fixture-author/sound-route-history.deadpan",
+      "--json",
+      "/tmp/deadpan-authored-sound-routing-8wcpeljx/fixture-author/core29-repeat.json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "2203d22c7c4a1817e75927435c377b898d98487ae366c9b4df337569f2aa9d18",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "core29-deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-authored-sound-routing-8wcpeljx/fixture-author/sound-route-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "19b99df0d38f2c99b6789488609706116fef087bf951e2b2a1b4ee4f84adf2c5",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "core29-deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-authored-sound-routing-8wcpeljx/fixture-author/sound-route-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "19b99df0d38f2c99b6789488609706116fef087bf951e2b2a1b4ee4f84adf2c5",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "core29-deadpan-cli",
+      "command",
+      "/tmp/deadpan-authored-sound-routing-8wcpeljx/fixture-author/sound-route-history.deadpan",
+      "--json",
+      "/tmp/deadpan-authored-sound-routing-8wcpeljx/fixture-author/core29-add-impact.json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "720433fe6d61f9885c18202929b5461a0d68efcea44e7026e75927c8562f9517",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "core29-deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-authored-sound-routing-8wcpeljx/fixture-author/sound-route-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "17fd11ee29db23794204f1f843e301c1f399eda3963cabf3db66c53df508f3a3",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "core29-deadpan-cli",
+      "command",
+      "/tmp/deadpan-authored-sound-routing-8wcpeljx/fixture-author/sound-route-history.deadpan",
+      "--json",
+      "/tmp/deadpan-authored-sound-routing-8wcpeljx/fixture-author/core29-abandoned-impact.json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "c34a05a60b5df03434ab34f3dffeccc4ddba290ef2b1b6843b3f54f0dc4b4bce",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "core29-deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-authored-sound-routing-8wcpeljx/fixture-author/sound-route-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "8ccc97d3a0df5628fbb1e3e12b19308aa0a22f183fa59ebdfec37a8090730fbd",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "core29-deadpan-cli",
+      "project",
+      "undo",
+      "/tmp/deadpan-authored-sound-routing-8wcpeljx/fixture-author/sound-route-history.deadpan",
+      "--expected",
+      "core29-abandoned-impact"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "23a5eec228767d3c021a8dfe6ad6a53b27b2fdc95793ac269d0feab2bd3e2f71",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "core29-deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-authored-sound-routing-8wcpeljx/fixture-author/sound-route-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "ec4b52154fe9e0721324a0d2517254466adf220ee76a4d3d8283106eb6dc2f3d",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "core29-deadpan-cli",
+      "command",
+      "/tmp/deadpan-authored-sound-routing-8wcpeljx/fixture-author/sound-route-history.deadpan",
+      "--json",
+      "/tmp/deadpan-authored-sound-routing-8wcpeljx/fixture-author/core29-update-impact.json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "f3fcb21f3e7b73a578c140c0a0490992c28ed217490fd9c8709eca9502c6c6d9",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "core29-deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-authored-sound-routing-8wcpeljx/fixture-author/sound-route-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "c37cc178ec7b3149321883fbc0bdebd6f26df0667ba6c96b1887fb1bfe75abbf",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "core29-deadpan-cli",
+      "command",
+      "/tmp/deadpan-authored-sound-routing-8wcpeljx/fixture-author/sound-route-history.deadpan",
+      "--json",
+      "/tmp/deadpan-authored-sound-routing-8wcpeljx/fixture-author/core29-add-bed.json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "db3840beae365a3a7179a50bbd82bb98b63790aba46c105d776bb45e2db8a517",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "core29-deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-authored-sound-routing-8wcpeljx/fixture-author/sound-route-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "106ea2cbb8f3ba82084446799bfea3ffea1b11eb765ae6c018923a4fcb60db06",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "core29-deadpan-cli",
+      "command",
+      "/tmp/deadpan-authored-sound-routing-8wcpeljx/fixture-author/sound-route-history.deadpan",
+      "--json",
+      "/tmp/deadpan-authored-sound-routing-8wcpeljx/fixture-author/core29-label.json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "9bac1b66cc83132ec047387a455e6160787de17d63617b127f913a3fe4b62b99",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "core29-deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-authored-sound-routing-8wcpeljx/fixture-author/sound-route-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "1ab071789f6019178639356275db818e808ba826b918dcd3f991394be1d8a0f0",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "core29-deadpan-cli",
+      "command",
+      "/tmp/deadpan-authored-sound-routing-8wcpeljx/fixture-author/sound-route-history.deadpan",
+      "--json",
+      "/tmp/deadpan-authored-sound-routing-8wcpeljx/fixture-author/core29-delete-impact.json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "a1667a703c33068f7cf9e992c051253fd6dcd5e23d7a0af8c17f0fee62f9851e",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "core29-deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-authored-sound-routing-8wcpeljx/fixture-author/sound-route-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "7ed531a252c3a41f395005b4b0b2d3d266c58c50cc3d7028991d51352dfb3177",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "core29-deadpan-cli",
+      "project",
+      "undo",
+      "/tmp/deadpan-authored-sound-routing-8wcpeljx/fixture-author/sound-route-history.deadpan",
+      "--expected",
+      "core29-delete-impact"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "065d7507e2d31d0c3148a665013e7fa75a996a2979ef84e388e9991b7651e022",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "core29-deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-authored-sound-routing-8wcpeljx/fixture-author/sound-route-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "87f1740ef830063f7fc1dfd21a8f0cb5e4adcf8e523173d261742c3fcc9fb14e",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "core29-deadpan-cli",
+      "project",
+      "redo",
+      "/tmp/deadpan-authored-sound-routing-8wcpeljx/fixture-author/sound-route-history.deadpan",
+      "--expected",
+      "32cd8a2f-c377-4ba0-83c8-b957f8439dbb"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "31371069ca6be8063e60cd11453f16d07ee2296787c25826cc28fb16c830c92c",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "core29-deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-authored-sound-routing-8wcpeljx/fixture-author/sound-route-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "e3a10d8d5291e5f5d8aa3d073e75f06640e4784d4dd745e11d1593b7614197fd",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "core29-deadpan-cli",
+      "project",
+      "undo",
+      "/tmp/deadpan-authored-sound-routing-8wcpeljx/fixture-author/sound-route-history.deadpan",
+      "--expected",
+      "c1291142-eee2-416f-8595-70edab5f772c"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "ba8d13f175f99ae261a6d82f49f449b619168eb434ead2c592f4d875d0030814",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "core29-deadpan-cli",
+      "project",
+      "validate",
+      "/tmp/deadpan-authored-sound-routing-8wcpeljx/fixture-author/sound-route-history.deadpan"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "38a0711f37830d25620d4b0a1a21e39b09b2717ba0d9d48ae9758600e77d5e87",
+    "stderr": "",
+    "stdout": "{\n  \"basis_state\": {\n    \"geometry_origin\": \"explicit\",\n    \"primary\": {\n      \"asset\": \"camera\",\n      \"qualification\": \"38776b6eae9a3ce89f1126abbcd6e3cd74a68bb05d09489ee58a548f3499dfe4\"\n    },\n    \"rate_origin\": \"explicit\"\n  },\n  \"duration_frames\": 242,\n  \"mark_count\": 0,\n  \"node_count\": 3,\n  \"presentation_basis\": {\n    \"color_policy\": \"sdr_rec709\",\n    \"frame_rate\": {\n      \"denominator\": 1001,\n      \"numerator\": 30000\n    },\n    \"height\": 180,\n    \"width\": 320\n  },\n  \"project_id\": \"e57fe5e8-ab20-4de1-828a-b7fd56372b7d\",\n  \"protocol\": 1,\n  \"revision_id\": \"04c85d5b-8a06-412b-b572-9a331d9ba34d\",\n  \"root\": \"9ad8a1de-32dd-4182-8df7-319f6dee8b91\",\n  \"valid\": true\n}\n"
+  },
+  {
+    "command": [
+      "core29-deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-authored-sound-routing-8wcpeljx/fixture-author/sound-route-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "0c935144f1fa52db8949ef1566eb55d21586c43eaf3df812351cd3b79a990c95",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "core29-deadpan-cli",
+      "project",
+      "validate",
+      "/tmp/deadpan-authored-sound-routing-8wcpeljx/fixture-author/reopened-sql.deadpan"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "38a0711f37830d25620d4b0a1a21e39b09b2717ba0d9d48ae9758600e77d5e87",
+    "stderr": "",
+    "stdout": "{\n  \"basis_state\": {\n    \"geometry_origin\": \"explicit\",\n    \"primary\": {\n      \"asset\": \"camera\",\n      \"qualification\": \"38776b6eae9a3ce89f1126abbcd6e3cd74a68bb05d09489ee58a548f3499dfe4\"\n    },\n    \"rate_origin\": \"explicit\"\n  },\n  \"duration_frames\": 242,\n  \"mark_count\": 0,\n  \"node_count\": 3,\n  \"presentation_basis\": {\n    \"color_policy\": \"sdr_rec709\",\n    \"frame_rate\": {\n      \"denominator\": 1001,\n      \"numerator\": 30000\n    },\n    \"height\": 180,\n    \"width\": 320\n  },\n  \"project_id\": \"e57fe5e8-ab20-4de1-828a-b7fd56372b7d\",\n  \"protocol\": 1,\n  \"revision_id\": \"04c85d5b-8a06-412b-b572-9a331d9ba34d\",\n  \"root\": \"9ad8a1de-32dd-4182-8df7-319f6dee8b91\",\n  \"valid\": true\n}\n"
+  },
+  {
+    "command": [
+      "core29-deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-authored-sound-routing-8wcpeljx/fixture-author/reopened-sql.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "0c935144f1fa52db8949ef1566eb55d21586c43eaf3df812351cd3b79a990c95",
+    "stderr": ""
+  }
+]
