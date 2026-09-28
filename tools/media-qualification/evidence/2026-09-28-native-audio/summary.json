@@ -1,0 +1,1446 @@
+{
+  "commands": [
+    {
+      "name": "native01-unit",
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools/media-qualification/compatible",
+        "-p",
+        "test_*.py",
+        "-v"
+      ],
+      "started": "2026-09-28T15:17:53.135963+00:00",
+      "base_commit": "3b6e8da5579fb9e0ddf6ef80396642f535afedfa",
+      "diff_sha256": "10f78142543dbebd3c47ed4aade83bc15b157304c0a61209cd0b36d5d0cc4512",
+      "source_manifest_sha256": "7b5c2b8b54a4b6253083bdfd7b4b3f05554e1bee6dbf16d9afd571a51e0e5771",
+      "pid": 44801,
+      "exit_code": 0,
+      "seconds": 6.191400082781911
+    },
+    {
+      "name": "native02-encoder-regression",
+      "command": [
+        "python3",
+        "/tmp/deadpan-export-encoder-iogtzpzn/reevaluate-encoder.py"
+      ],
+      "started": "2026-09-28T15:18:16.671467+00:00",
+      "base_commit": "3b6e8da5579fb9e0ddf6ef80396642f535afedfa",
+      "diff_sha256": "31d8c19d26cf5e917f6d663f7cb6276040f60d0847e8063e182ee2ee52f1f0d6",
+      "source_manifest_sha256": "2b5ffded5545dddf290daf3dc4f3e55951d7526cd98ba9b137f6f22ea9087842",
+      "pid": 45037,
+      "exit_code": 0,
+      "seconds": 2.5788454581052065
+    },
+    {
+      "name": "native03-avfoundation",
+      "command": [
+        "python3",
+        "tools/media-qualification/compatible/qualify_native_audio.py",
+        "--encoder-report",
+        "/tmp/deadpan-export-encoder-iogtzpzn/matrix.json",
+        "--work",
+        "/tmp/deadpan-export-encoder-iogtzpzn/native",
+        "--output",
+        "/tmp/deadpan-export-encoder-iogtzpzn/native.json"
+      ],
+      "started": "2026-09-28T15:18:28.408732+00:00",
+      "base_commit": "3b6e8da5579fb9e0ddf6ef80396642f535afedfa",
+      "diff_sha256": "31d8c19d26cf5e917f6d663f7cb6276040f60d0847e8063e182ee2ee52f1f0d6",
+      "source_manifest_sha256": "2b5ffded5545dddf290daf3dc4f3e55951d7526cd98ba9b137f6f22ea9087842",
+      "pid": 45074,
+      "exit_code": 1,
+      "seconds": 4.905980958137661
+    },
+    {
+      "name": "native04-typed-bools",
+      "command": [
+        "python3",
+        "tools/media-qualification/compatible/qualify_native_audio.py",
+        "--encoder-report",
+        "/tmp/deadpan-export-encoder-iogtzpzn/matrix.json",
+        "--work",
+        "/tmp/deadpan-export-encoder-iogtzpzn/native-bools",
+        "--output",
+        "/tmp/deadpan-export-encoder-iogtzpzn/native-bools.json"
+      ],
+      "started": "2026-09-28T15:19:57.182168+00:00",
+      "base_commit": "3b6e8da5579fb9e0ddf6ef80396642f535afedfa",
+      "diff_sha256": "31d8c19d26cf5e917f6d663f7cb6276040f60d0847e8063e182ee2ee52f1f0d6",
+      "source_manifest_sha256": "8f5dfa4aef7482d9690a58b3ee36f0dba0484f46d6fc6e297b584954342fa056",
+      "pid": 45553,
+      "exit_code": 1,
+      "seconds": 4.175517541822046
+    },
+    {
+      "name": "native05-sanitizers",
+      "command": [
+        "python3",
+        "tools/media-qualification/compatible/qualify_native_audio.py",
+        "--encoder-report",
+        "/tmp/deadpan-export-encoder-iogtzpzn/matrix.json",
+        "--work",
+        "/tmp/deadpan-export-encoder-iogtzpzn/native-sanitizers",
+        "--output",
+        "/tmp/deadpan-export-encoder-iogtzpzn/native-sanitizers.json",
+        "--sanitizers"
+      ],
+      "started": "2026-09-28T15:21:09.978705+00:00",
+      "base_commit": "3b6e8da5579fb9e0ddf6ef80396642f535afedfa",
+      "diff_sha256": "31d8c19d26cf5e917f6d663f7cb6276040f60d0847e8063e182ee2ee52f1f0d6",
+      "source_manifest_sha256": "8f5dfa4aef7482d9690a58b3ee36f0dba0484f46d6fc6e297b584954342fa056",
+      "pid": 45666,
+      "exit_code": 1,
+      "seconds": 4.899073000065982
+    }
+  ],
+  "reports": [
+    {
+      "name": "native",
+      "result": "failed: native reader or timing checks",
+      "commands": 13,
+      "experiment_completed": true,
+      "cases": [
+        {
+          "name": "impulse-60-default",
+          "status": "failed",
+          "probe_exit_code": 0,
+          "checks": 3,
+          "failed_required_checks": [
+            {
+              "label": "native: valid bounded observations",
+              "passed": false,
+              "details": "native PCM buffer is not ready",
+              "diagnostic": false
+            }
+          ],
+          "measurement": {
+            "event_timing_qualified": false
+          },
+          "unqualified": [
+            "physical playback/listening",
+            "coded padding outside the default asset range",
+            "video/color/closed GOP observations",
+            "edge-content survival"
+          ],
+          "track": {
+            "id": 2,
+            "segments": [
+              {
+                "empty": false,
+                "source": {
+                  "duration": {
+                    "epoch": 0,
+                    "flags": 1,
+                    "timescale": 48000,
+                    "value": 96000
+                  },
+                  "start": {
+                    "epoch": 0,
+                    "flags": 1,
+                    "timescale": 48000,
+                    "value": 1024
+                  }
+                },
+                "target": {
+                  "duration": {
+                    "epoch": 0,
+                    "flags": 1,
+                    "timescale": 48000,
+                    "value": 96000
+                  },
+                  "start": {
+                    "epoch": 0,
+                    "flags": 1,
+                    "timescale": 48000,
+                    "value": 0
+                  }
+                }
+              }
+            ],
+            "source_formats": [
+              {
+                "bits_per_channel": 0,
+                "bytes_per_frame": 0,
+                "bytes_per_packet": 0,
+                "channels_per_frame": 2,
+                "format_flags": 0,
+                "format_id": 1633772320,
+                "frames_per_packet": 1024,
+                "sample_rate": 48000
+              }
+            ],
+            "time_range": {
+              "duration": {
+                "epoch": 0,
+                "flags": 1,
+                "timescale": 48000,
+                "value": 96000
+              },
+              "start": {
+                "epoch": 0,
+                "flags": 1,
+                "timescale": 1,
+                "value": 0
+              }
+            }
+          },
+          "pcm_samples": 96000,
+          "stored_buffers": 97,
+          "pcm_buffers": 14
+        },
+        {
+          "name": "impulse-60-disabled",
+          "status": "failed",
+          "probe_exit_code": 0,
+          "checks": 3,
+          "failed_required_checks": [
+            {
+              "label": "native: valid bounded observations",
+              "passed": false,
+              "details": "native PCM buffer is not ready",
+              "diagnostic": false
+            }
+          ],
+          "measurement": {
+            "event_timing_qualified": false
+          },
+          "unqualified": [
+            "physical playback/listening",
+            "coded padding outside the default asset range",
+            "video/color/closed GOP observations",
+            "edge-content survival"
+          ],
+          "track": {
+            "id": 2,
+            "segments": [
+              {
+                "empty": false,
+                "source": {
+                  "duration": {
+                    "epoch": 0,
+                    "flags": 1,
+                    "timescale": 48000,
+                    "value": 94912
+                  },
+                  "start": {
+                    "epoch": 0,
+                    "flags": 1,
+                    "timescale": 48000,
+                    "value": 2112
+                  }
+                },
+                "target": {
+                  "duration": {
+                    "epoch": 0,
+                    "flags": 1,
+                    "timescale": 48000,
+                    "value": 94912
+                  },
+                  "start": {
+                    "epoch": 0,
+                    "flags": 1,
+                    "timescale": 1,
+                    "value": 0
+                  }
+                }
+              }
+            ],
+            "source_formats": [
+              {
+                "bits_per_channel": 0,
+                "bytes_per_frame": 0,
+                "bytes_per_packet": 0,
+                "channels_per_frame": 2,
+                "format_flags": 0,
+                "format_id": 1633772320,
+                "frames_per_packet": 1024,
+                "sample_rate": 48000
+              }
+            ],
+            "time_range": {
+              "duration": {
+                "epoch": 0,
+                "flags": 1,
+                "timescale": 48000,
+                "value": 94912
+              },
+              "start": {
+                "epoch": 0,
+                "flags": 1,
+                "timescale": 1,
+                "value": 0
+              }
+            }
+          },
+          "pcm_samples": 94912,
+          "stored_buffers": 97,
+          "pcm_buffers": 18
+        }
+      ],
+      "process_faults": [],
+      "source_unchanged_during_run": true,
+      "final_file_admission": [
+        {
+          "path": "/private/tmp/deadpan-export-encoder-iogtzpzn/matrix.json",
+          "expected": "b13316a4e3f1ea5c320805187c07e596cc18587895e7e11c7a44e7585699da6e",
+          "actual": "b13316a4e3f1ea5c320805187c07e596cc18587895e7e11c7a44e7585699da6e",
+          "passed": true
+        },
+        {
+          "path": "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang",
+          "expected": "7def90dd8829726686213a747fc5bff1583df933dae5edc55d755479e0bfe00a",
+          "actual": "7def90dd8829726686213a747fc5bff1583df933dae5edc55d755479e0bfe00a",
+          "passed": true
+        },
+        {
+          "path": "/private/tmp/deadpan-export-encoder-iogtzpzn/native/avfoundation_probe",
+          "expected": "c45bf0765ce9b9251caff0712ff3fe5614a4c85b8ea2e018bae0bbb1104c64eb",
+          "actual": "c45bf0765ce9b9251caff0712ff3fe5614a4c85b8ea2e018bae0bbb1104c64eb",
+          "passed": true
+        },
+        {
+          "path": "/private/tmp/deadpan-export-encoder-iogtzpzn/matrix/impulse-60-default.mp4",
+          "expected": "200fd7eb55e7608fe2a266d0bc3e9703b574cbdb9260190f2ea80b7e6f8b7592",
+          "actual": "200fd7eb55e7608fe2a266d0bc3e9703b574cbdb9260190f2ea80b7e6f8b7592",
+          "passed": true
+        },
+        {
+          "path": "/private/tmp/deadpan-export-encoder-iogtzpzn/matrix/impulse-60-disabled.mp4",
+          "expected": "4aabc997d14e1649b2e40b6a6ad062c53d5d38f5357165e48cc4e1f58ab5d4eb",
+          "actual": "4aabc997d14e1649b2e40b6a6ad062c53d5d38f5357165e48cc4e1f58ab5d4eb",
+          "passed": true
+        },
+        {
+          "load_path": "/private/tmp/deadpan-export-encoder-iogtzpzn/matrix.json",
+          "expected": {
+            "resolved": "/private/tmp/deadpan-export-encoder-iogtzpzn/matrix.json",
+            "sha256": "b13316a4e3f1ea5c320805187c07e596cc18587895e7e11c7a44e7585699da6e"
+          },
+          "actual": {
+            "resolved": "/private/tmp/deadpan-export-encoder-iogtzpzn/matrix.json",
+            "sha256": "b13316a4e3f1ea5c320805187c07e596cc18587895e7e11c7a44e7585699da6e"
+          },
+          "passed": true
+        },
+        {
+          "load_path": "/private/tmp/deadpan-export-encoder-iogtzpzn/native/avfoundation_probe",
+          "expected": {
+            "resolved": "/private/tmp/deadpan-export-encoder-iogtzpzn/native/avfoundation_probe",
+            "sha256": "c45bf0765ce9b9251caff0712ff3fe5614a4c85b8ea2e018bae0bbb1104c64eb"
+          },
+          "actual": {
+            "resolved": "/private/tmp/deadpan-export-encoder-iogtzpzn/native/avfoundation_probe",
+            "sha256": "c45bf0765ce9b9251caff0712ff3fe5614a4c85b8ea2e018bae0bbb1104c64eb"
+          },
+          "passed": true
+        },
+        {
+          "load_path": "/private/tmp/deadpan-export-encoder-iogtzpzn/matrix/impulse-60-default.mp4",
+          "expected": {
+            "resolved": "/private/tmp/deadpan-export-encoder-iogtzpzn/matrix/impulse-60-default.mp4",
+            "sha256": "200fd7eb55e7608fe2a266d0bc3e9703b574cbdb9260190f2ea80b7e6f8b7592"
+          },
+          "actual": {
+            "resolved": "/private/tmp/deadpan-export-encoder-iogtzpzn/matrix/impulse-60-default.mp4",
+            "sha256": "200fd7eb55e7608fe2a266d0bc3e9703b574cbdb9260190f2ea80b7e6f8b7592"
+          },
+          "passed": true
+        },
+        {
+          "load_path": "/private/tmp/deadpan-export-encoder-iogtzpzn/matrix/impulse-60-disabled.mp4",
+          "expected": {
+            "resolved": "/private/tmp/deadpan-export-encoder-iogtzpzn/matrix/impulse-60-disabled.mp4",
+            "sha256": "4aabc997d14e1649b2e40b6a6ad062c53d5d38f5357165e48cc4e1f58ab5d4eb"
+          },
+          "actual": {
+            "resolved": "/private/tmp/deadpan-export-encoder-iogtzpzn/matrix/impulse-60-disabled.mp4",
+            "sha256": "4aabc997d14e1649b2e40b6a6ad062c53d5d38f5357165e48cc4e1f58ab5d4eb"
+          },
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "native-bools",
+      "result": "failed: native reader or timing checks",
+      "commands": 13,
+      "experiment_completed": true,
+      "cases": [
+        {
+          "name": "impulse-60-default",
+          "status": "passed",
+          "probe_exit_code": 0,
+          "checks": 19,
+          "failed_required_checks": [],
+          "measurement": {
+            "events": [
+              {
+                "channel": "left",
+                "expected_sample": 100,
+                "actual_peak_sample": 100,
+                "error_samples": 0,
+                "error_seconds": "0",
+                "peak_amplitude": 0.5088973045349121,
+                "searched_samples": 4197,
+                "search_radius_samples": 4096,
+                "exact": true,
+                "within_tolerance": true
+              },
+              {
+                "channel": "left",
+                "expected_sample": 48000,
+                "actual_peak_sample": 48000,
+                "error_samples": 0,
+                "error_seconds": "0",
+                "peak_amplitude": 0.7490767240524292,
+                "searched_samples": 8193,
+                "search_radius_samples": 4096,
+                "exact": true,
+                "within_tolerance": true
+              },
+              {
+                "channel": "left",
+                "expected_sample": 95800,
+                "actual_peak_sample": 95800,
+                "error_samples": 0,
+                "error_seconds": "0",
+                "peak_amplitude": 0.6928781270980835,
+                "searched_samples": 4296,
+                "search_radius_samples": 4096,
+                "exact": true,
+                "within_tolerance": true
+              },
+              {
+                "channel": "right",
+                "expected_sample": 100,
+                "actual_peak_sample": 100,
+                "error_samples": 0,
+                "error_seconds": "0",
+                "peak_amplitude": -0.37364035844802856,
+                "searched_samples": 4197,
+                "search_radius_samples": 4096,
+                "exact": true,
+                "within_tolerance": true
+              },
+              {
+                "channel": "right",
+                "expected_sample": 48000,
+                "actual_peak_sample": 48000,
+                "error_samples": 0,
+                "error_seconds": "0",
+                "peak_amplitude": -0.6494708061218262,
+                "searched_samples": 8193,
+                "search_radius_samples": 4096,
+                "exact": true,
+                "within_tolerance": true
+              },
+              {
+                "channel": "right",
+                "expected_sample": 95800,
+                "actual_peak_sample": 95800,
+                "error_samples": 0,
+                "error_seconds": "0",
+                "peak_amplitude": -0.5867177248001099,
+                "searched_samples": 4296,
+                "search_radius_samples": 4096,
+                "exact": true,
+                "within_tolerance": true
+              }
+            ],
+            "physical_start_sample": 0,
+            "physical_end_sample": 96000,
+            "physical_tail_after_authored_end": 0,
+            "exact_event_samples": true,
+            "event_timing_qualified": true,
+            "edge_content_qualified": false,
+            "alignment_or_event_based_cropping_applied": false,
+            "stream_start_sample": 0,
+            "stream_end_sample": 96000,
+            "stream_end_error_samples": 0
+          },
+          "unqualified": [
+            "physical playback/listening",
+            "coded padding outside the default asset range",
+            "video/color/closed GOP observations",
+            "edge-content survival"
+          ],
+          "track": {
+            "id": 2,
+            "segments": [
+              {
+                "empty": false,
+                "source": {
+                  "duration": {
+                    "epoch": 0,
+                    "flags": 1,
+                    "timescale": 48000,
+                    "value": 96000
+                  },
+                  "start": {
+                    "epoch": 0,
+                    "flags": 1,
+                    "timescale": 48000,
+                    "value": 1024
+                  }
+                },
+                "target": {
+                  "duration": {
+                    "epoch": 0,
+                    "flags": 1,
+                    "timescale": 48000,
+                    "value": 96000
+                  },
+                  "start": {
+                    "epoch": 0,
+                    "flags": 1,
+                    "timescale": 48000,
+                    "value": 0
+                  }
+                }
+              }
+            ],
+            "source_formats": [
+              {
+                "bits_per_channel": 0,
+                "bytes_per_frame": 0,
+                "bytes_per_packet": 0,
+                "channels_per_frame": 2,
+                "format_flags": 0,
+                "format_id": 1633772320,
+                "frames_per_packet": 1024,
+                "sample_rate": 48000
+              }
+            ],
+            "time_range": {
+              "duration": {
+                "epoch": 0,
+                "flags": 1,
+                "timescale": 48000,
+                "value": 96000
+              },
+              "start": {
+                "epoch": 0,
+                "flags": 1,
+                "timescale": 1,
+                "value": 0
+              }
+            }
+          },
+          "pcm_samples": 96000,
+          "stored_buffers": 97,
+          "pcm_buffers": 17
+        },
+        {
+          "name": "impulse-60-disabled",
+          "status": "failed",
+          "probe_exit_code": 0,
+          "checks": 19,
+          "failed_required_checks": [
+            {
+              "label": "native: stream endpoint within declared sub-frame tolerance",
+              "passed": false,
+              "details": {
+                "error_samples": -1088,
+                "declared_tolerance_samples": 799
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "native: left event 100 within declared sub-frame tolerance",
+              "passed": false,
+              "details": {
+                "channel": "left",
+                "expected_sample": 100,
+                "actual_peak_sample": 256,
+                "error_samples": 156,
+                "error_seconds": "13/4000",
+                "peak_amplitude": -0.002289664698764682,
+                "searched_samples": 4197,
+                "search_radius_samples": 4096,
+                "exact": false,
+                "within_tolerance": false
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "native: left event 48000 within declared sub-frame tolerance",
+              "passed": false,
+              "details": {
+                "channel": "left",
+                "expected_sample": 48000,
+                "actual_peak_sample": 46912,
+                "error_samples": -1088,
+                "error_seconds": "-17/750",
+                "peak_amplitude": 0.7490767240524292,
+                "searched_samples": 8193,
+                "search_radius_samples": 4096,
+                "exact": false,
+                "within_tolerance": false
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "native: left event 95800 within declared sub-frame tolerance",
+              "passed": false,
+              "details": {
+                "channel": "left",
+                "expected_sample": 95800,
+                "actual_peak_sample": 94712,
+                "error_samples": -1088,
+                "error_seconds": "-17/750",
+                "peak_amplitude": 0.6928781270980835,
+                "searched_samples": 3208,
+                "search_radius_samples": 4096,
+                "exact": false,
+                "within_tolerance": false
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "native: right event 100 within declared sub-frame tolerance",
+              "passed": false,
+              "details": {
+                "channel": "right",
+                "expected_sample": 100,
+                "actual_peak_sample": 256,
+                "error_samples": 156,
+                "error_seconds": "13/4000",
+                "peak_amplitude": 0.002289664698764682,
+                "searched_samples": 4197,
+                "search_radius_samples": 4096,
+                "exact": false,
+                "within_tolerance": false
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "native: right event 48000 within declared sub-frame tolerance",
+              "passed": false,
+              "details": {
+                "channel": "right",
+                "expected_sample": 48000,
+                "actual_peak_sample": 46912,
+                "error_samples": -1088,
+                "error_seconds": "-17/750",
+                "peak_amplitude": -0.6494708061218262,
+                "searched_samples": 8193,
+                "search_radius_samples": 4096,
+                "exact": false,
+                "within_tolerance": false
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "native: right event 95800 within declared sub-frame tolerance",
+              "passed": false,
+              "details": {
+                "channel": "right",
+                "expected_sample": 95800,
+                "actual_peak_sample": 94712,
+                "error_samples": -1088,
+                "error_seconds": "-17/750",
+                "peak_amplitude": -0.5867177248001099,
+                "searched_samples": 3208,
+                "search_radius_samples": 4096,
+                "exact": false,
+                "within_tolerance": false
+              },
+              "diagnostic": false
+            }
+          ],
+          "measurement": {
+            "events": [
+              {
+                "channel": "left",
+                "expected_sample": 100,
+                "actual_peak_sample": 256,
+                "error_samples": 156,
+                "error_seconds": "13/4000",
+                "peak_amplitude": -0.002289664698764682,
+                "searched_samples": 4197,
+                "search_radius_samples": 4096,
+                "exact": false,
+                "within_tolerance": false
+              },
+              {
+                "channel": "left",
+                "expected_sample": 48000,
+                "actual_peak_sample": 46912,
+                "error_samples": -1088,
+                "error_seconds": "-17/750",
+                "peak_amplitude": 0.7490767240524292,
+                "searched_samples": 8193,
+                "search_radius_samples": 4096,
+                "exact": false,
+                "within_tolerance": false
+              },
+              {
+                "channel": "left",
+                "expected_sample": 95800,
+                "actual_peak_sample": 94712,
+                "error_samples": -1088,
+                "error_seconds": "-17/750",
+                "peak_amplitude": 0.6928781270980835,
+                "searched_samples": 3208,
+                "search_radius_samples": 4096,
+                "exact": false,
+                "within_tolerance": false
+              },
+              {
+                "channel": "right",
+                "expected_sample": 100,
+                "actual_peak_sample": 256,
+                "error_samples": 156,
+                "error_seconds": "13/4000",
+                "peak_amplitude": 0.002289664698764682,
+                "searched_samples": 4197,
+                "search_radius_samples": 4096,
+                "exact": false,
+                "within_tolerance": false
+              },
+              {
+                "channel": "right",
+                "expected_sample": 48000,
+                "actual_peak_sample": 46912,
+                "error_samples": -1088,
+                "error_seconds": "-17/750",
+                "peak_amplitude": -0.6494708061218262,
+                "searched_samples": 8193,
+                "search_radius_samples": 4096,
+                "exact": false,
+                "within_tolerance": false
+              },
+              {
+                "channel": "right",
+                "expected_sample": 95800,
+                "actual_peak_sample": 94712,
+                "error_samples": -1088,
+                "error_seconds": "-17/750",
+                "peak_amplitude": -0.5867177248001099,
+                "searched_samples": 3208,
+                "search_radius_samples": 4096,
+                "exact": false,
+                "within_tolerance": false
+              }
+            ],
+            "physical_start_sample": 0,
+            "physical_end_sample": 94912,
+            "physical_tail_after_authored_end": -1088,
+            "exact_event_samples": false,
+            "event_timing_qualified": false,
+            "edge_content_qualified": false,
+            "alignment_or_event_based_cropping_applied": false,
+            "stream_start_sample": 0,
+            "stream_end_sample": 94912,
+            "stream_end_error_samples": -1088
+          },
+          "unqualified": [
+            "physical playback/listening",
+            "coded padding outside the default asset range",
+            "video/color/closed GOP observations",
+            "edge-content survival"
+          ],
+          "track": {
+            "id": 2,
+            "segments": [
+              {
+                "empty": false,
+                "source": {
+                  "duration": {
+                    "epoch": 0,
+                    "flags": 1,
+                    "timescale": 48000,
+                    "value": 94912
+                  },
+                  "start": {
+                    "epoch": 0,
+                    "flags": 1,
+                    "timescale": 48000,
+                    "value": 2112
+                  }
+                },
+                "target": {
+                  "duration": {
+                    "epoch": 0,
+                    "flags": 1,
+                    "timescale": 48000,
+                    "value": 94912
+                  },
+                  "start": {
+                    "epoch": 0,
+                    "flags": 1,
+                    "timescale": 1,
+                    "value": 0
+                  }
+                }
+              }
+            ],
+            "source_formats": [
+              {
+                "bits_per_channel": 0,
+                "bytes_per_frame": 0,
+                "bytes_per_packet": 0,
+                "channels_per_frame": 2,
+                "format_flags": 0,
+                "format_id": 1633772320,
+                "frames_per_packet": 1024,
+                "sample_rate": 48000
+              }
+            ],
+            "time_range": {
+              "duration": {
+                "epoch": 0,
+                "flags": 1,
+                "timescale": 48000,
+                "value": 94912
+              },
+              "start": {
+                "epoch": 0,
+                "flags": 1,
+                "timescale": 1,
+                "value": 0
+              }
+            }
+          },
+          "pcm_samples": 94912,
+          "stored_buffers": 97,
+          "pcm_buffers": 13
+        }
+      ],
+      "process_faults": [],
+      "source_unchanged_during_run": true,
+      "final_file_admission": [
+        {
+          "path": "/private/tmp/deadpan-export-encoder-iogtzpzn/matrix.json",
+          "expected": "b13316a4e3f1ea5c320805187c07e596cc18587895e7e11c7a44e7585699da6e",
+          "actual": "b13316a4e3f1ea5c320805187c07e596cc18587895e7e11c7a44e7585699da6e",
+          "passed": true
+        },
+        {
+          "path": "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang",
+          "expected": "7def90dd8829726686213a747fc5bff1583df933dae5edc55d755479e0bfe00a",
+          "actual": "7def90dd8829726686213a747fc5bff1583df933dae5edc55d755479e0bfe00a",
+          "passed": true
+        },
+        {
+          "path": "/private/tmp/deadpan-export-encoder-iogtzpzn/native-bools/avfoundation_probe",
+          "expected": "1ba1a45714c2070202f7de549ec389b0b3b5b90ca5592ea142b0ff2da90bdbfd",
+          "actual": "1ba1a45714c2070202f7de549ec389b0b3b5b90ca5592ea142b0ff2da90bdbfd",
+          "passed": true
+        },
+        {
+          "path": "/private/tmp/deadpan-export-encoder-iogtzpzn/matrix/impulse-60-default.mp4",
+          "expected": "200fd7eb55e7608fe2a266d0bc3e9703b574cbdb9260190f2ea80b7e6f8b7592",
+          "actual": "200fd7eb55e7608fe2a266d0bc3e9703b574cbdb9260190f2ea80b7e6f8b7592",
+          "passed": true
+        },
+        {
+          "path": "/private/tmp/deadpan-export-encoder-iogtzpzn/matrix/impulse-60-disabled.mp4",
+          "expected": "4aabc997d14e1649b2e40b6a6ad062c53d5d38f5357165e48cc4e1f58ab5d4eb",
+          "actual": "4aabc997d14e1649b2e40b6a6ad062c53d5d38f5357165e48cc4e1f58ab5d4eb",
+          "passed": true
+        },
+        {
+          "load_path": "/private/tmp/deadpan-export-encoder-iogtzpzn/matrix.json",
+          "expected": {
+            "resolved": "/private/tmp/deadpan-export-encoder-iogtzpzn/matrix.json",
+            "sha256": "b13316a4e3f1ea5c320805187c07e596cc18587895e7e11c7a44e7585699da6e"
+          },
+          "actual": {
+            "resolved": "/private/tmp/deadpan-export-encoder-iogtzpzn/matrix.json",
+            "sha256": "b13316a4e3f1ea5c320805187c07e596cc18587895e7e11c7a44e7585699da6e"
+          },
+          "passed": true
+        },
+        {
+          "load_path": "/private/tmp/deadpan-export-encoder-iogtzpzn/native-bools/avfoundation_probe",
+          "expected": {
+            "resolved": "/private/tmp/deadpan-export-encoder-iogtzpzn/native-bools/avfoundation_probe",
+            "sha256": "1ba1a45714c2070202f7de549ec389b0b3b5b90ca5592ea142b0ff2da90bdbfd"
+          },
+          "actual": {
+            "resolved": "/private/tmp/deadpan-export-encoder-iogtzpzn/native-bools/avfoundation_probe",
+            "sha256": "1ba1a45714c2070202f7de549ec389b0b3b5b90ca5592ea142b0ff2da90bdbfd"
+          },
+          "passed": true
+        },
+        {
+          "load_path": "/private/tmp/deadpan-export-encoder-iogtzpzn/matrix/impulse-60-default.mp4",
+          "expected": {
+            "resolved": "/private/tmp/deadpan-export-encoder-iogtzpzn/matrix/impulse-60-default.mp4",
+            "sha256": "200fd7eb55e7608fe2a266d0bc3e9703b574cbdb9260190f2ea80b7e6f8b7592"
+          },
+          "actual": {
+            "resolved": "/private/tmp/deadpan-export-encoder-iogtzpzn/matrix/impulse-60-default.mp4",
+            "sha256": "200fd7eb55e7608fe2a266d0bc3e9703b574cbdb9260190f2ea80b7e6f8b7592"
+          },
+          "passed": true
+        },
+        {
+          "load_path": "/private/tmp/deadpan-export-encoder-iogtzpzn/matrix/impulse-60-disabled.mp4",
+          "expected": {
+            "resolved": "/private/tmp/deadpan-export-encoder-iogtzpzn/matrix/impulse-60-disabled.mp4",
+            "sha256": "4aabc997d14e1649b2e40b6a6ad062c53d5d38f5357165e48cc4e1f58ab5d4eb"
+          },
+          "actual": {
+            "resolved": "/private/tmp/deadpan-export-encoder-iogtzpzn/matrix/impulse-60-disabled.mp4",
+            "sha256": "4aabc997d14e1649b2e40b6a6ad062c53d5d38f5357165e48cc4e1f58ab5d4eb"
+          },
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "native-sanitizers",
+      "result": "failed: native reader or timing checks",
+      "commands": 15,
+      "experiment_completed": true,
+      "cases": [
+        {
+          "name": "impulse-60-default",
+          "status": "passed",
+          "probe_exit_code": 0,
+          "checks": 19,
+          "failed_required_checks": [],
+          "measurement": {
+            "events": [
+              {
+                "channel": "left",
+                "expected_sample": 100,
+                "actual_peak_sample": 100,
+                "error_samples": 0,
+                "error_seconds": "0",
+                "peak_amplitude": 0.5088973045349121,
+                "searched_samples": 4197,
+                "search_radius_samples": 4096,
+                "exact": true,
+                "within_tolerance": true
+              },
+              {
+                "channel": "left",
+                "expected_sample": 48000,
+                "actual_peak_sample": 48000,
+                "error_samples": 0,
+                "error_seconds": "0",
+                "peak_amplitude": 0.7490767240524292,
+                "searched_samples": 8193,
+                "search_radius_samples": 4096,
+                "exact": true,
+                "within_tolerance": true
+              },
+              {
+                "channel": "left",
+                "expected_sample": 95800,
+                "actual_peak_sample": 95800,
+                "error_samples": 0,
+                "error_seconds": "0",
+                "peak_amplitude": 0.6928781270980835,
+                "searched_samples": 4296,
+                "search_radius_samples": 4096,
+                "exact": true,
+                "within_tolerance": true
+              },
+              {
+                "channel": "right",
+                "expected_sample": 100,
+                "actual_peak_sample": 100,
+                "error_samples": 0,
+                "error_seconds": "0",
+                "peak_amplitude": -0.37364035844802856,
+                "searched_samples": 4197,
+                "search_radius_samples": 4096,
+                "exact": true,
+                "within_tolerance": true
+              },
+              {
+                "channel": "right",
+                "expected_sample": 48000,
+                "actual_peak_sample": 48000,
+                "error_samples": 0,
+                "error_seconds": "0",
+                "peak_amplitude": -0.6494708061218262,
+                "searched_samples": 8193,
+                "search_radius_samples": 4096,
+                "exact": true,
+                "within_tolerance": true
+              },
+              {
+                "channel": "right",
+                "expected_sample": 95800,
+                "actual_peak_sample": 95800,
+                "error_samples": 0,
+                "error_seconds": "0",
+                "peak_amplitude": -0.5867177248001099,
+                "searched_samples": 4296,
+                "search_radius_samples": 4096,
+                "exact": true,
+                "within_tolerance": true
+              }
+            ],
+            "physical_start_sample": 0,
+            "physical_end_sample": 96000,
+            "physical_tail_after_authored_end": 0,
+            "exact_event_samples": true,
+            "event_timing_qualified": true,
+            "edge_content_qualified": false,
+            "alignment_or_event_based_cropping_applied": false,
+            "stream_start_sample": 0,
+            "stream_end_sample": 96000,
+            "stream_end_error_samples": 0
+          },
+          "unqualified": [
+            "physical playback/listening",
+            "coded padding outside the default asset range",
+            "video/color/closed GOP observations",
+            "edge-content survival"
+          ],
+          "track": {
+            "id": 2,
+            "segments": [
+              {
+                "empty": false,
+                "source": {
+                  "duration": {
+                    "epoch": 0,
+                    "flags": 1,
+                    "timescale": 48000,
+                    "value": 96000
+                  },
+                  "start": {
+                    "epoch": 0,
+                    "flags": 1,
+                    "timescale": 48000,
+                    "value": 1024
+                  }
+                },
+                "target": {
+                  "duration": {
+                    "epoch": 0,
+                    "flags": 1,
+                    "timescale": 48000,
+                    "value": 96000
+                  },
+                  "start": {
+                    "epoch": 0,
+                    "flags": 1,
+                    "timescale": 48000,
+                    "value": 0
+                  }
+                }
+              }
+            ],
+            "source_formats": [
+              {
+                "bits_per_channel": 0,
+                "bytes_per_frame": 0,
+                "bytes_per_packet": 0,
+                "channels_per_frame": 2,
+                "format_flags": 0,
+                "format_id": 1633772320,
+                "frames_per_packet": 1024,
+                "sample_rate": 48000
+              }
+            ],
+            "time_range": {
+              "duration": {
+                "epoch": 0,
+                "flags": 1,
+                "timescale": 48000,
+                "value": 96000
+              },
+              "start": {
+                "epoch": 0,
+                "flags": 1,
+                "timescale": 1,
+                "value": 0
+              }
+            }
+          },
+          "pcm_samples": 96000,
+          "stored_buffers": 97,
+          "pcm_buffers": 21
+        },
+        {
+          "name": "impulse-60-disabled",
+          "status": "failed",
+          "probe_exit_code": 0,
+          "checks": 19,
+          "failed_required_checks": [
+            {
+              "label": "native: stream endpoint within declared sub-frame tolerance",
+              "passed": false,
+              "details": {
+                "error_samples": -1088,
+                "declared_tolerance_samples": 799
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "native: left event 100 within declared sub-frame tolerance",
+              "passed": false,
+              "details": {
+                "channel": "left",
+                "expected_sample": 100,
+                "actual_peak_sample": 256,
+                "error_samples": 156,
+                "error_seconds": "13/4000",
+                "peak_amplitude": -0.002289664698764682,
+                "searched_samples": 4197,
+                "search_radius_samples": 4096,
+                "exact": false,
+                "within_tolerance": false
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "native: left event 48000 within declared sub-frame tolerance",
+              "passed": false,
+              "details": {
+                "channel": "left",
+                "expected_sample": 48000,
+                "actual_peak_sample": 46912,
+                "error_samples": -1088,
+                "error_seconds": "-17/750",
+                "peak_amplitude": 0.7490767240524292,
+                "searched_samples": 8193,
+                "search_radius_samples": 4096,
+                "exact": false,
+                "within_tolerance": false
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "native: left event 95800 within declared sub-frame tolerance",
+              "passed": false,
+              "details": {
+                "channel": "left",
+                "expected_sample": 95800,
+                "actual_peak_sample": 94712,
+                "error_samples": -1088,
+                "error_seconds": "-17/750",
+                "peak_amplitude": 0.6928781270980835,
+                "searched_samples": 3208,
+                "search_radius_samples": 4096,
+                "exact": false,
+                "within_tolerance": false
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "native: right event 100 within declared sub-frame tolerance",
+              "passed": false,
+              "details": {
+                "channel": "right",
+                "expected_sample": 100,
+                "actual_peak_sample": 256,
+                "error_samples": 156,
+                "error_seconds": "13/4000",
+                "peak_amplitude": 0.002289664698764682,
+                "searched_samples": 4197,
+                "search_radius_samples": 4096,
+                "exact": false,
+                "within_tolerance": false
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "native: right event 48000 within declared sub-frame tolerance",
+              "passed": false,
+              "details": {
+                "channel": "right",
+                "expected_sample": 48000,
+                "actual_peak_sample": 46912,
+                "error_samples": -1088,
+                "error_seconds": "-17/750",
+                "peak_amplitude": -0.6494708061218262,
+                "searched_samples": 8193,
+                "search_radius_samples": 4096,
+                "exact": false,
+                "within_tolerance": false
+              },
+              "diagnostic": false
+            },
+            {
+              "label": "native: right event 95800 within declared sub-frame tolerance",
+              "passed": false,
+              "details": {
+                "channel": "right",
+                "expected_sample": 95800,
+                "actual_peak_sample": 94712,
+                "error_samples": -1088,
+                "error_seconds": "-17/750",
+                "peak_amplitude": -0.5867177248001099,
+                "searched_samples": 3208,
+                "search_radius_samples": 4096,
+                "exact": false,
+                "within_tolerance": false
+              },
+              "diagnostic": false
+            }
+          ],
+          "measurement": {
+            "events": [
+              {
+                "channel": "left",
+                "expected_sample": 100,
+                "actual_peak_sample": 256,
+                "error_samples": 156,
+                "error_seconds": "13/4000",
+                "peak_amplitude": -0.002289664698764682,
+                "searched_samples": 4197,
+                "search_radius_samples": 4096,
+                "exact": false,
+                "within_tolerance": false
+              },
+              {
+                "channel": "left",
+                "expected_sample": 48000,
+                "actual_peak_sample": 46912,
+                "error_samples": -1088,
+                "error_seconds": "-17/750",
+                "peak_amplitude": 0.7490767240524292,
+                "searched_samples": 8193,
+                "search_radius_samples": 4096,
+                "exact": false,
+                "within_tolerance": false
+              },
+              {
+                "channel": "left",
+                "expected_sample": 95800,
+                "actual_peak_sample": 94712,
+                "error_samples": -1088,
+                "error_seconds": "-17/750",
+                "peak_amplitude": 0.6928781270980835,
+                "searched_samples": 3208,
+                "search_radius_samples": 4096,
+                "exact": false,
+                "within_tolerance": false
+              },
+              {
+                "channel": "right",
+                "expected_sample": 100,
+                "actual_peak_sample": 256,
+                "error_samples": 156,
+                "error_seconds": "13/4000",
+                "peak_amplitude": 0.002289664698764682,
+                "searched_samples": 4197,
+                "search_radius_samples": 4096,
+                "exact": false,
+                "within_tolerance": false
+              },
+              {
+                "channel": "right",
+                "expected_sample": 48000,
+                "actual_peak_sample": 46912,
+                "error_samples": -1088,
+                "error_seconds": "-17/750",
+                "peak_amplitude": -0.6494708061218262,
+                "searched_samples": 8193,
+                "search_radius_samples": 4096,
+                "exact": false,
+                "within_tolerance": false
+              },
+              {
+                "channel": "right",
+                "expected_sample": 95800,
+                "actual_peak_sample": 94712,
+                "error_samples": -1088,
+                "error_seconds": "-17/750",
+                "peak_amplitude": -0.5867177248001099,
+                "searched_samples": 3208,
+                "search_radius_samples": 4096,
+                "exact": false,
+                "within_tolerance": false
+              }
+            ],
+            "physical_start_sample": 0,
+            "physical_end_sample": 94912,
+            "physical_tail_after_authored_end": -1088,
+            "exact_event_samples": false,
+            "event_timing_qualified": false,
+            "edge_content_qualified": false,
+            "alignment_or_event_based_cropping_applied": false,
+            "stream_start_sample": 0,
+            "stream_end_sample": 94912,
+            "stream_end_error_samples": -1088
+          },
+          "unqualified": [
+            "physical playback/listening",
+            "coded padding outside the default asset range",
+            "video/color/closed GOP observations",
+            "edge-content survival"
+          ],
+          "track": {
+            "id": 2,
+            "segments": [
+              {
+                "empty": false,
+                "source": {
+                  "duration": {
+                    "epoch": 0,
+                    "flags": 1,
+                    "timescale": 48000,
+                    "value": 94912
+                  },
+                  "start": {
+                    "epoch": 0,
+                    "flags": 1,
+                    "timescale": 48000,
+                    "value": 2112
+                  }
+                },
+                "target": {
+                  "duration": {
+                    "epoch": 0,
+                    "flags": 1,
+                    "timescale": 48000,
+                    "value": 94912
+                  },
+                  "start": {
+                    "epoch": 0,
+                    "flags": 1,
+                    "timescale": 1,
+                    "value": 0
+                  }
+                }
+              }
+            ],
+            "source_formats": [
+              {
+                "bits_per_channel": 0,
+                "bytes_per_frame": 0,
+                "bytes_per_packet": 0,
+                "channels_per_frame": 2,
+                "format_flags": 0,
+                "format_id": 1633772320,
+                "frames_per_packet": 1024,
+                "sample_rate": 48000
+              }
+            ],
+            "time_range": {
+              "duration": {
+                "epoch": 0,
+                "flags": 1,
+                "timescale": 48000,
+                "value": 94912
+              },
+              "start": {
+                "epoch": 0,
+                "flags": 1,
+                "timescale": 1,
+                "value": 0
+              }
+            }
+          },
+          "pcm_samples": 94912,
+          "stored_buffers": 97,
+          "pcm_buffers": 19
+        }
+      ],
+      "process_faults": [],
+      "source_unchanged_during_run": true,
+      "final_file_admission": [
+        {
+          "path": "/private/tmp/deadpan-export-encoder-iogtzpzn/matrix.json",
+          "expected": "b13316a4e3f1ea5c320805187c07e596cc18587895e7e11c7a44e7585699da6e",
+          "actual": "b13316a4e3f1ea5c320805187c07e596cc18587895e7e11c7a44e7585699da6e",
+          "passed": true
+        },
+        {
+          "path": "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang",
+          "expected": "7def90dd8829726686213a747fc5bff1583df933dae5edc55d755479e0bfe00a",
+          "actual": "7def90dd8829726686213a747fc5bff1583df933dae5edc55d755479e0bfe00a",
+          "passed": true
+        },
+        {
+          "path": "/private/tmp/deadpan-export-encoder-iogtzpzn/native-sanitizers/avfoundation_probe",
+          "expected": "bbda6288186b49dee86cb8fd87fed596cbbb1fc3f0353b83230623407007c7ad",
+          "actual": "bbda6288186b49dee86cb8fd87fed596cbbb1fc3f0353b83230623407007c7ad",
+          "passed": true
+        },
+        {
+          "path": "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/21/lib/darwin/libclang_rt.asan_osx_dynamic.dylib",
+          "expected": "fe1e17021123184ac0380808606a7cce00ad657158d2d4f62916970df1e8eaef",
+          "actual": "fe1e17021123184ac0380808606a7cce00ad657158d2d4f62916970df1e8eaef",
+          "passed": true
+        },
+        {
+          "path": "/private/tmp/deadpan-export-encoder-iogtzpzn/matrix/impulse-60-default.mp4",
+          "expected": "200fd7eb55e7608fe2a266d0bc3e9703b574cbdb9260190f2ea80b7e6f8b7592",
+          "actual": "200fd7eb55e7608fe2a266d0bc3e9703b574cbdb9260190f2ea80b7e6f8b7592",
+          "passed": true
+        },
+        {
+          "path": "/private/tmp/deadpan-export-encoder-iogtzpzn/matrix/impulse-60-disabled.mp4",
+          "expected": "4aabc997d14e1649b2e40b6a6ad062c53d5d38f5357165e48cc4e1f58ab5d4eb",
+          "actual": "4aabc997d14e1649b2e40b6a6ad062c53d5d38f5357165e48cc4e1f58ab5d4eb",
+          "passed": true
+        },
+        {
+          "load_path": "/private/tmp/deadpan-export-encoder-iogtzpzn/matrix.json",
+          "expected": {
+            "resolved": "/private/tmp/deadpan-export-encoder-iogtzpzn/matrix.json",
+            "sha256": "b13316a4e3f1ea5c320805187c07e596cc18587895e7e11c7a44e7585699da6e"
+          },
+          "actual": {
+            "resolved": "/private/tmp/deadpan-export-encoder-iogtzpzn/matrix.json",
+            "sha256": "b13316a4e3f1ea5c320805187c07e596cc18587895e7e11c7a44e7585699da6e"
+          },
+          "passed": true
+        },
+        {
+          "load_path": "/private/tmp/deadpan-export-encoder-iogtzpzn/native-sanitizers/avfoundation_probe",
+          "expected": {
+            "resolved": "/private/tmp/deadpan-export-encoder-iogtzpzn/native-sanitizers/avfoundation_probe",
+            "sha256": "bbda6288186b49dee86cb8fd87fed596cbbb1fc3f0353b83230623407007c7ad"
+          },
+          "actual": {
+            "resolved": "/private/tmp/deadpan-export-encoder-iogtzpzn/native-sanitizers/avfoundation_probe",
+            "sha256": "bbda6288186b49dee86cb8fd87fed596cbbb1fc3f0353b83230623407007c7ad"
+          },
+          "passed": true
+        },
+        {
+          "load_path": "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/21/lib/darwin/libclang_rt.asan_osx_dynamic.dylib",
+          "expected": {
+            "resolved": "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/21/lib/darwin/libclang_rt.asan_osx_dynamic.dylib",
+            "sha256": "fe1e17021123184ac0380808606a7cce00ad657158d2d4f62916970df1e8eaef"
+          },
+          "actual": {
+            "resolved": "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/21/lib/darwin/libclang_rt.asan_osx_dynamic.dylib",
+            "sha256": "fe1e17021123184ac0380808606a7cce00ad657158d2d4f62916970df1e8eaef"
+          },
+          "passed": true
+        },
+        {
+          "load_path": "/private/tmp/deadpan-export-encoder-iogtzpzn/matrix/impulse-60-default.mp4",
+          "expected": {
+            "resolved": "/private/tmp/deadpan-export-encoder-iogtzpzn/matrix/impulse-60-default.mp4",
+            "sha256": "200fd7eb55e7608fe2a266d0bc3e9703b574cbdb9260190f2ea80b7e6f8b7592"
+          },
+          "actual": {
+            "resolved": "/private/tmp/deadpan-export-encoder-iogtzpzn/matrix/impulse-60-default.mp4",
+            "sha256": "200fd7eb55e7608fe2a266d0bc3e9703b574cbdb9260190f2ea80b7e6f8b7592"
+          },
+          "passed": true
+        },
+        {
+          "load_path": "/private/tmp/deadpan-export-encoder-iogtzpzn/matrix/impulse-60-disabled.mp4",
+          "expected": {
+            "resolved": "/private/tmp/deadpan-export-encoder-iogtzpzn/matrix/impulse-60-disabled.mp4",
+            "sha256": "4aabc997d14e1649b2e40b6a6ad062c53d5d38f5357165e48cc4e1f58ab5d4eb"
+          },
+          "actual": {
+            "resolved": "/private/tmp/deadpan-export-encoder-iogtzpzn/matrix/impulse-60-disabled.mp4",
+            "sha256": "4aabc997d14e1649b2e40b6a6ad062c53d5d38f5357165e48cc4e1f58ab5d4eb"
+          },
+          "passed": true
+        }
+      ]
+    }
+  ]
+}

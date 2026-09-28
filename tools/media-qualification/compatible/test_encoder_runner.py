@@ -45,7 +45,7 @@ class EncoderRunnerTests(unittest.TestCase):
         def timeout(argv, **kwargs):
             kwargs["stdout"].write(b"partial output\n")
             raise subprocess.TimeoutExpired(argv, kwargs["timeout"])
-        with mock.patch("qualify_encoder.subprocess.run", side_effect=timeout):
+        with mock.patch("recorded_harness.subprocess.run", side_effect=timeout):
             with self.assertRaisesRegex(RuntimeError, "timed out"):
                 self.harness.run(["fixture"], timeout=1)
         record = self.harness.report["commands"][0]
@@ -55,7 +55,7 @@ class EncoderRunnerTests(unittest.TestCase):
         self.assertEqual(self.harness.process_faults, [{"command": 0, "reason": "timeout"}])
 
     def test_launch_error_is_retained(self):
-        with mock.patch("qualify_encoder.subprocess.run", side_effect=FileNotFoundError("missing fixture")):
+        with mock.patch("recorded_harness.subprocess.run", side_effect=FileNotFoundError("missing fixture")):
             with self.assertRaisesRegex(RuntimeError, "could not launch"):
                 self.harness.run(["fixture"])
         record = self.harness.report["commands"][0]

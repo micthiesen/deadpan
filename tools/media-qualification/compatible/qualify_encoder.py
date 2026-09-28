@@ -12,12 +12,11 @@ import os
 from pathlib import Path
 import platform
 import shlex
-import subprocess
 import sys
-import time
 
 from mp4_boxes import inspect_mp4
 from encoder_oracle import CaseSpec, inspect_case, movie_timescale
+from recorded_harness import RecordedHarness
 
 ROOT = Path(__file__).resolve().parent
 spec = importlib.util.spec_from_file_location("native_qualification", ROOT.parent / "run.py")
@@ -25,7 +24,7 @@ native = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(native)
 
 
-class EncoderHarness(native.Harness):
+class EncoderHarness(RecordedHarness):
     """Keep every command's complete output and every independently failed case."""
 
     def __init__(self, work: Path, sanitizers: bool, build_report: Path):
@@ -54,51 +53,6 @@ class EncoderHarness(native.Harness):
                                              if key in self.environment}
         self.report["source_sha256_at_start"] = source_inventory()
         self.admitted_files[str(build_report)] = self.report["build_report"]["sha256"]
-
-    def run(self, argv, *, required=True, timeout=120):
-        argv = [str(value) for value in argv]
-        number = len(self.report["commands"])
-        paths = {name: self.work / f"command-{number:03d}.{name}" for name in ("stdout", "stderr")}
-        record = {"argv": argv, "cwd": str(self.work), "timeout_seconds": timeout}
-        self.report["commands"].append(record)
-        start = time.monotonic()
-        timed_out = False
-        try:
-            with paths["stdout"].open("wb") as stdout, paths["stderr"].open("wb") as stderr:
-                try:
-                    result = subprocess.run(argv, cwd=self.work, env=self.environment, stdout=stdout,
-                                            stderr=stderr, check=False, timeout=timeout)
-                    record["exit_code"] = result.returncode
-                except subprocess.TimeoutExpired:
-                    timed_out = True
-                    record["timed_out"] = True
-                    record["exit_code"] = None
-                    self.process_faults.append({"command": number, "reason": "timeout"})
-                except OSError as error:
-                    record["exit_code"] = None
-                    record["launch_error"] = str(error)
-                    self.process_faults.append({"command": number, "reason": "launch error"})
-                    raise RuntimeError(f"command {number} could not launch: {error}") from error
-        finally:
-            record["elapsed_seconds"] = time.monotonic() - start
-            record["logs"] = {name: {"path": str(path), "bytes": path.stat().st_size,
-                                      "sha256": native.digest(path)} for name, path in paths.items() if path.exists()}
-        if timed_out:
-            raise RuntimeError(f"command {number} timed out; retained logs: {paths['stderr']}")
-        # These tools inspect at most 240 generated frames. Reject unexpectedly
-        # large output before loading it; original log files remain available.
-        if any(path.stat().st_size > 16 * 1024 * 1024 for path in paths.values()):
-            self.process_faults.append({"command": number, "reason": "output limit"})
-            raise RuntimeError(f"command {number} exceeded the 16 MiB report-read limit")
-        result = subprocess.CompletedProcess(argv, record["exit_code"],
-                                             paths["stdout"].read_text(), paths["stderr"].read_text())
-        if result.returncode < 0 or result.returncode in (86, 87) or any(
-            marker in result.stderr for marker in ("ERROR: AddressSanitizer", "UndefinedBehaviorSanitizer", "runtime error:", "ERROR: LeakSanitizer")
-        ):
-            self.process_faults.append({"command": number, "reason": "signal or sanitizer failure"})
-        if required and result.returncode != 0:
-            raise RuntimeError(f"command {number} failed ({result.returncode}); retained logs: {paths['stderr']}")
-        return result
 
     def prepare(self):
         self.assert_that("successful pinned build report", self.build["result"] == "passed")
@@ -177,27 +131,6 @@ class EncoderHarness(native.Harness):
             self.assert_that(f"load-path bytes: {name}", actual == self.admitted_files[str(resolved)])
             self.loaded_paths[name] = {"resolved": str(resolved), "sha256": actual}
         self.report["loaded_paths"] = self.loaded_paths
-
-    def finish_admission(self):
-        observations = []
-        for name, expected in self.admitted_files.items():
-            try:
-                actual = native.digest(Path(name))
-                observations.append({"path": name, "expected": expected, "actual": actual, "passed": actual == expected})
-            except OSError as error:
-                observations.append({"path": name, "passed": False, "error": str(error)})
-        self.report["final_file_admission"] = observations
-        for name, expected in self.loaded_paths.items():
-            try:
-                actual = {"resolved": str(Path(name).resolve()), "sha256": native.digest(Path(name))}
-                observations.append({"load_path": name, "expected": expected, "actual": actual, "passed": actual == expected})
-            except OSError as error:
-                observations.append({"load_path": name, "passed": False, "error": str(error)})
-        if any(not row["passed"] for row in observations):
-            self.report["result"] = "failed: admitted executable or library changed"
-
-    def artifact(self, path):
-        return {"path": str(path), "sha256": native.digest(path), "bytes": path.stat().st_size}
 
     def capture_case(self, name, mode, edits, fps=(30000, 1001), count=120, pcm_kind="impulses"):
         case = {"name": name, "requested": {"mode": mode, "edit_lists": edits, "fps": list(fps),

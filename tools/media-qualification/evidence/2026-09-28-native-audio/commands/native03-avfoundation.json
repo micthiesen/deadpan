@@ -1,0 +1,19 @@
+{
+  "command": [
+    "python3",
+    "tools/media-qualification/compatible/qualify_native_audio.py",
+    "--encoder-report",
+    "/tmp/deadpan-export-encoder-iogtzpzn/matrix.json",
+    "--work",
+    "/tmp/deadpan-export-encoder-iogtzpzn/native",
+    "--output",
+    "/tmp/deadpan-export-encoder-iogtzpzn/native.json"
+  ],
+  "started": "2026-09-28T15:18:28.408732+00:00",
+  "base_commit": "3b6e8da5579fb9e0ddf6ef80396642f535afedfa",
+  "diff_sha256": "31d8c19d26cf5e917f6d663f7cb6276040f60d0847e8063e182ee2ee52f1f0d6",
+  "source_manifest_sha256": "2b5ffded5545dddf290daf3dc4f3e55951d7526cd98ba9b137f6f22ea9087842",
+  "pid": 45074,
+  "exit_code": 1,
+  "seconds": 4.905980958137661
+}

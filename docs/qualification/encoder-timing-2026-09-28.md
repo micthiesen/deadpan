@@ -110,10 +110,12 @@ The muxer's AAC `roll` sample groups do not supply arbitrary leading/trailing
 sample counts, and this FFmpeg demuxer does not interpret them as an exact trim.
 The retained source note records symbols, line references and source hashes.
 
-The next independent consumer check is a headless AVFoundation reader of the
-same files, retaining raw/output timestamps and trim attachments. It has not
-been executed in this qualification. Neither a hypothetical native pass nor
-an untested metadata workaround erases the measured FFmpeg failure.
+The subsequent [AVFoundation comparison](native-audio-2026-09-28.md) reads the
+same files with retained raw/output timestamps and trim attachments. It finds
+a different no-edit-list failure: missing opening events and later events
+1,088 samples early. The default-edit-list reference aligns in both readers.
+That later evidence does not replace this original FFmpeg result or approve
+a specification change.
 
 Fresh-decoder closed GOPs, full boundary-content and acoustic quality, the shared
 renderer-to-Rec.709 encoder transform, immutable project rendering, final-file

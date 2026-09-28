@@ -5,9 +5,9 @@ from collections.abc import Sequence
 import unittest
 
 from encoder_oracle import (
-    CaseSpec, I64_MAX, MAX_DECODED_SAMPLES, OracleError, audio_boundary,
+    CaseSpec, I64_MAX, MAX_AUDIO_FRAMES, MAX_DECODED_SAMPLES, OracleError, PcmSpan, audio_boundary,
     bt709_oetf, color_reference, expected_manifest, inspect_case, movie_timescale,
-    point_ceil_boundary,
+    point_ceil_boundary, inspect_pcm_events,
 )
 
 
@@ -151,6 +151,57 @@ class ColorOracleTests(unittest.TestCase):
         result = inspect_case(**inputs)
         self.assertFalse(check(result, "color: valid bounded observations")["passed"])
         self.assertTrue(check(result, "video: every visible authored identity")["passed"])
+
+
+class PcmEventTests(unittest.TestCase):
+    def test_absolute_events_are_independent_of_decoder_buffer_partition(self):
+        inputs = fixture()
+        spec, pcm = inputs["spec"], inputs["ordinary_pcm"]
+        whole = inspect_pcm_events(spec, pcm, [PcmSpan(0, spec.audio_samples, 0)])
+        boundaries = [0, 101, 8191, 30721, 48000, spec.audio_samples]
+        spans = [PcmSpan(left, right - left, left) for left, right in zip(boundaries, boundaries[1:])]
+        self.assertEqual(inspect_pcm_events(spec, pcm, spans), whole)
+        self.assertTrue(whole["passed"])
+        self.assertNotIn("frame_skip_metadata", whole["observations"])
+        self.assertNotIn("discarded_frames", whole["observations"])
+
+    def test_encoder_retains_public_event_labels_values_and_diagnostics(self):
+        inputs = fixture()
+        spec = inputs["spec"]
+        native_clock = inspect_pcm_events(spec, inputs["ordinary_pcm"],
+                                         [PcmSpan(0, spec.audio_samples, 0)], label="ordinary")
+        encoded = inspect_case(**inputs)
+        self.assertEqual(encoded["observations"]["ordinary"]["events"], native_clock["observations"]["events"])
+        labels = {entry["label"] for entry in native_clock["checks"]}
+        self.assertEqual([entry for entry in encoded["checks"] if entry["label"] in labels], native_clock["checks"])
+
+    def test_invalid_span_layouts_and_nonintegral_clocks_reject(self):
+        inputs = fixture()
+        spec, pcm = inputs["spec"], inputs["ordinary_pcm"]
+        for spans in ([PcmSpan(1, spec.audio_samples - 1, 0)],
+                      [PcmSpan(0, 100, 0), PcmSpan(100, spec.audio_samples - 100, 101)],
+                      [PcmSpan(0, 100, 0), PcmSpan(99, spec.audio_samples - 100, 100)],
+                      [PcmSpan(0, spec.audio_samples - 1, 0)]):
+            with self.subTest(spans=spans), self.assertRaises(OracleError):
+                inspect_pcm_events(spec, pcm, spans)
+        for start in (0.5, True, I64_MAX):
+            with self.subTest(start=start), self.assertRaises(OracleError):
+                PcmSpan(0, 1, start)
+
+    def test_record_cap_preflights_pcm_and_all_pcm_is_finite(self):
+        class Untouched(Sequence):
+            def __len__(self):
+                raise AssertionError("PCM must not be accessed after an oversized span inventory")
+
+            def __getitem__(self, index):
+                raise AssertionError("PCM must not be accessed after an oversized span inventory")
+
+        with self.assertRaises(OracleError):
+            inspect_pcm_events(CaseSpec(), Untouched(), [PcmSpan(0, 1, 0)] * (MAX_AUDIO_FRAMES + 1))
+        inputs = fixture()
+        inputs["ordinary_pcm"][20000] = float("nan")
+        with self.assertRaises(OracleError):
+            inspect_pcm_events(inputs["spec"], inputs["ordinary_pcm"], [PcmSpan(0, inputs["spec"].audio_samples, 0)])
 
 
 class EncodedObservationTests(unittest.TestCase):

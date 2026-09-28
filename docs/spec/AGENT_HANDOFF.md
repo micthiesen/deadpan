@@ -7,8 +7,11 @@ finds native AAC events and the stream endpoint 1,024 samples late when edit
 lists are disabled, exceeding one frame at 60 fps. Default-edit-list references
 are sample-aligned, but are not an approved spec deviation. Retain the failed
 files and both decoder modes; do not hide priming by shifting/cropping PCM or
-widening tolerance. Independent native reading, closed GOPs and product export
-remain open.
+widening tolerance. The [independent AVFoundation comparison](../qualification/native-audio-2026-09-28.md)
+finds missing opening events and later events 1,088 samples early in the same
+disabled-edit-list file; the default reference aligns. A concrete mux-policy
+revision is awaiting the user's answer. Closed GOPs, native video and product
+export remain open.
 
 ## Product in one paragraph
 

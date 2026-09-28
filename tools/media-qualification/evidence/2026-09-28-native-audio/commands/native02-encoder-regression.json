@@ -1,0 +1,13 @@
+{
+  "command": [
+    "python3",
+    "/tmp/deadpan-export-encoder-iogtzpzn/reevaluate-encoder.py"
+  ],
+  "started": "2026-09-28T15:18:16.671467+00:00",
+  "base_commit": "3b6e8da5579fb9e0ddf6ef80396642f535afedfa",
+  "diff_sha256": "31d8c19d26cf5e917f6d663f7cb6276040f60d0847e8063e182ee2ee52f1f0d6",
+  "source_manifest_sha256": "2b5ffded5545dddf290daf3dc4f3e55951d7526cd98ba9b137f6f22ea9087842",
+  "pid": 45037,
+  "exit_code": 0,
+  "seconds": 2.5788454581052065
+}

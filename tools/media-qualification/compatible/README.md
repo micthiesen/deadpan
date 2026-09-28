@@ -107,3 +107,34 @@ decoder GOP independence, a second native decoder stack, complete boundary
 content/quality acceptance, the renderer's encoder transform and product export
 integration remain separate requirements. No passing fixture is a complete
 export qualification.
+
+## Independent AVFoundation audio observation
+
+`qualify_native_audio.py` reads the retained 120-frame, 60 fps default/disabled
+edit-list pair from an encoder report. It independently checks the MP4 hashes
+and compiles a small Objective-C reader against Apple frameworks. It does not
+encode new media, link FFmpeg, open a window or play through an audio device.
+
+```sh
+python3 tools/media-qualification/compatible/qualify_native_audio.py \
+  --encoder-report /tmp/deadpan-encoder-NEW-report.json \
+  --work /tmp/deadpan-native-audio-NEW \
+  --output /tmp/deadpan-native-audio-NEW-report.json
+```
+
+Each file gets two fresh readers, first stored AAC samples and then 48 kHz
+interleaved stereo float32 PCM. Both drain to `AVAssetReaderStatusCompleted`.
+Reports retain raw and output CMTime values, source/PCM formats, track segments,
+trim and presentation attachments, complete untouched PCM, commands and hashes.
+The default reader range is intersected with the asset duration; completion
+does not prove access to coded padding outside that range.
+
+`native_audio_oracle.py` admits exact, unrounded sample coordinates before
+using the shared absolute event oracle. It does not apply attachment trims,
+segment offsets or detected-event alignment. Ambiguous native timing is
+explicitly unqualified. Keep `outcome`, `passed`, `event_timing_qualified` and
+`unqualified` together: passing applicable checks alone is not timing admission.
+The 799-sample tolerance stays strictly below the 800-sample video frame.
+`--sanitizers` instruments the observer, not the Apple decoder/frameworks.
+This is a second audio reader comparison, not acoustic playback, native video
+qualification or approval of a nonconforming export path.

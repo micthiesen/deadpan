@@ -384,6 +384,108 @@ def _finite_pcm(pcm):
     return len(pcm) // 2
 
 
+@dataclass(frozen=True)
+class PcmSpan:
+    """A contiguous raw PCM region on an absolute 48000 Hz sample clock."""
+
+    sample_offset: int
+    sample_count: int
+    start_sample: int
+
+    def __post_init__(self):
+        _integer(self.sample_offset, "PCM span offset", 0, MAX_DECODED_SAMPLES)
+        _integer(self.sample_count, "PCM span count", 1, MAX_DECODED_SAMPLES)
+        _integer(self.start_sample, "PCM span start")
+        _integer(self.sample_offset + self.sample_count, "PCM span buffer end", 1, MAX_DECODED_SAMPLES)
+        _integer(self.start_sample + self.sample_count, "PCM span clock end")
+
+
+def inspect_pcm_events(spec: CaseSpec, pcm: Sequence[float], spans: Sequence[PcmSpan],
+                       *, tolerance_samples: int = 0, label: str = "pcm") -> dict:
+    """Measure absolute authored events without decoder/container assumptions.
+
+    Input is unmodified interleaved stereo PCM and complete ordered spans.
+    Invalid, discontinuous or overlapping layouts raise before peak scanning.
+    An invalid tolerance still retains signed event diagnostics, with failed
+    acceptance. No timestamp alignment, trimming or normalization occurs.
+    """
+    if not isinstance(spec, CaseSpec):
+        raise OracleError("spec must be a CaseSpec")
+    if not isinstance(label, str) or not label or len(label) > 64:
+        raise OracleError("PCM event label must contain 1..64 characters")
+    spans = _records(spans, "PCM spans", MAX_AUDIO_FRAMES)
+    count = _finite_pcm(pcm)
+    if not spans or count == 0:
+        raise OracleError("PCM event measurement requires nonempty PCM and spans")
+    next_offset, next_sample = 0, None
+    segments = []
+    for span in spans:
+        if not isinstance(span, PcmSpan):
+            raise OracleError("PCM spans must be PcmSpan values")
+        if span.sample_offset != next_offset or (next_sample is not None and span.start_sample != next_sample):
+            raise OracleError("PCM spans must cover contiguous bytes and absolute sample clocks")
+        next_offset = span.sample_offset + span.sample_count
+        next_sample = span.start_sample + span.sample_count
+        if next_offset > count:
+            raise OracleError("PCM span exceeds supplied PCM")
+        segments.append((span.sample_offset, span.sample_count, Fraction(span.start_sample)))
+    if next_offset != count:
+        raise OracleError("PCM spans must account for every supplied sample")
+    report = _Checks()
+    tolerance_valid = type(tolerance_samples) is int and 0 <= tolerance_samples < spec.frame_samples
+    tolerance = tolerance_samples if type(tolerance_samples) is int else 0
+    first = segments[0][2]
+    physical_end = segments[-1][2] + segments[-1][1]
+    events = []
+    expected = expected_manifest(spec)["impulses"]
+    independent_events = all(right - left > SEARCH_RADIUS * 2
+                             for left, right in zip(expected, expected[1:]))
+    if not independent_events:
+        report.unqualified.append(f"{label} event timing: authored marker diagnostic windows overlap")
+    report.add(f"{label}: independent event diagnostic windows", independent_events,
+               {"expected_samples": expected, "search_radius_samples": SEARCH_RADIUS}, diagnostic=True)
+    for channel, name in enumerate(("left", "right")):
+        selected = []
+        for expected_sample in expected:
+            peak = None
+            searched = 0
+            for offset, samples, start in segments:
+                low = max(0, math.ceil(expected_sample - SEARCH_RADIUS - start))
+                high = min(samples, math.floor(expected_sample + SEARCH_RADIUS - start) + 1)
+                for local in range(low, high):
+                    amplitude = pcm[(offset + local) * 2 + channel]
+                    searched += 1
+                    if peak is None or abs(amplitude) > abs(peak[1]):
+                        peak = (start + local, amplitude)
+            actual = peak[0] if peak is not None else None
+            amplitude = peak[1] if peak is not None else None
+            error = actual - expected_sample if actual is not None else None
+            signal = amplitude is not None and abs(amplitude) > 0.15 and (amplitude > 0 if channel == 0 else amplitude < 0)
+            exact = signal and error == 0
+            within = signal and tolerance_valid and abs(error) <= tolerance and abs(error) < spec.frame_samples
+            event = {"channel": name, "expected_sample": expected_sample,
+                     "actual_peak_sample": _exact(actual) if actual is not None else None,
+                     "error_samples": _exact(error) if error is not None else None,
+                     "error_seconds": str(error / SAMPLE_RATE) if error is not None else None,
+                     "peak_amplitude": amplitude, "searched_samples": searched,
+                     "search_radius_samples": SEARCH_RADIUS, "exact": exact, "within_tolerance": within}
+            events.append(event)
+            selected.append(actual)
+            report.add(f"{label}: {name} event {expected_sample} exact", exact, event, diagnostic=True)
+            report.add(f"{label}: {name} event {expected_sample} within declared sub-frame tolerance",
+                       within, event, diagnostic=not independent_events)
+        report.add(f"{label}: {name} events select distinct measured peaks", len(set(selected)) == len(expected) and None not in selected,
+                   {"selected_samples": [_exact(value) if value is not None else None for value in selected]},
+                   diagnostic=not independent_events)
+    observations = {"events": events, "physical_start_sample": _exact(first),
+        "physical_end_sample": _exact(physical_end), "physical_tail_after_authored_end": _exact(physical_end - spec.audio_samples),
+        "exact_event_samples": all(event["exact"] for event in events),
+        "event_timing_qualified": independent_events and all(event["within_tolerance"] for event in events),
+        "edge_content_qualified": False, "alignment_or_event_based_cropping_applied": False}
+    return {"passed": tolerance_valid and all(check["passed"] for check in report.checks if not check["diagnostic"]),
+            "checks": report.checks, "observations": observations, "unqualified": report.unqualified}
+
+
 def _audio_checks(report, label, spec, audio, pcm, tolerance, tolerance_valid):
     audio = _mapping(audio, label)
     count = _finite_pcm(pcm)
@@ -431,7 +533,6 @@ def _audio_checks(report, label, spec, audio, pcm, tolerance, tolerance_valid):
     if not segments:
         return
     first = segments[0][2]
-    physical_end = segments[-1][2] + segments[-1][1]
     report.add(f"{label}: first-sample summary agrees with raw PTS", _integer(audio["first_sample_pts"], "first sample PTS") == first)
     stream_start = _integer(audio["stream_start_pts"], "audio stream start") * tb * SAMPLE_RATE
     stream_duration = _integer(audio["stream_duration"], "audio stream duration", 0) * tb * SAMPLE_RATE
@@ -449,55 +550,15 @@ def _audio_checks(report, label, spec, audio, pcm, tolerance, tolerance_valid):
             "event_search_skipped": "invalid absolute PCM frame layout",
             "stream_end_error_samples": _exact(end_error), "frame_skip_metadata": skips}
         return
-    events = []
-    expected = expected_manifest(spec)["impulses"]
-    independent_events = all(right - left > SEARCH_RADIUS * 2
-                             for left, right in zip(expected, expected[1:]))
-    if not independent_events:
-        report.unqualified.append(f"{label} event timing: authored marker diagnostic windows overlap")
-    report.add(f"{label}: independent event diagnostic windows", independent_events,
-               {"expected_samples": expected, "search_radius_samples": SEARCH_RADIUS}, diagnostic=True)
-    for channel, name in enumerate(("left", "right")):
-        selected = []
-        for expected_sample in expected:
-            peak = None
-            searched = 0
-            for offset, samples, start in segments:
-                low = max(0, math.ceil(expected_sample - SEARCH_RADIUS - start))
-                high = min(samples, math.floor(expected_sample + SEARCH_RADIUS - start) + 1)
-                for local in range(low, high):
-                    amplitude = pcm[(offset + local) * 2 + channel]
-                    searched += 1
-                    if peak is None or abs(amplitude) > abs(peak[1]):
-                        peak = (start + local, amplitude)
-            actual = peak[0] if peak is not None else None
-            amplitude = peak[1] if peak is not None else None
-            error = actual - expected_sample if actual is not None else None
-            signal = amplitude is not None and abs(amplitude) > 0.15 and (amplitude > 0 if channel == 0 else amplitude < 0)
-            exact = signal and error == 0
-            within = signal and tolerance_valid and abs(error) <= tolerance and abs(error) < spec.frame_samples
-            event = {"channel": name, "expected_sample": expected_sample,
-                     "actual_peak_sample": _exact(actual) if actual is not None else None,
-                     "error_samples": _exact(error) if error is not None else None,
-                     "error_seconds": str(error / SAMPLE_RATE) if error is not None else None,
-                     "peak_amplitude": amplitude, "searched_samples": searched,
-                     "search_radius_samples": SEARCH_RADIUS, "exact": exact, "within_tolerance": within}
-            events.append(event)
-            selected.append(actual)
-            report.add(f"{label}: {name} event {expected_sample} exact", exact, event, diagnostic=True)
-            report.add(f"{label}: {name} event {expected_sample} within declared sub-frame tolerance",
-                       within, event, diagnostic=not independent_events)
-        report.add(f"{label}: {name} events select distinct measured peaks", len(set(selected)) == len(expected) and None not in selected,
-                   {"selected_samples": [_exact(value) if value is not None else None for value in selected]},
-                   diagnostic=not independent_events)
-    report.observations[label] = {"events": events, "physical_start_sample": _exact(first),
-        "physical_end_sample": _exact(physical_end), "physical_tail_after_authored_end": _exact(physical_end - spec.audio_samples),
+    measured = inspect_pcm_events(spec, pcm,
+        [PcmSpan(offset, samples, start.numerator) for offset, samples, start in segments],
+        tolerance_samples=tolerance if tolerance_valid else -1, label=label)
+    report.checks.extend(measured["checks"])
+    report.unqualified.extend(measured["unqualified"])
+    report.observations[label] = {**measured["observations"],
         "stream_start_sample": _exact(stream_start), "stream_end_sample": _exact(stream_end),
         "stream_end_error_samples": _exact(end_error), "frame_skip_metadata": skips,
-        "discarded_frames": [number for number, frame in enumerate(frames) if frame.get("discard") is True],
-        "exact_event_samples": all(event["exact"] for event in events),
-        "event_timing_qualified": independent_events and all(event["within_tolerance"] for event in events),
-        "edge_content_qualified": False, "alignment_or_event_based_cropping_applied": False}
+        "discarded_frames": [number for number, frame in enumerate(frames) if frame.get("discard") is True]}
 
 
 def inspect_case(

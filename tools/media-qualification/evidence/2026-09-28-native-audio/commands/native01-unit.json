@@ -1,0 +1,20 @@
+{
+  "command": [
+    "python3",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "tools/media-qualification/compatible",
+    "-p",
+    "test_*.py",
+    "-v"
+  ],
+  "started": "2026-09-28T15:17:53.135963+00:00",
+  "base_commit": "3b6e8da5579fb9e0ddf6ef80396642f535afedfa",
+  "diff_sha256": "10f78142543dbebd3c47ed4aade83bc15b157304c0a61209cd0b36d5d0cc4512",
+  "source_manifest_sha256": "7b5c2b8b54a4b6253083bdfd7b4b3f05554e1bee6dbf16d9afd571a51e0e5771",
+  "pid": 44801,
+  "exit_code": 0,
+  "seconds": 6.191400082781911
+}
