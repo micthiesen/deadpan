@@ -403,6 +403,7 @@ These bindings are mnemonic accelerators for ordinary commands. All actions also
 |---|---|
 | `,h` | Insert a 0.5 s freeze hold with silence. Count scales duration: `3,h` = 1.5 s. |
 | `,i` | Explicitly reuse the full Original after the selected beat; `:insert` is its command alias. No count. Range reuse retains `y`/`p` semantics. |
+| `,s` | Place the selected catalog sound at the retained Edit cursor; `:sound-place` is its command alias. No count. Picture duration stays unchanged. |
 | `,a` | Insert the same hold and request an AI candidate. Same count semantics. |
 | `,z` | Punch in to 1.35× on the selected target. |
 | `,c` | Creep from current framing to 1.35× over selection. |
@@ -416,6 +417,18 @@ These bindings are mnemonic accelerators for ordinary commands. All actions also
 | `,v` | Enter Trim mode. |
 
 `+` / `-` in Normal mode change selected audio gain by ±3 dB. With no explicit selection, they affect the current beat, never the entire master bus. Camera mode owns its own `+` / `-` meanings. The status line shows the exact scope and resulting value before and after each change.
+
+Placed sounds have their own visible selection and pane focus, independent of
+catalog audition and the retained picture beat. `:sounds` focuses that pane;
+`j/k` select events, `h/l` move the selected event by exact project frames, and
+Enter opens its fine position in 48 kHz samples. Counts compose without
+accumulated rounding. `+/-` change that event's gain; `dd` removes only that
+event. These keys also retain event scope in its inspector. Entering the pane
+from Original activates Your edit while preserving both cursors. Parameter
+entry captures the event and revision; a later completion cannot retarget it.
+Unsupported placement or timing changes report a reason and leave history
+unchanged. Silent-Hold policy, explicit allowances and overflow retain their
+specified semantics rather than being inferred from placement.
 
 ## 7.6 Camera mode
 

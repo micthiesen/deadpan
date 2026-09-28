@@ -4,6 +4,8 @@ pub mod camera;
 pub mod command;
 pub mod duration;
 pub mod retime;
+mod sound;
+pub use sound::SoundAction;
 #[cfg(any(test, feature = "ui-harness"))]
 pub mod shortcut_audit;
 pub use camera::route_camera_key;
@@ -25,6 +27,7 @@ pub enum Pane {
     #[default]
     Viewer,
     Sequence,
+    Sounds,
     Inspector,
 }
 
@@ -48,16 +51,19 @@ impl Pane {
         match (self, reverse) {
             (Self::Sources, false) | (Self::Inspector, true) => Self::Viewer,
             (Self::Viewer, false) | (Self::Sequence, true) => Self::Inspector,
-            (Self::Inspector, false) | (Self::Sources, true) => Self::Sequence,
-            _ => Self::Sources,
+            (Self::Inspector, false) | (Self::Sounds, true) => Self::Sequence,
+            (Self::Sequence, false) | (Self::Sources, true) => Self::Sounds,
+            (Self::Sounds, false) | (Self::Viewer, true) => Self::Sources,
         }
     }
 
     pub fn cycle(self, reverse: bool) -> Self {
         match (self, reverse) {
             (Self::Sources, false) | (Self::Sequence, true) => Self::Viewer,
-            (Self::Viewer, false) | (Self::Sources, true) => Self::Sequence,
-            _ => Self::Sources,
+            (Self::Viewer, false) | (Self::Sounds, true) => Self::Sequence,
+            (Self::Sequence, false) | (Self::Sources, true) => Self::Sounds,
+            (Self::Sounds, false) | (Self::Viewer, true) => Self::Sources,
+            (Self::Inspector, _) => Self::Viewer,
         }
     }
 }
@@ -89,6 +95,7 @@ pub enum Action {
     OfferInsert,
     Edit(BeatEdit),
     Framing(FramingAction),
+    Sound(SoundAction),
     Invalid(&'static str),
 }
 
@@ -171,15 +178,38 @@ impl Bindings {
             _ if self.comma && self.count.is_some() => {
                 Some("h inserts the counted pause · Esc cancels")
             }
-            _ if self.comma => {
-                Some("i reuse Original · h pause · f Camera · z punch in · c creep · Esc cancels")
-            }
+            _ if self.comma => Some(
+                "i reuse Original · s place sound · h pause · f Camera · z punch in · c creep · Esc cancels",
+            ),
             _ if self.g => Some("g goes to the start · Esc cancels"),
-            _ if self.count.is_some() => {
-                Some("Then h/l to move, rr to repeat, or ,h to pause · Esc cancels")
-            }
+            _ if self.count.is_some() => Some(
+                "Then h/l to move, rr to repeat, +/- for sound gain, or ,h to pause · Esc cancels",
+            ),
             _ => None,
         }
+    }
+
+    fn sound_gain_step(&mut self, increase: bool) -> Action {
+        let action = if self.g || self.comma || self.operator.is_some() {
+            Action::Invalid("Use + or - for sound gain without an operator or comma prefix.")
+        } else if self.count_overflow {
+            Action::Invalid("Count exceeds 4294967295; no edit was made.")
+        } else if self.count == Some(0) {
+            Action::Invalid("A sound gain count must be positive; no edit was made.")
+        } else {
+            let step = if increase { 3000 } else { -3000 };
+            match i32::try_from(self.count.unwrap_or(1))
+                .ok()
+                .and_then(|count| count.checked_mul(step))
+            {
+                Some(delta) => Action::Sound(SoundAction::GainStep(delta)),
+                None => Action::Invalid(
+                    "Sound gain step exceeds the supported range; no edit was made.",
+                ),
+            }
+        };
+        self.clear();
+        action
     }
 
     pub fn key(&mut self, key: Key, modifiers: Modifiers, text: bool, ime: bool) -> Option<Action> {
@@ -240,6 +270,12 @@ impl Bindings {
                     Key::Questionmark => Action::Help,
                     _ => Action::Search,
                 });
+            }
+            // Logical Plus may require Shift. egui can fall back from an
+            // unrecognized underscore to physical Minus, so Shift+Minus stays
+            // unclaimed, as in Camera. Never infer Plus from physical Equals.
+            if !modifiers.alt && (key == Key::Plus || (key == Key::Minus && !modifiers.shift)) {
+                return Some(self.sound_gain_step(key == Key::Plus));
             }
             // Kestrel owns Option+1–5 and Shift+Option+1–5 globally. Do not
             // start an editor count from Option-number keys if they reach us.
@@ -310,6 +346,8 @@ impl Bindings {
             let action = match key {
                 Key::I if self.count.is_none() => Action::Insert,
                 Key::I => Action::Invalid("Reuse inserts once. Use ,i without a count."),
+                Key::S if self.count.is_none() => Action::Sound(SoundAction::Place),
+                Key::S => Action::Invalid("Place one sound with ,s, without a count."),
                 Key::H => Action::Edit(BeatEdit::InsertHold(
                     duration::DurationInput::half_seconds(self.count.unwrap_or(1)),
                 )),
@@ -323,7 +361,7 @@ impl Bindings {
                     Action::Invalid("Counts apply only to ,h. Use ,f, ,z, or ,c without a count.")
                 }
                 _ => Action::Invalid(
-                    "After comma, use i to reuse the Original, h for a pause, f for Camera, z to punch in, or c to creep.",
+                    "After comma, use i to reuse the Original, s to place a sound, h for a pause, f for Camera, z to punch in, or c to creep.",
                 ),
             };
             self.clear();
@@ -1227,17 +1265,27 @@ mod tests {
         assert_eq!(Pane::default(), Pane::Viewer);
         assert_eq!(Pane::Sources.cycle(false), Pane::Viewer);
         assert_eq!(Pane::Viewer.cycle(false), Pane::Sequence);
-        assert_eq!(Pane::Sequence.cycle(false), Pane::Sources);
-        for pane in [Pane::Sources, Pane::Viewer, Pane::Sequence] {
+        assert_eq!(Pane::Sequence.cycle(false), Pane::Sounds);
+        assert_eq!(Pane::Sounds.cycle(false), Pane::Sources);
+        for pane in [Pane::Sources, Pane::Viewer, Pane::Sequence, Pane::Sounds] {
             assert_eq!(pane.cycle(false).cycle(true), pane);
             assert_eq!(pane.cycle(true).cycle(false), pane);
-            assert_eq!(pane.cycle(false).cycle(false).cycle(false), pane);
+            assert_eq!(
+                pane.cycle(false).cycle(false).cycle(false).cycle(false),
+                pane
+            );
         }
     }
 
     #[test]
     fn inspector_participates_only_while_visible() {
-        let visible = [Pane::Sources, Pane::Viewer, Pane::Inspector, Pane::Sequence];
+        let visible = [
+            Pane::Sources,
+            Pane::Viewer,
+            Pane::Inspector,
+            Pane::Sequence,
+            Pane::Sounds,
+        ];
         for (index, pane) in visible.into_iter().enumerate() {
             assert_eq!(
                 pane.cycle_visible(false, true),
@@ -1248,7 +1296,7 @@ mod tests {
                 pane
             );
         }
-        for pane in [Pane::Sources, Pane::Viewer, Pane::Sequence] {
+        for pane in [Pane::Sources, Pane::Viewer, Pane::Sequence, Pane::Sounds] {
             for reverse in [false, true] {
                 assert_ne!(pane.cycle_visible(reverse, false), Pane::Inspector);
                 assert_eq!(pane.cycle_visible(reverse, false), pane.cycle(reverse));
@@ -1258,6 +1306,8 @@ mod tests {
         assert_eq!(Pane::Inspector.visible(false), Pane::Viewer);
         assert_eq!(Pane::Inspector.visible(true), Pane::Inspector);
         assert_eq!(Pane::Sequence.visible(false), Pane::Sequence);
+        assert_eq!(Pane::Sounds.visible(false), Pane::Sounds);
+        assert_eq!(Pane::Sounds.visible(true), Pane::Sounds);
     }
 
     #[test]
@@ -1317,5 +1367,168 @@ mod tests {
             );
             assert!(bindings.pending().is_empty());
         }
+    }
+
+    #[test]
+    fn comma_s_places_once_without_counts_or_native_input_capture() {
+        let mut bindings = Bindings::default();
+        assert_eq!(
+            bindings.key(Key::Comma, Modifiers::NONE, false, false),
+            Some(Action::OfferInsert)
+        );
+        assert!(bindings.pending_hint().unwrap().contains("s place sound"));
+        assert_eq!(
+            bindings.key(Key::S, Modifiers::NONE, false, false),
+            Some(Action::Sound(SoundAction::Place))
+        );
+        assert!(bindings.pending().is_empty());
+        // The UI's existing repeat filter rejects a held S before this router;
+        // a later distinct S press retains its ordinary Split meaning.
+        assert!(!allows_key_repeat(Key::S, Modifiers::NONE));
+        assert!(!allows_key_repeat(Key::Comma, Modifiers::NONE));
+        assert_eq!(
+            bindings.key(Key::S, Modifiers::NONE, false, false),
+            Some(Action::Edit(BeatEdit::Split))
+        );
+        for count in [Key::Num0, Key::Num1, Key::Num3] {
+            assert!(matches!(
+                keys(&mut bindings, &[count, Key::Comma, Key::S]),
+                Some(Action::Invalid(_))
+            ));
+            assert!(bindings.pending().is_empty());
+        }
+        for (modifiers, text, ime) in [
+            (Modifiers::NONE, true, false),
+            (Modifiers::NONE, false, true),
+            (Modifiers::NONE, true, true),
+            (Modifiers::SHIFT, false, false),
+            (Modifiers::ALT, false, false),
+            (Modifiers::CTRL, false, false),
+            (Modifiers::COMMAND, false, false),
+            (Modifiers::MAC_CMD, false, false),
+        ] {
+            bindings.key(Key::Comma, Modifiers::NONE, false, false);
+            assert_eq!(bindings.key(Key::S, modifiers, text, ime), None);
+            assert!(bindings.pending().is_empty());
+        }
+        for modifiers in [
+            Modifiers::SHIFT,
+            Modifiers::ALT,
+            Modifiers::ALT | Modifiers::SHIFT,
+        ] {
+            bindings.key(Key::Comma, modifiers, false, false);
+            assert_eq!(
+                bindings.key(Key::S, Modifiers::NONE, false, false),
+                Some(Action::Sound(SoundAction::Place))
+            );
+        }
+    }
+
+    #[test]
+    fn sound_gain_counts_are_checked_and_never_complete_another_prefix() {
+        let mut bindings = Bindings::default();
+        for (count, key, expected) in [
+            ("", Key::Plus, 3000),
+            ("", Key::Minus, -3000),
+            ("2", Key::Plus, 6000),
+            ("3", Key::Minus, -9000),
+            ("715827", Key::Plus, 2147481000),
+            ("715827", Key::Minus, -2147481000),
+        ] {
+            for digit in count.bytes() {
+                bindings.key(
+                    DIGITS[usize::from(digit - b'0')].0,
+                    Modifiers::NONE,
+                    false,
+                    false,
+                );
+            }
+            assert_eq!(
+                bindings.key(key, Modifiers::NONE, false, false),
+                Some(Action::Sound(SoundAction::GainStep(expected)))
+            );
+            assert!(bindings.pending().is_empty());
+        }
+        for count in ["0", "715828", "4294967295", "4294967296"] {
+            for key in [Key::Plus, Key::Minus] {
+                for digit in count.bytes() {
+                    bindings.key(
+                        DIGITS[usize::from(digit - b'0')].0,
+                        Modifiers::NONE,
+                        false,
+                        false,
+                    );
+                }
+                assert!(
+                    matches!(
+                        bindings.key(key, Modifiers::NONE, false, false),
+                        Some(Action::Invalid(_))
+                    ),
+                    "{count} {key:?}"
+                );
+                assert!(bindings.pending().is_empty());
+            }
+        }
+        for prefix in [Key::G, Key::R, Key::D, Key::Comma] {
+            for key in [Key::Plus, Key::Minus] {
+                bindings.key(prefix, Modifiers::NONE, false, false);
+                assert!(matches!(
+                    bindings.key(key, Modifiers::NONE, false, false),
+                    Some(Action::Invalid(_))
+                ));
+                assert!(bindings.pending().is_empty());
+            }
+        }
+    }
+
+    #[test]
+    fn sound_gain_uses_logical_symbols_and_preserves_text_and_reserved_modifiers() {
+        for (key, delta) in [(Key::Plus, 3000), (Key::Minus, -3000)] {
+            for modifiers in [Modifiers::NONE, Modifiers::SHIFT] {
+                let expected = if key == Key::Minus && modifiers.shift {
+                    None
+                } else {
+                    Some(Action::Sound(SoundAction::GainStep(delta)))
+                };
+                assert_eq!(
+                    Bindings::default().key(key, modifiers, false, false),
+                    expected
+                );
+                assert!(!allows_key_repeat(key, modifiers));
+            }
+            for (text, ime) in [(true, false), (false, true), (true, true)] {
+                let mut bindings = Bindings::default();
+                bindings.key(Key::Num3, Modifiers::NONE, false, false);
+                assert_eq!(bindings.key(key, Modifiers::SHIFT, text, ime), None);
+                assert!(bindings.pending().is_empty());
+            }
+            for modifiers in [
+                Modifiers::ALT,
+                Modifiers::ALT | Modifiers::SHIFT,
+                Modifiers::CTRL,
+                Modifiers::COMMAND,
+                Modifiers::MAC_CMD,
+            ] {
+                let mut bindings = Bindings::default();
+                bindings.key(Key::Num3, Modifiers::NONE, false, false);
+                assert_eq!(bindings.key(key, modifiers, false, false), None);
+                assert!(bindings.pending().is_empty());
+            }
+        }
+        for modifiers in [Modifiers::NONE, Modifiers::SHIFT, Modifiers::ALT] {
+            assert_eq!(
+                Bindings::default().key(Key::Equals, modifiers, false, false),
+                None,
+                "a US physical key position cannot stand in for logical Plus"
+            );
+        }
+        let mut bindings = Bindings::default();
+        bindings.key(Key::Num3, Modifiers::NONE, false, false);
+        assert_eq!(
+            bindings.key(Key::Minus, Modifiers::SHIFT, false, false),
+            None,
+            "underscore fallback cannot change sound gain"
+        );
+        assert!(bindings.pending().is_empty());
     }
 }

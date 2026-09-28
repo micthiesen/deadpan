@@ -139,6 +139,17 @@ Use the shared qualified
 playback service and temporary Source view; never persist an audition beat or
 infer a missing speaker layout. Sound audition does not authorize placement.
 
+Native sound placement uses a separate selected event and Placed sounds pane.
+`,s` places the complete qualified catalog sound at the retained Edit cursor via
+the revision-bound project service; it never adds picture time. Parameter entry
+captures session, revision and event, including absence of an eligible target.
+Late completions cannot supply or replace that target. Entering Placed sounds
+from Original switches to Your edit while preserving both cursors and the beat.
+Frame nudges translate the persisted exact mapping and audible selection while
+retaining the independent sample offset; never round each nudge to samples.
+Routed sounds permit gain/edge changes but reject repositioning until their
+full timing lifecycle is implemented. See [sound events](docs/SOUND_EVENTS.md).
+
 The shared picture baseline accepts owned, bounded, full-range straight RGBA8
 with explicit transfer, primaries, SAR, rotation and source PTS. Decode transfer
 before filtering into linear Rec.2020 `Rgba16Float`; preserve negative working

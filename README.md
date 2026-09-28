@@ -24,7 +24,7 @@ This repository currently contains an **editing foundation**, not a working vide
 - `deadpan-output`: a bounded [prepared-PCM queue and narrow macOS device adapter](docs/AUDIO_OUTPUT.md), generation revocation, delivery-clock intervals and owned sleep/wake observation. Full device and acoustic qualification remain open.
 - `deadpan-playback`: [Original and edit audition](docs/PLAYBACK.md) from immutable source receipts, with separate preparation/control workers, bounded canonical PCM and explicit device-clock failures. The app exposes Space Play/Pause, Shift+Space selection loops with adjustable context, and independent monitor volume; full mastering remains open.
 - `deadpan-audio`: [exact source resampling and explicit stereo mixing](docs/AUDIO_PREPARATION.md), [plan-driven source PCM](docs/SOURCE_STAGE_AUDIO.md), [continuous Preserve retimes](docs/AUDIO_STAGE_PREPARATION.md), [room-tone loops](docs/ROOM_TONE_AUDIO.md), [sampled-root transfer](docs/AUDIO_SIGNAL_TRANSFER.md) and [authored edge fades](docs/AUDIO_EDGES.md) and [owned timing bindings](docs/OWNED_AUDIO_BINDINGS.md) from verified originals; the full voice graph remains open.
-- [Root sound events](docs/SOUND_EVENTS.md#persisted-root-sounds): durable qualified recipes, exact sample placement, per-voice edges/gain and shared limited mixing. Root ripple edits retain chronological sample phase. Native placement, nested ownership and remaining structural sound transforms stay open.
+- [Root sound events](docs/SOUND_EVENTS.md#native-root-placement): durable qualified recipes, native catalog placement, exact sample positioning and frame nudges, per-event edges/gain and shared limited mixing. Root ripple edits retain chronological sample phase. Nested ownership, custom silence allowances and remaining structural sound transforms stay open.
 - [Independent source audio timing](docs/SOURCE_AUDIO_MAPPING.md): exact audio durations and offsets, reversible commands, and per-play edits that preserve picture timing.
 - [Exact source picture timing](docs/SOURCE_VIDEO_MAPPING.md): natural-rate frame selection independent of beat rounding, with persisted endpoint holding restricted to the selected trim.
 - [Measured import timing](docs/SOURCE_IMPORT_TIMING.md): exact independent stream starts, preserved available audio, full-source enclosure and presentation-basis candidates.
@@ -36,7 +36,7 @@ This repository currently contains an **editing foundation**, not a working vide
 - `deadpan-app`: an `egui`/`eframe` [native project workspace](docs/NATIVE_WORKSPACE.md) using Metal, with one-video creation in Documents/Deadpan, automatic full-original initialization, a separate audio catalog, same-original reuse, [current-depth Split](docs/STRUCTURAL_SPLIT.md), [silent pause insertion](docs/INSERT_TIME.md), repeat/delete/Hold-duration commands, [exact speed and pitch editing](docs/RETIME_EDITING.md), durable undo/redo, visible key hints and exact Original/Your edit frame inspection. Generic projects retain their broader compatibility workspace.
 - `deadpan-cli`: headless project/command/history operations, migration, picture/audio-plan and source-PCM inspection, [physical audio contexts](docs/AUDIO_PHYSICAL_DOMAINS.md), [authored audio definitions](docs/AUDIO_DEFINITIONS.md), [owned recipes in explicit clocks](docs/OWNED_AUDIO_CLOCKS.md), and exact boundary selection, also available through `deadpan-app --headless`.
 
-The app implements a local-video-to-full-timeline workflow with reversible current-depth edits, limited Original/edit/sound audition with selection loops, and legacy reopening. The [shared limiter](docs/AUDIO_MASTERING.md) follows the current edge-faded bus; voice effects and the full mix remain incomplete. Arbitrary range cuts/replacement, persistent registers, sound placement, full structural keyboard editing, mastered playback, app AI generation, YouTube acquisition and export remain open. All 24 full-product requirements remain open or partial in the [requirement tracker](docs/REQUIREMENTS.md). [Compatible native media qualification](docs/qualification/media-compatible-2026-09-20.md), [canonical audio qualification](docs/qualification/audio-canonical-2026-09-20.md), and a [real local model smoke](docs/qualification/model-smoke-2026-09-20.md) record actual tests, failed configurations, and measured limits separately from the application.
+The app implements a local-video-to-full-timeline workflow with reversible current-depth edits, root sound placement, limited Original/edit/sound audition with selection loops, and legacy reopening. The [shared limiter](docs/AUDIO_MASTERING.md) follows the current edge-faded bus; voice effects and the full mix remain incomplete. Arbitrary range cuts/replacement, persistent registers, nested sound ownership and Repeat/Retime sound transforms, custom silence allowances, full structural keyboard editing, mastered playback, app AI generation, YouTube acquisition and export remain open. All 24 full-product requirements remain open or partial in the [requirement tracker](docs/REQUIREMENTS.md). [Compatible native media qualification](docs/qualification/media-compatible-2026-09-20.md), [canonical audio qualification](docs/qualification/audio-canonical-2026-09-20.md), and a [real local model smoke](docs/qualification/model-smoke-2026-09-20.md) record actual tests, failed configurations, and measured limits separately from the application.
 
 The [interface design boards](docs/design/README.md) contain the imagegen workspace,
 screens and interaction targets, with exact prompts and reviewed behavior notes.
@@ -64,7 +64,19 @@ The Out boundary is excluded; copying leaves the Original intact. In Your edit, 
 selected beat in three total plays, `dd` deletes it, and `u` undoes the edit.
 `Enter` opens an ordinary Sequence group; `Backspace` returns to its parent.
 The [group breadcrumbs](docs/GROUP_NAVIGATION.md) keep the editing depth visible.
-Undo stops at the full-original baseline. Use `?` or `:help` for the implemented
+Undo stops at the full-original baseline.
+
+For a catalog sound, `,s` or `:sound-place` places its whole measured span at the
+retained edit cursor without changing picture duration. In Placed sounds,
+`j/k` selects, `h/l` nudges by exact project frames, Enter opens fine 48 kHz sample
+positioning, `+` / `-` adjusts gain by 3 dB, and `dd` removes the event. Accepting
+the unchanged position preserves fractional phase; `:sound-at N` explicitly
+sets a whole sample onset. Routed events
+retain cuts through gain/edge changes and reject moves. Overflow fails visibly.
+See the [native placement qualification record](docs/qualification/native-sound-placement-2026-09-27.md)
+for checks and limits.
+
+Use `?` or `:help` for the implemented
 keyboard vocabulary. Legacy projects keep register/insert compatibility behavior.
 `--project PATH` opens a
 project at launch; `--preview-source PATH` opens a non-destructive source preview.

@@ -11,6 +11,17 @@ The [specification](spec/DEADPAN_SPEC.md), [design targets](design/README.md) an
 
 ## Current status
 
+The [native sound-placement increment](qualification/native-sound-placement-2026-09-27.md)
+adds `sound-placement`, with real audio-only qualification, persistent root-event
+commands, separate catalog/event/beat selection, exact frame movement and native
+sample entry. It covers late-completion target guards, pane focus, both window
+sizes and routed timing restrictions. The record separates painted interaction
+evidence from PCM, device, physical keyboard and listening acceptance.
+The final complete visual run passed 775 checks; the separate release run
+passed 1,745. Warm navigation, Repeat and Hold picture p95 values were 1.462,
+1.612 and 2.067 ms on the retained small fixture. The minimum stopped sound
+workspace retains a 125-point picture, with separate active-playback paint checks.
+
 The [2026-09-27 layout qualification](qualification/workspace-layout-2026-09-27.md)
 records restored Metal access, the expanded fourteen-scenario coverage and
 focused follow-ups. It retains failed development runs as well as passing
@@ -231,6 +242,7 @@ the real app. The initial viewport is 1280×820 points at 1×. The code lives in
 | `original-moment` | Checks active-empty Visual guidance, selects Original [10,24) through v and counted h/l, copies with y, cancels selection with Escape, returns to Your edit, pastes after with p, undoes once, then pastes before with P. Also selects/copies and pastes through actual buttons. Checks exact range, unchanged copy revision, pane cues, destination, selected Source and exact restored structure. |
 | `original-playback` | Uses production Original Space and Shift+Space input, adjustable context, exact loop resume, pointer controls, stale update rejection, navigation stop and failure feedback. Injected device updates exercise UI routing only; actual canonical PCM has separate headless tests. |
 | `sound-playback` | Registers two measured audio-only sources, selects by pointer and j/k, exercises Space pause/resume and Shift+Space full-sound loops, rejects stale/faulted delivery, stops on pane/source changes and retains native text input. Pointer Pause must change state on release and paint Resume on the next frame. Pinned controls and status must remain fully painted on the first resize frame. Asserts no sound-driven picture request or editor-clock/selection mutation. Delivery is explicitly simulated; separate backend tests compare real AAC PCM. |
+| `sound-placement` | Imports measured catalog audio, places by pointer and `,s`, preserves picture duration and editor targets, checks exact sample entry and frame-nudge count equivalence, gain/edges, event selection, deletion and undo. Tests Original-to-Sounds keyboard/pointer focus, absent/stale command targets across held real writer completions, overflow, both window sizes and route-preserving gain with rejected movement. Does not start PCM preparation or a device. |
 | `retime` | Opens/cancels speed entry by pointer, checks the resolved-duration preview, creates a Preserve Retime by command, adjusts the same stage to tape pitch through ordinary text editing, explicitly nests another stage, undoes all three edits and confirms Original context stays unchanged. Uses real project history and picture preparation; it does not measure acoustic quality. |
 | `nested-pause` | Seeds two framed Sequence groups with typed store commands, reopens the actual project, navigates to frame 17 with keys, inserts `:hold 11f`, and checks the nested Hold, exact freeze, retained child crop, live ancestor scopes and cursor. Undo/redo compares nodes and audio bindings. Enter drills through breadcrumbs to the Hold; Inspector Enter changes its duration, history preserves scope, Camera commits only its framing, Backspace selects exited groups, and a group-edge pause fails without mutation. |
 

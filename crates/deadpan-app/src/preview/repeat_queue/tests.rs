@@ -120,6 +120,7 @@ fn completion(
         preserve_cursor: false,
         cursor: None,
         scope: target.scope.clone(),
+        sound: None,
     }
 }
 

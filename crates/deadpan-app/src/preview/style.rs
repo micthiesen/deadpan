@@ -158,13 +158,17 @@ impl Layout {
         };
         let sources = (width * 0.15).clamp(144.0, 196.0);
         let inspector = (width * 0.185).clamp(192.0, 236.0);
-        let card_height = if height < 700.0 { 88.0 } else { 92.0 };
+        let (card_height, beats) = if height < 700.0 {
+            (64.0, 128.0)
+        } else {
+            (92.0, 164.0)
+        };
         Self {
             sources,
             inspector,
-            // Header, row spacing, cursor badge, horizontal scrollbar and frame
-            // margins all need space outside the cards themselves.
-            beats: card_height + 72.0,
+            // Compact: 28 px heading, 4 px row gap, 20 px cursor band and
+            // 12 px panel margins. The scrollbar floats over the canvas.
+            beats,
             card_width: ((width - sources - 24.0) / 4.0).clamp(210.0, 340.0),
             card_height,
         }
@@ -235,7 +239,7 @@ mod tests {
             assert!((144.0..=196.0).contains(&layout.sources));
             assert!((192.0..=236.0).contains(&layout.inspector));
             assert!((210.0..=340.0).contains(&layout.card_width));
-            assert!((160.0..=164.0).contains(&layout.beats));
+            assert!((128.0..=164.0).contains(&layout.beats));
         }
     }
 }

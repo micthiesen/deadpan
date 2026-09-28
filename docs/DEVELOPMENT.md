@@ -182,6 +182,13 @@ GPU-delay state, stale replies, picture-error recovery and actual decoded freeze
 at distinct sequence positions. See the
 [presentation evidence](qualification/preview-presentation-2026-09-21.md).
 
+Native sound authoring uses `cargo test -p deadpan-app --locked project::tests::sound`
+for qualified service placement, history, receipt rejection and exact mapping
+nudges. The optional `sound-placement` UI replay covers real input, text entry,
+event focus, delayed command targets and painted controls. Run it through the
+[UI feedback loop](UI_FEEDBACK.md), with the production Kestrel source when
+available. It does not replace decoded-PCM, device or listening qualification.
+
 Headless source evidence uses `cargo run -p deadpan-media --example inspect_source -- /absolute/video.mp4 /tmp/new-source-report.json`.
 The report preserves original clocks, observed terminal duration, content identity,
 retained-pixel hashes and seek timings. The input must be a regular file at most

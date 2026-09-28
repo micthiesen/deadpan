@@ -9,6 +9,13 @@ The comma prefix remains usable while browsing the Original so `,i` can copy it
 into Your edit. Other edit operators keep the Original non-destructive. Native
 text editing retains its own selection, clipboard, undo, and redo behavior.
 
+Catalog placement uses `,s` with no count or key-repeat activation. In Placed
+sounds and its inspector, `h/l`, `j/k`, Enter, `+/-` and `dd` act on the event.
+Logical Plus accepts no modifier or Shift; Minus accepts no modifier so the
+physical fallback for an underscore cannot change gain. Command, Control and
+Option variants remain reserved. The `sound-placement` production replay covers
+pane entry, native command text and captured targets alongside this routing audit.
+
 ## Automated audit
 
 The UI feedback runner includes a shortcut audit. The standalone routing tests

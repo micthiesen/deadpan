@@ -72,8 +72,12 @@ Original selection and cursor. The focused catalog supports separate selection,
 `j/k`, Space play/pause/resume and Shift+Space whole-sound loops, with its own
 elapsed/total clock and visible key hints. [Sound audition](PLAYBACK.md#sound-catalog-audition)
 uses canonical playback and measured sample endpoints without moving either
-editor cursor or requesting picture changes. Sound-event placement and mixing
-remain open. Legacy import also retains registration-only semantics.
+editor cursor or requesting picture changes. Explicit [root sound placement](SOUND_EVENTS.md#native-root-placement)
+uses `,s` or `:sound-place` to place the selected catalog sound's complete measured
+span at the retained Your edit cursor. It leaves picture duration unchanged and
+rejects overflow instead of trimming or stretching the sound. The existing shared
+audio bus mixes placed events before its single limiter. Legacy import also
+retains registration-only semantics.
 Explicit whole-original reuse (or generic source insertion)
 uses the caller's current revision, parent and insertion index, and the shared
 store transaction path. The first primary video insertion may select measured
@@ -121,6 +125,27 @@ background progress. User assets and accepted objects retain their existing
 storage policies; cancellation never treats originals as disposable caches.
 Registration updates the available source without switching the active viewer
 away from Sequence, including after history commands clear a completion marker.
+
+Placed sounds have a separate pane and event selection. `:sounds` or pane
+navigation focuses the list, `j/k` selects an event, and `h/l` moves an unrouted
+event by exact project frames. Counts compose on its durable mapping without
+accumulating rounded sample durations. Enter opens exact position entry in whole,
+nonnegative 48 kHz samples. `+` / `-` changes the event by 3 dB per step;
+`:sound-gain -3.125` sets exact gain within -96 through +24 dB. Soft/Hard controls
+and `:sound-edges soft|hard` change both endpoints, and `dd` or `:sound-delete`
+removes the selected event. These controls never change monitor or master gain.
+Ordinary undo/redo applies to each committed sound edit.
+
+Sound parameter entry captures the selected event, project session and revision.
+A stale or missing target fails instead of following an asynchronous completion
+to another sound. The list keeps catalog audition and the selected structural
+beat distinct. Gain and edge edits preserve routed events' chronological cuts;
+absolute moves and frame nudges reject routed events explicitly. Silent pauses
+suppress sound and the inspector describes that policy without offering an
+unimplemented allowance control. Nested owners, Repeat/Retime sound transforms,
+custom silence allowances, effects and export remain open. See the
+[native sound placement qualification record](qualification/native-sound-placement-2026-09-27.md)
+for verification scope and limits.
 
 ## Picture and keyboard behavior
 
@@ -198,7 +223,8 @@ in a Ready V1 project or chooses the Original for an incomplete project. Legacy
 projects retain generic import. `,i` reuses the whole Original after the
 selected child or at the current group's end. `/` searches; `?` opens keyboard help;
 `:` opens command entry with
-`insert`, `split`, `undo`, `redo`, `new`, `open`, `import`, `source`, `sequence`, `enter`, `parent`, `help`.
+`insert`, `split`, `undo`, `redo`, `new`, `open`, `import`, `source`, `sequence`, `enter`, `parent`, `help`,
+`sound-place`, `sounds`, `sound-at`, `sound-gain`, `sound-edges`, `sound-delete`.
 In Original, `v` starts/finishes a half-open temporal range, `h/l` adjusts its
 head, and `y` copies it without history. The inspector displays In, excluded Out,
 original ordinal count and measured duration; the bar uses measured PTS. Return
@@ -264,7 +290,7 @@ The pause command supports root Source and ordinary Hold interiors and their
 fragments, plus existing root seams before composite suffixes, including Repeats
 and their gap branches. It also supports these cuts inside unretimed Sequence
 groups without flattening them. Insertion beneath Repeat or Retime ancestors,
-Repeat gaps, occurrence navigation, range edits, gain controls, semantic
+Repeat gaps, occurrence navigation, range edits, beat gain controls, semantic
 dot-repeat and macros remain open. Unsupported interior boundaries fail without
 an edit. Existing child-index Insert
 retains its distinct semantics. [Splice design prerequisites](STRUCTURAL_SPLICE_DESIGN.md)

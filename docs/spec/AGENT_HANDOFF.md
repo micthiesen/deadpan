@@ -45,9 +45,20 @@ the complete recipe and old physical sample labels while current Hold gates
 stay live. Parameter changes keep routing; explicit ReplaceSound discards it.
 Frozen core 29 checks historical contextual admission before modern replay.
 See [persisted root ripple edits](../SOUND_EVENTS.md#persisted-root-ripple-edits).
-Nested ownership, allowances, effects, the remaining structural transforms and
-native event placement are still required. Use the
-[placement board](../design/boards/sound-placement-board-v2.png) for that UI.
+The [native root placement subset](../SOUND_EVENTS.md#native-root-placement) now
+places the complete measured catalog sound with `,s` or `:sound-place` at the
+retained Edit cursor. A separate Placed sounds pane owns event selection and
+`j/k`, durable exact-frame `h/l` nudges, Enter for a whole 48 kHz sample onset,
+3 dB `+` / `-` steps, soft/hard endpoints and `dd`. Edits use normal durable
+history; picture duration never grows and overflow is rejected. Parameter entry
+captures event/session/revision, including rejection when no event was captured.
+Routed gain and edge edits retain their journal; native move/nudge rejects it.
+Follow the [placement board](../design/boards/sound-placement-board-v2.png) and
+the [native placement qualification record](../qualification/native-sound-placement-2026-09-27.md)
+for the implemented subset and its verification limits. Nested ownership,
+Repeat/Retime sound transforms, custom silence allowances, effects, the remaining
+structural transforms and export remain required. No requirement or gate is
+complete because these controls exist.
 
 [Structural speed editing](../RETIME_EDITING.md) exposes `:retime` and
 `:wrap-retime` through exact speed resolution and the native inspector. Preserve

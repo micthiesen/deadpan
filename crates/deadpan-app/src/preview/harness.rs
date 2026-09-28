@@ -18,6 +18,7 @@ mod repeat_input;
 mod retime;
 mod scale;
 mod scenarios;
+mod sound_placement;
 mod sound_playback;
 mod telemetry;
 mod wake;
@@ -244,7 +245,11 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                 driver.capture("Original ready")?;
                 driver.command("sequence")?;
                 driver.settled()?;
-                scenarios::run(name, &mut driver)
+                if name == "sound-placement" {
+                    sound_placement::run(&mut driver)
+                } else {
+                    scenarios::run(name, &mut driver)
+                }
             }))
             .unwrap_or_else(|panic| Err(panic_message(panic)));
             if let Err(error) = &result {
@@ -485,7 +490,7 @@ impl Driver<'_> {
 
     fn snapshot(&self) -> Value {
         let app = self.app();
-        json!({
+        let mut snapshot = json!({
             "pane":format!("{:?}",app.pane),"context":format!("{:?}",app.view),
             "selected_beat":app.selected_beat,"selected_source":app.selected_source,
             "selected_sound":app.selected_sound,"sound_cursor":app.sound_cursor,
@@ -509,7 +514,11 @@ impl Driver<'_> {
             "layout_passes":self.harness.output().platform_output.num_completed_passes,
             "footer_bottom":app.feedback.footer_bottom,
             "footer_command_open":app.feedback.footer_command_open,
-        })
+        });
+        snapshot["selected_event"] = json!(app.selected_event);
+        snapshot["sound_events"] = json!(app.workspace.as_ref().map(|w| w.document.sounds()));
+        snapshot["sound_routes"] = json!(app.workspace.as_ref().map(|w| w.document.sound_routes()));
+        snapshot
     }
 
     fn widgets(&self) -> Value {

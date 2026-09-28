@@ -47,6 +47,7 @@ external media contributes sound only.
 |---|---|
 | `,h` | Insert 0.5 seconds of freeze + silence. |
 | `,i` | Reuse the full Original after the selected beat (`:insert`). |
+| `,s` | Place the selected catalog sound at the retained Edit cursor (`:sound-place`). |
 | `3,h` | Insert 1.5 seconds. |
 | `,a` | Insert same hold and request an AI candidate. |
 | `,z` | 1.35× punch-in. |
@@ -60,6 +61,19 @@ external media contributes sound only.
 | `,f` | Camera mode. |
 | `,v` | Trim mode. |
 | `+/-` | Change selected/current beat's audio gain by ±3 dB. |
+
+## Placed sounds
+
+Placed sounds: `:sounds` focuses the event list; `j/k` select, `h/l` move by exact
+project frames, Enter opens a fine 48 kHz sample position, `+/-` change gain by
+3 dB, and `dd` removes the event. These keys retain event scope in its inspector.
+Catalog sound selection and the picture beat remain separate. Commands include
+`:sound-at 137`, `:sound-gain -3`, `:sound-edges soft|hard` and `:sound-delete`.
+Placement never changes picture duration; unsupported overflow or routed movement
+reports a reason without changing history. This is the current root-event subset;
+full host ownership, scoped silence and creative treatments remain required.
+Use explicit `:sound-delete` in command entry; `:delete` remains a picture-beat
+command and is rejected in sound context.
 
 ## Camera and trim
 

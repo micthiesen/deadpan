@@ -310,7 +310,7 @@ fn workspace(d: &mut Driver<'_>) -> Result<(), String> {
     d.capture("Workspace after pointer drag")
 }
 
-fn viewer_visible(d: &mut Driver<'_>) -> Result<(), String> {
+pub(super) fn viewer_visible(d: &mut Driver<'_>) -> Result<(), String> {
     let label = d
         .app()
         .presentation

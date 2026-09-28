@@ -1,0 +1,4 @@
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.09s
+     Running `target/debug/deadpan-app --ui-check --scenario sound-placement --kestrel-source /Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift --output /tmp/deadpan-native-sound-jzAmH7/visual-07`
+sound-placement: PASS
+UI feedback: /tmp/deadpan-native-sound-jzAmH7/visual-07/report.html

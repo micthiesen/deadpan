@@ -14,6 +14,7 @@ mod moment;
 mod pause;
 mod retime;
 mod scope;
+mod sound;
 
 const TIMEOUT: Duration = Duration::from_secs(20);
 

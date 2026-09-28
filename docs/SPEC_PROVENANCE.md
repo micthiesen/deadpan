@@ -21,6 +21,14 @@ shortcuts. The current keyboard policy reserves those globals; whole-Original
 reuse uses `,i` in place of the conflicting native `⌘Return` accelerator.
 [UI feedback](UI_FEEDBACK.md) defines the executable evidence and its limits.
 
+On 27 September 2026 the sound-placement interaction target was integrated into
+Section 7.5 and the keyboard reference: `,s` places catalog audio at the retained
+Edit cursor, with a separate placed-event selection, exact frame nudges and fine
+sample entry. This elaborates the authorized single-Original audio workflow and
+visible Vim-style controls. It does not reduce the required sound ownership,
+silence, effects or export scope. Current implementation remains a root-event
+subset tracked separately in [sound events](SOUND_EVENTS.md).
+
 The original five files were hash-verified before archiving. Their names and
 relative links are retained there. The root `spec/DEADPAN_SPEC.pdf` also remains
 an unchanged historical 1.0 copy for old links; it is not an updated reading

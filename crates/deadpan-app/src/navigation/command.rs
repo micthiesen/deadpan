@@ -39,6 +39,10 @@ pub fn parse(input: &str) -> Result<Entry, String> {
     }
     let action = match verb.as_str() {
         "monitor" => return monitor(argument).map(Entry::Monitor),
+        "sound-place" | "sounds" | "sound-at" | "sound-gain" | "sound-edges" | "sound-delete" => {
+            return super::sound::parse(&verb, argument)
+                .map(|sound| Entry::Action(Action::Sound(sound)));
+        }
         "hold" => {
             let duration =
                 DurationInput::parse(argument.ok_or(

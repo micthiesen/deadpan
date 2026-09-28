@@ -1,0 +1,26 @@
+{
+  "command": [
+    "cargo",
+    "run",
+    "-p",
+    "deadpan-app",
+    "--features",
+    "ui-harness",
+    "--locked",
+    "--",
+    "--ui-check",
+    "--scenario",
+    "sound-placement",
+    "--kestrel-source",
+    "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+    "--output",
+    "/tmp/deadpan-native-sound-jzAmH7/visual-05"
+  ],
+  "started": "2026-09-28T02:26:33.394664+00:00",
+  "base_commit": "be30f88de08eafc1f6bc6411b612f156024459ad",
+  "diff_sha256": "cddb1c8f7db22c8d13a832f1d5264e876a8aea930232a14cca39aa2730801165",
+  "source_manifest_sha256": "054294d3a274a408fb03704737b57a8ac974d7dc803a7a5a99988235fbea7315",
+  "pid": 98235,
+  "exit_code": 1,
+  "seconds": 23.15808454202488
+}

@@ -7,7 +7,8 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, mpsc};
 
 use deadpan_core::{
-    AssetId, FrameDuration, NodeId, ProjectDocument, ProjectFrame, RevisionId, SourceFrameIndex,
+    AssetId, AudioEdgePolicy, AudioSample, FrameDuration, NodeId, ProjectDocument, ProjectFrame,
+    RevisionId, SoundId, SourceFrameIndex,
 };
 use deadpan_plan::RenderPlan;
 use deadpan_store::original_media::{OriginalImportHandle, OriginalMediaRecord, OriginalOwnership};
@@ -20,6 +21,7 @@ mod pause;
 pub mod retime;
 mod scope;
 mod service;
+pub mod sound;
 #[cfg(test)]
 mod tests;
 mod worker;
@@ -103,6 +105,39 @@ pub struct CommittedEdit {
     /// Navigation scope captured when this edit was requested. Async completions
     /// must not restore a scope inferred from the current UI state.
     pub scope: SequenceScope,
+    /// Sound commits preserve the editor's picture, beat and navigation context.
+    pub sound: Option<SoundCommit>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SoundCommit {
+    pub selected: Option<SoundId>,
+}
+
+#[derive(Clone, Debug)]
+pub enum ProjectSoundEdit {
+    Place {
+        asset: AssetId,
+        at: AudioSample,
+    },
+    Update {
+        id: SoundId,
+        gain_millidecibels: i32,
+        start_edge: AudioEdgePolicy,
+        end_edge: AudioEdgePolicy,
+    },
+    Move {
+        id: SoundId,
+        at: AudioSample,
+    },
+    /// Relative motion in exact project frames, without rounding each delta.
+    Nudge {
+        id: SoundId,
+        frames: i64,
+    },
+    Delete {
+        id: SoundId,
+    },
 }
 
 /// Node-targeted operations edit direct children of the captured Sequence scope.
@@ -203,6 +238,11 @@ pub enum ProjectRequest {
         cursor: ProjectFrame,
         scope: SequenceScope,
         edit: ProjectEdit,
+    },
+    SoundEdit {
+        expected_session: u64,
+        expected_revision: RevisionId,
+        edit: ProjectSoundEdit,
     },
     Undo {
         expected_revision: RevisionId,

@@ -154,6 +154,7 @@ impl Service {
             preserve_cursor: false,
             cursor: Some(moment.cursor),
             scope,
+            sound: None,
         });
         self.message = Some("Original moment pasted and saved. Undo with u.".into());
         Ok(())

@@ -37,14 +37,58 @@ length is insufficient for editing intervals. Deleting the start of an event
 must not erase its surviving suffix. A source phase, processing history or fade
 cannot restart merely because an event is represented by another fragment.
 
-The root-owned subset below has validated commands, migration and rendering.
-The complete ownership and edit contract remains required before the native
-workspace advertises sound placement.
+The root-owned subset below has validated commands, migration, rendering and
+native controls. The native workspace exposes that subset explicitly; the
+complete ownership and edit contract remains required product work.
+
+## Native root placement
+
+Choose an audio-only catalog sound and use `,s` or `:sound-place` to place its
+complete measured span at the retained Your edit cursor. The destination uses
+the project-origin 48 kHz sample boundary, independently of Original browsing
+and the catalog audition cursor. Placement neither adds picture time nor trims
+the sound: a selection extending beyond the root is rejected without an edit.
+
+The Placed sounds pane has its own event selection, separate from the catalog
+asset and structural beat. `:sounds` or pane navigation focuses it; `j/k` chooses
+an event. Its controls use the same revision-bound project service and reversible
+store transactions as structural edits:
+
+| Input | Result |
+| --- | --- |
+| `h/l`, with an optional count | Move an unrouted event by exact project frames. The durable mapping retains fractional phase, so repeated nudges do not accumulate rounded sample durations. |
+| Enter | Open fine position entry. Accepting the unchanged prefilled value preserves fractional phase and creates no history. |
+| `:sound-at 274000` | Explicitly set the selected onset to a whole, nonnegative 48 kHz sample coordinate. |
+| `+` / `-`, with an optional count | Change the selected event's gain by 3 dB per step. |
+| `:sound-gain -3.125` | Set exact gain, with at most three decimal places, within -96 through +24 dB. |
+| Soft / Hard or `:sound-edges soft\|hard` | Set both event endpoints to Automatic or Hard. |
+| `dd` or `:sound-delete` | Remove the selected event. |
+| `u` / Ctrl-R | Use ordinary durable undo/redo. |
+
+Parameter command entry captures the event, project session and revision. A
+changed or missing target cannot be acquired from a later asynchronous reply.
+Native text and IME retain input ownership; placement accepts neither a count
+nor held-key repetition. Success is reported only after the transaction commits.
+The contextual `dd` key removes a sound, while command entry uses the explicit
+`:sound-delete`; `:delete` is rejected in sound context. `:source` and `:sequence`
+leave event focus, and the viewer's navigation buttons always move picture time.
+
+Routed events keep their timing journals when gain or edges change. Native move
+and frame-nudge controls reject them rather than resetting their cuts. Silent
+Holds still suppress event output; the inspector explains this policy and offers
+no custom allowance control. Nested owners, Repeat/Retime sound transforms,
+scoped silence allowances, effects, full mastering and export remain open.
+
+The [placement board](design/boards/sound-placement-board-v2.png) is the visual
+target for this subset. The [native placement qualification record](qualification/native-sound-placement-2026-09-27.md)
+tracks its checks and limits; this increment completes no product requirement or
+release gate.
 
 ## Persisted root sounds
 
-Core schema 29 and database 35 add `SoundEvent` recipes keyed by `SoundId`.
-`SetSound` creates or replaces a complete event; `DeleteSound` removes it. The
+Core schema 29 and database 35 introduced `SoundEvent` recipes keyed by `SoundId`.
+The current schemas are core 30 and database 36. `SetSound` creates an event or
+updates it under the retained-route rules below; `DeleteSound` removes it. The
 shared headless command entrypoint supports preview and atomic commit, followed
 by ordinary durable undo/redo. Migration replays old chronology through closed
 adapters and adds no sounds to historical projects. The actual database-34
@@ -84,12 +128,12 @@ time-mapped and `--edge-faded` diagnostic readers retain their Original-only
 meaning. With no events, previous PCM and metadata stay unchanged.
 
 Nested ownership, the remaining structural interval transforms, custom Hold
-allowances, creative treatments and native event controls remain open. The
+allowances and creative treatments remain open. The
 root ripple subset below preserves sounds through supported edits. Other
 temporal commands and unsupported frozen audio captures still fail explicitly.
 Renaming, framing, audio mapping,
 edge choices and other clock-preserving edits retain their normal transactions.
-This guarded backend is not full sound editing or a completed audio master.
+This root subset is not full sound editing or a completed audio master.
 See the [qualification record](qualification/root-sounds-2026-09-27.md) for
 review findings, real-PCM comparisons, resource limits and verification evidence.
 
@@ -429,9 +473,9 @@ and bounded compact histories whose masked dependencies remain revocable.
    treatments, sends and group processing in the declared order, then feed the
    complete bus into the shared limiter. Extend host scheduling beyond the current
    bounded source caches without weakening source admission.
-4. Extend catalog audition with host-local placement, sound
-   selection, parameters, removal and explicit overflow/custom-silence feedback.
-   Keep Original and edited clocks separate and use the common typed command path.
+4. Extend the native root placement controls to the remaining owner, transform,
+   treatment and explicit custom-silence policies. Keep Original and edited
+   clocks separate and use the common typed command path.
 5. Extend CLI inspection, production UI replay and real decoded-PCM tests. Verify
    actual preview/export equivalence, listening, failure recovery and performance;
    unit tests alone cannot qualify those acceptance results.

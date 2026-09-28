@@ -1,0 +1,16 @@
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+error[E0308]: `match` arms have incompatible types
+   --> crates/deadpan-app/src/preview/sound_events.rs:237:27
+    |
+235 | /         match result {
+236 | |             Ok(request) => self.submit(request),
+    | |                            -------------------- this is found to be of type `bool`
+237 | |             Err(error) => self.error = Some(error),
+    | |                           ^^^^^^^^^^^^^^^^^^^^^^^^ expected `bool`, found `()`
+238 | |         }
+    | |_________- `match` arms have incompatible types
+
+For more information about this error, try `rustc --explain E0308`.
+error: could not compile `deadpan-app` (bin "deadpan-app") due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `deadpan-app` (bin "deadpan-app" test) due to 1 previous error

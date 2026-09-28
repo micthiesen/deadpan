@@ -439,6 +439,9 @@ impl DeadpanApp {
             self.monitor_control = None;
             return;
         }
+        let compact = self.compact_sound_layout(ui.ctx())
+            && self.transport.is_none()
+            && !self.sound_focused();
         if !self.sound_focused() {
             ui.horizontal_wrapped(|ui| {
             let active = self.transport.is_some();
@@ -448,7 +451,7 @@ impl DeadpanApp {
             if ui.add_enabled(enabled, egui::Button::new(label).fill(style::SELECTED)).clicked() { self.toggle_playback(); }
             let looping = self.transport.as_ref().is_some_and(|run| run.window().looping());
             let label = if looping { "Pause loop  ·  Shift+Space" } else if self.sound_focused() { "Loop sound  ·  Shift+Space" } else { "Loop selection  ·  Shift+Space" };
-            if ui.add_enabled(enabled && (looping || self.selected_playback_range().is_some()), egui::Button::new(label)).on_hover_text("Loop the whole selected sound, or the selected Original moment or edited beat with context. Space pauses and resumes the exact heard position. Navigation stops the loop.").clicked() { self.audition_selection(); }
+            if ui.add_enabled(enabled && (looping || self.selected_playback_range().is_some()), egui::Button::new(label)).on_hover_text(format!("Loop the selected Original moment or edited beat with {} lead-in and {} follow-through. Space pauses and resumes the exact heard position. Change context with :audition-context.", self.audition_context.lead_label(), self.audition_context.follow_label())).clicked() { self.audition_selection(); }
             if let Some(run) = &self.transport {
                 let sample = run.content_sample().unwrap_or(run.sample).0;
                 let millis = sample / 48;
@@ -456,15 +459,40 @@ impl DeadpanApp {
                 let lap = if looping { format!(" · loop {}", run.lap().unwrap_or(0) + 1) } else { String::new() };
                 ui.label(egui::RichText::new(format!("{status} · {:02}:{:02}.{:03}{lap}", millis / 60_000, (millis / 1000) % 60, millis % 1000)).monospace().size(10.0).color(style::MUTED));
             }
+            if compact { self.monitor_slider(ui); }
         });
         }
-        ui.horizontal_wrapped(|ui| {
+        if !compact {
+            ui.horizontal_wrapped(|ui| {
             ui.label(egui::RichText::new(if self.sound_focused() { "Sound loop · complete measured audio".into() } else { format!("Loop context  {} / {}", self.audition_context.lead_label(), self.audition_context.follow_label()) }).size(10.5).color(style::MUTED))
                 .on_hover_text("Lead-in / follow-through, clamped to this source or edit. Change with :audition-context lead=500ms follow=750ms. Playback uses edge fades and a safety limiter; full voice effects and mastering remain unavailable.");
-            let monitor = ui.add_enabled(self.transport.is_none(), egui::Slider::new(&mut self.monitor_gain, 0.0..=1.0).text("Monitor · :monitor").show_value(false))
-                .on_hover_text(format!("Monitor {:.1}%. Pause to change volume. Does not change export gain.", self.monitor_gain * 100.0));
-            self.monitor_control = Some(monitor.id);
+            self.monitor_slider(ui);
         });
+        }
+        // Pointer activation runs while painting these controls, after the
+        // viewer reserved their previous height. Reflow the same outer frame
+        // before presenting an inline row that just gained a live clock.
+        let compact_now = self.compact_sound_layout(ui.ctx())
+            && self.transport.is_none()
+            && !self.sound_focused();
+        if compact != compact_now {
+            ui.ctx().request_discard("playback controls changed height");
+        }
+    }
+
+    fn monitor_slider(&mut self, ui: &mut egui::Ui) {
+        let monitor = ui
+            .add_enabled(
+                self.transport.is_none(),
+                egui::Slider::new(&mut self.monitor_gain, 0.0..=1.0)
+                    .text("Monitor · :monitor")
+                    .show_value(false),
+            )
+            .on_hover_text(format!(
+                "Monitor {:.1}%. Pause to change volume. Does not change export gain.",
+                self.monitor_gain * 100.0
+            ));
+        self.monitor_control = Some(monitor.id);
     }
 
     pub(super) fn sound_preview_controls(&mut self, ui: &mut egui::Ui) {
@@ -583,6 +611,18 @@ impl DeadpanApp {
             egui::TextWrapMode::Wrap,
             (width - padding.x).max(1.0),
         );
+        let placement_text = text(
+            egui::RichText::new("Place at edit cursor  ·  ,s"),
+            egui::TextWrapMode::Wrap,
+            (width - padding.x).max(1.0),
+        );
+        let destination = text(
+            egui::RichText::new(format!("Destination: Edit {} f", self.sequence_cursor))
+                .size(11.0)
+                .color(style::CURSOR),
+            egui::TextWrapMode::Wrap,
+            width,
+        );
         // Reuse these exact galleys for layout and paint. This bottom panel
         // must fit on its first frame, including narrow windows and wrapped
         // shortcut labels; it cannot inherit the previous selection's height.
@@ -600,7 +640,9 @@ impl DeadpanApp {
             + button_height(&play)
             + button_height(&looping_text)
             + note.size().y
-            + 6.0 * 4.0;
+            + button_height(&placement_text)
+            + destination.size().y
+            + 8.0 * 4.0;
         panel.exact_size(height).show(ui, |ui| { frame.show(ui, |ui| {
             ui.spacing_mut().item_spacing.y = 4.0;
             ui.horizontal(|ui| {
@@ -623,6 +665,13 @@ impl DeadpanApp {
                 self.audition_selection();
             }
             ui.add(egui::Label::new(note));
+            let placement = ui.add_enabled(!self.service.is_busy(), egui::Button::new(egui::WidgetText::from(placement_text)).fill(style::SELECTED))
+                .on_hover_text("Place the complete catalog sound at the retained edit cursor. Picture duration stays unchanged; overflow is rejected.");
+            placement.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, placement.enabled(), "Place at edit cursor  ·  ,s"));
+            if placement.clicked() {
+                self.sound_action(navigation::SoundAction::Place, ui.ctx());
+            }
+            ui.add(egui::Label::new(destination));
         }); });
     }
 }

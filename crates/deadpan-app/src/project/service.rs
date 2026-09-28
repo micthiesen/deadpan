@@ -22,7 +22,8 @@ use crate::library::ProjectLibrary;
 use super::worker::{Job, Prepared, Reply, Streams, Work};
 use super::{
     CommittedEdit, ImportMedia, ImportStage, ImportStatus, ProjectEdit, ProjectRequest,
-    ProjectUpdate, RegisteredSource, SequenceScope, Shared, Workspace,
+    ProjectSoundEdit, ProjectUpdate, RegisteredSource, SequenceScope, Shared, SoundCommit,
+    Workspace,
 };
 
 type Result<T> = std::result::Result<T, String>;
@@ -224,6 +225,11 @@ impl Service {
                 scope,
                 edit,
             } => self.edit(expected_session, expected_revision, cursor, scope, edit),
+            ProjectRequest::SoundEdit {
+                expected_session,
+                expected_revision,
+                edit,
+            } => self.sound_edit(expected_session, expected_revision, edit),
             ProjectRequest::Undo { expected_revision } => {
                 self.writer()?
                     .undo(&expected_revision, revision())
@@ -260,6 +266,103 @@ impl Service {
         if workspace.document.revision_id() != expected_revision {
             return Err("Project changed before the request".into());
         }
+        Ok(())
+    }
+
+    fn sound_edit(
+        &mut self,
+        expected_session: u64,
+        expected_revision: RevisionId,
+        edit: ProjectSoundEdit,
+    ) -> Result<()> {
+        self.check_context(expected_session, &expected_revision)?;
+        let workspace = self.workspace.as_ref().ok_or("Open a project first")?;
+        let (command, selected, message) = match edit {
+            ProjectSoundEdit::Place { asset, at } => {
+                let event = super::sound::placement(workspace, &asset, at)?;
+                let id = deadpan_core::SoundId::new(uuid::Uuid::new_v4().to_string())
+                    .map_err(display)?;
+                (
+                    Command::SetSound {
+                        id: id.clone(),
+                        event,
+                    },
+                    Some(id),
+                    "Sound placed and saved",
+                )
+            }
+            ProjectSoundEdit::Update {
+                id,
+                gain_millidecibels,
+                start_edge,
+                end_edge,
+            } => {
+                let mut event = workspace
+                    .document
+                    .sounds()
+                    .get(&id)
+                    .cloned()
+                    .ok_or("The selected sound no longer exists.")?;
+                event.gain_millidecibels = gain_millidecibels;
+                event.start_edge = start_edge;
+                event.end_edge = end_edge;
+                (
+                    Command::SetSound {
+                        id: id.clone(),
+                        event,
+                    },
+                    Some(id),
+                    "Sound parameters saved",
+                )
+            }
+            ProjectSoundEdit::Move { id, at } => {
+                let event = super::sound::moved(workspace, &id, at)?;
+                (
+                    Command::SetSound {
+                        id: id.clone(),
+                        event,
+                    },
+                    Some(id),
+                    "Sound moved and saved",
+                )
+            }
+            ProjectSoundEdit::Nudge { id, frames } => {
+                let event = super::sound::nudge(workspace, &id, frames)?;
+                (
+                    Command::SetSound {
+                        id: id.clone(),
+                        event,
+                    },
+                    Some(id),
+                    "Sound nudged and saved",
+                )
+            }
+            ProjectSoundEdit::Delete { id } => {
+                if !workspace.document.sounds().contains_key(&id) {
+                    return Err("The selected sound no longer exists.".into());
+                }
+                (Command::DeleteSound { id }, None, "Sound removed and saved")
+            }
+        };
+        let request = CommandRequest {
+            project_id: workspace.document.project_id().clone(),
+            expected_revision,
+            new_revision: revision(),
+            command,
+        };
+        // Recheck revision-bound source evidence and the existing generation
+        // relevance guard in the writer transaction. Do not invent observations.
+        let outcome = self.writer()?.commit(&request).map_err(display)?;
+        self.refresh()?;
+        self.committed = Some(CommittedEdit {
+            revision: outcome.revision_id,
+            selected_node: None,
+            preserve_cursor: true,
+            cursor: None,
+            scope: SequenceScope::default(),
+            sound: Some(SoundCommit { selected }),
+        });
+        self.message = Some(message.into());
         Ok(())
     }
 
@@ -366,6 +469,7 @@ impl Service {
                 preserve_cursor: false,
                 cursor: Some(at),
                 scope,
+                sound: None,
             });
             self.message = Some(format!(
                 "Inserted a {} frame silent pause at boundary {} and saved",
@@ -559,6 +663,7 @@ impl Service {
             preserve_cursor,
             cursor: preserve_cursor.then_some(cursor),
             scope,
+            sound: None,
         });
         self.message = Some(retime_message.unwrap_or_else(|| message.into()));
         Ok(())
@@ -792,6 +897,7 @@ impl Service {
                                     preserve_cursor: false,
                                     cursor: None,
                                     scope: scope.clone(),
+                                    sound: None,
                                 })
                         });
                         if self.active.is_none() {
@@ -926,6 +1032,7 @@ impl Service {
                 preserve_cursor: false,
                 cursor: None,
                 scope: active.scope.clone(),
+                sound: None,
             });
             if let Some(status) = &mut self.import {
                 status.stage = ImportStage::Complete;
@@ -988,6 +1095,7 @@ impl Service {
                 preserve_cursor: false,
                 cursor: None,
                 scope: active.scope.clone(),
+                sound: None,
             });
         }
         if let Some(status) = &mut self.import {

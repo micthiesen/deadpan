@@ -33,6 +33,7 @@ mod repeat_queue;
 mod repeats;
 mod scope;
 mod selection;
+mod sound_events;
 mod style;
 
 const SEARCH_ID: &str = "source-search";
@@ -109,6 +110,10 @@ pub struct DeadpanApp {
     import: Option<ImportStatus>,
     selected_source: Option<AssetId>,
     selected_sound: Option<AssetId>,
+    selected_event: Option<deadpan_core::SoundId>,
+    sound_inspection: Option<sound_events::Inspection>,
+    reveal_event: bool,
+    sound_command_target: Option<sound_events::CommandTarget>,
     sound_cursor: u64,
     selected_beat: Option<NodeId>,
     sequence_scope: SequenceScope,
@@ -205,6 +210,10 @@ impl DeadpanApp {
             import: None,
             selected_source: None,
             selected_sound: None,
+            selected_event: None,
+            sound_inspection: None,
+            reveal_event: false,
+            sound_command_target: None,
             sound_cursor: 0,
             selected_beat: None,
             sequence_scope: SequenceScope::default(),
@@ -494,6 +503,10 @@ impl DeadpanApp {
                 self.raw_source = None;
                 self.selected_source = None;
                 self.selected_sound = None;
+                self.selected_event = None;
+                self.sound_inspection = None;
+                self.reveal_event = false;
+                self.sound_command_target = None;
                 self.sound_cursor = 0;
                 self.selected_beat = None;
                 self.sequence_scope = SequenceScope::default();
@@ -535,6 +548,7 @@ impl DeadpanApp {
                 self.bindings.clear();
                 if let Some(commit) = update.committed.as_ref()
                     && self.last_committed.as_ref() != Some(&commit.revision)
+                    && commit.sound.is_none()
                 {
                     self.sequence_scope = commit.scope.clone();
                 }
@@ -559,22 +573,29 @@ impl DeadpanApp {
                 self.feedback.record("command_committed");
                 self.last_committed = Some(commit.revision);
                 self.bindings.clear();
-                self.pane = Pane::Sequence;
-                if let Some(cursor) = commit.cursor.and_then(|at| u64::try_from(at.0).ok()) {
-                    self.sequence_cursor = cursor;
-                }
-                let selected = selection::after_commit(
-                    &self.beat_rows,
-                    commit.selected_node.as_ref(),
-                    commit.cursor,
-                );
-                self.selected_beat = selected.map(|index| self.beat_rows[index].id.clone());
-                if let Some(index) = selected {
-                    let beat = &self.beat_rows[index];
-                    if commit.cursor.is_none() && !commit.preserve_cursor {
-                        self.sequence_cursor = beat.start;
+                if let Some(sound) = commit.sound {
+                    self.selected_event = sound.selected;
+                    self.reveal_event = true;
+                    self.pane = Pane::Sounds;
+                } else {
+                    self.selected_event = None;
+                    self.pane = Pane::Sequence;
+                    if let Some(cursor) = commit.cursor.and_then(|at| u64::try_from(at.0).ok()) {
+                        self.sequence_cursor = cursor;
                     }
-                    self.reveal_beat = true;
+                    let selected = selection::after_commit(
+                        &self.beat_rows,
+                        commit.selected_node.as_ref(),
+                        commit.cursor,
+                    );
+                    self.selected_beat = selected.map(|index| self.beat_rows[index].id.clone());
+                    if let Some(index) = selected {
+                        let beat = &self.beat_rows[index];
+                        if commit.cursor.is_none() && !commit.preserve_cursor {
+                            self.sequence_cursor = beat.start;
+                        }
+                        self.reveal_beat = true;
+                    }
                 }
             } else if completion == selection::Completion::Registration
                 && let Some(asset) = self.import.as_ref().and_then(|i| i.asset.clone())
@@ -595,6 +616,7 @@ impl DeadpanApp {
             self.sequence_cursor = self.sequence_cursor.min(self.sequence_length());
             self.source_cursor = self.source_cursor.min(self.source_length());
             self.reconcile_moment();
+            self.reconcile_events();
             if self.view == View::Sequence && !committed_selection {
                 self.reconcile_beat_selection();
             }
@@ -947,6 +969,7 @@ impl DeadpanApp {
     }
 
     fn open_command(&mut self, command: String, context: &egui::Context) {
+        self.sound_command_target = self.capture_sound_command(&command);
         self.cancel_repeats("command entry was opened");
         self.pause_playback();
         self.bindings.clear();
@@ -974,6 +997,7 @@ impl DeadpanApp {
         self.stop_playback();
         self.selected_sound = None;
         self.selected_source = Some(id);
+        self.selected_event = None;
         self.raw_source = None;
         self.source_cursor = 0;
         self.view.set(View::Source, &mut self.message);
@@ -995,6 +1019,7 @@ impl DeadpanApp {
         self.stop_playback();
         self.bindings.clear();
         self.selected_sound = Some(id);
+        self.selected_event = None;
         self.reveal_source = true;
         self.sound_cursor = 0;
         self.pane = Pane::Sources;
@@ -1093,6 +1118,42 @@ impl DeadpanApp {
         if !repeat_input {
             self.cancel_repeats("another action was requested");
         }
+        if self.pane == Pane::Sounds || self.event_focused() {
+            match action {
+                Action::Step { forward, count } => {
+                    self.move_event(forward, count, context);
+                    return;
+                }
+                Action::Beat { forward, count } => {
+                    self.step_event(forward, count, context);
+                    return;
+                }
+                Action::First | Action::Last => {
+                    self.selected_event = None;
+                    self.step_event(action == Action::First, 1, context);
+                    return;
+                }
+                Action::EnterGroup => {
+                    self.open_sound_position(context);
+                    return;
+                }
+                Action::Edit(BeatEdit::Delete) => {
+                    self.sound_action(navigation::SoundAction::Delete, context);
+                    return;
+                }
+                Action::Edit(_)
+                | Action::Framing(_)
+                | Action::LeaveGroup
+                | Action::VisualMoment
+                | Action::CopyMoment
+                | Action::PasteMoment { .. } => {
+                    self.bindings.clear();
+                    self.error = Some("Focus Beats to edit the video structure. Placed sounds use h/l, Enter, +/− and dd.".into());
+                    return;
+                }
+                _ => {}
+            }
+        }
         if self.sound_focused() && !sound_action_allowed(action) {
             self.bindings.clear();
             self.message = Some(
@@ -1105,6 +1166,7 @@ impl DeadpanApp {
             self.cancel_camera();
         }
         match action {
+            Action::Sound(action) => self.sound_action(action, context),
             Action::Framing(action) => self.framing_action(action, context),
             Action::New => self.begin_dialog(DialogKind::CreateProject, context, false),
             Action::Open => self.begin_dialog(DialogKind::OpenProject, context, false),
@@ -1132,8 +1194,21 @@ impl DeadpanApp {
                     self.stop_playback();
                 }
                 self.pane = self.pane.cycle_visible(reverse, self.inspector_visible());
+                if self.pane == Pane::Sounds {
+                    self.focus_events(context);
+                }
+                if !matches!(self.pane, Pane::Sounds | Pane::Inspector) {
+                    self.selected_event = None;
+                }
+                self.reconcile_events();
                 self.bindings.clear();
-                context.memory_mut(|m| m.request_focus(pane_id(self.pane)));
+                context.memory_mut(|m| {
+                    // egui computed Tab traversal before our router consumed
+                    // the event. Do not leave a deferred native focus move that
+                    // steals the next Enter from the explicitly chosen pane.
+                    m.move_focus(egui::FocusDirection::None);
+                    m.request_focus(pane_id(self.pane));
+                });
             }
             Action::Step { forward, count } => {
                 match self.view {
@@ -1230,6 +1305,7 @@ impl DeadpanApp {
                         forward,
                         count,
                     ) {
+                        self.selected_event = None;
                         self.selected_beat = Some(beats[next].id.clone());
                         self.sequence_cursor = beats[next].start;
                         self.view.set(View::Sequence, &mut self.message);
@@ -1280,7 +1356,11 @@ impl DeadpanApp {
                 context.memory_mut(|m| m.request_focus(pane_id(self.pane)));
             }
             Action::OfferInsert => {
-                if self.view == View::Source {
+                if self.sound_focused() {
+                    self.message = Some(
+                        "Type s to place this sound at the edit cursor, or Esc to cancel.".into(),
+                    );
+                } else if self.view == View::Source {
                     if self.bindings.reuse_pending() {
                         self.message = Some(SOURCE_INSERT_HINT.into());
                     } else {
@@ -1464,14 +1544,60 @@ impl DeadpanApp {
 
     fn run_command(&mut self, context: &egui::Context) {
         let command = navigation::command::parse(&self.command);
+        let sound_target = self.sound_command_target.take();
         self.bindings.clear();
         self.command_open = false;
         self.command_focus_pending = false;
+        if matches!(
+            command,
+            Ok(navigation::command::Entry::Action(Action::Edit(
+                BeatEdit::Delete
+            )))
+        ) && (sound_target.is_some() || self.pane == Pane::Sounds || self.event_focused())
+        {
+            self.error = Some("Use :sound-delete to remove a placed sound. :delete cuts the selected picture beat when Beats is focused; no edit was made.".into());
+            return;
+        }
+        if let Ok(navigation::command::Entry::Action(Action::Sound(action))) = &command
+            && !matches!(
+                action,
+                navigation::SoundAction::Place | navigation::SoundAction::Focus
+            )
+        {
+            match sound_target {
+                Some(target) => {
+                    if let Err(error) = self.check_sound_command(&target) {
+                        self.error = Some(error);
+                        return;
+                    }
+                    // The displayed first audible sample may enclose an exact
+                    // fractional-frame onset. Merely accepting the prefilled
+                    // field must not snap that retained phase or add history.
+                    if matches!(action, navigation::SoundAction::Move(_))
+                        && self.unchanged_sound_position(&target)
+                    {
+                        self.message = Some("Sound position unchanged.".into());
+                        return;
+                    }
+                }
+                None => {
+                    self.error = Some("Select a placed sound before opening its command. Use :sounds, then enter the command again; no edit was made.".into());
+                    return;
+                }
+            }
+        }
         match command {
             Ok(navigation::command::Entry::Action(action)) => self.action(action, context),
             Ok(navigation::command::Entry::Source) => {
                 self.stop_playback();
+                let leaving_event = self.pane == Pane::Sounds || self.event_focused();
                 self.selected_sound = None;
+                self.selected_event = None;
+                self.sound_inspection = None;
+                if leaving_event {
+                    self.pane = Pane::Sources;
+                    context.memory_mut(|m| m.request_focus(pane_id(self.pane)));
+                }
                 if self.view != View::Source {
                     self.view.set(View::Source, &mut self.message);
                     self.request_picture(true);
@@ -1479,7 +1605,14 @@ impl DeadpanApp {
             }
             Ok(navigation::command::Entry::Sequence) => {
                 self.stop_playback();
+                let leaving_event = self.pane == Pane::Sounds || self.event_focused();
                 self.selected_sound = None;
+                self.selected_event = None;
+                self.sound_inspection = None;
+                if leaving_event {
+                    self.pane = Pane::Sequence;
+                    context.memory_mut(|m| m.request_focus(pane_id(self.pane)));
+                }
                 if self.workspace.is_none() {
                     self.error = Some("Create or open a project to inspect its sequence.".into());
                 } else if self.view != View::Sequence {
@@ -1661,6 +1794,10 @@ impl DeadpanApp {
                 if self.presentation.loading() || self.presentation.needs_render() { ui.spinner(); ui.weak("Updating picture"); }
                 if self.sound_focused() {
                     ui.weak("Catalog audition");
+                } else if self.event_focused() {
+                    if let Some(event) = self.workspace.as_ref().and_then(|w| w.document.sounds().get(self.selected_event.as_ref()?)) {
+                        ui.label(format!("Sound: {}", event.label));
+                    }
                 } else if self.view == View::Sequence {
                     if let Some(beat) = self.beat_rows.iter().find(|beat| Some(&beat.id) == self.selected_beat.as_ref()) {
                         ui.add(egui::Label::new(format!("{} · {}", beat.label, self.beat_scope_label())).truncate()).on_hover_text(format!("{} · {} · {} frames · {}", beat.label, beat.kind, beat.frames, self.beat_scope_label()));
@@ -1682,7 +1819,7 @@ impl DeadpanApp {
                 ui.horizontal_wrapped(|ui| {
                     style::key_hint(ui, "Enter", "apply command");
                     style::key_hint(ui, "Esc", "cancel entry");
-                    ui.weak("Whole project frames: 11f · repeat count: total plays");
+                    ui.weak(sound_events::command_hint(&self.command).unwrap_or("Whole project frames: 11f · repeat count: total plays"));
                     if let (Ok(navigation::command::Entry::Action(Action::Edit(BeatEdit::InsertHold(input)))), Some(workspace)) = (navigation::command::parse(&self.command), &self.workspace)
                         && let Ok(duration) = input.resolve(workspace.document.presentation_basis().frame_rate)
                     {
@@ -1703,6 +1840,14 @@ impl DeadpanApp {
                         style::key_hint(ui, "j k", "sound");
                         style::key_hint(ui, "Space", "play / pause");
                         style::key_hint(ui, "Shift+Space", "loop sound");
+                        style::key_hint(ui, ",s", "place at edit cursor");
+                    } else if self.pane == Pane::Sounds || self.event_focused() {
+                        style::key_hint(ui, "j k", "sound");
+                        style::key_hint(ui, "h l", "move 1 frame");
+                        style::key_hint(ui, "Enter", "exact position");
+                        style::key_hint(ui, "+ / −", "gain 3 dB");
+                        style::key_hint(ui, "dd", "remove sound");
+                        style::key_hint(ui, "u", "undo");
                     } else if self.view == View::Sequence {
                         style::key_hint(ui, "h l", "frame");
                         style::key_hint(ui, "j k", "beat");
@@ -1910,7 +2055,6 @@ impl DeadpanApp {
                             }
                         });
                         if reveal { ui.scroll_to_rect(catalog.inner_rect, Some(egui::Align::Max)); }
-                        ui.label(egui::RichText::new("Retained sounds. Placement is not available yet.").size(11.0).color(style::MUTED));
                     }
                     let available = self.workspace.is_some() && !matches!(profile, Some(SingleSourceState::AwaitingSource { .. })) && !self.service.is_busy() && !self.dialogs.is_open() && !self.importing();
                     if self.workspace.is_some() && !matches!(profile, Some(SingleSourceState::AwaitingSource { .. })) {
@@ -2007,6 +2151,7 @@ impl DeadpanApp {
                 let beat = &beats[index];
                 self.bindings.clear();
                 self.selected_beat = Some(beat.id.clone());
+                self.selected_event = None;
                 self.sequence_cursor = beat.start;
                 self.view.set(View::Sequence, &mut self.message);
                 self.pane = Pane::Sequence;
@@ -2022,7 +2167,8 @@ impl DeadpanApp {
     }
 
     fn inspector_visible(&self) -> bool {
-        (self.view == View::Source && self.moment_identity().is_some())
+        self.event_focused()
+            || (self.view == View::Source && self.moment_identity().is_some())
             || self.view == View::Sequence
                 && self
                     .selected_beat
@@ -2087,6 +2233,9 @@ impl DeadpanApp {
     }
 
     fn open_inspector_parameter(&mut self, context: &egui::Context) -> bool {
+        if self.open_sound_position(context) {
+            return true;
+        }
         let Some((_, command)) = self.inspector_description().and_then(|data| data.parameter)
         else {
             return false;
@@ -2096,6 +2245,10 @@ impl DeadpanApp {
     }
 
     fn inspector(&mut self, ui: &mut egui::Ui) {
+        if self.event_focused() {
+            self.event_inspector(ui);
+            return;
+        }
         if self.camera.is_some() {
             self.camera_inspector(ui);
             return;
@@ -2272,6 +2425,8 @@ impl DeadpanApp {
                     if ui.add_enabled(view == View::Source || self.workspace.is_some(), egui::Button::new(label).min_size(egui::vec2(88.0, 28.0)).selected(self.view == view)).clicked() {
                         self.stop_playback();
                         self.selected_sound = None;
+                        self.selected_event = None;
+                        self.sound_inspection = None;
                         self.bindings.clear();
                         if self.view != view { self.view.set(view, &mut self.message); if view == View::Sequence { self.reconcile_beat_selection(); } self.request_picture(true); }
                         self.pane = Pane::Viewer;
@@ -2280,14 +2435,20 @@ impl DeadpanApp {
                 }
                 if self.camera.is_none() && (self.workspace.is_some() || self.raw_source.is_some()) {
                     for (label, action) in [("Start  gg", Action::First), ("Previous  h", Action::Step { forward: false, count: 1 }), ("Next  l", Action::Step { forward: true, count: 1 }), ("End  G", Action::Last)] {
-                        if ui.small_button(label).clicked() { self.action(action, ui.ctx()); }
+                        if ui.small_button(label).clicked() {
+                            self.selected_event = None;
+                            self.sound_inspection = None;
+                            self.pane = Pane::Viewer;
+                            ui.memory_mut(|m| m.request_focus(pane_id(Pane::Viewer)));
+                            self.action(action, ui.ctx());
+                        }
                     }
                 }
             });
             if self.camera.is_some() {
                 ui.label(egui::RichText::new("CAMERA · Draft preview").color(style::LAVENDER));
             }
-            let controls_height = if self.camera.is_some() { 76.0 } else if self.view == View::Sequence { if self.moment.copied.is_some() { 156.0 } else { 118.0 } } else { 174.0 };
+            let controls_height = if self.camera.is_some() { 76.0 } else if self.view == View::Sequence { if self.moment.copied.is_some() { 156.0 } else if self.compact_sound_layout(ui.ctx()) && self.transport.is_none() { 86.0 } else { 118.0 } } else { 174.0 };
             let available = egui::vec2(ui.available_width().max(1.0), (ui.available_height() - controls_height).max(50.0));
             let (_, rect) = ui.allocate_space(available);
             let response = pane_focus(ui, Pane::Viewer, rect, "Picture viewer pane");
@@ -2478,7 +2639,7 @@ impl DeadpanApp {
                         ("gg / G", "First / final boundary of the current group or Original."),
                         ("Enter / Backspace · :enter / :parent", "Open a selected Sequence group / return to its parent. The project cursor stays exact; breadcrumbs show the active group. Repeat plays and Retime descendants are not yet navigable."),
                         (":source / :sequence", "Browse unchanged Original / work on Your edit."),
-                        ("Tab / Shift Tab", "Cycle Original, Viewer, visible Inspector, and Beats focus."),
+                        ("Tab / Shift Tab", "Cycle Original, Viewer, visible Inspector, Beats, and Placed sounds focus."),
                         ("/", "Find a sound in V1, or a source in a legacy project."),
                     ] { help_binding(ui, key, description); }
                     ui.separator();
@@ -2493,7 +2654,13 @@ impl DeadpanApp {
                         (":wrap-repeat 3", "Always add an enclosing Repeat, including nesting."),
                         (":retime 0.75 pitch=preserve", "Slow the selected beat to 0.75× input speed. Use pitch=tape to let pitch follow speed. Exact fractions such as 3/4 work too. The command shows its resolved duration before Enter; Escape cancels entry."),
                         (":wrap-retime 2 pitch=tape", "Always add an enclosing speed stage. :retime instead updates an existing ordinary Retime, preserving its child and input range. Split fragments are wrapped without changing their retained clocks."),
-                        ("Enter in Inspector", "Edit the selected Repeat count, existing Hold duration, or Retime speed and pitch."),
+                        ("Enter in Inspector", "Edit the selected Repeat count, Hold duration, Retime speed or placed sound's exact sample position."),
+                        (",s / :sound-place", "Place the complete selected catalog sound at the edit cursor, without changing picture duration. A sound that ends beyond the edit is rejected; move the edit cursor earlier."),
+                        (":sounds · Tab", "Focus Placed sounds. j/k selects an event; the retained beat and both editor cursors stay in place."),
+                        ("Sound h/l · Enter", "Move an uncut sound by exact project frames without accumulated rounding, or choose an exact sample onset with :sound-at 137. Escape cancels entry. Sounds with retained timeline cuts cannot be moved yet."),
+                        ("Sound +/− · :sound-gain -3", "Change the selected sound's gain by 3 dB, or enter a value from -96 to 24 dB, to three decimal places. Counts repeat the gain step; Monitor and Original levels stay unchanged."),
+                        (":sound-edges soft / hard", "Set both endpoint fade policies on the selected sound. Gain and edge changes retain its timeline cuts."),
+                        ("Sound dd / :sound-delete", "Remove only the selected placed sound. Undo restores it. Focus Beats to cut picture time."),
                         (",f", "Camera preview on the selected beat. Parent framing stays live. h/j/k/l move 1% of the uncropped Original; uppercase moves 5%."),
                         ("Camera + / −", "Scale by ×1.05 or its reciprocal. Counts repeat: 3+ is three steps."),
                         ("Camera f · 1–5", "Toggle center/corner targets, then choose by number. Digits are counts outside the picker."),
@@ -2513,7 +2680,7 @@ impl DeadpanApp {
                     ] { help_binding(ui, key, description); }
                     ui.separator();
                     ui.weak("Original browsing never changes it. Your edit commands affect the selected beat in the displayed group and its linked picture and sound. Counts precede operators, such as 3rr; the visible PENDING badge waits without a timer.");
-                    ui.weak("Space auditions the focused sound, Original, or full edit. In the sound catalog, j/k selects a sound and Shift+Space loops its complete measured audio. Sound audition keeps the picture and both editor cursors in place. Leaving the catalog or choosing another sound stops it. Elsewhere Shift+Space loops the selected Original moment or edited beat with context. Playback has edge fades and a safety limiter; pause before changing Monitor volume. Range cuts/replacement, named registers, Repeat/Retime descendant navigation and insertion, sound placement, voice effects, the full mix, AI generation in the app, and export remain unavailable.");
+                    ui.weak("Space auditions the focused catalog sound, Original, or full edit. In the catalog, j/k selects a sound and Shift+Space loops its complete measured audio. Catalog audition keeps the picture and both editor cursors in place. Leaving the catalog or choosing another sound stops it. Elsewhere Shift+Space loops the selected Original moment or edited beat with context. Playback has edge fades and a safety limiter; pause before changing Monitor volume. Range cuts/replacement, named registers, Repeat/Retime descendant navigation and insertion, moving routed sounds, custom pause allowances, voice effects, the full mix, AI generation in the app, and export remain unavailable.");
             });
     }
 }
@@ -2555,7 +2722,10 @@ impl eframe::App for DeadpanApp {
         } else if first_pass {
             self.receive_dialog();
         }
-        if self.pane != previous_pane {
+        // A writer completion may select its edited content while the user is
+        // entering the next command. Preserve text focus so submission can
+        // reject its captured stale target instead of silently closing entry.
+        if self.pane != previous_pane && !text_input_active(&context, self.command_open) {
             context.memory_mut(|m| m.request_focus(pane_id(self.pane)));
         }
         // A command opened after last frame's footer receives this batch's text
@@ -2583,8 +2753,9 @@ impl eframe::App for DeadpanApp {
         let footer_mode = (self.command_open, self.camera.is_some());
         self.footer(ui);
         self.sources(ui);
-        self.timeline(ui);
         self.inspector(ui);
+        self.placed_sounds(ui);
+        self.timeline(ui);
         self.viewer(ui);
         if first_pass {
             self.finish_camera_entry(&context);
@@ -2705,6 +2876,8 @@ fn sound_action_allowed(action: Action) -> bool {
             | Action::Help
             | Action::Escape
             | Action::Invalid(_)
+            | Action::OfferInsert
+            | Action::Sound(navigation::SoundAction::Place | navigation::SoundAction::Focus)
     )
 }
 
@@ -2714,6 +2887,7 @@ fn pane_name(pane: Pane) -> &'static str {
         Pane::Viewer => "Viewer",
         Pane::Sequence => "Beats",
         Pane::Inspector => "Inspector",
+        Pane::Sounds => "Placed sounds",
     }
 }
 
@@ -2840,6 +3014,7 @@ fn pane_id(pane: Pane) -> egui::Id {
         Pane::Viewer => "viewer-pane",
         Pane::Sequence => "sequence-pane",
         Pane::Inspector => "inspector-pane",
+        Pane::Sounds => "placed-sounds-pane",
     })
 }
 fn close_command_on_blur(context: &egui::Context, open: &mut bool) -> bool {
@@ -2861,9 +3036,15 @@ fn control_owns_activation(context: &egui::Context, key: egui::Key) -> bool {
         && context
             .memory(|memory| memory.focused())
             .is_some_and(|focused| {
-                [Pane::Sources, Pane::Viewer, Pane::Sequence, Pane::Inspector]
-                    .into_iter()
-                    .all(|pane| focused != pane_id(pane))
+                [
+                    Pane::Sources,
+                    Pane::Viewer,
+                    Pane::Sequence,
+                    Pane::Inspector,
+                    Pane::Sounds,
+                ]
+                .into_iter()
+                .all(|pane| focused != pane_id(pane))
             })
 }
 

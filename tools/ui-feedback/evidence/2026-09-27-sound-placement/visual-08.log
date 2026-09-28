@@ -1,0 +1,6 @@
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 9.60s
+     Running `target/debug/deadpan-app --ui-check --scenario sound-placement --kestrel-source /Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift --output /tmp/deadpan-native-sound-jzAmH7/visual-08`
+sound-placement: FAIL
+UI feedback: /tmp/deadpan-native-sound-jzAmH7/visual-08/report.html
+Error: "UI feedback checks failed; inspect report.json and report.html"

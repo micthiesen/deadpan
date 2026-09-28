@@ -68,7 +68,7 @@ revision fails with `RevisionConflict` and the current revision, without writing
 
 Supported commands are `insert`, `insert_time`, `split`, `delete`, `move`, `group`,
 `ungroup`, `splice_source`, `wrap_repeat`, `set_repeat`, `wrap_retime`, `set_retime`, `insert_plays`, `move_plays`, `set_hold_duration`, `set_hold_provider`, `set_hold_picture_context`, `set_source_audio_mapping`, `set_source_video_mapping`,
-`rename`, `set_audio_edge`, `set_framing`, `set_sound`, `delete_sound`, `add_asset`, `set_canvas`, `set_mark`, `delete_mark`, `set_play_override`, `clear_play_override`, `set_gap_override`, `clear_gap_override`, `isolate_gap`, and `edit_occurrence`. Their exact typed parameters are defined in
+`rename`, `set_audio_edge`, `set_framing`, `set_sound`, `replace_sound`, `delete_sound`, `add_asset`, `set_canvas`, `set_mark`, `delete_mark`, `set_play_override`, `clear_play_override`, `set_gap_override`, `clear_gap_override`, `isolate_gap`, and `edit_occurrence`. Their exact typed parameters are defined in
 [`Command`](../crates/deadpan-core/src/command.rs). `set_repeat` changes an existing
 Repeat; `wrap_repeat` deliberately adds nesting. A three-play repeat includes
 three total plays and only two gaps. These are structural edits, not rendered
@@ -81,12 +81,18 @@ and `pitch`, retaining the ordinary Retime's child/input range. Both also have
 occurrence forms. The native `:retime` speed grammar resolves to these same
 commands. See [speed editing](RETIME_EDITING.md) for output-binding lifecycle.
 
-Documents use schema 29. `set_sound` takes an `id` and complete `event`;
-`delete_sound` takes its `id`. Events require a qualified source, root owner,
+Documents use schema 30 in database schema 36. `set_sound` and `replace_sound`
+take an `id` and complete `event`; `delete_sound` takes its `id`.
+Events require a qualified source, root owner,
 natural-rate mapping, contained selection plus sample offset, explicit gain,
 edge choices and `overflow: "reject"`. They feed the shared limited bus without
-adding picture time. Temporal edits while events exist remain explicitly
-unsupported. See [root sound events](SOUND_EVENTS.md#persisted-root-sounds).
+adding picture time. `insert_time`, `splice_source` and supported Delete edits
+through ordinary Sequence ancestors retain chronological root `sound_routes`;
+non-root Split leaves the sound bus unchanged. `set_sound` preserves an existing
+route when changing label, gain or endpoint policy. Changing a routed recipe,
+mapping, owner or offset requires `replace_sound`, the explicit reversible reset
+of its retained routing. Root Split, temporal occurrence edits and Repeat/Retime
+sound transforms remain guarded. See [root sound events](SOUND_EVENTS.md#persisted-root-ripple-edits).
 
 Sparse [gap branches](REPEAT_GAP_BRANCHES.md) retain an
 independent subtree after a stable Repeat play. `isolate_gap` copies the current
@@ -727,7 +733,7 @@ future-schema read-only inspection still needs a compatibility implementation.
 
 ## Schema migration
 
-Database schemas 1 through 34 return `MigrationRequired` when opened. Upgrade explicitly:
+Database schemas 1 through 35 return `MigrationRequired` when opened. Upgrade explicitly:
 
 ```sh
 cargo run --locked -p deadpan-cli -- project migrate /tmp/example.deadpan
@@ -738,7 +744,11 @@ Migration holds the project writer lock, keeps a consistent SQLite backup under
 replays all commands, undo/redo revisions, and abandoned branches with their
 original revision IDs. Every snapshot and forward/inverse transaction is checked
 against its strict original schema meaning. Migration goes directly to database
-schema 35 and core document schema 29. Database-34 replays frozen core 28,
+schema 36 and core document schema 30. Database-35 replays frozen core 29,
+retaining qualified root events while rejecting route fields and `replace_sound`.
+It checks the old sound-bearing command restrictions before modern replay, even
+when a command's snapshots and patches would contain no route. Migration adds no
+journals to those old events. Database-34 replays frozen core 28,
 which retains Retime commands but rejects all sound state and commands,
 including empty or null sound maps. Database-33 replays frozen core 27,
 which admits SpliceSource but refuses the new Retime edit commands.

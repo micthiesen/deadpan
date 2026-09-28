@@ -16,7 +16,7 @@ establish an implemented feature.
 | [Camera and framing](boards/camera-framing-board-v1.png) | Dedicated Camera preview, visible movement and scale keys, manual targets, keyboard region fields and a whole-Hold creep. | [Camera prompt](prompts/camera-framing-board-v1.txt) |
 | [Original moment reuse](boards/original-moment-reuse-v1.png) | Temporal Visual selection, copy without editing, explicit paste destination and one-step undo. | [Moment prompt](prompts/original-moment-reuse-v1.txt) |
 | [Sound audition](boards/sound-audition-board-v1.png) | Focused sound catalog, independent audition clock, visible play/pause/loop keys and retained edit context. | [Sound prompt](prompts/sound-audition-board-v1.txt) |
-| [Sound placement and adjustment](boards/sound-placement-board-v2.png) | Planned placed-sounds list, exact edit destination, event inspector, discoverable keys, scoped silence and overflow feedback. | [Initial prompt](prompts/sound-placement-board-v1.txt), [precision and silence corrections](prompts/sound-placement-board-v2.txt) |
+| [Sound placement and adjustment](boards/sound-placement-board-v2.png) | Target for the implemented root placement subset: separate event list, exact edit destination, inspector, visible keys and truthful silence/overflow feedback. Custom allowances remain open. | [Initial prompt](prompts/sound-placement-board-v1.txt), [precision and silence corrections](prompts/sound-placement-board-v2.txt) |
 
 The built-in `image_gen.imagegen` tool generated these assets on 2026-09-23 and
 the Camera companion on 2026-09-24, the moment-reuse companion on 2026-09-26
@@ -119,28 +119,34 @@ while text is active.
 Generated visual content is a composition reference. The following generated
 details are intentionally not implementation instructions:
 
-- The sound-placement board is a future native interaction target. A compact
+- The sound-placement board now guides the native root placement subset. A compact
   placed-sounds list preserves picture priority and distinguishes each event
   from its catalog source and the selected structural beat. Its corrected
   sample field shows 274000 samples for Edit 137 f at 24 fps; fine placement must
   use actual project-rate boundaries. The selected event overlaps the Pause,
   so the inspector explicitly shows its suppressed 137–143 f portion. A scoped
   allowance must become an explicit authored policy before its control appears.
-  The `,s` placement sequence, sound-focused `h/l` movement, `dd` removal and
-  parameter draft are proposed interactions, not implemented bindings. They
-  require production-router/Kestrel checks, native text ownership and replay
-  evidence together. The pictured Place and Sound added states are separate
-  moments; do not show Saved before the actual transaction completes. Root
-  sound commands and mixing now exist, but temporal-edit transforms, native
-  placement and custom allowances remain open. See [sound events](../SOUND_EVENTS.md).
+  `,s` places the whole measured catalog sound at the retained Edit cursor.
+  `j/k` selects a placed event; `h/l` applies durable exact frame nudges to an
+  unrouted event, Enter edits its 48 kHz sample onset, `+` / `-` adjusts gain,
+  Soft/Hard sets both endpoints, and `dd` removes it. Parameter entry captures
+  event/session/revision and rejects stale or missing targets. The pictured
+  Place and Sound added states are separate moments; Saved follows the actual
+  transaction. Routed gain and edge changes retain cuts; moving a routed event
+  remains unavailable. Custom allowances, nested owners, Repeat/Retime sound
+  transforms, effects and export remain open. Production-router/Kestrel checks,
+  text ownership and replay results belong in the
+  [native placement qualification record](../qualification/native-sound-placement-2026-09-27.md),
+  not in claims inferred from the image. See [sound events](../SOUND_EVENTS.md).
 - The sound-audition board separates catalog selection, pane focus and the
   selected beat. Its violet Original outline must not imply that Original is
   also the active audition target. Sound elapsed/total values use their own
   sample-derived seconds clock. Space toggles audition and Shift+Space requests
   a whole-sound loop; leaving Sources or changing sound discards resume state.
   Keep the stopped picture, edit cursor and authored selection intact. The
-  waveform, sound placement and per-event effects remain separate requirements;
-  this board does not authorize controls for unfinished behavior. Generated
+  waveform and per-event effects remain separate requirements; explicit root
+  placement uses the companion board and its own command path.
+  This board does not authorize controls for unfinished behavior. Generated
   mini-state labels describe intended interactions, not test evidence.
 - The moment-reuse board is the target for native Original selection and paste.
   Its temporal range, context/focus separation and visible paste destination
@@ -179,8 +185,9 @@ details are intentionally not implementation instructions:
   current limited edge-faded bus; full voice processing, group mixing and
   mastered export remain required.
 - Sound import registers audio; the focused catalog also auditions it through
-  the shared playback service. The Place a sound panel is the target
-  for a real anchored overlay, never an audio-only sequential beat with blank picture.
+  the shared playback service. Explicit `,s` placement creates a root event and
+  mixes it through the shared bus without adding blank picture time. Complete
+  sounds that overflow the root fail visibly instead of being trimmed.
 - The workflow board shows live Camera preview and intended Trim preview. Current Hold and
   Repeat setters are validated command entry; do not claim Escape restores a
   committed edit or that a text field previews on every keystroke.

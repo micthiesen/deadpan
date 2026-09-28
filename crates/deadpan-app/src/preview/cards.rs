@@ -130,12 +130,13 @@ fn beat_card(
             beat.start + beat.frames,
         ),
     );
+    let compact = rect.height() <= 64.0;
     let mut content = ui.new_child(
         egui::UiBuilder::new()
             .id_salt(("beat-content", &beat.id))
-            .max_rect(rect.shrink(12.0)),
+            .max_rect(rect.shrink(if compact { 6.0 } else { 12.0 })),
     );
-    content.spacing_mut().item_spacing.y = 6.0;
+    content.spacing_mut().item_spacing.y = if compact { 2.0 } else { 6.0 };
     content.add(
         egui::Label::new(
             egui::RichText::new(format!("{}. {}", index + 1, beat.label))
@@ -532,7 +533,12 @@ mod tests {
 
     #[test]
     fn beat_headers_and_card_rows_remain_visible_below_the_viewer() {
-        for size in [egui::vec2(960.0, 640.0), egui::vec2(1492.0, 929.0)] {
+        for size in [
+            egui::vec2(960.0, 640.0),
+            egui::vec2(960.0, 699.0),
+            egui::vec2(960.0, 700.0),
+            egui::vec2(1492.0, 929.0),
+        ] {
             for (count, group_labels) in [
                 (1, vec![]),
                 (2, vec![]),
@@ -579,6 +585,8 @@ mod tests {
                                     .show(ui, |_| {});
                                 panel = style::beat_panel(layout)
                                     .show(ui, |ui| {
+                                        // Match the production timeline's heading-to-strip gap.
+                                        ui.spacing_mut().item_spacing.y = 4.0;
                                         title = super::super::scope::draw_heading(
                                             ui,
                                             true,
@@ -622,7 +630,16 @@ mod tests {
                         let mut card_labels = 0;
                         let mut fully_visible_cards = 0;
                         let mut cards = Vec::new();
+                        let mut cursor_badges = 0;
                         for clipped in &output.shapes {
+                            if let egui::Shape::Rect(shape) = &clipped.shape
+                                && shape.fill == style::CURSOR
+                            {
+                                assert!(panel.contains_rect(shape.rect));
+                                assert!(shape.rect.top() >= title.bottom());
+                                assert!(clipped.clip_rect.contains_rect(shape.rect));
+                                cursor_badges += 1;
+                            }
                             if let egui::Shape::Rect(shape) = &clipped.shape
                                 && (shape.rect.height() - layout.card_height).abs() < 0.1
                                 && [style::PANEL, style::SELECTED].contains(&shape.fill)
@@ -672,6 +689,9 @@ mod tests {
                         // horizontal viewport; egui culls that card's labels.
                         assert!(fully_visible_cards > 0);
                         assert!(card_labels >= fully_visible_cards * 3);
+                        if reveal || count == 1 {
+                            assert_eq!(cursor_badges, 1);
+                        }
                     }
                 }
             }
