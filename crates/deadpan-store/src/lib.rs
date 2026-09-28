@@ -459,6 +459,8 @@ fn prepare_command_with_admission(
     ensure_generated_admission_with(Some(&current), &next, generated)?;
     ensure_source_admission(Some(&current), &next, source)?;
     #[cfg(any(target_os = "macos", target_os = "linux"))]
+    source_registration::validate_sound_sources(connection, &current, &next)?;
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
     single_source::check_transition(connection, &current, &next, source.is_some())?;
     match &request.command {
         deadpan_core::Command::ImportSource {

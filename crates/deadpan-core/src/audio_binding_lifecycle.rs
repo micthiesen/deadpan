@@ -71,6 +71,12 @@ fn capture_with_placements(
     collect_root_placements: bool,
 ) -> Result<CompositeInsertionCapture, DocumentError> {
     document.validate()?;
+    if !document.sounds().is_empty() {
+        return Err(DocumentError::new(
+            DocumentErrorCode::InvalidTree,
+            "audio binding capture cannot yet retain authored sound events",
+        ));
+    }
     let mut capture = Capture {
         document,
         timing: &timing,

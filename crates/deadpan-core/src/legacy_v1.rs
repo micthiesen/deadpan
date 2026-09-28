@@ -164,6 +164,7 @@ impl Document {
             .map(|(id, node)| Ok((id, node.upgrade(&self.revision_id)?)))
             .collect::<Result<_, DocumentError>>()?;
         let document = ProjectDocument {
+            sounds: BTreeMap::new(),
             gap_overrides: BTreeMap::new(),
             audio_lineage: BTreeMap::new(),
             audio_bindings: crate::AudioBindingState::default(),
@@ -187,6 +188,9 @@ impl Document {
     }
     /// Compare every schema-1 field, projecting out later iteration and lineage metadata.
     pub fn matches(&self, document: &ProjectDocument) -> bool {
+        if !document.sounds.is_empty() {
+            return false;
+        }
         if !document.gap_overrides.is_empty() {
             return false;
         }
@@ -395,6 +399,9 @@ struct Patch {
 
 impl Patch {
     fn project(patch: &DocumentPatch) -> Option<Self> {
+        if !patch.sounds.is_empty() {
+            return None;
+        }
         if !patch.gap_overrides.is_empty() {
             return None;
         }

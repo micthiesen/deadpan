@@ -9,7 +9,7 @@ use crate::{
     TimeError,
 };
 
-pub const DOCUMENT_SCHEMA_VERSION: u32 = 28;
+pub const DOCUMENT_SCHEMA_VERSION: u32 = 29;
 /// Bounds apply before traversal. Structure is walked iteratively, never recursively.
 pub const MAX_DOCUMENT_NODES: usize = 100_000;
 pub const MAX_DOCUMENT_ASSETS: usize = 100_000;
@@ -70,6 +70,7 @@ identifier!(RevisionId);
 identifier!(NodeId);
 identifier!(AssetId);
 identifier!(MarkId);
+identifier!(SoundId);
 
 /// BLAKE3 identity of a canonical host qualification receipt. The core retains
 /// the binding; only the host can establish receipt ownership and validity.
@@ -408,6 +409,8 @@ pub struct ProjectDocument {
     pub(crate) nodes: BTreeMap<NodeId, BeatNode>,
     pub(crate) assets: BTreeMap<AssetId, AssetRecord>,
     pub(crate) marks: BTreeMap<MarkId, Mark>,
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub(crate) sounds: BTreeMap<SoundId, crate::SoundEvent>,
     pub(crate) overrides: BTreeMap<NodeId, PlayOverrides>,
     /// Independently owned gap subtrees, keyed by the stable preceding play.
     /// A final play retains its override without rendering trailing time.
@@ -434,6 +437,8 @@ struct DocumentWire {
     assets: BTreeMap<AssetId, AssetRecord>,
     #[serde(deserialize_with = "unique_map")]
     marks: BTreeMap<MarkId, Mark>,
+    #[serde(default, deserialize_with = "unique_map")]
+    sounds: BTreeMap<SoundId, crate::SoundEvent>,
     #[serde(deserialize_with = "unique_map")]
     overrides: BTreeMap<NodeId, PlayOverrides>,
     #[serde(default, deserialize_with = "unique_map")]
@@ -457,6 +462,7 @@ impl TryFrom<DocumentWire> for ProjectDocument {
             nodes: value.nodes,
             assets: value.assets,
             marks: value.marks,
+            sounds: value.sounds,
             overrides: value.overrides,
             gap_overrides: value.gap_overrides,
             audio_lineage: value.audio_lineage,
@@ -484,6 +490,7 @@ impl ProjectDocument {
             root,
             assets: BTreeMap::new(),
             marks: BTreeMap::new(),
+            sounds: BTreeMap::new(),
             overrides: BTreeMap::new(),
             gap_overrides: BTreeMap::new(),
             audio_lineage: BTreeMap::new(),
@@ -572,6 +579,9 @@ impl ProjectDocument {
     }
     pub fn marks(&self) -> &BTreeMap<MarkId, Mark> {
         &self.marks
+    }
+    pub fn sounds(&self) -> &BTreeMap<SoundId, crate::SoundEvent> {
+        &self.sounds
     }
     pub fn overrides(&self) -> &BTreeMap<NodeId, PlayOverrides> {
         &self.overrides
@@ -680,6 +690,7 @@ impl ProjectDocument {
         context_limit: usize,
     ) -> Result<BTreeMap<NodeId, FrameDuration>, DocumentError> {
         let durations = self.structural_durations()?;
+        crate::sound_events::validate(self, &durations)?;
         crate::framing::validate_document(self)?;
         crate::picture_context::validate_nodes_with_limit(self.nodes.values(), context_limit)?;
         self.validate_basis_state(&durations)?;

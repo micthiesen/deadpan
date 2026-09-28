@@ -1,0 +1,1108 @@
+{
+  "base_commit": "34e816a64b628de1731c2bf161669dc8fd483d40",
+  "environment": {
+    "os": "macOS 26.5.2 (25F84)",
+    "hardware": "Apple M5 Max",
+    "toolchain": "Rust/Cargo 1.97.1",
+    "ffmpeg_prefix": "/tmp/deadpan-ui-ffmpeg/prefix"
+  },
+  "commands": {
+    "core-plan-01": {
+      "command_record": "not retained separately; exact test target and result are in the compiler log",
+      "log_sha256": "445476117c0e2d0843a1b8c715ebf680657910171f8076c48d8f7f082a04be21",
+      "test_summaries": [
+        [
+          7,
+          0,
+          0
+        ],
+        [
+          0,
+          2,
+          0
+        ]
+      ]
+    },
+    "plan-02": {
+      "command_record": "not retained separately; exact test target and result are in the compiler log",
+      "log_sha256": "291ee08817bd32116f79146c3b1077ca7a77afe34380453bdde164847893a9be",
+      "test_summaries": [
+        [
+          2,
+          0,
+          0
+        ]
+      ]
+    },
+    "playback-events-01": {
+      "command_record": "not retained separately; exact test target and result are in the compiler log",
+      "log_sha256": "0e62dc3661f12e88cf24c8564e1b6ce7e1444d222b2096cb18696fdc58eb4244",
+      "test_summaries": [
+        [
+          2,
+          0,
+          0
+        ]
+      ]
+    },
+    "playback-events-02": {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-playback",
+        "source_voice::events"
+      ],
+      "exit_code": 0,
+      "seconds": 22.45558562502265,
+      "log_sha256": "7b1e034e9cbd8e965feb8797a05e7bf91ce006b616e575042c07598f8451bec2",
+      "test_summaries": [
+        [
+          2,
+          0,
+          0
+        ]
+      ]
+    },
+    "playback-events-03": {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-playback",
+        "source_voice::events"
+      ],
+      "exit_code": 101,
+      "seconds": 19.63682545814663,
+      "log_sha256": "1cb9be1c7274de7fbec744d41e98a24256663c72cd2190595d1a4162358e3798",
+      "test_summaries": []
+    },
+    "migration-sounds-01": {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-store",
+        "--test",
+        "migration",
+        "sounds::"
+      ],
+      "exit_code": 0,
+      "seconds": 34.38024358311668,
+      "log_sha256": "17ab8e376a79674cc1712b380f1feae14ea7e0ac510a82cb9c65636e5658ba3f",
+      "test_summaries": [
+        [
+          3,
+          0,
+          0
+        ]
+      ]
+    },
+    "store-sounds-01": {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-store",
+        "--test",
+        "source_registration",
+        "sounds::"
+      ],
+      "exit_code": 0,
+      "seconds": 6.798551042098552,
+      "log_sha256": "222b515f918b5c2079f0a3321c4fbdbec297dea91d23db7e74a6cfe999528b3b",
+      "test_summaries": [
+        [
+          2,
+          0,
+          0
+        ]
+      ]
+    },
+    "audio-limits-01": {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-audio",
+        "--test",
+        "sound_events"
+      ],
+      "exit_code": 0,
+      "seconds": 6.726997334044427,
+      "log_sha256": "1015eead0fb5da4c395a874b7073a560ee80b530776dd3a592657c87a0f0c807",
+      "test_summaries": [
+        [
+          3,
+          0,
+          0
+        ]
+      ]
+    },
+    "cli-events-01": {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-cli",
+        "--test",
+        "audio_inspection",
+        "sounds::"
+      ],
+      "exit_code": 0,
+      "seconds": 16.27372825006023,
+      "log_sha256": "9869a50224869d83166479a29480575c3bd7dae071f22674760122bffa3e7094",
+      "test_summaries": [
+        [
+          1,
+          0,
+          0
+        ]
+      ]
+    },
+    "gate-plan-01": {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-plan",
+        "--test",
+        "sound_event_fades",
+        "--test",
+        "sound_events"
+      ],
+      "exit_code": 0,
+      "seconds": 14.178002416621894,
+      "log_sha256": "3eb4f523a2ce0ff73edfe9f47c6d9d58f84d6c1db759813e3c71206cf7dea039",
+      "test_summaries": [
+        [
+          7,
+          0,
+          0
+        ],
+        [
+          2,
+          0,
+          0
+        ]
+      ]
+    },
+    "gate-pcm-01": {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-playback",
+        "source_voice::events"
+      ],
+      "exit_code": 0,
+      "seconds": 16.436248624697328,
+      "log_sha256": "f95bea2e777b936fdfac8daaf0b4695476b1ea029ce68a370174e21fd0aa6fc9",
+      "test_summaries": [
+        [
+          3,
+          0,
+          0
+        ]
+      ]
+    },
+    "gate-format": {
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.8743136669509113,
+      "source_identity_unchanged": true,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "test_summaries": []
+    },
+    "gate-clippy": {
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 240.1937554171309,
+      "source_identity_unchanged": true,
+      "log_sha256": "e15228e8ed7a167adff2eabf78d0001eb3f63c52fc8533ebf73d77921d33a538",
+      "test_summaries": []
+    },
+    "gate-tests": {
+      "command": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked"
+      ],
+      "exit_code": 101,
+      "seconds": 409.1148232081905,
+      "source_identity_unchanged": true,
+      "log_sha256": "184afe5d5fa94003f44b8c78a443f0fc15e2652e5022dbd97c7fce736300c381",
+      "test_summaries": [
+        [
+          215,
+          0,
+          0
+        ],
+        [
+          2,
+          0,
+          0
+        ],
+        [
+          54,
+          0,
+          0
+        ],
+        [
+          4,
+          0,
+          0
+        ],
+        [
+          41,
+          0,
+          0
+        ],
+        [
+          12,
+          0,
+          0
+        ],
+        [
+          14,
+          0,
+          0
+        ],
+        [
+          10,
+          0,
+          0
+        ],
+        [
+          6,
+          0,
+          0
+        ],
+        [
+          9,
+          0,
+          0
+        ],
+        [
+          9,
+          0,
+          0
+        ],
+        [
+          6,
+          0,
+          0
+        ],
+        [
+          4,
+          0,
+          0
+        ],
+        [
+          7,
+          0,
+          0
+        ],
+        [
+          12,
+          0,
+          0
+        ],
+        [
+          8,
+          0,
+          0
+        ],
+        [
+          7,
+          0,
+          0
+        ],
+        [
+          3,
+          0,
+          0
+        ],
+        [
+          58,
+          0,
+          0
+        ],
+        [
+          7,
+          0,
+          0
+        ],
+        [
+          7,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          3,
+          0,
+          0
+        ],
+        [
+          15,
+          0,
+          0
+        ],
+        [
+          5,
+          0,
+          0
+        ],
+        [
+          2,
+          0,
+          0
+        ],
+        [
+          2,
+          0,
+          0
+        ],
+        [
+          17,
+          0,
+          0
+        ],
+        [
+          8,
+          0,
+          0
+        ],
+        [
+          86,
+          0,
+          0
+        ],
+        [
+          8,
+          0,
+          0
+        ],
+        [
+          35,
+          0,
+          0
+        ],
+        [
+          6,
+          0,
+          0
+        ],
+        [
+          36,
+          0,
+          0
+        ],
+        [
+          8,
+          0,
+          0
+        ],
+        [
+          5,
+          0,
+          0
+        ],
+        [
+          10,
+          0,
+          0
+        ],
+        [
+          15,
+          0,
+          0
+        ],
+        [
+          17,
+          0,
+          0
+        ],
+        [
+          13,
+          0,
+          0
+        ],
+        [
+          9,
+          0,
+          0
+        ],
+        [
+          7,
+          0,
+          0
+        ],
+        [
+          6,
+          0,
+          0
+        ],
+        [
+          29,
+          0,
+          0
+        ],
+        [
+          2,
+          0,
+          0
+        ],
+        [
+          21,
+          0,
+          0
+        ],
+        [
+          5,
+          0,
+          0
+        ],
+        [
+          4,
+          0,
+          0
+        ],
+        [
+          9,
+          0,
+          0
+        ],
+        [
+          9,
+          0,
+          0
+        ],
+        [
+          18,
+          0,
+          0
+        ],
+        [
+          8,
+          0,
+          0
+        ],
+        [
+          5,
+          0,
+          0
+        ],
+        [
+          20,
+          0,
+          0
+        ],
+        [
+          8,
+          0,
+          0
+        ],
+        [
+          15,
+          0,
+          0
+        ],
+        [
+          6,
+          0,
+          0
+        ],
+        [
+          6,
+          0,
+          0
+        ],
+        [
+          7,
+          0,
+          0
+        ],
+        [
+          19,
+          0,
+          0
+        ],
+        [
+          7,
+          0,
+          0
+        ],
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          18,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          11,
+          0,
+          0
+        ],
+        [
+          3,
+          0,
+          0
+        ],
+        [
+          4,
+          0,
+          0
+        ],
+        [
+          5,
+          0,
+          0
+        ],
+        [
+          9,
+          0,
+          0
+        ],
+        [
+          10,
+          0,
+          0
+        ],
+        [
+          15,
+          0,
+          0
+        ],
+        [
+          11,
+          0,
+          0
+        ],
+        [
+          11,
+          2,
+          0
+        ]
+      ]
+    },
+    "supervisor-diagnostic-01": {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-jobs",
+        "--test",
+        "supervisor",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "seconds": 8.840413833968341,
+      "log_sha256": "c5a08e7255ca5586255a6a240a836b18e9a20b5eb3bb0878746695c96d552c32",
+      "test_summaries": [
+        [
+          13,
+          0,
+          0
+        ]
+      ]
+    },
+    "remaining-tests-01": {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--no-fail-fast",
+        "-p",
+        "deadpan-media",
+        "-p",
+        "deadpan-media-worker",
+        "-p",
+        "deadpan-models",
+        "-p",
+        "deadpan-native-process",
+        "-p",
+        "deadpan-output",
+        "-p",
+        "deadpan-plan",
+        "-p",
+        "deadpan-playback",
+        "-p",
+        "deadpan-render",
+        "-p",
+        "deadpan-source",
+        "-p",
+        "deadpan-store"
+      ],
+      "exit_code": 0,
+      "seconds": 366.6586439590901,
+      "source_identity_unchanged": true,
+      "log_sha256": "4d2d9964695df5e6bd964d729e7a405b80e1983aa1046e19b78e867e7724020e",
+      "test_summaries": [
+        [
+          19,
+          0,
+          0
+        ],
+        [
+          6,
+          0,
+          0
+        ],
+        [
+          9,
+          0,
+          0
+        ],
+        [
+          18,
+          0,
+          0
+        ],
+        [
+          10,
+          0,
+          0
+        ],
+        [
+          8,
+          0,
+          0
+        ],
+        [
+          3,
+          0,
+          0
+        ],
+        [
+          3,
+          0,
+          0
+        ],
+        [
+          5,
+          0,
+          0
+        ],
+        [
+          7,
+          0,
+          0
+        ],
+        [
+          9,
+          0,
+          0
+        ],
+        [
+          9,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          12,
+          0,
+          0
+        ],
+        [
+          10,
+          0,
+          0
+        ],
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          15,
+          0,
+          0
+        ],
+        [
+          9,
+          0,
+          0
+        ],
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          2,
+          0,
+          0
+        ],
+        [
+          28,
+          0,
+          0
+        ],
+        [
+          8,
+          0,
+          0
+        ],
+        [
+          7,
+          0,
+          0
+        ],
+        [
+          22,
+          0,
+          0
+        ],
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          15,
+          0,
+          0
+        ],
+        [
+          17,
+          0,
+          0
+        ],
+        [
+          12,
+          0,
+          0
+        ],
+        [
+          3,
+          0,
+          0
+        ],
+        [
+          4,
+          0,
+          0
+        ],
+        [
+          10,
+          0,
+          0
+        ],
+        [
+          4,
+          0,
+          0
+        ],
+        [
+          30,
+          0,
+          0
+        ],
+        [
+          5,
+          0,
+          0
+        ],
+        [
+          7,
+          0,
+          0
+        ],
+        [
+          8,
+          0,
+          0
+        ],
+        [
+          2,
+          0,
+          0
+        ],
+        [
+          12,
+          0,
+          0
+        ],
+        [
+          4,
+          0,
+          0
+        ],
+        [
+          6,
+          0,
+          0
+        ],
+        [
+          38,
+          0,
+          0
+        ],
+        [
+          23,
+          0,
+          0
+        ],
+        [
+          37,
+          0,
+          0
+        ],
+        [
+          11,
+          0,
+          0
+        ],
+        [
+          14,
+          0,
+          0
+        ],
+        [
+          30,
+          0,
+          0
+        ],
+        [
+          2,
+          0,
+          0
+        ],
+        [
+          8,
+          0,
+          0
+        ],
+        [
+          11,
+          0,
+          0
+        ],
+        [
+          8,
+          0,
+          0
+        ],
+        [
+          15,
+          0,
+          0
+        ],
+        [
+          102,
+          0,
+          0
+        ],
+        [
+          3,
+          0,
+          0
+        ],
+        [
+          6,
+          0,
+          0
+        ],
+        [
+          9,
+          0,
+          0
+        ],
+        [
+          19,
+          0,
+          0
+        ],
+        [
+          18,
+          0,
+          0
+        ],
+        [
+          6,
+          0,
+          0
+        ],
+        [
+          8,
+          0,
+          0
+        ],
+        [
+          8,
+          0,
+          0
+        ],
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          0,
+          0
+        ]
+      ]
+    },
+    "remaining-docs-01": {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--doc",
+        "-p",
+        "deadpan-audio",
+        "-p",
+        "deadpan-cli",
+        "-p",
+        "deadpan-core",
+        "-p",
+        "deadpan-dsp",
+        "-p",
+        "deadpan-fileclone",
+        "-p",
+        "deadpan-jobs"
+      ],
+      "exit_code": 0,
+      "seconds": 59.68710762495175,
+      "source_identity_unchanged": true,
+      "log_sha256": "eb2ecf11d73bc3c5f30199e49677e50d22b7728a3384653aae4a242558838cb6",
+      "test_summaries": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ]
+      ]
+    }
+  },
+  "gate_source_files": 607,
+  "source_changes_after_gate_started": [
+    "Cargo.lock",
+    "crates/deadpan-app/Cargo.toml",
+    "crates/deadpan-app/src/ui_harness.rs",
+    "crates/deadpan-jobs/src/supervisor.rs",
+    "crates/deadpan-jobs/tests/supervisor.rs",
+    "crates/deadpan-media/src/conversion.rs",
+    "native/deadpan-process/src/lib.rs",
+    "native/deadpan-process/src/spawn.rs"
+  ],
+  "review": [
+    "Independent core/storage review: command and occurrence guards, typed mapping validation, guarded reversible patches, frozen captures, qualified-source ingress and historical integrity. No outstanding findings.",
+    "Independent plan/audio review corrected root boundary dispatch, shared preflight ordering and missing silent-Hold edge fades.",
+    "Independent gate-fade and integration review: exact Hard coincidence, short islands, bounded context, rounded terminal, no unrelated Original fades, and complete preflight envelope coverage. No outstanding findings.",
+    "Independent follow-up confirmed root-owner Hard applies at exact endpoint coincidence only."
+  ],
+  "workspace_result": "The initial locked workspace run stopped after 1104 passes and two worker pipe-EOF failures. A single diagnostic run passed without a production change. Remaining packages and documentation tests were then run separately. The later process-launch fix and its checks have separate qualification evidence; no retry erased the initial failure.",
+  "skipped": [
+    "Painted UI replay: no widget or input behavior changed",
+    "Native device, acoustic listening, export equivalence and performance qualification"
+  ]
+}

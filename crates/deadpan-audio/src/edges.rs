@@ -228,7 +228,7 @@ pub(crate) fn exhausted_ranges(
     Ok(result)
 }
 
-fn edge_gain(length: u64, at: i128, start: bool, end: bool) -> f32 {
+pub(crate) fn edge_gain(length: u64, at: i128, start: bool, end: bool) -> f32 {
     let Ok(at) = u64::try_from(at) else {
         return 0.0;
     };

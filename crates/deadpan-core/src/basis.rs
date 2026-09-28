@@ -158,6 +158,7 @@ impl ProjectDocument {
         if state.rate_origin == FrameRateOrigin::Provisional
             && (state != &BasisState::provisional()
                 || self.presentation_basis != default
+                || !self.sounds.is_empty()
                 || durations
                     .values()
                     .any(|duration| *duration != FrameDuration::ZERO)
@@ -196,7 +197,7 @@ impl ProjectDocument {
                     .bindings()
                     .any(|binding| !matches!(binding.coordinate, Anchor::Source { .. }))
         });
-        if changed_structure || changed_marks {
+        if changed_structure || changed_marks || before.sounds != self.sounds {
             self.basis_state.rate_origin = FrameRateOrigin::TimedEdit;
         }
         Ok(())

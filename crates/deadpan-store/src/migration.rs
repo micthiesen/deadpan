@@ -45,7 +45,7 @@ impl ProjectStore {
                 backup: None,
             });
         }
-        if !matches!(version, 1..=33) {
+        if !matches!(version, 1..=34) {
             return Err(StoreError::UnsupportedSchema(version));
         }
         let lock = acquire_lock(&package)?;
@@ -225,6 +225,8 @@ fn migrate_candidate(
     // schema 32 uses core schema 26 and admits nested Sequence InsertTime.
     // Schema 33 uses core schema 27, retaining SpliceSource while its closed
     // commands reject WrapRetime and SetRetime, including occurrence edits.
+    // Schema 34 uses core schema 28, retaining Retime authoring while its
+    // closed documents, patches and commands reject authored sound events.
     // Replay all authored history, preserving operational rows and identities
     // while assigning FitBeat only to mappings absent in that legacy schema.
     // Schemas before 15 gain an explicit basis; schema 15 retains its policy.

@@ -22,6 +22,9 @@ use rusqlite::Connection;
 
 type Result<T = ()> = std::result::Result<T, Box<dyn Error>>;
 
+#[path = "source_registration/sounds.rs"]
+mod sounds;
+
 fn active() -> AtomicBool {
     AtomicBool::new(false)
 }

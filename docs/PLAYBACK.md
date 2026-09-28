@@ -39,13 +39,16 @@ Navigation discards the paused delivery coordinate. A fault never restarts a loo
 
 This is **limited audition**, with the full preview/export audio contract still open.
 It uses canonical source audio, structural Repeat/Retime/Hold semantics, room
-tone, authored bindings and edge fades, followed by the shared
+tone, authored bindings and edge fades. Persisted
+[root sound events](SOUND_EVENTS.md#persisted-root-sounds) enter this same bus
+with their own gain and edges, followed by the shared
 [finite oversampled limiter](AUDIO_MASTERING.md). The full voice/effects graph,
 sends and group mix remain required before this can be a final master.
 Monitor volume is independent of
 authored and export gain, defaults to 12.5%, and changes while stopped. PCM beyond
 the device's finite ±1 range fails explicitly; the application does not clip or
-normalize individual blocks. Sound-event placement remains open.
+normalize individual blocks. Native sound-event placement and structural sound
+editing remain open; Original and catalog audition exclude edit overlays.
 
 [Speed edits](RETIME_EDITING.md) create or adjust the Retime structures already
 handled by this canonical path. Command entry stops playback; the committed

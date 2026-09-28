@@ -46,6 +46,14 @@ pub struct SourceInsertion {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "command", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Command {
+    /// Add or replace one independent sound without changing picture duration.
+    SetSound {
+        id: crate::SoundId,
+        event: crate::SoundEvent,
+    },
+    DeleteSound {
+        id: crate::SoundId,
+    },
     /// Insert deterministic time at a project boundary while retaining the
     /// sampled phase of each shifted physical allocation.
     InsertTime {
@@ -277,6 +285,12 @@ pub struct DocumentPatch {
     pub assets: BTreeMap<AssetId, ValueChange<AssetRecord>>,
     #[serde(deserialize_with = "unique_map")]
     pub marks: BTreeMap<MarkId, ValueChange<Mark>>,
+    #[serde(
+        default,
+        skip_serializing_if = "BTreeMap::is_empty",
+        deserialize_with = "unique_map"
+    )]
+    pub sounds: BTreeMap<crate::SoundId, ValueChange<crate::SoundEvent>>,
     #[serde(deserialize_with = "unique_map")]
     pub overrides: BTreeMap<NodeId, ValueChange<PlayOverrides>>,
     #[serde(
@@ -317,6 +331,7 @@ impl DocumentPatch {
         if self.nodes.len() > MAX_DOCUMENT_NODES
             || self.assets.len() > MAX_DOCUMENT_NODES
             || self.marks.len() > MAX_DOCUMENT_MARKS
+            || self.sounds.len() > 2 * crate::MAX_DOCUMENT_SOUNDS
             || self.overrides.len() > MAX_DOCUMENT_NODES
             || self.gap_overrides.len() > MAX_DOCUMENT_NODES
             || self.audio_lineage.len() > MAX_DOCUMENT_NODES
@@ -376,6 +391,7 @@ impl DocumentPatch {
         }
         apply_changes(&mut result.assets, &self.assets)?;
         apply_changes(&mut result.marks, &self.marks)?;
+        apply_changes(&mut result.sounds, &self.sounds)?;
         apply_changes(&mut result.overrides, &self.overrides)?;
         apply_changes(&mut result.gap_overrides, &self.gap_overrides)?;
         apply_changes(&mut result.audio_lineage, &self.audio_lineage)?;
@@ -411,6 +427,7 @@ impl DocumentPatch {
             nodes: inverse_changes(&self.nodes),
             assets: inverse_changes(&self.assets),
             marks: inverse_changes(&self.marks),
+            sounds: inverse_changes(&self.sounds),
             overrides: inverse_changes(&self.overrides),
             gap_overrides: inverse_changes(&self.gap_overrides),
             audio_lineage: inverse_changes(&self.audio_lineage),
@@ -447,6 +464,7 @@ pub fn apply(
     // Validate caller-owned context before cloning either the document or an
     // isolated occurrence. Public structs can be constructed without serde.
     crate::picture_context::validate_command(&request.command)?;
+    crate::sound_events::validate_command(document, &request.command)?;
     let before_duration = document.duration()?.frames();
     let mut result = match &request.command {
         Command::InsertTime {
@@ -546,6 +564,7 @@ pub fn apply(
         nodes: diff(&document.nodes, &result.nodes),
         assets: diff(&document.assets, &result.assets),
         marks: diff(&document.marks, &result.marks),
+        sounds: diff(&document.sounds, &result.sounds),
         overrides: diff(&document.overrides, &result.overrides),
         gap_overrides: diff(&document.gap_overrides, &result.gap_overrides),
         audio_lineage: diff(&document.audio_lineage, &result.audio_lineage),
@@ -564,6 +583,13 @@ pub fn apply(
             .chain(forward.gap_overrides.keys())
             .chain(forward.audio_lineage.keys())
             .chain(binding_changed_ids.iter())
+            .chain(forward.sounds.values().flat_map(|change| {
+                change
+                    .before
+                    .iter()
+                    .chain(change.after.iter())
+                    .map(|event| &event.owner)
+            }))
             .cloned()
             .collect::<BTreeSet<_>>()
             .into_iter()
@@ -653,6 +679,31 @@ pub(crate) fn reduce(
     allocation: &RevisionId,
 ) -> Result<(), EditError> {
     match command {
+        Command::SetSound { id, event } => {
+            if event.owner != document.root {
+                return Err(EditError::new(
+                    EditErrorCode::InvalidCommand,
+                    "sound events currently require the root Sequence owner",
+                ));
+            }
+            if !document.sounds.contains_key(id)
+                && document.sounds.len() >= crate::MAX_DOCUMENT_SOUNDS
+            {
+                return Err(EditError::new(
+                    EditErrorCode::LimitExceeded,
+                    "document exceeds 64 live sound events",
+                ));
+            }
+            document.sounds.insert(id.clone(), event.clone());
+        }
+        Command::DeleteSound { id } => {
+            if document.sounds.remove(id).is_none() {
+                return Err(EditError::new(
+                    EditErrorCode::SelectionUnavailable,
+                    "sound event is absent",
+                ));
+            }
+        }
         Command::IsolateGap { .. } => {
             return Err(EditError::new(
                 EditErrorCode::InvalidCommand,
@@ -1635,6 +1686,8 @@ fn apply_changes<K: Ord + Clone, V: Eq + Clone>(
 
 fn description(command: &Command) -> &'static str {
     match command {
+        Command::SetSound { .. } => "Set sound event",
+        Command::DeleteSound { .. } => "Delete sound event",
         Command::InsertTime { .. } => "Insert pause",
         Command::SpliceSource { .. } => "Paste source moment",
         Command::Split { .. } => "Split beat",

@@ -3,6 +3,9 @@
 #[path = "source_voice/routed.rs"]
 mod routed;
 
+#[path = "source_voice/events.rs"]
+mod events;
+
 use super::*;
 
 use deadpan_audio::{PcmWindow, ResampleRecipe, Resampler, StageAudio, StereoMatrix};

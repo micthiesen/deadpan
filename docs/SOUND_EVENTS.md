@@ -37,9 +37,61 @@ length is insufficient for editing intervals. Deleting the start of an event
 must not erase its surviving suffix. A source phase, processing history or fade
 cannot restart merely because an event is represented by another fragment.
 
-These are implementation decisions within the specification's existing contract,
-not a new persisted wire format. They need validated commands, migration and
-rendering before the native workspace may advertise sound placement.
+The root-owned subset below has validated commands, migration and rendering.
+The complete ownership and edit contract remains required before the native
+workspace advertises sound placement.
+
+## Persisted root sounds
+
+Core schema 29 and database 35 add `SoundEvent` recipes keyed by `SoundId`.
+`SetSound` creates or replaces a complete event; `DeleteSound` removes it. The
+shared headless command entrypoint supports preview and atomic commit, followed
+by ordinary durable undo/redo. Migration replays old chronology through closed
+adapters and adds no sounds to historical projects. The actual database-34
+fixture includes ordinary and occurrence Retime edits, an abandoned branch and
+pending redo.
+
+This increment admits at most 64 root-owned events. Each retains a qualified
+source span, explicit natural-rate mapping and optional exact audible selection,
+a signed 48 kHz offset, milli-decibel gain from -96 dB through +24 dB, independent
+Automatic/Hard edge choices and an explicit `Reject` overflow policy. The whole
+selected interval must fit inside the root. Sound placement never changes
+picture duration. A qualification ID alone is insufficient: storage rechecks
+the revision's immutable receipt and original binding during the command
+transaction, and playback admits actual source bytes through its existing
+provider.
+
+The root reader evaluates source phase, allocation and current silent-Hold
+policy directly on the absolute RoundEven grid. It does not relabel PointCeil
+PCM. Each sound receives its own edges and gain before f64 summation in SoundId order
+with the existing continuous Original voice. The bus converts once to finite
+f32, then enters the existing single canonical limiter. Exhaustion applies to
+one contribution; bus suppression is an intersection. Even a wholly suppressed
+sound remains a dependency of cached PCM. Original and catalog audition use
+source-only views and exclude the edit's sound events.
+
+Silent Holds cut that voice's audible intervals with the same sample-centered
+2 ms edge envelope, shortened for tiny surviving intervals. Source phase continues
+under the gate. Exact event, Hold and owner boundary choices determine Hard
+exceptions; unrelated Original cuts create no sound edge. A bounded 192-sample
+lookaround discovers short intervals independently of request chunks. Context
+limits never introduce a fade or erase a genuine fractional endpoint.
+
+`StageAudio::prepare_edge_faded` returns
+`authored_bus_pcm_before_mastering` when events exist. `LimitedAudio` and
+`inspect-audio --limited` return `limited_authored_bus_pcm`. The small raw,
+time-mapped and `--edge-faded` diagnostic readers retain their Original-only
+meaning. With no events, previous PCM and metadata stay unchanged.
+
+Nested ownership, structural interval transforms, custom Hold allowances,
+creative treatments and native event controls remain open. Temporal commands
+explicitly reject documents containing sound events until those transforms
+exist; removing the events permits those edits again. Capturing an unsupported
+frozen audio context also fails explicitly. Renaming, framing, audio mapping,
+edge choices and other clock-preserving edits retain their normal transactions.
+This guarded backend is not full sound editing or a completed audio master.
+See the [qualification record](qualification/root-sounds-2026-09-27.md) for
+review findings, real-PCM comparisons, resource limits and verification evidence.
 
 ## Structural edit contract
 
@@ -292,9 +344,34 @@ decoded-PCM witnesses, review, verification and acceptance limits.
 
 The remaining integration is required, not optional follow-up scope:
 
-1. Persist owned recipes and bounded interval projections through validated,
-   reversible commands. Preserve strict old history grammars and actual old-CLI
-   fixture provenance during migration.
+The immediate dependency is persisted routing. Keep the complete sound recipe,
+original owner extent, selected support, sample-clock history and envelope
+progress separate from live fragments. A final offset or a collection of trimmed
+sources cannot preserve successive rounded edits. `SetSound` parameter changes
+must retain routing unless an explicit command replaces that intent.
+
+The raw root-source provider also needs a checked retained RoundEven capture.
+The existing `AudioRoutedRoot` accepts a processed root; a unity Preserve stage
+must not stand in for this missing raw boundary. Routed bus reads must reuse the
+caller's work budget and return dependencies for cache validation, including
+fully masked sounds. Current Hold gates remain separate from the retained input.
+
+InsertTime/SpliceSource/Delete should each capture and transform the root sound
+clock once, outside any helper Split. Non-root Split leaves that owner clock
+unchanged. Root Split instead needs retained owned contexts and shared logical
+sound identity so the replacement root never doubles the contribution. Do not
+open public frozen-context guards until those captures include their sound bus.
+
+Decisive witnesses include successive NTSC insertions retaining the old physical
+sample rather than reconstructing a final offset; deleting an event's beginning
+without losing its suffix; sample-identical root/non-root Split without new fades;
+nested source splices with sound-free inserted time and unchanged old suffixes;
+and bounded compact histories whose masked dependencies remain revocable.
+
+1. Extend root-owned recipes to nested owners and bounded interval projections
+   through validated, reversible commands. Implement the structural edit table
+   above while preserving strict old history grammars and actual old-CLI fixture
+   provenance during migration.
 2. Compile all live and retained sound dependencies into root, definition,
    processing-input, bound-domain and projected readers. Stop at each processing
    boundary so descendant voices enter once. Sound catalog assets need qualified

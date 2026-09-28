@@ -156,6 +156,7 @@ impl RenderPlan {
             });
         }
         Ok(Self {
+            sounds: BTreeMap::new(),
             metadata: PlanMetadata {
                 project_id: context.project_id().clone(),
                 revision_id: context.revision_id().clone(),

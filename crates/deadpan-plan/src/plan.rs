@@ -108,6 +108,7 @@ pub struct RenderPlan {
     // Catalog-only sounds are retained alongside structural dependencies.
     // These contracts still require explicit host admission.
     audio_assets: BTreeMap<AssetId, deadpan_core::AssetRecord>,
+    sounds: BTreeMap<deadpan_core::SoundId, deadpan_core::SoundEvent>,
     // Frozen admission stays distinct even when its catalog is empty.
     audio_context: bool,
     audio_bindings: deadpan_core::AudioBindingState,
@@ -444,12 +445,17 @@ impl RenderPlan {
             parents,
             audio_bindings: document.audio_bindings().clone(),
             audio_assets: document.assets().clone(),
+            sounds: document.sounds().clone(),
             audio_context: false,
         })
     }
 
     pub fn metadata(&self) -> &PlanMetadata {
         &self.metadata
+    }
+
+    pub fn sounds(&self) -> &BTreeMap<deadpan_core::SoundId, deadpan_core::SoundEvent> {
+        &self.sounds
     }
 
     /// Retained contracts are serialized intent, not permission to read media.
@@ -466,6 +472,10 @@ impl RenderPlan {
         self.by_id
             .get(id)
             .map(|index| self.nodes[*index].inspection.duration)
+    }
+
+    pub(crate) fn root_audio_edges(&self) -> deadpan_core::AudioEdgePolicies {
+        self.nodes[self.root].audio_edges
     }
 
     pub fn inspect(&self) -> PlanInspection {

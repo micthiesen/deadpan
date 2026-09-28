@@ -16,10 +16,11 @@ establish an implemented feature.
 | [Camera and framing](boards/camera-framing-board-v1.png) | Dedicated Camera preview, visible movement and scale keys, manual targets, keyboard region fields and a whole-Hold creep. | [Camera prompt](prompts/camera-framing-board-v1.txt) |
 | [Original moment reuse](boards/original-moment-reuse-v1.png) | Temporal Visual selection, copy without editing, explicit paste destination and one-step undo. | [Moment prompt](prompts/original-moment-reuse-v1.txt) |
 | [Sound audition](boards/sound-audition-board-v1.png) | Focused sound catalog, independent audition clock, visible play/pause/loop keys and retained edit context. | [Sound prompt](prompts/sound-audition-board-v1.txt) |
+| [Sound placement and adjustment](boards/sound-placement-board-v2.png) | Planned placed-sounds list, exact edit destination, event inspector, discoverable keys, scoped silence and overflow feedback. | [Initial prompt](prompts/sound-placement-board-v1.txt), [precision and silence corrections](prompts/sound-placement-board-v2.txt) |
 
 The built-in `image_gen.imagegen` tool generated these assets on 2026-09-23 and
 the Camera companion on 2026-09-24, the moment-reuse companion on 2026-09-26
-and the sound-audition companion on 2026-09-27.
+and the sound-audition and sound-placement companions on 2026-09-27.
 The current boards implement the owner's single-original direction in specification
 1.1: begin with the complete video and gradually reshape it, reuse its moments,
 add audio effects and accept AI extensions. New projects belong in Documents/Deadpan.
@@ -118,6 +119,20 @@ while text is active.
 Generated visual content is a composition reference. The following generated
 details are intentionally not implementation instructions:
 
+- The sound-placement board is a future native interaction target. A compact
+  placed-sounds list preserves picture priority and distinguishes each event
+  from its catalog source and the selected structural beat. Its corrected
+  sample field shows 274000 samples for Edit 137 f at 24 fps; fine placement must
+  use actual project-rate boundaries. The selected event overlaps the Pause,
+  so the inspector explicitly shows its suppressed 137–143 f portion. A scoped
+  allowance must become an explicit authored policy before its control appears.
+  The `,s` placement sequence, sound-focused `h/l` movement, `dd` removal and
+  parameter draft are proposed interactions, not implemented bindings. They
+  require production-router/Kestrel checks, native text ownership and replay
+  evidence together. The pictured Place and Sound added states are separate
+  moments; do not show Saved before the actual transaction completes. Root
+  sound commands and mixing now exist, but temporal-edit transforms, native
+  placement and custom allowances remain open. See [sound events](../SOUND_EVENTS.md).
 - The sound-audition board separates catalog selection, pane focus and the
   selected beat. Its violet Original outline must not imply that Original is
   also the active audition target. Sound elapsed/total values use their own

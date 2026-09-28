@@ -215,6 +215,7 @@ impl Document {
 
     pub fn upgrade(self) -> Result<ProjectDocument, DocumentError> {
         let document = ProjectDocument {
+            sounds: BTreeMap::new(),
             gap_overrides: self.gap_overrides,
             audio_lineage: self.audio_lineage,
             audio_bindings: self.audio_bindings,
@@ -238,6 +239,9 @@ impl Document {
     }
 
     pub fn matches(&self, document: &ProjectDocument) -> bool {
+        if !document.sounds.is_empty() {
+            return false;
+        }
         let Some(marks) = project_marks(&document.marks) else {
             return false;
         };
@@ -921,6 +925,9 @@ struct Patch {
 
 impl Patch {
     fn project(patch: &DocumentPatch) -> Option<Self> {
+        if !patch.sounds.is_empty() {
+            return None;
+        }
         Some(Self {
             project_id: patch.project_id.clone(),
             from_revision: patch.from_revision.clone(),

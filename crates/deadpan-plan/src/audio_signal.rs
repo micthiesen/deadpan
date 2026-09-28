@@ -718,6 +718,15 @@ impl<'plan> AudioSignal<'plan> {
         self.query_inner(samples, limits, AudioBoundaryRule::PointCeil, true, true)
     }
 
+    pub(crate) fn query_on_grid(
+        &self,
+        samples: Range<SignalSample>,
+        limits: AudioQueryLimits,
+        rule: AudioBoundaryRule,
+    ) -> Result<AudioSignalQuery<'plan>, PlanError> {
+        self.query_inner(samples, limits, rule, true, true)
+    }
+
     /// Resolve structural policies through all retimes on the same point grid.
     /// This is policy/source inspection, not permission to bypass Preserve DSP.
     pub fn query_flattened(

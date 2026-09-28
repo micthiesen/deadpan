@@ -1,0 +1,268 @@
+[
+  {
+    "command": [
+      "core28-deadpan-cli",
+      "doctor"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "2d0ecf798c8172a281898d3e2d09bcaba4b345cc916e15fb8ddc5c4fcf0827f9",
+    "stderr": "",
+    "stdout": "{\n  \"application\": \"deadpan\",\n  \"architecture\": \"aarch64\",\n  \"database_schema\": 34,\n  \"device_output\": \"macos-bounded-limited-sequence-audition\",\n  \"document_schema\": 28,\n  \"edge_faded_pcm\": \"authored-boundary-exceptions-after-time-mapping-before-voice-effects\",\n  \"internal_audio_sample_rate\": 48000,\n  \"limited_pcm\": \"canonical-edge-faded-bus-with-finite-oversampled-limiter-before-missing-voice-mix-stages\",\n  \"os\": \"macos\",\n  \"partial\": [\n    \"structural-editing-commands\",\n    \"sqlite-project-history\",\n    \"schema-1-through-33-migration\",\n    \"single-original-project-baseline\",\n    \"native-documents-project-library\",\n    \"indexed-picture-plan\",\n    \"indexed-audio-plan\",\n    \"worker-dsp-adapter\",\n    \"source-audio-preparation\",\n    \"plan-driven-source-pcm\",\n    \"transparent-audio-partitions\",\n    \"retained-context-split\",\n    \"atomic-sequence-pause-insertion\",\n    \"logical-mark-bindings\",\n    \"exact-boundary-selectors\",\n    \"persistent-marks\",\n    \"sparse-play-overrides\",\n    \"nested-occurrence-edits\",\n    \"persistent-generation-requests\",\n    \"persistent-generation-attempts\",\n    \"authored-generated-hold-semantics\",\n    \"generated-media-conversion\",\n    \"native-bridge-bundle-qualification\",\n    \"durable-generated-bundle-acceptance\",\n    \"durable-original-byte-ownership\",\n    \"identity-checked-relinking\",\n    \"persistent-source-decoding\",\n    \"measured-source-audio-indexes\",\n    \"independent-source-audio-mapping\",\n    \"independent-source-video-mapping\",\n    \"exact-source-stream-placement\",\n    \"measured-import-timing-candidates\",\n    \"measured-original-moment-candidates\",\n    \"exact-source-audio-selections\",\n    \"durable-source-qualification\",\n    \"atomic-source-registration-and-insertion\",\n    \"background-import-preparation\",\n    \"automatic-presentation-basis\",\n    \"timed-basis-locking\",\n    \"explicit-canvas-geometry\",\n    \"shared-sdr-picture-pipeline\",\n    \"authored-framing-envelopes\",\n    \"ordered-canvas-framing\",\n    \"captured-hold-framing\",\n    \"native-camera-draft\",\n    \"native-source-preview\",\n    \"native-project-workspace\",\n    \"native-sequence-audition\",\n    \"native-original-audition\",\n    \"selection-loop-audition\",\n    \"native-structural-speed-editing\"\n  ],\n  \"room_tone_pcm\": \"explicit-source-range-exact-overlap-before-effects\",\n  \"schema_version\": 1,\n  \"sequence_audition\": \"immutable-revision-device-clock-pictures-exact-paused-sample-resume\",\n  \"sqlite_version\": \"3.53.2\",\n  \"stage\": \"development-foundation\",\n  \"time_mapped_pcm\": \"bounded-continuous-preserve-before-effects\",\n  \"timing_probe\": {\n    \"frame\": 1,\n    \"frame_rate_denominator\": 1001,\n    \"frame_rate_numerator\": 30000,\n    \"sample_boundary\": 1602\n  },\n  \"unimplemented\": [\n    \"mastered-preview-audio\",\n    \"full-device-and-acoustic-qualification\",\n    \"full-keyboard-editor\",\n    \"analysis\",\n    \"ai-generation\",\n    \"youtube-import\",\n    \"export\",\n    \"distribution\"\n  ],\n  \"version\": \"0.1.0\"\n}\n"
+  },
+  {
+    "command": [
+      "core28-deadpan-cli",
+      "project",
+      "migrate",
+      "/tmp/deadpan-sound-events-20260927/db34-fixture/sound-history.deadpan"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "99f88cdfd9cf6397994f5eb59e934f330d879309eadb77300b2e767e37c66a3f",
+    "stderr": "",
+    "stdout": "{\n  \"migration\": {\n    \"backup\": \"/private/tmp/deadpan-sound-events-20260927/db34-fixture/sound-history.deadpan/Snapshots/before-schema-34-pCnGsC.sqlite\",\n    \"from_schema\": 33,\n    \"to_schema\": 34\n  },\n  \"protocol\": 1\n}\n"
+  },
+  {
+    "command": [
+      "core28-deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-sound-events-20260927/db34-fixture/sound-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "e85171c5a0ea2c0a8f388fb4b85b5ff67f71e4385a90209ab17cf5c0f641b3e6",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "core28-deadpan-cli",
+      "command",
+      "/tmp/deadpan-sound-events-20260927/db34-fixture/sound-history.deadpan",
+      "--json",
+      "/tmp/deadpan-sound-events-20260927/db34-fixture/core28-wrap-retime.json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "c9128911c598292c4080cd6d891f84d632e65d509bc1e749967345a2780c4365",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "core28-deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-sound-events-20260927/db34-fixture/sound-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "65449d98ada44e51640efa64e1dd9f61e67f76eeab1b7260e2806359359739b1",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "core28-deadpan-cli",
+      "command",
+      "/tmp/deadpan-sound-events-20260927/db34-fixture/sound-history.deadpan",
+      "--json",
+      "/tmp/deadpan-sound-events-20260927/db34-fixture/core28-abandoned-retime.json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "983964a9d01100bf4aef9c7b8013a4538f810b66787c355f528276c39e616e93",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "core28-deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-sound-events-20260927/db34-fixture/sound-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "fd34039edd55d7bae559299ba2c3161c1eea2396c67f14dd4a7c82324064cf06",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "core28-deadpan-cli",
+      "project",
+      "undo",
+      "/tmp/deadpan-sound-events-20260927/db34-fixture/sound-history.deadpan",
+      "--expected",
+      "core28-abandoned-retime"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "940c2efac4a58a9c65e0c4ae180e201e7e42b3577a0bf3ca168074efea42fcb4",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "core28-deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-sound-events-20260927/db34-fixture/sound-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "027dcd466d33aae71ebed791a1c92a5f761bda6781ffc7bf43772b728b03a4d7",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "core28-deadpan-cli",
+      "command",
+      "/tmp/deadpan-sound-events-20260927/db34-fixture/sound-history.deadpan",
+      "--json",
+      "/tmp/deadpan-sound-events-20260927/db34-fixture/core28-set-retime.json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "2993cb4925d9d23ecf1a74f53a421a1e15b7bcb6f4f4b9b2b293b23c50f17788",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "core28-deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-sound-events-20260927/db34-fixture/sound-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "d8bd7cf5de1cc8081fd37478ebdd42d831306dd4bfe91dc731e5f99098086e93",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "core28-deadpan-cli",
+      "command",
+      "/tmp/deadpan-sound-events-20260927/db34-fixture/sound-history.deadpan",
+      "--json",
+      "/tmp/deadpan-sound-events-20260927/db34-fixture/core28-occurrence-retime.json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "d15c1611cde56a229886f23fdb7b9459994c7d8548ca402b9beec38686de55e1",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "core28-deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-sound-events-20260927/db34-fixture/sound-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "1d0a640b28c4ce7da07dbe152961bf05af8e436366cbb207ead9a388f4699499",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "core28-deadpan-cli",
+      "project",
+      "undo",
+      "/tmp/deadpan-sound-events-20260927/db34-fixture/sound-history.deadpan",
+      "--expected",
+      "core28-occurrence-retime"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "487520d66e1a940fdfbd9bd1ab35c2b4865e6044edf89601c356200b302aa22b",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "core28-deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-sound-events-20260927/db34-fixture/sound-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "158eee1578cac5ccc2192bae2b097da393ab3b7feb7d20def6d88798f9278841",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "core28-deadpan-cli",
+      "project",
+      "redo",
+      "/tmp/deadpan-sound-events-20260927/db34-fixture/sound-history.deadpan",
+      "--expected",
+      "ad92d97e-8dea-4bd5-8563-e73aac030187"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "2acc3fa96b3f75721d155237ec4bd0818c6e23058c325a34fb3f9403717dabe9",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "core28-deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-sound-events-20260927/db34-fixture/sound-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "1978a3bf5fd65b720e2e620ee9c271e9a7765569bdfbe9c04b95366e8666e9b0",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "core28-deadpan-cli",
+      "project",
+      "undo",
+      "/tmp/deadpan-sound-events-20260927/db34-fixture/sound-history.deadpan",
+      "--expected",
+      "d6ff890f-c0d7-4556-af23-487ada28d527"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "1b84cf761536c7074e15e2f88edf5c629f0e5cd7dcb272e1c16d21030337ce76",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "core28-deadpan-cli",
+      "project",
+      "validate",
+      "/tmp/deadpan-sound-events-20260927/db34-fixture/sound-history.deadpan"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "d369eb01525deaab3da2a29f77ece2874344255fcfa57a346705562277685992",
+    "stderr": "",
+    "stdout": "{\n  \"basis_state\": {\n    \"geometry_origin\": \"explicit\",\n    \"primary\": null,\n    \"rate_origin\": \"explicit\"\n  },\n  \"duration_frames\": 107,\n  \"mark_count\": 0,\n  \"node_count\": 36,\n  \"presentation_basis\": {\n    \"color_policy\": \"sdr_rec709\",\n    \"frame_rate\": {\n      \"denominator\": 1001,\n      \"numerator\": 30000\n    },\n    \"height\": 16,\n    \"width\": 16\n  },\n  \"project_id\": \"d038df46-94c6-4c0a-9d11-038b0e6da220\",\n  \"protocol\": 1,\n  \"revision_id\": \"649aa96c-b73a-48cb-a87c-3b86baf7b4d5\",\n  \"root\": \"b5903f58-0249-4a89-8af8-ed3d8a5cfe1f\",\n  \"valid\": true\n}\n"
+  },
+  {
+    "command": [
+      "core28-deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-sound-events-20260927/db34-fixture/sound-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "c6bc91dfd5fe74c389f9fad3e74042c2612c0683a8c9a9cd558388e37d2b3bb4",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "core28-deadpan-cli",
+      "project",
+      "validate",
+      "/tmp/deadpan-sound-events-20260927/db34-fixture/reopened-sql.deadpan"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "d369eb01525deaab3da2a29f77ece2874344255fcfa57a346705562277685992",
+    "stderr": "",
+    "stdout": "{\n  \"basis_state\": {\n    \"geometry_origin\": \"explicit\",\n    \"primary\": null,\n    \"rate_origin\": \"explicit\"\n  },\n  \"duration_frames\": 107,\n  \"mark_count\": 0,\n  \"node_count\": 36,\n  \"presentation_basis\": {\n    \"color_policy\": \"sdr_rec709\",\n    \"frame_rate\": {\n      \"denominator\": 1001,\n      \"numerator\": 30000\n    },\n    \"height\": 16,\n    \"width\": 16\n  },\n  \"project_id\": \"d038df46-94c6-4c0a-9d11-038b0e6da220\",\n  \"protocol\": 1,\n  \"revision_id\": \"649aa96c-b73a-48cb-a87c-3b86baf7b4d5\",\n  \"root\": \"b5903f58-0249-4a89-8af8-ed3d8a5cfe1f\",\n  \"valid\": true\n}\n"
+  },
+  {
+    "command": [
+      "core28-deadpan-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-sound-events-20260927/db34-fixture/reopened-sql.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "c6bc91dfd5fe74c389f9fad3e74042c2612c0683a8c9a9cd558388e37d2b3bb4",
+    "stderr": ""
+  }
+]

@@ -40,6 +40,9 @@ mod stage_projection;
 #[path = "signal_mix.rs"]
 mod signal_mix;
 
+#[path = "sound_events.rs"]
+mod sound_events;
+
 #[path = "projected_root.rs"]
 mod projected_root;
 pub use projected_root::ProjectedRootBlock;
@@ -612,7 +615,7 @@ impl StageAudio {
         while cursor.0 < end {
             let count = u32::try_from((end - cursor.0).min(i64::from(MAX_OUTPUT_FRAMES)))
                 .map_err(|_| StageAudioError::PreparationRange)?;
-            let block = self.read_controlled(provider, cursor, count, control, true, 0)?;
+            let block = self.read_authored_bus(provider, cursor, count, control)?;
             samples.extend(block.samples);
             suppressed.extend(block.suppressed);
             dependencies.extend(block.dependencies);
@@ -620,11 +623,20 @@ impl StageAudio {
         }
         let suppressed = merged_suppression(suppressed);
         control.check()?;
+        let has_sounds = !self.plan.sounds().is_empty();
         let block = EdgeFadedBlock {
             schema_version: 1,
-            stage: "edge_faded_pcm_before_voice_effects",
+            stage: if has_sounds {
+                "authored_bus_pcm_before_mastering"
+            } else {
+                "edge_faded_pcm_before_voice_effects"
+            },
             engine: crate::EDGE_FADE_ID,
-            processing_order: ["time_pitch_mapping", "edge_fades"],
+            processing_order: if has_sounds {
+                ["per_voice_time_pitch_edges_gain", "group_mix"]
+            } else {
+                ["time_pitch_mapping", "edge_fades"]
+            },
             project_id: self.plan.metadata().project_id.clone(),
             revision_id: self.plan.metadata().revision_id.clone(),
             start,

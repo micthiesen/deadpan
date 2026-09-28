@@ -847,6 +847,43 @@ pub(crate) fn check_stored_sizes(connection: &Connection) -> Result<(), StoreErr
     Ok(())
 }
 
+/// Sound edits may use only source evidence already admitted in their expected
+/// revision. A caller-supplied qualification name is never registration.
+pub(crate) fn validate_sound_sources(
+    connection: &Connection,
+    current: &ProjectDocument,
+    next: &ProjectDocument,
+) -> Result<(), StoreError> {
+    let assets = next
+        .sounds()
+        .iter()
+        .filter(|(id, event)| current.sounds().get(*id) != Some(*event))
+        .map(|(_, event)| &event.source.asset)
+        .collect::<std::collections::BTreeSet<_>>();
+    for asset in assets {
+        let record = current
+            .assets()
+            .get(asset)
+            .ok_or_else(|| invalid("sound asset is absent from the selected revision"))?;
+        if next.assets().get(asset) != Some(record) {
+            return Err(invalid("sound edit changes its admitted asset contract"));
+        }
+        let id = record
+            .source_qualification
+            .as_ref()
+            .ok_or_else(|| invalid("sound asset has no measured source qualification"))?;
+        let receipt = read_receipt(connection, id)?
+            .ok_or_else(|| invalid("sound source qualification is missing"))?;
+        if receipt.asset_record(record.label.clone())? != *record {
+            return Err(invalid(
+                "sound asset metadata disagrees with selected source qualification",
+            ));
+        }
+        check_original_binding(connection, &receipt)?;
+    }
+    Ok(())
+}
+
 pub(crate) fn validate_store(connection: &Connection) -> Result<(), StoreError> {
     check_stored_sizes(connection)?;
     let mut metadata = BTreeMap::new();

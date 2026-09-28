@@ -1,6 +1,6 @@
 //! Canonical limited audition tiles on the absolute project sample grid.
-//! The current upstream is the edge-faded bus. Voice effects, sends and the
-//! full group mix remain separate work; this is not a completed export master.
+//! The upstream combines the edge-faded Original and independent root sounds.
+//! Full voice effects, sends and nested mixing remain separate work.
 use std::ops::Range;
 use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
@@ -169,9 +169,21 @@ impl LimitedAudio {
         budget.check()?;
         Ok(LimitedAudioBlock {
             schema_version: 1,
-            stage: "limited_edge_faded_pcm",
+            stage: if self.plan().sounds().is_empty() {
+                "limited_edge_faded_pcm"
+            } else {
+                "limited_authored_bus_pcm"
+            },
             engine: LIMITER_ID,
-            processing_order: ["time_pitch_mapping", "edge_fades", "stereo_limiter"],
+            processing_order: if self.plan().sounds().is_empty() {
+                ["time_pitch_mapping", "edge_fades", "stereo_limiter"]
+            } else {
+                [
+                    "per_voice_time_pitch_edges_gain",
+                    "group_mix",
+                    "stereo_limiter",
+                ]
+            },
             project_id: self.plan().metadata().project_id.clone(),
             revision_id: self.plan().metadata().revision_id.clone(),
             start,

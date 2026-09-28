@@ -68,7 +68,7 @@ revision fails with `RevisionConflict` and the current revision, without writing
 
 Supported commands are `insert`, `insert_time`, `split`, `delete`, `move`, `group`,
 `ungroup`, `splice_source`, `wrap_repeat`, `set_repeat`, `wrap_retime`, `set_retime`, `insert_plays`, `move_plays`, `set_hold_duration`, `set_hold_provider`, `set_hold_picture_context`, `set_source_audio_mapping`, `set_source_video_mapping`,
-`rename`, `set_audio_edge`, `set_framing`, `add_asset`, `set_canvas`, `set_mark`, `delete_mark`, `set_play_override`, `clear_play_override`, `set_gap_override`, `clear_gap_override`, `isolate_gap`, and `edit_occurrence`. Their exact typed parameters are defined in
+`rename`, `set_audio_edge`, `set_framing`, `set_sound`, `delete_sound`, `add_asset`, `set_canvas`, `set_mark`, `delete_mark`, `set_play_override`, `clear_play_override`, `set_gap_override`, `clear_gap_override`, `isolate_gap`, and `edit_occurrence`. Their exact typed parameters are defined in
 [`Command`](../crates/deadpan-core/src/command.rs). `set_repeat` changes an existing
 Repeat; `wrap_repeat` deliberately adds nesting. A three-play repeat includes
 three total plays and only two gaps. These are structural edits, not rendered
@@ -81,7 +81,14 @@ and `pitch`, retaining the ordinary Retime's child/input range. Both also have
 occurrence forms. The native `:retime` speed grammar resolves to these same
 commands. See [speed editing](RETIME_EDITING.md) for output-binding lifecycle.
 
-Documents use schema 28. Sparse [gap branches](REPEAT_GAP_BRANCHES.md) retain an
+Documents use schema 29. `set_sound` takes an `id` and complete `event`;
+`delete_sound` takes its `id`. Events require a qualified source, root owner,
+natural-rate mapping, contained selection plus sample offset, explicit gain,
+edge choices and `overflow: "reject"`. They feed the shared limited bus without
+adding picture time. Temporal edits while events exist remain explicitly
+unsupported. See [root sound events](SOUND_EVENTS.md#persisted-root-sounds).
+
+Sparse [gap branches](REPEAT_GAP_BRANCHES.md) retain an
 independent subtree after a stable Repeat play. `isolate_gap` copies the current
 rendered default into a Hold while preserving its audio clock; it requires fresh
 node and timing identities. `set_gap_override` replaces a gap with a supplied
@@ -720,18 +727,20 @@ future-schema read-only inspection still needs a compatibility implementation.
 
 ## Schema migration
 
-Database schemas 1 through 33 return `MigrationRequired` when opened. Upgrade explicitly:
+Database schemas 1 through 34 return `MigrationRequired` when opened. Upgrade explicitly:
 
 ```sh
 cargo run --locked -p deadpan-cli -- project migrate /tmp/example.deadpan
 ```
 
 Migration holds the project writer lock, keeps a consistent SQLite backup under
-`Snapshots/before-schema-33-*.sqlite`, and upgrades a separate candidate. It
+`Snapshots/before-schema-34-*.sqlite` for a database-34 input, and upgrades a separate candidate. It
 replays all commands, undo/redo revisions, and abandoned branches with their
 original revision IDs. Every snapshot and forward/inverse transaction is checked
 against its strict original schema meaning. Migration goes directly to database
-schema 34 and core document schema 28. Database-33 replays frozen core 27,
+schema 35 and core document schema 29. Database-34 replays frozen core 28,
+which retains Retime commands but rejects all sound state and commands,
+including empty or null sound maps. Database-33 replays frozen core 27,
 which admits SpliceSource but refuses the new Retime edit commands.
 Database-32 replays frozen core 26,
 retaining nested Sequence pause admission but rejecting `splice_source`. Database-31 histories retain root physical

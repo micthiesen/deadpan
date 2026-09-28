@@ -138,6 +138,32 @@
       "referenced_images": [
         "boards/single-source-workspace-v1.png"
       ]
+    },
+    {
+      "image": "boards/sound-placement-board-v1.png",
+      "status": "superseded-exploration",
+      "generated_on": "2026-09-27",
+      "sha256": "9ec72644965c2a1b85de38ef4f85b1c22be005926b6838a56c37bf46d35fec25",
+      "width": 1536,
+      "height": 1024,
+      "prompt": "prompts/sound-placement-board-v1.txt",
+      "prompt_sha256": "7d7ec78c022061b33faee283f64be7ec1071991c23f90c0da5b11f9c285aa243",
+      "referenced_images": [
+        "boards/single-source-workspace-v1.png"
+      ]
+    },
+    {
+      "image": "boards/sound-placement-board-v2.png",
+      "status": "current-target",
+      "generated_on": "2026-09-27",
+      "sha256": "34820d3c4ad0232bfc90c4e50b62f2ca0cb2ee5f5efee7ea55cc2fa66fe6bc75",
+      "width": 1536,
+      "height": 1024,
+      "prompt": "prompts/sound-placement-board-v2.txt",
+      "prompt_sha256": "de808767e2dcb956ba6ccd2bfc927f177ae8dfe3b9958fdff039e4e9646a7495",
+      "referenced_images": [
+        "boards/sound-placement-board-v1.png"
+      ]
     }
   ]
 }

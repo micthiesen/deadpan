@@ -66,6 +66,12 @@ never keep retrying until green. Retry a capability failure only after that
 capability changes. Keep one concise result record and use Git checkpoints
 instead of creating another full archive and gate-script copy per iteration.
 
+Owned runtime launches use the shared process adapter. On macOS, qualify changes
+to that boundary with `python3 tools/process-qualification/check_pipe_inheritance.py
+--output /tmp/deadpan-pipe-proof-NEW`. The [process-launch record](qualification/process-launch-2026-09-27.md)
+explains the deterministic raw/fixed pipe-inheritance witness and its cooperative
+scope. A passing rerun alone does not diagnose a worker pipe-EOF failure.
+
 Use `cargo fmt --all` to apply formatting. Keep `Cargo.lock` committed; dependency updates are explicit reviewed changes. Tests should establish meaningful behavior and failure modes rather than mirror implementation.
 
 Use unit and integration tests for command transactions, grammar, geometry and
@@ -225,6 +231,15 @@ versioned geometry preview/commit. [Presentation policy](PRESENTATION_BASIS.md)
 documents the boundary; these tests establish no native canvas-preview quality.
 
 ## Source audio checks
+
+Persisted root sound events use core/plan `sound_events` integration tests,
+store `migration sounds::` and `source_registration sounds::`, audio
+`sound_events`, playback `source_voice::events` and CLI `audio_inspection sounds::`.
+These cover durable commands, strict old histories, exact RoundEven placement,
+independent decoded PCM sums, the shared limiter, source revocation and bounded
+preparation. Original and catalog audition remain independent source views.
+Structural sound editing and native event placement remain open. See
+[root sound events](SOUND_EVENTS.md#persisted-root-sounds).
 
 Structural speed edits use `:retime 0.75 pitch=preserve` or `pitch=tape`, with
 exact fractional input also accepted. The inspector shows the final duration

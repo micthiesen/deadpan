@@ -40,6 +40,8 @@ mod picture_context;
 mod retime;
 #[path = "migration/sequence_insert.rs"]
 mod sequence_insert;
+#[path = "migration/sounds.rs"]
+mod sounds;
 #[path = "migration/source_selection.rs"]
 mod source_selection;
 

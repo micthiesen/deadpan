@@ -329,12 +329,13 @@ impl<'plan> AudioSignalTape<'plan> {
             if remaining_spans == 0 || remaining_work == 0 {
                 return Err(PlanError::AudioQueryLimit("audio tape work/span"));
             }
-            let query = run.signal.query(
+            let query = run.signal.query_on_grid(
                 cursor..end,
                 AudioQueryLimits {
                     maximum_spans: remaining_spans,
                     maximum_work: remaining_work,
                 },
+                self.grid.boundary_rule(),
             )?;
             charge(&mut work, query.work, limits.maximum_work)?;
             add_lookup(&mut lookup, query.lookup)?;

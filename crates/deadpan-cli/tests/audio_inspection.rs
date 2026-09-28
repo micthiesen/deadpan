@@ -28,6 +28,9 @@ type Result<T = ()> = std::result::Result<T, Box<dyn Error>>;
 #[path = "audio_inspection/gap.rs"]
 mod gap;
 
+#[path = "audio_inspection/sounds.rs"]
+mod sounds;
+
 fn active() -> AtomicBool {
     AtomicBool::new(false)
 }
