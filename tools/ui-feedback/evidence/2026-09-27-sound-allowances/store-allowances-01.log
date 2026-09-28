@@ -1,0 +1,23 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+   Compiling deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 46.19s
+     Running tests/migration.rs (target/debug/deps/migration-1ec6c371835407ea)
+
+running 5 tests
+test sound_allowances::schema30_frozen_guard_retains_root_split_and_temporal_occurrence_rejections ... ok
+test sound_allowances::schema30_projections_never_discard_modern_allowances ... ok
+test sound_allowances::schema30_rejects_allowance_commands_in_abandoned_history ... ok
+test sound_allowances::schema30_rejects_allowance_fields_in_all_snapshot_and_patch_positions ... ok
+test sound_allowances::actual_schema36_sound_history_preserves_routes_branches_receipts_and_pending_redo ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 107 filtered out; finished in 0.52s
+
+     Running tests/source_registration.rs (target/debug/deps/source_registration-6682ef6b7c54f360)
+
+running 1 test
+test sounds::sound_allowance_edits_recheck_sources_and_survive_atomic_history_reopen ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.18s
+

@@ -860,6 +860,7 @@ pub(crate) fn validate_sound_sources(
         .filter(|(id, event)| {
             current.sounds().get(*id) != Some(*event)
                 || current.sound_routes().get(*id) != next.sound_routes().get(*id)
+                || current.sound_allowances().get(*id) != next.sound_allowances().get(*id)
         })
         .map(|(_, event)| &event.source.asset)
         .collect::<std::collections::BTreeSet<_>>();

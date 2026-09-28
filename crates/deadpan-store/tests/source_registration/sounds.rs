@@ -1,7 +1,8 @@
 use super::*;
 use deadpan_core::{
-    AudioEdgePolicy, AudioSample, SoundEvent, SoundId, SoundOverflowPolicy, SourceAudio,
-    SourceAudioMapping, SourceSpan, SourceTimestamp,
+    AudioEdgePolicy, AudioSample, AudioTimingId, FrameDuration, HoldAudio, HoldRecipe, HoldVideo,
+    InstancePath, ProjectFrame, SoundEvent, SoundHoldIssuer, SoundId, SoundOverflowPolicy,
+    SourceAudio, SourceAudioMapping, SourceSpan, SourceTimestamp, SplitIdentities,
 };
 
 fn sound(document: &ProjectDocument) -> Result<SoundEvent> {
@@ -162,5 +163,138 @@ fn sound_command_rechecks_receipt_inside_its_revision_transaction() -> Result {
     )?;
     store.commit(&add)?;
     store.validate()?;
+    Ok(())
+}
+
+#[test]
+fn sound_allowance_edits_recheck_sources_and_survive_atomic_history_reopen() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let (path, mut store) = project(scratch.path())?;
+    let original = retain(&mut store, "offset-bframes.mp4")?;
+    let decoded = decode(&store, &original)?;
+    let input = request(&store, &original, "import", "camera", Some("clip"))?;
+    store.register_source(&input, &decoded, None, limits(), &active())?;
+    let sound_id = SoundId::new("overlay")?;
+    let imported = store.snapshot()?;
+    store.commit(&edit(
+        &imported,
+        "sound-add",
+        Command::SetSound {
+            id: sound_id.clone(),
+            event: sound(&imported)?,
+        },
+    ))?;
+    let hold = NodeId::new("silent-hold")?;
+    store.commit(&edit(
+        &store.snapshot()?,
+        "pause",
+        Command::InsertTime {
+            at: ProjectFrame(0),
+            hold: HoldRecipe {
+                picture_context: None,
+                duration: FrameDuration::new(2)?,
+                video: HoldVideo::Background,
+                audio: HoldAudio::Silence,
+            },
+            id: hold.clone(),
+            identities: SplitIdentities::default(),
+            timing: AudioTimingId {
+                allocation: revision("pause"),
+                ordinal: 0,
+            },
+        },
+    ))?;
+    let baseline = store.snapshot()?;
+    assert!(baseline.sound_routes().contains_key(&sound_id));
+    let issuer = SoundHoldIssuer::Node {
+        instance: InstancePath {
+            node: hold,
+            repeats: Vec::new(),
+        },
+    };
+    let allow = edit(
+        &baseline,
+        "allow-sound",
+        Command::SetSoundAllowance {
+            sound: sound_id.clone(),
+            issuer: issuer.clone(),
+            allowed: true,
+        },
+    );
+    let preview = store.preview(&allow)?;
+    assert_eq!(store.snapshot()?, baseline);
+    let baseline_counts = counts(&path)?;
+    let database = Connection::open(path.join("project.sqlite"))?;
+    database.execute_batch("CREATE TRIGGER fail_allowance_history BEFORE INSERT ON history BEGIN SELECT RAISE(FAIL,'forced allowance history failure'); END;")?;
+    assert!(store.commit(&allow).is_err());
+    assert_eq!(store.snapshot()?, baseline);
+    assert_eq!(counts(&path)?, baseline_counts);
+    database.execute_batch("DROP TRIGGER fail_allowance_history")?;
+
+    // The event and its sample route are unchanged by this command. Receipt
+    // admission must still run for both adding and removing the allowance.
+    for allowed in [true, false] {
+        let before = store.snapshot()?;
+        let change = edit(
+            &before,
+            if allowed { "allow-sound" } else { "deny-sound" },
+            Command::SetSoundAllowance {
+                sound: sound_id.clone(),
+                issuer: issuer.clone(),
+                allowed,
+            },
+        );
+        let before_counts = counts(&path)?;
+        let (receipt, original_ref): (Vec<u8>, String) = database.query_row(
+            "SELECT snapshot,original_ref FROM source_qualifications",
+            [],
+            |row| Ok((row.get(0)?, row.get(1)?)),
+        )?;
+        for tamper in [
+            "UPDATE source_qualifications SET snapshot=X'00'",
+            "UPDATE source_qualifications SET original_ref=json_set(original_ref,'$.byte_length',1234)",
+        ] {
+            database.execute(tamper, [])?;
+            assert!(matches!(
+                store.preview(&change),
+                Err(StoreError::SourceRegistration(_))
+            ));
+            assert!(matches!(
+                store.commit(&change),
+                Err(StoreError::SourceRegistration(_))
+            ));
+            assert_eq!(store.snapshot()?, before);
+            assert_eq!(counts(&path)?, before_counts);
+            database.execute(
+                "UPDATE source_qualifications SET snapshot=?1,original_ref=?2",
+                rusqlite::params![receipt, original_ref],
+            )?;
+        }
+        let committed = store.commit(&change)?;
+        if allowed {
+            assert_eq!(committed.edit, preview);
+        }
+        let after = store.snapshot()?;
+        assert_eq!(after.sounds(), baseline.sounds());
+        assert_eq!(after.sound_routes(), baseline.sound_routes());
+        assert_eq!(after.nodes(), baseline.nodes());
+        assert_eq!(after.sound_allowances().contains_key(&sound_id), allowed);
+        assert_eq!(committed.edit.inverse.apply(&after)?, before);
+        drop(store);
+        store = ProjectStore::open(&path, AccessMode::ReadWrite)?;
+        assert_eq!(store.snapshot()?, after);
+    }
+    let denied = store.snapshot()?;
+    store.undo(denied.revision_id(), revision("undo-deny"))?;
+    let allowed = store.snapshot()?;
+    assert!(allowed.sound_allowances().contains_key(&sound_id));
+    drop(store);
+    let mut store = ProjectStore::open(&path, AccessMode::ReadWrite)?;
+    store.redo(allowed.revision_id(), revision("redo-deny"))?;
+    assert!(store.snapshot()?.sound_allowances().is_empty());
+    assert_eq!(store.snapshot()?.sound_routes(), baseline.sound_routes());
+    store.validate()?;
+    drop(store);
+    ProjectStore::open(&path, AccessMode::ReadOnly)?.validate()?;
     Ok(())
 }

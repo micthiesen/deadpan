@@ -1,0 +1,27 @@
+{
+  "command": [
+    "cargo",
+    "run",
+    "--locked",
+    "-p",
+    "deadpan-app",
+    "--release",
+    "--features",
+    "ui-harness",
+    "--",
+    "--ui-check",
+    "--mode",
+    "performance",
+    "--kestrel-source",
+    "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+    "--output",
+    "/tmp/deadpan-sound-allowances-h1t6i96x/performance-final"
+  ],
+  "started": "2026-09-28T04:04:02.395393+00:00",
+  "base_commit": "357ae533b399ccf51e6dc3196ba2e0bba720ef9f",
+  "diff_sha256": "9c99a15d91e0dbd13975674dd6f86bad548f02e10a84784bef1c3cb04305651e",
+  "source_manifest_sha256": "379db4507769ccb2a5e815874f546b0817b70e0cce58c766c258f20457c4bd5f",
+  "pid": 26217,
+  "exit_code": 0,
+  "seconds": 212.23207566607744
+}

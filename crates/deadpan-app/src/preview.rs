@@ -1570,6 +1570,10 @@ impl DeadpanApp {
                         self.error = Some(error);
                         return;
                     }
+                    if let navigation::SoundAction::Allowance(allowed) = action {
+                        self.captured_sound_allowance(target, *allowed);
+                        return;
+                    }
                     // The displayed first audible sample may enclose an exact
                     // fractional-frame onset. Merely accepting the prefilled
                     // field must not snap that retained phase or add history.
@@ -1812,7 +1816,7 @@ impl DeadpanApp {
                 egui::Frame::new().fill(style::PANEL).stroke(egui::Stroke::new(1.0, style::LAVENDER)).corner_radius(4).inner_margin(egui::Margin::symmetric(10, 6)).show(ui, |ui| {
                     ui.horizontal(|ui| {
                         ui.label(egui::RichText::new(":").monospace().color(style::LAVENDER));
-                        ui.add(egui::TextEdit::singleline(&mut self.command).id(egui::Id::new(COMMAND_ID)).font(egui::TextStyle::Monospace).frame(egui::Frame::NONE).desired_width(f32::INFINITY).hint_text("hold 0.5s · repeat 3 · retime 0.75 pitch=preserve · help"));
+                        ui.add(command_text_edit(&mut self.command).font(egui::TextStyle::Monospace).frame(egui::Frame::NONE).desired_width(f32::INFINITY).hint_text("hold 0.5s · repeat 3 · retime 0.75 pitch=preserve · help"));
                         retain_text_escape(ui, COMMAND_ID);
                     });
                 });
@@ -2660,6 +2664,7 @@ impl DeadpanApp {
                         ("Sound h/l · Enter", "Move an uncut sound by exact project frames without accumulated rounding, or choose an exact sample onset with :sound-at 137. Escape cancels entry. Sounds with retained timeline cuts cannot be moved yet."),
                         ("Sound +/− · :sound-gain -3", "Change the selected sound's gain by 3 dB, or enter a value from -96 to 24 dB, to three decimal places. Counts repeat the gain step; Monitor and Original levels stay unchanged."),
                         (":sound-edges soft / hard", "Set both endpoint fade policies on the selected sound. Gain and edge changes retain its timeline cuts."),
+                        (":sound-allow / :sound-silence", "Allow or silence the selected sound in the identified pause at the retained Edit cursor. Exact occurrence only; never fills a timing gap."),
                         ("Sound dd / :sound-delete", "Remove only the selected placed sound. Undo restores it. Focus Beats to cut picture time."),
                         (",f", "Camera preview on the selected beat. Parent framing stays live. h/j/k/l move 1% of the uncropped Original; uppercase moves 5%."),
                         ("Camera + / −", "Scale by ×1.05 or its reciprocal. Counts repeat: 3+ is three steps."),
@@ -2680,7 +2685,7 @@ impl DeadpanApp {
                     ] { help_binding(ui, key, description); }
                     ui.separator();
                     ui.weak("Original browsing never changes it. Your edit commands affect the selected beat in the displayed group and its linked picture and sound. Counts precede operators, such as 3rr; the visible PENDING badge waits without a timer.");
-                    ui.weak("Space auditions the focused catalog sound, Original, or full edit. In the catalog, j/k selects a sound and Shift+Space loops its complete measured audio. Catalog audition keeps the picture and both editor cursors in place. Leaving the catalog or choosing another sound stops it. Elsewhere Shift+Space loops the selected Original moment or edited beat with context. Playback has edge fades and a safety limiter; pause before changing Monitor volume. Range cuts/replacement, named registers, Repeat/Retime descendant navigation and insertion, moving routed sounds, custom pause allowances, voice effects, the full mix, AI generation in the app, and export remain unavailable.");
+                    ui.weak("Space auditions the focused catalog sound, Original, or full edit. In the catalog, j/k selects a sound and Shift+Space loops its complete measured audio. Catalog audition keeps the picture and both editor cursors in place. Leaving the catalog or choosing another sound stops it. Elsewhere Shift+Space loops the selected Original moment or edited beat with context. Playback has edge fades and a safety limiter; pause before changing Monitor volume. Range cuts/replacement, named registers, Repeat/Retime descendant navigation and insertion, moving routed sounds, voice effects, the full mix, AI generation in the app, and export remain unavailable.");
             });
     }
 }
@@ -2952,6 +2957,15 @@ fn inspector_value(ui: &mut egui::Ui, label: &str, value: &str) {
 }
 
 type SourceRow = (AssetId, String, bool);
+fn command_text_edit(command: &mut String) -> egui::TextEdit<'_> {
+    // The application routes non-IME Enter after final text has been processed.
+    // TextEdit's default return key instead surrenders focus unconditionally,
+    // including during Preedit, closing command mode before composition ends.
+    egui::TextEdit::singleline(command)
+        .id(egui::Id::new(COMMAND_ID))
+        .return_key(None)
+}
+
 fn retain_text_escape(ui: &egui::Ui, id: &str) {
     // egui installs this filter only on an already-focused widget. Initialize
     // it in the same outer frame as focus acquisition; otherwise an immediate
@@ -3558,6 +3572,107 @@ mod tests {
                 })
             );
             assert!(context.memory(|m| m.has_focus(pane_id(Pane::Sources))));
+        }
+    }
+
+    #[test]
+    fn command_composition_keeps_focus_through_enter_and_layout_retries() {
+        let context = egui::Context::default();
+        context.options_mut(|options| options.max_passes = 3.try_into().unwrap());
+        let mut command = String::new();
+        let mut open = true;
+        let mut composing = false;
+        let mut submissions = 0;
+        run_ui(&context, egui::RawInput::default(), |ui| {
+            ui.memory_mut(|memory| memory.request_focus(egui::Id::new(COMMAND_ID)));
+            ui.add(command_text_edit(&mut command));
+            retain_text_escape(ui, COMMAND_ID);
+        });
+        for (events, should_submit) in [
+            (
+                vec![
+                    egui::Event::Ime(egui::ImeEvent::Preedit {
+                        text: "sound-silence".into(),
+                        active_range_chars: Some(0..13),
+                    }),
+                    key_event(egui::Key::Enter),
+                ],
+                false,
+            ),
+            // Composition remains active without another Preedit in this batch.
+            (vec![key_event(egui::Key::Enter)], false),
+            (
+                vec![
+                    egui::Event::Ime(egui::ImeEvent::Commit("sound-silence".into())),
+                    key_event(egui::Key::Enter),
+                ],
+                false,
+            ),
+            (vec![key_event(egui::Key::Enter)], true),
+        ] {
+            let mut passes = 0;
+            run_ui(
+                &context,
+                egui::RawInput {
+                    events,
+                    ..Default::default()
+                },
+                |ui| {
+                    passes += 1;
+                    let events = ui.input(|input| input.events.clone());
+                    help_scroll::observe_composition(&events, &mut composing);
+                    let ime = composing
+                        || events
+                            .iter()
+                            .any(|event| matches!(event, egui::Event::Ime(_)));
+                    let enter = ui.input(|input| input.key_pressed(egui::Key::Enter));
+                    let action = enter
+                        .then(|| {
+                            navigation::text_action(
+                                egui::Key::Enter,
+                                egui::Modifiers::NONE,
+                                text_input_active(ui.ctx(), open),
+                                ime,
+                            )
+                        })
+                        .flatten();
+                    if action.is_some() {
+                        ui.input_mut(|input| {
+                            input.consume_key(egui::Modifiers::NONE, egui::Key::Enter);
+                        });
+                    }
+                    if open {
+                        ui.add(command_text_edit(&mut command));
+                        retain_text_escape(ui, COMMAND_ID);
+                    }
+                    let heading = ui.label("Sounds");
+                    pane_focus(ui, Pane::Sounds, heading.rect, "Placed sounds pane");
+                    if action == Some(TextAction::Open) {
+                        submissions += 1;
+                        open = false;
+                        ui.memory_mut(|memory| memory.request_focus(pane_id(Pane::Sounds)));
+                    }
+                    assert!(
+                        !close_command_on_blur(ui.ctx(), &mut open),
+                        "IME must not cause a native blur"
+                    );
+                    if ui.ctx().current_pass_index() < 2 {
+                        ui.ctx()
+                            .request_discard("exercise command footer layout retry");
+                    }
+                },
+            );
+            assert_eq!(passes, 3);
+            assert_eq!(
+                command, "sound-silence",
+                "preedit and commit must reach the native widget exactly once"
+            );
+            assert_eq!(open, !should_submit);
+            assert_eq!(submissions, usize::from(should_submit));
+            assert_eq!(
+                context.memory(|memory| memory.has_focus(egui::Id::new(COMMAND_ID))),
+                !should_submit
+            );
         }
     }
 

@@ -9,7 +9,7 @@ use crate::{
     Anchor, AnchorIndex, BeatNode, DocumentError, EditError, EditErrorCode, ExactRatio,
     FrameDuration, FrameRange, InsertionBias, InstancePath, MAX_DOCUMENT_MARK_BINDINGS,
     MAX_DOCUMENT_NODES, MAX_MARK_BINDINGS, MarkFragment, MarkState, NodeId, NodeKind, PitchPolicy,
-    ProjectDocument, ProjectFrame, RetimePurpose, RevisionId,
+    ProjectDocument, ProjectFrame, RetimePurpose,
 };
 
 /// Fresh node IDs, consumed deterministically. Unused IDs are not persisted.
@@ -28,8 +28,9 @@ pub(crate) fn apply(
     target: &NodeId,
     at: FrameDuration,
     identities: &SplitIdentities,
-    allocation: &RevisionId,
+    edit_context: crate::command::EditContext<'_>,
 ) -> Result<ProjectDocument, EditError> {
+    let allocation = edit_context.allocation;
     let durations = document.durations()?;
     let original = document.nodes.get(target).ok_or_else(|| {
         EditError::new(
@@ -122,6 +123,9 @@ pub(crate) fn apply(
     )?;
     let mut result = document.clone();
     crate::occurrence_edit::clone_nodes(&mut result, &copied, allocation)?;
+    if let Some(allowances) = edit_context.allowances {
+        allowances.split(&copied)?;
+    }
     if root {
         result.nodes.insert(left_context.clone(), original.clone());
         let lineage = result.audio_lineage[target].clone();

@@ -69,9 +69,12 @@ project frames, Enter opens a fine 48 kHz sample position, `+/-` change gain by
 3 dB, and `dd` removes the event. These keys retain event scope in its inspector.
 Catalog sound selection and the picture beat remain separate. Commands include
 `:sound-at 137`, `:sound-gain -3`, `:sound-edges soft|hard` and `:sound-delete`.
+At an explicitly identified silent pause, `:sound-allow` permits this sound
+through that occurrence; `:sound-silence` restores its suppression. The inspector
+shows the retained Edit cursor and exact issuer. Command entry captures that scope.
 Placement never changes picture duration; unsupported overflow or routed movement
 reports a reason without changing history. This is the current root-event subset;
-full host ownership, scoped silence and creative treatments remain required.
+full host ownership, send/tail policies and creative treatments remain required.
 Use explicit `:sound-delete` in command entry; `:delete` remains a picture-beat
 command and is rejected in sound context.
 

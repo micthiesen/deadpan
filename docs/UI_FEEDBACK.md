@@ -11,6 +11,20 @@ The [specification](spec/DEADPAN_SPEC.md), [design targets](design/README.md) an
 
 ## Current status
 
+The [sound allowance increment](qualification/sound-allowances-2026-09-27.md)
+extends `sound-placement` with one sound's permission in a concrete pause,
+including scoped pointer/command edits, durable undo, gap rejection, delayed
+targets and native text composition. Replay found Enter blurring the command
+field during IME; the field now leaves Enter to the app router. Visual review
+replaced database IDs with readable pause/play context. The final complete
+Metal replay passed 819 checks, including 190 sound-placement checks, with
+permission and revoke controls verified at both supported window sizes.
+The separate release replay passed 1,789 checks. Warm navigation, Repeat and
+silent-freeze picture p95 values were 1.505, 1.660 and 2.360 ms on the small
+fixture; 10,000-beat structural navigation CPU p95 was 0.332 ms.
+The qualification retains the failed replay and separates simulated IME from
+physical native input acceptance.
+
 The [native sound-placement increment](qualification/native-sound-placement-2026-09-27.md)
 adds `sound-placement`, with real audio-only qualification, persistent root-event
 commands, separate catalog/event/beat selection, exact frame movement and native

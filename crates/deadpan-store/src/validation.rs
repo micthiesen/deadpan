@@ -6,7 +6,7 @@ use deadpan_core::{
     legacy_v2, legacy_v3, legacy_v4, legacy_v5, legacy_v6, legacy_v7, legacy_v8, legacy_v9,
     legacy_v10, legacy_v11, legacy_v12, legacy_v13, legacy_v14, legacy_v15, legacy_v16, legacy_v17,
     legacy_v18, legacy_v19, legacy_v20, legacy_v21, legacy_v22, legacy_v23, legacy_v24, legacy_v25,
-    legacy_v26, legacy_v27, legacy_v28, legacy_v29,
+    legacy_v26, legacy_v27, legacy_v28, legacy_v29, legacy_v30,
 };
 use rusqlite::{Connection, params};
 
@@ -192,6 +192,7 @@ pub(crate) fn migrate_history(connection: &Connection, version: u32) -> Result<(
         33 => ReplaySchema::V27,
         34 => ReplaySchema::V28,
         35 => ReplaySchema::V29,
+        36 => ReplaySchema::V30,
         _ => return Err(StoreError::UnsupportedSchema(version)),
     };
     replay(connection, schema)
@@ -229,6 +230,7 @@ enum ReplaySchema {
     V27,
     V28,
     V29,
+    V30,
 }
 
 enum StoredDocument {
@@ -262,6 +264,7 @@ enum StoredDocument {
     V27(legacy_v27::Document),
     V28(legacy_v28::Document),
     V29(legacy_v29::Document),
+    V30(legacy_v30::Document),
 }
 impl StoredDocument {
     fn revision_id(&self) -> &RevisionId {
@@ -296,6 +299,7 @@ impl StoredDocument {
             Self::V27(doc) => doc.revision_id(),
             Self::V28(doc) => doc.revision_id(),
             Self::V29(doc) => doc.revision_id(),
+            Self::V30(doc) => doc.revision_id(),
         }
     }
     fn initial(self) -> Result<ProjectDocument, StoreError> {
@@ -330,6 +334,7 @@ impl StoredDocument {
             Self::V27(doc) => Ok(doc.upgrade()?),
             Self::V28(doc) => Ok(doc.upgrade()?),
             Self::V29(doc) => Ok(doc.upgrade()?),
+            Self::V30(doc) => Ok(doc.upgrade()?),
         }
     }
     fn matches(&self, doc: &ProjectDocument) -> bool {
@@ -364,6 +369,7 @@ impl StoredDocument {
             Self::V27(stored) => stored.matches(doc),
             Self::V28(stored) => stored.matches(doc),
             Self::V29(stored) => stored.matches(doc),
+            Self::V30(stored) => stored.matches(doc),
         }
     }
 }
@@ -405,6 +411,7 @@ fn read_replay_revision(
         ReplaySchema::V27 => StoredDocument::V27(legacy_v27::Document::from_json(&json)?),
         ReplaySchema::V28 => StoredDocument::V28(legacy_v28::Document::from_json(&json)?),
         ReplaySchema::V29 => StoredDocument::V29(legacy_v29::Document::from_json(&json)?),
+        ReplaySchema::V30 => StoredDocument::V30(legacy_v30::Document::from_json(&json)?),
     };
     if document.revision_id().as_str() != id {
         return Err(history_error("revision identity disagrees with document"));
@@ -549,12 +556,15 @@ fn replay(connection: &Connection, schema: ReplaySchema) -> Result<(), StoreErro
                     ReplaySchema::V27 => legacy_v27::upgrade_request(&request_json)?,
                     ReplaySchema::V28 => legacy_v28::upgrade_request(&request_json)?,
                     ReplaySchema::V29 => legacy_v29::upgrade_request(&request_json)?,
+                    ReplaySchema::V30 => legacy_v30::upgrade_request(&request_json)?,
                 };
                 if migrate {
                     // An old command must have been admissible in its original
                     // pre-edit context. Matching a newly supported operation's
                     // patches cannot legitimize a forged legacy chronology.
-                    if schema == ReplaySchema::V29 {
+                    if schema == ReplaySchema::V30 {
+                        legacy_v30::validate_request_context(&current, &request)?;
+                    } else if schema == ReplaySchema::V29 {
                         legacy_v29::validate_request_context(&current, &request)?;
                     } else if schema == ReplaySchema::V28 {
                         legacy_v28::validate_request_context(&current, &request)?;
@@ -604,6 +614,7 @@ fn replay(connection: &Connection, schema: ReplaySchema) -> Result<(), StoreErro
                     ReplaySchema::V27 => legacy_v27::matches_edit(&edit_json, &calculated)?,
                     ReplaySchema::V28 => legacy_v28::matches_edit(&edit_json, &calculated)?,
                     ReplaySchema::V29 => legacy_v29::matches_edit(&edit_json, &calculated)?,
+                    ReplaySchema::V30 => legacy_v30::matches_edit(&edit_json, &calculated)?,
                 };
                 let next_document = calculated.forward.apply(&current)?;
                 if !matches_edit || !next.matches(&next_document) {

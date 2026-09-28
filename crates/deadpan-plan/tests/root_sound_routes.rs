@@ -130,6 +130,119 @@ fn gates(plan: &RenderPlan, range: Range<i64>) -> AudioSoundGateQuery {
         )
         .unwrap()
 }
+
+#[test]
+fn selected_range_finds_subframe_support_without_filling_routed_gaps() {
+    let rate = FrameRate::new(24, 1).unwrap();
+    let selection = Some(ExactRatio::new(1, 4).unwrap()..ExactRatio::new(1, 2).unwrap());
+    for routed in [false, true] {
+        let doc = document(
+            &[(if routed { 3 } else { 2 }, true)],
+            rate,
+            2,
+            routed.then(|| vec![insert(0, 1, rate)]),
+            selection.clone(),
+        );
+        let plan = RenderPlan::compile(&doc).unwrap();
+        let sound = plan.root_sound(&id()).unwrap();
+        let shift = if routed { 2000 } else { 0 };
+        assert!(!sound.selects_sample(AudioSample(shift)).unwrap());
+        assert!(
+            sound
+                .selects_range(AudioSample(shift)..AudioSample(shift + 2000))
+                .unwrap()
+        );
+        assert!(
+            !sound
+                .selects_range(AudioSample(shift)..AudioSample(shift + 500))
+                .unwrap()
+        );
+        assert!(
+            sound
+                .selects_range(AudioSample(shift + 499)..AudioSample(shift + 501))
+                .unwrap()
+        );
+        assert!(
+            !sound
+                .selects_range(AudioSample(shift + 1000)..AudioSample(shift + 2000))
+                .unwrap()
+        );
+        assert!(
+            !sound
+                .selects_range(AudioSample(shift + 750)..AudioSample(shift + 750))
+                .unwrap()
+        );
+        assert!(
+            sound
+                .selects_range(AudioSample(-1)..AudioSample(0))
+                .is_err()
+        );
+        assert!(sound.selects_range(AudioSample(2)..AudioSample(1)).is_err());
+        let end = plan.audio_duration().unwrap();
+        assert!(!sound.selects_range(end..end).unwrap());
+        assert!(sound.selects_range(end..AudioSample(end.0 + 1)).is_err());
+        if routed {
+            assert!(
+                !sound
+                    .selects_range(AudioSample(0)..AudioSample(2000))
+                    .unwrap()
+            );
+        }
+    }
+    for route in [None, Some(vec![])] {
+        let sampleless = document(
+            &[(2, true)],
+            rate,
+            2,
+            route,
+            Some(ExactRatio::new(2501, 10_000).unwrap()..ExactRatio::new(2502, 10_000).unwrap()),
+        );
+        let plan = RenderPlan::compile(&sampleless).unwrap();
+        let sound = plan.root_sound(&id()).unwrap();
+        assert_eq!(sound.audible_samples(), AudioSample(500)..AudioSample(500));
+        assert!(
+            !sound
+                .selects_range(AudioSample(0)..AudioSample(2000))
+                .unwrap()
+        );
+    }
+}
+
+#[test]
+fn allowing_current_holds_never_restores_samples_deleted_from_the_route() {
+    let rate = FrameRate::new(48_000, 1).unwrap();
+    let doc = document(
+        &[(100, true), (20, true), (100, true)],
+        rate,
+        200,
+        Some(vec![insert(100, 20, rate)]),
+        None,
+    );
+    let mut wire = serde_json::to_value(doc).unwrap();
+    wire["sound_allowances"] = json!({"sound": SoundHoldAllowances::try_from((0..3).map(|index| SoundHoldIssuer::Node {
+        instance: InstancePath { node: node(&format!("part{index}")), repeats: vec![] }
+    }).collect::<Vec<_>>()).unwrap()});
+    let plan =
+        RenderPlan::compile(&ProjectDocument::from_json(&wire.to_string()).unwrap()).unwrap();
+    let sound = plan.root_sound(&id()).unwrap();
+    for at in 0..220 {
+        assert_eq!(
+            sound.selects_sample(AudioSample(at)).unwrap(),
+            !(100..120).contains(&at)
+        );
+    }
+    let full = gates(&plan, 0..220);
+    let gains = factors(&full);
+    assert!(gains[..100].iter().all(|gain| *gain != ExactRatio::ZERO));
+    assert!(gains[100..120].iter().all(|gain| *gain == ExactRatio::ZERO));
+    assert!(gains[120..].iter().all(|gain| *gain != ExactRatio::ZERO));
+    for range in [98..122, 99..101, 119..121, 170..190] {
+        assert_eq!(
+            factors(&gates(&plan, range.clone())),
+            gains[range.start as usize..range.end as usize]
+        );
+    }
+}
 fn factors(query: &AudioSoundGateQuery) -> Vec<ExactRatio> {
     query
         .spans

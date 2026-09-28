@@ -1,0 +1,1906 @@
+{
+  "captures": [
+    {
+      "frame": 290,
+      "path": "minimum-pause-permission.png",
+      "report": "visual-all-final",
+      "source": "sound-placement-132.png",
+      "state": "Exact sound and pause permission before grant"
+    },
+    {
+      "frame": 292,
+      "path": "pause-permission.png",
+      "report": "visual-all-final",
+      "source": "sound-placement-133.png",
+      "state": "Exact sound and pause permission before grant"
+    },
+    {
+      "frame": 308,
+      "path": "minimum-allowed-sound.png",
+      "report": "visual-all-final",
+      "source": "sound-placement-134.png",
+      "state": "Allowed sound and its revoke control in the identified pause"
+    },
+    {
+      "frame": 310,
+      "path": "allowed-sound.png",
+      "report": "visual-all-final",
+      "source": "sound-placement-135.png",
+      "state": "Allowed sound and its revoke control in the identified pause"
+    },
+    {
+      "frame": 271,
+      "path": "routed-sound.png",
+      "report": "visual-all-final",
+      "source": "sound-placement-131.png",
+      "state": "Routed sound retains its journal after rejected repositioning"
+    }
+  ],
+  "commands": [
+    {
+      "base_commit": "357ae533b399ccf51e6dc3196ba2e0bba720ef9f",
+      "command": [
+        "cargo",
+        "clippy",
+        "-p",
+        "deadpan-app",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "diff_sha256": "9c99a15d91e0dbd13975674dd6f86bad548f02e10a84784bef1c3cb04305651e",
+      "exit_code": 0,
+      "name": "clippy-app-final",
+      "pid": 24386,
+      "seconds": 8.810566375032067,
+      "source_manifest_sha256": "379db4507769ccb2a5e815874f546b0817b70e0cce58c766c258f20457c4bd5f",
+      "started": "2026-09-28T04:00:11.720605+00:00"
+    },
+    {
+      "base_commit": "357ae533b399ccf51e6dc3196ba2e0bba720ef9f",
+      "command": [
+        "cargo",
+        "clippy",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "diff_sha256": "6029d9eb07056bd9199b0206c2257358a96ebb5c4b53559d32407067e0ae205e",
+      "exit_code": 0,
+      "name": "clippy-harness-01",
+      "pid": 22109,
+      "seconds": 59.122418500017375,
+      "source_manifest_sha256": "9fa3bfb6b45bd8ba489a8c24253d0f542fc20a5b51684e9b04af27ce73abc4b5",
+      "started": "2026-09-28T03:50:52.404961+00:00"
+    },
+    {
+      "base_commit": "357ae533b399ccf51e6dc3196ba2e0bba720ef9f",
+      "command": [
+        "cargo",
+        "clippy",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "diff_sha256": "9c99a15d91e0dbd13975674dd6f86bad548f02e10a84784bef1c3cb04305651e",
+      "exit_code": 0,
+      "name": "clippy-harness-final",
+      "pid": 24552,
+      "seconds": 9.125309667084366,
+      "source_manifest_sha256": "379db4507769ccb2a5e815874f546b0817b70e0cce58c766c258f20457c4bd5f",
+      "started": "2026-09-28T04:00:32.209101+00:00"
+    },
+    {
+      "base_commit": "357ae533b399ccf51e6dc3196ba2e0bba720ef9f",
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "diff_sha256": "4af78c3b60a081b328458115dc968ca192e05c819b3ee9ad84a64ec7750db96a",
+      "exit_code": 101,
+      "name": "clippy-workspace-01",
+      "pid": 19075,
+      "seconds": 170.72486162511632,
+      "source_manifest_sha256": "c52d7dc2c6751010cca5f3c4ff19c8c99af4c32d59e084b0cec59ecfd72b3a7c",
+      "started": "2026-09-28T03:33:22.851760+00:00"
+    },
+    {
+      "base_commit": "357ae533b399ccf51e6dc3196ba2e0bba720ef9f",
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "diff_sha256": "89a26cfa64622d45280fe5e9f07313826fec6f4751d5f83bbf436dfe07a223a2",
+      "exit_code": 0,
+      "name": "clippy-workspace-02",
+      "pid": 19475,
+      "seconds": 100.63180537475273,
+      "source_manifest_sha256": "76fe6f48572d0d2ffd418e6646b7849b4bc4f6b922216d87e8b6f17d3e7becf5",
+      "started": "2026-09-28T03:36:30.349165+00:00"
+    },
+    {
+      "base_commit": "357ae533b399ccf51e6dc3196ba2e0bba720ef9f",
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "diff_sha256": "6029d9eb07056bd9199b0206c2257358a96ebb5c4b53559d32407067e0ae205e",
+      "exit_code": 0,
+      "name": "clippy-workspace-03",
+      "pid": 21052,
+      "seconds": 6.800783250015229,
+      "source_manifest_sha256": "9fa3bfb6b45bd8ba489a8c24253d0f542fc20a5b51684e9b04af27ce73abc4b5",
+      "started": "2026-09-28T03:45:30.669227+00:00"
+    },
+    {
+      "base_commit": "357ae533b399ccf51e6dc3196ba2e0bba720ef9f",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "deadpan-core",
+        "--test",
+        "sound_allowances",
+        "--test",
+        "sound_events",
+        "--test",
+        "sound_routing",
+        "--locked"
+      ],
+      "diff_sha256": "43b3dbac5b0b17a0392802230ca19631949bf2ef8edcd0dfc136451156d460b0",
+      "exit_code": 101,
+      "name": "core-01",
+      "pid": 14594,
+      "seconds": 16.598967124707997,
+      "source_manifest_sha256": "64992c3e2ed558c5a7cbdcbd86e6fc960aba840ad900c95f21f0eb58e9d23c97",
+      "started": "2026-09-28T03:18:53.248407+00:00"
+    },
+    {
+      "base_commit": "357ae533b399ccf51e6dc3196ba2e0bba720ef9f",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "deadpan-core",
+        "--test",
+        "sound_allowances",
+        "--test",
+        "sound_events",
+        "--test",
+        "sound_routing",
+        "--locked"
+      ],
+      "diff_sha256": "d2ea44b7211809149f4a1f0099568d1e62dd7e1509d33e229724b1ef730a56d3",
+      "exit_code": 101,
+      "name": "core-02",
+      "pid": 15271,
+      "seconds": 35.66553904209286,
+      "source_manifest_sha256": "cc96f837bce87485b8730385c8897c4b9d67fac4adf107bc4c358f533e3b90c8",
+      "started": "2026-09-28T03:20:27.488356+00:00"
+    },
+    {
+      "base_commit": "357ae533b399ccf51e6dc3196ba2e0bba720ef9f",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "deadpan-core",
+        "--test",
+        "sound_allowances",
+        "--test",
+        "sound_events",
+        "--test",
+        "sound_routing",
+        "--locked"
+      ],
+      "diff_sha256": "d2ea44b7211809149f4a1f0099568d1e62dd7e1509d33e229724b1ef730a56d3",
+      "exit_code": 0,
+      "name": "core-03",
+      "pid": 16105,
+      "seconds": 8.882606834173203,
+      "source_manifest_sha256": "44eef899d4535d581503105599fa20691762b0568db1fc7b2717ed8d8f61a5cb",
+      "started": "2026-09-28T03:21:28.481717+00:00",
+      "test_groups": 3,
+      "test_totals": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 24
+      }
+    },
+    {
+      "base_commit": "357ae533b399ccf51e6dc3196ba2e0bba720ef9f",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--check"
+      ],
+      "diff_sha256": "89a26cfa64622d45280fe5e9f07313826fec6f4751d5f83bbf436dfe07a223a2",
+      "exit_code": 0,
+      "name": "format-final-02",
+      "pid": 19468,
+      "seconds": 0.9603452500887215,
+      "source_manifest_sha256": "76fe6f48572d0d2ffd418e6646b7849b4bc4f6b922216d87e8b6f17d3e7becf5",
+      "started": "2026-09-28T03:36:29.209225+00:00"
+    },
+    {
+      "base_commit": "357ae533b399ccf51e6dc3196ba2e0bba720ef9f",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--check"
+      ],
+      "diff_sha256": "6029d9eb07056bd9199b0206c2257358a96ebb5c4b53559d32407067e0ae205e",
+      "exit_code": 0,
+      "name": "format-final-03",
+      "pid": 21045,
+      "seconds": 0.9552054996602237,
+      "source_manifest_sha256": "9fa3bfb6b45bd8ba489a8c24253d0f542fc20a5b51684e9b04af27ce73abc4b5",
+      "started": "2026-09-28T03:45:29.572764+00:00"
+    },
+    {
+      "base_commit": "357ae533b399ccf51e6dc3196ba2e0bba720ef9f",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--check"
+      ],
+      "diff_sha256": "9c99a15d91e0dbd13975674dd6f86bad548f02e10a84784bef1c3cb04305651e",
+      "exit_code": 0,
+      "name": "format-final-04",
+      "pid": 24364,
+      "seconds": 0.9398280424065888,
+      "source_manifest_sha256": "379db4507769ccb2a5e815874f546b0817b70e0cce58c766c258f20457c4bd5f",
+      "started": "2026-09-28T04:00:10.666719+00:00"
+    },
+    {
+      "base_commit": "357ae533b399ccf51e6dc3196ba2e0bba720ef9f",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--check"
+      ],
+      "diff_sha256": "4af78c3b60a081b328458115dc968ca192e05c819b3ee9ad84a64ec7750db96a",
+      "exit_code": 0,
+      "name": "format-final",
+      "pid": 19068,
+      "seconds": 0.9145879996940494,
+      "source_manifest_sha256": "c52d7dc2c6751010cca5f3c4ff19c8c99af4c32d59e084b0cec59ecfd72b3a7c",
+      "started": "2026-09-28T03:33:21.761529+00:00"
+    },
+    {
+      "base_commit": "357ae533b399ccf51e6dc3196ba2e0bba720ef9f",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-cli",
+        "--test",
+        "audio_inspection",
+        "sound_allowance"
+      ],
+      "diff_sha256": "ee991805801273525e57fe2246fb3bf32f807923bf888dca70943c5afed4acc6",
+      "exit_code": 101,
+      "name": "pcm-01",
+      "pid": 18471,
+      "seconds": 22.64466462470591,
+      "source_manifest_sha256": "d0cffad5f65b29f6d606ae24b30353a61dd96681574c2e088e9cae195624f476",
+      "started": "2026-09-28T03:29:48.457613+00:00",
+      "test_groups": 1,
+      "test_totals": {
+        "failed": 1,
+        "ignored": 0,
+        "passed": 0
+      }
+    },
+    {
+      "base_commit": "357ae533b399ccf51e6dc3196ba2e0bba720ef9f",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-cli",
+        "--test",
+        "audio_inspection",
+        "sound_allowance"
+      ],
+      "diff_sha256": "4af78c3b60a081b328458115dc968ca192e05c819b3ee9ad84a64ec7750db96a",
+      "exit_code": 101,
+      "name": "pcm-02",
+      "pid": 18726,
+      "seconds": 28.412569291889668,
+      "source_manifest_sha256": "399e970309121e823d4d634ff0793397427bb3e3f8c0b5880fb85203910f8d42",
+      "started": "2026-09-28T03:31:36.012671+00:00",
+      "test_groups": 1,
+      "test_totals": {
+        "failed": 1,
+        "ignored": 0,
+        "passed": 0
+      }
+    },
+    {
+      "base_commit": "357ae533b399ccf51e6dc3196ba2e0bba720ef9f",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-cli",
+        "--test",
+        "audio_inspection",
+        "sound_allowance"
+      ],
+      "diff_sha256": "4af78c3b60a081b328458115dc968ca192e05c819b3ee9ad84a64ec7750db96a",
+      "exit_code": 0,
+      "name": "pcm-03",
+      "pid": 18905,
+      "seconds": 15.863271624781191,
+      "source_manifest_sha256": "a935e2c9f752883ebfd4431476ffc5dfcef81f506042ebc31b2e4b9f31c6f82a",
+      "started": "2026-09-28T03:32:39.078332+00:00",
+      "test_groups": 1,
+      "test_totals": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 1
+      }
+    },
+    {
+      "base_commit": "357ae533b399ccf51e6dc3196ba2e0bba720ef9f",
+      "command": [
+        "cargo",
+        "run",
+        "--locked",
+        "-p",
+        "deadpan-app",
+        "--release",
+        "--features",
+        "ui-harness",
+        "--",
+        "--ui-check",
+        "--mode",
+        "performance",
+        "--kestrel-source",
+        "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+        "--output",
+        "/tmp/deadpan-sound-allowances-h1t6i96x/performance-final"
+      ],
+      "diff_sha256": "9c99a15d91e0dbd13975674dd6f86bad548f02e10a84784bef1c3cb04305651e",
+      "exit_code": 0,
+      "name": "performance-final",
+      "pid": 26217,
+      "seconds": 212.23207566607744,
+      "source_manifest_sha256": "379db4507769ccb2a5e815874f546b0817b70e0cce58c766c258f20457c4bd5f",
+      "started": "2026-09-28T04:04:02.395393+00:00"
+    },
+    {
+      "base_commit": "357ae533b399ccf51e6dc3196ba2e0bba720ef9f",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-plan",
+        "--test",
+        "sound_events",
+        "--test",
+        "sound_event_fades",
+        "--test",
+        "root_sound_routes",
+        "--test",
+        "hold_policy"
+      ],
+      "diff_sha256": "357daf40921f4fe47f41443f1f06aace6eb0ea537ec3bb38876109262d025a18",
+      "exit_code": 101,
+      "name": "plan-01",
+      "pid": 18053,
+      "seconds": 6.951953208073974,
+      "source_manifest_sha256": "a2f9e18776e775418b541114cc62db539ee0cb849b4f69b304cbfb87fd7558c8",
+      "started": "2026-09-28T03:28:57.434962+00:00"
+    },
+    {
+      "base_commit": "357ae533b399ccf51e6dc3196ba2e0bba720ef9f",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-plan",
+        "--test",
+        "sound_events",
+        "--test",
+        "sound_event_fades",
+        "--test",
+        "root_sound_routes",
+        "--test",
+        "hold_policy"
+      ],
+      "diff_sha256": "ee991805801273525e57fe2246fb3bf32f807923bf888dca70943c5afed4acc6",
+      "exit_code": 0,
+      "name": "plan-02",
+      "pid": 18319,
+      "seconds": 19.013122499920428,
+      "source_manifest_sha256": "d0cffad5f65b29f6d606ae24b30353a61dd96681574c2e088e9cae195624f476",
+      "started": "2026-09-28T03:29:21.544790+00:00",
+      "test_groups": 4,
+      "test_totals": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 31
+      }
+    },
+    {
+      "base_commit": "357ae533b399ccf51e6dc3196ba2e0bba720ef9f",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-store",
+        "--test",
+        "migration",
+        "--test",
+        "source_registration",
+        "sound_allowance"
+      ],
+      "diff_sha256": "1202657e564bc53c99b689319ff1115b23b81f693b5590491812b69989d33da7",
+      "exit_code": 0,
+      "name": "store-allowances-01",
+      "pid": 17265,
+      "seconds": 46.92781604221091,
+      "source_manifest_sha256": "44eef899d4535d581503105599fa20691762b0568db1fc7b2717ed8d8f61a5cb",
+      "started": "2026-09-28T03:25:28.113366+00:00",
+      "test_groups": 2,
+      "test_totals": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 6
+      }
+    },
+    {
+      "base_commit": "357ae533b399ccf51e6dc3196ba2e0bba720ef9f",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "deadpan-app",
+        "--locked"
+      ],
+      "diff_sha256": "9c99a15d91e0dbd13975674dd6f86bad548f02e10a84784bef1c3cb04305651e",
+      "exit_code": 0,
+      "name": "tests-app-final",
+      "pid": 24470,
+      "seconds": 11.377489042002708,
+      "source_manifest_sha256": "379db4507769ccb2a5e815874f546b0817b70e0cce58c766c258f20457c4bd5f",
+      "started": "2026-09-28T04:00:20.643346+00:00",
+      "test_groups": 2,
+      "test_totals": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 235
+      }
+    },
+    {
+      "base_commit": "357ae533b399ccf51e6dc3196ba2e0bba720ef9f",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--locked"
+      ],
+      "diff_sha256": "6029d9eb07056bd9199b0206c2257358a96ebb5c4b53559d32407067e0ae205e",
+      "exit_code": 0,
+      "name": "tests-harness-01",
+      "pid": 22233,
+      "seconds": 65.7879184577614,
+      "source_manifest_sha256": "9fa3bfb6b45bd8ba489a8c24253d0f542fc20a5b51684e9b04af27ce73abc4b5",
+      "started": "2026-09-28T03:51:51.714393+00:00",
+      "test_groups": 2,
+      "test_totals": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 263
+      }
+    },
+    {
+      "base_commit": "357ae533b399ccf51e6dc3196ba2e0bba720ef9f",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--locked"
+      ],
+      "diff_sha256": "9c99a15d91e0dbd13975674dd6f86bad548f02e10a84784bef1c3cb04305651e",
+      "exit_code": 0,
+      "name": "tests-harness-final",
+      "pid": 24566,
+      "seconds": 11.669532000087202,
+      "source_manifest_sha256": "379db4507769ccb2a5e815874f546b0817b70e0cce58c766c258f20457c4bd5f",
+      "started": "2026-09-28T04:00:41.521894+00:00",
+      "test_groups": 2,
+      "test_totals": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 264
+      }
+    },
+    {
+      "base_commit": "357ae533b399ccf51e6dc3196ba2e0bba720ef9f",
+      "command": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked"
+      ],
+      "diff_sha256": "89a26cfa64622d45280fe5e9f07313826fec6f4751d5f83bbf436dfe07a223a2",
+      "exit_code": 101,
+      "name": "tests-workspace-01",
+      "pid": 19626,
+      "seconds": 411.5114917908795,
+      "source_manifest_sha256": "76fe6f48572d0d2ffd418e6646b7849b4bc4f6b922216d87e8b6f17d3e7becf5",
+      "started": "2026-09-28T03:38:11.102296+00:00",
+      "test_groups": 28,
+      "test_totals": {
+        "failed": 1,
+        "ignored": 0,
+        "passed": 558
+      }
+    },
+    {
+      "base_commit": "357ae533b399ccf51e6dc3196ba2e0bba720ef9f",
+      "command": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked"
+      ],
+      "diff_sha256": "6029d9eb07056bd9199b0206c2257358a96ebb5c4b53559d32407067e0ae205e",
+      "exit_code": 0,
+      "name": "tests-workspace-02",
+      "pid": 21073,
+      "seconds": 314.62302295770496,
+      "source_manifest_sha256": "9fa3bfb6b45bd8ba489a8c24253d0f542fc20a5b51684e9b04af27ce73abc4b5",
+      "started": "2026-09-28T03:45:37.586915+00:00",
+      "test_groups": 152,
+      "test_totals": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 1910
+      }
+    },
+    {
+      "base_commit": "357ae533b399ccf51e6dc3196ba2e0bba720ef9f",
+      "command": [
+        "cargo",
+        "run",
+        "--locked",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--",
+        "--ui-check",
+        "--kestrel-source",
+        "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+        "--output",
+        "/tmp/deadpan-sound-allowances-h1t6i96x/visual-all-01"
+      ],
+      "diff_sha256": "6029d9eb07056bd9199b0206c2257358a96ebb5c4b53559d32407067e0ae205e",
+      "exit_code": 1,
+      "name": "visual-all-01",
+      "pid": 22387,
+      "seconds": 152.4211777499877,
+      "source_manifest_sha256": "9fa3bfb6b45bd8ba489a8c24253d0f542fc20a5b51684e9b04af27ce73abc4b5",
+      "started": "2026-09-28T03:53:24.568932+00:00"
+    },
+    {
+      "base_commit": "357ae533b399ccf51e6dc3196ba2e0bba720ef9f",
+      "command": [
+        "cargo",
+        "run",
+        "--locked",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--",
+        "--ui-check",
+        "--kestrel-source",
+        "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+        "--output",
+        "/tmp/deadpan-sound-allowances-h1t6i96x/visual-all-final"
+      ],
+      "diff_sha256": "9c99a15d91e0dbd13975674dd6f86bad548f02e10a84784bef1c3cb04305651e",
+      "exit_code": 0,
+      "name": "visual-all-final",
+      "pid": 24741,
+      "seconds": 155.9471623338759,
+      "source_manifest_sha256": "379db4507769ccb2a5e815874f546b0817b70e0cce58c766c258f20457c4bd5f",
+      "started": "2026-09-28T04:01:05.837410+00:00"
+    }
+  ],
+  "runs": [
+    {
+      "failed": false,
+      "gzip_sha256": "d6f2e0e9d10411ee766e5ded32f5a0aa3cf829e4487b911bafc064c411146481",
+      "metadata": {
+        "binary_sha256": "39f8ea67ac630efb35b7cca190fabe9d12ebee04bae833db3ac3a62bfa5b874b",
+        "build_profile": "release",
+        "cache_state": "first import/index cold, subsequent operations warm; OS file cache uncontrolled",
+        "cargo_lock_sha256_at_run": "5fb326154cef286bd5ca066870ab70e2d633f7ee1cfa4c085add332af349c7b3",
+        "fixture": "cfr-bframes.mp4",
+        "fixture_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+        "git_revision": "357ae533b399ccf51e6dc3196ba2e0bba720ef9f",
+        "git_status": "M AGENTS.md\n M README.md\n M crates/deadpan-app/src/navigation/command.rs\n M crates/deadpan-app/src/navigation/sound.rs\n M crates/deadpan-app/src/preview.rs\n M crates/deadpan-app/src/preview/harness/sound_placement.rs\n M crates/deadpan-app/src/preview/sound_events.rs\n M crates/deadpan-app/src/project.rs\n M crates/deadpan-app/src/project/service.rs\n M crates/deadpan-app/src/project/sound.rs\n M crates/deadpan-app/src/project/tests/sound.rs\n M crates/deadpan-audio/src/sound_events.rs\n M crates/deadpan-cli/src/doctor.rs\n M crates/deadpan-cli/tests/audio_inspection.rs\n M crates/deadpan-cli/tests/project_commands.rs\n M crates/deadpan-core/src/command.rs\n M crates/deadpan-core/src/document.rs\n M crates/deadpan-core/src/insert_time.rs\n M crates/deadpan-core/src/legacy_v1.rs\n M crates/deadpan-core/src/legacy_v10.rs\n M crates/deadpan-core/src/legacy_v11.rs\n M crates/deadpan-core/src/legacy_v12.rs\n M crates/deadpan-core/src/legacy_v13.rs\n M crates/deadpan-core/src/legacy_v14.rs\n M crates/deadpan-core/src/legacy_v15.rs\n M crates/deadpan-core/src/legacy_v16.rs\n M crates/deadpan-core/src/legacy_v17.rs\n M crates/deadpan-core/src/legacy_v18.rs\n M crates/deadpan-core/src/legacy_v19.rs\n M crates/deadpan-core/src/legacy_v2.rs\n M crates/deadpan-core/src/legacy_v20.rs\n M crates/deadpan-core/src/legacy_v21.rs\n M crates/deadpan-core/src/legacy_v22.rs\n M crates/deadpan-core/src/legacy_v23.rs\n M crates/deadpan-core/src/legacy_v24.rs\n M crates/deadpan-core/src/legacy_v25.rs\n M crates/deadpan-core/src/legacy_v26.rs\n M crates/deadpan-core/src/legacy_v27.rs\n M crates/deadpan-core/src/legacy_v28.rs\n M crates/deadpan-core/src/legacy_v29.rs\n M crates/deadpan-core/src/legacy_v3.rs\n M crates/deadpan-core/src/legacy_v4.rs\n M crates/deadpan-core/src/legacy_v5.rs\n M crates/deadpan-core/src/legacy_v6.rs\n M crates/deadpan-core/src/legacy_v7.rs\n M crates/deadpan-core/src/legacy_v8.rs\n M crates/deadpan-core/src/legacy_v9.rs\n M crates/deadpan-core/src/lib.rs\n M crates/deadpan-core/src/occurrence.rs\n M crates/deadpan-core/src/occurrence_edit.rs\n M crates/deadpan-core/src/sound_events.rs\n M crates/deadpan-core/src/sound_routing.rs\n M crates/deadpan-core/src/split.rs\n M crates/deadpan-plan/src/audio_context.rs\n M crates/deadpan-plan/src/audio_hold_policy.rs\n M crates/deadpan-plan/src/audio_sound_event.rs\n M crates/deadpan-plan/src/plan.rs\n M crates/deadpan-plan/tests/hold_policy.rs\n M crates/deadpan-plan/tests/root_sound_routes.rs\n M crates/deadpan-plan/tests/sound_event_fades.rs\n M crates/deadpan-plan/tests/sound_events.rs\n M crates/deadpan-store/src/migration.rs\n M crates/deadpan-store/src/schema.rs\n M crates/deadpan-store/src/source_registration.rs\n M crates/deadpan-store/src/validation.rs\n M crates/deadpan-store/tests/migration.rs\n M crates/deadpan-store/tests/source_registration/sounds.rs\n M docs/ARCHITECTURE.md\n M docs/HEADLESS.md\n M docs/NATIVE_WORKSPACE.md\n M docs/REQUIREMENTS.md\n M docs/SOUND_EVENTS.md\n M docs/SPEC_PROVENANCE.md\n M docs/UI_FEEDBACK.md\n M docs/design/README.md\n M docs/spec/AGENT_HANDOFF.md\n M docs/spec/DEADPAN_SPEC.md\n M docs/spec/KEYBOARD_REFERENCE.md\n?? crates/deadpan-app/src/preview/harness/sound_placement/\n?? crates/deadpan-app/src/project/tests/sound/\n?? crates/deadpan-cli/tests/audio_inspection/sound_allowances.rs\n?? crates/deadpan-core/src/legacy_v30.rs\n?? crates/deadpan-core/src/sound_allowance.rs\n?? crates/deadpan-core/tests/sound_allowances.rs\n?? crates/deadpan-store/tests/fixtures/produce-v36-sound-allowance-history.py\n?? crates/deadpan-store/tests/fixtures/v36-sound-allowance-history.commands.json\n?? crates/deadpan-store/tests/fixtures/v36-sound-allowance-history.provenance.json\n?? crates/deadpan-store/tests/fixtures/v36-sound-allowance-history.sql\n?? crates/deadpan-store/tests/migration/sound_allowances.rs\n?? docs/qualification/sound-allowances-2026-09-27.md\n?? tools/ui-feedback/evidence/2026-09-27-sound-allowances/",
+        "gpu_readback_in_timing_run": false,
+        "hardware": "Apple M5 Max",
+        "os": "26.5.2",
+        "physical_display_measured": false,
+        "picture_worker_timing": "request_start_finish_publication_receipt_v1",
+        "power_thermal_state": "uncontrolled; compare on the same idle machine and power mode",
+        "replay_hz": 60,
+        "replay_wall_ms": 3396.6773749999998,
+        "rust": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+        "source_identity_note": "Git metadata describes the checkout at replay start; binary_sha256 identifies the executed build even during concurrent edits.",
+        "started_unix_ms": 1790568451085,
+        "tracked_diff_sha256_at_run": "a65f070c4f28ce3f197737ab0a85a3f3e0c35a3b2fef6c571fa7eb3446b50da2",
+        "viewport_points": [
+          1280,
+          820
+        ],
+        "wait_strategy": "egui_repaint_callback_v1"
+      },
+      "mode": "performance",
+      "name": "performance-final",
+      "report_bytes": 20469411,
+      "report_sha256": "1ca836ed9eae67c88c86dd78ae371541f795d0766c436d6dcbec3a3560f2c286",
+      "scenarios": [
+        {
+          "failed": false,
+          "failed_checks": [],
+          "findings": [],
+          "frames": 0,
+          "name": "kestrel-shortcuts",
+          "passed_checks": 1,
+          "skipped": [],
+          "timings": []
+        },
+        {
+          "failed": false,
+          "failed_checks": [],
+          "findings": [],
+          "frames": 90,
+          "name": "workspace",
+          "passed_checks": 80,
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "timings": []
+        },
+        {
+          "failed": false,
+          "failed_checks": [],
+          "findings": [],
+          "frames": 104,
+          "name": "editing",
+          "passed_checks": 29,
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "timings": []
+        },
+        {
+          "failed": false,
+          "failed_checks": [],
+          "findings": [],
+          "frames": 59,
+          "name": "camera",
+          "passed_checks": 12,
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "timings": []
+        },
+        {
+          "failed": false,
+          "failed_checks": [],
+          "findings": [],
+          "frames": 113,
+          "name": "menus",
+          "passed_checks": 37,
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "timings": []
+        },
+        {
+          "failed": false,
+          "failed_checks": [],
+          "findings": [],
+          "frames": 53,
+          "name": "delayed-preview",
+          "passed_checks": 8,
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "timings": []
+        },
+        {
+          "failed": false,
+          "failed_checks": [],
+          "findings": [],
+          "frames": 630,
+          "name": "rapid-input",
+          "passed_checks": 319,
+          "skipped": [
+            "Repeat boundary checks delay delivery of real SQLite updates; the writer and production event router remain live. Physical key delivery is not exercised.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "timings": [
+            {
+              "name": "warm_navigation_input_cpu_ms",
+              "summary": {
+                "completed": {
+                  "max_ms": 0.156167,
+                  "n": 120,
+                  "p50_ms": 0.134625,
+                  "p95_ms": 0.140292,
+                  "p99_ms": 0.147584
+                },
+                "failed": 0,
+                "samples": 120,
+                "timed_out": 0
+              }
+            },
+            {
+              "name": "warm_navigation_input_to_picture_complete_ms",
+              "summary": {
+                "completed": {
+                  "max_ms": 1.678958,
+                  "n": 120,
+                  "p50_ms": 1.297042,
+                  "p95_ms": 1.5050000000000001,
+                  "p99_ms": 1.656584
+                },
+                "failed": 0,
+                "samples": 120,
+                "timed_out": 0
+              }
+            }
+          ]
+        },
+        {
+          "failed": false,
+          "failed_checks": [],
+          "findings": [],
+          "frames": 49,
+          "name": "playback-feedback",
+          "passed_checks": 12,
+          "skipped": [
+            "Playback service updates are explicitly simulated. This scenario qualifies UI feedback and picture routing, not PCM preparation, device timing or listening.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "timings": []
+        },
+        {
+          "failed": false,
+          "failed_checks": [],
+          "findings": [],
+          "frames": 523,
+          "name": "large-project",
+          "passed_checks": 524,
+          "skipped": [
+            "Large-project fixture: 10,000 root Background/Silence Holds in a real SQLite package. No source media, decoding, PCM or large asset inventory is stressed.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "timings": [
+            {
+              "name": "large_project_navigation_cpu_ms",
+              "summary": {
+                "completed": {
+                  "max_ms": 0.735625,
+                  "n": 160,
+                  "p50_ms": 0.313666,
+                  "p95_ms": 0.332125,
+                  "p99_ms": 0.469416
+                },
+                "failed": 0,
+                "samples": 160,
+                "timed_out": 0
+              }
+            }
+          ]
+        },
+        {
+          "failed": false,
+          "failed_checks": [],
+          "findings": [],
+          "frames": 654,
+          "name": "edit-latency",
+          "passed_checks": 448,
+          "skipped": [
+            "Edit timings measure the real committed revision through offscreen GPU completion. Physical display presentation and acoustic Hold silence are outside this scenario.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "timings": [
+            {
+              "name": "cached_repeat_input_to_picture_complete_ms",
+              "summary": {
+                "completed": {
+                  "max_ms": 1.752833,
+                  "n": 40,
+                  "p50_ms": 1.579542,
+                  "p95_ms": 1.659875,
+                  "p99_ms": 1.752833
+                },
+                "failed": 0,
+                "samples": 40,
+                "timed_out": 0
+              }
+            },
+            {
+              "name": "cached_repeat_input_to_commit_ms",
+              "summary": {
+                "completed": {
+                  "max_ms": 0.572709,
+                  "n": 40,
+                  "p50_ms": 0.46875,
+                  "p95_ms": 0.51725,
+                  "p99_ms": 0.572709
+                },
+                "failed": 0,
+                "samples": 40,
+                "timed_out": 0
+              }
+            },
+            {
+              "name": "hold_fallback_input_to_picture_complete_ms",
+              "summary": {
+                "completed": {
+                  "max_ms": 2.485291,
+                  "n": 40,
+                  "p50_ms": 2.02475,
+                  "p95_ms": 2.3604580000000004,
+                  "p99_ms": 2.485291
+                },
+                "failed": 0,
+                "samples": 40,
+                "timed_out": 0
+              }
+            },
+            {
+              "name": "hold_input_to_commit_ms",
+              "summary": {
+                "completed": {
+                  "max_ms": 1.189125,
+                  "n": 40,
+                  "p50_ms": 0.872583,
+                  "p95_ms": 0.955917,
+                  "p99_ms": 1.189125
+                },
+                "failed": 0,
+                "samples": 40,
+                "timed_out": 0
+              }
+            }
+          ]
+        },
+        {
+          "failed": false,
+          "failed_checks": [],
+          "findings": [],
+          "frames": 105,
+          "name": "nested-pause",
+          "passed_checks": 49,
+          "skipped": [
+            "This replay enters Sequence groups. Repeat and Retime entry, occurrence isolation, and their pause insertion remain outside this scenario.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "timings": []
+        },
+        {
+          "failed": false,
+          "failed_checks": [],
+          "findings": [],
+          "frames": 82,
+          "name": "original-moment",
+          "passed_checks": 16,
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "timings": []
+        },
+        {
+          "failed": false,
+          "failed_checks": [],
+          "findings": [],
+          "frames": 79,
+          "name": "original-playback",
+          "passed_checks": 18,
+          "skipped": [
+            "Playback service updates are explicitly injected. This scenario exercises Original controls, clock admission, looping and picture routing, not PCM preparation, device timing or listening.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "timings": []
+        },
+        {
+          "failed": false,
+          "failed_checks": [],
+          "findings": [],
+          "frames": 96,
+          "name": "sound-playback",
+          "passed_checks": 31,
+          "skipped": [
+            "Sound registration and widgets use production services. Delivery reports are deterministic fakes, not real PCM playback, device timing, or listening evidence.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "timings": []
+        },
+        {
+          "failed": false,
+          "failed_checks": [],
+          "findings": [],
+          "frames": 401,
+          "name": "sound-placement",
+          "passed_checks": 190,
+          "skipped": [
+            "Sound placement uses real source qualification and durable project commands. This scenario does not start audio output or establish PCM, device timing, or listening evidence.",
+            "Preparing/Playing at 960 pixels uses the real transport controls with simulated delivery reports only. It does not start a device or prepare PCM.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "timings": []
+        },
+        {
+          "failed": false,
+          "failed_checks": [],
+          "findings": [],
+          "frames": 60,
+          "name": "retime",
+          "passed_checks": 15,
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "timings": []
+        }
+      ]
+    },
+    {
+      "failed": true,
+      "gzip_sha256": "da6fbeeb4ea33d4bc69a1fa2b996d7bf5aeb370b64cfbf6381a9390f7a89f829",
+      "metadata": {
+        "binary_sha256": "6701fc9abc23f9600b5d930f19c2d4655ffede2bbdc8121f684364188df9b4a5",
+        "build_profile": "debug",
+        "cache_state": "first import/index cold, subsequent operations warm; OS file cache uncontrolled",
+        "cargo_lock_sha256_at_run": "5fb326154cef286bd5ca066870ab70e2d633f7ee1cfa4c085add332af349c7b3",
+        "fixture": "cfr-bframes.mp4",
+        "fixture_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+        "git_revision": "357ae533b399ccf51e6dc3196ba2e0bba720ef9f",
+        "git_status": "M AGENTS.md\n M README.md\n M crates/deadpan-app/src/navigation/command.rs\n M crates/deadpan-app/src/navigation/sound.rs\n M crates/deadpan-app/src/preview.rs\n M crates/deadpan-app/src/preview/harness/sound_placement.rs\n M crates/deadpan-app/src/preview/sound_events.rs\n M crates/deadpan-app/src/project.rs\n M crates/deadpan-app/src/project/service.rs\n M crates/deadpan-app/src/project/sound.rs\n M crates/deadpan-app/src/project/tests/sound.rs\n M crates/deadpan-audio/src/sound_events.rs\n M crates/deadpan-cli/src/doctor.rs\n M crates/deadpan-cli/tests/audio_inspection.rs\n M crates/deadpan-cli/tests/project_commands.rs\n M crates/deadpan-core/src/command.rs\n M crates/deadpan-core/src/document.rs\n M crates/deadpan-core/src/insert_time.rs\n M crates/deadpan-core/src/legacy_v1.rs\n M crates/deadpan-core/src/legacy_v10.rs\n M crates/deadpan-core/src/legacy_v11.rs\n M crates/deadpan-core/src/legacy_v12.rs\n M crates/deadpan-core/src/legacy_v13.rs\n M crates/deadpan-core/src/legacy_v14.rs\n M crates/deadpan-core/src/legacy_v15.rs\n M crates/deadpan-core/src/legacy_v16.rs\n M crates/deadpan-core/src/legacy_v17.rs\n M crates/deadpan-core/src/legacy_v18.rs\n M crates/deadpan-core/src/legacy_v19.rs\n M crates/deadpan-core/src/legacy_v2.rs\n M crates/deadpan-core/src/legacy_v20.rs\n M crates/deadpan-core/src/legacy_v21.rs\n M crates/deadpan-core/src/legacy_v22.rs\n M crates/deadpan-core/src/legacy_v23.rs\n M crates/deadpan-core/src/legacy_v24.rs\n M crates/deadpan-core/src/legacy_v25.rs\n M crates/deadpan-core/src/legacy_v26.rs\n M crates/deadpan-core/src/legacy_v27.rs\n M crates/deadpan-core/src/legacy_v28.rs\n M crates/deadpan-core/src/legacy_v29.rs\n M crates/deadpan-core/src/legacy_v3.rs\n M crates/deadpan-core/src/legacy_v4.rs\n M crates/deadpan-core/src/legacy_v5.rs\n M crates/deadpan-core/src/legacy_v6.rs\n M crates/deadpan-core/src/legacy_v7.rs\n M crates/deadpan-core/src/legacy_v8.rs\n M crates/deadpan-core/src/legacy_v9.rs\n M crates/deadpan-core/src/lib.rs\n M crates/deadpan-core/src/occurrence.rs\n M crates/deadpan-core/src/occurrence_edit.rs\n M crates/deadpan-core/src/sound_events.rs\n M crates/deadpan-core/src/sound_routing.rs\n M crates/deadpan-core/src/split.rs\n M crates/deadpan-plan/src/audio_context.rs\n M crates/deadpan-plan/src/audio_hold_policy.rs\n M crates/deadpan-plan/src/audio_sound_event.rs\n M crates/deadpan-plan/src/plan.rs\n M crates/deadpan-plan/tests/hold_policy.rs\n M crates/deadpan-plan/tests/root_sound_routes.rs\n M crates/deadpan-plan/tests/sound_event_fades.rs\n M crates/deadpan-plan/tests/sound_events.rs\n M crates/deadpan-store/src/migration.rs\n M crates/deadpan-store/src/schema.rs\n M crates/deadpan-store/src/source_registration.rs\n M crates/deadpan-store/src/validation.rs\n M crates/deadpan-store/tests/migration.rs\n M crates/deadpan-store/tests/source_registration/sounds.rs\n M docs/ARCHITECTURE.md\n M docs/HEADLESS.md\n M docs/NATIVE_WORKSPACE.md\n M docs/REQUIREMENTS.md\n M docs/SOUND_EVENTS.md\n M docs/SPEC_PROVENANCE.md\n M docs/design/README.md\n M docs/spec/AGENT_HANDOFF.md\n M docs/spec/DEADPAN_SPEC.md\n M docs/spec/KEYBOARD_REFERENCE.md\n?? crates/deadpan-app/src/preview/harness/sound_placement/\n?? crates/deadpan-app/src/project/tests/sound/\n?? crates/deadpan-cli/tests/audio_inspection/sound_allowances.rs\n?? crates/deadpan-core/src/legacy_v30.rs\n?? crates/deadpan-core/src/sound_allowance.rs\n?? crates/deadpan-core/tests/sound_allowances.rs\n?? crates/deadpan-store/tests/fixtures/produce-v36-sound-allowance-history.py\n?? crates/deadpan-store/tests/fixtures/v36-sound-allowance-history.commands.json\n?? crates/deadpan-store/tests/fixtures/v36-sound-allowance-history.provenance.json\n?? crates/deadpan-store/tests/fixtures/v36-sound-allowance-history.sql\n?? crates/deadpan-store/tests/migration/sound_allowances.rs\n?? docs/qualification/sound-allowances-2026-09-27.md",
+        "gpu_readback_in_timing_run": false,
+        "hardware": "Apple M5 Max",
+        "os": "26.5.2",
+        "physical_display_measured": false,
+        "picture_worker_timing": "request_start_finish_publication_receipt_v1",
+        "power_thermal_state": "uncontrolled; compare on the same idle machine and power mode",
+        "replay_hz": 60,
+        "replay_wall_ms": 147655.712,
+        "rust": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+        "source_identity_note": "Git metadata describes the checkout at replay start; binary_sha256 identifies the executed build even during concurrent edits.",
+        "started_unix_ms": 1790567604865,
+        "tracked_diff_sha256_at_run": "bde2b9c1d44545825a061b71a659a05c012bd669bd8e5dc1b8ba022c83259794",
+        "viewport_points": [
+          1280,
+          820
+        ],
+        "wait_strategy": "egui_repaint_callback_v1"
+      },
+      "mode": "visual",
+      "name": "visual-all-01",
+      "report_bytes": 104267489,
+      "report_sha256": "9eef220b970908b342e4a4490a38a72b5faa0d967a6f2973176fde3488dab812",
+      "scenarios": [
+        {
+          "failed": false,
+          "failed_checks": [],
+          "findings": [],
+          "frames": 0,
+          "name": "kestrel-shortcuts",
+          "passed_checks": 1,
+          "skipped": [],
+          "timings": []
+        },
+        {
+          "failed": false,
+          "failed_checks": [],
+          "findings": [],
+          "frames": 68,
+          "name": "workspace",
+          "passed_checks": 80,
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "timings": []
+        },
+        {
+          "failed": false,
+          "failed_checks": [],
+          "findings": [],
+          "frames": 79,
+          "name": "editing",
+          "passed_checks": 29,
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "timings": []
+        },
+        {
+          "failed": false,
+          "failed_checks": [],
+          "findings": [],
+          "frames": 27,
+          "name": "camera",
+          "passed_checks": 12,
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "timings": []
+        },
+        {
+          "failed": false,
+          "failed_checks": [],
+          "findings": [],
+          "frames": 79,
+          "name": "menus",
+          "passed_checks": 37,
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "timings": []
+        },
+        {
+          "failed": false,
+          "failed_checks": [],
+          "findings": [],
+          "frames": 28,
+          "name": "delayed-preview",
+          "passed_checks": 8,
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "timings": []
+        },
+        {
+          "failed": false,
+          "failed_checks": [],
+          "findings": [],
+          "frames": 264,
+          "name": "rapid-input",
+          "passed_checks": 60,
+          "skipped": [
+            "Repeat boundary checks delay delivery of real SQLite updates; the writer and production event router remain live. Physical key delivery is not exercised.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "timings": []
+        },
+        {
+          "failed": false,
+          "failed_checks": [],
+          "findings": [],
+          "frames": 29,
+          "name": "playback-feedback",
+          "passed_checks": 12,
+          "skipped": [
+            "Playback service updates are explicitly simulated. This scenario qualifies UI feedback and picture routing, not PCM preparation, device timing or listening.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "timings": []
+        },
+        {
+          "failed": false,
+          "failed_checks": [],
+          "findings": [],
+          "frames": 360,
+          "name": "large-project",
+          "passed_checks": 235,
+          "skipped": [
+            "Large-project fixture: 10,000 root Background/Silence Holds in a real SQLite package. No source media, decoding, PCM or large asset inventory is stressed.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "timings": [
+            {
+              "name": "large_project_navigation_cpu_ms",
+              "summary": {
+                "completed": {
+                  "max_ms": 7.222833,
+                  "n": 64,
+                  "p50_ms": 3.210417,
+                  "p95_ms": 3.432792,
+                  "p99_ms": 7.222833
+                },
+                "failed": 0,
+                "samples": 64,
+                "timed_out": 0
+              }
+            }
+          ]
+        },
+        {
+          "failed": false,
+          "failed_checks": [],
+          "findings": [],
+          "frames": 50,
+          "name": "edit-latency",
+          "passed_checks": 26,
+          "skipped": [
+            "Edit timings measure the real committed revision through offscreen GPU completion. Physical display presentation and acoustic Hold silence are outside this scenario.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "timings": [
+            {
+              "name": "cached_repeat_input_to_picture_complete_ms",
+              "summary": {
+                "completed": {
+                  "max_ms": 243.980584,
+                  "n": 2,
+                  "p50_ms": 233.322792,
+                  "p95_ms": 243.980584,
+                  "p99_ms": 243.980584
+                },
+                "failed": 0,
+                "samples": 2,
+                "timed_out": 0
+              }
+            },
+            {
+              "name": "cached_repeat_input_to_commit_ms",
+              "summary": {
+                "completed": {
+                  "max_ms": 115.117417,
+                  "n": 2,
+                  "p50_ms": 113.877792,
+                  "p95_ms": 115.117417,
+                  "p99_ms": 115.117417
+                },
+                "failed": 0,
+                "samples": 2,
+                "timed_out": 0
+              }
+            },
+            {
+              "name": "hold_fallback_input_to_picture_complete_ms",
+              "summary": {
+                "completed": {
+                  "max_ms": 249.224209,
+                  "n": 2,
+                  "p50_ms": 234.44620799999998,
+                  "p95_ms": 249.224209,
+                  "p99_ms": 249.224209
+                },
+                "failed": 0,
+                "samples": 2,
+                "timed_out": 0
+              }
+            },
+            {
+              "name": "hold_input_to_commit_ms",
+              "summary": {
+                "completed": {
+                  "max_ms": 117.636584,
+                  "n": 2,
+                  "p50_ms": 116.642042,
+                  "p95_ms": 117.636584,
+                  "p99_ms": 117.636584
+                },
+                "failed": 0,
+                "samples": 2,
+                "timed_out": 0
+              }
+            }
+          ]
+        },
+        {
+          "failed": false,
+          "failed_checks": [],
+          "findings": [],
+          "frames": 78,
+          "name": "nested-pause",
+          "passed_checks": 49,
+          "skipped": [
+            "This replay enters Sequence groups. Repeat and Retime entry, occurrence isolation, and their pause insertion remain outside this scenario.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "timings": []
+        },
+        {
+          "failed": false,
+          "failed_checks": [],
+          "findings": [],
+          "frames": 53,
+          "name": "original-moment",
+          "passed_checks": 16,
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "timings": []
+        },
+        {
+          "failed": false,
+          "failed_checks": [],
+          "findings": [],
+          "frames": 63,
+          "name": "original-playback",
+          "passed_checks": 18,
+          "skipped": [
+            "Playback service updates are explicitly injected. This scenario exercises Original controls, clock admission, looping and picture routing, not PCM preparation, device timing or listening.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "timings": []
+        },
+        {
+          "failed": false,
+          "failed_checks": [],
+          "findings": [],
+          "frames": 65,
+          "name": "sound-playback",
+          "passed_checks": 31,
+          "skipped": [
+            "Sound registration and widgets use production services. Delivery reports are deterministic fakes, not real PCM playback, device timing, or listening evidence.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "timings": []
+        },
+        {
+          "failed": true,
+          "failed_checks": [
+            {
+              "actual": {
+                "beat_count": 3,
+                "busy": false,
+                "camera_open": false,
+                "camera_pending": false,
+                "command": "sound-silence",
+                "command_open": false,
+                "context": "Sequence",
+                "copied_moment": null,
+                "duration": 122,
+                "error": null,
+                "focused_widget": null,
+                "footer_bottom": [
+                  794.0,
+                  794.0
+                ],
+                "footer_command_open": false,
+                "help_open": false,
+                "import": {
+                  "error": null,
+                  "stage": "Complete"
+                },
+                "layout_passes": 3,
+                "message": "Redo saved",
+                "original_selection": null,
+                "pane": "Sounds",
+                "pending_keys": "",
+                "picture": {
+                  "decoded": {
+                    "label": "Showing sequence frame 3",
+                    "location": "Project { session: 1, project: ProjectId(\"f65cfbd0-9604-4e57-a60b-6c4b9536a045\"), revision: RevisionId(\"f7488db5-c23d-4f4a-9d58-214374f7b96c\"), view: Sequence { frame: ProjectFrame(2) }, empty_sequence: false }",
+                    "ticket": "Ticket { transport: None, source: 75, request: 77 }"
+                  },
+                  "decoded_framing": "[PictureFraming { instance: InstancePath { node: NodeId(\"da2b02d9-85fa-4cd9-aad9-3d433d1e3650\"), repeats: [] }, local_position: ExactRatio { numerator: 1, denominator: 2 }, duration: FrameDuration(2), pose: None }, PictureFraming { instance: InstancePath { node: NodeId(\"c22dbd36-45b4-4e57-8a2e-0d174e58ff4c\"), repeats: [] }, local_position: ExactRatio { numerator: 5, denominator: 2 }, duration: FrameDuration(122), pose: None }]",
+                  "decoded_geometry_revision": 0,
+                  "displayed": {
+                    "label": "Showing sequence frame 3",
+                    "location": "Project { session: 1, project: ProjectId(\"f65cfbd0-9604-4e57-a60b-6c4b9536a045\"), revision: RevisionId(\"f7488db5-c23d-4f4a-9d58-214374f7b96c\"), view: Sequence { frame: ProjectFrame(2) }, empty_sequence: false }",
+                    "ticket": "Ticket { transport: None, source: 75, request: 77 }"
+                  },
+                  "error": null,
+                  "geometry_revision": 0,
+                  "loading": false,
+                  "needs_render": false,
+                  "requested": {
+                    "label": "Showing sequence frame 3",
+                    "location": "Project { session: 1, project: ProjectId(\"f65cfbd0-9604-4e57-a60b-6c4b9536a045\"), revision: RevisionId(\"f7488db5-c23d-4f4a-9d58-214374f7b96c\"), view: Sequence { frame: ProjectFrame(2) }, empty_sequence: false }",
+                    "ticket": "Ticket { transport: None, source: 75, request: 77 }"
+                  },
+                  "source_frame": 1
+                },
+                "pixels_per_point": 1.0,
+                "playback": null,
+                "project_error": null,
+                "repeat_queue": {
+                  "active": false,
+                  "status": null,
+                  "waiting": 0
+                },
+                "revision": "f7488db5-c23d-4f4a-9d58-214374f7b96c",
+                "scope_end": 122,
+                "scope_labels": [],
+                "scope_start": 0,
+                "selected_beat": "da2b02d9-85fa-4cd9-aad9-3d433d1e3650",
+                "selected_event": "5be01707-84e7-4f82-976c-9a800b24a0ea",
+                "selected_sound": "0012996f-d697-4fa3-9380-98011699e901",
+                "selected_source": "aad26c72-ea6b-4551-8ac9-59d974bcbf19",
+                "sequence_cursor": 2,
+                "sequence_scope": [],
+                "sound_cursor": 0,
+                "sound_events": {
+                  "5be01707-84e7-4f82-976c-9a800b24a0ea": {
+                    "end_edge": "automatic",
+                    "gain_millidecibels": 0,
+                    "label": "pcm-stereo-48000.wav",
+                    "mapping": {
+                      "frames": {
+                        "denominator": "1144",
+                        "numerator": "5855"
+                      },
+                      "type": "duration"
+                    },
+                    "offset": 3203,
+                    "overflow": "reject",
+                    "owner": "c22dbd36-45b4-4e57-8a2e-0d174e58ff4c",
+                    "source": {
+                      "asset": "0012996f-d697-4fa3-9380-98011699e901",
+                      "span": {
+                        "end": {
+                          "ticks": 8197,
+                          "time_base": {
+                            "denominator": 48000,
+                            "numerator": 1
+                          }
+                        },
+                        "start": {
+                          "ticks": 0,
+                          "time_base": {
+                            "denominator": 48000,
+                            "numerator": 1
+                          }
+                        }
+                      }
+                    },
+                    "start_edge": "automatic"
+                  },
+                  "a6230469-687a-40d2-adb8-28003e54f438": {
+                    "end_edge": "automatic",
+                    "gain_millidecibels": -9000,
+                    "label": "pcm-stereo-48000.wav",
+                    "mapping": {
+                      "frames": {
+                        "denominator": "1144",
+                        "numerator": "5855"
+                      },
+                      "start": {
+                        "denominator": "1",
+                        "numerator": "0"
+                      },
+                      "type": "placement"
+                    },
+                    "offset": 137,
+                    "overflow": "reject",
+                    "owner": "c22dbd36-45b4-4e57-8a2e-0d174e58ff4c",
+                    "source": {
+                      "asset": "0012996f-d697-4fa3-9380-98011699e901",
+                      "span": {
+                        "end": {
+                          "ticks": 8197,
+                          "time_base": {
+                            "denominator": 48000,
+                            "numerator": 1
+                          }
+                        },
+                        "start": {
+                          "ticks": 0,
+                          "time_base": {
+                            "denominator": 48000,
+                            "numerator": 1
+                          }
+                        }
+                      }
+                    },
+                    "start_edge": "automatic"
+                  }
+                },
+                "sound_routes": {
+                  "a6230469-687a-40d2-adb8-28003e54f438": {
+                    "edits": [
+                      {
+                        "cuts": {
+                          "after": "automatic",
+                          "before": "automatic"
+                        },
+                        "grid": {
+                          "frame_origin": {
+                            "denominator": "1",
+                            "numerator": "0"
+                          },
+                          "frame_rate": {
+                            "denominator": 1001,
+                            "numerator": 30000
+                          }
+                        },
+                        "operation": {
+                          "at": 2,
+                          "duration": 2,
+                          "type": "insert"
+                        }
+                      }
+                    ],
+                    "recipe_extent": 120,
+                    "recipe_grid": {
+                      "frame_origin": {
+                        "denominator": "1",
+                        "numerator": "0"
+                      },
+                      "frame_rate": {
+                        "denominator": 1001,
+                        "numerator": 30000
+                      }
+                    }
+                  }
+                },
+                "source_cursor": 0,
+                "source_summary": {
+                  "first_pts": 0,
+                  "frame_count": 120,
+                  "height": 180,
+                  "terminal_pts": 120120,
+                  "time_base": [
+                    1,
+                    30000
+                  ],
+                  "width": 320
+                },
+                "viewport_points": [
+                  1280.0,
+                  820.0
+                ],
+                "visual_selection": false
+              },
+              "expected": {
+                "command_open": true,
+                "revision": "f7488db5-c23d-4f4a-9d58-214374f7b96c"
+              },
+              "name": "Composition Enter cannot submit a pause permission command",
+              "passed": false
+            }
+          ],
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            },
+            {
+              "message": "Check failed: Composition Enter cannot submit a pause permission command",
+              "severity": "failure"
+            }
+          ],
+          "frames": 313,
+          "name": "sound-placement",
+          "passed_checks": 164,
+          "skipped": [
+            "Sound placement uses real source qualification and durable project commands. This scenario does not start audio output or establish PCM, device timing, or listening evidence.",
+            "Preparing/Playing at 960 pixels uses the real transport controls with simulated delivery reports only. It does not start a device or prepare PCM.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "timings": []
+        },
+        {
+          "failed": false,
+          "failed_checks": [],
+          "findings": [],
+          "frames": 44,
+          "name": "retime",
+          "passed_checks": 15,
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "timings": []
+        }
+      ]
+    },
+    {
+      "failed": false,
+      "gzip_sha256": "20dc7ce5e86c75103aac0a43b98836a4b8a208eb22236361a6a7c6f7f9c1d4ef",
+      "metadata": {
+        "binary_sha256": "2c14a29f3c2c8c9c6887205a1bcc5095c1914bcb63eab414b3bedc36fc452dca",
+        "build_profile": "debug",
+        "cache_state": "first import/index cold, subsequent operations warm; OS file cache uncontrolled",
+        "cargo_lock_sha256_at_run": "5fb326154cef286bd5ca066870ab70e2d633f7ee1cfa4c085add332af349c7b3",
+        "fixture": "cfr-bframes.mp4",
+        "fixture_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+        "git_revision": "357ae533b399ccf51e6dc3196ba2e0bba720ef9f",
+        "git_status": "M AGENTS.md\n M README.md\n M crates/deadpan-app/src/navigation/command.rs\n M crates/deadpan-app/src/navigation/sound.rs\n M crates/deadpan-app/src/preview.rs\n M crates/deadpan-app/src/preview/harness/sound_placement.rs\n M crates/deadpan-app/src/preview/sound_events.rs\n M crates/deadpan-app/src/project.rs\n M crates/deadpan-app/src/project/service.rs\n M crates/deadpan-app/src/project/sound.rs\n M crates/deadpan-app/src/project/tests/sound.rs\n M crates/deadpan-audio/src/sound_events.rs\n M crates/deadpan-cli/src/doctor.rs\n M crates/deadpan-cli/tests/audio_inspection.rs\n M crates/deadpan-cli/tests/project_commands.rs\n M crates/deadpan-core/src/command.rs\n M crates/deadpan-core/src/document.rs\n M crates/deadpan-core/src/insert_time.rs\n M crates/deadpan-core/src/legacy_v1.rs\n M crates/deadpan-core/src/legacy_v10.rs\n M crates/deadpan-core/src/legacy_v11.rs\n M crates/deadpan-core/src/legacy_v12.rs\n M crates/deadpan-core/src/legacy_v13.rs\n M crates/deadpan-core/src/legacy_v14.rs\n M crates/deadpan-core/src/legacy_v15.rs\n M crates/deadpan-core/src/legacy_v16.rs\n M crates/deadpan-core/src/legacy_v17.rs\n M crates/deadpan-core/src/legacy_v18.rs\n M crates/deadpan-core/src/legacy_v19.rs\n M crates/deadpan-core/src/legacy_v2.rs\n M crates/deadpan-core/src/legacy_v20.rs\n M crates/deadpan-core/src/legacy_v21.rs\n M crates/deadpan-core/src/legacy_v22.rs\n M crates/deadpan-core/src/legacy_v23.rs\n M crates/deadpan-core/src/legacy_v24.rs\n M crates/deadpan-core/src/legacy_v25.rs\n M crates/deadpan-core/src/legacy_v26.rs\n M crates/deadpan-core/src/legacy_v27.rs\n M crates/deadpan-core/src/legacy_v28.rs\n M crates/deadpan-core/src/legacy_v29.rs\n M crates/deadpan-core/src/legacy_v3.rs\n M crates/deadpan-core/src/legacy_v4.rs\n M crates/deadpan-core/src/legacy_v5.rs\n M crates/deadpan-core/src/legacy_v6.rs\n M crates/deadpan-core/src/legacy_v7.rs\n M crates/deadpan-core/src/legacy_v8.rs\n M crates/deadpan-core/src/legacy_v9.rs\n M crates/deadpan-core/src/lib.rs\n M crates/deadpan-core/src/occurrence.rs\n M crates/deadpan-core/src/occurrence_edit.rs\n M crates/deadpan-core/src/sound_events.rs\n M crates/deadpan-core/src/sound_routing.rs\n M crates/deadpan-core/src/split.rs\n M crates/deadpan-plan/src/audio_context.rs\n M crates/deadpan-plan/src/audio_hold_policy.rs\n M crates/deadpan-plan/src/audio_sound_event.rs\n M crates/deadpan-plan/src/plan.rs\n M crates/deadpan-plan/tests/hold_policy.rs\n M crates/deadpan-plan/tests/root_sound_routes.rs\n M crates/deadpan-plan/tests/sound_event_fades.rs\n M crates/deadpan-plan/tests/sound_events.rs\n M crates/deadpan-store/src/migration.rs\n M crates/deadpan-store/src/schema.rs\n M crates/deadpan-store/src/source_registration.rs\n M crates/deadpan-store/src/validation.rs\n M crates/deadpan-store/tests/migration.rs\n M crates/deadpan-store/tests/source_registration/sounds.rs\n M docs/ARCHITECTURE.md\n M docs/HEADLESS.md\n M docs/NATIVE_WORKSPACE.md\n M docs/REQUIREMENTS.md\n M docs/SOUND_EVENTS.md\n M docs/SPEC_PROVENANCE.md\n M docs/design/README.md\n M docs/spec/AGENT_HANDOFF.md\n M docs/spec/DEADPAN_SPEC.md\n M docs/spec/KEYBOARD_REFERENCE.md\n?? crates/deadpan-app/src/preview/harness/sound_placement/\n?? crates/deadpan-app/src/project/tests/sound/\n?? crates/deadpan-cli/tests/audio_inspection/sound_allowances.rs\n?? crates/deadpan-core/src/legacy_v30.rs\n?? crates/deadpan-core/src/sound_allowance.rs\n?? crates/deadpan-core/tests/sound_allowances.rs\n?? crates/deadpan-store/tests/fixtures/produce-v36-sound-allowance-history.py\n?? crates/deadpan-store/tests/fixtures/v36-sound-allowance-history.commands.json\n?? crates/deadpan-store/tests/fixtures/v36-sound-allowance-history.provenance.json\n?? crates/deadpan-store/tests/fixtures/v36-sound-allowance-history.sql\n?? crates/deadpan-store/tests/migration/sound_allowances.rs\n?? docs/qualification/sound-allowances-2026-09-27.md\n?? tools/ui-feedback/evidence/2026-09-27-sound-allowances/",
+        "gpu_readback_in_timing_run": false,
+        "hardware": "Apple M5 Max",
+        "os": "26.5.2",
+        "physical_display_measured": false,
+        "picture_worker_timing": "request_start_finish_publication_receipt_v1",
+        "power_thermal_state": "uncontrolled; compare on the same idle machine and power mode",
+        "replay_hz": 60,
+        "replay_wall_ms": 151152.205125,
+        "rust": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+        "source_identity_note": "Git metadata describes the checkout at replay start; binary_sha256 identifies the executed build even during concurrent edits.",
+        "started_unix_ms": 1790568066134,
+        "tracked_diff_sha256_at_run": "aba0b7c581b9bf045d253320204feb6b74fa91d2b83b53546cd0e1d91bba7e8e",
+        "viewport_points": [
+          1280,
+          820
+        ],
+        "wait_strategy": "egui_repaint_callback_v1"
+      },
+      "mode": "visual",
+      "name": "visual-all-final",
+      "report_bytes": 104834273,
+      "report_sha256": "c576a92d80b666f4746fd3964c27eeed60bb65dd729a9bdd6b816cb40bf507d1",
+      "scenarios": [
+        {
+          "failed": false,
+          "failed_checks": [],
+          "findings": [],
+          "frames": 0,
+          "name": "kestrel-shortcuts",
+          "passed_checks": 1,
+          "skipped": [],
+          "timings": []
+        },
+        {
+          "failed": false,
+          "failed_checks": [],
+          "findings": [],
+          "frames": 68,
+          "name": "workspace",
+          "passed_checks": 80,
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "timings": []
+        },
+        {
+          "failed": false,
+          "failed_checks": [],
+          "findings": [],
+          "frames": 79,
+          "name": "editing",
+          "passed_checks": 29,
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "timings": []
+        },
+        {
+          "failed": false,
+          "failed_checks": [],
+          "findings": [],
+          "frames": 27,
+          "name": "camera",
+          "passed_checks": 12,
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "timings": []
+        },
+        {
+          "failed": false,
+          "failed_checks": [],
+          "findings": [],
+          "frames": 79,
+          "name": "menus",
+          "passed_checks": 37,
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "timings": []
+        },
+        {
+          "failed": false,
+          "failed_checks": [],
+          "findings": [],
+          "frames": 28,
+          "name": "delayed-preview",
+          "passed_checks": 8,
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "timings": []
+        },
+        {
+          "failed": false,
+          "failed_checks": [],
+          "findings": [],
+          "frames": 264,
+          "name": "rapid-input",
+          "passed_checks": 60,
+          "skipped": [
+            "Repeat boundary checks delay delivery of real SQLite updates; the writer and production event router remain live. Physical key delivery is not exercised.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "timings": []
+        },
+        {
+          "failed": false,
+          "failed_checks": [],
+          "findings": [],
+          "frames": 29,
+          "name": "playback-feedback",
+          "passed_checks": 12,
+          "skipped": [
+            "Playback service updates are explicitly simulated. This scenario qualifies UI feedback and picture routing, not PCM preparation, device timing or listening.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "timings": []
+        },
+        {
+          "failed": false,
+          "failed_checks": [],
+          "findings": [],
+          "frames": 314,
+          "name": "large-project",
+          "passed_checks": 235,
+          "skipped": [
+            "Large-project fixture: 10,000 root Background/Silence Holds in a real SQLite package. No source media, decoding, PCM or large asset inventory is stressed.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "timings": [
+            {
+              "name": "large_project_navigation_cpu_ms",
+              "summary": {
+                "completed": {
+                  "max_ms": 7.628875,
+                  "n": 64,
+                  "p50_ms": 3.4655,
+                  "p95_ms": 3.623209,
+                  "p99_ms": 7.628875
+                },
+                "failed": 0,
+                "samples": 64,
+                "timed_out": 0
+              }
+            }
+          ]
+        },
+        {
+          "failed": false,
+          "failed_checks": [],
+          "findings": [],
+          "frames": 50,
+          "name": "edit-latency",
+          "passed_checks": 26,
+          "skipped": [
+            "Edit timings measure the real committed revision through offscreen GPU completion. Physical display presentation and acoustic Hold silence are outside this scenario.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "timings": [
+            {
+              "name": "cached_repeat_input_to_picture_complete_ms",
+              "summary": {
+                "completed": {
+                  "max_ms": 250.95433299999996,
+                  "n": 2,
+                  "p50_ms": 237.720125,
+                  "p95_ms": 250.95433299999996,
+                  "p99_ms": 250.95433299999996
+                },
+                "failed": 0,
+                "samples": 2,
+                "timed_out": 0
+              }
+            },
+            {
+              "name": "cached_repeat_input_to_commit_ms",
+              "summary": {
+                "completed": {
+                  "max_ms": 116.902291,
+                  "n": 2,
+                  "p50_ms": 116.536125,
+                  "p95_ms": 116.902291,
+                  "p99_ms": 116.902291
+                },
+                "failed": 0,
+                "samples": 2,
+                "timed_out": 0
+              }
+            },
+            {
+              "name": "hold_fallback_input_to_picture_complete_ms",
+              "summary": {
+                "completed": {
+                  "max_ms": 258.433042,
+                  "n": 2,
+                  "p50_ms": 242.203792,
+                  "p95_ms": 258.433042,
+                  "p99_ms": 258.433042
+                },
+                "failed": 0,
+                "samples": 2,
+                "timed_out": 0
+              }
+            },
+            {
+              "name": "hold_input_to_commit_ms",
+              "summary": {
+                "completed": {
+                  "max_ms": 121.82870899999999,
+                  "n": 2,
+                  "p50_ms": 119.927875,
+                  "p95_ms": 121.82870899999999,
+                  "p99_ms": 121.82870899999999
+                },
+                "failed": 0,
+                "samples": 2,
+                "timed_out": 0
+              }
+            }
+          ]
+        },
+        {
+          "failed": false,
+          "failed_checks": [],
+          "findings": [],
+          "frames": 78,
+          "name": "nested-pause",
+          "passed_checks": 49,
+          "skipped": [
+            "This replay enters Sequence groups. Repeat and Retime entry, occurrence isolation, and their pause insertion remain outside this scenario.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "timings": []
+        },
+        {
+          "failed": false,
+          "failed_checks": [],
+          "findings": [],
+          "frames": 53,
+          "name": "original-moment",
+          "passed_checks": 16,
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "timings": []
+        },
+        {
+          "failed": false,
+          "failed_checks": [],
+          "findings": [],
+          "frames": 63,
+          "name": "original-playback",
+          "passed_checks": 18,
+          "skipped": [
+            "Playback service updates are explicitly injected. This scenario exercises Original controls, clock admission, looping and picture routing, not PCM preparation, device timing or listening.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "timings": []
+        },
+        {
+          "failed": false,
+          "failed_checks": [],
+          "findings": [],
+          "frames": 65,
+          "name": "sound-playback",
+          "passed_checks": 31,
+          "skipped": [
+            "Sound registration and widgets use production services. Delivery reports are deterministic fakes, not real PCM playback, device timing, or listening evidence.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "timings": []
+        },
+        {
+          "failed": false,
+          "failed_checks": [],
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            }
+          ],
+          "frames": 376,
+          "name": "sound-placement",
+          "passed_checks": 190,
+          "skipped": [
+            "Sound placement uses real source qualification and durable project commands. This scenario does not start audio output or establish PCM, device timing, or listening evidence.",
+            "Preparing/Playing at 960 pixels uses the real transport controls with simulated delivery reports only. It does not start a device or prepare PCM.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "timings": []
+        },
+        {
+          "failed": false,
+          "failed_checks": [],
+          "findings": [],
+          "frames": 44,
+          "name": "retime",
+          "passed_checks": 15,
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "timings": []
+        }
+      ]
+    }
+  ]
+}

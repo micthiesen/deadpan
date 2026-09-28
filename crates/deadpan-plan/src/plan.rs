@@ -110,6 +110,7 @@ pub struct RenderPlan {
     audio_assets: BTreeMap<AssetId, deadpan_core::AssetRecord>,
     sounds: BTreeMap<deadpan_core::SoundId, deadpan_core::SoundEvent>,
     sound_routes: BTreeMap<deadpan_core::SoundId, deadpan_core::RootSoundRoute>,
+    sound_allowances: BTreeMap<deadpan_core::SoundId, deadpan_core::SoundHoldAllowances>,
     compiled_sounds: BTreeMap<deadpan_core::SoundId, crate::audio_sound_event::CompiledRootSound>,
     // Frozen admission stays distinct even when its catalog is empty.
     audio_context: bool,
@@ -449,6 +450,7 @@ impl RenderPlan {
             audio_assets: document.assets().clone(),
             sounds: document.sounds().clone(),
             sound_routes: document.sound_routes().clone(),
+            sound_allowances: document.sound_allowances().clone(),
             compiled_sounds: BTreeMap::new(),
             audio_context: false,
         };
@@ -466,6 +468,12 @@ impl RenderPlan {
 
     pub fn sound_routes(&self) -> &BTreeMap<deadpan_core::SoundId, deadpan_core::RootSoundRoute> {
         &self.sound_routes
+    }
+
+    pub fn sound_allowances(
+        &self,
+    ) -> &BTreeMap<deadpan_core::SoundId, deadpan_core::SoundHoldAllowances> {
+        &self.sound_allowances
     }
 
     pub(crate) fn compiled_root_sound(

@@ -271,6 +271,18 @@ guides the appearance; it does not implement nested ownership, scoped Hold
 allowances, effects, listening or export acceptance. Every DP and gate remains
 open or partial.
 
+Core 31/database 37 add [persisted root sound allowances](SOUND_EVENTS.md#persisted-root-sound-allowances).
+One sound can pass through one concrete silent Hold or Repeat gap while other
+contributions and occurrences remain suppressed. Structural edits retain or
+remap the relation, old histories gain no permission, and source admission runs
+for allowance-only transactions. Native inspector controls and
+`:sound-allow` / `:sound-silence` capture the sound, Edit frame and exact issuer.
+Retained route gaps remain empty. Nested ownership, send/tail rules, the full
+voice graph, listening and preview/export acceptance remain required; no DP or
+gate is promoted by this subset.
+The [allowance qualification](qualification/sound-allowances-2026-09-27.md)
+records review corrections, migration provenance, actual PCM and UI evidence.
+
 [Original and edit audition](PLAYBACK.md) connects immutable qualified originals and
 canonical limited PCM to the native device, with Space Play/Pause, a monitor
 level, exact audio-clock picture scheduling and explicit interruption. Bounded

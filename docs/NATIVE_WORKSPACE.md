@@ -141,10 +141,16 @@ A stale or missing target fails instead of following an asynchronous completion
 to another sound. The list keeps catalog audition and the selected structural
 beat distinct. Gain and edge edits preserve routed events' chronological cuts;
 absolute moves and frame nudges reject routed events explicitly. Silent pauses
-suppress sound and the inspector describes that policy without offering an
-unimplemented allowance control. Nested owners, Repeat/Retime sound transforms,
-custom silence allowances, effects and export remain open. See the
+suppress each sound by default. The inspector and `:sound-allow` /
+`:sound-silence` grant or revoke one sound's permission in the concrete pause
+under the Edit frame. Command entry also captures that frame and issuer; it
+cannot acquire a later target. Enabling requires retained sound selection in
+that frame's pause samples, including subframe sounds. Revocation remains
+available after the selection moves away. Route gaps never acquire media.
+Nested owners, Repeat/Retime sound transforms, send/tail allowances, effects
+and export remain open. See the
 [native sound placement qualification record](qualification/native-sound-placement-2026-09-27.md)
+and [allowance qualification](qualification/sound-allowances-2026-09-27.md)
 for verification scope and limits.
 
 ## Picture and keyboard behavior
@@ -224,7 +230,8 @@ projects retain generic import. `,i` reuses the whole Original after the
 selected child or at the current group's end. `/` searches; `?` opens keyboard help;
 `:` opens command entry with
 `insert`, `split`, `undo`, `redo`, `new`, `open`, `import`, `source`, `sequence`, `enter`, `parent`, `help`,
-`sound-place`, `sounds`, `sound-at`, `sound-gain`, `sound-edges`, `sound-delete`.
+`sound-place`, `sounds`, `sound-at`, `sound-gain`, `sound-edges`, `sound-delete`,
+`sound-allow`, `sound-silence`.
 In Original, `v` starts/finishes a half-open temporal range, `h/l` adjusts its
 head, and `y` copies it without history. The inspector displays In, excluded Out,
 original ordinal count and measured duration; the bar uses measured PTS. Return

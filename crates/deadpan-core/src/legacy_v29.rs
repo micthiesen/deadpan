@@ -222,6 +222,7 @@ impl Document {
         let document = ProjectDocument {
             sounds: self.sounds,
             sound_routes: BTreeMap::new(),
+            sound_allowances: BTreeMap::new(),
             gap_overrides: self.gap_overrides,
             audio_lineage: self.audio_lineage,
             audio_bindings: self.audio_bindings,
@@ -245,7 +246,7 @@ impl Document {
     }
 
     pub fn matches(&self, document: &ProjectDocument) -> bool {
-        if !document.sound_routes.is_empty() {
+        if !document.sound_routes.is_empty() || !document.sound_allowances.is_empty() {
             return false;
         }
         let Some(marks) = project_marks(&document.marks) else {
@@ -1016,7 +1017,7 @@ struct Patch {
 
 impl Patch {
     fn project(patch: &DocumentPatch) -> Option<Self> {
-        if !patch.sound_routes.is_empty() {
+        if !patch.sound_routes.is_empty() || !patch.sound_allowances.is_empty() {
             return None;
         }
         Some(Self {
@@ -1103,7 +1104,11 @@ pub fn validate_request_context(
     request: &CommandRequest,
 ) -> Result<(), EditError> {
     if !document.sound_routes().is_empty()
-        || matches!(request.command, Command::ReplaceSound { .. })
+        || !document.sound_allowances().is_empty()
+        || matches!(
+            request.command,
+            Command::ReplaceSound { .. } | Command::SetSoundAllowance { .. }
+        )
         || (!document.sounds().is_empty() && !preserves_sound_clocks(&request.command))
     {
         return Err(EditError::new(
@@ -1163,7 +1168,8 @@ fn preserves_sound_clocks(command: &Command) -> bool {
             | OccurrenceEdit::IsolateGap { .. }
             | OccurrenceEdit::ClearGapOverride { .. } => false,
         },
-        Command::ReplaceSound { .. }
+        Command::SetSoundAllowance { .. }
+        | Command::ReplaceSound { .. }
         | Command::InsertTime { .. }
         | Command::SpliceSource { .. }
         | Command::Split { .. }

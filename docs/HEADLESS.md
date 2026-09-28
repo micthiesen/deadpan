@@ -68,7 +68,7 @@ revision fails with `RevisionConflict` and the current revision, without writing
 
 Supported commands are `insert`, `insert_time`, `split`, `delete`, `move`, `group`,
 `ungroup`, `splice_source`, `wrap_repeat`, `set_repeat`, `wrap_retime`, `set_retime`, `insert_plays`, `move_plays`, `set_hold_duration`, `set_hold_provider`, `set_hold_picture_context`, `set_source_audio_mapping`, `set_source_video_mapping`,
-`rename`, `set_audio_edge`, `set_framing`, `set_sound`, `replace_sound`, `delete_sound`, `add_asset`, `set_canvas`, `set_mark`, `delete_mark`, `set_play_override`, `clear_play_override`, `set_gap_override`, `clear_gap_override`, `isolate_gap`, and `edit_occurrence`. Their exact typed parameters are defined in
+`rename`, `set_audio_edge`, `set_framing`, `set_sound`, `replace_sound`, `delete_sound`, `set_sound_allowance`, `add_asset`, `set_canvas`, `set_mark`, `delete_mark`, `set_play_override`, `clear_play_override`, `set_gap_override`, `clear_gap_override`, `isolate_gap`, and `edit_occurrence`. Their exact typed parameters are defined in
 [`Command`](../crates/deadpan-core/src/command.rs). `set_repeat` changes an existing
 Repeat; `wrap_repeat` deliberately adds nesting. A three-play repeat includes
 three total plays and only two gaps. These are structural edits, not rendered
@@ -81,7 +81,7 @@ and `pitch`, retaining the ordinary Retime's child/input range. Both also have
 occurrence forms. The native `:retime` speed grammar resolves to these same
 commands. See [speed editing](RETIME_EDITING.md) for output-binding lifecycle.
 
-Documents use schema 30 in database schema 36. `set_sound` and `replace_sound`
+Documents use schema 31 in database schema 37. `set_sound` and `replace_sound`
 take an `id` and complete `event`; `delete_sound` takes its `id`.
 Events require a qualified source, root owner,
 natural-rate mapping, contained selection plus sample offset, explicit gain,
@@ -93,6 +93,35 @@ route when changing label, gain or endpoint policy. Changing a routed recipe,
 mapping, owner or offset requires `replace_sound`, the explicit reversible reset
 of its retained routing. Root Split, temporal occurrence edits and Repeat/Retime
 sound transforms remain guarded. See [root sound events](SOUND_EVENTS.md#persisted-root-ripple-edits).
+
+`set_sound_allowance` takes `sound`, a concrete `issuer`, and boolean `allowed`.
+It grants or revokes one root contribution's permission through one current
+silent Hold or default Repeat gap, in the same reversible command transaction:
+
+```json
+{
+  "command": "set_sound_allowance",
+  "sound": "impact",
+  "issuer": {
+    "type": "node",
+    "instance": { "node": "hold-id", "repeats": [] }
+  },
+  "allowed": true
+}
+```
+
+For a default Repeat gap, `issuer.type` is `repeat_gap`, `instance` identifies
+the Repeat and its complete enclosing occurrence path, and `gap_after` identifies
+the preceding stable play as `{ "allocation": "repeat-revision", "ordinal": 0 }`.
+Node issuers likewise require every repeated ancestor; definition wildcards and
+stale issuers are rejected. Allowance-only edits recheck source admission.
+Direct and routed sounds prepare complete input before applying current
+per-contribution Hold gates and authored edges. Allowances preserve the Original's
+silence, other sounds' policy, source exhaustion and empty routing gaps.
+The native `:sound-allow` and `:sound-silence` commands capture the sound, session,
+revision, Edit frame and issuer on entry. Nested owners, send/tail allowances,
+the full voice graph and remaining structural sound transforms stay open. See
+[root allowances](SOUND_EVENTS.md#persisted-root-sound-allowances).
 
 Sparse [gap branches](REPEAT_GAP_BRANCHES.md) retain an
 independent subtree after a stable Repeat play. `isolate_gap` copies the current
@@ -733,18 +762,22 @@ future-schema read-only inspection still needs a compatibility implementation.
 
 ## Schema migration
 
-Database schemas 1 through 35 return `MigrationRequired` when opened. Upgrade explicitly:
+Database schemas 1 through 36 return `MigrationRequired` when opened. Upgrade explicitly:
 
 ```sh
 cargo run --locked -p deadpan-cli -- project migrate /tmp/example.deadpan
 ```
 
 Migration holds the project writer lock, keeps a consistent SQLite backup under
-`Snapshots/before-schema-34-*.sqlite` for a database-34 input, and upgrades a separate candidate. It
+`Snapshots/before-schema-37-*.sqlite`, named for the destination schema, and upgrades a separate candidate. It
 replays all commands, undo/redo revisions, and abandoned branches with their
 original revision IDs. Every snapshot and forward/inverse transaction is checked
 against its strict original schema meaning. Migration goes directly to database
-schema 36 and core document schema 30. Database-35 replays frozen core 29,
+schema 37 and core document schema 31. Database-36 replays frozen core 30,
+retaining sound routes and `replace_sound` with their original contextual
+command admission. It rejects `sound_allowances` in snapshots and patches,
+including empty or null maps, and rejects `set_sound_allowance`. Older snapshots
+gain empty allowance state. Database-35 replays frozen core 29,
 retaining qualified root events while rejecting route fields and `replace_sound`.
 It checks the old sound-bearing command restrictions before modern replay, even
 when a command's snapshots and patches would contain no route. Migration adds no

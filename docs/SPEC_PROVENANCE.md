@@ -29,6 +29,12 @@ visible Vim-style controls. It does not reduce the required sound ownership,
 silence, effects or export scope. Current implementation remains a root-event
 subset tracked separately in [sound events](SOUND_EVENTS.md).
 
+The same interaction grammar now names `:sound-allow` and `:sound-silence`.
+They expose Section 10.4's explicit exception for one sound in one concrete
+silent pause, with captured Edit-frame scope and visible inspector feedback.
+This adds discoverable controls without changing default silence or authorizing
+permission for other voices, other occurrences, or absent routed samples.
+
 The original five files were hash-verified before archiving. Their names and
 relative links are retained there. The root `spec/DEADPAN_SPEC.pdf` also remains
 an unchanged historical 1.0 copy for old links; it is not an updated reading

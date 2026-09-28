@@ -216,6 +216,7 @@ impl Document {
         let document = ProjectDocument {
             sounds: BTreeMap::new(),
             sound_routes: BTreeMap::new(),
+            sound_allowances: BTreeMap::new(),
             gap_overrides: self.gap_overrides,
             audio_lineage: self.audio_lineage,
             audio_bindings: self.audio_bindings,
@@ -239,7 +240,10 @@ impl Document {
     }
 
     pub fn matches(&self, document: &ProjectDocument) -> bool {
-        if !document.sounds.is_empty() || !document.sound_routes.is_empty() {
+        if !document.sounds.is_empty()
+            || !document.sound_routes.is_empty()
+            || !document.sound_allowances.is_empty()
+        {
             return false;
         }
         let Some(marks) = project_marks(&document.marks) else {
@@ -948,7 +952,10 @@ struct Patch {
 
 impl Patch {
     fn project(patch: &DocumentPatch) -> Option<Self> {
-        if !patch.sounds.is_empty() || !patch.sound_routes.is_empty() {
+        if !patch.sounds.is_empty()
+            || !patch.sound_routes.is_empty()
+            || !patch.sound_allowances.is_empty()
+        {
             return None;
         }
         Some(Self {

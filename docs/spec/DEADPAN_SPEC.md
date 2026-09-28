@@ -426,6 +426,11 @@ accumulated rounding. `+/-` change that event's gain; `dd` removes only that
 event. These keys also retain event scope in its inspector. Entering the pane
 from Original activates Your edit while preserving both cursors. Parameter
 entry captures the event and revision; a later completion cannot retarget it.
+For the explicitly identified silent Hold at the retained Edit cursor,
+`:sound-allow` permits this contribution through that concrete occurrence and
+`:sound-silence` revokes the permission. Command entry captures the Hold issuer
+with the event. Neither command grants permission to other sounds or creates
+missing selected media in a routing gap.
 Unsupported placement or timing changes report a reason and leave history
 unchanged. Silent-Hold policy, explicit allowances and overflow retain their
 specified semantics rather than being inferred from placement.

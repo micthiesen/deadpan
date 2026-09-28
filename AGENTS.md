@@ -148,7 +148,14 @@ from Original switches to Your edit while preserving both cursors and the beat.
 Frame nudges translate the persisted exact mapping and audible selection while
 retaining the independent sample offset; never round each nudge to samples.
 Routed sounds permit gain/edge changes but reject repositioning until their
-full timing lifecycle is implemented. See [sound events](docs/SOUND_EVENTS.md).
+full timing lifecycle is implemented. `:sound-allow` and `:sound-silence` capture
+the selected sound, project session, revision, retained Edit frame and exact
+silent Hold or default Repeat-gap issuer on command entry. Missing targets and
+late completions cannot retarget the command. Grant only where the selected
+sound has retained sample support; permit revocation after support moves away.
+Show the captured Edit frame and readable pause/play context; retain the complete
+stable issuer in the command rather than exposing database IDs in the inspector.
+See [sound events](docs/SOUND_EVENTS.md).
 
 The shared picture baseline accepts owned, bounded, full-range straight RGBA8
 with explicit transfer, primaries, SAR, rotation and source PTS. Decode transfer
@@ -161,9 +168,9 @@ display color, editorial effects, playback or an encoded export path.
 
 Every persisted edit, undo, and redo gets a never-reused revision ID. Core inverse patches can restore exact fixture identity; the store rebases them onto fresh revisions to prevent stale commands becoming valid after undo. Store writes use one transaction for the revision, history, and cursor. Keep `.writer.lock` held for the writable store lifetime; read-only inspection and dry runs may coexist. Take live database snapshots through SQLite's backup API, never copy only an open main database file.
 
-Repeat play IDs are scoped by Repeat node and allocation revision, with an ordinal inside that allocation. Preserve surviving IDs through resizing and reorder; allocate fresh IDs for growth and inserted subtrees. Imported initial snapshots reserve their allocation names even after plays are removed. Keep compact runs bounded and never expand a repeat merely to seek. Core schema 30 retains these runs, marks, sparse overrides, generated Hold metadata, independent source mappings, audio edge policies, transparent Retime partitions and owned timing bindings, and binds qualified assets to immutable source receipts. Database schemas 1 through 35 replay the complete chronology directly into the current schema on a consistent copy, compare every legacy snapshot/transaction, and promote through SQLite's backup transaction only after validation. Strict legacy adapters freeze nested provider vocabulary and reject new fields, commands, and unexpected mark or override changes. Preserve the pre-migration backup.
+Repeat play IDs are scoped by Repeat node and allocation revision, with an ordinal inside that allocation. Preserve surviving IDs through resizing and reorder; allocate fresh IDs for growth and inserted subtrees. Imported initial snapshots reserve their allocation names even after plays are removed. Keep compact runs bounded and never expand a repeat merely to seek. Core schema 31 retains these runs, marks, sparse overrides, generated Hold metadata, independent source mappings, audio edge policies, transparent Retime partitions and owned timing bindings, and binds qualified assets to immutable source receipts. Database schemas 1 through 36 replay the complete chronology directly into the current schema on a consistent copy, compare every legacy snapshot/transaction, and promote through SQLite's backup transaction only after validation. Strict legacy adapters freeze nested provider vocabulary and reject new fields, commands, and unexpected mark or override changes. Preserve the pre-migration backup.
 
-Database schema 36 stores core schema 30 and retains operational generation requests,
+Database schema 37 stores core schema 31 and retains operational generation requests,
 plus an optional validated single-Original workflow profile. Use the dedicated
 `create_single_source` / `initialize_prepared_source` path to bind the full measured
 Original, basis and protected baseline atomically. Undo never crosses that baseline;
@@ -247,7 +254,7 @@ Ready bundles alone do not authorize an edit. See [acceptance](docs/GENERATION_A
 See [generated Hold semantics](docs/GENERATED_HOLDS.md).
 
 Original byte ownership is operational and separate from stream readiness.
-Database schema 36 retains content-keyed original records with monotonic location
+Database schema 37 retains content-keyed original records with monotonic location
 versions introduced in schema 10; earlier schemas gain an empty inventory. Use the
 shared descriptor-relative object engine for `Media/Originals` and
 `Media/Generated`. Managed originals try APFS clone, then verified copy; retain
@@ -572,7 +579,7 @@ Database-18 history uses frozen core 12; all earlier mark wires reject fragments
 including empty arrays and null. Database 19 uses frozen core 13, including its
 multi-binding mark vocabulary but excluding Split. Database 20 uses frozen core 14
 including closed direct/occurrence Split identity pools. Database 21 uses frozen
-core 15. Database 22 uses frozen core 16, including closed binding vocabulary but excluding InsertTime. Database 23 uses frozen core 17, excluding framing. Database 24 uses frozen core 18, excluding captured Hold geometry and its setter. Database 25 uses frozen core 19, excluding selected audio placements. Database 26 uses frozen core 20, excluding chronological reanchor steps. Database 27 uses frozen core 21, excluding gap binding maps and nested gap clock/placement vocabulary. Database 28 uses frozen core 22, excluding sparse gap branches and detached gap-clock references. Database 29 uses frozen core 23. Database 30 uses frozen core 24, retaining composite root-seam InsertTime admission but rejecting interiors before composite suffixes. Earlier replays check the stricter physical-suffix admission before modern apply. Database 31 uses frozen core 25, retaining root physical interiors but refusing nested Sequence insertion. Database 32 uses frozen core 26, retaining nested Sequence pause admission while rejecting SpliceSource. Database 33 uses frozen core 27, retaining SpliceSource while rejecting new Retime edits. Database 34 uses frozen core 28, retaining Retime commands but rejecting sound state and commands. Database 35 uses frozen core 29, retaining sound recipes while rejecting routed state, ReplaceSound and formerly forbidden sound-bearing temporal commands. Current schema 36 stores core 30. Legacy initial snapshots gain empty audio lineage; replayed copies may
+core 15. Database 22 uses frozen core 16, including closed binding vocabulary but excluding InsertTime. Database 23 uses frozen core 17, excluding framing. Database 24 uses frozen core 18, excluding captured Hold geometry and its setter. Database 25 uses frozen core 19, excluding selected audio placements. Database 26 uses frozen core 20, excluding chronological reanchor steps. Database 27 uses frozen core 21, excluding gap binding maps and nested gap clock/placement vocabulary. Database 28 uses frozen core 22, excluding sparse gap branches and detached gap-clock references. Database 29 uses frozen core 23. Database 30 uses frozen core 24, retaining composite root-seam InsertTime admission but rejecting interiors before composite suffixes. Earlier replays check the stricter physical-suffix admission before modern apply. Database 31 uses frozen core 25, retaining root physical interiors but refusing nested Sequence insertion. Database 32 uses frozen core 26, retaining nested Sequence pause admission while rejecting SpliceSource. Database 33 uses frozen core 27, retaining SpliceSource while rejecting new Retime edits. Database 34 uses frozen core 28, retaining Retime commands but rejecting sound state and commands. Database 35 uses frozen core 29, retaining sound recipes while rejecting routed state, ReplaceSound and formerly forbidden sound-bearing temporal commands. Database 36 uses frozen core 30, retaining sound routes and ReplaceSound with their original contextual admission while rejecting allowance state and commands. Current schema 37 stores core 31. Legacy initial snapshots gain empty audio lineage; replayed copies may
 establish it. Compare every old projected patch and changed-ID summary exactly
 while retaining complete modern transactions for historical undo/redo.
 
@@ -999,7 +1006,7 @@ and gain, sum with the existing continuous Original, then use one shared limiter
 Source exhaustion cannot mute another contribution. Source-only Original and
 catalog audition exclude authored overlays. Temporal edits and frozen-context
 capture reject sounds unless the complete interval/sample-history transform is
-implemented. Core 30/database 36 retain separate root `sound_routes` journals:
+implemented. Core 30/database 36 introduced separate root `sound_routes` journals:
 original extent/grid, ordered Insert/Delete operations and cut intent. Root-clock
 InsertTime, SpliceSource and ordinary Sequence Delete transform the bus once
 outside helper Split; non-root Split is neutral. Root Split, temporal occurrence
@@ -1013,8 +1020,21 @@ integral support; initially sampleless intent uses the exact logical fallback.
 SetSound parameters preserve a route; explicit
 ReplaceSound clears it atomically. Recheck unchanged recipes when their route
 changes. Freeze database-35/core-29 contextual admission before modern replay.
-Nested ownership, allowances, treatments, remaining structural sound editing
-and native placement remain required.
+Nested ownership, send/tail allowances, treatments and remaining structural
+sound transforms remain required.
+
+Core 31/database 37 retain a separate `sound_allowances` relation for exact root
+contributions. `SetSoundAllowance` addresses one sound and one concrete silent
+Hold occurrence or default Repeat gap, including every enclosing play and the
+gap's stable preceding play. Do not promote definition-relative addresses into
+root permissions. Prepare complete sound input before current per-contribution
+Hold gates and authored edges; keep the Original's silence and every other
+contribution's policy independent. Allowances neither bypass source admission or
+exhaustion nor create media in retained routing gaps. Recheck receipt/original
+metadata when only an allowance changes. Split and occurrence isolation preserve
+or remap exact issuers; prune removed sounds/issuers in the same reversible
+transaction. Freeze database-36/core-30 documents, patches, commands and contextual
+admission; older snapshots gain no allowances. The full voice graph remains open.
 
 Bind retained sample routes only to checked complete providers. `AudioRoutedSignal`
 uses independent source input or an immutable Preserve projection on PointCeil;

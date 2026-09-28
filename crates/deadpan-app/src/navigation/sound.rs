@@ -17,18 +17,22 @@ pub enum SoundAction {
     GainStep(i32),
     /// Apply the same policy to both event endpoints.
     Edges(AudioEdgePolicy),
+    /// Grant or revoke this sound's permission in the captured Edit-cursor pause.
+    Allowance(bool),
     Delete,
 }
 
 pub(super) fn parse(verb: &str, argument: Option<&str>) -> Result<SoundAction, String> {
     match verb {
-        "sound-place" | "sounds" | "sound-delete" => {
+        "sound-place" | "sounds" | "sound-delete" | "sound-allow" | "sound-silence" => {
             if argument.is_some() {
                 return Err("This command takes no arguments.".into());
             }
             Ok(match verb {
                 "sound-place" => SoundAction::Place,
                 "sounds" => SoundAction::Focus,
+                "sound-allow" => SoundAction::Allowance(true),
+                "sound-silence" => SoundAction::Allowance(false),
                 _ => SoundAction::Delete,
             })
         }
@@ -128,6 +132,8 @@ mod tests {
         action(":sound-place", SoundAction::Place);
         action("SOUNDS", SoundAction::Focus);
         action(":sound-delete", SoundAction::Delete);
+        action(":sound-allow", SoundAction::Allowance(true));
+        action("SOUND-SILENCE", SoundAction::Allowance(false));
         action(
             ":sound-edges soft",
             SoundAction::Edges(AudioEdgePolicy::Automatic),
@@ -140,6 +146,8 @@ mod tests {
             "sound-place 2",
             "sounds now",
             "sound-delete all",
+            "sound-allow all",
+            "sound-silence 2",
             "sound-edges",
             "sound-edges automatic",
             "sound-edges hard soft",

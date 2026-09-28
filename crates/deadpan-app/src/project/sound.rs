@@ -2,11 +2,160 @@
 //! Storage and playback still own transactional and live source admission.
 
 use deadpan_core::{
-    AssetId, AudioEdgePolicy, AudioSample, ExactFrameRange, ExactRatio, FrameDuration, SoundEvent,
-    SoundId, SoundOverflowPolicy, SourceAudio, SourceAudioMapping,
+    AssetId, AudioEdgePolicy, AudioSample, ExactFrameRange, ExactRatio, FrameDuration,
+    ProjectFrame, SoundEvent, SoundHoldIssuer, SoundId, SoundOverflowPolicy, SourceAudio,
+    SourceAudioMapping,
 };
 
 use super::Workspace;
+
+/// One exact current root occurrence, resolved with bounded indexed queries.
+/// Retained selection support is independent of the Hold's permission policy.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PauseTarget {
+    pub at: ProjectFrame,
+    pub issuer: SoundHoldIssuer,
+    pub label: String,
+    pub allowed: bool,
+    pub selected_support: bool,
+}
+
+impl PauseTarget {
+    pub fn validate_change(&self, allowed: bool) -> Result<(), String> {
+        if allowed && !self.selected_support {
+            return Err("This sound has no retained selection in this pause within the Edit frame. An allowance cannot fill a timing gap.".into());
+        }
+        if self.allowed == allowed {
+            return Err(if allowed {
+                "This sound is already allowed in this pause."
+            } else {
+                "This sound is already silenced by this pause."
+            }
+            .into());
+        }
+        Ok(())
+    }
+}
+
+pub fn pause_target(
+    workspace: &Workspace,
+    id: &SoundId,
+    at: ProjectFrame,
+) -> Result<PauseTarget, String> {
+    if at.0 < 0 || at.0 >= workspace.plan.duration().frames() {
+        return Err("Place the Edit cursor inside a silent pause first.".into());
+    }
+    let sample = workspace
+        .document
+        .presentation_basis()
+        .frame_rate
+        .audio_boundary(at)
+        .map_err(|error| error.to_string())?;
+    let next = workspace
+        .document
+        .presentation_basis()
+        .frame_rate
+        .audio_boundary(ProjectFrame(at.0 + 1))
+        .map_err(|error| error.to_string())?;
+    if next <= sample {
+        return Err("The Edit cursor frame has no allocated audio sample.".into());
+    }
+    let query = workspace
+        .plan
+        .audio_hold_policy(
+            sample..next,
+            deadpan_plan::AudioQueryLimits {
+                maximum_spans: 8,
+                maximum_work: 4096,
+            },
+        )
+        .map_err(|error| {
+            format!(
+                "The pause target could not be resolved within the inspector query limit: {error}"
+            )
+        })?;
+    let Some(rule) = query.rules.first() else {
+        return Err("No single silent pause is allocated in the Edit frame.".into());
+    };
+    let issuer = rule
+        .issuer
+        .sound_issuer()
+        .ok_or("This pause has no concrete root occurrence to allow.")?;
+    for rule in &query.rules[1..] {
+        if rule.issuer.sound_issuer().as_ref() != Some(&issuer) {
+            return Err("More than one silent pause occurs in this Edit frame. Choose a frame with one identified pause.".into());
+        }
+    }
+    let instance = issuer.instance();
+    let name = workspace
+        .document
+        .nodes()
+        .get(&instance.node)
+        .map(|node| node.label.as_str())
+        .unwrap_or("Pause");
+    // The current frame and readable play positions explain the scope. The
+    // complete stable issuer, never this display label, chooses the target.
+    let mut label = name.to_owned();
+    for play in &instance.repeats {
+        let owner = workspace
+            .document
+            .nodes()
+            .get(&play.node)
+            .ok_or("The pause's enclosing Repeat is unavailable.")?;
+        let deadpan_core::NodeKind::Repeat { iterations, .. } = &owner.kind else {
+            return Err("The pause's enclosing Repeat changed.".into());
+        };
+        let position = iterations
+            .position(&play.iteration)
+            .ok_or("The pause's enclosing play is unavailable.")?;
+        label.push_str(&format!(
+            " · {}: play {} of {}",
+            owner.label,
+            position + 1,
+            iterations.len()
+        ));
+    }
+    if let SoundHoldIssuer::RepeatGap { gap_after, .. } = &issuer {
+        let deadpan_core::NodeKind::Repeat { iterations, .. } =
+            &workspace.document.nodes()[&instance.node].kind
+        else {
+            return Err("The pause's Repeat changed.".into());
+        };
+        let position = iterations
+            .position(gap_after)
+            .ok_or("The pause's preceding play is unavailable.")?;
+        label.push_str(&format!(
+            " · pause after play {} of {}",
+            position + 1,
+            iterations.len()
+        ));
+    }
+    let allowed = workspace
+        .document
+        .sound_allowances()
+        .get(id)
+        .is_some_and(|allowances| allowances.contains(&issuer));
+    let sound = workspace
+        .plan
+        .root_sound(id)
+        .map_err(|error| error.to_string())?;
+    let selected_support = query
+        .rules
+        .iter()
+        .try_fold(false, |overlap, rule| {
+            sound
+                .selects_range(rule.samples.clone())
+                .map(|selected| overlap || selected)
+        })
+        .map_err(|error| error.to_string())?;
+    Ok(PauseTarget {
+        at,
+        issuer,
+        label,
+        allowed,
+        selected_support,
+    })
+}
 
 /// Place the complete measured audio-only catalog span at an exact 48 kHz onset.
 /// This performs no filesystem work and never rounds duration to picture frames.

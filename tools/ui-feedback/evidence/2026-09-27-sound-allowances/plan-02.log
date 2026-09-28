@@ -1,0 +1,57 @@
+   Compiling deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 18.75s
+     Running tests/hold_policy.rs (target/debug/deps/hold_policy-ff9960feb22c74a0)
+
+running 10 tests
+test coincident_placed_definitions_keep_distinct_issuers_through_preserve ... ok
+test each_grid_rounds_complete_extents_once_and_omits_empty_allocations ... ok
+test one_play_gap_definition_retains_its_namespace_without_a_fabricated_play ... ok
+test narrow_billion_repeat_lookup_keeps_gap_and_hold_identity_without_expansion ... ok
+test borrowed_stage_input_keeps_definition_and_outer_occurrence_scopes ... ok
+test adjacent_issuers_survive_complete_nested_retime_maps ... ok
+test source_absence_exhaustion_room_tone_and_tail_do_not_issue_silent_hold_rules ... ok
+test repeated_hold_and_gap_issuers_follow_stable_reordered_plays ... ok
+test partitions_clip_rules_without_restarting_identity_and_share_query_limits ... ok
+test retained_timing_does_not_invent_an_old_silent_hold_rule ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/root_sound_routes.rs (target/debug/deps/root_sound_routes-7731429ed96ff2f9)
+
+running 10 tests
+test two_ntsc_insertions_preserve_each_old_physical_clock ... ok
+test deleting_onset_cuts_envelope_but_keeps_complete_recipe_and_source_phase ... ok
+test extreme_destination_clips_support_before_narrowing_retained_labels ... ok
+test current_hold_owns_exact_coincident_boundary_after_odd_sample_translation ... ok
+test selected_range_finds_subframe_support_without_filling_routed_gaps ... ok
+test allowing_current_holds_never_restores_samples_deleted_from_the_route ... ok
+test identity_route_matches_unrouted_tiny_hold_islands_and_shuffled_queries ... ok
+test current_hold_masks_physical_drift_even_when_semantic_onset_is_later ... ok
+test forty_chronological_cuts_are_not_a_nested_map_depth_limit ... ok
+test hundreds_of_fragmented_cuts_have_indexed_cold_envelope_queries ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s
+
+     Running tests/sound_event_fades.rs (target/debug/deps/sound_event_fades-50692a1cc6465459)
+
+running 9 tests
+test rounded_root_terminal_does_not_replace_the_exact_event_edge_with_hard ... ok
+test event_edges_near_holds_shorten_the_combined_envelope_once ... ok
+test adjacent_and_sampleless_holds_have_no_phantom_audible_islands ... ok
+test root_owner_hard_applies_only_at_exact_event_coincidence ... ok
+test holds_create_independent_edges_but_ordinary_cuts_do_not ... ok
+test hard_hold_edges_and_exact_event_coincidence_are_preserved ... ok
+test short_surviving_islands_keep_one_envelope_across_query_and_source_cuts ... ok
+test custom_allowances_select_one_contribution_and_exact_repeat_issuers ... ok
+test query_context_and_work_are_bounded_and_tiny_budgets_fail ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+
+     Running tests/sound_events.rs (target/debug/deps/sound_events-aa02463d9529779d)
+
+running 2 tests
+test root_sounds_use_round_even_boundaries_and_keep_exact_source_phase ... ok
+test root_sound_hold_policy_uses_current_project_clock_and_not_original_exhaustion ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

@@ -38,7 +38,7 @@ including cold suffixes, and admit dependencies even for entirely masked output.
 Captured provider policy stays separate from current consuming Hold gates. See
 [routed-voice qualification](../qualification/routed-voices-2026-09-27.md).
 Core 29/database 35 added qualified persisted root events and the shared
-pre-master bus. Core 30/database 36 now retain chronological root sound routes
+pre-master bus. Core 30/database 36 introduced chronological root sound routes
 through InsertTime, SpliceSource and ordinary Sequence Delete. Non-root Split
 is neutral; root Split and temporal occurrence edits remain guarded. Preserve
 the complete recipe and old physical sample labels while current Hold gates
@@ -56,9 +56,18 @@ Routed gain and edge edits retain their journal; native move/nudge rejects it.
 Follow the [placement board](../design/boards/sound-placement-board-v2.png) and
 the [native placement qualification record](../qualification/native-sound-placement-2026-09-27.md)
 for the implemented subset and its verification limits. Nested ownership,
-Repeat/Retime sound transforms, custom silence allowances, effects, the remaining
+Repeat/Retime sound transforms, send/tail allowances, effects, the remaining
 structural transforms and export remain required. No requirement or gate is
 complete because these controls exist.
+
+Core 31/database 37 add explicit per-sound, per-concrete-Hold allowances.
+`:sound-allow` and `:sound-silence` capture the selected event, Edit frame,
+issuer, session and revision. The writer re-resolves that scope and rechecks
+source admission. Granting one sound leaves Original audio, other sounds and
+other pauses suppressed. Raw preparation precedes current contribution gates;
+an allowance cannot create sound in a retained route gap. Split and occurrence
+isolation remap exact identities; database-36 histories replay through frozen
+core 30 and gain no permission. See [sound allowances](../SOUND_EVENTS.md#persisted-root-sound-allowances).
 
 [Structural speed editing](../RETIME_EDITING.md) exposes `:retime` and
 `:wrap-retime` through exact speed resolution and the native inspector. Preserve

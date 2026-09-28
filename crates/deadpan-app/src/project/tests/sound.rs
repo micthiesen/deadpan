@@ -6,6 +6,8 @@ use deadpan_core::{
 
 use super::*;
 
+mod allowances;
+
 fn catalog(harness: &Harness) -> Arc<Workspace> {
     let update = command(
         &harness.service,

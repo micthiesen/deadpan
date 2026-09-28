@@ -30,8 +30,9 @@ pub(crate) fn apply(
     id: &NodeId,
     identities: &SplitIdentities,
     timing: &AudioTimingId,
-    allocation: &RevisionId,
+    context: crate::command::EditContext<'_>,
 ) -> Result<ProjectDocument, EditError> {
+    let allocation = context.allocation;
     if hold.duration == FrameDuration::ZERO {
         return Err(EditError::new(
             EditErrorCode::InvalidDuration,
@@ -91,7 +92,7 @@ pub(crate) fn apply(
                         timing.clone(),
                     )?;
                 working =
-                    crate::split::apply(&working, &split.target, split.at, identities, allocation)?;
+                    crate::split::apply(&working, &split.target, split.at, identities, context)?;
                 // The post-Split placement graph has new physical aliases.
                 // Give it a distinct immutable identity rather than overwriting
                 // the pre-Split graph still referenced by inherited lattices.
@@ -144,7 +145,7 @@ pub(crate) fn apply(
             target,
             FrameDuration::new(*cut).map_err(crate::DocumentError::from)?,
             identities,
-            allocation,
+            context,
         )?;
         slot + 1
     } else {

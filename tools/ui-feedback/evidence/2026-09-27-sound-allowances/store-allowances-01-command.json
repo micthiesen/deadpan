@@ -1,0 +1,21 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "-p",
+    "deadpan-store",
+    "--test",
+    "migration",
+    "--test",
+    "source_registration",
+    "sound_allowance"
+  ],
+  "started": "2026-09-28T03:25:28.113366+00:00",
+  "base_commit": "357ae533b399ccf51e6dc3196ba2e0bba720ef9f",
+  "diff_sha256": "1202657e564bc53c99b689319ff1115b23b81f693b5590491812b69989d33da7",
+  "source_manifest_sha256": "44eef899d4535d581503105599fa20691762b0568db1fc7b2717ed8d8f61a5cb",
+  "pid": 17265,
+  "exit_code": 0,
+  "seconds": 46.92781604221091
+}

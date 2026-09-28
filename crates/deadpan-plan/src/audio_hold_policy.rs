@@ -34,7 +34,7 @@ pub enum AudioHoldIssuer {
 }
 
 impl AudioHoldIssuer {
-    fn from_span(
+    pub(crate) fn from_span(
         definition: Option<AudioDefinitionSelector>,
         instance: InstancePath,
         gap_after: Option<IterationId>,
@@ -54,6 +54,29 @@ impl AudioHoldIssuer {
                 definition,
                 instance,
             }
+        }
+    }
+
+    /// A durable root occurrence, without promoting an intrinsic definition's
+    /// relative path into a project-wide permission. Unplayed gap definitions
+    /// have no concrete preceding play and therefore cannot name an allowance.
+    pub fn sound_issuer(&self) -> Option<deadpan_core::SoundHoldIssuer> {
+        match self {
+            Self::Node {
+                definition: None,
+                instance,
+            } => Some(deadpan_core::SoundHoldIssuer::Node {
+                instance: instance.clone(),
+            }),
+            Self::RepeatGap {
+                definition: None,
+                instance,
+                gap_after: Some(gap_after),
+            } => Some(deadpan_core::SoundHoldIssuer::RepeatGap {
+                instance: instance.clone(),
+                gap_after: gap_after.clone(),
+            }),
+            _ => None,
         }
     }
 }

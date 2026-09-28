@@ -1,0 +1,19 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "-p",
+    "deadpan-cli",
+    "--test",
+    "audio_inspection",
+    "sound_allowance"
+  ],
+  "started": "2026-09-28T03:32:39.078332+00:00",
+  "base_commit": "357ae533b399ccf51e6dc3196ba2e0bba720ef9f",
+  "diff_sha256": "4af78c3b60a081b328458115dc968ca192e05c819b3ee9ad84a64ec7750db96a",
+  "source_manifest_sha256": "a935e2c9f752883ebfd4431476ffc5dfcef81f506042ebc31b2e4b9f31c6f82a",
+  "pid": 18905,
+  "exit_code": 0,
+  "seconds": 15.863271624781191
+}

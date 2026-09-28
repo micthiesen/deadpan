@@ -96,6 +96,117 @@ fn query(plan: &RenderPlan, range: Range<i64>) -> AudioSoundGateQuery {
         .unwrap()
 }
 
+#[test]
+fn custom_allowances_select_one_contribution_and_exact_repeat_issuers() {
+    let mut wire = serde_json::to_value(document(&[(100, true)], 48_000)).unwrap();
+    let allocation = RevisionId::new("repeat-plays").unwrap();
+    let plays = IterationOrder::new(allocation.clone(), 3).unwrap();
+    let play = |ordinal| IterationId {
+        allocation: allocation.clone(),
+        ordinal,
+    };
+    wire["nodes"]["root"] = json!(BeatNode::sequence("root", vec![node("repeat")]));
+    wire["nodes"]["repeat"] = json!(BeatNode {
+        label: "Three silent plays".into(),
+        framing: None,
+        audio_edges: Default::default(),
+        kind: NodeKind::Repeat {
+            child: node("part0"),
+            iterations: plays,
+            gap: Some(HoldRecipe {
+                duration: FrameDuration::new(50).unwrap(),
+                video: HoldVideo::Background,
+                audio: HoldAudio::Silence,
+                picture_context: None
+            }),
+        },
+    });
+    wire["sounds"]["sound"]["mapping"]["selection"]["end"] = json!(ExactRatio::integer(400));
+    wire["sounds"]["other"] = wire["sounds"]["sound"].clone();
+    let gap = SoundHoldIssuer::RepeatGap {
+        instance: InstancePath {
+            node: node("repeat"),
+            repeats: vec![],
+        },
+        gap_after: play(0),
+    };
+    let held_play = SoundHoldIssuer::Node {
+        instance: InstancePath {
+            node: node("part0"),
+            repeats: vec![RepeatInstance {
+                node: node("repeat"),
+                iteration: play(1),
+            }],
+        },
+    };
+    wire["sound_allowances"] =
+        json!({"sound": SoundHoldAllowances::try_from(vec![gap, held_play]).unwrap()});
+    let document = ProjectDocument::from_json(&wire.to_string()).unwrap();
+    let plan = RenderPlan::compile(&document).unwrap();
+    let whole = query(&plan, 0..400);
+    assert_eq!(
+        whole
+            .spans
+            .iter()
+            .map(|s| (s.samples.clone(), s.length))
+            .collect::<Vec<_>>(),
+        vec![
+            (AudioSample(0)..AudioSample(100), 0),
+            (AudioSample(100)..AudioSample(250), 150),
+            (AudioSample(250)..AudioSample(400), 0),
+        ]
+    );
+    let gains = factors(&whole);
+    for range in [0..100, 99..101, 148..152, 174..176, 249..251, 399..400] {
+        assert_eq!(
+            factors(&query(&plan, range.clone())),
+            gains[range.start as usize..range.end as usize]
+        );
+    }
+    let other = plan.root_sound(&SoundId::new("other").unwrap()).unwrap();
+    assert!(
+        other
+            .gate_fades(AudioSample(0)..AudioSample(400), Default::default())
+            .unwrap()
+            .spans
+            .iter()
+            .all(|s| s.length == 0)
+    );
+    let original = plan
+        .audio_hold_policy(AudioSample(0)..AudioSample(400), Default::default())
+        .unwrap();
+    assert_eq!(
+        original.rules.len(),
+        5,
+        "custom contribution policy cannot remove Original Hold rules"
+    );
+    assert!(
+        original
+            .rules
+            .iter()
+            .all(|rule| rule.issuer.sound_issuer().is_some())
+    );
+    let voice = plan.root_sound(&sound()).unwrap();
+    assert!(
+        voice.selects_sample(AudioSample(0)).unwrap(),
+        "selection is distinct from current suppression"
+    );
+    assert!(voice.selects_sample(AudioSample(399)).unwrap());
+    assert!(voice.selects_sample(AudioSample(400)).is_err());
+    assert!(voice.selects_sample(AudioSample(-1)).is_err());
+    assert!(
+        voice
+            .gate_fades(
+                AudioSample(100)..AudioSample(250),
+                AudioQueryLimits {
+                    maximum_spans: 16,
+                    maximum_work: 1
+                }
+            )
+            .is_err()
+    );
+}
+
 // Exact sample-centered envelope factors avoid testing a duplicate f32 mixer.
 fn factors(query: &AudioSoundGateQuery) -> Vec<ExactRatio> {
     let mut result = Vec::new();

@@ -5,6 +5,7 @@ use deadpan_core::{AudioEdgePolicy, AudioSample, ExactRatio, FrameDuration, Soun
 use super::*;
 use crate::navigation::SoundAction;
 use crate::project::ProjectSoundEdit;
+use crate::project::sound::{PauseTarget, pause_target};
 
 pub(super) struct Inspection {
     session: u64,
@@ -14,8 +15,8 @@ pub(super) struct Inspection {
     position: String,
     duration: String,
     routed: bool,
-    policy: String,
-    policy_warning: bool,
+    cursor: u64,
+    pause: Result<PauseTarget, String>,
 }
 
 pub(super) struct CommandTarget {
@@ -23,6 +24,8 @@ pub(super) struct CommandTarget {
     revision: RevisionId,
     event: SoundId,
     initial_command: String,
+    cursor: u64,
+    pause: Result<PauseTarget, String>,
 }
 
 impl DeadpanApp {
@@ -45,6 +48,12 @@ impl DeadpanApp {
             revision: workspace.document.revision_id().clone(),
             event: self.selected_event.clone()?,
             initial_command: command.into(),
+            cursor: self.sequence_cursor,
+            pause: cursor_pause(
+                workspace,
+                self.selected_event.as_ref()?,
+                self.sequence_cursor,
+            ),
         })
     }
 
@@ -63,6 +72,36 @@ impl DeadpanApp {
             return Err("The sound or project changed while entering this command. Open its parameters again; no edit was made.".into());
         }
         Ok(())
+    }
+
+    pub(super) fn captured_sound_allowance(&mut self, target: CommandTarget, allowed: bool) {
+        let result = (|| {
+            self.check_sound_command(&target)?;
+            if self.sequence_cursor != target.cursor {
+                return Err(
+                    "The Edit cursor changed while entering the pause command; no edit was made."
+                        .into(),
+                );
+            }
+            let pause = target.pause?;
+            pause.validate_change(allowed)?;
+            Ok(ProjectRequest::SoundEdit {
+                expected_session: target.session,
+                expected_revision: target.revision,
+                edit: ProjectSoundEdit::Allowance {
+                    id: target.event,
+                    issuer: pause.issuer,
+                    at: pause.at,
+                    allowed,
+                },
+            })
+        })();
+        match result {
+            Ok(request) => {
+                self.submit(request);
+            }
+            Err(error) => self.error = Some(error),
+        }
     }
     pub(super) fn event_focused(&self) -> bool {
         self.view == View::Sequence
@@ -105,10 +144,11 @@ impl DeadpanApp {
             inspection.session == workspace.session
                 && &inspection.revision == workspace.document.revision_id()
                 && &inspection.id == id
+                && inspection.cursor == self.sequence_cursor
         }) {
             return;
         }
-        self.sound_inspection = inspect(workspace, id).ok();
+        self.sound_inspection = inspect(workspace, id, self.sequence_cursor).ok();
     }
 
     pub(super) fn sound_action(&mut self, action: SoundAction, context: &egui::Context) {
@@ -175,6 +215,16 @@ impl DeadpanApp {
             .get(&id)
             .ok_or("The selected sound no longer exists.")?;
         let (gain, start_edge, end_edge) = match action {
+            SoundAction::Allowance(allowed) => {
+                let target = cursor_pause(workspace, &id, self.sequence_cursor)?;
+                target.validate_change(allowed)?;
+                return Ok(Some(ProjectSoundEdit::Allowance {
+                    id,
+                    issuer: target.issuer,
+                    at: target.at,
+                    allowed,
+                }));
+            }
             SoundAction::Move(at) => return Ok(Some(ProjectSoundEdit::Move { id, at })),
             SoundAction::Delete => return Ok(Some(ProjectSoundEdit::Delete { id })),
             SoundAction::Gain(value) => (value, event.start_edge, event.end_edge),
@@ -357,13 +407,28 @@ impl DeadpanApp {
         let Some(info) = &self.sound_inspection else {
             return;
         };
-        let (position, duration, routed, policy, policy_warning) = (
-            info.position.clone(),
-            info.duration.clone(),
-            info.routed,
-            info.policy.clone(),
-            info.policy_warning,
-        );
+        let (position, duration, routed) =
+            (info.position.clone(), info.duration.clone(), info.routed);
+        let allowance_entry = self.command_open
+            && matches!(
+                navigation::command::parse(&self.command),
+                Ok(navigation::command::Entry::Action(Action::Sound(
+                    SoundAction::Allowance(_)
+                )))
+            );
+        let (pause, pause_cursor) = if allowance_entry {
+            self.sound_command_target.as_ref().map_or_else(
+                || {
+                    (
+                        Err("No sound and pause were captured when command entry opened.".into()),
+                        self.sequence_cursor,
+                    )
+                },
+                |target| (target.pause.clone(), target.cursor),
+            )
+        } else {
+            (info.pause.clone(), info.cursor)
+        };
         let layout = self.workspace_layout(ui);
         egui::Panel::right("workspace-inspector").resizable(false).default_size(layout.inspector)
             .min_size(layout.inspector).max_size(layout.inspector).frame(style::panel()).show(ui, |ui| {
@@ -377,7 +442,7 @@ impl DeadpanApp {
                     inspector_value(ui, "Start", &position);
                     inspector_value(ui, "Duration", &duration);
                     inspector_value(ui, "Gain", &format!("{} dB", gain_label(event.gain_millidecibels)));
-                    let ready = !self.service.is_busy() && !self.dialogs.is_open();
+                    let ready = !self.service.is_busy() && !self.dialogs.is_open() && !self.command_open;
                     ui.add_space(8.0);
                     ui.label("Fine position · 48 kHz samples");
                     if ui.add_enabled(ready && !routed, egui::Button::new("Change position  ·  Enter").min_size(egui::vec2(ui.available_width(), 28.0))).clicked() {
@@ -398,8 +463,29 @@ impl DeadpanApp {
                         }
                     });
                     ui.add_space(8.0);
-                    ui.label(egui::RichText::new(policy).color(if policy_warning { style::CURSOR } else { style::MUTED }));
-                    ui.small("Silent pauses suppress sound. Custom allowances are not available yet.");
+                    ui.label("Pause in Edit frame");
+                    ui.small(format!("{}Edit frame {} · selected sound only", if allowance_entry { "Captured " } else { "" }, pause_cursor));
+                    match &pause {
+                        Ok(target) => {
+                            ui.label(&target.label);
+                            ui.small(if target.allowed { "This sound is allowed in this exact pause occurrence." } else { "This pause silences this sound." });
+                            if !target.selected_support {
+                                ui.colored_label(style::CURSOR, "No retained sound selection in this pause within the Edit frame. Allowing cannot fill a timing gap.");
+                            }
+                            let (label, command, allowed) = if target.allowed {
+                                ("Silence this sound in pause", ":sound-silence", false)
+                            } else {
+                                ("Allow this sound in pause", ":sound-allow", true)
+                            };
+                            if ui.add_enabled(ready && (target.allowed || target.selected_support), egui::Button::new(label).wrap()).clicked() {
+                                self.pane = Pane::Inspector;
+                                self.sound_action(SoundAction::Allowance(allowed), ui.ctx());
+                            }
+                            ui.monospace(command);
+                        }
+                        Err(reason) => { ui.colored_label(style::MUTED, reason); }
+                    }
+                    ui.small("Move the Edit cursor to a pause to choose it. Only this sound's permission changes.");
                     ui.separator();
                     if ui.add_enabled(ready, egui::Button::new("Remove sound  ·  dd")).clicked() { self.sound_action(SoundAction::Delete, ui.ctx()); }
                     if ui.add_enabled(ready, egui::Button::new("Undo  ·  u")).clicked() { self.history(false); }
@@ -420,6 +506,9 @@ pub(super) fn command_hint(command: &str) -> Option<&'static str> {
         "sound-gain" => Some("Gain: −96 to +24 dB · up to 3 decimal places"),
         "sound-edges" => Some("Edges: soft or hard · retained timing stays intact"),
         "sound-delete" => Some("Remove selected sound · picture time stays intact"),
+        "sound-allow" | "sound-silence" => {
+            Some("Captured Edit-cursor pause · selected sound only · no timing gaps filled")
+        }
         "sound-place" => {
             Some("Place complete catalog sound at Edit cursor · no added picture time")
         }
@@ -452,7 +541,14 @@ fn event_onset(
         .map_err(|_| "Sound position exceeds the sample range.".into())
 }
 
-fn inspect(workspace: &Workspace, id: &SoundId) -> Result<Inspection, String> {
+fn cursor_pause(workspace: &Workspace, id: &SoundId, cursor: u64) -> Result<PauseTarget, String> {
+    let at = i64::try_from(cursor)
+        .map(ProjectFrame)
+        .map_err(|_| "Edit cursor exceeds the supported range.")?;
+    pause_target(workspace, id, at)
+}
+
+fn inspect(workspace: &Workspace, id: &SoundId, cursor: u64) -> Result<Inspection, String> {
     let sound = workspace.plan.root_sound(id).map_err(|e| e.to_string())?;
     let onset = sound.audible_samples().start;
     let routed = workspace.document.sound_routes().contains_key(id);
@@ -466,42 +562,6 @@ fn inspect(workspace: &Workspace, id: &SoundId) -> Result<Inspection, String> {
         (sound.audible_samples().end.0 - onset.0) as f64 / 48_000.0,
         if routed { " recipe" } else { "" }
     );
-    let (policy, policy_warning) = if routed {
-        ("Timing and cuts retained from Your edit.".into(), false)
-    } else {
-        match workspace.plan.audio_hold_policy(
-            sound.audible_samples(),
-            deadpan_plan::AudioQueryLimits {
-                maximum_spans: 64,
-                maximum_work: 4096,
-            },
-        ) {
-            Ok(query) if query.rules.is_empty() => {
-                ("No silent pause overlaps this sound.".into(), false)
-            }
-            Ok(query) => {
-                let first = &query.rules[0].samples;
-                (
-                    format!(
-                        "Silent in pause: {}–{} samples{}",
-                        first.start.0,
-                        first.end.0,
-                        if query.rules.len() > 1 {
-                            " · more pauses"
-                        } else {
-                            ""
-                        }
-                    ),
-                    true,
-                )
-            }
-            Err(_) => (
-                "Pause details exceed the inspector query limit; playback applies the full policy."
-                    .into(),
-                true,
-            ),
-        }
-    };
     Ok(Inspection {
         session: workspace.session,
         revision: workspace.document.revision_id().clone(),
@@ -510,8 +570,8 @@ fn inspect(workspace: &Workspace, id: &SoundId) -> Result<Inspection, String> {
         position,
         duration,
         routed,
-        policy,
-        policy_warning,
+        cursor,
+        pause: cursor_pause(workspace, id, cursor),
     })
 }
 

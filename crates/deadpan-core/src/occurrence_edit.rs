@@ -322,8 +322,9 @@ pub(crate) fn apply(
     instance: &InstancePath,
     edit: &OccurrenceEdit,
     supplied: &OccurrenceIdentities,
-    allocation: &RevisionId,
+    mut context: crate::command::EditContext<'_>,
 ) -> Result<ProjectDocument, EditError> {
+    let allocation = context.allocation;
     instance.validate(document)?;
     let mut identities = Identities::new(document, supplied)?;
     let mut result = document.clone();
@@ -384,6 +385,9 @@ pub(crate) fn apply(
         let marks =
             crate::marks::clone_occurrence_marks(&result, &step, &mapping, || identities.mark())?;
         clone_nodes(&mut result, &mapping, allocation)?;
+        if let Some(allowances) = context.allowances.as_deref_mut() {
+            allowances.isolate(&target.repeats[..=index], &mapping)?;
+        }
         result
             .overrides
             .entry(step.node)
@@ -410,7 +414,7 @@ pub(crate) fn apply(
         identities,
     } = &command
     {
-        return crate::split::apply(&result, node, *at, identities, allocation);
+        return crate::split::apply(&result, node, *at, identities, context);
     }
     let isolated = result.clone();
     crate::command::reduce(&mut result, &command, allocation)?;

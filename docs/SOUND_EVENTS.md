@@ -63,6 +63,7 @@ store transactions as structural edits:
 | `:sound-gain -3.125` | Set exact gain, with at most three decimal places, within -96 through +24 dB. |
 | Soft / Hard or `:sound-edges soft\|hard` | Set both event endpoints to Automatic or Hard. |
 | `dd` or `:sound-delete` | Remove the selected event. |
+| `:sound-allow` / `:sound-silence` | Grant or revoke this sound's permission in the concrete silent pause under the Edit frame. |
 | `u` / Ctrl-R | Use ordinary durable undo/redo. |
 
 Parameter command entry captures the event, project session and revision. A
@@ -75,9 +76,16 @@ leave event focus, and the viewer's navigation buttons always move picture time.
 
 Routed events keep their timing journals when gain or edges change. Native move
 and frame-nudge controls reject them rather than resetting their cuts. Silent
-Holds still suppress event output; the inspector explains this policy and offers
-no custom allowance control. Nested owners, Repeat/Retime sound transforms,
-scoped silence allowances, effects, full mastering and export remain open.
+Holds suppress event output by default. The inspector identifies the exact pause
+at the retained Edit cursor; `:sound-allow` permits only the selected effect in
+that occurrence and `:sound-silence` revokes that permission. The caption shows
+the Edit frame and readable pause/play context, while the command retains the
+complete stable issuer. Eligibility checks the pause's samples within
+that frame, so an effect wholly between frame boundaries remains selectable.
+Missing targets and routing gaps cannot gain
+audible support. An existing allowance remains revocable when support moves away.
+Nested owners, Repeat/Retime sound transforms, send/tail allowances, effects,
+full mastering and export remain open.
 
 The [placement board](design/boards/sound-placement-board-v2.png) is the visual
 target for this subset. The [native placement qualification record](qualification/native-sound-placement-2026-09-27.md)
@@ -87,7 +95,7 @@ release gate.
 ## Persisted root sounds
 
 Core schema 29 and database 35 introduced `SoundEvent` recipes keyed by `SoundId`.
-The current schemas are core 30 and database 36. `SetSound` creates an event or
+The current schemas are core 31 and database 37. `SetSound` creates an event or
 updates it under the retained-route rules below; `DeleteSound` removes it. The
 shared headless command entrypoint supports preview and atomic commit, followed
 by ordinary durable undo/redo. Migration replays old chronology through closed
@@ -128,7 +136,7 @@ time-mapped and `--edge-faded` diagnostic readers retain their Original-only
 meaning. With no events, previous PCM and metadata stay unchanged.
 
 Nested ownership, the remaining structural interval transforms, custom Hold
-allowances and creative treatments remain open. The
+send/tail allowances and creative treatments remain open. The
 root ripple subset below preserves sounds through supported edits. Other
 temporal commands and unsupported frozen audio captures still fail explicitly.
 Renaming, framing, audio mapping,
@@ -223,6 +231,38 @@ one occurrence or fragment needs explicit isolation. This cannot be inferred fro
 which copy happens to be visible.
 
 ## Silence and edges
+
+### Persisted root sound allowances
+
+Core 31/database 37 retain a separate `sound_allowances` relation. Each entry
+names one `SoundId` and a concrete `SoundHoldIssuer`: a silent Hold's complete
+`InstancePath`, or a default Repeat gap's owner path and stable preceding play.
+There are no definition wildcards or permissions inferred from sample ranges.
+`SetSoundAllowance { sound, issuer, allowed }` grants or revokes one address in
+one normal reversible transaction. Duplicate, stale, incomplete and oversized
+addresses fail validation. An allowance-only edit rechecks source admission.
+
+Transparent Split copies the issuer with its retained context; occurrence
+isolation remaps only the selected path. InsertTime and source splice carry those
+changes once through helper splits. Deleting a sound or issuer prunes its relation;
+undo restores it. Parameter changes and explicit recipe replacement retain the
+same sound identity and its permissions. Inserting new time grants no permission,
+and an explicit allowance cannot recreate sound absent from a retained route gap.
+
+Root sound preparation uses complete raw input. One current per-contribution gate
+then combines exact Hold policy, explicit allowances and authored edges on the
+root sample grid for both direct and routed sounds. The Original keeps its own
+silence, and another sound gets no permission. Source exhaustion, full source
+admission and route masks remain independent. Intrinsic definition queries cannot
+be promoted into concrete root issuer addresses.
+
+Database 36 replays frozen core 30 with its original sound-bearing command
+admission. Older snapshots gain empty allowance state; their closed document,
+command and patch grammars reject the new relation even when explicitly empty.
+This root contribution policy does not complete nested ownership, effect sends,
+hanging tails or the broader voice processing graph.
+
+### Full voice policy
 
 Source exhaustion silences that source voice. It does not silence another voice
 at the same time. By contrast, an authored silent Hold suppresses its governed
@@ -468,13 +508,14 @@ and bounded compact histories whose masked dependencies remain revocable.
    processing-input, bound-domain and projected readers. Stop at each processing
    boundary so descendant voices enter once. Sound catalog assets need qualified
    source admission without creating picture content.
-3. Resolve scoped Hold allowances and voice/ancestor edge ownership. Preserve
+3. Extend the root sound allowance subset to nested voices and sends; resolve
+   voice/ancestor edge ownership. Preserve
    continuous per-voice time/pitch processing and its output gates. Apply gain,
    treatments, sends and group processing in the declared order, then feed the
    complete bus into the shared limiter. Extend host scheduling beyond the current
    bounded source caches without weakening source admission.
 4. Extend the native root placement controls to the remaining owner, transform,
-   treatment and explicit custom-silence policies. Keep Original and edited
+   treatment and remaining custom-silence policies. Keep Original and edited
    clocks separate and use the common typed command path.
 5. Extend CLI inspection, production UI replay and real decoded-PCM tests. Verify
    actual preview/export equivalence, listening, failure recovery and performance;

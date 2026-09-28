@@ -1,0 +1,9 @@
+   Compiling deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+error[E0063]: missing field `sound_allowances` in initializer of `plan::RenderPlan`
+   --> crates/deadpan-plan/src/audio_context.rs:158:12
+    |
+158 |         Ok(Self {
+    |            ^^^^ missing `sound_allowances`
+
+For more information about this error, try `rustc --explain E0063`.
+error: could not compile `deadpan-plan` (lib) due to 1 previous error

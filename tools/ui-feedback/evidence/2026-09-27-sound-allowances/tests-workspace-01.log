@@ -1,0 +1,755 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+   Compiling deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+   Compiling deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+   Compiling deadpan-render v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-render)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+   Compiling deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+   Compiling deadpan-media-worker v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-media-worker)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+   Compiling deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 6m 17s
+     Running unittests src/main.rs (target/debug/deps/deadpan_app-6820b8824a0e132d)
+
+running 232 tests
+test navigation::camera::tests::logical_router_respects_focus_modifiers_and_key_repeat ... ok
+test navigation::camera::tests::numeric_pose_update_preserves_exact_components_and_reset_intent ... ok
+test navigation::camera::tests::invalid_or_stale_targets_leave_picker_open ... ok
+test navigation::camera::tests::zero_overflow_unsupported_count_and_repeated_commit_are_bounded ... ok
+test navigation::camera::tests::unchanged_enter_is_not_a_project_edit_but_reset_is ... ok
+test navigation::camera::tests::camera_enters_adjust_at_current_pose_and_escape_discards_the_draft ... ok
+test library::tests::file_names_are_bounded_without_changing_the_source_label ... ok
+test navigation::camera::tests::target_picker_digits_choose_targets_instead_of_becoming_counts ... ok
+test navigation::camera::tests::bounds_and_missing_projection_reject_without_changing_the_pose ... ok
+test navigation::camera::tests::f_toggles_target_picker_without_discarding_the_adjustment ... ok
+test navigation::camera::tests::reset_is_explicit_and_survives_later_pose_adjustments ... ok
+test navigation::command::tests::invalid_counts_and_unimplemented_parameters_never_become_edits ... ok
+test navigation::command::tests::monitor_command_preserves_bounded_percentages_without_authored_edits ... ok
+test navigation::camera::tests::source_axis_vectors_pan_exactly_and_coarse_steps_are_five_percent ... ok
+test navigation::command::tests::existing_commands_keep_their_explicit_actions ... ok
+test navigation::command::tests::hold_duration_requires_exact_frame_units_without_lowercasing_arguments ... ok
+test navigation::command::tests::repeat_setter_and_explicit_wrapper_remain_distinct ... ok
+test navigation::duration::tests::duration_inputs_quantize_once_with_ties_to_even ... ok
+test navigation::duration::tests::sample_durations_keep_subframe_precision_and_exact_frame_boundaries ... ok
+test navigation::duration::tests::malformed_or_unbounded_durations_are_not_approximated ... ok
+test navigation::retime::tests::speeds_are_exact_and_pitch_is_chosen_explicitly ... ok
+test navigation::command::tests::audition_context_requires_two_distinct_named_exact_durations ... ok
+test navigation::command::tests::pause_command_keeps_exact_units_and_zero_without_committing ... ok
+test navigation::retime::tests::invalid_or_ambiguous_speed_never_becomes_an_edit ... ok
+test navigation::sound::tests::sound_commands_are_explicit_and_reject_extraneous_arguments ... ok
+test navigation::sound::tests::sound_onset_uses_whole_sample_labels_without_frame_rounding ... ok
+test navigation::tests::comma_f_z_c_are_direct_unrepeatable_camera_actions ... ok
+test navigation::tests::comma_s_places_once_without_counts_or_native_input_capture ... ok
+test navigation::tests::boundaries_include_the_end_and_saturate_without_wrapping ... ok
+test navigation::tests::control_r_is_redo_only_outside_text_and_composition ... ok
+test navigation::tests::comma_i_reuses_once_and_keeps_native_text_and_global_return_free ... ok
+test navigation::tests::counts_reject_overflow_and_zero_never_creates_a_zero_distance_motion ... ok
+test navigation::tests::endpoint_search_history_and_pane_actions_clear_counts ... ok
+test navigation::sound::tests::sound_gain_is_exact_bounded_millidecibels ... ok
+test navigation::tests::enter_and_escape_belong_to_composition_until_it_finishes ... ok
+test navigation::duration::tests::sample_durations_check_negative_values_and_all_overflow_boundaries ... ok
+test navigation::tests::frame_and_beat_bindings_use_one_accumulated_count ... ok
+test navigation::shortcut_audit::tests::fixture_validation_cannot_silently_skip_unknown_bindings ... ok
+test navigation::tests::inspector_enter_is_distinct_from_native_text_and_composition ... ok
+test navigation::tests::held_keys_cannot_finish_an_operator_or_repeat_an_edit ... ok
+test navigation::tests::inspector_participates_only_while_visible ... ok
+test navigation::tests::invalid_prefixes_escape_and_explicit_reset_discard_pending_input ... ok
+test navigation::tests::invalid_operator_counts_and_unimplemented_selectors_never_commit ... ok
+test navigation::tests::group_navigation_cancels_prefixes_and_respects_native_input_ownership ... ok
+test navigation::tests::logical_comma_accepts_layout_modifiers_but_never_command_or_control ... ok
+test navigation::tests::logical_symbols_and_digits_do_not_assume_a_us_layout ... ok
+test navigation::tests::modified_navigation_and_reserved_shortcuts_do_not_edit ... ok
+test navigation::tests::logical_question_mark_opens_help_and_remains_text_during_editing ... ok
+test navigation::tests::moment_keys_are_native_owned_and_never_counted_or_repeated_edits ... ok
+test navigation::tests::native_command_shortcuts_preserve_text_editing_history ... ok
+test navigation::tests::pane_order_cycles_both_directions_and_reverses_exactly ... ok
+test navigation::tests::pause_leader_preserves_counts_and_cannot_fire_from_text_or_repeat ... ok
+test navigation::tests::pending_edits_cancel_for_text_ime_context_reset_and_escape ... ok
+test navigation::tests::shift_space_loops_once_and_preserves_native_and_global_ownership ... ok
+test navigation::tests::space_is_one_normal_mode_toggle_and_clears_pending_edits ... ok
+test navigation::tests::split_uses_a_single_unmodified_key_and_respects_native_text_entry ... ok
+test navigation::tests::sound_gain_counts_are_checked_and_never_complete_another_prefix ... ok
+test navigation::tests::sound_gain_uses_logical_symbols_and_preserves_text_and_reserved_modifiers ... ok
+test navigation::tests::text_and_ime_discard_pending_normal_mode_bindings ... ok
+test presentation::tests::clearing_rejects_old_success_and_failure_even_after_reopening ... ok
+test presentation::tests::current_decode_failure_removes_the_old_picture_and_label ... ok
+test navigation::camera::tests::count_multiplies_pan_and_scale ... ok
+test presentation::tests::background_and_empty_sequence_do_not_invent_source_frame_identity ... ok
+test presentation::tests::late_decode_and_error_cannot_replace_the_newest_request ... ok
+test presentation::tests::render_failure_preserves_the_last_displayed_identity_until_a_new_request ... ok
+test presentation::tests::repeated_original_picture_has_distinct_sequence_and_revision_identity ... ok
+test presentation::tests::accepted_picture_waiting_for_gpu_survives_a_new_request ... ok
+test navigation::tests::repeat_and_delete_operators_keep_counts_and_wait_without_a_timeout ... ok
+test presentation::tests::successful_decode_clears_an_older_gpu_failure_while_waiting ... ok
+test preview::camera::tests::camera_routing_preserves_native_text_ime_and_global_shortcuts ... ok
+test navigation::tests::g_prefix_survives_idle_observation_without_a_clock_or_timeout ... ok
+test presentation::tests::camera_ticket_cannot_modify_retained_picture_after_a_new_request ... ok
+test presentation::tests::transport_stop_keeps_displayed_picture_but_revokes_unsubmitted_decode ... ok
+test presentation::tests::camera_geometry_redraws_same_bytes_and_only_submission_advances_display ... ok
+test presentation::tests::source_caption_uses_the_source_view_even_inside_a_project ... ok
+test navigation::shortcut_audit::tests::shipped_routers_never_claim_a_kestrel_global_chord_or_prefix ... ok
+test navigation::shortcut_audit::tests::audit_rejects_the_old_command_return_binding ... ok
+test preview::camera::tests::camera_adjusts_the_whole_curve_and_controls_without_changing_time_hosts ... ok
+test navigation::shortcut_audit::tests::changed_live_registry_is_reported_as_drift ... ok
+test navigation::shortcut_audit::tests::audit_rejects_reserved_keys_that_only_start_a_count ... ok
+test preview::camera::tests::invalid_curve_adjustment_and_nonfinite_projection_fail_without_mutation ... ok
+test preview::camera::tests::target_picker_tab_keeps_same_batch_digits_and_return_key_routable ... ok
+test preview::camera_fields::tests::sync_resets_text_and_nonfinite_or_out_of_range_values_never_parse ... ok
+test dialogs::tests::pending_dialog_rejects_another_and_cancellation_releases_it ... ok
+test dialogs::tests::new_project_returns_the_selected_original_once_without_changing_its_path ... ok
+test preview::help_scroll::tests::closing_help_discards_its_pointer_and_ime_prefix_before_editor_gating ... ok
+test preview::help_scroll::tests::escape_preserves_the_ordered_command_suffix_without_replaying_help_input ... ok
+test library::tests::a_library_failure_does_not_create_a_project_elsewhere ... ok
+test preview::help_scroll::tests::held_keys_repeat_and_native_modifiers_do_not_scroll_or_escape ... ok
+test preview::help_scroll::tests::lines_pages_and_ends_clamp_to_measured_geometry_and_use_pointer_offset ... ok
+test preview::help_scroll::tests::opening_closing_and_reopening_help_changes_ownership_within_one_batch ... ok
+test preview::help_scroll::tests::popup_owned_commit_and_focus_loss_clear_composition_without_consuming_events ... ok
+test preview::inspector::tests::empty_group_has_truthful_zero_duration_without_invented_parameter_controls ... ok
+test preview::inspector::tests::hold_facts_and_duration_entry_preserve_actual_policy_and_frame_units ... ok
+test preview::inspector::tests::repeat_inspection_is_compact_and_edits_the_existing_repeat ... ok
+test preview::inspector::tests::retime_entry_uses_the_exact_retained_input_speed_and_current_pitch ... ok
+test preview::moment::tests::finish_freezes_range_and_identity_change_discards_selection ... ok
+test preview::moment::tests::paste_slot_requires_selection_and_keeps_explicit_group_edges ... ok
+test preview::moment::tests::selection_is_half_open_reversible_and_copy_survives_cancel ... ok
+test preview::moment::tests::temporal_bar_uses_measured_vfr_time_and_snaps_to_actual_boundaries ... ok
+test preview::playback::tests::loop_context_is_exact_in_audio_samples_and_clamps_to_the_captured_domain ... ok
+test navigation::camera::tests::counted_scale_matches_repeated_quantized_steps_and_stays_bounded ... ok
+test preview::repeat_queue::tests::cancellation_before_dispatch_or_during_save_never_resurrects_waiting_work ... ok
+test preview::repeat_queue::tests::a_real_repeat_with_the_wrong_child_count_or_gap_cannot_authorize_continuation ... ok
+test preview::repeat_queue::tests::changed_context_cannot_append_intents_or_retarget_ready_work ... ok
+test preview::repeat_queue::tests::completion_requires_the_current_session_document_and_exact_commit_metadata ... ok
+test preview::repeat_queue::tests::counted_wraps_continue_in_fifo_order_from_each_exact_committed_wrapper ... ok
+test preview::repeat_queue::tests::same_revision_background_progress_neither_finishes_nor_consumes_waiting_intents ... ok
+test preview::repeat_queue::tests::service_failure_cancels_pending_work_even_if_the_revision_or_commit_looks_valid ... ok
+test preview::selection::tests::beat_navigation_visits_empty_rows_in_both_directions_without_skipping ... ok
+test preview::selection::tests::committed_nested_pause_selects_its_visible_group_at_the_captured_boundary ... ok
+test preview::selection::tests::cursor_crossings_choose_the_right_hand_root_beat ... ok
+test preview::selection::tests::cursor_marker_maps_only_within_its_own_structural_card ... ok
+test preview::selection::tests::duration_changes_and_deletion_recompute_selection_from_committed_rows ... ok
+test preview::selection::tests::empty_and_zero_duration_structures_have_no_invented_frame ... ok
+test preview::selection::tests::empty_beat_has_no_invented_cursor_progress ... ok
+test preview::selection::tests::explicit_empty_row_survives_refresh_but_frame_motion_reselects ... ok
+test preview::selection::tests::nested_rows_keep_absolute_cursor_and_local_split_coordinates ... ok
+test preview::selection::tests::returning_from_a_group_preserves_a_heard_cursor_outside_its_parent ... ok
+test preview::selection::tests::split_captures_only_an_interior_boundary_of_the_selected_beat ... ok
+test preview::selection::tests::split_or_coalesced_import_completion_cannot_override_an_edit ... ok
+test preview::sound_events::tests::gain_labels_preserve_millidecibels_for_command_entry ... ok
+test preview::style::tests::layout_metrics_stay_finite_and_bounded_for_transient_resize_inputs ... ok
+test preview::style::tests::supported_windows_keep_the_picture_larger_than_either_sidebar ... ok
+test preview::repeat_queue::tests::overflow_preserves_the_admitted_fifo_prefix_and_counts_every_rejected_intent ... ok
+test preview::camera_fields::tests::fields_fit_the_minimum_inspector_content_width ... ok
+test preview::cards::tests::card_identity_and_keyboard_focus_follow_its_node_after_a_move ... ok
+test preview::camera_fields::tests::same_frame_text_and_enter_validate_new_value_without_rounding_untouched_fields ... ok
+test preview::camera_fields::tests::nonfinite_text_in_same_batch_as_apply_is_rejected_without_clamping ... ok
+test preview::tests::import_completion_after_history_preserves_the_current_view ... ok
+test preview::camera_fields::tests::focused_arrow_steps_only_the_selected_exact_component ... ok
+test preview::tests::clicking_away_closes_command_mode_before_normal_edit_keys_resume ... ok
+test preview::camera_fields::tests::active_ime_preedit_blocks_apply_until_its_commit_is_consumed ... ok
+test preview::camera_fields::tests::canceled_ime_preedit_restores_the_exact_precomposition_buffer ... ok
+test preview::style::tests::wrapped_shortcuts_keep_every_key_and_label_inside_the_panel ... ok
+test preview::tests::pointer_focus_batches_defer_shortcuts_and_old_command_submission ... ok
+test preview::tests::preview_target_bounds_retina_and_preserves_canvas_geometry ... ok
+test preview::tests::repeat_description_exposes_current_total_plays_without_expanding_them ... ok
+test preview::tests::sound_catalog_keys_use_production_bindings_and_honor_native_text ... ok
+test preview::tests::sound_catalog_shortcuts_cannot_target_the_retained_timeline_selection ... ok
+test preview::tests::source_hint_clears_on_context_change_without_clearing_project_feedback ... ok
+test preview::tests::v1_open_and_sound_completion_preserve_original_identity_and_cursor ... ok
+test preview::camera::tests::tab_into_camera_fields_does_not_retype_an_earlier_count ... ok
+test preview::cards::tests::resize_keeps_the_selected_card_visible_when_card_pitch_changes ... ok
+test preview::tests::focused_control_keeps_shift_space_and_pane_shift_space_loops_selection ... ok
+test preview::tests::pane_focus_survives_egui_arrow_routing_and_cycles_explicitly ... ok
+test preview::tests::parameter_entry_opened_after_footer_draw_receives_next_frame_text ... ok
+test preview::tests::text_exit_keeps_final_text_and_returns_to_a_real_pane ... ok
+test preview::cards::tests::original_caption_follows_the_whole_card_at_both_sidebar_widths ... ok
+test preview::tests::focused_button_keeps_space_and_return_while_pane_space_controls_playback ... ok
+test preview::help_scroll::tests::headless_file_menu_owns_escape_and_edit_keys_before_help_and_editor ... ok
+test preview::cards::tests::undo_then_insert_after_first_preserves_each_card_and_its_text ... ok
+test preview::help_scroll::tests::headless_window_replay_reaches_the_final_row_and_keeps_pointer_and_keyboard_in_sync ... ok
+test preview::cards::tests::appending_beats_keeps_every_fitting_card_visible_on_the_first_frame ... ok
+test library::tests::library_uses_injected_documents_and_exclusive_collision_names ... ok
+test project::tests::lost_import_worker_reports_failure_without_closing_project ... ok
+test project::tests::explicit_audio_import_is_measured_and_invalid_selected_stream_fails ... ok
+test project::tests::delete_selects_successor_then_predecessor_and_explicitly_clears_empty_selection ... ok
+test project::tests::edit_rejects_stale_session_revision_and_invalid_targets_without_authored_changes ... ok
+test project::tests::cancel_and_switch_reject_late_prepared_results_and_release_writer_lock ... ok
+test project::tests::native_framing_preserves_time_and_cursor_with_one_durable_undoable_commit ... ok
+test project::tests::consecutive_cached_insertions_report_distinct_committed_nodes ... ok
+test project::tests::pause::native_pause_supports_empty_sequence_and_repeat_seams_but_refuses_repeat_interiors ... ok
+test project::tests::native_open_migrates_authentic_schema16_with_a_backup_and_keeps_it_generic ... ok
+test project::tests::moment::native_moment_is_one_undo_and_rejects_stale_or_changed_source_identity ... ok
+test project::tests::failed_original_qualification_reopens_as_an_incomplete_project_for_retry ... ok
+test project::tests::native_new_starts_with_the_full_original_and_history_stops_at_that_baseline ... ok
+test project::tests::failed_native_migration_retains_the_current_project_and_its_active_preparation ... ok
+test project::tests::interrupted_initialization_is_recoverable_and_never_overlaps_after_project_switch ... ok
+test project::tests::native_split_refines_the_original_and_restores_it_through_durable_history ... ok
+test project::tests::retime::nested_scope_and_split_partition_are_preserved_by_retime ... ok
+test project::tests::insertion_completion_survives_import_progress_and_replaced_mailbox_updates ... ok
+test project::tests::moment::uncached_moment_preparation_keeps_nested_group_edge_and_explicit_cursor ... ok
+test project::tests::repeat_setter_preserves_gap_and_operator_wrap_is_distinct_and_durable ... ok
+test project::tests::scope::scope_resolves_absolute_edges_and_blocks_composite_descent_and_pause_seams ... ok
+test project::tests::retime::retime_resolves_once_and_rejects_empty_zero_and_overflow_without_commits ... ok
+test project::tests::pause::native_capture_keeps_lower_clips_and_inherits_root_motion_once ... ok
+test project::tests::shutdown_does_not_wait_for_import_and_rejects_new_commands ... ok
+test project::tests::shutdown_finishes_an_admitted_command_before_releasing_the_store ... ok
+test project::tests::scope::nested_edits_validate_direct_membership_and_rebuild_sibling_selection_in_scope ... ok
+test preview::cards::tests::beat_headers_and_card_rows_remain_visible_below_the_viewer ... ok
+test project::tests::pause::native_pause_retains_framing_and_repeated_capture_does_not_grow_it ... ok
+test project::tests::scope::stale_nested_scope_and_revision_are_rejected_and_reconcile_to_nearest_parent ... ok
+test project::tests::sound::allowances::current_pause_target_stays_indexed_and_names_one_of_a_million_repeat_plays ... ok
+test project::tests::retime::native_original_retime_adjusts_one_wrapper_and_has_durable_undo ... ok
+test project::tests::project_commands_and_undo_continue_during_preparation_and_errors_survive_progress ... ok
+test project::tests::pause::native_pause_inside_a_source_fragment_preserves_the_following_repeat_and_durable_history ... ok
+test transport::tests::a_window_ends_at_its_own_boundary_and_keeps_out_out_of_the_picture ... ok
+test transport::tests::invalid_windows_and_domain_bounds_fail_before_starting_transport ... ok
+test project::tests::prepared_insertion_retains_captured_revision_and_never_retargets_after_undo ... ok
+test transport::tests::loop_laps_map_content_backwards_without_accepting_backwards_delivery ... ok
+test transport::tests::ntsc_picture_changes_at_allocated_sample_boundary_once ... ok
+test transport::tests::inverse_matches_every_sample_of_several_rational_clocks ... ok
+test project::tests::real_import_registers_without_inserting_and_round_trips_entire_history ... ok
+test project::tests::sound::allowances::exact_pause_allowance_is_scoped_reversible_and_durable ... ok
+test project::tests::pause::native_pause_freezes_measured_vfr_picture_and_keeps_one_undo_step ... ok
+test transport::tests::pause_resume_keeps_subframe_sample_and_rejects_other_locations ... ok
+test transport::tests::picture_work_coalesces_while_busy_and_terminal_updates_are_exact ... ok
+test transport::tests::resume_checks_window_domain_rate_duration_and_actual_position ... ok
+test project::tests::sound::allowances::selected_sound_between_frame_boundaries_can_be_allowed_and_revoked_atomically ... ok
+test project::tests::pause::native_pause_descends_to_nested_sequence_and_keeps_its_framing_live ... ok
+test transport::tests::stale_request_session_revision_project_and_generation_cannot_advance_cursor ... ok
+test transport::tests::sound::sound_uses_exact_sample_cursor_and_never_schedules_a_picture ... ok
+test transport::tests::sound::sound_loops_keep_monotonic_delivery_and_reject_stale_or_invalid_reports ... ok
+test project::tests::sound::allowances::routed_gap_cannot_be_filled_but_a_new_sound_can_be_allowed_in_the_same_pause ... ok
+test project::tests::sound::placement_rechecks_revoked_stored_qualification_in_the_commit_transaction ... ok
+test worker::project_tests::index_validation_observes_cancellation_between_bounded_chunks ... ok
+test project::tests::structural_edit_during_import_preparation_survives_coalesced_progress ... ok
+test transport::tests::original::offset_original_subrange_stops_before_out_and_keeps_leading_audio ... ok
+test project::tests::sound::routed_sound_parameters_preserve_journal_and_native_move_is_explicitly_rejected ... ok
+test project::tests::unavailable_linked_original_invalidates_cached_insertion_without_losing_registration ... ok
+test worker::tests::nonregular_input_is_rejected_before_hashing ... ok
+test worker::tests::opening_another_source_invalidates_even_completed_old_reply ... ok
+test worker::tests::rapid_navigation_keeps_only_latest_work_and_cancels_inflight_decode ... ok
+test worker::tests::shutdown_cancels_active_and_pending_and_prevents_publication ... ok
+test worker::tests::actual_preview_worker_opens_then_coalesces_source_frame_requests ... ok
+test project::tests::sound::sound_requests_reject_overflow_stale_context_video_sources_and_invalid_parameters ... ok
+test project::tests::sound::moving_an_unrouted_selected_recipe_targets_its_exact_onset_without_losing_source_phase ... ok
+test project::tests::sound::frame_nudges_are_count_equivalent_and_semantically_reversible_on_fractional_sample_grids ... ok
+test project::tests::sound::arbitrary_sample_sound_parameters_move_and_removal_survive_durable_history ... ok
+test worker::project_tests::actual_decoded_freeze_keeps_sequence_position_and_rejects_old_revision_reply ... ok
+test transport::tests::original::original_vfr_uses_measured_picture_boundaries_at_a_different_project_rate ... ok
+test project::tests::sounds_are_audio_only_catalog_entries_and_bad_streams_leave_the_edit_intact ... ok
+test project::tests::scope::nested_insert_checks_parent_and_retains_captured_scope_for_cached_and_async_paths ... ok
+test worker::project_tests::cancelled_open_does_not_leave_a_later_project_request_without_a_source ... ok
+test worker::project_tests::registered_source_and_sequence_decode_the_same_original_frame ... ok
+test worker::project_tests::frozen_context_reaches_sequence_preview_without_leaking_into_original_view ... ok
+test worker::project_tests::sequence_samples_exact_mapping_and_endpoint_policy_after_a_revision_change ... ok
+test worker::project_tests::freeze_background_and_empty_sequence_follow_the_plan ... ok
+test transport::tests::original::edge_selection_windows_exclude_audio_lead_tail_and_project_enclosure_until_context_is_added ... ok
+test transport::tests::original::original_resume_checks_source_receipt_view_rate_and_loop_window ... ok
+test worker::project_tests::revision_receipt_index_and_session_identity_are_checked ... ok
+
+test result: ok. 232 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.76s
+
+     Running tests/headless.rs (target/debug/deps/headless-b549945d3396b4eb)
+
+running 2 tests
+test headless_errors_keep_the_same_structured_protocol ... ok
+test native_binary_runs_headless_without_initializing_a_window ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running unittests src/lib.rs (target/debug/deps/deadpan_audio-650769edc03772c9)
+
+running 54 tests
+test loudness::tests::both_gates_are_strict_and_the_absolute_gate_remains_in_force ... ok
+test loudness::tests::full_day_capacity_and_window_edges_are_exact ... ok
+test matrix::tests::ambiguous_invalid_and_unsupported_layouts_fail_explicitly ... ok
+test edges::tests::tiny_fragments_and_default_two_millisecond_edges_are_sample_centered ... ok
+test matrix::tests::every_supported_non_lfe_speaker_can_be_interpreted ... ok
+test matrix::tests::mono_and_stereo_retain_unity_gain_and_channel_separation ... ok
+test matrix::tests::sparse_surround_layout_uses_native_interleaved_order ... ok
+test matrix::tests::malformed_pcm_and_invalid_omitted_lfe_are_rejected ... ok
+test matrix::tests::fixed_matrix_preserves_dynamics_without_normalizing_or_clipping ... ok
+test matrix::tests::native_channel_impulses_follow_speaker_bits_with_holes ... ok
+test room_tone::tests::phase_modulo_remains_exact_beyond_float_integer_precision ... ok
+test room_tone::tests::rejects_invalid_extents_allocations_pcm_and_reads_and_cancels ... ok
+test edges::tests::derived_fade_validation_is_atomic_for_a_later_invalid_span ... ok
+test edges::tests::hard_coincident_owners_disable_only_in_domain_fades ... ok
+test edges::tests::bounded_pcm_keeps_wide_allocation_and_envelope_progress ... ok
+test edges::tests::invalid_queries_owners_and_progress_fail_before_modifying_pcm ... ok
+test edges::tests::raw_reads_keep_in_domain_pcm_and_silence_both_retained_endpoints ... ok
+test edges::tests::tiny_retained_envelopes_do_not_widen_to_fit_the_shifted_allocation ... ok
+test limiter::tests::coefficient_bits_match_the_retained_pilot ... ok
+test edges::tests::ntsc_shift_resumes_old_progress_and_silences_the_extra_allocated_sample ... ok
+test session::tests::index_comparison_checks_cancellation_through_raw_and_derived_chunks ... ok
+test room_tone::tests::integer_seam_follows_complementary_linear_overlap ... ok
+test limiter::tests::exact_integer_envelope_has_the_declared_finite_horizons ... ok
+test room_tone::tests::unity_weights_preserve_dc_and_levels_without_normalizing ... ok
+test limiter::tests::final_verification_rejects_peaks_on_actual_outer_project_rows ... ok
+test stages::bound_reads::captured_source_keeps_current_coincident_ancestor_hard_edges ... ok
+test stages::bound_reads::expanded_edit_reveals_current_source_without_reclocking_its_binding ... ok
+test stages::bound_reads::bound_hidden_negative_support_is_not_capped_to_the_old_project ... ok
+test stages::bound_reads::new_ordinary_edit_crop_excludes_filter_context_from_bound_raw_source ... ok
+test stages::bound_reads::translated_binding_retains_two_sample_automatic_envelope ... ok
+test stages::bound_reads::resumed_binding_retains_old_envelope_progress_and_exhaustion ... ok
+test stages::bound_reads::reordered_survivors_keep_old_phase_and_a_fresh_play_uses_definition_phase ... ok
+test stages::bound_reads::cached_intrinsic_depth_is_readmitted_before_dependency_access ... ok
+test stages::bound_reads::bound_reads_share_cancellation_work_and_complete_cached_dependencies ... ok
+test stages::controlled_reads::controlled_depth_cannot_restart_at_a_domain_or_bypass_through_cache ... ok
+test stages::controlled_reads::every_controlled_block_retains_dependencies_already_observed_or_cached ... ok
+test stages::controlled_reads::placed_point_source_keeps_selected_origin_and_matches_partitioned_pcm ... ok
+test stages::bound_reads::capture_only_preserve_keeps_the_consuming_output_envelope ... ok
+test stages::controlled_reads::placed_ntsc_source_preserves_signed_reference_phase_and_controlled_dependencies ... ok
+test stages::bound_reads::bound_preserve_evaluates_changed_room_tone_without_old_silence ... ok
+test sequence::sampling_recipes::sequence_source_recipe_resumes_current_ntsc_phase_with_full_44100_support ... ok
+test stages::controlled_reads::controlled_transfer_unions_halo_dependencies_and_keeps_parent_work_limit ... ok
+test stages::sampling_recipes::prepared_and_source_recipe_steps_come_from_sampling_not_structure ... ok
+test stages::bound_reads::fresh_follow_speed_keeps_two_millisecond_post_mapping_fades ... ok
+test stages::bound_reads::normal_root_binding_retains_fractional_ntsc_source_phase_and_block_parity ... ok
+test stages::bound_reads::bound_hold_with_no_old_input_point_still_suppresses_new_preserve_output ... ok
+test stages::bound_reads::bound_source_retains_nonzero_point_origin_inside_current_preserve ... ok
+test stages::bound_reads::capture_only_zero_point_source_absence_preserves_processed_decay ... ok
+test stages::sampling_recipes::prepared_stage_recipes_resume_full_canonical_pcm_without_repreparation ... ok
+test stages::controlled_reads::placed_point_preserve_rechecks_policy_that_owned_no_input_point ... ok
+test stages::sampling_recipes::processing_source_recipes_use_resumed_root_and_signal_maps ... ok
+test edges::tests::derived_creative_gain_preserves_integer_fades_and_exact_fractional_progress ... ok
+test room_tone::tests::tiny_fragments_shorten_fades_and_skip_unobserved_cycles ... ok
+test room_tone::tests::fractional_44100_extent_keeps_exact_period_and_partition_identity ... ok
+
+test result: ok. 54 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s
+
+     Running tests/audio_context.rs (target/debug/deps/audio_context-5667c1db79d16315)
+
+running 4 tests
+test context_provider_is_required_and_retained_asset_contract_is_checked ... ok
+test tail_context_remains_explicitly_unsupported ... ok
+test cached_context_stages_recheck_admission_before_returning_pcm ... ok
+test restored_context_renders_qualified_source_room_tone_nested_preserve_split_and_silence ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/audio_definition.rs (target/debug/deps/audio_definition-01e58c9a33cc49d2)
+
+running 41 tests
+test mix::mixed_preflight_rejects_hidden_unsupported_history_before_an_earlier_voice_reads ... ok
+test mix::gated_voice_still_requires_source_admission_and_invalid_requests_read_nothing ... ok
+test historical_definition_survives_live_deletion_and_rechecks_cached_context_admission ... ok
+test owned_root_domain_rejects_foreign_handles_ranges_cancellation_and_work_limits ... ok
+test definitions_reject_foreign_handles_invalid_ranges_cancel_and_bounded_work ... ok
+test projection::projected_input_is_preflighted_even_when_output_policy_omits_unsupported_tail ... ok
+test all_overridden_repeat_still_renders_its_unheard_default_definition ... ok
+test projection::projected_input_preflights_hidden_history_of_an_ordinary_nested_stage ... ok
+test projection::nested_projection_enforces_depth_and_residency_then_recovers ... ok
+test owned_root_placement_keeps_silent_hold_without_any_preserve_input_point ... ok
+test owned_root_placements_share_intrinsic_preparation_without_rebinding_clocks ... ok
+test definition_preserve_retains_silent_policy_without_an_input_grid_point ... ok
+test projection::routed::fully_masked_routes_admit_hidden_depth_before_source_io ... ok
+test owned_nested_preserve_uses_edited_room_tone_in_the_same_root_clock ... ok
+test projection::projected_memo_rechecks_source_admission_within_one_read ... ok
+test projection::projected_output_preserves_processed_decay_past_the_source_selection ... ok
+test projection::projected_root_admission_precedes_source_reads_and_failures_recover ... ok
+test tape::tape_keeps_repeat_default_and_actual_room_tone_occurrence_scopes_distinct ... ok
+test projection::projected_root_regrids_a_hold_with_no_intrinsic_point_before_rounding ... ok
+test definitions_keep_nested_history_silence_room_phase_and_distinct_cache_scopes ... ok
+test tape::tape_uses_live_source_mapping_when_one_asset_is_referenced_twice ... ok
+test tape::tape_uses_one_ntsc_point_ceil_grid_across_an_exact_run_seam ... ok
+test mix::a_silent_hold_voice_does_not_suppress_the_other_voice ... ok
+test tape_admission::bound_source_reads_keep_the_physical_allocation_anchor_across_tape_seams ... ok
+test projection::nested_projection_prepares_each_intrinsic_once_and_places_pause_after_stretch ... ok
+test tape_admission::tape_preflights_all_runs_and_shares_preparation_limits_between_them ... ok
+test mix::mix_residency_includes_the_voice_reader_and_its_span_buffer ... ok
+test tape_admission::tape_reads_reject_foreign_handles_bad_ranges_and_cancellation ... ok
+test projection::routed::fully_masked_routes_reject_revoked_history_and_recover ... ok
+test tape::tape_preserves_nested_preserve_history_suppression_and_cache_admission ... ok
+test projection::two_routes_through_one_stage_do_not_alias_prepared_pcm ... ok
+test tape::tape_run_seams_do_not_crop_source_filter_context ... ok
+test owned_source_root_clock_retains_signed_ntsc_phase_and_exact_filter_crop ... ok
+test projection::routed::routed_spans_share_one_complete_projection_preparation ... ok
+test projection::projected_root_ntsc_resume_keeps_phase_and_later_domain_origin_independent ... ok
+test mix::scoped_mix_sums_two_decoded_rates_and_keeps_exhaustion_and_gates_per_voice ... ok
+test mix_limits::exactly_1024_distinct_dependencies_are_admitted_with_duplicate_and_gated_voices ... ok
+test mix::mixed_projection_memo_rechecks_every_voice_and_shares_nested_limits ... ok
+test ntsc_definition_uses_local_zero_and_point_ceil_instead_of_root_allocation ... ok
+test mix::enclosing_preserve_processes_the_complete_sum_once_and_retains_source_decay ... ok
+test mix_limits::all_hidden_dependency_kinds_enforce_the_shared_cap_before_any_source_io_and_recover ... ok
+
+test result: ok. 41 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.57s
+
+     Running tests/audio_domain.rs (target/debug/deps/audio_domain-be928cb41bc270b8)
+
+running 12 tests
+test bounded_read_does_not_materialize_or_narrow_a_wide_signed_domain ... ok
+test domain_transfer_masks_outside_signed_support_before_returning_filtered_pcm ... ok
+test transferred_domain_keeps_one_provenance_observation_across_halo_callbacks ... ok
+test moved_partition_reads_its_hidden_source_instead_of_the_colliding_root_voice ... ok
+test hidden_room_tone_gap_keeps_its_loop_origin_and_rechecks_cached_admission ... ok
+test ordinary_edit_crop_keeps_excluded_source_filter_context_out_of_the_domain ... ok
+test domain_reads_reject_foreign_plans_ranges_cancellation_and_preparation_overruns ... ok
+test hidden_nested_preserve_keeps_full_history_and_distinguishes_absence_from_silence ... ok
+test transferred_domain_rejects_foreign_context_and_uses_the_full_stage_budget ... ok
+test negative_hidden_domain_transfers_fractional_pcm_and_silence_into_a_new_preserve ... ok
+test domain_transfer_halo_callbacks_share_one_deadline ... ok
+test ntsc_hidden_44100_context_keeps_the_captured_fractional_root_origin ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.21s
+
+     Running tests/composite_insert.rs (target/debug/deps/composite_insert-422581ee2079daa9)
+
+running 14 tests
+test source_splice::pasted_selected_audio_ends_on_its_exact_interval_after_another_splice ... ok
+test nested_sequence::nested_fragment_split_composes_a_previously_shifted_source_clock ... ok
+test split_repeat_suffix_inserts_twice_and_resumes_each_old_ntsc_play ... ok
+test source_splice::fresh_ntsc_source_uses_project_phase_while_repeat_fragments_keep_distinct_entries ... ok
+test inserting_before_preserve_crop_keeps_full_history_and_exact_silence ... ok
+test source_splice::nested_group_edges_keep_ownership_ancestor_suffix_clocks_and_live_recipe_edits ... ok
+test interior_pause_before_nested_retime_preserves_intrinsic_dsp_input_clock ... ok
+test interior_source_fragment_pause_composes_an_existing_resume_before_repeat ... ok
+test nested_sequence::nested_pause_resumes_each_level_at_its_own_ntsc_sample_and_stays_editable ... ok
+test interior_source_pause_uses_each_suffix_boundary_instead_of_one_rounded_shift ... ok
+test source_splice::source_splice_leaves_shifted_preserve_preparation_and_roomtone_on_their_own_clocks ... ok
+test nested_sequence::nested_sequence_pause_preserves_later_preserve_input_and_roomtone_gap_clocks ... ok
+test inserted_composite_keeps_isolated_gap_phase_and_default_gap_births ... ok
+test interior_roomtone_hold_and_fragment_keep_phase_before_repeat_gaps ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.43s
+
+     Running tests/gap_bindings.rs (target/debug/deps/gap_bindings-342be7b5555555e1)
+
+running 10 tests
+test bound_silent_gap_with_zero_input_points_suppresses_nested_preserve_output ... ok
+test isolation::materializing_a_born_gap_keeps_its_canonical_clock_and_discards_old_outer_window ... ok
+test gaps_survive_overridden_preceding_children_and_follow_stable_play_reordering ... ok
+test interrupted_first_gap_and_later_full_gap_resume_distinct_ntsc_phases ... ok
+test isolation::isolated_gap_keeps_decoded_ntsc_phase_and_live_owned_recipe ... ok
+test isolation::materialized_gap_retains_distinct_outer_play_clocks_and_definition_birth ... ok
+test moved_gap_uses_current_duration_media_and_policy_without_recapturing_phase ... ok
+test isolation::materialized_gap_edges_match_independent_fades_and_explicit_hard_choices ... ok
+test captured_one_play_gap_and_former_final_gap_are_born_on_the_definition_clock ... ok
+test isolation::isolated_gap_under_real_preserve_matches_the_unedited_pcm_and_fresh_seeks ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.78s
+
+     Running tests/gap_definition.rs (target/debug/deps/gap_definition-301057538617b742)
+
+running 6 tests
+test silence_policy_survives_a_zero_point_gap_and_later_expanded_placement ... ok
+test missing_and_zero_gaps_are_rejected_and_tail_remains_explicitly_unsupported ... ok
+test gap_reads_recheck_cached_admission_and_enforce_preparation_limits_and_cancellation ... ok
+test current_gap_recipe_changes_audio_while_preserving_explicit_clock ... ok
+test one_play_gap_renders_44100_pcm_without_child_leakage_or_loop_phase_rounding ... ok
+test root_and_point_gap_clocks_keep_signed_ntsc_phase_and_full_finite_filter_context ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.14s
+
+     Running tests/limiter.rs (target/debug/deps/limiter-c5a6d2facb856b88)
+
+running 9 tests
+test an_empty_project_has_no_native_preparation_or_fabricated_samples ... ok
+test range_context_samples_and_work_fail_before_returning_output ... ok
+test complete_zero_context_preserves_signed_bits_and_still_requires_its_halo ... ok
+test root_end_near_i64_max_keeps_signed_filter_context_in_wide_coordinates ... ok
+test ordinary_tones_and_tiny_hard_fragments_keep_their_exact_samples ... ok
+test hot_linked_stereo_preserves_silent_islands_and_passes_the_independent_meter ... ok
+test the_long_ordinary_tone_ending_is_not_attenuated_by_the_guard ... ok
+test cold_unaligned_crops_match_the_same_owned_project_context ... ok
+test exact_retained_failure_inputs_are_not_replaced_with_approximations ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.19s
+
+     Running tests/loudness.rs (target/debug/deps/loudness-e15bb58af72b303f)
+
+running 9 tests
+test admission_is_bounded_and_preserves_full_scale_pcm ... ok
+test incomplete_final_hop_neither_pads_nor_changes_existing_blocks ... ok
+test rejected_blocks_and_cancellation_leave_all_state_unchanged ... ok
+test no_complete_or_audible_window_has_no_numeric_loudness ... ok
+test arbitrary_chunk_partitions_are_bit_identical ... ok
+test itu_997_hz_single_channel_reference_and_channel_energy ... ok
+test a_long_silent_gap_does_not_dilute_the_gated_programme ... ok
+test low_and_high_frequency_weighting_matches_analytic_filter_gain ... ok
+test ebu_published_stereo_tone_and_gating_cases ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.00s
+
+     Running tests/reanchors.rs (target/debug/deps/reanchors-44e191f91f17053e)
+
+running 6 tests
+test hidden_retained_occurrence_does_not_replace_its_legacy_resume_anchor ... ok
+test born_play_drops_outer_window_but_preserves_intrinsic_partition_entry ... ok
+test sequential_reanchors_compose_prior_resume_on_each_retained_ntsc_grid ... ok
+test insert_time_after_a_reanchor_resumes_the_pre_edit_bound_waveform ... ok
+test repeat_suffix_reanchors_first_partial_play_and_later_full_play_separately ... ok
+test opaque_preserve_reanchor_reads_full_history_and_enforces_full_preparation_budget ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running tests/reference_policy.rs (target/debug/deps/reference_policy-aab2bb1d8bb55a89)
+
+running 4 tests
+test reference_masks_are_partition_independent_bounded_and_atomic ... ok
+test retained_root_silence_closes_the_prepared_point_grid_hole_after_resume ... ok
+test current_silence_wins_when_rounding_starts_it_before_the_retained_mask ... ok
+test absent_source_and_placement_gaps_preserve_prepared_decay ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/resample.rs (target/debug/deps/resample-c5abff6c52c81469)
+
+running 7 tests
+test invalid_recipes_and_arithmetic_overflow_fail_without_clamping ... ok
+test source_halo_is_bounded_and_missing_or_invalid_pcm_is_never_substituted ... ok
+test integer_unity_is_exact_and_zero_extension_never_reads_outside_authored_trim ... ok
+test translating_huge_signed_source_and_output_clocks_preserves_fractional_phase ... ok
+test dc_calibration_is_independent_of_level_and_does_not_renormalize_trim_edges ... ok
+test partitions_and_isolated_seeks_are_bit_equal_for_fractional_negative_and_large_origins ... ok
+test actual_tones_preserve_passband_phase_and_reject_aliases_and_images ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.37s
+
+     Running tests/sequence.rs (target/debug/deps/sequence-43c3e15c4129c9f2)
+
+running 12 tests
+test transparent_partition_retains_full_filter_support_while_an_authored_crop_excludes_it ... ok
+test unsupported_audio_policies_fail_before_any_source_is_requested ... ok
+test cancellation_and_invalid_block_budgets_do_not_touch_the_provider ... ok
+test unity_preserve_and_retimed_silence_need_no_unimplemented_dsp ... ok
+test source_placement_and_sequence_order_preserve_original_samples_and_revision_identity ... ok
+test billion_play_repeat_seeks_the_last_play_without_a_trailing_gap ... ok
+test inserted_silence_resumes_untouched_speech_and_repeat_has_three_total_plays ... ok
+test structural_crops_exclude_filter_context_and_use_half_open_discrete_samples ... ok
+test nested_follow_speed_retimes_keep_the_exact_composed_mapping ... ok
+test pure_partition_keeps_ntsc_sampling_phase_and_signed_source_placement ... ok
+test original_44100_clock_is_resampled_to_the_mix_clock_and_mono_stays_centered ... ok
+test ntsc_boundaries_keep_exact_fractional_phase_across_partitions_and_seeks ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+     Running tests/session.rs (target/debug/deps/session-9e7115f7e6878bc7)
+
+running 8 tests
+test private_media_read_limits_and_preparation_limits_are_not_silently_relaxed ... ok
+test verified_stereo_unity_preserves_actual_fixture_amplitudes_and_terminal_samples ... ok
+test cancellation_prevents_admission_and_block_preparation_without_poisoning_the_source ... ok
+test filter_context_reads_only_the_authored_trim_and_unavailable_selected_samples_fail ... ok
+test mono_44100_to_mix_rate_keeps_fractional_origin_across_partitions_and_random_seeks ... ok
+test admission_rechecks_identity_stream_and_raw_observations_before_exposing_pcm ... ok
+test unspecified_original_layouts_require_explicit_consistent_host_interpretation ... ok
+test actual_native_aac_layout_cannot_be_reinterpreted_as_different_speakers ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running tests/signal_transfer.rs (target/debug/deps/signal_transfer-24db6eadf8125dca)
+
+running 7 tests
+test invalid_callbacks_and_cancellation_never_return_partial_audio ... ok
+test explicit_silence_masks_input_taps_and_zero_pcm_does_not_create_policy ... ok
+test negative_mapped_positions_and_support_endpoints_are_explicit_output_silence ... ok
+test old_no_input_regions_keep_real_preserve_decay_after_root_to_signal_transfer ... ok
+test retained_domain_resume_drives_fractional_transfer_into_another_real_preserve ... ok
+test real_preserve_root_rounding_hole_stays_closed_through_transfer_and_another_preserve ... ok
+test materialized_carrier_matches_fractional_nonzero_grids_and_suffix_first_queries ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.69s
+
+     Running tests/sound_events.rs (target/debug/deps/sound_events-de92e75232e19f0f)
+
+running 5 tests
+test resident_budget_rejection_and_provider_failure_release_bus_reservations ... ok
+test initial_and_inflight_cancellation_leave_the_same_sound_renderer_reusable ... ok
+test gap_masked_sound_keeps_dependency_and_releases_failed_and_cancelled_reservations ... ok
+test routed_sound_and_original_admit_dependencies_under_one_budget ... ok
+test original_and_sound_dependencies_share_one_limit_before_provider_resolution ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.19s
+
+     Running tests/stages.rs (target/debug/deps/stages-ac19ce5a8c9455cb)
+
+running 58 tests
+test insert_time::a_pause_preserves_the_two_sample_creative_envelope_on_both_sides ... ok
+test cancellation_during_source_access_leaves_no_partial_stage_and_retry_replays_exactly ... ok
+test insert_time::start_and_end_pauses_retain_hard_source_edges_room_tone_phase_and_silence ... ok
+test a_subsample_room_tone_hold_renders_through_preserve_without_becoming_silence ... ok
+test edge_fades_follow_continuous_preserve_and_inner_cuts_without_query_edges ... ok
+test limited::limited_admission_cache_residency_and_empty_dependency_cancellation_are_bounded ... ok
+test nested_depth_and_native_long_input_limits_fail_without_decoding_originals ... ok
+test edge_fades_follow_nested_mixed_room_tone_retimes_and_authored_crops ... ok
+test nested_preserve_retains_inner_history_and_outer_crop_matches_full_render ... ok
+test mixed_pitch_policies_keep_their_order_even_when_overall_speed_is_unity ... ok
+test one_hard_repeat_override_and_room_tone_gap_edges_preserve_silence_masks ... ok
+test actual_split_and_refinement_preserve_ntsc_44100_pcm_and_two_sample_envelopes ... ok
+test partition_inside_a_repeat_gap_keeps_its_full_room_tone_origin ... ok
+test partition_inside_preserve_input_retains_full_source_filter_context ... ok
+test placement_hard_end_does_not_mistake_the_host_start_for_its_later_onset ... ok
+test preparation::preparation_does_not_renew_stage_allowance_at_each_small_read ... ok
+test insert_time::selected_original_window_survives_ntsc_split_pause_and_endpoint_exhaustion ... ok
+test preparation::preparation_rejects_bad_admission_and_cancellation_without_a_partial_block ... ok
+test preparation::preparation_matches_irregular_reads_and_cold_crops_across_all_stages ... ok
+test ntsc_fractional_input_and_output_origins_preserve_exact_three_over_two_speed ... ok
+test pure_partition_preserves_a_two_sample_envelope_and_standalone_fragment_offset ... ok
+test ntsc_partition_keeps_44100_filter_phase_placement_and_original_fades_in_both_readers ... ok
+test preserve_processes_both_source_cuts_continuously_and_query_partitions_cannot_restart_it ... ok
+test prepared_cache_rechecks_explicit_source_layout_including_nested_dependencies ... ok
+test repeated_room_tone_and_override_restart_locally_with_two_distinct_gap_caches ... ok
+test repeat_and_override_occurrences_do_not_alias_prepared_history ... ok
+test room_tone_cache_layout_changes_invalidate_both_holds_and_dependent_preserve_stages ... ok
+test insert_time::ntsc_44100_pause_at_an_existing_split_resumes_1602_and_exhausts_4804 ... ok
+test selection::changing_a_selected_window_keeps_retained_phase_and_uses_current_support ... ok
+test selection::fractional_selected_source_preserves_original_phase_and_excludes_outside_taps ... ok
+test selection::selected_empty_host_intersections_and_zero_point_windows_do_not_read_media ... ok
+test selection::selected_source_follow_speed_uses_exact_window_on_its_retained_physical_grid ... ok
+test room_tone_keeps_fractional_44100_source_extent_and_long_hold_duration_across_loops ... ok
+test insert_time::ntsc_pause_reanchors_room_tone_from_its_old_visible_entry ... ok
+test silent_hold_is_suppressed_even_when_its_input_interval_owns_no_grid_sample ... ok
+test stage_budget_failures_and_initial_cancellation_do_not_decode_or_publish_cache_entries ... ok
+test transferred_halo_rejects_changed_source_provenance_between_input_blocks ... ok
+test transferred_halo_shares_preparation_work_and_rejects_invalid_context_before_io ... ok
+test actual_split_preserves_mixed_retime_and_room_tone_history_when_suffix_is_read_first ... ok
+test selection::selection_masks_physical_transfer_but_preserve_retains_its_decay ... ok
+test unsupported_effect_tails_cannot_hide_between_input_grid_samples ... ok
+test transferred_root_uses_qualified_pcm_without_baking_in_creative_fades ... ok
+test room_tone_retimes_keep_pitch_order_and_outer_crop_keeps_the_intrinsic_loop_history ... ok
+test shared_per_read_work_limits_bound_repeated_stage_preparation_and_allow_warm_retry ... ok
+test insert_time::extending_moved_room_tone_retains_its_binding_and_uses_the_current_duration ... ok
+test partitions_of_mixed_retimes_retain_full_preserve_and_room_tone_histories ... ok
+test insert_time::insertion_preserves_fractional_source_placement_offset_and_first_speech_sample ... ok
+test transferred_preserve_keeps_root_silence_and_intrinsic_preparation_on_fractional_grid ... ok
+test insert_time::inserting_before_several_split_fragments_reanchors_every_surviving_entry ... ok
+test insert_time::a_second_interior_pause_composes_the_current_resume_without_changing_its_prefix ... ok
+test insert_time::extending_a_captured_repeat_hold_keeps_each_surviving_play_clock ... ok
+test retime_edits::wrapping_a_split_partition_retains_child_processing_history_for_both_policies ... ok
+test limited::limited_cache_rechecks_nested_stage_provenance_and_recovers_after_cancellation ... ok
+test limited::bus_cache_does_not_round_context_into_an_unavailable_following_source ... ok
+test limited::two_tile_read_cannot_mix_source_interpretations_even_when_both_tiles_are_warm ... ok
+test retime_edits::rate_and_pitch_changes_use_fresh_output_but_keep_bound_child_pcm ... ok
+test limited::adjacent_tiles_reuse_exact_bus_context_and_revalidate_its_source_layout ... ok
+test limited::limited_bus_matches_direct_full_context_and_cold_shuffled_reads ... ok
+
+test result: ok. 58 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 9.56s
+
+     Running tests/true_peak.rs (target/debug/deps/true_peak-6c759d162c5dd168)
+
+running 7 tests
+test final_flush_catches_intersample_peak_after_the_last_input_block ... ok
+test rejected_admissions_preserve_counts_peaks_and_history ... ok
+test sample_peak_is_a_floor_and_channels_are_measured_independently ... ok
+test silence_and_empty_input_have_no_fabricated_db_value ... ok
+test generated_ebu_3341_peak_cases_15_through_19_meet_published_tolerances ... ok
+test chunk_partition_and_zero_context_do_not_reset_fir_history ... ok
+test generated_ebu_3341_peak_cases_20_through_23_cover_all_decimation_offsets ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.23s
+
+     Running unittests src/lib.rs (target/debug/deps/deadpan_cli-bcc7ee8edbce4989)
+
+running 7 tests
+test audio::cache_tests::aggregate_reservation_is_inclusive_checked_and_requires_nonempty_pcm_and_index ... ok
+test audio::cache_tests::retained_context_and_cache_hits_recheck_the_captured_contracts ... ok
+test audio::cache_tests::alternating_registered_sources_reuses_private_pcm_after_paths_disappear ... ok
+test audio::cache_tests::metadata_pressure_evicts_before_preparation_without_charging_failed_reservation ... ok
+test audio::cache_tests::byte_pressure_evicts_before_preparation_without_charging_failed_reservation ... ok
+test audio::cache_tests::failed_cold_source_and_cancelled_hits_preserve_other_cache_entries ... ok
+test audio::cache_tests::seventeenth_source_evicts_lru_and_missing_evicted_source_preserves_recent_pcm ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.82s
+
+     Running unittests src/main.rs (target/debug/deps/deadpan_cli-01b99ac0a4ff7edb)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/audio_context.rs (target/debug/deps/audio_context-9e8f6f5f4dd84d2b)
+
+running 3 tests
+test context_read_refuses_changed_linked_original_bytes ... ok
+test context_host_rejects_valid_forgery_and_unavailable_revision ... ok
+test captured_context_reopens_abandoned_source_after_alias_reuse_without_moving_history ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.19s
+
+     Running tests/audio_inspection.rs (target/debug/deps/audio_inspection-0468975cd8f607bc)
+
+running 16 tests
+test gap::unplayed_gap_reads_revalidate_original_bytes_before_returning_pcm ... ok
+test unspecified_layout_and_legacy_unqualified_assets_are_not_guessed ... ok
+test source_repeat_gaps_and_silent_hold_boundaries_follow_exact_sequence_allocation ... ok
+test invalid_ranges_and_cancellation_fail_without_returning_partial_pcm ... ok
+test actual_aac_pcm_inspection_is_read_only_beside_writer_and_matches_original_impulse ... ok
+test missing_and_corrupt_linked_originals_fail_before_pcm_is_exposed ... ok
+test frozen_session_resolves_historical_receipt_after_undo_and_asset_alias_reuse ... ok
+test physical_domain_cli_reads_hidden_negative_source_and_retained_history ... ok
+test gap::pause_captures_unplayed_gap_then_growth_and_historical_reads_keep_verified_media ... ok
+test placement_cli_uses_selected_revision_recipe_and_never_changes_history ... ok
+test gap::repeat_gap_cli_reads_unplayed_recipe_and_retained_history_without_writes ... ok
+test definition_cli_reads_unplayed_default_from_current_and_historical_media ... ok
+test mapped_inspection_prepares_preserve_from_historical_aac_without_writing ... ok
+test sounds::json_sound_command_reaches_shared_limited_bus_without_changing_picture_time ... ok
+test room_tone_inspection_loops_an_explicit_aac_range_and_retains_silent_time ... ok
+test sound_allowances::decoded_sound_allowance_preserves_other_silence_and_ripple_sample_history ... ok
+
+test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 9.72s
+
+     Running tests/boundary_location.rs (target/debug/deps/boundary_location-1b4972d8032786e0)
+
+running 5 tests
+test exact_nested_retime_location_round_trips_through_existing_occurrence_selection ... ok
+test owned_gap_entry_is_distinct_from_a_play_and_sequence_indices_keep_empty_slots ... ok
+test implicit_gap_keeps_repeat_owner_and_bias_distinguishes_its_start ... ok
+test stale_foreign_and_malformed_requests_fail_without_authored_changes ... ok
+test endpoint_bias_and_query_budgets_are_explicit ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.08s
+
+     Running tests/doctor.rs (target/debug/deps/doctor-7e3d4ca2d5f2a4de)
+
+running 2 tests
+test unsupported_command_fails_without_success_output ... ok
+test doctor_reports_real_timing_probe_and_missing_capabilities ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/original_commands.rs (target/debug/deps/original_commands-06d5beebe4db7552)
+
+running 2 tests
+test original_mutations_respect_writer_lock_and_validate_arguments ... ok
+test original_commands_retain_verify_list_and_relink_without_an_authored_edit ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+     Running tests/project_commands.rs (target/debug/deps/project_commands-12680b7f6fceb6fd)
+
+running 17 tests
+test doctor_reports_speed_editing_document_and_migration_schemas ... FAILED
+test failed_migration_returns_retained_backup_and_preserves_original ... ok
+test writer_lock_is_enforced_between_processes_but_readers_and_dry_run_work ... ok
+test malformed_or_future_protocol_is_rejected_before_mutation ... ok
+test selection_resolution_is_revision_checked_exact_and_read_only ... ok
+test current_generation_requires_host_reconciliation_but_allows_cli_preview ... ok
+test history_dry_runs_work_with_a_writer_and_preserve_the_redo_path ... ok
+test headless_migration_and_plan_inspection_are_explicit_and_read_only ... ok
+test headless_split_preview_commit_and_history_share_one_exact_command ... ok
+test headless_edit_dry_run_conflict_and_durable_history ... ok
+test dry_run_and_commit_preserve_actionable_domain_errors ... ok
+test headless_captured_view_is_inspectable_reversible_and_validated_before_commit ... ok
+test sparse_override_commands_and_inspection_share_revision_and_dry_run_guards ... ok
+test nested_occurrence_command_is_atomic_and_uses_the_same_headless_plan ... ok
+test persistent_mark_queries_and_loss_states_share_the_headless_command_path ... ok
+test nested_pause::nested_pause_dry_run_commit_and_durable_history_share_one_transaction ... ok
+test independent_stream_mappings_use_headless_commands_and_durable_undo ... ok
+
+failures:
+
+---- doctor_reports_speed_editing_document_and_migration_schemas stdout ----
+
+thread 'doctor_reports_speed_editing_document_and_migration_schemas' (48145089) panicked at crates/deadpan-cli/tests/project_commands.rs:38:5:
+assertion `left == right` failed
+  left: Number(31)
+ right: 30
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    doctor_reports_speed_editing_document_and_migration_schemas
+
+test result: FAILED. 16 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.46s
+
+error: test failed, to rerun pass `-p deadpan-cli --test project_commands`

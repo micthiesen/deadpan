@@ -489,6 +489,7 @@ impl RootSoundEditCapture {
         let mut working = document.clone();
         working.sounds.clear();
         working.sound_routes.clear();
+        working.sound_allowances.clear();
         working
     }
 

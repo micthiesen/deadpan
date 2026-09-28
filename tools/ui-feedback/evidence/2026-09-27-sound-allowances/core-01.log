@@ -1,0 +1,9 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+error[E0609]: no field `allowances` on type `&document::NodeId`
+   --> crates/deadpan-core/src/split.rs:126:39
+    |
+126 |     if let Some(allowances) = context.allowances {
+    |                                       ^^^^^^^^^^ unknown field
+
+For more information about this error, try `rustc --explain E0609`.
+error: could not compile `deadpan-core` (lib) due to 1 previous error

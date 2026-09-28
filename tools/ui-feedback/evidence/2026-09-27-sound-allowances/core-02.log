@@ -1,0 +1,10 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+error[E0282]: type annotations needed
+   --> crates/deadpan-core/tests/sound_allowances.rs:566:9
+    |
+566 |         SoundHoldAllowances::try_from(too_large).unwrap_err().code,
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ cannot infer type for type parameter `E`
+
+For more information about this error, try `rustc --explain E0282`.
+error: could not compile `deadpan-core` (test "sound_allowances") due to 1 previous error
+warning: build failed, waiting for other jobs to finish...

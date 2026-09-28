@@ -243,15 +243,22 @@ impl InstancePath {
         Ok(())
     }
     pub fn validate(&self, document: &crate::ProjectDocument) -> Result<(), DocumentError> {
-        self.validate_depth()?;
-        if !document.nodes().contains_key(&self.node) {
-            return Err(invalid("instance target does not exist"));
-        }
         let parents: BTreeMap<_, _> = document
             .nodes()
             .keys()
             .flat_map(|id| document.children(id).map(move |child| (child, id)))
             .collect();
+        self.validate_with_parents(document, &parents)
+    }
+    pub(crate) fn validate_with_parents(
+        &self,
+        document: &crate::ProjectDocument,
+        parents: &BTreeMap<&NodeId, &NodeId>,
+    ) -> Result<(), DocumentError> {
+        self.validate_depth()?;
+        if !document.nodes().contains_key(&self.node) {
+            return Err(invalid("instance target does not exist"));
+        }
         let mut target = &self.node;
         let mut step = self.repeats.len();
         while let Some(parent) = parents.get(target) {

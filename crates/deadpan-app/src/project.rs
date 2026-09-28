@@ -135,6 +135,12 @@ pub enum ProjectSoundEdit {
         id: SoundId,
         frames: i64,
     },
+    Allowance {
+        id: SoundId,
+        issuer: deadpan_core::SoundHoldIssuer,
+        at: ProjectFrame,
+        allowed: bool,
+    },
     Delete {
         id: SoundId,
     },

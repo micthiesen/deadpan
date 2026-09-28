@@ -337,6 +337,31 @@ impl Service {
                     "Sound nudged and saved",
                 )
             }
+            ProjectSoundEdit::Allowance {
+                id,
+                issuer,
+                at,
+                allowed,
+            } => {
+                let target = super::sound::pause_target(workspace, &id, at)?;
+                if target.issuer != issuer {
+                    return Err("The identified pause changed; no allowance was saved.".into());
+                }
+                target.validate_change(allowed)?;
+                (
+                    Command::SetSoundAllowance {
+                        sound: id.clone(),
+                        issuer,
+                        allowed,
+                    },
+                    Some(id),
+                    if allowed {
+                        "Sound allowed in this pause and saved"
+                    } else {
+                        "Sound silenced in this pause and saved"
+                    },
+                )
+            }
             ProjectSoundEdit::Delete { id } => {
                 if !workspace.document.sounds().contains_key(&id) {
                     return Err("The selected sound no longer exists.".into());

@@ -345,6 +345,10 @@ fn one_play_gap_definition_retains_its_namespace_without_a_fabricated_play() {
         }]
     );
     assert_eq!(intrinsic.work, 1);
+    assert!(
+        intrinsic.rules[0].issuer.sound_issuer().is_none(),
+        "an unplayed intrinsic gap cannot authorize a root occurrence"
+    );
     assert_eq!(intrinsic.lookup.iteration_run_comparisons, 0);
     let placement = AudioRootPlacement::new(
         ExactRatio::integer(-2),

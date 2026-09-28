@@ -1,0 +1,20 @@
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 22.52s
+     Running tests/audio_inspection.rs (target/debug/deps/audio_inspection-74cacaa23c2c07b5)
+
+running 1 test
+test sound_allowances::decoded_sound_allowance_preserves_other_silence_and_ripple_sample_history ... FAILED
+
+failures:
+
+---- sound_allowances::decoded_sound_allowance_preserves_other_silence_and_ripple_sample_history stdout ----
+Error: Stage(Preparation(UnsupportedLayout))
+
+
+failures:
+    sound_allowances::decoded_sound_allowance_preserves_other_silence_and_ripple_sample_history
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.09s
+
+error: test failed, to rerun pass `-p deadpan-cli --test audio_inspection`

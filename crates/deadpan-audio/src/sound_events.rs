@@ -46,7 +46,7 @@ impl StageAudio {
                 )
             } else {
                 let tape = voice
-                    .root_output_tape()
+                    .root_input_tape()
                     .ok_or(PlanError::InvalidPlan("sound input is absent"))?;
                 let range = SignalSample(start.0)..SignalSample(end);
                 let signal = tape.query(range.clone(), control.query_limits()?)?;

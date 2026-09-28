@@ -59,6 +59,12 @@ pub enum Command {
     DeleteSound {
         id: crate::SoundId,
     },
+    /// Permit one sound through one current silent-Hold occurrence.
+    SetSoundAllowance {
+        sound: crate::SoundId,
+        issuer: crate::SoundHoldIssuer,
+        allowed: bool,
+    },
     /// Insert deterministic time at a project boundary while retaining the
     /// sampled phase of each shifted physical allocation.
     InsertTime {
@@ -302,6 +308,12 @@ pub struct DocumentPatch {
         deserialize_with = "unique_map"
     )]
     pub sound_routes: BTreeMap<crate::SoundId, ValueChange<crate::RootSoundRoute>>,
+    #[serde(
+        default,
+        skip_serializing_if = "BTreeMap::is_empty",
+        deserialize_with = "unique_map"
+    )]
+    pub sound_allowances: BTreeMap<crate::SoundId, ValueChange<crate::SoundHoldAllowances>>,
     #[serde(deserialize_with = "unique_map")]
     pub overrides: BTreeMap<NodeId, ValueChange<PlayOverrides>>,
     #[serde(
@@ -344,6 +356,7 @@ impl DocumentPatch {
             || self.marks.len() > MAX_DOCUMENT_MARKS
             || self.sounds.len() > 2 * crate::MAX_DOCUMENT_SOUNDS
             || self.sound_routes.len() > 2 * crate::MAX_DOCUMENT_SOUNDS
+            || self.sound_allowances.len() > 2 * crate::MAX_DOCUMENT_SOUNDS
             || self.overrides.len() > MAX_DOCUMENT_NODES
             || self.gap_overrides.len() > MAX_DOCUMENT_NODES
             || self.audio_lineage.len() > MAX_DOCUMENT_NODES
@@ -405,6 +418,7 @@ impl DocumentPatch {
         apply_changes(&mut result.marks, &self.marks)?;
         apply_changes(&mut result.sounds, &self.sounds)?;
         apply_changes(&mut result.sound_routes, &self.sound_routes)?;
+        apply_changes(&mut result.sound_allowances, &self.sound_allowances)?;
         apply_changes(&mut result.overrides, &self.overrides)?;
         apply_changes(&mut result.gap_overrides, &self.gap_overrides)?;
         apply_changes(&mut result.audio_lineage, &self.audio_lineage)?;
@@ -442,6 +456,7 @@ impl DocumentPatch {
             marks: inverse_changes(&self.marks),
             sounds: inverse_changes(&self.sounds),
             sound_routes: inverse_changes(&self.sound_routes),
+            sound_allowances: inverse_changes(&self.sound_allowances),
             overrides: inverse_changes(&self.overrides),
             gap_overrides: inverse_changes(&self.gap_overrides),
             audio_lineage: inverse_changes(&self.audio_lineage),
@@ -482,10 +497,22 @@ pub fn apply(
     let before_duration = document.duration()?.frames();
     let sound_edit =
         crate::sound_routing::RootSoundEditCapture::prepare(document, &request.command)?;
-    let structural = sound_edit
+    let mut allowance_edit =
+        crate::sound_allowance::SoundAllowanceEdit::capture(document, &request.command);
+    let mut structural = sound_edit
         .as_ref()
-        .map(|capture| capture.structural_document(document));
+        .map(|capture| capture.structural_document(document))
+        .or_else(|| allowance_edit.as_ref().map(|_| document.clone()));
+    if allowance_edit.is_some()
+        && let Some(structural) = &mut structural
+    {
+        structural.sound_allowances.clear();
+    }
     let input = structural.as_ref().unwrap_or(document);
+    let context = EditContext {
+        allocation: &request.new_revision,
+        allowances: allowance_edit.as_mut(),
+    };
     let mut result = match &request.command {
         Command::InsertTime {
             at,
@@ -493,15 +520,7 @@ pub fn apply(
             id,
             identities,
             timing,
-        } => crate::insert_time::apply(
-            input,
-            *at,
-            hold,
-            id,
-            identities,
-            timing,
-            &request.new_revision,
-        )?,
+        } => crate::insert_time::apply(input, *at, hold, id, identities, timing, context)?,
         Command::SpliceSource {
             parent,
             index,
@@ -529,7 +548,7 @@ pub fn apply(
             node,
             at,
             identities,
-        } => crate::split::apply(input, node, *at, identities, &request.new_revision)?,
+        } => crate::split::apply(input, node, *at, identities, context)?,
         Command::IsolateGap {
             node,
             iteration,
@@ -542,9 +561,7 @@ pub fn apply(
             instance,
             edit,
             identities,
-        } => {
-            crate::occurrence_edit::apply(input, instance, edit, identities, &request.new_revision)?
-        }
+        } => crate::occurrence_edit::apply(input, instance, edit, identities, context)?,
         command => {
             let mut result = input.clone();
             reduce(&mut result, command, &request.new_revision)?;
@@ -560,6 +577,9 @@ pub fn apply(
     };
     if let Some(capture) = sound_edit {
         capture.restore(&mut result)?;
+    }
+    if let Some(allowances) = allowance_edit {
+        allowances.restore(&mut result)?;
     }
     crate::audio_binding_lifecycle::prune(&mut result);
     result.lock_timed_basis(document)?;
@@ -580,6 +600,7 @@ pub fn apply(
         marks: diff(&document.marks, &result.marks),
         sounds: diff(&document.sounds, &result.sounds),
         sound_routes: diff(&document.sound_routes, &result.sound_routes),
+        sound_allowances: diff(&document.sound_allowances, &result.sound_allowances),
         overrides: diff(&document.overrides, &result.overrides),
         gap_overrides: diff(&document.gap_overrides, &result.gap_overrides),
         audio_lineage: diff(&document.audio_lineage, &result.audio_lineage),
@@ -612,6 +633,20 @@ pub fn apply(
                     .chain(change.after.iter())
                     .map(|event| &event.owner)
             }))
+            .chain(forward.sound_allowances.keys().filter_map(|id| {
+                document
+                    .sounds
+                    .get(id)
+                    .or_else(|| result.sounds.get(id))
+                    .map(|event| &event.owner)
+            }))
+            .chain(forward.sound_allowances.values().flat_map(|change| {
+                change
+                    .before
+                    .iter()
+                    .chain(change.after.iter())
+                    .flat_map(|allowances| allowances.iter().map(|issuer| &issuer.instance().node))
+            }))
             .cloned()
             .collect::<BTreeSet<_>>()
             .into_iter()
@@ -622,6 +657,13 @@ pub fn apply(
         duration_delta: after_duration - before_duration,
         description: description(&request.command).to_owned(),
     })
+}
+
+/// Scoped identity transforms share the outer transaction's detached allowance
+/// relation. Nested Split helpers never capture or restore that relation twice.
+pub(crate) struct EditContext<'a> {
+    pub(crate) allocation: &'a RevisionId,
+    pub(crate) allowances: Option<&'a mut crate::sound_allowance::SoundAllowanceEdit>,
 }
 
 fn changed_audio_binding_owners(
@@ -749,6 +791,13 @@ pub(crate) fn reduce(
                     "sound event is absent",
                 ));
             }
+        }
+        Command::SetSoundAllowance {
+            sound,
+            issuer,
+            allowed,
+        } => {
+            crate::sound_allowance::set(document, sound, issuer, *allowed)?;
         }
         Command::IsolateGap { .. } => {
             return Err(EditError::new(
@@ -1735,6 +1784,7 @@ fn description(command: &Command) -> &'static str {
         Command::SetSound { .. } => "Set sound event",
         Command::ReplaceSound { .. } => "Replace sound recipe",
         Command::DeleteSound { .. } => "Delete sound event",
+        Command::SetSoundAllowance { .. } => "Set sound Hold allowance",
         Command::InsertTime { .. } => "Insert pause",
         Command::SpliceSource { .. } => "Paste source moment",
         Command::Split { .. } => "Split beat",

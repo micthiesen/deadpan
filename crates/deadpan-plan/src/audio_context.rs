@@ -157,6 +157,7 @@ impl RenderPlan {
         }
         Ok(Self {
             sounds: BTreeMap::new(),
+            sound_allowances: BTreeMap::new(),
             sound_routes: BTreeMap::new(),
             compiled_sounds: BTreeMap::new(),
             metadata: PlanMetadata {

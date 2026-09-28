@@ -4,6 +4,8 @@ use super::*;
 use deadpan_core::{AudioEdgePolicy, AudioSample, ExactRatio, FrameDuration, SoundEvent, SoundId};
 use egui::{Key, Modifiers};
 
+mod allowances;
+
 pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     d.report.skipped.push(
         "Sound placement uses real source qualification and durable project commands. This scenario does not start audio output or establish PCM, device timing, or listening evidence.".into(),
@@ -430,6 +432,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         "Moving a routed sound rejects without losing its journal",
     )?;
     d.capture("Routed sound retains its journal after rejected repositioning")?;
+    allowances::run(d, &first, &catalog.1)?;
     Ok(())
 }
 

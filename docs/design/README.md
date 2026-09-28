@@ -16,7 +16,7 @@ establish an implemented feature.
 | [Camera and framing](boards/camera-framing-board-v1.png) | Dedicated Camera preview, visible movement and scale keys, manual targets, keyboard region fields and a whole-Hold creep. | [Camera prompt](prompts/camera-framing-board-v1.txt) |
 | [Original moment reuse](boards/original-moment-reuse-v1.png) | Temporal Visual selection, copy without editing, explicit paste destination and one-step undo. | [Moment prompt](prompts/original-moment-reuse-v1.txt) |
 | [Sound audition](boards/sound-audition-board-v1.png) | Focused sound catalog, independent audition clock, visible play/pause/loop keys and retained edit context. | [Sound prompt](prompts/sound-audition-board-v1.txt) |
-| [Sound placement and adjustment](boards/sound-placement-board-v2.png) | Target for the implemented root placement subset: separate event list, exact edit destination, inspector, visible keys and truthful silence/overflow feedback. Custom allowances remain open. | [Initial prompt](prompts/sound-placement-board-v1.txt), [precision and silence corrections](prompts/sound-placement-board-v2.txt) |
+| [Sound placement and adjustment](boards/sound-placement-board-v2.png) | Target for root placement and concrete pause allowances: separate event list, exact edit destination, inspector, visible keys and truthful silence/overflow feedback. | [Initial prompt](prompts/sound-placement-board-v1.txt), [precision and silence corrections](prompts/sound-placement-board-v2.txt) |
 
 The built-in `image_gen.imagegen` tool generated these assets on 2026-09-23 and
 the Camera companion on 2026-09-24, the moment-reuse companion on 2026-09-26
@@ -125,7 +125,10 @@ details are intentionally not implementation instructions:
   sample field shows 274000 samples for Edit 137 f at 24 fps; fine placement must
   use actual project-rate boundaries. The selected event overlaps the Pause,
   so the inspector explicitly shows its suppressed 137–143 f portion. A scoped
-  allowance must become an explicit authored policy before its control appears.
+  allowance is an explicit authored policy for one sound and concrete pause.
+  The native inspector shows its exact current issuer; `:sound-allow` and
+  `:sound-silence` share the reversible transaction with pointer controls.
+  Permission leaves other contributions silent and cannot fill a route gap.
   `,s` places the whole measured catalog sound at the retained Edit cursor.
   `j/k` selects a placed event; `h/l` applies durable exact frame nudges to an
   unrouted event, Enter edits its 48 kHz sample onset, `+` / `-` adjusts gain,
@@ -133,11 +136,12 @@ details are intentionally not implementation instructions:
   event/session/revision and rejects stale or missing targets. The pictured
   Place and Sound added states are separate moments; Saved follows the actual
   transaction. Routed gain and edge changes retain cuts; moving a routed event
-  remains unavailable. Custom allowances, nested owners, Repeat/Retime sound
+  remains unavailable. Send/tail allowances, nested owners, Repeat/Retime sound
   transforms, effects and export remain open. Production-router/Kestrel checks,
   text ownership and replay results belong in the
   [native placement qualification record](../qualification/native-sound-placement-2026-09-27.md),
-  not in claims inferred from the image. See [sound events](../SOUND_EVENTS.md).
+  with the subsequent [allowance qualification](../qualification/sound-allowances-2026-09-27.md).
+  No qualification is inferred from the image. See [sound events](../SOUND_EVENTS.md).
 - The sound-audition board separates catalog selection, pane focus and the
   selected beat. Its violet Original outline must not imply that Original is
   also the active audition target. Sound elapsed/total values use their own

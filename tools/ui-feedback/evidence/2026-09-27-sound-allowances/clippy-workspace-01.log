@@ -1,0 +1,27 @@
+    Checking deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+    Checking deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+    Checking deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+    Checking deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+    Checking deadpan-render v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-render)
+    Checking deadpan-media-worker v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-media-worker)
+    Checking deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+    Checking deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+    Checking deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+    Checking deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Checking deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+    Checking deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+error[E0308]: `match` arms have incompatible types
+   --> crates/deadpan-app/src/preview/sound_events.rs:101:27
+    |
+ 99 | /         match result {
+100 | |             Ok(request) => self.submit(request),
+    | |                            -------------------- this is found to be of type `bool`
+101 | |             Err(error) => self.error = Some(error),
+    | |                           ^^^^^^^^^^^^^^^^^^^^^^^^ expected `bool`, found `()`
+102 | |         }
+    | |_________- `match` arms have incompatible types
+
+For more information about this error, try `rustc --explain E0308`.
+error: could not compile `deadpan-app` (bin "deadpan-app") due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `deadpan-app` (bin "deadpan-app" test) due to 1 previous error

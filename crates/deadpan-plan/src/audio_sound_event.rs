@@ -4,23 +4,25 @@ use std::{collections::BTreeMap, ops::Range, sync::Arc};
 
 use deadpan_core::{
     AudioEdgePolicy, AudioSample, ExactRatio, FrameDuration, MIX_SAMPLE_RATE, RootSoundOperation,
-    RootSoundRoute, SoundEvent, SoundId, TimeError,
+    RootSoundRoute, SoundEvent, SoundHoldAllowances, SoundId, TimeError,
 };
 
 use crate::{
-    AudioBoundaryRule, AudioContent, AudioQueryLimits, AudioRootSource, AudioRoutedRoot,
-    AudioSampleGrid, AudioSignalTape, AudioSignalTapeRun, AudioSoundRoute, AudioSourceVoiceRecipe,
-    PlanError, RenderPlan, SilenceReason,
+    AudioBoundaryRule, AudioContent, AudioHoldIssuer, AudioQueryLimits, AudioRootSource,
+    AudioRoutedRoot, AudioSampleGrid, AudioSignalTape, AudioSignalTapeRun, AudioSoundRoute,
+    AudioSourceVoiceRecipe, AudioSpan, PlanError, RenderPlan, SilenceReason,
 };
 
 /// A checked authored sound on the absolute RoundEven grid. The private tape
-/// adapter evaluates source phase and Hold policy directly on that grid; it
+/// adapter evaluates source phase directly on that grid; output gates resolve
+/// current Hold policy and this contribution's explicit allowances. It
 /// never converts a rendered PointCeil sample array by relabeling its indices.
 #[derive(Debug, Clone)]
 pub struct AudioRootSound<'plan> {
     plan: &'plan RenderPlan,
     event: &'plan SoundEvent,
-    output: Option<AudioSignalTape<'plan>>,
+    input: Option<AudioSignalTape<'plan>>,
+    allowances: Option<&'plan SoundHoldAllowances>,
     routed: Option<AudioRoutedRoot<'plan>>,
     projection: Option<&'plan CompiledRootSound>,
     audible: Range<AudioSample>,
@@ -96,7 +98,7 @@ impl RenderPlan {
             mapping: event.mapping,
             offset: event.offset,
         };
-        let (output, routed) = if journal.is_some() {
+        let (input, routed) = if journal.is_some() {
             let projection = self
                 .compiled_root_sound(id)
                 .ok_or(PlanError::InvalidPlan("compiled root sound is absent"))?;
@@ -122,7 +124,7 @@ impl RenderPlan {
                 vec![AudioSignalTapeRun::new(
                     full.clone(),
                     full.clone(),
-                    voice.output_signal(),
+                    voice.input_signal(),
                 )],
             )?;
             (
@@ -139,7 +141,8 @@ impl RenderPlan {
         Ok(AudioRootSound {
             plan: self,
             event,
-            output,
+            input,
+            allowances: self.sound_allowances().get(id),
             routed,
             projection: self.compiled_root_sound(id),
             audible,
@@ -162,15 +165,91 @@ impl<'plan> AudioRootSound<'plan> {
         self.audible.clone()
     }
 
-    /// Internal preparation carrier: its labels are absolute root samples and
+    /// Complete preparation input before current Hold gates. Its labels are absolute root samples and
     /// its boundary rule is RoundEven despite the tape's generic signal label.
     /// Consumers must not use intrinsic PointCeil allocation for this view.
-    pub fn root_output_tape(&self) -> Option<&AudioSignalTape<'plan>> {
-        self.output.as_ref()
+    pub fn root_input_tape(&self) -> Option<&AudioSignalTape<'plan>> {
+        self.input.as_ref()
     }
 
     pub fn routed_input(&self) -> Option<&AudioRoutedRoot<'plan>> {
         self.routed.as_ref()
+    }
+
+    /// Whether the transported authored selection covers one current root
+    /// sample, before Hold suppression or gain. Route gaps never gain support
+    /// from an allowance. This bounded indexed lookup neither decodes media nor
+    /// promises a nonzero waveform value.
+    pub fn selects_sample(&self, sample: AudioSample) -> Result<bool, PlanError> {
+        if sample.0 < 0 || sample >= self.plan.audio_duration()? {
+            return Err(PlanError::AudioRangeOutOfRange);
+        }
+        let Some(projection) = self.projection else {
+            return Ok(self.audible.contains(&sample));
+        };
+        let index = projection
+            .islands
+            .partition_point(|island| island.support.end <= sample);
+        Ok(projection
+            .islands
+            .get(index)
+            .is_some_and(|island| island.support.contains(&sample)))
+    }
+
+    /// Whether any retained authored selection overlaps this half-open root
+    /// range, before Hold suppression or gain. Empty ranges select nothing.
+    /// The indexed lookup examines only the first possible island; route gaps
+    /// never acquire support from an allowance.
+    pub fn selects_range(&self, samples: Range<AudioSample>) -> Result<bool, PlanError> {
+        if samples.start.0 < 0
+            || samples.end < samples.start
+            || samples.end > self.plan.audio_duration()?
+        {
+            return Err(PlanError::AudioRangeOutOfRange);
+        }
+        if samples.is_empty() {
+            return Ok(false);
+        }
+        let Some(projection) = self.projection else {
+            return Ok(!self.audible.is_empty()
+                && self.audible.start < samples.end
+                && samples.start < self.audible.end);
+        };
+        let index = projection
+            .islands
+            .partition_point(|island| island.support.end <= samples.start);
+        Ok(projection
+            .islands
+            .get(index)
+            .is_some_and(|island| !island.support.is_empty() && island.support.start < samples.end))
+    }
+
+    fn allows_hold(
+        &self,
+        span: &AudioSpan,
+        work: &mut usize,
+        maximum: usize,
+    ) -> Result<bool, PlanError> {
+        let Some(allowances) = self.allowances else {
+            return Ok(false);
+        };
+        // Account for path copying and the bounded binary membership search.
+        // The core wrapper keeps the entries sorted and rejects duplicates.
+        let comparisons = usize::BITS - allowances.len().leading_zeros();
+        for _ in 0..span.instance.repeats.len() + 1 {
+            charge(work, maximum)?;
+        }
+        for _ in 0..comparisons {
+            charge(work, maximum)?;
+        }
+        let issuer = AudioHoldIssuer::from_span(
+            span.definition.clone(),
+            span.instance.clone(),
+            span.gap_after.clone(),
+        );
+        Ok(issuer
+            .sound_issuer()
+            .is_some_and(|issuer| allowances.contains(&issuer)))
     }
 
     /// Combine this event's edges with current silent-Hold gates. Original cuts
@@ -255,6 +334,9 @@ impl<'plan> AudioRootSound<'plan> {
                     reason: SilenceReason::SilentHold
                 }
             ) {
+                continue;
+            }
+            if self.allows_hold(&span, &mut work, limits.maximum_work)? {
                 continue;
             }
             // Retained envelope provenance applies only at the same exact
@@ -491,6 +573,9 @@ impl AudioRootSound<'_> {
                     reason: SilenceReason::SilentHold
                 }
             ) {
+                continue;
+            }
+            if self.allows_hold(&span, &mut work, limits.maximum_work)? {
                 continue;
             }
             let start = RoutedBoundary {

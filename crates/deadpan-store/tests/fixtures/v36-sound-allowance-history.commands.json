@@ -1,0 +1,453 @@
+[
+  {
+    "command": [
+      "deadpan-core30-cli",
+      "doctor"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "49de6ec707241eca60784c72a332b96da1dcca17f166f23536ff4c6929d59674",
+    "stderr": "",
+    "stdout": "{\n  \"application\": \"deadpan\",\n  \"architecture\": \"aarch64\",\n  \"database_schema\": 36,\n  \"device_output\": \"macos-bounded-limited-sequence-audition\",\n  \"document_schema\": 30,\n  \"edge_faded_pcm\": \"authored-boundary-exceptions-after-time-mapping-before-voice-effects\",\n  \"internal_audio_sample_rate\": 48000,\n  \"limited_pcm\": \"original-and-root-sound-bus-with-finite-oversampled-limiter-before-missing-voice-effects\",\n  \"os\": \"macos\",\n  \"partial\": [\n    \"structural-editing-commands\",\n    \"sqlite-project-history\",\n    \"schema-1-through-35-migration\",\n    \"single-original-project-baseline\",\n    \"native-documents-project-library\",\n    \"indexed-picture-plan\",\n    \"indexed-audio-plan\",\n    \"worker-dsp-adapter\",\n    \"source-audio-preparation\",\n    \"plan-driven-source-pcm\",\n    \"transparent-audio-partitions\",\n    \"retained-context-split\",\n    \"atomic-sequence-pause-insertion\",\n    \"logical-mark-bindings\",\n    \"exact-boundary-selectors\",\n    \"persistent-marks\",\n    \"sparse-play-overrides\",\n    \"nested-occurrence-edits\",\n    \"persistent-generation-requests\",\n    \"persistent-generation-attempts\",\n    \"authored-generated-hold-semantics\",\n    \"generated-media-conversion\",\n    \"native-bridge-bundle-qualification\",\n    \"durable-generated-bundle-acceptance\",\n    \"durable-original-byte-ownership\",\n    \"identity-checked-relinking\",\n    \"persistent-source-decoding\",\n    \"measured-source-audio-indexes\",\n    \"independent-source-audio-mapping\",\n    \"independent-source-video-mapping\",\n    \"exact-source-stream-placement\",\n    \"measured-import-timing-candidates\",\n    \"measured-original-moment-candidates\",\n    \"exact-source-audio-selections\",\n    \"durable-source-qualification\",\n    \"atomic-source-registration-and-insertion\",\n    \"background-import-preparation\",\n    \"automatic-presentation-basis\",\n    \"timed-basis-locking\",\n    \"explicit-canvas-geometry\",\n    \"shared-sdr-picture-pipeline\",\n    \"authored-framing-envelopes\",\n    \"ordered-canvas-framing\",\n    \"captured-hold-framing\",\n    \"native-camera-draft\",\n    \"native-source-preview\",\n    \"native-project-workspace\",\n    \"native-sequence-audition\",\n    \"native-original-audition\",\n    \"selection-loop-audition\",\n    \"native-structural-speed-editing\",\n    \"root-sound-event-commands-and-mixing\",\n    \"root-sound-ripple-edit-history\"\n  ],\n  \"room_tone_pcm\": \"explicit-source-range-exact-overlap-before-effects\",\n  \"schema_version\": 1,\n  \"sequence_audition\": \"immutable-revision-device-clock-pictures-exact-paused-sample-resume\",\n  \"sqlite_version\": \"3.53.2\",\n  \"stage\": \"development-foundation\",\n  \"time_mapped_pcm\": \"bounded-continuous-preserve-before-effects\",\n  \"timing_probe\": {\n    \"frame\": 1,\n    \"frame_rate_denominator\": 1001,\n    \"frame_rate_numerator\": 30000,\n    \"sample_boundary\": 1602\n  },\n  \"unimplemented\": [\n    \"mastered-preview-audio\",\n    \"full-device-and-acoustic-qualification\",\n    \"full-keyboard-editor\",\n    \"analysis\",\n    \"ai-generation\",\n    \"youtube-import\",\n    \"export\",\n    \"distribution\"\n  ],\n  \"version\": \"0.1.0\"\n}\n"
+  },
+  {
+    "command": [
+      "deadpan-core30-cli",
+      "project",
+      "create",
+      "/tmp/deadpan-sound-allowance-storage/actual36/sound-allowance-history.deadpan",
+      "--fps",
+      "30000/1001",
+      "--size",
+      "320x180"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "f294a007ae32100f6666c48db70a5c9b48dbc036a7d8b979c99f92f061fe3224",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core30-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-sound-allowance-storage/actual36/sound-allowance-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "8dfcbfea7a82cdc0538156dccee5e1104a58ead004f32763b34146aa053cc6cf",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core30-cli",
+      "project",
+      "retain-original",
+      "/tmp/deadpan-sound-allowance-storage/actual36/sound-allowance-history.deadpan",
+      "/Users/michael/Code/deadpan/native/deadpan-source/tests/fixtures/offset-bframes.mp4"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "70bb7e16da785fb75fde4c033a4fc39388814e00ed9e812caa3ab6b9b6b9f3ca",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core30-cli",
+      "project",
+      "register-source",
+      "/tmp/deadpan-sound-allowance-storage/actual36/sound-allowance-history.deadpan",
+      "--request-json",
+      "/tmp/deadpan-sound-allowance-storage/actual36/registration.json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "e7986b6fcbdb6b54812248f0a990647d2a5d5d55d85787354115f4a68f531e1b",
+    "stderr": "",
+    "stdout": "{\n  \"committed\": true,\n  \"outcome\": {\n    \"asset_id\": \"camera\",\n    \"commit\": {\n      \"edit\": {\n        \"changed_ids\": [\n          \"c7e2bda0-2133-431f-a4cf-69dca429a916\",\n          \"clip\"\n        ],\n        \"description\": \"Import source media\",\n        \"duration_delta\": 121,\n        \"forward\": {\n          \"assets\": {\n            \"camera\": {\n              \"after\": {\n                \"audio\": {\n                  \"end\": {\n                    \"ticks\": 288288,\n                    \"time_base\": {\n                      \"denominator\": 48000,\n                      \"numerator\": 1\n                    }\n                  },\n                  \"start\": {\n                    \"ticks\": 95072,\n                    \"time_base\": {\n                      \"denominator\": 48000,\n                      \"numerator\": 1\n                    }\n                  }\n                },\n                \"content_hash\": \"blake3:2a71661b9ab6925c88996ee355b96cd96c3041ee775c3ccbe2681513397a613f\",\n                \"frame_count\": 120,\n                \"label\": \"Measured camera\",\n                \"source_qualification\": \"38776b6eae9a3ce89f1126abbcd6e3cd74a68bb05d09489ee58a548f3499dfe4\",\n                \"still_image\": false,\n                \"video\": {\n                  \"end\": {\n                    \"ticks\": 180180,\n                    \"time_base\": {\n                      \"denominator\": 30000,\n                      \"numerator\": 1\n                    }\n                  },\n                  \"start\": {\n                    \"ticks\": 60060,\n                    \"time_base\": {\n                      \"denominator\": 30000,\n                      \"numerator\": 1\n                    }\n                  }\n                }\n              },\n              \"before\": null\n            }\n          },\n          \"from_revision\": \"8aeeca72-f7c6-4c85-98a8-416932d27a50\",\n          \"marks\": {},\n          \"nodes\": {\n            \"c7e2bda0-2133-431f-a4cf-69dca429a916\": {\n              \"after\": {\n                \"kind\": {\n                  \"children\": [\n                    \"clip\"\n                  ],\n                  \"type\": \"sequence\"\n                },\n                \"label\": \"Sequence\"\n              },\n              \"before\": {\n                \"kind\": {\n                  \"children\": [],\n                  \"type\": \"sequence\"\n                },\n                \"label\": \"Sequence\"\n              }\n            },\n            \"clip\": {\n              \"after\": {\n                \"kind\": {\n                  \"source\": {\n                    \"audio\": {\n                      \"asset\": \"camera\",\n                      \"span\": {\n                        \"end\": {\n                          \"ticks\": 288288,\n                          \"time_base\": {\n                            \"denominator\": 48000,\n                            \"numerator\": 1\n                          }\n                        },\n                        \"start\": {\n                          \"ticks\": 95072,\n                          \"time_base\": {\n                            \"denominator\": 48000,\n                            \"numerator\": 1\n                          }\n                        }\n                      }\n                    },\n                    \"audio_mapping\": {\n                      \"frames\": {\n                        \"denominator\": \"1001\",\n                        \"numerator\": \"120760\"\n                      },\n                      \"start\": {\n                        \"denominator\": \"1\",\n                        \"numerator\": \"0\"\n                      },\n                      \"type\": \"placement\"\n                    },\n                    \"audio_offset\": 0,\n                    \"duration\": 121,\n                    \"link\": \"linked\",\n                    \"video\": {\n                      \"asset\": \"camera\",\n                      \"span\": {\n                        \"end\": {\n                          \"ticks\": 180180,\n                          \"time_base\": {\n                            \"denominator\": 30000,\n                            \"numerator\": 1\n                          }\n                        },\n                        \"start\": {\n                          \"ticks\": 60060,\n                          \"time_base\": {\n                            \"denominator\": 30000,\n                            \"numerator\": 1\n                          }\n                        }\n                      },\n                      \"type\": \"stream\"\n                    },\n                    \"video_mapping\": {\n                      \"endpoints\": \"hold_adjacent\",\n                      \"frames\": {\n                        \"denominator\": \"1\",\n                        \"numerator\": \"120\"\n                      },\n                      \"start\": {\n                        \"denominator\": \"1001\",\n                        \"numerator\": \"640\"\n                      },\n                      \"type\": \"placement\"\n                    }\n                  },\n                  \"type\": \"source\"\n                },\n                \"label\": \"Original\"\n              },\n              \"before\": null\n            }\n          },\n          \"overrides\": {},\n          \"presentation\": {\n            \"after\": {\n              \"basis\": {\n                \"color_policy\": \"sdr_rec709\",\n                \"frame_rate\": {\n                  \"denominator\": 1001,\n                  \"numerator\": 30000\n                },\n                \"height\": 180,\n                \"width\": 320\n              },\n              \"state\": {\n                \"geometry_origin\": \"explicit\",\n                \"primary\": {\n                  \"asset\": \"camera\",\n                  \"qualification\": \"38776b6eae9a3ce89f1126abbcd6e3cd74a68bb05d09489ee58a548f3499dfe4\"\n                },\n                \"rate_origin\": \"explicit\"\n              }\n            },\n            \"before\": {\n              \"basis\": {\n                \"color_policy\": \"sdr_rec709\",\n                \"frame_rate\": {\n                  \"denominator\": 1001,\n                  \"numerator\": 30000\n                },\n                \"height\": 180,\n                \"width\": 320\n              },\n              \"state\": {\n                \"geometry_origin\": \"explicit\",\n                \"primary\": null,\n                \"rate_origin\": \"explicit\"\n              }\n            }\n          },\n          \"project_id\": \"ba6828c4-5fcc-47a8-895b-82547b276d76\",\n          \"to_revision\": \"core30-import\"\n        },\n        \"inverse\": {\n          \"assets\": {\n            \"camera\": {\n              \"after\": null,\n              \"before\": {\n                \"audio\": {\n                  \"end\": {\n                    \"ticks\": 288288,\n                    \"time_base\": {\n                      \"denominator\": 48000,\n                      \"numerator\": 1\n                    }\n                  },\n                  \"start\": {\n                    \"ticks\": 95072,\n                    \"time_base\": {\n                      \"denominator\": 48000,\n                      \"numerator\": 1\n                    }\n                  }\n                },\n                \"content_hash\": \"blake3:2a71661b9ab6925c88996ee355b96cd96c3041ee775c3ccbe2681513397a613f\",\n                \"frame_count\": 120,\n                \"label\": \"Measured camera\",\n                \"source_qualification\": \"38776b6eae9a3ce89f1126abbcd6e3cd74a68bb05d09489ee58a548f3499dfe4\",\n                \"still_image\": false,\n                \"video\": {\n                  \"end\": {\n                    \"ticks\": 180180,\n                    \"time_base\": {\n                      \"denominator\": 30000,\n                      \"numerator\": 1\n                    }\n                  },\n                  \"start\": {\n                    \"ticks\": 60060,\n                    \"time_base\": {\n                      \"denominator\": 30000,\n                      \"numerator\": 1\n                    }\n                  }\n                }\n              }\n            }\n          },\n          \"from_revision\": \"core30-import\",\n          \"marks\": {},\n          \"nodes\": {\n            \"c7e2bda0-2133-431f-a4cf-69dca429a916\": {\n              \"after\": {\n                \"kind\": {\n                  \"children\": [],\n                  \"type\": \"sequence\"\n                },\n                \"label\": \"Sequence\"\n              },\n              \"before\": {\n                \"kind\": {\n                  \"children\": [\n                    \"clip\"\n                  ],\n                  \"type\": \"sequence\"\n                },\n                \"label\": \"Sequence\"\n              }\n            },\n            \"clip\": {\n              \"after\": null,\n              \"before\": {\n                \"kind\": {\n                  \"source\": {\n                    \"audio\": {\n                      \"asset\": \"camera\",\n                      \"span\": {\n                        \"end\": {\n                          \"ticks\": 288288,\n                          \"time_base\": {\n                            \"denominator\": 48000,\n                            \"numerator\": 1\n                          }\n                        },\n                        \"start\": {\n                          \"ticks\": 95072,\n                          \"time_base\": {\n                            \"denominator\": 48000,\n                            \"numerator\": 1\n                          }\n                        }\n                      }\n                    },\n                    \"audio_mapping\": {\n                      \"frames\": {\n                        \"denominator\": \"1001\",\n                        \"numerator\": \"120760\"\n                      },\n                      \"start\": {\n                        \"denominator\": \"1\",\n                        \"numerator\": \"0\"\n                      },\n                      \"type\": \"placement\"\n                    },\n                    \"audio_offset\": 0,\n                    \"duration\": 121,\n                    \"link\": \"linked\",\n                    \"video\": {\n                      \"asset\": \"camera\",\n                      \"span\": {\n                        \"end\": {\n                          \"ticks\": 180180,\n                          \"time_base\": {\n                            \"denominator\": 30000,\n                            \"numerator\": 1\n                          }\n                        },\n                        \"start\": {\n                          \"ticks\": 60060,\n                          \"time_base\": {\n                            \"denominator\": 30000,\n                            \"numerator\": 1\n                          }\n                        }\n                      },\n                      \"type\": \"stream\"\n                    },\n                    \"video_mapping\": {\n                      \"endpoints\": \"hold_adjacent\",\n                      \"frames\": {\n                        \"denominator\": \"1\",\n                        \"numerator\": \"120\"\n                      },\n                      \"start\": {\n                        \"denominator\": \"1001\",\n                        \"numerator\": \"640\"\n                      },\n                      \"type\": \"placement\"\n                    }\n                  },\n                  \"type\": \"source\"\n                },\n                \"label\": \"Original\"\n              }\n            }\n          },\n          \"overrides\": {},\n          \"presentation\": {\n            \"after\": {\n              \"basis\": {\n                \"color_policy\": \"sdr_rec709\",\n                \"frame_rate\": {\n                  \"denominator\": 1001,\n                  \"numerator\": 30000\n                },\n                \"height\": 180,\n                \"width\": 320\n              },\n              \"state\": {\n                \"geometry_origin\": \"explicit\",\n                \"primary\": null,\n                \"rate_origin\": \"explicit\"\n              }\n            },\n            \"before\": {\n              \"basis\": {\n                \"color_policy\": \"sdr_rec709\",\n                \"frame_rate\": {\n                  \"denominator\": 1001,\n                  \"numerator\": 30000\n                },\n                \"height\": 180,\n                \"width\": 320\n              },\n              \"state\": {\n                \"geometry_origin\": \"explicit\",\n                \"primary\": {\n                  \"asset\": \"camera\",\n                  \"qualification\": \"38776b6eae9a3ce89f1126abbcd6e3cd74a68bb05d09489ee58a548f3499dfe4\"\n                },\n                \"rate_origin\": \"explicit\"\n              }\n            }\n          },\n          \"project_id\": \"ba6828c4-5fcc-47a8-895b-82547b276d76\",\n          \"to_revision\": \"8aeeca72-f7c6-4c85-98a8-416932d27a50\"\n        }\n      },\n      \"revision_id\": \"core30-import\"\n    },\n    \"qualification\": \"38776b6eae9a3ce89f1126abbcd6e3cd74a68bb05d09489ee58a548f3499dfe4\"\n  },\n  \"protocol\": 1\n}\n"
+  },
+  {
+    "command": [
+      "deadpan-core30-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-sound-allowance-storage/actual36/sound-allowance-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "5ab36e95fc1b0a3ff054f3d9eacd8e6654011c3f46c9e9e82c660a2402dd9dc5",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core30-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-sound-allowance-storage/actual36/sound-allowance-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "5ab36e95fc1b0a3ff054f3d9eacd8e6654011c3f46c9e9e82c660a2402dd9dc5",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core30-cli",
+      "command",
+      "/tmp/deadpan-sound-allowance-storage/actual36/sound-allowance-history.deadpan",
+      "--json",
+      "/tmp/deadpan-sound-allowance-storage/actual36/core30-add-impact.json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "b492aab6be8157c650d2fca6725696d5b62e083cdcd438bc2bd3b1b908927345",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core30-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-sound-allowance-storage/actual36/sound-allowance-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "7e8c61c90c70dbc6e0215806447f27dd5d786fa16fd66e96e13363c507c8492e",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core30-cli",
+      "command",
+      "/tmp/deadpan-sound-allowance-storage/actual36/sound-allowance-history.deadpan",
+      "--json",
+      "/tmp/deadpan-sound-allowance-storage/actual36/core30-add-bed.json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "19c833306eeb02d648bfb44163972954a555c86898391bb14debcbfc959d5426",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core30-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-sound-allowance-storage/actual36/sound-allowance-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "c9e10aefcb467510fe1bb5deda1e4c0f5bf158ca8a8675e2ca6a5eb1f8c0f949",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core30-cli",
+      "command",
+      "/tmp/deadpan-sound-allowance-storage/actual36/sound-allowance-history.deadpan",
+      "--json",
+      "/tmp/deadpan-sound-allowance-storage/actual36/core30-first-pause.json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "ceefc56d7772a3f08e90a25509a4b92faf2349c9a7d0afd5316331fbe839d74f",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core30-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-sound-allowance-storage/actual36/sound-allowance-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "3939f85bc5a2bf9b29481e5fc5cde25c5204b961d689327c721a5628677e1718",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core30-cli",
+      "command",
+      "/tmp/deadpan-sound-allowance-storage/actual36/sound-allowance-history.deadpan",
+      "--json",
+      "/tmp/deadpan-sound-allowance-storage/actual36/core30-second-pause.json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "24d362aa7e09d0acf4d0127e40e0eb0bccfeac38423a841f39f0df8814a67e42",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core30-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-sound-allowance-storage/actual36/sound-allowance-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "9fc17918681b8624698b8221b3141ead248fcec3775ee89b3e993c467e6b4406",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core30-cli",
+      "command",
+      "/tmp/deadpan-sound-allowance-storage/actual36/sound-allowance-history.deadpan",
+      "--json",
+      "/tmp/deadpan-sound-allowance-storage/actual36/core30-update-impact.json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "3e7892ae9094a8f6a6fd37707769b84a5384905e9d42b4eb5d0e32a46c06620b",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core30-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-sound-allowance-storage/actual36/sound-allowance-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "ffcb169297c3a32121d176ca69fd2f570a9fc5750c3da722a511a1045c2069be",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core30-cli",
+      "command",
+      "/tmp/deadpan-sound-allowance-storage/actual36/sound-allowance-history.deadpan",
+      "--json",
+      "/tmp/deadpan-sound-allowance-storage/actual36/core30-abandoned-replacement.json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "912eda04f2d8dfc9623448f51631d82a224e4343688faf7eb273550e718a0c86",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core30-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-sound-allowance-storage/actual36/sound-allowance-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "22726273d4a91f4cb4f9e482460c956554df8a0be2caae8d9852acaf1050aee6",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core30-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-sound-allowance-storage/actual36/sound-allowance-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "22726273d4a91f4cb4f9e482460c956554df8a0be2caae8d9852acaf1050aee6",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core30-cli",
+      "project",
+      "undo",
+      "/tmp/deadpan-sound-allowance-storage/actual36/sound-allowance-history.deadpan",
+      "--expected",
+      "core30-abandoned-replacement"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "c209cf750f7e25bd7ebede26a95db99feeffdaa75aed5d0b79f5aff4d3e058ac",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core30-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-sound-allowance-storage/actual36/sound-allowance-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "c1a9d61c33a5d786dff368d32c2bbdc64f362b42705409a73384dc397d4f3019",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core30-cli",
+      "command",
+      "/tmp/deadpan-sound-allowance-storage/actual36/sound-allowance-history.deadpan",
+      "--json",
+      "/tmp/deadpan-sound-allowance-storage/actual36/core30-split.json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "68dd3c31c0791deda5c63e9f9b8ef2f9eea1d134811526e85827e58e0c183a53",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core30-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-sound-allowance-storage/actual36/sound-allowance-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "610d378746c7fe6f9b0be08f61bb036ee9097ab6e764c67d54892704cb49cc97",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core30-cli",
+      "command",
+      "/tmp/deadpan-sound-allowance-storage/actual36/sound-allowance-history.deadpan",
+      "--json",
+      "/tmp/deadpan-sound-allowance-storage/actual36/core30-delete-pause.json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "95561974ac5540f44cedf787a819d098b9b2872fe9ea1741b5008291218bb6af",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core30-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-sound-allowance-storage/actual36/sound-allowance-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "9eee828db12fcafd78a13e3d392cd3fe37b0bd90e92f266e81cd8dff59181913",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core30-cli",
+      "command",
+      "/tmp/deadpan-sound-allowance-storage/actual36/sound-allowance-history.deadpan",
+      "--json",
+      "/tmp/deadpan-sound-allowance-storage/actual36/core30-replace-bed.json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "737e5022b1e6b2f7328f60f1842ba4914b2f0af9dad8f0065691a4eaa14ebfcc",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core30-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-sound-allowance-storage/actual36/sound-allowance-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "55a9fc2236c9706b189e3aa5317bb4d24c91e360f7ee69851f9a54c605a44210",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core30-cli",
+      "project",
+      "undo",
+      "/tmp/deadpan-sound-allowance-storage/actual36/sound-allowance-history.deadpan",
+      "--expected",
+      "core30-replace-bed"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "b6810767833399cdba93b164ace76c1ef5a4689410e38ab3151ac71efa09d5c2",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core30-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-sound-allowance-storage/actual36/sound-allowance-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "0a991ce76ef36e6d2fc62909734da0900f33560b583cedf30d3e540d7f8efbdc",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core30-cli",
+      "project",
+      "redo",
+      "/tmp/deadpan-sound-allowance-storage/actual36/sound-allowance-history.deadpan",
+      "--expected",
+      "daa8ce3d-cf66-4b49-bf39-980ce910d11a"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "868b9eafb1a5ad9fd7bd7124b2db034e91118a35679026d759b8e12070e20a58",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core30-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-sound-allowance-storage/actual36/sound-allowance-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "e6f72064d9a8a09e275ec506dc2e9a84801a3ae8a50266bb45c66593bb38a38a",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core30-cli",
+      "project",
+      "undo",
+      "/tmp/deadpan-sound-allowance-storage/actual36/sound-allowance-history.deadpan",
+      "--expected",
+      "9b191a81-0988-4db9-ba3b-89a25c60cf57"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "0a0a2b4392c92303f42d0b4bd264320fdfaf1a71dea98c0559e0d1084a1e6e11",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core30-cli",
+      "project",
+      "validate",
+      "/tmp/deadpan-sound-allowance-storage/actual36/sound-allowance-history.deadpan"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "18ed71966231264b52ca5a77fe0a4194f8bee0d4072ddd3094b38ad489d25c36",
+    "stderr": "",
+    "stdout": "{\n  \"basis_state\": {\n    \"geometry_origin\": \"explicit\",\n    \"primary\": {\n      \"asset\": \"camera\",\n      \"qualification\": \"38776b6eae9a3ce89f1126abbcd6e3cd74a68bb05d09489ee58a548f3499dfe4\"\n    },\n    \"rate_origin\": \"explicit\"\n  },\n  \"duration_frames\": 122,\n  \"mark_count\": 0,\n  \"node_count\": 6,\n  \"presentation_basis\": {\n    \"color_policy\": \"sdr_rec709\",\n    \"frame_rate\": {\n      \"denominator\": 1001,\n      \"numerator\": 30000\n    },\n    \"height\": 180,\n    \"width\": 320\n  },\n  \"project_id\": \"ba6828c4-5fcc-47a8-895b-82547b276d76\",\n  \"protocol\": 1,\n  \"revision_id\": \"d12b65be-fc96-48c0-a2c6-abaae10f3c15\",\n  \"root\": \"c7e2bda0-2133-431f-a4cf-69dca429a916\",\n  \"valid\": true\n}\n"
+  },
+  {
+    "command": [
+      "deadpan-core30-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-sound-allowance-storage/actual36/sound-allowance-history.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "81e371c385e2b583126f3a8712eeca77bb85fb0df6385a6dc067e499566ad838",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "deadpan-core30-cli",
+      "project",
+      "validate",
+      "/tmp/deadpan-sound-allowance-storage/actual36/reopened-sql.deadpan"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "18ed71966231264b52ca5a77fe0a4194f8bee0d4072ddd3094b38ad489d25c36",
+    "stderr": "",
+    "stdout": "{\n  \"basis_state\": {\n    \"geometry_origin\": \"explicit\",\n    \"primary\": {\n      \"asset\": \"camera\",\n      \"qualification\": \"38776b6eae9a3ce89f1126abbcd6e3cd74a68bb05d09489ee58a548f3499dfe4\"\n    },\n    \"rate_origin\": \"explicit\"\n  },\n  \"duration_frames\": 122,\n  \"mark_count\": 0,\n  \"node_count\": 6,\n  \"presentation_basis\": {\n    \"color_policy\": \"sdr_rec709\",\n    \"frame_rate\": {\n      \"denominator\": 1001,\n      \"numerator\": 30000\n    },\n    \"height\": 180,\n    \"width\": 320\n  },\n  \"project_id\": \"ba6828c4-5fcc-47a8-895b-82547b276d76\",\n  \"protocol\": 1,\n  \"revision_id\": \"d12b65be-fc96-48c0-a2c6-abaae10f3c15\",\n  \"root\": \"c7e2bda0-2133-431f-a4cf-69dca429a916\",\n  \"valid\": true\n}\n"
+  },
+  {
+    "command": [
+      "deadpan-core30-cli",
+      "project",
+      "dump",
+      "/tmp/deadpan-sound-allowance-storage/actual36/reopened-sql.deadpan",
+      "--json"
+    ],
+    "returncode": 0,
+    "stdout_sha256": "81e371c385e2b583126f3a8712eeca77bb85fb0df6385a6dc067e499566ad838",
+    "stderr": ""
+  }
+]

@@ -99,7 +99,7 @@ fn root_sounds_use_round_even_boundaries_and_keep_exact_source_phase() {
     let sound = plan.root_sound(&SoundId::new("event").unwrap()).unwrap();
     assert_eq!(sound.audible_samples(), AudioSample(2)..AudioSample(34));
     let query = sound
-        .root_output_tape()
+        .root_input_tape()
         .unwrap()
         .query(
             SignalSample(0)..SignalSample(64),
@@ -169,7 +169,7 @@ fn root_sound_hold_policy_uses_current_project_clock_and_not_original_exhaustion
         RenderPlan::compile(&ProjectDocument::from_json(&wire.to_string()).unwrap()).unwrap();
     let sound = plan.root_sound(&SoundId::new("event").unwrap()).unwrap();
     let policy = sound
-        .root_output_tape()
+        .root_input_tape()
         .unwrap()
         .policy(
             SignalSample(0)..SignalSample(64),
@@ -177,11 +177,18 @@ fn root_sound_hold_policy_uses_current_project_clock_and_not_original_exhaustion
         )
         .unwrap();
     assert!(
-        policy
+        !policy
             .suppressed
             .iter()
             .any(|r| r.start.0 <= 16 && r.end.0 >= 32)
     );
+    let gated = sound
+        .gate_fades(
+            AudioSample(16)..AudioSample(32),
+            AudioQueryLimits::default(),
+        )
+        .unwrap();
+    assert!(gated.spans.iter().all(|span| span.length == 0));
     assert!(
         !policy
             .suppressed

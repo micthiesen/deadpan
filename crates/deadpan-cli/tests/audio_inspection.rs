@@ -31,6 +31,9 @@ mod gap;
 #[path = "audio_inspection/sounds.rs"]
 mod sounds;
 
+#[path = "audio_inspection/sound_allowances.rs"]
+mod sound_allowances;
+
 fn active() -> AtomicBool {
     AtomicBool::new(false)
 }
