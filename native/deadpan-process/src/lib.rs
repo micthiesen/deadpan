@@ -9,6 +9,9 @@ use rustix::process::{
     Pid, Signal, WaitId, WaitIdOptions, kill_process, kill_process_group, waitid,
 };
 
+mod spawn;
+pub use spawn::spawn;
+
 /// Stop an owned worker group without reaping its leader.
 ///
 /// The caller must create `child` as its process-group leader and retain sole

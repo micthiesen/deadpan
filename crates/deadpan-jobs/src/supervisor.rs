@@ -246,16 +246,17 @@ impl WorkerProcess {
             ));
         }
         let workspace = std::fs::canonicalize(&spec.workspace)?;
-        let child = Command::new(&spec.executable)
-            .args(&spec.arguments)
-            .env_clear()
-            .envs(&spec.environment)
-            .current_dir(workspace)
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .process_group(0)
-            .spawn()?;
+        let child = deadpan_native_process::spawn(
+            Command::new(&spec.executable)
+                .args(&spec.arguments)
+                .env_clear()
+                .envs(&spec.environment)
+                .current_dir(workspace)
+                .stdin(Stdio::piped())
+                .stdout(Stdio::piped())
+                .stderr(Stdio::piped())
+                .process_group(0),
+        )?;
         let pid = Pid::from_child(&child);
         let (event_tx, event_rx) = mpsc::sync_channel(EVENT_CAPACITY);
         let (control_tx, control_rx) = mpsc::sync_channel(2);

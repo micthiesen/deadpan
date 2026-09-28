@@ -87,10 +87,16 @@ impl Options {
 }
 
 fn command_output(program: &str, args: &[&str]) -> Option<String> {
-    let output = std::process::Command::new(program)
-        .args(args)
-        .output()
-        .ok()?;
+    let output = deadpan_native_process::spawn(
+        std::process::Command::new(program)
+            .args(args)
+            .stdin(std::process::Stdio::null())
+            .stdout(std::process::Stdio::piped())
+            .stderr(std::process::Stdio::piped()),
+    )
+    .ok()?
+    .wait_with_output()
+    .ok()?;
     output
         .status
         .success()

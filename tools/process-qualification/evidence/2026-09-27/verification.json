@@ -1,0 +1,241 @@
+{
+  "base_commit": "34e816a64b628de1731c2bf161669dc8fd483d40",
+  "environment": {
+    "os": "macOS 26.5.2 (25F84)",
+    "hardware": "Apple M5 Max",
+    "toolchain": "Rust/Cargo 1.97.1",
+    "ffmpeg_prefix": "/tmp/deadpan-ui-ffmpeg/prefix"
+  },
+  "commands": {
+    "spawn-proof-01": {
+      "command": [
+        "python3",
+        "tools/process-qualification/check_pipe_inheritance.py",
+        "--output",
+        "/tmp/deadpan-sound-events-20260927/spawn-proof-01"
+      ],
+      "exit_code": 1,
+      "seconds": 0.08518875017762184,
+      "source_identity_unchanged": true,
+      "log_sha256": "06177c19985564a2a6a15837c93ae72efa6d57bc51db7ef1241863654854fa1e",
+      "test_summaries": []
+    },
+    "spawn-proof-02": {
+      "command": [
+        "python3",
+        "tools/process-qualification/check_pipe_inheritance.py",
+        "--output",
+        "/tmp/deadpan-sound-events-20260927/spawn-proof-02"
+      ],
+      "exit_code": 0,
+      "seconds": 0.5836138748563826,
+      "log_sha256": "24645fe34c7259f798be1eadbd49d63bd057757efcf32dfe24565f521b341a45",
+      "test_summaries": []
+    },
+    "spawn-format": {
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.8762966669164598,
+      "source_identity_unchanged": true,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "test_summaries": []
+    },
+    "spawn-clippy": {
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--all-targets",
+        "-p",
+        "deadpan-native-process",
+        "-p",
+        "deadpan-jobs",
+        "-p",
+        "deadpan-media",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 57.70419550035149,
+      "source_identity_unchanged": true,
+      "log_sha256": "69c1e645ac97c65ad3cd16b1a4bc39db43450f22dd381678d44898158bd77efc",
+      "test_summaries": []
+    },
+    "spawn-tests": {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--no-fail-fast",
+        "-p",
+        "deadpan-native-process",
+        "-p",
+        "deadpan-jobs",
+        "-p",
+        "deadpan-media"
+      ],
+      "exit_code": 0,
+      "seconds": 74.30990404170007,
+      "source_identity_unchanged": true,
+      "log_sha256": "21cc5143d4b38dba04f691de9d6a911b0b92fa58a22a6df018eb8913b0615997",
+      "test_summaries": [
+        [
+          5,
+          0,
+          0
+        ],
+        [
+          9,
+          0,
+          0
+        ],
+        [
+          10,
+          0,
+          0
+        ],
+        [
+          15,
+          0,
+          0
+        ],
+        [
+          11,
+          0,
+          0
+        ],
+        [
+          13,
+          0,
+          0
+        ],
+        [
+          3,
+          0,
+          0
+        ],
+        [
+          19,
+          0,
+          0
+        ],
+        [
+          6,
+          0,
+          0
+        ],
+        [
+          9,
+          0,
+          0
+        ],
+        [
+          18,
+          0,
+          0
+        ],
+        [
+          10,
+          0,
+          0
+        ],
+        [
+          8,
+          0,
+          0
+        ],
+        [
+          9,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    "spawn-harness-clippy": {
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--all-targets",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 57.994280375074595,
+      "source_identity_unchanged": true,
+      "log_sha256": "70c0164330dc0f642f5f5c1aa3ac0626fae25545a77756bbd629b6eda655c63f",
+      "test_summaries": []
+    },
+    "spawn-harness-tests": {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness"
+      ],
+      "exit_code": 0,
+      "seconds": 61.764270124956965,
+      "source_identity_unchanged": true,
+      "log_sha256": "e58c7cd94cf4b3d51ddeac349246450cb05196468554bb1aa3a91aa25d5cfcb4",
+      "test_summaries": [
+        [
+          244,
+          0,
+          0
+        ],
+        [
+          2,
+          0,
+          0
+        ]
+      ]
+    }
+  },
+  "driver_unit_tests": {
+    "passed": 4,
+    "failed": 0,
+    "evidence": "Implementation agent reported four mocked failure-path checks passing; no raw execution log retained here. Tests are in ../../test_driver.py."
+  },
+  "review": [
+    "Independent review confirmed participating launch coverage, unchanged command streams/environment/groups, lock release before wait, fail-closed poison handling, and no pre_exec users.",
+    "Review corrected fixture failure cleanup and scheduling false-positive risks. Direct lock observation, raw negative control, guarded EOF while keeper lives, and spawn-error recovery are retained.",
+    "Follow-up review confirmed Darwin group membership validation, ownership-before-signal, explicit EPERM confirmation, and failure evidence before raising."
+  ],
+  "scope": "Cooperative in-process macOS spawn boundary; neither worker serialization nor foreign-spawn protection. Linux native execution and GUI/device/acoustic behavior were not qualified here.",
+  "source_identity_note": "Cargo hashes exclude tools/process-qualification: its driver cleanup changed during Cargo verification; production source hashes remained unchanged. The final proof has its own exact source hashes."
+}

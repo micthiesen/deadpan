@@ -230,15 +230,16 @@ fn convert_snapshot(
     }
     let mut output = tempfile::tempfile()?;
     deadline.check()?;
-    let child = Command::new(executable)
-        .arg(serialized)
-        .env_clear()
-        .current_dir(std::env::temp_dir())
-        .stdin(Stdio::from(input))
-        .stdout(Stdio::from(output.try_clone()?))
-        .stderr(Stdio::piped())
-        .process_group(0)
-        .spawn()?;
+    let child = deadpan_native_process::spawn(
+        Command::new(executable)
+            .arg(serialized)
+            .env_clear()
+            .current_dir(std::env::temp_dir())
+            .stdin(Stdio::from(input))
+            .stdout(Stdio::from(output.try_clone()?))
+            .stderr(Stdio::piped())
+            .process_group(0),
+    )?;
     let mut process = OwnedProcess::new(child);
     let (status, reply) = process.collect(deadline, &output, request.limits().max_output_bytes)?;
     // Every failure discards the anonymous output. A well-formed success from a

@@ -255,7 +255,8 @@ fn stderr_is_drained_but_retained_tail_is_bounded() {
     let workspace = tempfile::tempdir().unwrap();
     responses(workspace.path(), &[completed()]);
     let mut process = WorkerProcess::spawn(spec(workspace.path(), "stderr"), request()).unwrap();
-    assert!(faults(&finish(&mut process)).is_empty());
+    let events = finish(&mut process);
+    assert!(faults(&events).is_empty(), "faults: {:?}", faults(&events));
     let logs = process.log_tail();
     assert_eq!(logs.bytes, vec![b'd'; 64 * 1024]);
     assert_eq!(logs.discarded_bytes, 192 * 1024);
