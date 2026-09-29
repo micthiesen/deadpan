@@ -88,16 +88,17 @@ do not qualify the new renderer work.
 
 ## Export policy decision and remaining scope
 
-The normative spec still requires no edit lists. A decision has been requested
-on this concrete replacement for the muxing line in §22.3:
+At measurement time the normative spec required no edit lists. The user
+approved this replacement for the muxing line in §22.3 on 2026-09-28; it was
+applied on resumption on 2026-09-29:
 
 > Explicitly validated stream start and sync; edit lists permitted for encoder
 > delay, padding, and frame reordering.
 
-That proposal preserves emitted-file verification and the sub-frame encoded
-tolerance. It is not approved by these measurements alone, and the specification
-has not been changed. Independent color conversion work can proceed while this
-decision remains open.
+The approved rule preserves emitted-file verification and the sub-frame encoded
+tolerance. Approval changes the output policy, not the retained observations
+or their qualification scope. Both independent readers must still demonstrate
+the actual encoded output's timing.
 
 The native video stack, closed GOP independence, boundary-content/audio quality,
 physical playback, other OS versions, full-resolution performance, HDR, shared

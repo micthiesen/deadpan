@@ -1,0 +1,49 @@
+{
+  "tests": {
+    "workspace": {
+      "exit_code": 101,
+      "seconds": 346.07080291584134,
+      "target_results": 155,
+      "passed": 2076,
+      "failed": 2,
+      "ignored": 0,
+      "filtered": 0,
+      "source_manifest_sha256": "d2e9fb88b2bdfb90b960272628f77a8610b9f01d7b0fd818969eac6b24749e3d"
+    },
+    "picture-corrected": {
+      "exit_code": 101,
+      "seconds": 8.54903120920062,
+      "target_results": 21,
+      "passed": 7,
+      "failed": 1,
+      "ignored": 0,
+      "filtered": 576,
+      "source_manifest_sha256": "618d5d20c8efe8a9f29c6a69e4d1cdb9e02582b38c58b7912700304129966465"
+    },
+    "picture-final": {
+      "exit_code": 0,
+      "seconds": 8.915796792134643,
+      "target_results": 140,
+      "passed": 8,
+      "failed": 0,
+      "ignored": 0,
+      "filtered": 2068,
+      "source_manifest_sha256": "23978286806c9512b420e803f5d2f97a69a3272fbeef531620e77e588c56f151"
+    },
+    "feature-tests": {
+      "exit_code": 0,
+      "seconds": 34.30086395889521,
+      "target_results": 2,
+      "passed": 302,
+      "failed": 0,
+      "ignored": 0,
+      "filtered": 0,
+      "source_manifest_sha256": "23978286806c9512b420e803f5d2f97a69a3272fbeef531620e77e588c56f151"
+    }
+  },
+  "source_changes_after_full_gate": [
+    "crates/deadpan-cli/src/picture/tests.rs"
+  ],
+  "current_sources_match_corrected_checks": true,
+  "continuation": "Full failed run retained; only the corrected picture module was rerun; unrelated passing suites and doctests retained."
+}

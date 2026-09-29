@@ -31,7 +31,7 @@ measurements and pictured controls do not authorize invented capabilities.
 - Keep the core independent of UI, media handles, databases, workers, and networking. Use focused typed modules and narrow provider boundaries rather than a general plugin framework.
 - Keep ordinary editing immediate and local. Bound queues, memory, and work; prioritize audio and current-frame preview. No analysis or inference job may block a structural edit. Sources, transcripts, and generated footage stay local.
 - Use one render plan and the same picture and DSP semantics for preview and export. Export one immutable committed revision and verify the emitted file. Never omit unsupported effects silently.
-- Preserve the [measured encoder constraint](docs/qualification/encoder-timing-2026-09-28.md): native AAC with MP4 edit lists disabled shifts events 1,024 samples late in FFmpeg and fails the 60 fps bound. The [AVFoundation comparison](docs/qualification/native-audio-2026-09-28.md) loses opening events and shifts later events 1,088 samples early. An aligned default-edit-list reference is not an approved specification change. Never hide this through event-based PCM alignment, packet dropping or an AAC-block tolerance. Retain actual file/decoder evidence and qualify alternatives explicitly.
+- Preserve the [measured encoder constraint](docs/qualification/encoder-timing-2026-09-28.md): native AAC with MP4 edit lists disabled shifts events 1,024 samples late in FFmpeg and fails the 60 fps bound. The [AVFoundation comparison](docs/qualification/native-audio-2026-09-28.md) loses opening events and shifts later events 1,088 samples early. The user approved §22.3 timing metadata on 2026-09-28: edit lists may represent encoder delay, padding and frame reordering, with explicit stream-start/sync and full emitted-file verification. Never hide failures through event-based PCM alignment, packet dropping or an AAC-block tolerance. Retain actual file/decoder evidence and qualify each output path explicitly.
 - Make AI acceptance explicit. Inserting time immediately commits a deterministic fallback; actual local generation produces a candidate. Only an explicit undoable acceptance changes the provider. Stale jobs cannot overwrite newer edits, and accepted media must work without its model.
 - Preserve user assets and history. SQLite is authoritative; JSON dumps are derived. Originals and accepted artifacts are not disposable caches. Recovery, migration, relinking, and worker failures must retain user intent and report failures truthfully.
 - Measure capability. Record hardware, revisions, licenses, fixtures, failures, and actual results. Gate A qualifies media, GPU, audio, model, and packaging choices before large integration work. Performance targets and upstream benchmarks are not Deadpan measurements.
@@ -176,6 +176,19 @@ output timestamps and completed-frame retention. A cancelled/dropped readback
 keeps its single-flight permit until both mapping and submitted GPU work drain.
 Run conversion/readback off the UI and preserve the immutable frame identity.
 Library pixels and synthetic encoder fixtures do not qualify product export.
+
+The [committed project picture boundary](docs/PROJECT_PICTURES.md) captures an
+explicit revision and nonempty half-open range through a read-only store.
+Admit Original Source/Freeze frames against that revision's receipt, original
+bytes and complete freshly measured index. Retain at most one private source
+decoder; a hot snapshot survives linked-path loss, while cold admission must
+revalidate it. Keep project frame/rate separate from original ordinal/PTS,
+preserve odd committed canvases and carry provider-to-root/captured framing
+unchanged through the shared native preview adapters. Authored Background/Blank
+clears both renderer targets to opaque black; never use it for missing media.
+Accepted generated media, Still and HDR currently fail explicitly. Preparation
+is off the UI/audio threads and does not provide final-render isolation,
+encoder geometry normalization, complete muxing or verified publication.
 
 Every persisted edit, undo, and redo gets a never-reused revision ID. Core inverse patches can restore exact fixture identity; the store rebases them onto fresh revisions to prevent stale commands becoming valid after undo. Store writes use one transaction for the revision, history, and cursor. Keep `.writer.lock` held for the writable store lifetime; read-only inspection and dry runs may coexist. Take live database snapshots through SQLite's backup API, never copy only an open main database file.
 

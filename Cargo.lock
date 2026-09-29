@@ -867,13 +867,18 @@ dependencies = [
  "deadpan-core",
  "deadpan-media",
  "deadpan-plan",
+ "deadpan-render",
+ "deadpan-source",
  "deadpan-store",
+ "pollster",
  "rusqlite",
  "serde",
  "serde_json",
+ "sha2",
  "tempfile",
  "thiserror 2.0.20",
  "uuid",
+ "wgpu",
 ]
 
 [[package]]

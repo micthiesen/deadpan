@@ -1,0 +1,45 @@
+{
+  "cargo_artifact": {
+    "reason": "compiler-artifact",
+    "package_id": "path+file:///Users/michael/Code/deadpan/crates/deadpan-cli#0.1.0",
+    "manifest_path": "/Users/michael/Code/deadpan/crates/deadpan-cli/Cargo.toml",
+    "target": {
+      "kind": [
+        "example"
+      ],
+      "crate_types": [
+        "bin"
+      ],
+      "name": "qualify_project_picture",
+      "src_path": "/Users/michael/Code/deadpan/crates/deadpan-cli/examples/qualify_project_picture.rs",
+      "edition": "2024",
+      "doc": false,
+      "doctest": false,
+      "test": false
+    },
+    "profile": {
+      "opt_level": "0",
+      "debuginfo": 2,
+      "debug_assertions": true,
+      "overflow_checks": true,
+      "test": false
+    },
+    "features": [],
+    "filenames": [
+      "/Users/michael/Code/deadpan/target/debug/examples/qualify_project_picture"
+    ],
+    "executable": "/Users/michael/Code/deadpan/target/debug/examples/qualify_project_picture",
+    "fresh": false
+  },
+  "sha256": "4b300474be27a22fd64b0e3437aaf3c263b267c3a32e894df7c4ac0e0c470fd9",
+  "command": [
+    "/Users/michael/Code/deadpan/target/debug/examples/qualify_project_picture",
+    "/private/tmp/deadpan-project-pictures-EYNVPYJA/project-metal.json",
+    "/private/tmp/deadpan-project-pictures-EYNVPYJA/project-metal-fixtures"
+  ],
+  "cwd": "/Users/michael/Code/deadpan",
+  "timeout_seconds": 120,
+  "exit_code": 0,
+  "sha256_after": "4b300474be27a22fd64b0e3437aaf3c263b267c3a32e894df7c4ac0e0c470fd9",
+  "binary_unchanged": true
+}

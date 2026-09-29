@@ -35,6 +35,16 @@ silent pause, with captured Edit-frame scope and visible inspector feedback.
 This adds discoverable controls without changing default silence or authorizing
 permission for other voices, other occurrences, or absent routed samples.
 
+On 28 September 2026 the product owner explicitly approved the Section 22.3
+muxing rule: “Explicitly validated stream start and sync; edit lists permitted
+for encoder delay, padding, and frame reordering.” The approved text was applied
+on 29 September after a requested pause. Full emitted-file verification and
+encoded synchronization tolerances remain required. The
+[FFmpeg measurements](qualification/encoder-timing-2026-09-28.md) and
+[independent AVFoundation comparison](qualification/native-audio-2026-09-28.md)
+retain both the aligned reference and failed no-edit-list files. This policy
+change does not establish a working product export path or alter those results.
+
 The original five files were hash-verified before archiving. Their names and
 relative links are retained there. The root `spec/DEADPAN_SPEC.pdf` also remains
 an unchanged historical 1.0 copy for old links; it is not an updated reading

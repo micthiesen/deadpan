@@ -2,28 +2,64 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
+## Current project-picture work, 2026-09-29
+
+The user resumed the goal. The [committed-picture boundary](../PROJECT_PICTURES.md)
+captures one revision, admits historical qualified originals and prepares exact
+Source/Freeze or opaque black frames with unchanged geometry. Native preview
+shares its pure decoded-frame, index and framing adapters. One retained source
+cache owns private verified bytes independently of a live linked path.
+Accepted/Still readers, final-render isolation, geometry normalization,
+audio/mux/publication and full native export remain open.
+
+The [qualification](../qualification/project-pictures-2026-09-29.md) retains
+31 passing Metal checks over 18 complete frames. The full 2,078-test workspace
+run finished with two new fixture failures; the final eight-test picture
+continuation corrects those, with only test source changed. Other completed
+targets and doctests remain valid. The optional app harness passes 302 tests;
+both strict Clippy configurations and final formatting pass. Initial compile,
+launcher and fixture failures remain in the evidence. No test process remains
+running. Do not restart unchanged passing suites.
+
+Next, implement model-independent accepted Generated Hold picture admission
+for both native preview and the captured-revision consumer. The current plan
+already maps these to sampled-master ordinals. They have no Original receipt;
+use the captured `GeneratedArtifact`, verified generated snapshots and bounded
+schema-3 host provenance in `deadpan-models`. Add a revoked, package-anchored
+generated read capability in the store, following `OriginalImportHandle`.
+Do not use current request relevance, candidate selection or mutable receipt
+availability to authorize historical pictures. Preserve original allocation
+revision, measured terminal duration and accepted prefix semantics. Keep legacy
+Accepted/Still failures explicit until qualified. Extend the real relocated
+bundle acceptance test through actual decoded pixels after undo/revert and
+worker-file removal. This does not authorize inference or product export claims.
+
+## Earlier completed evidence
+
 The [SDR encoder timing experiment](../qualification/encoder-timing-2026-09-28.md)
 finds native AAC events and the stream endpoint 1,024 samples late when edit
 lists are disabled, exceeding one frame at 60 fps. Default-edit-list references
-are sample-aligned, but are not an approved spec deviation. Retain the failed
+are sample-aligned. Retain the failed
 files and both decoder modes; do not hide priming by shifting/cropping PCM or
 widening tolerance. The [independent AVFoundation comparison](../qualification/native-audio-2026-09-28.md)
 finds missing opening events and later events 1,088 samples early in the same
-disabled-edit-list file; the default reference aligns. A concrete mux-policy
-revision is awaiting the user's answer. Closed GOPs, native video and product
-export remain open.
+disabled-edit-list file; the default reference aligns. The user approved the
+§22.3 revision on 2026-09-28, applied on 2026-09-29: edit lists may represent
+encoder delay, padding and frame reordering, with explicit stream-start/sync
+and full emitted-file verification. Do not reopen this decision. Closed GOPs,
+native video and product export remain open.
 
 The [shared SDR encoder pixel boundary](../SDR_ENCODER_PIXELS.md) snapshots
 the composed linear working target into bounded owned memory and converts it
 to explicit Rec.709 limited-range, left-sited I420. Preserve its signed working
 values until the output transform and keep output timestamps separate from
 source PTS. Cancelled GPU work retains its permit until callbacks drain.
-The synthetic video-only encoder experiment is independent of the pending AAC
-mux-policy decision; neither boundary supplies a project export worker.
+The synthetic video-only encoder experiment does not qualify AAC timing under
+the approved mux policy; neither boundary supplies a project export worker.
 Its [qualification](../qualification/sdr-encoder-pixels-2026-09-28.md) retains
 the full workspace pass, 22 actual Metal checks and normal/sanitized H.264
-pixel comparisons. Continue with fixed-revision project picture preparation;
-qualified accepted-media/Still readers and final-render isolation remain open.
+pixel comparisons. Qualified accepted-media/Still readers and final-render
+isolation remain open beyond the current project-picture preparation work.
 
 ## Product in one paragraph
 

@@ -7,16 +7,15 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Condvar, Mutex};
 use std::time::{Duration, Instant};
 
-use deadpan_core::{
-    AssetId, ProjectFrame, SourceFrameId, SourceFrameIndex, SourceQualificationId, SourceTimeBase,
-    SourceTimestamp,
-};
+#[cfg(test)]
+use deadpan_core::SourceTimestamp;
+use deadpan_core::{AssetId, ProjectFrame, SourceFrameId, SourceFrameIndex, SourceQualificationId};
 use deadpan_media::source_index::SourceContentIdentity;
 use deadpan_media::source_session::{SourceSession, SourceSessionLimits};
-use deadpan_render::{
-    FrameMetadata, Primaries, Rgba8Frame, Rotation, SampleAspectRatio, SourceColor, Transfer,
-};
-use deadpan_source::{ColorPrimaries, ColorTransfer, DecodedRgbaFrame, SourceStreamInfo};
+use deadpan_render::Rgba8Frame;
+#[cfg(test)]
+use deadpan_render::{Primaries, Transfer};
+use deadpan_source::{DecodedRgbaFrame, SourceStreamInfo};
 use deadpan_store::original_media::OriginalMediaLimits;
 use eframe::egui;
 use sha2::{Digest, Sha256};
@@ -555,27 +554,14 @@ fn registered_picture(
 fn same_index_mapping(
     left: &SourceFrameIndex,
     right: &SourceFrameIndex,
-    mut cancelled: impl FnMut() -> bool,
+    cancelled: impl FnMut() -> bool,
 ) -> Result<bool, String> {
-    if cancelled() {
-        return Err("Project preview was cancelled.".into());
-    }
-    if left.time_base() != right.time_base()
-        || left.frames().len() != right.frames().len()
-        || left.terminal_end() != right.terminal_end()
-        || left.terminal_provenance() != right.terminal_provenance()
-    {
-        return Ok(false);
-    }
-    for (left, right) in left.frames().chunks(1024).zip(right.frames().chunks(1024)) {
-        if cancelled() {
-            return Err("Project preview was cancelled.".into());
+    deadpan_cli::picture::same_index_mapping(left, right, cancelled).map_err(|error| match error {
+        deadpan_cli::picture::ProjectPictureError::Cancelled => {
+            "Project preview was cancelled.".into()
         }
-        if left != right {
-            return Ok(false);
-        }
-    }
-    Ok(true)
+        _ => error.to_string(),
+    })
 }
 
 fn source_summary(source: &SourceSession) -> SourceSummary {
@@ -668,39 +654,7 @@ fn check_hash_control(started: Instant, cancelled: &AtomicBool) -> Result<(), St
 }
 
 fn render_frame(decoded: DecodedRgbaFrame, info: &SourceStreamInfo) -> Result<Rgba8Frame, String> {
-    let metadata = FrameMetadata {
-        width: decoded.width,
-        height: decoded.height,
-        row_stride_bytes: u32::try_from(decoded.row_stride_bytes)
-            .map_err(|_| "Source row stride exceeds the preview limit.")?,
-        sample_aspect_ratio: SampleAspectRatio::new(info.sample_aspect_num, info.sample_aspect_den)
-            .map_err(|error| error.to_string())?,
-        rotation: match info.rotation_quarter_turns {
-            0 => Rotation::None,
-            1 => Rotation::Clockwise90,
-            2 => Rotation::Clockwise180,
-            3 => Rotation::Clockwise270,
-            _ => return Err("Source orientation is unsupported.".into()),
-        },
-        color: SourceColor {
-            transfer: match info.color.transfer {
-                ColorTransfer::Bt709 => Transfer::Rec709,
-                ColorTransfer::Srgb => Transfer::Srgb,
-                ColorTransfer::Linear => Transfer::Linear,
-            },
-            primaries: match info.color.primaries {
-                ColorPrimaries::Bt709 => Primaries::Rec709,
-                ColorPrimaries::Bt2020 => Primaries::Rec2020,
-                ColorPrimaries::DisplayP3 => Primaries::DisplayP3D65,
-            },
-        },
-        pts: SourceTimestamp {
-            ticks: decoded.metadata.pts,
-            time_base: SourceTimeBase::new(info.time_base_num, info.time_base_den)
-                .map_err(|error| error.to_string())?,
-        },
-    };
-    Rgba8Frame::new(metadata, decoded.rgba).map_err(|error| error.to_string())
+    deadpan_cli::picture::source_to_render_frame(decoded, info).map_err(|error| error.to_string())
 }
 
 #[cfg(test)]

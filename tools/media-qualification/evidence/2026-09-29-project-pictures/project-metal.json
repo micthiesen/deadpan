@@ -1,0 +1,949 @@
+{
+  "checks": [
+    {
+      "actual": {
+        "color_policy": "sdr_rec709",
+        "frame_rate": {
+          "denominator": 1001,
+          "numerator": 30000
+        },
+        "height": 180,
+        "width": 320
+      },
+      "label": "known automatic NTSC source basis",
+      "passed": true
+    },
+    {
+      "actual": {},
+      "label": "exact project duration after retime, repeat and Holds",
+      "passed": true
+    },
+    {
+      "actual": {
+        "backend": "Metal",
+        "name": "Apple M5 Max"
+      },
+      "label": "real Metal adapter",
+      "passed": true
+    },
+    {
+      "actual": {},
+      "label": "background rejects a foreign renderer target",
+      "passed": true
+    },
+    {
+      "actual": {
+        "expected": 1,
+        "observed": 1,
+        "project_frame": 0
+      },
+      "label": "exact manually expected original frame selection",
+      "passed": true
+    },
+    {
+      "actual": {
+        "expected": 41,
+        "observed": 41,
+        "project_frame": 20
+      },
+      "label": "exact manually expected original frame selection",
+      "passed": true
+    },
+    {
+      "actual": {
+        "expected": 119,
+        "observed": 119,
+        "project_frame": 59
+      },
+      "label": "exact manually expected original frame selection",
+      "passed": true
+    },
+    {
+      "actual": {
+        "expected": null,
+        "observed": null,
+        "project_frame": 60
+      },
+      "label": "exact manually expected original frame selection",
+      "passed": true
+    },
+    {
+      "actual": {
+        "project_frame": 60
+      },
+      "label": "authored background is opaque legal black in all planes",
+      "passed": true
+    },
+    {
+      "actual": {
+        "expected": null,
+        "observed": null,
+        "project_frame": 61
+      },
+      "label": "exact manually expected original frame selection",
+      "passed": true
+    },
+    {
+      "actual": {
+        "project_frame": 61
+      },
+      "label": "authored background is opaque legal black in all planes",
+      "passed": true
+    },
+    {
+      "actual": {
+        "expected": 1,
+        "observed": 1,
+        "project_frame": 62
+      },
+      "label": "exact manually expected original frame selection",
+      "passed": true
+    },
+    {
+      "actual": {
+        "expected": 41,
+        "observed": 41,
+        "project_frame": 82
+      },
+      "label": "exact manually expected original frame selection",
+      "passed": true
+    },
+    {
+      "actual": {
+        "expected": 119,
+        "observed": 119,
+        "project_frame": 121
+      },
+      "label": "exact manually expected original frame selection",
+      "passed": true
+    },
+    {
+      "actual": {
+        "expected": 41,
+        "observed": 41,
+        "project_frame": 122
+      },
+      "label": "exact manually expected original frame selection",
+      "passed": true
+    },
+    {
+      "actual": {
+        "expected": 41,
+        "observed": 41,
+        "project_frame": 123
+      },
+      "label": "exact manually expected original frame selection",
+      "passed": true
+    },
+    {
+      "actual": {
+        "expected": 41,
+        "observed": 41,
+        "project_frame": 124
+      },
+      "label": "exact manually expected original frame selection",
+      "passed": true
+    },
+    {
+      "actual": {
+        "expected": null,
+        "observed": null,
+        "project_frame": 125
+      },
+      "label": "exact manually expected original frame selection",
+      "passed": true
+    },
+    {
+      "actual": {
+        "project_frame": 125
+      },
+      "label": "authored background is opaque legal black in all planes",
+      "passed": true
+    },
+    {
+      "actual": {
+        "expected": null,
+        "observed": null,
+        "project_frame": 127
+      },
+      "label": "exact manually expected original frame selection",
+      "passed": true
+    },
+    {
+      "actual": {
+        "project_frame": 127
+      },
+      "label": "authored background is opaque legal black in all planes",
+      "passed": true
+    },
+    {
+      "actual": {},
+      "label": "repeated retimed picture remains identical",
+      "passed": true
+    },
+    {
+      "actual": {},
+      "label": "captured Hold preserves framing of its explicitly selected source frame",
+      "passed": true
+    },
+    {
+      "actual": {},
+      "label": "range end is excluded",
+      "passed": true
+    },
+    {
+      "actual": {},
+      "label": "cancelled preparation publishes no frame",
+      "passed": true
+    },
+    {
+      "actual": {},
+      "label": "new committed Source pose changes its picture",
+      "passed": true
+    },
+    {
+      "actual": {},
+      "label": "captured Hold geometry survives changed source pose",
+      "passed": true
+    },
+    {
+      "actual": {},
+      "label": "in-progress session retains committed picture after live edit",
+      "passed": true
+    },
+    {
+      "actual": {},
+      "label": "live undo cannot retarget captured revision",
+      "passed": true
+    },
+    {
+      "actual": {},
+      "label": "live redo cannot retarget captured revision",
+      "passed": true
+    },
+    {
+      "actual": {},
+      "label": "read-only picture work preserves original snapshot and live history",
+      "passed": true
+    }
+  ],
+  "deadline": {
+    "cooperative_seconds": 60,
+    "external_timeout_required": true,
+    "native_calls_are_not_preempted": true,
+    "scope": "whole example, checked around bounded calls"
+  },
+  "elapsed_seconds": 1.528740416,
+  "frame_count": 18,
+  "frames": [
+    {
+      "byte_count": 86400,
+      "canvas": [
+        320,
+        180
+      ],
+      "frame_rate": {
+        "denominator": 1001,
+        "numerator": 30000
+      },
+      "framing_scopes": 4,
+      "gap_after": null,
+      "label": "committed",
+      "path": "/private/tmp/deadpan-project-pictures-EYNVPYJA/project-metal-fixtures/committed-0.i420",
+      "picture_context": null,
+      "project_frame": 0,
+      "project_id": "project-picture-qualification",
+      "revision_id": "background",
+      "sha256": "218b3994a29240cbfe782be2c2f40e93b16d050c30f67eb058f4eca054403a08",
+      "source": {
+        "asset": "original",
+        "frame": 1,
+        "pts": {
+          "ticks": 1001,
+          "time_base": {
+            "denominator": 30000,
+            "numerator": 1
+          }
+        },
+        "qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6"
+      }
+    },
+    {
+      "byte_count": 86400,
+      "canvas": [
+        320,
+        180
+      ],
+      "frame_rate": {
+        "denominator": 1001,
+        "numerator": 30000
+      },
+      "framing_scopes": 4,
+      "gap_after": null,
+      "label": "committed",
+      "path": "/private/tmp/deadpan-project-pictures-EYNVPYJA/project-metal-fixtures/committed-20.i420",
+      "picture_context": null,
+      "project_frame": 20,
+      "project_id": "project-picture-qualification",
+      "revision_id": "background",
+      "sha256": "96ac12c8ab52c63bc3c59e5704f78e33f8e18f49c019fc0cd3968063b519fb65",
+      "source": {
+        "asset": "original",
+        "frame": 41,
+        "pts": {
+          "ticks": 41041,
+          "time_base": {
+            "denominator": 30000,
+            "numerator": 1
+          }
+        },
+        "qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6"
+      }
+    },
+    {
+      "byte_count": 86400,
+      "canvas": [
+        320,
+        180
+      ],
+      "frame_rate": {
+        "denominator": 1001,
+        "numerator": 30000
+      },
+      "framing_scopes": 4,
+      "gap_after": null,
+      "label": "committed",
+      "path": "/private/tmp/deadpan-project-pictures-EYNVPYJA/project-metal-fixtures/committed-59.i420",
+      "picture_context": null,
+      "project_frame": 59,
+      "project_id": "project-picture-qualification",
+      "revision_id": "background",
+      "sha256": "f2bec5c93f7eb3e604f0837911af6cf783f5792b7c11c7b2eadfc38f7319cb75",
+      "source": {
+        "asset": "original",
+        "frame": 119,
+        "pts": {
+          "ticks": 119119,
+          "time_base": {
+            "denominator": 30000,
+            "numerator": 1
+          }
+        },
+        "qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6"
+      }
+    },
+    {
+      "byte_count": 86400,
+      "canvas": [
+        320,
+        180
+      ],
+      "frame_rate": {
+        "denominator": 1001,
+        "numerator": 30000
+      },
+      "framing_scopes": 2,
+      "gap_after": {
+        "allocation": "repeat",
+        "ordinal": 0
+      },
+      "label": "committed",
+      "path": "/private/tmp/deadpan-project-pictures-EYNVPYJA/project-metal-fixtures/committed-60.i420",
+      "picture_context": null,
+      "project_frame": 60,
+      "project_id": "project-picture-qualification",
+      "revision_id": "background",
+      "sha256": "77308802cc32b84584f7239a4b3747f790c65ffbd69cf5b4178a2b25f4b73683",
+      "source": null
+    },
+    {
+      "byte_count": 86400,
+      "canvas": [
+        320,
+        180
+      ],
+      "frame_rate": {
+        "denominator": 1001,
+        "numerator": 30000
+      },
+      "framing_scopes": 2,
+      "gap_after": {
+        "allocation": "repeat",
+        "ordinal": 0
+      },
+      "label": "committed",
+      "path": "/private/tmp/deadpan-project-pictures-EYNVPYJA/project-metal-fixtures/committed-61.i420",
+      "picture_context": null,
+      "project_frame": 61,
+      "project_id": "project-picture-qualification",
+      "revision_id": "background",
+      "sha256": "77308802cc32b84584f7239a4b3747f790c65ffbd69cf5b4178a2b25f4b73683",
+      "source": null
+    },
+    {
+      "byte_count": 86400,
+      "canvas": [
+        320,
+        180
+      ],
+      "frame_rate": {
+        "denominator": 1001,
+        "numerator": 30000
+      },
+      "framing_scopes": 4,
+      "gap_after": null,
+      "label": "committed",
+      "path": "/private/tmp/deadpan-project-pictures-EYNVPYJA/project-metal-fixtures/committed-62.i420",
+      "picture_context": null,
+      "project_frame": 62,
+      "project_id": "project-picture-qualification",
+      "revision_id": "background",
+      "sha256": "218b3994a29240cbfe782be2c2f40e93b16d050c30f67eb058f4eca054403a08",
+      "source": {
+        "asset": "original",
+        "frame": 1,
+        "pts": {
+          "ticks": 1001,
+          "time_base": {
+            "denominator": 30000,
+            "numerator": 1
+          }
+        },
+        "qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6"
+      }
+    },
+    {
+      "byte_count": 86400,
+      "canvas": [
+        320,
+        180
+      ],
+      "frame_rate": {
+        "denominator": 1001,
+        "numerator": 30000
+      },
+      "framing_scopes": 4,
+      "gap_after": null,
+      "label": "committed",
+      "path": "/private/tmp/deadpan-project-pictures-EYNVPYJA/project-metal-fixtures/committed-82.i420",
+      "picture_context": null,
+      "project_frame": 82,
+      "project_id": "project-picture-qualification",
+      "revision_id": "background",
+      "sha256": "96ac12c8ab52c63bc3c59e5704f78e33f8e18f49c019fc0cd3968063b519fb65",
+      "source": {
+        "asset": "original",
+        "frame": 41,
+        "pts": {
+          "ticks": 41041,
+          "time_base": {
+            "denominator": 30000,
+            "numerator": 1
+          }
+        },
+        "qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6"
+      }
+    },
+    {
+      "byte_count": 86400,
+      "canvas": [
+        320,
+        180
+      ],
+      "frame_rate": {
+        "denominator": 1001,
+        "numerator": 30000
+      },
+      "framing_scopes": 4,
+      "gap_after": null,
+      "label": "committed",
+      "path": "/private/tmp/deadpan-project-pictures-EYNVPYJA/project-metal-fixtures/committed-121.i420",
+      "picture_context": null,
+      "project_frame": 121,
+      "project_id": "project-picture-qualification",
+      "revision_id": "background",
+      "sha256": "f2bec5c93f7eb3e604f0837911af6cf783f5792b7c11c7b2eadfc38f7319cb75",
+      "source": {
+        "asset": "original",
+        "frame": 119,
+        "pts": {
+          "ticks": 119119,
+          "time_base": {
+            "denominator": 30000,
+            "numerator": 1
+          }
+        },
+        "qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6"
+      }
+    },
+    {
+      "byte_count": 86400,
+      "canvas": [
+        320,
+        180
+      ],
+      "frame_rate": {
+        "denominator": 1001,
+        "numerator": 30000
+      },
+      "framing_scopes": 2,
+      "gap_after": null,
+      "label": "committed",
+      "path": "/private/tmp/deadpan-project-pictures-EYNVPYJA/project-metal-fixtures/committed-122.i420",
+      "picture_context": {
+        "canvases": [
+          {
+            "fit": "fit",
+            "height": 180,
+            "layers": [
+              {
+                "center_x": {
+                  "denominator": "5",
+                  "numerator": "3"
+                },
+                "center_y": {
+                  "denominator": "5",
+                  "numerator": "2"
+                },
+                "scale": {
+                  "denominator": "5",
+                  "numerator": "7"
+                }
+              }
+            ],
+            "width": 320
+          }
+        ]
+      },
+      "project_frame": 122,
+      "project_id": "project-picture-qualification",
+      "revision_id": "background",
+      "sha256": "96ac12c8ab52c63bc3c59e5704f78e33f8e18f49c019fc0cd3968063b519fb65",
+      "source": {
+        "asset": "original",
+        "frame": 41,
+        "pts": {
+          "ticks": 41041,
+          "time_base": {
+            "denominator": 30000,
+            "numerator": 1
+          }
+        },
+        "qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6"
+      }
+    },
+    {
+      "byte_count": 86400,
+      "canvas": [
+        320,
+        180
+      ],
+      "frame_rate": {
+        "denominator": 1001,
+        "numerator": 30000
+      },
+      "framing_scopes": 2,
+      "gap_after": null,
+      "label": "committed",
+      "path": "/private/tmp/deadpan-project-pictures-EYNVPYJA/project-metal-fixtures/committed-123.i420",
+      "picture_context": {
+        "canvases": [
+          {
+            "fit": "fit",
+            "height": 180,
+            "layers": [
+              {
+                "center_x": {
+                  "denominator": "5",
+                  "numerator": "3"
+                },
+                "center_y": {
+                  "denominator": "5",
+                  "numerator": "2"
+                },
+                "scale": {
+                  "denominator": "5",
+                  "numerator": "7"
+                }
+              }
+            ],
+            "width": 320
+          }
+        ]
+      },
+      "project_frame": 123,
+      "project_id": "project-picture-qualification",
+      "revision_id": "background",
+      "sha256": "96ac12c8ab52c63bc3c59e5704f78e33f8e18f49c019fc0cd3968063b519fb65",
+      "source": {
+        "asset": "original",
+        "frame": 41,
+        "pts": {
+          "ticks": 41041,
+          "time_base": {
+            "denominator": 30000,
+            "numerator": 1
+          }
+        },
+        "qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6"
+      }
+    },
+    {
+      "byte_count": 86400,
+      "canvas": [
+        320,
+        180
+      ],
+      "frame_rate": {
+        "denominator": 1001,
+        "numerator": 30000
+      },
+      "framing_scopes": 2,
+      "gap_after": null,
+      "label": "committed",
+      "path": "/private/tmp/deadpan-project-pictures-EYNVPYJA/project-metal-fixtures/committed-124.i420",
+      "picture_context": {
+        "canvases": [
+          {
+            "fit": "fit",
+            "height": 180,
+            "layers": [
+              {
+                "center_x": {
+                  "denominator": "5",
+                  "numerator": "3"
+                },
+                "center_y": {
+                  "denominator": "5",
+                  "numerator": "2"
+                },
+                "scale": {
+                  "denominator": "5",
+                  "numerator": "7"
+                }
+              }
+            ],
+            "width": 320
+          }
+        ]
+      },
+      "project_frame": 124,
+      "project_id": "project-picture-qualification",
+      "revision_id": "background",
+      "sha256": "96ac12c8ab52c63bc3c59e5704f78e33f8e18f49c019fc0cd3968063b519fb65",
+      "source": {
+        "asset": "original",
+        "frame": 41,
+        "pts": {
+          "ticks": 41041,
+          "time_base": {
+            "denominator": 30000,
+            "numerator": 1
+          }
+        },
+        "qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6"
+      }
+    },
+    {
+      "byte_count": 86400,
+      "canvas": [
+        320,
+        180
+      ],
+      "frame_rate": {
+        "denominator": 1001,
+        "numerator": 30000
+      },
+      "framing_scopes": 2,
+      "gap_after": null,
+      "label": "committed",
+      "path": "/private/tmp/deadpan-project-pictures-EYNVPYJA/project-metal-fixtures/committed-125.i420",
+      "picture_context": null,
+      "project_frame": 125,
+      "project_id": "project-picture-qualification",
+      "revision_id": "background",
+      "sha256": "77308802cc32b84584f7239a4b3747f790c65ffbd69cf5b4178a2b25f4b73683",
+      "source": null
+    },
+    {
+      "byte_count": 86400,
+      "canvas": [
+        320,
+        180
+      ],
+      "frame_rate": {
+        "denominator": 1001,
+        "numerator": 30000
+      },
+      "framing_scopes": 2,
+      "gap_after": null,
+      "label": "committed",
+      "path": "/private/tmp/deadpan-project-pictures-EYNVPYJA/project-metal-fixtures/committed-127.i420",
+      "picture_context": null,
+      "project_frame": 127,
+      "project_id": "project-picture-qualification",
+      "revision_id": "background",
+      "sha256": "77308802cc32b84584f7239a4b3747f790c65ffbd69cf5b4178a2b25f4b73683",
+      "source": null
+    },
+    {
+      "byte_count": 86400,
+      "canvas": [
+        320,
+        180
+      ],
+      "frame_rate": {
+        "denominator": 1001,
+        "numerator": 30000
+      },
+      "framing_scopes": 4,
+      "gap_after": null,
+      "label": "changed",
+      "path": "/private/tmp/deadpan-project-pictures-EYNVPYJA/project-metal-fixtures/changed-20.i420",
+      "picture_context": null,
+      "project_frame": 20,
+      "project_id": "project-picture-qualification",
+      "revision_id": "live-change",
+      "sha256": "746b8b299e4a5b5f21305c0ef480cf2428692fe1f274fc970f05c19f8e3cdd5b",
+      "source": {
+        "asset": "original",
+        "frame": 41,
+        "pts": {
+          "ticks": 41041,
+          "time_base": {
+            "denominator": 30000,
+            "numerator": 1
+          }
+        },
+        "qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6"
+      }
+    },
+    {
+      "byte_count": 86400,
+      "canvas": [
+        320,
+        180
+      ],
+      "frame_rate": {
+        "denominator": 1001,
+        "numerator": 30000
+      },
+      "framing_scopes": 2,
+      "gap_after": null,
+      "label": "changed",
+      "path": "/private/tmp/deadpan-project-pictures-EYNVPYJA/project-metal-fixtures/changed-122.i420",
+      "picture_context": {
+        "canvases": [
+          {
+            "fit": "fit",
+            "height": 180,
+            "layers": [
+              {
+                "center_x": {
+                  "denominator": "5",
+                  "numerator": "3"
+                },
+                "center_y": {
+                  "denominator": "5",
+                  "numerator": "2"
+                },
+                "scale": {
+                  "denominator": "5",
+                  "numerator": "7"
+                }
+              }
+            ],
+            "width": 320
+          }
+        ]
+      },
+      "project_frame": 122,
+      "project_id": "project-picture-qualification",
+      "revision_id": "live-change",
+      "sha256": "96ac12c8ab52c63bc3c59e5704f78e33f8e18f49c019fc0cd3968063b519fb65",
+      "source": {
+        "asset": "original",
+        "frame": 41,
+        "pts": {
+          "ticks": 41041,
+          "time_base": {
+            "denominator": 30000,
+            "numerator": 1
+          }
+        },
+        "qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6"
+      }
+    },
+    {
+      "byte_count": 86400,
+      "canvas": [
+        320,
+        180
+      ],
+      "frame_rate": {
+        "denominator": 1001,
+        "numerator": 30000
+      },
+      "framing_scopes": 4,
+      "gap_after": null,
+      "label": "after-live-change",
+      "path": "/private/tmp/deadpan-project-pictures-EYNVPYJA/project-metal-fixtures/after-live-change-20.i420",
+      "picture_context": null,
+      "project_frame": 20,
+      "project_id": "project-picture-qualification",
+      "revision_id": "background",
+      "sha256": "96ac12c8ab52c63bc3c59e5704f78e33f8e18f49c019fc0cd3968063b519fb65",
+      "source": {
+        "asset": "original",
+        "frame": 41,
+        "pts": {
+          "ticks": 41041,
+          "time_base": {
+            "denominator": 30000,
+            "numerator": 1
+          }
+        },
+        "qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6"
+      }
+    },
+    {
+      "byte_count": 86400,
+      "canvas": [
+        320,
+        180
+      ],
+      "frame_rate": {
+        "denominator": 1001,
+        "numerator": 30000
+      },
+      "framing_scopes": 4,
+      "gap_after": null,
+      "label": "after-undo",
+      "path": "/private/tmp/deadpan-project-pictures-EYNVPYJA/project-metal-fixtures/after-undo-20.i420",
+      "picture_context": null,
+      "project_frame": 20,
+      "project_id": "project-picture-qualification",
+      "revision_id": "background",
+      "sha256": "96ac12c8ab52c63bc3c59e5704f78e33f8e18f49c019fc0cd3968063b519fb65",
+      "source": {
+        "asset": "original",
+        "frame": 41,
+        "pts": {
+          "ticks": 41041,
+          "time_base": {
+            "denominator": 30000,
+            "numerator": 1
+          }
+        },
+        "qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6"
+      }
+    },
+    {
+      "byte_count": 86400,
+      "canvas": [
+        320,
+        180
+      ],
+      "frame_rate": {
+        "denominator": 1001,
+        "numerator": 30000
+      },
+      "framing_scopes": 4,
+      "gap_after": null,
+      "label": "after-redo",
+      "path": "/private/tmp/deadpan-project-pictures-EYNVPYJA/project-metal-fixtures/after-redo-20.i420",
+      "picture_context": null,
+      "project_frame": 20,
+      "project_id": "project-picture-qualification",
+      "revision_id": "background",
+      "sha256": "96ac12c8ab52c63bc3c59e5704f78e33f8e18f49c019fc0cd3968063b519fb65",
+      "source": {
+        "asset": "original",
+        "frame": 41,
+        "pts": {
+          "ticks": 41041,
+          "time_base": {
+            "denominator": 30000,
+            "numerator": 1
+          }
+        },
+        "qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6"
+      }
+    }
+  ],
+  "limitations": [
+    "synthetic SDR fixture",
+    "no encoded export or audio",
+    "no final-render process isolation",
+    "no Accepted/Still provider",
+    "no HDR, physical display or performance qualification"
+  ],
+  "project": {
+    "committed_revision": "background",
+    "duration": 128,
+    "path": "/private/tmp/deadpan-project-pictures-EYNVPYJA/project-metal-fixtures/picture.deadpan",
+    "range": {
+      "end": 128,
+      "start": 0
+    }
+  },
+  "schema_version": 1,
+  "scope": "committed project picture preparation through actual Metal and owned SDR I420",
+  "source": {
+    "basis": {
+      "color_policy": "sdr_rec709",
+      "frame_rate": {
+        "denominator": 1001,
+        "numerator": 30000
+      },
+      "height": 180,
+      "width": 320
+    },
+    "bytes": 39157,
+    "frames": 120,
+    "frozen_frame": 41,
+    "frozen_pts": {
+      "ticks": 41041,
+      "time_base": {
+        "denominator": 30000,
+        "numerator": 1
+      }
+    },
+    "path": "/Users/michael/Code/deadpan/native/deadpan-source/tests/fixtures/cfr-bframes.mp4",
+    "sha256": [
+      90,
+      130,
+      10,
+      121,
+      191,
+      85,
+      13,
+      72,
+      77,
+      142,
+      203,
+      55,
+      255,
+      221,
+      208,
+      72,
+      208,
+      99,
+      103,
+      148,
+      235,
+      206,
+      93,
+      184,
+      62,
+      79,
+      92,
+      229,
+      245,
+      230,
+      73,
+      24
+    ]
+  },
+  "status": "passed"
+}

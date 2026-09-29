@@ -378,6 +378,46 @@ impl PictureRenderer {
         self.render_framed(frame, target, [target.width(), target.height()], mode, &[])
     }
 
+    /// Render the authored opaque black Background/Blank picture into both
+    /// shared targets. This is a picture submission, not a missing-media
+    /// fallback. Its working pixels are valid for the same encoder readback as
+    /// a source picture, without inventing an original source clock or image.
+    pub fn render_background(
+        &mut self,
+        target: &RenderTarget,
+    ) -> Result<wgpu::SubmissionIndex, RenderError> {
+        if !Arc::ptr_eq(&self.owner, &target.owner) {
+            return Err(RenderError::ForeignTarget);
+        }
+        if !self.is_idle()? {
+            return Err(RenderError::Busy);
+        }
+        let mut encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("Deadpan authored black picture"),
+            });
+        for view in [&target.working_view, &target.display_view] {
+            let _pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                label: Some("Deadpan opaque black picture pass"),
+                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                    view,
+                    depth_slice: None,
+                    resolve_target: None,
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
+                        store: wgpu::StoreOp::Store,
+                    },
+                })],
+                depth_stencil_attachment: None,
+                timestamp_writes: None,
+                occlusion_query_set: None,
+                multiview_mask: None,
+            });
+        }
+        Ok(self.submit(encoder))
+    }
+
     /// Render evaluated provider-to-root framing in the committed canvas space.
     /// Geometry and all limits are checked before any upload or submission.
     pub fn render_framed(
@@ -462,12 +502,16 @@ impl PictureRenderer {
             &display_bindings,
             &target.display_view,
         );
+        Ok(self.submit(encoder))
+    }
+
+    fn submit(&self, encoder: wgpu::CommandEncoder) -> wgpu::SubmissionIndex {
         self.complete.store(false, Ordering::Release);
         let submission = self.queue.submit([encoder.finish()]);
         let complete = Arc::clone(&self.complete);
         self.queue
             .on_submitted_work_done(move || complete.store(true, Ordering::Release));
-        Ok(submission)
+        submission
     }
 
     fn validate_size(&self, width: u32, height: u32) -> Result<(), RenderError> {

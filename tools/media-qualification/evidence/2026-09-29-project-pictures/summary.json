@@ -1,0 +1,243 @@
+{
+  "commands": [
+    {
+      "name": "artifacts",
+      "command": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked",
+        "--no-run",
+        "--message-format=json"
+      ],
+      "started": "2026-09-29T21:34:22.340202+00:00",
+      "base_commit": "2e26e4c21bf1f0da7beac1a65b3d0e1a57ab64bf",
+      "diff_sha256": "ed98ed56dc308f9240fafd5a243dabbde8436d227805570e003f678fab39c132",
+      "source_manifest_sha256": "d2e9fb88b2bdfb90b960272628f77a8610b9f01d7b0fd818969eac6b24749e3d",
+      "pid": 50305,
+      "exit_code": 0,
+      "seconds": 59.413059290964156
+    },
+    {
+      "name": "clippy-corrected",
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "started": "2026-09-29T21:33:39.584114+00:00",
+      "base_commit": "2e26e4c21bf1f0da7beac1a65b3d0e1a57ab64bf",
+      "diff_sha256": "5ce92cc703a496af9dc10832002fa04e67e96d51d007b79e3ba83ae9820832a8",
+      "source_manifest_sha256": "d2e9fb88b2bdfb90b960272628f77a8610b9f01d7b0fd818969eac6b24749e3d",
+      "pid": 49922,
+      "exit_code": 0,
+      "seconds": 8.553274207748473
+    },
+    {
+      "name": "clippy-final",
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "started": "2026-09-29T21:44:49.965090+00:00",
+      "base_commit": "2e26e4c21bf1f0da7beac1a65b3d0e1a57ab64bf",
+      "diff_sha256": "039fe4224cd1c6099a485e9ac7a3c3cce111611a2cf115b78fb1c584c655c6e9",
+      "source_manifest_sha256": "23978286806c9512b420e803f5d2f97a69a3272fbeef531620e77e588c56f151",
+      "pid": 53219,
+      "exit_code": 0,
+      "seconds": 7.849773457739502
+    },
+    {
+      "name": "clippy-initial",
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "started": "2026-09-28T16:21:59.496948+00:00",
+      "base_commit": "2e26e4c21bf1f0da7beac1a65b3d0e1a57ab64bf",
+      "diff_sha256": "09142a0c3db59f7d39aa31a16f511d6679ebf30b1ad03581bc2968a93b17057a",
+      "source_manifest_sha256": "adc3019e612ccf5e46ba2667e98215b2b8b54efab7ea014ea63107554bef646f",
+      "pid": 55218,
+      "exit_code": 101,
+      "seconds": 119.70547087490559
+    },
+    {
+      "name": "feature-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "started": "2026-09-29T21:45:11.838830+00:00",
+      "base_commit": "2e26e4c21bf1f0da7beac1a65b3d0e1a57ab64bf",
+      "diff_sha256": "039fe4224cd1c6099a485e9ac7a3c3cce111611a2cf115b78fb1c584c655c6e9",
+      "source_manifest_sha256": "23978286806c9512b420e803f5d2f97a69a3272fbeef531620e77e588c56f151",
+      "pid": 53273,
+      "exit_code": 0,
+      "seconds": 29.44808916701004
+    },
+    {
+      "name": "feature-tests",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--locked"
+      ],
+      "started": "2026-09-29T21:46:23.116214+00:00",
+      "base_commit": "2e26e4c21bf1f0da7beac1a65b3d0e1a57ab64bf",
+      "diff_sha256": "039fe4224cd1c6099a485e9ac7a3c3cce111611a2cf115b78fb1c584c655c6e9",
+      "source_manifest_sha256": "23978286806c9512b420e803f5d2f97a69a3272fbeef531620e77e588c56f151",
+      "pid": 53348,
+      "exit_code": 0,
+      "seconds": 34.30086395889521
+    },
+    {
+      "name": "fmt-check",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "started": "2026-09-29T21:34:12.382667+00:00",
+      "base_commit": "2e26e4c21bf1f0da7beac1a65b3d0e1a57ab64bf",
+      "diff_sha256": "ed98ed56dc308f9240fafd5a243dabbde8436d227805570e003f678fab39c132",
+      "source_manifest_sha256": "d2e9fb88b2bdfb90b960272628f77a8610b9f01d7b0fd818969eac6b24749e3d",
+      "pid": 50182,
+      "exit_code": 0,
+      "seconds": 1.068524249829352
+    },
+    {
+      "name": "fmt-final",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "started": "2026-09-29T21:47:34.051144+00:00",
+      "base_commit": "2e26e4c21bf1f0da7beac1a65b3d0e1a57ab64bf",
+      "diff_sha256": "039fe4224cd1c6099a485e9ac7a3c3cce111611a2cf115b78fb1c584c655c6e9",
+      "source_manifest_sha256": "23978286806c9512b420e803f5d2f97a69a3272fbeef531620e77e588c56f151",
+      "pid": 53540,
+      "exit_code": 0,
+      "seconds": 1.0662352917715907
+    },
+    {
+      "name": "metal-fixed",
+      "command": [
+        "python3",
+        "/tmp/deadpan-project-pictures-EYNVPYJA/run-metal.py"
+      ],
+      "started": "2026-09-29T21:36:01.904489+00:00",
+      "base_commit": "2e26e4c21bf1f0da7beac1a65b3d0e1a57ab64bf",
+      "diff_sha256": "a4c9c6e53b50379a83e1112ab700739509128c237b24bab4ca24c038d57fc44f",
+      "source_manifest_sha256": "d2e9fb88b2bdfb90b960272628f77a8610b9f01d7b0fd818969eac6b24749e3d",
+      "pid": 50856,
+      "exit_code": 0,
+      "seconds": 1.6952420827001333
+    },
+    {
+      "name": "metal",
+      "command": [
+        "python3",
+        "/tmp/deadpan-project-pictures-EYNVPYJA/run-metal.py"
+      ],
+      "started": "2026-09-29T21:35:46.321379+00:00",
+      "base_commit": "2e26e4c21bf1f0da7beac1a65b3d0e1a57ab64bf",
+      "diff_sha256": "a4c9c6e53b50379a83e1112ab700739509128c237b24bab4ca24c038d57fc44f",
+      "source_manifest_sha256": "d2e9fb88b2bdfb90b960272628f77a8610b9f01d7b0fd818969eac6b24749e3d",
+      "pid": 50793,
+      "exit_code": 1,
+      "seconds": 0.15892816707491875
+    },
+    {
+      "name": "picture-corrected",
+      "command": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked",
+        "picture::tests"
+      ],
+      "started": "2026-09-29T21:43:18.614555+00:00",
+      "base_commit": "2e26e4c21bf1f0da7beac1a65b3d0e1a57ab64bf",
+      "diff_sha256": "039fe4224cd1c6099a485e9ac7a3c3cce111611a2cf115b78fb1c584c655c6e9",
+      "source_manifest_sha256": "618d5d20c8efe8a9f29c6a69e4d1cdb9e02582b38c58b7912700304129966465",
+      "pid": 52810,
+      "exit_code": 101,
+      "seconds": 8.54903120920062
+    },
+    {
+      "name": "picture-final",
+      "command": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked",
+        "picture::tests"
+      ],
+      "started": "2026-09-29T21:44:04.224241+00:00",
+      "base_commit": "2e26e4c21bf1f0da7beac1a65b3d0e1a57ab64bf",
+      "diff_sha256": "039fe4224cd1c6099a485e9ac7a3c3cce111611a2cf115b78fb1c584c655c6e9",
+      "source_manifest_sha256": "23978286806c9512b420e803f5d2f97a69a3272fbeef531620e77e588c56f151",
+      "pid": 53026,
+      "exit_code": 0,
+      "seconds": 8.915796792134643
+    },
+    {
+      "name": "workspace",
+      "command": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked",
+        "--no-fail-fast"
+      ],
+      "started": "2026-09-29T21:36:45.392438+00:00",
+      "base_commit": "2e26e4c21bf1f0da7beac1a65b3d0e1a57ab64bf",
+      "diff_sha256": "e82d53583988979a4532798adf3e2f079ec29d76c4f69db0beb37c8f30c59d00",
+      "source_manifest_sha256": "d2e9fb88b2bdfb90b960272628f77a8610b9f01d7b0fd818969eac6b24749e3d",
+      "pid": 50988,
+      "exit_code": 101,
+      "seconds": 346.07080291584134
+    }
+  ],
+  "metal": {
+    "status": "passed",
+    "checks": 31,
+    "frames": 18,
+    "elapsed_seconds": 1.528740416
+  }
+}

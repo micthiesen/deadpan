@@ -1148,7 +1148,8 @@ Video:            H.264 High, progressive, 4:2:0, square pixels
 Color:            Rec.709 with correct range/transfer/matrix signaling
 Frame timing:     constant project frame rate, rational timestamps
 Audio:            AAC-LC, 48 kHz, stereo, 384 kbit/s target
-Muxing:           no edit lists; explicitly validated stream start/sync
+Muxing:           explicitly validated stream start and sync; edit lists permitted
+                  for encoder delay, padding, and frame reordering
 ```
 
 Target two consecutive B-frames and a closed GOP around half the frame rate when the selected encoder supports those controls. These are automatic engineering settings, not user controls. Validate the actual bitstream and decoded result; do not claim the OS encoder obeys every requested property merely because a setter accepted it. YouTube documents these recommendations. [S22]

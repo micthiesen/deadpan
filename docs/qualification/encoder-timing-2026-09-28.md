@@ -114,8 +114,11 @@ The subsequent [AVFoundation comparison](native-audio-2026-09-28.md) reads the
 same files with retained raw/output timestamps and trim attachments. It finds
 a different no-edit-list failure: missing opening events and later events
 1,088 samples early. The default-edit-list reference aligns in both readers.
-That later evidence does not replace this original FFmpeg result or approve
-a specification change.
+That later evidence does not replace this original FFmpeg result. On 2026-09-28
+the user separately approved permitting edit lists for verified encoder delay,
+padding and frame reordering; the [decision record](native-audio-2026-09-28.md#export-policy-decision-and-remaining-scope)
+preserves emitted-file timing verification. The approval does not turn the
+failed no-edit-list files into passing results.
 
 Fresh-decoder closed GOPs, full boundary-content and acoustic quality, the shared
 renderer-to-Rec.709 encoder transform, immutable project rendering, final-file

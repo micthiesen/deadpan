@@ -875,18 +875,8 @@ impl DeadpanApp {
 }
 
 pub(super) fn render_layers(picture: &crate::worker::Picture) -> Result<Vec<FramingLayer>, String> {
-    let mut layers = Vec::with_capacity(picture.framing.len() + usize::from(picture.framing_gap));
-    if picture.framing_gap {
-        layers.push(FramingLayer::identity());
-    }
-    for layer in &picture.framing {
-        layers.push(match &layer.pose {
-            Some(pose) => FramingLayer::new([pose.center_x, pose.center_y], pose.scale)
-                .map_err(|error| error.to_string())?,
-            None => FramingLayer::identity(),
-        });
-    }
-    Ok(layers)
+    deadpan_cli::picture::render_layers(&picture.framing, picture.framing_gap)
+        .map_err(|error| error.to_string())
 }
 
 #[cfg(test)]
