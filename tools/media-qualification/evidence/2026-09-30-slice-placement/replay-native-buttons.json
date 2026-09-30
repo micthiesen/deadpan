@@ -1,0 +1,19 @@
+{
+  "command": [
+    "target/debug/deadpan-app",
+    "--ui-check",
+    "--scenario",
+    "place-slice",
+    "--kestrel-source",
+    "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+    "--output",
+    "/tmp/deadpan-slice-placement-20260930/replay-native-buttons"
+  ],
+  "started": "2026-09-30T18:50:36.144110+00:00",
+  "base_commit": "20b0e6a01bafda0a95fd050c9efc4d85a52974e3",
+  "diff_sha256": "1cb467c718ed8756bc63f612e9980353ad5c95f77b39bf9f477fe650805e1553",
+  "source_manifest_sha256": "55f23ea6375b38653411bf759ee9a37e5d0ca5204e76ff7b941e8f3b75ce038e",
+  "pid": 64268,
+  "exit_code": 1,
+  "seconds": 28.18429429223761
+}

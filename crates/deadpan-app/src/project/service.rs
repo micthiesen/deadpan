@@ -34,6 +34,7 @@ mod moment;
 mod render;
 mod render_history;
 mod room_tone;
+mod splice;
 
 struct Pending {
     id: u64,
@@ -43,6 +44,7 @@ struct Pending {
     insertion: Option<SourceRegistration>,
     initialization: Option<SingleSourceInitialization>,
     moment: Option<moment::PendingMoment>,
+    splice: Option<super::splice::ProposalId>,
     scope: SequenceScope,
 }
 
@@ -57,8 +59,13 @@ struct Service {
     room_tone: Option<PreparedRoomTone>,
     room_tone_error: Option<RoomToneFailure>,
     gain: Option<super::gain::ProposalUpdate>,
+    splice: Option<super::splice::ProposalUpdate>,
+    splice_commit: Option<super::splice::SpliceCommitUpdate>,
+    splice_draft: Option<splice::Draft>,
+    splice_seen: Option<super::splice::ProposalId>,
     active: Option<Pending>,
-    // Exactly one complete-file token, never one per catalog asset.
+    // One reusable catalog token. A live slice draft can additionally retain
+    // its exact prepared Original, never a token for every catalog asset.
     cached: Option<(AssetId, PreparedSourceRegistration)>,
     session: u64,
     serial: u64,
@@ -94,6 +101,10 @@ pub(super) fn run(
         room_tone: None,
         room_tone_error: None,
         gain: None,
+        splice: None,
+        splice_commit: None,
+        splice_draft: None,
+        splice_seen: None,
         active: None,
         cached: None,
         session: 0,
@@ -143,6 +154,7 @@ pub(super) fn run(
                 if service.dispatch_request(request) {
                     service.shared.busy.store(false, Ordering::Release);
                 }
+                service.invalidate_changed_splice();
                 service.publish();
             }
             Err(RecvTimeoutError::Disconnected) => {
@@ -157,6 +169,7 @@ pub(super) fn run(
         match results.try_recv() {
             Ok(reply) => {
                 service.result(reply);
+                service.invalidate_changed_splice();
                 service.publish();
             }
             Err(TryRecvError::Disconnected)
@@ -164,11 +177,13 @@ pub(super) fn run(
             {
                 service.host_preparation_disconnected();
                 if let Some(active) = service.active.take() {
+                    service.splice_worker_disconnected(&active);
                     active.cancelled.store(true, Ordering::Release);
                     if service
                         .workspace
                         .as_ref()
                         .is_some_and(|workspace| workspace.session == active.session)
+                        && active.splice.is_none()
                         && let Some(status) = &mut service.import
                         && status.stage != ImportStage::Cancelled
                     {
@@ -217,6 +232,8 @@ impl Service {
                 .cloned(),
             room_tone_error: self.room_tone_error.clone(),
             gain: self.gain.clone(),
+            splice: self.splice.clone(),
+            splice_commit: self.splice_commit.clone(),
             render: self.render_update.clone(),
             render_history: self.render_history.clone(),
         };
@@ -229,6 +246,18 @@ impl Service {
     }
 
     fn command(&mut self, request: ProjectRequest) -> Result<()> {
+        let request = match request {
+            ProjectRequest::PrepareSplice(proposal) => {
+                self.prepare_splice_command(proposal);
+                return Ok(());
+            }
+            ProjectRequest::CommitSplice(id) => return self.commit_splice_command(id),
+            ProjectRequest::AbandonSplice(id) => {
+                self.abandon_splice(&id);
+                return Ok(());
+            }
+            request => request,
+        };
         if let ProjectRequest::RenderHistory(request) = request {
             self.render_history_command(request);
             return Ok(());
@@ -307,6 +336,9 @@ impl Service {
                 index,
             ),
             ProjectRequest::PasteMoment(request) => self.paste_moment(request),
+            ProjectRequest::PrepareSplice(_)
+            | ProjectRequest::CommitSplice(_)
+            | ProjectRequest::AbandonSplice(_) => unreachable!("splice uses independent feedback"),
             ProjectRequest::PrepareGain(proposal) => {
                 let result = self.prepare_gain(&proposal);
                 self.gain = Some(super::gain::ProposalUpdate {
@@ -935,14 +967,17 @@ impl Service {
             current.path.clone(),
             Some(current),
         )?));
+        self.invalidate_changed_splice();
         Ok(())
     }
 
     fn cancel(&mut self) {
+        self.invalidate_splice("Slice proposal was cancelled");
         self.cancel_host_preparation();
         if let Some(active) = &self.active {
             active.cancelled.store(true, Ordering::Release);
             if active.session == self.session
+                && active.splice.is_none()
                 && let Some(status) = &mut self.import
             {
                 status.stage = ImportStage::Cancelled;
@@ -995,6 +1030,7 @@ impl Service {
             insertion,
             initialization,
             moment: None,
+            splice: None,
             scope,
         });
         self.serial = id;
@@ -1166,6 +1202,10 @@ impl Service {
         };
         if reply.id != active.id {
             self.active = Some(active);
+            return;
+        }
+        if active.splice.is_some() {
+            self.splice_result(active, reply);
             return;
         }
         if active.cancelled.load(Ordering::Acquire)

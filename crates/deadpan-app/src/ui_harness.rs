@@ -22,6 +22,7 @@ pub(crate) const SCENARIOS: &[&str] = &[
     "edit-latency",
     "nested-pause",
     "original-moment",
+    "place-slice",
     "original-playback",
     "sound-playback",
     "sound-placement",

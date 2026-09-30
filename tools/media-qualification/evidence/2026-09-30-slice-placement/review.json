@@ -1,0 +1,25 @@
+{
+  "scope": "Visual slice placement changes, including untracked implementation and tests",
+  "independent_reviewer": "/root/automatic_workflow_review",
+  "confirmed": [
+    {
+      "severity": "minor",
+      "problem": "Opening Place through its visible button during advancing playback at an interior destination could revoke the pending frame without requesting the captured saved destination.",
+      "resolution": "open_splice explicitly requests the destination picture; production replay withholds the advancing playback decode, opens Place, delivers the stale reply and checks saved-frame GPU presentation without a seam proposal."
+    }
+  ],
+  "dismissed": [
+    {
+      "hypothesis": "Dynamic Audition/Pause labels change native button IDs and lose focus.",
+      "evidence": "Pinned egui uses next_auto_id for these buttons. Production widget Enter/Space audition, pause, resume and pause checks pass with simulated delivery. Native starvation remains independently recorded."
+    }
+  ],
+  "additional_corrections": [
+    "Cancel the last issued proposal when a later local refinement was never submitted.",
+    "Use the exact service-admitted base Arc for Before and proposed-picture authority.",
+    "Keep endpoint picture layout vertical and dynamic at the minimum window size.",
+    "Keep proposed playback in local cursor/sample state and preserve loop mode on pause/resume.",
+    "Use the actual Sequence group label and bound its footer width."
+  ],
+  "remaining": "Full specification scope and broad performance/media/release qualification remain open. Native debug Starved is investigated separately from keyboard routing."
+}

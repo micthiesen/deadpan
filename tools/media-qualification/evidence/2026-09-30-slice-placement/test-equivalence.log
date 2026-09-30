@@ -1,0 +1,24 @@
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+warning: linker stderr: ld: __eh_frame section too large (max 16MB) to encode dwarf unwind offsets in compact unwind table, performance of exception handling might be affected
+  |
+  = note: `#[warn(linker_messages)]` on by default
+
+warning: `deadpan-app` (bin "deadpan-app") generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 15.13s
+     Running unittests src/main.rs (target/debug/deps/deadpan_app-ee1862e87f36dd24)
+
+running 1 test
+
+thread 'project::tests::splice::equivalence::service_proposal_and_commit_match_decoded_pictures_and_canonical_pcm_at_both_joins' (58318771) panicked at crates/deadpan-app/src/project/tests/splice_equivalence.rs:206:13:
+each side of each join contains decoded fixture audio
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test project::tests::splice::equivalence::service_proposal_and_commit_match_decoded_pictures_and_canonical_pcm_at_both_joins ... FAILED
+
+failures:
+
+failures:
+    project::tests::splice::equivalence::service_proposal_and_commit_match_decoded_pictures_and_canonical_pcm_at_both_joins
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 354 filtered out; finished in 0.39s
+
+error: test failed, to rerun pass `-p deadpan-app --bin deadpan-app`

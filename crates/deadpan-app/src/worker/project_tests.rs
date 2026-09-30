@@ -17,6 +17,9 @@ use deadpan_store::source_registration::{
 
 use super::*;
 
+#[path = "proposed_tests.rs"]
+mod proposed_tests;
+
 #[test]
 fn generated_decoder_identity_preserves_edits_but_rechecks_media_interpretation() {
     use deadpan_core::{
@@ -146,7 +149,7 @@ fn index_validation_observes_cancellation_between_bounded_chunks() {
     assert!(!same_index_mapping(&left, &make(true), || false).unwrap());
 }
 
-struct Fixture {
+pub(super) struct Fixture {
     scratch: tempfile::TempDir,
     store: ProjectStore,
 }
@@ -165,7 +168,7 @@ impl Fixture {
         Self { scratch, store }
     }
 
-    fn source(name: &str) -> Self {
+    pub(super) fn source(name: &str) -> Self {
         let mut fixture = Self::empty();
         let cancelled = AtomicBool::new(false);
         let limits = OriginalMediaLimits::default();
@@ -235,7 +238,7 @@ impl Fixture {
         fixture
     }
 
-    fn workspace(&self, session: u64) -> Arc<Workspace> {
+    pub(super) fn workspace(&self, session: u64) -> Arc<Workspace> {
         let document = Arc::new(self.store.snapshot().unwrap());
         let sources = document
             .assets()
@@ -577,7 +580,7 @@ fn sequence_samples_exact_mapping_and_endpoint_policy_after_a_revision_change() 
     let mut fixture = Fixture::source("cfr-bframes.mp4");
     let before = fixture.workspace(1);
     let mut retained = None;
-    let original = perform(&request(&before, sequence(20), 1), &mut retained).unwrap();
+    let original = perform(&request(&before, sequence(20), 1), &mut retained, &mut None).unwrap();
     assert_eq!(original.id, SourceFrameId(20));
     fixture
         .store
@@ -595,10 +598,10 @@ fn sequence_samples_exact_mapping_and_endpoint_policy_after_a_revision_change() 
         })
         .unwrap();
     let after = fixture.workspace(1);
-    let faster = perform(&request(&after, sequence(20), 2), &mut retained).unwrap();
+    let faster = perform(&request(&after, sequence(20), 2), &mut retained, &mut None).unwrap();
     assert_eq!(faster.id, SourceFrameId(41));
     assert_eq!(faster.frame.unwrap().metadata().pts.ticks, 41 * 1001);
-    let endpoint = perform(&request(&after, sequence(119), 3), &mut retained).unwrap();
+    let endpoint = perform(&request(&after, sequence(119), 3), &mut retained, &mut None).unwrap();
     assert_eq!(endpoint.id, SourceFrameId(119));
 }
 
@@ -658,7 +661,12 @@ fn frozen_context_reaches_sequence_preview_without_leaking_into_original_view() 
     let workspace = fixture.workspace(1);
     let sample = workspace.plan.picture(ProjectFrame(121)).unwrap();
     let mut retained = None;
-    let frozen = perform(&request(&workspace, sequence(121), 1), &mut retained).unwrap();
+    let frozen = perform(
+        &request(&workspace, sequence(121), 1),
+        &mut retained,
+        &mut None,
+    )
+    .unwrap();
     assert_eq!(frozen.id, SourceFrameId(20));
     assert_eq!(frozen.picture_context.as_deref(), Some(&context));
     assert!(Arc::ptr_eq(
@@ -669,13 +677,28 @@ fn frozen_context_reaches_sequence_preview_without_leaking_into_original_view() 
         frozen.frame.as_ref().unwrap().metadata().pts.ticks,
         20 * 1001
     );
-    let original = perform(&request(&workspace, source(20), 2), &mut retained).unwrap();
+    let original = perform(
+        &request(&workspace, source(20), 2),
+        &mut retained,
+        &mut None,
+    )
+    .unwrap();
     assert_eq!(original.id, frozen.id);
     assert!(original.picture_context.is_none());
     assert!(original.framing.is_empty());
-    let ordinary = perform(&request(&workspace, sequence(20), 3), &mut retained).unwrap();
+    let ordinary = perform(
+        &request(&workspace, sequence(20), 3),
+        &mut retained,
+        &mut None,
+    )
+    .unwrap();
     assert!(ordinary.picture_context.is_none());
-    let frozen_again = perform(&request(&workspace, sequence(122), 4), &mut retained).unwrap();
+    let frozen_again = perform(
+        &request(&workspace, sequence(122), 4),
+        &mut retained,
+        &mut None,
+    )
+    .unwrap();
     assert!(Arc::ptr_eq(
         frozen.picture_context.as_ref().unwrap(),
         frozen_again.picture_context.as_ref().unwrap()
@@ -705,29 +728,69 @@ fn freeze_background_and_empty_sequence_follow_the_plan() {
     fixture.append_hold("background", 2, HoldVideo::Background);
     let workspace = fixture.workspace(1);
     let mut retained = None;
-    let frozen = perform(&request(&workspace, sequence(121), 1), &mut retained).unwrap();
+    let frozen = perform(
+        &request(&workspace, sequence(121), 1),
+        &mut retained,
+        &mut None,
+    )
+    .unwrap();
     assert_eq!(frozen.id, SourceFrameId(20));
     assert_eq!(
         frozen.frame.as_ref().unwrap().metadata().pts.ticks,
         20 * 1001
     );
-    let background = perform(&request(&workspace, sequence(123), 2), &mut retained).unwrap();
+    let background = perform(
+        &request(&workspace, sequence(123), 2),
+        &mut retained,
+        &mut None,
+    )
+    .unwrap();
     assert!(background.frame.is_none());
     assert_eq!(background.canvas, Some((320, 180)));
-    assert!(perform(&request(&workspace, sequence(126), 3), &mut retained).is_err());
-    assert!(perform(&request(&workspace, source(120), 4), &mut retained).is_err());
+    assert!(
+        perform(
+            &request(&workspace, sequence(126), 3),
+            &mut retained,
+            &mut None
+        )
+        .is_err()
+    );
+    assert!(
+        perform(
+            &request(&workspace, source(120), 4),
+            &mut retained,
+            &mut None
+        )
+        .is_err()
+    );
     assert_eq!(
-        perform(&request(&workspace, source(20), 5), &mut retained)
-            .unwrap()
-            .id,
+        perform(
+            &request(&workspace, source(20), 5),
+            &mut retained,
+            &mut None
+        )
+        .unwrap()
+        .id,
         SourceFrameId(20)
     );
     let empty = Fixture::empty();
     let workspace = empty.workspace(2);
-    let blank = perform(&request(&workspace, sequence(0), 4), &mut retained).unwrap();
+    let blank = perform(
+        &request(&workspace, sequence(0), 4),
+        &mut retained,
+        &mut None,
+    )
+    .unwrap();
     assert!(blank.frame.is_none());
     assert_eq!(blank.canvas, Some((1920, 1080)));
-    assert!(perform(&request(&workspace, sequence(-1), 5), &mut retained).is_err());
+    assert!(
+        perform(
+            &request(&workspace, sequence(-1), 5),
+            &mut retained,
+            &mut None
+        )
+        .is_err()
+    );
 }
 
 #[test]
@@ -741,7 +804,7 @@ fn cancelled_open_does_not_leave_a_later_project_request_without_a_source() {
     let replacement = request(&workspace, sequence(37), 2);
     mailbox.submit(replacement.ticket, replacement.work);
     let mut retained = None;
-    let result = perform(&first, &mut retained);
+    let result = perform(&first, &mut retained, &mut None);
     assert!(result.is_err());
     assert!(!mailbox.publish(Reply {
         ticket: first.ticket,
@@ -750,7 +813,7 @@ fn cancelled_open_does_not_leave_a_later_project_request_without_a_source() {
         timing: None,
     }));
     let latest = mailbox.start_next().unwrap();
-    let picture = perform(&latest, &mut retained).unwrap();
+    let picture = perform(&latest, &mut retained, &mut None).unwrap();
     assert_eq!(picture.id, SourceFrameId(37));
     assert_eq!(picture.frame.unwrap().metadata().pts.ticks, 37 * 1001);
 }
@@ -765,7 +828,7 @@ fn revision_receipt_index_and_session_identity_are_checked() {
     current_mut.plan = old.plan.clone();
     let mut retained = None;
     assert!(
-        perform(&request(&current, sequence(0), 1), &mut retained)
+        perform(&request(&current, sequence(0), 1), &mut retained, &mut None)
             .err()
             .unwrap()
             .contains("another project revision")
@@ -776,10 +839,14 @@ fn revision_receipt_index_and_session_identity_are_checked() {
     let mut inconsistent = fixture.workspace(1);
     Arc::get_mut(&mut inconsistent).unwrap().sources = other.sources.clone();
     assert!(
-        perform(&request(&inconsistent, source(0), 2), &mut retained)
-            .err()
-            .unwrap()
-            .contains("selected project revision")
+        perform(
+            &request(&inconsistent, source(0), 2),
+            &mut retained,
+            &mut None
+        )
+        .err()
+        .unwrap()
+        .contains("selected project revision")
     );
 
     let mut inconsistent = fixture.workspace(1);
@@ -793,21 +860,32 @@ fn revision_receipt_index_and_session_identity_are_checked() {
     .unwrap();
     registered.video_index = other.sources[&asset()].video_index.clone();
     assert!(
-        perform(&request(&inconsistent, source(0), 3), &mut retained)
-            .err()
-            .unwrap()
-            .contains("immutable receipt")
+        perform(
+            &request(&inconsistent, source(0), 3),
+            &mut retained,
+            &mut None
+        )
+        .err()
+        .unwrap()
+        .contains("immutable receipt")
     );
 
-    let first = perform(&request(&old, source(0), 4), &mut retained).unwrap();
-    let replacement = perform(&request(&other, source(0), 5), &mut retained).unwrap();
+    let first = perform(&request(&old, source(0), 4), &mut retained, &mut None).unwrap();
+    let replacement = perform(&request(&other, source(0), 5), &mut retained, &mut None).unwrap();
     assert_ne!(
         first.frame.unwrap().metadata().pts.ticks,
         replacement.frame.unwrap().metadata().pts.ticks
     );
     let new_session = other_fixture.workspace(2);
     drop(other_fixture.store);
-    assert!(perform(&request(&new_session, source(0), 6), &mut retained).is_err());
+    assert!(
+        perform(
+            &request(&new_session, source(0), 6),
+            &mut retained,
+            &mut None
+        )
+        .is_err()
+    );
     // Reopening was attempted despite identical alias and receipt. The old
     // private decoder cannot cross a project-service session boundary.
     assert!(retained.is_none());

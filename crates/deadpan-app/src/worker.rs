@@ -12,6 +12,7 @@ use deadpan_core::SourceTimestamp;
 use deadpan_core::{AssetId, ProjectFrame, SourceFrameId, SourceFrameIndex, SourceQualificationId};
 use deadpan_media::source_index::SourceContentIdentity;
 use deadpan_media::source_session::{SourceSession, SourceSessionLimits};
+use deadpan_plan::RenderPlan;
 use deadpan_render::Rgba8Frame;
 #[cfg(test)]
 use deadpan_render::{Primaries, Transfer};
@@ -24,6 +25,10 @@ use crate::project::{RegisteredSource, Workspace};
 
 const HASH_TIMEOUT: Duration = Duration::from_secs(300);
 const FRAME_TIMEOUT: Duration = Duration::from_secs(15);
+
+mod endpoints;
+mod proposed;
+pub use endpoints::{EndpointIdentity, EndpointPictures, EndpointReply, EndpointWorker};
 
 #[cfg(test)]
 mod project_tests;
@@ -40,6 +45,13 @@ pub enum Work {
     Frame(SourceFrameId),
     Project {
         workspace: Arc<Workspace>,
+        view: ProjectView,
+    },
+    /// Media authority belongs to the captured committed workspace. The worker
+    /// compiles the genuine proposal itself; a caller cannot supply another plan.
+    Proposed {
+        base: Arc<Workspace>,
+        snapshot: Arc<deadpan_playback::Snapshot>,
         view: ProjectView,
     },
 }
@@ -251,6 +263,7 @@ impl Drop for PreviewWorker {
 
 fn run(shared: Arc<Shared>, context: egui::Context) {
     let mut session = None;
+    let mut proposal = None;
     loop {
         let request = {
             let mut mailbox = shared.mailbox.lock().expect("preview mailbox");
@@ -271,11 +284,12 @@ fn run(shared: Arc<Shared>, context: egui::Context) {
             // Native teardown and private snapshot deletion stay off the UI and
             // outside the mailbox lock used for submitting the next request.
             session = None;
+            proposal = None;
             continue;
         };
         #[cfg(feature = "ui-harness")]
         let started = Instant::now();
-        let picture = perform(&request, &mut session);
+        let picture = perform(&request, &mut session, &mut proposal);
         #[cfg(feature = "ui-harness")]
         let timing = Some(WorkerTiming {
             started,
@@ -349,13 +363,41 @@ struct RetainedSession {
     catalog: Option<Arc<RegisteredSource>>,
 }
 
-fn perform(request: &Request, retained: &mut Option<RetainedSession>) -> Result<Picture, String> {
+fn perform(
+    request: &Request,
+    retained: &mut Option<RetainedSession>,
+    proposal: &mut Option<proposed::ProposedPlan>,
+) -> Result<Picture, String> {
     if let Work::Project { workspace, view } = &request.work {
-        return project_picture(workspace, view, &request.cancelled, retained);
+        return project_picture(
+            workspace,
+            &workspace.document,
+            &workspace.plan,
+            view,
+            &request.cancelled,
+            retained,
+        );
+    }
+    if let Work::Proposed {
+        base,
+        snapshot,
+        view,
+    } = &request.work
+    {
+        let plan = proposed::admit(base, snapshot, proposal, &request.cancelled)?;
+        return project_picture(
+            base,
+            &snapshot.document,
+            plan,
+            view,
+            &request.cancelled,
+            retained,
+        );
     }
     let (summary, id) = match &request.work {
         Work::Open(path) => {
             *retained = None;
+            *proposal = None;
             let source = open_source(path, &request.cancelled)?;
             check_picture_limits(&source)?;
             let summary = source_summary(&source);
@@ -367,7 +409,9 @@ fn perform(request: &Request, retained: &mut Option<RetainedSession>) -> Result<
             (Some(summary), SourceFrameId(0))
         }
         Work::Frame(id) => (None, *id),
-        Work::Project { .. } => unreachable!("project requests handled above"),
+        Work::Project { .. } | Work::Proposed { .. } => {
+            unreachable!("project requests handled above")
+        }
     };
     let session = retained
         .as_mut()
@@ -390,6 +434,8 @@ fn perform(request: &Request, retained: &mut Option<RetainedSession>) -> Result<
 
 fn project_picture(
     workspace: &Workspace,
+    document: &deadpan_core::ProjectDocument,
+    plan: &RenderPlan,
     view: &ProjectView,
     cancelled: &AtomicBool,
     retained: &mut Option<RetainedSession>,
@@ -397,23 +443,20 @@ fn project_picture(
     if cancelled.load(Ordering::Acquire) {
         return Err("Project preview was cancelled.".into());
     }
-    if workspace.plan.metadata().project_id != *workspace.document.project_id()
-        || workspace.plan.metadata().revision_id != *workspace.document.revision_id()
+    if plan.metadata().project_id != *document.project_id()
+        || plan.metadata().revision_id != *document.revision_id()
     {
         return Err("The picture plan belongs to another project revision.".into());
     }
     let (asset, frame, canvas) = match view {
         ProjectView::Source { asset, frame } => (asset, *frame, None),
         ProjectView::Sequence { frame } => {
-            let basis = workspace.document.presentation_basis();
+            let basis = document.presentation_basis();
             let canvas = Some((basis.width, basis.height));
-            if workspace.plan.duration().frames() == 0 && frame.0 == 0 {
+            if plan.duration().frames() == 0 && frame.0 == 0 {
                 return Ok(background_picture(canvas));
             }
-            let sample = workspace
-                .plan
-                .picture(*frame)
-                .map_err(|error| error.to_string())?;
+            let sample = plan.picture(*frame).map_err(|error| error.to_string())?;
             let asset = match &sample.picture {
                 deadpan_plan::Picture::Source { asset, .. }
                 | deadpan_plan::Picture::Freeze { asset, .. } => asset,
@@ -435,6 +478,7 @@ fn project_picture(
                     }
                     let mut picture = generated_picture(
                         workspace,
+                        document,
                         &sample.picture,
                         artifact,
                         canvas,
@@ -490,6 +534,7 @@ fn background_picture(canvas: Option<(u32, u32)>) -> Picture {
 
 fn generated_picture(
     workspace: &Workspace,
+    document: &deadpan_core::ProjectDocument,
     picture: &deadpan_plan::Picture,
     artifact: &Arc<deadpan_core::GeneratedArtifact>,
     canvas: Option<(u32, u32)>,
@@ -502,13 +547,13 @@ fn generated_picture(
         .map_err(|error| error.to_string())?;
     let key = SessionKey::Generated {
         session: workspace.session,
-        media: Arc::new(GeneratedMediaKey::new(&workspace.document, artifact)?),
+        media: Arc::new(GeneratedMediaKey::new(document, artifact)?),
     };
     if retained.as_ref().is_none_or(|session| session.key != key) {
         *retained = None;
         let source = deadpan_cli::picture::open_generated_picture(
             &workspace.generated,
-            &workspace.document,
+            document,
             artifact,
             cancelled,
         )

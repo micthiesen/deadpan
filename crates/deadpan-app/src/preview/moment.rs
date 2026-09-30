@@ -8,14 +8,14 @@ use super::*;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(super) struct Identity {
-    session: u64,
-    asset: AssetId,
-    qualification: SourceQualificationId,
+    pub(super) session: u64,
+    pub(super) asset: AssetId,
+    pub(super) qualification: SourceQualificationId,
 }
 
 #[derive(Clone, Debug)]
 pub(super) struct Copied {
-    identity: Identity,
+    pub(super) identity: Identity,
     pub ordinals: Range<u64>,
 }
 
@@ -189,7 +189,7 @@ impl DeadpanApp {
         match self.moment.copy() {
             Ok(()) => {
                 self.error = None;
-                self.message = Some("Moment copied. Return to Your edit (:sequence), then p after or P before a beat.".into());
+                self.message = Some("Moment copied. Return to Your edit (:sequence): :splice previews placement; p/P pastes beside a beat.".into());
             }
             Err(error) => self.error = Some(error),
         }
@@ -309,6 +309,15 @@ impl DeadpanApp {
             );
             ui.horizontal_wrapped(|ui| {
                 ui.colored_label(style::LAVENDER, label);
+                if ui
+                    .add_enabled(
+                        !self.service.is_busy(),
+                        egui::Button::new("Place slice…  :splice"),
+                    )
+                    .clicked()
+                {
+                    self.open_splice(ui.ctx());
+                }
                 if ui
                     .add_enabled(!self.service.is_busy(), egui::Button::new("Paste after  p"))
                     .clicked()

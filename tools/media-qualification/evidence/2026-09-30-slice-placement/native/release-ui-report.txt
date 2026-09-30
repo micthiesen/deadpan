@@ -1,0 +1,20 @@
+Deadpan Slice Release QA native retest
+Date: 2026-09-30
+App: /tmp/deadpan-slice-placement-20260930/Deadpan Slice Release QA.app (dev.thiesen.deadpan.slice-release-qa)
+Project: /tmp/deadpan-slice-placement-20260930/replay-2/projects/place-slice/Documents/Deadpan/cfr-bframes.deadpan
+
+Result: bounded native flow passed for picture playback, looping, keyboard pause/resume, and focused-button activation in the release build. No acoustic claim.
+
+Actions and observations
+- Opened only the specified release QA app and disposable project through the native Open Project sheet. Copied the Original interval with `:source`, `gg`, `10l`, `v`, `14l`, `y`; AX showed `Copied [10..24)`, 14 frames, Original boundary 24/120.
+- Returned with `:sequence`, `gg`; opened `:splice`. The native preview was UNSAVED · Insert · Linked picture + sound, initial Edit boundary 0, slot 1 of 2, +14 project frames, source thumbnails Original frames 11 and 24, proposed Edit picture frame 1. Initial AX focus was `Place slice keyboard controls` (164); no Tab before the loop test.
+- From that heading focus, Shift+Space started the join-loop audition. AX showed Pause · Space and picture advanced to proposed frame 4. The initial keypress also updated Destination Edit 0 to off and Inspect picture to on. After 2.5 seconds picture was frame 18; after another 2.5 seconds it had wrapped to frame 1. Sustained advancement and loop wrap were visible.
+- Space paused: AX button changed from Pause · Space to Audition · Space. One in-flight picture update advanced to frame 29; after a separate 1.2-second observation AX had no change and the picture remained at 29.
+- Space resumed: AX returned to Pause · Space and picture advanced/wrapped to frame 1. A second Space changed the button back to Audition · Space; one in-flight picture update advanced to frame 22, then a separate 1.2-second observation showed no tree change and picture held.
+- Focused-button check: Tab x10 moved focus to Audition · Space. Space activated it, changing the label to Pause · Space; another Space changed it back to Audition · Space.
+- No Starved or other error appeared during this release retest. We did not listen for or claim sound output.
+- Escape canceled the provisional splice and returned to Your edit at boundary 0/120. Project remained Saved, with 1 beat · 120f. No placement or authored edit was committed.
+- Cmd+Q quit only Slice Release QA. Inventory after 2.5 seconds no longer listed `dev.thiesen.deadpan.slice-release-qa`; the existing `dev.thiesen.deadpan.cursor-qa` remained running and untouched.
+
+Evidence limits
+- Native CUA exposes screenshots inline and has no local screenshot-save API. The first splice state was observed in AX; playback/frame/label observations were returned in AX. Parent owns the before/after SQLite comparison.

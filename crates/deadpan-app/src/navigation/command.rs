@@ -11,6 +11,7 @@ pub enum Entry {
     Sequence,
     Help,
     Renders,
+    Splice,
     RoomTone,
     HoldSilence,
     Gain(Option<deadpan_core::GainDb>),
@@ -114,19 +115,20 @@ pub fn parse(input: &str) -> Result<Entry, String> {
         "open" => Action::Open,
         "import" => Action::Import,
         "render" => Action::Render,
-        "source" | "sequence" | "help" | "renders" | "room-tone" | "hold-silence"
+        "source" | "sequence" | "help" | "renders" | "splice" | "room-tone" | "hold-silence"
             if argument.is_none() =>
         {
             return Ok(match verb.as_str() {
                 "source" => Entry::Source,
                 "sequence" => Entry::Sequence,
                 "renders" => Entry::Renders,
+                "splice" => Entry::Splice,
                 "room-tone" => Entry::RoomTone,
                 "hold-silence" => Entry::HoldSilence,
                 _ => Entry::Help,
             });
         }
-        "source" | "sequence" | "help" | "renders" | "room-tone" | "hold-silence" => {
+        "source" | "sequence" | "help" | "renders" | "splice" | "room-tone" | "hold-silence" => {
             return Err("This command takes no arguments.".into());
         }
         _ => {
@@ -397,6 +399,7 @@ mod tests {
             ("import", Entry::Action(Action::Import)),
             (":render", Entry::Action(Action::Render)),
             (":renders", Entry::Renders),
+            (":splice", Entry::Splice),
             ("source", Entry::Source),
             ("sequence", Entry::Sequence),
             ("help", Entry::Help),
@@ -411,6 +414,7 @@ mod tests {
             "room-tone 12f",
             "hold-silence all",
             "renders current",
+            "splice 12",
         ] {
             assert!(parse(input).is_err(), "{input}");
         }

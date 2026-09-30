@@ -71,6 +71,24 @@ fn proposal_admission_rejects_bad_identity_changed_assets_and_retargeted_public_
         Err(SnapshotError::ReusedRevision)
     ));
     let proposal = Snapshot::proposed(&base, document.clone(), 7, 1).unwrap();
+    assert_eq!(
+        proposal.validate_proposed_base(base.session, &base.document),
+        Ok(())
+    );
+    assert_eq!(
+        proposal.validate_proposed_base(base.session + 1, &base.document),
+        Err(SnapshotError::InvalidAdmission)
+    );
+    assert_eq!(
+        proposal.validate_proposed_base(base.session, &Arc::new((*base.document).clone())),
+        Err(SnapshotError::InvalidAdmission),
+        "equal public project/revision fields cannot replace the captured base"
+    );
+    assert_eq!(
+        base.validate_proposed_base(base.session, &base.document),
+        Err(SnapshotError::InvalidAdmission),
+        "a committed snapshot is not a genuine proposal"
+    );
     assert!(matches!(
         Snapshot::proposed(&proposal, document.clone(), 7, 2),
         Err(SnapshotError::BaseNotCommitted)
@@ -100,6 +118,10 @@ fn proposal_admission_rejects_bad_identity_changed_assets_and_retargeted_public_
     };
     assert_eq!(
         retagged.validate_admission(),
+        Err(SnapshotError::InvalidAdmission)
+    );
+    assert_eq!(
+        retagged.validate_proposed_base(base.session, &base.document),
         Err(SnapshotError::InvalidAdmission)
     );
     let mut moved = Snapshot::proposed(&base, document.clone(), 7, 1).unwrap();

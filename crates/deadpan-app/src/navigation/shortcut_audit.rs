@@ -157,6 +157,22 @@ fn audit_reservation(
                     format!("Gain text={text} background={background} ime={ime} repeat={repeat}"),
                     gain.map(|action| format!("gain={action:?}")),
                 );
+                let splice = super::splice::route_key(
+                    reservation.key,
+                    reservation.modifiers,
+                    text,
+                    background,
+                    ime,
+                    repeat,
+                );
+                record(
+                    report,
+                    reservation,
+                    format!(
+                        "Place slice text={text} background={background} ime={ime} repeat={repeat}"
+                    ),
+                    splice.map(|action| format!("splice={action:?}")),
+                );
             }
             let camera =
                 super::route_camera_key(reservation.key, reservation.modifiers, text, ime, repeat);
@@ -344,7 +360,7 @@ mod tests {
     fn shipped_routers_never_claim_a_kestrel_global_chord_or_prefix() {
         let report = audit().unwrap();
         assert_eq!(report.reserved_bindings, 62);
-        assert_eq!(report.routing_cases, 62 * 88);
+        assert_eq!(report.routing_cases, 62 * 104);
         assert!(report.passed(), "{report:#?}");
     }
 

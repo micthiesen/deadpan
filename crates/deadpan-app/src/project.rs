@@ -25,6 +25,7 @@ pub mod retime;
 mod scope;
 mod service;
 pub mod sound;
+pub mod splice;
 #[cfg(test)]
 mod tests;
 mod worker;
@@ -126,6 +127,10 @@ pub struct ProjectUpdate {
     pub room_tone_error: Option<RoomToneFailure>,
     /// Both success and failure retain the exact uncommitted proposal identity.
     pub gain: Option<gain::ProposalUpdate>,
+    /// Read-only linked Original proposals have independent, identity-tagged replies.
+    pub splice: Option<splice::ProposalUpdate>,
+    /// Exact placement commit acknowledgements survive proposal and query traffic.
+    pub splice_commit: Option<splice::SpliceCommitUpdate>,
     /// Operational render feedback is retained independently of editor feedback.
     pub render: Option<ProjectRenderUpdate>,
     /// Bounded history replies retain their exact query and session independently
@@ -398,6 +403,9 @@ pub enum ProjectRequest {
         index: usize,
     },
     PasteMoment(MomentPaste),
+    PrepareSplice(splice::Proposal),
+    CommitSplice(splice::ProposalId),
+    AbandonSplice(splice::ProposalId),
     /// Resolve source samples and prepare an audition descriptor off the UI.
     /// This does not select a Hold, author a policy, or create history.
     PrepareRoomTone {
@@ -438,6 +446,8 @@ struct Shared {
     render_commit_refresh_failure: AtomicBool,
     #[cfg(test)]
     host_refresh_failure: AtomicBool,
+    #[cfg(test)]
+    splice_commit_refresh_failure: AtomicBool,
     update: Mutex<Option<ProjectUpdate>>,
     wake: Arc<dyn Fn() + Send + Sync>,
 }
@@ -467,6 +477,8 @@ impl ProjectService {
             render_commit_refresh_failure: AtomicBool::new(false),
             #[cfg(test)]
             host_refresh_failure: AtomicBool::new(false),
+            #[cfg(test)]
+            splice_commit_refresh_failure: AtomicBool::new(false),
             update: Mutex::new(None),
             wake,
         });

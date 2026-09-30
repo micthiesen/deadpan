@@ -1,0 +1,22 @@
+{
+  "revisions": 6,
+  "history": 3,
+  "state": 1,
+  "redo": 2,
+  "hold_request_clocks": 0,
+  "generation_requests": 0,
+  "generation_attempts": 0,
+  "generation_candidate_receipts": 0,
+  "generation_bundle_receipts": 0,
+  "generation_attempt_heads": 0,
+  "render_jobs": 0,
+  "render_attempts": 0,
+  "render_job_heads": 0,
+  "render_candidate_checkpoints": 0,
+  "render_encoding_decisions": 0,
+  "render_publications": 0,
+  "render_publication_operations": 0,
+  "original_media": 1,
+  "source_qualifications": 1,
+  "single_source": 1
+}

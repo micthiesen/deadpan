@@ -17,6 +17,13 @@ enum Location {
         view: ProjectView,
         empty_sequence: bool,
     },
+    Proposed {
+        session: u64,
+        project: ProjectId,
+        revision: RevisionId,
+        content: deadpan_playback::ContentIdentity,
+        view: ProjectView,
+    },
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -38,6 +45,13 @@ impl RequestedPicture {
                 empty_sequence: matches!(view, ProjectView::Sequence { .. })
                     && workspace.plan.duration().frames() == 0,
             },
+            Work::Proposed { snapshot, view, .. } => Location::Proposed {
+                session: snapshot.session,
+                project: snapshot.document.project_id().clone(),
+                revision: snapshot.document.revision_id().clone(),
+                content: snapshot.content.clone(),
+                view: view.clone(),
+            },
         };
         Self { ticket, location }
     }
@@ -46,6 +60,10 @@ impl RequestedPicture {
         match &self.location {
             Location::Standalone(frame)
             | Location::Project {
+                view: ProjectView::Source { frame, .. },
+                ..
+            }
+            | Location::Proposed {
                 view: ProjectView::Source { frame, .. },
                 ..
             } => Some(format!("Showing source frame {}", u128::from(frame.0) + 1)),
@@ -58,6 +76,13 @@ impl RequestedPicture {
                 ..
             } => Some(format!(
                 "Showing sequence frame {}",
+                i128::from(frame.0) + 1
+            )),
+            Location::Proposed {
+                view: ProjectView::Sequence { frame },
+                ..
+            } => Some(format!(
+                "Showing proposed edit frame {}",
                 i128::from(frame.0) + 1
             )),
         }

@@ -516,3 +516,59 @@ fn source_caption_uses_the_source_view_even_inside_a_project() {
     };
     assert_eq!(request.label().as_deref(), Some("Showing source frame 120"));
 }
+
+#[test]
+fn proposed_content_identity_never_becomes_a_committed_display_or_camera_target() {
+    let make = |change| RequestedPicture {
+        ticket: ticket(1, change),
+        location: Location::Proposed {
+            session: 1,
+            project: ProjectId::new("project").unwrap(),
+            revision: RevisionId::new("proposal").unwrap(),
+            content: deadpan_playback::ContentIdentity::Proposed {
+                base_revision: RevisionId::new("base").unwrap(),
+                draft: 7,
+                change,
+            },
+            view: ProjectView::Sequence {
+                frame: ProjectFrame(12),
+            },
+        },
+    };
+    let mut state = Presentation {
+        requested: Some(make(1)),
+        ..Default::default()
+    };
+    accept(&mut state, ticket(1, 1), picture(4));
+    state.presented();
+    assert_eq!(
+        state.displayed_label().as_deref(),
+        Some("Showing proposed edit frame 13")
+    );
+    assert_eq!(
+        state.stable_sequence_ticket(1, &RevisionId::new("proposal").unwrap(), ProjectFrame(12)),
+        None
+    );
+    state.requested = Some(make(2));
+    accept(&mut state, ticket(1, 2), picture(4));
+    assert!(
+        state.needs_render(),
+        "a new proposed change keeps its own submitted identity even with identical pixels"
+    );
+    state.presented();
+    state.requested = Some(project_request(12, 3, "proposal", false));
+    accept(&mut state, ticket(1, 3), picture(4));
+    assert!(
+        state.needs_render(),
+        "matching public revision and pixels cannot collapse proposed and committed domains"
+    );
+    assert_eq!(
+        state.displayed_label().as_deref(),
+        Some("Showing proposed edit frame 13")
+    );
+    state.presented();
+    assert_eq!(
+        state.displayed_label().as_deref(),
+        Some("Showing sequence frame 13")
+    );
+}

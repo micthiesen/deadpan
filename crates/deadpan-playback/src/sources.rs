@@ -137,6 +137,26 @@ impl Snapshot {
         })
     }
 
+    /// Check that this genuine proposal was admitted from this exact committed
+    /// document and session. Picture workers can share proposed audio semantics
+    /// without inventing a stored revision or exposing the private admission.
+    /// Media consumers must still admit the captured source receipts and bytes.
+    pub fn validate_proposed_base(
+        &self,
+        session: u64,
+        document: &Arc<ProjectDocument>,
+    ) -> Result<(), SnapshotError> {
+        self.validate_admission()?;
+        match &self.admission {
+            Some(admission)
+                if self.session == session && Arc::ptr_eq(document, &admission.base) =>
+            {
+                Ok(())
+            }
+            _ => Err(SnapshotError::InvalidAdmission),
+        }
+    }
+
     pub(crate) fn validate_admission(&self) -> Result<(), SnapshotError> {
         match (&self.content, &self.admission) {
             (ContentIdentity::Committed, None) => Ok(()),

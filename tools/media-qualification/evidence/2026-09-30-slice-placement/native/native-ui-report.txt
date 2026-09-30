@@ -1,0 +1,25 @@
+Deadpan Slice QA native report
+Date: 2026-09-30
+App: /tmp/deadpan-slice-placement-20260930/Deadpan Slice QA.app (dev.thiesen.deadpan.slice-qa)
+Project: /tmp/deadpan-slice-placement-20260930/replay-2/projects/place-slice/Documents/Deadpan/cfr-bframes.deadpan
+
+Actions and observations
+- Opened the requested disposable project in Slice QA using its in-app Open Project picker. No other Deadpan app was selected or manipulated.
+- In Source, `gg`, `10l`, `v`, `14l`, `y` produced copied interval [10..24), 14 original frames. AX showed Original boundary 24/120 and `Copied [10..24)`.
+- `:sequence`, `gg`, `:splice` opened a provisional Insert preview. AX showed UNSAVED, Linked picture + sound, destination Root beat / Edit boundary 0, Sequence slot 1 of 2, +14 project frames. Original thumbnails were First included frame 11 and Last included frame 24. Proposed picture showed Edit frame 1 inside inserted slice. Screenshot observed inline in this thread.
+- `i`, `2l`, `o`, `3l` refined the preview to [12..27), 15 source frames. AX and inline screenshot showed thumbnails Original frames 13 and 27, BEFORE · SAVED EDIT at sequence frame 1, slot 1 of 2, +15 project frames. The insertion marker/slot and unsaved state were visible.
+- Tab moved focus among preview controls. Enter on the Before comparison toggle changed the selected view to Proposed and AX marked it on; it did not activate Place slice. Project remained Saved, and the preview remained UNSAVED. No placement was committed.
+- Audition was started by Tab to the Audition button and Enter. The button changed to Pause and the visible proposed sequence picture advanced from frame 1 to frame 6 (captured inline). No acoustic claim was made.
+- Space did not produce a reliable pause/resume sequence while focus remained on the audition button; the Pause label remained and frames continued advancing. Return/click attempts also left it running. Escape exited the provisional preview. In the restored editor, AX showed Your edit and Edit boundary 0/120; `l` advanced to 1 and `h` returned to 0. The Original source card was selected in the left pane, with picture restored. This verifies editing navigation resumed after Escape.
+
+Evidence limits
+- CUA supplied screenshots inline only and exposed no local-save method. No screenshot files were created; the inline captures show the placement proposal, Before comparison, active audition, and restored editor.
+- Native playback was visibly active and advancing. Keyboard pause/resume remained inconclusive because repeated Space did not stop the audition; Escape safely canceled preview and returned to normal editing.
+- No save/commit/authoring edits were performed. Parent owns the SQLite baseline comparison.
+
+Bounded heading-focus playback follow-up
+- Reopened only the same Slice QA app and project. Copied [10..24) again and reopened :splice at Edit 0. Initial AX focus was the `Place slice keyboard controls` button (index 164), with the visible heading outlined; no Tab was used before playback inputs.
+- First Shift+Space caused the preview control state to update (Destination Edit 0 off, Inspect picture on) while AX still showed Audition; the visible picture remained Proposed frame 1. This key chord did not yield a clear loop-start indication.
+- Plain Space changed the Audition button to Pause. Subsequent Space presses left the label as Pause while requested/displayed picture advanced through frames 6, 11, 16. Pause/resume therefore remained inconclusive from the label and cursor observations.
+- A later Shift+Space stopped audition and AX reported `Audition stopped: audio output stopped: Starved`; button returned to Audition. Space restarted, changing the button to Pause. Escape canceled the preview and returned to normal Your edit at boundary 0/120. Project remained Saved; no placement or authored edit was committed.
+- This follow-up confirms AX exposes Place slice controls and endpoints, not merely the old disabled editor controls. Focus at key delivery was the keyboard-controls button. No local screenshot-save API was exposed.

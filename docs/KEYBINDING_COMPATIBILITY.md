@@ -42,6 +42,22 @@ paint and complete hit-target clips. Native CUA also verified gain boundary
 wrapping, keyboard envelope/key editing, field reveal, literal shortcut text and
 Escape cancellation without changing the saved project.
 
+## Place slice
+
+**`:splice`** opens a local linked Original insertion draft in Your edit.
+`i/o` selects included In/exclusive Out, `d` selects the destination, and `f`
+inspects its picture. `h/l` or Left/Right adjusts frames with counts; `j/k`
+chooses a Sequence slot. `b` compares Before/Proposed, Space auditions or pauses,
+and Shift+Space loops both joins. Enter commits once; Escape cancels. The draft
+keeps the copied range and saved editor cursors intact until commit.
+
+These keys add no modified global shortcut. The production router preserves
+composition and focused native buttons. The `place-slice` replay checks exact
+endpoint/destination pictures, both joins, loop pause/resume, stale captures,
+cancel/commit/undo and actual picture/text clips at 960×640 and 1280×820.
+Linked insertion at ordinary Sequence seams is available; the remaining
+[slice placement modes](SLICE_PLACEMENT.md) are still required.
+
 ## Render
 
 **`⌘E`** and **`:render`** open the native Render flow for the full committed
@@ -97,10 +113,10 @@ cargo test --locked -p deadpan-app navigation::
 
 [The audit](../crates/deadpan-app/src/navigation/shortcut_audit.rs) sends each of
 the 62 exact global Kestrel bindings through the actual `Bindings::key`, Camera,
-text-action, inspector, room-tone and Gain routers. The current source expects
-88 routing cases per reservation, or 5,456 total, including pending prefix
+text-action, inspector, room-tone, Gain and Place slice routers. The current source expects
+104 routing cases per reservation, or 6,448 total, including pending prefix
 states, counts and overflow, text/IME states, and repeat/focus combinations.
-The corrected workspace, room-tone, gain and retime runs each pass all 5,456
+The earlier corrected workspace, room-tone, gain and retime runs each passed all 5,456
 cases with no conflicts or live-source drift; all 298 app/harness tests also
 pass. The [native-gain qualification](qualification/native-gain-2026-09-28.md) retains
 source identities, native CUA evidence and remaining physical-input limits.

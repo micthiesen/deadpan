@@ -37,6 +37,7 @@ mod room_tone;
 mod scope;
 mod selection;
 mod sound_events;
+mod splice;
 mod style;
 
 const SEARCH_ID: &str = "source-search";
@@ -93,6 +94,7 @@ pub struct DeadpanApp {
     close_pending: bool,
     exited: Rc<Cell<bool>>,
     worker: PreviewWorker,
+    endpoint_worker: crate::worker::EndpointWorker,
     playback: deadpan_playback::Engine,
     #[cfg(target_os = "macos")]
     _lifecycle: deadpan_output::LifecycleObserver,
@@ -123,6 +125,8 @@ pub struct DeadpanApp {
     room_tone: Option<room_tone::Draft>,
     gain_command_target: Option<Result<crate::project::gain::Target, String>>,
     gain: Option<gain::Draft>,
+    splice: Option<splice::Draft>,
+    splice_abandon: Option<crate::project::splice::ProposalId>,
     sound_cursor: u64,
     selected_beat: Option<NodeId>,
     sequence_scope: SequenceScope,
@@ -176,6 +180,7 @@ impl DeadpanApp {
         let repaint = context.egui_ctx.clone();
         let service = ProjectService::new(Arc::new(move || repaint.request_repaint()))?;
         let worker = PreviewWorker::new(context.egui_ctx.clone())?;
+        let endpoint_worker = crate::worker::EndpointWorker::new(context.egui_ctx.clone())?;
         let repaint = context.egui_ctx.clone();
         let playback = deadpan_playback::Engine::new(Arc::new(move || repaint.request_repaint()))?;
         let playback_interrupted = Arc::new(AtomicBool::new(false));
@@ -199,6 +204,7 @@ impl DeadpanApp {
             close_pending: false,
             exited,
             worker,
+            endpoint_worker,
             playback,
             #[cfg(target_os = "macos")]
             _lifecycle: lifecycle,
@@ -229,6 +235,8 @@ impl DeadpanApp {
             room_tone: None,
             gain_command_target: None,
             gain: None,
+            splice: None,
+            splice_abandon: None,
             sound_cursor: 0,
             selected_beat: None,
             sequence_scope: SequenceScope::default(),
@@ -410,7 +418,12 @@ impl DeadpanApp {
         if clear {
             self.preview_source = serial;
         }
-        let work = if let Some(workspace) = &self.workspace {
+        let work = if self.splice.is_some() {
+            let Some(work) = self.splice_picture_work(picture) else {
+                return;
+            };
+            work
+        } else if let Some(workspace) = &self.workspace {
             let view = match self.view {
                 View::Source => {
                     let Some(asset) = &self.selected_source else {
@@ -512,6 +525,7 @@ impl DeadpanApp {
                             .is_some_and(|next| next.asset != i.asset)
                 });
             self.workspace = update.workspace;
+            self.receive_splice(update.splice, update.splice_commit);
             self.import = update.import;
             if old_session != new_session {
                 self.render_session_changed();
@@ -1444,6 +1458,10 @@ impl DeadpanApp {
         if self.render_keyboard(context) {
             return None;
         }
+        if self.splice.is_some() {
+            self.splice_keyboard(context);
+            return None;
+        }
         if self.gain.is_some() {
             self.gain_keyboard(context);
             return None;
@@ -1718,6 +1736,7 @@ impl DeadpanApp {
             }
             Ok(navigation::command::Entry::Help) => self.help_open = true,
             Ok(navigation::command::Entry::Renders) => self.render.history.requested = true,
+            Ok(navigation::command::Entry::Splice) => self.open_splice(context),
             Ok(navigation::command::Entry::Monitor(tenths)) => {
                 self.pause_playback();
                 self.monitor_gain = f32::from(tenths) / 1000.0;
@@ -2839,6 +2858,7 @@ impl DeadpanApp {
                         (":hold-duration 11f", "Set a selected Hold to exactly 11 project frames."),
                         ("v / :select · y / :yank", "In Original, start or finish a half-open time selection. Move with h/l or counted motions. y copies the range; Esc cancels selection. The Out frame is excluded. Copy is session-local; named and persistent registers are not available yet."),
                         ("p / P · :paste / :paste-before", "In Your edit, paste the copied Original moment after / before the selected beat in the displayed group. An empty group accepts a paste at its start. Each paste is one undoable transaction; later audio keeps its sampling phase."),
+                        (":splice", "Preview a copied Original slice at the Edit cursor. i/o selects In/exclusive Out; d selects destination; h/l adjusts frames with counts; j/k chooses a Sequence seam; f inspects the picture. b compares Before/Proposed, Space auditions, Shift+Space loops both joins, Enter places once and Escape cancels. Linked inserts at ordinary Sequence seams are available; other placement modes remain open."),
                         (",i / :insert", "Reuse the full Original after the selected beat in the current group, or append to an empty group. Legacy projects insert their selected source."),
                         ("u / Ctrl R", "Undo / redo. Native ⌘Z / ⌘Shift Z also work."),
                         ("⌘E / :render", "Render the saved full edit with automatic SDR output settings. For an unsaved Camera, Gain or Room tone preview, choose Commit preview and render, Discard preview and render, or Keep editing."),
@@ -2875,6 +2895,7 @@ impl eframe::App for DeadpanApp {
             self.receive();
             self.reconcile_room_tone(&context);
             self.reconcile_gain(&context);
+            self.reconcile_splice(&context);
             self.reconcile_render(&context);
             self.receive_gain_waveform();
         }
@@ -2957,7 +2978,7 @@ impl eframe::App for DeadpanApp {
             ui.disable();
             ui.set_opacity(1.0);
         }
-        self.header(ui);
+        ui.add_enabled_ui(self.splice.is_none(), |ui| self.header(ui));
         // A pointer activation can change views while the panes are painted.
         // Use one placement decision for Sounds throughout this pass.
         let compact_empty_sounds = self.compact_empty_sounds(&context);
@@ -2965,20 +2986,25 @@ impl eframe::App for DeadpanApp {
             self.command_open,
             self.camera.is_some(),
             self.gain.is_some(),
+            self.splice.is_some(),
         );
-        self.footer(ui);
-        self.gain_panel(ui);
-        if self.gain.is_some() {
-            // Only draft controls participate in native Tab focus while the
-            // comparison is open. Keep the retained picture at full opacity.
-            ui.disable();
-            ui.set_opacity(1.0);
+        if self.splice.is_some() {
+            self.splice_workspace(ui);
+        } else {
+            self.footer(ui);
+            self.gain_panel(ui);
+            if self.gain.is_some() {
+                // Only draft controls participate in native Tab focus while the
+                // comparison is open. Keep the retained picture at full opacity.
+                ui.disable();
+                ui.set_opacity(1.0);
+            }
+            self.sources(ui);
+            self.inspector(ui);
+            self.placed_sounds(ui, compact_empty_sounds);
+            self.timeline(ui, compact_empty_sounds);
+            self.viewer(ui, compact_empty_sounds);
         }
-        self.sources(ui);
-        self.inspector(ui);
-        self.placed_sounds(ui, compact_empty_sounds);
-        self.timeline(ui, compact_empty_sounds);
-        self.viewer(ui, compact_empty_sounds);
         if first_pass {
             self.finish_camera_entry(&context);
         }
@@ -3019,6 +3045,7 @@ impl eframe::App for DeadpanApp {
                 self.command_open,
                 self.camera.is_some(),
                 self.gain.is_some(),
+                self.splice.is_some(),
             )
         {
             context.request_discard("workspace footer mode changed after input");
@@ -3034,6 +3061,7 @@ impl eframe::App for DeadpanApp {
             self.schedule_playback_picture();
             self.dispatch_waiting_repeat(&context);
             self.dispatch_gain_proposal(&context);
+            self.dispatch_splice(&context);
         }
         if first_pass && let Some(frames) = self.smoke_frames.as_mut() {
             *frames += 1;
@@ -3047,13 +3075,16 @@ impl eframe::App for DeadpanApp {
             self.camera.is_some()
                 || self.camera_pending.is_some()
                 || self.gain.is_some()
-                || self.room_tone.is_some(),
+                || self.room_tone.is_some()
+                || self.splice.is_some(),
         );
     }
     fn on_exit(&mut self) {
         self.playback.shutdown();
         self.service.shutdown();
         self.worker.shutdown();
+        self.endpoint_worker.shutdown();
+        self.splice = None;
         self.forget_target();
         self.exited.set(true);
     }
@@ -3063,6 +3094,8 @@ impl Drop for DeadpanApp {
         self.playback.shutdown();
         self.service.shutdown();
         self.worker.shutdown();
+        self.endpoint_worker.shutdown();
+        self.splice = None;
         self.forget_target();
     }
 }

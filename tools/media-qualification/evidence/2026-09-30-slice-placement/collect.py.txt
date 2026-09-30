@@ -1,0 +1,66 @@
+import gzip
+import hashlib
+import json
+from pathlib import Path
+import shutil
+
+scratch = Path('/tmp/deadpan-slice-placement-20260930')
+destination = Path('tools/media-qualification/evidence/2026-09-30-slice-placement')
+destination.mkdir(parents=True, exist_ok=True)
+
+def copy(source, relative):
+    target = destination / relative
+    target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(source, target)
+
+for source in sorted(scratch.glob('*.json')):
+    if source.name.startswith('source-'):
+        continue
+    report = json.loads(source.read_text())
+    copy(source, source.name)
+    log = source.with_suffix('.log')
+    if log.exists():
+        copy(log, log.name)
+    if isinstance(report, dict) and report.get('source_manifest_sha256'):
+        manifest = scratch / ('source-' + report['source_manifest_sha256'] + '.json')
+        (destination / (manifest.name + '.gz')).write_bytes(gzip.compress(manifest.read_bytes(), mtime=0))
+
+for source in sorted(scratch.glob('replay*/report.json')):
+    target = destination / 'replays' / (source.parent.name + '.json.gz')
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_bytes(gzip.compress(source.read_bytes(), mtime=0))
+for source in sorted((scratch / 'native').glob('*.txt')):
+    copy(source, Path('native') / source.name)
+for source in sorted((scratch / 'native').glob('*.json')):
+    copy(source, Path('native') / source.name)
+for source in sorted((scratch / 'native').glob('*.py')):
+    copy(source, Path('native') / (source.name + '.txt'))
+for source in sorted((scratch / 'native').glob('*.sqlite')):
+    target = destination / 'native' / (source.name + '.gz')
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_bytes(gzip.compress(source.read_bytes(), mtime=0))
+for source in sorted((scratch / 'audio').glob('*.json')):
+    copy(source, Path('audio') / source.name)
+
+final_replay = scratch / 'replay-final'
+if (final_replay / 'report.json').exists():
+    replay = json.loads((final_replay / 'report.json').read_text())
+    for scenario in replay['scenarios']:
+        for step in scenario['steps']:
+            if step['input'].startswith('Visible Original endpoints, proposed destination and action at '):
+                name = step['screenshot']
+                source = final_replay / name
+                if source.exists():
+                    copy(source, Path('captures') / name)
+
+copy(Path(__file__), 'collect.py.txt')
+manifest = {
+    str(source.relative_to(destination)): {
+        'bytes': source.stat().st_size,
+        'sha256': hashlib.sha256(source.read_bytes()).hexdigest(),
+    }
+    for source in sorted(destination.rglob('*'))
+    if source.is_file() and source.name != 'manifest.json'
+}
+(destination / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
+print(json.dumps({'files': len(manifest), 'bytes': sum(item['bytes'] for item in manifest.values())}))

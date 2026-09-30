@@ -1,0 +1,66 @@
+    Checking deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+    Checking deadpan-native-process v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-process)
+    Checking deadpan-encode v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-encode)
+    Checking deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+    Checking deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+    Checking deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+    Checking deadpan-render v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-render)
+    Checking deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+    Checking deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+    Checking deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+    Checking deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Checking deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+    Checking deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+warning: unused import: `EndpointWorker`
+  --> crates/deadpan-app/src/preview/splice.rs:10:39
+   |
+10 | use crate::worker::{EndpointIdentity, EndpointWorker};
+   |                                       ^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+error[E0624]: method `splice_keyboard` is private
+    --> crates/deadpan-app/src/preview.rs:1460:18
+     |
+1460 |             self.splice_keyboard(context);
+     |                  ^^^^^^^^^^^^^^^ private method
+     |
+    ::: crates/deadpan-app/src/preview/splice/controls.rs:4:5
+     |
+   4 |     pub(super) fn splice_keyboard(&mut self, context: &egui::Context) {
+     |     ----------------------------------------------------------------- private method defined here
+
+error[E0624]: method `splice_workspace` is private
+    --> crates/deadpan-app/src/preview.rs:2990:18
+     |
+2990 |             self.splice_workspace(ui);
+     |                  ^^^^^^^^^^^^^^^^ private method
+     |
+    ::: crates/deadpan-app/src/preview/splice/controls.rs:24:5
+     |
+  24 |     pub(super) fn splice_workspace(&mut self, ui: &mut egui::Ui) {
+     |     ------------------------------------------------------------ private method defined here
+
+error[E0507]: cannot move out of `label`, a captured variable in an `Fn` closure
+   --> crates/deadpan-app/src/preview/splice/pictures.rs:76:94
+    |
+ 68 |             let label = if ready {
+    |                 ----- captured outer variable
+...
+ 76 |             response.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Image, true, label));
+    |                                  -- captured by this `Fn` closure                            ^^^^^ move occurs because `label` has type `std::string::String`, which does not implement the `Copy` trait
+    |
+help: `Fn` and `FnMut` closures require captured values to be able to be consumed multiple times, but `FnOnce` closures may consume them only once
+   --> /Users/michael/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/egui-0.36.2/src/response.rs:869:47
+    |
+869 |     pub fn widget_info(&self, make_info: impl Fn() -> crate::WidgetInfo) {
+    |                                               ^^^^^^^^^^^^^^^^^^^^^^^^^
+help: consider cloning the value if the performance cost is acceptable
+    |
+ 76 |             response.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Image, true, label.clone()));
+    |                                                                                                   ++++++++
+
+Some errors have detailed explanations: E0507, E0624.
+For more information about an error, try `rustc --explain E0507`.
+warning: `deadpan-app` (bin "deadpan-app") generated 1 warning
+error: could not compile `deadpan-app` (bin "deadpan-app") due to 3 previous errors; 1 warning emitted

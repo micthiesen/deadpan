@@ -16,6 +16,7 @@ pub(super) fn run(name: &str, d: &mut Driver<'_>) -> Result<(), String> {
         "edit-latency" => super::edit_latency::run(d),
         "nested-pause" => super::nested_pause::run(d),
         "original-moment" => super::moment::run(d),
+        "place-slice" => super::splice::run(d),
         "original-playback" => super::original_playback::run(d),
         "sound-playback" => super::sound_playback::run(d),
         "retime" => super::retime::run(d),

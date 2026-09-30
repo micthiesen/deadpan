@@ -1,0 +1,21 @@
+{
+  "command": [
+    "cargo",
+    "clippy",
+    "--locked",
+    "-p",
+    "deadpan-cli",
+    "--example",
+    "qualify_audio_stream",
+    "--",
+    "-D",
+    "warnings"
+  ],
+  "started": "2026-09-30T19:08:19.218890+00:00",
+  "base_commit": "20b0e6a01bafda0a95fd050c9efc4d85a52974e3",
+  "diff_sha256": "1cb467c718ed8756bc63f612e9980353ad5c95f77b39bf9f477fe650805e1553",
+  "source_manifest_sha256": "b1b767658e1b3bf9a8495c92354c59bd5186db67a95a538b7f5f1b1a1531ab43",
+  "pid": 68624,
+  "exit_code": 0,
+  "seconds": 84.20182054117322
+}

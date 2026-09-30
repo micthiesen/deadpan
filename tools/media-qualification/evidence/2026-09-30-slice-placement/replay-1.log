@@ -1,0 +1,3 @@
+place-slice: FAIL
+UI feedback: /tmp/deadpan-slice-placement-20260930/replay-1/report.html
+Error: "UI feedback checks failed; inspect report.json and report.html"

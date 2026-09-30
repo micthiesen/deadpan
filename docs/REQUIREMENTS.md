@@ -132,8 +132,18 @@ This is DP-17/DP-18 groundwork; public Render remains open.
 explicit DP-05/DP-20 requirement: select and refine a time range, see its source
 endpoints and destination, audition both proposed joins, then commit or cancel
 with the keyboard. Insert, replace and move require exact reversible semantics,
-visible occurrence scope and stale-revision rejection. Existing Original moment
-copy/paste is partial groundwork; the complete preview workflow remains open.
+visible occurrence scope and stale-revision rejection. [Place slice](SLICE_PLACEMENT.md)
+now previews linked Original copies at ordinary Sequence seams with decoded
+endpoints, local In/Out refinement, a provisional timeline, Before/Proposed and
+both-join audition. The production replay passes 215 checks including minimum
+layout, complete Tab circuits, synthetic IME, cancellation, stale captures and
+exact commit/undo. Actual decoded pictures and canonical nonzero PCM around both
+joins match the committed result. Frame-interior placement, edited ranges/moves,
+replacement, picture/audio-only policies and Repeat/Retime occurrence targets
+remain required; this does not complete DP-05 or DP-20.
+[Qualification](qualification/slice-placement-2026-09-30.md) records native release
+looping and pause/resume, unchanged SQLite rows after cancellation, all automated
+checks and the measured debug-build audio starvation limitation.
 
 The [shared render workflow](RENDER_JOBS.md#shared-workflow-and-native-ownership)
 connects capture, encoding, retained checkpoints, fresh verification, publication

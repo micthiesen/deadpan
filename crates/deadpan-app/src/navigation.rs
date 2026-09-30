@@ -7,6 +7,7 @@ pub mod gain;
 pub mod retime;
 pub mod room_tone;
 mod sound;
+pub mod splice;
 pub use sound::SoundAction;
 #[cfg(any(test, feature = "ui-harness"))]
 pub mod shortcut_audit;

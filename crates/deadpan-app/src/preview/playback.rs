@@ -123,6 +123,7 @@ impl DeadpanApp {
     fn follow_stopped_playback(&mut self, looping: bool) {
         if self.room_tone.is_none()
             && self.gain.is_none()
+            && self.splice.is_none()
             && !self.sound_focused()
             && self.view == View::Sequence
             && !looping
@@ -360,7 +361,10 @@ impl DeadpanApp {
                     match run.domain() {
                         Domain::Original(_) => self.source_cursor = position.cursor,
                         Domain::Sequence { .. } => {
-                            if self.gain.is_none() {
+                            if let Some(draft) = &mut self.splice {
+                                draft.cursor = position.cursor;
+                                draft.position = run.content_sample().ok();
+                            } else if self.gain.is_none() {
                                 self.sequence_cursor = position.cursor;
                             }
                         }
@@ -412,7 +416,9 @@ impl DeadpanApp {
             Ok(Some(frame)) => match run.domain() {
                 Domain::Original(_) => self.source_cursor = frame,
                 Domain::Sequence { .. } => {
-                    if self.gain.is_none() {
+                    if let Some(draft) = &mut self.splice {
+                        draft.cursor = frame;
+                    } else if self.gain.is_none() {
                         self.sequence_cursor = frame;
                     }
                 }
@@ -432,6 +438,9 @@ impl DeadpanApp {
             }
         }
         let looping = run.window().looping();
+        if let Some(draft) = &mut self.splice {
+            draft.position = run.content_sample().ok();
+        }
         if let Some(draft) = &mut self.gain
             && let Ok(position) = run.content_sample()
         {

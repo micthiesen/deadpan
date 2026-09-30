@@ -1,0 +1,90 @@
+   Compiling deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+error[E0599]: the associated function or constant `new` exists for struct `AudioTimingId`, but its trait bounds were not satisfied
+  --> crates/deadpan-app/src/worker/proposed_tests.rs:28:50
+   |
+28 |             timing: deadpan_core::AudioTimingId::new(name).unwrap(),
+   |                                                  ^^^ associated function or constant cannot be called on `AudioTimingId` due to unsatisfied trait bounds
+   |
+  ::: crates/deadpan-core/src/audio_binding.rs:27:1
+   |
+27 | pub struct AudioTimingId {
+   | ------------------------ doesn't satisfy 5 bounds
+   |
+   = note: the following trait bounds were not satisfied:
+           `AudioTimingId: FixedOutput`
+           which is required by `AudioTimingId: sha2::Digest`
+           `AudioTimingId: std::default::Default`
+           which is required by `AudioTimingId: sha2::Digest`
+           `AudioTimingId: sha2::digest::Update`
+           which is required by `AudioTimingId: sha2::Digest`
+           `AudioTimingId: HashMarker`
+           which is required by `AudioTimingId: sha2::Digest`
+           `&AudioTimingId: FixedOutput`
+           which is required by `&AudioTimingId: sha2::Digest`
+           `&AudioTimingId: std::default::Default`
+           which is required by `&AudioTimingId: sha2::Digest`
+           `&AudioTimingId: sha2::digest::Update`
+           which is required by `&AudioTimingId: sha2::Digest`
+           `&AudioTimingId: HashMarker`
+           which is required by `&AudioTimingId: sha2::Digest`
+           `&mut AudioTimingId: FixedOutput`
+           which is required by `&mut AudioTimingId: sha2::Digest`
+           `&mut AudioTimingId: std::default::Default`
+           which is required by `&mut AudioTimingId: sha2::Digest`
+           `&mut AudioTimingId: sha2::digest::Update`
+           which is required by `&mut AudioTimingId: sha2::Digest`
+           `&mut AudioTimingId: HashMarker`
+           which is required by `&mut AudioTimingId: sha2::Digest`
+
+warning: methods `proposal_for_check`, `prepared_for_check`, `ready_for_check`, `before_for_check`, and `invalidated_for_check` are never used
+  --> crates/deadpan-app/src/preview/splice.rs:53:31
+   |
+51 | impl Draft {
+   | ---------- methods in this implementation
+52 |     #[cfg(feature = "ui-harness")]
+53 |     pub(in crate::preview) fn proposal_for_check(&self) -> &Proposal { &self.proposal }
+   |                               ^^^^^^^^^^^^^^^^^^
+54 |     #[cfg(feature = "ui-harness")]
+55 |     pub(in crate::preview) fn prepared_for_check(&self) -> Option<&Arc<Prepared>> { self.prepared.as_ref() }
+   |                               ^^^^^^^^^^^^^^^^^^
+56 |     #[cfg(feature = "ui-harness")]
+57 |     pub(in crate::preview) fn ready_for_check(&self) -> bool { self.prepared.is_some() && !self.dirty && self.pending.is_none() && !...
+   |                               ^^^^^^^^^^^^^^^
+58 |     #[cfg(feature = "ui-harness")]
+59 |     pub(in crate::preview) fn before_for_check(&self) -> bool { self.before }
+   |                               ^^^^^^^^^^^^^^^^
+60 |     #[cfg(feature = "ui-harness")]
+61 |     pub(in crate::preview) fn invalidated_for_check(&self) -> bool { self.invalidated }
+   |                               ^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: field `node` is never read
+  --> crates/deadpan-app/src/project/splice.rs:39:9
+   |
+33 | pub struct Prepared {
+   |            -------- field in this struct
+...
+39 |     pub node: NodeId,
+   |         ^^^^
+   |
+   = note: `Prepared` has a derived impl for the trait `Clone`, but this is intentionally ignored during dead code analysis
+
+warning: method `cancel` is never used
+   --> crates/deadpan-app/src/worker/endpoints.rs:141:12
+    |
+109 | impl EndpointWorker {
+    | ------------------- method in this implementation
+...
+141 |     pub fn cancel(&self) {
+    |            ^^^^^^
+
+For more information about this error, try `rustc --explain E0599`.
+error: could not compile `deadpan-app` (bin "deadpan-app" test) due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+warning: linker stderr: ld: __eh_frame section too large (max 16MB) to encode dwarf unwind offsets in compact unwind table, performance of exception handling might be affected
+  |
+  = note: `#[warn(linker_messages)]` on by default
+
+warning: `deadpan-app` (bin "deadpan-app") generated 4 warnings

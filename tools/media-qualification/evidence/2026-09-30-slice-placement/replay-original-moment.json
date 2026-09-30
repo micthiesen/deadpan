@@ -1,0 +1,19 @@
+{
+  "command": [
+    "target/debug/deadpan-app",
+    "--ui-check",
+    "--scenario",
+    "original-moment",
+    "--kestrel-source",
+    "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+    "--output",
+    "/tmp/deadpan-slice-placement-20260930/replay-original-moment"
+  ],
+  "started": "2026-09-30T19:01:20.178155+00:00",
+  "base_commit": "20b0e6a01bafda0a95fd050c9efc4d85a52974e3",
+  "diff_sha256": "1cb467c718ed8756bc63f612e9980353ad5c95f77b39bf9f477fe650805e1553",
+  "source_manifest_sha256": "1db5ff942809211e799b0966ba8600196889b3d115cf19e93b9930db616a3421",
+  "pid": 67302,
+  "exit_code": 0,
+  "seconds": 7.468175542075187
+}

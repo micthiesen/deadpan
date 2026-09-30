@@ -1,0 +1,103 @@
+{
+  "audio": {
+    "debug": {
+      "budget_ms": 170.66666666666666,
+      "passes": [
+        {
+          "kind": "fresh_session",
+          "session": 1,
+          "first_read_ms": 1088.574333,
+          "refill_min_ms": 1072.224875,
+          "refill_max_ms": 1193.0547080000001,
+          "refill_mean_ms": 1117.4641782857143,
+          "over_budget": 7
+        },
+        {
+          "kind": "fresh_session",
+          "session": 2,
+          "first_read_ms": 1087.908459,
+          "refill_min_ms": 1065.5035,
+          "refill_max_ms": 1194.280875,
+          "refill_mean_ms": 1115.6214108571428,
+          "over_budget": 7
+        },
+        {
+          "kind": "retained_session_repeat",
+          "session": 2,
+          "first_read_ms": 1071.170791,
+          "refill_min_ms": 1066.0355829999999,
+          "refill_max_ms": 1193.3423750000002,
+          "refill_mean_ms": 1116.734637,
+          "over_budget": 7
+        }
+      ]
+    },
+    "release": {
+      "budget_ms": 170.66666666666666,
+      "passes": [
+        {
+          "kind": "fresh_session",
+          "session": 1,
+          "first_read_ms": 26.027333,
+          "refill_min_ms": 21.398625000000003,
+          "refill_max_ms": 31.116666000000002,
+          "refill_mean_ms": 24.579726,
+          "over_budget": 0
+        },
+        {
+          "kind": "fresh_session",
+          "session": 2,
+          "first_read_ms": 25.212292,
+          "refill_min_ms": 21.209458,
+          "refill_max_ms": 30.873541,
+          "refill_mean_ms": 24.442339,
+          "over_budget": 0
+        },
+        {
+          "kind": "retained_session_repeat",
+          "session": 2,
+          "first_read_ms": 22.219040999999997,
+          "refill_min_ms": 21.429707999999998,
+          "refill_max_ms": 30.936792,
+          "refill_mean_ms": 24.464458285714283,
+          "over_budget": 0
+        }
+      ]
+    },
+    "debug_release_pcm_and_gain_equal": true
+  },
+  "replays": {
+    "replay-final": {
+      "kestrel-shortcuts": {
+        "checks": 1,
+        "failed": false
+      },
+      "place-slice": {
+        "checks": 215,
+        "failed": false
+      }
+    },
+    "replay-original-moment": {
+      "kestrel-shortcuts": {
+        "checks": 1,
+        "failed": false
+      },
+      "original-moment": {
+        "checks": 16,
+        "failed": false
+      }
+    }
+  },
+  "tests": {
+    "test-workspace": {
+      "passed": 2592,
+      "failed": 0,
+      "ignored": 0
+    },
+    "test-ui-final": {
+      "passed": 358,
+      "failed": 0,
+      "ignored": 0
+    }
+  }
+}

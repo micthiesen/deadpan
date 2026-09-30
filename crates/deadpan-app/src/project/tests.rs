@@ -20,6 +20,7 @@ mod retime;
 mod room_tone;
 mod scope;
 mod sound;
+mod splice;
 
 const TIMEOUT: Duration = Duration::from_secs(20);
 
@@ -651,6 +652,7 @@ fn shutdown_finishes_an_admitted_command_before_releasing_the_store() {
         render_poll_paused: AtomicBool::new(false),
         render_commit_refresh_failure: AtomicBool::new(false),
         host_refresh_failure: AtomicBool::new(false),
+        splice_commit_refresh_failure: AtomicBool::new(false),
         update: Mutex::new(None),
         wake: Arc::new(|| {}),
     });
@@ -925,6 +927,7 @@ impl Harness {
             render_poll_paused: AtomicBool::new(false),
             render_commit_refresh_failure: AtomicBool::new(false),
             host_refresh_failure: AtomicBool::new(false),
+            splice_commit_refresh_failure: AtomicBool::new(false),
             update: Mutex::new(None),
             wake: Arc::new(|| {}),
         });

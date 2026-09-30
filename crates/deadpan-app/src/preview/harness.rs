@@ -24,6 +24,7 @@ mod scale;
 mod scenarios;
 mod sound_placement;
 mod sound_playback;
+mod splice;
 mod telemetry;
 mod wake;
 
@@ -559,6 +560,7 @@ impl Driver<'_> {
                 "source":prepared.source,"duration_samples":prepared.audition.duration_samples().0,
             })),
         })));
+        snapshot["splice"] = splice::state(self);
         snapshot
     }
 

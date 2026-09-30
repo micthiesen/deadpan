@@ -60,17 +60,37 @@ Native relink/checkpoint controls, complete keyboard editing, full mastering,
 HDR and the full media/performance/release matrix remain open. Saved-render
 browsing completes this entrypoint boundary, not DP-17, DP-18 or any delivery gate.
 
-For §9.7, the next bounded slice increment can preview a linked Original moment
-at an ordinary Sequence child boundary through `:splice`, preserving fast `p/P`.
-`preview_prepared_source_moment` already produces a reversible proposed edit;
-retain its exact prepared request without committing until Enter. Show endpoint
-pictures, a provisional destination, local endpoint refinement and Before/Proposed
-audition including both joins. Escape must restore the entry view and history.
-Keep proposed picture/audio on the same document with authority anchored in the
-committed base. Endpoint requests need a separate bounded identity/queue so they
-cannot displace the main picture. Frame-interior insertion, edited-slice move,
-replacement, picture/audio-only policies and Repeat/Retime occurrence targets
-remain required by the full specification and are not covered by this increment.
+## Visual slice preview, 2026-09-30
+
+`:splice` previews a linked Original moment at an ordinary Sequence child seam,
+with exact source endpoint pictures, local In/Out refinement, destination and
+provisional timeline, frame inspection, and Before/Proposed audition around both
+joins. The service retains the exact prepared request until Enter; Escape
+abandons the last issued identity and preserves the copied register and saved
+edit. Picture and audio use the same genuine proposed document and exact admitted
+base. Endpoint pictures have a separate bounded worker/mailbox. Fast `p/P` stays
+available. No core/database schema change was needed.
+
+The production `place-slice` replay passes 215 checks, including complete widget
+Tab/Shift+Tab focus circuits, synthetic IME ownership, actual text/image paint at
+960×640 and 1280×820, stale destination/reply handling, one commit and exact undo.
+An actual media test compares decoded pixels and canonical nonzero PCM across
+both joins against the committed result. See [the contract](../SLICE_PLACEMENT.md)
+and [qualification](../qualification/slice-placement-2026-09-30.md) for authority,
+evidence and limits. The replay does not qualify physical IME or acoustics.
+
+Native release QA passes sustained looping, heading and focused-button
+pause/resume, and cancellation; all rows in 20 SQLite tables remain unchanged
+and shutdown releases the writer lock. The user's existing window is untouched.
+Earlier debug audition starved: isolated preparation takes 1,065–1,194 ms per
+170.667 ms buffer in debug, versus 21–31 ms in release with identical PCM/gain.
+Retain this debug limitation; it does not qualify the broader workload matrix.
+The workspace passes 2,592 tests, the final UI-feature app passes 358 tests,
+and strict lint/format checks pass.
+
+Frame-interior insertion, edited-slice move, replacement, picture/audio-only
+policies and Repeat/Retime occurrence targets remain required by §9.7. DP-05,
+DP-20 and all release gates remain open or partial.
 
 ## Owner preparation, 2026-09-30
 
