@@ -1,0 +1,15 @@
+{
+  "bundle": "/tmp/deadpan-owner-preparation-20260930/Deadpan Preparation QA.app",
+  "binary": "/tmp/deadpan-owner-preparation-20260930/Deadpan Preparation QA.app/Contents/MacOS/deadpan-app",
+  "sha256": "74fb9f28e2fbb27891b3e6975e0899cf0aed916f639e6e2be52196d82297f847",
+  "source_manifest_sha256": "0d5b629c41b5839307f58322c46ecff0dee8addeaacfea44d38fcc132d8de7a7",
+  "purpose": "Disposable native verification, not release packaging",
+  "hardware": {
+    "hw.model": "Mac17,7",
+    "hw.memsize": "137438953472",
+    "hw.ncpu": "18",
+    "machdep.cpu.brand_string": "Apple M5 Max"
+  },
+  "macos": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84\n",
+  "rust": "rustc 1.97.1 (8bab26f4f 2026-07-14)"
+}

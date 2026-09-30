@@ -1,0 +1,152 @@
+{
+  "checks": [
+    {
+      "name": "native-smoke",
+      "exit_code": 0,
+      "seconds": 35.29983904212713,
+      "source_manifest_sha256": "0d5b629c41b5839307f58322c46ecff0dee8addeaacfea44d38fcc132d8de7a7",
+      "passed": 0,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "name": "preparation-app-first",
+      "exit_code": 0,
+      "seconds": 43.757288000080734,
+      "source_manifest_sha256": "bcfe575bb1eaf7243dda96ef3ece418dd32d8b66bf571bbfa7a972567e06b994",
+      "passed": 16,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "name": "preparation-app-regressions",
+      "exit_code": 0,
+      "seconds": 27.246419874951243,
+      "source_manifest_sha256": "0a410ee85d71ecb35dad98843231eb4916ec4f031223e8ad07e3e3171875e41a",
+      "passed": 15,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "name": "preparation-cli-first",
+      "exit_code": 101,
+      "seconds": 50.81712833279744,
+      "source_manifest_sha256": "b7fa2fc19d805e0677ea836f4ce6f7503a44ce0d16f402bf62c36f10781b6a37",
+      "passed": 236,
+      "failed": 1,
+      "ignored": 0
+    },
+    {
+      "name": "prepared-store-first",
+      "exit_code": 101,
+      "seconds": 32.1263632918708,
+      "source_manifest_sha256": "bb95b1f7360a7f5e59ff36c4b6daa56e424ee5f841d80df136d026326deb9145",
+      "passed": 0,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "name": "prepared-store-second",
+      "exit_code": 0,
+      "seconds": 34.038255042396486,
+      "source_manifest_sha256": "403b66b0f86e0022796816cea11ccd43cfd4799e9ef61945f2d06653a14a1ab5",
+      "passed": 88,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "name": "ui-clippy",
+      "exit_code": 0,
+      "seconds": 39.66335033392534,
+      "source_manifest_sha256": "4f1bffeee50885a4768883c8e219507ef24dc2b1b981273078878580c71f7b75",
+      "passed": 0,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "name": "ui-tests",
+      "exit_code": 0,
+      "seconds": 52.14503712486476,
+      "source_manifest_sha256": "4f1bffeee50885a4768883c8e219507ef24dc2b1b981273078878580c71f7b75",
+      "passed": 338,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "name": "workspace-clippy-corrected",
+      "exit_code": 101,
+      "seconds": 188.62038700003177,
+      "source_manifest_sha256": "a5509ef23b7d0a456f17ce8e66a65e8d73dfff2ecb60463a06cc5d4b589135db",
+      "passed": 0,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "name": "workspace-clippy-final",
+      "exit_code": 0,
+      "seconds": 12.921926875133067,
+      "source_manifest_sha256": "07a8783a8805f38bf3b3bd0623dd723f37a7896a133110c21fdcb446530549ea",
+      "passed": 0,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "name": "workspace-clippy-receipt",
+      "exit_code": 0,
+      "seconds": 107.21123966621235,
+      "source_manifest_sha256": "4f1bffeee50885a4768883c8e219507ef24dc2b1b981273078878580c71f7b75",
+      "passed": 0,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "name": "workspace-clippy",
+      "exit_code": 101,
+      "seconds": 93.89908749982715,
+      "source_manifest_sha256": "d56ca160349153a86eb7d88be55ecdea4f6d8cdf857079ee26b12e7a8e6c7f89",
+      "passed": 0,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "name": "workspace-fmt-final",
+      "exit_code": 0,
+      "seconds": 1.3631440829485655,
+      "source_manifest_sha256": "4f1bffeee50885a4768883c8e219507ef24dc2b1b981273078878580c71f7b75",
+      "passed": 0,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "name": "workspace-fmt",
+      "exit_code": 1,
+      "seconds": 1.3133861245587468,
+      "source_manifest_sha256": "d56ca160349153a86eb7d88be55ecdea4f6d8cdf857079ee26b12e7a8e6c7f89",
+      "passed": 0,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "name": "workspace-tests",
+      "exit_code": 0,
+      "seconds": 659.3776905830018,
+      "source_manifest_sha256": "0d5b629c41b5839307f58322c46ecff0dee8addeaacfea44d38fcc132d8de7a7",
+      "passed": 2572,
+      "failed": 0,
+      "ignored": 0
+    }
+  ],
+  "native_commands": 28,
+  "native_expected_failures": 10,
+  "native_binary": {
+    "path": "/private/tmp/deadpan-owner-preparation-20260930/Deadpan Preparation QA.app/Contents/MacOS/deadpan-app",
+    "sha256": "74fb9f28e2fbb27891b3e6975e0899cf0aed916f639e6e2be52196d82297f847"
+  },
+  "limits": [
+    "No process-crash or physical power-loss qualification",
+    "No representative large-project latency or memory measurement",
+    "No VoiceOver, IME or non-US-layout qualification",
+    "No new UI controls or full painted replay; affected native interaction inspected",
+    "This is a development wrapper, not signed/release packaging"
+  ]
+}

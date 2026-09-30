@@ -1,0 +1,18 @@
+Diff in /Users/michael/Code/deadpan/crates/deadpan-store/src/lib.rs:4:
+ //! change atomically. Undo restores content under a fresh revision, so an old
+ //! optimistic request never becomes valid again after undo.
+ 
+[32m+#[cfg(any(target_os = "macos", target_os = "linux"))]
+(B[m[32m+pub mod checkpoint;
+(B[m mod error;
+ #[cfg(any(target_os = "macos", target_os = "linux"))]
+ pub mod generated_media;
+Diff in /Users/michael/Code/deadpan/crates/deadpan-store/src/lib.rs:11:
+ pub mod generation_acceptance;
+ pub mod generation_attempts;
+ mod history;
+[31m-#[cfg(any(target_os = "macos", target_os = "linux"))]
+(B[m[31m-pub mod checkpoint;
+(B[m #[cfg(any(target_os = "macos", target_os = "linux"))]
+ pub mod host_owner;
+ mod migration;

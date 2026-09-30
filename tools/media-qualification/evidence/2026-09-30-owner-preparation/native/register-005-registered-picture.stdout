@@ -1,0 +1,150 @@
+{
+  "schema_version": 33,
+  "project_id": "79f0c32a-cbea-49c8-b8c3-1c6d8fce6712",
+  "revision_id": "native-register-original",
+  "presentation_basis": {
+    "width": 320,
+    "height": 180,
+    "frame_rate": {
+      "numerator": 30000,
+      "denominator": 1001
+    },
+    "color_policy": "sdr_rec709"
+  },
+  "basis_state": {
+    "rate_origin": "explicit",
+    "geometry_origin": "explicit",
+    "primary": {
+      "asset": "native-original",
+      "qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6"
+    }
+  },
+  "root": "8cb7be16-8034-4e10-b03c-435433aa6c7c",
+  "nodes": {
+    "8cb7be16-8034-4e10-b03c-435433aa6c7c": {
+      "label": "Sequence",
+      "kind": {
+        "type": "sequence",
+        "children": [
+          "native-original-clip"
+        ]
+      }
+    },
+    "native-original-clip": {
+      "label": "Native prepared picture",
+      "kind": {
+        "type": "source",
+        "source": {
+          "duration": 120,
+          "video": {
+            "type": "stream",
+            "asset": "native-original",
+            "span": {
+              "start": {
+                "ticks": 0,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 30000
+                }
+              },
+              "end": {
+                "ticks": 120120,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 30000
+                }
+              }
+            }
+          },
+          "video_mapping": {
+            "type": "placement",
+            "start": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "frames": {
+              "numerator": "120",
+              "denominator": "1"
+            },
+            "endpoints": "hold_adjacent"
+          },
+          "audio": {
+            "asset": "native-original",
+            "span": {
+              "start": {
+                "ticks": 0,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 48000
+                }
+              },
+              "end": {
+                "ticks": 192192,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 48000
+                }
+              }
+            }
+          },
+          "audio_mapping": {
+            "type": "placement",
+            "start": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "frames": {
+              "numerator": "120",
+              "denominator": "1"
+            }
+          },
+          "link": "linked",
+          "audio_offset": 0
+        }
+      }
+    }
+  },
+  "assets": {
+    "native-original": {
+      "label": "native-original",
+      "content_hash": "blake3:16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+      "video": {
+        "start": {
+          "ticks": 0,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 30000
+          }
+        },
+        "end": {
+          "ticks": 120120,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 30000
+          }
+        }
+      },
+      "audio": {
+        "start": {
+          "ticks": 0,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 48000
+          }
+        },
+        "end": {
+          "ticks": 192192,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 48000
+          }
+        }
+      },
+      "still_image": false,
+      "frame_count": 120,
+      "source_qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6"
+    }
+  },
+  "marks": {},
+  "overrides": {}
+}

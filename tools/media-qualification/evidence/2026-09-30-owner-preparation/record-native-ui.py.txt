@@ -1,0 +1,54 @@
+import fcntl
+import importlib.util
+import json
+import os
+from pathlib import Path
+import subprocess
+
+root = Path('/tmp/deadpan-owner-preparation-20260930')
+package = root / 'native-preparation.deadpan'
+spec = importlib.util.spec_from_file_location('qualification', root / 'qualify-native-preparation.py')
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+state = json.loads((root / 'native-preparation-evidence/state.json').read_text())
+descriptor = os.open(package / '.writer.lock', os.O_RDONLY | os.O_NOFOLLOW)
+try:
+    fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    fcntl.flock(descriptor, fcntl.LOCK_UN)
+finally:
+    os.close(descriptor)
+assert not (package / '.host.json').exists()
+processes = subprocess.check_output(['ps', '-Ao', 'pid,comm'], text=True)
+assert 'Deadpan Preparation QA.app/Contents/MacOS/deadpan-app' not in processes
+assert module.database_info(package / 'project.sqlite')['document'] == state['final_document']
+report = {
+    'result': 'passed',
+    'operator': 'browser role using native CUA; parent process/SQLite checks',
+    'bundle_id': 'dev.thiesen.deadpan.preparation-qa',
+    'project': str(package),
+    'observations': [
+        'Generic empty developer project opened; legacy compatibility label expected.',
+        'CLI registration refreshed Video native-original and Audio native-sound without reopening.',
+        'One Native prepared picture beat remained 120 frames; sound registration did not add picture time.',
+        'Actual color/frame-number video decoded; l advanced Original and Edit coordinates independently.',
+        'Tab traversed focused panes; Sources j/k selected catalog Sound and Video. Sound Ready at 4.025 seconds.',
+        'After relink, picture still decoded and advanced to frame 3 without reopening. Edit cursor remained at 1/120.',
+        'After switching from Sound to Video, Original cursor reset to zero; recorded as observed behavior.',
+        'Final keypress plus 3.5-second wait and inventory-only query confirmed app absent.',
+    ],
+    'shutdown': {'writer_released': True, 'discovery_absent': True, 'app_process_absent': True,
+                 'authored_document_unchanged': True},
+    'diagnostic': {
+        'initial_observation': 'Post-quit app-specific queries showed a new-looking No project window and running app.',
+        'followup': 'The same quit with no subsequent app-specific query left no process or inventory entry.',
+        'interpretation': 'Inspection may have relaunched the app. This is an inference, not a verified tool mechanism.',
+        'application_change': 'No shutdown code change was made from this observation.',
+    },
+    'limitations': [
+        'No saved screenshot: documented native CUA supported inline image inspection but no local save path.',
+        'No sound playback/acoustic claim; catalog availability only.',
+        'No VoiceOver, IME, non-US-layout, large-project latency or physical display qualification.',
+    ],
+}
+(root / 'native-ui-report.json').write_text(json.dumps(report, indent=2) + '\n')
+print(json.dumps(report['shutdown']))

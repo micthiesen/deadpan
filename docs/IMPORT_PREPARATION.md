@@ -2,9 +2,11 @@
 
 The store separates complete-file preparation from short inventory and authored
 commits. A native import worker can hash, clone/copy, snapshot and decode while
-the project service retains its sole writable `ProjectStore`. These APIs provide
-the boundary; the native project service, bounded import queue and visible import
-workflow still need integration.
+the project service retains its sole writable `ProjectStore`. The native service
+uses this worker for its import workflow and for authenticated CLI retention,
+relinking, source registration and database checkpoints. Heavy preparation is
+separate from the short writer commit; [open-project routing](LIVE_PROJECT.md)
+defines admission, observation and cancellation.
 
 ## Ownership and lifetime
 
@@ -25,6 +27,13 @@ Prepared values have private fields and no deserialization path. Cached metadata
 a matching filename or a copied project ID cannot construct admission proof.
 Reading an already returned private snapshot remains valid after close; admitting
 new inventory or authored state does not.
+
+The service admits one import/preparation at a time onto its existing bounded
+worker. CLI preparation uses a separate operation UUID and cancellation token,
+retains the exact store session and keeps its result outside the native command
+mailbox. A completed worker result waits in `awaiting_commit` until queued native
+commands and unread native commit continuations permit publication. Ordinary
+editing and existing Render observation continue during the worker phase.
 
 ## Retention and qualification
 
@@ -52,12 +61,64 @@ new inventory or authored state does not.
    `register_prepared_source` to commit. Those paths use the same typed command
    reducer, atomic history and generation relevance checks as synchronous import.
 
-Preparation stores no insertion target, expected authored revision or project
-frame rate. A source prepared while the canvas is provisional must respect a
-timed edit or explicit canvas decision made before insertion. A stale request
-fails; the host can resolve fresh intent and reuse the still-valid token without
-decoding again. This does not authorize silently changing a user's selected
-target or automatically retrying an edit with different meaning.
+The store's `PreparedSourceRegistration` stores no insertion target, expected
+authored revision or project frame rate. A source prepared while the canvas is
+provisional must respect a timed edit or explicit canvas decision made before
+insertion. A stale request fails; a host can resolve fresh intent and reuse the
+still-valid token without decoding again. This does not authorize silently
+changing a user's selected target or automatically retrying an edit.
+
+The CLI wrapper deliberately captures more than that media token. Its
+`PreparationWork` and `PreparedOperation` bind the complete submitted
+`SourceRegistration` and explicit stream selection. Commit rejects a different
+command before any write, then the store checks the original expected revision,
+new revision, asset/insertion identities and source availability. It cannot use
+the native import continuation to synthesize a fresh insertion. Registration
+passes no fabricated generation relevance observations; requests needing that
+context can fail with `GenerationRelevanceRequired`, as in the closed CLI.
+An identical existing registration reuses its qualified asset, even when the
+captured `new_asset_id` proposes another alias. Without insertion it may succeed
+with no new authored revision and still returns that existing asset and
+qualification receipt. Exact caller intent preserves this store deduplication
+rule; it does not require allocating the proposed asset identity.
+
+## Prepared relinking
+
+Admission captures the complete current `OriginalMediaRecord` and expected
+location version. `handle.prepare_relink(record, expected_version, location,
+limits, cancelled)` verifies the replacement's whole-file content and retains
+its descriptor/path freshness evidence on the worker. It does not update SQLite.
+`store.relink_prepared_original(prepared, cancelled)` rechecks the issuing
+session, complete captured record, location version and current source metadata
+before committing the inventory transaction. A competing relink cannot be
+overwritten by a delayed result. An identical path/bookmark is a successful
+no-op that preserves the version; a changed location increments it once.
+Neither case creates authored history.
+
+## Prepared database checkpoints
+
+`store.checkpoint_handle()` captures the held writer identity and pinned package,
+database and `Snapshots` descriptors without copying the database. The worker
+consumes that handle, opens its own read-only SQLite connection and pins a read
+transaction before using the backup API. Committed WAL content is included;
+later edits do not restart the copy or alter its captured revision. The worker
+checks the copied project/revision, closes the destination database and
+synchronizes the private file before returning `PreparedCheckpoint`.
+A pinned reader can delay WAL reclamation until preparation ends.
+
+`store.publish_prepared_checkpoint` checks the live owner, database and namespace
+identities, staged file metadata, cancellation and deadline, then performs an
+exclusive rename and synchronizes `Snapshots`. Its receipt gives the published
+path, actual captured project/revision and database bytes. The source revision
+comes from the worker's read snapshot, not the request's arrival time. The result
+is a database checkpoint; media is not copied with it.
+
+If rename succeeds but the final directory sync fails,
+`CheckpointError::PublishedUnconfirmed` retains the receipt. The file stays
+published. The service records a completed operation with `completion_error`,
+and the CLI emits its output and receipt before exiting nonzero. Cancellation
+after rename cannot relabel that publication as cancelled. No saved receipt
+proves physical power-loss recovery.
 
 ## Availability and atomicity
 
@@ -87,16 +148,49 @@ Once a copy is published, its file and namespace durability steps complete befor
 cancellation can stop post-publication verification. A durability failure remains
 an error, with the published bytes retained for a later verified retry.
 
+## Limits and client observation
+
+Typed CLI preparation commands admit at most 64 KiB of serialized JSON, with
+16 KiB path/bookmark and 4 KiB label limits. Original preparation uses the shared
+video/audio decoder input bound, currently 64 GiB, and a 300-second cooperative
+limit for each phase. Checkpoint defaults are 1 GiB, 32 pages per backup step and
+a five-minute deadline that also applies to publication. These limits do not
+preempt a blocking SQLite, decoder or filesystem call.
+
+The native service requests cancellation after 15 minutes and reports a timeout
+only after the worker returns. Close/switch/shutdown cancel and drain the old
+operation. The CLI retains its originally discovered owner and exact operation
+target, polls over separate bounded requests, and never holds a socket through
+media preparation. SIGINT, SIGTERM or its 15-minute limit request cancellation;
+it waits up to five further minutes for drain. Losing a reply or reaching that
+drain limit produces an unknown outcome, never a replay or a new owner lookup.
+
+Completed observations retain typed operational receipts independently of
+authored revision receipts, refresh errors and detailed reply capacity. The
+service invalidates cached workspace data after an inventory or authored change.
+A refresh failure cannot erase the committed result. Successful CLI stdout
+delivery releases the terminal observation; failed stdout delivery retains it.
+Known failed/cancelled operations also release their entries. The owner retains
+at most eight preparation observations, with ten-minute expiry for terminals.
+These live observations end when the owner closes; inventory, authored history
+and published checkpoints remain persisted.
+
 ## Scope and verification
 
 No database or core schema changes are needed. These capabilities are process-local;
 persisted original records and source receipts retain their existing meaning.
-The synchronous CLI remains available, including independent read-only preview.
+The closed-project CLI remains available, including independent read-only
+registration preview beside an open writer. Current-schema `project migrate`
+retains its read-only validation fast path and does not contact the owner.
+Only a migration writer-lock conflict selects the IPC no-op schema report;
+legacy closed packages keep their backed-up migration path.
 
-Headless thread and integration tests exercise live media, concurrent authored
-edits, session closure, stale intent, namespace changes, rollback and deduplication.
-The split removes complete-file copying and hashing from writer commits. SQLite
-receipt writes, document validation and source timing analysis still have costs;
-no full-size latency or memory budget is established by tiny fixtures. Native
-queue scheduling, project controls, visual quality and keyboard behavior remain
-separate implementation and acceptance work.
+The test suite includes thread, store, service and CLI cases for live media,
+concurrent edits, exact caller intent, no-op receipts, session closure, stale
+versions, namespace changes, cancellation, rollback and lost replies. Those
+cases define coverage; run results and native observations belong in dated
+qualification evidence. This document does not establish full-size latency,
+memory, visual or keyboard acceptance. SQLite receipt writes, document validation
+and source timing analysis still have costs. Native relink/checkpoint controls,
+portable project copies, full recovery UI and the remaining import acceptance
+work remain open.

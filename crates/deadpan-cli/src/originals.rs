@@ -6,6 +6,7 @@ use deadpan_store::original_media::{
 };
 use deadpan_store::{AccessMode, ProjectStore, StoreError};
 
+use crate::live_project::preparation::{self, PreparationCommand};
 use crate::{CliError, write_json};
 
 fn content(value: &str) -> Result<OriginalContentId, CliError> {
@@ -24,7 +25,19 @@ pub(super) fn run(action: &str, arguments: &[&str]) -> Result<(), CliError> {
             } else {
                 OriginalOwnership::Managed
             };
-            let mut store = ProjectStore::open(Path::new(project), AccessMode::ReadWrite)?;
+            let mut store = match ProjectStore::open(Path::new(project), AccessMode::ReadWrite) {
+                Ok(store) => store,
+                Err(StoreError::AlreadyOpen) => {
+                    return preparation::run(
+                        Path::new(project),
+                        PreparationCommand::Retain {
+                            path: Path::new(source).to_owned(),
+                            ownership: ownership.into(),
+                        },
+                    );
+                }
+                Err(error) => return Err(error.into()),
+            };
             let retained =
                 store.retain_original(Path::new(source), ownership, limits, &cancelled)?;
             write_json(
@@ -62,7 +75,20 @@ pub(super) fn run(action: &str, arguments: &[&str]) -> Result<(), CliError> {
             }
             let location = LinkedOriginal::new(Path::new(source).to_owned(), None)
                 .map_err(StoreError::from)?;
-            let mut store = ProjectStore::open(Path::new(project), AccessMode::ReadWrite)?;
+            let mut store = match ProjectStore::open(Path::new(project), AccessMode::ReadWrite) {
+                Ok(store) => store,
+                Err(StoreError::AlreadyOpen) => {
+                    return preparation::run(
+                        Path::new(project),
+                        PreparationCommand::Relink {
+                            content: key,
+                            expected_version: version,
+                            location,
+                        },
+                    );
+                }
+                Err(error) => return Err(error.into()),
+            };
             let record = store.relink_original(&key, version, location, limits, &cancelled)?;
             write_json(&serde_json::json!({ "protocol": 1, "relinked_original": record }))
         }

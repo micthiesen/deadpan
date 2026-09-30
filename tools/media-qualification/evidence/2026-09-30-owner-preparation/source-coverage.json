@@ -1,0 +1,27 @@
+{
+  "final_source_manifest_sha256": "4f1bffeee50885a4768883c8e219507ef24dc2b1b981273078878580c71f7b75",
+  "checks": [
+    {
+      "name": "native-smoke",
+      "source_manifest_sha256": "0d5b629c41b5839307f58322c46ecff0dee8addeaacfea44d38fcc132d8de7a7",
+      "different_source_paths": [
+        "crates/deadpan-app/src/preview.rs"
+      ],
+      "explanation": "Only the obsolete closed-project help claim changed after the native/base workspace snapshot."
+    },
+    {
+      "name": "workspace-tests",
+      "source_manifest_sha256": "0d5b629c41b5839307f58322c46ecff0dee8addeaacfea44d38fcc132d8de7a7",
+      "different_source_paths": [
+        "crates/deadpan-app/src/preview.rs"
+      ],
+      "explanation": "Only the obsolete closed-project help claim changed after the native/base workspace snapshot."
+    },
+    {
+      "name": "ui-tests",
+      "source_manifest_sha256": "4f1bffeee50885a4768883c8e219507ef24dc2b1b981273078878580c71f7b75",
+      "different_source_paths": [],
+      "explanation": "Exact final code inventory."
+    }
+  ]
+}

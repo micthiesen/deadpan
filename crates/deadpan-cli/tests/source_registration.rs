@@ -141,7 +141,7 @@ fn cfr_registration_previews_beside_writer_commits_once_and_preserves_undo_recei
     assert_eq!(counts(&package)?, (1, 0, 0));
     assert_eq!(
         registration(&package, &path, false, false)?["error"]["code"],
-        "ProjectAlreadyOpen"
+        "HostOwnerUnavailable"
     );
     drop(writer);
     fs::remove_file(scratch.path().join("source.mp4"))?;

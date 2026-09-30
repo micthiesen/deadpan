@@ -1,0 +1,18 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "-p",
+    "deadpan-app",
+    "project::tests::headless",
+    "--no-fail-fast"
+  ],
+  "started": "2026-09-30T16:10:14.183704+00:00",
+  "base_commit": "379b068ca8234a961b6cf18be13957b47c891903",
+  "diff_sha256": "96d12b9ae5f59e7d89aece28e7b28db78407df344a32990563ff462cb47cdcc1",
+  "source_manifest_sha256": "bcfe575bb1eaf7243dda96ef3ece418dd32d8b66bf571bbfa7a972567e06b994",
+  "pid": 87533,
+  "exit_code": 0,
+  "seconds": 43.757288000080734
+}

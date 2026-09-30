@@ -20,9 +20,12 @@ use crate::project::{
 const MAX_OBSERVERS: usize = 8;
 const TERMINAL_RETENTION: Duration = Duration::from_secs(10 * 60);
 
+mod preparation;
+
 pub(super) struct Host {
     endpoint: Endpoint,
     renders: Vec<Observation>,
+    preparations: Vec<preparation::Observation>,
 }
 
 struct Observation {
@@ -36,6 +39,7 @@ impl Host {
         Ok(Self {
             endpoint: Endpoint::bind(store).map_err(display)?,
             renders: Vec::new(),
+            preparations: Vec::new(),
         })
     }
 
@@ -43,6 +47,16 @@ impl Host {
         let now = Instant::now();
         self.renders
             .retain(|entry| entry.expires.is_none_or(|end| now < end));
+        self.preparations
+            .retain(|entry| entry.expires.is_none_or(|end| now < end));
+    }
+}
+
+impl Drop for Host {
+    fn drop(&mut self) {
+        for entry in &self.preparations {
+            entry.cancelled.store(true, Ordering::Release);
+        }
     }
 }
 
@@ -92,6 +106,18 @@ impl Service {
                 self.check_host_project(&project_id)?;
                 self.host_render_status(&target)
             }
+            Operation::PreparationStatus { project_id, target } => {
+                self.check_host_project(&project_id)?;
+                self.host_preparation_status(&target)
+            }
+            Operation::CancelPreparation { project_id, target } => {
+                self.check_host_project(&project_id)?;
+                self.host_cancel_preparation(&target)
+            }
+            Operation::ReleasePreparationStatus { project_id, target } => {
+                self.check_host_project(&project_id)?;
+                self.host_release_preparation(&target)
+            }
             Operation::ReleaseRenderStatus { project_id, target } => {
                 self.check_host_project(&project_id)?;
                 let HostReply::Render { finished, .. } = self.host_render_status(&target)? else {
@@ -133,6 +159,11 @@ impl Service {
                             command,
                         } => self.host_edit(&project_id, &command),
                         Operation::Render { request } => self.host_render(request),
+                        Operation::Prepare {
+                            project_id,
+                            target,
+                            command,
+                        } => self.host_prepare(&project_id, target, *command),
                         _ => unreachable!("non-admitting operations handled above"),
                     }
                 };
@@ -427,6 +458,43 @@ fn public_error(error: public_render::PublicRenderError) -> LiveError {
 }
 
 fn reply_failure(reply: &HostReply) -> HostReply {
+    if let HostReply::Preparation { status } = reply {
+        let mut status = status.clone();
+        match &mut status.state {
+            deadpan_cli::live_project::preparation::PreparationState::Completed {
+                output,
+                refresh_error,
+                completion_error,
+                ..
+            } => {
+                *output = serde_json::json!({
+                    "protocol": 1,
+                    "host_reply_detail_omitted": true,
+                    "message": "The operation completed. Its exact receipt is retained; inspect before repeating a mutation.",
+                });
+                if refresh_error.is_some() {
+                    *refresh_error = Some(
+                        "Native workspace refresh failed after the completed operation".into(),
+                    );
+                }
+                if let Some(error) = completion_error {
+                    error.message = "The operation was published, but final durability could not be confirmed. Inspect its retained receipt before repeating.".into();
+                    if error.code.len() > 128 {
+                        error.code = "HostPublishedUnconfirmed".into();
+                    }
+                }
+            }
+            deadpan_cli::live_project::preparation::PreparationState::Failed { error } => {
+                error.message =
+                    "Preparation failed; its diagnostic exceeded transport capacity".into();
+                if error.code.len() > 128 {
+                    error.code = "HostReplyLimit".into();
+                }
+            }
+            _ => {}
+        }
+        return HostReply::Preparation { status };
+    }
     if let HostReply::Failed { error } = reply {
         let mut error = error.clone();
         error.message =
@@ -488,5 +556,58 @@ mod tests {
         assert_eq!(error.code, "RevisionConflict");
         assert_eq!(error.current_revision, Some(revision));
         assert!(error.committed_revision.is_none());
+    }
+
+    #[test]
+    fn compact_preparation_reply_retains_published_checkpoint_and_durability_failure() {
+        use deadpan_cli::live_project::preparation::{
+            PreparationReceipt, PreparationState, PreparationStatus, PreparationTarget,
+        };
+        let target = PreparationTarget::fresh();
+        let receipt = PreparationReceipt::Checkpoint {
+            path: PathBuf::from("/project.deadpan/Snapshots/retained.sqlite3"),
+            project_id: ProjectId::new("checkpoint-project").unwrap(),
+            revision_id: RevisionId::new("captured-checkpoint").unwrap(),
+        };
+        let reply = HostReply::Preparation {
+            status: Box::new(PreparationStatus {
+                target: target.clone(),
+                state: PreparationState::Completed {
+                    output: serde_json::json!({"large": "x".repeat(1_000_000)}),
+                    receipt: receipt.clone(),
+                    committed_revision: None,
+                    inventory_changed: false,
+                    completion_error: Some(LiveError::new(
+                        "CheckpointPublishedUnconfirmed",
+                        "directory sync failed",
+                    )),
+                    refresh_error: None,
+                },
+            }),
+        };
+        let compact = reply_failure(&reply);
+        assert!(serde_json::to_vec(&compact).unwrap().len() < 4096);
+        let HostReply::Preparation { status } = compact else {
+            panic!("preparation receipt")
+        };
+        assert_eq!(status.target, target);
+        let PreparationState::Completed {
+            output,
+            receipt: retained,
+            committed_revision,
+            inventory_changed,
+            completion_error,
+            ..
+        } = status.state
+        else {
+            panic!("completed publication")
+        };
+        assert_eq!(retained, receipt);
+        assert_eq!(output["host_reply_detail_omitted"], true);
+        assert!(committed_revision.is_none() && !inventory_changed);
+        assert_eq!(
+            completion_error.unwrap().code,
+            "CheckpointPublishedUnconfirmed"
+        );
     }
 }

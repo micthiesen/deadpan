@@ -945,15 +945,14 @@ impl Harness {
     }
 
     fn finish(&self, job: worker::Job) {
-        let result = worker::prepare(&job);
+        let id = job.id;
+        let result = worker::prepare(job);
         assert!(
             result.is_ok(),
             "worker preparation failed: {:?}",
             result.as_ref().err()
         );
-        self.replies
-            .send(worker::Reply { id: job.id, result })
-            .unwrap();
+        self.replies.send(worker::Reply { id, result }).unwrap();
     }
 
     fn imported(&self, name: &str) -> Arc<Workspace> {
@@ -1211,12 +1210,10 @@ fn sounds_are_audio_only_catalog_entries_and_bad_streams_leave_the_edit_intact()
     assert!(failed.error.is_none());
     harness.finish(harness.job());
     let job = harness.job();
-    let result = worker::prepare(&job);
+    let id = job.id;
+    let result = worker::prepare(job);
     assert!(result.is_err());
-    harness
-        .replies
-        .send(worker::Reply { id: job.id, result })
-        .unwrap();
+    harness.replies.send(worker::Reply { id, result }).unwrap();
     let failed = wait(&harness.service, |update| {
         update
             .import
@@ -1275,15 +1272,13 @@ fn failed_original_qualification_reopens_as_an_incomplete_project_for_retry() {
     .unwrap();
     harness.finish(harness.job());
     let job = harness.job();
-    let result = worker::prepare(&job);
+    let id = job.id;
+    let result = worker::prepare(job);
     assert!(
         result.is_err(),
         "audio alone cannot establish an Original video"
     );
-    harness
-        .replies
-        .send(worker::Reply { id: job.id, result })
-        .unwrap();
+    harness.replies.send(worker::Reply { id, result }).unwrap();
     let failed = wait(&harness.service, |update| {
         update
             .import
@@ -1514,7 +1509,8 @@ fn cancel_and_switch_reject_late_prepared_results_and_release_writer_lock() {
     let old = create(&harness.service, &old_path);
     import(&harness.service, "cfr-bframes.mp4");
     let job = harness.job();
-    let prepared = worker::prepare(&job).unwrap();
+    let id = job.id;
+    let prepared = worker::prepare(job).unwrap();
     let cancelled = command(&harness.service, ProjectRequest::CancelImport);
     assert_eq!(cancelled.import.unwrap().stage, ImportStage::Cancelled);
     command(&harness.service, ProjectRequest::Close);
@@ -1538,7 +1534,7 @@ fn cancel_and_switch_reject_late_prepared_results_and_release_writer_lock() {
     harness
         .replies
         .send(worker::Reply {
-            id: job.id,
+            id,
             result: Ok(prepared),
         })
         .unwrap();

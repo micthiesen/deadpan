@@ -12,6 +12,9 @@ use serde_json::Value;
 use crate::host::{Client, HostError};
 use crate::render::{RenderContext, RenderRequest, RenderStatus, WorkflowTarget};
 
+pub mod preparation;
+use preparation::{PreparationCommand, PreparationStatus, PreparationTarget};
+
 pub const SCHEMA_VERSION: u32 = 1;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -40,6 +43,23 @@ pub enum Operation {
     ReleaseRenderStatus {
         project_id: ProjectId,
         target: WorkflowTarget,
+    },
+    Prepare {
+        project_id: ProjectId,
+        target: PreparationTarget,
+        command: Box<PreparationCommand>,
+    },
+    PreparationStatus {
+        project_id: ProjectId,
+        target: PreparationTarget,
+    },
+    CancelPreparation {
+        project_id: ProjectId,
+        target: PreparationTarget,
+    },
+    ReleasePreparationStatus {
+        project_id: ProjectId,
+        target: PreparationTarget,
     },
 }
 
@@ -97,6 +117,9 @@ pub enum Reply {
     Render {
         status: Box<RenderStatus>,
         finished: bool,
+    },
+    Preparation {
+        status: Box<PreparationStatus>,
     },
     #[serde(deserialize_with = "deserialize_empty")]
     Released,
@@ -181,6 +204,18 @@ impl Request {
             let bytes = serde_json::to_vec(request).map_err(LiveError::json)?;
             RenderRequest::from_json(&bytes)
                 .map_err(|error| LiveError::new(&error.code, error.message))?;
+        }
+        match &request.operation {
+            Operation::Prepare {
+                target, command, ..
+            } => {
+                target.validate()?;
+                command.validate()?;
+            }
+            Operation::PreparationStatus { target, .. }
+            | Operation::CancelPreparation { target, .. }
+            | Operation::ReleasePreparationStatus { target, .. } => target.validate()?,
+            _ => {}
         }
         Ok(request)
     }

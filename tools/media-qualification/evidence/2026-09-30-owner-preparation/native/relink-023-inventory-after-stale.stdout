@@ -1,0 +1,103 @@
+{
+  "next_after": "2a71661b9ab6925c88996ee355b96cd96c3041ee775c3ccbe2681513397a613f",
+  "originals": [
+    {
+      "label": "cfr-bframes.mp4",
+      "linked": {
+        "bookmark": null,
+        "path": "/tmp/deadpan-owner-preparation-20260930/native-preparation-evidence/media/moved-cfr-bframes.mp4"
+      },
+      "managed": false,
+      "object": {
+        "byte_length": 39157,
+        "content": {
+          "algorithm": "blake3",
+          "digest": "16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1"
+        }
+      },
+      "sha256": [
+        90,
+        130,
+        10,
+        121,
+        191,
+        85,
+        13,
+        72,
+        77,
+        142,
+        203,
+        55,
+        255,
+        221,
+        208,
+        72,
+        208,
+        99,
+        103,
+        148,
+        235,
+        206,
+        93,
+        184,
+        62,
+        79,
+        92,
+        229,
+        245,
+        230,
+        73,
+        24
+      ],
+      "version": 2
+    },
+    {
+      "label": "offset-bframes.mp4",
+      "linked": null,
+      "managed": true,
+      "object": {
+        "byte_length": 39181,
+        "content": {
+          "algorithm": "blake3",
+          "digest": "2a71661b9ab6925c88996ee355b96cd96c3041ee775c3ccbe2681513397a613f"
+        }
+      },
+      "sha256": [
+        21,
+        4,
+        232,
+        196,
+        28,
+        46,
+        142,
+        51,
+        207,
+        88,
+        139,
+        190,
+        70,
+        231,
+        199,
+        159,
+        159,
+        181,
+        7,
+        67,
+        117,
+        51,
+        245,
+        214,
+        205,
+        111,
+        40,
+        11,
+        107,
+        253,
+        177,
+        32
+      ],
+      "version": 1
+    }
+  ],
+  "protocol": 1
+}

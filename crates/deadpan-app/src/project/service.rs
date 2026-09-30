@@ -67,6 +67,8 @@ struct Service {
     render_update: Option<super::ProjectRenderUpdate>,
     pending_session_change: Option<render::PendingSessionChange>,
     host: Option<headless::Host>,
+    // Kept across session replacement until the shared worker drains its reply.
+    host_preparing: Option<(u64, Arc<AtomicBool>)>,
     #[cfg(test)]
     render_preview_refresh_failure: bool,
 }
@@ -100,6 +102,7 @@ pub(super) fn run(
         render_update: None,
         pending_session_change: None,
         host: None,
+        host_preparing: None,
         #[cfg(test)]
         render_preview_refresh_failure: false,
     };
@@ -118,6 +121,7 @@ pub(super) fn run(
             service.publish();
         }
         service.pump_host();
+        service.pump_host_preparation();
         if service.shared.stopping.load(Ordering::Acquire)
             && !service.shared.busy.load(Ordering::Acquire)
             && service.pending_session_change.is_none()
@@ -152,7 +156,10 @@ pub(super) fn run(
                 service.result(reply);
                 service.publish();
             }
-            Err(TryRecvError::Disconnected) if service.active.is_some() => {
+            Err(TryRecvError::Disconnected)
+                if service.active.is_some() || service.host_preparing.is_some() =>
+            {
+                service.host_preparation_disconnected();
                 if let Some(active) = service.active.take() {
                     active.cancelled.store(true, Ordering::Release);
                     if service
@@ -497,7 +504,7 @@ impl Service {
     fn create_from_source(&mut self, path: PathBuf) -> Result<()> {
         // A cancelled preparation retains its single worker slot until its reply.
         // Never allocate a package that cannot immediately start initialization.
-        if self.active.is_some() {
+        if self.active.is_some() || self.host_preparation_active() {
             return Err("Wait for the current import to stop before creating a project".into());
         }
         let library = match &self.library {
@@ -921,6 +928,7 @@ impl Service {
     }
 
     fn cancel(&mut self) {
+        self.cancel_host_preparation();
         if let Some(active) = &self.active {
             active.cancelled.store(true, Ordering::Release);
             if active.session == self.session
@@ -941,7 +949,7 @@ impl Service {
         scope: SequenceScope,
         work: Work,
     ) -> Result<()> {
-        if self.active.is_some() {
+        if self.active.is_some() || self.host_preparation_active() {
             return Err(
                 "An import is still active; cancel it and wait for preparation to stop".into(),
             );
@@ -1139,6 +1147,9 @@ impl Service {
     }
 
     fn result(&mut self, reply: Reply) {
+        let Some(reply) = self.host_preparation_result(reply) else {
+            return;
+        };
         let Some(active) = self.active.take() else {
             return;
         };
@@ -1155,6 +1166,9 @@ impl Service {
             return;
         }
         let outcome = match reply.result {
+            Ok(Prepared::Host(_)) => {
+                Err("Import worker returned an unrelated host operation".into())
+            }
             Err(error) => Err(error),
             Ok(Prepared::Retained(prepared)) => {
                 let retained = self.writer().and_then(|store| {

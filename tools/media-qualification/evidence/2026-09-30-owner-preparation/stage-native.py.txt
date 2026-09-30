@@ -1,0 +1,42 @@
+import hashlib
+import json
+from pathlib import Path
+import plistlib
+import shutil
+import subprocess
+
+root = Path('/tmp/deadpan-owner-preparation-20260930')
+repo = Path('/Users/michael/Code/deadpan')
+journal = json.loads((root / 'native-smoke.json').read_text())
+assert journal['exit_code'] == 0
+bundle = root / 'Deadpan Preparation QA.app'
+assert not bundle.exists()
+binary = bundle / 'Contents/MacOS/deadpan-app'
+binary.parent.mkdir(parents=True)
+source = repo / 'target/debug/deadpan-app'
+shutil.copy2(source, binary)
+with (bundle / 'Contents/Info.plist').open('xb') as stream:
+    plistlib.dump({
+        'CFBundleExecutable': 'deadpan-app',
+        'CFBundleIdentifier': 'dev.thiesen.deadpan.preparation-qa',
+        'CFBundleName': 'Deadpan Preparation QA',
+        'CFBundleDisplayName': 'Deadpan Preparation QA',
+        'CFBundlePackageType': 'APPL',
+        'CFBundleVersion': '1',
+        'NSHighResolutionCapable': True,
+    }, stream)
+def digest(path):
+    with path.open('rb') as stream:
+        return hashlib.file_digest(stream, 'sha256').hexdigest()
+assert digest(source) == digest(binary)
+report = {
+    'bundle': str(bundle), 'binary': str(binary), 'sha256': digest(binary),
+    'source_manifest_sha256': journal['source_manifest_sha256'],
+    'purpose': 'Disposable native verification, not release packaging',
+    'hardware': {key: subprocess.check_output(['sysctl', '-n', key], text=True).strip()
+                 for key in ('hw.model', 'hw.memsize', 'hw.ncpu', 'machdep.cpu.brand_string')},
+    'macos': subprocess.check_output(['sw_vers'], text=True),
+    'rust': subprocess.check_output(['rustc', '--version'], text=True).strip(),
+}
+(root / 'native-app.json').write_text(json.dumps(report, indent=2) + '\n')
+print(json.dumps(report))

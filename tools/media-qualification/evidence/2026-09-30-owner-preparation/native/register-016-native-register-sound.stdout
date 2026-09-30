@@ -1,0 +1,90 @@
+{
+  "committed": true,
+  "outcome": {
+    "asset_id": "native-sound",
+    "commit": {
+      "edit": {
+        "changed_ids": [],
+        "description": "Import source media",
+        "duration_delta": 0,
+        "forward": {
+          "assets": {
+            "native-sound": {
+              "after": {
+                "audio": {
+                  "end": {
+                    "ticks": 288288,
+                    "time_base": {
+                      "denominator": 48000,
+                      "numerator": 1
+                    }
+                  },
+                  "start": {
+                    "ticks": 95072,
+                    "time_base": {
+                      "denominator": 48000,
+                      "numerator": 1
+                    }
+                  }
+                },
+                "content_hash": "blake3:2a71661b9ab6925c88996ee355b96cd96c3041ee775c3ccbe2681513397a613f",
+                "frame_count": null,
+                "label": "native-sound",
+                "source_qualification": "58f446c16ec144ca3478ffc360c0a96fb257b752a3f2dd7c6071c97fc5123b15",
+                "still_image": false,
+                "video": null
+              },
+              "before": null
+            }
+          },
+          "from_revision": "native-register-original",
+          "marks": {},
+          "nodes": {},
+          "overrides": {},
+          "project_id": "79f0c32a-cbea-49c8-b8c3-1c6d8fce6712",
+          "to_revision": "native-register-sound"
+        },
+        "inverse": {
+          "assets": {
+            "native-sound": {
+              "after": null,
+              "before": {
+                "audio": {
+                  "end": {
+                    "ticks": 288288,
+                    "time_base": {
+                      "denominator": 48000,
+                      "numerator": 1
+                    }
+                  },
+                  "start": {
+                    "ticks": 95072,
+                    "time_base": {
+                      "denominator": 48000,
+                      "numerator": 1
+                    }
+                  }
+                },
+                "content_hash": "blake3:2a71661b9ab6925c88996ee355b96cd96c3041ee775c3ccbe2681513397a613f",
+                "frame_count": null,
+                "label": "native-sound",
+                "source_qualification": "58f446c16ec144ca3478ffc360c0a96fb257b752a3f2dd7c6071c97fc5123b15",
+                "still_image": false,
+                "video": null
+              }
+            }
+          },
+          "from_revision": "native-register-sound",
+          "marks": {},
+          "nodes": {},
+          "overrides": {},
+          "project_id": "79f0c32a-cbea-49c8-b8c3-1c6d8fce6712",
+          "to_revision": "native-register-original"
+        }
+      },
+      "revision_id": "native-register-sound"
+    },
+    "qualification": "58f446c16ec144ca3478ffc360c0a96fb257b752a3f2dd7c6071c97fc5123b15"
+  },
+  "protocol": 1
+}

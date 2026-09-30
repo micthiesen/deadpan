@@ -1,0 +1,73 @@
+"""Retain bounded qualification inputs/results, excluding live owner secrets."""
+import gzip
+import hashlib
+import json
+from pathlib import Path
+import re
+import shutil
+
+root = Path('/tmp/deadpan-owner-preparation-20260930')
+destination = Path('/Users/michael/Code/deadpan/tools/media-qualification/evidence/2026-09-30-owner-preparation')
+assert not destination.exists(), 'Review an existing collection instead of overwriting it'
+checks = json.loads((root / 'final-checks.json').read_text())
+assert len(checks) == 5 and all(row['exit_code'] == 0 for row in checks)
+native = json.loads((root / 'native-preparation-evidence/state.json').read_text())
+assert all(native['phases'].get(name) == 'passed' for name in ('setup', 'register', 'relink', 'summary'))
+ui = json.loads((root / 'native-ui-report.json').read_text())
+assert ui['result'] == 'passed' and ui['shutdown']['writer_released']
+destination.mkdir(parents=True)
+
+def digest(path):
+    with path.open('rb') as stream:
+        return hashlib.file_digest(stream, 'sha256').hexdigest()
+
+def copy(source, target):
+    assert source.is_file() and not source.is_symlink(), str(source)
+    assert source.stat().st_size <= 32 * 1024 * 1024, str(source)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(source, target)
+    assert digest(source) == digest(target)
+
+for source in sorted(root.iterdir()):
+    if re.fullmatch(r'source-[0-9a-f]{64}\.json', source.name):
+        with gzip.GzipFile(filename=str(destination / (source.name + '.gz')), mode='wb', mtime=0) as stream:
+            stream.write(source.read_bytes())
+    elif source.suffix in ('.json', '.log') or source.name == 'native-ui-report.txt':
+        copy(source, destination / source.name)
+    elif source.suffix == '.py':
+        copy(source, destination / (source.name + '.txt'))
+
+for source in sorted((root / 'native-preparation-evidence').rglob('*')):
+    if source.is_file():
+        if source.name.endswith(('-shm', '-wal')):
+            continue
+        assert source.name not in ('.host.json', '.writer.lock')
+        copy(source, destination / 'native' / source.relative_to(root / 'native-preparation-evidence'))
+copy(Path(native['checkpoint']['path']), destination / 'native/checkpoint.sqlite')
+
+results = []
+for source in sorted(root.glob('*.json')):
+    if source.name.startswith('source-'):
+        continue
+    value = json.loads(source.read_text())
+    if not isinstance(value, dict) or 'command' not in value:
+        continue
+    log = root / (source.stem + '.log')
+    counts = [tuple(map(int, match)) for match in re.findall(
+        r'test result: (?:ok|FAILED)\. (\d+) passed; (\d+) failed; (\d+) ignored;', log.read_text())]
+    results.append({
+        'name': source.stem, 'exit_code': value.get('exit_code'),
+        'seconds': value.get('seconds'), 'source_manifest_sha256': value['source_manifest_sha256'],
+        'passed': sum(row[0] for row in counts), 'failed': sum(row[1] for row in counts),
+        'ignored': sum(row[2] for row in counts),
+    })
+summary = {'checks': results, 'native_commands': len(native['commands']),
+           'native_expected_failures': sum(row['expected_exit'] != 0 for row in native['commands']),
+           'native_binary': native['binary'],
+           'limits': ['No process-crash or physical power-loss qualification',
+                      'No representative large-project latency or memory measurement',
+                      'No VoiceOver, IME or non-US-layout qualification',
+                      'No new UI controls or full painted replay; affected native interaction inspected',
+                      'This is a development wrapper, not signed/release packaging']}
+(destination / 'summary.json').write_text(json.dumps(summary, indent=2) + '\n')
+print(json.dumps(summary, indent=2))

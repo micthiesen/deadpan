@@ -6,6 +6,7 @@ use std::sync::mpsc::{self, Receiver, SyncSender};
 use std::thread::JoinHandle;
 use std::time::Duration;
 
+use deadpan_cli::live_project::{LiveError, preparation};
 use deadpan_core::AssetId;
 use deadpan_media::audio_session::{AudioSession, AudioSessionLimits};
 use deadpan_media::source_index::SourceContentIdentity;
@@ -36,6 +37,7 @@ pub(super) enum Streams {
 }
 
 pub(super) enum Work {
+    Host(Box<preparation::PreparationWork>),
     Retain {
         path: PathBuf,
         ownership: OriginalOwnership,
@@ -54,6 +56,7 @@ pub(super) struct Job {
 }
 
 pub(super) enum Prepared {
+    Host(Result<Box<preparation::PreparedOperation>, LiveError>),
     Retained(Box<PreparedOriginalRetention>),
     Qualified(Box<PreparedSourceRegistration>),
 }
@@ -72,8 +75,9 @@ pub(super) fn spawn() -> io::Result<Worker> {
         .name("deadpan-import".into())
         .spawn(move || {
             while let Ok(job) = receiver.recv() {
-                let result = prepare(&job);
-                if replies.send(Reply { id: job.id, result }).is_err() {
+                let id = job.id;
+                let result = prepare(job);
+                if replies.send(Reply { id, result }).is_err() {
                     break;
                 }
             }
@@ -81,18 +85,27 @@ pub(super) fn spawn() -> io::Result<Worker> {
     Ok((sender, results, worker))
 }
 
-pub(super) fn prepare(job: &Job) -> Result<Prepared, String> {
+pub(super) fn prepare(job: Job) -> Result<Prepared, String> {
     if job.cancelled.load(Ordering::Acquire) {
         return Err("Import cancelled".into());
     }
-    match &job.work {
-        Work::Retain { path, ownership } => job
+    match job.work {
+        Work::Host(work) => Ok(Prepared::Host(
+            preparation::prepare(*work, &job.cancelled).map(Box::new),
+        )),
+        Work::Retain {
+            ref path,
+            ref ownership,
+        } => job
             .handle
             .prepare_retention(path, ownership.clone(), original_limits(), &job.cancelled)
             .map(Box::new)
             .map(Prepared::Retained)
             .map_err(|error| error.to_string()),
-        Work::Qualify { record, streams } => qualify(job, record, *streams)
+        Work::Qualify {
+            ref record,
+            streams,
+        } => qualify(&job, record, streams)
             .map(Box::new)
             .map(Prepared::Qualified)
             .map_err(|error| error.to_string()),

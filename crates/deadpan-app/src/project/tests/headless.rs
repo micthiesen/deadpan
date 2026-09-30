@@ -1,5 +1,7 @@
 //! Real authenticated socket requests against the native owning service.
 
+mod preparation;
+
 use super::*;
 use deadpan_cli::host::Client;
 use deadpan_cli::live_project::{

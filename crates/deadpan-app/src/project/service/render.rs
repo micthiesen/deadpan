@@ -83,7 +83,7 @@ impl Service {
                 }
             },
             ProjectRequest::CreateFromSource { path } => {
-                if self.active.is_some() {
+                if self.active.is_some() || self.host_preparation_active() {
                     return Err(
                         "Wait for the current import to stop before creating a project".into(),
                     );

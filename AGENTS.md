@@ -4,6 +4,15 @@ Deadpan is a native macOS structural editor for massaging one original video int
 
 ## Product authority and current scope
 
+For the ongoing development goal/session, the user confirmed on 2026-09-30 that
+the project has no users and will remain unused. Breaking project-format and
+schema changes are authorized; omit migrations and compatibility with existing
+development packages when that simplifies implementation. This overrides the
+historical migration-preservation requirements below for new work during this
+goal. Keep runtime correctness, truthful failures and eventual product recovery
+requirements; do not spend effort removing existing compatibility solely to use
+this permission.
+
 Read [the full specification](docs/spec/DEADPAN_SPEC.md) and [agent handoff](docs/spec/AGENT_HANDOFF.md) before feature work. The Markdown specification is normative; summaries here do not reduce its scope. [Requirements](docs/REQUIREMENTS.md) tracks DP-01 through DP-24 and Gates A through G. Keep code, tests, evidence, and remaining work current there.
 
 The current foundation includes validated beat documents, reversible structural commands, persistent marks with edit transforms, sparse per-play overrides and automatic nested occurrence isolation, stable repeat identities, exact indexed picture plans and boundary queries, SQLite project/history storage with schema migration, and a shared headless command entrypoint. The native UI creates one-Original projects in system Documents/Deadpan with an automatically initialized full-source baseline, opens legacy projects without changing their profile, registers audio into a separate sound catalog, reuses the whole Original, selects/copies half-open Original moments with v/y and atomically pastes with p/P at explicit Sequence slots, navigates ordinary Sequence groups with Enter/Backspace, splits their direct children at the cursor, wraps/updates Repeats, deletes selected beats, changes existing Hold durations, atomically inserts silent freezes into Source/Hold beats and their fragments under ordinary Sequence groups or at Sequence seams before composite suffixes, navigates durable undo/redo, and inspects exact Source/Sequence frames through a persistent decoder and shared SDR GPU pipeline. It is not yet a usable video editor or release candidate. All product requirements remain open or partial. A button, mock worker, downloaded model, ignored test, or proposed target does not prove implementation.
@@ -312,8 +321,13 @@ delivery outcome. Preserve durable receipts across UI refresh and bounded reply
 failures. Replies cannot consume or overwrite unread native commit continuations.
 Remote Render refuses temporary previews and retains its exact target through
 edits and cancellation; a separate canceller cannot release its observer's result.
-Original retention, relinking, registration and checkpoints still need routing
-through bounded preparation and exact owner/session completion.
+Original retention, relinking, registration and checkpoints share the bounded
+import worker. Keep the complete caller registration and stream choice through
+preparation; never rebase a late result or borrow native selection. Retain the
+worker slot across owner replacement until its reply drains. Operational
+receipts are independent of authored revisions and survive compact replies,
+workspace refresh failure and final stdout failure. Terminal cancellation needs
+worker completion; a lost observer does not prove cancellation.
 
 Database schema 42 stores core schema 33 and retains operational generation requests,
 plus an optional validated single-Original workflow profile. Use the dedicated
@@ -442,7 +456,12 @@ replaced or modified originals. Resolve authored targets, frame rate and relevan
 against the current revision after preparation. Close revokes handles before
 releasing the writer lock; handles never retain that lock. Retention may merge
 ownership but cannot replace an established linked location; use explicit
-versioned relinking. See
+versioned relinking. Prepared relinks retain verified replacement descriptors
+and compare the complete captured record and version before the short inventory
+commit. Checkpoint workers pin their own read-only SQLite transaction and copy
+through the backup API. Publish only through their original owner, retaining the
+actual snapshot revision and any published-but-unconfirmed durability receipt.
+Never delete a renamed checkpoint or relabel it cancelled after a sync failure. See
 [import preparation](docs/IMPORT_PREPARATION.md).
 
 `SourceNode.audio_mapping` explicitly chooses `FitBeat` or an independent exact

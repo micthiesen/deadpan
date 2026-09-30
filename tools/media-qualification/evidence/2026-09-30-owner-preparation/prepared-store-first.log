@@ -1,0 +1,70 @@
+   Compiling deadpan-native-process v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-process)
+   Compiling deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+error[E0277]: the trait bound `u64: FromSql` is not satisfied
+   --> crates/deadpan-store/src/checkpoint.rs:246:85
+    |
+246 |         let page_size: u64 = source.pragma_query_value(None, "page_size", |row| row.get(0))?;
+    |                                                                                     ^^^ the trait `FromSql` is not implemented for `u64`
+    |
+    = help: the following other types implement trait `FromSql`:
+              f32
+              f64
+              i16
+              i32
+              i64
+              i8
+              isize
+              u16
+            and 2 others
+note: required by a bound in `rusqlite::Row::<'_>::get`
+   --> /Users/michael/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rusqlite-0.40.2/src/row.rs:285:32
+    |
+285 |     pub fn get<I: RowIndex, T: FromSql>(&self, idx: I) -> Result<T> {
+    |                                ^^^^^^^ required by this bound in `Row::<'_>::get`
+
+error[E0277]: the trait bound `u64: FromSql` is not satisfied
+   --> crates/deadpan-store/src/checkpoint.rs:247:87
+    |
+247 |         let page_count: u64 = source.pragma_query_value(None, "page_count", |row| row.get(0))?;
+    |                                                                                       ^^^ the trait `FromSql` is not implemented for `u64`
+    |
+    = help: the following other types implement trait `FromSql`:
+              f32
+              f64
+              i16
+              i32
+              i64
+              i8
+              isize
+              u16
+            and 2 others
+note: required by a bound in `rusqlite::Row::<'_>::get`
+   --> /Users/michael/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rusqlite-0.40.2/src/row.rs:285:32
+    |
+285 |     pub fn get<I: RowIndex, T: FromSql>(&self, idx: I) -> Result<T> {
+    |                                ^^^^^^^ required by this bound in `Row::<'_>::get`
+
+error: implementation of `FnOnce` is not general enough
+   --> crates/deadpan-store/src/checkpoint.rs:162:9
+    |
+162 |         self.publish_checkpoint_with(prepared, cancelled, fsync)
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ implementation of `FnOnce` is not general enough
+    |
+    = note: `fn(&'2 OwnedFd) -> Result<(), Errno> {fsync::<&'2 OwnedFd>}` must implement `FnOnce<(&'1 OwnedFd,)>`, for any lifetime `'1`...
+    = note: ...but it actually implements `FnOnce<(&'2 OwnedFd,)>`, for some specific lifetime `'2`
+
+error: implementation of `FnOnce` is not general enough
+   --> crates/deadpan-store/src/checkpoint.rs:162:9
+    |
+162 |         self.publish_checkpoint_with(prepared, cancelled, fsync)
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ implementation of `FnOnce` is not general enough
+    |
+    = note: `fn(&'2 OwnedFd) -> std::result::Result<(), Errno> {fsync::<&'2 OwnedFd>}` must implement `FnOnce<(&'1 OwnedFd,)>`, for any lifetime `'1`...
+    = note: ...but it actually implements `FnOnce<(&'2 OwnedFd,)>`, for some specific lifetime `'2`
+
+For more information about this error, try `rustc --explain E0277`.
+error: could not compile `deadpan-store` (lib) due to 3 previous errors
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `deadpan-store` (lib test) due to 3 previous errors

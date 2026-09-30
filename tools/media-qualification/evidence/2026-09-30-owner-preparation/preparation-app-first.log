@@ -1,0 +1,33 @@
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 42.79s
+     Running unittests src/main.rs (target/debug/deps/deadpan_app-5030a04931060b33)
+
+running 16 tests
+test project::tests::headless::socket_replies_do_not_consume_local_edit_selection_receipts ... ok
+test project::tests::headless::remote_render_refuses_temporary_previews_and_unknown_cancel_targets ... ok
+test project::tests::headless::committed_receipt_survives_native_workspace_refresh_failure ... ok
+test project::tests::headless::remote_render_cancel_is_exact_and_remains_available_during_native_admission ... ok
+test project::tests::headless::stale_and_foreign_requests_do_not_mutate_or_retarget ... ok
+test project::tests::headless::ipc_cannot_release_an_existing_native_admission ... ok
+test project::tests::headless::authenticated_edit_preserves_exact_receipt_and_publishes_native_workspace ... ok
+test project::tests::headless::preparation::cancellation_requires_the_exact_target_and_waits_for_the_worker_reply ... ok
+test project::tests::headless::dry_run_and_malformed_requests_leave_native_state_unchanged ... ok
+test project::tests::headless::preparation::completion_waits_for_native_receipt_and_retains_operational_success_on_refresh_failure ... ok
+test project::tests::headless::preparation::retention_stays_operational_and_preserves_an_edit_during_worker_preparation ... ok
+test project::tests::headless::remote_mutation_waits_until_native_ui_consumes_its_commit_receipt ... ok
+test project::tests::headless::old_clients_fail_after_close_reopen_and_same_project_id_switch ... ok
+test project::tests::headless::preparation::checkpoint_reports_the_worker_snapshot_and_preserves_the_later_edit ... ok
+test project::tests::headless::preparation::owner_replacement_revokes_late_preparation_and_keeps_the_worker_bounded ... ok
+test project::tests::headless::preparation::registration_keeps_all_caller_ids_and_refuses_a_late_revision ... ok
+
+test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 281 filtered out; finished in 0.92s
+
+     Running tests/headless.rs (target/debug/deps/headless-81fb862cb3b71743)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+

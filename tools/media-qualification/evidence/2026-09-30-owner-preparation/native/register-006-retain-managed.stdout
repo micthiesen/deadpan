@@ -1,0 +1,54 @@
+{
+  "authored_asset_registered": false,
+  "protocol": 1,
+  "retained_original": {
+    "method": "cloned",
+    "record": {
+      "label": "offset-bframes.mp4",
+      "linked": null,
+      "managed": true,
+      "object": {
+        "byte_length": 39181,
+        "content": {
+          "algorithm": "blake3",
+          "digest": "2a71661b9ab6925c88996ee355b96cd96c3041ee775c3ccbe2681513397a613f"
+        }
+      },
+      "sha256": [
+        21,
+        4,
+        232,
+        196,
+        28,
+        46,
+        142,
+        51,
+        207,
+        88,
+        139,
+        190,
+        70,
+        231,
+        199,
+        159,
+        159,
+        181,
+        7,
+        67,
+        117,
+        51,
+        245,
+        214,
+        205,
+        111,
+        40,
+        11,
+        107,
+        253,
+        177,
+        32
+      ],
+      "version": 1
+    }
+  }
+}

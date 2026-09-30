@@ -1,0 +1,283 @@
+#!/usr/bin/env python3
+"""Disposable real-native-owner preparation evidence; never retries a mutation.
+
+Parent runs setup, opens native-preparation.deadpan in the staged app, runs
+register, has the browser inspect the picture/catalog, then runs relink with
+--picture-confirmed. PATH must resolve bare deadpan-app to that same binary.
+No GUI interaction, discovery-secret reads, Cargo, or open-main-file copying.
+On timeout/overflow a CLI may remain alive: inspect the retained PID/outcome.
+"""
+import argparse
+import errno
+import fcntl
+import hashlib
+import json
+import os
+from pathlib import Path
+import shutil
+import sqlite3
+import stat
+import subprocess
+import time
+
+ROOT = Path('/tmp/deadpan-owner-preparation-20260930')
+REPO = Path('/Users/michael/Code/deadpan')
+EVIDENCE = ROOT / 'native-preparation-evidence'
+PACKAGE = ROOT / 'native-preparation.deadpan'
+MEDIA = EVIDENCE / 'media'
+STATE_PATH = EVIDENCE / 'state.json'
+PHASES = ('setup', 'register', 'relink', 'summary')
+TABLES = ('revisions', 'history', 'state', 'redo', 'source_qualifications')
+STATE = {}
+PHASE = ''
+
+
+def check(condition, message):
+    if not condition:
+        raise RuntimeError(message)
+
+
+def save(path, value):
+    temporary = path.with_suffix(path.suffix + '.pending')
+    temporary.write_text(json.dumps(value, indent=2) + '\n')
+    temporary.replace(path)
+
+
+def sha256(path):
+    digest = hashlib.sha256()
+    with Path(path).open('rb') as stream:
+        for block in iter(lambda: stream.read(1024 * 1024), b''):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def writer_held():
+    fd = os.open(PACKAGE / '.writer.lock', os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+    try:
+        check(stat.S_ISREG(os.fstat(fd).st_mode), 'Writer lock is not a regular file')
+        try:
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError as error:
+            if error.errno in (errno.EAGAIN, errno.EWOULDBLOCK):
+                return
+            raise
+        fcntl.flock(fd, fcntl.LOCK_UN)
+        raise RuntimeError('Native writer is not held; no mutation was dispatched')
+    finally:
+        os.close(fd)
+
+
+def run(name, arguments, mutation=False, expected=0):
+    owner_required = PHASE in ('register', 'relink')
+    if owner_required:
+        writer_held()
+    stem = EVIDENCE / f'{PHASE}-{len(STATE["commands"]):03d}-{name}'
+    output, errors = stem.with_suffix('.stdout'), stem.with_suffix('.stderr')
+    record = {'name': name, 'phase': PHASE, 'argv': ['deadpan-app', '--headless', *map(str, arguments)],
+              'stdout': str(output), 'stderr': str(errors), 'writer_held_before': owner_required, 'mutation': mutation,
+              'expected_exit': expected, 'result': 'running'}
+    STATE['commands'].append(record)
+    save(STATE_PATH, STATE)
+    started = time.monotonic()
+    with output.open('xb') as out, errors.open('xb') as err:
+        child = subprocess.Popen(record['argv'], stdin=subprocess.DEVNULL, stdout=out, stderr=err)
+    record['pid'] = child.pid
+    save(STATE_PATH, STATE)
+    while child.poll() is None:
+        check(time.monotonic() - started < 180, f'Unknown outcome: PID {child.pid} exceeded 180s')
+        check(output.stat().st_size <= 16 * 1024 * 1024 and errors.stat().st_size <= 4 * 1024 * 1024,
+              f'Unknown outcome: PID {child.pid} exceeded output bound')
+        time.sleep(0.05)
+    record.update(exit_code=child.returncode, seconds=time.monotonic() - started)
+    check(output.stat().st_size <= 16 * 1024 * 1024 and errors.stat().st_size <= 4 * 1024 * 1024,
+          'Completed command exceeded output bound')
+    for label, path in [('parsed_stdout', output), ('parsed_stderr', errors)]:
+        raw = path.read_text()
+        try:
+            record[label] = json.loads(raw) if raw.strip() else None
+        except json.JSONDecodeError as error:
+            record[label] = None
+            record[label + '_parse_error'] = str(error)
+    record['result'] = 'passed' if child.returncode == expected else 'failed'
+    save(STATE_PATH, STATE)
+    check(child.returncode == expected, f'Unexpected exit; inspect {stem}')
+    if owner_required:
+        writer_held()
+    parsed = record['parsed_stdout'] if expected == 0 else record['parsed_stderr']
+    check(isinstance(parsed, dict), f'Expected structured CLI result; inspect {stem}')
+    if expected == 0:
+        check(not any(key in parsed for key in ('host_refresh_error', 'host_reply_detail_omitted', 'completion_error')),
+              f'Incomplete owner completion; inspect {stem}')
+    else:
+        check(record['parsed_stdout'] is None, 'Failure emitted a possible durable receipt; inspect before continuing')
+    return parsed
+
+
+def dump(name):
+    return run(name, ['project', 'dump', PACKAGE, '--json'])
+
+
+def database_info(path):
+    with sqlite3.connect(path.resolve().as_uri() + '?mode=ro', uri=True, timeout=5) as db:
+        db.execute('BEGIN')
+        rows = {table: sorted([
+            tuple({'bytes_hex': cell.hex()} if isinstance(cell, bytes) else cell for cell in row)
+            for row in db.execute(f'SELECT * FROM "{table}"').fetchall()
+        ], key=repr) for table in TABLES}
+        document = json.loads(db.execute('SELECT document FROM revisions JOIN state ON head_revision=revisions.id WHERE singleton=1').fetchone()[0])
+        result = {'document': document, 'schema': db.execute('PRAGMA user_version').fetchone()[0],
+                  'quick_check': db.execute('PRAGMA quick_check').fetchall(), 'authored_rows': rows}
+        check(result['quick_check'] == [('ok',)], 'SQLite quick_check failed')
+        return result
+
+
+def backup(destination):
+    check(not destination.exists(), 'Backup destination already exists')
+    with sqlite3.connect((PACKAGE / 'project.sqlite').resolve().as_uri() + '?mode=ro', uri=True, timeout=5) as source:
+        with sqlite3.connect(destination) as target:
+            started = time.monotonic()
+            source.backup(target, pages=128, sleep=0.02,
+                          progress=lambda *_: check(time.monotonic() - started < 30, 'SQLite backup deadline'))
+
+
+def unchanged(before):
+    check(database_info(PACKAGE / 'project.sqlite') == before, 'Operational request changed document/history/qualification rows')
+
+
+def registration(name, original, asset, streams, insertion, expected=0):
+    current = database_info(PACKAGE / 'project.sqlite')['document']
+    request = {'protocol': 1, 'registration': {'expected_revision': current['revision_id'],
+        'new_revision': name, 'original': original, 'new_asset_id': asset, 'label': asset,
+        'insertion': insertion}, 'streams': streams}
+    path = EVIDENCE / f'{name}.request.json'
+    check(not path.exists(), 'Request file already exists')
+    save(path, request)
+    return run(name, ['project', 'register-source', PACKAGE, '--request-json', path], True, expected)
+
+
+def setup():
+    EVIDENCE.mkdir()
+    MEDIA.mkdir()
+    for name in ('cfr-bframes.mp4', 'offset-bframes.mp4'):
+        source = REPO / 'native/deadpan-source/tests/fixtures' / name
+        shutil.copyfile(source, MEDIA / name)
+        STATE['fixtures'][name] = {'source': str(source), 'sha256': sha256(source), 'bytes': source.stat().st_size}
+    check(STATE['fixtures']['cfr-bframes.mp4']['sha256'] != STATE['fixtures']['offset-bframes.mp4']['sha256'], 'Fixtures must differ')
+    run('create', ['project', 'create', PACKAGE, '--fps', '30000/1001', '--size', '320x180'])
+    initial = dump('initial')
+    STATE['initial_document'] = initial
+    save(EVIDENCE / 'initial-document.json', initial)
+    backup(EVIDENCE / 'initial.sqlite')
+
+
+def register():
+    check(dump('entry') == STATE['initial_document'], 'Native open changed initial document')
+    before = database_info(PACKAGE / 'project.sqlite')
+    linked = run('retain-linked', ['project', 'retain-original', PACKAGE, MEDIA / 'cfr-bframes.mp4', '--linked'], True)
+    unchanged(before)
+    record = linked['retained_original']['record']
+    check(linked['authored_asset_registered'] is False and linked['retained_original']['method'] == 'linked', 'Wrong linked retention result')
+    STATE['linked_record'] = record
+    insertion = {'parent': before['document']['root'], 'index': 0, 'node': 'native-original-clip', 'label': 'Native prepared picture', 'purpose': 'primary'}
+    result = registration('native-register-original', record['object']['content'], 'native-original', {'type': 'video_and_audio', 'audio_stream': 1}, insertion)
+    check(result['committed'] and result['outcome']['asset_id'] == 'native-original', 'Registration replaced caller asset ID')
+    picture = dump('registered-picture')
+    check(picture['revision_id'] == 'native-register-original' and picture['nodes'][picture['root']]['kind']['children'] == ['native-original-clip'], 'Registration replaced caller revision/insertion')
+    check(picture['assets']['native-original']['video'] and picture['assets']['native-original']['audio'], 'Selected A/V streams are missing')
+    before = database_info(PACKAGE / 'project.sqlite')
+    managed = run('retain-managed', ['project', 'retain-original', PACKAGE, MEDIA / 'offset-bframes.mp4'], True)
+    unchanged(before)
+    managed = managed['retained_original']['record']
+    check(managed['managed'] and managed['object']['content'] != record['object']['content'], 'Managed source is not distinct')
+    STATE['managed_record'] = managed
+    for index in range(9):
+        failure = registration(f'invalid-stream-{index}', managed['object']['content'], f'invalid-asset-{index}', {'type': 'audio_only', 'stream': 999}, None, 1)
+        code = failure['error']['code']
+        check(code not in ('HostBusy', 'PreparationArchiveFull', 'HostOwnerUnavailable'), 'Invalid preparation exhausted/refused owner admission')
+        check('stream' in failure['error']['message'].lower(), 'Failure did not exercise invalid stream selection')
+        unchanged(before)
+    result = registration('native-register-sound', managed['object']['content'], 'native-sound', {'type': 'audio_only', 'stream': 1}, None)
+    final = dump('registered-sound')
+    check(result['committed'] and result['outcome']['asset_id'] == 'native-sound' and final['revision_id'] == 'native-register-sound', 'Successful operation after failures changed caller IDs')
+    check(final['assets']['native-sound']['video'] is None and final['assets']['native-sound']['audio'], 'Catalog sound is not audio-only')
+    check(final['nodes'] == picture['nodes'], 'Catalog registration changed picture timeline')
+    STATE['registered_document'] = final
+    save(EVIDENCE / 'registered-document.json', final)
+    backup(EVIDENCE / 'registered.sqlite')
+
+
+def relink():
+    writer_held()
+    check(dump('entry') == STATE['registered_document'], 'Authored document changed before relink')
+    before = database_info(PACKAGE / 'project.sqlite')
+    old, moved = MEDIA / 'cfr-bframes.mp4', MEDIA / 'moved-cfr-bframes.mp4'
+    check(old.exists() and not moved.exists(), 'Source move is not fresh')
+    old.rename(moved)
+    STATE['source_move'] = {'from': str(old), 'to': str(moved), 'sha256': sha256(moved), 'picture_confirmed': True}
+    save(STATE_PATH, STATE)
+    record = STATE['linked_record']
+    version = record['version']
+    args = ['project', 'relink-original', PACKAGE, record['object']['content']['digest'], moved, '--expected-version']
+    linked = run('relink', [*args, version], True)['relinked_original']
+    check(linked['version'] == version + 1, 'Relink did not advance exact location version')
+    unchanged(before)
+    check(run('relink-noop', [*args, version + 1], True)['relinked_original'] == linked, 'Same-path relink was not a no-op')
+    unchanged(before)
+    inventory = run('inventory-before-stale', ['project', 'originals', PACKAGE])
+    check(run('relink-stale', [*args, version], True, 1)['error']['code'] == 'OriginalLocationConflict', 'Stale version was not refused')
+    check(run('inventory-after-stale', ['project', 'originals', PACKAGE]) == inventory, 'Stale relink changed inventory')
+    unchanged(before)
+    checkpoint = Path(run('checkpoint', ['project', 'checkpoint', PACKAGE], True)['database_checkpoint'])
+    check(checkpoint.resolve().parent == (PACKAGE / 'Snapshots').resolve(), 'Checkpoint outside expected package')
+    snapshot = database_info(checkpoint)
+    check(snapshot == before, 'Checkpoint did not capture exact live revision/history')
+    backup(EVIDENCE / 'live-backup.sqlite')
+    check(database_info(EVIDENCE / 'live-backup.sqlite') == snapshot, 'Independent SQLite backup differs')
+    STATE['checkpoint'] = {'path': str(checkpoint), 'sha256': sha256(checkpoint), 'database_info': snapshot}
+    migration = run('current-migrate', ['project', 'migrate', PACKAGE])['migration']
+    check(migration['from_schema'] == migration['to_schema'] == before['schema'] and migration['backup'] is None, 'Current migration was not a read-only no-op')
+    unchanged(before)
+    STATE['final_document'] = dump('final')
+    save(EVIDENCE / 'final-document.json', STATE['final_document'])
+    run('validate', ['project', 'validate', PACKAGE])
+
+
+def main():
+    global STATE, PHASE
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('phase', choices=PHASES)
+    parser.add_argument('--picture-confirmed', action='store_true')
+    args = parser.parse_args()
+    PHASE = args.phase
+    executable = shutil.which('deadpan-app')
+    check(executable is not None, 'Provide the staged deadpan-app on PATH')
+    binary = {'path': str(Path(executable).resolve()), 'sha256': sha256(executable)}
+    if PHASE == 'setup':
+        check(not EVIDENCE.exists() and not PACKAGE.exists(), 'Fixture already exists; refusing restart')
+        STATE = {'binary': binary, 'commands': [], 'fixtures': {}, 'phases': {}, 'limitations': ['No GUI or acoustic observation in this script', 'No process-crash or power-loss qualification', 'No automatic retries or archive-exhaustion proof beyond nine completed invalid-stream requests']}
+    else:
+        STATE = json.loads(STATE_PATH.read_text())
+        check(STATE['binary'] == binary, 'Staged binary changed since setup')
+        check(all(STATE['phases'].get(phase) == 'passed' for phase in PHASES[:PHASES.index(PHASE)]), 'Prior phase incomplete')
+        check(PHASE not in STATE['phases'], 'Phase already attempted; inspect evidence without replaying mutations')
+    if PHASE == 'relink':
+        check(args.picture_confirmed, 'Parent must record browser picture/catalog observation first')
+    STATE['phases'][PHASE] = 'running'
+    if EVIDENCE.exists():
+        save(STATE_PATH, STATE)
+    try:
+        if PHASE != 'summary':
+            globals()[PHASE]()
+        STATE['phases'][PHASE] = 'passed'
+    except BaseException as error:
+        STATE['phases'][PHASE] = 'failed'
+        STATE['failure'] = {'phase': PHASE, 'type': type(error).__name__, 'message': str(error)}
+        raise
+    finally:
+        if EVIDENCE.exists():
+            save(STATE_PATH, STATE)
+    print(json.dumps({'phase': PHASE, 'result': 'passed', 'package': str(PACKAGE), 'commands': len(STATE['commands']), 'evidence': str(EVIDENCE)}))
+
+
+if __name__ == '__main__':
+    main()

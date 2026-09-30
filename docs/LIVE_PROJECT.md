@@ -13,13 +13,21 @@ readers.
 | Structural `command` | Execute the submitted project, revision and typed command through the existing store transaction. |
 | Undo and redo | Use the explicit expected revision and a fresh revision allocated by the caller. |
 | Adopt primary geometry | Use the submitted revision and the store's existing qualified geometry boundary. |
+| Retain or relink an Original | Prepare complete-byte verification on the import worker, then commit the inventory change on its writer. Relinking retains the caller's expected location version. |
+| Register a source | Decode exactly the selected streams on the import worker, then commit the complete caller-supplied registration at its expected revision. |
+| Database checkpoint | Prepare a consistent SQLite backup on the import worker, then publish it through the original writer. |
+| `project migrate` | Current-schema packages use the existing read-only validation and no-op result, including beside a native owner. Only a migration writer-lock conflict takes the IPC fallback. |
 | Render, retry, re-encode and reconcile | Admit through the native service's shared render coordinator and observe the exact workflow. |
 | Render cancellation | Require the exact job, attempt and cancellation token. |
 
-Original retention, relinking, source registration and database checkpoints
-still require a closed writer through their CLI entrypoints. Routing their
-preparation and completion through the service remains required by specification
-Section 20.5. This milestone does not complete DP-21.
+The CLI first attempts its existing closed-project operation. Only an actual
+writer-lock conflict selects the live owner. A writer without an authenticated
+endpoint returns `HostOwnerUnavailable`. The current-schema migration fast path
+does not acquire a writer or contact the owner. The explicit IPC `Migrate`
+operation can report an admitted owner's current schema without releasing its
+writer; it does not migrate a legacy store. Older closed packages retain their
+existing explicit migration path. This boundary does not complete DP-21 or add
+CLI generation, analysis, macros or the remaining editor commands.
 
 ## Ownership and authentication
 
@@ -77,8 +85,85 @@ mailbox. A remote edit publishes the resulting workspace. Generic operations
 take the same short admission slot as UI commands; status and exact cancellation
 remain available while that slot is busy. They cannot clear another command's
 admission flag.
-A remote mutation returns `HostBusy` while a native commit receipt remains
+A remote short edit returns `HostBusy` while a native commit receipt remains
 unread by the UI, preserving that edit's cursor and selection continuation.
+
+## Background preparation
+
+Retention, relinking, registration and checkpoints use typed `prepare`,
+`preparation_status`, `cancel_preparation` and `release_preparation_status`
+operations. The client allocates an operation UUID and cancellation token before
+admission. Every observation uses that exact target and retained owner through
+a separate bounded connection; no socket remains open for copying or decoding.
+
+One preparation shares the existing import worker with native imports. Its
+connection-free handles carry the original store's authority and are revoked
+when that session closes. The worker hashes, copies, decodes or backs up the
+database. The project service alone commits inventory or authored changes and
+publishes completed checkpoints. Ordinary edits and existing Render observations
+continue while preparation runs. A new import or preparation is refused while
+the shared worker or its pending commit is occupied.
+
+The states are `preparing`, `awaiting_commit`, `cancelling`, `completed`, `failed`
+and `cancelled`. `awaiting_commit` retains a completed worker result while a
+queued native command or unread native commit receipt prevents safe publication.
+Cancellation sets the exact operation's cooperative flag. A running worker must
+return before the service reports cancellation; a timeout does not prove it
+stopped. Close, project replacement and shutdown request cancellation and drain
+the old worker without applying its result to a replacement session.
+
+Preparation commands are limited to 64 KiB serialized JSON. Paths and bookmarks
+are each bounded to 16 KiB and labels to 4 KiB. Paths retain the CLI's absolute
+path and no-parent-traversal rules. Original preparation uses the decoder input
+bound, currently 64 GiB, and a 300-second cooperative limit per preparation phase.
+Checkpoints default to 1 GiB, 32 SQLite pages per backup step and five minutes.
+SQLite and filesystem calls remain cooperative rather than preemptible.
+
+The native owner requests cancellation after 15 minutes. The CLI polls at
+50-millisecond intervals, requests cancellation on SIGINT, SIGTERM or its own
+15-minute limit, and observes drain for up to five more minutes. An unconfirmed
+drain or lost reply reports an unknown outcome with the captured target. It does
+not release ownership, invent cancellation, rediscover an owner or repeat work.
+The service retains at most eight preparation observations. Terminal entries
+expire after ten minutes or an explicit release; active entries do not expire.
+
+### Exact intent and receipts
+
+Source registration retains the caller's complete `SourceRegistration`, including
+expected/new revisions, asset identity, labels and optional insertion, plus the
+explicit video/audio stream choice. It never borrows GUI selection, synthesizes
+a new insertion or rebases a stale revision after decoding. A matching existing
+registration reuses its qualified asset even if `new_asset_id` proposed a different
+alias. Without insertion, it may return a successful no-op receipt without an
+authored revision. Preserving caller intent does not disable that existing store
+deduplication rule. Detailed output must agree with the resolved asset and
+qualification in the retained receipt.
+As in the closed CLI, registration supplies no invented generation relevance:
+current requests requiring host context can return `GenerationRelevanceRequired`.
+
+Every completed preparation retains a typed operational receipt independently
+of workspace refresh and detailed output: retained/relinked content and location
+version, registered asset and qualification, or checkpoint path and captured
+project/revision. An identical relink can preserve the current location version.
+A checkpoint identifies the worker's actual consistent read snapshot, which can
+differ from the revision present at admission or publication. Its media remains
+in the package.
+
+`completed` means the operation has finished; its separate `completion_error`
+can report a failure after publication. If checkpoint rename succeeds but the
+directory sync fails, `CheckpointPublishedUnconfirmed` preserves the published
+path and receipt. The CLI writes that receipt, reports the error and exits
+nonzero. The caller must inspect the published file before repeating the command.
+Refresh errors likewise preserve receipts and do not make a mutation retryable.
+Compact replies retain these fields when full detail does not fit.
+
+Preparation commands emit their existing final JSON shape, without intermediate
+stdout events. A failed final stdout write leaves the completed observation
+available until expiry. Successful output releases it; known failed or cancelled
+operations also release their terminal entries. A failed release cannot reverse
+an already observed result. These observations are process-local, so closing the
+owner removes them; retained inventory, authored history and published checkpoints
+remain the authoritative persistent state.
 
 ## Render observations
 

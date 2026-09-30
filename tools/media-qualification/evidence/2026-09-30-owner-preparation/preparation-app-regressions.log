@@ -1,0 +1,30 @@
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 26.25s
+     Running unittests src/main.rs (target/debug/deps/deadpan_app-5030a04931060b33)
+
+running 15 tests
+test project::service::headless::tests::compact_preparation_reply_retains_published_checkpoint_and_durability_failure ... ok
+test dialogs::tests::render_directory_preparation_creates_only_the_neighbor_folder_and_preserves_collisions ... ok
+test project::tests::headless::preparation::cancellation_requires_the_exact_target_and_waits_for_the_worker_reply ... ok
+test project::tests::headless::preparation::retention_stays_operational_and_preserves_an_edit_during_worker_preparation ... ok
+test project::tests::headless::preparation::completion_waits_for_native_receipt_and_retains_operational_success_on_refresh_failure ... ok
+test project::tests::headless::preparation::checkpoint_reports_the_worker_snapshot_and_preserves_the_later_edit ... ok
+test project::tests::room_tone::native_room_tone_preparation_is_sample_exact_and_creates_no_history_or_target ... ok
+test project::tests::failed_native_migration_retains_the_current_project_and_its_active_preparation ... ok
+test project::tests::structural_edit_during_import_preparation_survives_coalesced_progress ... ok
+test project::tests::room_tone::native_room_tone_preparation_rejects_stale_context_receipts_and_invalid_ranges ... ok
+test project::tests::headless::preparation::registration_keeps_all_caller_ids_and_refuses_a_late_revision ... ok
+test project::tests::headless::preparation::owner_replacement_revokes_late_preparation_and_keeps_the_worker_bounded ... ok
+test project::tests::project_commands_and_undo_continue_during_preparation_and_errors_survive_progress ... ok
+test project::tests::moment::uncached_moment_preparation_keeps_nested_group_edge_and_explicit_cursor ... ok
+test project::tests::headless::preparation::new_project_cannot_allocate_a_package_while_remote_preparation_is_draining ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 284 filtered out; finished in 0.95s
+
+     Running tests/headless.rs (target/debug/deps/headless-81fb862cb3b71743)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+

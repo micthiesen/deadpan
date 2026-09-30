@@ -1,0 +1,18 @@
+{
+  "protocol": 1,
+  "registration": {
+    "expected_revision": "native-register-original",
+    "new_revision": "invalid-stream-4",
+    "original": {
+      "algorithm": "blake3",
+      "digest": "2a71661b9ab6925c88996ee355b96cd96c3041ee775c3ccbe2681513397a613f"
+    },
+    "new_asset_id": "invalid-asset-4",
+    "label": "invalid-asset-4",
+    "insertion": null
+  },
+  "streams": {
+    "type": "audio_only",
+    "stream": 999
+  }
+}

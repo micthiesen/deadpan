@@ -1,0 +1,14 @@
+Native owner-preparation UI verification
+
+App: staged Deadpan Preparation QA, bundle dev.thiesen.deadpan.preparation-qa
+Project: /tmp/deadpan-owner-preparation-20260930/native-preparation.deadpan
+
+After CLI registration, without reopening the project, the workspace refreshed to show Video native-original and Audio native-sound. The sequence contained exactly one `Native prepared picture` source beat at 120 frames (0–120). The linked video decoded to the qualification color/frame-number pattern. Original `l` advanced the displayed frame from 1 to 2 and then 3; Sequence `l` advanced the Edit boundary from 0 to 1. Tab focus cycled Inspector, Beats, Placed sounds and Sources. With Sources focused, `j` selected Audio and showed `Ready`, `native-sound`, and 00:00.000 / 00:04.025; no audition was started. `k` returned to Video. No authoring edits were made.
+
+After parent relink/checkpoint (no project reopen), the linked video still decoded and Original `l` advanced boundary 1/120 to 2/120 and frame 2 to 3. The audio catalog remained Ready with the same measured duration. After switching Audio to Video, Original boundary reset to 0/120; switching Source to Sequence showed Edit boundary 1/120, so the Edit cursor was retained. At that switch, focus showed Viewer; source selection did not add/remove the authored beat. Final saved workspace remained 1 beat, 120 frames.
+
+Close behavior: Cmd-Q returned to the empty No project workspace while the app remained running. Choosing native app menu Quit also left the process running. Closing the final app window exited the app; the final native app inventory no longer listed Deadpan Preparation QA as running.
+
+No screenshot file was saved: the documented CUA native app API supports screenshot capture for inspection/emission but exposes no local screenshot path save option. No latency claim was measured.
+
+Lifecycle follow-up (2026-09-30): The first two Cmd-Q checks were followed by `app.getAXState()` / `cua.getState()` and showed the No project window plus `isRunning:true`; these observations may have relaunched the app during inspection. The parent later confirmed the prior process PID 1255 was absent and the staged executable was not running. In a targeted check from the existing empty app binding, I sent `app.pressKey("super+q")`, waited 3.5 seconds, then called only `cua.getState()` without querying/rebinding the app. Deadpan Preparation QA was absent from the inventory. This confirms the staged app was stopped after the key; the earlier post-key UI reads are not reliable evidence that it remained running. No further reopen or UI action followed.

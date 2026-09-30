@@ -1,0 +1,110 @@
+{
+  "databases": {
+    "checkpoint.sqlite": {
+      "sha256": "fc4b2bb946472cb2017fec981a7238f197b7294039119f03847fc024dc65a681",
+      "quick_check": "ok",
+      "table_rows": {
+        "generation_attempt_heads": 0,
+        "generation_attempts": 0,
+        "generation_bundle_receipts": 0,
+        "generation_candidate_receipts": 0,
+        "generation_requests": 0,
+        "history": 2,
+        "hold_request_clocks": 0,
+        "original_media": 2,
+        "redo": 0,
+        "render_attempts": 0,
+        "render_candidate_checkpoints": 0,
+        "render_encoding_decisions": 0,
+        "render_job_heads": 0,
+        "render_jobs": 0,
+        "render_publication_operations": 0,
+        "render_publications": 0,
+        "revisions": 3,
+        "single_source": 0,
+        "source_qualifications": 2,
+        "state": 1
+      }
+    },
+    "initial.sqlite": {
+      "sha256": "a67a3a0fa8bb32afd395e3a3d91a366fa31fa48cc81c50949b479e4882a22e13",
+      "quick_check": "ok",
+      "table_rows": {
+        "generation_attempt_heads": 0,
+        "generation_attempts": 0,
+        "generation_bundle_receipts": 0,
+        "generation_candidate_receipts": 0,
+        "generation_requests": 0,
+        "history": 0,
+        "hold_request_clocks": 0,
+        "original_media": 0,
+        "redo": 0,
+        "render_attempts": 0,
+        "render_candidate_checkpoints": 0,
+        "render_encoding_decisions": 0,
+        "render_job_heads": 0,
+        "render_jobs": 0,
+        "render_publication_operations": 0,
+        "render_publications": 0,
+        "revisions": 1,
+        "single_source": 0,
+        "source_qualifications": 0,
+        "state": 1
+      }
+    },
+    "live-backup.sqlite": {
+      "sha256": "45ba05893f664495e4b8bab556ec35392d8f5952e3109f5515dc905d5e82e05b",
+      "quick_check": "ok",
+      "table_rows": {
+        "generation_attempt_heads": 0,
+        "generation_attempts": 0,
+        "generation_bundle_receipts": 0,
+        "generation_candidate_receipts": 0,
+        "generation_requests": 0,
+        "history": 2,
+        "hold_request_clocks": 0,
+        "original_media": 2,
+        "redo": 0,
+        "render_attempts": 0,
+        "render_candidate_checkpoints": 0,
+        "render_encoding_decisions": 0,
+        "render_job_heads": 0,
+        "render_jobs": 0,
+        "render_publication_operations": 0,
+        "render_publications": 0,
+        "revisions": 3,
+        "single_source": 0,
+        "source_qualifications": 2,
+        "state": 1
+      }
+    },
+    "registered.sqlite": {
+      "sha256": "a6fd823b28c88131727d12f8488dac2546e8c5a84046150def1a47861556ef21",
+      "quick_check": "ok",
+      "table_rows": {
+        "generation_attempt_heads": 0,
+        "generation_attempts": 0,
+        "generation_bundle_receipts": 0,
+        "generation_candidate_receipts": 0,
+        "generation_requests": 0,
+        "history": 2,
+        "hold_request_clocks": 0,
+        "original_media": 2,
+        "redo": 0,
+        "render_attempts": 0,
+        "render_candidate_checkpoints": 0,
+        "render_encoding_decisions": 0,
+        "render_job_heads": 0,
+        "render_jobs": 0,
+        "render_publication_operations": 0,
+        "render_publications": 0,
+        "revisions": 3,
+        "single_source": 0,
+        "source_qualifications": 2,
+        "state": 1
+      }
+    }
+  },
+  "checkpoint_equals_independent_live_backup": true,
+  "comparison": "Every row of every SQLite table, with exact BLOB bytes and unordered rows sorted for comparison."
+}

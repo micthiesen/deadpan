@@ -1,0 +1,21 @@
+import json
+import os
+from pathlib import Path
+import subprocess
+
+root = Path('/tmp/deadpan-owner-preparation-20260930')
+runner = 'tools/media-qualification/evidence/2026-09-29-generated-pictures/run-native.py'
+environment = dict(os.environ, DEADPAN_CHECK_OUTPUT=str(root))
+checks = [
+    ('workspace-tests', ['cargo', 'test', '--workspace', '--locked', '--no-fail-fast']),
+    ('ui-tests', ['cargo', 'test', '--locked', '-p', 'deadpan-app', '--features', 'ui-harness', '--no-fail-fast']),
+    ('workspace-clippy-receipt', ['cargo', 'clippy', '--workspace', '--all-targets', '--locked', '--', '-D', 'warnings']),
+    ('ui-clippy', ['cargo', 'clippy', '--locked', '-p', 'deadpan-app', '--features', 'ui-harness', '--all-targets', '--', '-D', 'warnings']),
+    ('workspace-fmt-final', ['cargo', 'fmt', '--all', '--', '--check']),
+]
+outcomes = []
+for name, command in checks:
+    result = subprocess.run(['python3', runner, name, *command], env=environment)
+    outcomes.append({'name': name, 'exit_code': result.returncode})
+    (root / 'final-checks.json').write_text(json.dumps(outcomes, indent=2) + '\n')
+raise SystemExit(int(any(row['exit_code'] != 0 for row in outcomes)))

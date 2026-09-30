@@ -134,7 +134,7 @@ fn original_mutations_respect_writer_lock_and_validate_arguments() -> Result {
             project,
             missing.to_str().unwrap()
         ])?["error"]["code"],
-        "ProjectAlreadyOpen"
+        "HostOwnerUnavailable"
     );
     success(&["project", "originals", project])?;
     drop(writer);

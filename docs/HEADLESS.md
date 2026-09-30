@@ -670,6 +670,11 @@ copying. `--linked` records its external location. The response reports the
 actual retention method and `authored_asset_registered: false`: stream
 qualification and insertion into the edited document remain outstanding.
 Neither operation changes the authored revision or undo history.
+When the native app owns the package, retention and relinking use its
+[authenticated preparation service](LIVE_PROJECT.md#background-preparation).
+Hashing and copying run on the import worker; the owner commits the inventory.
+The ordinary final JSON shape is unchanged. Read-only inventory and verification
+continue to use independent readers.
 
 `originals` returns at most 100 records and a `next_after` content digest. Continue
 until an empty page. Digests are 64 lowercase hexadecimal BLAKE3 characters,
@@ -683,6 +688,8 @@ version, independent of the document revision. Wrong content returns
 `OriginalContentMismatch`; stale versions return `OriginalLocationConflict`.
 Missing owned or linked bytes return `OriginalOffline`. Paths must be absolute
 UTF-8 local regular files; final symlinks and parent traversal are rejected.
+Relinking the already recorded path and bookmark is a successful no-op and keeps
+the location version.
 The CLI uses the host defaults of 64 GiB and 300 cooperative seconds. The Rust
 host API also accepts cancellation, tighter limits and opaque bookmark data.
 See [original media](ORIGINAL_MEDIA.md) for durability and remaining import work.
@@ -738,6 +745,14 @@ requests require host relevance context and return `GenerationRelevanceRequired`
 through this CLI; preview remains available to a host resolver. The CLI does not
 invent unchanged context. [Source registration](SOURCE_REGISTRATION.md) documents
 durability, historical lookup, bounded evidence and remaining native workflow work.
+
+An open native owner performs qualification on its import worker. The request
+file is parsed once and its complete registration and stream selection remain
+captured through preparation. The owner rechecks the expected revision at commit;
+an intervening edit can therefore reject an already decoded result. It never
+substitutes GUI selection, allocates replacement caller IDs or retries at a newer
+revision. `--dry-run` continues to verify and decode through an independent
+read-only store without contacting the owner.
 
 ## Presentation and canvas
 
@@ -937,15 +952,39 @@ Only one writable `ProjectStore` may own a package. Read-only dumps, validation,
 and dry runs can coexist. Structural commands, history and primary-geometry
 adoption route to the native writer through its authenticated endpoint. They
 retain explicit project and revision targeting and do not use GUI focus.
-Original retention, relinking, source registration and checkpoints still require
-a closed writer. The remaining routing work is tracked in
-[the open-project contract](LIVE_PROJECT.md).
+Original retention, relinking, source registration and checkpoints use that
+owner's asynchronous preparation path after a real writer-lock conflict. A writer
+without an endpoint remains unavailable. See
+[the open-project contract](LIVE_PROJECT.md) for exact targets and limits.
 
 A checkpoint is a consistent SQLite backup including committed WAL data, stored
 under `Snapshots/`. It is not a portable project copy: the media directories are
-not duplicated. Full recovery UI and portable project-copy workflow remain open.
+not duplicated. With an open native owner, its worker pins a read transaction
+and copies at most 32 pages per step, with a default 1 GiB/five-minute limit. The
+owner publishes the finished file after rechecking its session and namespace.
+The internal receipt records the revision actually captured by the backup,
+which may differ from the admission or current revision; ordinary stdout keeps
+the existing `database_checkpoint` path field. Full recovery UI and portable
+project-copy workflow remain open.
 Unsupported database schema versions are refused without rewriting them;
 future-schema read-only inspection still needs a compatibility implementation.
+
+Open-owner preparation commands emit one final JSON result. SIGINT and SIGTERM
+request cancellation of the captured operation, followed by observation until
+the worker stops. The owner and client also request cancellation after 15 minutes;
+the client allows up to five further minutes for drain. A lost reply or unconfirmed
+drain reports an unknown outcome and never retries or switches owners. Inspect
+the project before repeating a mutation.
+
+An error after checkpoint publication retains `preparation_receipt` and
+`completion_error` alongside the output path. For
+`CheckpointPublishedUnconfirmed`, the file was renamed into `Snapshots/` but
+directory durability could not be confirmed. Stdout retains that result and the
+process exits nonzero; inspect the file before repeating the command. Workspace
+refresh failures use `host_refresh_error` without discarding an operational or
+authored receipt. If final stdout delivery fails, the owner retains its completed
+observation until release or its ten-minute expiry. Detailed-output limits retain
+the compact receipt with `host_reply_detail_omitted: true`.
 
 ## Schema migration
 
@@ -954,6 +993,13 @@ Database schemas 1 through 41 return `MigrationRequired` when opened. Upgrade ex
 ```sh
 cargo run --locked -p deadpan-cli -- project migrate /tmp/example.deadpan
 ```
+
+For a current-schema package, this command validates through a read-only store
+and reports equal source/destination schemas with `backup: null`. That fast path
+also works beside a native writer without contacting its endpoint. Only an actual
+migration writer-lock conflict uses the IPC fallback, whose admitted native
+store can report its current schema. Closed legacy packages keep the migration
+behavior below; an open endpoint does not perform legacy migration.
 
 Migration holds the project writer lock, keeps a consistent SQLite backup under
 `Snapshots/before-schema-42-*.sqlite`, named for the destination schema, and upgrades a separate candidate. It

@@ -1,0 +1,32 @@
+{
+  "schema_version": 33,
+  "project_id": "79f0c32a-cbea-49c8-b8c3-1c6d8fce6712",
+  "revision_id": "9a93abde-a988-448c-b098-99f043990b33",
+  "presentation_basis": {
+    "width": 320,
+    "height": 180,
+    "frame_rate": {
+      "numerator": 30000,
+      "denominator": 1001
+    },
+    "color_policy": "sdr_rec709"
+  },
+  "basis_state": {
+    "rate_origin": "explicit",
+    "geometry_origin": "explicit",
+    "primary": null
+  },
+  "root": "8cb7be16-8034-4e10-b03c-435433aa6c7c",
+  "nodes": {
+    "8cb7be16-8034-4e10-b03c-435433aa6c7c": {
+      "label": "Sequence",
+      "kind": {
+        "type": "sequence",
+        "children": []
+      }
+    }
+  },
+  "assets": {},
+  "marks": {},
+  "overrides": {}
+}

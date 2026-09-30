@@ -1,0 +1,26 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "-p",
+    "deadpan-store",
+    "--test",
+    "prepared_relink",
+    "--test",
+    "original_preparation",
+    "--test",
+    "original_media",
+    "--test",
+    "prepared_checkpoint",
+    "--lib",
+    "--no-fail-fast"
+  ],
+  "started": "2026-09-30T16:08:49.058131+00:00",
+  "base_commit": "379b068ca8234a961b6cf18be13957b47c891903",
+  "diff_sha256": "0a75ebaeaf9116e50deb983b7b1713059ddaf836b95f11f43aceea22a52553b4",
+  "source_manifest_sha256": "403b66b0f86e0022796816cea11ccd43cfd4799e9ef61945f2d06653a14a1ab5",
+  "pid": 87214,
+  "exit_code": 0,
+  "seconds": 34.038255042396486
+}

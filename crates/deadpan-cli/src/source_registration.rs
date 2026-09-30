@@ -13,6 +13,7 @@ use deadpan_store::source_registration::{PrimaryGeometryAdoption, SourceRegistra
 use deadpan_store::{AccessMode, ProjectStore, StoreError};
 use serde::Deserialize;
 
+use crate::live_project::preparation::{self, PreparationCommand, SourceStreams as Streams};
 use crate::{CliError, read_request, write_json};
 
 #[derive(Deserialize)]
@@ -21,15 +22,6 @@ struct RegistrationEnvelope {
     protocol: u32,
     registration: SourceRegistration,
     streams: Streams,
-}
-
-/// Selecting video alone is deliberate; no failed audio decode falls back to it.
-#[derive(Deserialize)]
-#[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
-enum Streams {
-    VideoOnly {},
-    VideoAndAudio { audio_stream: u32 },
-    AudioOnly { stream: u32 },
 }
 
 #[derive(Deserialize)]
@@ -64,14 +56,26 @@ pub(super) fn run(package: &Path, request: &Path, dry_run: bool) -> Result<(), C
         return Err(CliError::Protocol(envelope.protocol));
     }
     let input = envelope.registration;
-    let mut store = ProjectStore::open(
+    let mut store = match ProjectStore::open(
         package,
         if dry_run {
             AccessMode::ReadOnly
         } else {
             AccessMode::ReadWrite
         },
-    )?;
+    ) {
+        Ok(store) => store,
+        Err(StoreError::AlreadyOpen) if !dry_run => {
+            return preparation::run(
+                package,
+                PreparationCommand::Register {
+                    registration: input,
+                    streams: envelope.streams,
+                },
+            );
+        }
+        Err(error) => return Err(error.into()),
+    };
     let current = store.snapshot()?;
     if current.revision_id() != &input.expected_revision {
         return Err(StoreError::RevisionConflict {

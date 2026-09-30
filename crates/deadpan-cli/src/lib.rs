@@ -656,14 +656,31 @@ fn run(arguments: &[String]) -> Result<(), CliError> {
             "--dry-run",
         ] => history(Path::new(path), action, expected, true),
         ["project", "checkpoint", path] => {
-            let store = ProjectStore::open(Path::new(path), AccessMode::ReadWrite)?;
+            let store = match ProjectStore::open(Path::new(path), AccessMode::ReadWrite) {
+                Ok(store) => store,
+                Err(StoreError::AlreadyOpen) => {
+                    return live_project::preparation::run(
+                        Path::new(path),
+                        live_project::preparation::PreparationCommand::Checkpoint {},
+                    );
+                }
+                Err(error) => return Err(error.into()),
+            };
             write_json(
                 &serde_json::json!({ "protocol": 1, "database_checkpoint": store.checkpoint()? }),
             )
         }
-        ["project", "migrate", path] => write_json(
-            &serde_json::json!({ "protocol": 1, "migration": ProjectStore::migrate(Path::new(path))? }),
-        ),
+        ["project", "migrate", path] => match ProjectStore::migrate(Path::new(path)) {
+            Ok(migration) => {
+                write_json(&serde_json::json!({ "protocol":1, "migration": migration }))
+            }
+            Err(StoreError::AlreadyOpen) => write_json(&live_project::dispatch_short(
+                Path::new(path),
+                None,
+                live_project::ShortOperation::Migrate,
+            )?),
+            Err(error) => Err(error.into()),
+        },
         ["inspect-plan", path] => {
             let document = ProjectStore::open(Path::new(path), AccessMode::ReadOnly)?.snapshot()?;
             let plan = deadpan_plan::RenderPlan::compile(&document)?;

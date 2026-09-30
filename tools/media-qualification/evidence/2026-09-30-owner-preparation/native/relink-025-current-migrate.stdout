@@ -1,0 +1,8 @@
+{
+  "migration": {
+    "backup": null,
+    "from_schema": 42,
+    "to_schema": 42
+  },
+  "protocol": 1
+}

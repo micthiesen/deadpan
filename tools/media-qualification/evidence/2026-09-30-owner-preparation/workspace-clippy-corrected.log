@@ -1,0 +1,33 @@
+    Checking deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+    Checking deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Checking deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+    Checking deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+    Checking deadpan-media-worker v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-media-worker)
+    Checking deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+error: this `let...else` may be rewritten with the `?` operator
+   --> crates/deadpan-app/src/project/service/headless/preparation.rs:219:9
+    |
+219 | /         let Some(entry) = self.host.as_mut().and_then(|host| {
+220 | |             host.preparations
+221 | |                 .iter_mut()
+222 | |                 .find(|entry| entry.worker_id == reply.id)
+223 | |         }) else {
+224 | |             return None;
+225 | |         };
+    | |__________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#question_mark
+    = note: `-D clippy::question-mark` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::question_mark)]`
+help: replace it with
+    |
+219 ~         let entry = self.host.as_mut().and_then(|host| {
+220 +             host.preparations
+221 +                 .iter_mut()
+222 +                 .find(|entry| entry.worker_id == reply.id)
+223 +         })?;
+    |
+
+error: could not compile `deadpan-app` (bin "deadpan-app" test) due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `deadpan-app` (bin "deadpan-app") due to 1 previous error

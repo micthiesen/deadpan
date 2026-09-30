@@ -2,6 +2,45 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
+## Development format policy, 2026-09-30
+
+The user confirmed that Deadpan has no users and will remain unused throughout
+this goal and session. New work may break project formats and schemas without
+migrations when that simplifies implementation. Prefer this permission over
+historical compatibility requirements; it does not require deleting working
+adapters or reduce eventual runtime/recovery requirements.
+
+## Owner preparation, 2026-09-30
+
+CLI retain/relink/register/checkpoint now use the existing native import worker
+and exact owning session. Do not synthesize native selection, rebase a late
+registration, or release a worker slot before its cancelled reply drains.
+Operational receipts survive bounded output and refresh failures independently
+of authored revision receipts. Checkpoint publication retains the actual pinned
+read revision and reports any post-rename durability failure with the saved path.
+
+[Qualification](../qualification/owner-preparation-2026-09-30.md) records 28 real
+CLI invocations and native catalog/picture/keyboard inspection, with 2,572 passing
+locked workspace tests, 338 optional UI-feature tests, strict lint, formatting
+and native startup/shutdown. Initial failures and scoped corrections remain in the
+evidence. Current schema migration remains an independent read-only no-op.
+Native relink/checkpoint controls, full preparation performance/failure acceptance
+and native persisted Render recovery remain open.
+
+For the next native recovery step, reuse service `ProjectRenderOperation::Retry`
+and `Reconcile`, the CLI `retry_request`/`reconcile_request` builders, and bounded
+store job/attempt/publication queries. Add session/ticket-bound browsing and
+captured historical targets before destination pickers; the backend workflow
+already provides checkpoint retry, re-encoding and destination reconciliation.
+No schema change is needed for that connection.
+
+Native inspection also found a pre-existing cursor-preservation gap: returning
+from a catalog sound to the same video calls `preview::select_source`, which
+unconditionally resets `source_cursor` to zero. Fix and verify that focused
+round trip before the larger Render recovery UI work. Sound selection itself
+and the Edit cursor remained intact; do not reset a retained Original position
+merely to reselect its existing source.
+
 ## Open-project routing, 2026-09-30
 
 The native writer now advertises a private authenticated local endpoint for
@@ -24,9 +63,13 @@ No native status window appeared for CLI-started work; the short recovery finish
 before native progress could be inspected. Preserve this visibility limitation
 alongside the retained CLI progress/results and endpoint crash-test gaps.
 
-Original retention, relinking, registration and checkpoints still require a
-closed writer through the CLI. Route their preparation and exact completion
-through the service next, then implement native persisted-job recovery.
+Original retention, relinking, registration and checkpoints now prepare through
+the service's shared import worker and complete through their exact owner.
+Registration retains the caller's complete revision and insertion intent.
+Checkpoints use a private consistent SQLite backup and retain the actual captured
+revision. Operational receipts survive refresh/reply failures; a renamed
+checkpoint with failed directory sync retains its receipt and reports the error.
+Native persisted-job recovery remains the next product boundary.
 Section 20.5, DP-21 and all product gates remain open.
 
 ## Native and public Render, 2026-09-30
@@ -52,8 +95,8 @@ audio in both public exports. The accepted-generated-picture replay requires its
 separate fixture and is explicitly skipped in this ordinary release run.
 
 The open-project boundary above extends these commands to the native owner.
-Heavy writer operations and native persisted-job recovery remain required by
-Section 20.5. Full mastering, HDR, expanded output qualification and the complete
+Prepared owner operations are described above; native persisted-job recovery
+remains required by Section 20.5. Full mastering, HDR, expanded output qualification and the complete
 product scope remain open.
 
 ## Durable automatic encoding, 2026-09-30

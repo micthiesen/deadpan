@@ -4,6 +4,8 @@
 //! change atomically. Undo restores content under a fresh revision, so an old
 //! optimistic request never becomes valid again after undo.
 
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+pub mod checkpoint;
 mod error;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod generated_media;

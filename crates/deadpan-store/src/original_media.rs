@@ -154,7 +154,7 @@ impl OriginalMediaRecord {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum OriginalOwnership {
     Managed,
     Linked { bookmark: Option<Vec<u8>> },
@@ -289,6 +289,23 @@ impl PreparedOriginalRetention {
         &self.record.object
     }
 
+    fn recheck(&self, cancelled: &AtomicBool) -> Result<(), StoreError> {
+        self.handle.check_live(cancelled)?;
+        self.guard.recheck(&self.handle.storage)?;
+        self.handle.check_live(cancelled)
+    }
+}
+
+/// Verified replacement location awaiting the owning writer's versioned update.
+/// This cannot be minted from a serialized ownership record.
+pub struct PreparedOriginalRelink {
+    handle: OriginalImportHandle,
+    record: OriginalMediaRecord,
+    location: LinkedOriginal,
+    guard: OriginalFreshnessGuard,
+}
+
+impl PreparedOriginalRelink {
     fn recheck(&self, cancelled: &AtomicBool) -> Result<(), StoreError> {
         self.handle.check_live(cancelled)?;
         self.guard.recheck(&self.handle.storage)?;
@@ -456,6 +473,52 @@ impl OriginalImportHandle {
             record,
             method,
             guard,
+        })
+    }
+
+    /// Verifies complete replacement bytes without SQLite. The captured record
+    /// and expected location version are checked again by the owning writer.
+    pub fn prepare_relink(
+        &self,
+        record: &OriginalMediaRecord,
+        expected_version: u64,
+        location: LinkedOriginal,
+        limits: OriginalMediaLimits,
+        cancelled: &AtomicBool,
+    ) -> Result<PreparedOriginalRelink, StoreError> {
+        self.check_live(cancelled)?;
+        record.validate()?;
+        location.validate()?;
+        let control = limits.control(cancelled)?.with_closed(&self.closed);
+        if record.version != expected_version {
+            return Err(OriginalMediaError::VersionConflict {
+                current: record.version,
+            }
+            .into());
+        }
+        if record.object.byte_length() > limits.maximum_bytes {
+            return Err(OriginalMediaError::ByteLimit.into());
+        }
+        let file = open_source(location.path())?;
+        let InspectedOriginal {
+            object,
+            sha256,
+            state,
+        } = inspect_original(&file, limits, &control, io::sink())?;
+        if object != record.object || sha256 != record.sha256 {
+            return Err(OriginalMediaError::IdentityMismatch.into());
+        }
+        confirm_source_path(location.path(), &file, &state)?;
+        control.check()?;
+        Ok(PreparedOriginalRelink {
+            handle: self.clone(),
+            record: record.clone(),
+            guard: OriginalFreshnessGuard::Linked {
+                path: location.path().to_owned(),
+                file,
+                state,
+            },
+            location,
         })
     }
 
@@ -661,45 +724,60 @@ impl ProjectStore {
         limits: OriginalMediaLimits,
         cancelled: &AtomicBool,
     ) -> Result<OriginalMediaRecord, StoreError> {
-        require_writer(self)?;
+        let handle = self.original_import_handle()?;
         location.validate()?;
         let control = limits.control(cancelled)?;
         let old =
             read_record(&self.connection, content)?.ok_or(OriginalMediaError::MissingRecord)?;
-        if old.version != expected_version {
-            return Err(OriginalMediaError::VersionConflict {
-                current: old.version,
-            }
-            .into());
+        let prepared =
+            handle.prepare_relink(&old, expected_version, location, limits, cancelled)?;
+        self.relink_prepared_original_controlled(&prepared, cancelled, Some(&control))
+    }
+
+    /// Performs only descriptor/path freshness checks and one versioned
+    /// inventory transaction. Complete byte verification ran during preparation.
+    pub fn relink_prepared_original(
+        &mut self,
+        prepared: &PreparedOriginalRelink,
+        cancelled: &AtomicBool,
+    ) -> Result<OriginalMediaRecord, StoreError> {
+        self.relink_prepared_original_controlled(prepared, cancelled, None)
+    }
+
+    fn relink_prepared_original_controlled(
+        &mut self,
+        prepared: &PreparedOriginalRelink,
+        cancelled: &AtomicBool,
+        control: Option<&Control<'_>>,
+    ) -> Result<OriginalMediaRecord, StoreError> {
+        prepared.handle.validate_for(self, cancelled)?;
+        prepared.recheck(cancelled)?;
+        if let Some(control) = control {
+            control.check()?;
         }
-        let file = open_source(location.path())?;
-        let InspectedOriginal {
-            object,
-            sha256,
-            state,
-        } = inspect_original(&file, limits, &control, io::sink())?;
-        if object != old.object || sha256 != old.sha256 {
-            return Err(OriginalMediaError::IdentityMismatch.into());
-        }
-        confirm_source_path(location.path(), &file, &state)?;
-        control.check()?;
         let transaction = self
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
-        let mut record =
-            read_record(&transaction, content)?.ok_or(OriginalMediaError::MissingRecord)?;
-        if record.version != expected_version {
+        let mut record = read_record(&transaction, prepared.record.object.content())?
+            .ok_or(OriginalMediaError::MissingRecord)?;
+        if record.version != prepared.record.version {
             return Err(OriginalMediaError::VersionConflict {
                 current: record.version,
             }
             .into());
         }
-        if record.linked.as_ref() != Some(&location) {
-            record.linked = Some(location);
+        if record != prepared.record {
+            return Err(OriginalMediaError::IdentityMismatch.into());
+        }
+        if record.linked.as_ref() != Some(&prepared.location) {
+            record.linked = Some(prepared.location.clone());
             record.version = next_version(record.version)?;
             write_record(&transaction, &record)?;
         }
-        control.check()?;
+        prepared.recheck(cancelled)?;
+        if let Some(control) = control {
+            control.check()?;
+        }
         transaction.commit()?;
         Ok(record)
     }

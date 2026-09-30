@@ -1,0 +1,16 @@
+{
+  "result": "failed",
+  "error": "Collector rejected read-only SQLite sidecars created while inspecting backup files. No product command failed.",
+  "partial_collection_preserved": "/tmp/deadpan-owner-preparation-20260930/collection-first-failed",
+  "sidecars": [
+    {
+      "path": "/tmp/deadpan-owner-preparation-20260930/native-preparation-evidence/live-backup.sqlite-shm",
+      "bytes": 32768
+    },
+    {
+      "path": "/tmp/deadpan-owner-preparation-20260930/native-preparation-evidence/live-backup.sqlite-wal",
+      "bytes": 0
+    }
+  ],
+  "correction": "Exclude SQLite sidecars; retain the already-closed backup databases and verify copied integrity."
+}
