@@ -2,6 +2,35 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
+## Encoder runtime binding, 2026-09-30
+
+The [automatic consumer](../AUTOMATIC_ENCODER_ADMISSION.md#consuming-a-fresh-admission)
+now consumes one live admission for a committed project encode. Probe protocol 2
+and report schema 2 carry actual mapped helper and Avcodec/Avformat/Avutil/Swscale
+observations. Project protocol 3 requires the exact nullable runtime/control
+binding. Matching descriptors stay open through work and are fully hashed and
+revalidated before and after. Missing evidence or a runtime change stops the
+attempt. This proves backing-object provenance under trusted installed code,
+not resident-memory or OS/framework/driver attestation.
+
+`EncodeContract::new_v1` freezes the existing controls, with `new` as its alias.
+Historical manifests and database schema 41 are unchanged. The real qualification
+consumer retained a verified 128-frame, 205,005-sample project file and fresh
+canonical references; all 19 database tables remained unchanged. See
+[qualification](../qualification/encoder-runtime-2026-09-30.md) for final checks,
+actual hashes and limits. Independent readers pass all 384 planes and the full
+authored audio. Final coverage is 2,397 passing tests after one protocol fixture
+correction; strict Clippy, formatting and native smoke pass. Tiny probes report
+192x96 coded geometry above their 256/256/4096-pixel budgets. Their admission
+bounds remain unchanged.
+
+Next implement the database-42 automatic policy/decision boundary described
+below. Keep pure durable DTOs separate from live native observations, bind the
+decision to the original encoding attempt, and freshly qualify every encoding
+retry. Retained checkpoint verification/reconciliation preserves its original
+decision. Then connect native/public headless Render. An in-memory candidate and
+serialized runtime observations alone do not implement that workflow.
+
 ## Automatic encoder probe, 2026-09-30
 
 The [admission boundary](../AUTOMATIC_ENCODER_ADMISSION.md) generates deterministic
@@ -21,8 +50,9 @@ before deciding whether those failures justify a decoder change.
 Keep legacy final-file verification policy 1 unchanged. An absent-B verification
 failure still stops this selector; safe typed absence requires finishing every
 other check. Legitimate all-I/P project output needs a separately versioned rule.
-Current evidence identifies helper bytes, kernel and native version observations,
-but loaded-library fingerprints and a runtime-bound project consumer remain open.
+That milestone identified helper bytes, kernel and native version observations.
+The runtime-binding increment above adds loaded-library evidence and a fresh
+project consumer.
 
 Next implement database 42 with strict legacy intent adapters, a versioned
 automatic algorithm policy per job and an immutable encoder decision per new

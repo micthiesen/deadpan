@@ -8,7 +8,9 @@ pub mod protocol;
 pub(crate) mod worker;
 
 pub use content::{ProbeContentReport, ProbeMarkerObservation};
-pub use host::{AdmissionFailure, AdmissionRequest, QualifiedEncoder, qualify};
+pub use host::{
+    AdmissionFailure, AdmissionRequest, AutomaticEncodedCandidate, QualifiedEncoder, qualify,
+};
 
 use deadpan_core::{
     AudioSample, ColorPolicy, ExactRatio, FrameRange, FrameRate, ProjectFrame, ProjectId,
@@ -21,6 +23,7 @@ use sha2::{Digest, Sha256 as Hasher};
 
 use super::{
     protocol::{EncodedFailure, EncodedManifest, EncodedRenderContract, EncoderChoice},
+    runtime::RuntimeFingerprint,
     verification::{VerificationLimits, VerificationReport},
 };
 use crate::render_worker::protocol::{RenderContract, RenderIdentity, RenderTimeBase};
@@ -112,11 +115,13 @@ pub struct ProbeReport {
     pub manifest: EncodedManifest,
     pub verification: VerificationReport,
     pub content: ProbeContentReport,
+    pub runtime: RuntimeFingerprint,
 }
 
 impl ProbeReport {
     pub fn validate(&self, limits: EncodeLimits) -> Result<(), String> {
-        if self.schema_version != 1
+        self.runtime.validate()?;
+        if self.schema_version != 2
             || self.manifest.contract != self.spec.contract()?
             || self.manifest.document_sha256 != self.spec.document_sha256()?
         {
@@ -142,7 +147,8 @@ impl ProbeReport {
 
 /// Runtime facts captured afresh around admission. No host name or user path is
 /// retained. Kernel build includes the running Apple kernel/architecture family.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct AdmissionRuntime {
     pub helper_sha256: Sha256,
     pub helper_bytes: u64,
@@ -152,11 +158,46 @@ pub struct AdmissionRuntime {
     pub machine: String,
 }
 
+impl AdmissionRuntime {
+    pub fn validate(&self) -> Result<(), String> {
+        if self.helper_bytes == 0 || self.helper_bytes > 512 * 1024 * 1024 {
+            return Err("probe helper byte bound".into());
+        }
+        for value in [
+            &self.system,
+            &self.kernel_release,
+            &self.kernel_build,
+            &self.machine,
+        ] {
+            if value.is_empty() || value.len() > 512 || value.chars().any(char::is_control) {
+                return Err("probe host runtime text bound".into());
+            }
+        }
+        Ok(())
+    }
+
+    pub(super) fn matches_loaded(&self, loaded: &RuntimeFingerprint) -> Result<(), String> {
+        self.validate()?;
+        loaded.validate()?;
+        if loaded.helper().sha256 != self.helper_sha256
+            || loaded.helper().mapped.file_size != self.helper_bytes
+            || loaded.system != self.system
+            || loaded.kernel_release != self.kernel_release
+            || loaded.kernel_build != self.kernel_build
+            || loaded.machine != self.machine
+        {
+            return Err("loaded helper differs from the host-selected runtime".into());
+        }
+        Ok(())
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct RejectedProbe {
     pub identity: RenderIdentity,
     pub spec: ProbeSpec,
     pub failure: EncodedFailure,
+    pub runtime: Option<RuntimeFingerprint>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]

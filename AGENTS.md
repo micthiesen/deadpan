@@ -221,6 +221,16 @@ the next probe; later faults invalidate those claims. Preserve ordered rejected
 attempts and exact sample observations. Serialized probe reports cannot restore
 a live admission or replace a durable encoding decision and final-file verification.
 
+Fresh automatic project encoding consumes that live admission once. Bind the
+loaded helper and Avcodec/Avformat/Avutil/Swscale mapped vnodes and Mach-O UUIDs
+to matching descriptors, hash those bytes before and after work, and retain the
+descriptors throughout. Every eligible rejection and the project worker must
+match the selected runtime. Missing or changed evidence invalidates selection;
+serialized fingerprints grant no live authority. This assumes trusted installed
+code and does not attest resident memory, OS frameworks or drivers. Preserve
+frozen `EncodeContract::new_v1` controls and historical manifest grammar; new
+defaults require a new policy identity. Durable automatic decisions remain open.
+
 The [committed project picture boundary](docs/PROJECT_PICTURES.md) captures an
 explicit revision and nonempty half-open range through a read-only store.
 Admit Original Source/Freeze frames against that revision's receipt, original

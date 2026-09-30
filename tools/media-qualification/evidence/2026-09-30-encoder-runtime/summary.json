@@ -1,0 +1,58 @@
+{
+  "checks": [
+    "format-check-final",
+    "workspace-clippy-final",
+    "workspace-tests-final",
+    "native-smoke",
+    "native-bound-build-final",
+    "native-bound-final",
+    "independent-decode-final",
+    "oracle-extension-checks",
+    "verification-fixture-regression",
+    "verification-fixture-syntax"
+  ],
+  "workspace": {
+    "passed": 2397,
+    "failed": 0,
+    "ignored": 0,
+    "result_groups": 171,
+    "full_run_exit": 101,
+    "original_failed_tests": 21,
+    "corrected_target": "deadpan-cli/encoded_verification",
+    "corrected_target_passed": 21,
+    "only_changed_source": "crates/deadpan-cli/tests/encoded_verification/fixture.py",
+    "preserved_workspace_source": "1e557942d104f3990ce6a9edf0c9310f4bab3fa2b4e67906321b066a7ece6cbf"
+  },
+  "qualified_source_inventory": "46892abe2157dbb43b41cf84889b25cde5eb840f029293fea063216776cea20f",
+  "native": {
+    "frames": 128,
+    "complete_picture_planes": 384,
+    "authored_audio_samples_per_reader": 205005,
+    "audio_readers": [
+      "FFmpeg ordinary",
+      "FFmpeg manual",
+      "AVFoundation"
+    ],
+    "runtime_images": 5,
+    "database_tables_unchanged": 19
+  },
+  "failed_evidence": [
+    "full workspace run failed 21 encoded_verification setup tests due to an outdated protocol-2 transport fixture; protocol-3 and explicit-null binding correction passes all 21 without production changes",
+    "initial independent reference oracle refused the 4.27-second fixture; scratch-only five-second extent preserves all fidelity/timing tolerances",
+    "14x16/16x16/64x64 probes explicitly reject 192x96 coded geometry and confirm teardown"
+  ],
+  "unrun": [
+    "sanitizers",
+    "physical listening",
+    "painted UI and optional UI replay",
+    "GUI performance"
+  ],
+  "remaining": [
+    "durable automatic job/attempt decisions",
+    "native/public headless Render",
+    "small-raster coded/display allocation policy",
+    "complete mastering/effects",
+    "HDR",
+    "release qualification"
+  ]
+}

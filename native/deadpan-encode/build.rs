@@ -30,6 +30,8 @@ fn main() {
     println!("cargo:rerun-if-env-changed=DEADPAN_FFMPEG_PREFIX");
     println!("cargo:rerun-if-changed=src/encoder.c");
     println!("cargo:rerun-if-changed=src/encoder.h");
+    println!("cargo:rerun-if-changed=src/runtime.c");
+    println!("cargo:rerun-if-changed=src/runtime.h");
 
     let prefix = env::var_os("DEADPAN_FFMPEG_PREFIX")
         .map(PathBuf::from)
@@ -65,6 +67,7 @@ fn main() {
 
     cc::Build::new()
         .file("src/encoder.c")
+        .file("src/runtime.c")
         .include(&include)
         .flag("-std=c11")
         .flag("-Wall")

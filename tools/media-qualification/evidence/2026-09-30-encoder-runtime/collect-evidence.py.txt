@@ -1,0 +1,128 @@
+import hashlib
+import json
+from pathlib import Path
+import re
+import shutil
+import sqlite3
+import tarfile
+
+repo = Path('/Users/michael/Code/deadpan')
+work = Path('/tmp/deadpan-runtime-binding-20260930')
+target = repo / 'tools/media-qualification/evidence/2026-09-30-encoder-runtime'
+checks = ['format-check-final', 'workspace-clippy-final', 'workspace-tests-final', 'native-smoke',
+          'native-bound-build-final', 'native-bound-final', 'independent-decode-final', 'oracle-extension-checks', 'verification-fixture-regression', 'verification-fixture-syntax']
+journals = {name: json.loads((work / (name + '.json')).read_text()) for name in checks}
+assert all(row['exit_code'] == (101 if name == 'workspace-tests-final' else 0) for name, row in journals.items())
+source_id = journals['verification-fixture-regression']['source_manifest_sha256']
+source_inventory = json.loads((work / ('source-' + source_id + '.json')).read_text())
+for name, digest in source_inventory.items():
+    assert hashlib.sha256((repo / name).read_bytes()).hexdigest() == digest, name
+before_id = journals['workspace-tests-final']['source_manifest_sha256']
+before_inventory = json.loads((work / ('source-' + before_id + '.json')).read_text())
+assert before_inventory.keys() == source_inventory.keys()
+changed = [name for name in source_inventory if source_inventory[name] != before_inventory[name]]
+assert changed == ['crates/deadpan-cli/tests/encoded_verification/fixture.py'], changed
+assert {row['source_manifest_sha256'] for row in journals.values()} == {before_id, source_id}
+full_log = (work / 'workspace-tests-final.log').read_text()
+assert 'error: 1 target failed:\n    `-p deadpan-cli --test encoded_verification`' in full_log
+rows = re.findall(r'test result: (ok|FAILED)\. (\d+) passed; (\d+) failed; (\d+) ignored;', full_log)
+assert rows and sum(int(failed) for _, _, failed, _ in rows) == 21
+assert not any(int(ignored) for _, _, _, ignored in rows)
+retry = re.findall(r'test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored;', (work / 'verification-fixture-regression.log').read_text())
+assert retry == [('21', '0', '0')]
+counts = {'passed': sum(int(passed) for _, passed, _, _ in rows) + 21, 'failed': 0, 'ignored': 0, 'result_groups': len(rows), 'full_run_exit': 101, 'original_failed_tests': 21, 'corrected_target': 'deadpan-cli/encoded_verification', 'corrected_target_passed': 21, 'only_changed_source': changed[0], 'preserved_workspace_source': before_id}
+bound = json.loads((work / 'bound-project-final.json').read_text())
+decoded = json.loads((work / 'decoded-bound-final/report.json').read_text())
+assert bound['status'] == 'passed' and bound['cleanup_confirmed'] and decoded['result'] == 'passed'
+assert json.loads((work / 'database-final.json').read_text())['all_tables_unchanged']
+
+# Back up the read-only database consistently; never archive a live main file alone.
+retained = work / 'retained-package'
+package = work / 'source.deadpan'
+def ignore(directory, names):
+    return [name for name in names if Path(directory) == package and (name.startswith('project.sqlite') or name == '.writer.lock')]
+shutil.copytree(package, retained, ignore=ignore)
+with sqlite3.connect(f'file:{package / "project.sqlite"}?mode=ro', uri=True) as src:
+    with sqlite3.connect(retained / 'project.sqlite') as dst:
+        src.backup(dst)
+        assert dst.execute('PRAGMA integrity_check').fetchall() == [('ok',)]
+
+paths = [path for path in sorted(work.iterdir()) if path.suffix in ('.mp4', '.i420', '.f32')]
+paths += [path for path in sorted(retained.rglob('*')) if path.is_file() and path.name not in ('project.sqlite-wal', 'project.sqlite-shm')]
+for folder in [work / 'decoded-bound', work / 'decoded-bound-final']:
+    paths += [path for path in sorted(folder.rglob('*')) if path.is_file() and path.suffix in ('.mp4', '.i420', '.f32', '.json', '.log')]
+files = {str(path.relative_to(work)): {'bytes': path.stat().st_size, 'sha256': hashlib.sha256(path.read_bytes()).hexdigest()} for path in paths}
+archive = work / 'native-files.tar.gz'
+with tarfile.open(archive, 'w:gz') as output:
+    for path in paths:
+        output.add(path, arcname=str(path.relative_to(work)), recursive=False)
+with tarfile.open(archive, 'r:gz') as archived:
+    assert sorted(archived.getnames()) == sorted(files)
+    for member in archived.getmembers():
+        assert member.isfile()
+        data = archived.extractfile(member).read()
+        assert files[member.name] == {'bytes': len(data), 'sha256': hashlib.sha256(data).hexdigest()}
+(work / 'native-files.json').write_text(json.dumps({'files': files, 'archive_sha256': hashlib.sha256(archive.read_bytes()).hexdigest(), 'archive_bytes': archive.stat().st_size, 'all_members_rehashed': True, 'database_snapshot_method': 'SQLite backup API'}, indent=2) + '\n')
+(work / 'workspace-test-counts.json').write_text(json.dumps(counts, indent=2) + '\n')
+
+target.mkdir(parents=True, exist_ok=False)
+for path in sorted(work.iterdir()):
+    if path.is_file() and (path.suffix in ('.json', '.log', '.md', '.txt') or path.name == 'native-files.tar.gz'):
+        shutil.copy2(path, target / path.name)
+    elif path.is_file() and path.suffix == '.py':
+        shutil.copy2(path, target / (path.name + '.txt'))
+adapters = target / 'five-second-oracles'
+for path in sorted((work / 'five-second-oracles').rglob('*')):
+    if path.is_file() and path.suffix in ('.py', '.m', '.json', '.patch', '.diff', '.md'):
+        relative = path.relative_to(work / 'five-second-oracles')
+        destination = adapters / relative
+        if path.suffix in ('.py', '.m'):
+            destination = destination.with_name(destination.name + '.txt')
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(path, destination)
+shutil.copy2(work / 'decoded-bound-final/report.json', target / 'independent-full-file.json')
+shutil.copy2(work / 'decoded-bound/report.json', target / 'independent-initial-failure.json')
+summary = {'checks': checks, 'workspace': counts, 'qualified_source_inventory': source_id,
+           'native': {'frames': 128, 'complete_picture_planes': 384, 'authored_audio_samples_per_reader': 205005, 'audio_readers': ['FFmpeg ordinary', 'FFmpeg manual', 'AVFoundation'], 'runtime_images': 5, 'database_tables_unchanged': 19},
+           'failed_evidence': ['full workspace run failed only21 encoded_verification setup tests due to a missedprotocol2 transportfixture; protocol3/nullbinding correction passes all21 withoutproductionchanges', 'initial independent reference oracle refused the 4.27-second fixture; scratch-only five-second extent preserves all fidelity/timing tolerances', '14x16/16x16/64x64 probes explicitly reject 192x96 coded geometry and confirm teardown'],
+           'unrun': ['sanitizers', 'physical listening', 'painted UI and optional UI replay', 'GUI performance'],
+           'remaining': ['durable automatic job/attempt decisions', 'native/public headless Render', 'small-raster coded/display allocation policy', 'complete mastering/effects', 'HDR', 'release qualification']}
+(target / 'summary.json').write_text(json.dumps(summary, indent=2) + '\n')
+(target / 'README.md').write_text(f'''# Encoder runtime binding evidence
+
+See the [qualification report](../../../../docs/qualification/encoder-runtime-2026-09-30.md)
+for the contract, native results, retained failures and proof limits.
+
+- [Summary](summary.json): workspace checks and remaining work.
+- [Review](review.md): independent source review and bounded follow-ups.
+- [Bound project](bound-project-final.json): actual probes, exact runtime and
+  controls, committed input, candidate and complete-file verification.
+- [Independent readers](independent-full-file.json): all 128 pictures,
+  384 complete planes and 205,005 audio sample frames through each of three readers.
+- [Initial comparison failure](independent-initial-failure.json) and
+  [five-second fixture edits](five-second-oracles/edits.json): the original
+  four-second capacity, explicit scratch-only extension and unchanged tolerances.
+- [Native files](native-files.tar.gz) and [inventory](native-files.json): exact
+  movies, references, decoded bytes and a consistent synthetic project backup.
+  Every archive member was rehashed. No helper/library binaries are committed.
+- [Database check](database-final.json): all cells in 19 tables unchanged.
+- [Geometry diagnostics](geometry-summary.json): three unsupported tiny rasters.
+- [Host](host.json): platform and exact runtime backing-file matches.
+
+The qualified source inventory is `{source_id}`. Per-command JSON journals record
+arguments, base commit, diff/source hashes, elapsed time and exit status. Scripts
+retain the scratch paths used by this run; replace paths when reproducing. The
+canonical runner pins `DEADPAN_FFMPEG_PREFIX=/tmp/deadpan-ui-ffmpeg/prefix`.
+
+The full workspace run failed only the 21 tests sharing an outdated encoder
+protocol fixture. Correcting that one Python fixture passed all 21 on the focused
+rerun; production sources and other passing targets were preserved. Final coverage
+is {counts['passed']:,} passing tests in {counts['result_groups']} groups, with no
+remaining failure or ignored test. The original exit-101 log is retained.
+Native smoke covers startup/shutdown.
+These results do not establish public Render, durable automatic decisions or
+full-product acceptance. [Manifest](manifest.json) hashes every other file here.
+''')
+manifest = {str(path.relative_to(target)): {'bytes': path.stat().st_size, 'sha256': hashlib.sha256(path.read_bytes()).hexdigest()} for path in sorted(target.rglob('*')) if path.is_file()}
+(target / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
+print(json.dumps({'workspace': counts, 'source': source_id, 'evidence_files': len(manifest), 'archive_bytes': archive.stat().st_size}))

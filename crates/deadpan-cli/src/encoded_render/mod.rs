@@ -12,6 +12,7 @@ mod host;
 pub mod jobs;
 pub mod protocol;
 pub mod publication;
+pub mod runtime;
 pub mod verification;
 pub(crate) mod worker;
 pub mod workflow;

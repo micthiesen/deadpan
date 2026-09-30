@@ -3,8 +3,10 @@
 `encoded_render::admission::qualify` runs deterministic probes on the current
 helper at the requested output raster and rational frame rate. It returns an
 owned `QualifiedEncoder` containing the selected probe's private bytes and the
-complete decision record. It does not change a project or durable Render job.
-Public native/headless Render remains open.
+complete decision record. Consuming that capability through
+`QualifiedEncoder::encode` runs one project encoding attempt bound to the
+qualified runtime and SDR controls. Admission does not change a project or
+durable Render job. Public native/headless Render remains open.
 
 ## Probe and selection
 
@@ -56,23 +58,77 @@ become an `EncodedCandidate` or `VerifiedCandidate` for project publication.
 The serialized report is historical evidence. `copy_probe_to` only copies probe
 bytes into a caller-owned private evidence sink.
 
+## Loaded runtime identity
+
+Probe protocol 2 and probe report schema 2 carry fresh runtime observations.
+Each worker captures a fixed inventory: the loaded helper, Avcodec, Avformat,
+Avutil and Swscale. On macOS the native adapter binds each loaded Mach-O UUID to
+the kernel-reported mapped vnode's device/inode, extent, generation and exact
+modification, change and birth times. It checks both the image header and role
+anchor. Paths locate descriptors; a pathname or numerical library version
+cannot establish this identity. Missing images and unsupported observations
+fail explicitly; Linux runtime capture is currently unsupported.
+
+The worker opens matching regular-file descriptors and hashes their complete
+bytes with SHA-256 in 64 KiB blocks, with a 512 MiB cap per image. Cancellation
+and the shared deadline apply throughout. It revalidates mapped identity and
+descriptor metadata around hashing, retains all five descriptors through work,
+then hashes and revalidates them again before completion. The fingerprint also
+contains bounded OS build, hardware model and CPU family observations, plus
+system, kernel release/build and architecture. Serialized facts contain no
+image paths, mapped addresses, hostname or environment values.
+
+The parent checks the selected helper's hash and extent against the worker's
+loaded helper and checks its own kernel facts. Every eligible rejected attempt
+and the selected attempt must agree on the full loaded-runtime fingerprint;
+failure before a valid capture cannot authorize fallback. The helper is hashed
+again after admission. Decisions retain ordered failures, their available
+runtime observations, the selected runtime, recipe identity, codec observations
+and complete verification/content results.
+
+This establishes backing-object provenance under trusted installed code. It
+does not hash resident memory or attest the OS, frameworks, kernel or drivers.
+A Mach-O UUID is an identifier, not a digest. Private memory patches and in-place
+changes predating capture that preserve the UUID remain outside this proof.
+Installed-code trust must come from release and installation controls. Native
+filesystem and kernel calls remain cooperative even though reads are bounded.
+
+## Consuming a fresh admission
+
+`QualifiedEncoder::encode` consumes the capability once. It requires the same
+request/attempt identity and cancellation token, a direct host-selected helper
+with no argument or environment overrides, and unchanged current helper facts.
+It binds the selected mode, B-frame policy, raster, rational rate and resolved
+SDR controls to the selected probe's full runtime fingerprint.
+
+The project worker independently captures and compares that binding before
+opening project media. It retains the matching descriptors through encoding and
+revalidates their bytes and platform facts after work. The parent also rechecks
+the helper after encoding. Any mismatch fails the attempt. The returned
+`AutomaticEncodedCandidate` retains the decision alongside the private project
+candidate; the ordinary finished-file verification and publication boundaries
+still apply. A passed probe cannot establish the validity of a project movie.
+
+SDR control derivation is frozen as `EncodeContract::new_v1`; `new` remains its
+alias. Future bitrate/GOP policies require a separate constructor and identity.
+The binding records version 1 and exact resolved controls without changing the
+historical `EncodedManifest` wire format or reinterpreting retained checkpoints.
+Serialized runtime facts and decisions cannot recreate a live capability. Each
+new encoding attempt must qualify again.
+
 ## Bounds and remaining integration
 
-The shared deadline is at most 120 seconds across all attempts. There are at most
-four attempts, 121 frames, eight seconds of content, 1024 packets and 512 MiB of
+Admission's shared deadline is at most 120 seconds across all probe attempts.
+There are at most four attempts, 121 frames, eight seconds of content, 1024 packets and 512 MiB of
 output per probe. Smaller caller limits may fail explicitly. Admission requires
 at least 14x16 pixels to distinguish the ordinal strip and color regions;
 this recipe bound does not establish platform availability. Actual 14x16, 16x16
-and 64x64 runs failed the decoder geometry guard on the qualified host; their
-diagnostics need actual dimensions before any bound changes. Smaller geometries
-and very low frame rates remain unqualified.
-
-The decision records helper SHA-256/length, kernel build/release, architecture,
-recipe identity, ordered rejected probes, actual native codec observations and
-complete verification/content results. It hashes the helper before and after
-admission. It does not yet fingerprint loaded dynamic-library bytes or supply
-a runtime-bound project-encode consumer. Do not cache this result as authority
-across encoding attempts or runtime changes.
+and 64x64 runs failed the decoder geometry guard on the qualified host. The
+decoder reports a 192x96 coded geometry, exceeding the respective macroblock
+pixel budgets of 256, 256 and 4096. The diagnostic now retains the stage,
+dimensions and configured limits. Admission bounds are unchanged; supporting
+these rasters requires a separately qualified coded-versus-display allocation
+policy. Smaller geometries and very low frame rates remain unqualified.
 
 The existing policy-1 finished-file verifier still rejects requested B-frames
 when none are observed. That rejection is fatal here. A future typed absence
@@ -80,12 +136,13 @@ result must complete all other file and content checks before it can authorize
 a different path. Legitimate all-I/P project content also needs explicitly
 versioned verification semantics, without weakening legacy checkpoint admission.
 
-Next, pin automatic algorithm policy per durable job and the resolved encoder,
-runtime and probe evidence per encoding attempt. Cold encoding retries must
-qualify again; checkpoint verification and publication reconciliation must retain
-the original decision. Freeze legacy policy resolvers so future bitrate/GOP
-changes cannot reinterpret historical bytes. Then connect native and public
-headless Render to that shared workflow. Full mastering/effects, HDR, quality
-policy and the supported hardware/OS release matrix remain open.
+Durable decision storage planned for database schema 42 remains open. It must
+pin automatic algorithm policy per job and the resolved encoder, runtime and
+probe evidence per encoding attempt. Cold encoding retries must qualify again;
+checkpoint verification and publication reconciliation must retain the original
+decision. Native and public headless Render still need this durable shared
+workflow. Full mastering/effects, HDR, quality policy and the supported
+hardware/OS release matrix remain open.
 
-See [qualification](qualification/encoder-admission-2026-09-30.md).
+See [probe qualification](qualification/encoder-admission-2026-09-30.md) and
+[runtime-bound project qualification](qualification/encoder-runtime-2026-09-30.md).

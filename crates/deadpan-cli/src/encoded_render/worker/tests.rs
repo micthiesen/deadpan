@@ -321,6 +321,7 @@ fn contract_and_source_admission_failures_are_typed_before_output_allocation() {
                 b_frames: BFramePolicy::None,
             },
         },
+        binding: None,
         document_sha256: Sha256::new("a".repeat(64)).unwrap(),
         limits: EncodeLimits::default(),
     };
@@ -334,6 +335,19 @@ fn contract_and_source_admission_failures_are_typed_before_output_allocation() {
     )
     .unwrap_err();
     assert_eq!(error.kind, EncodedFailureKind::Source);
+    let mut binding = crate::encoded_render::runtime::test_binding(&request.contract);
+    binding.policy_version += 1;
+    request.binding = Some(binding);
+    let error = prepare(
+        &missing,
+        &request,
+        &AtomicBool::new(false),
+        deadline(),
+        &mut output,
+    )
+    .unwrap_err();
+    assert_eq!(error.kind, EncodedFailureKind::Contract);
+    request.binding = None;
     request.contract.picture.frame_count = 0;
     let error = prepare(
         &missing,

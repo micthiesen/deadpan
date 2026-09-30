@@ -1,0 +1,16 @@
+{
+  "command": [
+    "target/debug/examples/qualify_bound_encoder",
+    "/tmp/deadpan-runtime-binding-20260930/source.deadpan",
+    "workflow-live-restored",
+    "target/debug/deadpan-cli",
+    "/tmp/deadpan-runtime-binding-20260930/bound-project.json"
+  ],
+  "started": "2026-09-30T10:55:04.427662+00:00",
+  "base_commit": "026ff88ebc1d6e607e2c09e327aa2ff468959dc3",
+  "diff_sha256": "9f9455727d1794ae22f01f4aa5bd659b40fb0484441b557e651440ff97b53435",
+  "source_manifest_sha256": "3f20b906e91b9e43cf4d9c7f336d375cf55a38dcaab5dce716d490ccad59a487",
+  "pid": 23902,
+  "exit_code": 0,
+  "seconds": 49.1651387498714
+}

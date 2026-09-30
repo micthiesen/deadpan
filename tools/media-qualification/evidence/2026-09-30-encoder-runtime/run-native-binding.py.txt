@@ -1,0 +1,42 @@
+import hashlib
+import json
+import os
+from pathlib import Path
+import shutil
+import sqlite3
+import subprocess
+
+repo = Path('/Users/michael/Code/deadpan')
+work = Path('/tmp/deadpan-runtime-binding-20260930')
+source = Path('/tmp/deadpan-automatic-render-H6fzEQ/worker-input/source.deadpan')
+package = work / 'source.deadpan'
+runner = repo / 'tools/media-qualification/evidence/2026-09-29-generated-pictures/run-native.py'
+os.environ['DEADPAN_CHECK_OUTPUT'] = str(work)
+
+def tables(path):
+    with sqlite3.connect(f'file:{path / "project.sqlite"}?mode=ro', uri=True) as db:
+        db.execute('BEGIN')
+        result = {}
+        for (name,) in db.execute("SELECT name FROM sqlite_schema WHERE type='table' ORDER BY name"):
+            rows = db.execute('SELECT * FROM "' + name.replace('"', '""') + '"').fetchall()
+            wire = sorted(json.dumps(row, default=lambda value: {'blob': value.hex()}, ensure_ascii=True, separators=(',', ':')) for row in rows)
+            result[name] = {'rows': len(rows), 'sha256': hashlib.sha256(('\n'.join(wire) + '\n').encode()).hexdigest()}
+        assert db.execute('PRAGMA integrity_check').fetchall() == [('ok',)]
+        return result
+
+def ignore(directory, names):
+    return [name for name in names if Path(directory) == source and (name.startswith('project.sqlite') or name == '.writer.lock')]
+
+shutil.copytree(source, package, ignore=ignore)
+with sqlite3.connect(f'file:{source / "project.sqlite"}?mode=ro', uri=True) as src:
+    with sqlite3.connect(package / 'project.sqlite') as dst:
+        src.backup(dst)
+before = tables(package)
+assert before == tables(source)
+(work / 'database-before.json').write_text(json.dumps(before, indent=2) + '\n')
+result = subprocess.run(['python3', str(runner), 'native-bound-project', 'target/debug/examples/qualify_bound_encoder', str(package), 'workflow-live-restored', 'target/debug/deadpan-cli', str(work / 'bound-project.json')], cwd=repo)
+after = tables(package)
+report = {'status': 'passed' if result.returncode == 0 and before == after else 'failed', 'command_exit': result.returncode, 'all_tables_unchanged': before == after, 'snapshot_method': 'SQLite backup API', 'before': before, 'after': after}
+(work / 'database-check.json').write_text(json.dumps(report, indent=2) + '\n')
+print(json.dumps({key: value for key, value in report.items() if key not in ('before', 'after')}))
+assert report['status'] == 'passed'

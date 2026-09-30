@@ -84,7 +84,9 @@ pub struct ExportPictureContract {
 }
 
 impl ExportPictureContract {
-    pub(crate) fn capture(session: &ProjectPictureSession) -> Result<Self, ExportPictureError> {
+    /// Capture exact output geometry and clocks from an immutable project view.
+    /// This allocates no renderer and does not admit decoded media or an output file.
+    pub fn capture(session: &ProjectPictureSession) -> Result<Self, ExportPictureError> {
         Self::from_captured(
             session.project_id(),
             session.revision(),

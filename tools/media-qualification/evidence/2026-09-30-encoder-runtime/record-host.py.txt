@@ -1,0 +1,32 @@
+import hashlib
+import json
+from pathlib import Path
+import subprocess
+
+repo = Path('/Users/michael/Code/deadpan')
+work = Path('/tmp/deadpan-runtime-binding-20260930')
+prefix = Path('/tmp/deadpan-ui-ffmpeg/prefix')
+bound = json.loads((work / 'bound-project-final.json').read_text())
+
+def run(args):
+    return subprocess.check_output(args, cwd=repo, text=True).strip()
+
+def describe(path):
+    digest = hashlib.sha256()
+    with path.open('rb') as stream:
+        for block in iter(lambda: stream.read(1024 * 1024), b''):
+            digest.update(block)
+    stat = path.stat()
+    return {'path': str(path), 'bytes': stat.st_size, 'device': stat.st_dev, 'inode': stat.st_ino, 'sha256': digest.hexdigest()}
+
+images = {}
+for role, path in [('helper', repo / 'target/debug/deadpan-cli'), ('avcodec', prefix / 'lib/libavcodec.62.dylib'), ('avformat', prefix / 'lib/libavformat.62.dylib'), ('avutil', prefix / 'lib/libavutil.60.dylib'), ('swscale', prefix / 'lib/libswscale.9.dylib')]:
+    actual = describe(path.resolve())
+    mapped = next(row for row in bound['binding']['runtime']['images'] if row['mapped']['kind'] == role)
+    assert actual['sha256'] == mapped['sha256']
+    assert actual['bytes'] == mapped['mapped']['file_size']
+    assert actual['device'] == mapped['mapped']['device'] and actual['inode'] == mapped['mapped']['inode']
+    images[role] = actual
+report = {'cpu_and_memory': run(['sysctl', '-n', 'machdep.cpu.brand_string', 'hw.memsize']).splitlines(), 'os': run(['sw_vers']), 'rust': run(['rustc', '-Vv']), 'helper_linkage': run(['otool', '-L', 'target/debug/deadpan-cli']), 'checked_runtime_files': images, 'scope': 'post-encode independent on-disk match to exact runtime observations; actual mapped-object checks occurred inside each worker; trusted installed code, no memory/framework/driver attestation'}
+(work / 'host.json').write_text(json.dumps(report, indent=2) + '\n')
+print(json.dumps({'matched_runtime_files': len(images), 'helper_sha256': images['helper']['sha256']}))

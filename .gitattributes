@@ -6,3 +6,4 @@
 # Preserve captured output and unified-diff context bytes, including whitespace.
 tools/**/evidence/**/*.log -whitespace
 tools/**/evidence/**/*.patch -whitespace
+tools/**/evidence/**/*.diff -whitespace

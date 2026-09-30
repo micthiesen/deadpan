@@ -1,0 +1,29 @@
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 9.30s
+     Running tests/encoded_verification.rs (target/debug/deps/encoded_verification-ff82f62a4336b617)
+
+running 21 tests
+test preflight_failures_and_missing_runtime_preserve_completed_bytes_for_retry ... ok
+test jobs::corrupted_retained_movie_cannot_reuse_saved_manifest_or_verification ... ok
+test jobs::closing_owner_cancels_and_reaps_a_running_encode_without_user_cancellation ... ok
+test cancellation_after_real_progress_retains_a_retryable_candidate ... ok
+test jobs::owner_revocation_during_native_verification_cannot_admit_a_candidate ... ok
+test jobs::closing_owner_cancels_and_reaps_a_running_verifier_without_user_cancellation ... ok
+test publication::cancellation_before_movie_rename_never_publishes_movie_and_retains_complete_candidate ... ok
+test jobs::restart_preserves_checkpoint_and_fresh_attempt_reverifies_exact_bytes ... ok
+test journal::identical_reports_do_not_substitute_a_different_live_verification_attempt ... ok
+test hostile_verifier_messages_never_replace_private_bytes_with_success ... ok
+test journal::each_rename_requires_its_exact_current_durable_permit ... ok
+test journal::durable_report_precedes_movie_and_completed_publication_survives_reopen ... ok
+test publication::destination_or_report_mutation_cannot_publish_a_successful_movie ... ok
+test publication::publishes_identical_movie_after_durable_bound_report_without_editing_project ... ok
+test actual_finished_files_pass_complete_native_inspection_and_retain_exact_bytes ... ok
+test publication::existing_and_competing_destinations_are_preserved_with_retryable_candidate ... ok
+test journal::closing_the_writer_revokes_both_report_and_movie_rename_authority ... ok
+test recomputed_hashes_do_not_admit_altered_headers_clocks_or_h264_content ... ok
+test journal::interruption_before_movie_authorization_never_adopts_or_touches_foreign_files ... ok
+test jobs::malformed_or_retargeted_retained_manifests_fail_before_verification ... ok
+test journal::restart_reconciliation_requires_the_original_final_objects_and_fresh_verification ... ok
+
+test result: ok. 21 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.83s
+

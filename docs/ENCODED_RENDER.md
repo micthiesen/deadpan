@@ -25,8 +25,9 @@ The [native encoder](NATIVE_ENCODING.md) chooses the next input by exact relativ
 clocks. The child retains one completed I420 picture or one bounded stereo audio
 block, consumes it, and releases it. It never writes an uncompressed movie spool.
 Explicit hardware/software and B-frame choices belong to the trusted host's
-engineering policy. A failed attempt cannot switch its encoder or revise its
-captured document.
+engineering policy. The separate [automatic admission boundary](AUTOMATIC_ENCODER_ADMISSION.md)
+can supply them by consuming a fresh `QualifiedEncoder`. A failed attempt cannot
+switch its encoder or revise its captured document.
 
 ## Protocol and ownership
 
@@ -38,19 +39,41 @@ selects a program.
 The encoded protocol is distinct from raw-picture preparation. It uses strict
 versioned length-framed JSON and the shared process supervisor. Prepare binds
 request/attempt identity, cancellation token, full document hash, exact output
-contract, explicit encoder choice, budgets and timeout. Progress counts accepted
-picture and audio inputs. Complete input progress is not codec drain, verified
-media or published output.
+contract, explicit encoder choice, budgets and timeout. Private protocol 3 also
+requires a nullable `binding` field in Prepare and Completed: explicit
+engineering attempts send `null`, while automatic encoding carries the exact
+qualified runtime and resolved SDR controls. Omission is invalid, and completion
+must echo the exact binding. Progress counts accepted picture and audio inputs.
+Complete input progress is not codec drain, verified media or published output.
 
-Protocol 2 carries a strict typed failure boundary separately from its bounded
+The protocol retains a strict typed failure boundary separately from its bounded
 diagnostic: control, contract, source, picture, audio, output or native encoder.
 Native encoder failures retain specific kinds for missing video encoders and
 observed invalid packet timing, distinct from input, resource, I/O and generic
-driver failures. Protocol-1 messages are rejected; existing retained manifests
+driver failures. Protocol-1 and protocol-2 messages are rejected; retained manifests
 and database rows are unchanged. The host keeps typed failures through process
 supervision and records their stable diagnostic codes in the workflow journal.
 No diagnostic text selects a fallback. A failure kind grants neither fallback
 permission nor cleanup evidence; unconfirmed teardown still takes precedence.
+
+The automatic consumer requires the same request/attempt identity and
+cancellation token as its fresh admission and rechecks current helper facts
+before and after encoding. Before opening project media, the worker captures
+the actual mapped helper and Avcodec, Avformat, Avutil and Swscale images and
+compares their complete fingerprint with the probe's. It hashes matching
+descriptors under cancellation, deadline and byte bounds, retains them through
+work, then rehashes and revalidates them and the platform facts before completion.
+The [runtime contract](AUTOMATIC_ENCODER_ADMISSION.md#loaded-runtime-identity)
+binds macOS mapped vnodes and loaded Mach-O UUIDs under trusted installed code;
+it does not attest resident memory, OS frameworks or drivers.
+
+The binding fixes policy version 1, raster, rational rate, encoder choice and
+resolved bitrate/GOP/B-frame/timescale controls. Native reconstruction uses
+`EncodeContract::new_v1`; `new` stays an alias of that frozen policy. Future
+policies require separate constructors. Runtime binding is carried by the
+private protocol and decision, without changing historical `EncodedManifest`
+bytes or checkpoint interpretation. Probe protocol 2 and report schema 2 are
+separate from this project-encode protocol.
 
 The raw worker retains its 512 MiB/100,000-frame qualification limits. Encoded
 requests reconstruct the native contract and enforce native frame, sample,
@@ -91,6 +114,9 @@ then checks an exact destination copy and publishes the local report and MP4 und
 exclusive names, with explicit outcomes for failures after the movie rename.
 The [durable journal](RENDER_PUBLICATION.md#durable-publication-journal) supports
 explicit recovery after restart. Native Render and public headless render commands
-remain required. Full audio/effects, HDR, automatic platform policy, performance
-and release hardware/OS coverage also remain open. Fixture content and platform
-qualification remain separate from per-file structural/decode admission.
+remain required, as does durable automatic-decision storage planned for database
+schema 42. The in-memory automatic consumer returns a candidate and its decision;
+it cannot bypass finished-file verification or publication. Full audio/effects,
+HDR, durable automatic policy integration, performance and release hardware/OS
+coverage remain open. Fixture content and platform qualification remain separate
+from per-file structural/decode admission.

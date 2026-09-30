@@ -2,11 +2,23 @@
 
 All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_SPEC.md#29-requirements-traceability) remain in scope. Their detailed sections are normative. This tracker records the current implementation and measured evidence, not a reduced release scope.
 
+[Runtime-bound project encoding](qualification/encoder-runtime-2026-09-30.md)
+now consumes a fresh automatic admission. The probe and project worker retain
+matching mapped helper/library descriptors and require stable hashes, platform
+facts and frozen SDR controls. The native example verifies a full 128-frame,
+205,005-sample committed project and preserves every cell in 19 database tables.
+Independent readers pass every picture plane and the complete authored audio;
+final workspace coverage is 2,397 passing tests after correcting one transport
+fixture. Strict Clippy, formatting and native startup/shutdown pass.
+Serialized evidence cannot restore a live admission. Durable automatic decisions,
+native/public headless Render and full output qualification remain open; no DP
+requirement or delivery gate changes status.
+
 [Automatic encoder probes](AUTOMATIC_ENCODER_ADMISSION.md) now select a path
 through fresh supervised deterministic encodes, complete file verification and
 expected picture/audio checks. Ordered typed rejections remain in the decision;
-non-capability and cleanup failures stop selection. Durable job/attempt policy,
-runtime-bound project encoding and public Render remain required for DP-17/DP-18.
+non-capability and cleanup failures stop selection. Durable job/attempt policy
+and public Render remain required for DP-17/DP-18.
 [Qualification](qualification/encoder-admission-2026-09-30.md) records 2,384 passing
 workspace tests, strict Clippy, formatting and native startup/shutdown. Four real
 cases passed 190 pictures and 24 exact AVFoundation event positions. The 14x16,

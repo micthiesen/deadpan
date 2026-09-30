@@ -16,12 +16,14 @@ use deadpan_jobs::{
     process::{ResponseKind, SupervisorError, WorkerProtocol},
     protocol::{read_frame, write_frame},
 };
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 
 use crate::export_picture::ExportPictureContract;
 pub use crate::render_worker::protocol::{RenderContract, RenderIdentity};
 
-pub const PROTOCOL_VERSION: u32 = 2;
+use super::runtime::EncodingBinding;
+
+pub const PROTOCOL_VERSION: u32 = 3;
 pub const MAX_TIMEOUT_MILLIS: u64 = 24 * 60 * 60 * 1_000;
 pub const OUTPUT_SCOPE: &str = "output";
 pub const MOVIE_REF: &str = "output/movie.mp4";
@@ -62,7 +64,7 @@ impl EncodedRenderContract {
             .checked_sub(self.picture.project_audio_start.0)
             .and_then(|samples| u64::try_from(samples).ok())
             .ok_or_else(|| "encoded audio interval exceeds exact sample bounds".to_owned())?;
-        EncodeContract::new(
+        EncodeContract::new_v1(
             self.picture.raster,
             [
                 self.picture.frame_rate.numerator(),
@@ -89,6 +91,8 @@ pub enum EncodedHostMessage {
         identity: RenderIdentity,
         cancellation_token: CancellationToken,
         contract: Box<EncodedRenderContract>,
+        #[serde(deserialize_with = "deserialize_required_binding")]
+        binding: Option<Box<EncodingBinding>>,
         document_sha256: Sha256,
         output_scope: WorkspaceRef,
         limits: EncodeLimits,
@@ -107,6 +111,7 @@ impl EncodedHostMessage {
             Self::Prepare {
                 protocol,
                 contract,
+                binding,
                 output_scope,
                 limits,
                 timeout_millis,
@@ -114,6 +119,9 @@ impl EncodedHostMessage {
             } => {
                 validate_version(*protocol)?;
                 let native = contract.native_contract()?;
+                if let Some(binding) = binding {
+                    binding.validate_for(contract)?;
+                }
                 limits
                     .validate_for(&native)
                     .map_err(|error| error.to_string())?;
@@ -335,6 +343,8 @@ pub enum EncodedWorkerMessage {
         protocol: u32,
         identity: RenderIdentity,
         manifest: Box<EncodedManifest>,
+        #[serde(deserialize_with = "deserialize_required_binding")]
+        binding: Option<Box<EncodingBinding>>,
     },
     Failed {
         protocol: u32,
@@ -380,9 +390,15 @@ impl EncodedWorkerMessage {
                 Ok(())
             }
             Self::Completed {
-                protocol, manifest, ..
+                protocol,
+                manifest,
+                binding,
+                ..
             } => {
                 validate_version(*protocol)?;
+                if let Some(binding) = binding {
+                    binding.validate_for(&manifest.contract)?;
+                }
                 manifest.validate()
             }
             Self::Failed { protocol, .. } | Self::Cancelled { protocol, .. } => {
@@ -390,6 +406,17 @@ impl EncodedWorkerMessage {
             }
         }
     }
+}
+
+// An omitted Option normally deserializes as None. Engineering requests must
+// explicitly send null so a protocol-3 peer cannot omit runtime-bound intent.
+fn deserialize_required_binding<'de, D>(
+    deserializer: D,
+) -> Result<Option<Box<EncodingBinding>>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    Option::<Box<EncodingBinding>>::deserialize(deserializer)
 }
 
 fn validate_version(protocol: u32) -> Result<(), String> {
@@ -406,6 +433,7 @@ pub struct EncodedProtocol {
     identity: RenderIdentity,
     cancellation_token: CancellationToken,
     contract: EncodedRenderContract,
+    binding: Option<EncodingBinding>,
     audio_samples: u64,
     document_sha256: Sha256,
     limits: EncodeLimits,
@@ -421,6 +449,7 @@ impl WorkerProtocol for EncodedProtocol {
             identity,
             cancellation_token,
             contract,
+            binding,
             document_sha256,
             limits,
             ..
@@ -437,6 +466,7 @@ impl WorkerProtocol for EncodedProtocol {
             identity: identity.clone(),
             cancellation_token: cancellation_token.clone(),
             contract: contract.as_ref().clone(),
+            binding: binding.as_deref().cloned(),
             audio_samples: native.audio_samples(),
             document_sha256: document_sha256.clone(),
             limits: *limits,
@@ -485,9 +515,12 @@ impl WorkerProtocol for EncodedProtocol {
                 }
                 Ok(ResponseKind::Progress)
             }
-            EncodedWorkerMessage::Completed { manifest, .. } => {
+            EncodedWorkerMessage::Completed {
+                manifest, binding, ..
+            } => {
                 if manifest.contract != self.contract
                     || manifest.document_sha256 != self.document_sha256
+                    || binding.as_deref() != self.binding.as_ref()
                 {
                     return Err("encoded completion differs from the captured request".into());
                 }

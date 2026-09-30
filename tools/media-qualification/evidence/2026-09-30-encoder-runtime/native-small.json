@@ -1,0 +1,18 @@
+{
+  "command": [
+    "target/debug/examples/qualify_encoder_admission",
+    "target/debug/deadpan-cli",
+    "64",
+    "64",
+    "30",
+    "1",
+    "/tmp/deadpan-runtime-binding-20260930/small.json"
+  ],
+  "started": "2026-09-30T10:56:27.118437+00:00",
+  "base_commit": "026ff88ebc1d6e607e2c09e327aa2ff468959dc3",
+  "diff_sha256": "e181d72c932fa300746d87e326c3d2def9425256bea2390c86095fb01f28fdb2",
+  "source_manifest_sha256": "3f20b906e91b9e43cf4d9c7f336d375cf55a38dcaab5dce716d490ccad59a487",
+  "pid": 24100,
+  "exit_code": 1,
+  "seconds": 6.156830249819905
+}

@@ -8,11 +8,12 @@ use deadpan_jobs::{
 };
 use serde::{Deserialize, Serialize};
 
-use super::{MAX_PROBE_BYTES, MAX_PROBE_PACKETS, ProbeReport, ProbeSpec};
+use super::{AdmissionRuntime, MAX_PROBE_BYTES, MAX_PROBE_PACKETS, ProbeReport, ProbeSpec};
+use crate::encoded_render::runtime::RuntimeFingerprint;
 use crate::{encoded_render::protocol::EncodedFailure, render_worker::protocol::RenderIdentity};
 
 pub use crate::encoded_render::protocol::{MOVIE_REF, OUTPUT_SCOPE};
-pub const PROTOCOL_VERSION: u32 = 1;
+pub const PROTOCOL_VERSION: u32 = 2;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "op", rename_all = "snake_case", deny_unknown_fields)]
@@ -24,6 +25,7 @@ pub enum HostMessage {
         spec: ProbeSpec,
         limits: EncodeLimits,
         timeout_millis: u64,
+        expected_runtime: AdmissionRuntime,
     },
     Cancel {
         protocol: u32,
@@ -40,9 +42,11 @@ impl HostMessage {
                 spec,
                 limits,
                 timeout_millis,
+                expected_runtime,
                 ..
             } => {
                 version(*protocol)?;
+                expected_runtime.validate()?;
                 let native = spec.contract()?.native_contract()?;
                 limits
                     .validate_for(&native)
@@ -78,11 +82,19 @@ pub enum WorkerMessage {
         protocol: u32,
         identity: RenderIdentity,
         failure: EncodedFailure,
+        #[serde(deserialize_with = "required_runtime")]
+        runtime: Option<Box<RuntimeFingerprint>>,
     },
     Cancelled {
         protocol: u32,
         identity: RenderIdentity,
     },
+}
+
+fn required_runtime<'de, D: serde::Deserializer<'de>>(
+    deserializer: D,
+) -> Result<Option<Box<RuntimeFingerprint>>, D::Error> {
+    Option::deserialize(deserializer)
 }
 
 impl WorkerMessage {
@@ -132,6 +144,7 @@ pub struct ProbeProtocol {
     token: CancellationToken,
     spec: ProbeSpec,
     limits: EncodeLimits,
+    expected_runtime: AdmissionRuntime,
 }
 impl WorkerProtocol for ProbeProtocol {
     type Request = HostMessage;
@@ -143,6 +156,7 @@ impl WorkerProtocol for ProbeProtocol {
             cancellation_token,
             spec,
             limits,
+            expected_runtime,
             ..
         } = request
         else {
@@ -155,6 +169,7 @@ impl WorkerProtocol for ProbeProtocol {
             token: cancellation_token.clone(),
             spec: spec.clone(),
             limits: *limits,
+            expected_runtime: expected_runtime.clone(),
         })
     }
     fn cancellation(&self) -> HostMessage {
@@ -196,12 +211,18 @@ impl WorkerProtocol for ProbeProtocol {
             }
             WorkerMessage::Completed { report, .. } => {
                 report.validate(self.limits)?;
+                self.expected_runtime.matches_loaded(&report.runtime)?;
                 if report.spec != self.spec {
                     return Err("probe completion changed its specification".into());
                 }
                 Ok(ResponseKind::Completed)
             }
-            WorkerMessage::Failed { .. } => Ok(ResponseKind::Failed),
+            WorkerMessage::Failed { runtime, .. } => {
+                if let Some(runtime) = runtime {
+                    self.expected_runtime.matches_loaded(runtime)?;
+                }
+                Ok(ResponseKind::Failed)
+            }
             WorkerMessage::Cancelled { .. } => Ok(ResponseKind::Terminal),
         }
     }

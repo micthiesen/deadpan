@@ -20,6 +20,7 @@ use super::protocol::{
     self, EncodedHostMessage, EncodedManifest, EncodedProtocol, EncodedRenderContract,
     EncodedWorkerMessage, EncoderChoice,
 };
+use super::runtime::EncodingBinding;
 use super::{EncodedRenderError, PRIVATE_WORKER_ARGUMENT, check_control};
 
 const COPY_BUFFER_BYTES: usize = 64 * 1024;
@@ -56,6 +57,7 @@ pub struct EncodedCandidate {
     contract: ExportPictureContract,
     document_sha256: Sha256,
     manifest: EncodedManifest,
+    binding: Option<EncodingBinding>,
     snapshot: CandidateBytes,
 }
 
@@ -75,6 +77,10 @@ impl EncodedCandidate {
 
     pub fn manifest(&self) -> &EncodedManifest {
         &self.manifest
+    }
+
+    pub fn encoding_binding(&self) -> Option<&EncodingBinding> {
+        self.binding.as_ref()
     }
 
     pub fn byte_length(&self) -> u64 {
@@ -124,6 +130,7 @@ impl EncodedCandidate {
             contract,
             document_sha256,
             manifest,
+            binding: None,
             snapshot: CandidateBytes::Retained(Box::new(snapshot)),
         };
         candidate.check_live(cancelled, deadline)?;
@@ -243,6 +250,57 @@ pub(super) fn encode_guarded(
     limits: EncodedWorkerLimits,
     cancelled: &AtomicBool,
     deadline: Instant,
+    progress: impl FnMut(EncodedProgress),
+    check_owner: impl Fn() -> Result<(), EncodedRenderError>,
+) -> Result<EncodedCandidate, EncodedRenderError> {
+    encode_with_binding_guarded(
+        runtime,
+        request,
+        choice,
+        None,
+        limits,
+        cancelled,
+        deadline,
+        progress,
+        check_owner,
+    )
+}
+
+/// Only a live qualified encoder may select this runtime-bound worker path.
+#[allow(clippy::too_many_arguments)]
+pub(super) fn encode_bound_guarded(
+    runtime: &RenderWorkerRuntime,
+    request: RenderPictureRequest,
+    choice: EncoderChoice,
+    binding: EncodingBinding,
+    limits: EncodedWorkerLimits,
+    cancelled: &AtomicBool,
+    deadline: Instant,
+    progress: impl FnMut(EncodedProgress),
+    check_owner: impl Fn() -> Result<(), EncodedRenderError>,
+) -> Result<EncodedCandidate, EncodedRenderError> {
+    encode_with_binding_guarded(
+        runtime,
+        request,
+        choice,
+        Some(binding),
+        limits,
+        cancelled,
+        deadline,
+        progress,
+        check_owner,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+fn encode_with_binding_guarded(
+    runtime: &RenderWorkerRuntime,
+    request: RenderPictureRequest,
+    choice: EncoderChoice,
+    binding: Option<EncodingBinding>,
+    limits: EncodedWorkerLimits,
+    cancelled: &AtomicBool,
+    deadline: Instant,
     mut progress: impl FnMut(EncodedProgress),
     check_owner: impl Fn() -> Result<(), EncodedRenderError>,
 ) -> Result<EncodedCandidate, EncodedRenderError> {
@@ -272,6 +330,11 @@ pub(super) fn encode_guarded(
         .native_contract()
         .map_err(EncodedRenderError::Protocol)?;
     limits.encode.validate_for(&native)?;
+    if let Some(binding) = &binding {
+        binding
+            .validate_for(&evidence)
+            .map_err(EncodedRenderError::Protocol)?;
+    }
     let document_sha256 = document_hash(pictures.document(), cancelled, deadline);
     check_control(cancelled, deadline)?;
     let document_sha256 = document_sha256?;
@@ -297,6 +360,7 @@ pub(super) fn encode_guarded(
         identity,
         cancellation_token,
         contract: Box::new(evidence.clone()),
+        binding: binding.clone().map(Box::new),
         document_sha256: document_sha256.clone(),
         output_scope: output_scope.clone(),
         limits: limits.encode,
@@ -389,9 +453,9 @@ pub(super) fn encode_guarded(
                                 total_audio_samples,
                             });
                         }
-                        EncodedWorkerMessage::Completed { manifest, .. } => {
-                            completion = Some(*manifest)
-                        }
+                        EncodedWorkerMessage::Completed {
+                            manifest, binding, ..
+                        } => completion = Some((*manifest, binding.map(|value| *value))),
                         EncodedWorkerMessage::Failed {
                             failure: reported, ..
                         } => {
@@ -438,12 +502,15 @@ pub(super) fn encode_guarded(
         }
         check_control(cancelled, deadline)?;
         check_owner()?;
-        let manifest = completion.ok_or_else(|| {
+        let (manifest, completed_binding) = completion.ok_or_else(|| {
             EncodedRenderError::Protocol("no clean completed encoded manifest".into())
         })?;
         // Keep admission explicit even though the protocol adapter also binds the
         // response before the supervisor releases completion after clean teardown.
-        if manifest.contract != evidence || manifest.document_sha256 != document_sha256 {
+        if manifest.contract != evidence
+            || manifest.document_sha256 != document_sha256
+            || completed_binding != binding
+        {
             return Err(EncodedRenderError::Protocol(
                 "completed output changed the captured contract".into(),
             ));
@@ -482,6 +549,7 @@ pub(super) fn encode_guarded(
             contract,
             document_sha256,
             manifest,
+            binding,
             snapshot: CandidateBytes::Worker(snapshot),
         })
     })();

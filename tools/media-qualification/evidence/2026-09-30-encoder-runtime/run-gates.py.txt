@@ -1,0 +1,18 @@
+import os
+from pathlib import Path
+import subprocess
+
+repo = Path('/Users/michael/Code/deadpan')
+work = Path('/tmp/deadpan-runtime-binding-20260930')
+os.environ['DEADPAN_CHECK_OUTPUT'] = str(work)
+runner = repo / 'tools/media-qualification/evidence/2026-09-29-generated-pictures/run-native.py'
+checks = [
+    ('format-check-final', ['cargo', 'fmt', '--all', '--', '--check']),
+    ('workspace-clippy-final', ['cargo', 'clippy', '--workspace', '--all-targets', '--locked', '--', '-D', 'warnings']),
+    ('workspace-tests-final', ['cargo', 'test', '--workspace', '--locked', '--no-fail-fast']),
+    ('native-smoke', ['cargo', 'run', '-p', 'deadpan-app', '--locked', '--', '--smoke-test']),
+]
+for name, command in checks:
+    result = subprocess.run(['python3', str(runner), name, *command], cwd=repo)
+    if result.returncode:
+        raise SystemExit(result.returncode)

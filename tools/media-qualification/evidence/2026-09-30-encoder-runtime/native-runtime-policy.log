@@ -1,0 +1,27 @@
+   Compiling deadpan-encode v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-encode)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 27.51s
+     Running tests/policy.rs (target/debug/deps/policy-6f9682d708641301)
+
+running 8 tests
+test caller_supplied_nonzero_origin_audio_count_is_not_replaced ... ok
+test hard_geometry_clock_duration_and_allocation_bounds_fail_before_native_work ... ok
+test exact_rate_gop_and_movie_clock_are_preserved ... ok
+test version_one_interpolation_keeps_fractional_class_areas_and_half_up_rounding ... ok
+test frozen_version_one_preserves_original_constructor_and_serialized_contract ... ok
+test version_one_resolves_low_and_fractional_rates_without_integer_rate_rounding ... ok
+test non_widescreen_rasters_interpolate_by_pixel_area ... ok
+test specification_classes_and_rate_split_are_exact ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/runtime.rs (target/debug/deps/runtime-2617f2da986817c0)
+
+running 5 tests
+test empty_and_out_of_range_identity_claims_fail_validation ... ok
+test platform_wire_contains_only_bounded_nonunique_platform_facts ... ok
+test runtime_identity_wire_is_closed_and_retains_exact_mapped_facts ... ok
+test fresh_loaded_images_match_pinned_descriptors_without_changing_their_cursor ... ok
+test copied_loaded_header_cannot_make_another_vnode_a_loaded_image ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+

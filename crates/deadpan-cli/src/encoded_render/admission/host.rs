@@ -23,6 +23,7 @@ use crate::{
         EncodedRenderError, check_control,
         host::{finish_owned_result, invalidate_report},
         protocol::{EncodedFailureKind, EncoderChoice},
+        runtime::{EncodingBinding, RuntimeFingerprint},
     },
     render_worker::{RenderWorkerRuntime, protocol::RenderIdentity},
 };
@@ -58,13 +59,87 @@ impl std::error::Error for AdmissionFailure {
 pub struct QualifiedEncoder {
     decision: EncoderDecision,
     movie: HashedArtifactSnapshot,
+    cancellation_token: CancellationToken,
 }
+
+pub struct AutomaticEncodedCandidate {
+    candidate: crate::encoded_render::EncodedCandidate,
+    decision: EncoderDecision,
+}
+
+impl AutomaticEncodedCandidate {
+    pub fn candidate(&self) -> &crate::encoded_render::EncodedCandidate {
+        &self.candidate
+    }
+    pub fn decision(&self) -> &EncoderDecision {
+        &self.decision
+    }
+    pub fn into_parts(self) -> (crate::encoded_render::EncodedCandidate, EncoderDecision) {
+        (self.candidate, self.decision)
+    }
+}
+
 impl QualifiedEncoder {
     pub fn decision(&self) -> &EncoderDecision {
         &self.decision
     }
     pub fn choice(&self) -> EncoderChoice {
         self.decision.selected.spec.choice
+    }
+
+    /// Consume this attempt's fresh admission. The child independently checks
+    /// the mapped runtime before preparation and after encoding; finished-file
+    /// verification and destination publication are still required afterwards.
+    pub fn encode(
+        self,
+        runtime: &RenderWorkerRuntime,
+        request: crate::render_worker::RenderPictureRequest,
+        limits: crate::encoded_render::EncodedWorkerLimits,
+        cancelled: &AtomicBool,
+        deadline: Instant,
+        progress: impl FnMut(crate::encoded_render::EncodedProgress),
+    ) -> Result<AutomaticEncodedCandidate, EncodedRenderError> {
+        check_control(cancelled, deadline)?;
+        if request.identity != self.decision.identity
+            || request.cancellation_token != self.cancellation_token
+            || !runtime.arguments.is_empty()
+            || !runtime.environment.is_empty()
+        {
+            return Err(EncodedRenderError::Configuration(
+                "fresh encoder admission belongs to another attempt or runtime configuration",
+            ));
+        }
+        if runtime_identity(runtime, cancelled, deadline)? != self.decision.runtime {
+            return Err(EncodedRenderError::Protocol(
+                "encoder helper changed after its probe".into(),
+            ));
+        }
+        let binding = EncodingBinding::from_contract(
+            &self.decision.selected.manifest.contract,
+            self.decision.selected.runtime.clone(),
+        )
+        .map_err(EncodedRenderError::Protocol)?;
+        let candidate = crate::encoded_render::host::encode_bound_guarded(
+            runtime,
+            request,
+            self.choice(),
+            binding,
+            limits,
+            cancelled,
+            deadline,
+            progress,
+            || Ok(()),
+        )?;
+        if runtime_identity(runtime, cancelled, deadline)? != self.decision.runtime {
+            return Err(EncodedRenderError::Protocol(
+                "encoder helper changed during project encoding".into(),
+            ));
+        }
+        check_control(cancelled, deadline)?;
+        Ok(AutomaticEncodedCandidate {
+            candidate,
+            decision: self.decision,
+        })
     }
 
     /// Retain the actual probe for engineering evidence. The sink stays private;
@@ -128,6 +203,7 @@ pub fn qualify(
         }
         let deadline = deadline.min(Instant::now() + limits.process.maximum_duration);
         let runtime_before = runtime_identity(runtime, cancelled, deadline)?;
+        let mut loaded_runtime = None;
         let initial = ProbeSpec {
             raster: request.raster,
             frame_rate: request.frame_rate,
@@ -162,8 +238,11 @@ pub fn qualify(
                 attempt_id: deadpan_jobs::AttemptId::new(uuid::Uuid::new_v4().to_string())
                     .map_err(|error| EncodedRenderError::Protocol(error.to_string()))?,
             };
+            let mut failed_runtime = None;
             let attempted = probe(
                 runtime,
+                &runtime_before,
+                &mut failed_runtime,
                 &identity,
                 &request.cancellation_token,
                 &spec,
@@ -174,6 +253,11 @@ pub fn qualify(
             );
             match attempted {
                 Ok((report, movie)) => {
+                    admit_loaded_runtime(
+                        &report.runtime,
+                        &runtime_before,
+                        loaded_runtime.as_ref(),
+                    )?;
                     let runtime_after = runtime_identity(runtime, cancelled, deadline)?;
                     if runtime_after != runtime_before {
                         return Err(EncodedRenderError::Protocol(
@@ -191,6 +275,7 @@ pub fn qualify(
                             selected: report,
                         },
                         movie,
+                        cancellation_token: request.cancellation_token,
                     });
                 }
                 Err(error) => {
@@ -203,7 +288,28 @@ pub fn qualify(
                             identity,
                             spec,
                             failure: failure.clone(),
+                            runtime: failed_runtime.clone(),
                         });
+                    }
+                    if next.is_some() {
+                        let checked = failed_runtime
+                            .as_ref()
+                            .ok_or_else(|| {
+                                EncodedRenderError::Protocol(
+                                    "capability rejection has no checked loaded runtime".into(),
+                                )
+                            })
+                            .and_then(|observed| {
+                                admit_loaded_runtime(
+                                    observed,
+                                    &runtime_before,
+                                    loaded_runtime.as_ref(),
+                                )
+                            });
+                        if let Err(fault) = checked {
+                            return Err(invalidate_report(Some(error), fault));
+                        }
+                        loaded_runtime = failed_runtime;
                     }
                     match next {
                         Some(next) => choice = next,
@@ -217,6 +323,22 @@ pub fn qualify(
         ))
     })();
     result.map_err(|error| AdmissionFailure { error, rejected })
+}
+
+fn admit_loaded_runtime(
+    observed: &RuntimeFingerprint,
+    expected: &AdmissionRuntime,
+    previous: Option<&RuntimeFingerprint>,
+) -> Result<(), EncodedRenderError> {
+    expected
+        .matches_loaded(observed)
+        .map_err(EncodedRenderError::Protocol)?;
+    if previous.is_some_and(|previous| previous != observed) {
+        return Err(EncodedRenderError::Protocol(
+            "loaded runtime changed between encoder probes".into(),
+        ));
+    }
+    Ok(())
 }
 
 fn next_choice(
@@ -333,6 +455,8 @@ fn runtime_identity(
 #[allow(clippy::too_many_arguments)]
 fn probe(
     runtime: &RenderWorkerRuntime,
+    expected_runtime: &AdmissionRuntime,
+    failed_runtime: &mut Option<RuntimeFingerprint>,
     identity: &RenderIdentity,
     token: &CancellationToken,
     spec: &ProbeSpec,
@@ -359,6 +483,7 @@ fn probe(
         spec: spec.clone(),
         limits: limits.encode,
         timeout_millis,
+        expected_runtime: expected_runtime.clone(),
     };
     let mut process = SupervisedProcess::<ProbeProtocol>::spawn(
         ProcessSpec {
@@ -427,8 +552,11 @@ fn probe(
                             report: completed, ..
                         } => report = Some(*completed),
                         WorkerMessage::Failed {
-                            failure: reported, ..
+                            failure: reported,
+                            runtime: observed,
+                            ..
                         } => {
+                            *failed_runtime = observed.map(|runtime| *runtime);
                             failure.get_or_insert(EncodedRenderError::WorkerFailure(reported));
                         }
                         WorkerMessage::Cancelled { .. } => was_cancelled = true,

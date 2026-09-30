@@ -1,0 +1,22 @@
+--- originals/avfoundation_probe.m
++++ avfoundation_probe.m
+@@ -23,7 +23,7 @@
+     MaximumTimingEntries = 8192,
+     MaximumInspectedAttachments = 262144,
+     MaximumSelectedAttachments = 8192,
+-    MaximumPCMFrames = 192000,
++    MaximumPCMFrames = 240000,
+     MaximumInputBytes = 64 * 1024 * 1024,
+     MaximumReportBytes = 16 * 1024 * 1024,
+ };
+@@ -368,8 +368,8 @@
+     root[@"provides_precise_duration_and_timing"] = @(asset.providesPreciseDurationAndTiming);
+     requireCondition(asset.providesPreciseDurationAndTiming && CMTIME_IS_NUMERIC(duration) &&
+                      !CMTIME_HAS_BEEN_ROUNDED(duration) && duration.epoch == 0 &&
+-                     CMTimeCompare(duration, kCMTimeZero) > 0 && CMTimeCompare(duration, CMTimeMake(4, 1)) <= 0,
+-                     @"fixture asset must have a precise positive duration no greater than four seconds");
++                     CMTimeCompare(duration, kCMTimeZero) > 0 && CMTimeCompare(duration, CMTimeMake(5, 1)) <= 0,
++                     @"scratch fixture asset must have a precise positive duration no greater than five seconds");
+     AVAssetTrack *track = audioTrack(asset);
+     loadKeys(track, @[@"formatDescriptions", @"timeRange", @"segments"]);
+     NSArray *descriptions = track.formatDescriptions;

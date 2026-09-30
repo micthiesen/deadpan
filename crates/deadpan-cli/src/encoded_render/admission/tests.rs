@@ -14,6 +14,7 @@ fn spec() -> ProbeSpec {
     }
 }
 fn request() -> HostMessage {
+    let loaded = crate::encoded_render::runtime::test_fingerprint();
     HostMessage::Probe {
         protocol: PROTOCOL_VERSION,
         identity: RenderIdentity {
@@ -24,6 +25,14 @@ fn request() -> HostMessage {
         spec: spec(),
         limits: AdmissionLimits::default().encode,
         timeout_millis: 120_000,
+        expected_runtime: AdmissionRuntime {
+            helper_sha256: loaded.helper().sha256.clone(),
+            helper_bytes: loaded.helper().mapped.file_size,
+            system: loaded.system,
+            kernel_release: loaded.kernel_release,
+            kernel_build: loaded.kernel_build,
+            machine: loaded.machine,
+        },
     }
 }
 
@@ -92,12 +101,14 @@ fn wire_admission_rejects_loose_fields_versions_and_work_before_execution() {
     let original = serde_json::to_value(request()).unwrap();
     for (path, value) in [
         ("/protocol", json!(0)),
-        ("/protocol", json!(2)),
+        ("/protocol", json!(1)),
+        ("/protocol", json!(3)),
         ("/timeout_millis", json!(0)),
         ("/timeout_millis", json!(120_001)),
         ("/spec/frame_rate", json!([120, 1])),
         ("/spec/raster", json!([2, 2])),
         ("/limits/maximum_output_bytes", json!(MAX_PROBE_BYTES + 1)),
+        ("/expected_runtime/helper_bytes", json!(0)),
     ] {
         let mut changed = original.clone();
         *changed.pointer_mut(path).unwrap() = value;
@@ -107,7 +118,7 @@ fn wire_admission_rejects_loose_fields_versions_and_work_before_execution() {
             "{path}"
         );
     }
-    for path in ["", "/spec", "/spec/choice", "/limits"] {
+    for path in ["", "/spec", "/spec/choice", "/limits", "/expected_runtime"] {
         let mut changed = original.clone();
         changed
             .pointer_mut(path)

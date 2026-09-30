@@ -1,0 +1,12 @@
+{
+  "passed": 2397,
+  "failed": 0,
+  "ignored": 0,
+  "result_groups": 171,
+  "full_run_exit": 101,
+  "original_failed_tests": 21,
+  "corrected_target": "deadpan-cli/encoded_verification",
+  "corrected_target_passed": 21,
+  "only_changed_source": "crates/deadpan-cli/tests/encoded_verification/fixture.py",
+  "preserved_workspace_source": "1e557942d104f3990ce6a9edf0c9310f4bab3fa2b4e67906321b066a7ece6cbf"
+}

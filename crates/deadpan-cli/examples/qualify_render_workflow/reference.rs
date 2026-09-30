@@ -1,4 +1,7 @@
-use std::{fs::OpenOptions, io::Write, path::Path, sync::atomic::AtomicBool, time::Instant};
+use std::{
+    fs::OpenOptions, io::Write, os::unix::fs::OpenOptionsExt, path::Path, sync::atomic::AtomicBool,
+    time::Instant,
+};
 
 use deadpan_cli::{
     audio::OfflineAudioSession,
@@ -58,10 +61,12 @@ pub(super) fn capture(
     let mut picture_file = OpenOptions::new()
         .write(true)
         .create_new(true)
+        .mode(0o600)
         .open(&picture_path)?;
     let mut audio_file = OpenOptions::new()
         .write(true)
         .create_new(true)
+        .mode(0o600)
         .open(&audio_path)?;
     for ordinal in 0..contract.frame_count() {
         let frame = pictures.prepare(OutputFrameOrdinal(ordinal), &cancelled, deadline)?;

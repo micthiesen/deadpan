@@ -1,0 +1,13 @@
+test_fidelity_and_no_alignment_semantics_are_unchanged (__main__.CapacityExtensionTests.test_fidelity_and_no_alignment_semantics_are_unchanged) ... ok
+test_final_authored_sample_cannot_disappear_or_move (__main__.CapacityExtensionTests.test_final_authored_sample_cannot_disappear_or_move) ... ok
+test_full_authored_interval_and_exact_five_second_capacity (__main__.CapacityExtensionTests.test_full_authored_interval_and_exact_five_second_capacity) ... ok
+test_gaps_overlaps_missing_edges_and_unaccounted_bytes_are_rejected (__main__.CapacityExtensionTests.test_gaps_overlaps_missing_edges_and_unaccounted_bytes_are_rejected) ... ok
+test_native_format_trim_pts_status_and_hash_checks_remain (__main__.CapacityExtensionTests.test_native_format_trim_pts_status_and_hash_checks_remain) ... ok
+test_only_reviewed_unique_capacity_edits_and_source_snapshots (__main__.CapacityExtensionTests.test_only_reviewed_unique_capacity_edits_and_source_snapshots) ... ok
+test_original_two_and_four_second_results_are_identical (__main__.CapacityExtensionTests.test_original_two_and_four_second_results_are_identical) ... ok
+test_over_five_seconds_or_sample_capacity_is_rejected (__main__.CapacityExtensionTests.test_over_five_seconds_or_sample_capacity_is_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.815s
+
+OK

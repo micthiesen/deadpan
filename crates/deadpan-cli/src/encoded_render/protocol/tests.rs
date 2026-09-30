@@ -64,6 +64,7 @@ fn request() -> EncodedHostMessage {
         identity: identity(),
         cancellation_token: CancellationToken::new("cancel-this-attempt").unwrap(),
         contract: Box::new(contract()),
+        binding: None,
         document_sha256: hash('a'),
         output_scope: WorkspaceRef::new(OUTPUT_SCOPE).unwrap(),
         limits: limits(),
@@ -136,6 +137,7 @@ fn completed(manifest: EncodedManifest) -> EncodedWorkerMessage {
         protocol: PROTOCOL_VERSION,
         identity: identity(),
         manifest: Box::new(manifest),
+        binding: None,
     }
 }
 
@@ -298,6 +300,98 @@ fn round_trip_handles_fragmented_frames_and_preserves_exact_cancellation() {
 }
 
 #[test]
+fn version_three_requires_explicit_binding_without_changing_persisted_manifest() {
+    assert_eq!(PROTOCOL_VERSION, 3);
+    let prepare = serde_json::to_value(request()).unwrap();
+    let complete = serde_json::to_value(completed(manifest())).unwrap();
+    assert_eq!(prepare.get("binding"), Some(&Value::Null));
+    assert_eq!(complete.get("binding"), Some(&Value::Null));
+    for value in [&prepare, &complete] {
+        for replacement in [None, Some(json!({})), Some(json!(false))] {
+            let mut changed = value.clone();
+            if let Some(replacement) = replacement {
+                changed["binding"] = replacement;
+            } else {
+                changed.as_object_mut().unwrap().remove("binding");
+            }
+            let bytes = wire(&changed);
+            if value.get("op").is_some() {
+                assert!(read_host_message(&mut Cursor::new(bytes)).is_err());
+            } else {
+                assert!(EncodedProtocol::read_response(&mut Cursor::new(bytes)).is_err());
+            }
+        }
+        let mut legacy = value.clone();
+        legacy["protocol"] = json!(2);
+        let bytes = wire(&legacy);
+        if value.get("op").is_some() {
+            assert!(read_host_message(&mut Cursor::new(bytes)).is_err());
+        } else {
+            assert!(EncodedProtocol::read_response(&mut Cursor::new(bytes)).is_err());
+        }
+    }
+    let mut persisted = complete["manifest"].clone();
+    let mut keys: Vec<_> = persisted
+        .as_object()
+        .unwrap()
+        .keys()
+        .map(String::as_str)
+        .collect();
+    keys.sort_unstable();
+    assert_eq!(keys, ["contract", "document_sha256", "movie", "report"]);
+    serde_json::from_value::<EncodedManifest>(persisted.clone()).unwrap();
+    persisted["binding"] = Value::Null;
+    assert!(serde_json::from_value::<EncodedManifest>(persisted).is_err());
+}
+
+#[test]
+fn runtime_bound_completion_requires_the_exact_requested_observation() {
+    let binding = crate::encoded_render::runtime::test_binding(&contract());
+    let engineering = EncodedProtocol::from_request(&request()).unwrap();
+    let mut bound_request = request();
+    if let EncodedHostMessage::Prepare { binding: slot, .. } = &mut bound_request {
+        *slot = Some(Box::new(binding.clone()));
+    }
+    let bound = EncodedProtocol::from_request(&bound_request).unwrap();
+    assert!(bound.classify(&completed(manifest())).is_err());
+    let mut response = completed(manifest());
+    if let EncodedWorkerMessage::Completed { binding: slot, .. } = &mut response {
+        *slot = Some(Box::new(binding.clone()));
+    }
+    assert_eq!(bound.classify(&response).unwrap(), ResponseKind::Completed);
+    assert!(engineering.classify(&response).is_err());
+    let mut bytes = Vec::new();
+    EncodedProtocol::write_request(&mut bytes, &bound_request).unwrap();
+    assert_eq!(
+        read_host_message(&mut Cursor::new(bytes)).unwrap(),
+        Some(bound_request.clone())
+    );
+    let mut bytes = Vec::new();
+    write_worker_message(&mut bytes, &response).unwrap();
+    assert_eq!(
+        EncodedProtocol::read_response(&mut Cursor::new(bytes)).unwrap(),
+        Some(response.clone())
+    );
+    if let EncodedWorkerMessage::Completed {
+        binding: Some(binding),
+        ..
+    } = &mut response
+    {
+        binding.runtime.images[0].sha256 = hash('c');
+    }
+    response.validate().unwrap();
+    assert!(bound.classify(&response).is_err());
+    if let EncodedHostMessage::Prepare {
+        binding: Some(binding),
+        ..
+    } = &mut bound_request
+    {
+        binding.policy_version += 1;
+    }
+    assert!(EncodedProtocol::from_request(&bound_request).is_err());
+}
+
+#[test]
 fn unknown_fields_and_unrecognized_encoder_choices_fail_closed() {
     let request = serde_json::to_value(request()).unwrap();
     for path in [
@@ -357,6 +451,7 @@ fn request_limits_versions_and_bounded_scalars_are_admitted_before_allocation() 
     for (path, value) in [
         ("/protocol", json!(0)),
         ("/protocol", json!(1)),
+        ("/protocol", json!(2)),
         ("/protocol", json!(PROTOCOL_VERSION + 1)),
         ("/identity/request_id", json!("")),
         ("/identity/attempt_id", json!("a".repeat(129))),
@@ -461,6 +556,7 @@ fn progress_and_terminals_bind_both_counts_and_exact_attempt() {
                 protocol: PROTOCOL_VERSION,
                 identity: altered.clone(),
                 manifest: Box::new(manifest()),
+                binding: None,
             },
             EncodedWorkerMessage::Failed {
                 protocol: PROTOCOL_VERSION,

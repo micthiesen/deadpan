@@ -1,0 +1,1484 @@
+[
+  {
+    "case": "minimum",
+    "raster": [
+      14,
+      16
+    ],
+    "exit_code": 1,
+    "status": "failed",
+    "error": "encoded render worker failed: render_output_failed: source decode resource_limit: decoder coded geometry 192x96 exceeds max_dimension=8192 or max_pixels=256",
+    "cleanup_confirmed": true,
+    "rejected": [
+      {
+        "failure": {
+          "diagnostic": "native encoder video_timestamp_order: H264 packet PTS (1) precedes DTS (2)",
+          "kind": {
+            "kind": "video_timestamp_order",
+            "stage": "encoder"
+          }
+        },
+        "identity": {
+          "attempt_id": "3e196897-3d4f-4422-925b-d8192ca42dd2",
+          "request_id": "native-admission-qualification"
+        },
+        "runtime": {
+          "images": [
+            {
+              "mapped": {
+                "birth_time": {
+                  "nanoseconds": 467744402,
+                  "seconds": 1790765661
+                },
+                "change_time": {
+                  "nanoseconds": 549122465,
+                  "seconds": 1790765661
+                },
+                "device": 16777233,
+                "file_size": 172562480,
+                "generation": 0,
+                "inode": 34174276,
+                "kind": "helper",
+                "modification_time": {
+                  "nanoseconds": 480195175,
+                  "seconds": 1790765661
+                },
+                "uuid": [
+                  235,
+                  93,
+                  50,
+                  224,
+                  252,
+                  71,
+                  61,
+                  236,
+                  142,
+                  209,
+                  16,
+                  40,
+                  224,
+                  155,
+                  76,
+                  254
+                ]
+              },
+              "sha256": "21f594f7520c9ee5de2b66acf44f25507433d8644e979448e81c1b294bca78a0"
+            },
+            {
+              "mapped": {
+                "birth_time": {
+                  "nanoseconds": 395800433,
+                  "seconds": 1790454349
+                },
+                "change_time": {
+                  "nanoseconds": 401713738,
+                  "seconds": 1790454349
+                },
+                "device": 16777233,
+                "file_size": 12808632,
+                "generation": 0,
+                "inode": 28353644,
+                "kind": "avcodec",
+                "modification_time": {
+                  "nanoseconds": 399936817,
+                  "seconds": 1790454349
+                },
+                "uuid": [
+                  25,
+                  36,
+                  102,
+                  216,
+                  161,
+                  97,
+                  51,
+                  201,
+                  152,
+                  184,
+                  148,
+                  133,
+                  20,
+                  165,
+                  100,
+                  151
+                ]
+              },
+              "sha256": "58aac15dab11ce599ae595eb8e5bf54ed68327d9929451650fa3b4bcf6307f1f"
+            },
+            {
+              "mapped": {
+                "birth_time": {
+                  "nanoseconds": 294287417,
+                  "seconds": 1790454349
+                },
+                "change_time": {
+                  "nanoseconds": 295391253,
+                  "seconds": 1790454349
+                },
+                "device": 16777233,
+                "file_size": 2244152,
+                "generation": 0,
+                "inode": 28353639,
+                "kind": "avformat",
+                "modification_time": {
+                  "nanoseconds": 294921252,
+                  "seconds": 1790454349
+                },
+                "uuid": [
+                  79,
+                  83,
+                  10,
+                  175,
+                  230,
+                  163,
+                  60,
+                  157,
+                  179,
+                  58,
+                  83,
+                  15,
+                  67,
+                  16,
+                  216,
+                  247
+                ]
+              },
+              "sha256": "1e95ffdb6a28931038273c3c30a1807b1254613efb806e429caddf703fa5972d"
+            },
+            {
+              "mapped": {
+                "birth_time": {
+                  "nanoseconds": 662561439,
+                  "seconds": 1790454349
+                },
+                "change_time": {
+                  "nanoseconds": 663955859,
+                  "seconds": 1790454349
+                },
+                "device": 16777233,
+                "file_size": 725688,
+                "generation": 0,
+                "inode": 28353657,
+                "kind": "avutil",
+                "modification_time": {
+                  "nanoseconds": 663661567,
+                  "seconds": 1790454349
+                },
+                "uuid": [
+                  148,
+                  193,
+                  25,
+                  100,
+                  154,
+                  33,
+                  60,
+                  18,
+                  133,
+                  29,
+                  170,
+                  4,
+                  239,
+                  242,
+                  159,
+                  185
+                ]
+              },
+              "sha256": "a5245d17b143832d7b57351d0bb97d0e31d65ae6a53bea195627b64e9b44edb8"
+            },
+            {
+              "mapped": {
+                "birth_time": {
+                  "nanoseconds": 578712587,
+                  "seconds": 1790454349
+                },
+                "change_time": {
+                  "nanoseconds": 579278089,
+                  "seconds": 1790454349
+                },
+                "device": 16777233,
+                "file_size": 949464,
+                "generation": 0,
+                "inode": 28353653,
+                "kind": "swscale",
+                "modification_time": {
+                  "nanoseconds": 579071422,
+                  "seconds": 1790454349
+                },
+                "uuid": [
+                  39,
+                  59,
+                  165,
+                  89,
+                  231,
+                  47,
+                  48,
+                  193,
+                  134,
+                  67,
+                  104,
+                  217,
+                  128,
+                  60,
+                  161,
+                  10
+                ]
+              },
+              "sha256": "02a571c85bbd5df607f7aea1021d93764b4d53cb1c1432d03ed7d840cb15d104"
+            }
+          ],
+          "kernel_build": "Darwin Kernel Version 25.5.0: Tue Jun  9 22:28:34 PDT 2026; root:xnu-12377.121.10~1/RELEASE_ARM64_T6050",
+          "kernel_release": "25.5.0",
+          "machine": "arm64",
+          "platform": {
+            "cpu_family": 4151073562,
+            "hardware_model": "Mac17,7",
+            "os_build": "25F84"
+          },
+          "schema_version": 1,
+          "system": "Darwin"
+        },
+        "spec": {
+          "choice": {
+            "b_frames": "target_two",
+            "mode": "hardware"
+          },
+          "frame_rate": [
+            30,
+            1
+          ],
+          "raster": [
+            14,
+            16
+          ]
+        }
+      },
+      {
+        "failure": {
+          "diagnostic": "source decode resource_limit: decoder coded geometry 192x96 exceeds max_dimension=8192 or max_pixels=256",
+          "kind": {
+            "stage": "output"
+          }
+        },
+        "identity": {
+          "attempt_id": "05c4af44-2028-4571-b275-6c485b526e62",
+          "request_id": "native-admission-qualification"
+        },
+        "runtime": {
+          "images": [
+            {
+              "mapped": {
+                "birth_time": {
+                  "nanoseconds": 467744402,
+                  "seconds": 1790765661
+                },
+                "change_time": {
+                  "nanoseconds": 549122465,
+                  "seconds": 1790765661
+                },
+                "device": 16777233,
+                "file_size": 172562480,
+                "generation": 0,
+                "inode": 34174276,
+                "kind": "helper",
+                "modification_time": {
+                  "nanoseconds": 480195175,
+                  "seconds": 1790765661
+                },
+                "uuid": [
+                  235,
+                  93,
+                  50,
+                  224,
+                  252,
+                  71,
+                  61,
+                  236,
+                  142,
+                  209,
+                  16,
+                  40,
+                  224,
+                  155,
+                  76,
+                  254
+                ]
+              },
+              "sha256": "21f594f7520c9ee5de2b66acf44f25507433d8644e979448e81c1b294bca78a0"
+            },
+            {
+              "mapped": {
+                "birth_time": {
+                  "nanoseconds": 395800433,
+                  "seconds": 1790454349
+                },
+                "change_time": {
+                  "nanoseconds": 401713738,
+                  "seconds": 1790454349
+                },
+                "device": 16777233,
+                "file_size": 12808632,
+                "generation": 0,
+                "inode": 28353644,
+                "kind": "avcodec",
+                "modification_time": {
+                  "nanoseconds": 399936817,
+                  "seconds": 1790454349
+                },
+                "uuid": [
+                  25,
+                  36,
+                  102,
+                  216,
+                  161,
+                  97,
+                  51,
+                  201,
+                  152,
+                  184,
+                  148,
+                  133,
+                  20,
+                  165,
+                  100,
+                  151
+                ]
+              },
+              "sha256": "58aac15dab11ce599ae595eb8e5bf54ed68327d9929451650fa3b4bcf6307f1f"
+            },
+            {
+              "mapped": {
+                "birth_time": {
+                  "nanoseconds": 294287417,
+                  "seconds": 1790454349
+                },
+                "change_time": {
+                  "nanoseconds": 295391253,
+                  "seconds": 1790454349
+                },
+                "device": 16777233,
+                "file_size": 2244152,
+                "generation": 0,
+                "inode": 28353639,
+                "kind": "avformat",
+                "modification_time": {
+                  "nanoseconds": 294921252,
+                  "seconds": 1790454349
+                },
+                "uuid": [
+                  79,
+                  83,
+                  10,
+                  175,
+                  230,
+                  163,
+                  60,
+                  157,
+                  179,
+                  58,
+                  83,
+                  15,
+                  67,
+                  16,
+                  216,
+                  247
+                ]
+              },
+              "sha256": "1e95ffdb6a28931038273c3c30a1807b1254613efb806e429caddf703fa5972d"
+            },
+            {
+              "mapped": {
+                "birth_time": {
+                  "nanoseconds": 662561439,
+                  "seconds": 1790454349
+                },
+                "change_time": {
+                  "nanoseconds": 663955859,
+                  "seconds": 1790454349
+                },
+                "device": 16777233,
+                "file_size": 725688,
+                "generation": 0,
+                "inode": 28353657,
+                "kind": "avutil",
+                "modification_time": {
+                  "nanoseconds": 663661567,
+                  "seconds": 1790454349
+                },
+                "uuid": [
+                  148,
+                  193,
+                  25,
+                  100,
+                  154,
+                  33,
+                  60,
+                  18,
+                  133,
+                  29,
+                  170,
+                  4,
+                  239,
+                  242,
+                  159,
+                  185
+                ]
+              },
+              "sha256": "a5245d17b143832d7b57351d0bb97d0e31d65ae6a53bea195627b64e9b44edb8"
+            },
+            {
+              "mapped": {
+                "birth_time": {
+                  "nanoseconds": 578712587,
+                  "seconds": 1790454349
+                },
+                "change_time": {
+                  "nanoseconds": 579278089,
+                  "seconds": 1790454349
+                },
+                "device": 16777233,
+                "file_size": 949464,
+                "generation": 0,
+                "inode": 28353653,
+                "kind": "swscale",
+                "modification_time": {
+                  "nanoseconds": 579071422,
+                  "seconds": 1790454349
+                },
+                "uuid": [
+                  39,
+                  59,
+                  165,
+                  89,
+                  231,
+                  47,
+                  48,
+                  193,
+                  134,
+                  67,
+                  104,
+                  217,
+                  128,
+                  60,
+                  161,
+                  10
+                ]
+              },
+              "sha256": "02a571c85bbd5df607f7aea1021d93764b4d53cb1c1432d03ed7d840cb15d104"
+            }
+          ],
+          "kernel_build": "Darwin Kernel Version 25.5.0: Tue Jun  9 22:28:34 PDT 2026; root:xnu-12377.121.10~1/RELEASE_ARM64_T6050",
+          "kernel_release": "25.5.0",
+          "machine": "arm64",
+          "platform": {
+            "cpu_family": 4151073562,
+            "hardware_model": "Mac17,7",
+            "os_build": "25F84"
+          },
+          "schema_version": 1,
+          "system": "Darwin"
+        },
+        "spec": {
+          "choice": {
+            "b_frames": "none",
+            "mode": "hardware"
+          },
+          "frame_rate": [
+            30,
+            1
+          ],
+          "raster": [
+            14,
+            16
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "case": "aligned-minimum",
+    "raster": [
+      16,
+      16
+    ],
+    "exit_code": 1,
+    "status": "failed",
+    "error": "encoded render worker failed: render_output_failed: source decode resource_limit: decoder coded geometry 192x96 exceeds max_dimension=8192 or max_pixels=256",
+    "cleanup_confirmed": true,
+    "rejected": [
+      {
+        "failure": {
+          "diagnostic": "native encoder video_timestamp_order: H264 packet PTS (1) precedes DTS (2)",
+          "kind": {
+            "kind": "video_timestamp_order",
+            "stage": "encoder"
+          }
+        },
+        "identity": {
+          "attempt_id": "88bd7417-bf30-4863-9cb1-5af65ea65e76",
+          "request_id": "native-admission-qualification"
+        },
+        "runtime": {
+          "images": [
+            {
+              "mapped": {
+                "birth_time": {
+                  "nanoseconds": 467744402,
+                  "seconds": 1790765661
+                },
+                "change_time": {
+                  "nanoseconds": 549122465,
+                  "seconds": 1790765661
+                },
+                "device": 16777233,
+                "file_size": 172562480,
+                "generation": 0,
+                "inode": 34174276,
+                "kind": "helper",
+                "modification_time": {
+                  "nanoseconds": 480195175,
+                  "seconds": 1790765661
+                },
+                "uuid": [
+                  235,
+                  93,
+                  50,
+                  224,
+                  252,
+                  71,
+                  61,
+                  236,
+                  142,
+                  209,
+                  16,
+                  40,
+                  224,
+                  155,
+                  76,
+                  254
+                ]
+              },
+              "sha256": "21f594f7520c9ee5de2b66acf44f25507433d8644e979448e81c1b294bca78a0"
+            },
+            {
+              "mapped": {
+                "birth_time": {
+                  "nanoseconds": 395800433,
+                  "seconds": 1790454349
+                },
+                "change_time": {
+                  "nanoseconds": 401713738,
+                  "seconds": 1790454349
+                },
+                "device": 16777233,
+                "file_size": 12808632,
+                "generation": 0,
+                "inode": 28353644,
+                "kind": "avcodec",
+                "modification_time": {
+                  "nanoseconds": 399936817,
+                  "seconds": 1790454349
+                },
+                "uuid": [
+                  25,
+                  36,
+                  102,
+                  216,
+                  161,
+                  97,
+                  51,
+                  201,
+                  152,
+                  184,
+                  148,
+                  133,
+                  20,
+                  165,
+                  100,
+                  151
+                ]
+              },
+              "sha256": "58aac15dab11ce599ae595eb8e5bf54ed68327d9929451650fa3b4bcf6307f1f"
+            },
+            {
+              "mapped": {
+                "birth_time": {
+                  "nanoseconds": 294287417,
+                  "seconds": 1790454349
+                },
+                "change_time": {
+                  "nanoseconds": 295391253,
+                  "seconds": 1790454349
+                },
+                "device": 16777233,
+                "file_size": 2244152,
+                "generation": 0,
+                "inode": 28353639,
+                "kind": "avformat",
+                "modification_time": {
+                  "nanoseconds": 294921252,
+                  "seconds": 1790454349
+                },
+                "uuid": [
+                  79,
+                  83,
+                  10,
+                  175,
+                  230,
+                  163,
+                  60,
+                  157,
+                  179,
+                  58,
+                  83,
+                  15,
+                  67,
+                  16,
+                  216,
+                  247
+                ]
+              },
+              "sha256": "1e95ffdb6a28931038273c3c30a1807b1254613efb806e429caddf703fa5972d"
+            },
+            {
+              "mapped": {
+                "birth_time": {
+                  "nanoseconds": 662561439,
+                  "seconds": 1790454349
+                },
+                "change_time": {
+                  "nanoseconds": 663955859,
+                  "seconds": 1790454349
+                },
+                "device": 16777233,
+                "file_size": 725688,
+                "generation": 0,
+                "inode": 28353657,
+                "kind": "avutil",
+                "modification_time": {
+                  "nanoseconds": 663661567,
+                  "seconds": 1790454349
+                },
+                "uuid": [
+                  148,
+                  193,
+                  25,
+                  100,
+                  154,
+                  33,
+                  60,
+                  18,
+                  133,
+                  29,
+                  170,
+                  4,
+                  239,
+                  242,
+                  159,
+                  185
+                ]
+              },
+              "sha256": "a5245d17b143832d7b57351d0bb97d0e31d65ae6a53bea195627b64e9b44edb8"
+            },
+            {
+              "mapped": {
+                "birth_time": {
+                  "nanoseconds": 578712587,
+                  "seconds": 1790454349
+                },
+                "change_time": {
+                  "nanoseconds": 579278089,
+                  "seconds": 1790454349
+                },
+                "device": 16777233,
+                "file_size": 949464,
+                "generation": 0,
+                "inode": 28353653,
+                "kind": "swscale",
+                "modification_time": {
+                  "nanoseconds": 579071422,
+                  "seconds": 1790454349
+                },
+                "uuid": [
+                  39,
+                  59,
+                  165,
+                  89,
+                  231,
+                  47,
+                  48,
+                  193,
+                  134,
+                  67,
+                  104,
+                  217,
+                  128,
+                  60,
+                  161,
+                  10
+                ]
+              },
+              "sha256": "02a571c85bbd5df607f7aea1021d93764b4d53cb1c1432d03ed7d840cb15d104"
+            }
+          ],
+          "kernel_build": "Darwin Kernel Version 25.5.0: Tue Jun  9 22:28:34 PDT 2026; root:xnu-12377.121.10~1/RELEASE_ARM64_T6050",
+          "kernel_release": "25.5.0",
+          "machine": "arm64",
+          "platform": {
+            "cpu_family": 4151073562,
+            "hardware_model": "Mac17,7",
+            "os_build": "25F84"
+          },
+          "schema_version": 1,
+          "system": "Darwin"
+        },
+        "spec": {
+          "choice": {
+            "b_frames": "target_two",
+            "mode": "hardware"
+          },
+          "frame_rate": [
+            30,
+            1
+          ],
+          "raster": [
+            16,
+            16
+          ]
+        }
+      },
+      {
+        "failure": {
+          "diagnostic": "source decode resource_limit: decoder coded geometry 192x96 exceeds max_dimension=8192 or max_pixels=256",
+          "kind": {
+            "stage": "output"
+          }
+        },
+        "identity": {
+          "attempt_id": "3581ea0c-ad83-4686-9275-7e706fa4ff7e",
+          "request_id": "native-admission-qualification"
+        },
+        "runtime": {
+          "images": [
+            {
+              "mapped": {
+                "birth_time": {
+                  "nanoseconds": 467744402,
+                  "seconds": 1790765661
+                },
+                "change_time": {
+                  "nanoseconds": 549122465,
+                  "seconds": 1790765661
+                },
+                "device": 16777233,
+                "file_size": 172562480,
+                "generation": 0,
+                "inode": 34174276,
+                "kind": "helper",
+                "modification_time": {
+                  "nanoseconds": 480195175,
+                  "seconds": 1790765661
+                },
+                "uuid": [
+                  235,
+                  93,
+                  50,
+                  224,
+                  252,
+                  71,
+                  61,
+                  236,
+                  142,
+                  209,
+                  16,
+                  40,
+                  224,
+                  155,
+                  76,
+                  254
+                ]
+              },
+              "sha256": "21f594f7520c9ee5de2b66acf44f25507433d8644e979448e81c1b294bca78a0"
+            },
+            {
+              "mapped": {
+                "birth_time": {
+                  "nanoseconds": 395800433,
+                  "seconds": 1790454349
+                },
+                "change_time": {
+                  "nanoseconds": 401713738,
+                  "seconds": 1790454349
+                },
+                "device": 16777233,
+                "file_size": 12808632,
+                "generation": 0,
+                "inode": 28353644,
+                "kind": "avcodec",
+                "modification_time": {
+                  "nanoseconds": 399936817,
+                  "seconds": 1790454349
+                },
+                "uuid": [
+                  25,
+                  36,
+                  102,
+                  216,
+                  161,
+                  97,
+                  51,
+                  201,
+                  152,
+                  184,
+                  148,
+                  133,
+                  20,
+                  165,
+                  100,
+                  151
+                ]
+              },
+              "sha256": "58aac15dab11ce599ae595eb8e5bf54ed68327d9929451650fa3b4bcf6307f1f"
+            },
+            {
+              "mapped": {
+                "birth_time": {
+                  "nanoseconds": 294287417,
+                  "seconds": 1790454349
+                },
+                "change_time": {
+                  "nanoseconds": 295391253,
+                  "seconds": 1790454349
+                },
+                "device": 16777233,
+                "file_size": 2244152,
+                "generation": 0,
+                "inode": 28353639,
+                "kind": "avformat",
+                "modification_time": {
+                  "nanoseconds": 294921252,
+                  "seconds": 1790454349
+                },
+                "uuid": [
+                  79,
+                  83,
+                  10,
+                  175,
+                  230,
+                  163,
+                  60,
+                  157,
+                  179,
+                  58,
+                  83,
+                  15,
+                  67,
+                  16,
+                  216,
+                  247
+                ]
+              },
+              "sha256": "1e95ffdb6a28931038273c3c30a1807b1254613efb806e429caddf703fa5972d"
+            },
+            {
+              "mapped": {
+                "birth_time": {
+                  "nanoseconds": 662561439,
+                  "seconds": 1790454349
+                },
+                "change_time": {
+                  "nanoseconds": 663955859,
+                  "seconds": 1790454349
+                },
+                "device": 16777233,
+                "file_size": 725688,
+                "generation": 0,
+                "inode": 28353657,
+                "kind": "avutil",
+                "modification_time": {
+                  "nanoseconds": 663661567,
+                  "seconds": 1790454349
+                },
+                "uuid": [
+                  148,
+                  193,
+                  25,
+                  100,
+                  154,
+                  33,
+                  60,
+                  18,
+                  133,
+                  29,
+                  170,
+                  4,
+                  239,
+                  242,
+                  159,
+                  185
+                ]
+              },
+              "sha256": "a5245d17b143832d7b57351d0bb97d0e31d65ae6a53bea195627b64e9b44edb8"
+            },
+            {
+              "mapped": {
+                "birth_time": {
+                  "nanoseconds": 578712587,
+                  "seconds": 1790454349
+                },
+                "change_time": {
+                  "nanoseconds": 579278089,
+                  "seconds": 1790454349
+                },
+                "device": 16777233,
+                "file_size": 949464,
+                "generation": 0,
+                "inode": 28353653,
+                "kind": "swscale",
+                "modification_time": {
+                  "nanoseconds": 579071422,
+                  "seconds": 1790454349
+                },
+                "uuid": [
+                  39,
+                  59,
+                  165,
+                  89,
+                  231,
+                  47,
+                  48,
+                  193,
+                  134,
+                  67,
+                  104,
+                  217,
+                  128,
+                  60,
+                  161,
+                  10
+                ]
+              },
+              "sha256": "02a571c85bbd5df607f7aea1021d93764b4d53cb1c1432d03ed7d840cb15d104"
+            }
+          ],
+          "kernel_build": "Darwin Kernel Version 25.5.0: Tue Jun  9 22:28:34 PDT 2026; root:xnu-12377.121.10~1/RELEASE_ARM64_T6050",
+          "kernel_release": "25.5.0",
+          "machine": "arm64",
+          "platform": {
+            "cpu_family": 4151073562,
+            "hardware_model": "Mac17,7",
+            "os_build": "25F84"
+          },
+          "schema_version": 1,
+          "system": "Darwin"
+        },
+        "spec": {
+          "choice": {
+            "b_frames": "none",
+            "mode": "hardware"
+          },
+          "frame_rate": [
+            30,
+            1
+          ],
+          "raster": [
+            16,
+            16
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "case": "small",
+    "raster": [
+      64,
+      64
+    ],
+    "exit_code": 1,
+    "status": "failed",
+    "error": "encoded render worker failed: render_output_failed: source decode resource_limit: decoder coded geometry 192x96 exceeds max_dimension=8192 or max_pixels=4096",
+    "cleanup_confirmed": true,
+    "rejected": [
+      {
+        "failure": {
+          "diagnostic": "native encoder video_timestamp_order: H264 packet PTS (1) precedes DTS (2)",
+          "kind": {
+            "kind": "video_timestamp_order",
+            "stage": "encoder"
+          }
+        },
+        "identity": {
+          "attempt_id": "1b1f724c-21fc-44c5-bfc8-692aac4ef254",
+          "request_id": "native-admission-qualification"
+        },
+        "runtime": {
+          "images": [
+            {
+              "mapped": {
+                "birth_time": {
+                  "nanoseconds": 467744402,
+                  "seconds": 1790765661
+                },
+                "change_time": {
+                  "nanoseconds": 549122465,
+                  "seconds": 1790765661
+                },
+                "device": 16777233,
+                "file_size": 172562480,
+                "generation": 0,
+                "inode": 34174276,
+                "kind": "helper",
+                "modification_time": {
+                  "nanoseconds": 480195175,
+                  "seconds": 1790765661
+                },
+                "uuid": [
+                  235,
+                  93,
+                  50,
+                  224,
+                  252,
+                  71,
+                  61,
+                  236,
+                  142,
+                  209,
+                  16,
+                  40,
+                  224,
+                  155,
+                  76,
+                  254
+                ]
+              },
+              "sha256": "21f594f7520c9ee5de2b66acf44f25507433d8644e979448e81c1b294bca78a0"
+            },
+            {
+              "mapped": {
+                "birth_time": {
+                  "nanoseconds": 395800433,
+                  "seconds": 1790454349
+                },
+                "change_time": {
+                  "nanoseconds": 401713738,
+                  "seconds": 1790454349
+                },
+                "device": 16777233,
+                "file_size": 12808632,
+                "generation": 0,
+                "inode": 28353644,
+                "kind": "avcodec",
+                "modification_time": {
+                  "nanoseconds": 399936817,
+                  "seconds": 1790454349
+                },
+                "uuid": [
+                  25,
+                  36,
+                  102,
+                  216,
+                  161,
+                  97,
+                  51,
+                  201,
+                  152,
+                  184,
+                  148,
+                  133,
+                  20,
+                  165,
+                  100,
+                  151
+                ]
+              },
+              "sha256": "58aac15dab11ce599ae595eb8e5bf54ed68327d9929451650fa3b4bcf6307f1f"
+            },
+            {
+              "mapped": {
+                "birth_time": {
+                  "nanoseconds": 294287417,
+                  "seconds": 1790454349
+                },
+                "change_time": {
+                  "nanoseconds": 295391253,
+                  "seconds": 1790454349
+                },
+                "device": 16777233,
+                "file_size": 2244152,
+                "generation": 0,
+                "inode": 28353639,
+                "kind": "avformat",
+                "modification_time": {
+                  "nanoseconds": 294921252,
+                  "seconds": 1790454349
+                },
+                "uuid": [
+                  79,
+                  83,
+                  10,
+                  175,
+                  230,
+                  163,
+                  60,
+                  157,
+                  179,
+                  58,
+                  83,
+                  15,
+                  67,
+                  16,
+                  216,
+                  247
+                ]
+              },
+              "sha256": "1e95ffdb6a28931038273c3c30a1807b1254613efb806e429caddf703fa5972d"
+            },
+            {
+              "mapped": {
+                "birth_time": {
+                  "nanoseconds": 662561439,
+                  "seconds": 1790454349
+                },
+                "change_time": {
+                  "nanoseconds": 663955859,
+                  "seconds": 1790454349
+                },
+                "device": 16777233,
+                "file_size": 725688,
+                "generation": 0,
+                "inode": 28353657,
+                "kind": "avutil",
+                "modification_time": {
+                  "nanoseconds": 663661567,
+                  "seconds": 1790454349
+                },
+                "uuid": [
+                  148,
+                  193,
+                  25,
+                  100,
+                  154,
+                  33,
+                  60,
+                  18,
+                  133,
+                  29,
+                  170,
+                  4,
+                  239,
+                  242,
+                  159,
+                  185
+                ]
+              },
+              "sha256": "a5245d17b143832d7b57351d0bb97d0e31d65ae6a53bea195627b64e9b44edb8"
+            },
+            {
+              "mapped": {
+                "birth_time": {
+                  "nanoseconds": 578712587,
+                  "seconds": 1790454349
+                },
+                "change_time": {
+                  "nanoseconds": 579278089,
+                  "seconds": 1790454349
+                },
+                "device": 16777233,
+                "file_size": 949464,
+                "generation": 0,
+                "inode": 28353653,
+                "kind": "swscale",
+                "modification_time": {
+                  "nanoseconds": 579071422,
+                  "seconds": 1790454349
+                },
+                "uuid": [
+                  39,
+                  59,
+                  165,
+                  89,
+                  231,
+                  47,
+                  48,
+                  193,
+                  134,
+                  67,
+                  104,
+                  217,
+                  128,
+                  60,
+                  161,
+                  10
+                ]
+              },
+              "sha256": "02a571c85bbd5df607f7aea1021d93764b4d53cb1c1432d03ed7d840cb15d104"
+            }
+          ],
+          "kernel_build": "Darwin Kernel Version 25.5.0: Tue Jun  9 22:28:34 PDT 2026; root:xnu-12377.121.10~1/RELEASE_ARM64_T6050",
+          "kernel_release": "25.5.0",
+          "machine": "arm64",
+          "platform": {
+            "cpu_family": 4151073562,
+            "hardware_model": "Mac17,7",
+            "os_build": "25F84"
+          },
+          "schema_version": 1,
+          "system": "Darwin"
+        },
+        "spec": {
+          "choice": {
+            "b_frames": "target_two",
+            "mode": "hardware"
+          },
+          "frame_rate": [
+            30,
+            1
+          ],
+          "raster": [
+            64,
+            64
+          ]
+        }
+      },
+      {
+        "failure": {
+          "diagnostic": "source decode resource_limit: decoder coded geometry 192x96 exceeds max_dimension=8192 or max_pixels=4096",
+          "kind": {
+            "stage": "output"
+          }
+        },
+        "identity": {
+          "attempt_id": "36866d87-06b1-430a-ba63-286972866d37",
+          "request_id": "native-admission-qualification"
+        },
+        "runtime": {
+          "images": [
+            {
+              "mapped": {
+                "birth_time": {
+                  "nanoseconds": 467744402,
+                  "seconds": 1790765661
+                },
+                "change_time": {
+                  "nanoseconds": 549122465,
+                  "seconds": 1790765661
+                },
+                "device": 16777233,
+                "file_size": 172562480,
+                "generation": 0,
+                "inode": 34174276,
+                "kind": "helper",
+                "modification_time": {
+                  "nanoseconds": 480195175,
+                  "seconds": 1790765661
+                },
+                "uuid": [
+                  235,
+                  93,
+                  50,
+                  224,
+                  252,
+                  71,
+                  61,
+                  236,
+                  142,
+                  209,
+                  16,
+                  40,
+                  224,
+                  155,
+                  76,
+                  254
+                ]
+              },
+              "sha256": "21f594f7520c9ee5de2b66acf44f25507433d8644e979448e81c1b294bca78a0"
+            },
+            {
+              "mapped": {
+                "birth_time": {
+                  "nanoseconds": 395800433,
+                  "seconds": 1790454349
+                },
+                "change_time": {
+                  "nanoseconds": 401713738,
+                  "seconds": 1790454349
+                },
+                "device": 16777233,
+                "file_size": 12808632,
+                "generation": 0,
+                "inode": 28353644,
+                "kind": "avcodec",
+                "modification_time": {
+                  "nanoseconds": 399936817,
+                  "seconds": 1790454349
+                },
+                "uuid": [
+                  25,
+                  36,
+                  102,
+                  216,
+                  161,
+                  97,
+                  51,
+                  201,
+                  152,
+                  184,
+                  148,
+                  133,
+                  20,
+                  165,
+                  100,
+                  151
+                ]
+              },
+              "sha256": "58aac15dab11ce599ae595eb8e5bf54ed68327d9929451650fa3b4bcf6307f1f"
+            },
+            {
+              "mapped": {
+                "birth_time": {
+                  "nanoseconds": 294287417,
+                  "seconds": 1790454349
+                },
+                "change_time": {
+                  "nanoseconds": 295391253,
+                  "seconds": 1790454349
+                },
+                "device": 16777233,
+                "file_size": 2244152,
+                "generation": 0,
+                "inode": 28353639,
+                "kind": "avformat",
+                "modification_time": {
+                  "nanoseconds": 294921252,
+                  "seconds": 1790454349
+                },
+                "uuid": [
+                  79,
+                  83,
+                  10,
+                  175,
+                  230,
+                  163,
+                  60,
+                  157,
+                  179,
+                  58,
+                  83,
+                  15,
+                  67,
+                  16,
+                  216,
+                  247
+                ]
+              },
+              "sha256": "1e95ffdb6a28931038273c3c30a1807b1254613efb806e429caddf703fa5972d"
+            },
+            {
+              "mapped": {
+                "birth_time": {
+                  "nanoseconds": 662561439,
+                  "seconds": 1790454349
+                },
+                "change_time": {
+                  "nanoseconds": 663955859,
+                  "seconds": 1790454349
+                },
+                "device": 16777233,
+                "file_size": 725688,
+                "generation": 0,
+                "inode": 28353657,
+                "kind": "avutil",
+                "modification_time": {
+                  "nanoseconds": 663661567,
+                  "seconds": 1790454349
+                },
+                "uuid": [
+                  148,
+                  193,
+                  25,
+                  100,
+                  154,
+                  33,
+                  60,
+                  18,
+                  133,
+                  29,
+                  170,
+                  4,
+                  239,
+                  242,
+                  159,
+                  185
+                ]
+              },
+              "sha256": "a5245d17b143832d7b57351d0bb97d0e31d65ae6a53bea195627b64e9b44edb8"
+            },
+            {
+              "mapped": {
+                "birth_time": {
+                  "nanoseconds": 578712587,
+                  "seconds": 1790454349
+                },
+                "change_time": {
+                  "nanoseconds": 579278089,
+                  "seconds": 1790454349
+                },
+                "device": 16777233,
+                "file_size": 949464,
+                "generation": 0,
+                "inode": 28353653,
+                "kind": "swscale",
+                "modification_time": {
+                  "nanoseconds": 579071422,
+                  "seconds": 1790454349
+                },
+                "uuid": [
+                  39,
+                  59,
+                  165,
+                  89,
+                  231,
+                  47,
+                  48,
+                  193,
+                  134,
+                  67,
+                  104,
+                  217,
+                  128,
+                  60,
+                  161,
+                  10
+                ]
+              },
+              "sha256": "02a571c85bbd5df607f7aea1021d93764b4d53cb1c1432d03ed7d840cb15d104"
+            }
+          ],
+          "kernel_build": "Darwin Kernel Version 25.5.0: Tue Jun  9 22:28:34 PDT 2026; root:xnu-12377.121.10~1/RELEASE_ARM64_T6050",
+          "kernel_release": "25.5.0",
+          "machine": "arm64",
+          "platform": {
+            "cpu_family": 4151073562,
+            "hardware_model": "Mac17,7",
+            "os_build": "25F84"
+          },
+          "schema_version": 1,
+          "system": "Darwin"
+        },
+        "spec": {
+          "choice": {
+            "b_frames": "none",
+            "mode": "hardware"
+          },
+          "frame_rate": [
+            30,
+            1
+          ],
+          "raster": [
+            64,
+            64
+          ]
+        }
+      }
+    ]
+  }
+]

@@ -173,10 +173,12 @@ static int allowed_codec(enum AVCodecID id) {
         default: return 0;
     }
 }
-static int geometry(DeadpanSource *s, int width, int height) {
+static int geometry(DeadpanSource *s, int width, int height, const char *stage) {
     if (width <= 0 || height <= 0 || (unsigned)width > s->limits.max_dimension || (unsigned)height > s->limits.max_dimension ||
         (uint64_t)width * (uint64_t)height > s->limits.max_pixels)
-        return fail(s, "resource_limit", "source dimensions exceed configured bounds");
+        return fail(s, "resource_limit",
+                    "%s geometry %dx%d exceeds max_dimension=%u or max_pixels=%" PRIu64,
+                    stage, width, height, s->limits.max_dimension, s->limits.max_pixels);
     return 1;
 }
 static int rotation(DeadpanSource *s, const AVPacketSideData *side, int count, int *out) {
@@ -248,7 +250,7 @@ static int table(DeadpanSource *s, int initial) {
             // Container-level metadata must fail before stream probing can open
             // a decoder, and must be rechecked if demuxing changes the table.
             if (packet_color_metadata(s, p->coded_side_data, p->nb_coded_side_data, "stream") < 0) return -1;
-            if (geometry(s, p->width, p->height) < 0) return -1;
+            if (geometry(s, p->width, p->height, "container video stream") < 0) return -1;
             selected = (int)i;
         } else if (p->codec_type != AVMEDIA_TYPE_AUDIO) return fail(s, "unsupported_streams", "source contains an unsupported stream type");
         else stream->discard = AVDISCARD_ALL;
@@ -308,8 +310,8 @@ static int capture_audio_inventory(DeadpanSource *s) {
 // alone is later than that allocation. No hidden probing decoder may bypass us.
 static enum AVPixelFormat bounded_format(AVCodecContext *context, const enum AVPixelFormat *formats) {
     DeadpanSource *s = context->opaque;
-    if (check(s) < 0 || geometry(s, context->width, context->height) < 0 ||
-        geometry(s, context->coded_width, context->coded_height) < 0) return AV_PIX_FMT_NONE;
+    if (check(s) < 0 || geometry(s, context->width, context->height, "decoder display") < 0 ||
+        geometry(s, context->coded_width, context->coded_height, "decoder coded") < 0) return AV_PIX_FMT_NONE;
     for (unsigned int i = 0; i < 64 && formats[i] != AV_PIX_FMT_NONE; i++) {
         const AVPixFmtDescriptor *pixel = av_pix_fmt_desc_get(formats[i]);
         if (!pixel || (pixel->flags & AV_PIX_FMT_FLAG_HWACCEL)) continue;
@@ -326,7 +328,7 @@ static enum AVPixelFormat bounded_format(AVCodecContext *context, const enum AVP
 }
 static int bounded_buffer(AVCodecContext *context, AVFrame *frame, int flags) {
     DeadpanSource *s = context->opaque;
-    if (check(s) < 0 || geometry(s, frame->width, frame->height) < 0) return AVERROR(EINVAL);
+    if (check(s) < 0 || geometry(s, frame->width, frame->height, "decoder frame buffer") < 0) return AVERROR(EINVAL);
     return avcodec_default_get_buffer2(context, frame, flags);
 }
 static int receive_frame(DeadpanSource *s);

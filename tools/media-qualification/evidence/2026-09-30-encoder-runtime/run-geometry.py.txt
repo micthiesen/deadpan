@@ -1,0 +1,17 @@
+import json
+import os
+from pathlib import Path
+import subprocess
+
+repo = Path('/Users/michael/Code/deadpan')
+work = Path('/tmp/deadpan-runtime-binding-20260930')
+os.environ['DEADPAN_CHECK_OUTPUT'] = str(work)
+runner = repo / 'tools/media-qualification/evidence/2026-09-29-generated-pictures/run-native.py'
+summary = []
+for name, width, height in [('minimum', 14, 16), ('aligned-minimum', 16, 16), ('small', 64, 64)]:
+    report_path = work / (name + '.json')
+    result = subprocess.run(['python3', str(runner), 'native-' + name, 'target/debug/examples/qualify_encoder_admission', 'target/debug/deadpan-cli', str(width), str(height), '30', '1', str(report_path)], cwd=repo)
+    report = json.loads(report_path.read_text())
+    summary.append({'case': name, 'raster': [width, height], 'exit_code': result.returncode, 'status': report['status'], 'error': report.get('error'), 'cleanup_confirmed': report.get('cleanup_confirmed'), 'rejected': report.get('rejected')})
+    (work / 'geometry-summary.json').write_text(json.dumps(summary, indent=2) + '\n')
+print(json.dumps([{key: row[key] for key in ('case', 'status', 'error', 'cleanup_confirmed')} for row in summary]))

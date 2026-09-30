@@ -21,6 +21,7 @@ use super::{
 use crate::{
     encoded_render::{
         protocol::{EncodedFailure, EncodedFailureKind, EncodedManifest, MOVIE_REF},
+        runtime::{self, RuntimeFingerprint},
         verification::{self, VerificationLimits},
         worker::hash_movie,
     },
@@ -60,6 +61,7 @@ fn run() -> std::result::Result<bool, String> {
         spec,
         limits,
         timeout_millis,
+        expected_runtime,
         ..
     }) = protocol::read_host_message(&mut reader)?
     else {
@@ -74,14 +76,37 @@ fn run() -> std::result::Result<bool, String> {
     })
     .map_err(|error| error.to_string())?;
     let mut stdout = io::stdout().lock();
-    let prepared = prepare(
-        &identity,
-        &spec,
-        limits,
-        control.cancelled(),
-        deadline,
-        &mut stdout,
-    );
+    let mut observed_runtime = None;
+    let prepared = (|| {
+        let mut captured_runtime = runtime::capture(control.cancelled(), deadline)
+            .map_err(|error| failure(EncodedFailureKind::Contract, error))?;
+        let before = captured_runtime.fingerprint().clone();
+        expected_runtime
+            .matches_loaded(&before)
+            .map_err(|error| failure(EncodedFailureKind::Contract, error))?;
+        let prepared = prepare(
+            &identity,
+            &spec,
+            limits,
+            &before,
+            control.cancelled(),
+            deadline,
+            &mut stdout,
+        );
+        captured_runtime
+            .revalidate(control.cancelled(), deadline)
+            .map_err(|error| {
+                failure(
+                    EncodedFailureKind::Contract,
+                    format!(
+                        "runtime revalidation failed: {error}; prior probe failure: {:?}",
+                        prepared.as_ref().err()
+                    ),
+                )
+            })?;
+        observed_runtime = Some(Box::new(before));
+        prepared
+    })();
     // Drain queued cancellation and malformed controls before trusting any
     // terminal, including a typed native rejection.
     let terminal = match control.finish() {
@@ -93,6 +118,7 @@ fn run() -> std::result::Result<bool, String> {
             protocol: PROTOCOL_VERSION,
             identity,
             failure: failure(EncodedFailureKind::Control, error),
+            runtime: None,
         },
         Ok(ControlEnd::Stopped) => match prepared {
             Ok(report) => WorkerMessage::Completed {
@@ -104,6 +130,7 @@ fn run() -> std::result::Result<bool, String> {
                 protocol: PROTOCOL_VERSION,
                 identity,
                 failure,
+                runtime: observed_runtime,
             },
         },
     };
@@ -138,6 +165,7 @@ fn prepare(
     identity: &RenderIdentity,
     spec: &ProbeSpec,
     limits: EncodeLimits,
+    runtime: &RuntimeFingerprint,
     cancelled: &AtomicBool,
     deadline: Instant,
     stdout: &mut impl Write,
@@ -298,7 +326,8 @@ fn prepare(
         ));
     }
     let result = ProbeReport {
-        schema_version: 1,
+        schema_version: 2,
+        runtime: runtime.clone(),
         spec: spec.clone(),
         manifest,
         verification,

@@ -1,0 +1,26 @@
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 25.12s
+     Running tests/encoded_render.rs (target/debug/deps/encoded_render-38ea41bdb8f1105e)
+
+running 8 tests
+test cancelled_expired_and_invalid_limit_preflight_never_launch_the_runtime ... ok
+test candidate_keeps_exact_nonzero_origin_and_private_bytes_after_paths_disappear ... ok
+test artifact_hash_size_and_descriptor_containment_are_independent_admission_checks ... ok
+test host_preserves_the_first_worker_diagnostic_and_never_snapshots_failed_completion ... ok
+test completed_claims_bind_every_captured_clock_field_and_explicit_encoder_choice ... ok
+test inconsistent_encoder_reports_are_rejected_before_artifact_access ... ok
+test typed_failure_crosses_supervision_without_trusting_prose_or_legacy_workers ... ok
+test cancellation_after_progress_and_deadline_stop_the_process_before_snapshotting ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.34s
+
+     Running tests/encoder_admission.rs (target/debug/deps/encoder_admission-4e0e7f35c17e795f)
+
+running 4 tests
+test cancel_while_probe_is_live_stops_and_confirms_teardown ... ok
+test changed_library_between_probes_invalidates_the_selection ... ok
+test real_supervision_keeps_each_probe_identity_and_only_allowed_selection_steps ... ok
+test capacity_prose_and_faults_after_failure_never_start_a_second_probe ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.81s
+

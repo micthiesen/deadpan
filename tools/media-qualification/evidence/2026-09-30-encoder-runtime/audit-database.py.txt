@@ -1,0 +1,19 @@
+import hashlib
+import json
+from pathlib import Path
+import sqlite3
+
+work = Path('/tmp/deadpan-runtime-binding-20260930')
+package = work / 'source.deadpan'
+with sqlite3.connect(f'file:{package / "project.sqlite"}?mode=ro', uri=True) as db:
+    db.execute('BEGIN')
+    actual = {}
+    for (name,) in db.execute("SELECT name FROM sqlite_schema WHERE type='table' ORDER BY name"):
+        rows = db.execute('SELECT * FROM "' + name.replace('"', '""') + '"').fetchall()
+        wire = sorted(json.dumps(row, default=lambda value: {'blob': value.hex()}, ensure_ascii=True, separators=(',', ':')) for row in rows)
+        actual[name] = {'rows': len(rows), 'sha256': hashlib.sha256(('\n'.join(wire) + '\n').encode()).hexdigest()}
+    assert db.execute('PRAGMA integrity_check').fetchall() == [('ok',)]
+before = json.loads((work / 'database-before.json').read_text())
+assert actual == before
+(work / 'database-final.json').write_text(json.dumps({'status': 'passed', 'all_tables_unchanged': True, 'tables': actual, 'method': 'all table cells from read-only SQLite transaction, initial package copied through SQLite backup API'}, indent=2) + '\n')
+print(json.dumps({'all_tables_unchanged': True, 'tables': len(actual)}))

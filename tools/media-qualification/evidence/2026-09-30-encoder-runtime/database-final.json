@@ -1,0 +1,83 @@
+{
+  "status": "passed",
+  "all_tables_unchanged": true,
+  "tables": {
+    "generation_attempt_heads": {
+      "rows": 0,
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    "generation_attempts": {
+      "rows": 0,
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    "generation_bundle_receipts": {
+      "rows": 0,
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    "generation_candidate_receipts": {
+      "rows": 0,
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    "generation_requests": {
+      "rows": 0,
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    "history": {
+      "rows": 11,
+      "sha256": "c0922a3325c2e50c768b9e94db6abab4c2f2d8a1ef4e24af04f193290a0d7521"
+    },
+    "hold_request_clocks": {
+      "rows": 0,
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    "original_media": {
+      "rows": 1,
+      "sha256": "b24129e16b2f08e3b3ac3a43dcbbf43ec3980d20843f93f2663d72bdfa0b0f79"
+    },
+    "redo": {
+      "rows": 1,
+      "sha256": "88c2a263e886858b70361e4cb269b3ac102e1c9d2193aadd14a8d7221e9752a1"
+    },
+    "render_attempts": {
+      "rows": 26,
+      "sha256": "ddc655f6d0819df369b26de910aef4464192fd8065a6ca7a481dbcd244f6761b"
+    },
+    "render_candidate_checkpoints": {
+      "rows": 2,
+      "sha256": "42ce4caf08cc001f45077f8ce8e20d5633825be7f17bdee415a714663a163896"
+    },
+    "render_job_heads": {
+      "rows": 3,
+      "sha256": "7ef84c389dfc5a8cc965e299b00cc9d17ed3009b51b32bc4ed9d04613e4d7a03"
+    },
+    "render_jobs": {
+      "rows": 3,
+      "sha256": "f7e6945f8906efcc5e1aea28eef42b808946b708508614ecf5e267fb725c9939"
+    },
+    "render_publication_operations": {
+      "rows": 23,
+      "sha256": "598eda13a9e29ed9471180f2d8bc17cf898061d1bfcbae3106c75826c48039ea"
+    },
+    "render_publications": {
+      "rows": 12,
+      "sha256": "237ca81c7e7287e2f6daae76bc0c0645bb42f6e089a0d03dad2c6fcd629b3fbd"
+    },
+    "revisions": {
+      "rows": 24,
+      "sha256": "7a56df1161ceb82c32d89619466a496d7b67534a5f3c7c4d5cfaec35101cd35f"
+    },
+    "single_source": {
+      "rows": 0,
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    "source_qualifications": {
+      "rows": 1,
+      "sha256": "a69a4ae1b11edf8a891d95fbd7ab5ffa3b717934764fcfa101d49377a3b6ea50"
+    },
+    "state": {
+      "rows": 1,
+      "sha256": "13ad1cb04a89d3383bed249f02baa6015d195d5083944614a86656338f05db76"
+    }
+  },
+  "method": "all table cells from read-only SQLite transaction, initial package copied through SQLite backup API"
+}

@@ -1,10 +1,10 @@
 use deadpan_encode::{
     BFramePolicy, EncodeContract, EncodeLimits, EncoderMode, MAX_AUDIO_SAMPLES, MAX_OUTPUT_BYTES,
-    MAX_PACKET_BYTES, MAX_PACKETS, MAX_VIDEO_FRAMES,
+    MAX_PACKET_BYTES, MAX_PACKETS, MAX_VIDEO_FRAMES, SDR_POLICY_VERSION_V1,
 };
 
 fn contract(raster: [u32; 2], rate: [u32; 2], frames: u64, samples: u64) -> EncodeContract {
-    EncodeContract::new(
+    EncodeContract::new_v1(
         raster,
         rate,
         frames,
@@ -13,6 +13,30 @@ fn contract(raster: [u32; 2], rate: [u32; 2], frames: u64, samples: u64) -> Enco
         BFramePolicy::TargetTwo,
     )
     .unwrap()
+}
+
+#[test]
+fn frozen_version_one_preserves_original_constructor_and_serialized_contract() {
+    assert_eq!(SDR_POLICY_VERSION_V1, 1);
+    let explicit = contract([1000, 1440], [30000, 1001], 45, 72072);
+    let original = EncodeContract::new(
+        [1000, 1440],
+        [30000, 1001],
+        45,
+        72072,
+        EncoderMode::Hardware,
+        BFramePolicy::TargetTwo,
+    )
+    .unwrap();
+    assert_eq!(explicit, original);
+    let expected = concat!(
+        r#"{"raster":[1000,1440],"frame_rate":[30000,1001],"video_frames":45,"#,
+        r#""audio_samples":72072,"mode":"hardware","policy":{"video_bitrate":6350000,"#,
+        r#""audio_bitrate":384000,"gop_frames":15,"b_frames":2,"movie_timescale":240000},"#,
+        r#""picture_bytes":2160000}"#,
+    );
+    assert_eq!(serde_json::to_string(&explicit).unwrap(), expected);
+    assert_eq!(serde_json::to_string(&original).unwrap(), expected);
 }
 
 #[test]
@@ -91,6 +115,60 @@ fn non_widescreen_rasters_interpolate_by_pixel_area() {
             .video_bitrate,
         6_350_000
     );
+}
+
+#[test]
+fn version_one_interpolation_keeps_fractional_class_areas_and_half_up_rounding() {
+    for (raster, low, high) in [
+        // The nominal 480p class lies at 409600 pixels, below 854x480.
+        // High-rate interpolation here adds exactly 2187.5 bits per second.
+        ([854, 480], 3_001_250, 4_002_188),
+        ([480, 854], 3_001_250, 4_002_188),
+        ([1000, 1000], 5_204_167, 7_806_250),
+        ([1000, 1440], 6_350_000, 9_525_000),
+    ] {
+        assert_eq!(
+            contract(raster, [30, 1], 1, 1600).policy().video_bitrate,
+            low
+        );
+        assert_eq!(
+            contract(raster, [60, 1], 1, 800).policy().video_bitrate,
+            high
+        );
+    }
+}
+
+#[test]
+fn version_one_resolves_low_and_fractional_rates_without_integer_rate_rounding() {
+    for (rate, samples, bitrate, gop, timescale) in [
+        ([1, 2], 96_000, 1_500_000, 1, 48_000),
+        ([3, 1], 16_000, 1_500_000, 2, 48_000),
+        ([5, 1], 9_600, 1_500_000, 3, 48_000),
+        ([29_999, 1000], 1_600, 1_500_000, 15, 1_439_952_000),
+        ([30_001, 1000], 1_600, 2_000_000, 15, 1_440_048_000),
+        ([48_000, 1001], 1_001, 2_000_000, 24, 48_000),
+    ] {
+        for mode in [EncoderMode::Hardware, EncoderMode::Software] {
+            for (requested_b_frames, resolved_b_frames) in
+                [(BFramePolicy::TargetTwo, 2), (BFramePolicy::None, 0)]
+            {
+                let explicit =
+                    EncodeContract::new_v1([320, 180], rate, 1, samples, mode, requested_b_frames)
+                        .unwrap();
+                assert_eq!(explicit.policy().video_bitrate, bitrate);
+                assert_eq!(explicit.policy().audio_bitrate, 384_000);
+                assert_eq!(explicit.policy().gop_frames, gop);
+                assert_eq!(explicit.policy().movie_timescale, timescale);
+                assert_eq!(explicit.policy().b_frames, resolved_b_frames);
+                assert_eq!(explicit.mode(), mode);
+                assert_eq!(
+                    explicit,
+                    EncodeContract::new([320, 180], rate, 1, samples, mode, requested_b_frames)
+                        .unwrap()
+                );
+            }
+        }
+    }
 }
 
 #[test]

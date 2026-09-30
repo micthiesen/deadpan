@@ -42,7 +42,8 @@ assert sys.argv[2] == "--render-encode-worker"
 assert Path(sys.argv[3]).is_absolute()
 request = read_message()
 assert request["op"] == "prepare"
-assert request["protocol"] == 2
+assert request["protocol"] == 3
+assert request["binding"] is None
 protocol = request["protocol"]
 picture = request["contract"]["picture"]
 assert picture["raster"] == [2, 2]
@@ -245,10 +246,10 @@ if mode == "stale_attempt":
 elif mode == "wrong_request":
     identity = dict(identity, request_id="other-request")
 emit({"event": "completed", "protocol": 1 if mode == "wrong_version" else protocol,
-      "identity": identity, "manifest": manifest})
+      "identity": identity, "manifest": manifest, "binding": None})
 if mode == "completed_exit_failure":
     raise SystemExit(1)
 if mode == "after_terminal":
     progress(video_frames, audio_samples)
 if mode == "duplicate_terminal":
-    emit({"event": "completed", "protocol": protocol, "identity": identity, "manifest": manifest})
+    emit({"event": "completed", "protocol": protocol, "identity": identity, "manifest": manifest, "binding": None})

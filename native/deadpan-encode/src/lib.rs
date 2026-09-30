@@ -17,6 +17,7 @@ use serde::{Deserialize, Serialize};
 mod policy;
 pub mod probe;
 mod progress;
+pub mod runtime;
 pub use policy::*;
 pub use progress::NextInput;
 
@@ -24,6 +25,10 @@ pub use progress::NextInput;
 // this narrow module. The public wrapper and policy forbid unsafe operations.
 #[allow(unsafe_code)]
 mod ffi;
+
+// Fixed own-process libproc/Mach-O observations and borrowed descriptor checks.
+#[allow(unsafe_code)]
+mod runtime_ffi;
 
 #[derive(Debug, thiserror::Error)]
 pub enum EncodeError {

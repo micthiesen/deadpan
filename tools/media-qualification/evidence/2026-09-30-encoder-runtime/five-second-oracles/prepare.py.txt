@@ -1,0 +1,99 @@
+#!/usr/bin/env python3
+"""Audit and reproduce this scratch-only five-second fixture capacity extension."""
+import argparse
+import difflib
+import hashlib
+import json
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+MAX_SOURCE_BYTES = 2 * 1024 * 1024
+NAMES = ("native_audio_oracle.py", "project_encode_oracle.py", "avfoundation_probe.m")
+
+
+def digest(data):
+    return hashlib.sha256(data).hexdigest()
+
+
+def read_bounded(path):
+    if path.is_symlink() or not path.is_file():
+        raise ValueError(f"expected a regular nonsymlink source: {path}")
+    with path.open("rb") as source:
+        data = source.read(MAX_SOURCE_BYTES + 1)
+    if len(data) > MAX_SOURCE_BYTES:
+        raise ValueError(f"source exceeds 2 MiB: {path}")
+    return data
+
+
+def retain(path, data):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if path.is_symlink():
+        raise ValueError(f"refuse symlink output: {path}")
+    if path.exists():
+        if read_bounded(path) != data:
+            raise ValueError(f"refuse to replace differing retained evidence: {path}")
+    else:
+        with path.open("xb") as output:
+            output.write(data)
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--repo", type=Path, default=Path("/Users/michael/Code/deadpan"))
+    args = parser.parse_args()
+    rules = json.loads(read_bounded(HERE / "edits.json"))
+    if tuple(item["name"] for item in rules["files"]) != NAMES:
+        raise ValueError("unexpected source inventory")
+    pending = []
+    for item in rules["files"]:
+        relative = Path("tools/media-qualification/compatible") / item["name"]
+        source = args.repo.resolve() / relative
+        original = read_bounded(source)
+        if digest(original) != item["source_sha256"]:
+            raise ValueError(f"source changed since this extension was reviewed: {source}")
+        text = original.decode("utf-8")
+        changed = text
+        for before, after in item["edits"]:
+            if changed.count(before) != 1:
+                raise ValueError(f"edit anchor is not unique in {source}: {before!r}")
+            changed = changed.replace(before, after, 1)
+        amended = changed.encode("utf-8")
+        delta = "".join(difflib.unified_diff(
+            text.splitlines(keepends=True), changed.splitlines(keepends=True),
+            fromfile=f"originals/{item['name']}", tofile=item["name"],
+        )).encode("utf-8")
+        pending.append((item, relative, original, amended, delta))
+
+    # Preserve every original snapshot before producing any amended file.
+    for item, _, original, _, _ in pending:
+        retain(HERE / "originals" / item["name"], original)
+    records = []
+    for item, relative, original, amended, delta in pending:
+        retain(HERE / item["name"], amended)
+        retain(HERE / "diffs" / (item["name"] + ".diff"), delta)
+        records.append({
+            "repository_source": str(relative),
+            "source_sha256": digest(original),
+            "snapshot": "originals/" + item["name"],
+            "modified": item["name"],
+            "modified_sha256": digest(amended),
+            "diff": "diffs/" + item["name"] + ".diff",
+            "diff_sha256": digest(delta),
+            "unique_edits": len(item["edits"]),
+        })
+    manifest = {
+        "schema_version": 1,
+        "scope": rules["scope"],
+        "maximum_seconds": 5,
+        "maximum_pcm_samples": 240000,
+        "fidelity_tolerances_changed": False,
+        "format_pts_trim_rules_changed": False,
+        "pcm_alignment_applied": False,
+        "files": records,
+    }
+    retain(HERE / "manifest.json", (json.dumps(manifest, indent=2) + "\n").encode())
+    print(json.dumps({"status": "prepared_and_hash_checked", "manifest": str(HERE / "manifest.json")}))
+
+
+if __name__ == "__main__":
+    main()

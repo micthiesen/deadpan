@@ -28,6 +28,7 @@ use super::protocol::{
     EncodedFailure, EncodedFailureKind, EncodedHostMessage, EncodedManifest, EncodedRenderContract,
     EncodedWorkerMessage, MOVIE_REF, PROTOCOL_VERSION, read_host_message, write_worker_message,
 };
+use super::runtime::{EncodingBinding, RuntimeCapture};
 
 type Result<T> = std::result::Result<T, String>;
 type PreparationResult<T> = std::result::Result<T, EncodedFailure>;
@@ -38,6 +39,7 @@ const AUDIO_BLOCK: usize = 1024;
 struct Request {
     identity: RenderIdentity,
     contract: EncodedRenderContract,
+    binding: Option<EncodingBinding>,
     document_sha256: Sha256,
     limits: EncodeLimits,
 }
@@ -68,6 +70,7 @@ fn run_entry(package: &Path) -> Result<bool> {
         identity,
         cancellation_token,
         contract,
+        binding,
         document_sha256,
         limits,
         timeout_millis,
@@ -82,6 +85,7 @@ fn run_entry(package: &Path) -> Result<bool> {
     let request = Request {
         identity,
         contract: *contract,
+        binding: binding.map(|value| *value),
         document_sha256,
         limits,
     };
@@ -115,6 +119,7 @@ fn run_entry(package: &Path) -> Result<bool> {
                 protocol: PROTOCOL_VERSION,
                 identity: request.identity,
                 manifest: Box::new(manifest),
+                binding: request.binding.map(Box::new),
             },
             Err(error) => EncodedWorkerMessage::Failed {
                 protocol: PROTOCOL_VERSION,
@@ -171,6 +176,7 @@ fn prepare(
         .limits
         .validate_for(&native_contract)
         .map_err(|error| failure(EncodedFailureKind::Contract, error))?;
+    let mut runtime_capture = check_binding(request, cancelled, deadline)?;
     let picture = &request.contract.picture;
     let pictures = ProjectPictureSession::open_revision(
         package,
@@ -372,8 +378,36 @@ fn prepare(
     manifest
         .validate_for(request.limits)
         .map_err(|error| failure(EncodedFailureKind::Contract, error))?;
+    if let Some(capture) = &mut runtime_capture {
+        capture
+            .revalidate(cancelled, deadline)
+            .map_err(|error| failure(EncodedFailureKind::Contract, error))?;
+    }
     check_control(cancelled, deadline)?;
     Ok(manifest)
+}
+
+fn check_binding(
+    request: &Request,
+    cancelled: &AtomicBool,
+    deadline: Instant,
+) -> PreparationResult<Option<RuntimeCapture>> {
+    if let Some(binding) = &request.binding {
+        binding
+            .validate_for(&request.contract)
+            .map_err(|error| failure(EncodedFailureKind::Contract, error))?;
+        let observed = binding
+            .check_current(cancelled, deadline)
+            .map_err(|error| failure(EncodedFailureKind::Contract, error))?;
+        if observed.fingerprint() != &binding.runtime {
+            return Err(failure(
+                EncodedFailureKind::Contract,
+                "encoding runtime differs from the qualified binding",
+            ));
+        }
+        return Ok(Some(observed));
+    }
+    Ok(None)
 }
 
 fn audio_start(

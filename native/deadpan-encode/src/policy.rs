@@ -13,6 +13,10 @@ pub const MAX_PACKETS: u64 = 2_000_000;
 pub const MAX_PACKET_BYTES: u64 = 32 * 1_024 * 1_024;
 const MAX_CODEC_INTEGER: u32 = 2_147_483_647;
 
+/// Frozen SDR control derivation used by `EncodeContract::new_v1`.
+/// Persist this identity alongside resolved controls when retaining a decision.
+pub const SDR_POLICY_VERSION_V1: u32 = 1;
+
 /// A separately admitted attempt. Neither mode permits an automatic fallback.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case", deny_unknown_fields)]
@@ -59,7 +63,32 @@ pub struct EncodeContract {
 }
 
 impl EncodeContract {
+    /// Construct using the original SDR policy. This entry point remains an
+    /// alias of `new_v1`; a later policy must have a separate constructor.
     pub fn new(
+        raster: [u32; 2],
+        frame_rate: [u32; 2],
+        video_frames: u64,
+        audio_samples: u64,
+        mode: EncoderMode,
+        b_frames: BFramePolicy,
+    ) -> Result<Self, EncodeError> {
+        Self::new_v1(
+            raster,
+            frame_rate,
+            video_frames,
+            audio_samples,
+            mode,
+            b_frames,
+        )
+    }
+
+    /// Construct using frozen SDR policy version 1. Its bitrate interpolation,
+    /// rate boundary, GOP rounding, AAC target and exact movie timescale are
+    /// part of retained encoding decisions and must not follow future defaults.
+    /// This validates inputs anew; it does not restore native admission from a
+    /// serialized contract or permit caller-selected rate controls.
+    pub fn new_v1(
         raster: [u32; 2],
         frame_rate: [u32; 2],
         video_frames: u64,
@@ -127,7 +156,7 @@ impl EncodeContract {
         let gop_frames = u64::from(numerator).div_euclid(gop_denominator)
             + u64::from(u64::from(numerator) % gop_denominator * 2 >= gop_denominator);
         let policy = SdrPolicy {
-            video_bitrate: bitrate(pixels, u64::from(numerator) > 30 * u64::from(denominator)),
+            video_bitrate: bitrate_v1(pixels, u64::from(numerator) > 30 * u64::from(denominator)),
             audio_bitrate: 384_000,
             gop_frames: u32::try_from(gop_frames.max(1))
                 .expect("admitted frame rate bounds the GOP"),
@@ -251,7 +280,7 @@ fn round_even(numerator: u128, denominator: u128) -> u128 {
         )
 }
 
-fn bitrate(pixels: u64, high_rate: bool) -> u64 {
+fn bitrate_v1(pixels: u64, high_rate: bool) -> u64 {
     // Nominal 16:9 class areas are represented exactly as height²*16/9,
     // including the nonintegral nominal 480p width. Actual raster area drives
     // interpolation, so portrait, square and ultrawide pictures follow area.

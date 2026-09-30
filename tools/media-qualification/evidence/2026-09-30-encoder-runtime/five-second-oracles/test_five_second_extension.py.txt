@@ -1,0 +1,204 @@
+#!/usr/bin/env python3
+"""Pure checks for the scratch capacity extension. No decoder or subprocess runs."""
+from array import array
+from copy import deepcopy
+import hashlib
+import importlib.util
+import json
+from pathlib import Path
+import sys
+import unittest
+
+HERE = Path(__file__).resolve().parent
+REPO = Path("/Users/michael/Code/deadpan")
+sys.dont_write_bytecode = True
+# Shared primitives remain the original repository implementations.
+sys.path.insert(0, str(REPO / "tools/media-qualification/compatible"))
+from encoder_oracle import OracleError, PcmSpan, _Checks
+
+
+def load(name, path):
+    spec = importlib.util.spec_from_file_location(name, path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+old_pcm = load("four_second_project_oracle", HERE / "originals/project_encode_oracle.py")
+new_pcm = load("five_second_project_oracle", HERE / "project_encode_oracle.py")
+old_native = load("four_second_native_oracle", HERE / "originals/native_audio_oracle.py")
+new_native = load("five_second_native_oracle", HERE / "native_audio_oracle.py")
+
+
+def cm(value, scale=48000):
+    return {"value": value, "timescale": scale, "flags": 1, "epoch": 0}
+
+
+def fixture(count):
+    pcm = array("f", [0.0]) * (count * 2)
+    for position in (100, count // 2, count - 100):
+        pcm[2 * position] = 0.75
+        pcm[2 * position + 1] = -0.65
+    asbd = {"sample_rate": 48000.0, "format_id": 0x6C70636D, "format_flags": 9,
+            "bytes_per_packet": 8, "frames_per_packet": 1, "bytes_per_frame": 8,
+            "channels_per_frame": 2, "bits_per_channel": 32}
+    buffers = []
+    for offset in range(0, count, 48000):
+        samples = min(48000, count - offset)
+        buffers.append({
+            "index": len(buffers), "num_samples": samples, "data_ready": True,
+            "pts": cm(offset), "dts": cm(0), "duration": cm(samples),
+            "output_pts": cm(offset), "output_duration": cm(samples),
+            "timing": [{"pts": cm(offset), "dts": cm(0), "duration": cm(1)}],
+            "asbd": deepcopy(asbd),
+            "attachments": {key: None for key in (
+                "trim_start", "trim_end", "speed", "reverse", "empty_media",
+                "reset_decoder", "drain_after_decoding")},
+            "sample_attachment_count": 0, "sample_attachments": [],
+            "sample_offset": offset, "byte_count": samples * 8,
+        })
+    observation = {
+        "schema_version": 1, "kind": "avfoundation_audio", "status": "completed",
+        "input_sha256": "0" * 64, "final_input_sha256": "0" * 64,
+        "asset_duration": cm(count), "provides_precise_duration_and_timing": True,
+        "track": {"id": 1, "time_range": {"start": cm(0), "duration": cm(count)},
+                  "source_formats": [deepcopy(asbd)], "segments": []},
+        "stored": {"status": "completed", "reader_status": 2,
+                   "buffer_count": len(buffers), "buffers": deepcopy(buffers)},
+        "pcm": {"status": "completed", "reader_status": 2,
+                "buffer_count": len(buffers), "buffers": buffers,
+                "total_samples": count, "pcm_bytes": count * 8,
+                "pcm_format": "f32le_interleaved_stereo_48000"},
+    }
+    return observation, pcm
+
+
+def adapt(module, observation, pcm):
+    report = _Checks()
+    spans, start, duration = module._adapt(report, observation, pcm)
+    return spans, start, duration, report.result()
+
+
+class CapacityExtensionTests(unittest.TestCase):
+    def test_only_reviewed_unique_capacity_edits_and_source_snapshots(self):
+        rules = json.loads((HERE / "edits.json").read_text())
+        self.assertEqual(len(rules["files"]), 3)
+        for rule in rules["files"]:
+            with self.subTest(source=rule["name"]):
+                source = (REPO / "tools/media-qualification/compatible" / rule["name"]).read_bytes()
+                original = (HERE / "originals" / rule["name"]).read_bytes()
+                self.assertEqual(source, original)
+                self.assertEqual(hashlib.sha256(source).hexdigest(), rule["source_sha256"])
+                changed = source.decode()
+                for before, after in rule["edits"]:
+                    self.assertEqual(changed.count(before), 1)
+                    changed = changed.replace(before, after, 1)
+                self.assertEqual((HERE / rule["name"]).read_bytes(), changed.encode())
+
+    def test_original_two_and_four_second_results_are_identical(self):
+        for count in (96000, 192000):
+            with self.subTest(samples=count):
+                observation, pcm = fixture(count)
+                before = deepcopy(observation)
+                old = adapt(old_native, observation, pcm)
+                new = adapt(new_native, observation, pcm)
+                self.assertEqual(old, new)
+                self.assertEqual(observation, before)
+                self.assertEqual(old_pcm.compare_pcm(pcm, old[0], pcm),
+                                 new_pcm.compare_pcm(pcm, new[0], pcm))
+                self.assertTrue(new_pcm.compare_pcm(pcm, new[0], pcm)["passed"])
+
+    def test_full_authored_interval_and_exact_five_second_capacity(self):
+        for count in (205005, 240000):
+            with self.subTest(samples=count):
+                observation, pcm = fixture(count)
+                with self.assertRaises(OracleError):
+                    adapt(old_native, observation, pcm)
+                with self.assertRaises(ValueError):
+                    old_pcm.compare_pcm(pcm, [PcmSpan(0, count, 0)], pcm)
+                spans, start, duration, checked = adapt(new_native, observation, pcm)
+                self.assertEqual((start, duration), (0, count))
+                self.assertTrue(checked["passed"])
+                compared = new_pcm.compare_pcm(pcm, spans, pcm)
+                self.assertTrue(compared["passed"])
+                self.assertEqual(compared["authored_samples"], count)
+                self.assertEqual(compared["physical_samples"], count)
+                self.assertEqual(compared["bounds"], {"maximum_error": 0.25, "rms_error": 0.02})
+
+    def test_over_five_seconds_or_sample_capacity_is_rejected(self):
+        observation, pcm = fixture(240001)
+        with self.assertRaises(OracleError):
+            adapt(new_native, observation, pcm)
+        with self.assertRaises(ValueError):
+            new_pcm.compare_pcm(pcm, [PcmSpan(0, 240001, 0)], pcm)
+        # The independent PCM capacity still rejects excess data when duration is falsified.
+        observation["asset_duration"] = cm(5, 1)
+        with self.assertRaises(OracleError):
+            adapt(new_native, observation, pcm)
+        short, short_pcm = fixture(96000)
+        short["asset_duration"] = cm(240001)
+        with self.assertRaises(OracleError):
+            adapt(new_native, short, short_pcm)
+
+    def test_native_format_trim_pts_status_and_hash_checks_remain(self):
+        for defect in ("format", "trim", "pts", "reader", "hash", "nan"):
+            with self.subTest(defect=defect):
+                observation, pcm = fixture(96000)
+                first = observation["pcm"]["buffers"][0]
+                if defect == "format":
+                    first["asbd"]["format_flags"] |= 32
+                elif defect == "trim":
+                    first["attachments"]["trim_start"] = cm(1)
+                elif defect == "pts":
+                    first["output_pts"] = cm(1)
+                elif defect == "reader":
+                    observation["pcm"]["reader_status"] = 1
+                elif defect == "hash":
+                    observation["final_input_sha256"] = "1" * 64
+                else:
+                    pcm[200] = float("nan")
+                for oracle in (old_native, new_native):
+                    with self.assertRaises(OracleError):
+                        adapt(oracle, observation, pcm)
+
+    def test_gaps_overlaps_missing_edges_and_unaccounted_bytes_are_rejected(self):
+        for spans in ([PcmSpan(0, 4, 0), PcmSpan(4, 4, 5)],
+                      [PcmSpan(0, 4, 0), PcmSpan(4, 4, 3)],
+                      [PcmSpan(0, 8, 1)], [PcmSpan(0, 8, -1)],
+                      [PcmSpan(1, 7, 0)], [PcmSpan(0, 7, 0)]):
+            for oracle in (old_pcm, new_pcm):
+                with self.subTest(spans=spans, oracle=oracle.__name__), self.assertRaises(ValueError):
+                    oracle.compare_pcm([0.0] * 16, spans, [0.0] * 16)
+
+    def test_fidelity_and_no_alignment_semantics_are_unchanged(self):
+        reference = [0.0, 0.0] * 20
+        reference[16] = 0.8
+        actual = [0.3, -0.3] * 4 + reference + [0.2, -0.2] * 4
+        spans = [PcmSpan(0, 8, -4), PcmSpan(8, 20, 4)]
+        for samples in (actual, [0.0, 0.0] + actual[:-2], [0.0] * len(actual)):
+            self.assertEqual(old_pcm.compare_pcm(samples, spans, reference),
+                             new_pcm.compare_pcm(samples, spans, reference))
+        self.assertTrue(new_pcm.compare_pcm(actual, spans, reference)["passed"])
+        self.assertFalse(new_pcm.compare_pcm([0.0, 0.0] + actual[:-2], spans, reference)["passed"])
+        for oracle in (old_pcm, new_pcm):
+            with self.assertRaises(ValueError):
+                oracle.compare_pcm([float("nan"), 0.0], [PcmSpan(0, 1, 0)], [0.0, 0.0])
+            self.assertFalse(oracle.compare_pcm([0.001, 0.001], [PcmSpan(0, 1, 0)],
+                                               [0.0, 0.0])["passed"])
+            self.assertFalse(oracle.compare_pcm([0.25, 0.25] * 8, [PcmSpan(0, 8, 0)],
+                                               [0.1, 0.1] * 8)["passed"])
+
+    def test_final_authored_sample_cannot_disappear_or_move(self):
+        observation, reference = fixture(205005)
+        reference[-2] = 0.8
+        spans, _, _, _ = adapt(new_native, observation, reference)
+        omitted = reference[:-2]
+        with self.assertRaises(ValueError):
+            new_pcm.compare_pcm(omitted, spans, reference)
+        changed = array("f", reference)
+        changed[-2] = 0.0
+        self.assertFalse(new_pcm.compare_pcm(changed, spans, reference)["passed"])
+
+
+if __name__ == "__main__":
+    unittest.main(verbosity=2)

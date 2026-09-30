@@ -1,0 +1,13 @@
+--- originals/project_encode_oracle.py
++++ project_encode_oracle.py
+@@ -88,8 +88,8 @@
+ def compare_pcm(actual, spans, reference):
+     """Compare on observed absolute timestamps; no event-derived realignment."""
+     actual_count, expected_count = _finite_pcm(actual), _finite_pcm(reference)
+-    if not 0 < expected_count <= 192000 or len(spans) > 8192:
+-        raise ValueError("PCM fixture exceeds four seconds")
++    if not 0 < expected_count <= 240000 or len(spans) > 8192:
++        raise ValueError("PCM scratch fixture exceeds five seconds")
+     position = 0
+     expected_offset = 0
+     previous_end = None

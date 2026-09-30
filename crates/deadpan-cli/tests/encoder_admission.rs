@@ -112,6 +112,8 @@ fn capacity_prose_and_faults_after_failure_never_start_a_second_probe() {
         "misleading",
         "stale",
         "unknown",
+        "missing_runtime",
+        "helper_mismatch",
         "regressed_progress",
         "malformed_tail",
         "duplicate",
@@ -145,6 +147,29 @@ fn capacity_prose_and_faults_after_failure_never_start_a_second_probe() {
             );
         }
     }
+}
+
+#[test]
+fn changed_library_between_probes_invalidates_the_selection() {
+    let root = tempfile::tempdir().unwrap();
+    let error = qualify(
+        &runtime(root.path(), "runtime_change"),
+        request(),
+        limits(),
+        &AtomicBool::new(false),
+        Instant::now() + Duration::from_secs(5),
+        |_, _, _| {},
+    )
+    .err()
+    .expect("changed runtime must fail");
+    assert!(error.error.cleanup_confirmed());
+    assert!(
+        matches!(error.error, EncodedRenderError::WorkerFault { .. }),
+        "{error:?}"
+    );
+    assert_eq!(rows(root.path()).len(), 2);
+    assert_eq!(error.rejected.len(), 2);
+    assert_ne!(error.rejected[0].runtime, error.rejected[1].runtime);
 }
 
 #[test]
