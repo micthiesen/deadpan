@@ -1,0 +1,66 @@
+{
+  "core_audio": {
+    "reviewer": "slice_interior_service",
+    "result": "No actionable finding after tracing direct child and strict boundary admission, sampling capture, Split contexts, sound ripple, marks, framing and allowances."
+  },
+  "store_actor": {
+    "reviewer": "automatic_workflow_review",
+    "result": "No actionable finding after source receipt/token admission, retained request/IDs, transaction rollback, stale rejection and success idempotence audit."
+  },
+  "ui": {
+    "reviewer": "app_identity",
+    "findings": [
+      {
+        "finding": "Clamped frame movement selected first duplicate numeric seam and changed insertion ownership.",
+        "reproduction": "replay-input-red: leading/trailing empty Sequences and actual downstream commits fail.",
+        "fix": "Retain the explicit slot if the numeric destination is unchanged."
+      },
+      {
+        "finding": "consume_key consumed duplicate digits and one-action-per-pass lost later count/motion events.",
+        "reproduction": "replay-input-red: raw [1,1,L] and [1,2,H] from boundary30 remain30 instead of41/18.",
+        "fix": "Consume each routed press once and process the ordered batch; replay-input-fixed passes."
+      },
+      {
+        "finding": "Cancelling while an earlier U remains in raw input can dispatch Undo on the layout retry.",
+        "status": "Dismissed: both heading [U,Escape] and native Cancel [U,Enter] regressions pass before any cancellation change. Regressions retained; no speculative fix.",
+        "reason": "Pinned egui 0.36.2 Context::run_dyn calls begin_pass(new_input.take()); RawInput::take moves events out and InputState::begin_pass replaces events, so discarded passes do not reuse the old raw batch."
+      }
+    ]
+  },
+  "visual_review": {
+    "source": "replay-input-fixed",
+    "images": [
+      "place-slice-124.png",
+      "place-slice-125.png"
+    ],
+    "sizes": [
+      [
+        960,
+        640
+      ],
+      [
+        1280,
+        820
+      ]
+    ],
+    "observation": "Decoded endpoint strip, dominant destination picture, exact group/local boundary and provisional interval are visible and legible; final captures inspected.",
+    "final_capture_source": "replay-cancel-review",
+    "final_captures_identical_to_inspected": true
+  },
+  "verification": {
+    "workspace_passed": 2609,
+    "workspace_failed": 0,
+    "workspace_ignored": 0,
+    "final_replay": "replay-cancel-review",
+    "slice_checks": 267,
+    "reserved_shortcut_cases": 6448,
+    "final_ui_app_passed": 362,
+    "strict_workspace_clippy": "passed",
+    "strict_ui_clippy": "passed",
+    "format": "passed",
+    "final_after_test_source_changes": {
+      "crates/deadpan-app/src/preview.rs": "Help text describes admitted interior destinations.",
+      "crates/deadpan-app/src/preview/splice/controls.rs": "Comment corrected after dismissal of cancellation review finding; no behavior change."
+    }
+  }
+}

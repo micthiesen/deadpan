@@ -62,7 +62,8 @@ browsing completes this entrypoint boundary, not DP-17, DP-18 or any delivery ga
 
 ## Visual slice preview, 2026-09-30
 
-`:splice` previews a linked Original moment at an ordinary Sequence child seam,
+`:splice` previews a linked Original moment at an ordinary Sequence child seam
+or inside a direct Source, ordinary Hold or supported transparent fragment,
 with exact source endpoint pictures, local In/Out refinement, destination and
 provisional timeline, frame inspection, and Before/Proposed audition around both
 joins. The service retains the exact prepared request until Enter; Escape
@@ -71,7 +72,29 @@ edit. Picture and audio use the same genuine proposed document and exact admitte
 base. Endpoint pictures have a separate bounded worker/mailbox. Fast `p/P` stays
 available. No core/database schema change was needed.
 
-The production `place-slice` replay passes 215 checks, including complete widget
+Interior placement uses one `SpliceSourceAt` command with retained Split IDs,
+the explicit Sequence parent and a strict local child boundary. Capture audio
+clocks before Split, preserve both fragment contexts, then reanchor the suffix
+and transform placed sounds once. A failed transaction publishes no preliminary
+split; Undo removes split and insertion together. Do not silently descend an
+ordinary child group. Core schema 33 and database schema 42 remain unchanged;
+frozen command adapters reject the new tag.
+
+[Interior qualification](../qualification/interior-slice-2026-09-30.md) records
+2,609 workspace tests, 362 UI-feature app tests and 267 production slice checks.
+Actual proposed and committed picture/PCM agree at both joins, while independent
+NTSC phase checks and the saved suffix verify retained audio clocks. Keep ordered
+native input batches intact and retain a deliberately chosen empty-group slot
+when a frame motion is clamped. Both regressions failed before their fixes.
+Native release QA verifies both joins, one 14-frame placement at boundary 30
+and one Undo. SQLite backups confirm the complete authored document is restored
+with exactly those two new revisions; all 16 unrelated tables are identical and
+the writer lock is released. Playback advances and pauses/resumes without a
+visible starvation error; a complete loop wrap was not conclusively captured
+in this pass. Native AX lists the slice controls. This does not resolve the
+earlier Render-overlay AX omission or establish VoiceOver acceptance.
+
+The initial seam `place-slice` replay passed 215 checks, including complete widget
 Tab/Shift+Tab focus circuits, synthetic IME ownership, actual text/image paint at
 960×640 and 1280×820, stale destination/reply handling, one commit and exact undo.
 An actual media test compares decoded pixels and canonical nonzero PCM across
@@ -85,10 +108,10 @@ and shutdown releases the writer lock. The user's existing window is untouched.
 Earlier debug audition starved: isolated preparation takes 1,065–1,194 ms per
 170.667 ms buffer in debug, versus 21–31 ms in release with identical PCM/gain.
 Retain this debug limitation; it does not qualify the broader workload matrix.
-The workspace passes 2,592 tests, the final UI-feature app passes 358 tests,
-and strict lint/format checks pass.
+That checkpoint passed 2,592 workspace tests, 358 UI-feature app tests,
+and strict lint/format checks.
 
-Frame-interior insertion, edited-slice move, replacement, picture/audio-only
+Edited-slice move, replacement, picture/audio-only
 policies and Repeat/Retime occurrence targets remain required by §9.7. DP-05,
 DP-20 and all release gates remain open or partial.
 

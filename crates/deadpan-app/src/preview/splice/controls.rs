@@ -22,7 +22,19 @@ impl DeadpanApp {
             });
             return;
         }
-        if self.dialogs.is_open() || pointer_focus_transition(&events) {
+        if self.dialogs.is_open()
+            || pointer_focus_transition(&events)
+            || events.iter().any(|event| {
+                matches!(
+                    event,
+                    egui::Event::Key {
+                        key: egui::Key::Tab,
+                        pressed: true,
+                        ..
+                    }
+                )
+            })
+        {
             return;
         }
         let background = context.memory(|memory| {
@@ -30,35 +42,41 @@ impl DeadpanApp {
                 .focused()
                 .is_none_or(|id| id == egui::Id::new(FOCUS) || id == pane_id(self.pane))
         });
-        for event in events {
-            let egui::Event::Key {
-                key,
-                modifiers,
-                pressed: true,
-                repeat,
-                ..
-            } = event
-            else {
-                continue;
-            };
-            if let Some(action) =
-                navigation::splice::route_key(key, modifiers, false, background, false, repeat)
-            {
-                if let Some(draft) = &mut self.splice {
-                    draft.key = Some(action);
+        let Some(draft) = &mut self.splice else {
+            return;
+        };
+        // Keep every routed press in native order. consume_key removes all
+        // matching presses, which loses duplicate count digits in one batch.
+        // Native widgets receive only the events they still own.
+        context.input_mut(|input| {
+            input.events.retain(|event| {
+                let egui::Event::Key {
+                    key,
+                    modifiers,
+                    pressed: true,
+                    repeat,
+                    ..
+                } = event
+                else {
+                    return true;
+                };
+                if let Some(action) = navigation::splice::route_key(
+                    *key, *modifiers, false, background, false, *repeat,
+                ) {
+                    draft.keys.push(action);
+                    false
+                } else {
+                    true
                 }
-                context.input_mut(|input| {
-                    input.consume_key(modifiers, key);
-                });
-                break;
-            }
-        }
+            });
+        });
     }
 
     pub(in crate::preview) fn splice_workspace(&mut self, ui: &mut egui::Ui) {
         egui::CentralPanel::default().frame(style::panel()).show(ui, |ui| {
             let Some(mut draft) = self.splice.take() else { return; };
-            let mut action = draft.key.take();
+            let keys = std::mem::take(&mut draft.keys);
+            let mut action = None;
             let heading = ui.horizontal(|ui| {
                 ui.heading("Place slice");
                 ui.colored_label(style::LAVENDER, "UNSAVED · Insert · Linked picture + sound");
@@ -90,11 +108,11 @@ impl DeadpanApp {
                 if ui.add_enabled(ready, egui::Button::new(if draft.before { "Before · b" } else { "Proposed · b" }).selected(!draft.before)).clicked() { action = Some(SpliceKey::Compare); }
                 if ui.add_enabled(ready || self.transport.is_some(), egui::Button::new(if self.transport.is_some() { "Pause · Space" } else { "Audition · Space" })).clicked() { action = Some(SpliceKey::Play); }
                 if ui.add_enabled(ready, egui::Button::new("Loop both joins · Shift Space")).clicked() { action = Some(SpliceKey::Loop); }
-                if ui.add_enabled(ready && draft.slot.is_some(), egui::Button::new("Place slice · Enter").fill(style::SELECTED)).clicked() { action = Some(SpliceKey::Apply); }
+                if ui.add_enabled(ready, egui::Button::new("Place slice · Enter").fill(style::SELECTED)).clicked() { action = Some(SpliceKey::Apply); }
                 if ui.add_enabled(!draft.applying, egui::Button::new("Cancel · Esc")).clicked() { action = Some(SpliceKey::Cancel); }
             });
             ui.weak("h/l adjusts the selected control; counts work: 12l. Tab / Shift Tab selects buttons; Enter activates.");
-            if action.is_some() {
+            if action.is_some() || !keys.is_empty() {
                 ui.ctx().request_discard("Place slice controls changed before picture submission");
             }
             ui.separator();
@@ -132,16 +150,20 @@ impl DeadpanApp {
                 ui.add_sized(egui::vec2(ui.available_width().min(320.0), 20.0), egui::Label::new(&destination).truncate()).on_hover_text(&destination);
                 ui.label(format!("Edit boundary {}", draft.destination));
                 if let Some(slot) = draft.slot { ui.weak(format!("Sequence slot {} of {}", slot + 1, draft.seams.len())); }
+                if let Destination::Interior { target, at } = &draft.proposal.destination {
+                    let label = draft.base.document.nodes().get(target).map_or("Destination beat", |node| node.label.as_str());
+                    let location = format!("Inside {label} · local boundary {}", at.frames());
+                    ui.add_sized(egui::vec2(ui.available_width().min(280.0), 20.0), egui::Label::new(&location).truncate()).on_hover_text(location);
+                }
                 if let Some(prepared) = &draft.prepared { ui.colored_label(style::LAVENDER, format!("+{} project frames", prepared.range.end().0 - prepared.range.start().0)); }
             });
             timeline(ui, &draft);
-            if draft.slot.is_none() { ui.colored_label(style::LAVENDER, "This destination is inside a beat. Use j/k to choose a Sequence seam; no snapping or edit has occurred."); }
-            if draft.slot.is_some() && (draft.dirty || draft.pending.is_some()) { ui.weak("Preparing proposed picture and sound…"); }
+            if draft.dirty || draft.pending.is_some() { ui.weak("Preparing proposed picture and sound…"); }
             if draft.applying { ui.weak("Saving the exact proposed slice…"); }
             if let Some(error) = &draft.error { ui.colored_label(style::LAVENDER, error); }
             if let Some(error) = &self.error { ui.colored_label(style::LAVENDER, error); }
             self.splice = Some(draft);
-            if let Some(action) = action {
+            for action in keys.into_iter().chain(action) {
                 self.splice_action(action, ui.ctx());
                 ui.ctx().request_discard("Place slice action changed its controls");
             }

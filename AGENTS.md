@@ -501,14 +501,18 @@ committed cursor/selection. Session-local copy is not persistent register suppor
 See [Original moments](docs/SOURCE_MOMENTS.md).
 
 `:splice` retains a service-owned proposed linked Original insertion at an
-ordinary Sequence seam. Picture and audio use the same genuine proposed
+ordinary Sequence seam or direct Source/ordinary Hold/supported fragment
+interior. Keep the captured Sequence owner explicit; never silently descend a
+child group. Interior placement retains Split identities and commits one
+SpliceSourceAt command, including pre-Split audio clocks, both retained contexts
+and one placed-sound transform. Picture and audio use the same genuine proposed
 document and exact admitted committed base. Source endpoints have their own
 bounded worker and cannot replace the main picture request. Local refinements
 do not change the copied register or saved cursors. Cancel the last issued
 proposal identity, including when a newer local change is still unsent. Commit
 the exact prepared request once; retain its receipt across refresh failure.
-Changed session/revision invalidates the draft and pending pictures. Frame-
-interior placement, move/replace and occurrence destinations remain open.
+Changed session/revision invalidates the draft and pending pictures.
+Move/replace and Repeat/Retime occurrence destinations remain open.
 See [slice placement](docs/SLICE_PLACEMENT.md).
 
 `SourceNode.video_mapping` independently chooses `FitBeat` or an exact duration

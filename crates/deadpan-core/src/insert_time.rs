@@ -14,7 +14,11 @@ use crate::{
 mod composite;
 mod source_splice;
 mod target;
-pub(crate) use source_splice::apply as splice_source;
+pub use source_splice::SourceSpliceInterior;
+pub(crate) use source_splice::{
+    InteriorInsertion as SourceSpliceInsertion, apply as splice_source,
+    apply_interior as splice_source_at,
+};
 pub use target::{InsertTimeSplit, InsertTimeTarget};
 
 struct ShiftedOwner {

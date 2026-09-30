@@ -3,6 +3,9 @@ use deadpan_core::AudioTimingId;
 use deadpan_media::source_import_timing::derive_source_moment;
 use deadpan_store::source_registration::SourceMomentInsertionRequest;
 
+#[path = "moment/interior.rs"]
+mod interior;
+
 fn ready(parent: &Path) -> Result<(PathBuf, ProjectStore, PreparedSourceRegistration)> {
     let (path, mut store) = project(parent)?;
     let original = retain(&mut store, "offset-bframes.mp4")?;

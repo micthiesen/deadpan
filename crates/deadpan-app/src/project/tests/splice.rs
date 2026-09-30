@@ -1,8 +1,11 @@
 use super::*;
-use crate::project::splice::{Prepared, Proposal, ProposalId};
+use crate::project::splice::{Destination, Prepared, Proposal, ProposalId};
 
 #[path = "splice_equivalence.rs"]
 mod equivalence;
+
+#[path = "splice/interior.rs"]
+mod interior;
 
 fn initialize(harness: &Harness) -> Arc<Workspace> {
     command(
@@ -35,7 +38,7 @@ fn proposal(workspace: &Workspace, draft: u64, change: u64) -> Proposal {
         ordinals: 10..24,
         scope: SequenceScope::default(),
         parent: workspace.document.root().clone(),
-        index: 0,
+        destination: Destination::Slot(0),
     }
 }
 
@@ -97,7 +100,7 @@ fn cached_refinement_and_abandon_leave_history_unchanged_and_exact_commit_undo_o
 
     let mut refined = proposal(&before, 1, 2);
     refined.ordinals = 12..31;
-    refined.index = 1;
+    refined.destination = Destination::Slot(1);
     let update = command(
         &harness.service,
         ProjectRequest::PrepareSplice(refined.clone()),
@@ -209,7 +212,7 @@ fn uncached_qualification_prepares_latest_exact_nested_destination_without_commi
         .descend(&before, &node("slice-group"))
         .unwrap();
     latest.parent = node("slice-group");
-    latest.index = 1;
+    latest.destination = Destination::Slot(1);
     command(
         &harness.service,
         ProjectRequest::PrepareSplice(latest.clone()),
@@ -373,7 +376,7 @@ fn invalid_identity_qualification_scope_and_reopened_session_fail_without_retarg
             .is_err()
     );
     let mut outside = proposal(&before, 2, 1);
-    outside.index = 2;
+    outside.destination = Destination::Slot(2);
     assert!(
         command(&harness.service, ProjectRequest::PrepareSplice(outside))
             .splice

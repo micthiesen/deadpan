@@ -3,7 +3,9 @@
 use std::ops::Range;
 use std::sync::Arc;
 
-use deadpan_core::{AssetId, FrameRange, NodeId, ProjectId, RevisionId, SourceQualificationId};
+use deadpan_core::{
+    AssetId, FrameDuration, FrameRange, NodeId, ProjectId, RevisionId, SourceQualificationId,
+};
 use deadpan_plan::RenderPlan;
 
 use super::{CommittedEdit, SequenceScope, Workspace};
@@ -26,7 +28,13 @@ pub struct Proposal {
     pub ordinals: Range<u64>,
     pub scope: SequenceScope,
     pub parent: NodeId,
-    pub index: usize,
+    pub destination: Destination,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Destination {
+    Slot(usize),
+    Interior { target: NodeId, at: FrameDuration },
 }
 
 #[derive(Clone)]

@@ -120,6 +120,15 @@ fn decode(worker: &PreviewWorker, serial: u64, work: Work) -> Picture {
 
 #[test]
 fn service_proposal_and_commit_match_decoded_pictures_and_canonical_pcm_at_both_joins() {
+    verify_equivalence(false);
+}
+
+#[test]
+fn interior_proposal_and_commit_match_both_joins_and_preserve_original_suffix_pcm() {
+    verify_equivalence(true);
+}
+
+fn verify_equivalence(interior: bool) {
     let scratch = tempfile::tempdir().unwrap();
     let harness = Harness::with_library(Some(
         ProjectLibrary::from_documents(scratch.path().join("Documents")).unwrap(),
@@ -131,16 +140,20 @@ fn service_proposal_and_commit_match_decoded_pictures_and_canonical_pcm_at_both_
         .next()
         .unwrap()
         .clone();
-    let before = edited(
-        &harness.service,
-        &initial,
-        ProjectEdit::Split {
-            node: original,
-            at: FrameDuration::new(30).unwrap(),
-        },
-    )
-    .workspace
-    .unwrap();
+    let before = if interior {
+        initial
+    } else {
+        edited(
+            &harness.service,
+            &initial,
+            ProjectEdit::Split {
+                node: original.clone(),
+                at: FrameDuration::new(30).unwrap(),
+            },
+        )
+        .workspace
+        .unwrap()
+    };
     let mut request = proposal(&before, 1, 1);
     // This clock fixture contains isolated impulses, not continuous sound.
     // At 30000/1001 fps, frame 30 begins at sample 48048, beside its 48000
@@ -148,7 +161,14 @@ fn service_proposal_and_commit_match_decoded_pictures_and_canonical_pcm_at_both_
     // entry join and the second impulse before both joins, with its decoded
     // AAC tail present after the exit join. All four sides carry real PCM.
     request.ordinals = 0..30;
-    request.index = 1;
+    request.destination = if interior {
+        Destination::Interior {
+            target: original,
+            at: FrameDuration::new(30).unwrap(),
+        }
+    } else {
+        Destination::Slot(1)
+    };
     let reply = command(
         &harness.service,
         ProjectRequest::PrepareSplice(request.clone()),
@@ -199,12 +219,18 @@ fn service_proposal_and_commit_match_decoded_pictures_and_canonical_pcm_at_both_
 
     let cancelled = AtomicBool::new(false);
     let rate = proposed.snapshot.document.presentation_basis().frame_rate;
-    let starts = [proposed.range.start(), proposed.range.end()]
-        .map(|frame| AudioSample(rate.audio_boundary(frame).unwrap().0 - 128));
+    let final_boundary = rate
+        .audio_boundary(ProjectFrame(proposed.plan.duration().frames()))
+        .unwrap();
+    let starts = [
+        AudioSample(rate.audio_boundary(proposed.range.start()).unwrap().0 - 128),
+        AudioSample(rate.audio_boundary(proposed.range.end()).unwrap().0 - 128),
+        AudioSample(final_boundary.0 - 256),
+    ];
     let mut source = ProposedOriginal::open(&proposed, &request.asset, &cancelled);
     let mut limited = LimitedAudio::new(proposed.plan.clone());
     let mut pcm = Vec::new();
-    for start in starts {
+    for (window, start) in starts.into_iter().enumerate() {
         let block = limited
             .read(&mut source, start, 256, Duration::from_secs(60), &cancelled)
             .unwrap();
@@ -216,13 +242,38 @@ fn service_proposal_and_commit_match_decoded_pictures_and_canonical_pcm_at_both_
                 .iter()
                 .flatten()
                 .fold(0.0_f32, |peak, sample| peak.max(sample.abs()));
-            assert!(
-                peak > 1.0e-7,
-                "join block at {start:?}, side {side_index} has decoded fixture audio; peak={peak}"
-            );
+            if window < 2 {
+                assert!(
+                    peak > 1.0e-7,
+                    "join block at {start:?}, side {side_index} has decoded fixture audio; peak={peak}"
+                );
+            }
         }
+        assert!(
+            block
+                .samples
+                .iter()
+                .flatten()
+                .any(|sample| sample.abs() > 1.0e-7)
+        );
         pcm.push(block);
     }
+    let mut baseline_audio = deadpan_cli::audio::ProjectAudioSession::open_revision(
+        &before.path,
+        before.document.revision_id(),
+    )
+    .unwrap();
+    let baseline_end = rate
+        .audio_boundary(ProjectFrame(before.plan.duration().frames()))
+        .unwrap();
+    let baseline_suffix = baseline_audio
+        .read_limited(AudioSample(baseline_end.0 - 256), 256, &cancelled)
+        .unwrap();
+    assert_eq!(
+        pcm[2].samples, baseline_suffix.samples,
+        "interior splitting and placement retain the original suffix sample lattice"
+    );
+    assert_eq!(pcm[2].gain, baseline_suffix.gain);
     assert!(
         source.reads > 0,
         "canonical proposed preparation admitted original PCM"

@@ -55,7 +55,8 @@ These keys add no modified global shortcut. The production router preserves
 composition and focused native buttons. The `place-slice` replay checks exact
 endpoint/destination pictures, both joins, loop pause/resume, stale captures,
 cancel/commit/undo and actual picture/text clips at 960×640 and 1280×820.
-Linked insertion at ordinary Sequence seams is available; the remaining
+Linked insertion at ordinary Sequence seams and direct Source/Hold interiors
+is available; counted `j/k` also works from an interior. The remaining
 [slice placement modes](SLICE_PLACEMENT.md) are still required.
 
 ## Render

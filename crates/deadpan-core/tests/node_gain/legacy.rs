@@ -31,7 +31,7 @@ fn old_edit(version: u32, transaction: &EditTransaction) -> Value {
 }
 
 #[test]
-fn every_frozen_document_patch_and_command_rejects_modern_gain_vocabulary() {
+fn every_frozen_document_patch_and_command_rejects_new_vocabulary() {
     let before = fixture();
     let mut treated_wire = serde_json::to_value(&before).unwrap();
     treated_wire["nodes"]["hold"]["audio_treatments"] = serde_json::to_value(unity()).unwrap();
@@ -76,6 +76,27 @@ fn every_frozen_document_patch_and_command_rejects_modern_gain_vocabulary() {
                 treatments: unity(),
             },
             identities: OccurrenceIdentities::default(),
+        },
+        Command::SpliceSourceAt {
+            parent: id("root"),
+            target: id("hold"),
+            at: frames(1),
+            source: SourceNode {
+                duration: frames(1),
+                video: SourceVideo::Blank,
+                video_mapping: SourceVideoMapping::FitBeat,
+                audio: None,
+                audio_mapping: SourceAudioMapping::FitBeat,
+                link: LinkRelation::Independent,
+                audio_offset: AudioSample(0),
+            },
+            id: id("inserted"),
+            label: "Inserted slice".into(),
+            identities: SplitIdentities::default(),
+            timing: AudioTimingId {
+                allocation: RevisionId::new("initialx").unwrap(),
+                ordinal: 0,
+            },
         },
     ];
     macro_rules! check {
@@ -145,6 +166,45 @@ fn every_frozen_document_patch_and_command_rejects_modern_gain_vocabulary() {
     check!(30, legacy_v30);
     check!(31, legacy_v31);
     check!(32, legacy_v32);
+}
+
+#[test]
+fn frozen_sound_context_guards_reject_interior_splices_without_sounds() {
+    let before = fixture();
+    let request = request(
+        &before,
+        Command::SpliceSourceAt {
+            parent: id("root"),
+            target: id("hold"),
+            at: frames(1),
+            source: SourceNode {
+                duration: frames(1),
+                video: SourceVideo::Blank,
+                video_mapping: SourceVideoMapping::FitBeat,
+                audio: None,
+                audio_mapping: SourceAudioMapping::FitBeat,
+                link: LinkRelation::Independent,
+                audio_offset: AudioSample(0),
+            },
+            id: id("inserted"),
+            label: "Inserted slice".into(),
+            identities: SplitIdentities::default(),
+            timing: AudioTimingId {
+                allocation: RevisionId::new("initialx").unwrap(),
+                ordinal: 0,
+            },
+        },
+    );
+
+    assert!(before.sounds().is_empty());
+    for error in [
+        legacy_v29::validate_request_context(&before, &request),
+        legacy_v30::validate_request_context(&before, &request),
+        legacy_v31::validate_request_context(&before, &request),
+        legacy_v32::validate_request_context(&before, &request),
+    ] {
+        assert_eq!(error.unwrap_err().code, EditErrorCode::InvalidCommand);
+    }
 }
 
 #[test]

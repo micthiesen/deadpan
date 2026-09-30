@@ -1,0 +1,138 @@
+{
+  "authored_document_restored_except_revision": true,
+  "old_revision": "ab453146-3cef-425b-b832-85cedb497611",
+  "new_revision": "ca509e41-a414-47f4-88da-0fcd06c3a63f",
+  "revisions": [
+    [
+      "5a7ab30c-5a9f-472a-b408-642b85e72d12",
+      "ab453146-3cef-425b-b832-85cedb497611",
+      "edit"
+    ],
+    [
+      "ca509e41-a414-47f4-88da-0fcd06c3a63f",
+      "5a7ab30c-5a9f-472a-b408-642b85e72d12",
+      "undo"
+    ]
+  ],
+  "new_command": {
+    "command": "splice_source_at",
+    "parent": "6d0ca630-03cc-4edd-ab4c-e20e23b75c38",
+    "target": "6bd03c7b-21ef-40f7-b7e2-e590bcba9839",
+    "at": 30,
+    "source": {
+      "duration": 14,
+      "video": {
+        "type": "stream",
+        "asset": "e1e95004-39a0-4de2-8e3d-a09ea0cb7955",
+        "span": {
+          "start": {
+            "ticks": 10010,
+            "time_base": {
+              "numerator": 1,
+              "denominator": 30000
+            }
+          },
+          "end": {
+            "ticks": 24024,
+            "time_base": {
+              "numerator": 1,
+              "denominator": 30000
+            }
+          }
+        }
+      },
+      "video_mapping": {
+        "type": "placement",
+        "start": {
+          "numerator": "0",
+          "denominator": "1"
+        },
+        "frames": {
+          "numerator": "14",
+          "denominator": "1"
+        },
+        "endpoints": "hold_adjacent"
+      },
+      "audio": {
+        "asset": "e1e95004-39a0-4de2-8e3d-a09ea0cb7955",
+        "span": {
+          "start": {
+            "ticks": 0,
+            "time_base": {
+              "numerator": 1,
+              "denominator": 48000
+            }
+          },
+          "end": {
+            "ticks": 192192,
+            "time_base": {
+              "numerator": 1,
+              "denominator": 48000
+            }
+          }
+        }
+      },
+      "audio_mapping": {
+        "type": "selected_placement",
+        "start": {
+          "numerator": "-10",
+          "denominator": "1"
+        },
+        "frames": {
+          "numerator": "120",
+          "denominator": "1"
+        },
+        "selection": {
+          "start": {
+            "numerator": "0",
+            "denominator": "1"
+          },
+          "end": {
+            "numerator": "14",
+            "denominator": "1"
+          }
+        }
+      },
+      "link": "linked",
+      "audio_offset": 0
+    },
+    "id": "b20cfe7a-a1f6-4fd7-b4b0-e94f4151db00",
+    "label": "cfr-bframes.mp4 [10..24)",
+    "identities": {
+      "nodes": [
+        "67bfdb81-0a8e-4b46-9bb5-d9695f720d4a",
+        "c67fe8bc-6cf7-4d84-b5b0-6b9bb77e6a56",
+        "81e876df-fb58-419d-aadf-493f03bf7d8d"
+      ]
+    },
+    "timing": {
+      "allocation": "5a7ab30c-5a9f-472a-b408-642b85e72d12",
+      "ordinal": 0
+    }
+  },
+  "changed_tables": [
+    "history",
+    "redo",
+    "revisions",
+    "state"
+  ],
+  "unchanged_tables": [
+    "generation_attempt_heads",
+    "generation_attempts",
+    "generation_bundle_receipts",
+    "generation_candidate_receipts",
+    "generation_requests",
+    "hold_request_clocks",
+    "original_media",
+    "render_attempts",
+    "render_candidate_checkpoints",
+    "render_encoding_decisions",
+    "render_job_heads",
+    "render_jobs",
+    "render_publication_operations",
+    "render_publications",
+    "single_source",
+    "source_qualifications"
+  ],
+  "writer_lock_released": true
+}

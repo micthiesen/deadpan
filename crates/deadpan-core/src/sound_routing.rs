@@ -422,6 +422,18 @@ impl RootSoundEditCapture {
                 at: document.source_splice_boundary(parent, *index)?,
                 duration: source.duration,
             },
+            Command::SpliceSourceAt {
+                parent,
+                target,
+                at,
+                source,
+                ..
+            } => RootSoundOperation::Insert {
+                at: document
+                    .source_splice_interior(parent, target, *at)?
+                    .boundary,
+                duration: source.duration,
+            },
             Command::Delete { node } => {
                 let parent = document.parent_of(node).ok_or_else(|| {
                     edit_invalid("sound ripple deletion requires a non-root Sequence child")

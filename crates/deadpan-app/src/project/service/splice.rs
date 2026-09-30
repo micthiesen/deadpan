@@ -1,16 +1,35 @@
 //! Retain one exact uncommitted placement on the project owner.
 
-use deadpan_core::{AudioTimingId, EditTransaction, FrameRange, ProjectFrame};
-use deadpan_store::source_registration::SourceMomentInsertionRequest;
+use deadpan_core::{AudioTimingId, EditTransaction, FrameRange, ProjectFrame, SplitIdentities};
+use deadpan_store::source_registration::{
+    SourceMomentInsertionRequest, SourceMomentInteriorInsertionRequest,
+};
 
 use super::*;
 use crate::project::splice::{
-    Prepared as PreparedSplice, Proposal, ProposalId, ProposalUpdate, SpliceCommitUpdate,
+    Destination, Prepared as PreparedSplice, Proposal, ProposalId, ProposalUpdate,
+    SpliceCommitUpdate,
 };
+
+/// Retain the exact allocation and destination through preview and commit.
+/// An interior placement never publishes a preliminary Split.
+enum Request {
+    Slot(SourceMomentInsertionRequest),
+    Interior(SourceMomentInteriorInsertionRequest),
+}
+
+impl Request {
+    fn node(&self) -> &NodeId {
+        match self {
+            Self::Slot(request) => &request.node,
+            Self::Interior(request) => &request.node,
+        }
+    }
+}
 
 pub(super) struct Draft {
     proposal: Proposal,
-    request: SourceMomentInsertionRequest,
+    request: Request,
     cursor: ProjectFrame,
     source: Option<PreparedSourceRegistration>,
     prepared: Option<Arc<PreparedSplice>>,
@@ -88,7 +107,7 @@ impl Service {
         }
         let workspace = self.workspace.as_ref().ok_or("Open a project first")?;
         let view = proposal.scope.resolve(workspace)?;
-        if view.owner != &proposal.parent || proposal.index > view.children.len() {
+        if view.owner != &proposal.parent {
             return Err("Slice destination is outside the captured Sequence scope".into());
         }
         if proposal.ordinals.start >= proposal.ordinals.end {
@@ -102,27 +121,61 @@ impl Service {
         if source.receipt.id() != &proposal.qualification || source.video_index.is_none() {
             return Err("Copied Original qualification has changed; select and copy again".into());
         }
-        let cursor = workspace
-            .document
-            .source_splice_boundary(&proposal.parent, proposal.index)
-            .map_err(display)?;
-        let new_revision = revision();
-        let request = SourceMomentInsertionRequest {
-            expected_revision: proposal.id.base_revision.clone(),
-            new_revision: new_revision.clone(),
-            asset: proposal.asset.clone(),
-            parent: proposal.parent.clone(),
-            index: proposal.index,
-            node: node(),
-            label: format!(
-                "{} [{}..{})",
-                source.label, proposal.ordinals.start, proposal.ordinals.end
+        let (cursor, split_ids) = match &proposal.destination {
+            Destination::Slot(index) => (
+                workspace
+                    .document
+                    .source_splice_boundary(&proposal.parent, *index)
+                    .map_err(display)?,
+                0,
             ),
-            timing: AudioTimingId {
-                allocation: new_revision,
-                ordinal: 0,
-            },
-            ordinals: proposal.ordinals.clone(),
+            Destination::Interior { target, at } => {
+                let interior = workspace
+                    .document
+                    .source_splice_interior(&proposal.parent, target, *at)
+                    .map_err(display)?;
+                (interior.boundary, interior.required_ids)
+            }
+        };
+        let new_revision = revision();
+        let inserted = node();
+        let label = format!(
+            "{} [{}..{})",
+            source.label, proposal.ordinals.start, proposal.ordinals.end
+        );
+        let timing = AudioTimingId {
+            allocation: new_revision.clone(),
+            ordinal: 0,
+        };
+        let request = match &proposal.destination {
+            Destination::Slot(index) => Request::Slot(SourceMomentInsertionRequest {
+                expected_revision: proposal.id.base_revision.clone(),
+                new_revision,
+                asset: proposal.asset.clone(),
+                parent: proposal.parent.clone(),
+                index: *index,
+                node: inserted,
+                label,
+                timing,
+                ordinals: proposal.ordinals.clone(),
+            }),
+            Destination::Interior { target, at } => {
+                Request::Interior(SourceMomentInteriorInsertionRequest {
+                    expected_revision: proposal.id.base_revision.clone(),
+                    new_revision,
+                    asset: proposal.asset.clone(),
+                    parent: proposal.parent.clone(),
+                    target: target.clone(),
+                    at: *at,
+                    node: inserted,
+                    label,
+                    identities: SplitIdentities {
+                        nodes: (0..split_ids).map(|_| node()).collect(),
+                    },
+                    timing,
+                    ordinals: proposal.ordinals.clone(),
+                })
+            }
         };
         let id = proposal.id.clone();
         let asset = proposal.asset.clone();
@@ -199,11 +252,16 @@ impl Service {
         if source.receipt().id() != &draft.proposal.qualification {
             return Err("Fresh source qualification differs from the copied Original".into());
         }
-        let edit = self
-            .store
-            .as_ref()
-            .ok_or("Open a project first")?
-            .preview_prepared_source_moment(&draft.request, &source, &AtomicBool::new(false));
+        let store = self.store.as_ref().ok_or("Open a project first")?;
+        let cancelled = AtomicBool::new(false);
+        let edit = match &draft.request {
+            Request::Slot(request) => {
+                store.preview_prepared_source_moment(request, &source, &cancelled)
+            }
+            Request::Interior(request) => {
+                store.preview_prepared_source_moment_interior(request, &source, &cancelled)
+            }
+        };
         let edit = match edit {
             Ok(edit) => edit,
             Err(StoreError::OriginalMedia(_) | StoreError::Io(_)) => return Ok(false),
@@ -230,7 +288,7 @@ impl Service {
     ) -> Result<Arc<PreparedSplice>> {
         let workspace = self.workspace.as_ref().ok_or("Open a project first")?;
         let document = Arc::new(edit.forward.apply(&workspace.document).map_err(display)?);
-        let NodeKind::Source { source } = &document.nodes()[&draft.request.node].kind else {
+        let NodeKind::Source { source } = &document.nodes()[draft.request.node()].kind else {
             return Err("Slice preview did not produce its Source beat".into());
         };
         let end = draft
@@ -253,7 +311,7 @@ impl Service {
             base: workspace.clone(),
             snapshot,
             plan,
-            node: draft.request.node.clone(),
+            node: draft.request.node().clone(),
             range,
         }))
     }
@@ -355,17 +413,21 @@ impl Service {
             .source
             .take()
             .ok_or("Slice source is no longer prepared")?;
-        let outcome = self.writer()?.commit_prepared_source_moment(
-            &draft.request,
-            &source,
-            None,
-            &AtomicBool::new(false),
-        );
+        let store = self.writer()?;
+        let cancelled = AtomicBool::new(false);
+        let outcome = match &draft.request {
+            Request::Slot(request) => {
+                store.commit_prepared_source_moment(request, &source, None, &cancelled)
+            }
+            Request::Interior(request) => {
+                store.commit_prepared_source_moment_interior(request, &source, None, &cancelled)
+            }
+        };
         self.cache_splice_source(&draft.proposal.asset, Some(source));
         let commit = outcome.map_err(display)?;
         Ok(CommittedEdit {
             revision: commit.revision_id,
-            selected_node: Some(draft.request.node),
+            selected_node: Some(draft.request.node().clone()),
             preserve_cursor: false,
             cursor: Some(draft.cursor),
             scope: draft.proposal.scope,

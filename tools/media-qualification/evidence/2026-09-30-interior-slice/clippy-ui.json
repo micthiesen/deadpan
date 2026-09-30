@@ -1,0 +1,22 @@
+{
+  "command": [
+    "cargo",
+    "clippy",
+    "--locked",
+    "-p",
+    "deadpan-app",
+    "--features",
+    "ui-harness",
+    "--all-targets",
+    "--",
+    "-D",
+    "warnings"
+  ],
+  "started": "2026-09-30T20:11:54.357117+00:00",
+  "base_commit": "d3f5e367d917dec4922167b3ec86a46f544c578a",
+  "diff_sha256": "e7317956585f5812b670cbf6a6e7ceeb1cf39cabe8e4b61db6954f7a11752edd",
+  "source_manifest_sha256": "16a71510b74255d3ce460123c77ec3f42ddbde20ca5eac5d69f90620ee3fff56",
+  "pid": 81865,
+  "exit_code": 0,
+  "seconds": 85.11928162490949
+}

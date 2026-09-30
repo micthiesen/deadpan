@@ -84,6 +84,18 @@ pub enum Command {
         label: String,
         timing: crate::AudioTimingId,
     },
+    /// Insert one Source strictly inside an explicitly named direct Sequence
+    /// child, retaining both split contexts in one atomic edit.
+    SpliceSourceAt {
+        parent: NodeId,
+        target: NodeId,
+        at: FrameDuration,
+        source: SourceNode,
+        id: NodeId,
+        label: String,
+        identities: crate::SplitIdentities,
+        timing: crate::AudioTimingId,
+    },
     /// Split an interior local output boundary without changing rendered time.
     Split {
         node: NodeId,
@@ -572,6 +584,36 @@ pub fn apply(
             timing,
             &request.new_revision,
         )?,
+        Command::SpliceSourceAt {
+            parent,
+            target,
+            at,
+            source,
+            id,
+            label,
+            identities,
+            timing,
+        } => crate::insert_time::splice_source_at(
+            input,
+            parent,
+            target,
+            *at,
+            crate::insert_time::SourceSpliceInsertion {
+                node: BeatNode {
+                    audio_treatments: Default::default(),
+                    label: label.clone(),
+                    framing: None,
+                    audio_edges: Default::default(),
+                    kind: NodeKind::Source {
+                        source: source.clone(),
+                    },
+                },
+                id,
+                identities,
+                timing,
+            },
+            context,
+        )?,
         Command::Split {
             node,
             at,
@@ -836,7 +878,9 @@ pub(crate) fn reduce(
                 "gap isolation requires the retained-clock entrypoint",
             ));
         }
-        Command::InsertTime { .. } | Command::SpliceSource { .. } => {
+        Command::InsertTime { .. }
+        | Command::SpliceSource { .. }
+        | Command::SpliceSourceAt { .. } => {
             return Err(EditError::new(
                 EditErrorCode::InvalidCommand,
                 "time insertion requires the retained-clock entrypoint",
@@ -1837,6 +1881,7 @@ fn description(command: &Command) -> &'static str {
         Command::SetSoundAllowance { .. } => "Set sound Hold allowance",
         Command::InsertTime { .. } => "Insert pause",
         Command::SpliceSource { .. } => "Paste source moment",
+        Command::SpliceSourceAt { .. } => "Splice source moment inside beat",
         Command::Split { .. } => "Split beat",
         Command::Insert { .. } => "Insert beats",
         Command::Delete { .. } => "Delete beat",

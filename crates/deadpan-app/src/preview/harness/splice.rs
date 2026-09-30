@@ -1,18 +1,19 @@
 //! Production slice keys, genuine preview pictures and exact reversible commits.
 
 use super::*;
-use crate::project::splice::{Prepared, ProposalUpdate};
+use crate::project::splice::{Destination, Prepared, ProposalUpdate};
 use deadpan_core::{AudioSample, ProjectFrame};
 use deadpan_playback::{ContentIdentity, Phase, Update};
 use egui::{Key, Modifiers};
 
+mod input;
+
 const APPLY: &str = "Place slice · Enter";
 const CANCEL: &str = "Cancel · Esc";
 const HEADING: &str = "Place slice keyboard controls";
-const INTERIOR: &str = "This destination is inside a beat. Use j/k to choose a Sequence seam; no snapping or edit has occurred.";
 
 pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
-    d.report.skipped.push("Place slice covers linked Original copies at exact ordinary Sequence seams. Interior-frame insertion, edited-slice move/copy, replacement, separate picture/audio placement and Repeat/Retime occurrence targeting remain outside this increment.".into());
+    d.report.skipped.push("Place slice covers linked Original copies at ordinary Sequence seams and Source/Hold interiors. Edited-slice move/copy, replacement, separate picture/audio placement and Repeat/Retime occurrence targeting remain outside this increment.".into());
     d.report.skipped.push("The replay uses genuine source qualification, endpoint decoding, SDR GPU pictures, proposed documents and durable commands. Audio delivery and a concurrent service Undo are explicitly injected. It does not open an audio device or establish acoustic quality.".into());
     let full_original = document(d)?.nodes().clone();
     let baseline = d.revision();
@@ -54,20 +55,35 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         |app| app.splice.is_some(),
     )?;
     wait_endpoints(d, 10, 24)?;
-    paint_text(d, INTERIOR)?;
-    d.key(Key::Enter)?;
+    wait_ready(d)?;
+    let interior = prepared(d)?;
     d.check(
-        "An interior destination stays explicit and cannot silently snap or commit",
-        d.rect(APPLY).is_err() && d.revision() == entry_revision && editor(d) == entry,
-        json!({"apply_enabled":false,"editor":entry}),
+        "An interior destination previews its exact frame without snapping or saving a split",
+        matches!(
+            draft(d)?.proposal_for_check().destination,
+            Destination::Interior { .. }
+        ) && interior.range.start().0 == d.app().sequence_cursor as i64
+            && d.rect(APPLY).is_ok()
+            && d.revision() == entry_revision
+            && document(d)?.nodes() == &entry_nodes
+            && editor(d) == entry,
+        json!({"apply_enabled":true,"editor":entry,"saved_unchanged":true}),
         d.snapshot(),
     )?;
-    d.key(Key::K)?;
+    d.chord(&[Key::Num2, Key::K])?;
+    wait_ready(d)?;
+    d.check(
+        "Counted seam motion from an interior respects both requested boundaries",
+        prepared(d)?.range.start() == ProjectFrame(0),
+        json!(0),
+        state(d),
+    )?;
+    d.key(Key::J)?;
     wait_ready(d)?;
     let first = prepared(d)?;
     let first_id = draft(d)?.proposal_for_check().id.clone();
     d.check(
-        "Previous seam chooses Edit 60 and prepares one unsaved linked Source",
+        "Next seam chooses Edit 60 and prepares one unsaved linked Source",
         first.range.start() == ProjectFrame(60)
             && first.range.end() == ProjectFrame(74)
             && first.plan.duration().frames() == entry_duration as i64 + 14
@@ -196,8 +212,96 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         json!("exact pre-placement nodes and duration"),
         d.snapshot(),
     )?;
+    interior_commit(d)?;
     stale_revision(d, &full_original)?;
+    input::run(d)?;
     Ok(())
+}
+
+fn interior_commit(d: &mut Driver<'_>) -> Result<(), String> {
+    d.chord(&[Key::G, Key::G, Key::Num6, Key::Num1, Key::L])?;
+    d.settled()?;
+    let before = document(d)?.clone();
+    let revision = d.revision();
+    d.command("splice")?;
+    wait_ready(d)?;
+    let proposal = prepared(d)?;
+    d.check(
+        "A strict interior of an existing Source fragment previews an exact unsaved placement",
+        proposal.range.start() == ProjectFrame(61)
+            && proposal.range.end() == ProjectFrame(75)
+            && *document(d)? == before
+            && matches!(
+                draft(d)?.proposal_for_check().destination,
+                Destination::Interior { .. }
+            ),
+        json!({"inserted":[61,75],"saved_revision":revision}),
+        state(d),
+    )?;
+    d.key(Key::F)?;
+    wait_picture(d, 10, "Showing proposed edit frame 62")?;
+    for (width, height) in [(960.0, 640.0), (1280.0, 820.0)] {
+        let viewport = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(width, height));
+        let input = d.harness.input_mut();
+        input.screen_rect = Some(viewport);
+        input
+            .viewports
+            .get_mut(&egui::ViewportId::ROOT)
+            .ok_or("Missing interior splice viewport")?
+            .inner_rect = Some(viewport);
+        d.step(
+            "Paint interior slice placement at the requested viewport",
+            true,
+        )?;
+        wait_endpoints(d, 10, 24)?;
+        wait_picture(d, 10, "Showing proposed edit frame 62")?;
+        for label in [
+            "Edit boundary 61",
+            "local boundary 1",
+            "Place slice · Enter",
+        ] {
+            paint_text(d, label)?;
+        }
+        viewer_painted(d)?;
+        d.capture(&format!(
+            "Interior placement source endpoints and destination at {width} by {height}"
+        ))?;
+    }
+    d.key(Key::H)?;
+    wait_picture(d, 60, "Showing proposed edit frame 61")?;
+    d.key(Key::L)?;
+    wait_picture(d, 10, "Showing proposed edit frame 62")?;
+    d.chord(&[Key::Num1, Key::Num3, Key::L])?;
+    wait_picture(d, 23, "Showing proposed edit frame 75")?;
+    d.key(Key::L)?;
+    wait_picture(d, 61, "Showing proposed edit frame 76")?;
+    d.key(Key::Enter)?;
+    d.changed(&revision)?;
+    let committed = d.revision();
+    d.check(
+        "Interior Enter commits both destination fragments and the exact proposed Source once",
+        d.app().splice.is_none()
+            && *document(d)? == *proposal.snapshot.document
+            && d.app().selected_beat.as_ref() == Some(&proposal.node)
+            && d.app().sequence_cursor == 61,
+        json!({"revision":proposal.snapshot.document.revision_id(),"cursor":61}),
+        d.snapshot(),
+    )?;
+    d.key(Key::U)?;
+    d.changed(&committed)?;
+    d.check(
+        "One undo removes the inserted slice and its automatic interior split together",
+        document(d)?.nodes() == before.nodes()
+            && document(d)?.audio_bindings() == before.audio_bindings()
+            && d.app().sequence_length()
+                == before
+                    .duration()
+                    .map_err(|error| error.to_string())?
+                    .frames() as u64
+            && copied(d) == Some(10..24),
+        json!("exact preceding structure and audio bindings"),
+        d.snapshot(),
+    )
 }
 
 fn saved_destination_button(d: &mut Driver<'_>) -> Result<(), String> {
@@ -263,11 +367,11 @@ fn saved_destination_button(d: &mut Driver<'_>) -> Result<(), String> {
         d.snapshot(),
     )?;
 
+    d.app_mut().feedback.hold_project_updates = true;
     d.click("Place slice…  :splice")?;
     d.wait_for("Visible Place slice button opens the draft", |app| {
         app.splice.is_some()
     })?;
-    paint_text(d, INTERIOR)?;
     let requested = d.app().presentation.diagnostic_snapshot();
     let stale = d
         .app_mut()
@@ -276,16 +380,15 @@ fn saved_destination_button(d: &mut Driver<'_>) -> Result<(), String> {
         .take()
         .ok_or("The advancing playback picture was not held")?;
     d.check(
-        "Opening Place captures the advancing interior cursor and requests its saved Edit picture without a seam proposal",
-        d.app().splice.as_ref().is_some_and(|draft| {
-            draft.cursor == advanced
-                && draft.prepared_for_check().is_none()
-        })
+        "Opening Place requests its saved destination while the proposal reply is withheld",
+        d.app()
+            .splice
+            .as_ref()
+            .is_some_and(|draft| draft.cursor == advanced && draft.prepared_for_check().is_none())
             && d.rect(APPLY).is_err()
-            && !d.app().service.is_busy()
             && requested["requested"]["label"] == target_label
             && requested["requested"]["ticket"] != format!("{:?}", stale.ticket),
-        json!({"destination":advanced,"requested":target_label,"seam_proposal":false}),
+        json!({"destination":advanced,"requested":target_label,"proposal_reply_held":true}),
         json!({"draft":state(d),"picture":requested}),
     )?;
 
@@ -302,26 +405,37 @@ fn saved_destination_button(d: &mut Driver<'_>) -> Result<(), String> {
         json!({"displayed":old_display,"requested":target_label}),
         after_stale,
     )?;
-    d.settled()?;
+    d.wait_for(
+        "The saved destination reaches GPU while proposal delivery is held",
+        |app| {
+            !app.presentation.loading()
+                && !app.presentation.needs_render()
+                && app.presentation.displayed_label().as_deref() == Some(target_label.as_str())
+        },
+    )?;
     let presented = d.app().presentation.diagnostic_snapshot();
     d.check(
-        "The captured no-seam destination reaches GPU presentation after the stale reply is rejected",
+        "The captured interior destination reaches GPU presentation before its proposal reply",
         d.app().presentation.displayed_label().as_deref() == Some(target_label.as_str())
             && !d.app().presentation.needs_render()
             && presented["displayed"]["label"] == target_label
             && presented["displayed"]["location"] == presented["requested"]["location"]
-            && d.app().splice.as_ref().is_some_and(|draft| {
-                draft.prepared_for_check().is_none()
-            })
+            && d.app()
+                .splice
+                .as_ref()
+                .is_some_and(|draft| draft.prepared_for_check().is_none())
             && d.rect(APPLY).is_err()
-            && !d.app().service.is_busy()
             && d.app().sequence_cursor == advanced
             && d.revision() == revision,
-        json!({"displayed":target_label,"seam_proposal":false,"revision":revision}),
+        json!({"displayed":target_label,"proposal_reply_held":true,"revision":revision}),
         json!({"picture":presented,"state":state(d)}),
     )?;
     d.key(Key::Escape)?;
-    d.wait_for("Cancel the no-seam Place draft", |app| app.splice.is_none())?;
+    d.app_mut().feedback.hold_project_updates = false;
+    d.wait_for(
+        "Cancel the Place draft with its prepared reply still withheld",
+        |app| app.splice.is_none() && app.splice_abandon.is_none() && !app.service.is_busy(),
+    )?;
     d.settled()?;
     d.app_mut().feedback.simulate_playback = simulated;
     Ok(())
@@ -1012,7 +1126,7 @@ pub(super) fn state(d: &Driver<'_>) -> Value {
         let proposal = draft.proposal_for_check();
         json!({"session":proposal.id.session,"project":proposal.id.project,"base_revision":proposal.id.base_revision,
             "draft":proposal.id.draft,"change":proposal.id.change,"ordinals":proposal.ordinals,"parent":proposal.parent,
-            "slot":proposal.index,"ready":draft.ready_for_check(),"before":draft.before_for_check(),"invalidated":draft.invalidated_for_check(),
+            "destination":format!("{:?}",proposal.destination),"ready":draft.ready_for_check(),"before":draft.before_for_check(),"invalidated":draft.invalidated_for_check(),
             "cursor":draft.cursor,"position":draft.position.map(|sample| sample.0),
             "prepared":draft.prepared_for_check().map(|prepared| json!({"revision":prepared.snapshot.document.revision_id(),
                 "node":prepared.node,"range":[prepared.range.start().0,prepared.range.end().0],"duration":prepared.plan.duration().frames()}))})

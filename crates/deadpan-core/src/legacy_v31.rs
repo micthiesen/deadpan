@@ -1142,6 +1142,12 @@ pub fn validate_request_context(
     request: &CommandRequest,
 ) -> Result<(), EditError> {
     let command = &request.command;
+    if matches!(command, Command::SpliceSourceAt { .. }) {
+        return Err(EditError::new(
+            EditErrorCode::InvalidCommand,
+            "schema 31 does not admit interior source splicing",
+        ));
+    }
     if matches!(
         command,
         Command::SetHoldAudio { .. }
@@ -1230,6 +1236,7 @@ fn preserves_sound_clocks(command: &Command) -> bool {
         | Command::SetHoldAudio { .. }
         | Command::InsertTime { .. }
         | Command::SpliceSource { .. }
+        | Command::SpliceSourceAt { .. }
         | Command::Split { .. }
         | Command::Insert { .. }
         | Command::Delete { .. }

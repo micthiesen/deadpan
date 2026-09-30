@@ -95,7 +95,7 @@ pub use document::*;
 pub use exact::ExactRatio;
 pub use framing::*;
 pub use generated::*;
-pub use insert_time::{InsertTimeSplit, InsertTimeTarget};
+pub use insert_time::{InsertTimeSplit, InsertTimeTarget, SourceSpliceInterior};
 pub use marks::*;
 pub use occurrence::*;
 pub use occurrence_edit::{OccurrenceEdit, OccurrenceIdentities};

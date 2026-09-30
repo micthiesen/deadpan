@@ -12,7 +12,8 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use deadpan_core::{
     AssetId, AssetRecord, AudioTimingId, Command, CommandRequest, EditTransaction, FrameDuration,
     FrameRate, FrameRateOrigin, GeometryOrigin, NodeId, PrimarySourceImport, ProjectDocument,
-    RevisionId, SourceFrameIndex, SourceInsertion, SourceQualificationId,
+    RevisionId, SourceFrameIndex, SourceInsertion, SourceNode, SourceQualificationId,
+    SplitIdentities,
 };
 use deadpan_media::source_import_timing::derive_source_moment;
 use deadpan_media::source_qualification::{
@@ -86,6 +87,25 @@ pub struct SourceMomentInsertionRequest {
     pub index: usize,
     pub node: NodeId,
     pub label: String,
+    pub timing: AudioTimingId,
+    pub ordinals: Range<u64>,
+}
+
+/// Paste inside an explicitly captured direct Sequence child. The store derives
+/// the inserted Source from measured Original evidence; the core splits the
+/// destination and inserts that Source in one reversible transaction.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SourceMomentInteriorInsertionRequest {
+    pub expected_revision: RevisionId,
+    pub new_revision: RevisionId,
+    pub asset: AssetId,
+    pub parent: NodeId,
+    pub target: NodeId,
+    pub at: FrameDuration,
+    pub node: NodeId,
+    pub label: String,
+    pub identities: SplitIdentities,
     pub timing: AudioTimingId,
     pub ordinals: Range<u64>,
 }
@@ -238,6 +258,42 @@ impl ProjectStore {
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
         let plan = prepare_source_moment(&transaction, input, source)?;
+        let outcome = crate::write_command_plan(&transaction, plan, relevance)?;
+        source.original.recheck(cancelled)?;
+        transaction.commit()?;
+        Ok(outcome)
+    }
+
+    /// Preview the complete interior split/insertion without publishing either
+    /// operation or adding history. The same retained request is used at commit.
+    pub fn preview_prepared_source_moment_interior(
+        &self,
+        input: &SourceMomentInteriorInsertionRequest,
+        source: &PreparedSourceRegistration,
+        cancelled: &AtomicBool,
+    ) -> Result<EditTransaction, StoreError> {
+        source.original.validate_for(self, cancelled)?;
+        let transaction = self.connection.unchecked_transaction()?;
+        let plan = prepare_source_moment_interior(&transaction, input, source)?;
+        source.original.recheck(cancelled)?;
+        Ok(plan.edit)
+    }
+
+    /// Commit one exact prepared interior placement after fresh byte and
+    /// revision checks. No intermediate Split revision can become visible.
+    pub fn commit_prepared_source_moment_interior(
+        &mut self,
+        input: &SourceMomentInteriorInsertionRequest,
+        source: &PreparedSourceRegistration,
+        relevance: Option<&RelevancePlan>,
+        cancelled: &AtomicBool,
+    ) -> Result<CommitOutcome, StoreError> {
+        self.require_writer()?;
+        source.original.validate_for(self, cancelled)?;
+        let transaction = self
+            .connection
+            .transaction_with_behavior(TransactionBehavior::Immediate)?;
+        let plan = prepare_source_moment_interior(&transaction, input, source)?;
         let outcome = crate::write_command_plan(&transaction, plan, relevance)?;
         source.original.recheck(cancelled)?;
         transaction.commit()?;
@@ -445,16 +501,76 @@ fn prepare_source_moment(
     input: &SourceMomentInsertionRequest,
     source: &PreparedSourceRegistration,
 ) -> Result<CommandPlan, StoreError> {
+    let (current, moment) = prepared_moment_source(
+        connection,
+        &input.expected_revision,
+        &input.asset,
+        &input.ordinals,
+        source,
+    )?;
+    let request = CommandRequest {
+        project_id: current.project_id().clone(),
+        expected_revision: input.expected_revision.clone(),
+        new_revision: input.new_revision.clone(),
+        command: Command::SpliceSource {
+            parent: input.parent.clone(),
+            index: input.index,
+            source: moment,
+            id: input.node.clone(),
+            label: input.label.clone(),
+            timing: input.timing.clone(),
+        },
+    };
+    crate::prepare_command(connection, &request)
+}
+
+fn prepare_source_moment_interior(
+    connection: &Connection,
+    input: &SourceMomentInteriorInsertionRequest,
+    source: &PreparedSourceRegistration,
+) -> Result<CommandPlan, StoreError> {
+    let (current, moment) = prepared_moment_source(
+        connection,
+        &input.expected_revision,
+        &input.asset,
+        &input.ordinals,
+        source,
+    )?;
+    let request = CommandRequest {
+        project_id: current.project_id().clone(),
+        expected_revision: input.expected_revision.clone(),
+        new_revision: input.new_revision.clone(),
+        command: Command::SpliceSourceAt {
+            parent: input.parent.clone(),
+            target: input.target.clone(),
+            at: input.at,
+            source: moment,
+            id: input.node.clone(),
+            label: input.label.clone(),
+            identities: input.identities.clone(),
+            timing: input.timing.clone(),
+        },
+    };
+    crate::prepare_command(connection, &request)
+}
+
+fn prepared_moment_source(
+    connection: &Connection,
+    expected_revision: &RevisionId,
+    asset: &AssetId,
+    ordinals: &Range<u64>,
+    source: &PreparedSourceRegistration,
+) -> Result<(ProjectDocument, SourceNode), StoreError> {
     let current = crate::read_snapshot(connection)?;
-    if current.revision_id() != &input.expected_revision {
+    if current.revision_id() != expected_revision {
         return Err(StoreError::RevisionConflict {
-            expected: input.expected_revision.as_str().into(),
+            expected: expected_revision.as_str().into(),
             current: current.revision_id().as_str().into(),
         });
     }
     let record = current
         .assets()
-        .get(&input.asset)
+        .get(asset)
         .ok_or_else(|| invalid("moment asset is absent from the selected revision"))?;
     if record.source_qualification.as_ref() != Some(source.receipt.id())
         || *record != source.receipt.asset_record(record.label.clone())?
@@ -475,24 +591,11 @@ fn prepare_source_moment(
     let timing = derive_source_moment(
         video.index(),
         source.receipt.snapshot.audio(),
-        input.ordinals.clone(),
+        ordinals.clone(),
         current.presentation_basis().frame_rate,
     )
     .map_err(deadpan_media::source_qualification::SourceQualificationError::from)?;
-    let request = CommandRequest {
-        project_id: current.project_id().clone(),
-        expected_revision: input.expected_revision.clone(),
-        new_revision: input.new_revision.clone(),
-        command: Command::SpliceSource {
-            parent: input.parent.clone(),
-            index: input.index,
-            source: timing.source_node(input.asset.clone()),
-            id: input.node.clone(),
-            label: input.label.clone(),
-            timing: input.timing.clone(),
-        },
-    };
-    crate::prepare_command(connection, &request)
+    Ok((current, timing.source_node(asset.clone())))
 }
 
 fn prepare_receipt(

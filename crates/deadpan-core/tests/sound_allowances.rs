@@ -309,6 +309,70 @@ fn split_and_internal_insertion_split_copy_only_existing_hold_issuers_once() {
 }
 
 #[test]
+fn interior_source_splice_copies_hold_allowances_once_and_ripples_placed_sound_once() {
+    let original = allow(&fixture(false), address("hold", vec![]));
+    let insert = |document: &ProjectDocument, target: NodeId, name: &str| Command::SpliceSourceAt {
+        parent: node("root"),
+        target,
+        at: frames(5),
+        source: SourceNode {
+            duration: frames(40),
+            video: SourceVideo::Blank,
+            audio: Some(original.sounds()[&sound()].source.clone()),
+            audio_mapping: original.sounds()[&sound()].mapping,
+            video_mapping: SourceVideoMapping::FitBeat,
+            audio_offset: AudioSample(0),
+            link: LinkRelation::Independent,
+        },
+        id: node(name),
+        label: "Original moment".into(),
+        identities: split_ids(name),
+        timing: AudioTimingId {
+            allocation: request(document, Command::DeleteSound { id: sound() }).new_revision,
+            ordinal: 0,
+        },
+    };
+    let first = edit(&original, insert(&original, node("hold"), "first")).0;
+    assert_eq!(allowance_ids(&first).len(), 2);
+    assert_eq!(first.sounds(), original.sounds());
+    let journal = &first.sound_routes()[&sound()];
+    assert_eq!(journal.edits.len(), 1);
+    assert_eq!(
+        journal.edits[0].operation,
+        RootSoundOperation::Insert {
+            at: ProjectFrame(5),
+            duration: frames(40),
+        }
+    );
+    let NodeKind::Sequence { children } = &first.nodes()[&node("root")].kind else {
+        panic!("root")
+    };
+    let second = edit(&first, insert(&first, children[2].clone(), "second")).0;
+    assert_eq!(allowance_ids(&second).len(), 3);
+    assert_eq!(second.sounds(), original.sounds());
+    let journal = &second.sound_routes()[&sound()];
+    assert_eq!(journal.edits.len(), 2);
+    assert_eq!(
+        journal.edits[1].operation,
+        RootSoundOperation::Insert {
+            at: ProjectFrame(50),
+            duration: frames(40),
+        }
+    );
+    assert_eq!(journal.recipe_extent, frames(120));
+    assert_eq!(
+        journal.compile().unwrap().output_extent(),
+        ExactRatio::integer(200)
+    );
+    for name in ["first", "second"] {
+        assert!(!second.sound_allowances()[&sound()].contains(&address(name, vec![])));
+    }
+    for issuer in second.sound_allowances()[&sound()].iter() {
+        issuer.validate(&second).unwrap();
+    }
+}
+
+#[test]
 fn splice_retains_policy_and_deleting_the_issuer_prunes_it_without_removing_surviving_sound() {
     let original = allow(&fixture(false), address("hold", vec![]));
     let source = SourceNode {

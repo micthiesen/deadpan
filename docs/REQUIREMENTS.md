@@ -133,17 +133,27 @@ explicit DP-05/DP-20 requirement: select and refine a time range, see its source
 endpoints and destination, audition both proposed joins, then commit or cancel
 with the keyboard. Insert, replace and move require exact reversible semantics,
 visible occurrence scope and stale-revision rejection. [Place slice](SLICE_PLACEMENT.md)
-now previews linked Original copies at ordinary Sequence seams with decoded
+now previews linked Original copies at ordinary Sequence seams and direct
+Source/ordinary Hold/supported-fragment interiors with decoded
 endpoints, local In/Out refinement, a provisional timeline, Before/Proposed and
-both-join audition. The production replay passes 215 checks including minimum
+both-join audition. Interior placement captures its direct child and local
+boundary, retains the split's original audio clocks and commits the split and
+insertion as one command. The initial seam replay passed 215 checks including minimum
 layout, complete Tab circuits, synthetic IME, cancellation, stale captures and
 exact commit/undo. Actual decoded pictures and canonical nonzero PCM around both
-joins match the committed result. Frame-interior placement, edited ranges/moves,
+joins match the committed result. Edited ranges/moves,
 replacement, picture/audio-only policies and Repeat/Retime occurrence targets
 remain required; this does not complete DP-05 or DP-20.
 [Qualification](qualification/slice-placement-2026-09-30.md) records native release
 looping and pause/resume, unchanged SQLite rows after cancellation, all automated
 checks and the measured debug-build audio starvation limitation.
+[Interior placement qualification](qualification/interior-slice-2026-09-30.md)
+adds Source/Hold/fragment insertion with one commit/Undo, exact retained suffix
+PCM, failed-transaction rollback and 267 production replay checks. Raw count
+batches and clamped motions across empty-group slots are covered by reproduced
+failures and passing regressions. All 2,609 workspace and 362 UI-feature app
+tests pass, with strict lint and formatting. Native release commit/Undo restores
+all authored fields; the database records exactly one placement and one Undo.
 
 The [shared render workflow](RENDER_JOBS.md#shared-workflow-and-native-ownership)
 connects capture, encoding, retained checkpoints, fresh verification, publication

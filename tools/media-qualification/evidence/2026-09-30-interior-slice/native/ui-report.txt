@@ -1,0 +1,33 @@
+Deadpan native interior slice QA
+Date: 2026-09-30
+Bundle: /tmp/deadpan-interior-slice-20260930/Deadpan Interior Slice QA.app
+Project: /tmp/deadpan-interior-slice-20260930/replay-input-fixed/projects/place-slice/Documents/Deadpan/cfr-bframes.deadpan
+
+Observed workflow
+- Opened the assigned project. Original showed 120 decoded video frames. Root showed 3 beats / 120 f: leading empty Sequence, full Source, trailing empty Sequence.
+- Switched with :source. Used gg, 10l, v, 14l, y. Selection UI showed [10..24), 14 original frames, first included Original frame 11, last included Original frame 24. Copied moment banner confirmed [10..24).
+- Returned with :sequence, used gg, 30l. Edit boundary read 30 / 120.
+- Opened :splice. Preview showed Original boundaries [10..24), 14 source frames; first/last included labels Original frame 11 and Original frame 24; proposed destination Edit boundary 30; insertion through exclusive 44; +14 project frames; initial proposed duration context 16 to 58.
+- AX listed the visible placement controls: In, Out, Destination, Inspect picture, Previous seam, Next seam, +/-1, Proposed, Audition, Loop both joins, Place slice, Cancel. No accessibility debugging was performed.
+
+Picture join checks
+Used f for picture inspection and h/l navigation. Read the "Showing proposed edit frame N" caption and waited for it to agree with the requested picture before reading the displayed slate:
+- Edit 29: slate 028, matching Original 29.
+- Edit 30: one call returned AX caption "Showing proposed edit frame 30" and then a separate screenshot whose slate read 028. Since AX and screenshot are separate captures, this is not a coherent single-frame presentation assertion. A later read of Edit 30 returned the same AX caption paired with slate 029, matching Original 30.
+- Edit 31: slate 010, matching Original 11 (first inserted frame).
+- Edit 43: slate 022, matching Original 23.
+- Edit 44: slate 023, matching Original 24 (last inserted frame).
+- Edit 45: slate 030, matching Original 31 (following Source frame).
+
+Playback check
+- Shift+Space changed the control to Pause and proposed picture advanced. At one read, displayed was 61 while requested was 62.
+- Space changed the control back to Audition. Space resumed playback and Pause reappeared; another Space stopped it before commit. Visible picture advancement occurred. A complete loop wrap was not conclusively observed from consecutive matching displayed-frame captures.
+- No visible error or Starved status appeared. This records UI state only; no acoustics or sound-quality claim.
+
+Commit and undo
+- Exactly one Return committed the splice. UI reported "Slice placed and saved. Undo with u." Edit boundary showed 30 / 134; root showed 5 beats / 134 f; inserted Source inspector boundaries were 30–44 and duration 14 f.
+- Exactly one `u` undid the splice. UI reported "Undo saved"; Edit boundary showed 30 / 120; root showed 3 beats / 120 f. No other authored edits or undo actions were made.
+
+Cleanup and evidence limits
+- Quit was issued only to the QA app with Cmd+Q. The user's dev.thiesen.deadpan.cursor-qa app was not selected, moved, resized, quit, or relaunched.
+- No screenshot file was saved; CUA screenshots were displayed inline and visually inspected. No repository, Cargo, package, or database files were edited by this QA operator.

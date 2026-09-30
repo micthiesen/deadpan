@@ -1,0 +1,20 @@
+{
+  "command": [
+    "target/debug/deadpan-app",
+    "--ui-check",
+    "--scenario",
+    "place-slice",
+    "--retain-projects",
+    "--kestrel-source",
+    "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+    "--output",
+    "/tmp/deadpan-interior-slice-20260930/replay-input-red"
+  ],
+  "started": "2026-09-30T19:40:57.552335+00:00",
+  "base_commit": "d3f5e367d917dec4922167b3ec86a46f544c578a",
+  "diff_sha256": "ce049eb572cea8b259fd143a3b0b3bc507c606a910b254107da7fae7d661bad3",
+  "source_manifest_sha256": "1bbcc16dcb43b63abb357e63169102553519af4dc56cacbf3683c4d60e4bb0ae",
+  "pid": 76460,
+  "exit_code": 1,
+  "seconds": 14.965377292130142
+}

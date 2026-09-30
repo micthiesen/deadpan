@@ -1,11 +1,13 @@
 //! A local placement draft never changes the copied register or committed view.
 
-use deadpan_core::AudioSample;
+use deadpan_core::{AudioSample, FrameDuration};
 use deadpan_playback::{Snapshot, Window};
 
 use super::*;
 use crate::navigation::splice::SpliceKey;
-use crate::project::splice::{Prepared, Proposal, ProposalId, ProposalUpdate, SpliceCommitUpdate};
+use crate::project::splice::{
+    Destination, Prepared, Proposal, ProposalId, ProposalUpdate, SpliceCommitUpdate,
+};
 use crate::transport::Domain;
 use crate::worker::EndpointIdentity;
 
@@ -34,6 +36,7 @@ pub(super) struct Draft {
     invalidated: bool,
     error: Option<String>,
     seams: Vec<u64>,
+    children: Vec<NodeId>,
     slot: Option<usize>,
     destination: u64,
     pub(super) cursor: u64,
@@ -50,7 +53,7 @@ pub(super) struct Draft {
     entry_source: u64,
     entry_pane: Pane,
     focus_pending: bool,
-    key: Option<SpliceKey>,
+    keys: Vec<SpliceKey>,
     scope_label: String,
 }
 
@@ -136,11 +139,35 @@ impl Draft {
         self.error = None;
         self.position = None;
         self.dirty = true;
-        if let Some(slot) = self.slot {
-            self.proposal.index = slot;
-        }
+        self.proposal.destination =
+            placement_at(&self.seams, &self.children, self.slot, self.destination)?;
         Ok(())
     }
+}
+
+fn placement_at(
+    seams: &[u64],
+    children: &[NodeId],
+    slot: Option<usize>,
+    boundary: u64,
+) -> Result<Destination, String> {
+    if let Some(slot) = slot {
+        return Ok(Destination::Slot(slot));
+    }
+    let index = seams
+        .windows(2)
+        .position(|pair| pair[0] < boundary && boundary < pair[1])
+        .ok_or("Slice destination is outside its captured Sequence")?;
+    let target = children
+        .get(index)
+        .ok_or("Slice destination child is unavailable")?
+        .clone();
+    let local =
+        i64::try_from(boundary - seams[index]).map_err(|_| "Slice local destination overflow")?;
+    Ok(Destination::Interior {
+        target,
+        at: FrameDuration::new(local).map_err(|error| error.to_string())?,
+    })
 }
 
 impl DeadpanApp {
@@ -186,6 +213,7 @@ impl DeadpanApp {
                 seams.push(at);
             }
             let parent = view.owner.clone();
+            let children = view.children.to_vec();
             let source_frames = base
                 .sources
                 .get(&copied.identity.asset)
@@ -193,9 +221,9 @@ impl DeadpanApp {
                 .ok_or("The copied Original has no qualified pictures.")?
                 .frames()
                 .len() as u64;
-            Ok((base, copied.clone(), parent, seams, source_frames))
+            Ok((base, copied.clone(), parent, seams, children, source_frames))
         })();
-        let (base, copied, parent, seams, source_frames) = match captured {
+        let (base, copied, parent, seams, children, source_frames) = match captured {
             Ok(value) => value,
             Err(error) => {
                 self.error = Some(error);
@@ -206,6 +234,13 @@ impl DeadpanApp {
             return;
         };
         let slot = seams.iter().position(|at| *at == self.sequence_cursor);
+        let destination = match placement_at(&seams, &children, slot, self.sequence_cursor) {
+            Ok(destination) => destination,
+            Err(error) => {
+                self.error = Some(error);
+                return;
+            }
+        };
         let proposal = Proposal {
             id: ProposalId {
                 session: base.session,
@@ -219,7 +254,7 @@ impl DeadpanApp {
             ordinals: copied.ordinals,
             scope: self.sequence_scope.clone(),
             parent,
-            index: slot.unwrap_or(0),
+            destination,
         };
         self.stop_playback();
         self.cancel_repeats("Place slice opened");
@@ -237,6 +272,7 @@ impl DeadpanApp {
             invalidated: false,
             error: None,
             seams,
+            children,
             slot,
             destination: self.sequence_cursor,
             cursor: self.sequence_cursor,
@@ -253,7 +289,7 @@ impl DeadpanApp {
             entry_source: self.source_cursor,
             entry_pane: self.pane,
             focus_pending: true,
-            key: None,
+            keys: Vec::new(),
             scope_label: if self.scope_labels.is_empty() {
                 "Your edit".into()
             } else {
@@ -395,7 +431,7 @@ impl DeadpanApp {
                 .submit(draft.endpoint_identity(), draft.base.clone());
             draft.endpoints_pending = false;
         }
-        if draft.dirty && draft.pending.is_none() && draft.slot.is_some() {
+        if draft.dirty && draft.pending.is_none() {
             match self
                 .service
                 .submit(ProjectRequest::PrepareSplice(draft.proposal.clone()))
@@ -494,11 +530,7 @@ impl DeadpanApp {
             let Some(draft) = &mut self.splice else {
                 return;
             };
-            if draft.prepared.is_none()
-                || draft.dirty
-                || draft.pending.is_some()
-                || draft.slot.is_none()
-            {
+            if draft.prepared.is_none() || draft.dirty || draft.pending.is_some() {
                 return;
             }
             match self
@@ -589,12 +621,17 @@ impl DeadpanApp {
                         endpoints = true;
                     }
                     Focus::Destination => {
-                        draft.destination = advance(
+                        let destination = advance(
                             draft.destination,
                             draft.seams[0],
                             *draft.seams.last().expect("scope has a boundary"),
                         );
-                        draft.slot = draft.seams.iter().position(|at| *at == draft.destination);
+                        // Distinct empty children share a numeric boundary.
+                        // A clamped motion must retain the explicitly chosen slot.
+                        if destination != draft.destination {
+                            draft.slot = draft.seams.iter().position(|at| *at == destination);
+                        }
+                        draft.destination = destination;
                         draft.cursor = draft.destination;
                         changed = true;
                     }
@@ -618,12 +655,15 @@ impl DeadpanApp {
                         .iter()
                         .position(|at| *at > draft.destination)
                         .unwrap_or(draft.seams.len() - 1)
+                        .saturating_add((count - 1) as usize)
+                        .min(draft.seams.len() - 1)
                 } else {
                     draft
                         .seams
                         .iter()
                         .rposition(|at| *at < draft.destination)
                         .unwrap_or(0)
+                        .saturating_sub((count - 1) as usize)
                 };
                 draft.destination = draft.seams[slot];
                 draft.slot = Some(slot);

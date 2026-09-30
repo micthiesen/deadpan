@@ -285,6 +285,45 @@ fn splice_one_frame(doc: &ProjectDocument, name: &str) -> Command {
 }
 
 #[test]
+fn nested_interior_source_splice_routes_the_absolute_boundary_once() {
+    let original = fixture();
+    let Command::SpliceSource { source, timing, .. } = splice_one_frame(&original, "moment") else {
+        panic!("source recipe")
+    };
+    let (inserted, transaction) = edit(
+        &original,
+        Command::SpliceSourceAt {
+            parent: node("group"),
+            target: node("b"),
+            at: frames(3),
+            source,
+            id: node("moment"),
+            label: "Original moment".into(),
+            identities: SplitIdentities {
+                nodes: (0..3).map(|i| node(&format!("split-{i}"))).collect(),
+            },
+            timing,
+        },
+    );
+    assert_eq!(transaction.duration_delta, 1);
+    assert_eq!(inserted.sounds(), original.sounds());
+    let journal = &inserted.sound_routes()[&sound()];
+    assert_eq!(journal.edits.len(), 1);
+    assert_eq!(
+        journal.edits[0].operation,
+        RootSoundOperation::Insert {
+            at: ProjectFrame(13),
+            duration: frames(1),
+        }
+    );
+    assert_eq!(journal.recipe_extent, frames(100));
+    assert_eq!(
+        journal.compile().unwrap().output_extent(),
+        ExactRatio::integer(101)
+    );
+}
+
+#[test]
 fn deletion_keeps_a_physical_sample_outside_its_transported_exact_selection() {
     // RoundEven at 32kfps allocates selection [2,8/3) as sample [3,4).
     // Each insert at frame1 moves that sample by B2-B1 = 3-2 = 1.

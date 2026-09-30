@@ -9,6 +9,8 @@ mod interior;
 mod nested_sequence;
 #[path = "insert_time/source_splice.rs"]
 mod source_splice;
+#[path = "insert_time/source_splice_interior.rs"]
+mod source_splice_interior;
 
 fn id(name: &str) -> NodeId {
     NodeId::new(name).unwrap()

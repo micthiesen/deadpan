@@ -67,7 +67,7 @@ never-reused revision rule as commit. A stale expected
 revision fails with `RevisionConflict` and the current revision, without writing.
 
 Supported commands are `insert`, `insert_time`, `split`, `delete`, `move`, `group`,
-`ungroup`, `splice_source`, `wrap_repeat`, `set_repeat`, `wrap_retime`, `set_retime`, `insert_plays`, `move_plays`, `set_hold_duration`, `set_hold_provider`, `set_hold_picture_context`, `set_source_audio_mapping`, `set_source_video_mapping`,
+`ungroup`, `splice_source`, `splice_source_at`, `wrap_repeat`, `set_repeat`, `wrap_retime`, `set_retime`, `insert_plays`, `move_plays`, `set_hold_duration`, `set_hold_provider`, `set_hold_picture_context`, `set_source_audio_mapping`, `set_source_video_mapping`,
 `rename`, `set_audio_edge`, `set_audio_treatments`, `set_hold_audio`, `set_framing`, `set_sound`, `replace_sound`, `delete_sound`, `set_sound_allowance`, `add_asset`, `set_canvas`, `set_mark`, `delete_mark`, `set_play_override`, `clear_play_override`, `set_gap_override`, `clear_gap_override`, `isolate_gap`, and `edit_occurrence`. Their exact typed parameters are defined in
 [`Command`](../crates/deadpan-core/src/command.rs). `set_repeat` changes an existing
 Repeat; `wrap_repeat` deliberately adds nesting. A three-play repeat includes
@@ -86,7 +86,7 @@ take an `id` and complete `event`; `delete_sound` takes its `id`.
 Events require a qualified source, root owner,
 natural-rate mapping, contained selection plus sample offset, explicit gain,
 edge choices and `overflow: "reject"`. They feed the shared limited bus without
-adding picture time. `insert_time`, `splice_source` and supported Delete edits
+adding picture time. `insert_time`, `splice_source`, `splice_source_at` and supported Delete edits
 through ordinary Sequence ancestors retain chronological root `sound_routes`;
 non-root Split leaves the sound bus unchanged. `set_sound` preserves an existing
 route when changing label, gain or endpoint policy. Changing a routed recipe,
@@ -211,6 +211,16 @@ physical audio entry. The newly inserted Source starts on the canonical unbound
 project grid. Repeat/Retime ancestors are rejected. This generic command can
 reuse an existing asset offline; the native host instead derives the Source
 through prepared-receipt admission. See [Original moments](SOURCE_MOMENTS.md).
+
+`splice_source_at` replaces the slot with an explicit direct `target` child and
+strict local `at` frame duration, and also requires `identities` for Split. The
+named `parent` must be an ordinary Sequence; supported targets are Source,
+ordinary Hold and transparent fragments. It splits and inserts in one reversible
+command, retaining the original audio clocks and transforming placed sounds
+once. `timing.ordinal` and its checked successor cover pre-Split sampling and
+post-Split placement. It never descends a child group or resolves a Repeat/Retime
+occurrence. Native [Place slice](SLICE_PLACEMENT.md) previews the complete command
+through exact prepared Original evidence before committing.
 
 Optional per-node [framing](FRAMING.md) retains a static
 pose or whole-owner envelope; `set_framing` sets it, and `framing: null` removes it.

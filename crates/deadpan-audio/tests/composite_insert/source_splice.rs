@@ -29,6 +29,116 @@ fn splice(
     )
 }
 
+fn splice_interior(document: &ProjectDocument, target: NodeId, name: &str) -> ProjectDocument {
+    let NodeKind::Source { source } = source(ntsc(), 1).kind else {
+        unreachable!()
+    };
+    edit(
+        document,
+        name,
+        Command::SpliceSourceAt {
+            parent: id("group"),
+            target,
+            at: frames(1),
+            source,
+            id: id(name),
+            label: "Interior Original moment".into(),
+            identities: SplitIdentities {
+                nodes: (0..3).map(|i| id(&format!("{name}-{i}"))).collect(),
+            },
+            timing: AudioTimingId {
+                allocation: revision(name),
+                ordinal: 0,
+            },
+        },
+    )
+}
+
+#[test]
+fn interior_ntsc_source_splice_and_fragment_refinement_keep_nonzero_pcm_at_both_joins() {
+    let original = document(
+        ntsc(),
+        &["prefix", "group", "tail"],
+        vec![
+            ("prefix", source(ntsc(), 1)),
+            ("group", BeatNode::sequence("Group", vec![id("lead")])),
+            ("lead", source(ntsc(), 4)),
+            ("tail", source(ntsc(), 2)),
+        ],
+    );
+    let first = splice_interior(&original, id("lead"), "first");
+    let NodeKind::Sequence { children } = &first.nodes()[&id("group")].kind else {
+        panic!("group")
+    };
+    let second = splice_interior(&first, children[2].clone(), "second");
+    let mut provider = Provider::new();
+    // Each fresh insertion uses its new absolute grid. The physical lead
+    // starts at sample 1601.6, so its two retained resumes have phases 1601.4
+    // and 3202.4. Rounding the latter to the old frame-3 boundary loses a sample.
+    for (document, start, phase) in [
+        (&first, 3203, ratio(-1, 5)),
+        (&second, 3203, ratio(-1, 5)),
+        (&second, 6406, ratio(-2, 5)),
+        (&original, 3203, ratio(8007, 5)),
+        (&first, 4805, ratio(8007, 5)),
+        (&second, 4805, ratio(8007, 5)),
+        (&first, 6406, ratio(16012, 5)),
+        (&second, 8008, ratio(16012, 5)),
+        (&original, 8008, ExactRatio::ZERO),
+        (&first, 9610, ExactRatio::ZERO),
+        (&second, 11211, ExactRatio::ZERO),
+    ] {
+        let oracle = expected(&provider, phase, 128);
+        assert!(oracle.iter().flatten().any(|sample| sample.abs() > 0.001));
+        check_reads(document, &mut provider, start, &oracle);
+    }
+    let mut original_audio = renderer(&original, &mut provider);
+    let mut first_audio = renderer(&first, &mut provider);
+    let mut second_audio = renderer(&second, &mut provider);
+    // The old suffix is bit-identical, separately from the handwritten phase
+    // oracle above. These blocks all contain decoded fixture audio.
+    assert_eq!(
+        read(&mut original_audio, &mut provider, 3203, 128),
+        read(&mut first_audio, &mut provider, 4805, 128)
+    );
+    assert_eq!(
+        read(&mut first_audio, &mut provider, 6406, 128),
+        read(&mut second_audio, &mut provider, 8008, 128)
+    );
+    for document in [&first, &second] {
+        let prefix = expected(&provider, ExactRatio::ZERO, 128);
+        let entry = expected(&provider, ratio(2, 5), 128);
+        check_reads(document, &mut provider, 0, &prefix);
+        check_reads(document, &mut provider, 1602, &entry);
+    }
+}
+
+#[test]
+fn interior_ntsc_roomtone_splice_keeps_nonzero_hold_recipe_phase() {
+    let original = document(
+        ntsc(),
+        &["prefix", "group"],
+        vec![
+            ("prefix", source(ntsc(), 1)),
+            ("group", BeatNode::sequence("Group", vec![id("lead")])),
+            ("lead", BeatNode::hold("Room tone", room(4, 700..921))),
+        ],
+    );
+    let inserted = splice_interior(&original, id("lead"), "room-insert");
+    let mut provider = Provider::new();
+    let wave = room_reference(&provider, 700..921, 2000);
+    let oracle = sample_reference(&wave, ratio(8007, 5), ExactRatio::ONE, 128);
+    assert!(oracle.iter().flatten().any(|sample| sample.abs() > 0.001));
+    check_reads(&original, &mut provider, 3203, &oracle);
+    check_reads(&inserted, &mut provider, 4805, &oracle);
+    let mut before = renderer(&original, &mut provider);
+    let mut after = renderer(&inserted, &mut provider);
+    assert_eq!(
+        read(&mut before, &mut provider, 3203, 128),
+        read(&mut after, &mut provider, 4805, 128)
+    );
+}
+
 #[test]
 fn fresh_ntsc_source_uses_project_phase_while_repeat_fragments_keep_distinct_entries() {
     let original = document(

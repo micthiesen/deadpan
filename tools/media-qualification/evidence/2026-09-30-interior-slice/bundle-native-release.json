@@ -1,0 +1,19 @@
+{
+  "command": [
+    "python3",
+    "tools/build-app.py",
+    "--binary",
+    "target/release/deadpan-app",
+    "--output",
+    "/tmp/deadpan-interior-slice-20260930/Deadpan Interior Slice QA.app",
+    "--bundle-id",
+    "dev.thiesen.deadpan.interior-slice-qa"
+  ],
+  "started": "2026-09-30T20:17:00.182834+00:00",
+  "base_commit": "d3f5e367d917dec4922167b3ec86a46f544c578a",
+  "diff_sha256": "e323c2f5f90dcef030011f404aa4fb2fdbbec2641e76b8bf7a8c47eecce7f180",
+  "source_manifest_sha256": "16a71510b74255d3ce460123c77ec3f42ddbde20ca5eac5d69f90620ee3fff56",
+  "pid": 82908,
+  "exit_code": 0,
+  "seconds": 1.888422334101051
+}
