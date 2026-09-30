@@ -22,16 +22,23 @@ typedef struct {
     char codec[32];
 } DeadpanAudioInfo;
 typedef struct {
+    uint32_t mode;
+    int32_t container_profile, decoder_profile;
+    char container_format[64], decoder_name[32], decoder_profile_name[32];
+} DeadpanAudioEvidence;
+typedef struct {
     int64_t pts, duration, dts;
     int32_t nb_samples, sample_rate, sample_format;
     DeadpanAudioLayout channel_layout;
     uint32_t skip_present, leading, trailing, leading_reason, trailing_reason, discard;
 } DeadpanAudioFrame;
-int deadpan_audio_open(int fd, int64_t length, uint32_t selected_stream,
+int deadpan_audio_open(int fd, int64_t length, uint32_t selected_stream, uint32_t mode,
     const DeadpanAudioLimits *limits, uint64_t preflight_io_bytes, uint64_t timeout, DeadpanCancelled cancelled,
-    const void *opaque, DeadpanAudio **out, DeadpanAudioInfo *info, DeadpanSourceError *error);
+    const void *opaque, DeadpanAudio **out, DeadpanAudioInfo *info,
+    DeadpanAudioEvidence *evidence, DeadpanSourceError *error);
 int deadpan_audio_next(DeadpanAudio *source, uint64_t timeout, DeadpanCancelled cancelled,
-    const void *opaque, DeadpanAudioFrame *frame, DeadpanSourceError *error);
+    const void *opaque, DeadpanAudioFrame *frame, DeadpanAudioEvidence *evidence,
+    DeadpanSourceError *error);
 int deadpan_audio_copy(DeadpanAudio *source, uint64_t timeout, DeadpanCancelled cancelled,
     const void *opaque, DeadpanAudioFrame *frame, float *samples, size_t length,
     DeadpanSourceError *error);

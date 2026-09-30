@@ -287,6 +287,12 @@ pub fn entry(arguments: impl IntoIterator<Item = String>) -> ExitCode {
     {
         return encoded_render::worker::entry(Path::new(package));
     }
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    if let [operation] = arguments.as_slice()
+        && operation == encoded_render::verification::PRIVATE_WORKER_ARGUMENT
+    {
+        return encoded_render::verification::worker::entry();
+    }
     match run(&arguments) {
         Ok(()) => ExitCode::SUCCESS,
         Err(error) => {

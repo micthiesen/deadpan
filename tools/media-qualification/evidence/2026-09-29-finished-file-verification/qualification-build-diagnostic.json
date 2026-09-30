@@ -1,0 +1,20 @@
+{
+  "command": [
+    "cargo",
+    "build",
+    "--locked",
+    "-p",
+    "deadpan-cli",
+    "--example",
+    "qualify_encoded_verification",
+    "--bin",
+    "deadpan-cli"
+  ],
+  "started": "2026-09-30T04:12:04.055628+00:00",
+  "base_commit": "4387a88a7c110c8ed86ddc98099a8f248da7aa59",
+  "diff_sha256": "90775a9494e1e30e84f1d0332fd715bc77f9b7d58859b3a3e3bfdd2b836e463e",
+  "source_manifest_sha256": "4e973bddd8e5dc00ffda867698b7f3dcaca7f48fb8b8fd892ec1c4f2610943f9",
+  "pid": 36880,
+  "exit_code": 0,
+  "seconds": 18.121958415955305
+}

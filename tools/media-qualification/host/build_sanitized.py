@@ -42,7 +42,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--work", type=Path, required=True)
     parser.add_argument("--package", action="append", choices=[
-        "deadpan-media-worker", "deadpan-source", "deadpan-media"
+        "deadpan-media-worker", "deadpan-source", "deadpan-media", "deadpan-cli"
     ], help="Cargo package to instrument/test; repeat for an integrated boundary")
     args = parser.parse_args()
     if platform.system() != "Darwin" or platform.machine() != "arm64":

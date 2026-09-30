@@ -1,0 +1,16 @@
+{
+  "command": [
+    "qualify_encoded_verification",
+    "/tmp/deadpan-encoded-render-_0zk9gnz/metal-initial-report.json",
+    "/Users/michael/Code/deadpan/target/debug/deadpan-cli",
+    "/tmp/deadpan-export-verify-mkzjo3zd/retained-diagnostic-report.json",
+    "/tmp/deadpan-export-verify-mkzjo3zd/retained-diagnostic-files"
+  ],
+  "started": "2026-09-30T04:12:28.216644+00:00",
+  "base_commit": "4387a88a7c110c8ed86ddc98099a8f248da7aa59",
+  "diff_sha256": "90775a9494e1e30e84f1d0332fd715bc77f9b7d58859b3a3e3bfdd2b836e463e",
+  "source_manifest_sha256": "685d403266804228d5bfaed17dce766a1d16eab6b2191959a29200b99ae3f7e1",
+  "pid": 36956,
+  "exit_code": 1,
+  "seconds": 0.0796580002643168
+}

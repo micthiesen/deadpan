@@ -1,0 +1,18 @@
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 9.14s
+     Running unittests src/lib.rs (target/debug/deps/deadpan_cli-7e3b93d343074012)
+
+running 10 tests
+test encoded_render::verification::protocol::tests::long_exports_require_enough_gops_and_actual_requested_reordering ... ok
+test encoded_render::verification::protocol::tests::reordering_observations_must_use_whole_frames_within_the_captured_policy ... ok
+test encoded_render::verification::protocol::tests::progress_totals_are_bound_to_each_captured_stage ... ok
+test encoded_render::verification::protocol::tests::every_response_binds_the_complete_attempt_identity ... ok
+test encoded_render::verification::protocol::tests::completion_cannot_change_the_committed_contract_or_private_bytes ... ok
+test encoded_render::verification::protocol::tests::malformed_or_oversized_frames_and_diagnostics_are_rejected ... ok
+test encoded_render::verification::protocol::tests::fragmented_wire_round_trip_preserves_the_exact_cancellation_target ... ok
+test encoded_render::verification::protocol::tests::unknown_fields_and_unrecognized_stages_fail_closed ... ok
+test encoded_render::verification::protocol::tests::report_rejects_inconsistent_clocks_runtime_and_physical_sample_claims ... ok
+test encoded_render::verification::protocol::tests::request_rejects_invalid_scalars_and_insufficient_host_budgets ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 68 filtered out; finished in 0.01s
+

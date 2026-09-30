@@ -9,6 +9,7 @@ use std::time::Instant;
 
 mod host;
 pub mod protocol;
+pub mod verification;
 pub(crate) mod worker;
 
 pub use host::{EncodedCandidate, EncodedProgress, EncodedWorkerLimits, encode};

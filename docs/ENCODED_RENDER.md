@@ -74,8 +74,10 @@ termination and checked reaping. This is process isolation, not an OS sandbox.
 Host work and callbacks belong off the UI/audio threads; callbacks must be cheap
 and nonblocking.
 
-Independent isolated finished-file verification, durable render jobs/recovery,
-destination-side partial-file publication and the native Render workflow remain
+The separate [finished-file verifier](FINISHED_FILE_VERIFICATION.md) now checks
+actual MP4 tables, every decoded picture, fresh GOPs and manual/ordinary AAC
+presentation before returning a private verified candidate. Durable render
+jobs/recovery, destination-side partial-file publication and native Render remain
 required. Full audio/effects, HDR, automatic platform policy, performance and
-release hardware/OS coverage also remain open. Development fixture decode checks
-do not substitute for the production verifier.
+release hardware/OS coverage also remain open. Fixture content and platform
+qualification remain separate from per-file structural/decode admission.

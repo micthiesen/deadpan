@@ -1,0 +1,15 @@
+{
+  "command": [
+    "python3",
+    "/tmp/deadpan-export-verify-mkzjo3zd/run-metal.py",
+    "metal-current",
+    "native-build"
+  ],
+  "started": "2026-09-30T04:18:48.581731+00:00",
+  "base_commit": "4387a88a7c110c8ed86ddc98099a8f248da7aa59",
+  "diff_sha256": "04bec5543010a8cf7c095fd4c34d07181bdf2f1365fc64c04504e939d31ed625",
+  "source_manifest_sha256": "8055a2e6943ffe70ade618b0fcfcefe4f7bd1ad65d9a727255560bfe2cd1155e",
+  "pid": 38270,
+  "exit_code": 0,
+  "seconds": 454.0534260831773
+}

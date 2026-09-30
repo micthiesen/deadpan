@@ -1,0 +1,2888 @@
+{
+  "cases": [
+    {
+      "failure": null,
+      "name": "structural",
+      "progress": [
+        {
+          "completed": 1,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 9,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 18,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 27,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 36,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 45,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 54,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 63,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 72,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 81,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 90,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 99,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 108,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 117,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 126,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 135,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 144,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 153,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 162,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 171,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 180,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 189,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 198,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 207,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 216,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 225,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 234,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 243,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 252,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 261,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 270,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 278,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 1,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 4,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 8,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 12,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 16,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 20,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 24,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 28,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 32,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 36,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 40,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 44,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 48,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 52,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 56,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 60,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 64,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 68,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 72,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 76,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 80,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 84,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 88,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 92,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 96,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 100,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 104,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 108,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 1024,
+          "stage": "manual_audio",
+          "total": 172973
+        },
+        {
+          "completed": 7168,
+          "stage": "manual_audio",
+          "total": 172973
+        },
+        {
+          "completed": 13312,
+          "stage": "manual_audio",
+          "total": 172973
+        },
+        {
+          "completed": 19456,
+          "stage": "manual_audio",
+          "total": 172973
+        },
+        {
+          "completed": 25600,
+          "stage": "manual_audio",
+          "total": 172973
+        },
+        {
+          "completed": 31744,
+          "stage": "manual_audio",
+          "total": 172973
+        },
+        {
+          "completed": 37888,
+          "stage": "manual_audio",
+          "total": 172973
+        },
+        {
+          "completed": 44032,
+          "stage": "manual_audio",
+          "total": 172973
+        },
+        {
+          "completed": 50176,
+          "stage": "manual_audio",
+          "total": 172973
+        },
+        {
+          "completed": 56320,
+          "stage": "manual_audio",
+          "total": 172973
+        },
+        {
+          "completed": 62464,
+          "stage": "manual_audio",
+          "total": 172973
+        },
+        {
+          "completed": 68608,
+          "stage": "manual_audio",
+          "total": 172973
+        },
+        {
+          "completed": 74752,
+          "stage": "manual_audio",
+          "total": 172973
+        },
+        {
+          "completed": 80896,
+          "stage": "manual_audio",
+          "total": 172973
+        },
+        {
+          "completed": 87040,
+          "stage": "manual_audio",
+          "total": 172973
+        },
+        {
+          "completed": 93184,
+          "stage": "manual_audio",
+          "total": 172973
+        },
+        {
+          "completed": 99328,
+          "stage": "manual_audio",
+          "total": 172973
+        },
+        {
+          "completed": 105472,
+          "stage": "manual_audio",
+          "total": 172973
+        },
+        {
+          "completed": 111616,
+          "stage": "manual_audio",
+          "total": 172973
+        },
+        {
+          "completed": 117760,
+          "stage": "manual_audio",
+          "total": 172973
+        },
+        {
+          "completed": 123904,
+          "stage": "manual_audio",
+          "total": 172973
+        },
+        {
+          "completed": 130048,
+          "stage": "manual_audio",
+          "total": 172973
+        },
+        {
+          "completed": 136192,
+          "stage": "manual_audio",
+          "total": 172973
+        },
+        {
+          "completed": 142336,
+          "stage": "manual_audio",
+          "total": 172973
+        },
+        {
+          "completed": 148480,
+          "stage": "manual_audio",
+          "total": 172973
+        },
+        {
+          "completed": 154624,
+          "stage": "manual_audio",
+          "total": 172973
+        },
+        {
+          "completed": 160768,
+          "stage": "manual_audio",
+          "total": 172973
+        },
+        {
+          "completed": 166912,
+          "stage": "manual_audio",
+          "total": 172973
+        },
+        {
+          "completed": 172973,
+          "stage": "manual_audio",
+          "total": 172973
+        },
+        {
+          "completed": 1024,
+          "stage": "ordinary_audio",
+          "total": 172973
+        },
+        {
+          "completed": 7168,
+          "stage": "ordinary_audio",
+          "total": 172973
+        },
+        {
+          "completed": 13312,
+          "stage": "ordinary_audio",
+          "total": 172973
+        },
+        {
+          "completed": 19456,
+          "stage": "ordinary_audio",
+          "total": 172973
+        },
+        {
+          "completed": 25600,
+          "stage": "ordinary_audio",
+          "total": 172973
+        },
+        {
+          "completed": 31744,
+          "stage": "ordinary_audio",
+          "total": 172973
+        },
+        {
+          "completed": 37888,
+          "stage": "ordinary_audio",
+          "total": 172973
+        },
+        {
+          "completed": 44032,
+          "stage": "ordinary_audio",
+          "total": 172973
+        },
+        {
+          "completed": 50176,
+          "stage": "ordinary_audio",
+          "total": 172973
+        },
+        {
+          "completed": 56320,
+          "stage": "ordinary_audio",
+          "total": 172973
+        },
+        {
+          "completed": 62464,
+          "stage": "ordinary_audio",
+          "total": 172973
+        },
+        {
+          "completed": 68608,
+          "stage": "ordinary_audio",
+          "total": 172973
+        },
+        {
+          "completed": 74752,
+          "stage": "ordinary_audio",
+          "total": 172973
+        },
+        {
+          "completed": 80896,
+          "stage": "ordinary_audio",
+          "total": 172973
+        },
+        {
+          "completed": 87040,
+          "stage": "ordinary_audio",
+          "total": 172973
+        },
+        {
+          "completed": 93184,
+          "stage": "ordinary_audio",
+          "total": 172973
+        },
+        {
+          "completed": 99328,
+          "stage": "ordinary_audio",
+          "total": 172973
+        },
+        {
+          "completed": 105472,
+          "stage": "ordinary_audio",
+          "total": 172973
+        },
+        {
+          "completed": 111616,
+          "stage": "ordinary_audio",
+          "total": 172973
+        },
+        {
+          "completed": 117760,
+          "stage": "ordinary_audio",
+          "total": 172973
+        },
+        {
+          "completed": 123904,
+          "stage": "ordinary_audio",
+          "total": 172973
+        },
+        {
+          "completed": 130048,
+          "stage": "ordinary_audio",
+          "total": 172973
+        },
+        {
+          "completed": 136192,
+          "stage": "ordinary_audio",
+          "total": 172973
+        },
+        {
+          "completed": 142336,
+          "stage": "ordinary_audio",
+          "total": 172973
+        },
+        {
+          "completed": 148480,
+          "stage": "ordinary_audio",
+          "total": 172973
+        },
+        {
+          "completed": 154624,
+          "stage": "ordinary_audio",
+          "total": 172973
+        },
+        {
+          "completed": 160768,
+          "stage": "ordinary_audio",
+          "total": 172973
+        },
+        {
+          "completed": 166912,
+          "stage": "ordinary_audio",
+          "total": 172973
+        },
+        {
+          "completed": 172973,
+          "stage": "ordinary_audio",
+          "total": 172973
+        }
+      ],
+      "report": {
+        "audio_edit_media_time": 1024,
+        "audio_packets": 170,
+        "audio_samples": 172973,
+        "contract": {
+          "choice": {
+            "b_frames": "none",
+            "mode": "hardware"
+          },
+          "picture": {
+            "canvas": [
+              320,
+              180
+            ],
+            "color_policy": "sdr_rec709",
+            "frame_count": 108,
+            "frame_rate": {
+              "denominator": 1001,
+              "numerator": 30000
+            },
+            "project_audio_end": 205005,
+            "project_audio_start": 32032,
+            "project_id": "project-picture-qualification",
+            "range": {
+              "end": 128,
+              "start": 20
+            },
+            "raster": [
+              320,
+              180
+            ],
+            "relative_aspect_error": {
+              "denominator": "1",
+              "numerator": "0"
+            },
+            "revision_id": "background",
+            "terminal_pts": 108108,
+            "time_base": {
+              "denominator": 30000,
+              "numerator": 1
+            }
+          }
+        },
+        "document_sha256": "af8e5672cee86b4d64827ef4e86b8af5ad9b9ca11d5c8b46e18e0f4d7d5663ff",
+        "fresh_gop_frames": 108,
+        "gops": 7,
+        "manual_first_sample": -1024,
+        "manual_physical_samples": 174080,
+        "maximum_b_run": 0,
+        "movie_bytes": 97359,
+        "movie_sha256": "1d3732a31e947c2ba6409bcedb405cebb401808bfe5a7db6640e9d23a605d46e",
+        "movie_timescale": 240000,
+        "ordinary_first_sample": 0,
+        "ordinary_physical_samples": 173056,
+        "policy_version": 1,
+        "runtime_versions": [
+          4066151,
+          4064103,
+          3934311
+        ],
+        "video_edit_media_time": 0,
+        "video_frames": 108,
+        "video_packets": 108
+      },
+      "seconds": 0.295212792
+    },
+    {
+      "failure": null,
+      "name": "nonzero",
+      "progress": [
+        {
+          "completed": 1,
+          "stage": "packets",
+          "total": 4
+        },
+        {
+          "completed": 2,
+          "stage": "packets",
+          "total": 4
+        },
+        {
+          "completed": 3,
+          "stage": "packets",
+          "total": 4
+        },
+        {
+          "completed": 4,
+          "stage": "packets",
+          "total": 4
+        },
+        {
+          "completed": 1,
+          "stage": "pictures",
+          "total": 1
+        },
+        {
+          "completed": 1024,
+          "stage": "manual_audio",
+          "total": 1601
+        },
+        {
+          "completed": 1601,
+          "stage": "manual_audio",
+          "total": 1601
+        },
+        {
+          "completed": 1024,
+          "stage": "ordinary_audio",
+          "total": 1601
+        },
+        {
+          "completed": 1601,
+          "stage": "ordinary_audio",
+          "total": 1601
+        }
+      ],
+      "report": {
+        "audio_edit_media_time": 1024,
+        "audio_packets": 3,
+        "audio_samples": 1601,
+        "contract": {
+          "choice": {
+            "b_frames": "none",
+            "mode": "hardware"
+          },
+          "picture": {
+            "canvas": [
+              320,
+              180
+            ],
+            "color_policy": "sdr_rec709",
+            "frame_count": 1,
+            "frame_rate": {
+              "denominator": 1001,
+              "numerator": 30000
+            },
+            "project_audio_end": 3203,
+            "project_audio_start": 1602,
+            "project_id": "project-picture-qualification",
+            "range": {
+              "end": 2,
+              "start": 1
+            },
+            "raster": [
+              320,
+              180
+            ],
+            "relative_aspect_error": {
+              "denominator": "1",
+              "numerator": "0"
+            },
+            "revision_id": "background",
+            "terminal_pts": 1001,
+            "time_base": {
+              "denominator": 30000,
+              "numerator": 1
+            }
+          }
+        },
+        "document_sha256": "af8e5672cee86b4d64827ef4e86b8af5ad9b9ca11d5c8b46e18e0f4d7d5663ff",
+        "fresh_gop_frames": 1,
+        "gops": 1,
+        "manual_first_sample": -1024,
+        "manual_physical_samples": 3072,
+        "maximum_b_run": 0,
+        "movie_bytes": 2959,
+        "movie_sha256": "3ed39453e601785efa9341714948a51b0f61d4a0c52568b2b2ceb9960281abaf",
+        "movie_timescale": 240000,
+        "ordinary_first_sample": 0,
+        "ordinary_physical_samples": 2048,
+        "policy_version": 1,
+        "runtime_versions": [
+          4066151,
+          4064103,
+          3934311
+        ],
+        "video_edit_media_time": 0,
+        "video_frames": 1,
+        "video_packets": 1
+      },
+      "seconds": 0.023172542
+    },
+    {
+      "failure": null,
+      "name": "software-two",
+      "progress": [
+        {
+          "completed": 1,
+          "stage": "packets",
+          "total": 112
+        },
+        {
+          "completed": 4,
+          "stage": "packets",
+          "total": 112
+        },
+        {
+          "completed": 8,
+          "stage": "packets",
+          "total": 112
+        },
+        {
+          "completed": 12,
+          "stage": "packets",
+          "total": 112
+        },
+        {
+          "completed": 16,
+          "stage": "packets",
+          "total": 112
+        },
+        {
+          "completed": 20,
+          "stage": "packets",
+          "total": 112
+        },
+        {
+          "completed": 24,
+          "stage": "packets",
+          "total": 112
+        },
+        {
+          "completed": 28,
+          "stage": "packets",
+          "total": 112
+        },
+        {
+          "completed": 32,
+          "stage": "packets",
+          "total": 112
+        },
+        {
+          "completed": 36,
+          "stage": "packets",
+          "total": 112
+        },
+        {
+          "completed": 40,
+          "stage": "packets",
+          "total": 112
+        },
+        {
+          "completed": 44,
+          "stage": "packets",
+          "total": 112
+        },
+        {
+          "completed": 48,
+          "stage": "packets",
+          "total": 112
+        },
+        {
+          "completed": 52,
+          "stage": "packets",
+          "total": 112
+        },
+        {
+          "completed": 56,
+          "stage": "packets",
+          "total": 112
+        },
+        {
+          "completed": 60,
+          "stage": "packets",
+          "total": 112
+        },
+        {
+          "completed": 64,
+          "stage": "packets",
+          "total": 112
+        },
+        {
+          "completed": 68,
+          "stage": "packets",
+          "total": 112
+        },
+        {
+          "completed": 72,
+          "stage": "packets",
+          "total": 112
+        },
+        {
+          "completed": 76,
+          "stage": "packets",
+          "total": 112
+        },
+        {
+          "completed": 80,
+          "stage": "packets",
+          "total": 112
+        },
+        {
+          "completed": 84,
+          "stage": "packets",
+          "total": 112
+        },
+        {
+          "completed": 88,
+          "stage": "packets",
+          "total": 112
+        },
+        {
+          "completed": 92,
+          "stage": "packets",
+          "total": 112
+        },
+        {
+          "completed": 96,
+          "stage": "packets",
+          "total": 112
+        },
+        {
+          "completed": 100,
+          "stage": "packets",
+          "total": 112
+        },
+        {
+          "completed": 104,
+          "stage": "packets",
+          "total": 112
+        },
+        {
+          "completed": 108,
+          "stage": "packets",
+          "total": 112
+        },
+        {
+          "completed": 112,
+          "stage": "packets",
+          "total": 112
+        },
+        {
+          "completed": 1,
+          "stage": "pictures",
+          "total": 43
+        },
+        {
+          "completed": 2,
+          "stage": "pictures",
+          "total": 43
+        },
+        {
+          "completed": 4,
+          "stage": "pictures",
+          "total": 43
+        },
+        {
+          "completed": 6,
+          "stage": "pictures",
+          "total": 43
+        },
+        {
+          "completed": 8,
+          "stage": "pictures",
+          "total": 43
+        },
+        {
+          "completed": 10,
+          "stage": "pictures",
+          "total": 43
+        },
+        {
+          "completed": 12,
+          "stage": "pictures",
+          "total": 43
+        },
+        {
+          "completed": 14,
+          "stage": "pictures",
+          "total": 43
+        },
+        {
+          "completed": 16,
+          "stage": "pictures",
+          "total": 43
+        },
+        {
+          "completed": 18,
+          "stage": "pictures",
+          "total": 43
+        },
+        {
+          "completed": 20,
+          "stage": "pictures",
+          "total": 43
+        },
+        {
+          "completed": 22,
+          "stage": "pictures",
+          "total": 43
+        },
+        {
+          "completed": 24,
+          "stage": "pictures",
+          "total": 43
+        },
+        {
+          "completed": 26,
+          "stage": "pictures",
+          "total": 43
+        },
+        {
+          "completed": 28,
+          "stage": "pictures",
+          "total": 43
+        },
+        {
+          "completed": 30,
+          "stage": "pictures",
+          "total": 43
+        },
+        {
+          "completed": 32,
+          "stage": "pictures",
+          "total": 43
+        },
+        {
+          "completed": 34,
+          "stage": "pictures",
+          "total": 43
+        },
+        {
+          "completed": 36,
+          "stage": "pictures",
+          "total": 43
+        },
+        {
+          "completed": 38,
+          "stage": "pictures",
+          "total": 43
+        },
+        {
+          "completed": 40,
+          "stage": "pictures",
+          "total": 43
+        },
+        {
+          "completed": 42,
+          "stage": "pictures",
+          "total": 43
+        },
+        {
+          "completed": 43,
+          "stage": "pictures",
+          "total": 43
+        },
+        {
+          "completed": 1024,
+          "stage": "manual_audio",
+          "total": 68869
+        },
+        {
+          "completed": 4096,
+          "stage": "manual_audio",
+          "total": 68869
+        },
+        {
+          "completed": 7168,
+          "stage": "manual_audio",
+          "total": 68869
+        },
+        {
+          "completed": 10240,
+          "stage": "manual_audio",
+          "total": 68869
+        },
+        {
+          "completed": 13312,
+          "stage": "manual_audio",
+          "total": 68869
+        },
+        {
+          "completed": 16384,
+          "stage": "manual_audio",
+          "total": 68869
+        },
+        {
+          "completed": 19456,
+          "stage": "manual_audio",
+          "total": 68869
+        },
+        {
+          "completed": 22528,
+          "stage": "manual_audio",
+          "total": 68869
+        },
+        {
+          "completed": 25600,
+          "stage": "manual_audio",
+          "total": 68869
+        },
+        {
+          "completed": 28672,
+          "stage": "manual_audio",
+          "total": 68869
+        },
+        {
+          "completed": 31744,
+          "stage": "manual_audio",
+          "total": 68869
+        },
+        {
+          "completed": 34816,
+          "stage": "manual_audio",
+          "total": 68869
+        },
+        {
+          "completed": 37888,
+          "stage": "manual_audio",
+          "total": 68869
+        },
+        {
+          "completed": 40960,
+          "stage": "manual_audio",
+          "total": 68869
+        },
+        {
+          "completed": 44032,
+          "stage": "manual_audio",
+          "total": 68869
+        },
+        {
+          "completed": 47104,
+          "stage": "manual_audio",
+          "total": 68869
+        },
+        {
+          "completed": 50176,
+          "stage": "manual_audio",
+          "total": 68869
+        },
+        {
+          "completed": 53248,
+          "stage": "manual_audio",
+          "total": 68869
+        },
+        {
+          "completed": 56320,
+          "stage": "manual_audio",
+          "total": 68869
+        },
+        {
+          "completed": 59392,
+          "stage": "manual_audio",
+          "total": 68869
+        },
+        {
+          "completed": 62464,
+          "stage": "manual_audio",
+          "total": 68869
+        },
+        {
+          "completed": 65536,
+          "stage": "manual_audio",
+          "total": 68869
+        },
+        {
+          "completed": 68608,
+          "stage": "manual_audio",
+          "total": 68869
+        },
+        {
+          "completed": 68869,
+          "stage": "manual_audio",
+          "total": 68869
+        },
+        {
+          "completed": 1024,
+          "stage": "ordinary_audio",
+          "total": 68869
+        },
+        {
+          "completed": 4096,
+          "stage": "ordinary_audio",
+          "total": 68869
+        },
+        {
+          "completed": 7168,
+          "stage": "ordinary_audio",
+          "total": 68869
+        },
+        {
+          "completed": 10240,
+          "stage": "ordinary_audio",
+          "total": 68869
+        },
+        {
+          "completed": 13312,
+          "stage": "ordinary_audio",
+          "total": 68869
+        },
+        {
+          "completed": 16384,
+          "stage": "ordinary_audio",
+          "total": 68869
+        },
+        {
+          "completed": 19456,
+          "stage": "ordinary_audio",
+          "total": 68869
+        },
+        {
+          "completed": 22528,
+          "stage": "ordinary_audio",
+          "total": 68869
+        },
+        {
+          "completed": 25600,
+          "stage": "ordinary_audio",
+          "total": 68869
+        },
+        {
+          "completed": 28672,
+          "stage": "ordinary_audio",
+          "total": 68869
+        },
+        {
+          "completed": 31744,
+          "stage": "ordinary_audio",
+          "total": 68869
+        },
+        {
+          "completed": 34816,
+          "stage": "ordinary_audio",
+          "total": 68869
+        },
+        {
+          "completed": 37888,
+          "stage": "ordinary_audio",
+          "total": 68869
+        },
+        {
+          "completed": 40960,
+          "stage": "ordinary_audio",
+          "total": 68869
+        },
+        {
+          "completed": 44032,
+          "stage": "ordinary_audio",
+          "total": 68869
+        },
+        {
+          "completed": 47104,
+          "stage": "ordinary_audio",
+          "total": 68869
+        },
+        {
+          "completed": 50176,
+          "stage": "ordinary_audio",
+          "total": 68869
+        },
+        {
+          "completed": 53248,
+          "stage": "ordinary_audio",
+          "total": 68869
+        },
+        {
+          "completed": 56320,
+          "stage": "ordinary_audio",
+          "total": 68869
+        },
+        {
+          "completed": 59392,
+          "stage": "ordinary_audio",
+          "total": 68869
+        },
+        {
+          "completed": 62464,
+          "stage": "ordinary_audio",
+          "total": 68869
+        },
+        {
+          "completed": 65536,
+          "stage": "ordinary_audio",
+          "total": 68869
+        },
+        {
+          "completed": 68608,
+          "stage": "ordinary_audio",
+          "total": 68869
+        },
+        {
+          "completed": 68869,
+          "stage": "ordinary_audio",
+          "total": 68869
+        }
+      ],
+      "report": {
+        "audio_edit_media_time": 1024,
+        "audio_packets": 69,
+        "audio_samples": 68869,
+        "contract": {
+          "choice": {
+            "b_frames": "target_two",
+            "mode": "software"
+          },
+          "picture": {
+            "canvas": [
+              320,
+              180
+            ],
+            "color_policy": "sdr_rec709",
+            "frame_count": 43,
+            "frame_rate": {
+              "denominator": 1001,
+              "numerator": 30000
+            },
+            "project_audio_end": 100901,
+            "project_audio_start": 32032,
+            "project_id": "project-picture-qualification",
+            "range": {
+              "end": 63,
+              "start": 20
+            },
+            "raster": [
+              320,
+              180
+            ],
+            "relative_aspect_error": {
+              "denominator": "1",
+              "numerator": "0"
+            },
+            "revision_id": "background",
+            "terminal_pts": 43043,
+            "time_base": {
+              "denominator": 30000,
+              "numerator": 1
+            }
+          }
+        },
+        "document_sha256": "af8e5672cee86b4d64827ef4e86b8af5ad9b9ca11d5c8b46e18e0f4d7d5663ff",
+        "fresh_gop_frames": 43,
+        "gops": 5,
+        "manual_first_sample": -1024,
+        "manual_physical_samples": 70656,
+        "maximum_b_run": 1,
+        "movie_bytes": 33144,
+        "movie_sha256": "b1e886e6b946936cbe23a24b9eb0a0e18f26b339dd9f202ec0dc5c7bebf9a72e",
+        "movie_timescale": 240000,
+        "ordinary_first_sample": 0,
+        "ordinary_physical_samples": 69632,
+        "policy_version": 1,
+        "runtime_versions": [
+          4066151,
+          4064103,
+          3934311
+        ],
+        "video_edit_media_time": 1001,
+        "video_frames": 43,
+        "video_packets": 43
+      },
+      "seconds": 0.119393458
+    },
+    {
+      "failure": null,
+      "name": "odd",
+      "progress": [
+        {
+          "completed": 1,
+          "stage": "packets",
+          "total": 4
+        },
+        {
+          "completed": 2,
+          "stage": "packets",
+          "total": 4
+        },
+        {
+          "completed": 3,
+          "stage": "packets",
+          "total": 4
+        },
+        {
+          "completed": 4,
+          "stage": "packets",
+          "total": 4
+        },
+        {
+          "completed": 1,
+          "stage": "pictures",
+          "total": 1
+        },
+        {
+          "completed": 1024,
+          "stage": "manual_audio",
+          "total": 1602
+        },
+        {
+          "completed": 1602,
+          "stage": "manual_audio",
+          "total": 1602
+        },
+        {
+          "completed": 1024,
+          "stage": "ordinary_audio",
+          "total": 1602
+        },
+        {
+          "completed": 1602,
+          "stage": "ordinary_audio",
+          "total": 1602
+        }
+      ],
+      "report": {
+        "audio_edit_media_time": 1024,
+        "audio_packets": 3,
+        "audio_samples": 1602,
+        "contract": {
+          "choice": {
+            "b_frames": "none",
+            "mode": "hardware"
+          },
+          "picture": {
+            "canvas": [
+              319,
+              179
+            ],
+            "color_policy": "sdr_rec709",
+            "frame_count": 1,
+            "frame_rate": {
+              "denominator": 1001,
+              "numerator": 30000
+            },
+            "project_audio_end": 33634,
+            "project_audio_start": 32032,
+            "project_id": "project-picture-qualification-odd",
+            "range": {
+              "end": 21,
+              "start": 20
+            },
+            "raster": [
+              318,
+              178
+            ],
+            "relative_aspect_error": {
+              "denominator": "28391",
+              "numerator": "70"
+            },
+            "revision_id": "background",
+            "terminal_pts": 1001,
+            "time_base": {
+              "denominator": 30000,
+              "numerator": 1
+            }
+          }
+        },
+        "document_sha256": "6ebd233ce975917f7e6d95656b38807febd71b289d23fce6e416938e58e9f166",
+        "fresh_gop_frames": 1,
+        "gops": 1,
+        "manual_first_sample": -1024,
+        "manual_physical_samples": 3072,
+        "maximum_b_run": 0,
+        "movie_bytes": 2861,
+        "movie_sha256": "c8062d02b51abed0655d04281ef6700b48c304d9d3e82de41e1454fc00e35a3e",
+        "movie_timescale": 240000,
+        "ordinary_first_sample": 0,
+        "ordinary_physical_samples": 2048,
+        "policy_version": 1,
+        "runtime_versions": [
+          4066151,
+          4064103,
+          3934311
+        ],
+        "video_edit_media_time": 0,
+        "video_frames": 1,
+        "video_packets": 1
+      },
+      "seconds": 0.02167675
+    },
+    {
+      "failure": null,
+      "name": "marker",
+      "progress": [
+        {
+          "completed": 1,
+          "stage": "packets",
+          "total": 215
+        },
+        {
+          "completed": 7,
+          "stage": "packets",
+          "total": 215
+        },
+        {
+          "completed": 14,
+          "stage": "packets",
+          "total": 215
+        },
+        {
+          "completed": 21,
+          "stage": "packets",
+          "total": 215
+        },
+        {
+          "completed": 28,
+          "stage": "packets",
+          "total": 215
+        },
+        {
+          "completed": 35,
+          "stage": "packets",
+          "total": 215
+        },
+        {
+          "completed": 42,
+          "stage": "packets",
+          "total": 215
+        },
+        {
+          "completed": 49,
+          "stage": "packets",
+          "total": 215
+        },
+        {
+          "completed": 56,
+          "stage": "packets",
+          "total": 215
+        },
+        {
+          "completed": 63,
+          "stage": "packets",
+          "total": 215
+        },
+        {
+          "completed": 70,
+          "stage": "packets",
+          "total": 215
+        },
+        {
+          "completed": 77,
+          "stage": "packets",
+          "total": 215
+        },
+        {
+          "completed": 84,
+          "stage": "packets",
+          "total": 215
+        },
+        {
+          "completed": 91,
+          "stage": "packets",
+          "total": 215
+        },
+        {
+          "completed": 98,
+          "stage": "packets",
+          "total": 215
+        },
+        {
+          "completed": 105,
+          "stage": "packets",
+          "total": 215
+        },
+        {
+          "completed": 112,
+          "stage": "packets",
+          "total": 215
+        },
+        {
+          "completed": 119,
+          "stage": "packets",
+          "total": 215
+        },
+        {
+          "completed": 126,
+          "stage": "packets",
+          "total": 215
+        },
+        {
+          "completed": 133,
+          "stage": "packets",
+          "total": 215
+        },
+        {
+          "completed": 140,
+          "stage": "packets",
+          "total": 215
+        },
+        {
+          "completed": 147,
+          "stage": "packets",
+          "total": 215
+        },
+        {
+          "completed": 154,
+          "stage": "packets",
+          "total": 215
+        },
+        {
+          "completed": 161,
+          "stage": "packets",
+          "total": 215
+        },
+        {
+          "completed": 168,
+          "stage": "packets",
+          "total": 215
+        },
+        {
+          "completed": 175,
+          "stage": "packets",
+          "total": 215
+        },
+        {
+          "completed": 182,
+          "stage": "packets",
+          "total": 215
+        },
+        {
+          "completed": 189,
+          "stage": "packets",
+          "total": 215
+        },
+        {
+          "completed": 196,
+          "stage": "packets",
+          "total": 215
+        },
+        {
+          "completed": 203,
+          "stage": "packets",
+          "total": 215
+        },
+        {
+          "completed": 210,
+          "stage": "packets",
+          "total": 215
+        },
+        {
+          "completed": 215,
+          "stage": "packets",
+          "total": 215
+        },
+        {
+          "completed": 1,
+          "stage": "pictures",
+          "total": 120
+        },
+        {
+          "completed": 4,
+          "stage": "pictures",
+          "total": 120
+        },
+        {
+          "completed": 8,
+          "stage": "pictures",
+          "total": 120
+        },
+        {
+          "completed": 12,
+          "stage": "pictures",
+          "total": 120
+        },
+        {
+          "completed": 16,
+          "stage": "pictures",
+          "total": 120
+        },
+        {
+          "completed": 20,
+          "stage": "pictures",
+          "total": 120
+        },
+        {
+          "completed": 24,
+          "stage": "pictures",
+          "total": 120
+        },
+        {
+          "completed": 28,
+          "stage": "pictures",
+          "total": 120
+        },
+        {
+          "completed": 32,
+          "stage": "pictures",
+          "total": 120
+        },
+        {
+          "completed": 36,
+          "stage": "pictures",
+          "total": 120
+        },
+        {
+          "completed": 40,
+          "stage": "pictures",
+          "total": 120
+        },
+        {
+          "completed": 44,
+          "stage": "pictures",
+          "total": 120
+        },
+        {
+          "completed": 48,
+          "stage": "pictures",
+          "total": 120
+        },
+        {
+          "completed": 52,
+          "stage": "pictures",
+          "total": 120
+        },
+        {
+          "completed": 56,
+          "stage": "pictures",
+          "total": 120
+        },
+        {
+          "completed": 60,
+          "stage": "pictures",
+          "total": 120
+        },
+        {
+          "completed": 64,
+          "stage": "pictures",
+          "total": 120
+        },
+        {
+          "completed": 68,
+          "stage": "pictures",
+          "total": 120
+        },
+        {
+          "completed": 72,
+          "stage": "pictures",
+          "total": 120
+        },
+        {
+          "completed": 76,
+          "stage": "pictures",
+          "total": 120
+        },
+        {
+          "completed": 80,
+          "stage": "pictures",
+          "total": 120
+        },
+        {
+          "completed": 84,
+          "stage": "pictures",
+          "total": 120
+        },
+        {
+          "completed": 88,
+          "stage": "pictures",
+          "total": 120
+        },
+        {
+          "completed": 92,
+          "stage": "pictures",
+          "total": 120
+        },
+        {
+          "completed": 96,
+          "stage": "pictures",
+          "total": 120
+        },
+        {
+          "completed": 100,
+          "stage": "pictures",
+          "total": 120
+        },
+        {
+          "completed": 104,
+          "stage": "pictures",
+          "total": 120
+        },
+        {
+          "completed": 108,
+          "stage": "pictures",
+          "total": 120
+        },
+        {
+          "completed": 112,
+          "stage": "pictures",
+          "total": 120
+        },
+        {
+          "completed": 116,
+          "stage": "pictures",
+          "total": 120
+        },
+        {
+          "completed": 120,
+          "stage": "pictures",
+          "total": 120
+        },
+        {
+          "completed": 1024,
+          "stage": "manual_audio",
+          "total": 96000
+        },
+        {
+          "completed": 4096,
+          "stage": "manual_audio",
+          "total": 96000
+        },
+        {
+          "completed": 7168,
+          "stage": "manual_audio",
+          "total": 96000
+        },
+        {
+          "completed": 10240,
+          "stage": "manual_audio",
+          "total": 96000
+        },
+        {
+          "completed": 13312,
+          "stage": "manual_audio",
+          "total": 96000
+        },
+        {
+          "completed": 16384,
+          "stage": "manual_audio",
+          "total": 96000
+        },
+        {
+          "completed": 19456,
+          "stage": "manual_audio",
+          "total": 96000
+        },
+        {
+          "completed": 22528,
+          "stage": "manual_audio",
+          "total": 96000
+        },
+        {
+          "completed": 25600,
+          "stage": "manual_audio",
+          "total": 96000
+        },
+        {
+          "completed": 28672,
+          "stage": "manual_audio",
+          "total": 96000
+        },
+        {
+          "completed": 31744,
+          "stage": "manual_audio",
+          "total": 96000
+        },
+        {
+          "completed": 34816,
+          "stage": "manual_audio",
+          "total": 96000
+        },
+        {
+          "completed": 37888,
+          "stage": "manual_audio",
+          "total": 96000
+        },
+        {
+          "completed": 40960,
+          "stage": "manual_audio",
+          "total": 96000
+        },
+        {
+          "completed": 44032,
+          "stage": "manual_audio",
+          "total": 96000
+        },
+        {
+          "completed": 47104,
+          "stage": "manual_audio",
+          "total": 96000
+        },
+        {
+          "completed": 50176,
+          "stage": "manual_audio",
+          "total": 96000
+        },
+        {
+          "completed": 53248,
+          "stage": "manual_audio",
+          "total": 96000
+        },
+        {
+          "completed": 56320,
+          "stage": "manual_audio",
+          "total": 96000
+        },
+        {
+          "completed": 59392,
+          "stage": "manual_audio",
+          "total": 96000
+        },
+        {
+          "completed": 62464,
+          "stage": "manual_audio",
+          "total": 96000
+        },
+        {
+          "completed": 65536,
+          "stage": "manual_audio",
+          "total": 96000
+        },
+        {
+          "completed": 68608,
+          "stage": "manual_audio",
+          "total": 96000
+        },
+        {
+          "completed": 71680,
+          "stage": "manual_audio",
+          "total": 96000
+        },
+        {
+          "completed": 74752,
+          "stage": "manual_audio",
+          "total": 96000
+        },
+        {
+          "completed": 77824,
+          "stage": "manual_audio",
+          "total": 96000
+        },
+        {
+          "completed": 80896,
+          "stage": "manual_audio",
+          "total": 96000
+        },
+        {
+          "completed": 83968,
+          "stage": "manual_audio",
+          "total": 96000
+        },
+        {
+          "completed": 87040,
+          "stage": "manual_audio",
+          "total": 96000
+        },
+        {
+          "completed": 90112,
+          "stage": "manual_audio",
+          "total": 96000
+        },
+        {
+          "completed": 93184,
+          "stage": "manual_audio",
+          "total": 96000
+        },
+        {
+          "completed": 96000,
+          "stage": "manual_audio",
+          "total": 96000
+        },
+        {
+          "completed": 1024,
+          "stage": "ordinary_audio",
+          "total": 96000
+        },
+        {
+          "completed": 4096,
+          "stage": "ordinary_audio",
+          "total": 96000
+        },
+        {
+          "completed": 7168,
+          "stage": "ordinary_audio",
+          "total": 96000
+        },
+        {
+          "completed": 10240,
+          "stage": "ordinary_audio",
+          "total": 96000
+        },
+        {
+          "completed": 13312,
+          "stage": "ordinary_audio",
+          "total": 96000
+        },
+        {
+          "completed": 16384,
+          "stage": "ordinary_audio",
+          "total": 96000
+        },
+        {
+          "completed": 19456,
+          "stage": "ordinary_audio",
+          "total": 96000
+        },
+        {
+          "completed": 22528,
+          "stage": "ordinary_audio",
+          "total": 96000
+        },
+        {
+          "completed": 25600,
+          "stage": "ordinary_audio",
+          "total": 96000
+        },
+        {
+          "completed": 28672,
+          "stage": "ordinary_audio",
+          "total": 96000
+        },
+        {
+          "completed": 31744,
+          "stage": "ordinary_audio",
+          "total": 96000
+        },
+        {
+          "completed": 34816,
+          "stage": "ordinary_audio",
+          "total": 96000
+        },
+        {
+          "completed": 37888,
+          "stage": "ordinary_audio",
+          "total": 96000
+        },
+        {
+          "completed": 40960,
+          "stage": "ordinary_audio",
+          "total": 96000
+        },
+        {
+          "completed": 44032,
+          "stage": "ordinary_audio",
+          "total": 96000
+        },
+        {
+          "completed": 47104,
+          "stage": "ordinary_audio",
+          "total": 96000
+        },
+        {
+          "completed": 50176,
+          "stage": "ordinary_audio",
+          "total": 96000
+        },
+        {
+          "completed": 53248,
+          "stage": "ordinary_audio",
+          "total": 96000
+        },
+        {
+          "completed": 56320,
+          "stage": "ordinary_audio",
+          "total": 96000
+        },
+        {
+          "completed": 59392,
+          "stage": "ordinary_audio",
+          "total": 96000
+        },
+        {
+          "completed": 62464,
+          "stage": "ordinary_audio",
+          "total": 96000
+        },
+        {
+          "completed": 65536,
+          "stage": "ordinary_audio",
+          "total": 96000
+        },
+        {
+          "completed": 68608,
+          "stage": "ordinary_audio",
+          "total": 96000
+        },
+        {
+          "completed": 71680,
+          "stage": "ordinary_audio",
+          "total": 96000
+        },
+        {
+          "completed": 74752,
+          "stage": "ordinary_audio",
+          "total": 96000
+        },
+        {
+          "completed": 77824,
+          "stage": "ordinary_audio",
+          "total": 96000
+        },
+        {
+          "completed": 80896,
+          "stage": "ordinary_audio",
+          "total": 96000
+        },
+        {
+          "completed": 83968,
+          "stage": "ordinary_audio",
+          "total": 96000
+        },
+        {
+          "completed": 87040,
+          "stage": "ordinary_audio",
+          "total": 96000
+        },
+        {
+          "completed": 90112,
+          "stage": "ordinary_audio",
+          "total": 96000
+        },
+        {
+          "completed": 93184,
+          "stage": "ordinary_audio",
+          "total": 96000
+        },
+        {
+          "completed": 96000,
+          "stage": "ordinary_audio",
+          "total": 96000
+        }
+      ],
+      "report": {
+        "audio_edit_media_time": 1024,
+        "audio_packets": 95,
+        "audio_samples": 96000,
+        "contract": {
+          "choice": {
+            "b_frames": "none",
+            "mode": "hardware"
+          },
+          "picture": {
+            "canvas": [
+              320,
+              180
+            ],
+            "color_policy": "sdr_rec709",
+            "frame_count": 120,
+            "frame_rate": {
+              "denominator": 1,
+              "numerator": 60
+            },
+            "project_audio_end": 96000,
+            "project_audio_start": 0,
+            "project_id": "encoded-marker-project",
+            "range": {
+              "end": 120,
+              "start": 0
+            },
+            "raster": [
+              320,
+              180
+            ],
+            "relative_aspect_error": {
+              "denominator": "1",
+              "numerator": "0"
+            },
+            "revision_id": "marker-registered",
+            "terminal_pts": 120,
+            "time_base": {
+              "denominator": 60,
+              "numerator": 1
+            }
+          }
+        },
+        "document_sha256": "c56064b1e285fab150de4b5ed9913b4040bb05f49a64f3dfcadd346c39933144",
+        "fresh_gop_frames": 120,
+        "gops": 4,
+        "manual_first_sample": -1024,
+        "manual_physical_samples": 97280,
+        "maximum_b_run": 0,
+        "movie_bytes": 28768,
+        "movie_sha256": "4658f6dd1a701d2ee7fb54630fe9ecbd41708881e7d4f21b865ad7ca1ddd8c86",
+        "movie_timescale": 48000,
+        "ordinary_first_sample": 0,
+        "ordinary_physical_samples": 96256,
+        "policy_version": 1,
+        "runtime_versions": [
+          4066151,
+          4064103,
+          3934311
+        ],
+        "video_edit_media_time": 0,
+        "video_frames": 120,
+        "video_packets": 120
+      },
+      "seconds": 0.259151833
+    },
+    {
+      "failure": null,
+      "name": "generated",
+      "progress": [
+        {
+          "completed": 1,
+          "stage": "packets",
+          "total": 78
+        },
+        {
+          "completed": 3,
+          "stage": "packets",
+          "total": 78
+        },
+        {
+          "completed": 6,
+          "stage": "packets",
+          "total": 78
+        },
+        {
+          "completed": 9,
+          "stage": "packets",
+          "total": 78
+        },
+        {
+          "completed": 12,
+          "stage": "packets",
+          "total": 78
+        },
+        {
+          "completed": 15,
+          "stage": "packets",
+          "total": 78
+        },
+        {
+          "completed": 18,
+          "stage": "packets",
+          "total": 78
+        },
+        {
+          "completed": 21,
+          "stage": "packets",
+          "total": 78
+        },
+        {
+          "completed": 24,
+          "stage": "packets",
+          "total": 78
+        },
+        {
+          "completed": 27,
+          "stage": "packets",
+          "total": 78
+        },
+        {
+          "completed": 30,
+          "stage": "packets",
+          "total": 78
+        },
+        {
+          "completed": 33,
+          "stage": "packets",
+          "total": 78
+        },
+        {
+          "completed": 36,
+          "stage": "packets",
+          "total": 78
+        },
+        {
+          "completed": 39,
+          "stage": "packets",
+          "total": 78
+        },
+        {
+          "completed": 42,
+          "stage": "packets",
+          "total": 78
+        },
+        {
+          "completed": 45,
+          "stage": "packets",
+          "total": 78
+        },
+        {
+          "completed": 48,
+          "stage": "packets",
+          "total": 78
+        },
+        {
+          "completed": 51,
+          "stage": "packets",
+          "total": 78
+        },
+        {
+          "completed": 54,
+          "stage": "packets",
+          "total": 78
+        },
+        {
+          "completed": 57,
+          "stage": "packets",
+          "total": 78
+        },
+        {
+          "completed": 60,
+          "stage": "packets",
+          "total": 78
+        },
+        {
+          "completed": 63,
+          "stage": "packets",
+          "total": 78
+        },
+        {
+          "completed": 66,
+          "stage": "packets",
+          "total": 78
+        },
+        {
+          "completed": 69,
+          "stage": "packets",
+          "total": 78
+        },
+        {
+          "completed": 72,
+          "stage": "packets",
+          "total": 78
+        },
+        {
+          "completed": 75,
+          "stage": "packets",
+          "total": 78
+        },
+        {
+          "completed": 78,
+          "stage": "packets",
+          "total": 78
+        },
+        {
+          "completed": 1,
+          "stage": "pictures",
+          "total": 30
+        },
+        {
+          "completed": 2,
+          "stage": "pictures",
+          "total": 30
+        },
+        {
+          "completed": 3,
+          "stage": "pictures",
+          "total": 30
+        },
+        {
+          "completed": 4,
+          "stage": "pictures",
+          "total": 30
+        },
+        {
+          "completed": 5,
+          "stage": "pictures",
+          "total": 30
+        },
+        {
+          "completed": 6,
+          "stage": "pictures",
+          "total": 30
+        },
+        {
+          "completed": 7,
+          "stage": "pictures",
+          "total": 30
+        },
+        {
+          "completed": 8,
+          "stage": "pictures",
+          "total": 30
+        },
+        {
+          "completed": 9,
+          "stage": "pictures",
+          "total": 30
+        },
+        {
+          "completed": 10,
+          "stage": "pictures",
+          "total": 30
+        },
+        {
+          "completed": 11,
+          "stage": "pictures",
+          "total": 30
+        },
+        {
+          "completed": 12,
+          "stage": "pictures",
+          "total": 30
+        },
+        {
+          "completed": 13,
+          "stage": "pictures",
+          "total": 30
+        },
+        {
+          "completed": 14,
+          "stage": "pictures",
+          "total": 30
+        },
+        {
+          "completed": 15,
+          "stage": "pictures",
+          "total": 30
+        },
+        {
+          "completed": 16,
+          "stage": "pictures",
+          "total": 30
+        },
+        {
+          "completed": 17,
+          "stage": "pictures",
+          "total": 30
+        },
+        {
+          "completed": 18,
+          "stage": "pictures",
+          "total": 30
+        },
+        {
+          "completed": 19,
+          "stage": "pictures",
+          "total": 30
+        },
+        {
+          "completed": 20,
+          "stage": "pictures",
+          "total": 30
+        },
+        {
+          "completed": 21,
+          "stage": "pictures",
+          "total": 30
+        },
+        {
+          "completed": 22,
+          "stage": "pictures",
+          "total": 30
+        },
+        {
+          "completed": 23,
+          "stage": "pictures",
+          "total": 30
+        },
+        {
+          "completed": 24,
+          "stage": "pictures",
+          "total": 30
+        },
+        {
+          "completed": 25,
+          "stage": "pictures",
+          "total": 30
+        },
+        {
+          "completed": 26,
+          "stage": "pictures",
+          "total": 30
+        },
+        {
+          "completed": 27,
+          "stage": "pictures",
+          "total": 30
+        },
+        {
+          "completed": 28,
+          "stage": "pictures",
+          "total": 30
+        },
+        {
+          "completed": 29,
+          "stage": "pictures",
+          "total": 30
+        },
+        {
+          "completed": 30,
+          "stage": "pictures",
+          "total": 30
+        },
+        {
+          "completed": 1024,
+          "stage": "manual_audio",
+          "total": 48048
+        },
+        {
+          "completed": 3072,
+          "stage": "manual_audio",
+          "total": 48048
+        },
+        {
+          "completed": 5120,
+          "stage": "manual_audio",
+          "total": 48048
+        },
+        {
+          "completed": 7168,
+          "stage": "manual_audio",
+          "total": 48048
+        },
+        {
+          "completed": 9216,
+          "stage": "manual_audio",
+          "total": 48048
+        },
+        {
+          "completed": 11264,
+          "stage": "manual_audio",
+          "total": 48048
+        },
+        {
+          "completed": 13312,
+          "stage": "manual_audio",
+          "total": 48048
+        },
+        {
+          "completed": 15360,
+          "stage": "manual_audio",
+          "total": 48048
+        },
+        {
+          "completed": 17408,
+          "stage": "manual_audio",
+          "total": 48048
+        },
+        {
+          "completed": 19456,
+          "stage": "manual_audio",
+          "total": 48048
+        },
+        {
+          "completed": 21504,
+          "stage": "manual_audio",
+          "total": 48048
+        },
+        {
+          "completed": 23552,
+          "stage": "manual_audio",
+          "total": 48048
+        },
+        {
+          "completed": 25600,
+          "stage": "manual_audio",
+          "total": 48048
+        },
+        {
+          "completed": 27648,
+          "stage": "manual_audio",
+          "total": 48048
+        },
+        {
+          "completed": 29696,
+          "stage": "manual_audio",
+          "total": 48048
+        },
+        {
+          "completed": 31744,
+          "stage": "manual_audio",
+          "total": 48048
+        },
+        {
+          "completed": 33792,
+          "stage": "manual_audio",
+          "total": 48048
+        },
+        {
+          "completed": 35840,
+          "stage": "manual_audio",
+          "total": 48048
+        },
+        {
+          "completed": 37888,
+          "stage": "manual_audio",
+          "total": 48048
+        },
+        {
+          "completed": 39936,
+          "stage": "manual_audio",
+          "total": 48048
+        },
+        {
+          "completed": 41984,
+          "stage": "manual_audio",
+          "total": 48048
+        },
+        {
+          "completed": 44032,
+          "stage": "manual_audio",
+          "total": 48048
+        },
+        {
+          "completed": 46080,
+          "stage": "manual_audio",
+          "total": 48048
+        },
+        {
+          "completed": 48048,
+          "stage": "manual_audio",
+          "total": 48048
+        },
+        {
+          "completed": 1024,
+          "stage": "ordinary_audio",
+          "total": 48048
+        },
+        {
+          "completed": 3072,
+          "stage": "ordinary_audio",
+          "total": 48048
+        },
+        {
+          "completed": 5120,
+          "stage": "ordinary_audio",
+          "total": 48048
+        },
+        {
+          "completed": 7168,
+          "stage": "ordinary_audio",
+          "total": 48048
+        },
+        {
+          "completed": 9216,
+          "stage": "ordinary_audio",
+          "total": 48048
+        },
+        {
+          "completed": 11264,
+          "stage": "ordinary_audio",
+          "total": 48048
+        },
+        {
+          "completed": 13312,
+          "stage": "ordinary_audio",
+          "total": 48048
+        },
+        {
+          "completed": 15360,
+          "stage": "ordinary_audio",
+          "total": 48048
+        },
+        {
+          "completed": 17408,
+          "stage": "ordinary_audio",
+          "total": 48048
+        },
+        {
+          "completed": 19456,
+          "stage": "ordinary_audio",
+          "total": 48048
+        },
+        {
+          "completed": 21504,
+          "stage": "ordinary_audio",
+          "total": 48048
+        },
+        {
+          "completed": 23552,
+          "stage": "ordinary_audio",
+          "total": 48048
+        },
+        {
+          "completed": 25600,
+          "stage": "ordinary_audio",
+          "total": 48048
+        },
+        {
+          "completed": 27648,
+          "stage": "ordinary_audio",
+          "total": 48048
+        },
+        {
+          "completed": 29696,
+          "stage": "ordinary_audio",
+          "total": 48048
+        },
+        {
+          "completed": 31744,
+          "stage": "ordinary_audio",
+          "total": 48048
+        },
+        {
+          "completed": 33792,
+          "stage": "ordinary_audio",
+          "total": 48048
+        },
+        {
+          "completed": 35840,
+          "stage": "ordinary_audio",
+          "total": 48048
+        },
+        {
+          "completed": 37888,
+          "stage": "ordinary_audio",
+          "total": 48048
+        },
+        {
+          "completed": 39936,
+          "stage": "ordinary_audio",
+          "total": 48048
+        },
+        {
+          "completed": 41984,
+          "stage": "ordinary_audio",
+          "total": 48048
+        },
+        {
+          "completed": 44032,
+          "stage": "ordinary_audio",
+          "total": 48048
+        },
+        {
+          "completed": 46080,
+          "stage": "ordinary_audio",
+          "total": 48048
+        },
+        {
+          "completed": 48048,
+          "stage": "ordinary_audio",
+          "total": 48048
+        }
+      ],
+      "report": {
+        "audio_edit_media_time": 1024,
+        "audio_packets": 48,
+        "audio_samples": 48048,
+        "contract": {
+          "choice": {
+            "b_frames": "none",
+            "mode": "hardware"
+          },
+          "picture": {
+            "canvas": [
+              1920,
+              1080
+            ],
+            "color_policy": "sdr_rec709",
+            "frame_count": 30,
+            "frame_rate": {
+              "denominator": 1001,
+              "numerator": 30000
+            },
+            "project_audio_end": 48048,
+            "project_audio_start": 0,
+            "project_id": "project",
+            "range": {
+              "end": 30,
+              "start": 0
+            },
+            "raster": [
+              1920,
+              1080
+            ],
+            "relative_aspect_error": {
+              "denominator": "1",
+              "numerator": "0"
+            },
+            "revision_id": "ui-generated-ready",
+            "terminal_pts": 30030,
+            "time_base": {
+              "denominator": 30000,
+              "numerator": 1
+            }
+          }
+        },
+        "document_sha256": "2e7fca9f6df4f0282bf5b0e547ea15b7eaf4d89f46cbd48640b26a49789d94c7",
+        "fresh_gop_frames": 30,
+        "gops": 2,
+        "manual_first_sample": -1024,
+        "manual_physical_samples": 49152,
+        "maximum_b_run": 0,
+        "movie_bytes": 227109,
+        "movie_sha256": "1b68b28ddaa450b44b72e465c2c628ff161e5e29f696ebf77183a2c6b36e8dfc",
+        "movie_timescale": 240000,
+        "ordinary_first_sample": 0,
+        "ordinary_physical_samples": 48128,
+        "policy_version": 1,
+        "runtime_versions": [
+          4066151,
+          4064103,
+          3934311
+        ],
+        "video_edit_media_time": 0,
+        "video_frames": 30,
+        "video_packets": 30
+      },
+      "seconds": 1.878236166
+    },
+    {
+      "failure": null,
+      "name": "after-cancel",
+      "progress": [
+        {
+          "completed": 1,
+          "stage": "packets",
+          "total": 4
+        },
+        {
+          "completed": 2,
+          "stage": "packets",
+          "total": 4
+        },
+        {
+          "completed": 3,
+          "stage": "packets",
+          "total": 4
+        },
+        {
+          "completed": 4,
+          "stage": "packets",
+          "total": 4
+        },
+        {
+          "completed": 1,
+          "stage": "pictures",
+          "total": 1
+        },
+        {
+          "completed": 1024,
+          "stage": "manual_audio",
+          "total": 1602
+        },
+        {
+          "completed": 1602,
+          "stage": "manual_audio",
+          "total": 1602
+        },
+        {
+          "completed": 1024,
+          "stage": "ordinary_audio",
+          "total": 1602
+        },
+        {
+          "completed": 1602,
+          "stage": "ordinary_audio",
+          "total": 1602
+        }
+      ],
+      "report": {
+        "audio_edit_media_time": 1024,
+        "audio_packets": 3,
+        "audio_samples": 1602,
+        "contract": {
+          "choice": {
+            "b_frames": "none",
+            "mode": "hardware"
+          },
+          "picture": {
+            "canvas": [
+              320,
+              180
+            ],
+            "color_policy": "sdr_rec709",
+            "frame_count": 1,
+            "frame_rate": {
+              "denominator": 1001,
+              "numerator": 30000
+            },
+            "project_audio_end": 33634,
+            "project_audio_start": 32032,
+            "project_id": "project-picture-qualification",
+            "range": {
+              "end": 21,
+              "start": 20
+            },
+            "raster": [
+              320,
+              180
+            ],
+            "relative_aspect_error": {
+              "denominator": "1",
+              "numerator": "0"
+            },
+            "revision_id": "background",
+            "terminal_pts": 1001,
+            "time_base": {
+              "denominator": 30000,
+              "numerator": 1
+            }
+          }
+        },
+        "document_sha256": "af8e5672cee86b4d64827ef4e86b8af5ad9b9ca11d5c8b46e18e0f4d7d5663ff",
+        "fresh_gop_frames": 1,
+        "gops": 1,
+        "manual_first_sample": -1024,
+        "manual_physical_samples": 3072,
+        "maximum_b_run": 0,
+        "movie_bytes": 2925,
+        "movie_sha256": "b4f45c4dee99d2761df42d52e93e83addea32dfd8c37901b923a54e34348bae1",
+        "movie_timescale": 240000,
+        "ordinary_first_sample": 0,
+        "ordinary_physical_samples": 2048,
+        "policy_version": 1,
+        "runtime_versions": [
+          4066151,
+          4064103,
+          3934311
+        ],
+        "video_edit_media_time": 0,
+        "video_frames": 1,
+        "video_packets": 1
+      },
+      "seconds": 0.023197291
+    }
+  ],
+  "scope": "production verifier over retained actual encoded files; no encoding or publication",
+  "status": "passed"
+}

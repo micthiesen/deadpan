@@ -1,0 +1,62 @@
+"""Run the final verifier over retained fresh candidates, binding exact binaries."""
+import hashlib
+import json
+import os
+from pathlib import Path
+import shutil
+import subprocess
+import sys
+
+root = Path(__file__).resolve().parent
+name, mode = sys.argv[1:]
+assert mode in ('normal', 'sanitized')
+records = []
+for line in (root / 'final-build.log').read_text().splitlines():
+    try:
+        records.append(json.loads(line))
+    except json.JSONDecodeError:
+        pass
+artifacts = {}
+directory = root / (name + '-bin')
+directory.mkdir()
+for target, kind in [('deadpan-cli', 'bin'), ('qualify_encoded_verification', 'example')]:
+    matches = [row for row in records if row.get('reason') == 'compiler-artifact'
+               and row.get('target', {}).get('name') == target
+               and row.get('target', {}).get('kind') == [kind] and row.get('executable')]
+    assert len(matches) == 1
+    row = matches[0]
+    source = Path(row['executable']).resolve()
+    binding = {'cargo_artifact': row}
+    if mode == 'sanitized' and target == 'deadpan-cli':
+        source = (root / 'sanitizer/target/aarch64-apple-darwin/debug/deadpan-cli').resolve()
+        binding = {'build_report': str(root / 'sanitizer/report.json'),
+                   'build_journal': str(root / 'sanitized-tests.json')}
+    destination = directory / target
+    shutil.copy2(source, destination)
+    artifacts[target] = binding | {'original': str(source), 'path': str(destination),
+                                  'sha256': hashlib.sha256(destination.read_bytes()).hexdigest()}
+binary = directory / 'qualify_encoded_verification'
+environment = os.environ | {'PATH': str(directory) + os.pathsep + os.environ['PATH']}
+assert Path(shutil.which(binary.name, path=environment['PATH'])).resolve() == binary
+command = [binary.name, str(root / 'metal-current-report.json'),
+           artifacts['deadpan-cli']['path'], str(root / (name + '-report.json')),
+           str(root / (name + '-files'))]
+receipt = {'artifacts': artifacts, 'command': command, 'cwd': str(Path.cwd()),
+           'mode': mode, 'timeout_seconds': 180,
+           'asan_options': environment.get('ASAN_OPTIONS'),
+           'ubsan_options': environment.get('UBSAN_OPTIONS')}
+path = root / (name + '-artifacts.json')
+with path.open('x') as file:
+    json.dump(receipt, file, indent=2)
+    file.write('\n')
+try:
+    result = subprocess.run(command, env=environment, timeout=180)
+    receipt['exit_code'] = result.returncode
+except subprocess.TimeoutExpired:
+    receipt.update(timed_out=True, exit_code=124)
+for artifact in artifacts.values():
+    artifact['sha256_after'] = hashlib.sha256(Path(artifact['path']).read_bytes()).hexdigest()
+    artifact['unchanged'] = artifact['sha256_after'] == artifact['sha256']
+path.write_text(json.dumps(receipt, indent=2) + '\n')
+assert all(artifact['unchanged'] for artifact in artifacts.values())
+sys.exit(receipt['exit_code'])

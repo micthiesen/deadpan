@@ -1,0 +1,174 @@
+{
+  "cases": [
+    {
+      "failure": "Diagnostic(\"ExportVerificationFailed: decoded picture differs from exact output contract\")",
+      "name": "structural",
+      "progress": [
+        {
+          "completed": 1,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 9,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 18,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 27,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 36,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 45,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 54,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 63,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 72,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 81,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 90,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 99,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 108,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 117,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 126,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 135,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 144,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 153,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 162,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 171,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 180,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 189,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 198,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 207,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 216,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 225,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 234,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 243,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 252,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 261,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 270,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 278,
+          "stage": "packets",
+          "total": 278
+        }
+      ],
+      "report": null,
+      "seconds": 0.05365125
+    }
+  ],
+  "scope": "production verifier over retained actual encoded files; no encoding or publication",
+  "status": "running"
+}

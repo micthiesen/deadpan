@@ -3,11 +3,13 @@
 //! Supply an immutable host snapshot. Operations perform I/O and allocation and
 //! belong on a worker, never the audio callback. Cancellation and deadlines are
 //! cooperative. The decoder preserves source rate and channel order, performs no
-//! resampling, downmix, gain, clipping, or automatic skip/padding removal, and
-//! never derives a terminal endpoint from a declared container duration.
+//! resampling, downmix, gain, or clipping, and never derives a terminal endpoint
+//! from a declared container duration.
 //!
-//! FFmpeg's `AV_CODEC_FLAG2_SKIP_MANUAL` returns untrimmed frames with its reported
-//! skip side data. That evidence is exposed separately from decoded sample counts.
+//! The default manual mode uses FFmpeg's `AV_CODEC_FLAG2_SKIP_MANUAL` to return
+//! untrimmed frames with reported skip side data. Explicit ordinary mode lets
+//! FFmpeg apply its skip handling. Neither mode realigns PCM or drops packets in
+//! this adapter. Skip evidence is exposed separately from decoded sample counts.
 //! A zero skip record, absent skip record, codec padding observation, or container
 //! duration is not by itself proof that every decoded sample is presentation data.
 //!
@@ -19,12 +21,36 @@ use std::{fs::File, time::Instant};
 
 use crate::{DecodeControl, SourceDecodeError, input};
 
+/// Which FFmpeg skip-sample behavior the caller wants to observe.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum AudioDecodeMode {
+    /// Return physical decoded priming and padding with their skip side data.
+    #[default]
+    Manual,
+    /// Let FFmpeg apply its ordinary skip handling, without host trimming.
+    Ordinary,
+}
+
+/// Decoder and demuxer observations, distinct from the selected stream contract.
+/// These identify the implementation and reported profile; they do not establish
+/// finished-file timing or successful presentation of all authored samples.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct AudioDecoderEvidence {
+    pub container_format: String,
+    pub decoder_name: String,
+    /// FFmpeg profile IDs. Unknown profiles remain absent, never inferred.
+    pub container_profile: Option<i32>,
+    pub decoder_profile: Option<i32>,
+    /// FFmpeg's profile name, for example `LC` for observed AAC-LC.
+    pub decoder_profile_name: Option<String>,
+}
+
 #[derive(Clone, Copy, Debug)]
 pub struct AudioDecodeLimits {
     pub max_input_bytes: u64,
     pub max_frames: u64,
     pub max_packets: u64,
-    /// Total decoded samples per channel, including priming and padding.
+    /// Total returned samples per channel, including priming/padding in Manual.
     pub max_decoded_samples: u64,
     pub max_io_bytes_per_call: u64,
     pub max_samples_per_frame: u32,
@@ -136,12 +162,13 @@ pub struct AudioFrameMetadata {
     pub decode_timestamp: Option<i64>,
     /// Positive original frame.duration, without sample-count substitution.
     pub reported_duration: Option<i64>,
-    /// Decoded samples per channel, including any reported priming or padding.
+    /// Returned samples per channel under the selected decode mode.
     pub nb_samples: u32,
     pub sample_rate: u32,
     pub sample_format: AudioSampleFormat,
     pub channel_layout: AudioChannelLayout,
-    /// Exact frame skip side data under manual skip mode; no trimming applied.
+    /// Exact returned frame skip side data. Manual mode leaves it unconsumed;
+    /// ordinary mode may consume it inside FFmpeg before returning this frame.
     pub skip_samples: Option<AudioSkipSamples>,
     /// Original frame discard flag; manual AAC priming can carry this flag.
     pub discard: bool,
@@ -162,6 +189,8 @@ pub struct DecodedAudioFrame {
 pub struct AudioDecoder {
     inner: ffi::Decoder,
     info: AudioStreamInfo,
+    mode: AudioDecodeMode,
+    evidence: AudioDecoderEvidence,
     current: Option<AudioFrameMetadata>,
 }
 
@@ -192,6 +221,7 @@ mod opening_budget_tests {
             ffi::Decoder::open(
                 file.try_clone().unwrap(),
                 0,
+                AudioDecodeMode::Manual,
                 AudioDecodeLimits {
                     max_io_bytes_per_call: bytes,
                     ..defaults
@@ -257,28 +287,56 @@ mod opening_budget_tests {
 }
 
 impl AudioDecoder {
+    /// Open in Manual mode, preserving the original physical-sample contract.
     pub fn open(
         file: File,
         selected_stream: u32,
         limits: AudioDecodeLimits,
         control: DecodeControl<'_>,
     ) -> Result<Self, SourceDecodeError> {
-        Self::open_selection(file, Some(selected_stream), limits, control)
+        Self::open_with_mode(
+            file,
+            selected_stream,
+            AudioDecodeMode::Manual,
+            limits,
+            control,
+        )
+    }
+
+    pub fn open_with_mode(
+        file: File,
+        selected_stream: u32,
+        mode: AudioDecodeMode,
+        limits: AudioDecodeLimits,
+        control: DecodeControl<'_>,
+    ) -> Result<Self, SourceDecodeError> {
+        Self::open_selection(file, Some(selected_stream), mode, limits, control)
     }
 
     /// Select the first audio track in the fully admitted MP4/WAVE inventory.
     /// A container without audio fails; metadata reports the actual stream ID.
+    /// Preserves the original Manual-mode physical-sample contract.
     pub fn open_first(
         file: File,
         limits: AudioDecodeLimits,
         control: DecodeControl<'_>,
     ) -> Result<Self, SourceDecodeError> {
-        Self::open_selection(file, None, limits, control)
+        Self::open_first_with_mode(file, AudioDecodeMode::Manual, limits, control)
+    }
+
+    pub fn open_first_with_mode(
+        file: File,
+        mode: AudioDecodeMode,
+        limits: AudioDecodeLimits,
+        control: DecodeControl<'_>,
+    ) -> Result<Self, SourceDecodeError> {
+        Self::open_selection(file, None, mode, limits, control)
     }
 
     fn open_selection(
         file: File,
         selected_stream: Option<u32>,
+        mode: AudioDecodeMode,
         limits: AudioDecodeLimits,
         control: DecodeControl<'_>,
     ) -> Result<Self, SourceDecodeError> {
@@ -295,9 +353,10 @@ impl AudioDecoder {
                 code: "deadline_exceeded".into(),
                 message: "audio header validation exhausted the opening budget".into(),
             })?;
-        let (inner, info) = ffi::Decoder::open(
+        let (inner, info, evidence) = ffi::Decoder::open(
             file,
             selected_stream,
+            mode,
             limits,
             preflight_io_bytes,
             DecodeControl { timeout, ..control },
@@ -305,12 +364,24 @@ impl AudioDecoder {
         Ok(Self {
             inner,
             info,
+            mode,
+            evidence,
             current: None,
         })
     }
 
     pub fn info(&self) -> &AudioStreamInfo {
         &self.info
+    }
+
+    pub fn mode(&self) -> AudioDecodeMode {
+        self.mode
+    }
+
+    /// Latest successfully admitted decoder observations. The profile may be
+    /// unknown at open and become known after the first decoded frame.
+    pub fn evidence(&self) -> &AudioDecoderEvidence {
+        &self.evidence
     }
 
     /// Decode and retain one frame without allocating an owned PCM output.
@@ -320,7 +391,9 @@ impl AudioDecoder {
     ) -> Result<Option<AudioFrameMetadata>, SourceDecodeError> {
         ffi::preflight(control)?;
         self.current = None;
-        self.current = self.inner.next(control)?;
+        let (current, evidence) = self.inner.next(control)?;
+        self.current = current;
+        self.evidence = evidence;
         Ok(self.current)
     }
 
@@ -386,6 +459,9 @@ mod ffi {
         time::Duration,
     };
 
+    const PROFILE_UNKNOWN: i32 = -99;
+    const PROFILE_AAC_LOW: i32 = 1;
+
     #[repr(C)]
     struct Limits {
         max_input_bytes: u64,
@@ -423,6 +499,29 @@ mod ffi {
         seek_preroll: i32,
         sample_format: i32,
         codec: [c_char; 32],
+    }
+
+    #[repr(C)]
+    struct Evidence {
+        mode: u32,
+        container_profile: i32,
+        decoder_profile: i32,
+        container_format: [c_char; 64],
+        decoder_name: [c_char; 32],
+        decoder_profile_name: [c_char; 32],
+    }
+
+    impl Default for Evidence {
+        fn default() -> Self {
+            Self {
+                mode: u32::MAX,
+                container_profile: PROFILE_UNKNOWN,
+                decoder_profile: PROFILE_UNKNOWN,
+                container_format: [0; 64],
+                decoder_name: [0; 32],
+                decoder_profile_name: [0; 32],
+            }
+        }
     }
 
     #[repr(C)]
@@ -473,6 +572,7 @@ mod ffi {
             fd: c_int,
             length: i64,
             selected_stream: u32,
+            mode: u32,
             limits: *const Limits,
             preflight_io_bytes: u64,
             timeout_ms: u64,
@@ -480,6 +580,7 @@ mod ffi {
             opaque: *const c_void,
             out: *mut *mut c_void,
             info: *mut Info,
+            evidence: *mut Evidence,
             error: *mut Error,
         ) -> c_int;
         fn deadpan_audio_next(
@@ -488,6 +589,7 @@ mod ffi {
             cancelled: Cancel,
             opaque: *const c_void,
             frame: *mut Frame,
+            evidence: *mut Evidence,
             error: *mut Error,
         ) -> c_int;
         fn deadpan_audio_copy(
@@ -536,6 +638,7 @@ mod ffi {
     pub(super) struct Decoder {
         pointer: NonNull<c_void>,
         _file: File,
+        mode: AudioDecodeMode,
         _not_sync: PhantomData<Cell<()>>,
     }
 
@@ -555,10 +658,11 @@ mod ffi {
         pub(super) fn open(
             file: File,
             selected_stream: u32,
+            mode: AudioDecodeMode,
             limits: AudioDecodeLimits,
             preflight_io_bytes: u64,
             ctl: DecodeControl<'_>,
-        ) -> Result<(Self, AudioStreamInfo), SourceDecodeError> {
+        ) -> Result<(Self, AudioStreamInfo, AudioDecoderEvidence), SourceDecodeError> {
             let (timeout, opaque) = control(ctl)?;
             limits.validate()?;
             let metadata = file.metadata()?;
@@ -584,6 +688,7 @@ mod ffi {
             };
             let mut pointer = std::ptr::null_mut();
             let mut info = Info::default();
+            let mut evidence = Evidence::default();
             let mut error = Error::default();
             // SAFETY: bounded live input/output structures, an owned regular
             // descriptor, and a synchronous cancellation callback. C frees its
@@ -593,6 +698,7 @@ mod ffi {
                     file.as_raw_fd(),
                     length,
                     selected_stream,
+                    mode_id(mode),
                     &limits,
                     preflight_io_bytes,
                     timeout,
@@ -600,6 +706,7 @@ mod ffi {
                     opaque,
                     &mut pointer,
                     &mut info,
+                    &mut evidence,
                     &mut error,
                 )
             };
@@ -609,6 +716,7 @@ mod ffi {
             let inner = Self {
                 pointer: NonNull::new(pointer).ok_or_else(invalid_report)?,
                 _file: file,
+                mode,
                 _not_sync: PhantomData,
             };
             let codec = string(&info.codec);
@@ -632,15 +740,20 @@ mod ffi {
             if value.stream_index != selected_stream {
                 return Err(invalid_report());
             }
-            Ok((inner, value))
+            let evidence = evidence.convert(mode)?;
+            if evidence.decoder_name != value.codec {
+                return Err(invalid_report());
+            }
+            Ok((inner, value, evidence))
         }
 
         pub(super) fn next(
             &mut self,
             ctl: DecodeControl<'_>,
-        ) -> Result<Option<AudioFrameMetadata>, SourceDecodeError> {
+        ) -> Result<(Option<AudioFrameMetadata>, AudioDecoderEvidence), SourceDecodeError> {
             let (timeout, opaque) = control(ctl)?;
             let mut frame = Frame::default();
+            let mut evidence = Evidence::default();
             let mut error = Error::default();
             // SAFETY: exclusive context ownership and synchronous live outputs
             // and cancellation state; next retains its own decoded AVFrame.
@@ -651,12 +764,13 @@ mod ffi {
                     cancelled,
                     opaque,
                     &mut frame,
+                    &mut evidence,
                     &mut error,
                 )
             };
             match result {
-                1 => Ok(Some(frame.convert()?)),
-                0 => Ok(None),
+                1 => Ok((Some(frame.convert()?), evidence.convert(self.mode)?)),
+                0 => Ok((None, evidence.convert(self.mode)?)),
                 _ => Err(error.into_error()),
             }
         }
@@ -688,6 +802,53 @@ mod ffi {
             }
             frame.convert()
         }
+    }
+
+    fn mode_id(mode: AudioDecodeMode) -> u32 {
+        match mode {
+            AudioDecodeMode::Manual => 0,
+            AudioDecodeMode::Ordinary => 1,
+        }
+    }
+
+    impl Evidence {
+        fn convert(self, mode: AudioDecodeMode) -> Result<AudioDecoderEvidence, SourceDecodeError> {
+            let container_format = checked_string(&self.container_format)?;
+            let decoder_name = checked_string(&self.decoder_name)?;
+            let decoder_profile_name = checked_string(&self.decoder_profile_name)?;
+            if self.mode != mode_id(mode)
+                || !matches!(container_format.as_str(), "mov,mp4,m4a,3gp,3g2,mj2" | "wav")
+                || !matches!(decoder_name.as_str(), "aac" | "pcm_s16le")
+                || (decoder_name == "aac"
+                    && (!matches!(self.container_profile, PROFILE_UNKNOWN | PROFILE_AAC_LOW)
+                        || !matches!(self.decoder_profile, PROFILE_UNKNOWN | PROFILE_AAC_LOW)))
+                || (self.decoder_profile == PROFILE_UNKNOWN && !decoder_profile_name.is_empty())
+                || (decoder_name == "aac"
+                    && self.decoder_profile == PROFILE_AAC_LOW
+                    && decoder_profile_name != "LC")
+            {
+                return Err(invalid_report());
+            }
+            Ok(AudioDecoderEvidence {
+                container_format,
+                decoder_name,
+                container_profile: (self.container_profile != PROFILE_UNKNOWN)
+                    .then_some(self.container_profile),
+                decoder_profile: (self.decoder_profile != PROFILE_UNKNOWN)
+                    .then_some(self.decoder_profile),
+                decoder_profile_name: (!decoder_profile_name.is_empty())
+                    .then_some(decoder_profile_name),
+            })
+        }
+    }
+
+    fn checked_string(bytes: &[c_char]) -> Result<String, SourceDecodeError> {
+        let end = bytes
+            .iter()
+            .position(|&value| value == 0)
+            .ok_or_else(invalid_report)?;
+        let bytes: Vec<_> = bytes[..end].iter().map(|&value| value as u8).collect();
+        String::from_utf8(bytes).map_err(|_| invalid_report())
     }
 
     impl Layout {
@@ -776,6 +937,57 @@ mod ffi {
         SourceDecodeError::Native {
             code: "invalid_report".into(),
             message: "native audio decoder returned an invalid validated report".into(),
+        }
+    }
+
+    #[cfg(test)]
+    mod evidence_tests {
+        use super::*;
+
+        fn unknown_aac(mode: AudioDecodeMode) -> Evidence {
+            let mut value = Evidence {
+                mode: mode_id(mode),
+                ..Evidence::default()
+            };
+            for (out, input) in value
+                .container_format
+                .iter_mut()
+                .zip(b"mov,mp4,m4a,3gp,3g2,mj2")
+            {
+                *out = *input as c_char;
+            }
+            for (out, input) in value.decoder_name.iter_mut().zip(b"aac") {
+                *out = *input as c_char;
+            }
+            value
+        }
+
+        #[test]
+        fn unknown_profile_remains_unknown_and_malformed_evidence_is_rejected() {
+            let actual = unknown_aac(AudioDecodeMode::Ordinary)
+                .convert(AudioDecodeMode::Ordinary)
+                .unwrap();
+            assert_eq!(actual.container_profile, None);
+            assert_eq!(actual.decoder_profile, None);
+            assert_eq!(actual.decoder_profile_name, None);
+            assert!(
+                unknown_aac(AudioDecodeMode::Manual)
+                    .convert(AudioDecodeMode::Ordinary)
+                    .is_err()
+            );
+
+            let mut invalid = unknown_aac(AudioDecodeMode::Manual);
+            invalid.mode = 2;
+            assert!(invalid.convert(AudioDecodeMode::Manual).is_err());
+            let mut invalid = unknown_aac(AudioDecodeMode::Manual);
+            invalid.decoder_profile = 4;
+            assert!(invalid.convert(AudioDecodeMode::Manual).is_err());
+            let mut invalid = unknown_aac(AudioDecodeMode::Manual);
+            invalid.decoder_profile_name[0] = b'L' as c_char;
+            assert!(invalid.convert(AudioDecodeMode::Manual).is_err());
+            let mut invalid = unknown_aac(AudioDecodeMode::Manual);
+            invalid.container_format.fill(b'x' as c_char);
+            assert!(invalid.convert(AudioDecodeMode::Manual).is_err());
         }
     }
 }

@@ -1,0 +1,21 @@
+{
+  "format-final": [],
+  "native-build": [
+    "crates/deadpan-cli/examples/qualify_encoded_verification.rs",
+    "crates/deadpan-cli/examples/qualify_project_picture/encoded.rs",
+    "crates/deadpan-cli/src/encoded_render/verification/host.rs",
+    "crates/deadpan-cli/src/encoded_render/verification/inspect.rs",
+    "crates/deadpan-cli/src/encoded_render/verification/inspect/pictures.rs",
+    "crates/deadpan-cli/src/encoded_render/verification/worker.rs",
+    "crates/deadpan-cli/src/encoded_render/verification/worker/tests.rs",
+    "crates/deadpan-cli/tests/encoded_verification.rs",
+    "crates/deadpan-cli/tests/encoded_verification/README.md",
+    "crates/deadpan-cli/tests/encoded_verification/fixture.py"
+  ],
+  "project-decode": [],
+  "sanitized-tests": [],
+  "verified-final": [],
+  "verified-sanitized": [],
+  "workspace-clippy-final": [],
+  "workspace-tests": []
+}

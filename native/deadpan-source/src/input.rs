@@ -5,6 +5,14 @@ use crate::audio::AudioDecodeLimits;
 use crate::{DecodeControl, DecodeLimits, SourceDecodeError};
 use std::{fs::File, os::unix::fs::FileExt, sync::atomic::Ordering, time::Instant};
 
+mod inspection;
+use inspection::{MovieHeader, TrackHeader};
+pub use inspection::{
+    Mp4AvcConfiguration, Mp4ColorDescription, Mp4Edit, Mp4H264Packet, Mp4Inspection,
+    Mp4PacketObservation, Mp4PacketReader, Mp4PresentationTime, Mp4TrackInspection, Mp4TrackKind,
+    inspect_mp4,
+};
+
 const HEADER_BYTES: u64 = 16 * 1024 * 1024;
 const ITEMS: u64 = 1_000_000;
 const ATOMS: u32 = 100_000;
@@ -147,6 +155,25 @@ struct Track {
     sync: Option<Table>,
     roll_description: bool,
     roll_samples: Option<u32>,
+    header: Option<TrackHeader>,
+    media_timescale: u32,
+    media_duration: Option<u64>,
+    edit_entries: Vec<Mp4Edit>,
+    timing: Option<Table>,
+    timing_duration: u64,
+    composition: Option<(Table, u8)>,
+    avc: Option<Mp4AvcConfiguration>,
+    dimensions: Option<[u32; 2]>,
+    color: Option<Mp4ColorDescription>,
+    pixel_aspect_ratio: Option<[u32; 2]>,
+    audio_channels: Option<u32>,
+    audio_sample_rate: Option<u32>,
+}
+
+struct Mp4Layout {
+    movie: MovieHeader,
+    moov_before_mdat: bool,
+    tracks: Vec<Track>,
 }
 
 struct Page {
@@ -611,9 +638,43 @@ fn wave_extensible_pcm16(r: &mut Reader<'_>, start: u64, channels: u32) -> Resul
 }
 
 fn mp4(r: &mut Reader<'_>, policy: Selection) -> Result<Option<u32>> {
+    let layout = mp4_layout(r)?;
+    let tracks = layout.tracks;
+    match policy {
+        Selection::Audio(index) => {
+            if tracks.get(index as usize).and_then(|track| track.codec) != Some(Kind::Audio) {
+                return Err(selection());
+            }
+            Ok(Some(index))
+        }
+        Selection::FirstAudio => {
+            let index = tracks
+                .iter()
+                .position(|track| track.codec == Some(Kind::Audio))
+                .ok_or_else(selection)?;
+            Ok(Some(
+                u32::try_from(index).map_err(|_| limit("audio stream index overflow"))?,
+            ))
+        }
+        Selection::Video => {
+            if tracks
+                .iter()
+                .filter(|track| track.codec == Some(Kind::Video))
+                .count()
+                != 1
+            {
+                return Err(selection());
+            }
+            Ok(None)
+        }
+    }
+}
+
+fn mp4_layout(r: &mut Reader<'_>) -> Result<Mp4Layout> {
     let mut cursor = 0;
     let mut brands = false;
-    let mut movie = false;
+    let mut movie = None;
+    let mut moov_before_mdat = false;
     let mut media = None;
     let mut tracks = Vec::new();
     while cursor < r.length {
@@ -651,11 +712,11 @@ fn mp4(r: &mut Reader<'_>, policy: Selection) -> Result<Option<u32>> {
             }
             b"moov" => {
                 require(
-                    brands && !movie,
+                    brands && movie.is_none(),
                     "MP4 requires one movie after its file type",
                 )?;
-                movie = true;
-                movie_box(r, atom.body, &mut tracks)?;
+                moov_before_mdat = media.is_none();
+                movie = Some(movie_box(r, atom.body, &mut tracks)?);
             }
             b"mdat" => {
                 require(
@@ -676,52 +737,29 @@ fn mp4(r: &mut Reader<'_>, policy: Selection) -> Result<Option<u32>> {
         }
     }
     require(
-        brands && movie && !tracks.is_empty(),
+        brands && movie.is_some() && !tracks.is_empty(),
         "MP4 lacks its bounded movie header",
     )?;
     let media = media.ok_or_else(|| invalid("MP4 has no media-data box"))?;
     for track in &tracks {
         validate_track(r, track, media)?;
     }
-    match policy {
-        Selection::Audio(index) => {
-            if tracks.get(index as usize).and_then(|track| track.codec) != Some(Kind::Audio) {
-                return Err(selection());
-            }
-            Ok(Some(index))
-        }
-        Selection::FirstAudio => {
-            let index = tracks
-                .iter()
-                .position(|track| track.codec == Some(Kind::Audio))
-                .ok_or_else(selection)?;
-            Ok(Some(
-                u32::try_from(index).map_err(|_| limit("audio stream index overflow"))?,
-            ))
-        }
-        Selection::Video => {
-            if tracks
-                .iter()
-                .filter(|track| track.codec == Some(Kind::Video))
-                .count()
-                != 1
-            {
-                return Err(selection());
-            }
-            Ok(None)
-        }
-    }
+    Ok(Mp4Layout {
+        movie: movie.ok_or_else(|| invalid("MP4 has no movie header"))?,
+        moov_before_mdat,
+        tracks,
+    })
 }
 
-fn movie_box(r: &mut Reader<'_>, span: Span, tracks: &mut Vec<Track>) -> Result<()> {
+fn movie_box(r: &mut Reader<'_>, span: Span, tracks: &mut Vec<Track>) -> Result<MovieHeader> {
     let mut cursor = span.start;
-    let mut header = false;
+    let mut header = None;
     let mut metadata = false;
     while cursor < span.end {
         let atom = r.atom(&mut cursor, span.end, 1)?;
         match &atom.tag {
             b"mvhd" => {
-                require(!header, "duplicate movie header")?;
+                require(header.is_none(), "duplicate movie header")?;
                 let version = r.full(atom.body, &[0, 1], 0)?;
                 r.fixed(atom.body, if version == 0 { 100 } else { 112 })?;
                 let timescale = r.u32(atom.body.start + if version == 0 { 12 } else { 20 })?;
@@ -729,7 +767,14 @@ fn movie_box(r: &mut Reader<'_>, span: Span, tracks: &mut Vec<Track>) -> Result<
                     timescale > 0 && timescale <= i32::MAX as u32,
                     "invalid movie time scale",
                 )?;
-                header = true;
+                header = Some(MovieHeader {
+                    timescale,
+                    duration: inspection::duration(r, atom.body, version, 16, 24)?,
+                    matrix: inspection::matrix(
+                        r,
+                        atom.body.start + if version == 0 { 36 } else { 48 },
+                    )?,
+                });
             }
             b"trak" => {
                 if tracks.len() >= TRACKS {
@@ -750,7 +795,7 @@ fn movie_box(r: &mut Reader<'_>, span: Span, tracks: &mut Vec<Track>) -> Result<
             _ => return Err(invalid("unqualified movie metadata or fragmentation")),
         }
     }
-    require(header, "MP4 lacks movie header")
+    header.ok_or_else(|| invalid("MP4 lacks movie header"))
 }
 
 fn track_box(r: &mut Reader<'_>, span: Span) -> Result<Track> {
@@ -773,11 +818,12 @@ fn track_box(r: &mut Reader<'_>, span: Span) -> Result<Track> {
                 let id = r.u32(atom.body.start + if version == 0 { 12 } else { 20 })?;
                 require(id != 0, "invalid MP4 track identity")?;
                 track.id = Some(id);
+                track.header = Some(inspection::track_header(r, atom.body, version, full)?);
             }
             b"edts" => {
                 require(!track.edits, "duplicate track edits")?;
                 track.edits = true;
-                edit_box(r, atom.body)?;
+                track.edit_entries = edit_box(r, atom.body)?;
             }
             b"mdia" => {
                 require(!media, "duplicate track media header")?;
@@ -794,7 +840,7 @@ fn track_box(r: &mut Reader<'_>, span: Span) -> Result<Track> {
     Ok(track)
 }
 
-fn edit_box(r: &mut Reader<'_>, span: Span) -> Result<()> {
+fn edit_box(r: &mut Reader<'_>, span: Span) -> Result<Vec<Mp4Edit>> {
     let mut cursor = span.start;
     let atom = r.atom(&mut cursor, span.end, 3)?;
     require(
@@ -807,6 +853,7 @@ fn edit_box(r: &mut Reader<'_>, span: Span) -> Result<()> {
         (1..=2).contains(&table.rows),
         "only one media edit optionally preceded by one empty edit is admitted",
     )?;
+    let mut entries = Vec::with_capacity(2);
     for index in 0..table.rows {
         let at = table.data.start + u64::from(index) * if version == 0 { 12 } else { 20 };
         let (duration, time, rate) = if version == 0 {
@@ -830,8 +877,14 @@ fn edit_box(r: &mut Reader<'_>, span: Span) -> Result<()> {
             },
             "unsupported repeated or negative media edit",
         )?;
+        entries.push(Mp4Edit {
+            segment_duration: duration,
+            media_time: time,
+            media_rate_integer: (rate >> 16) as i16,
+            media_rate_fraction: rate as i16,
+        });
     }
-    Ok(())
+    Ok(entries)
 }
 
 fn media_box(r: &mut Reader<'_>, span: Span, track: &mut Track) -> Result<()> {
@@ -849,6 +902,8 @@ fn media_box(r: &mut Reader<'_>, span: Span, track: &mut Track) -> Result<()> {
                     "invalid media time scale",
                 )?;
                 track.mdhd = true;
+                track.media_timescale = timescale;
+                track.media_duration = inspection::duration(r, atom.body, version, 16, 24)?;
             }
             b"hdlr" => {
                 require(track.handler.is_none(), "duplicate media handler")?;
@@ -938,7 +993,7 @@ fn sample_tables(r: &mut Reader<'_>, span: Span, track: &mut Track) -> Result<()
         match &atom.tag {
             b"stsd" => {
                 require(track.codec.is_none(), "duplicate sample description")?;
-                track.codec = Some(sample_description(r, atom.body)?);
+                track.codec = Some(sample_description(r, atom.body, track)?);
             }
             b"stsz" | b"stz2" => {
                 require(track.sizes.is_none(), "duplicate sample-size table")?;
@@ -1002,8 +1057,11 @@ fn sample_tables(r: &mut Reader<'_>, span: Span, track: &mut Track) -> Result<()
                 }
                 if composition {
                     track.composition_count = Some(samples);
+                    track.composition = Some((table, version));
                 } else {
                     track.timing_count = Some(samples);
+                    track.timing = Some(table);
+                    track.timing_duration = duration;
                 }
             }
             b"stss" => {
@@ -1101,7 +1159,7 @@ fn size_table(r: &mut Reader<'_>, atom: Atom) -> Result<Sizes> {
     Ok(sizes)
 }
 
-fn sample_description(r: &mut Reader<'_>, span: Span) -> Result<Kind> {
+fn sample_description(r: &mut Reader<'_>, span: Span, track: &mut Track) -> Result<Kind> {
     r.full(span, &[0], 0)?;
     require(
         span.len() >= 16 && r.u32(span.start + 4)? == 1,
@@ -1135,6 +1193,8 @@ fn sample_description(r: &mut Reader<'_>, span: Span) -> Result<Kind> {
         )?;
         let channels = u32::from(u16::from_be_bytes(r.bytes(entry.body.start + 16)?));
         let rate = r.u32(entry.body.start + 24)?;
+        track.audio_channels = Some(channels);
+        track.audio_sample_rate = Some(rate >> 16);
         if channels == 0
             || channels > r.limits.max_channels
             || rate >> 16 == 0
@@ -1151,6 +1211,7 @@ fn sample_description(r: &mut Reader<'_>, span: Span) -> Result<Kind> {
     } else {
         let width = u32::from(u16::from_be_bytes(r.bytes(entry.body.start + 24)?));
         let height = u32::from(u16::from_be_bytes(r.bytes(entry.body.start + 26)?));
+        track.dimensions = Some([width, height]);
         require(
             width > 0 && height > 0,
             "MP4 video dimensions must be positive",
@@ -1175,6 +1236,13 @@ fn sample_description(r: &mut Reader<'_>, span: Span) -> Result<Kind> {
                 require(!config, "duplicate video configuration")?;
                 config = true;
                 avcc(r, atom.body)?;
+                let prefix = r.bytes::<5>(atom.body.start)?;
+                track.avc = Some(Mp4AvcConfiguration {
+                    profile: prefix[1],
+                    compatibility: prefix[2],
+                    level: prefix[3],
+                    nal_length_bytes: (prefix[4] & 3) + 1,
+                });
             }
             b"esds" if kind == Kind::Audio => {
                 require(!config, "duplicate audio configuration")?;
@@ -1189,6 +1257,14 @@ fn sample_description(r: &mut Reader<'_>, span: Span) -> Result<Kind> {
                     r.bytes::<4>(atom.body.start)? == *b"nclx",
                     "only bounded nclx color metadata is admitted",
                 )?;
+                let range_byte = r.bytes::<1>(atom.body.start + 10)?[0];
+                track.color = Some(Mp4ColorDescription {
+                    primaries: u16::from_be_bytes(r.bytes(atom.body.start + 4)?),
+                    transfer: u16::from_be_bytes(r.bytes(atom.body.start + 6)?),
+                    matrix: u16::from_be_bytes(r.bytes(atom.body.start + 8)?),
+                    full_range: range_byte & 128 != 0,
+                    range_byte,
+                });
             }
             b"pasp" if kind == Kind::Video => {
                 require(!aspect, "duplicate pixel aspect")?;
@@ -1198,6 +1274,8 @@ fn sample_description(r: &mut Reader<'_>, span: Span) -> Result<Kind> {
                     r.u32(atom.body.start)? > 0 && r.u32(atom.body.start + 4)? > 0,
                     "invalid pixel aspect",
                 )?;
+                track.pixel_aspect_ratio =
+                    Some([r.u32(atom.body.start)?, r.u32(atom.body.start + 4)?]);
             }
             b"btrt" => {
                 require(!bitrate, "duplicate bitrate metadata")?;

@@ -30,11 +30,14 @@
 #define MAX_STREAMS 33
 #define DEMUXERS "mov,wav"
 #define CODECS "aac,pcm_s16le"
+#define DECODE_MANUAL 0
+#define DECODE_ORDINARY 1
 struct DeadpanAudio {
     int fd;
     int64_t length, position;
     DeadpanAudioLimits limits;
     DeadpanAudioInfo info;
+    uint32_t mode;
     DeadpanAudioLayout header_layout;
     DeadpanAudioFrame current;
     AVIOContext *io;
@@ -238,6 +241,8 @@ static int bounded_buffer(AVCodecContext *context, AVFrame *frame, int flags) {
     return avcodec_default_get_buffer2(context, frame, flags);
 }
 static int open_impl(DeadpanAudio *s) {
+    if (s->mode != DECODE_MANUAL && s->mode != DECODE_ORDINARY)
+        return fail(s, "invalid_configuration", "audio decode mode is outside its closed vocabulary");
     if (runtime(s) < 0) return -1;
     if (!s->limits.max_input_bytes || s->limits.max_input_bytes > 64ULL*1024*1024*1024 ||
         !s->limits.max_frames || s->limits.max_frames > 10000000 || !s->limits.max_packets || s->limits.max_packets > 40000000 ||
@@ -316,7 +321,8 @@ static int open_impl(DeadpanAudio *s) {
     s->decoder->max_samples = (int64_t)s->limits.max_samples_per_frame * s->limits.max_channels;
     s->decoder->err_recognition = AV_EF_EXPLODE | AV_EF_CAREFUL;
     s->decoder->pkt_timebase = stream->time_base;
-    s->decoder->flags2 |= AV_CODEC_FLAG2_SKIP_MANUAL;
+    if (s->mode == DECODE_MANUAL) s->decoder->flags2 |= AV_CODEC_FLAG2_SKIP_MANUAL;
+    else s->decoder->flags2 &= ~AV_CODEC_FLAG2_SKIP_MANUAL;
     s->decoder->opaque = s;
     s->decoder->get_buffer2 = bounded_buffer;
     if ((result = avcodec_open2(s->decoder, codec, NULL)) < 0) return fferror(s, "open audio decoder", result);
@@ -331,6 +337,22 @@ static int open_impl(DeadpanAudio *s) {
     s->info.sample_format = s->decoder->sample_fmt;
     return check(s);
 }
+static int capture_evidence(DeadpanAudio *s, DeadpanAudioEvidence *out) {
+    const char *container = s->format->iformat->name;
+    const char *decoder = s->decoder->codec->name;
+    const char *name = avcodec_profile_name(s->decoder->codec_id, s->decoder->profile);
+    if (!container || !decoder || strlen(container) >= sizeof(out->container_format) ||
+        strlen(decoder) >= sizeof(out->decoder_name) ||
+        (name && strlen(name) >= sizeof(out->decoder_profile_name)))
+        return fail(s, "invalid_report", "audio decoder evidence exceeds its bounded report");
+    *out = (DeadpanAudioEvidence){.mode=s->mode,
+        .container_profile=s->format->streams[s->stream]->codecpar->profile,
+        .decoder_profile=s->decoder->profile};
+    (void)snprintf(out->container_format, sizeof(out->container_format), "%s", container);
+    (void)snprintf(out->decoder_name, sizeof(out->decoder_name), "%s", decoder);
+    if (name) (void)snprintf(out->decoder_profile_name, sizeof(out->decoder_profile_name), "%s", name);
+    return 1;
+}
 void deadpan_audio_close(DeadpanAudio *s) {
     if (!s) return;
     av_frame_free(&s->frame);
@@ -340,19 +362,20 @@ void deadpan_audio_close(DeadpanAudio *s) {
     if (s->io) { av_freep(&s->io->buffer); avio_context_free(&s->io); }
     av_free(s);
 }
-int deadpan_audio_open(int fd, int64_t length, uint32_t selected, const DeadpanAudioLimits *limits,
+int deadpan_audio_open(int fd, int64_t length, uint32_t selected, uint32_t mode, const DeadpanAudioLimits *limits,
     uint64_t preflight_io_bytes, uint64_t timeout, DeadpanCancelled cancelled, const void *opaque, DeadpanAudio **out,
-    DeadpanAudioInfo *info, DeadpanSourceError *error) {
+    DeadpanAudioInfo *info, DeadpanAudioEvidence *evidence, DeadpanSourceError *error) {
     *out = NULL; memset(error, 0, sizeof(*error));
     DeadpanAudio *s = av_mallocz(sizeof(*s));
     if (!s) { (void)snprintf(error->code, sizeof(error->code), "resource_exhausted"); return -1; }
-    s->fd = fd; s->length = length; s->limits = *limits;
+    s->fd = fd; s->length = length; s->limits = *limits; s->mode = mode;
     s->stream = selected <= INT_MAX ? (int)selected : -1;
     int result = begin(s, timeout, cancelled, opaque, error);
     if (result > 0 && preflight_io_bytes > s->limits.max_io_bytes_per_call)
         result = fail(s, "resource_limit", "header guard exhausted the opening input byte budget");
     s->io_bytes = preflight_io_bytes;
     if (result > 0) result = open_impl(s);
+    if (result > 0) result = capture_evidence(s, evidence);
     result = finish(s, result);
     if (result < 0) { deadpan_audio_close(s); return -1; }
     *info = s->info; *out = s; return 1;
@@ -446,9 +469,11 @@ static int next_impl(DeadpanAudio *s, DeadpanAudioFrame *out) {
     return fail(s, "resource_limit", "bounded audio decode progress budget exhausted");
 }
 int deadpan_audio_next(DeadpanAudio *s, uint64_t timeout, DeadpanCancelled cancelled,
-    const void *opaque, DeadpanAudioFrame *frame, DeadpanSourceError *error) {
+    const void *opaque, DeadpanAudioFrame *frame, DeadpanAudioEvidence *evidence, DeadpanSourceError *error) {
     if (begin(s, timeout, cancelled, opaque, error) < 0) return finish(s, -1);
-    return finish(s, next_impl(s, frame));
+    int result = next_impl(s, frame);
+    if (result >= 0 && capture_evidence(s, evidence) < 0) result = -1;
+    return finish(s, result);
 }
 static int copy_impl(DeadpanAudio *s, DeadpanAudioFrame *out, float *samples, size_t length) {
     if (!s->current_valid) return fail(s, "no_current_frame", "decode an audio frame before copying samples");

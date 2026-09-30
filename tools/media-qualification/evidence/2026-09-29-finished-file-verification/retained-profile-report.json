@@ -1,0 +1,314 @@
+{
+  "cases": [
+    {
+      "failure": "Diagnostic(\"source decode ffmpeg_failure: send audio packet: Invalid argument\")",
+      "name": "structural",
+      "progress": [
+        {
+          "completed": 1,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 9,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 18,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 27,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 36,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 45,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 54,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 63,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 72,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 81,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 90,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 99,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 108,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 117,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 126,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 135,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 144,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 153,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 162,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 171,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 180,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 189,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 198,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 207,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 216,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 225,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 234,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 243,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 252,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 261,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 270,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 278,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 1,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 4,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 8,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 12,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 16,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 20,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 24,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 28,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 32,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 36,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 40,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 44,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 48,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 52,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 56,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 60,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 64,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 68,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 72,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 76,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 80,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 84,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 88,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 92,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 96,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 100,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 104,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 108,
+          "stage": "pictures",
+          "total": 108
+        }
+      ],
+      "report": null,
+      "seconds": 0.23698825
+    }
+  ],
+  "scope": "production verifier over retained actual encoded files; no encoding or publication",
+  "status": "running"
+}

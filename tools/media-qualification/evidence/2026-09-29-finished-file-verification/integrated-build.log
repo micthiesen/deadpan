@@ -1,0 +1,52 @@
+   Compiling deadpan-source v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-source)
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+error[E0277]: the trait bound `Array<u8, UInt<UInt<UInt<UInt<..., ...>, ...>, ...>, ...>>: LowerHex` is not satisfied
+   --> crates/deadpan-cli/src/encoded_render/verification/worker.rs:192:33
+    |
+192 |     Sha256::new(format!("{:x}", hash.finalize())).map_err(|e| e.to_string())
+    |                          ----   ^^^^^^^^^^^^^^^ the trait `LowerHex` is not implemented for `Array<u8, UInt<UInt<UInt<UInt<UInt<..., ...>, ...>, ...>, ...>, ...>>`
+    |                          |
+    |                          required by this formatting parameter
+    |
+    = help: the following other types implement trait `LowerHex`:
+              &T
+              &mut T
+              AccelerationStructureBuildFlags
+              AccelerationStructureGeometryFlags
+              AccelerationStructureUses
+              AtFlags
+              AttachmentOps
+              Backends
+            and 186 others
+    = note: the full name for the type has been written to '/Users/michael/Code/deadpan/target/debug/deps/deadpan_cli-73bf07dd81773fda.long-type-7274928422767853121.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+
+error[E0277]: the trait bound `Array<u8, UInt<UInt<UInt<UInt<..., ...>, ...>, ...>, ...>>: LowerHex` is not satisfied
+   --> crates/deadpan-cli/src/encoded_render/verification/worker.rs:192:33
+    |
+192 |     Sha256::new(format!("{:x}", hash.finalize())).map_err(|e| e.to_string())
+    |                          ----   ^^^^^^^^^^^^^^^ the trait `LowerHex` is not implemented for `Array<u8, UInt<UInt<UInt<UInt<UInt<..., ...>, ...>, ...>, ...>, ...>>`
+    |                          |
+    |                          required by this formatting parameter
+    |
+    = help: the following other types implement trait `LowerHex`:
+              &T
+              &mut T
+              AccelerationStructureBuildFlags
+              AccelerationStructureGeometryFlags
+              AccelerationStructureUses
+              AtFlags
+              AttachmentOps
+              Backends
+            and 186 others
+    = note: the full name for the type has been written to '/Users/michael/Code/deadpan/target/debug/deps/deadpan_cli-7e3b93d343074012.long-type-1900666578907759264.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+
+For more information about this error, try `rustc --explain E0277`.
+error: could not compile `deadpan-cli` (lib) due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `deadpan-cli` (lib test) due to 1 previous error

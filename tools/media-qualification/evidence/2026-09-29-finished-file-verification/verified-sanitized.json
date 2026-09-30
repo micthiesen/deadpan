@@ -1,0 +1,15 @@
+{
+  "command": [
+    "python3",
+    "/tmp/deadpan-export-verify-mkzjo3zd/run-verifier.py",
+    "verified-sanitized",
+    "sanitized"
+  ],
+  "started": "2026-09-30T04:44:52.436022+00:00",
+  "base_commit": "4387a88a7c110c8ed86ddc98099a8f248da7aa59",
+  "diff_sha256": "1f0590d16c54c6c296d31fa0c56f8051cf79754d7819274e52765061f183a69f",
+  "source_manifest_sha256": "ad271d24c7ba5226183f89e6a4e955014b81d8f7d361e94fd5b4751422874820",
+  "pid": 45007,
+  "exit_code": 0,
+  "seconds": 3.2543724169954658
+}

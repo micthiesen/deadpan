@@ -1,0 +1,114 @@
+   Compiling deadpan-source v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-source)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 21.67s
+     Running unittests src/lib.rs (target/debug/deps/deadpan_source-2643d4b177af2eba)
+
+running 49 tests
+test audio::ffi::evidence_tests::unknown_profile_remains_unknown_and_malformed_evidence_is_rejected ... ok
+test input::inspection::tests::contradictory_color_and_aspect_headers_are_retained_for_export_rejection ... ok
+test input::tests::committed_aac_h264_and_pcm_fixtures_pass_without_changing_descriptors ... ok
+test input::tests::cached_constant_size_work_still_observes_cancellation_and_limits_charge_reads ... ok
+test input::tests::every_committed_mp4_passes_video_allocation_admission ... ok
+test input::inspection::tests::unknown_durations_and_noncanonical_matrices_remain_explicit_observations ... ok
+test input::inspection::tests::sample_tables_yield_exact_reordered_and_primed_clocks_without_trimming ... ok
+test input::tests::sparse_large_table_is_rejected_before_reading_or_allocating_its_rows ... ok
+test input::tests::nested_descriptor_lengths_cannot_escape_a_small_codec_box ... ok
+test audio::opening_budget_tests::header_guard_and_ffmpeg_share_one_opening_io_allowance ... ok
+test input::inspection::tests::movie_track_and_edit_observations_preserve_both_clock_versions_and_order ... ok
+test input::inspection::tests::varying_chunk_runs_and_compact_sample_sizes_preserve_packet_offsets ... ok
+test input::tests::sparse_huge_headers_and_compact_huge_sample_counts_fail_without_large_buffers ... ok
+test matroska_input::tests::all_committed_matroska_fixtures_pass_allocation_admission ... ok
+test matroska_input::tests::configured_dimensions_packets_io_and_cancellation_are_enforced ... ok
+test input::tests::first_audio_uses_complete_admitted_inventory_without_extra_header_reads ... ok
+test input::inspection::tests::nal_bounds_fail_closed_and_poison_further_traversal ... ok
+test input::tests::thousands_of_interleaved_chunk_and_size_reads_reuse_bounded_pages ... ok
+test input::inspection::tests::actual_registered_fixture_tables_are_observed_without_changing_import_admission ... ok
+test input::inspection::tests::signed_composition_offsets_and_source_empty_edits_are_never_rounded ... ok
+test input::tests::video_selection_requires_one_video_and_bounded_audio_inventory ... ok
+test matroska_input::tests::finite_complete_document_and_block_group_are_admitted ... ok
+test input::tests::compact_and_constant_sizes_and_wide_offsets_have_bounded_semantic_coverage ... ok
+test input::tests::declared_video_geometry_obeys_dimension_and_pixel_limits ... ok
+test video_codec::tests::committed_ffv1_configurations_admit_including_semantic_negatives ... ok
+test opening_budget_tests::i420_allocation_timeout_preserves_the_retained_picture ... ok
+test input::inspection::tests::limits_and_control_apply_to_admission_and_each_packet_without_renewing_state ... ok
+test video_codec::tests::range_scalars_preserve_signed_values_and_reject_exponent_overflow ... ok
+test matroska_input::tests::sparse_oversized_block_is_rejected_without_reading_its_payload ... ok
+test input::tests::wav_lengths_block_alignment_and_metadata_are_checked_before_demux ... ok
+test video_codec::tests::valid_large_slice_raster_and_context_expansion_fail_before_codec_open ... ok
+test video_codec::tests::unsupported_versions_and_reserved_fields_do_not_reach_codec_open ... ok
+test opening_budget_tests::admission_and_controlled_first_frame_share_the_opening_io_budget ... ok
+test video_codec::tests::every_truncation_and_configuration_corruption_is_rejected ... ok
+test input::tests::malformed_extents_and_unsafe_metadata_never_reach_ffmpeg ... ok
+test video_codec::tests::valid_synthesized_configurations_cover_coders_and_initial_states ... ok
+test matroska_input::tests::metadata_conversion_cannot_expand_nested_language_tags_or_unbounded_flat_tags ... ok
+test input::tests::video_admission_checks_ignored_audio_counts_and_every_packet_size ... ok
+test input::tests::counts_and_expansions_in_unselected_tracks_fail_before_ffmpeg ... ok
+test matroska_input::tests::large_fields_and_laced_or_extra_payloads_fail_before_payload_reads ... ok
+test matroska_input::tests::unknown_sizes_truncation_and_overflowing_positions_are_rejected ... ok
+test matroska_input::tests::deferred_cues_and_seek_entries_require_actual_boundaries ... ok
+test matroska_input::tests::duplicate_unknown_and_unqualified_metadata_are_rejected_even_after_frames ... ok
+test input::inspection::tests::malformed_edits_clocks_matrices_and_tables_fail_before_packet_traversal ... ok
+test video_codec::tests::truncated_range_streams_recomputed_crcs_and_extreme_inputs_are_bounded ... ok
+test input::tests::extensible_pcm16_requires_exact_fields_and_declared_speaker_positions ... ok
+test video_codec::tests::compact_expanded_initial_states_have_a_binary_work_ceiling ... ok
+test matroska_input::tests::twelve_thousand_sparse_blocks_do_not_spend_one_page_per_frame ... ok
+test matroska_input::tests::nested_tags_and_aggregate_metadata_have_hard_limits ... ok
+
+test result: ok. 49 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.24s
+
+     Running tests/audio_decode.rs (target/debug/deps/audio_decode-61851ceace1653f5)
+
+running 13 tests
+test first_audio_does_not_fall_back_to_video_or_relax_admission ... ok
+test unsupported_codec_garbage_and_truncated_packet_are_rejected ... ok
+test unsupported_selection_and_invalid_sources_fail ... ok
+test retained_descriptor_uses_pread_and_survives_unlinked_path ... ok
+test cancelled_and_invalid_requests_preserve_current_frame ... ok
+test allocation_deadline_does_not_advance_retained_audio ... ok
+test wav_packet_sizes_are_bounded_before_demux_allocation ... ok
+test input_and_decode_budgets_fail_and_poison_failed_contexts ... ok
+test both_modes_preserve_pcm_and_preflight_failure_semantics ... ok
+test pcm_exact_samples_keep_rate_channel_slots_and_non_aligned_endpoint ... ok
+test ordinary_aac_consumes_reported_priming_and_preserves_unreported_tail ... ok
+test first_audio_selects_actual_stream_and_preserves_decoded_evidence ... ok
+test aac_manual_skip_preserves_priming_duration_tail_and_original_pts ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/export_decode.rs (target/debug/deps/export_decode-9ce237d9c2dfbfc1)
+
+running 5 tests
+test i420_rejects_an_unqualified_pixel_format_without_an_rgb_round_trip ... ok
+test fresh_gop_rejects_a_non_key_target_and_poisoned_sessions ... ok
+test cancellation_preserves_current_picture_and_does_not_restart_the_decoder ... ok
+test i420_observes_the_current_picture_without_converting_or_advancing ... ok
+test fresh_idr_decoders_match_linear_planes_and_keep_cumulative_work ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.50s
+
+     Running tests/persistent_decode.rs (target/debug/deps/persistent_decode-3dadccf8da1f4f11)
+
+running 14 tests
+test packet_byte_limits_are_validated_and_applied_before_decode ... ok
+test descriptor_byte_budget_and_external_playlist_fail_closed ... ok
+test stream_hdr_metadata_is_rejected_during_open_despite_sdr_transfer_tags ... ok
+test anamorphic_samples_are_retained_and_interlace_is_rejected ... ok
+[h264 @ 0x9290fc380] decode_slice_header error
+test yuv_matrix_and_range_are_applied_without_relabeling_transfer ... ok
+test full_range_rgb_is_exact_and_pixels_outlive_session_reuse ... ok
+test source_orientation_is_retained_and_unqualified_hdr_and_depth_fail ... ok
+test h264_packet_expansion_and_invalid_nal_lengths_fail_before_codec_submission ... ok
+test input_interpretation_and_resource_bounds_fail_explicitly ... ok
+test audio_inventory_reports_probe_observations_without_claiming_decoded_readiness ... ok
+test cancellation_before_call_preserves_session_and_invalid_timeouts_are_rejected ... ok
+test first_frame_probe_is_retained_counted_and_discarded_on_seek ... ok
+test pixel_budget_rejects_sources_before_frame_decode ... ok
+test original_bframe_pts_vfr_and_offset_survive_persistent_reverse_seeks ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.49s
+
+   Doc-tests deadpan_source
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

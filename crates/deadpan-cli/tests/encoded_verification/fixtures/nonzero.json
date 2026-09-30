@@ -1,0 +1,83 @@
+{
+  "contract": {
+    "choice": {
+      "b_frames": "none",
+      "mode": "hardware"
+    },
+    "picture": {
+      "canvas": [
+        320,
+        180
+      ],
+      "color_policy": "sdr_rec709",
+      "frame_count": 1,
+      "frame_rate": {
+        "denominator": 1001,
+        "numerator": 30000
+      },
+      "project_audio_end": 3203,
+      "project_audio_start": 1602,
+      "project_id": "project-picture-qualification",
+      "range": {
+        "end": 2,
+        "start": 1
+      },
+      "raster": [
+        320,
+        180
+      ],
+      "relative_aspect_error": {
+        "denominator": "1",
+        "numerator": "0"
+      },
+      "revision_id": "background",
+      "terminal_pts": 1001,
+      "time_base": {
+        "denominator": 30000,
+        "numerator": 1
+      }
+    }
+  },
+  "document_sha256": "af8e5672cee86b4d64827ef4e86b8af5ad9b9ca11d5c8b46e18e0f4d7d5663ff",
+  "movie": {
+    "byte_length": 2959,
+    "reference": "output/movie.mp4",
+    "sha256": "3ed39453e601785efa9341714948a51b0f61d4a0c52568b2b2ceb9960281abaf"
+  },
+  "report": {
+    "audio_eof": true,
+    "audio_packets": 3,
+    "audio_samples": 1601,
+    "faststart_read_closes": 1,
+    "faststart_read_opens": 1,
+    "info": {
+      "abi_version": 1,
+      "audio_bitrate": 384000,
+      "audio_frame_size": 1024,
+      "audio_initial_padding": 1024,
+      "audio_profile": 1,
+      "audio_time_base_den": 48000,
+      "audio_time_base_num": 1,
+      "audio_trailing_padding": 0,
+      "avcodec_version": 4066151,
+      "avformat_version": 4064103,
+      "avutil_version": 3934311,
+      "maximum_moov_bytes": 257048576,
+      "movie_timescale": 240000,
+      "requested_mode": "hardware",
+      "video_bitrate": 1500000,
+      "video_gop_size": 15,
+      "video_has_b_frames": 0,
+      "video_max_b_frames": 0,
+      "video_profile": 100,
+      "video_time_base_den": 30000,
+      "video_time_base_num": 1
+    },
+    "output_bytes": 2959,
+    "packet_bytes": 1556,
+    "video_duration_from_contract_packets": 1,
+    "video_eof": true,
+    "video_frames": 1,
+    "video_packets": 1
+  }
+}

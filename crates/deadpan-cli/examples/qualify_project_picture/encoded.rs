@@ -11,7 +11,9 @@ use std::time::{Duration, Instant};
 
 use deadpan_cli::audio::OfflineAudioSession;
 use deadpan_cli::encoded_render::{
-    EncodedProgress, EncodedRenderError, EncodedWorkerLimits, encode, protocol::EncoderChoice,
+    EncodedProgress, EncodedRenderError, EncodedWorkerLimits, encode,
+    protocol::EncoderChoice,
+    verification::{VerificationLimits, VerificationRequest, verify},
 };
 use deadpan_cli::picture::ProjectPictureSession;
 use deadpan_cli::render_worker::{
@@ -92,7 +94,7 @@ pub(super) fn qualify(
     };
     report["encoded"] = json!({"status": "running", "checks": [], "cases": [],
         "scope": "real isolated committed picture and canonical PCM encoding; private candidate only",
-        "limitations": ["independent decode follows in Python", "no production verifier or publication",
+        "limitations": ["platform and content qualification follows in Python", "no publication",
             "no durable render jobs, native Render, full audio effects, HDR or release qualification"]});
     let report = &mut report["encoded"];
     let hardware = EncoderChoice {
@@ -263,7 +265,9 @@ pub(super) fn qualify(
         report,
         |_| {},
     )?;
-    report["status"] = json!("passed candidate preparation; independent decode required");
+    report["status"] = json!(
+        "passed candidate preparation and production SDR verification; content qualification required"
+    );
     check_deadline(gpu.deadline)?;
     Ok(())
 }
@@ -332,7 +336,51 @@ fn run_case(
         copied == candidate.byte_length() && fs::metadata(&path)?.len() == copied,
         json!({"case": case.name, "bytes": copied}),
     )?;
-    let contract = candidate.contract().clone();
+    // Retain rejected candidates and their exact claims before inspection.
+    // The outer harness also writes this pending case if verification fails.
+    let pending = json!({"name": case.name, "path": path, "manifest": candidate.manifest(),
+        "progress": progress, "verification_status": "pending"});
+    let mut sidecar = OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(path.with_extension("manifest.json"))?;
+    sidecar.write_all(&serde_json::to_vec_pretty(&pending)?)?;
+    sidecar.sync_all()?;
+    let case_index = report["cases"]
+        .as_array()
+        .ok_or("missing encoded cases")?
+        .len();
+    report["cases"]
+        .as_array_mut()
+        .ok_or("missing encoded cases")?
+        .push(pending);
+    let verification_request = request(case, "verify")?;
+    let mut verification_progress = Vec::new();
+    let verified = verify(
+        runtime,
+        candidate,
+        VerificationRequest {
+            identity: verification_request.identity,
+            cancellation_token: verification_request.cancellation_token,
+            limits: VerificationLimits::default(),
+        },
+        &cancelled,
+        gpu.deadline,
+        |update| verification_progress.push(update),
+    );
+    let candidate = match verified {
+        Ok(candidate) => candidate,
+        Err(error) => {
+            report["cases"][case_index]["verification_status"] = json!("failed");
+            report["cases"][case_index]["verification_failure"] = json!(error.to_string());
+            report["cases"][case_index]["verification_progress"] = json!(verification_progress);
+            return Err(error.into());
+        }
+    };
+    report["cases"][case_index]["verification_status"] = json!("passed");
+    report["cases"][case_index]["verification"] = json!(candidate.report());
+    report["cases"][case_index]["verification_progress"] = json!(verification_progress);
+    let contract = candidate.candidate().contract().clone();
     let mut pictures = gpu.session(ProjectPictureSession::open_revision(
         case.package,
         &case.revision,
@@ -387,11 +435,13 @@ fn run_case(
                 == (contract.project_audio_start()..contract.project_audio_end()),
         json!({"case": case.name, "contract": contract, "audio_samples": audio.sample_count()}),
     )?;
-    report["cases"].as_array_mut().ok_or("missing encoded cases")?.push(json!({
+    report["cases"][case_index] = json!({
         "name": case.name, "path": path, "picture_reference": picture_path, "audio_reference": audio_path,
-        "contract": contract, "manifest": candidate.manifest(), "progress": progress,
+        "contract": contract, "manifest": candidate.candidate().manifest(), "progress": progress,
+        "verification": candidate.report(), "verification_progress": verification_progress,
+        "verification_status": "passed",
         "elapsed_seconds": started.elapsed().as_secs_f64(), "independent_decode": "pending",
-    }));
+    });
     Ok(())
 }
 

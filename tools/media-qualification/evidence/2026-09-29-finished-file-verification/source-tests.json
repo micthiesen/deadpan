@@ -1,0 +1,16 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "-p",
+    "deadpan-source"
+  ],
+  "started": "2026-09-30T04:08:58.440108+00:00",
+  "base_commit": "4387a88a7c110c8ed86ddc98099a8f248da7aa59",
+  "diff_sha256": "aed2b27ec7004f7f4f6fbfbe50f74776cc890241c14ea6a55e76301ac0bc6031",
+  "source_manifest_sha256": "21e88c8d10ad718a0134e47a12065f8405a38b805cba3327c64cfcc27e6c261e",
+  "pid": 36191,
+  "exit_code": 0,
+  "seconds": 32.80348175019026
+}

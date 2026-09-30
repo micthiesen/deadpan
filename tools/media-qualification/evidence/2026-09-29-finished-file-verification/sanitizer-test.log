@@ -1,0 +1,463 @@
+   Compiling proc-macro2 v1.0.107
+   Compiling unicode-ident v1.0.26
+   Compiling quote v1.0.47
+   Compiling bitflags v2.13.2
+   Compiling libc v0.2.189
+   Compiling find-msvc-tools v0.1.13
+   Compiling shlex v2.0.1
+   Compiling cfg-if v1.0.5
+   Compiling thiserror v2.0.20
+   Compiling once_cell v1.21.4
+   Compiling arrayvec v0.7.8
+   Compiling rustix v1.1.5
+   Compiling cfg_aliases v0.2.2
+   Compiling objc2 v0.6.4
+   Compiling foldhash v0.2.0
+   Compiling getrandom v0.4.3
+   Compiling objc2-encode v4.1.0
+   Compiling serde_core v1.0.229
+   Compiling libm v0.2.16
+   Compiling fastrand v2.5.0
+   Compiling zmij v1.0.23
+   Compiling cc v1.4.7
+   Compiling hashbrown v0.17.1
+   Compiling autocfg v1.5.1
+   Compiling serde v1.0.229
+   Compiling zerocopy v0.8.57
+   Compiling equivalent v1.0.2
+   Compiling typenum v1.20.1
+   Compiling serde_json v1.0.151
+   Compiling constant_time_eq v0.4.2
+   Compiling itoa v1.0.18
+   Compiling memchr v2.8.3
+   Compiling rustc-hash v1.1.0
+   Compiling smallvec v1.16.1
+   Compiling naga v30.0.1
+   Compiling bit-vec v0.9.1
+   Compiling log v0.4.34
+   Compiling parking_lot_core v0.9.12
+   Compiling unicode-width v0.2.2
+   Compiling bit-set v0.10.0
+   Compiling indexmap v2.14.2
+   Compiling scopeguard v1.2.0
+   Compiling num-traits v0.2.19
+   Compiling static_assertions v1.1.0
+   Compiling codespan-reporting v0.13.1
+   Compiling raw-window-handle v0.6.2
+   Compiling lock_api v0.4.14
+   Compiling wgpu-hal v30.0.1
+   Compiling libloading v0.8.9
+   Compiling profiling v1.0.18
+   Compiling vcpkg v0.2.15
+   Compiling pkg-config v0.3.34
+   Compiling wgpu-core v30.0.1
+   Compiling litrs v1.0.0
+   Compiling wgpu v30.0.1
+   Compiling hashlink v0.12.2
+   Compiling syn v3.0.6
+   Compiling errno v0.3.14
+   Compiling syn v2.0.119
+   Compiling hybrid-array v0.4.15
+   Compiling cpufeatures v0.3.1
+   Compiling fallible-streaming-iterator v0.1.9
+   Compiling fallible-iterator v0.3.0
+   Compiling uuid v1.26.1
+   Compiling deadpan-fileclone v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-fileclone)
+   Compiling objc2-core-foundation v0.3.2
+   Compiling block2 v0.6.2
+   Compiling parking_lot v0.12.5
+   Compiling pollster v1.0.1
+   Compiling document-features v0.2.12
+   Compiling crypto-common v0.2.2
+   Compiling block-buffer v0.12.1
+   Compiling blake3 v1.8.7
+   Compiling deadpan-source v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-source)
+   Compiling libsqlite3-sys v0.38.2
+   Compiling deadpan-dsp v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-dsp)
+   Compiling deadpan-encode v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-encode)
+   Compiling digest v0.11.3
+   Compiling tempfile v3.27.0
+   Compiling deadpan-native-process v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-process)
+   Compiling objc2-foundation v0.3.2
+   Compiling objc2-core-graphics v0.3.2
+   Compiling sha2 v0.11.0
+   Compiling thiserror-impl v2.0.20
+   Compiling serde_derive v1.0.229
+   Compiling bytemuck_derive v1.12.1
+   Compiling bytemuck v1.25.2
+   Compiling zerocopy-derive v0.8.57
+   Compiling naga-types v30.0.1
+   Compiling wgpu-types v30.0.1
+   Compiling objc2-metal v0.3.2
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+   Compiling objc2-quartz-core v0.3.2
+   Compiling raw-window-metal v1.1.0
+   Compiling half v2.7.1
+   Compiling wgpu-naga-bridge v30.0.1
+   Compiling rusqlite v0.40.2
+   Compiling wgpu-core-deps-apple v30.0.1
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+   Compiling deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+   Compiling deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+   Compiling deadpan-render v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-render)
+   Compiling deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 28.27s
+     Running unittests src/lib.rs (/private/tmp/deadpan-export-verify-mkzjo3zd/sanitizer/target/aarch64-apple-darwin/debug/deps/deadpan_cli-3d61ea5724e297e8)
+
+running 84 tests
+test encoded_render::host::tests::artifact_admission_can_retain_the_native_maximum_without_the_raw_picture_spool_limit ... ok
+test encoded_render::host::tests::snapshot_interruption_retains_the_public_cancellation_and_deadline_outcomes ... ok
+test audio::cache_tests::aggregate_reservation_is_inclusive_checked_and_requires_nonempty_pcm_and_index ... ok
+test encoded_render::protocol::tests::encoded_contract_keeps_absolute_audio_phase_and_exceeds_only_raw_sink_limits ... ok
+test encoded_render::verification::protocol::tests::every_response_binds_the_complete_attempt_identity ... ok
+test encoded_render::protocol::tests::explicit_software_b_frame_attempt_keeps_requested_and_observed_counts_distinct ... ok
+test encoded_render::protocol::tests::native_reconstruction_rejects_clock_geometry_and_encoding_bounds ... ok
+test encoded_render::protocol::tests::progress_and_terminals_bind_both_counts_and_exact_attempt ... ok
+test encoded_render::protocol::tests::completed_manifest_binds_identity_contract_artifact_and_all_host_budgets ... ok
+test encoded_render::verification::protocol::tests::long_exports_require_enough_gops_and_actual_requested_reordering ... ok
+test encoded_render::verification::protocol::tests::completion_cannot_change_the_committed_contract_or_private_bytes ... ok
+test encoded_render::verification::protocol::tests::progress_totals_are_bound_to_each_captured_stage ... ok
+test encoded_render::verification::protocol::tests::reordering_observations_must_use_whole_frames_within_the_captured_policy ... ok
+test encoded_render::verification::worker::tests::cancellation_requires_exact_token_request_attempt_and_protocol ... ok
+test encoded_render::verification::worker::tests::eof_and_truncated_controls_never_acknowledge_cancellation ... ok
+test encoded_render::verification::protocol::tests::malformed_or_oversized_frames_and_diagnostics_are_rejected ... ok
+test encoded_render::protocol::tests::wire_rejects_truncation_oversize_and_unbounded_diagnostics ... ok
+test encoded_render::protocol::tests::round_trip_handles_fragmented_frames_and_preserves_exact_cancellation ... ok
+test encoded_render::verification::protocol::tests::fragmented_wire_round_trip_preserves_the_exact_cancellation_target ... ok
+test encoded_render::worker::tests::fractional_range_rebases_absolute_audio_without_rounding_or_padding ... ok
+test encoded_render::worker::tests::hashing_checks_exact_extent_and_interrupts_between_bounded_reads ... ok
+test encoded_render::protocol::tests::request_limits_versions_and_bounded_scalars_are_admitted_before_allocation ... ok
+test encoded_render::protocol::tests::unknown_fields_and_unrecognized_encoder_choices_fail_closed ... ok
+test export_picture::contract::tests::audio_boundaries_round_absolute_project_coordinates_independently ... ok
+test encoded_render::verification::worker::tests::binary_hash_covers_all_chunks_without_moving_the_descriptor_position ... ok
+test encoded_render::worker::tests::queued_encoded_cancellation_and_invalid_controls_are_drained_before_terminal ... ok
+test export_picture::contract::tests::empty_negative_and_hdr_captures_fail_explicitly ... ok
+test encoded_render::verification::protocol::tests::unknown_fields_and_unrecognized_stages_fail_closed ... ok
+test export_picture::contract::tests::encoder_rational_bounds_reject_without_retiming_the_project ... ok
+test export_picture::contract::tests::largest_representable_boundaries_remain_exact ... ok
+test export_picture::contract::tests::output_terminal_and_audio_boundary_overflow_are_separate_admission_failures ... ok
+test export_picture::contract::tests::odd_and_tiny_axes_use_the_shared_even_rule_with_signed_aspect_evidence ... ok
+test export_picture::contract::tests::output_timestamps_are_exact_relative_to_the_selected_project_range ... ok
+test export_picture::contract::tests::raster_and_committed_canvas_obey_renderer_bounds_before_allocation ... ok
+test encoded_render::verification::protocol::tests::report_rejects_inconsistent_clocks_runtime_and_physical_sample_claims ... ok
+test export_picture::contract::tests::serialized_evidence_retains_the_captured_identities_and_exact_clocks ... ok
+test export_picture::tests::cancellation_and_expired_deadline_stop_before_next_poll ... ok
+test encoded_render::worker::tests::encoded_output_is_private_exclusive_contained_and_hashed_through_its_descriptor ... ok
+test export_picture::tests::completed_result_budget_is_released_on_worker_drop_and_failed_work ... ok
+test encoded_render::verification::protocol::tests::request_rejects_invalid_scalars_and_insufficient_host_budgets ... ok
+test encoded_render::verification::worker::tests::hashing_honors_cancellation_and_deadline_even_for_empty_files ... ok
+test picture::tests::shared_index_comparison_includes_terminal_evidence_and_cancels_in_chunks ... ok
+test encoded_render::verification::worker::tests::hashing_rejects_both_shrink_and_growth_against_the_captured_extent ... ok
+test render_worker::host::tests::validation_copy_interruption_keeps_the_same_host_cancellation_and_deadline_outcome ... ok
+test encoded_render::protocol::tests::completion_rejects_forged_native_counts_clocks_policy_and_drain_claims ... ok
+test render_worker::protocol::tests::classifier_binds_progress_and_completed_evidence_to_the_request ... ok
+test render_worker::protocol::tests::classifier_rejects_other_requests_stale_attempts_and_changed_versions ... ok
+test render_worker::protocol::tests::checked_picture_lengths_and_request_budgets_bound_the_raw_sink ... ok
+test render_worker::protocol::tests::contract_rejects_forged_clock_geometry_and_unsupported_color ... ok
+test render_worker::protocol::tests::range_and_audio_checks_use_absolute_boundaries_without_duration_rounding ... ok
+test encoded_render::verification::worker::tests::hashing_keeps_the_open_file_identity_after_its_path_is_replaced ... ok
+test render_worker::protocol::tests::wire_rejects_unknown_fields_at_every_structural_boundary ... ok
+test render_worker::protocol::tests::wire_rejects_versions_missing_fields_and_invalid_bounded_values ... ok
+test render_worker::protocol::tests::wire_rejects_truncated_or_oversized_frames_before_deserialization ... ok
+test render_worker::protocol::tests::wire_round_trip_handles_fragmented_reads_and_preserves_cancellation ... ok
+test render_worker::protocol::tests::contract_evidence_matches_every_field_of_a_real_captured_revision ... ok
+test render_worker::worker::control::tests::incomplete_initial_handshake_has_a_deadline ... ok
+test render_worker::worker::control::tests::oversized_control_rejects_without_waiting_for_its_payload ... ok
+test render_worker::worker::control::tests::queued_invalid_control_and_partial_body_cannot_be_hidden_by_finish ... ok
+test render_worker::worker::control::tests::shutdown_joins_a_partial_frame_with_the_host_still_open ... ok
+test render_worker::worker::control::tests::shutdown_joins_an_idle_control_stream ... ok
+test render_worker::worker::control::tests::terminal_shutdown_drains_an_already_queued_cancel ... ok
+test render_worker::worker::control::tests::valid_cancel_sets_atomic_without_waiting_for_preparation ... ok
+test render_worker::worker::control::tests::wrong_token_and_host_eof_fail_closed ... ok
+test render_worker::worker::tests::output_creation_is_exclusive_and_rejects_symlink_components ... ok
+test render_worker::worker::tests::picture_writes_stop_between_bounded_chunks_and_keep_partial_data ... ok
+test render_worker::worker::tests::progress_is_bounded_and_diagnostics_end_on_utf8_boundaries ... ok
+test export_picture::tests::captured_contract_rejects_other_revision_clock_canvas_and_position ... ok
+test render_worker::host::tests::every_plane_and_frame_is_checked_before_an_owned_range_can_be_read ... ok
+test render_worker::tests::full_document_hash_detects_same_labelled_revision_with_different_authored_state ... ok
+test picture::tests::shared_adapter_preserves_negative_pts_and_checks_decoded_geometry ... ok
+test render_worker::tests::cancelled_expired_and_over_budget_preflight_never_launch_the_runtime ... ok
+test picture::tests::unqualified_source_still_and_accepted_providers_fail_without_fallback ... ok
+test picture::tests::real_retime_repeat_freeze_and_captured_framing_keep_distinct_clocks ... ok
+test audio::cache_tests::retained_context_and_cache_hits_recheck_the_captured_contracts ... ok
+test picture::tests::foreign_receipt_cannot_rebind_the_fixed_revision ... ok
+test picture::tests::cached_verified_bytes_survive_path_loss_but_cold_or_changed_originals_fail ... ok
+test audio::cache_tests::byte_pressure_evicts_before_preparation_without_charging_failed_reservation ... ok
+test audio::cache_tests::alternating_registered_sources_reuses_private_pcm_after_paths_disappear ... ok
+test audio::cache_tests::metadata_pressure_evicts_before_preparation_without_charging_failed_reservation ... ok
+test audio::cache_tests::failed_cold_source_and_cancelled_hits_preserve_other_cache_entries ... ok
+test picture::tests::real_cut_frames_stay_exact_across_live_deletion_undo_and_writer_close ... ok
+test picture::tests::blank_and_background_are_explicit_and_ranges_hdr_and_bounds_reject ... ok
+test audio::cache_tests::seventeenth_source_evicts_lru_and_missing_evicted_source_preserves_recent_pcm ... ok
+
+test result: ok. 84 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.40s
+
+     Running unittests src/main.rs (/private/tmp/deadpan-export-verify-mkzjo3zd/sanitizer/target/aarch64-apple-darwin/debug/deps/deadpan_cli-535f13cb7e712ab2)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/audio_context.rs (/private/tmp/deadpan-export-verify-mkzjo3zd/sanitizer/target/aarch64-apple-darwin/debug/deps/audio_context-d1619ec0e9d62fdf)
+
+running 3 tests
+test context_read_refuses_changed_linked_original_bytes ... ok
+test context_host_rejects_valid_forgery_and_unavailable_revision ... ok
+test captured_context_reopens_abandoned_source_after_alias_reuse_without_moving_history ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.28s
+
+     Running tests/audio_inspection.rs (/private/tmp/deadpan-export-verify-mkzjo3zd/sanitizer/target/aarch64-apple-darwin/debug/deps/audio_inspection-581e9e525c7881ce)
+
+running 18 tests
+test gap::unplayed_gap_reads_revalidate_original_bytes_before_returning_pcm ... ok
+test source_repeat_gaps_and_silent_hold_boundaries_follow_exact_sequence_allocation ... ok
+test actual_aac_pcm_inspection_is_read_only_beside_writer_and_matches_original_impulse ... ok
+test frozen_session_resolves_historical_receipt_after_undo_and_asset_alias_reuse ... ok
+test unspecified_layout_and_legacy_unqualified_assets_are_not_guessed ... ok
+test missing_and_corrupt_linked_originals_fail_before_pcm_is_exposed ... ok
+test invalid_ranges_and_cancellation_fail_without_returning_partial_pcm ... ok
+test gap::pause_captures_unplayed_gap_then_growth_and_historical_reads_keep_verified_media ... ok
+test gain::gain_command_authored_pcm_context_and_undo_share_one_durable_revision ... ok
+test physical_domain_cli_reads_hidden_negative_source_and_retained_history ... ok
+test mapped_inspection_prepares_preserve_from_historical_aac_without_writing ... ok
+test definition_cli_reads_unplayed_default_from_current_and_historical_media ... ok
+test gap::repeat_gap_cli_reads_unplayed_recipe_and_retained_history_without_writes ... ok
+test placement_cli_uses_selected_revision_recipe_and_never_changes_history ... ok
+test sounds::json_sound_command_reaches_shared_limited_bus_without_changing_picture_time ... ok
+test hold_audio::authored_room_tone_range_and_silence_share_cli_history_and_actual_pcm ... ok
+test room_tone_inspection_loops_an_explicit_aac_range_and_retains_silent_time ... ok
+test sound_allowances::decoded_sound_allowance_preserves_other_silence_and_ripple_sample_history ... ok
+
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 10.51s
+
+     Running tests/boundary_location.rs (/private/tmp/deadpan-export-verify-mkzjo3zd/sanitizer/target/aarch64-apple-darwin/debug/deps/boundary_location-d2d2ebae8b0bf49f)
+
+running 5 tests
+test owned_gap_entry_is_distinct_from_a_play_and_sequence_indices_keep_empty_slots ... ok
+test exact_nested_retime_location_round_trips_through_existing_occurrence_selection ... ok
+test implicit_gap_keeps_repeat_owner_and_bias_distinguishes_its_start ... ok
+test endpoint_bias_and_query_budgets_are_explicit ... ok
+test stale_foreign_and_malformed_requests_fail_without_authored_changes ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.59s
+
+     Running tests/doctor.rs (/private/tmp/deadpan-export-verify-mkzjo3zd/sanitizer/target/aarch64-apple-darwin/debug/deps/doctor-0e065442315d20c1)
+
+running 2 tests
+test unsupported_command_fails_without_success_output ... ok
+test doctor_reports_real_timing_probe_and_missing_capabilities ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+
+     Running tests/encoded_render.rs (/private/tmp/deadpan-export-verify-mkzjo3zd/sanitizer/target/aarch64-apple-darwin/debug/deps/encoded_render-0bb96fcc2ee3a53d)
+
+running 7 tests
+test cancelled_expired_and_invalid_limit_preflight_never_launch_the_runtime ... ok
+test candidate_keeps_exact_nonzero_origin_and_private_bytes_after_paths_disappear ... ok
+test artifact_hash_size_and_descriptor_containment_are_independent_admission_checks ... ok
+test host_preserves_the_first_worker_diagnostic_and_never_snapshots_failed_completion ... ok
+test completed_claims_bind_every_captured_clock_field_and_explicit_encoder_choice ... ok
+test inconsistent_encoder_reports_are_rejected_before_artifact_access ... ok
+test cancellation_after_progress_and_deadline_stop_the_process_before_snapshotting ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.19s
+
+     Running tests/encoded_verification.rs (/private/tmp/deadpan-export-verify-mkzjo3zd/sanitizer/target/aarch64-apple-darwin/debug/deps/encoded_verification-2f0f7d279cc7f559)
+
+running 5 tests
+test preflight_failures_and_missing_runtime_preserve_completed_bytes_for_retry ... ok
+test cancellation_after_real_progress_retains_a_retryable_candidate ... ok
+test hostile_verifier_messages_never_replace_private_bytes_with_success ... ok
+test actual_finished_files_pass_complete_native_inspection_and_retain_exact_bytes ... ok
+test recomputed_hashes_do_not_admit_altered_headers_clocks_or_h264_content ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.97s
+
+     Running tests/offline_audio.rs (/private/tmp/deadpan-export-verify-mkzjo3zd/sanitizer/target/aarch64-apple-darwin/debug/deps/offline_audio-89ec1b185a20acac)
+
+running 4 tests
+test offline_capture_and_reads_reject_control_failures_and_out_of_range_blocks ... ok
+test offline_deadline_is_not_renewed_after_capture ... ok
+test offline_reads_keep_the_captured_revision_through_edits_history_and_link_loss ... ok
+test offline_fractional_range_and_read_partitions_match_the_canonical_limited_bus ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.14s
+
+     Running tests/original_commands.rs (/private/tmp/deadpan-export-verify-mkzjo3zd/sanitizer/target/aarch64-apple-darwin/debug/deps/original_commands-05e0a57d7134a70c)
+
+running 2 tests
+test original_mutations_respect_writer_lock_and_validate_arguments ... ok
+test original_commands_retain_verify_list_and_relink_without_an_authored_edit ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.86s
+
+     Running tests/project_commands.rs (/private/tmp/deadpan-export-verify-mkzjo3zd/sanitizer/target/aarch64-apple-darwin/debug/deps/project_commands-33adda5583873f53)
+
+running 17 tests
+test doctor_reports_hold_audio_document_and_migration_schemas ... ok
+test failed_migration_returns_retained_backup_and_preserves_original ... ok
+test malformed_or_future_protocol_is_rejected_before_mutation ... ok
+test writer_lock_is_enforced_between_processes_but_readers_and_dry_run_work ... ok
+test current_generation_requires_host_reconciliation_but_allows_cli_preview ... ok
+test selection_resolution_is_revision_checked_exact_and_read_only ... ok
+test headless_split_preview_commit_and_history_share_one_exact_command ... ok
+test history_dry_runs_work_with_a_writer_and_preserve_the_redo_path ... ok
+test dry_run_and_commit_preserve_actionable_domain_errors ... ok
+test sparse_override_commands_and_inspection_share_revision_and_dry_run_guards ... ok
+test nested_occurrence_command_is_atomic_and_uses_the_same_headless_plan ... ok
+test headless_captured_view_is_inspectable_reversible_and_validated_before_commit ... ok
+test headless_edit_dry_run_conflict_and_durable_history ... ok
+test headless_migration_and_plan_inspection_are_explicit_and_read_only ... ok
+test persistent_mark_queries_and_loss_states_share_the_headless_command_path ... ok
+test nested_pause::nested_pause_dry_run_commit_and_durable_history_share_one_transaction ... ok
+test independent_stream_mappings_use_headless_commands_and_durable_undo ... ok
+
+test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.29s
+
+     Running tests/render_worker.rs (/private/tmp/deadpan-export-verify-mkzjo3zd/sanitizer/target/aarch64-apple-darwin/debug/deps/render_worker-7ef4e43f574e13a6)
+
+running 5 tests
+test host_preserves_the_worker_diagnostic_across_a_failed_process_exit ... ok
+test admitted_fixture_bytes_outlive_the_child_workspace_and_project_path ... ok
+test host_independently_rejects_wrong_bytes_after_a_valid_completed_manifest ... ok
+test real_worker_rejects_changed_document_and_contract_before_output ... ok
+test host_rejects_broken_framing_stale_attempts_and_unclean_completion ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.28s
+
+     Running tests/source_registration.rs (/private/tmp/deadpan-export-verify-mkzjo3zd/sanitizer/target/aarch64-apple-darwin/debug/deps/source_registration-e323866f0a44f5ce)
+
+running 8 tests
+test stale_revision_is_checked_before_unavailable_original_bytes ... ok
+test offset_av_and_audio_only_register_exact_measured_placements ... ok
+test stream_selection_is_required_and_failed_audio_never_becomes_video_only ... ok
+test explicit_geometry_cli_previews_then_changes_only_canvas_and_keeps_version_guards ... ok
+test protocol_is_required_and_rejected_before_opening_the_project ... ok
+test pending_generation_allows_preview_but_requires_real_relevance_on_commit ... ok
+test cfr_registration_previews_beside_writer_commits_once_and_preserves_undo_receipt ... ok
+test automatic_creation_adopts_first_inserted_picture_and_secondary_preserves_the_clock ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.06s
+
+     Running unittests src/lib.rs (/private/tmp/deadpan-export-verify-mkzjo3zd/sanitizer/target/aarch64-apple-darwin/debug/deps/deadpan_source-5cc71faf02abbfd1)
+
+running 49 tests
+test audio::ffi::evidence_tests::unknown_profile_remains_unknown_and_malformed_evidence_is_rejected ... ok
+test input::tests::cached_constant_size_work_still_observes_cancellation_and_limits_charge_reads ... ok
+test input::inspection::tests::unknown_durations_and_noncanonical_matrices_remain_explicit_observations ... ok
+test input::tests::committed_aac_h264_and_pcm_fixtures_pass_without_changing_descriptors ... ok
+test input::inspection::tests::contradictory_color_and_aspect_headers_are_retained_for_export_rejection ... ok
+test input::tests::every_committed_mp4_passes_video_allocation_admission ... ok
+test input::tests::sparse_large_table_is_rejected_before_reading_or_allocating_its_rows ... ok
+test input::tests::nested_descriptor_lengths_cannot_escape_a_small_codec_box ... ok
+test input::inspection::tests::sample_tables_yield_exact_reordered_and_primed_clocks_without_trimming ... ok
+test input::tests::sparse_huge_headers_and_compact_huge_sample_counts_fail_without_large_buffers ... ok
+test input::inspection::tests::movie_track_and_edit_observations_preserve_both_clock_versions_and_order ... ok
+test input::tests::declared_video_geometry_obeys_dimension_and_pixel_limits ... ok
+test input::inspection::tests::nal_bounds_fail_closed_and_poison_further_traversal ... ok
+test matroska_input::tests::all_committed_matroska_fixtures_pass_allocation_admission ... ok
+test matroska_input::tests::configured_dimensions_packets_io_and_cancellation_are_enforced ... ok
+test input::inspection::tests::varying_chunk_runs_and_compact_sample_sizes_preserve_packet_offsets ... ok
+test audio::opening_budget_tests::header_guard_and_ffmpeg_share_one_opening_io_allowance ... ok
+test input::tests::first_audio_uses_complete_admitted_inventory_without_extra_header_reads ... ok
+test input::inspection::tests::limits_and_control_apply_to_admission_and_each_packet_without_renewing_state ... ok
+test matroska_input::tests::finite_complete_document_and_block_group_are_admitted ... ok
+test input::tests::compact_and_constant_sizes_and_wide_offsets_have_bounded_semantic_coverage ... ok
+test matroska_input::tests::sparse_oversized_block_is_rejected_without_reading_its_payload ... ok
+test input::inspection::tests::signed_composition_offsets_and_source_empty_edits_are_never_rounded ... ok
+test input::tests::thousands_of_interleaved_chunk_and_size_reads_reuse_bounded_pages ... ok
+test video_codec::tests::committed_ffv1_configurations_admit_including_semantic_negatives ... ok
+test input::tests::wav_lengths_block_alignment_and_metadata_are_checked_before_demux ... ok
+test input::tests::video_selection_requires_one_video_and_bounded_audio_inventory ... ok
+test video_codec::tests::range_scalars_preserve_signed_values_and_reject_exponent_overflow ... ok
+test input::tests::malformed_extents_and_unsafe_metadata_never_reach_ffmpeg ... ok
+test input::tests::video_admission_checks_ignored_audio_counts_and_every_packet_size ... ok
+test video_codec::tests::valid_large_slice_raster_and_context_expansion_fail_before_codec_open ... ok
+test video_codec::tests::unsupported_versions_and_reserved_fields_do_not_reach_codec_open ... ok
+test opening_budget_tests::i420_allocation_timeout_preserves_the_retained_picture ... ok
+test input::tests::counts_and_expansions_in_unselected_tracks_fail_before_ffmpeg ... ok
+test matroska_input::tests::duplicate_unknown_and_unqualified_metadata_are_rejected_even_after_frames ... ok
+test matroska_input::tests::large_fields_and_laced_or_extra_payloads_fail_before_payload_reads ... ok
+test matroska_input::tests::metadata_conversion_cannot_expand_nested_language_tags_or_unbounded_flat_tags ... ok
+test matroska_input::tests::deferred_cues_and_seek_entries_require_actual_boundaries ... ok
+test video_codec::tests::every_truncation_and_configuration_corruption_is_rejected ... ok
+test input::inspection::tests::actual_registered_fixture_tables_are_observed_without_changing_import_admission ... ok
+test matroska_input::tests::unknown_sizes_truncation_and_overflowing_positions_are_rejected ... ok
+test input::inspection::tests::malformed_edits_clocks_matrices_and_tables_fail_before_packet_traversal ... ok
+test video_codec::tests::valid_synthesized_configurations_cover_coders_and_initial_states ... ok
+test opening_budget_tests::admission_and_controlled_first_frame_share_the_opening_io_budget ... ok
+test input::tests::extensible_pcm16_requires_exact_fields_and_declared_speaker_positions ... ok
+test video_codec::tests::truncated_range_streams_recomputed_crcs_and_extreme_inputs_are_bounded ... ok
+test video_codec::tests::compact_expanded_initial_states_have_a_binary_work_ceiling ... ok
+test matroska_input::tests::twelve_thousand_sparse_blocks_do_not_spend_one_page_per_frame ... ok
+test matroska_input::tests::nested_tags_and_aggregate_metadata_have_hard_limits ... ok
+
+test result: ok. 49 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.22s
+
+     Running tests/audio_decode.rs (/private/tmp/deadpan-export-verify-mkzjo3zd/sanitizer/target/aarch64-apple-darwin/debug/deps/audio_decode-1577d550ccdd0d4f)
+
+running 13 tests
+test unsupported_codec_garbage_and_truncated_packet_are_rejected ... ok
+test first_audio_does_not_fall_back_to_video_or_relax_admission ... ok
+test unsupported_selection_and_invalid_sources_fail ... ok
+test allocation_deadline_does_not_advance_retained_audio ... ok
+test cancelled_and_invalid_requests_preserve_current_frame ... ok
+test retained_descriptor_uses_pread_and_survives_unlinked_path ... ok
+test input_and_decode_budgets_fail_and_poison_failed_contexts ... ok
+test wav_packet_sizes_are_bounded_before_demux_allocation ... ok
+test both_modes_preserve_pcm_and_preflight_failure_semantics ... ok
+test pcm_exact_samples_keep_rate_channel_slots_and_non_aligned_endpoint ... ok
+test ordinary_aac_consumes_reported_priming_and_preserves_unreported_tail ... ok
+test aac_manual_skip_preserves_priming_duration_tail_and_original_pts ... ok
+test first_audio_selects_actual_stream_and_preserves_decoded_evidence ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/export_decode.rs (/private/tmp/deadpan-export-verify-mkzjo3zd/sanitizer/target/aarch64-apple-darwin/debug/deps/export_decode-5222862244326e39)
+
+running 5 tests
+test i420_rejects_an_unqualified_pixel_format_without_an_rgb_round_trip ... ok
+test fresh_gop_rejects_a_non_key_target_and_poisoned_sessions ... ok
+test cancellation_preserves_current_picture_and_does_not_restart_the_decoder ... ok
+test i420_observes_the_current_picture_without_converting_or_advancing ... ok
+test fresh_idr_decoders_match_linear_planes_and_keep_cumulative_work ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.72s
+
+     Running tests/persistent_decode.rs (/private/tmp/deadpan-export-verify-mkzjo3zd/sanitizer/target/aarch64-apple-darwin/debug/deps/persistent_decode-bb71d4f563a12f53)
+
+running 14 tests
+test packet_byte_limits_are_validated_and_applied_before_decode ... ok
+test descriptor_byte_budget_and_external_playlist_fail_closed ... ok
+test stream_hdr_metadata_is_rejected_during_open_despite_sdr_transfer_tags ... ok
+[h264 @ 0x6180000c2080] decode_slice_header error
+test yuv_matrix_and_range_are_applied_without_relabeling_transfer ... ok
+test anamorphic_samples_are_retained_and_interlace_is_rejected ... ok
+test full_range_rgb_is_exact_and_pixels_outlive_session_reuse ... ok
+test h264_packet_expansion_and_invalid_nal_lengths_fail_before_codec_submission ... ok
+test source_orientation_is_retained_and_unqualified_hdr_and_depth_fail ... ok
+test cancellation_before_call_preserves_session_and_invalid_timeouts_are_rejected ... ok
+test audio_inventory_reports_probe_observations_without_claiming_decoded_readiness ... ok
+test input_interpretation_and_resource_bounds_fail_explicitly ... ok
+test pixel_budget_rejects_sources_before_frame_decode ... ok
+test first_frame_probe_is_retained_counted_and_discarded_on_seek ... ok
+test original_bframe_pts_vfr_and_offset_survive_persistent_reverse_seeks ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 7.66s
+
+   Doc-tests deadpan_cli
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests deadpan_source
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

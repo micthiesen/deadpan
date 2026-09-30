@@ -1,0 +1,27 @@
+{
+  "source_report": "/tmp/deadpan-encoded-render-_0zk9gnz/metal-initial-report.json",
+  "source_report_sha256": "f2dfc29d1114d0960a826762b302d109f2f5556f7efebb37574113c58396a0e2",
+  "files": [
+    {
+      "name": "nonzero",
+      "source": "/tmp/deadpan-encoded-render-_0zk9gnz/metal-initial-files/encoded-nonzero.mp4",
+      "bytes": 2959,
+      "sha256": "3ed39453e601785efa9341714948a51b0f61d4a0c52568b2b2ceb9960281abaf",
+      "original_document_sha256": "af8e5672cee86b4d64827ef4e86b8af5ad9b9ca11d5c8b46e18e0f4d7d5663ff"
+    },
+    {
+      "name": "software-two",
+      "source": "/tmp/deadpan-encoded-render-_0zk9gnz/metal-initial-files/encoded-software-two.mp4",
+      "bytes": 33144,
+      "sha256": "b1e886e6b946936cbe23a24b9eb0a0e18f26b339dd9f202ec0dc5c7bebf9a72e",
+      "original_document_sha256": "af8e5672cee86b4d64827ef4e86b8af5ad9b9ca11d5c8b46e18e0f4d7d5663ff"
+    },
+    {
+      "name": "marker",
+      "source": "/tmp/deadpan-encoded-render-_0zk9gnz/metal-initial-files/encoded-marker.mp4",
+      "bytes": 28768,
+      "sha256": "4658f6dd1a701d2ee7fb54630fe9ecbd41708881e7d4f21b865ad7ca1ddd8c86",
+      "original_document_sha256": "c56064b1e285fab150de4b5ed9913b4040bb05f49a64f3dfcadd346c39933144"
+    }
+  ]
+}

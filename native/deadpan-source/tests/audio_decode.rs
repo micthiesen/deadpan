@@ -1,6 +1,8 @@
 use deadpan_source::{
     DecodeControl, SourceDecodeError,
-    audio::{AudioChannelLayout, AudioDecodeLimits, AudioDecoder, AudioSampleFormat},
+    audio::{
+        AudioChannelLayout, AudioDecodeLimits, AudioDecodeMode, AudioDecoder, AudioSampleFormat,
+    },
 };
 use std::{
     fs::File,
@@ -60,19 +62,24 @@ fn first_audio_selects_actual_stream_and_preserves_decoded_evidence() {
             control(),
         )
         .unwrap();
-        let mut explicit = AudioDecoder::open(
+        let mut explicit = AudioDecoder::open_with_mode(
             File::open(fixture(name)).unwrap(),
             selected,
+            AudioDecodeMode::Manual,
             AudioDecodeLimits::default(),
             control(),
         )
         .unwrap();
         assert_eq!(first.info().stream_index, selected);
+        assert_eq!(first.mode(), AudioDecodeMode::Manual);
+        assert_eq!(explicit.mode(), AudioDecodeMode::Manual);
         assert_eq!(first.info(), explicit.info());
+        assert_eq!(first.evidence(), explicit.evidence());
         let mut frames = 0;
         loop {
             let next = first.next_metadata(control()).unwrap();
             assert_eq!(next, explicit.next_metadata(control()).unwrap());
+            assert_eq!(first.evidence(), explicit.evidence());
             if next.is_none() {
                 break;
             }
@@ -83,6 +90,164 @@ fn first_audio_selects_actual_stream_and_preserves_decoded_evidence() {
             frames += 1;
         }
         assert!(frames > 0);
+    }
+}
+
+#[test]
+fn ordinary_aac_consumes_reported_priming_and_preserves_unreported_tail() {
+    let mut manual = open("cfr-bframes.mp4");
+    let mut ordinary = AudioDecoder::open_first_with_mode(
+        File::open(fixture("cfr-bframes.mp4")).unwrap(),
+        AudioDecodeMode::Ordinary,
+        AudioDecodeLimits::default(),
+        control(),
+    )
+    .unwrap();
+    assert_eq!(manual.mode(), AudioDecodeMode::Manual);
+    assert_eq!(ordinary.mode(), AudioDecodeMode::Ordinary);
+    assert_eq!(manual.info(), ordinary.info());
+    let priming = manual.next_metadata(control()).unwrap().unwrap();
+    assert_eq!(priming.pts, -1024);
+    assert_eq!(priming.skip_samples.unwrap().leading, 1024);
+
+    let mut count = 0_u64;
+    let mut last = None;
+    while let Some(expected) = manual.next_metadata(control()).unwrap() {
+        let actual = ordinary.next_metadata(control()).unwrap().unwrap();
+        assert_eq!(actual.pts, i64::try_from(count).unwrap());
+        assert_eq!(actual.pts, expected.pts);
+        assert_eq!(actual.nb_samples, expected.nb_samples);
+        assert_eq!(actual.reported_duration, expected.reported_duration);
+        assert_eq!(actual.skip_samples, None);
+        assert_eq!(
+            ordinary
+                .copy_current_interleaved_f32(control())
+                .unwrap()
+                .samples,
+            manual
+                .copy_current_interleaved_f32(control())
+                .unwrap()
+                .samples,
+        );
+        count += u64::from(actual.nb_samples);
+        last = Some(actual);
+    }
+    assert_eq!(ordinary.next_metadata(control()).unwrap(), None);
+    assert_eq!(count, 192_512);
+    let last = last.unwrap();
+    assert_eq!(
+        i64::from(last.nb_samples) - last.reported_duration.unwrap(),
+        320
+    );
+    for decoder in [&manual, &ordinary] {
+        assert_eq!(
+            decoder.evidence().container_format,
+            "mov,mp4,m4a,3gp,3g2,mj2"
+        );
+        assert_eq!(decoder.evidence().decoder_name, "aac");
+        assert_eq!(decoder.evidence().decoder_profile, Some(1));
+        assert_eq!(
+            decoder.evidence().decoder_profile_name.as_deref(),
+            Some("LC")
+        );
+    }
+}
+
+#[test]
+fn both_modes_preserve_pcm_and_preflight_failure_semantics() {
+    for mode in [AudioDecodeMode::Manual, AudioDecodeMode::Ordinary] {
+        let cancelled = AtomicBool::new(true);
+        let interrupted = DecodeControl {
+            cancelled: &cancelled,
+            ..control()
+        };
+        assert_code(
+            AudioDecoder::open_first_with_mode(
+                File::open(fixture("cfr-bframes.mp4")).unwrap(),
+                mode,
+                AudioDecodeLimits::default(),
+                interrupted,
+            )
+            .err()
+            .unwrap(),
+            "cancelled",
+        );
+        assert_code(
+            AudioDecoder::open_with_mode(
+                File::open(fixture("cfr-bframes.mp4")).unwrap(),
+                0,
+                mode,
+                AudioDecodeLimits::default(),
+                control(),
+            )
+            .err()
+            .unwrap(),
+            "unsupported_streams",
+        );
+        assert_code(
+            AudioDecoder::open_first_with_mode(
+                File::open(fixture("pcm-stereo-48000.wav")).unwrap(),
+                mode,
+                AudioDecodeLimits {
+                    max_channels: 33,
+                    ..Default::default()
+                },
+                control(),
+            )
+            .err()
+            .unwrap(),
+            "invalid_configuration",
+        );
+        let mut decoder = AudioDecoder::open_first_with_mode(
+            File::open(fixture("pcm-stereo-48000.wav")).unwrap(),
+            mode,
+            AudioDecodeLimits::default(),
+            control(),
+        )
+        .unwrap();
+        assert_eq!(decoder.mode(), mode);
+        assert_eq!(decoder.evidence().container_format, "wav");
+        assert_eq!(decoder.evidence().decoder_name, "pcm_s16le");
+        assert_eq!(decoder.evidence().decoder_profile, None);
+        assert_eq!(decoder.evidence().decoder_profile_name, None);
+        let first = decoder.next_metadata(control()).unwrap().unwrap();
+        assert_code(decoder.next_metadata(interrupted).unwrap_err(), "cancelled");
+        assert_code(
+            decoder
+                .next_metadata(DecodeControl {
+                    timeout: Duration::ZERO,
+                    ..control()
+                })
+                .unwrap_err(),
+            "invalid_configuration",
+        );
+        let current = decoder.copy_current_interleaved_f32(control()).unwrap();
+        assert_eq!(current.metadata, first);
+        assert_eq!(
+            &current.samples[..4],
+            &[0.75, -1.0, -0.75, 32767.0 / 32768.0]
+        );
+        assert!(decoder.next_metadata(control()).unwrap().is_some());
+
+        let mut bounded = AudioDecoder::open_first_with_mode(
+            File::open(fixture("pcm-stereo-48000.wav")).unwrap(),
+            mode,
+            AudioDecodeLimits {
+                max_frames: 1,
+                ..Default::default()
+            },
+            control(),
+        )
+        .unwrap();
+        assert!(bounded.next_metadata(control()).unwrap().is_some());
+        assert_code(
+            bounded.next_metadata(control()).unwrap_err(),
+            "resource_limit",
+        );
+        assert_code(
+            bounded.next_metadata(control()).unwrap_err(),
+            "session_failed",
+        );
     }
 }
 

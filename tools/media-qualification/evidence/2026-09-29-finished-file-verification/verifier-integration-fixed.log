@@ -1,0 +1,13 @@
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 8.27s
+     Running tests/encoded_verification.rs (target/debug/deps/encoded_verification-243d20298b1c3667)
+
+running 5 tests
+test preflight_failures_and_missing_runtime_preserve_completed_bytes_for_retry ... ok
+test cancellation_after_real_progress_retains_a_retryable_candidate ... ok
+test recomputed_hashes_do_not_admit_altered_headers_clocks_or_h264_content ... ok
+test actual_finished_files_pass_complete_native_inspection_and_retain_exact_bytes ... ok
+test hostile_verifier_messages_never_replace_private_bytes_with_success ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.66s
+

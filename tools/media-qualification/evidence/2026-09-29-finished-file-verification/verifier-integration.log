@@ -1,0 +1,46 @@
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+error[E0277]: the trait bound `Array<u8, UInt<UInt<UInt<UInt<..., ...>, ...>, ...>, ...>>: LowerHex` is not satisfied
+   --> crates/deadpan-cli/tests/encoded_verification.rs:102:29
+    |
+102 |             format!("{:x}", Sha256::digest(&bytes)),
+    |                      ----   ^^^^^^^^^^^^^^^^^^^^^^ the trait `LowerHex` is not implemented for `Array<u8, UInt<UInt<UInt<UInt<UInt<..., ...>, ...>, ...>, ...>, ...>>`
+    |                      |
+    |                      required by this formatting parameter
+    |
+    = help: the following other types implement trait `LowerHex`:
+              &T
+              &mut T
+              Saturating<T>
+              Wrapping<T>
+              compiler_builtins::math::libm_math::support::big::i256
+              compiler_builtins::math::libm_math::support::big::u256
+              compiler_builtins::math::libm_math::support::hex_float::hex_fmt::Hex<T>
+              half::bfloat::bf16
+            and 186 others
+    = note: the full name for the type has been written to '/Users/michael/Code/deadpan/target/debug/deps/encoded_verification-243d20298b1c3667.long-type-493550393539514529.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+
+error[E0277]: the trait bound `Array<u8, UInt<UInt<UInt<UInt<..., ...>, ...>, ...>, ...>>: LowerHex` is not satisfied
+   --> crates/deadpan-cli/tests/encoded_verification.rs:489:29
+    |
+489 |             format!("{:x}", Sha256::digest(&bytes))
+    |                      ----   ^^^^^^^^^^^^^^^^^^^^^^ the trait `LowerHex` is not implemented for `Array<u8, UInt<UInt<UInt<UInt<UInt<..., ...>, ...>, ...>, ...>, ...>>`
+    |                      |
+    |                      required by this formatting parameter
+    |
+    = help: the following other types implement trait `LowerHex`:
+              &T
+              &mut T
+              Saturating<T>
+              Wrapping<T>
+              compiler_builtins::math::libm_math::support::big::i256
+              compiler_builtins::math::libm_math::support::big::u256
+              compiler_builtins::math::libm_math::support::hex_float::hex_fmt::Hex<T>
+              half::bfloat::bf16
+            and 186 others
+    = note: the full name for the type has been written to '/Users/michael/Code/deadpan/target/debug/deps/encoded_verification-243d20298b1c3667.long-type-493550393539514529.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+
+For more information about this error, try `rustc --explain E0277`.
+error: could not compile `deadpan-cli` (test "encoded_verification") due to 2 previous errors
+warning: build failed, waiting for other jobs to finish...

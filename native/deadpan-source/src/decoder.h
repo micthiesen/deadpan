@@ -41,12 +41,30 @@ typedef struct {
     int32_t keyframe;
 } DeadpanSourceFrame;
 typedef struct {
+    DeadpanSourceFrame source;
+    int64_t best_effort_pts;
+    int32_t picture_type, decoder_profile, codec_profile, chroma_location;
+    int32_t stream_sar_num, stream_sar_den, codec_sar_num, codec_sar_den;
+    int32_t frame_sar_num, frame_sar_den;
+    int32_t flags, decode_error_flags;
+    int32_t interlaced, top_field_first, corrupt;
+} DeadpanExportFrame;
+typedef struct {
+    uint64_t frames, packets, io_bytes;
+} DeadpanDecodeWork;
+typedef struct {
+    uint32_t avcodec, avformat, avutil, swscale;
+} DeadpanDecoderRuntime;
+typedef struct {
     char code[48];
     char message[256];
 } DeadpanSourceError;
 int deadpan_source_open(int fd, int64_t length, const DeadpanSourceLimits *limits,
     uint64_t preflight_io_bytes, uint64_t timeout_ms, DeadpanCancelled cancelled, const void *opaque,
     DeadpanSource **out, DeadpanSourceInfo *info, DeadpanSourceError *error);
+int deadpan_source_open_at_keyframe(int fd, int64_t length, const DeadpanSourceLimits *limits,
+    uint64_t preflight_io_bytes, uint64_t timeout_ms, DeadpanCancelled cancelled, const void *opaque,
+    DeadpanSource **out, DeadpanSourceInfo *info, DeadpanSourceError *error, int64_t pts);
 int deadpan_source_next(DeadpanSource *source, uint64_t timeout_ms,
     DeadpanCancelled cancelled, const void *opaque, DeadpanSourceFrame *frame,
     uint8_t *rgba, size_t rgba_length, DeadpanSourceError *error);
@@ -55,5 +73,15 @@ int deadpan_source_copy(DeadpanSource *source, uint64_t timeout_ms,
     uint8_t *rgba, size_t rgba_length, DeadpanSourceError *error);
 int deadpan_source_seek(DeadpanSource *source, int64_t pts, uint64_t timeout_ms,
     DeadpanCancelled cancelled, const void *opaque, DeadpanSourceError *error);
+int deadpan_source_restart_at_keyframe(DeadpanSource *source, int64_t pts, uint64_t timeout_ms,
+    DeadpanCancelled cancelled, const void *opaque, DeadpanSourceError *error);
+int deadpan_source_next_i420(DeadpanSource *source, uint64_t timeout_ms,
+    DeadpanCancelled cancelled, const void *opaque, DeadpanExportFrame *frame,
+    uint8_t *i420, size_t i420_length, DeadpanSourceError *error);
+int deadpan_source_copy_i420(DeadpanSource *source, uint64_t timeout_ms,
+    DeadpanCancelled cancelled, const void *opaque, DeadpanExportFrame *frame,
+    uint8_t *i420, size_t i420_length, DeadpanSourceError *error);
+void deadpan_source_work(const DeadpanSource *source, DeadpanDecodeWork *work);
+void deadpan_source_runtime(DeadpanDecoderRuntime *runtime);
 void deadpan_source_close(DeadpanSource *source);
 #endif

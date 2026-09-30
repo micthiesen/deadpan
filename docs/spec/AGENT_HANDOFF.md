@@ -2,6 +2,37 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
+## Isolated finished-file verification, 2026-09-29
+
+The [finished-file verifier](../FINISHED_FILE_VERIFICATION.md) now inspects a
+private encoded candidate in a separate supervised process. It binds the bytes,
+document and captured contract, checks actual MP4 tables and edit lists, decodes
+every picture, and compares every complete GOP with a fresh decoder starting at
+its actual IDR. Manual and ordinary AAC modes must cover the exact authored
+sample interval and agree at fixed sample coordinates without PCM realignment.
+Clean teardown admits the report; failure retains the candidate for retry.
+
+[Current qualification](../qualification/finished-file-verification-2026-09-29.md)
+passes seven fresh project MP4s through normal and instrumented production
+verifiers: 304 pictures, 390,695 authored sample frames and 21 GOPs per run.
+Independent FFmpeg/AVFoundation readers pass all 912 picture planes and 18
+audio marker observations at exact fixed coordinates. The workspace passes
+2,222 tests, Clippy and formatting. Native C ASan/UBSan passes 241 selected
+tests and reinspection of all seven fresh files. The evidence records exact
+source/binary identities and the instrumentation limits.
+
+Source admission remains bounded to 64 GiB, one million packets, a 16 MiB header
+and 16 MiB packets, with bounded aggregate tables. This is narrower than the
+encoder's capacity and fails explicitly. Structural/decode admission does not
+replace content, event-sync or hardware/runtime qualification. See the linked
+contract for the supported SDR interpretation and remaining limits.
+
+Next add durable render jobs/recovery, destination `.partial` handling with
+verification before atomic publication, and native Render. Complete mastering,
+remaining audio/picture effects, HDR, release-runtime coverage and the full
+specification remain required. DP-17 stays open; every DP requirement and Gate A
+through G remains open or partial. No native export workflow is complete.
+
 ## Isolated committed SDR encoding, 2026-09-29
 
 The [encoded render child](../ENCODED_RENDER.md) now streams one committed
@@ -16,7 +47,8 @@ sanitized independent readers pass complete picture/PCM comparisons, exact
 clocks/edit lists, 21 fresh GOP boundaries and all marker events. Real live
 edit/undo/redo, cancellation after progress, byte exhaustion and retry pass.
 Sanitizers cover the independent readers here; the native encoder has its
-separate preceding qualification. Production media verification remains open.
+separate preceding qualification. The production structural/decode verifier is
+now implemented in the newer boundary above.
 
 The locked workspace passes 2,182 tests, zero failed/ignored; strict all-target
 workspace Clippy, formatting and 123 Python tests pass. Independent review fixed
@@ -25,14 +57,12 @@ seven integration tests pass separately. Evidence retains the initial failures,
 actual bytes, SQLite backups, source/binary bindings and review dispositions.
 No app UI changed.
 
-Next implement independent isolated verification of the finished candidate.
-Reuse descriptor-only source decoders with focused MP4/packet/video observations;
-the existing FFV1 conversion worker discards audio and is unsuitable. Resolve
-source-header/packet limits against encoder bounds, exact arbitrary-range edit
-durations, bounded fresh-GOP checks and content/sync evidence. The evidence folder
-retains a detailed source-only boundary review. Then add durable jobs/recovery,
-destination publication and native Render. Full audio/effects, HDR and every
-DP requirement and Gate A through G remain in scope and incomplete.
+The [isolated verifier](../FINISHED_FILE_VERIFICATION.md) now reuses the
+descriptor-only source decoders and bounded MP4/packet observations. Its source
+capacity and content/runtime qualification limits remain explicit. Next add
+durable jobs/recovery, verified atomic destination publication and native Render.
+Full audio/effects, HDR and every DP requirement and Gate A through G remain in
+scope and incomplete.
 
 ## Native SDR encoder and offline audio, 2026-09-29
 
@@ -58,8 +88,9 @@ The evidence archive retains and verifies all 836 native result files, including
 rejected attempts and partial outputs. No app UI changed in this milestone.
 
 The integration above now feeds committed pictures and canonical PCM directly
-into this encoder inside the supervised child. Add independent isolated finished-file verification,
-durable render jobs/recovery, atomic destination publication and native Render.
+into this encoder inside the supervised child, followed by the separate
+[finished-file verifier](../FINISHED_FILE_VERIFICATION.md). Add durable render
+jobs/recovery, verified atomic destination publication and native Render.
 Do not promote a synthetic adapter fixture into product export evidence. Full
 audio/effects, HDR, release hardware/OS coverage and all DP-01 through DP-24 and
 Gates A through G remain open or partial.
@@ -93,9 +124,10 @@ Do not spool a full uncompressed product movie through the current 512 MiB raw
 qualification range. The existing conversion worker still owns whole-file FFV1
 conversion; it is not the H.264/AAC encoder.
 
-Durable render jobs/recovery, full audio/effects, independent encoded-file
-verification, atomic publication, native Render, HDR and all remaining product
-requirements stay open. No DP requirement or Gate A through G is complete.
+The [encoded-file verifier](../FINISHED_FILE_VERIFICATION.md) now provides the
+bounded structural/decode checks described above. Durable render jobs/recovery,
+full audio/effects, atomic publication, native Render, HDR and all remaining
+product requirements stay open. No DP requirement or Gate A through G is complete.
 
 ## Committed encoder pictures, 2026-09-29
 
@@ -120,15 +152,12 @@ Corrected checks and Metal use the same source inventory `66cc8615…`; only doc
 and archived evidence changed afterward. No compiler, test or native probe is
 left running. Keep these results unless a later code change affects them.
 
-Next, isolate the real producer in a supervised final-render process. The current
-generation supervisor has reusable pipe/deadline/teardown mechanics but its wire
-messages and lifecycle are Hold-specific. Keep render messages separate. A private
-CLI worker can own read-only store, media, GPU and output preparation without a
-new crate or backward dependency. Use the existing checked spawn/group teardown,
-one shared monotonic deadline, bounded output, and clean-exit admission. Complete
-the shared audio/effects graphs, qualified encoding and approved AAC timing
-metadata, emitted-file checks, atomic publication and native Render afterward.
-This boundary produces no encoded file or export control. All DP requirements
+The later [encoded worker](../ENCODED_RENDER.md) now isolates this real producer
+and canonical PCM behind separate render messages and checked supervision. The
+[finished-file verifier](../FINISHED_FILE_VERIFICATION.md) adds independent
+structural/decode admission. Complete the shared audio/effects graphs, durable
+render jobs/recovery, verified atomic publication and native Render. This picture
+boundary alone produces no encoded file or export control. All DP requirements
 and Gates A through G remain in scope and incomplete.
 
 ## Accepted Generated Hold pictures, 2026-09-29
@@ -181,8 +210,9 @@ finds missing opening events and later events 1,088 samples early in the same
 disabled-edit-list file; the default reference aligns. The user approved the
 §22.3 revision on 2026-09-28, applied on 2026-09-29: edit lists may represent
 encoder delay, padding and frame reordering, with explicit stream-start/sync
-and full emitted-file verification. Do not reopen this decision. Closed GOPs,
-native video and product export remain open.
+and full emitted-file verification. Do not reopen this decision. The newer native
+encoding and finished-file boundaries above add measured GOP/video evidence and
+production structural/decode checks; full product export remains open.
 
 The [shared SDR encoder pixel boundary](../SDR_ENCODER_PIXELS.md) snapshots
 the composed linear working target into bounded owned memory and converts it
@@ -193,8 +223,8 @@ The synthetic video-only encoder experiment does not qualify AAC timing under
 the approved mux policy; neither boundary supplies a project export worker.
 Its [qualification](../qualification/sdr-encoder-pixels-2026-09-28.md) retains
 the full workspace pass, 22 actual Metal checks and normal/sanitized H.264
-pixel comparisons. Legacy Accepted/Still readers and final-render isolation
-remain open beyond the current Generated picture preparation work.
+pixel comparisons. Later boundaries above add final-render isolation and file
+verification. Legacy Accepted/Still readers and the full export workflow remain open.
 
 ## Product in one paragraph
 

@@ -1,0 +1,65 @@
+{
+  "artifacts": {
+    "deadpan-cli": {
+      "build_report": "/private/tmp/deadpan-export-verify-mkzjo3zd/sanitizer/report.json",
+      "build_journal": "/private/tmp/deadpan-export-verify-mkzjo3zd/sanitized-tests.json",
+      "original": "/private/tmp/deadpan-export-verify-mkzjo3zd/sanitizer/target/aarch64-apple-darwin/debug/deadpan-cli",
+      "path": "/private/tmp/deadpan-export-verify-mkzjo3zd/verified-sanitized-bin/deadpan-cli",
+      "sha256": "41e582f44a05de00d46cbc6c075726967595215297027ec3e82e4dc13277c90f",
+      "sha256_after": "41e582f44a05de00d46cbc6c075726967595215297027ec3e82e4dc13277c90f",
+      "unchanged": true
+    },
+    "qualify_encoded_verification": {
+      "cargo_artifact": {
+        "reason": "compiler-artifact",
+        "package_id": "path+file:///Users/michael/Code/deadpan/crates/deadpan-cli#0.1.0",
+        "manifest_path": "/Users/michael/Code/deadpan/crates/deadpan-cli/Cargo.toml",
+        "target": {
+          "kind": [
+            "example"
+          ],
+          "crate_types": [
+            "bin"
+          ],
+          "name": "qualify_encoded_verification",
+          "src_path": "/Users/michael/Code/deadpan/crates/deadpan-cli/examples/qualify_encoded_verification.rs",
+          "edition": "2024",
+          "doc": false,
+          "doctest": false,
+          "test": false
+        },
+        "profile": {
+          "opt_level": "0",
+          "debuginfo": 2,
+          "debug_assertions": true,
+          "overflow_checks": true,
+          "test": false
+        },
+        "features": [],
+        "filenames": [
+          "/Users/michael/Code/deadpan/target/debug/examples/qualify_encoded_verification"
+        ],
+        "executable": "/Users/michael/Code/deadpan/target/debug/examples/qualify_encoded_verification",
+        "fresh": false
+      },
+      "original": "/Users/michael/Code/deadpan/target/debug/examples/qualify_encoded_verification",
+      "path": "/private/tmp/deadpan-export-verify-mkzjo3zd/verified-sanitized-bin/qualify_encoded_verification",
+      "sha256": "826fabebe0f0913cad44aea1d4cd00b34788a7c6c813b8808e7e5bd9f3b0992a",
+      "sha256_after": "826fabebe0f0913cad44aea1d4cd00b34788a7c6c813b8808e7e5bd9f3b0992a",
+      "unchanged": true
+    }
+  },
+  "command": [
+    "qualify_encoded_verification",
+    "/private/tmp/deadpan-export-verify-mkzjo3zd/metal-current-report.json",
+    "/private/tmp/deadpan-export-verify-mkzjo3zd/verified-sanitized-bin/deadpan-cli",
+    "/private/tmp/deadpan-export-verify-mkzjo3zd/verified-sanitized-report.json",
+    "/private/tmp/deadpan-export-verify-mkzjo3zd/verified-sanitized-files"
+  ],
+  "cwd": "/Users/michael/Code/deadpan",
+  "mode": "sanitized",
+  "timeout_seconds": 180,
+  "asan_options": "detect_leaks=0:halt_on_error=1:abort_on_error=1:exitcode=86",
+  "ubsan_options": "halt_on_error=1:abort_on_error=1:print_stacktrace=1",
+  "exit_code": 0
+}

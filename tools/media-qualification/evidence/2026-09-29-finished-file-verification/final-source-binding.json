@@ -1,0 +1,7 @@
+{
+  "base_commit": "4387a88a7c110c8ed86ddc98099a8f248da7aa59",
+  "passed": true,
+  "source_inventory_sha256": "ad271d24c7ba5226183f89e6a4e955014b81d8f7d361e94fd5b4751422874820",
+  "paths": 1130,
+  "method": "Recomputed tracked and untracked source inventory and compared exact entries to final-build and all final gates."
+}
