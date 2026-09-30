@@ -275,6 +275,13 @@ encoder geometry normalization, complete muxing or verified publication.
 
 Every persisted edit, undo, and redo gets a never-reused revision ID. Core inverse patches can restore exact fixture identity; the store rebases them onto fresh revisions to prevent stale commands becoming valid after undo. Store writes use one transaction for the revision, history, and cursor. Keep `.writer.lock` held for the writable store lifetime; read-only inspection and dry runs may coexist. Take live database snapshots through SQLite's backup API, never copy only an open main database file.
 
+Current native and CLI deletion uses `DeleteRipple { node, timing }` through
+ordinary Sequence ancestors. Capture downstream sample entries before removing
+the child; retain previous lattices/resumes and transform the root sound bus once.
+Zero-duration and terminal deletion need no new clock. Keep historical core
+`Delete` unchanged for saved-history replay; normalize the public CLI verb only
+at command ingress. See [ripple deletion](docs/AUDIO_REANCHORS.md#ripple-deletion).
+
 Repeat play IDs are scoped by Repeat node and allocation revision, with an ordinal inside that allocation. Preserve surviving IDs through resizing and reorder; allocate fresh IDs for growth and inserted subtrees. Imported initial snapshots reserve their allocation names even after plays are removed. Keep compact runs bounded and never expand a repeat merely to seek. Core schema 34 retains these runs, marks, sparse overrides, generated Hold metadata, independent source mappings, audio edge policies, transparent Retime partitions, owned timing bindings and direct sound replacement maps, and binds qualified assets to immutable source receipts. Database schemas 1 through 38 replay the complete chronology directly into the current schema on a consistent copy, compare every legacy snapshot/transaction, and promote through SQLite's backup transaction only after validation. Strict legacy adapters freeze nested provider vocabulary and reject new fields, commands, and unexpected mark or override changes. Preserve the pre-migration backup.
 
 Durable render jobs capture immutable project/revision/document/range/policy

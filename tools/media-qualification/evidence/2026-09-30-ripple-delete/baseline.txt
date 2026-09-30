@@ -1,0 +1,15 @@
+Delete PCM baseline, 2026-09-30
+Repository HEAD: 90292422e6c1e5f42b7692d2ba649f0063768d09
+Fixture: /Users/michael/Code/deadpan/native/deadpan-source/tests/audio-fixtures/pcm-mono-44100.wav
+Fixture SHA-256: b95b3debd2c83cf2590fddfaa98276c23c3b383b720fd96ac52c2c00c668318b
+Command: env DEADPAN_FFMPEG_PREFIX=/tmp/deadpan-ui-ffmpeg/prefix cargo test -p deadpan-audio --test composite_insert --locked delete::delete_preserves_nonzero_ntsc_source_suffix_phase -- --exact --nocapture
+Result: exit 101; one test ran and failed.
+Old command: Command::Delete { node: prefix }. NTSC 30000/1001.
+Before: silence 1 frame, genuine 44.1 kHz Source 4 frames.
+Old suffix [1602,8008); new suffix [0,6406), both 6406 samples.
+Independent first128 oracle: source100 + mixphase2/5 * source-step147/160.
+Original entry matches oracle within2e-6. Entire original suffix is retained as exact waveform oracle, including finite source endpoint behavior.
+Observed mismatch: 6405/6406 samples differ beyond2e-6; maximum absolute error0.779741. First sample original -0.8758008; deleted -0.75776315.
+Initial scaffolding failures initial-block-limit.log and initial-oracle-endpoint.log are not Delete evidence. Bounded256 sample reads fixed the first; comparison against the actual retained suffix plus independent entry oracle fixed the second (the broad recipe omitted source terminal support).
+Baseline test source: delete-before.rs
+Evidence: witness.log

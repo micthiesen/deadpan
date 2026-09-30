@@ -120,6 +120,13 @@ fn every_frozen_document_patch_and_command_rejects_new_vocabulary() {
         identities,
         timing,
     });
+    new_commands.push(Command::DeleteRipple {
+        node: id("hold"),
+        timing: AudioTimingId {
+            allocation: RevisionId::new("initialx").unwrap(),
+            ordinal: 0,
+        },
+    });
     macro_rules! check {
         ($version:literal, $adapter:ident) => {{
             let wire = old_document($version, &before);
@@ -192,7 +199,7 @@ fn every_frozen_document_patch_and_command_rejects_new_vocabulary() {
 #[test]
 fn frozen_sound_context_guards_reject_interior_splices_without_sounds() {
     let before = fixture();
-    let request = request(
+    let mut request = request(
         &before,
         Command::SpliceSourceAt {
             parent: id("root"),
@@ -218,6 +225,21 @@ fn frozen_sound_context_guards_reject_interior_splices_without_sounds() {
     );
 
     assert!(before.sounds().is_empty());
+    for error in [
+        legacy_v29::validate_request_context(&before, &request),
+        legacy_v30::validate_request_context(&before, &request),
+        legacy_v31::validate_request_context(&before, &request),
+        legacy_v32::validate_request_context(&before, &request),
+    ] {
+        assert_eq!(error.unwrap_err().code, EditErrorCode::InvalidCommand);
+    }
+    request.command = Command::DeleteRipple {
+        node: id("hold"),
+        timing: AudioTimingId {
+            allocation: request.new_revision.clone(),
+            ordinal: 0,
+        },
+    };
     for error in [
         legacy_v29::validate_request_context(&before, &request),
         legacy_v30::validate_request_context(&before, &request),

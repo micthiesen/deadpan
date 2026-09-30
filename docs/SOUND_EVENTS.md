@@ -95,7 +95,7 @@ release gate.
 ## Persisted root sounds
 
 Core schema 29 and database 35 introduced `SoundEvent` recipes keyed by `SoundId`.
-The current schemas are core 32 and database 38. `SetSound` creates an event or
+The current schemas are core 34 and database 43. `SetSound` creates an event or
 updates it under the retained-route rules below; `DeleteSound` removes it. The
 shared headless command entrypoint supports preview and atomic commit, followed
 by ordinary durable undo/redo. Migration replays old chronology through closed
@@ -158,6 +158,11 @@ Keep, including destination clipping. An initially sampleless selection uses
 exact logical support so unrelated edits preserve its accepted intent. Removing
 all selected support deletes the event. Internal helper Splits do not apply the
 transformation twice. Non-root Split retains the root bus unchanged.
+
+`DeleteRipple` uses this same one-step root-bus transform while also retaining
+the old sample entry of structural Source/Hold/Repeat/Preserve suffix owners.
+It is the native and public CLI deletion path; saved core `Delete` keeps its
+historical reduction for exact history replay. No route vocabulary changes.
 
 Core 34/database 43 add one direct `Replace { range, duration }` operation.
 `ReplaceSource` maps the old prefix and suffix directly to the final document,

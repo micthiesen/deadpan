@@ -12,9 +12,11 @@ use crate::{
 };
 
 mod composite;
+mod delete;
 mod source_replace;
 mod source_splice;
 mod target;
+pub(crate) use delete::apply as delete;
 pub use source_replace::SourceReplacement;
 pub(crate) use source_replace::apply as replace_source;
 pub use source_splice::SourceSpliceInterior;

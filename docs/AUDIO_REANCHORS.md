@@ -4,9 +4,8 @@ Core 21/database 27 extend [owned timing bindings](OWNED_AUDIO_BINDINGS.md) with
 ordered `AudioReanchorStep` records. They preserve each physical occurrence's
 resume coordinate when structural insertion shifts its allocation. [Repeat-gap
 bindings](GAP_AUDIO_BINDINGS.md) extend this state in core 22/database 28.
-General selected-moment splice remains open. The native
-[moment-reuse target](design/boards/original-moment-reuse-v1.png) remains the later
-workflow on the project's single Original.
+The native [slice workflow](SLICE_PLACEMENT.md) uses these bindings for linked
+Original insertion and replacement in ordinary Sequence scopes.
 
 ## Allocation and support
 
@@ -67,12 +66,36 @@ copy. Core schemas 16 through 20 use a closed binding adapter rejecting
 both directions of history patches. Older histories gain no invented steps.
 Audio-context schema 2 is unchanged and cannot carry owned binding state.
 
+## Ripple deletion
+
+`DeleteRipple { node, timing }` removes a complete child of an ordinary Sequence
+in one transaction. Capture the downstream owners on the original, undeleted
+tree at the old deletion end, then remove the child. Later siblings at each
+ordinary Sequence level retain their old sample entry. Existing sampling
+lattices and earlier resumes remain intact; compact Repeat plays and gaps stay
+compact, and a moved nonunity Preserve stage retains its complete input history.
+
+The timing allocation must equal the new revision. Empty-child deletion and
+deletion through project end do not capture a clock because no surviving time
+moves. Marks follow their existing content/pinned/loss policies; the root sound
+bus receives exactly one deletion transform and removed Hold allowances retire.
+Root deletion, missing children and Repeat/Retime ancestry fail before mutation.
+A whole Repeat or Retime may be removed as a direct ordinary Sequence child.
+
+Native `dd`/`:delete` and the public CLI `delete` verb use this command. The CLI
+allocates timing ordinal zero before both dry-run and commit; explicit
+`delete_ripple` accepts the full typed identity. Historical core `Delete` keeps
+its original reduction so saved patches replay exactly. Current core 34 and
+database 43 need no new fields or migration. Frozen command adapters reject
+the new tag. [Qualification](qualification/ripple-delete-2026-09-30.md) records
+the decoded-PCM regression, durable history and integration checks.
+
 ## Remaining work
 
 Current steps represent Source, Hold, Repeat-gap and opaque Preserve output resumes.
-Complete movement/raw-recipe lifecycle, general
-atomic moment insertion and its native Visual/register workflow remain open.
-Native paste must not use separate Split/Insert commits.
+Complete movement/raw-recipe lifecycle, range/role-only deletion, temporal
+occurrence deletion and the full Visual/register workflow remain open.
+Native paste and partial-range deletion must not use separate Split/Edit commits.
 
 ### Gap ownership design record
 

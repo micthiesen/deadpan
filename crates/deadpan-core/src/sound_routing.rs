@@ -477,7 +477,7 @@ impl RootSoundEditCapture {
                     .boundary,
                 duration: source.duration,
             },
-            Command::Delete { node } => {
+            Command::Delete { node } | Command::DeleteRipple { node, .. } => {
                 let parent = document.parent_of(node).ok_or_else(|| {
                     edit_invalid("sound ripple deletion requires a non-root Sequence child")
                 })?;

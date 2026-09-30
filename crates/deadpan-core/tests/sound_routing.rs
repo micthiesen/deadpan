@@ -305,6 +305,61 @@ fn nested_pause_captures_once_and_more_than_twenty_one_edits_keep_the_recipe() {
 }
 
 #[test]
+fn retained_delete_routes_the_root_bus_once_and_prunes_its_removed_issuer() {
+    let original = fixture();
+    let issuer = SoundHoldIssuer::Node {
+        instance: InstancePath {
+            node: node("a"),
+            repeats: vec![],
+        },
+    };
+    let (original, _) = edit(
+        &original,
+        Command::SetSoundAllowance {
+            sound: sound(),
+            issuer,
+            allowed: true,
+        },
+    );
+    let (historical, _) = edit(&original, Command::Delete { node: node("a") });
+    let (retained, transaction) = edit(
+        &original,
+        Command::DeleteRipple {
+            node: node("a"),
+            timing: AudioTimingId {
+                allocation: request(&original, Command::Delete { node: node("a") }).new_revision,
+                ordinal: 0,
+            },
+        },
+    );
+    assert_eq!(transaction.duration_delta, -10);
+    assert_eq!(retained.sounds(), historical.sounds());
+    assert_eq!(retained.sound_routes(), historical.sound_routes());
+    assert_eq!(retained.sound_routes()[&sound()].edits.len(), 1);
+    assert!(retained.sound_allowances().is_empty());
+    let (empty, _) = edit(
+        &retained,
+        Command::DeleteRipple {
+            node: node("group"),
+            timing: AudioTimingId {
+                allocation: request(
+                    &retained,
+                    Command::Delete {
+                        node: node("group"),
+                    },
+                )
+                .new_revision,
+                ordinal: 0,
+            },
+        },
+    );
+    assert_eq!(empty.duration().unwrap(), frames(0));
+    assert!(empty.sounds().is_empty());
+    assert!(empty.sound_routes().is_empty());
+    assert!(empty.audio_bindings().is_empty());
+}
+
+#[test]
 fn delete_onset_keeps_recipe_suffix_and_whole_deletion_removes_bus() {
     let original = fixture();
     let (doc, transaction) = edit(&original, Command::Delete { node: node("a") });

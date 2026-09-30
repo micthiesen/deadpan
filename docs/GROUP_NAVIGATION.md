@@ -16,6 +16,11 @@ on the current direct child. Inspector Enter retains its parameter action;
 normal Enter opens a Sequence. Text fields, IME, menus, dialogs, help and Camera
 keep their input ownership. Navigation clears pending operators and counts.
 
+Deletion submits one `DeleteRipple` command and retains the sample entry of
+every following audio owner, including later siblings outside the current group.
+Empty groups remain deletable without changing time. One Undo restores the full
+authored document. See [retained deletion clocks](AUDIO_REANCHORS.md#ripple-deletion).
+
 ## Command ownership
 
 `SequenceScope` is an ephemeral path of direct Sequence children. It is not

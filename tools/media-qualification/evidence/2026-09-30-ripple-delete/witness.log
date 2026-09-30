@@ -1,0 +1,21 @@
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 9.84s
+     Running tests/composite_insert.rs (target/debug/deps/composite_insert-83f2643f39d161d3)
+
+running 1 test
+NTSC Delete witness: old [1602,8008), new [0,6406); 6405/6406 samples differ; maximum absolute error 0.779741
+retained first eight: [[-0.8758008, -0.8758008], [-0.7374561, -0.7374561], [-0.78140485, -0.78140485], [-0.7766159, -0.7766159], [-0.75331706, -0.75331706], [-0.78480023, -0.78480023], [-0.74536353, -0.74536353], [-0.7783323, -0.7783323]]; after Delete: [[-0.75776315, -0.75776315], [-0.813442, -0.813442], [-0.7334135, -0.7334135], [-0.8068137, -0.8068137], [-0.7400441, -0.7400441], [-0.7878548, -0.7878548], [-0.7525258, -0.7525258], [-0.76741016, -0.76741016]]
+
+thread 'delete::delete_preserves_nonzero_ntsc_source_suffix_phase' (58748886) panicked at crates/deadpan-audio/tests/composite_insert/delete.rs:62:5:
+sample 0, channel 0: -0.75776315 != -0.8758008
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test delete::delete_preserves_nonzero_ntsc_source_suffix_phase ... FAILED
+
+failures:
+
+failures:
+    delete::delete_preserves_nonzero_ntsc_source_suffix_phase
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 18 filtered out; finished in 0.14s
+
+error: test failed, to rerun pass `-p deadpan-audio --test composite_insert`

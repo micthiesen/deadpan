@@ -685,6 +685,7 @@ impl Service {
                 | ProjectEdit::SetAudioTreatments { .. }
         );
         let mut retime_message = None;
+        let new_revision = revision();
         let (command, selected_node, message) = match edit {
             ProjectEdit::SetAudioTreatments { node, treatments } => {
                 if document.nodes()[&node].audio_treatments == treatments {
@@ -822,7 +823,17 @@ impl Service {
                             .and_then(|index| children.get(index))
                     })
                     .cloned();
-                (Command::Delete { node }, selected, "Beat deleted and saved")
+                (
+                    Command::DeleteRipple {
+                        node,
+                        timing: deadpan_core::AudioTimingId {
+                            allocation: new_revision.clone(),
+                            ordinal: 0,
+                        },
+                    },
+                    selected,
+                    "Beat deleted and saved",
+                )
             }
             ProjectEdit::HoldDuration { node, duration } => (
                 Command::SetHoldDuration { node, duration },
@@ -843,7 +854,7 @@ impl Service {
         let request = CommandRequest {
             project_id: document.project_id().clone(),
             expected_revision,
-            new_revision: revision(),
+            new_revision,
             command,
         };
         // Generic commit deliberately preserves the store's relevance guard.

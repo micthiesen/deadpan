@@ -121,6 +121,12 @@ pub enum Command {
     Delete {
         node: NodeId,
     },
+    /// Ripple-delete an ordinary Sequence child while retaining the old sample
+    /// entries of all following physical owners. `Delete` is historical replay.
+    DeleteRipple {
+        node: NodeId,
+        timing: crate::AudioTimingId,
+    },
     /// Destination index is measured after removal from the old parent.
     Move {
         node: NodeId,
@@ -653,6 +659,9 @@ pub fn apply(
             },
             context,
         )?,
+        Command::DeleteRipple { node, timing } => {
+            crate::insert_time::delete(input, node, timing, &request.new_revision)?
+        }
         Command::Split {
             node,
             at,
@@ -920,6 +929,7 @@ pub(crate) fn reduce(
         Command::InsertTime { .. }
         | Command::SpliceSource { .. }
         | Command::ReplaceSource { .. }
+        | Command::DeleteRipple { .. }
         | Command::SpliceSourceAt { .. } => {
             return Err(EditError::new(
                 EditErrorCode::InvalidCommand,
@@ -1929,6 +1939,7 @@ fn description(command: &Command) -> &'static str {
         Command::Split { .. } => "Split beat",
         Command::Insert { .. } => "Insert beats",
         Command::Delete { .. } => "Delete beat",
+        Command::DeleteRipple { .. } => "Ripple-delete beat",
         Command::Move { .. } => "Move beat",
         Command::Group { .. } => "Group beats",
         Command::Ungroup { .. } => "Ungroup beats",

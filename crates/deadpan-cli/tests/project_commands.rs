@@ -13,6 +13,8 @@ use serde_json::{Value, json};
 
 type Result<T = ()> = std::result::Result<T, Box<dyn Error>>;
 
+#[path = "project_commands/delete.rs"]
+mod delete;
 #[path = "project_commands/nested_pause.rs"]
 mod nested_pause;
 

@@ -1,0 +1,63 @@
+use super::*;
+
+#[test]
+fn delete_preserves_nonzero_ntsc_source_suffix_phase() {
+    let before = document(
+        ntsc(),
+        &["prefix", "voice"],
+        vec![("prefix", silence(1)), ("voice", source(ntsc(), 4))],
+    );
+    let after = edit(
+        &before,
+        "delete-prefix",
+        Command::Delete { node: id("prefix") },
+    );
+    // B(1)=1602, B(5)=8008, B(0)=0, B(4)=6406. The old and new
+    // suffixes both have 6406 samples. Its retained entry is 2/5 of a
+    // 48 kHz sample, or 147/400 of a 44.1 kHz source sample after 100.
+    assert_eq!(
+        ntsc().audio_boundary(ProjectFrame(1)).unwrap(),
+        AudioSample(1602)
+    );
+    assert_eq!(
+        ntsc().audio_boundary(ProjectFrame(5)).unwrap(),
+        AudioSample(8008)
+    );
+    assert_eq!(
+        ntsc().audio_boundary(ProjectFrame(4)).unwrap(),
+        AudioSample(6406)
+    );
+    let mut provider = Provider::new();
+    let entry = expected(&provider, ratio(2, 5), 128);
+    let mut original = renderer(&before, &mut provider);
+    let mut deleted = renderer(&after, &mut provider);
+    let mut oracle = Vec::new();
+    let mut actual = Vec::new();
+    for start in (0..6406).step_by(256) {
+        let count = u32::try_from((6406 - start).min(256)).unwrap();
+        oracle.extend(read(&mut original, &mut provider, 1602 + start, count));
+        actual.extend(read(&mut deleted, &mut provider, start, count));
+    }
+    assert_close(&oracle[..128], &entry);
+    assert!(oracle.iter().flatten().all(|sample| sample.is_finite()));
+    assert!(oracle.iter().flatten().any(|sample| sample.abs() > 0.1));
+    let differing = actual
+        .iter()
+        .zip(&oracle)
+        .filter(|(actual, expected)| (actual[0] - expected[0]).abs() > 2e-6)
+        .count();
+    let maximum_error = actual
+        .iter()
+        .zip(&oracle)
+        .map(|(actual, expected)| (actual[0] - expected[0]).abs())
+        .fold(0f32, f32::max);
+    eprintln!(
+        "NTSC Delete witness: old [1602,8008), new [0,6406); {differing}/6406 samples differ; maximum absolute error {maximum_error}"
+    );
+    eprintln!(
+        "retained first eight: {:?}; after Delete: {:?}",
+        &oracle[..8],
+        &actual[..8]
+    );
+    assert_close(&actual, &oracle);
+}

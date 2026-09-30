@@ -22,6 +22,8 @@ use sha2::{Digest, Sha256};
 
 const TIMEOUT: Duration = Duration::from_secs(10);
 
+#[path = "composite_insert/delete.rs"]
+mod delete;
 #[path = "composite_insert/nested_sequence.rs"]
 mod nested_sequence;
 #[path = "composite_insert/source_replace.rs"]

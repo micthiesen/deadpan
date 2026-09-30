@@ -1140,7 +1140,9 @@ pub fn validate_request_context(
     let command = &request.command;
     if matches!(
         command,
-        Command::SpliceSourceAt { .. } | Command::ReplaceSource { .. }
+        Command::SpliceSourceAt { .. }
+            | Command::ReplaceSource { .. }
+            | Command::DeleteRipple { .. }
     ) {
         return Err(EditError::new(
             EditErrorCode::InvalidCommand,
@@ -1240,6 +1242,7 @@ fn preserves_sound_clocks(command: &Command) -> bool {
         | Command::SpliceSource { .. }
         | Command::SpliceSourceAt { .. }
         | Command::ReplaceSource { .. }
+        | Command::DeleteRipple { .. }
         | Command::Split { .. }
         | Command::Insert { .. }
         | Command::Delete { .. }

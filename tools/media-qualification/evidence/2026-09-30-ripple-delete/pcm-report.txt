@@ -1,0 +1,14 @@
+Delete PCM evidence, current working sources, 2026-09-30
+HEAD: 90292422e6c1e5f42b7692d2ba649f0063768d09
+3b047327543f69affc70275a1b0e9f1db8a95f2584f0c5b51c634de28fd1906f  crates/deadpan-audio/tests/composite_insert.rs
+384b92a152a459f638e30fdce6834f2fca713a698909c1070eefa5493fed737a  crates/deadpan-audio/tests/composite_insert/delete.rs
+228e81ebf3a4dd7bf63a9a8a2f439a4b949f5ab3af6fc943c8475afcfb361275  crates/deadpan-core/src/command.rs
+c52334551a48dd1f40a05edadb202850a60b3e991d718b2c207331a27f8e6af2  crates/deadpan-core/src/insert_time/delete.rs
+
+Latest exact command: env DEADPAN_FFMPEG_PREFIX=/tmp/deadpan-ui-ffmpeg/prefix cargo test -p deadpan-audio --test composite_insert --locked delete::delete_preserves_fractional_ntsc_preserve_output_entry -- --exact --nocapture
+Result: exit0, 1 passed,25 filtered; ntsc-preserve.log.
+Parent reported earlier full composite_insert target exit0 with25 tests including seven deletion tests. Parent owns that original log.
+Eight deletion tests now cover nonzero NTSC Source entire suffix, explicit historical phase behavior, nested ordinary Sequences and outer siblings, RoomTone loop endpoint, preexisting InsertTime bindings with two deletes, Repeat Source plays and RoomTone gap, integer-grid full-history Preserve crop, and NTSC fractional Preserve output.
+All current deletion operations use edit helper asserting exact inverse. Cold last256 read precedes reverse irregular chunks over all retained samples. First128 Source and RoomTone references use handwritten coordinates; Preserve references construct full canonical DSP preparation independently from RenderPlan/bindings.
+Bounds: raw canonical PCM only; no acoustic/export qualification. One intermediate existing-binding case has6407 allocated samples and compares6406 retained original samples, then complete final6406 output. Default Repeat gaps covered; sparse occurrence/gap overrides and edits inside Repeat/Retime are outside these PCM cases. Parent owns admission/serialization/store/native tests.
+Initial genuine old-Delete failure and scaffolding failures remain separately recorded in baseline.txt and their respective logs.

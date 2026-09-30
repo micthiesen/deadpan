@@ -874,11 +874,24 @@ fn command(package: &Path, request: &Path, dry_run: bool) -> Result<(), CliError
         return Err(CliError::Protocol(envelope.protocol));
     }
     let preview = dry_run || envelope.dry_run;
+    let new_revision = envelope.new_revision.map_or_else(new_revision, Ok)?;
+    // The public editing verb retains current audio clocks. The old core tag
+    // remains unchanged solely so stored histories replay their exact patches.
+    let command = match envelope.command {
+        Command::Delete { node } => Command::DeleteRipple {
+            node,
+            timing: deadpan_core::AudioTimingId {
+                allocation: new_revision.clone(),
+                ordinal: 0,
+            },
+        },
+        command => command,
+    };
     let request = CommandRequest {
         project_id: envelope.project_id,
         expected_revision: envelope.expected_revision,
-        new_revision: envelope.new_revision.map_or_else(new_revision, Ok)?,
-        command: envelope.command,
+        new_revision,
+        command,
     };
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     {

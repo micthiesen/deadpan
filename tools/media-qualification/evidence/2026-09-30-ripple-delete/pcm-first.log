@@ -1,0 +1,36 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+   Compiling deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 51.18s
+     Running tests/composite_insert.rs (target/debug/deps/composite_insert-83f2643f39d161d3)
+
+running 25 tests
+test delete::historical_delete_keeps_its_unbound_phase_for_replay ... ok
+test nested_sequence::nested_fragment_split_composes_a_previously_shifted_source_clock ... ok
+test delete::delete_before_preserve_crop_retains_full_preparation_history ... ok
+test source_splice::fresh_ntsc_source_uses_project_phase_while_repeat_fragments_keep_distinct_entries ... ok
+test inserting_before_preserve_crop_keeps_full_history_and_exact_silence ... ok
+test source_splice::pasted_selected_audio_ends_on_its_exact_interval_after_another_splice ... ok
+test interior_pause_before_nested_retime_preserves_intrinsic_dsp_input_clock ... ok
+test interior_source_fragment_pause_composes_an_existing_resume_before_repeat ... ok
+test nested_sequence::nested_pause_resumes_each_level_at_its_own_ntsc_sample_and_stays_editable ... ok
+test source_splice::interior_ntsc_source_splice_and_fragment_refinement_keep_nonzero_pcm_at_both_joins ... ok
+test source_splice::nested_group_edges_keep_ownership_ancestor_suffix_clocks_and_live_recipe_edits ... ok
+test delete::delete_preserves_nonzero_ntsc_source_suffix_phase ... ok
+test split_repeat_suffix_inserts_twice_and_resumes_each_old_ntsc_play ... ok
+test source_replace::replacement_before_repeated_and_preserved_suffix_retains_their_entries ... ok
+test interior_source_pause_uses_each_suffix_boundary_instead_of_one_rounded_shift ... ok
+test delete::repeated_deletes_keep_preexisting_insert_time_bindings ... ok
+test delete::nested_delete_preserves_inner_and_outer_source_suffixes ... ok
+test nested_sequence::nested_sequence_pause_preserves_later_preserve_input_and_roomtone_gap_clocks ... ok
+test source_splice::source_splice_leaves_shifted_preserve_preparation_and_roomtone_on_their_own_clocks ... ok
+test delete::delete_preserves_repeat_play_and_roomtone_gap_entries ... ok
+test delete::delete_preserves_roomtone_loop_phase_through_the_final_sample ... ok
+test source_splice::interior_ntsc_roomtone_splice_keeps_nonzero_hold_recipe_phase ... ok
+test inserted_composite_keeps_isolated_gap_phase_and_default_gap_births ... ok
+test source_replace::ntsc_replacement_retains_source_roomtone_and_outer_suffix_samples_in_one_shift ... ok
+test interior_roomtone_hold_and_fragment_keep_phase_before_repeat_gaps ... ok
+
+test result: ok. 25 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.41s
+

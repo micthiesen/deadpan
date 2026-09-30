@@ -1,0 +1,19 @@
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 9.89s
+     Running tests/composite_insert.rs (target/debug/deps/composite_insert-83f2643f39d161d3)
+
+running 1 test
+
+thread 'delete::delete_preserves_nonzero_ntsc_source_suffix_phase' (58746290) panicked at crates/deadpan-audio/tests/composite_insert/delete.rs:47:9:
+sample 145, channel 0: 0.095767945 != 0.095770136
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test delete::delete_preserves_nonzero_ntsc_source_suffix_phase ... FAILED
+
+failures:
+
+failures:
+    delete::delete_preserves_nonzero_ntsc_source_suffix_phase
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 18 filtered out; finished in 0.19s
+
+error: test failed, to rerun pass `-p deadpan-audio --test composite_insert`

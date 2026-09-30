@@ -36,15 +36,53 @@ tables. The isolated QA app released its writer lock; the user's window stayed
 untouched. Automated verification passes 2,641 locked workspace tests, 372
 UI-feature tests, 401 slice replay checks, strict Clippy and formatting.
 Edited-slice copy/move, role-only placement and Repeat/Retime occurrence targets
-remain open. Ordinary Delete still needs its own retained suffix-phase work;
-replacement's direct map does not fix that separate operation.
-The next small Delete witness is a 1-frame silent prefix followed by a 4-frame
-44.1 kHz Source at 30000/1001 fps. Removing the prefix should retain the original
-6,406-sample suffix (`B(1)=1,602`, `B(5)=8,008`); arithmetic predicts the current
-unbound path resets a 147/400-source-sample phase. This witness has not yet run
-through Rust PCM. Prefer a new explicit command with a timing identity so old
-Delete history keeps its replay semantics; reuse suffix preparation before
-detaching the beat. Repeat/Retime ancestors need separate admission work.
+remain open. The deletion phase defect found during this work is addressed
+below through a distinct current command; historical Delete stays unchanged.
+
+## Retained audio through deletion, 2026-09-30
+
+Native `dd`/`:delete` and the public CLI `delete` verb now use `DeleteRipple`.
+Before detaching an ordinary Sequence child, retain each downstream owner's
+old sample entry on the original tree. Later siblings at every Sequence level
+keep their clocks, including compact Repeat gaps and opaque Preserve outputs.
+Empty and terminal deletion do not allocate an unused clock. Root sounds move
+once; marks and removed Hold allowances follow their existing policies.
+
+The 44.1 kHz Source witness at 30000/1001 fps reproduced the old defect:
+deleting a one-frame prefix changed 6,405 of the surviving 6,406 samples.
+The corrected path retains the complete decoded suffix, including cold final
+reads and reversed irregular read order. Independent scalar entry and complete
+stretch-history references supplement comparisons with the original document.
+See [the contract](../AUDIO_REANCHORS.md#ripple-deletion) and
+[qualification](../qualification/ripple-delete-2026-09-30.md).
+
+Core 34/database 43 remain unchanged. Historical core `Delete` replays its old
+patches; normalize the public CLI verb at ingress only. Current stores can hold
+both commands in one validated history. Native tests retain the captured group,
+successor selection, protected Original baseline and exact Undo; store tests
+reopen mixed histories and reject stale revisions after Undo. Range/role-only
+and Repeat/Retime occurrence deletion remain required.
+
+The locked workspace passes 2,661 tests and the UI-feature app passes 375, with
+none failed or ignored, including eight decoded-PCM deletion cases and the
+native, CLI and mixed-history tests. Formatting and strict all-target workspace
+Clippy with the UI harness feature pass.
+
+The next Visual-delete regression is `gg 20l v 10l d` on a 120-frame Original:
+expect one removal of `[20,30)`, cursor 20, two endpoint fragments, duration 110
+and new frame 20 equal to old frame 30. Currently `d` only arms the `dd` operator,
+and `dd` deletes the selected whole beat. Empty Visual selection must remain
+distinct from absent selection so it cannot fall back to whole-beat deletion.
+`:delete` also needs an independent command-entry target, including absence;
+it currently resolves the selected beat at Enter. Extend the production router,
+native text/IME guards and Kestrel audit together.
+
+Use an atomic `DeleteRange { parent, range, identities, timing }` with shared
+replacement endpoint splitting, but no extra Source allocation. Capture clocks
+before Split and suffix entries on the split, undeleted tree; transform sounds
+once. A concrete PCM witness is seven NTSC frames of 44.1 kHz Source with `[1,3)`
+removed: retain old prefix `[0,1602)` and old suffix `[4805,11211)` at new
+`[1602,8008)`. This range command and its tests are proposed, not implemented.
 
 ## Native identity, 2026-09-30
 

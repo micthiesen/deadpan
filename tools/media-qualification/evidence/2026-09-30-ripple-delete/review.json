@@ -1,0 +1,25 @@
+{
+  "independent_reviews": [
+    {
+      "reviewer": "replace_ui",
+      "scope": "Core DeleteRipple dispatch, suffix capture, sound routing and validation, legacy guards, core tests",
+      "findings": [],
+      "checks": "Pre-detach sample entry; ordinary Sequence ancestry; zero/end cases; previous lattices/resumes; compact Repeat/gap and Preserve output boundaries; subtree overrides; marks/lineage and allowance pruning; unchanged historical Delete reducer."
+    },
+    {
+      "reviewer": "range_ui",
+      "scope": "Native service, store history tests, CLI normalization and command test",
+      "findings": [],
+      "checks": "Session/revision/scope before allocation, timing bound to fresh revision, receipt before refresh, mixed history reopen and Undo/Redo, stale rejection, normalization before both preview and dispatch."
+    }
+  ],
+  "parent_review": {
+    "scope": "Complete implementation and test diff, PCM oracles, evidence and documentation",
+    "pcm": "Independent references for the first 128 Source/RoomTone samples and full canonical Preserve preparation complement exact comparisons against original decoded suffixes. Cold reads of the final 256 samples and reversed irregular reads exercise retained endpoints and preparation history.",
+    "limits": "Raw canonical PCM only. No acoustic, export or performance qualification. One intermediate repeated-edit case checks 6406 retained samples within 6407 allocated samples. Sparse occurrence/gap override PCM and edits inside Repeat/Retime are not covered. No new UI layout or bindings and no live window test."
+  },
+  "fixture_setup_failures": [
+    "Initial witness exceeded the 256-sample provider read bound; corrected to bounded reads.",
+    "Initial full-span handwritten recipe omitted source terminal support; corrected to an independent first-128-sample entry plus the complete original decoded suffix. Neither scaffold failure is claimed as Delete evidence."
+  ]
+}

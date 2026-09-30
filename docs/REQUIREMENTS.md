@@ -169,6 +169,18 @@ all four join pictures, one 14-frame replacement of `[30..60)` and one Undo.
 SQLite backups confirm complete authored restoration and unchanged unrelated
 tables. This remains partial DP-05/DP-20 work.
 
+[Retained deletion](qualification/ripple-delete-2026-09-30.md) corrects the
+native and CLI beat-delete path. Removing an ordinary Sequence child now keeps
+each downstream structural audio owner's old sample entry and transforms the
+root sound bus once. A real NTSC/44.1 kHz witness reproduced 6,405 changed samples
+in a 6,406-sample suffix under historical Delete; the new command preserves the
+complete decoded suffix. Core 34/database 43 stay unchanged, with old and new
+commands replayable in the same history. The locked workspace passes 2,661
+tests and the UI-feature app passes 375, with none failed or ignored.
+Formatting and strict all-target workspace Clippy with the UI harness feature
+pass. Range/role-only deletion and temporal occurrence deletion remain required;
+no DP requirement or gate changes status.
+
 The [shared render workflow](RENDER_JOBS.md#shared-workflow-and-native-ownership)
 connects capture, encoding, retained checkpoints, fresh verification, publication
 and reconciliation to the native project service. Close/switch/shutdown retain

@@ -1,0 +1,44 @@
+{
+  "core-first": {
+    "exit_code": 0,
+    "passed": 75,
+    "failed": 0,
+    "ignored": 0
+  },
+  "core-complete": {
+    "exit_code": 0,
+    "passed": 564,
+    "failed": 0,
+    "ignored": 0
+  },
+  "pcm-first": {
+    "exit_code": 0,
+    "passed": 25,
+    "failed": 0,
+    "ignored": 0
+  },
+  "fmt": {
+    "exit_code": 0,
+    "passed": 0,
+    "failed": 0,
+    "ignored": 0
+  },
+  "workspace": {
+    "exit_code": 0,
+    "passed": 2661,
+    "failed": 0,
+    "ignored": 0
+  },
+  "app-ui": {
+    "exit_code": 0,
+    "passed": 375,
+    "failed": 0,
+    "ignored": 0
+  },
+  "clippy": {
+    "exit_code": 0,
+    "passed": 0,
+    "failed": 0,
+    "ignored": 0
+  }
+}
