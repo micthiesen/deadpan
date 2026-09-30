@@ -65,6 +65,8 @@ struct Service {
     render: Option<render::NativeRender>,
     render_update: Option<super::ProjectRenderUpdate>,
     pending_session_change: Option<render::PendingSessionChange>,
+    #[cfg(test)]
+    render_preview_refresh_failure: bool,
 }
 
 pub(super) fn run(
@@ -95,6 +97,8 @@ pub(super) fn run(
         render: None,
         render_update: None,
         pending_session_change: None,
+        #[cfg(test)]
+        render_preview_refresh_failure: false,
     };
     let mut requests_connected = true;
     loop {
@@ -580,7 +584,6 @@ impl Service {
             // As for every native edit, current generation requests require the
             // real host relevance resolver. Never invent observations here.
             let outcome = self.writer()?.commit(&request).map_err(display)?;
-            self.refresh()?;
             self.committed = Some(CommittedEdit {
                 revision: outcome.revision_id,
                 selected_node: Some(id),
@@ -589,6 +592,7 @@ impl Service {
                 scope,
                 sound: None,
             });
+            self.refresh()?;
             self.message = Some(format!(
                 "Inserted a {} frame silent pause at boundary {} and saved",
                 duration.frames(),
@@ -788,6 +792,17 @@ impl Service {
         // An unresolved active generation request must fail rather than receive
         // invented observations from a widget or this service.
         let outcome = self.writer()?.commit(&request).map_err(display)?;
+        // Retain the actual durable receipt even if rebuilding the workspace
+        // fails. Render continuation must report this commit independently of
+        // its later admission result.
+        self.committed = Some(CommittedEdit {
+            revision: outcome.revision_id,
+            selected_node: selected_node.clone(),
+            preserve_cursor,
+            cursor: preserve_cursor.then_some(cursor),
+            scope: scope.clone(),
+            sound: None,
+        });
         self.refresh()?;
         // Resolve the right fragment from the committed structure, never from
         // progress text or an identity-pool ordering. Its start is the cut.
@@ -803,14 +818,10 @@ impl Service {
         } else {
             selected_node
         };
-        self.committed = Some(CommittedEdit {
-            revision: outcome.revision_id,
-            selected_node,
-            preserve_cursor,
-            cursor: preserve_cursor.then_some(cursor),
-            scope,
-            sound: None,
-        });
+        self.committed
+            .as_mut()
+            .expect("successful store commit retained its receipt")
+            .selected_node = selected_node;
         self.message = Some(retime_message.unwrap_or_else(|| message.into()));
         Ok(())
     }
@@ -881,6 +892,10 @@ impl Service {
     }
 
     fn refresh(&mut self) -> Result<()> {
+        #[cfg(test)]
+        if std::mem::take(&mut self.render_preview_refresh_failure) {
+            return Err("Injected failure refreshing the committed preview".into());
+        }
         let current = self.workspace.as_ref().ok_or("No project is open")?;
         let store = self.store.as_ref().ok_or("No project is open")?;
         self.workspace = Some(Arc::new(snapshot(

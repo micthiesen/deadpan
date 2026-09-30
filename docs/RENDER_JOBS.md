@@ -5,8 +5,9 @@ per-encoding decisions and operational attempt history. Core document schema
 remains 33. These library APIs support
 retaining a completed encode and retrying verification after restart. A shared
 workflow coordinator connects these stages to the native project service.
-Public Render controls, headless render commands and scheduling remain separate
-work. The [publication journal](RENDER_PUBLICATION.md#durable-publication-journal)
+Native controls and closed-project headless commands use this coordinator;
+open-project routing, native recovery and scheduling remain open.
+The [publication journal](RENDER_PUBLICATION.md#durable-publication-journal)
 uses these checkpoints for explicit destination reconciliation.
 
 ## Captured intent and attempts
@@ -155,7 +156,40 @@ editor command feedback and continues accepting ordinary edits. Close, switch
 and shutdown keep the old writer until worker release; unresolved cleanup
 retains the session and exposes its diagnostic. The runtime is the current
 native executable's direct private worker dispatch. The same executable still
-accepts ordinary public `--headless` commands. Public Render controls remain open.
+accepts ordinary public `--headless` commands. Native and public headless Render
+use the entrypoints below.
+
+## Native and public Render
+
+The native **Render · ⌘E** control and `:render` capture the current project
+session and committed revision. A Camera, Gain or Room tone preview first offers
+Commit preview and render, Discard preview and render, or Keep editing. Native
+field input is processed before capturing the proposal, including a Render click
+in the same input batch. Cancelling the destination picker preserves the draft.
+The native save sheet suggests a fresh MP4 name under the neighboring `Exports`
+directory and remembers the selected directory for this project session.
+
+`CommitAndStart` accepts only the three existing preview edit types. It validates
+the exact session, revision, cursor and scope before editing. Only the durable
+commit receipt supplies the render revision; an idle writer or refreshed view
+cannot establish a commit. The service retains this receipt even when workspace
+refresh or render admission fails, so the UI truthfully reports an already saved
+preview. Unchanged previews use the existing committed revision. Render progress,
+cancel, errors and final movie/report paths remain separate from editor feedback.
+Later editing or Undo cannot change the captured render.
+
+The shared public adapter derives the full range and `AutomaticSdrV1` policy,
+allocates fresh operation identities and chooses the current executable's private
+worker dispatch. [Headless Render](HEADLESS.md#automatic-render) exposes start,
+bounded stored status, checkpoint retry, fresh encoding and reconciliation. A
+closed-project invocation owns its writer through cleanup. SIGINT/SIGTERM and
+output backpressure request cancellation; the owner continues draining worker
+replies. Terminal/recovery events make a bounded stderr fallback attempt if
+stdout fails. Neither output failure nor unconfirmed cleanup authorizes release.
+
+The native UI currently exposes new rendering and live cancellation. Listing and
+recovering persisted jobs in the native UI, authenticated routing into an open
+application, full mastering/effects, HDR and release qualification remain open.
 
 ## Automatic admission and recovery
 
@@ -203,6 +237,6 @@ an edited Source project and an accepted Generated project.
 
 Destination publication has a separate durable journal and explicit reconciliation
 protocol. It requires a new live verifier result; a stored Verified row alone
-never authorizes adoption of destination bytes. Product controls, full
-mastering/effects, HDR and release qualification
+never authorizes adoption of destination bytes. Native recovery controls,
+open-project host routing, full mastering/effects, HDR and release qualification
 remain required; no DP requirement or delivery gate is completed here.

@@ -28,6 +28,7 @@ pub(crate) const SCENARIOS: &[&str] = &[
     "room-tone",
     "gain",
     "retime",
+    "render",
     "generated-picture",
 ];
 

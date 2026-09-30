@@ -1,0 +1,98 @@
+[
+  {
+    "bytes": 479263,
+    "checkpoint": "Explicit Camera Render decision at 960x640",
+    "frame": 32,
+    "original": "render-030.png",
+    "retained": "screenshots/01-render-030.png",
+    "sha256": "7d8a0f9b77244b88b1139aa7900026f1bd3726336f33bf707f6242071909fca4",
+    "viewport_points": [
+      960.0,
+      640.0
+    ]
+  },
+  {
+    "bytes": 701509,
+    "checkpoint": "Explicit Camera Render decision at 1280x820",
+    "frame": 33,
+    "original": "render-031.png",
+    "retained": "screenshots/02-render-031.png",
+    "sha256": "edd955ae0b73d192d7f469b98e318aa6aa7a3d34957f5ffb594ec51d1d74040a",
+    "viewport_points": [
+      1280.0,
+      820.0
+    ]
+  },
+  {
+    "bytes": 461738,
+    "checkpoint": "Explicit Gain Render decision at 960x640",
+    "frame": 64,
+    "original": "render-062.png",
+    "retained": "screenshots/03-render-062.png",
+    "sha256": "65f9f64013834bbee15193ec6f4e4f252ec54261940a21c321eec060ac179d95",
+    "viewport_points": [
+      960.0,
+      640.0
+    ]
+  },
+  {
+    "bytes": 713700,
+    "checkpoint": "Explicit Gain Render decision at 1280x820",
+    "frame": 65,
+    "original": "render-063.png",
+    "retained": "screenshots/04-render-063.png",
+    "sha256": "04cfdf42b121c98b046a22d3918698a555aa6336b5f7777673c17fc5d8e3477b",
+    "viewport_points": [
+      1280.0,
+      820.0
+    ]
+  },
+  {
+    "bytes": 501798,
+    "checkpoint": "Explicit Room tone Render decision at 960x640",
+    "frame": 106,
+    "original": "render-104.png",
+    "retained": "screenshots/05-render-104.png",
+    "sha256": "3d083097f2d23de4970352148f6f116a909d33e68220137dd7125925aa3c6f16",
+    "viewport_points": [
+      960.0,
+      640.0
+    ]
+  },
+  {
+    "bytes": 791211,
+    "checkpoint": "Explicit Room tone Render decision at 1280x820",
+    "frame": 107,
+    "original": "render-105.png",
+    "retained": "screenshots/06-render-105.png",
+    "sha256": "00ef23d4bfbeef8330a0c60626003ea84bedf934be40d0f2ecbedb201427088a",
+    "viewport_points": [
+      1280.0,
+      820.0
+    ]
+  },
+  {
+    "bytes": 235288,
+    "checkpoint": "Verified Render outcome at 960x640",
+    "frame": 281,
+    "original": "render-123.png",
+    "retained": "screenshots/07-render-123.png",
+    "sha256": "0439cafa0b9271b98159a48734a6ce1db746c515a06c945b52eb7f886b153df4",
+    "viewport_points": [
+      960.0,
+      640.0
+    ]
+  },
+  {
+    "bytes": 314921,
+    "checkpoint": "Verified Render outcome at 1280x820",
+    "frame": 282,
+    "original": "render-124.png",
+    "retained": "screenshots/08-render-124.png",
+    "sha256": "74c1ede852214d6de81b9727997dd85363509ed2b01c24c1e7b3c919950813b1",
+    "viewport_points": [
+      1280.0,
+      820.0
+    ]
+  }
+]

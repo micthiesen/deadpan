@@ -30,6 +30,7 @@ mod help_scroll;
 mod inspector;
 mod moment;
 mod playback;
+mod render;
 mod repeat_queue;
 mod repeats;
 mod room_tone;
@@ -111,6 +112,7 @@ pub struct DeadpanApp {
     workspace: Option<Arc<Workspace>>,
     import: Option<ImportStatus>,
     render_job: Option<crate::project::ProjectRenderUpdate>,
+    render: render::State,
     selected_source: Option<AssetId>,
     selected_sound: Option<AssetId>,
     selected_event: Option<deadpan_core::SoundId>,
@@ -216,6 +218,7 @@ impl DeadpanApp {
             workspace: None,
             import: None,
             render_job: None,
+            render: render::State::default(),
             selected_source: None,
             selected_sound: None,
             selected_event: None,
@@ -746,11 +749,25 @@ impl DeadpanApp {
         let Some(result) = self.dialogs.take_result() else {
             return;
         };
+        if let Some(error) = result.error {
+            if result.kind == DialogKind::Render {
+                self.render_dialog_failed(error);
+            } else {
+                self.error = Some(error);
+                self.dialog_intent = None;
+            }
+            return;
+        }
+        if result.kind == DialogKind::Render {
+            self.receive_render_dialog(result.path);
+            return;
+        }
         let intent = self.dialog_intent.take();
         let Some(path) = result.path else {
             return;
         };
         match result.kind {
+            DialogKind::Render => unreachable!("Render uses its captured destination intent"),
             DialogKind::CreateProject => {
                 self.submit(ProjectRequest::CreateFromSource { path });
             }
@@ -1129,6 +1146,12 @@ impl DeadpanApp {
     }
 
     fn action(&mut self, action: Action, context: &egui::Context) {
+        if action == Action::Render {
+            // Fields below the header must consume this frame's native text
+            // before the exact preview proposal is captured.
+            self.render.requested = true;
+            return;
+        }
         // OfferInsert also represents an unfinished operator (including the
         // first r of rr). In Sequence it is only a hint, not another action.
         let repeat_input = matches!(action, Action::Edit(BeatEdit::WrapRepeat(_)))
@@ -1184,6 +1207,7 @@ impl DeadpanApp {
             self.cancel_camera();
         }
         match action {
+            Action::Render => unreachable!("Render handles previews before ordinary actions"),
             Action::Sound(action) => self.sound_action(action, context),
             Action::GainStep(delta) => self.gain_step(delta, context),
             Action::Framing(action) => self.framing_action(action, context),
@@ -1391,6 +1415,9 @@ impl DeadpanApp {
     }
 
     fn keyboard(&mut self, context: &egui::Context) -> Option<(TextAction, bool)> {
+        if self.render_keyboard(context) {
+            return None;
+        }
         if self.gain.is_some() {
             self.gain_keyboard(context);
             return None;
@@ -1559,6 +1586,9 @@ impl DeadpanApp {
                     context.input_mut(|i| {
                         i.consume_key(modifiers, key);
                     });
+                    if action == Action::Render {
+                        break;
+                    }
                 } else if before != self.bindings.pending() {
                     context.input_mut(|i| {
                         i.consume_key(modifiers, key);
@@ -1705,10 +1735,6 @@ impl DeadpanApp {
             .resizable(false)
             .frame(style::panel())
             .show(ui, |ui| {
-                if self.gain.is_some() {
-                    ui.disable();
-                    ui.set_opacity(1.0);
-                }
                 let title = self
                     .workspace
                     .as_ref()
@@ -1721,7 +1747,9 @@ impl DeadpanApp {
                     columns[0].horizontal(|ui| {
                         ui.spacing_mut().button_padding.x = 6.0;
                         ui.label(egui::RichText::new("DEADPAN").size(14.0).strong());
-                        let ready = !self.service.is_busy() && !self.dialogs.is_open();
+                        let ready = !self.service.is_busy()
+                            && !self.dialogs.is_open()
+                            && self.gain.is_none();
                         ui.add_enabled_ui(ready, |ui| {
                             ui.menu_button("File", |ui| {
                                 for (label, action) in [
@@ -1755,6 +1783,15 @@ impl DeadpanApp {
                                 }
                             });
                         });
+                        if ui
+                            .add_enabled(
+                                self.workspace.is_some() && !self.dialogs.is_open(),
+                                egui::Button::new("Render  ⌘E"),
+                            )
+                            .clicked()
+                        {
+                            self.action(Action::Render, ui.ctx());
+                        }
                     });
                     columns[1].with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
                         ui.add_space(6.0);
@@ -1768,7 +1805,7 @@ impl DeadpanApp {
                         egui::Layout::right_to_left(egui::Align::Center),
                         |ui| {
                             if ui
-                                .button("Keys  ?")
+                                .add_enabled(self.gain.is_none(), egui::Button::new("Keys  ?"))
                                 .on_hover_text("Keyboard reference · ? or :help")
                                 .clicked()
                             {
@@ -1778,7 +1815,9 @@ impl DeadpanApp {
                                     self.action(Action::Help, ui.ctx());
                                 }
                             }
-                            let ready = !self.service.is_busy() && !self.dialogs.is_open();
+                            let ready = !self.service.is_busy()
+                                && !self.dialogs.is_open()
+                                && self.gain.is_none();
                             if ui
                                 .add_enabled(
                                     ready && self.workspace.as_ref().is_some_and(|w| w.can_redo),
@@ -2765,6 +2804,7 @@ impl DeadpanApp {
                         ("p / P · :paste / :paste-before", "In Your edit, paste the copied Original moment after / before the selected beat in the displayed group. An empty group accepts a paste at its start. Each paste is one undoable transaction; later audio keeps its sampling phase."),
                         (",i / :insert", "Reuse the full Original after the selected beat in the current group, or append to an empty group. Legacy projects insert their selected source."),
                         ("u / Ctrl R", "Undo / redo. Native ⌘Z / ⌘Shift Z also work."),
+                        ("⌘E / :render", "Render the saved full edit with automatic SDR output settings. For an unsaved Camera, Gain or Room tone preview, choose Commit preview and render, Discard preview and render, or Keep editing."),
                     ] { help_binding(ui, key, description); }
                     ui.separator();
                     for (key, description) in [
@@ -2774,7 +2814,7 @@ impl DeadpanApp {
                     ] { help_binding(ui, key, description); }
                     ui.separator();
                     ui.weak("Original browsing never changes it. Your edit commands affect the selected beat in the displayed group and its linked picture and sound. Counts precede operators, such as 3rr; the visible PENDING badge waits without a timer.");
-                    ui.weak("Space auditions the focused catalog sound, Original, or full edit. In the catalog, j/k selects a sound and Shift+Space loops its complete measured audio. Catalog audition keeps the picture and both editor cursors in place. Leaving the catalog or choosing another sound stops it. Elsewhere Shift+Space loops the selected Original moment or edited beat with context. Playback has edge fades and a safety limiter; pause before changing Monitor volume. Range cuts/replacement, named registers, Repeat/Retime descendant navigation and insertion, moving routed sounds, voice effects, the full mix, AI generation in the app, and export remain unavailable.");
+                    ui.weak("Space auditions the focused catalog sound, Original, or full edit. In the catalog, j/k selects a sound and Shift+Space loops its complete measured audio. Catalog audition keeps the picture and both editor cursors in place. Leaving the catalog or choosing another sound stops it. Elsewhere Shift+Space loops the selected Original moment or edited beat with context. Playback has edge fades and a safety limiter; pause before changing Monitor volume. Range cuts/replacement, named registers, Repeat/Retime descendant navigation and insertion, moving routed sounds, voice effects, the full mix, and AI generation in the app remain unavailable. Render supports the current SDR picture and audio path; unsupported content fails explicitly. HDR output, full mastering, headless Render while the project is open, and the native recovery browser remain unavailable.");
             });
     }
 }
@@ -2797,6 +2837,7 @@ impl eframe::App for DeadpanApp {
             self.receive();
             self.reconcile_room_tone(&context);
             self.reconcile_gain(&context);
+            self.reconcile_render(&context);
             self.receive_gain_waveform();
         }
         self.reconcile_sound_playback();
@@ -2874,6 +2915,10 @@ impl eframe::App for DeadpanApp {
             self.selected_source.clone(),
             self.selected_sound.clone(),
         );
+        if self.render.blocking() {
+            ui.disable();
+            ui.set_opacity(1.0);
+        }
         self.header(ui);
         // A pointer activation can change views while the panes are painted.
         // Use one placement decision for Sounds throughout this pass.
@@ -2901,7 +2946,10 @@ impl eframe::App for DeadpanApp {
         }
         self.reconcile_sound_playback();
         self.help(&context);
-        self.room_tone_sheet(&context);
+        if !self.render.blocking() {
+            self.room_tone_sheet(&context);
+        }
+        self.render_windows(&context);
         if input_scope
             != (
                 self.pane,
@@ -2941,6 +2989,9 @@ impl eframe::App for DeadpanApp {
             context.request_discard("empty Sounds heading changed placement");
         }
         if !context.will_discard() {
+            if self.render.requested {
+                self.begin_render(&context);
+            }
             self.schedule_playback_picture();
             self.dispatch_waiting_repeat(&context);
             self.dispatch_gain_proposal(&context);
@@ -3015,6 +3066,7 @@ fn sound_action_allowed(action: Action) -> bool {
         Action::New
             | Action::Open
             | Action::Import
+            | Action::Render
             | Action::Undo
             | Action::Redo
             | Action::Playback

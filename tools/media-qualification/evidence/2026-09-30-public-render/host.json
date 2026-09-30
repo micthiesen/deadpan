@@ -1,0 +1,11 @@
+{
+  "hardware": "Apple M5 Max",
+  "memory_bytes": 137438953472,
+  "os": "26.5.2",
+  "os_build": "25F84",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+  "base_commit": "796b20d6b4da141929fdd47221c38c7fbb6796dd",
+  "power_thermal": "uncontrolled",
+  "scope": "debug development qualification; no performance or distribution acceptance claim"
+}

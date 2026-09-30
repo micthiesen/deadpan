@@ -1,0 +1,144 @@
+"""Exercise public Render on a private SQLite-backed copy of a synthetic project."""
+import hashlib
+import json
+import os
+from pathlib import Path
+import selectors
+import shutil
+import signal
+import sqlite3
+import subprocess
+import time
+
+root = Path('/tmp/deadpan-public-render-20260930')
+repo = Path('/Users/michael/Code/deadpan')
+source = Path('/tmp/deadpan-durable-automatic-20260930/source-fixed.deadpan')
+package = root / 'public.deadpan'
+output = root / 'public-movies'
+binary = repo / 'target/debug/deadpan-app'
+results = []
+
+def digest(path):
+    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+def backup(source_path, target_path):
+    with sqlite3.connect(source_path.as_uri() + '?mode=ro', uri=True) as original:
+        with sqlite3.connect(target_path) as destination:
+            original.backup(destination)
+
+def copy_input():
+    def ignore(directory, names):
+        if Path(directory) == source:
+            return [n for n in names if n.startswith('project.sqlite') or n.endswith('.lock')]
+        return []
+    shutil.copytree(source, package, ignore=ignore)
+    backup(source / 'project.sqlite', package / 'project.sqlite')
+    backup(package / 'project.sqlite', root / 'public-before.sqlite')
+    output.mkdir()
+
+def run(name, args, expected=0, cancel_stage=None):
+    command = [str(binary), '--headless', *map(str, args)]
+    started = time.monotonic()
+    events = []
+    sent = False
+    with (root / (name + '.stderr')).open('wb') as err, (root / (name + '.jsonl')).open('w') as out:
+        child = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=err, stdin=subprocess.DEVNULL)
+        selector = selectors.DefaultSelector()
+        selector.register(child.stdout, selectors.EVENT_READ)
+        while selector.get_map():
+            if time.monotonic() - started > 180:
+                child.send_signal(signal.SIGTERM)
+                raise RuntimeError('public command exceeded 180 seconds; cancellation requested, PID ' + str(child.pid))
+            for key, _ in selector.select(0.2):
+                line = key.fileobj.readline()
+                if not line:
+                    selector.unregister(key.fileobj)
+                    continue
+                decoded = line.decode()
+                out.write(decoded)
+                out.flush()
+                event = json.loads(decoded)
+                events.append(event)
+                if cancel_stage and not sent and event.get('status', {}).get('stage') == cancel_stage:
+                    child.send_signal(signal.SIGINT)
+                    sent = True
+        code = child.wait(timeout=15)
+    record = {'name': name, 'command': command, 'exit_code': code, 'seconds': time.monotonic()-started,
+              'signal_sent': sent, 'stages': list(dict.fromkeys(e['status']['stage'] for e in events if 'status' in e)),
+              'stderr': (root / (name + '.stderr')).read_text()}
+    results.append(record)
+    (root / 'public-progress.json').write_text(json.dumps(results, indent=2)+'\n')
+    assert code == expected, record
+    if cancel_stage:
+        assert sent, record
+    return events
+
+def finished(events, outcome='published'):
+    assert events[-1]['event'] == 'finished', events[-1]
+    status = events[-1]['status']
+    assert status['cleanup_confirmed'] and status['outcome'] == outcome, status
+    return status
+
+def audit_authored():
+    backup(package / 'project.sqlite', root / 'public-after.sqlite')
+    before = sqlite3.connect(root / 'public-before.sqlite')
+    after = sqlite3.connect(root / 'public-after.sqlite')
+    tables = [r[0] for r in before.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")]
+    counts = {}
+    for table in tables:
+        if table.startswith('render_'):
+            continue
+        quoted = '"' + table.replace('"', '""') + '"'
+        a = before.execute('SELECT * FROM ' + quoted).fetchall()
+        b = after.execute('SELECT * FROM ' + quoted).fetchall()
+        assert a == b, table
+        counts[table] = len(a)
+    before.close()
+    after.close()
+    return counts
+
+copy_input()
+try:
+    initial = finished(run('public-start', ['render', package, '--output', output, '--name', 'initial.mp4']))
+    identity = initial['target']
+    job = identity['job_id']
+    attempt = initial['checkpoint_attempt_id'] or identity['attempt_id']
+    movie = Path(initial['receipt']['movie'])
+    original_hash = digest(movie)
+    stored = run('public-status', ['render', 'status', package, '--job', job])[-1]
+    assert stored['event'] == 'stored_status' and not stored['live_progress']
+    retry = finished(run('public-retry', ['render', 'retry', package, '--job', job, '--checkpoint', attempt,
+                                        '--output', output, '--name', 'retry.mp4']))
+    assert digest(retry['receipt']['movie']) == original_hash
+    assert not {'qualifying', 'encoding'} & set(results[-1]['stages'])
+    reconciled = finished(run('public-reconcile', ['render', 'reconcile', package,
+                                                 '--publication', initial['publication_id']]))
+    assert digest(movie) == original_hash
+    assert not {'qualifying', 'encoding'} & set(results[-1]['stages'])
+    run('public-stale', ['render', package, '--output', output, '--expected', 'stale-public-request'], expected=1)
+    collision_events = run('public-collision', ['render', 'retry', package, '--job', job, '--checkpoint', attempt,
+                                               '--output', output, '--name', 'initial.mp4'], expected=1)
+    collision = collision_events[-1]['status']
+    assert collision['cleanup_confirmed'] and collision['outcome'] in ('failed', 'not_published')
+    assert digest(movie) == original_hash
+    cancelled = finished(run('public-cancel', ['render', package, '--output', output, '--name', 'cancelled.mp4'],
+                             expected=1, cancel_stage='qualifying'), 'cancelled')
+    assert not (output / 'cancelled.mp4').exists()
+    request = {'schema_version': 1, 'request_id': 'public-qualification-reencode', 'context': initial['context'],
+               'operation': {'operation': 'reencode', 'job_id': job, 'destination': str(output / 'reencoded.mp4')}}
+    request_path = root / 'public-reencode-request.json'
+    request_path.write_text(json.dumps(request, indent=2)+'\n')
+    cold = finished(run('public-reencode', ['render', package, '--json', request_path]))
+    assert {'qualifying', 'encoding'} <= set(results[-1]['stages'])
+    assert cold['captured_revision'] == initial['captured_revision']
+    counts = audit_authored()
+    report = {'result': 'passed', 'binary_sha256': digest(binary), 'source': str(source), 'package': str(package),
+              'source_copy_method': 'immutable files copied; SQLite backup API for database',
+              'initial': initial, 'retry': retry, 'reconciled': reconciled, 'cancelled': cancelled, 'cold': cold,
+              'unchanged_tables': counts, 'checks': results}
+except Exception as error:
+    report = {'result': 'failed', 'error': repr(error), 'checks': results}
+    raise
+finally:
+    (root / 'public-report.json').write_text(json.dumps(report, indent=2)+'\n')
+print(json.dumps({'result': report['result'], 'commands': len(results), 'unchanged_tables': len(counts)}))

@@ -1,4 +1,4 @@
-//! Native ownership of the shared engineering render workflow. No UI controls.
+//! Native ownership of the shared render workflow and exact preview commits.
 
 use deadpan_cli::encoded_render::workflow::{
     RenderWorkflow, WorkflowConfig, WorkflowError, WorkflowIdentity,
@@ -101,12 +101,14 @@ impl Service {
     }
 
     pub(super) fn render_command(&mut self, request: ProjectRenderRequest) {
-        let result = self.admit_render(&request);
+        let mut committed_revision = None;
+        let result = self.admit_render(&request, &mut committed_revision);
         self.render_update
             .get_or_insert_with(Default::default)
             .command = Some(ProjectRenderCommandOutcome {
             ticket: request.ticket,
             context: request.context,
+            committed_revision,
             result,
         });
         self.capture_render_status();
@@ -115,6 +117,7 @@ impl Service {
     fn admit_render(
         &mut self,
         request: &ProjectRenderRequest,
+        committed_revision: &mut Option<RevisionId>,
     ) -> std::result::Result<WorkflowIdentity, ProjectRenderError> {
         if request.ticket == 0 {
             return Err(native_error(
@@ -134,6 +137,12 @@ impl Service {
             return Err(native_error(
                 "RenderContextChanged",
                 "Project session changed before the render request",
+            ));
+        }
+        if self.pending_session_change.is_some() {
+            return Err(native_error(
+                "RenderContextChanged",
+                "The project session is closing or changing",
             ));
         }
         if let ProjectRenderOperation::Cancel(identity) = &request.operation {
@@ -159,8 +168,11 @@ impl Service {
         {
             return Err(workflow_error(WorkflowError::Busy));
         }
-        let (revision, limits) = match &request.operation {
-            ProjectRenderOperation::Start { request, limits } => {
+        let (mut revision, limits) = match &request.operation {
+            ProjectRenderOperation::Start { request, limits }
+            | ProjectRenderOperation::CommitAndStart {
+                request, limits, ..
+            } => {
                 if workspace.document.revision_id() != &request.revision {
                     return Err(workflow_error(WorkflowError::StaleRevision));
                 }
@@ -194,7 +206,88 @@ impl Service {
             ProjectRenderOperation::Cancel(_) => unreachable!("cancellation was handled above"),
         };
         let package = workspace.path.clone();
+        if let ProjectRenderOperation::CommitAndStart { edit, .. } = &request.operation
+            && !matches!(
+                edit.as_ref(),
+                ProjectEdit::SetFraming { .. }
+                    | ProjectEdit::SetAudioTreatments { .. }
+                    | ProjectEdit::HoldAudio { .. }
+            )
+        {
+            return Err(native_error(
+                "RenderInvalidRequest",
+                "Commit and render requires a Camera, Gain or Hold audio preview",
+            ));
+        }
+        let unchanged = match &request.operation {
+            ProjectRenderOperation::CommitAndStart { edit, .. } => match edit.as_ref() {
+                ProjectEdit::SetFraming { node, framing } => workspace.document.nodes()
+                    .get(node).is_some_and(|beat| &beat.framing == framing),
+                ProjectEdit::SetAudioTreatments { node, treatments } => workspace.document.nodes()
+                    .get(node).is_some_and(|beat| &beat.audio_treatments == treatments),
+                ProjectEdit::HoldAudio { node, audio } => workspace.document.nodes()
+                    .get(node).is_some_and(|beat| matches!(&beat.kind, NodeKind::Hold { recipe } if &recipe.audio == audio)),
+                _ => false,
+            },
+            _ => false,
+        };
+        // A completed workflow must release its lease before a preview commits.
+        // Unknown cleanup therefore cannot accidentally author a new revision.
         self.release_inactive_render()?;
+        let committed_start = if let ProjectRenderOperation::CommitAndStart {
+            edit,
+            cursor,
+            scope,
+            request: start,
+            ..
+        } = &request.operation
+        {
+            self.committed = None;
+            if unchanged {
+                return Err(unchanged_preview());
+            }
+            #[cfg(test)]
+            {
+                self.render_preview_refresh_failure = self
+                    .shared
+                    .render_commit_refresh_failure
+                    .swap(false, Ordering::AcqRel);
+            }
+            let edit_result = self.edit(
+                request.context.session,
+                start.revision.clone(),
+                *cursor,
+                scope.clone(),
+                edit.as_ref().clone(),
+            );
+            #[cfg(test)]
+            {
+                self.render_preview_refresh_failure = false;
+            }
+            // This marker comes only from this synchronous typed edit's store
+            // receipt. Workspace changes and matching nodes are not evidence.
+            *committed_revision = self
+                .committed
+                .as_ref()
+                .map(|commit| commit.revision.clone());
+            if committed_revision.is_some() {
+                self.room_tone = None;
+                self.room_tone_error = None;
+                self.gain = None;
+            }
+            edit_result.map_err(|error| native_error("RenderPreviewCommitFailed", error))?;
+            revision = committed_revision
+                .as_ref()
+                .filter(|revision| *revision != &start.revision)
+                .cloned()
+                .ok_or_else(unchanged_preview)?;
+            self.error = None;
+            let mut start = start.clone();
+            start.revision = revision.clone();
+            Some(start)
+        } else {
+            None
+        };
         let store = self.store.as_mut().ok_or_else(|| {
             native_error("RenderContextChanged", "The project writer is unavailable")
         })?;
@@ -210,6 +303,15 @@ impl Service {
             .as_mut()
             .expect("render coordinator was installed");
         let identity = match &request.operation {
+            ProjectRenderOperation::CommitAndStart { .. } => {
+                let start = committed_start.expect("preview commit acknowledged above");
+                let identity = start.identity.clone();
+                render
+                    .workflow
+                    .start(store, start)
+                    .map_err(workflow_error)?;
+                identity
+            }
             ProjectRenderOperation::Start { request, .. } => {
                 render
                     .workflow
@@ -409,6 +511,13 @@ fn native_error(code: &'static str, message: impl ToString) -> ProjectRenderErro
         code,
         message: message.to_string(),
     }
+}
+
+fn unchanged_preview() -> ProjectRenderError {
+    native_error(
+        "RenderPreviewUnchanged",
+        "The preview made no edit; request a render of the committed revision explicitly",
+    )
 }
 
 fn workflow_error(error: WorkflowError) -> ProjectRenderError {

@@ -17,11 +17,18 @@ pub enum DialogKind {
     ImportSound,
     /// Generic/legacy host media registration.
     ImportMedia,
+    Render,
+}
+
+pub struct SaveMovie {
+    pub directory: PathBuf,
+    pub name: String,
 }
 
 pub struct DialogResult {
     pub kind: DialogKind,
     pub path: Option<PathBuf>,
+    pub error: Option<String>,
 }
 
 type DialogFuture = Pin<Box<dyn Future<Output = Option<PathBuf>> + Send>>;
@@ -30,6 +37,7 @@ struct PendingDialog {
     kind: DialogKind,
     future: DialogFuture,
     waker: Waker,
+    directory: Option<std::sync::mpsc::Receiver<Result<SaveMovie, String>>>,
 }
 
 struct Repaint(egui::Context);
@@ -55,9 +63,24 @@ impl Dialogs {
     /// Call only from the main thread during an update of the live window.
     /// Native sheet creation happens here; subsequent polls only inspect its result.
     pub fn start(&mut self, kind: DialogKind, context: &egui::Context) -> Result<(), String> {
+        self.start_with_save(kind, None, context)
+    }
+
+    pub fn save_movie(&mut self, save: SaveMovie, context: &egui::Context) -> Result<(), String> {
+        self.start_with_save(DialogKind::Render, Some(save), context)
+    }
+
+    fn start_with_save(
+        &mut self,
+        kind: DialogKind,
+        save: Option<SaveMovie>,
+        context: &egui::Context,
+    ) -> Result<(), String> {
         if self.is_open() {
             return Err("Finish or cancel the open dialog before opening another.".into());
         }
+        let waker = Waker::from(Arc::new(Repaint(context.clone())));
+        let mut directory = None;
         #[cfg(feature = "ui-harness")]
         let future: DialogFuture = if let Some(scripted) = &mut self.scripted {
             let (expected, path) = scripted
@@ -68,14 +91,15 @@ impl Dialogs {
             }
             Box::pin(std::future::ready(path))
         } else {
-            native_dialog(kind)?
+            prepare_dialog(kind, save, &waker, &mut directory)?
         };
         #[cfg(not(feature = "ui-harness"))]
-        let future = native_dialog(kind)?;
+        let future = prepare_dialog(kind, save, &waker, &mut directory)?;
         self.pending = Some(PendingDialog {
             kind,
             future,
-            waker: Waker::from(Arc::new(Repaint(context.clone()))),
+            waker,
+            directory,
         });
         // Register the completion waker on the next update, even if the UI is idle.
         context.request_repaint();
@@ -84,13 +108,42 @@ impl Dialogs {
 
     pub fn take_result(&mut self) -> Option<DialogResult> {
         let pending = self.pending.as_mut()?;
+        if let Some(directory) = &pending.directory {
+            use std::sync::mpsc::TryRecvError;
+            let prepared = match directory.try_recv() {
+                Ok(value) => value,
+                Err(TryRecvError::Empty) => return None,
+                Err(TryRecvError::Disconnected) => {
+                    Err("Render destination preparation stopped.".into())
+                }
+            };
+            match prepared.and_then(|save| native_dialog(pending.kind, Some(save))) {
+                Ok(future) => {
+                    pending.future = future;
+                    pending.directory = None;
+                }
+                Err(error) => {
+                    let kind = pending.kind;
+                    self.pending = None;
+                    return Some(DialogResult {
+                        kind,
+                        path: None,
+                        error: Some(error),
+                    });
+                }
+            }
+        }
         let mut context = Context::from_waker(&pending.waker);
         let Poll::Ready(path) = pending.future.as_mut().poll(&mut context) else {
             return None;
         };
         let kind = pending.kind;
         self.pending = None;
-        Some(DialogResult { kind, path })
+        Some(DialogResult {
+            kind,
+            path,
+            error: None,
+        })
     }
 
     pub fn is_open(&self) -> bool {
@@ -108,12 +161,57 @@ impl Dialogs {
     }
 }
 
+/// Directory creation is filesystem work. Keep it off the native event thread;
+/// construct the actual save sheet only when the main-thread poll admits it.
+fn prepare_dialog(
+    kind: DialogKind,
+    save: Option<SaveMovie>,
+    waker: &Waker,
+    directory: &mut Option<std::sync::mpsc::Receiver<Result<SaveMovie, String>>>,
+) -> Result<DialogFuture, String> {
+    let Some(save) = save else {
+        return native_dialog(kind, None);
+    };
+    let (sender, receiver) = std::sync::mpsc::sync_channel(1);
+    let waker = waker.clone();
+    std::thread::Builder::new()
+        .name("deadpan-export-directory".into())
+        .spawn(move || {
+            let result = match std::fs::create_dir(&save.directory) {
+                Ok(()) => Ok(save),
+                Err(error)
+                    if error.kind() == std::io::ErrorKind::AlreadyExists
+                        && save.directory.is_dir() =>
+                {
+                    Ok(save)
+                }
+                Err(error) => Err(format!("Cannot prepare the export directory: {error}")),
+            };
+            let _ = sender.send(result);
+            waker.wake();
+        })
+        .map_err(|error| error.to_string())?;
+    *directory = Some(receiver);
+    Ok(Box::pin(std::future::pending()))
+}
+
 #[cfg(target_os = "macos")]
-fn native_dialog(kind: DialogKind) -> Result<DialogFuture, String> {
+fn native_dialog(kind: DialogKind, save: Option<SaveMovie>) -> Result<DialogFuture, String> {
     // Construct on the main thread so rfd attaches an asynchronous sheet to the
     // running NSApplication. Moving construction into an async block would defer
     // that requirement to whoever first polls it.
     let future: Pin<Box<dyn Future<Output = Option<rfd::FileHandle>> + Send>> = match kind {
+        DialogKind::Render => {
+            let save = save.ok_or("A Render destination suggestion is required.")?;
+            Box::pin(
+                rfd::AsyncFileDialog::new()
+                    .set_title("Render your edit")
+                    .set_directory(save.directory)
+                    .set_file_name(save.name)
+                    .add_filter("MP4 movie", &["mp4"])
+                    .save_file(),
+            )
+        }
         DialogKind::CreateProject | DialogKind::InitializeSource => Box::pin(
             rfd::AsyncFileDialog::new()
                 .set_title("Choose the Original video")
@@ -152,13 +250,62 @@ fn native_dialog(kind: DialogKind) -> Result<DialogFuture, String> {
 }
 
 #[cfg(not(target_os = "macos"))]
-fn native_dialog(_kind: DialogKind) -> Result<DialogFuture, String> {
+fn native_dialog(_kind: DialogKind, _save: Option<SaveMovie>) -> Result<DialogFuture, String> {
     Err("Native file dialogs are supported only on macOS.".into())
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn render_directory_preparation_creates_only_the_neighbor_folder_and_preserves_collisions() {
+        let root = tempfile::tempdir().unwrap();
+        let folder = root.path().join("Exports");
+        let waker = Waker::from(Arc::new(Repaint(egui::Context::default())));
+        let mut directory = None;
+        let _pending = prepare_dialog(
+            DialogKind::Render,
+            Some(SaveMovie {
+                directory: folder.clone(),
+                name: "edit.mp4".into(),
+            }),
+            &waker,
+            &mut directory,
+        )
+        .unwrap();
+        let prepared = directory
+            .take()
+            .unwrap()
+            .recv_timeout(std::time::Duration::from_secs(5))
+            .unwrap()
+            .unwrap();
+        assert_eq!(prepared.directory, folder);
+        assert!(folder.is_dir());
+        assert!(!folder.join("edit.mp4").exists());
+
+        let collision = root.path().join("existing-movie.mp4");
+        std::fs::write(&collision, b"keep this movie").unwrap();
+        let _pending = prepare_dialog(
+            DialogKind::Render,
+            Some(SaveMovie {
+                directory: collision.clone(),
+                name: "edit.mp4".into(),
+            }),
+            &waker,
+            &mut directory,
+        )
+        .unwrap();
+        assert!(
+            directory
+                .take()
+                .unwrap()
+                .recv_timeout(std::time::Duration::from_secs(5))
+                .unwrap()
+                .is_err()
+        );
+        assert_eq!(std::fs::read(collision).unwrap(), b"keep this movie");
+    }
 
     #[test]
     fn pending_dialog_rejects_another_and_cancellation_releases_it() {
@@ -168,6 +315,7 @@ mod tests {
                 kind: DialogKind::ImportMedia,
                 future: Box::pin(std::future::pending()),
                 waker: Waker::from(Arc::new(Repaint(context.clone()))),
+                directory: None,
             }),
             #[cfg(feature = "ui-harness")]
             scripted: None,
@@ -193,6 +341,7 @@ mod tests {
                     "/clips/My interview.mp4",
                 )))),
                 waker: Waker::from(Arc::new(Repaint(egui::Context::default()))),
+                directory: None,
             }),
             #[cfg(feature = "ui-harness")]
             scripted: None,

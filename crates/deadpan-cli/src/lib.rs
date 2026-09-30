@@ -12,6 +12,8 @@ mod originals;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod picture;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+pub mod render;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod render_worker;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 mod source_registration;
@@ -52,9 +54,20 @@ const HELP: &str = "Deadpan headless commands:
   resolve-selection <project.deadpan> --json <selection.json>
   locate-boundary <project.deadpan> --json <boundary.json>
   command <project.deadpan> --json <request.json> [--dry-run]
+  render <project.deadpan> --output <directory> [--name <movie.mp4>] [--expected <revision>]
+  render <project.deadpan> --json <request.json>
+  render retry <project.deadpan> --job <job> --checkpoint <encoding-attempt> --output <directory> [--name <movie.mp4>]
+  render reencode <project.deadpan> --job <job> --output <directory> [--name <movie.mp4>]
+  render reconcile <project.deadpan> --publication <publication>
+  render status <project.deadpan> [--after <job>]
+  render status <project.deadpan> --job <job> [--after-attempt <ordinal>]
+  render status <project.deadpan> --publications [--after <publication>]
+  render status <project.deadpan> --publication <publication>
 
 Creation defaults to a provisional 1920x1080, 30 fps presentation basis.
 Document dumps are inspection output; SQLite remains authoritative.
+Rendering uses automatic SDR policy, emits bounded JSON lines, and requires a closed project on qualified macOS/APFS. SIGINT/SIGTERM requests cancellation and drain.
+Open-project Render routing, the native recovery browser, full mastering and HDR output remain unavailable.
 Original retention preserves complete bytes; stream qualification and authored import remain separate.
 Audio inspection returns at most 256 stereo samples at the explicitly selected processing stage.
 Domain inspection reads raw physical context; signed START/END use its captured root grid.
@@ -63,6 +76,9 @@ Placement inspection evaluates the selected revision's recipe on an explicit sig
 
 #[derive(Debug, thiserror::Error)]
 pub enum CliError {
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    #[error(transparent)]
+    Render(#[from] render::PublicRenderError),
     #[error("{0}")]
     Usage(String),
     #[error("Unsupported command protocol {0}; expected 1")]
@@ -98,6 +114,8 @@ pub enum CliError {
 impl CliError {
     fn code(&self) -> &str {
         match self {
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            Self::Render(error) => &error.code,
             Self::Usage(_) | Self::Timing(_) | Self::Json(_) => "InvalidInput",
             Self::Protocol(_) => "ProtocolUnsupported",
             Self::Document(_) => "ProjectInvalid",
@@ -220,6 +238,8 @@ impl CliError {
     }
     fn current_revision(&self) -> Option<&str> {
         match self {
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            Self::Render(error) => error.current_revision.as_ref().map(RevisionId::as_str),
             Self::Store(StoreError::RevisionConflict { current, .. }) => Some(current),
             Self::Store(StoreError::Edit(error)) => {
                 error.current_revision.as_ref().map(RevisionId::as_str)
@@ -301,6 +321,11 @@ pub fn entry(arguments: impl IntoIterator<Item = String>) -> ExitCode {
     }
     match run(&arguments) {
         Ok(()) => ExitCode::SUCCESS,
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        Err(CliError::Render(error)) => {
+            render::report_error(&error);
+            ExitCode::FAILURE
+        }
         Err(error) => {
             let report = serde_json::json!({ "schema_version": 1, "error": {
                 "code": error.code(), "message": error.to_string(), "current_revision": error.current_revision(), "recovery_backup": error.recovery_backup()
@@ -314,6 +339,8 @@ pub fn entry(arguments: impl IntoIterator<Item = String>) -> ExitCode {
 fn run(arguments: &[String]) -> Result<(), CliError> {
     let arguments: Vec<&str> = arguments.iter().map(String::as_str).collect();
     match arguments.as_slice() {
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        ["render", rest @ ..] => render::run(rest).map_err(CliError::Render),
         [] | ["--help"] | ["-h"] => {
             println!("{HELP}");
             Ok(())

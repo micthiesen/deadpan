@@ -1,0 +1,50 @@
+   Compiling deadpan-source v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-source)
+    Checking deadpan-native-process v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-process)
+   Compiling deadpan-dsp v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-dsp)
+    Checking deadpan-fileclone v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-fileclone)
+    Checking rusty-fork v0.3.1
+    Checking deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+   Compiling deadpan-encode v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-encode)
+    Checking deadpan-filesystem v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-filesystem)
+    Checking signal-hook v0.3.18
+    Checking deadpan-output v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-output)
+   Compiling deadpan-media-worker v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-media-worker)
+    Checking proptest v1.11.0
+    Checking deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+    Checking deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+    Checking deadpan-render v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-render)
+    Checking deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+    Checking deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+    Checking deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+    Checking deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+    Checking deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Checking deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+    Checking deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+error: large size difference between variants
+   --> crates/deadpan-app/src/project.rs:359:1
+    |
+359 | / pub enum ProjectRequest {
+360 | |     Render(ProjectRenderRequest),
+    | |     ---------------------------- the largest variant contains at least 592 bytes
+361 | |     /// Source first: native projects are always allocated in Documents/Deadpan.
+362 | |     CreateFromSource {
+...   |
+409 | |     PrepareGain(gain::Proposal),
+    | |     --------------------------- the second-largest variant contains at least 288 bytes
+...   |
+427 | |     },
+428 | | }
+    | |_^ the entire enum is at least 592 bytes
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#large_enum_variant
+    = note: `-D clippy::large-enum-variant` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::large_enum_variant)]`
+help: consider boxing the large fields or introducing indirection in some other way to reduce the total size of the enum
+    |
+360 -     Render(ProjectRenderRequest),
+360 +     Render(Box<ProjectRenderRequest>),
+    |
+
+error: could not compile `deadpan-app` (bin "deadpan-app" test) due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `deadpan-app` (bin "deadpan-app") due to 1 previous error

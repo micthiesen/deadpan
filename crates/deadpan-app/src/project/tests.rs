@@ -646,6 +646,7 @@ fn shutdown_finishes_an_admitted_command_before_releasing_the_store() {
         stopping: AtomicBool::new(false),
         shutdown_complete: AtomicBool::new(false),
         render_poll_paused: AtomicBool::new(false),
+        render_commit_refresh_failure: AtomicBool::new(false),
         update: Mutex::new(None),
         wake: Arc::new(|| {}),
     });
@@ -917,6 +918,7 @@ impl Harness {
             stopping: AtomicBool::new(false),
             shutdown_complete: AtomicBool::new(false),
             render_poll_paused: AtomicBool::new(false),
+            render_commit_refresh_failure: AtomicBool::new(false),
             update: Mutex::new(None),
             wake: Arc::new(|| {}),
         });

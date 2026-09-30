@@ -1,0 +1,20 @@
+Final source review
+
+The coordinator independently reviewed the latest boxed CommitAndStart payload,
+exact commit receipts, bounded public output fallback and documented behavior.
+No confirmed findings remained. Earlier review fixes preserve terminal/recovery
+output on stderr after stdout failure, use atomic CLOEXEC output duplicates and
+reject an incompatible zero-valued status cursor.
+
+The parent reviewed the complete changed UI paths and inspected all eight named
+final Metal captures from ui-render-final. At 960x640 and 1280x820 the Camera,
+Gain and Room tone decisions retain the picture and expose all three choices.
+The success panel shows the final movie/report paths without stale staging paths.
+The parent compared these captures with single-source-workspace-v1.png and
+single-source-workflows-v1.png. Existing quiet panels, lavender selection,
+separate picture context and visible key hints are preserved. Synthetic media
+does not establish performance or appearance on arbitrary user content.
+
+Native CUA and the automated replay remain separate observations; the former
+required accessibility filename correction and pointer focus before save. No
+physical/non-US/IME or release-packaging qualification is claimed.

@@ -75,6 +75,7 @@ pub enum Action {
     New,
     Open,
     Import,
+    Render,
     Insert,
     Undo,
     Redo,
@@ -233,6 +234,7 @@ impl Bindings {
                 (Key::N, false) => Some(Action::New),
                 (Key::O, false) => Some(Action::Open),
                 (Key::I, false) => Some(Action::Import),
+                (Key::E, false) if !text => Some(Action::Render),
                 (Key::Z, false) if !text => Some(Action::Undo),
                 (Key::Z, true) if !text => Some(Action::Redo),
                 _ => None,
@@ -490,6 +492,48 @@ pub fn text_action(
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn render_captures_only_the_exact_shortcut_outside_text_and_composition() {
+        use super::*;
+        let command = Modifiers {
+            command: true,
+            mac_cmd: true,
+            ..Modifiers::NONE
+        };
+        for (text, ime, expected) in [
+            (false, false, Some(Action::Render)),
+            (true, false, None),
+            (false, true, None),
+        ] {
+            let mut bindings = Bindings::default();
+            bindings.key(Key::Comma, Modifiers::NONE, false, false);
+            assert_eq!(bindings.key(Key::E, command, text, ime), expected);
+            assert!(bindings.pending().is_empty());
+        }
+        for modifiers in [
+            Modifiers::NONE,
+            Modifiers::ALT,
+            Modifiers {
+                shift: true,
+                ..command
+            },
+            Modifiers {
+                alt: true,
+                ..command
+            },
+            Modifiers {
+                ctrl: true,
+                ..command
+            },
+        ] {
+            assert_ne!(
+                Bindings::default().key(Key::E, modifiers, false, false),
+                Some(Action::Render)
+            );
+        }
+        assert!(!allows_key_repeat(Key::E, command));
+    }
+
     #[test]
     fn moment_keys_are_native_owned_and_never_counted_or_repeated_edits() {
         for (key, modifiers, action) in [

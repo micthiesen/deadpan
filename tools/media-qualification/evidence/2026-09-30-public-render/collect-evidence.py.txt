@@ -1,0 +1,525 @@
+#!/usr/bin/env python3
+"""Collect completed public Render evidence. Run only after the final checks.
+
+This collector never launches a compiler, test, native reader or application.
+It creates one exclusive evidence directory and preserves partial output on any
+failure. README and qualification prose are parent-owned; refresh manifest.json
+after adding that prose. Paths below are deliberately fixed to this experiment.
+"""
+
+import gzip
+import hashlib
+import json
+import os
+from contextlib import closing
+from pathlib import Path, PurePosixPath
+import re
+import sqlite3
+import stat
+import tarfile
+import tempfile
+import time
+
+REPO = Path('/Users/michael/Code/deadpan').resolve()
+WORK = Path('/tmp/deadpan-public-render-20260930').resolve()
+PRIOR = Path('/tmp/deadpan-durable-automatic-20260930').resolve()
+TARGET = REPO / 'tools/media-qualification/evidence/2026-09-30-public-render'
+MAX_FILE = 512 * 1024 * 1024
+MAX_JSON = 128 * 1024 * 1024
+MAX_TOTAL = 2 * 1024 * 1024 * 1024
+MAX_FILES = 4096
+GZIP_THRESHOLD = 128 * 1024
+BLOCK = 1024 * 1024
+REQUIRED = (
+    'workspace-tests', 'ui-tests', 'ui-clippy', 'ui-render-final',
+    'ui-release-build', 'ui-render-performance',
+    'native-smoke', 'format-final', 'independent-decode', 'public-workflow',
+)
+CHECKPOINTS = (
+    'Explicit Camera Render decision at 960x640',
+    'Explicit Camera Render decision at 1280x820',
+    'Explicit Gain Render decision at 960x640',
+    'Explicit Gain Render decision at 1280x820',
+    'Explicit Room tone Render decision at 960x640',
+    'Explicit Room tone Render decision at 1280x820',
+    'Verified Render outcome at 960x640',
+    'Verified Render outcome at 1280x820',
+)
+
+
+def require(condition, detail):
+    if not condition:
+        raise RuntimeError(detail)
+
+
+def relative_name(value):
+    path = PurePosixPath(value)
+    require(value and not path.is_absolute() and '..' not in path.parts
+            and '.' not in path.parts, f'unsafe evidence name: {value}')
+    return str(path)
+
+
+def contained(path, root):
+    """Resolve macOS /tmp alias, but reject symlinks below the admitted root."""
+    path = Path(path).absolute()
+    root = Path(root).resolve()
+    resolved = path.resolve(strict=True)
+    require(resolved.is_relative_to(root), f'path escapes admitted root: {path}')
+    for parent in (resolved, *resolved.parents):
+        if parent == root:
+            break
+        require(not parent.is_symlink(), f'symlink in evidence: {parent}')
+    # The original spelling may contain a symlink that resolve() erased.
+    for parent in (path, *path.parents):
+        if parent.resolve() == root:
+            break
+        require(not parent.is_symlink(), f'symlink in evidence input: {parent}')
+    return resolved
+
+
+def regular(path, maximum=MAX_FILE):
+    descriptor = os.open(path, os.O_RDONLY | os.O_NONBLOCK | os.O_NOFOLLOW | os.O_CLOEXEC)
+    file = os.fdopen(descriptor, 'rb')
+    before = os.fstat(file.fileno())
+    if not stat.S_ISREG(before.st_mode) or not 0 <= before.st_size <= maximum:
+        file.close()
+        raise RuntimeError(f'nonregular or oversized evidence file: {path}')
+    return file, before
+
+
+def stamp(info):
+    return (info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns, info.st_ctime_ns)
+
+
+def identity(path, maximum=MAX_FILE, output=None):
+    file, before = regular(path, maximum)
+    hasher, count = hashlib.sha256(), 0
+    with file:
+        while chunk := file.read(BLOCK):
+            count += len(chunk)
+            require(count <= maximum, f'evidence file grew past bound: {path}')
+            hasher.update(chunk)
+            if output is not None:
+                output.write(chunk)
+        after = os.fstat(file.fileno())
+    require(count == before.st_size and stamp(before) == stamp(after),
+            f'evidence changed during read: {path}')
+    return {'bytes': count, 'sha256': hasher.hexdigest()}
+
+
+def read_json(path):
+    def unique(pairs):
+        result = {}
+        for key, value in pairs:
+            require(key not in result, f'duplicate JSON key in {path}: {key}')
+            result[key] = value
+        return result
+
+    def invalid(value):
+        raise ValueError(f'nonfinite JSON constant in {path}: {value}')
+
+    file, before = regular(path, MAX_JSON)
+    with file:
+        data = file.read(MAX_JSON + 1)
+        after = os.fstat(file.fileno())
+    require(len(data) == before.st_size and stamp(before) == stamp(after),
+            f'JSON changed while reading: {path}')
+    return json.loads(data, object_pairs_hook=unique, parse_constant=invalid)
+
+
+def write_json(path, value):
+    with path.open('x', encoding='utf-8') as output:
+        json.dump(value, output, indent=2, sort_keys=True, allow_nan=False)
+        output.write('\n')
+
+
+def source_inventory(journal):
+    digest = journal['source_manifest_sha256']
+    require(re.fullmatch('[0-9a-f]{64}', digest), 'invalid source inventory identity')
+    path = WORK / f'source-{digest}.json'
+    require(identity(path)['sha256'] == digest, f'changed source inventory: {path}')
+    value = read_json(path)
+    require(isinstance(value, dict) and value, 'empty source inventory')
+    for name, sha256 in value.items():
+        relative_name(name)
+        require(re.fullmatch('[0-9a-f]{64}', sha256), f'invalid source digest: {name}')
+    return value
+
+
+def test_counts(path):
+    file, _ = regular(path)
+    with file:
+        text = file.read(MAX_FILE + 1).decode('utf-8')
+    rows = re.findall(r'test result: (ok|FAILED)\. (\d+) passed; (\d+) failed; (\d+) ignored;', text)
+    require(rows, f'no test result groups: {path}')
+    value = {'passed': sum(int(row[1]) for row in rows),
+             'failed': sum(int(row[2]) for row in rows),
+             'ignored': sum(int(row[3]) for row in rows), 'result_groups': len(rows)}
+    require(value['passed'] > 0 and value['failed'] == 0
+            and all(row[0] == 'ok' for row in rows), f'failed final tests: {path}')
+    return value
+
+
+def tree_files(root):
+    require(root.is_dir() and not root.is_symlink(), f'missing evidence directory: {root}')
+    files = []
+    for directory, subdirs, names in os.walk(root, followlinks=False):
+        for name in subdirs:
+            require(not (Path(directory) / name).is_symlink(), f'directory symlink: {name}')
+        for name in sorted(names):
+            path = contained(Path(directory) / name, root)
+            require(path.is_file(), f'non-file in evidence tree: {path}')
+            files.append(path)
+            require(len(files) <= MAX_FILES, f'too many evidence inputs in {root}')
+    return sorted(files)
+
+
+def source_coverage(journals, final):
+    passing = {name: row for name, row in journals.items()
+               if row.get('exit_code') == 0 and 'source_manifest_sha256' in row}
+    inventories = {name: source_inventory(row) for name, row in passing.items()}
+    deltas = {}
+    for name, inventory in inventories.items():
+        changed = sorted(key for key in final.keys() | inventory.keys()
+                         if final.get(key) != inventory.get(key))
+        deltas[name] = {'source_manifest_sha256': passing[name]['source_manifest_sha256'],
+                        'matches_final_inventory': not changed,
+                        'different_paths': [{'path': key, 'checked_sha256': inventory.get(key),
+                                             'final_sha256': final.get(key)} for key in changed]}
+    # Per-file coverage is descriptive. It is not a claim that source hashes
+    # establish equivalent behavior or that a compile replaces native execution.
+    changed_paths = sorted({row['path'] for delta in deltas.values()
+                            for row in delta['different_paths']})
+    coverage = {name: {'final_sha256': final.get(name),
+                       'passing_checks_with_final_bytes': sorted(check for check, inventory in inventories.items()
+                                                                 if final.get(name) is not None
+                                                                 and inventory.get(name) == final[name])}
+                for name in changed_paths}
+    return {'final_inventory': journals['format-final']['source_manifest_sha256'],
+            'per_check': deltas, 'changed_path_coverage': coverage,
+            'interpretation': 'Exact textual identities and deltas only. Earlier native observations retain their own inputs; no claim of behavioral equivalence for later source changes.'}
+
+
+class Collector:
+    def __init__(self, staging):
+        self.staging = staging
+        self.copied = {}
+        self.archive = {}
+        self.database_backups = []
+        self.total_bytes = 0
+
+    def charge(self, count):
+        self.total_bytes += count
+        require(self.total_bytes <= MAX_TOTAL, 'retained uncompressed inputs exceed 2 GiB')
+        require(len(self.copied) + len(self.archive) < MAX_FILES, 'too many retained evidence files')
+
+    def retain(self, source, name, force_gzip=False, expected=None):
+        name = relative_name(name)
+        initial = identity(source)
+        require(expected is None or initial == expected, f'input evidence identity mismatch: {source}')
+        compress = force_gzip or (initial['bytes'] >= GZIP_THRESHOLD and Path(name).suffix in
+                                  ('.log', '.json', '.jsonl', '.stdout', '.stderr', '.txt'))
+        if compress:
+            name += '.gz'
+        require(name not in self.copied, f'duplicate retained name: {name}')
+        self.charge(initial['bytes'])
+        destination = TARGET / name
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        with destination.open('xb') as raw:
+            if compress:
+                with gzip.GzipFile(filename='', mode='wb', fileobj=raw, mtime=0) as output:
+                    copied = identity(source, output=output)
+            else:
+                copied = identity(source, output=raw)
+        require(copied == initial, f'evidence changed between reads: {source}')
+        if compress:
+            with gzip.open(destination, 'rb') as reopened:
+                check = stream_identity(reopened, MAX_FILE)
+        else:
+            check = identity(destination)
+        require(check == initial, f'retained content failed reopen: {name}')
+        self.copied[name] = {'source': str(source), 'original': initial,
+                             'retained': identity(destination), 'gzip': compress}
+
+    def artifact(self, source, name, expected=None):
+        name = relative_name(name)
+        require(name not in self.archive, f'duplicate archive member: {name}')
+        value = identity(source)
+        require(expected is None or value == expected, f'archive input differs: {source}')
+        self.charge(value['bytes'])
+        self.archive[name] = {'source': str(source), **value,
+                              'matched_recorded_observation': expected is not None}
+
+    def backup(self, source, name):
+        source = contained(source, WORK)
+        destination = self.staging / relative_name(name)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        # Reserve exclusively. SQLite opens only this collector-owned file.
+        with destination.open('xb'):
+            pass
+        deadline = time.monotonic() + 60
+
+        def progress(_status, _remaining, _total):
+            require(time.monotonic() < deadline, f'SQLite backup exceeded 60 seconds: {source}')
+
+        with closing(sqlite3.connect(source.as_uri() + '?mode=ro', uri=True, timeout=1)) as original:
+            with closing(sqlite3.connect(destination, timeout=1)) as saved:
+                original.backup(saved, pages=256, progress=progress, sleep=0.05)
+                require(saved.execute('PRAGMA integrity_check').fetchall() == [('ok',)],
+                        f'SQLite backup integrity failure: {source}')
+                schema = saved.execute('PRAGMA user_version').fetchone()[0]
+        self.database_backups.append({'source': str(source), 'member': name,
+                                       'method': 'SQLite online backup API from read-only connection',
+                                       'user_version': schema})
+        self.artifact(destination, name)
+
+    def package(self, package, archive_root):
+        require((package / 'project.sqlite').is_file(), f'project database absent: {package}')
+        for source in tree_files(package):
+            relative = source.relative_to(package)
+            if source.name.endswith(('.lock', '-wal', '-shm', '-journal')):
+                continue
+            name = str(PurePosixPath(archive_root) / relative.as_posix())
+            if source.suffix == '.sqlite':
+                self.backup(source, name)
+            else:
+                self.artifact(source, name)
+
+    def finish_archive(self):
+        path = TARGET / 'native-files.tar.gz'
+        with path.open('xb') as raw:
+            with gzip.GzipFile(filename='', mode='wb', fileobj=raw, mtime=0) as compressed:
+                with tarfile.open(fileobj=compressed, mode='w|', format=tarfile.PAX_FORMAT) as archive:
+                    for name, record in sorted(self.archive.items()):
+                        source = Path(record['source'])
+                        expected = {key: record[key] for key in ('bytes', 'sha256')}
+                        require(identity(source) == expected, f'archive input changed: {source}')
+                        file, before = regular(source)
+                        with file:
+                            member = tarfile.TarInfo(name)
+                            member.size, member.mode, member.mtime = record['bytes'], 0o600, 0
+                            archive.addfile(member, file)
+                            require(stamp(before) == stamp(os.fstat(file.fileno())), f'archive input changed: {source}')
+        seen = set()
+        with tarfile.open(path, 'r:gz') as reopened:
+            for member in reopened:
+                require(member.isfile() and member.name not in seen and member.name in self.archive,
+                        f'unexpected archive member: {member.name}')
+                seen.add(member.name)
+                expected = self.archive[member.name]
+                with reopened.extractfile(member) as file:
+                    actual = stream_identity(file, MAX_FILE)
+                require(actual == {key: expected[key] for key in ('bytes', 'sha256')},
+                        f'archive member failed full rehash: {member.name}')
+        require(seen == self.archive.keys(), 'missing archive member')
+        write_json(TARGET / 'native-files.json', {
+            'archive': identity(path), 'all_members_reopened_and_rehashed': True,
+            'members': self.archive, 'database_backups': self.database_backups,
+        })
+
+
+def stream_identity(file, maximum):
+    digest, count = hashlib.sha256(), 0
+    while chunk := file.read(BLOCK):
+        count += len(chunk)
+        require(count <= maximum, 'decompressed evidence exceeds bound')
+        digest.update(chunk)
+    return {'bytes': count, 'sha256': digest.hexdigest()}
+
+
+def main():
+    require(not TARGET.exists(), f'evidence target already exists; preserve it: {TARGET}')
+    lint = 'workspace-clippy-final' if (WORK / 'workspace-clippy-final.json').exists() else 'workspace-clippy'
+    names = [lint, *REQUIRED]
+    required = {name: read_json(WORK / f'{name}.json') for name in names}
+    for name, row in required.items():
+        require(type(row.get('exit_code')) is int and row['exit_code'] == 0,
+                f'final journal is absent, unfinished or failed: {name}')
+        require(isinstance(row.get('command'), list), f'journal has no command: {name}')
+        require((WORK / f'{name}.log').is_file(), f'journal log absent: {name}')
+    final = source_inventory(required['format-final'])
+    for name, digest in final.items():
+        source = contained(REPO / name, REPO)
+        require(identity(source)['sha256'] == digest, f'current source differs from final inventory: {name}')
+    workspace = test_counts(WORK / 'workspace-tests.log')
+    ui_tests = test_counts(WORK / 'ui-tests.log')
+    public = read_json(WORK / 'public-report.json')
+    decoded = read_json(WORK / 'decoded-public/report.json')
+    native = read_json(WORK / 'native-ui-report.json')
+    require(public.get('result') == decoded.get('result') == 'passed', 'public workflow or decode did not pass')
+    require(native.get('result') == 'passed within listed scope', 'native CUA report did not pass')
+    require(not decoded.get('process_faults') and all(row['passed'] for row in decoded['final_file_admission']),
+            'independent decode had failed final file admission or process fault')
+    require(len(decoded['cases']) == 2 and all(row['result'] == 'passed' for row in decoded['cases']),
+            'independent decode needs both complete passing cases')
+    observed = {}
+
+    def observation(path, value):
+        path = Path(path).resolve()
+        expected = {key: value[key] for key in ('bytes', 'sha256')}
+        require(path not in observed or observed[path] == expected,
+                f'conflicting recorded observations: {path}')
+        observed[path] = expected
+
+    def receipt(value):
+        for kind in ('movie', 'report'):
+            observation(value[kind], {'bytes': value[kind + '_bytes'],
+                                      'sha256': value[kind + '_sha256']})
+
+    for row in decoded['final_file_admission']:
+        if 'path' in row:
+            observation(row['path'], row['actual'])
+    for key in ('initial', 'retry', 'reconciled', 'cold'):
+        require(public[key]['outcome'] == 'published' and public[key]['cleanup_confirmed'],
+                f'public {key} did not finish publication with cleanup')
+        receipt(public[key]['receipt'])
+    observation(native['movie']['path'], native['movie'])
+    command = required['ui-render-final']['command']
+    require(command.count('--output') == 1, 'final UI journal needs one output directory')
+    ui_root = contained(command[command.index('--output') + 1], WORK)
+    ui_report = read_json(ui_root / 'report.json')
+    require(ui_report['failed'] is False, 'final UI replay failed')
+    scenarios = [row for row in ui_report['scenarios'] if row['name'] == 'render']
+    require(len(scenarios) == 1 and not scenarios[0]['failed'], 'missing final Render scenario')
+    scenario = scenarios[0]
+    require(scenario['checks'] and all(row['passed'] for row in scenario['checks']), 'Render scenario has failed checks')
+    performance = read_json(WORK / 'ui-render-performance/report.json')
+    require(performance['failed'] is False, 'release UI replay failed')
+    performance_checks = [check for row in performance['scenarios'] for check in row['checks']]
+    require(performance_checks and all(check['passed'] for check in performance_checks),
+            'release UI replay contains failed checks')
+    selected = []
+    for label in CHECKPOINTS:
+        steps = [step for step in scenario['steps'] if step['input'] == label and step.get('screenshot')]
+        require(len(steps) == 1, f'expected one named final screenshot: {label}')
+        step = steps[0]
+        source = contained(ui_root / relative_name(step['screenshot']), ui_root)
+        require(source.suffix == '.png', 'named screenshot is not PNG')
+        selected.append((source, {'checkpoint': label, 'frame': step['frame'], 'original': step['screenshot'],
+                                  'viewport_points': step['semantic']['viewport_points']}))
+
+    root_paths = sorted(path for path in WORK.iterdir() if path.is_file())
+    require(len(root_paths) <= MAX_FILES, 'too many root evidence inputs')
+    journals = {}
+    for path in root_paths:
+        if path.suffix == '.json' and not path.name.startswith('source-'):
+            row = read_json(path)
+            if isinstance(row, dict) and isinstance(row.get('command'), list):
+                journals[path.stem] = row
+    require(all(name in journals for name in names), 'required journal omitted from root inventory')
+    coverage = source_coverage(journals, final)
+    TARGET.mkdir(parents=True, exist_ok=False)
+    staging = Path(tempfile.mkdtemp(prefix='collector-sqlite-', dir=WORK))
+    collector = Collector(staging)
+    try:
+        # Root retention includes failed/unfinished earlier journals without
+        # converting them into passing evidence or overwriting their text.
+        for path in root_paths:
+            source = contained(path, WORK)
+            if source.suffix in ('.json', '.jsonl', '.log', '.md', '.txt', '.stderr', '.stdout', '.diff'):
+                collector.retain(source, source.name,
+                                 force_gzip=source.name.startswith('source-'),
+                                 expected=observed.get(source.resolve()))
+            elif source.suffix == '.py':
+                collector.retain(source, source.name + '.txt', expected=observed.get(source.resolve()))
+            elif source.suffix == '.sqlite':
+                collector.backup(source, 'snapshots/' + source.name)
+        for name in ('public-before.sqlite', 'public-after.sqlite', 'native-ui-after.sqlite'):
+            require('snapshots/' + name in collector.archive, f'required database snapshot absent: {name}')
+        for name in ('public.deadpan', 'native-ui-project.deadpan'):
+            collector.package(WORK / name, 'projects/' + name)
+        # Retain the final synthetic UI package only, not every intermediate
+        # replay package or the copied QA application bundle.
+        package_roots = [path.parent for path in tree_files(ui_root / 'projects') if path.name == 'project.sqlite']
+        require(len(package_roots) == 1, 'final Render replay requires exactly one synthetic package')
+        package = package_roots[0]
+        collector.package(package, 'projects/final-ui/' + package.name)
+        replay_roots = sorted(path for path in WORK.iterdir()
+                              if path.is_dir() and path.name.startswith('ui-render-'))
+        for replay in replay_roots:
+            if (replay / 'report.json').exists():
+                replay_report = read_json(replay / 'report.json')
+                for replay_scenario in replay_report['scenarios']:
+                    for check in replay_scenario['checks']:
+                        actual = check.get('actual')
+                        if check.get('passed') and isinstance(actual, dict) and isinstance(actual.get('receipt'), dict):
+                            receipt(actual['receipt'])
+                collector.retain(contained(replay / 'report.json', WORK),
+                                 'replays/' + replay.name + '/report.json', force_gzip=True)
+        artifact_roots = [WORK / 'public-movies', WORK / 'native-ui', WORK / 'decoded-public']
+        artifact_roots += [path / 'render-output' for path in replay_roots if (path / 'render-output').is_dir()]
+        for root in artifact_roots:
+            for source in tree_files(root):
+                if source.suffix in ('.mp4', '.json', '.i420', '.f32', '.log', '.stdout', '.stderr'):
+                    collector.artifact(source, str(source.relative_to(WORK)), observed.get(source.resolve()))
+        # The only archive inputs outside this task's root are the exact prior
+        # canonical references admitted by the independent decode report.
+        references = {}
+        for key, basename in [('pictures', 'automatic.reference.i420'), ('audio', 'automatic.reference.f32')]:
+            row = decoded['canonical_references'][key]
+            source = contained(row['path'], PRIOR / 'native-fixed')
+            require(source.name == basename, f'unexpected canonical reference path: {source}')
+            expected = {key: row[key] for key in ('bytes', 'sha256')}
+            name = 'canonical-references/' + basename
+            collector.artifact(source, name, expected)
+            references[key] = {'member': name, 'original': row}
+        # Reader sources are retained as text, while linked binaries remain
+        # identified by their existing hashes and are never copied here.
+        for name in ('native_audio_oracle.py', 'project_encode_oracle.py', 'avfoundation_probe.m', 'edits.json'):
+            source = contained(PRIOR / 'five-second-oracles' / name, PRIOR)
+            admitted = [row for row in decoded['input_admission'] if Path(row['path']).resolve() == source]
+            require(len(admitted) == 1, f'adapter lacks exact decoder admission: {name}')
+            expected = {key: admitted[0][key] for key in ('bytes', 'sha256')}
+            retained = name + '.txt' if source.suffix in ('.py', '.m') else name
+            collector.retain(source, 'five-second-oracles/' + retained, expected=expected)
+        collector.retain(WORK / 'decoded-public/report.json', 'independent-full-file.json')
+        screenshot_rows = []
+        for ordinal, (source, row) in enumerate(selected, 1):
+            name = f'screenshots/{ordinal:02d}-' + source.name
+            collector.retain(source, name)
+            screenshot_rows.append({**row, 'retained': name, **identity(source)})
+        write_json(TARGET / 'screenshots.json', screenshot_rows)
+        collector.finish_archive()
+        write_json(TARGET / 'source-coverage.json', coverage)
+        write_json(TARGET / 'retained-files.json', collector.copied)
+        write_json(TARGET / 'summary.json', {
+            'schema_version': 1, 'required_passing_checks': names,
+            'journal_outcomes': {name: row.get('exit_code', 'unfinished') for name, row in journals.items()},
+            'workspace_tests': workspace, 'optional_ui_tests': ui_tests,
+            'render_replay': {'checks': len(scenario['checks']), 'failed': scenario['failed'],
+                              'skipped': scenario['skipped'], 'findings': scenario['findings'],
+                              'journal': 'ui-render-final', 'output': str(ui_root)},
+            'release_replay': {'checks': len(performance_checks), 'failed': performance['failed'],
+                               'scenarios': [{'name': row['name'], 'skipped': row['skipped'],
+                                              'checks': len(row['checks']), 'findings': row['findings']}
+                                             for row in performance['scenarios']],
+                               'journal': 'ui-render-performance'},
+            'public_workflow': {'commands': len(public['checks']), 'unchanged_nonrender_tables': public['unchanged_tables']},
+            'independent_decode': {'result': decoded['result'], 'cases': [row['name'] for row in decoded['cases']],
+                                   'complete_planes': sum(len(row['planes']) for row in decoded['cases']),
+                                   'canonical_references': references, 'scope': decoded['scope']},
+            'native_cua': {'result': native['result'], 'limitations': native['limitations']},
+            'source_coverage': 'source-coverage.json', 'archive_inventory': 'native-files.json',
+            'bounds': {'maximum_file_bytes': MAX_FILE, 'maximum_total_input_bytes': MAX_TOTAL,
+                       'maximum_files': MAX_FILES, 'retained_uncompressed_input_bytes': collector.total_bytes},
+            'excluded': ['copied QA .app bundle', 'compiled helpers and libraries', 'mass intermediate PNGs',
+                         'nonfinal UI project packages', 'live SQLite main-file copies, WAL, SHM and lock files'],
+            'remaining': ['authenticated open-project host routing', 'native persisted-job recovery',
+                          'full mastering/effects', 'HDR', 'expanded content/runtime qualification', 'release qualification'],
+            'manifest_note': 'Manifest covers collector output. Refresh after parent adds README or qualification-linked prose.',
+        })
+        for name, digest in final.items():
+            require(identity(contained(REPO / name, REPO))['sha256'] == digest,
+                    f'current source changed during collection: {name}')
+        manifest = {str(path.relative_to(TARGET)): identity(path) for path in tree_files(TARGET)}
+        write_json(TARGET / 'manifest.json', manifest)
+        print(json.dumps({'target': str(TARGET), 'files': len(manifest),
+                          'workspace_tests': workspace, 'optional_ui_tests': ui_tests,
+                          'archive_members': len(collector.archive), 'screenshots': len(selected)}))
+    except Exception as error:
+        write_json(TARGET / 'collection-failed.json', {'error': repr(error), 'staging_preserved': str(staging)})
+        raise
+
+
+if __name__ == '__main__':
+    main()

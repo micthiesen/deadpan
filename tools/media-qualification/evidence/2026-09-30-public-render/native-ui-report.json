@@ -1,0 +1,44 @@
+{
+  "result": "passed within listed scope",
+  "operator": "browser-role native CUA agent",
+  "application": "dev.thiesen.deadpan.render-qa",
+  "bundle_scope": "isolated scratch app registration with copied executable; not release packaging",
+  "binary_sha256": "5ed6d35b9ce54f6615e5a974d2ab9922a2c1577b7a812731bb5de7fe58587040",
+  "movie": {
+    "path": "/tmp/deadpan-public-render-20260930/native-ui/native.mp4",
+    "sha256": "171efd7a4056b943c0786e4cc4f3c30b496fa4070012f6c42229e2e08e1970b4",
+    "bytes": 37964
+  },
+  "report": "/tmp/deadpan-public-render-20260930/native-ui/deadpan-render-18f7b7b1-7fca-414b-8086-5b942b7b869a.json",
+  "unchanged_nonrender_tables": {
+    "revisions": 7,
+    "history": 4,
+    "state": 1,
+    "redo": 1,
+    "hold_request_clocks": 0,
+    "generation_requests": 0,
+    "generation_attempts": 0,
+    "generation_candidate_receipts": 0,
+    "generation_bundle_receipts": 0,
+    "generation_attempt_heads": 0,
+    "original_media": 1,
+    "source_qualifications": 1,
+    "single_source": 1
+  },
+  "observed": [
+    "Cmd-E opens real NSSavePanel with Exports and fresh project-derived MP4 name",
+    "Escape cancels destination and preserves saved editor",
+    "Camera Tab/Up changes Center X 50 to 51 as unsaved draft",
+    "Render preview Tab order Commit, Discard, Keep editing",
+    "Escape returns to Camera draft; second Escape discards it",
+    "Cmd-Shift-G navigates to scratch destination",
+    "Complete native export reaches Movie exported with report path and no stale partial path",
+    "Normal UI quit confirmed by CUA procNotFound and parent process inventory"
+  ],
+  "limitations": [
+    "Filename correction used accessibility setValue and a pointer focus step; not a fully keyboard-only save acceptance",
+    "CUA inline screenshots could not be saved through exposed API; parent has automated Metal replay captures",
+    "Physical non-US keyboard, physical display and IME not tested",
+    "Raw executable was invisible to CUA; an isolated app bundle supplied an explicit target. Initial attempt to bind unrelated Ghostty was denied and abandoned; no unrelated app inspection occurred."
+  ]
+}

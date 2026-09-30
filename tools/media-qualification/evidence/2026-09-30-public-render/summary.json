@@ -1,0 +1,351 @@
+{
+  "archive_inventory": "native-files.json",
+  "bounds": {
+    "maximum_file_bytes": 536870912,
+    "maximum_files": 4096,
+    "maximum_total_input_bytes": 2147483648,
+    "retained_uncompressed_input_bytes": 149951220
+  },
+  "excluded": [
+    "copied QA .app bundle",
+    "compiled helpers and libraries",
+    "mass intermediate PNGs",
+    "nonfinal UI project packages",
+    "live SQLite main-file copies, WAL, SHM and lock files"
+  ],
+  "independent_decode": {
+    "canonical_references": {
+      "audio": {
+        "member": "canonical-references/automatic.reference.f32",
+        "original": {
+          "bytes": 1640040,
+          "ctime_ns": 1790771416266215266,
+          "device": 16777233,
+          "inode": 34344291,
+          "mtime_ns": 1790771416266215266,
+          "path": "/private/tmp/deadpan-durable-automatic-20260930/native-fixed/automatic.reference.f32",
+          "resolved": "/private/tmp/deadpan-durable-automatic-20260930/native-fixed/automatic.reference.f32",
+          "sha256": "038c5a2946e1a2443919375f72e20e491a58d90c945a93e902e4f81d155092e2"
+        }
+      },
+      "pictures": {
+        "member": "canonical-references/automatic.reference.i420",
+        "original": {
+          "bytes": 11059200,
+          "ctime_ns": 1790771384943790262,
+          "device": 16777233,
+          "inode": 34344290,
+          "mtime_ns": 1790771384943790262,
+          "path": "/private/tmp/deadpan-durable-automatic-20260930/native-fixed/automatic.reference.i420",
+          "resolved": "/private/tmp/deadpan-durable-automatic-20260930/native-fixed/automatic.reference.i420",
+          "sha256": "6b113ad6eb41afb546576fe1fcf1a4063b04545b4bd736a56edabbdc0aad284b"
+        }
+      }
+    },
+    "cases": [
+      "initial",
+      "cold"
+    ],
+    "complete_planes": 768,
+    "result": "passed",
+    "scope": "Two newly published public CLI movies against the unchanged canonical inputs for the exact same immutable document; full picture planes and authored PCM at observed PTS, no realignment"
+  },
+  "journal_outcomes": {
+    "app-tests-first": 0,
+    "cli-tests-first": 101,
+    "cli-tests-second": 101,
+    "compile-first": 0,
+    "format-final": 0,
+    "independent-decode": 0,
+    "native-smoke": 0,
+    "public-workflow": 0,
+    "ui-build-final": 0,
+    "ui-build-first": 101,
+    "ui-build-second": 0,
+    "ui-build-third": 0,
+    "ui-build-verified": 0,
+    "ui-clippy": 0,
+    "ui-release-build": 0,
+    "ui-render-final": 0,
+    "ui-render-first": 1,
+    "ui-render-performance": 0,
+    "ui-render-second": 0,
+    "ui-tests": 0,
+    "workspace-clippy": 101,
+    "workspace-clippy-final": 0,
+    "workspace-tests": 0
+  },
+  "manifest_note": "Manifest covers collector output. Refresh after parent adds README or qualification-linked prose.",
+  "native_cua": {
+    "limitations": [
+      "Filename correction used accessibility setValue and a pointer focus step; not a fully keyboard-only save acceptance",
+      "CUA inline screenshots could not be saved through exposed API; parent has automated Metal replay captures",
+      "Physical non-US keyboard, physical display and IME not tested",
+      "Raw executable was invisible to CUA; an isolated app bundle supplied an explicit target. Initial attempt to bind unrelated Ghostty was denied and abandoned; no unrelated app inspection occurred."
+    ],
+    "result": "passed within listed scope"
+  },
+  "optional_ui_tests": {
+    "failed": 0,
+    "ignored": 0,
+    "passed": 318,
+    "result_groups": 2
+  },
+  "public_workflow": {
+    "commands": 8,
+    "unchanged_nonrender_tables": {
+      "generation_attempt_heads": 0,
+      "generation_attempts": 0,
+      "generation_bundle_receipts": 0,
+      "generation_candidate_receipts": 0,
+      "generation_requests": 0,
+      "history": 11,
+      "hold_request_clocks": 0,
+      "original_media": 1,
+      "redo": 1,
+      "revisions": 24,
+      "single_source": 0,
+      "source_qualifications": 1,
+      "state": 1
+    }
+  },
+  "release_replay": {
+    "checks": 2418,
+    "failed": false,
+    "journal": "ui-render-performance",
+    "scenarios": [
+      {
+        "checks": 1,
+        "findings": [],
+        "name": "kestrel-shortcuts",
+        "skipped": []
+      },
+      {
+        "checks": 80,
+        "findings": [],
+        "name": "workspace",
+        "skipped": [
+          "OS picker behavior: only its selected path is scripted",
+          "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+        ]
+      },
+      {
+        "checks": 29,
+        "findings": [],
+        "name": "editing",
+        "skipped": [
+          "OS picker behavior: only its selected path is scripted",
+          "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+        ]
+      },
+      {
+        "checks": 12,
+        "findings": [],
+        "name": "camera",
+        "skipped": [
+          "OS picker behavior: only its selected path is scripted",
+          "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+        ]
+      },
+      {
+        "checks": 37,
+        "findings": [],
+        "name": "menus",
+        "skipped": [
+          "OS picker behavior: only its selected path is scripted",
+          "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+        ]
+      },
+      {
+        "checks": 8,
+        "findings": [],
+        "name": "delayed-preview",
+        "skipped": [
+          "OS picker behavior: only its selected path is scripted",
+          "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+        ]
+      },
+      {
+        "checks": 319,
+        "findings": [],
+        "name": "rapid-input",
+        "skipped": [
+          "Repeat boundary checks delay delivery of real SQLite updates; the writer and production event router remain live. Physical key delivery is not exercised.",
+          "OS picker behavior: only its selected path is scripted",
+          "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+        ]
+      },
+      {
+        "checks": 12,
+        "findings": [],
+        "name": "playback-feedback",
+        "skipped": [
+          "Playback service updates are explicitly simulated. This scenario qualifies UI feedback and picture routing, not PCM preparation, device timing or listening.",
+          "OS picker behavior: only its selected path is scripted",
+          "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+        ]
+      },
+      {
+        "checks": 524,
+        "findings": [],
+        "name": "large-project",
+        "skipped": [
+          "Large-project fixture: 10,000 root Background/Silence Holds in a real SQLite package. No source media, decoding, PCM or large asset inventory is stressed.",
+          "OS picker behavior: only its selected path is scripted",
+          "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+        ]
+      },
+      {
+        "checks": 448,
+        "findings": [],
+        "name": "edit-latency",
+        "skipped": [
+          "Edit timings measure the real committed revision through offscreen GPU completion. Physical display presentation and acoustic Hold silence are outside this scenario.",
+          "OS picker behavior: only its selected path is scripted",
+          "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+        ]
+      },
+      {
+        "checks": 72,
+        "findings": [],
+        "name": "nested-pause",
+        "skipped": [
+          "This replay enters Sequence groups. Repeat and Retime entry, occurrence isolation, and their pause insertion remain outside this scenario.",
+          "OS picker behavior: only its selected path is scripted",
+          "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+        ]
+      },
+      {
+        "checks": 16,
+        "findings": [],
+        "name": "original-moment",
+        "skipped": [
+          "OS picker behavior: only its selected path is scripted",
+          "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+        ]
+      },
+      {
+        "checks": 18,
+        "findings": [],
+        "name": "original-playback",
+        "skipped": [
+          "Playback service updates are explicitly injected. This scenario exercises Original controls, clock admission, looping and picture routing, not PCM preparation, device timing or listening.",
+          "OS picker behavior: only its selected path is scripted",
+          "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+        ]
+      },
+      {
+        "checks": 31,
+        "findings": [],
+        "name": "sound-playback",
+        "skipped": [
+          "Sound registration and widgets use production services. Delivery reports are deterministic fakes, not real PCM playback, device timing, or listening evidence.",
+          "OS picker behavior: only its selected path is scripted",
+          "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+        ]
+      },
+      {
+        "checks": 216,
+        "findings": [],
+        "name": "sound-placement",
+        "skipped": [
+          "Sound placement uses real source qualification and durable project commands. This scenario does not start audio output or establish PCM, device timing, or listening evidence.",
+          "Preparing/Playing at 960 pixels uses the real transport controls with simulated delivery reports only. It does not start a device or prepare PCM.",
+          "OS picker behavior: only its selected path is scripted",
+          "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+        ]
+      },
+      {
+        "checks": 220,
+        "findings": [],
+        "name": "room-tone",
+        "skipped": [
+          "Source and committed Sequence audition use injected typed delivery updates, with real descriptor preparation and project writes. This replay does not prepare PCM, open an output device, establish acoustic quality or certify speech absence.",
+          "OS picker behavior: only its selected path is scripted",
+          "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+        ]
+      },
+      {
+        "checks": 290,
+        "findings": [],
+        "name": "gain",
+        "skipped": [
+          "Gain uses real qualified source evidence, writer previews, durable commands and canonical PCM for measured waveforms. Comparison audio delivery and labelled waveform failure replies are injected; this replay does not open an audio device or establish acoustic quality. Canonical Before/Draft mix and scheduling qualification belong to playback tests.",
+          "OS picker behavior: only its selected path is scripted",
+          "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+        ]
+      },
+      {
+        "checks": 15,
+        "findings": [],
+        "name": "retime",
+        "skipped": [
+          "OS picker behavior: only its selected path is scripted",
+          "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+        ]
+      },
+      {
+        "checks": 70,
+        "findings": [],
+        "name": "render",
+        "skipped": [
+          "OS picker behavior: only its selected path is scripted",
+          "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+        ]
+      },
+      {
+        "checks": 0,
+        "findings": [],
+        "name": "generated-picture",
+        "skipped": [
+          "Requires explicit --scenario generated-picture --project and the real bundle qualification fixture; ordinary replay does not fabricate accepted evidence."
+        ]
+      }
+    ]
+  },
+  "remaining": [
+    "authenticated open-project host routing",
+    "native persisted-job recovery",
+    "full mastering/effects",
+    "HDR",
+    "expanded content/runtime qualification",
+    "release qualification"
+  ],
+  "render_replay": {
+    "checks": 71,
+    "failed": false,
+    "findings": [
+      {
+        "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+        "severity": "warning"
+      }
+    ],
+    "journal": "ui-render-final",
+    "output": "/private/tmp/deadpan-public-render-20260930/ui-render-final",
+    "skipped": [
+      "OS picker behavior: only its selected path is scripted",
+      "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+    ]
+  },
+  "required_passing_checks": [
+    "workspace-clippy-final",
+    "workspace-tests",
+    "ui-tests",
+    "ui-clippy",
+    "ui-render-final",
+    "ui-release-build",
+    "ui-render-performance",
+    "native-smoke",
+    "format-final",
+    "independent-decode",
+    "public-workflow"
+  ],
+  "schema_version": 1,
+  "source_coverage": "source-coverage.json",
+  "workspace_tests": {
+    "failed": 0,
+    "ignored": 0,
+    "passed": 2463,
+    "result_groups": 172
+  }
+}

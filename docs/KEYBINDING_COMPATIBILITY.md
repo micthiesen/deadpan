@@ -42,6 +42,41 @@ paint and complete hit-target clips. Native CUA also verified gain boundary
 wrapping, keyboard envelope/key editing, field reveal, literal shortcut text and
 Escape cancellation without changing the saved project.
 
+## Render
+
+**`⌘E`** and **`:render`** open the native Render flow for the full committed
+edit. The shortcut uses exactly Command+E, clears pending prefixes, and does
+not repeat while held. Command+Shift+E, Command+Option+E, Control+Command+E and
+plain E do not dispatch Render. Native text fields and IME composition retain
+their input. The Render button remains available when a preview owns a field;
+the final field text is consumed before the preview proposal is captured.
+
+An unsaved Camera, Gain or Room tone preview opens a decision with **Commit
+preview and render**, **Discard preview and render**, and **Keep editing**.
+Escape chooses Keep editing outside active composition. Tab navigation and
+native button activation remain available. Cancelling the destination picker
+preserves the preview and creates no render job. Choosing Commit for a changed
+preview saves one typed edit, then starts Render from that exact commit receipt. A later render
+admission failure still reports the saved revision. A changed project session
+or revision rejects the captured choice instead of retargeting it.
+
+The production route lives in `Bindings::key` and the native command parser;
+the Camera, Gain and Room tone routers preserve their text and composition
+rules around it. The reservation audit therefore exercises the same route.
+The local Kestrel `Shortcuts.swift` was inspected for this change: its SHA-256
+is `368c01df72ae4fab2efa4d38b235b56c02251f8b895f7e6402c77f6a151723c2`, matching
+the checked fixture. It reserves Option+E for Ungroup and has no Command+E
+reservation. This source comparison is not a new routing-test or physical
+keyboard qualification result. The `render` production replay covers the
+shortcut, command entry, preview decisions, stale captures and export flow;
+its current run results are recorded separately.
+
+Automatic Render currently uses the SDR picture and audio path and rejects
+unsupported content. Closed-project headless Render supports retained-checkpoint
+retry, fresh encoding and publication reconciliation. Routing a headless request
+to an already-open native project, a native recovery browser, full mastering and
+HDR output remain open. See [headless Render](HEADLESS.md#automatic-render).
+
 ## Automated audit
 
 The UI feedback runner includes a shortcut audit. The standalone routing tests

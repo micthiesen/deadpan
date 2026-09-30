@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "request_id": "public-qualification-reencode",
+  "context": {
+    "project_id": "project-picture-qualification",
+    "revision_id": "workflow-live-restored"
+  },
+  "operation": {
+    "operation": "reencode",
+    "job_id": "f777c6b6-5009-4220-8301-2597f02f12ac",
+    "destination": "/tmp/deadpan-public-render-20260930/public-movies/reencoded.mp4"
+  }
+}

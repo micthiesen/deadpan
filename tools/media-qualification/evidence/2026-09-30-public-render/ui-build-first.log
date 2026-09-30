@@ -1,0 +1,56 @@
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+   Compiling deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+   Compiling deadpan-encode v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-encode)
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+   Compiling deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+error[E0433]: cannot find module or crate `deadpan_jobs` in this scope
+   --> crates/deadpan-app/src/preview/harness/render.rs:335:39
+    |
+335 | fn jobs(d: &Driver<'_>) -> Result<Vec<deadpan_jobs::render::RenderIntent>, String> {
+    |                                       ^^^^^^^^^^^^ use of unresolved module or unlinked crate `deadpan_jobs`
+    |
+help: there is a crate or module with a similar name
+    |
+335 - fn jobs(d: &Driver<'_>) -> Result<Vec<deadpan_jobs::render::RenderIntent>, String> {
+335 + fn jobs(d: &Driver<'_>) -> Result<Vec<deadpan_core::render::RenderIntent>, String> {
+    |
+
+error[E0277]: the trait bound `ContentIdentity: serde::Serialize` is not satisfied
+   --> crates/deadpan-app/src/preview/harness/render.rs:155:9
+    |
+155 |         json!({"revision":revision,"jobs":0,"proposal":proposal}),
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |         |
+    |         the trait `Serialize` is not implemented for `ContentIdentity`
+    |         required by a bound introduced by this call
+    |
+    = note: for local types consider adding `#[derive(serde::Serialize)]` to your `ContentIdentity` type
+    = note: for types from other crates check whether the crate offers a `serde` feature flag
+    = help: the following other types implement trait `Serialize`:
+              &'a T
+              &'a mut T
+              ()
+              (T,)
+              (T0, T1)
+              (T0, T1, T2)
+              (T0, T1, T2, T3)
+              (T0, T1, T2, T3, T4)
+            and 606 others
+    = note: required for `&ContentIdentity` to implement `Serialize`
+note: required by a bound in `to_value`
+   --> /Users/michael/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json-1.0.151/src/value/mod.rs:997:8
+    |
+995 | pub fn to_value<T>(value: T) -> Result<Value, Error>
+    |        -------- required by a bound in this function
+996 | where
+997 |     T: Serialize,
+    |        ^^^^^^^^^ required by this bound in `to_value`
+    = note: this error originates in the macro `$crate::json_internal` which comes from the expansion of the macro `json` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+Some errors have detailed explanations: E0277, E0433.
+For more information about an error, try `rustc --explain E0277`.
+error: could not compile `deadpan-app` (bin "deadpan-app") due to 2 previous errors

@@ -57,7 +57,7 @@ Current crates:
 - `native/deadpan-media-worker`: process-isolated FFmpeg conversion and independent decode verification through bounded descriptor-only AVIO. Only the documented FFI call permits unsafe Rust. Requires the explicitly selected pinned LGPL FFmpeg development prefix.
 - `native/deadpan-encode`: bounded descriptor-only H.264/AAC MP4 encoder over composed I420 and canonical stereo PCM. Exact clocks, explicit hardware/software attempts, one shared deadline and restricted fast-start readback; no project, decoding, verification or publication ownership.
 - `native/deadpan-process`: checked worker/leader teardown and Darwin group-membership adapter; unsafe is denied except for its documented bounded libproc call. Higher layers continue to forbid unsafe.
-- `crates/deadpan-app`: native `egui`/`eframe` project workspace using Metal. One service owns the writable store, one import worker prepares media, and a separate bounded preview worker consumes immutable workspaces. Native dialogs, source registration, explicit insertion, history, current-depth Camera previews and limited Original/edit/sound audition with selection loops are implemented; full editing, mastered playback and export remain open.
+- `crates/deadpan-app`: native `egui`/`eframe` project workspace using Metal. One service owns the writable store, one import worker prepares media, and a separate bounded preview worker consumes immutable workspaces. Native dialogs, source registration, explicit insertion, history, current-depth Camera previews, limited Original/edit/sound audition and automatic SDR Render with explicit preview decisions are implemented. Full editing, mastered playback, complete export qualification and native render recovery remain open.
 - `crates/deadpan-cli`: versioned headless project/command API, reused by `deadpan-app --headless`.
 
 [Architecture](docs/ARCHITECTURE.md) records Section 24's full boundary map. Add crates only when an implemented responsibility needs isolation. Do not create empty crates or feature controls that pretend to work.
@@ -229,7 +229,9 @@ match the selected runtime. Missing or changed evidence invalidates selection;
 serialized fingerprints grant no live authority. This assumes trusted installed
 code and does not attest resident memory, OS frameworks or drivers. Preserve
 frozen `EncodeContract::new_v1` controls and historical manifest grammar; new
-defaults require a new policy identity. Durable automatic decisions remain open.
+defaults require a new policy identity. Database 42 retains the automatic policy
+and each original encoding attempt's decision; checkpoint retries and publication
+reconciliation preserve that decision while obtaining fresh verification.
 
 The [committed project picture boundary](docs/PROJECT_PICTURES.md) captures an
 explicit revision and nonempty half-open range through a read-only store.
@@ -297,8 +299,11 @@ lease through preflight, verification, publication and worker release. Persist
 cancellation before signaling; preserve a racing movie commit through journal
 failure. Unknown process cleanup cannot become Failed/Cancelled or release the
 writer. Close/switch/shutdown must pump reliable completions while the old writer
-is alive. Separate render status from editor command feedback. Public Render
-controls and public headless rendering remain open.
+is alive. Separate render status from editor command feedback. Native Render
+captures preview decisions after field input and uses the exact durable commit
+receipt. Closed-project headless Render owns its writer through cleanup; bounded
+output failures and signals request cancellation without bypassing drain. Native
+persisted-job recovery and authenticated open-project routing remain open.
 
 Database schema 42 stores core schema 33 and retains operational generation requests,
 plus an optional validated single-Original workflow profile. Use the dedicated

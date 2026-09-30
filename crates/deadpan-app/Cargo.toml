@@ -10,7 +10,7 @@ publish.workspace = true
 
 [features]
 # Developer-only whole-workspace replay. The shipped app does not include the runner.
-ui-harness = ["dep:deadpan-native-process", "dep:egui_kittest", "dep:image", "dep:serde", "dep:serde_json", "dep:tempfile"]
+ui-harness = ["dep:deadpan-native-process", "dep:deadpan-jobs", "dep:egui_kittest", "dep:image", "dep:serde", "dep:serde_json", "dep:tempfile"]
 
 [dependencies]
 eframe.workspace = true
@@ -25,6 +25,7 @@ deadpan-playback.workspace = true
 deadpan-output.workspace = true
 deadpan-source.workspace = true
 deadpan-native-process = { workspace = true, optional = true }
+deadpan-jobs = { workspace = true, optional = true }
 sha2.workspace = true
 rustix.workspace = true
 uuid.workspace = true

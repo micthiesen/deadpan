@@ -1,0 +1,377 @@
+#!/usr/bin/env python3
+"""Independently decode the two public Render movies without rebuilding readers.
+
+Run once with Python 3. Output is exclusive under decoded-public. The retained
+five-second adapters change fixture extent only; their fidelity, timestamp,
+format and trim checks are unchanged. No PCM alignment or gain adjustment.
+"""
+
+import hashlib
+import json
+import os
+from pathlib import Path
+import stat
+import sys
+import time
+import traceback
+
+sys.dont_write_bytecode = True
+REPO = Path('/Users/michael/Code/deadpan')
+WORK = Path('/tmp/deadpan-public-render-20260930')
+PRIOR = Path('/tmp/deadpan-durable-automatic-20260930')
+ADAPTERS = PRIOR / 'five-second-oracles'
+PRIOR_REPORT = PRIOR / 'decoded-automatic-cold/report.json'
+PRIOR_SHA256 = 'a50f9c2dfc00faa8cd84679829548f9ede20766f690af65c5c8ecc22eb846490'
+PUBLIC_REPORT = WORK / 'public-report.json'
+PUBLIC_SHA256 = 'd833e1d713eac4a9b7c06ca0a207ee1262e18954fd211fdc28ef64f36b12e902'
+OUTPUT = WORK / 'decoded-public'
+JSON_LIMIT = 32 * 1024 * 1024
+FILE_LIMIT = 512 * 1024 * 1024
+FRAMES, WIDTH, HEIGHT, SAMPLES = 128, 320, 180, 205005
+PICTURE_BYTES = FRAMES * WIDTH * HEIGHT * 3 // 2
+PCM_LIMIT = 240000 * 8
+
+
+def require(condition, detail):
+    if not condition:
+        raise ValueError(detail)
+
+
+def unique_object(pairs):
+    result = {}
+    for key, value in pairs:
+        require(key not in result, f'duplicate JSON key: {key}')
+        result[key] = value
+    return result
+
+
+def invalid_constant(value):
+    raise ValueError(f'nonfinite JSON constant: {value}')
+
+
+def parse_json(data):
+    return json.loads(data, object_pairs_hook=unique_object,
+                      parse_constant=invalid_constant)
+
+
+def file_identity(path, maximum, expected_bytes=None, collect=False):
+    """Bound bytes and regular-file extent before reading; reject changed reads."""
+    path = Path(path)
+    descriptor = os.open(path, os.O_RDONLY | os.O_NONBLOCK | os.O_NOFOLLOW | os.O_CLOEXEC)
+    with os.fdopen(descriptor, 'rb') as file:
+        before = os.fstat(file.fileno())
+        require(stat.S_ISREG(before.st_mode) and 0 < before.st_size <= maximum,
+                f'file type or extent exceeds admitted bound: {path}')
+        require(expected_bytes is None or before.st_size == expected_bytes,
+                f'file length differs from exact receipt/reference: {path}')
+        hasher, count, chunks = hashlib.sha256(), 0, []
+        while count <= maximum:
+            chunk = file.read(min(1024 * 1024, maximum + 1 - count))
+            if not chunk:
+                break
+            count += len(chunk)
+            hasher.update(chunk)
+            if collect:
+                chunks.append(chunk)
+        after = os.fstat(file.fileno())
+    stamp = lambda item: (item.st_dev, item.st_ino, item.st_size,
+                          item.st_mtime_ns, item.st_ctime_ns)
+    require(count == before.st_size and stamp(before) == stamp(after),
+            f'file changed during bounded read: {path}')
+    return ({'path': str(path), 'resolved': str(path.resolve()), 'bytes': count,
+             'sha256': hasher.hexdigest(), 'device': before.st_dev,
+             'inode': before.st_ino, 'mtime_ns': before.st_mtime_ns,
+             'ctime_ns': before.st_ctime_ns}, b''.join(chunks) if collect else None)
+
+
+def main():
+    # Never overwrite a failed observation or earlier decoded bytes.
+    OUTPUT.mkdir(mode=0o700)
+    report = {
+        'schema_version': 1, 'result': 'failed', 'commands': [], 'cases': [],
+        'assertions': [], 'process_faults': [], 'input_admission': [],
+        'scope': 'Two newly published public CLI movies against the unchanged '
+                 'canonical inputs for the exact same immutable document; full '
+                 'picture planes and authored PCM at observed PTS, no realignment',
+        'fixture_capacity': {'seconds': 5, 'samples': 240000,
+                             'actual_frames': FRAMES, 'actual_samples': SAMPLES,
+                             'fidelity_tolerances_changed': False,
+                             'format_pts_trim_rules_changed': False},
+        'limits': {'commands': 8, 'command_seconds': 120,
+                   'shared_seconds': 480, 'json_bytes': JSON_LIMIT,
+                   'picture_bytes_per_movie': PICTURE_BYTES,
+                   'pcm_bytes_per_reader': PCM_LIMIT},
+    }
+    tracked, load_paths = {}, {}
+    deadline = time.monotonic() + 480
+
+    def admit(path, expected=None, maximum=FILE_LIMIT, expected_bytes=None, collect=False):
+        identity, data = file_identity(path, maximum, expected_bytes, collect)
+        require(expected is None or identity['sha256'] == expected,
+                f'SHA-256 differs from retained evidence: {path}')
+        key = str(Path(path))
+        if key in tracked:
+            require(tracked[key]['identity'] == identity,
+                    f'previously admitted file identity changed: {path}')
+        else:
+            tracked[key] = {'identity': identity, 'maximum': maximum}
+            report['input_admission'].append(identity)
+        return identity, data
+
+    def read_json(path, expected=None):
+        identity, data = admit(path, expected, JSON_LIMIT, collect=True)
+        return parse_json(data), identity
+
+    try:
+        admit(Path(__file__), maximum=JSON_LIMIT)
+        previous, previous_identity = read_json(PRIOR_REPORT, PRIOR_SHA256)
+        public, public_identity = read_json(PUBLIC_REPORT, PUBLIC_SHA256)
+        report['prior_report'] = previous_identity
+        report['public_report'] = public_identity
+        require(previous['result'] == 'passed' and not previous['process_faults'],
+                'prior independent decoding did not pass cleanly')
+        require(public['result'] == 'passed', 'public CLI workflow did not pass')
+        prior_admission = {}
+        for row in previous['final_file_admission']:
+            require(row['passed'] is True, 'prior final admission contains failure')
+            if 'path' in row:
+                require(row['expected'] == row['actual'], 'prior hash mismatch')
+                key = str(Path(row['path']).resolve())
+                require(key not in prior_admission or prior_admission[key] == row['expected'],
+                        'conflicting prior file admission')
+                prior_admission[key] = row['expected']
+
+        def admit_prior(path, maximum=FILE_LIMIT, expected_bytes=None):
+            key = str(Path(path).resolve())
+            require(key in prior_admission, f'file lacks prior final admission: {path}')
+            return admit(path, prior_admission[key], maximum, expected_bytes)[0]
+
+        source = PRIOR / 'independent-cold-input.json'
+        admit_prior(source, JSON_LIMIT)
+        bound, _ = read_json(source)
+        require(bound['status'] == 'passed' and bound['cleanup_confirmed'] is True,
+                'canonical reference capture did not complete cleanly')
+        contract = bound['captured_contract']
+        require(bound['direct_inputs']['contract'] == contract
+                and bound['manifest']['contract']['picture'] == contract,
+                'canonical reference and retained manifest contracts differ')
+        require(contract['frame_count'] == FRAMES and contract['raster'] == [WIDTH, HEIGHT]
+                and contract['canvas'] == [WIDTH, HEIGHT]
+                and contract['frame_rate'] == {'numerator': 30000, 'denominator': 1001}
+                and contract['range'] == {'start': 0, 'end': FRAMES}
+                and contract['project_audio_start'] == 0
+                and contract['project_audio_end'] == SAMPLES,
+                'this bounded experiment requires the exact retained fixture')
+        document_hash = bound['manifest']['document_sha256']
+        pictures = Path(bound['direct_inputs']['picture_reference'])
+        audio = Path(bound['direct_inputs']['audio_reference'])
+        report['canonical_references'] = {
+            'document_sha256': document_hash, 'contract': contract,
+            'pictures': admit_prior(pictures, PICTURE_BYTES, PICTURE_BYTES),
+            'audio': admit_prior(audio, PCM_LIMIT, SAMPLES * 8),
+        }
+        admit(bound['durable_source_report'], bound['durable_source_sha256'], JSON_LIMIT)
+
+        # Check source bytes before importing any qualification code. Do not
+        # invoke prepare(), compile a reader, or execute the production helper.
+        for relative, expected in previous['source_sha256_at_start'].items():
+            admit(REPO / 'tools/media-qualification' / relative, expected, JSON_LIMIT)
+        for name in ('native_audio_oracle.py', 'project_encode_oracle.py',
+                     'avfoundation_probe.m', 'edits.json'):
+            admit_prior(ADAPTERS / name, JSON_LIMIT)
+        edits, _ = read_json(ADAPTERS / 'edits.json')
+        report['fixture_capacity']['retained_edits'] = edits
+        reader = previous['binary']
+        native_reader = previous['extended_avfoundation_reader']
+        report['readers'] = {
+            'ffmpeg': admit_prior(reader['path']),
+            'avfoundation': admit_prior(native_reader['path'], expected_bytes=native_reader['bytes']),
+        }
+        require(report['readers']['ffmpeg']['sha256'] == reader['sha256']
+                and report['readers']['avfoundation']['sha256'] == native_reader['sha256'],
+                'reader sections disagree with prior final admission')
+        admit(previous['build_report']['path'], previous['build_report']['sha256'], JSON_LIMIT)
+        for library in previous['libraries'].values():
+            admit_prior(library['path'])
+        for name, expected in previous['loaded_paths'].items():
+            require(str(Path(name).resolve()) == expected['resolved'],
+                    f'previously admitted library load path changed: {name}')
+            admit(expected['resolved'], expected['sha256'])
+            load_paths[name] = expected
+        report['loaded_paths'] = load_paths
+        report['reader_linkage_from_prior_admission'] = reader['linked_libraries']
+
+        sys.path.insert(0, str(REPO / 'tools/media-qualification/compatible'))
+        sys.path.insert(0, str(ADAPTERS))
+        from encoder_oracle import _Checks
+        from native_audio_oracle import _adapt
+        from project_encode_oracle import compare_pcm, compare_plane, ffmpeg_spans, inspect_video
+        from qualify_encoder import read_pcm
+        from qualify_native_encode import RangeCaseSpec
+        from recorded_harness import RecordedHarness
+
+        harness = RecordedHarness(OUTPUT, False)
+        harness.report = report
+        report['process_faults'] = harness.process_faults
+        removed = sorted(key for key in harness.environment if key.startswith(('DYLD_', 'LD_')))
+        for key in removed:
+            del harness.environment[key]
+        report['removed_loader_override_names'] = removed
+        expected_pcm = read_pcm(audio)
+        require(len(expected_pcm) == SAMPLES * 2, 'canonical PCM extent changed')
+        require(public['initial']['target']['attempt_id'] != public['cold']['target']['attempt_id']
+                and public['initial']['target']['cancellation_token'] != public['cold']['target']['cancellation_token'],
+                'initial and cold encoding did not use fresh identities')
+
+        def observe(command):
+            require(len(report['commands']) < 8, 'command count exceeds fixed experiment')
+            remaining = deadline - time.monotonic()
+            require(remaining > 0, 'shared independent decoding deadline expired')
+            result = harness.run(command, timeout=min(120, remaining))
+            require(not harness.process_faults, 'reader process fault invalidates observation')
+            return parse_json(result.stdout)
+
+        for name in ('initial', 'cold'):
+            case = {'name': name, 'result': 'failed', 'planes': [], 'pcm_comparisons': {}}
+            report['cases'].append(case)
+            try:
+                status = public[name]
+                require(status['stage'] == 'finished' and status['outcome'] == 'published'
+                        and status['cleanup_confirmed'] is True
+                        and status['observed_movie_commit'] is True
+                        and status['attempt_state'] == 'verified',
+                        f'{name}: workflow did not finish publication with confirmed cleanup')
+                receipt, target = status['receipt'], status['target']
+                movie = Path(receipt['movie'])
+                case['receipt'], case['target'] = receipt, target
+                case['movie'] = admit(movie, receipt['movie_sha256'], FILE_LIMIT,
+                                      receipt['movie_bytes'])[0]
+                report_path = Path(receipt['report'])
+                provenance_report, report_identity = read_json(report_path, receipt['report_sha256'])
+                require(report_identity['bytes'] == receipt['report_bytes'], 'published report length differs')
+                case['published_report'] = report_identity
+                require(provenance_report['publication_id'] == receipt['publication_id'] == status['publication_id']
+                        and provenance_report['movie_filename'] == movie.name
+                        and provenance_report['report_filename'] == report_path.name
+                        and provenance_report['destination_readback'] == {
+                            'bytes': receipt['movie_bytes'], 'sha256': receipt['movie_sha256']},
+                        'published receipt and report identities differ')
+                provenance = provenance_report['provenance']
+                manifest, verification = provenance['encoded_manifest'], provenance['verification']
+                intent, decision = provenance['render_intent'], provenance['encoding_decision']
+                for document_owner in (provenance, manifest, verification, intent, decision):
+                    require(document_owner['document_sha256'] == document_hash,
+                            'published document hash differs from canonical references')
+                require(manifest['contract'] == bound['manifest']['contract']
+                        and verification['contract'] == manifest['contract']
+                        and decision['output'] == contract,
+                        'published picture/encoding contract differs from canonical reference')
+                expected_context = {key: contract[key] for key in ('project_id', 'revision_id')}
+                require(status['context'] == expected_context
+                        and status['captured_revision'] == contract['revision_id']
+                        and all(owner[key] == contract[key] for owner in (provenance, intent)
+                                for key in ('project_id', 'revision_id', 'range')),
+                        'published project, revision or range differs from reference')
+                require(provenance['encoder_selection'] == decision['algorithm'] == 'automatic_sdr_v1'
+                        and intent['policy'] == {'schema_version': 1, 'selection': 'automatic',
+                                                'algorithm': 'automatic_sdr_v1'}
+                        and intent['job_id'] == decision['job_id'] == target['job_id']
+                        and decision['encoding_attempt_id'] == target['attempt_id'] == status['checkpoint_attempt_id'],
+                        'published encoding decision is not owned by this automatic attempt')
+                require(manifest['movie']['sha256'] == verification['movie_sha256'] == receipt['movie_sha256']
+                        and manifest['movie']['byte_length'] == verification['movie_bytes'] == receipt['movie_bytes']
+                        and verification['video_frames'] == FRAMES and verification['audio_samples'] == SAMPLES,
+                        'published movie evidence differs from the exact receipt')
+                case['binding'] = {'document_sha256': document_hash, 'contract': manifest['contract'],
+                                   'encoding_attempt_id': decision['encoding_attempt_id']}
+                spec = RangeCaseSpec(frame_count=FRAMES, fps_num=30000, fps_den=1001,
+                                     project_start=0, width=WIDTH, height=HEIGHT,
+                                     requested_b_frames=0 if manifest['contract']['choice']['b_frames'] == 'none' else 2)
+                picture_output = OUTPUT / f'{name}.i420'
+                video = observe([reader['path'], 'project-video', movie, picture_output])
+                video_check = inspect_video(spec, video)
+                case['video_checks'] = video_check
+                case['picture_artifact'] = admit(picture_output, maximum=PICTURE_BYTES,
+                                                expected_bytes=PICTURE_BYTES)[0]
+                require(video['decoded_bytes'] == PICTURE_BYTES, 'decoded picture byte report differs')
+                with picture_output.open('rb') as actual, pictures.open('rb') as reference:
+                    for ordinal in range(FRAMES):
+                        require(time.monotonic() < deadline, 'shared picture comparison deadline expired')
+                        for plane, count in (('Y', WIDTH * HEIGHT), ('Cb', WIDTH * HEIGHT // 4),
+                                             ('Cr', WIDTH * HEIGHT // 4)):
+                            case['planes'].append({'ordinal': ordinal, 'plane': plane,
+                                                   **compare_plane(actual.read(count), reference.read(count))})
+                    require(not actual.read(1) and not reference.read(1), 'picture input has trailing bytes')
+                for mode in ('ordinary', 'manual', 'avfoundation'):
+                    pcm_path = OUTPUT / f'{name}.{mode}.f32'
+                    command = ([native_reader['path'], movie, pcm_path] if mode == 'avfoundation'
+                               else [reader['path'], 'audio', movie, pcm_path, mode])
+                    observation = observe(command)
+                    artifact = admit(pcm_path, maximum=PCM_LIMIT)[0]
+                    pcm = read_pcm(pcm_path)
+                    if mode == 'avfoundation':
+                        checks = _Checks()
+                        spans, start, duration = _adapt(checks, observation, pcm)
+                        adapted = checks.result()
+                        case['avfoundation_checks'] = adapted
+                        require(adapted['passed'] and start == 0 and duration == SAMPLES,
+                                'AVFoundation format, trim or exact duration checks failed')
+                        require(observation['input_sha256'] == observation['final_input_sha256'] == receipt['movie_sha256'],
+                                'AVFoundation decoded another file identity')
+                    else:
+                        require(observation['stream_start_pts'] == 0
+                                and observation['time_base'] == [1, 48000]
+                                and observation['stream_duration'] == SAMPLES
+                                and observation['decoded_samples'] == len(pcm) // 2
+                                and observation['decoded_frames'] == len(observation['frames']),
+                                'FFmpeg audio endpoint or complete physical PCM accounting differs')
+                        spans = ffmpeg_spans(observation, pcm)
+                    case['pcm_comparisons'][mode] = {**compare_pcm(pcm, spans, expected_pcm),
+                                                      'artifact': artifact,
+                                                      'first_observed_sample': spans[0].start_sample,
+                                                      'last_observed_end': spans[-1].start_sample + spans[-1].sample_count}
+                require(video_check['passed'] and len(case['planes']) == FRAMES * 3
+                        and all(row['passed'] for row in case['planes']), 'complete picture comparison failed')
+                require(len(case['pcm_comparisons']) == 3
+                        and all(row['passed'] for row in case['pcm_comparisons'].values()),
+                        'full authored PCM comparison failed')
+                case['result'] = 'passed'
+            except Exception as error:
+                case['failure'] = str(error)
+                case['traceback'] = traceback.format_exc()
+        require(len(report['cases']) == 2 and all(case['result'] == 'passed' for case in report['cases']),
+                'one or more public movies failed independent comparison')
+        require(not report['process_faults'], 'reader process fault invalidates experiment')
+        require(time.monotonic() < deadline, 'shared independent comparison deadline expired')
+        report['result'] = 'passed'
+    except Exception as error:
+        report['failure'] = str(error)
+        report['traceback'] = traceback.format_exc()
+    finally:
+        final = []
+        for path, admission in tracked.items():
+            try:
+                actual, _ = file_identity(path, admission['maximum'])
+                final.append({'path': path, 'passed': actual == admission['identity'], 'actual': actual})
+            except Exception as error:
+                final.append({'path': path, 'passed': False, 'failure': str(error)})
+        for path, expected in load_paths.items():
+            final.append({'load_path': path,
+                          'passed': str(Path(path).resolve()) == expected['resolved']})
+        report['final_file_admission'] = final
+        if any(not row['passed'] for row in final):
+            report['result'] = 'failed'
+            report['final_admission_failure'] = 'input, source, reader, library or decoded bytes changed'
+        encoded = (json.dumps(report, indent=2, allow_nan=False) + '\n').encode()
+        require(len(encoded) <= JSON_LIMIT, 'small experiment report exceeds its bound')
+        with (OUTPUT / 'report.json').open('xb') as file:
+            file.write(encoded)
+        print(json.dumps({'result': report['result'], 'report': str(OUTPUT / 'report.json'),
+                          'cases': [{'name': case['name'], 'result': case['result'],
+                                     'failure': case.get('failure')} for case in report['cases']],
+                          'failure': report.get('failure')}))
+    return 0 if report['result'] == 'passed' else 1
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

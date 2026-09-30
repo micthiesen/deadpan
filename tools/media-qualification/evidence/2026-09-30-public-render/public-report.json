@@ -1,0 +1,400 @@
+{
+  "result": "passed",
+  "binary_sha256": "b1c84f08b9366d173866ca2269514f431d4b3206e2e67437e218cccdaecac56b",
+  "source": "/tmp/deadpan-durable-automatic-20260930/source-fixed.deadpan",
+  "package": "/tmp/deadpan-public-render-20260930/public.deadpan",
+  "source_copy_method": "immutable files copied; SQLite backup API for database",
+  "initial": {
+    "context": {
+      "project_id": "project-picture-qualification",
+      "revision_id": "workflow-live-restored"
+    },
+    "target": {
+      "job_id": "f777c6b6-5009-4220-8301-2597f02f12ac",
+      "attempt_id": "5f4bbc0d-d4ed-4f21-9f35-5eeab1bad0fb",
+      "cancellation_token": "e9b01bd4-4430-4332-b65c-2abfd223bd3c"
+    },
+    "stage": "finished",
+    "captured_revision": "workflow-live-restored",
+    "attempt_state": "verified",
+    "checkpoint_attempt_id": "5f4bbc0d-d4ed-4f21-9f35-5eeab1bad0fb",
+    "publication_id": "44e47d69-b9cf-4fdb-950d-e716af18fd90",
+    "progress": null,
+    "cancellation_requested": false,
+    "outcome": "published",
+    "diagnostic": null,
+    "journal_diagnostic": null,
+    "retained": {
+      "partial_movie": "/private/tmp/deadpan-public-render-20260930/public-movies/.deadpan-44e47d69-b9cf-4fdb-950d-e716af18fd90.movie.partial",
+      "partial_report": null,
+      "published_report": "/private/tmp/deadpan-public-render-20260930/public-movies/deadpan-render-44e47d69-b9cf-4fdb-950d-e716af18fd90.json"
+    },
+    "receipt": {
+      "publication_id": "44e47d69-b9cf-4fdb-950d-e716af18fd90",
+      "movie": "/private/tmp/deadpan-public-render-20260930/public-movies/initial.mp4",
+      "report": "/private/tmp/deadpan-public-render-20260930/public-movies/deadpan-render-44e47d69-b9cf-4fdb-950d-e716af18fd90.json",
+      "movie_sha256": "1f6ae19f14fee98f8d5c53a6de85ac5bca3e53f3d3e7bd61a521d2ed19256d08",
+      "movie_bytes": 32553,
+      "report_sha256": "1e23af6736887d4fedfb404ed21990c37e3e819daf90669b95ab054c1d5b6357",
+      "report_bytes": 32556,
+      "contains_generated_pictures": false
+    },
+    "observed_movie_commit": true,
+    "cleanup_confirmed": true
+  },
+  "retry": {
+    "context": {
+      "project_id": "project-picture-qualification",
+      "revision_id": "workflow-live-restored"
+    },
+    "target": {
+      "job_id": "f777c6b6-5009-4220-8301-2597f02f12ac",
+      "attempt_id": "9290c002-eca9-42b6-be07-ab47b09a9cad",
+      "cancellation_token": "fdcc9928-01dd-40d6-828d-5aca32845641"
+    },
+    "stage": "finished",
+    "captured_revision": "workflow-live-restored",
+    "attempt_state": "verified",
+    "checkpoint_attempt_id": "5f4bbc0d-d4ed-4f21-9f35-5eeab1bad0fb",
+    "publication_id": "cc237682-29d1-4bd4-9afe-897db420f705",
+    "progress": null,
+    "cancellation_requested": false,
+    "outcome": "published",
+    "diagnostic": null,
+    "journal_diagnostic": null,
+    "retained": {
+      "partial_movie": "/private/tmp/deadpan-public-render-20260930/public-movies/.deadpan-cc237682-29d1-4bd4-9afe-897db420f705.movie.partial",
+      "partial_report": null,
+      "published_report": "/private/tmp/deadpan-public-render-20260930/public-movies/deadpan-render-cc237682-29d1-4bd4-9afe-897db420f705.json"
+    },
+    "receipt": {
+      "publication_id": "cc237682-29d1-4bd4-9afe-897db420f705",
+      "movie": "/private/tmp/deadpan-public-render-20260930/public-movies/retry.mp4",
+      "report": "/private/tmp/deadpan-public-render-20260930/public-movies/deadpan-render-cc237682-29d1-4bd4-9afe-897db420f705.json",
+      "movie_sha256": "1f6ae19f14fee98f8d5c53a6de85ac5bca3e53f3d3e7bd61a521d2ed19256d08",
+      "movie_bytes": 32553,
+      "report_sha256": "00fc9555bfafbb6c7f8b91182ebf4f78530c175573b1a622c385e633251c8420",
+      "report_bytes": 32554,
+      "contains_generated_pictures": false
+    },
+    "observed_movie_commit": true,
+    "cleanup_confirmed": true
+  },
+  "reconciled": {
+    "context": {
+      "project_id": "project-picture-qualification",
+      "revision_id": "workflow-live-restored"
+    },
+    "target": {
+      "job_id": "f777c6b6-5009-4220-8301-2597f02f12ac",
+      "attempt_id": "d77d62ff-b80e-4d88-a3a3-78679c675a32",
+      "cancellation_token": "ccf6a0af-404a-4bf7-9870-cfd9ecddcc1d"
+    },
+    "stage": "finished",
+    "captured_revision": "workflow-live-restored",
+    "attempt_state": "verified",
+    "checkpoint_attempt_id": "5f4bbc0d-d4ed-4f21-9f35-5eeab1bad0fb",
+    "publication_id": "44e47d69-b9cf-4fdb-950d-e716af18fd90",
+    "progress": null,
+    "cancellation_requested": false,
+    "outcome": "published",
+    "diagnostic": null,
+    "journal_diagnostic": null,
+    "retained": {
+      "partial_movie": null,
+      "partial_report": null,
+      "published_report": null
+    },
+    "receipt": {
+      "publication_id": "44e47d69-b9cf-4fdb-950d-e716af18fd90",
+      "movie": "/private/tmp/deadpan-public-render-20260930/public-movies/initial.mp4",
+      "report": "/private/tmp/deadpan-public-render-20260930/public-movies/deadpan-render-44e47d69-b9cf-4fdb-950d-e716af18fd90.json",
+      "movie_sha256": "1f6ae19f14fee98f8d5c53a6de85ac5bca3e53f3d3e7bd61a521d2ed19256d08",
+      "movie_bytes": 32553,
+      "report_sha256": "1e23af6736887d4fedfb404ed21990c37e3e819daf90669b95ab054c1d5b6357",
+      "report_bytes": 32556,
+      "contains_generated_pictures": false
+    },
+    "observed_movie_commit": true,
+    "cleanup_confirmed": true
+  },
+  "cancelled": {
+    "context": {
+      "project_id": "project-picture-qualification",
+      "revision_id": "workflow-live-restored"
+    },
+    "target": {
+      "job_id": "03fead17-1e47-4b58-9089-6600a6bd39f9",
+      "attempt_id": "b09b8996-7962-4899-8829-3f51a4e93148",
+      "cancellation_token": "4ff443e9-03dd-453f-8203-8a25a90853a4"
+    },
+    "stage": "finished",
+    "captured_revision": "workflow-live-restored",
+    "attempt_state": "cancelled",
+    "checkpoint_attempt_id": null,
+    "publication_id": null,
+    "progress": null,
+    "cancellation_requested": true,
+    "outcome": "cancelled",
+    "diagnostic": {
+      "code": "render_stage_failed",
+      "detail": "Picture preparation was cancelled."
+    },
+    "journal_diagnostic": null,
+    "retained": {
+      "partial_movie": null,
+      "partial_report": null,
+      "published_report": null
+    },
+    "receipt": null,
+    "observed_movie_commit": false,
+    "cleanup_confirmed": true
+  },
+  "cold": {
+    "context": {
+      "project_id": "project-picture-qualification",
+      "revision_id": "workflow-live-restored"
+    },
+    "target": {
+      "job_id": "f777c6b6-5009-4220-8301-2597f02f12ac",
+      "attempt_id": "5b075be0-c5f8-47d2-8735-8fe2f018b157",
+      "cancellation_token": "5e0d62fa-997f-4c65-b62e-10f4035e28bf"
+    },
+    "stage": "finished",
+    "captured_revision": "workflow-live-restored",
+    "attempt_state": "verified",
+    "checkpoint_attempt_id": "5b075be0-c5f8-47d2-8735-8fe2f018b157",
+    "publication_id": "3112e38c-1a52-4d41-ac19-cd8a7819f4c0",
+    "progress": null,
+    "cancellation_requested": false,
+    "outcome": "published",
+    "diagnostic": null,
+    "journal_diagnostic": null,
+    "retained": {
+      "partial_movie": "/private/tmp/deadpan-public-render-20260930/public-movies/.deadpan-3112e38c-1a52-4d41-ac19-cd8a7819f4c0.movie.partial",
+      "partial_report": null,
+      "published_report": "/private/tmp/deadpan-public-render-20260930/public-movies/deadpan-render-3112e38c-1a52-4d41-ac19-cd8a7819f4c0.json"
+    },
+    "receipt": {
+      "publication_id": "3112e38c-1a52-4d41-ac19-cd8a7819f4c0",
+      "movie": "/private/tmp/deadpan-public-render-20260930/public-movies/reencoded.mp4",
+      "report": "/private/tmp/deadpan-public-render-20260930/public-movies/deadpan-render-3112e38c-1a52-4d41-ac19-cd8a7819f4c0.json",
+      "movie_sha256": "025bc405ceed8302a21348b34ba20d037cad94c59cb54c1a11c4e3b8ff9e0ea8",
+      "movie_bytes": 32553,
+      "report_sha256": "340933ea207e69796fd10877a2c26702483d78f969f7e895efe61f5d1cea6d4f",
+      "report_bytes": 32558,
+      "contains_generated_pictures": false
+    },
+    "observed_movie_commit": true,
+    "cleanup_confirmed": true
+  },
+  "unchanged_tables": {
+    "revisions": 24,
+    "history": 11,
+    "state": 1,
+    "redo": 1,
+    "hold_request_clocks": 0,
+    "generation_requests": 0,
+    "generation_attempts": 0,
+    "generation_candidate_receipts": 0,
+    "generation_bundle_receipts": 0,
+    "generation_attempt_heads": 0,
+    "original_media": 1,
+    "source_qualifications": 1,
+    "single_source": 0
+  },
+  "checks": [
+    {
+      "name": "public-start",
+      "command": [
+        "/Users/michael/Code/deadpan/target/debug/deadpan-app",
+        "--headless",
+        "render",
+        "/tmp/deadpan-public-render-20260930/public.deadpan",
+        "--output",
+        "/tmp/deadpan-public-render-20260930/public-movies",
+        "--name",
+        "initial.mp4"
+      ],
+      "exit_code": 0,
+      "seconds": 53.66625029174611,
+      "signal_sent": false,
+      "stages": [
+        "capturing",
+        "qualifying",
+        "encoding",
+        "verifying",
+        "preparing_publication",
+        "committing_report",
+        "committing_movie",
+        "releasing",
+        "finished"
+      ],
+      "stderr": ""
+    },
+    {
+      "name": "public-status",
+      "command": [
+        "/Users/michael/Code/deadpan/target/debug/deadpan-app",
+        "--headless",
+        "render",
+        "status",
+        "/tmp/deadpan-public-render-20260930/public.deadpan",
+        "--job",
+        "f777c6b6-5009-4220-8301-2597f02f12ac"
+      ],
+      "exit_code": 0,
+      "seconds": 0.0706835831515491,
+      "signal_sent": false,
+      "stages": [],
+      "stderr": ""
+    },
+    {
+      "name": "public-retry",
+      "command": [
+        "/Users/michael/Code/deadpan/target/debug/deadpan-app",
+        "--headless",
+        "render",
+        "retry",
+        "/tmp/deadpan-public-render-20260930/public.deadpan",
+        "--job",
+        "f777c6b6-5009-4220-8301-2597f02f12ac",
+        "--checkpoint",
+        "5f4bbc0d-d4ed-4f21-9f35-5eeab1bad0fb",
+        "--output",
+        "/tmp/deadpan-public-render-20260930/public-movies",
+        "--name",
+        "retry.mp4"
+      ],
+      "exit_code": 0,
+      "seconds": 0.6918928329832852,
+      "signal_sent": false,
+      "stages": [
+        "verifying",
+        "preparing_publication",
+        "committing_report",
+        "committing_movie",
+        "releasing",
+        "finished"
+      ],
+      "stderr": ""
+    },
+    {
+      "name": "public-reconcile",
+      "command": [
+        "/Users/michael/Code/deadpan/target/debug/deadpan-app",
+        "--headless",
+        "render",
+        "reconcile",
+        "/tmp/deadpan-public-render-20260930/public.deadpan",
+        "--publication",
+        "44e47d69-b9cf-4fdb-950d-e716af18fd90"
+      ],
+      "exit_code": 0,
+      "seconds": 0.5883322502486408,
+      "signal_sent": false,
+      "stages": [
+        "verifying",
+        "reconciling",
+        "releasing",
+        "finished"
+      ],
+      "stderr": ""
+    },
+    {
+      "name": "public-stale",
+      "command": [
+        "/Users/michael/Code/deadpan/target/debug/deadpan-app",
+        "--headless",
+        "render",
+        "/tmp/deadpan-public-render-20260930/public.deadpan",
+        "--output",
+        "/tmp/deadpan-public-render-20260930/public-movies",
+        "--expected",
+        "stale-public-request"
+      ],
+      "exit_code": 1,
+      "seconds": 0.0671328748576343,
+      "signal_sent": false,
+      "stages": [],
+      "stderr": "{\"error\":{\"code\":\"RenderRevisionChanged\",\"current_revision\":\"workflow-live-restored\",\"message\":\"The committed revision changed before render admission\"},\"schema_version\":1}\n"
+    },
+    {
+      "name": "public-collision",
+      "command": [
+        "/Users/michael/Code/deadpan/target/debug/deadpan-app",
+        "--headless",
+        "render",
+        "retry",
+        "/tmp/deadpan-public-render-20260930/public.deadpan",
+        "--job",
+        "f777c6b6-5009-4220-8301-2597f02f12ac",
+        "--checkpoint",
+        "5f4bbc0d-d4ed-4f21-9f35-5eeab1bad0fb",
+        "--output",
+        "/tmp/deadpan-public-render-20260930/public-movies",
+        "--name",
+        "initial.mp4"
+      ],
+      "exit_code": 1,
+      "seconds": 0.5859283329918981,
+      "signal_sent": false,
+      "stages": [
+        "verifying",
+        "preparing_publication",
+        "releasing",
+        "finished"
+      ],
+      "stderr": "{\"error\":{\"code\":\"RenderFailed\",\"current_revision\":null,\"message\":\"destination_exists: destination already exists: destination already exists\"},\"schema_version\":1}\n"
+    },
+    {
+      "name": "public-cancel",
+      "command": [
+        "/Users/michael/Code/deadpan/target/debug/deadpan-app",
+        "--headless",
+        "render",
+        "/tmp/deadpan-public-render-20260930/public.deadpan",
+        "--output",
+        "/tmp/deadpan-public-render-20260930/public-movies",
+        "--name",
+        "cancelled.mp4"
+      ],
+      "exit_code": 1,
+      "seconds": 0.277195957954973,
+      "signal_sent": true,
+      "stages": [
+        "capturing",
+        "qualifying",
+        "cancelling",
+        "releasing",
+        "finished"
+      ],
+      "stderr": "{\"error\":{\"code\":\"Cancelled\",\"current_revision\":null,\"message\":\"Render cancelled after owned work stopped\"},\"schema_version\":1}\n"
+    },
+    {
+      "name": "public-reencode",
+      "command": [
+        "/Users/michael/Code/deadpan/target/debug/deadpan-app",
+        "--headless",
+        "render",
+        "/tmp/deadpan-public-render-20260930/public.deadpan",
+        "--json",
+        "/tmp/deadpan-public-render-20260930/public-reencode-request.json"
+      ],
+      "exit_code": 0,
+      "seconds": 53.87805433291942,
+      "signal_sent": false,
+      "stages": [
+        "qualifying",
+        "encoding",
+        "verifying",
+        "preparing_publication",
+        "committing_report",
+        "committing_movie",
+        "releasing",
+        "finished"
+      ],
+      "stderr": ""
+    }
+  ]
+}

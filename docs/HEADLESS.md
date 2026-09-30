@@ -81,7 +81,7 @@ and `pitch`, retaining the ordinary Retime's child/input range. Both also have
 occurrence forms. The native `:retime` speed grammar resolves to these same
 commands. See [speed editing](RETIME_EDITING.md) for output-binding lifecycle.
 
-Documents use schema 33 in database schema 40. `set_sound` and `replace_sound`
+Documents use schema 33 in database schema 42. `set_sound` and `replace_sound`
 take an `id` and complete `event`; `delete_sound` takes its `id`.
 Events require a qualified source, root owner,
 natural-rate mapping, contained selection plus sample offset, explicit gain,
@@ -785,6 +785,124 @@ return `SourceBasisAdmissionUnavailable`; they must use the qualified host path.
 Committed canvas geometry reevaluates normalized framing through the shared
 [picture geometry](FRAMING.md). Native temporary canvas-edit previews remain open.
 
+## Automatic Render
+
+The public Render command exports the complete committed edit through the shared
+render coordinator. It captures one revision, qualifies an automatic SDR encoder,
+records that decision, encodes, independently verifies the complete file, and
+publishes the report and movie through the destination journal. It does not edit
+the project or add an undo entry. Unsupported picture or audio behavior fails
+explicitly. HDR and the remaining mastering graph are still open.
+
+```sh
+deadpan-cli render /path/edit.deadpan --output /path/Exports --name edit.mp4
+deadpan-app --headless render /path/edit.deadpan --output /path/Exports --expected REVISION_ID
+```
+
+`--output` must be an existing directory. `--name` is one `.mp4` filename;
+omitting it chooses `deadpan-UUID.mp4`. Existing destination files are never
+replaced. The current output path requires macOS and the qualified APFS
+publication boundary. It uses the running executable as its private worker;
+there is no public encoder, bitrate, helper-path or environment override.
+The pinned selection policy is `AutomaticSdrV1`. See
+[automatic admission](AUTOMATIC_ENCODER_ADMISSION.md),
+[encoded output](ENCODED_RENDER.md), and [publication](RENDER_PUBLICATION.md).
+
+This entrypoint currently owns a closed project's writer for the operation.
+If the native app or another process already owns it, Render returns
+`ProjectLocked`. Routing to an open application's service remains unimplemented.
+Opening an older writable package uses the backed-up migration below before
+admission. `--expected` rejects a changed current revision. Rendering never
+implicitly commits temporary Camera, gain, or room-tone previews in another app.
+
+### Structured requests and events
+
+`render PROJECT --json REQUEST.json` accepts a regular, nonsymlink file of at
+most 16 KiB. The request has a strict schema and rejects unknown fields. For
+example:
+
+```json
+{
+  "schema_version": 1,
+  "request_id": "request-unique-to-this-invocation",
+  "context": {
+    "project_id": "PROJECT_ID_FROM_DUMP",
+    "revision_id": "REVISION_ID_FROM_DUMP"
+  },
+  "operation": {
+    "operation": "start",
+    "destination": "/absolute/path/Exports/edit.mp4"
+  }
+}
+```
+
+The host generates new job, attempt, cancellation, and publication identities.
+The supplied `request_id` correlates this invocation's events; it does not yet
+provide cross-process deduplication. Convenience commands generate that ID too.
+Recovery operations accept exact existing job, checkpoint or publication IDs;
+they cannot supply an encoder policy or restore a serialized live capability.
+
+Stdout is JSON Lines: `admitted`, bounded `progress`, then `finished`, each with
+`schema_version: 1`, `request_id`, and a compact status. Status includes the
+captured revision, exact workflow target, stage, cancellation state, diagnostics,
+retained paths, cleanup evidence and final receipt when available. A separate
+`recovery_required` event reports unconfirmed worker cleanup. Errors use a
+schema-1 JSON object on stderr with `error.code`, `error.message`, and optional
+`error.current_revision`. Success exits zero only for confirmed publication;
+failure, cancellation and `PublishedUnconfirmed` exit nonzero after safe release.
+
+Each JSON record is limited to 256 KiB. Stdout uses nonblocking writes and a
+one-second backpressure budget; a failed output stream requests cancellation
+while the owner continues processing worker replies. Terminal and recovery events
+make one bounded stderr fallback attempt if stdout is unusable, preserving the
+same request, workflow, publication and cleanup observations. SIGINT or SIGTERM also
+requests cancellation, persists it before signaling work, and drains owned work
+before releasing the writer. If cleanup remains unconfirmed, the process retains
+the writer and recovery diagnostic. It cannot truthfully report cancellation or
+safe completion. A movie already committed before cancellation remains a
+published or `PublishedUnconfirmed` outcome.
+
+The public execution budget is 24 hours. A movie is bounded to 64 GiB, its retained
+manifest to 256 KiB, and the project's retained render namespace to 128 GiB and
+4,096 entries. Encoding and independent verification each admit at most 1,000,000
+packets; an encoded packet is bounded to 32 MiB. These are refusal limits, not
+disk reservations or promises that every input within them is supported. Existing
+native geometry, memory, media and teardown bounds still apply.
+
+### Status and explicit recovery
+
+```sh
+deadpan-cli render status /path/edit.deadpan
+deadpan-cli render status /path/edit.deadpan --job JOB_ID
+deadpan-cli render status /path/edit.deadpan --publications
+deadpan-cli render status /path/edit.deadpan --publication PUBLICATION_ID
+deadpan-cli render retry /path/edit.deadpan --job JOB_ID --checkpoint ENCODING_ATTEMPT_ID --output /path/Exports
+deadpan-cli render reencode /path/edit.deadpan --job JOB_ID --output /path/Exports
+deadpan-cli render reconcile /path/edit.deadpan --publication PUBLICATION_ID
+```
+
+Status is read-only and may run while another writer owns the package. It emits
+`stored_status` with `live_progress: false`; it neither recovers unfinished jobs
+nor treats saved verification as current authority. Collections contain at most
+eight items. Follow `page.next_after` with `--after ID` for jobs or publications,
+and `page.next_after_attempt` with `--after-attempt ORDINAL` for a job's attempts.
+A nonnull cursor may lead to an empty final page.
+
+`retry` freshly hashes and verifies the selected retained checkpoint and resolves
+the decision belonging to its original encoding attempt. `reencode` retains the
+job's original committed revision but performs fresh automatic qualification and
+encoding. `reconcile` re-verifies retained media and checks the exact recorded
+destination identities before completing its journal. It does not choose a new
+destination or adopt a same-byte replacement. Each operation allocates fresh
+attempt identities. Public recovery rejects historical engineering-policy jobs;
+their existing engineering APIs and evidence remain available.
+
+Cross-process `render cancel PROJECT --json REQUEST.json` has no transport yet
+and returns `RenderOwnerUnavailable`. Cancel a running headless invocation with
+SIGINT or SIGTERM. The shared adapter's live-owner cancellation API requires the
+exact job, attempt and cancellation token, so stale requests cannot cancel a
+later workflow.
+
 ## History and checkpoints
 
 ```sh
@@ -826,20 +944,24 @@ future-schema read-only inspection still needs a compatibility implementation.
 
 ## Schema migration
 
-Database schemas 1 through 39 return `MigrationRequired` when opened. Upgrade explicitly:
+Database schemas 1 through 41 return `MigrationRequired` when opened. Upgrade explicitly:
 
 ```sh
 cargo run --locked -p deadpan-cli -- project migrate /tmp/example.deadpan
 ```
 
 Migration holds the project writer lock, keeps a consistent SQLite backup under
-`Snapshots/before-schema-40-*.sqlite`, named for the destination schema, and upgrades a separate candidate. It
+`Snapshots/before-schema-42-*.sqlite`, named for the destination schema, and upgrades a separate candidate. It
 replays all commands, undo/redo revisions, and abandoned branches with their
 original revision IDs. Every snapshot and forward/inverse transaction is checked
 against its strict original schema meaning. Migration goes directly to database
-schema 40 and core document schema 33. Database 39 validates existing core-33
-history without rewriting authored JSON or patches, then adds empty operational
-[render job tables](RENDER_JOBS.md). Earlier schemas retain strict replay.
+schema 42 and core document schema 33. Database schemas 39 through 41 validate
+existing core-33 history without rewriting authored JSON or patches. Schema 39
+gains empty [render job tables](RENDER_JOBS.md); schemas below 41 gain publication
+tables. Schema 42 adds immutable automatic encoding decisions while preserving
+old attempts, checkpoints, publication records and engineering-only intent
+grammar. Migration invents no historical decisions. Earlier schemas retain
+strict replay.
 Database-38 replays frozen core 32,
 including direct/occurrence Hold audio setters, while rejecting modern node
 treatments and gain setters. Database-37 replays frozen core 31,

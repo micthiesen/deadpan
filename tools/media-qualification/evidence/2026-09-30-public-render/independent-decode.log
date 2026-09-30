@@ -1,0 +1,1 @@
+{"result": "passed", "report": "/tmp/deadpan-public-render-20260930/decoded-public/report.json", "cases": [{"name": "initial", "result": "passed", "failure": null}, {"name": "cold", "result": "passed", "failure": null}], "failure": null}

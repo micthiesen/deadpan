@@ -141,6 +141,322 @@ fn finished(service: &ProjectService) -> ProjectUpdate {
     })
 }
 
+fn preview_gain(trim: i32) -> ProjectEdit {
+    ProjectEdit::SetAudioTreatments {
+        node: node("a"),
+        treatments: deadpan_core::AudioTreatments::from_clip_gain(
+            deadpan_core::ClipGain::new(
+                deadpan_core::GainDb::new(trim).unwrap(),
+                false,
+                Vec::new(),
+                Vec::new(),
+            )
+            .unwrap(),
+        ),
+    }
+}
+
+fn commit_and_start(
+    workspace: &Workspace,
+    destination: &Path,
+    suffix: &str,
+    ticket: u64,
+    edit: ProjectEdit,
+) -> ProjectRenderRequest {
+    let mut render = start(workspace, destination, suffix, ticket);
+    let ProjectRenderOperation::Start { request, limits } = render.operation else {
+        unreachable!("start helper")
+    };
+    render.operation = ProjectRenderOperation::CommitAndStart {
+        edit: Box::new(edit),
+        cursor: ProjectFrame(4),
+        scope: SequenceScope::default(),
+        request,
+        limits,
+    };
+    render
+}
+
+#[test]
+fn preview_commit_renders_its_exact_receipt_and_busy_render_does_not_commit() {
+    let scratch = tempfile::tempdir().unwrap();
+    let harness = Harness::new();
+    let initial = opened(&harness, &scratch.path().join("preview-render.deadpan"));
+    pause(&harness, true);
+    let accepted = request(
+        &harness.service,
+        commit_and_start(&initial, scratch.path(), "preview", 1, preview_gain(-3000)),
+    );
+    assert!(outcome(&accepted).result.is_ok());
+    let revision = outcome(&accepted).committed_revision.clone().unwrap();
+    assert_ne!(&revision, initial.document.revision_id());
+    assert_eq!(accepted.committed.as_ref().unwrap().revision, revision);
+    assert_eq!(
+        accepted.committed.as_ref().unwrap().cursor,
+        Some(ProjectFrame(4))
+    );
+    let committed = accepted.workspace.unwrap();
+    assert_eq!(committed.document.revision_id(), &revision);
+    assert_eq!(
+        accepted.render.unwrap().workflow.unwrap().revision,
+        revision
+    );
+    let busy = request(
+        &harness.service,
+        commit_and_start(
+            &committed,
+            scratch.path(),
+            "busy-preview",
+            2,
+            preview_gain(-6000),
+        ),
+    );
+    assert_eq!(
+        outcome(&busy).result.as_ref().unwrap_err().code,
+        "RenderBusy"
+    );
+    assert!(outcome(&busy).committed_revision.is_none());
+    assert_eq!(*busy.workspace.unwrap().document, *committed.document);
+
+    // The render was admitted before this subsequent command could run, and
+    // later authored edits cannot replace its acknowledged revision.
+    let later = edited(&harness.service, &committed, preview_gain(-6000));
+    let later = later.workspace.unwrap();
+    cancel(&harness.service, &later, identity("preview"), 3);
+    pause(&harness, false);
+    let terminal = finished(&harness.service);
+    assert_eq!(
+        terminal
+            .render
+            .as_ref()
+            .unwrap()
+            .workflow
+            .as_ref()
+            .unwrap()
+            .revision,
+        revision
+    );
+    assert_eq!(*terminal.workspace.unwrap().document, *later.document);
+}
+
+#[test]
+fn preview_render_rejects_wrong_context_revision_scope_cursor_and_edit_without_commit() {
+    let scratch = tempfile::tempdir().unwrap();
+    let harness = Harness::new();
+    let initial = opened(&harness, &scratch.path().join("preview-rejections.deadpan"));
+    for (case, code) in [
+        ("ticket", "RenderInvalidRequest"),
+        ("session", "RenderContextChanged"),
+        ("project", "RenderContextChanged"),
+        ("revision", "RenderRevisionChanged"),
+        ("scope", "RenderPreviewCommitFailed"),
+        ("cursor", "RenderPreviewCommitFailed"),
+        ("node", "RenderPreviewCommitFailed"),
+        ("structural", "RenderInvalidRequest"),
+    ] {
+        let mut captured = commit_and_start(&initial, scratch.path(), case, 1, preview_gain(-3000));
+        match case {
+            "ticket" => captured.ticket = 0,
+            "session" => captured.context.session += 1,
+            "project" => captured.context.project = ProjectId::new("foreign").unwrap(),
+            _ => {
+                let ProjectRenderOperation::CommitAndStart {
+                    edit,
+                    cursor,
+                    scope,
+                    request,
+                    ..
+                } = &mut captured.operation
+                else {
+                    unreachable!()
+                };
+                match case {
+                    "revision" => request.revision = RevisionId::new("stale").unwrap(),
+                    "scope" => *scope = SequenceScope::test_path(vec![node("a")]),
+                    "cursor" => *cursor = ProjectFrame(11),
+                    "node" => {
+                        **edit = ProjectEdit::SetFraming {
+                            node: node("missing"),
+                            framing: None,
+                        }
+                    }
+                    "structural" => {
+                        **edit = ProjectEdit::Repeat {
+                            node: node("a"),
+                            plays: 3,
+                        }
+                    }
+                    _ => unreachable!(),
+                }
+            }
+        }
+        let rejected = request(&harness.service, captured);
+        assert_eq!(
+            outcome(&rejected).result.as_ref().unwrap_err().code,
+            code,
+            "{case}"
+        );
+        assert!(outcome(&rejected).committed_revision.is_none(), "{case}");
+        assert!(
+            rejected.render.as_ref().unwrap().workflow.is_none(),
+            "{case}"
+        );
+        assert_eq!(
+            *rejected.workspace.unwrap().document,
+            *initial.document,
+            "{case}"
+        );
+    }
+}
+
+#[test]
+fn unchanged_preview_cannot_reuse_an_earlier_commit_receipt() {
+    let scratch = tempfile::tempdir().unwrap();
+    let harness = Harness::new();
+    let initial = opened(&harness, &scratch.path().join("preview-unchanged.deadpan"));
+    let earlier = edited(&harness.service, &initial, preview_gain(-3000));
+    assert!(earlier.committed.is_some());
+    let current = earlier.workspace.unwrap();
+    let unchanged = request(
+        &harness.service,
+        commit_and_start(
+            &current,
+            scratch.path(),
+            "unchanged",
+            1,
+            preview_gain(-3000),
+        ),
+    );
+    assert_eq!(
+        outcome(&unchanged).result.as_ref().unwrap_err().code,
+        "RenderPreviewUnchanged"
+    );
+    assert!(outcome(&unchanged).committed_revision.is_none());
+    assert!(unchanged.committed.is_none());
+    assert!(unchanged.render.as_ref().unwrap().workflow.is_none());
+    assert_eq!(*unchanged.workspace.unwrap().document, *current.document);
+
+    for edit in [
+        ProjectEdit::SetFraming {
+            node: node("a"),
+            framing: None,
+        },
+        ProjectEdit::HoldAudio {
+            node: node("a"),
+            audio: HoldAudio::Silence,
+        },
+    ] {
+        let unchanged = request(
+            &harness.service,
+            commit_and_start(&current, scratch.path(), "unchanged-recipe", 3, edit),
+        );
+        assert_eq!(
+            outcome(&unchanged).result.as_ref().unwrap_err().code,
+            "RenderPreviewUnchanged"
+        );
+        assert!(outcome(&unchanged).committed_revision.is_none());
+        assert!(unchanged.render.as_ref().unwrap().workflow.is_none());
+        assert_eq!(*unchanged.workspace.unwrap().document, *current.document);
+    }
+
+    // A later error cannot manufacture a receipt from the matching target or
+    // from the already committed workspace either.
+    let mut invalid = commit_and_start(&current, scratch.path(), "invalid", 2, preview_gain(-6000));
+    if let ProjectRenderOperation::CommitAndStart { cursor, .. } = &mut invalid.operation {
+        *cursor = ProjectFrame(-1);
+    }
+    let rejected = request(&harness.service, invalid);
+    assert!(outcome(&rejected).committed_revision.is_none());
+    assert!(outcome(&rejected).result.is_err());
+    assert_eq!(*rejected.workspace.unwrap().document, *current.document);
+}
+
+#[test]
+fn render_admission_failure_reports_and_preserves_the_preview_commit() {
+    let scratch = tempfile::tempdir().unwrap();
+    let path = scratch.path().join("preview-admission-failure.deadpan");
+    let harness = Harness::new();
+    let initial = opened(&harness, &path);
+    let mut captured = commit_and_start(
+        &initial,
+        scratch.path(),
+        "bad-limits",
+        1,
+        preview_gain(-3000),
+    );
+    if let ProjectRenderOperation::CommitAndStart { limits, .. } = &mut captured.operation {
+        limits.verification.maximum_packets = 0;
+    }
+    let rejected = request(&harness.service, captured);
+    assert_eq!(
+        outcome(&rejected).result.as_ref().unwrap_err().code,
+        "RenderInvalidRequest"
+    );
+    let revision = outcome(&rejected).committed_revision.clone().unwrap();
+    let committed = rejected.workspace.unwrap();
+    assert_eq!(committed.document.revision_id(), &revision);
+    assert!(rejected.render.unwrap().workflow.is_none());
+    let reader = ProjectStore::open(&path, AccessMode::ReadOnly).unwrap();
+    assert_eq!(reader.snapshot().unwrap().revision_id(), &revision);
+    assert!(reader.render_job(&identity("bad-limits").job_id).is_err());
+    let undone = command(
+        &harness.service,
+        ProjectRequest::Undo {
+            expected_revision: revision,
+        },
+    );
+    assert_eq!(
+        undone.workspace.unwrap().document.nodes(),
+        initial.document.nodes()
+    );
+}
+
+#[test]
+fn refresh_failure_keeps_the_durable_preview_receipt_without_starting_render() {
+    let scratch = tempfile::tempdir().unwrap();
+    let path = scratch.path().join("preview-refresh-failure.deadpan");
+    let harness = Harness::new();
+    let initial = opened(&harness, &path);
+    harness
+        .service
+        .shared
+        .render_commit_refresh_failure
+        .store(true, Ordering::Release);
+    let rejected = request(
+        &harness.service,
+        commit_and_start(
+            &initial,
+            scratch.path(),
+            "refresh-failure",
+            1,
+            preview_gain(-3000),
+        ),
+    );
+    assert_eq!(
+        outcome(&rejected).result.as_ref().unwrap_err().code,
+        "RenderPreviewCommitFailed"
+    );
+    let revision = outcome(&rejected).committed_revision.clone().unwrap();
+    assert_ne!(&revision, initial.document.revision_id());
+    assert_eq!(rejected.committed.as_ref().unwrap().revision, revision);
+    // The old workspace deliberately failed to refresh. It is not used as the
+    // source of the acknowledged revision and no workflow was started from it.
+    assert_eq!(*rejected.workspace.unwrap().document, *initial.document);
+    assert!(rejected.render.unwrap().workflow.is_none());
+    let reader = ProjectStore::open(&path, AccessMode::ReadOnly).unwrap();
+    let durable = reader.snapshot().unwrap();
+    assert_eq!(durable.revision_id(), &revision);
+    assert_ne!(
+        durable.nodes()[&node("a")],
+        initial.document.nodes()[&node("a")]
+    );
+    assert!(
+        reader
+            .render_job(&identity("refresh-failure").job_id)
+            .is_err()
+    );
+}
+
 #[test]
 fn render_capture_pending_does_not_block_edits_or_retarget_its_revision() {
     let scratch = tempfile::tempdir().unwrap();

@@ -112,6 +112,7 @@ pub fn parse(input: &str) -> Result<Entry, String> {
         "new" => Action::New,
         "open" => Action::Open,
         "import" => Action::Import,
+        "render" => Action::Render,
         "source" | "sequence" | "help" | "room-tone" | "hold-silence" if argument.is_none() => {
             return Ok(match verb.as_str() {
                 "source" => Entry::Source,
@@ -390,6 +391,7 @@ mod tests {
             ("new", Entry::Action(Action::New)),
             ("open", Entry::Action(Action::Open)),
             ("import", Entry::Action(Action::Import)),
+            (":render", Entry::Action(Action::Render)),
             ("source", Entry::Source),
             ("sequence", Entry::Sequence),
             ("help", Entry::Help),

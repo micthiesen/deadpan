@@ -1,0 +1,13 @@
+{
+  "command": [
+    "python3",
+    "/tmp/deadpan-public-render-20260930/qualify-decoded.py"
+  ],
+  "started": "2026-09-30T13:29:38.245153+00:00",
+  "base_commit": "796b20d6b4da141929fdd47221c38c7fbb6796dd",
+  "diff_sha256": "61999714fab93f78a04d8f41dfa411f011303f7bd61e12e4149dc6544b6cb130",
+  "source_manifest_sha256": "57301b9905d5fae7ed670bd765d3d024890c79b669cdcc5473b597e3acf25640",
+  "pid": 56730,
+  "exit_code": 0,
+  "seconds": 1.6877752910368145
+}

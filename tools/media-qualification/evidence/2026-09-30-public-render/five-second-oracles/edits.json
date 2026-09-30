@@ -1,0 +1,61 @@
+{
+  "scope": "Scratch-only five-second reference experiment. Production and repository oracle capacities remain unchanged.",
+  "maximum_seconds": 5,
+  "maximum_pcm_samples": 240000,
+  "files": [
+    {
+      "name": "native_audio_oracle.py",
+      "source_sha256": "457cd169ff3907b177834588ff28812b711394c17ef2298404a6e693fe658b01",
+      "edits": [
+        [
+          "MAX_SAMPLES = 192000",
+          "MAX_SAMPLES = 240000"
+        ],
+        [
+          "    if not 0 < asset_duration <= 4:",
+          "    if not 0 < asset_duration <= 5:"
+        ],
+        [
+          "native experiment asset duration must be positive and at most four seconds",
+          "native scratch experiment asset duration must be positive and at most five seconds"
+        ],
+        [
+          "native PCM exceeds the four-second stereo bound",
+          "native PCM exceeds the five-second scratch stereo bound"
+        ]
+      ]
+    },
+    {
+      "name": "project_encode_oracle.py",
+      "source_sha256": "cba2f70ec9130b8a14c462c81fa94f8c26043f3ccf8050a692aa1be293809448",
+      "edits": [
+        [
+          "    if not 0 < expected_count <= 192000 or len(spans) > 8192:",
+          "    if not 0 < expected_count <= 240000 or len(spans) > 8192:"
+        ],
+        [
+          "PCM fixture exceeds four seconds",
+          "PCM scratch fixture exceeds five seconds"
+        ]
+      ]
+    },
+    {
+      "name": "avfoundation_probe.m",
+      "source_sha256": "8188bc8b3d927b6bc1b4a63ee0f175e9a4dbf9a112af91a283087aa011d76613",
+      "edits": [
+        [
+          "    MaximumPCMFrames = 192000,",
+          "    MaximumPCMFrames = 240000,"
+        ],
+        [
+          "CMTimeCompare(duration, CMTimeMake(4, 1)) <= 0",
+          "CMTimeCompare(duration, CMTimeMake(5, 1)) <= 0"
+        ],
+        [
+          "fixture asset must have a precise positive duration no greater than four seconds",
+          "scratch fixture asset must have a precise positive duration no greater than five seconds"
+        ]
+      ]
+    }
+  ]
+}

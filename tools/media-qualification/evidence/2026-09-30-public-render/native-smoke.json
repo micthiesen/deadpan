@@ -1,0 +1,13 @@
+{
+  "command": [
+    "target/debug/deadpan-app",
+    "--smoke-test"
+  ],
+  "started": "2026-09-30T14:00:54.587579+00:00",
+  "base_commit": "796b20d6b4da141929fdd47221c38c7fbb6796dd",
+  "diff_sha256": "322da416c52f8439645e2fa93e494c018df2199992f30479223c1794149eb751",
+  "source_manifest_sha256": "9e2a4f8e6e1c532d817c1d9cc2802000743d3be56801f88a0c529cd055e28d1d",
+  "pid": 62274,
+  "exit_code": 0,
+  "seconds": 0.29699945775792
+}

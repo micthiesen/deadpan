@@ -146,6 +146,32 @@ impl Draft {
 }
 
 impl DeadpanApp {
+    pub(super) fn gain_render_edit(&self) -> Result<Option<super::render::PreviewEdit>, String> {
+        let draft = self
+            .gain
+            .as_ref()
+            .ok_or("Gain preview is no longer open.")?;
+        self.check_gain_target(&draft.target)?;
+        if draft.applying || draft.prepared.is_none() || !draft.controls.ready(&draft.edit) {
+            return Err(draft.error.clone().unwrap_or_else(|| {
+                "Finish and prepare the Gain preview before committing it.".into()
+            }));
+        }
+        if draft.target.entry == *draft.edit.recipe() {
+            return Ok(None);
+        }
+        Ok(Some(super::render::PreviewEdit {
+            session: draft.target.session,
+            revision: draft.target.revision.clone(),
+            cursor: draft.target.cursor,
+            scope: draft.target.scope.clone(),
+            edit: ProjectEdit::SetAudioTreatments {
+                node: draft.target.node.clone(),
+                treatments: draft.edit.recipe().clone(),
+            },
+        }))
+    }
+
     pub(super) fn capture_gain_target(&self) -> Result<Target, String> {
         if self.view != View::Sequence
             || matches!(self.pane, Pane::Sources | Pane::Sounds)
@@ -427,7 +453,7 @@ impl DeadpanApp {
         }
     }
 
-    fn close_gain(&mut self, context: &egui::Context) {
+    pub(super) fn close_gain(&mut self, context: &egui::Context) {
         self.stop_playback();
         self.cancel_gain_waveform();
         if let Some(draft) = self.gain.take()
@@ -516,6 +542,19 @@ impl DeadpanApp {
             }
             if repeat {
                 continue;
+            }
+            if Bindings::default().key(
+                key,
+                modifiers,
+                controls::Controls::text_focused(context),
+                false,
+            ) == Some(Action::Render)
+            {
+                self.render.requested = true;
+                context.input_mut(|input| {
+                    input.consume_key(modifiers, key);
+                });
+                break;
             }
             let action = navigation::gain::route_key(
                 key,

@@ -16,6 +16,7 @@ mod generated_picture;
 mod moment;
 mod nested_pause;
 mod original_playback;
+mod render;
 mod repeat_input;
 mod retime;
 mod room_tone;

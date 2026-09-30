@@ -1,0 +1,194 @@
+[
+  {
+    "name": "public-start",
+    "command": [
+      "/Users/michael/Code/deadpan/target/debug/deadpan-app",
+      "--headless",
+      "render",
+      "/tmp/deadpan-public-render-20260930/public.deadpan",
+      "--output",
+      "/tmp/deadpan-public-render-20260930/public-movies",
+      "--name",
+      "initial.mp4"
+    ],
+    "exit_code": 0,
+    "seconds": 53.66625029174611,
+    "signal_sent": false,
+    "stages": [
+      "capturing",
+      "qualifying",
+      "encoding",
+      "verifying",
+      "preparing_publication",
+      "committing_report",
+      "committing_movie",
+      "releasing",
+      "finished"
+    ],
+    "stderr": ""
+  },
+  {
+    "name": "public-status",
+    "command": [
+      "/Users/michael/Code/deadpan/target/debug/deadpan-app",
+      "--headless",
+      "render",
+      "status",
+      "/tmp/deadpan-public-render-20260930/public.deadpan",
+      "--job",
+      "f777c6b6-5009-4220-8301-2597f02f12ac"
+    ],
+    "exit_code": 0,
+    "seconds": 0.0706835831515491,
+    "signal_sent": false,
+    "stages": [],
+    "stderr": ""
+  },
+  {
+    "name": "public-retry",
+    "command": [
+      "/Users/michael/Code/deadpan/target/debug/deadpan-app",
+      "--headless",
+      "render",
+      "retry",
+      "/tmp/deadpan-public-render-20260930/public.deadpan",
+      "--job",
+      "f777c6b6-5009-4220-8301-2597f02f12ac",
+      "--checkpoint",
+      "5f4bbc0d-d4ed-4f21-9f35-5eeab1bad0fb",
+      "--output",
+      "/tmp/deadpan-public-render-20260930/public-movies",
+      "--name",
+      "retry.mp4"
+    ],
+    "exit_code": 0,
+    "seconds": 0.6918928329832852,
+    "signal_sent": false,
+    "stages": [
+      "verifying",
+      "preparing_publication",
+      "committing_report",
+      "committing_movie",
+      "releasing",
+      "finished"
+    ],
+    "stderr": ""
+  },
+  {
+    "name": "public-reconcile",
+    "command": [
+      "/Users/michael/Code/deadpan/target/debug/deadpan-app",
+      "--headless",
+      "render",
+      "reconcile",
+      "/tmp/deadpan-public-render-20260930/public.deadpan",
+      "--publication",
+      "44e47d69-b9cf-4fdb-950d-e716af18fd90"
+    ],
+    "exit_code": 0,
+    "seconds": 0.5883322502486408,
+    "signal_sent": false,
+    "stages": [
+      "verifying",
+      "reconciling",
+      "releasing",
+      "finished"
+    ],
+    "stderr": ""
+  },
+  {
+    "name": "public-stale",
+    "command": [
+      "/Users/michael/Code/deadpan/target/debug/deadpan-app",
+      "--headless",
+      "render",
+      "/tmp/deadpan-public-render-20260930/public.deadpan",
+      "--output",
+      "/tmp/deadpan-public-render-20260930/public-movies",
+      "--expected",
+      "stale-public-request"
+    ],
+    "exit_code": 1,
+    "seconds": 0.0671328748576343,
+    "signal_sent": false,
+    "stages": [],
+    "stderr": "{\"error\":{\"code\":\"RenderRevisionChanged\",\"current_revision\":\"workflow-live-restored\",\"message\":\"The committed revision changed before render admission\"},\"schema_version\":1}\n"
+  },
+  {
+    "name": "public-collision",
+    "command": [
+      "/Users/michael/Code/deadpan/target/debug/deadpan-app",
+      "--headless",
+      "render",
+      "retry",
+      "/tmp/deadpan-public-render-20260930/public.deadpan",
+      "--job",
+      "f777c6b6-5009-4220-8301-2597f02f12ac",
+      "--checkpoint",
+      "5f4bbc0d-d4ed-4f21-9f35-5eeab1bad0fb",
+      "--output",
+      "/tmp/deadpan-public-render-20260930/public-movies",
+      "--name",
+      "initial.mp4"
+    ],
+    "exit_code": 1,
+    "seconds": 0.5859283329918981,
+    "signal_sent": false,
+    "stages": [
+      "verifying",
+      "preparing_publication",
+      "releasing",
+      "finished"
+    ],
+    "stderr": "{\"error\":{\"code\":\"RenderFailed\",\"current_revision\":null,\"message\":\"destination_exists: destination already exists: destination already exists\"},\"schema_version\":1}\n"
+  },
+  {
+    "name": "public-cancel",
+    "command": [
+      "/Users/michael/Code/deadpan/target/debug/deadpan-app",
+      "--headless",
+      "render",
+      "/tmp/deadpan-public-render-20260930/public.deadpan",
+      "--output",
+      "/tmp/deadpan-public-render-20260930/public-movies",
+      "--name",
+      "cancelled.mp4"
+    ],
+    "exit_code": 1,
+    "seconds": 0.277195957954973,
+    "signal_sent": true,
+    "stages": [
+      "capturing",
+      "qualifying",
+      "cancelling",
+      "releasing",
+      "finished"
+    ],
+    "stderr": "{\"error\":{\"code\":\"Cancelled\",\"current_revision\":null,\"message\":\"Render cancelled after owned work stopped\"},\"schema_version\":1}\n"
+  },
+  {
+    "name": "public-reencode",
+    "command": [
+      "/Users/michael/Code/deadpan/target/debug/deadpan-app",
+      "--headless",
+      "render",
+      "/tmp/deadpan-public-render-20260930/public.deadpan",
+      "--json",
+      "/tmp/deadpan-public-render-20260930/public-reencode-request.json"
+    ],
+    "exit_code": 0,
+    "seconds": 53.87805433291942,
+    "signal_sent": false,
+    "stages": [
+      "qualifying",
+      "encoding",
+      "verifying",
+      "preparing_publication",
+      "committing_report",
+      "committing_movie",
+      "releasing",
+      "finished"
+    ],
+    "stderr": ""
+  }
+]

@@ -21,6 +21,9 @@ pub fn report() -> Result<serde_json::Value, CliError> {
         "limited_pcm": "original-and-root-sound-bus-with-finite-oversampled-limiter-before-missing-voice-effects",
         "device_output": "macos-bounded-limited-sequence-audition",
         "sequence_audition": "immutable-revision-device-clock-pictures-exact-paused-sample-resume",
-        "unimplemented": ["mastered-preview-audio", "full-device-and-acoustic-qualification", "full-keyboard-editor", "analysis", "ai-generation", "youtube-import", "export", "distribution"],
+        "render": "automatic-sdr-committed-revision-macos-apfs",
+        "render_entrypoints": ["native-cmd-e-and-render-command", "closed-project-headless-render-and-recovery"],
+        "render_preview_choices": ["commit-and-render", "discard-and-render", "keep-editing"],
+        "unimplemented": ["mastered-preview-audio", "full-device-and-acoustic-qualification", "full-keyboard-editor", "analysis", "ai-generation", "youtube-import", "full-render-mastering", "hdr-render", "open-project-render-ipc", "native-render-recovery-browser", "distribution"],
     }))
 }

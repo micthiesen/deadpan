@@ -1,0 +1,5362 @@
+[
+  {
+    "scenario": "workspace",
+    "name": "ui_frame_cpu_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 5.539874999999999,
+        "n": 208,
+        "p50_ms": 0.13362500000000002,
+        "p95_ms": 0.5885830000000001,
+        "p99_ms": 0.899292
+      },
+      "failed": 0,
+      "samples": 208,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "workspace",
+    "name": "ui_composition_submit_cpu_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.6561670000000001,
+        "n": 208,
+        "p50_ms": 0.090125,
+        "p95_ms": 0.11837500000000001,
+        "p99_ms": 0.162375
+      },
+      "failed": 0,
+      "samples": 208,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "workspace",
+    "name": "ui_composition_complete_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 9.110042,
+        "n": 208,
+        "p50_ms": 0.334833,
+        "p95_ms": 0.829,
+        "p99_ms": 1.2357500000000001
+      },
+      "failed": 0,
+      "samples": 208,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "workspace",
+    "name": "input_to_state_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.899292,
+        "n": 32,
+        "p50_ms": 0.177458,
+        "p95_ms": 0.87475,
+        "p99_ms": 0.899292
+      },
+      "failed": 0,
+      "samples": 32,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "workspace",
+    "name": "input_to_commit_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 78.6745,
+        "n": 7,
+        "p50_ms": 4.576791999999999,
+        "p95_ms": 78.6745,
+        "p99_ms": 78.6745
+      },
+      "failed": 0,
+      "samples": 7,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "workspace",
+    "name": "request_to_decode_delivery_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 5.454458,
+        "n": 11,
+        "p50_ms": 0.7967920000000001,
+        "p95_ms": 5.454458,
+        "p99_ms": 5.454458
+      },
+      "failed": 0,
+      "samples": 11,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "workspace",
+    "name": "request_to_worker_start_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.007666000000000001,
+        "n": 11,
+        "p50_ms": 0.006083,
+        "p95_ms": 0.007666000000000001,
+        "p99_ms": 0.007666000000000001
+      },
+      "failed": 0,
+      "samples": 11,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "workspace",
+    "name": "worker_execution_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 4.91125,
+        "n": 11,
+        "p50_ms": 0.067375,
+        "p95_ms": 4.91125,
+        "p99_ms": 4.91125
+      },
+      "failed": 0,
+      "samples": 11,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "workspace",
+    "name": "worker_publication_delay_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.000125,
+        "n": 11,
+        "p50_ms": 4.1e-05,
+        "p95_ms": 0.000125,
+        "p99_ms": 0.000125
+      },
+      "failed": 0,
+      "samples": 11,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "workspace",
+    "name": "publication_to_decode_delivery_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 1.752,
+        "n": 11,
+        "p50_ms": 0.680625,
+        "p95_ms": 1.752,
+        "p99_ms": 1.752
+      },
+      "failed": 0,
+      "samples": 11,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "workspace",
+    "name": "request_to_picture_submission_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 5.930000000000001,
+        "n": 11,
+        "p50_ms": 0.976792,
+        "p95_ms": 5.930000000000001,
+        "p99_ms": 5.930000000000001
+      },
+      "failed": 0,
+      "samples": 11,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "workspace",
+    "name": "request_to_picture_complete_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 7.473291,
+        "n": 11,
+        "p50_ms": 1.403416,
+        "p95_ms": 7.473291,
+        "p99_ms": 7.473291
+      },
+      "failed": 0,
+      "samples": 11,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "workspace",
+    "name": "input_to_picture_complete_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 86.15329100000001,
+        "n": 11,
+        "p50_ms": 5.736042,
+        "p95_ms": 86.15329100000001,
+        "p99_ms": 86.15329100000001
+      },
+      "failed": 0,
+      "samples": 11,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "workspace",
+    "name": "Original initialized and displayed",
+    "summary": {
+      "completed": {
+        "max_ms": 85.661,
+        "n": 1,
+        "p50_ms": 85.661,
+        "p95_ms": 85.661,
+        "p99_ms": 85.661
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "workspace",
+    "name": "Project and picture settled",
+    "summary": {
+      "completed": {
+        "max_ms": 0.926792,
+        "n": 11,
+        "p50_ms": 0.633958,
+        "p95_ms": 0.926792,
+        "p99_ms": 0.926792
+      },
+      "failed": 0,
+      "samples": 11,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "workspace",
+    "name": "Committed revision changed",
+    "summary": {
+      "completed": {
+        "max_ms": 5.770583,
+        "n": 6,
+        "p50_ms": 4.706667,
+        "p95_ms": 5.770583,
+        "p99_ms": 5.770583
+      },
+      "failed": 0,
+      "samples": 6,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "editing",
+    "name": "ui_frame_cpu_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 3.136041,
+        "n": 267,
+        "p50_ms": 0.134542,
+        "p95_ms": 0.545834,
+        "p99_ms": 0.937666
+      },
+      "failed": 0,
+      "samples": 267,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "editing",
+    "name": "ui_composition_submit_cpu_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.22404200000000002,
+        "n": 267,
+        "p50_ms": 0.087667,
+        "p95_ms": 0.11325,
+        "p99_ms": 0.14075000000000001
+      },
+      "failed": 0,
+      "samples": 267,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "editing",
+    "name": "ui_composition_complete_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 8.277958,
+        "n": 267,
+        "p50_ms": 0.300042,
+        "p95_ms": 0.6017079999999999,
+        "p99_ms": 1.323292
+      },
+      "failed": 0,
+      "samples": 267,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "editing",
+    "name": "input_to_state_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.735917,
+        "n": 41,
+        "p50_ms": 0.20249999999999999,
+        "p95_ms": 0.676583,
+        "p99_ms": 0.735917
+      },
+      "failed": 0,
+      "samples": 41,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "editing",
+    "name": "input_to_commit_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 69.102834,
+        "n": 9,
+        "p50_ms": 4.51325,
+        "p95_ms": 69.102834,
+        "p99_ms": 69.102834
+      },
+      "failed": 0,
+      "samples": 9,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "editing",
+    "name": "request_to_decode_delivery_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 5.2379169999999995,
+        "n": 20,
+        "p50_ms": 0.591458,
+        "p95_ms": 1.486542,
+        "p99_ms": 5.2379169999999995
+      },
+      "failed": 0,
+      "samples": 20,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "editing",
+    "name": "request_to_worker_start_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.007333,
+        "n": 20,
+        "p50_ms": 0.004458,
+        "p95_ms": 0.007083,
+        "p99_ms": 0.007333
+      },
+      "failed": 0,
+      "samples": 20,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "editing",
+    "name": "worker_execution_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 4.832834,
+        "n": 20,
+        "p50_ms": 0.07004200000000001,
+        "p95_ms": 0.4415,
+        "p99_ms": 4.832834
+      },
+      "failed": 0,
+      "samples": 20,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "editing",
+    "name": "worker_publication_delay_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.000166,
+        "n": 20,
+        "p50_ms": 4.2e-05,
+        "p95_ms": 0.000125,
+        "p99_ms": 0.000166
+      },
+      "failed": 0,
+      "samples": 20,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "editing",
+    "name": "publication_to_decode_delivery_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 1.406667,
+        "n": 20,
+        "p50_ms": 0.465875,
+        "p95_ms": 1.232625,
+        "p99_ms": 1.406667
+      },
+      "failed": 0,
+      "samples": 20,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "editing",
+    "name": "request_to_picture_submission_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 5.5798749999999995,
+        "n": 20,
+        "p50_ms": 0.795959,
+        "p95_ms": 1.6806670000000001,
+        "p99_ms": 5.5798749999999995
+      },
+      "failed": 0,
+      "samples": 20,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "editing",
+    "name": "request_to_picture_complete_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 6.233,
+        "n": 20,
+        "p50_ms": 1.234042,
+        "p95_ms": 2.289167,
+        "p99_ms": 6.233
+      },
+      "failed": 0,
+      "samples": 20,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "editing",
+    "name": "input_to_picture_complete_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 75.339292,
+        "n": 14,
+        "p50_ms": 4.958375,
+        "p95_ms": 75.339292,
+        "p99_ms": 75.339292
+      },
+      "failed": 0,
+      "samples": 14,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "editing",
+    "name": "Original initialized and displayed",
+    "summary": {
+      "completed": {
+        "max_ms": 74.33904199999999,
+        "n": 1,
+        "p50_ms": 74.33904199999999,
+        "p95_ms": 74.33904199999999,
+        "p99_ms": 74.33904199999999
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "editing",
+    "name": "Project and picture settled",
+    "summary": {
+      "completed": {
+        "max_ms": 0.924834,
+        "n": 17,
+        "p50_ms": 0.6047910000000001,
+        "p95_ms": 0.924834,
+        "p99_ms": 0.924834
+      },
+      "failed": 0,
+      "samples": 17,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "editing",
+    "name": "Committed revision changed",
+    "summary": {
+      "completed": {
+        "max_ms": 6.070625,
+        "n": 13,
+        "p50_ms": 4.750084,
+        "p95_ms": 6.070625,
+        "p99_ms": 6.070625
+      },
+      "failed": 0,
+      "samples": 13,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "editing",
+    "name": "Exact pause is selected",
+    "summary": {
+      "completed": {
+        "max_ms": 3.489041,
+        "n": 1,
+        "p50_ms": 3.489041,
+        "p95_ms": 3.489041,
+        "p99_ms": 3.489041
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "camera",
+    "name": "ui_frame_cpu_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 3.067542,
+        "n": 119,
+        "p50_ms": 0.065292,
+        "p95_ms": 0.616583,
+        "p99_ms": 1.178625
+      },
+      "failed": 0,
+      "samples": 119,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "camera",
+    "name": "ui_composition_submit_cpu_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.227666,
+        "n": 119,
+        "p50_ms": 0.059167,
+        "p95_ms": 0.11699999999999999,
+        "p99_ms": 0.182834
+      },
+      "failed": 0,
+      "samples": 119,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "camera",
+    "name": "ui_composition_complete_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 8.403958,
+        "n": 119,
+        "p50_ms": 0.330042,
+        "p95_ms": 0.8063750000000001,
+        "p99_ms": 1.612917
+      },
+      "failed": 0,
+      "samples": 119,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "camera",
+    "name": "input_to_state_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 1.178625,
+        "n": 17,
+        "p50_ms": 0.16858399999999998,
+        "p95_ms": 1.178625,
+        "p99_ms": 1.178625
+      },
+      "failed": 0,
+      "samples": 17,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "camera",
+    "name": "input_to_commit_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 64.92375,
+        "n": 2,
+        "p50_ms": 5.034000000000001,
+        "p95_ms": 64.92375,
+        "p99_ms": 64.92375
+      },
+      "failed": 0,
+      "samples": 2,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "camera",
+    "name": "request_to_decode_delivery_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 5.056749999999999,
+        "n": 2,
+        "p50_ms": 1.001833,
+        "p95_ms": 5.056749999999999,
+        "p99_ms": 5.056749999999999
+      },
+      "failed": 0,
+      "samples": 2,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "camera",
+    "name": "request_to_worker_start_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.007375,
+        "n": 2,
+        "p50_ms": 0.006625,
+        "p95_ms": 0.007375,
+        "p99_ms": 0.007375
+      },
+      "failed": 0,
+      "samples": 2,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "camera",
+    "name": "worker_execution_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 4.740292,
+        "n": 2,
+        "p50_ms": 0.07241600000000001,
+        "p95_ms": 4.740292,
+        "p99_ms": 4.740292
+      },
+      "failed": 0,
+      "samples": 2,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "camera",
+    "name": "worker_publication_delay_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 8.3e-05,
+        "n": 2,
+        "p50_ms": 4.2e-05,
+        "p95_ms": 8.3e-05,
+        "p99_ms": 8.3e-05
+      },
+      "failed": 0,
+      "samples": 2,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "camera",
+    "name": "publication_to_decode_delivery_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.92275,
+        "n": 2,
+        "p50_ms": 0.309,
+        "p95_ms": 0.92275,
+        "p99_ms": 0.92275
+      },
+      "failed": 0,
+      "samples": 2,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "camera",
+    "name": "request_to_picture_submission_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 5.377792,
+        "n": 2,
+        "p50_ms": 1.1557080000000002,
+        "p95_ms": 5.377792,
+        "p99_ms": 5.377792
+      },
+      "failed": 0,
+      "samples": 2,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "camera",
+    "name": "request_to_picture_complete_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 6.027792,
+        "n": 2,
+        "p50_ms": 1.492208,
+        "p95_ms": 6.027792,
+        "p99_ms": 6.027792
+      },
+      "failed": 0,
+      "samples": 2,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "camera",
+    "name": "input_to_picture_complete_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 70.954125,
+        "n": 2,
+        "p50_ms": 6.529042,
+        "p95_ms": 70.954125,
+        "p99_ms": 70.954125
+      },
+      "failed": 0,
+      "samples": 2,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "camera",
+    "name": "Original initialized and displayed",
+    "summary": {
+      "completed": {
+        "max_ms": 70.580459,
+        "n": 1,
+        "p50_ms": 70.580459,
+        "p95_ms": 70.580459,
+        "p99_ms": 70.580459
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "camera",
+    "name": "Project and picture settled",
+    "summary": {
+      "completed": {
+        "max_ms": 0.511875,
+        "n": 4,
+        "p50_ms": 4.2e-05,
+        "p95_ms": 0.511875,
+        "p99_ms": 0.511875
+      },
+      "failed": 0,
+      "samples": 4,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "camera",
+    "name": "Camera opens on the displayed picture",
+    "summary": {
+      "completed": {
+        "max_ms": 4.2e-05,
+        "n": 1,
+        "p50_ms": 4.2e-05,
+        "p95_ms": 4.2e-05,
+        "p99_ms": 4.2e-05
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "camera",
+    "name": "Camera opens again",
+    "summary": {
+      "completed": {
+        "max_ms": 0.0,
+        "n": 1,
+        "p50_ms": 0.0,
+        "p95_ms": 0.0,
+        "p99_ms": 0.0
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "camera",
+    "name": "Committed revision changed",
+    "summary": {
+      "completed": {
+        "max_ms": 5.480375,
+        "n": 1,
+        "p50_ms": 5.480375,
+        "p95_ms": 5.480375,
+        "p99_ms": 5.480375
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "menus",
+    "name": "ui_frame_cpu_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 3.525458,
+        "n": 149,
+        "p50_ms": 0.136291,
+        "p95_ms": 0.587,
+        "p99_ms": 2.986583
+      },
+      "failed": 0,
+      "samples": 149,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "menus",
+    "name": "ui_composition_submit_cpu_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.239667,
+        "n": 149,
+        "p50_ms": 0.075167,
+        "p95_ms": 0.13341699999999998,
+        "p99_ms": 0.206291
+      },
+      "failed": 0,
+      "samples": 149,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "menus",
+    "name": "ui_composition_complete_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 8.347375000000001,
+        "n": 149,
+        "p50_ms": 0.34691700000000003,
+        "p95_ms": 0.834583,
+        "p99_ms": 1.3671250000000001
+      },
+      "failed": 0,
+      "samples": 149,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "menus",
+    "name": "input_to_state_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 3.525458,
+        "n": 39,
+        "p50_ms": 0.308625,
+        "p95_ms": 0.740125,
+        "p99_ms": 3.525458
+      },
+      "failed": 0,
+      "samples": 39,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "menus",
+    "name": "input_to_commit_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 67.00833300000001,
+        "n": 1,
+        "p50_ms": 67.00833300000001,
+        "p95_ms": 67.00833300000001,
+        "p99_ms": 67.00833300000001
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "menus",
+    "name": "request_to_decode_delivery_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 4.934792000000001,
+        "n": 5,
+        "p50_ms": 0.778584,
+        "p95_ms": 4.934792000000001,
+        "p99_ms": 4.934792000000001
+      },
+      "failed": 0,
+      "samples": 5,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "menus",
+    "name": "request_to_worker_start_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.007333999999999999,
+        "n": 5,
+        "p50_ms": 0.006333,
+        "p95_ms": 0.007333999999999999,
+        "p99_ms": 0.007333999999999999
+      },
+      "failed": 0,
+      "samples": 5,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "menus",
+    "name": "worker_execution_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 4.8925410000000005,
+        "n": 5,
+        "p50_ms": 0.06791699999999999,
+        "p95_ms": 4.8925410000000005,
+        "p99_ms": 4.8925410000000005
+      },
+      "failed": 0,
+      "samples": 5,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "menus",
+    "name": "worker_publication_delay_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.000166,
+        "n": 5,
+        "p50_ms": 4.1e-05,
+        "p95_ms": 0.000166,
+        "p99_ms": 0.000166
+      },
+      "failed": 0,
+      "samples": 5,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "menus",
+    "name": "publication_to_decode_delivery_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.827584,
+        "n": 5,
+        "p50_ms": 0.641875,
+        "p95_ms": 0.827584,
+        "p99_ms": 0.827584
+      },
+      "failed": 0,
+      "samples": 5,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "menus",
+    "name": "request_to_picture_submission_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 5.253667,
+        "n": 5,
+        "p50_ms": 0.963958,
+        "p95_ms": 5.253667,
+        "p99_ms": 5.253667
+      },
+      "failed": 0,
+      "samples": 5,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "menus",
+    "name": "request_to_picture_complete_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 6.299084,
+        "n": 5,
+        "p50_ms": 1.297709,
+        "p95_ms": 6.299084,
+        "p99_ms": 6.299084
+      },
+      "failed": 0,
+      "samples": 5,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "menus",
+    "name": "input_to_picture_complete_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 73.30987499999999,
+        "n": 5,
+        "p50_ms": 1.386834,
+        "p95_ms": 73.30987499999999,
+        "p99_ms": 73.30987499999999
+      },
+      "failed": 0,
+      "samples": 5,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "menus",
+    "name": "Original initialized and displayed",
+    "summary": {
+      "completed": {
+        "max_ms": 72.93554200000001,
+        "n": 1,
+        "p50_ms": 72.93554200000001,
+        "p95_ms": 72.93554200000001,
+        "p99_ms": 72.93554200000001
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "menus",
+    "name": "Project and picture settled",
+    "summary": {
+      "completed": {
+        "max_ms": 0.00025,
+        "n": 1,
+        "p50_ms": 0.00025,
+        "p95_ms": 0.00025,
+        "p99_ms": 0.00025
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "delayed-preview",
+    "name": "ui_frame_cpu_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 2.9577090000000004,
+        "n": 108,
+        "p50_ms": 0.064166,
+        "p95_ms": 0.6409579999999999,
+        "p99_ms": 0.747625
+      },
+      "failed": 0,
+      "samples": 108,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "delayed-preview",
+    "name": "ui_composition_submit_cpu_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.25920899999999997,
+        "n": 108,
+        "p50_ms": 0.057083,
+        "p95_ms": 0.11670799999999999,
+        "p99_ms": 0.225792
+      },
+      "failed": 0,
+      "samples": 108,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "delayed-preview",
+    "name": "ui_composition_complete_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 8.461333999999999,
+        "n": 108,
+        "p50_ms": 0.34099999999999997,
+        "p95_ms": 1.104458,
+        "p99_ms": 1.587042
+      },
+      "failed": 0,
+      "samples": 108,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "delayed-preview",
+    "name": "input_to_state_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.7274579999999999,
+        "n": 15,
+        "p50_ms": 0.2855,
+        "p95_ms": 0.7274579999999999,
+        "p99_ms": 0.7274579999999999
+      },
+      "failed": 0,
+      "samples": 15,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "delayed-preview",
+    "name": "input_to_commit_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 64.67904100000001,
+        "n": 1,
+        "p50_ms": 64.67904100000001,
+        "p95_ms": 64.67904100000001,
+        "p99_ms": 64.67904100000001
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "delayed-preview",
+    "name": "request_to_decode_delivery_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 5.352250000000001,
+        "n": 3,
+        "p50_ms": 3.3308750000000003,
+        "p95_ms": 5.352250000000001,
+        "p99_ms": 5.352250000000001
+      },
+      "failed": 0,
+      "samples": 3,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "delayed-preview",
+    "name": "request_to_worker_start_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.007083,
+        "n": 3,
+        "p50_ms": 0.006792,
+        "p95_ms": 0.007083,
+        "p99_ms": 0.007083
+      },
+      "failed": 0,
+      "samples": 3,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "delayed-preview",
+    "name": "worker_execution_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 4.6356660000000005,
+        "n": 3,
+        "p50_ms": 0.10012499999999999,
+        "p95_ms": 4.6356660000000005,
+        "p99_ms": 4.6356660000000005
+      },
+      "failed": 0,
+      "samples": 3,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "delayed-preview",
+    "name": "worker_publication_delay_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 8.4e-05,
+        "n": 3,
+        "p50_ms": 4.2e-05,
+        "p95_ms": 8.4e-05,
+        "p99_ms": 8.4e-05
+      },
+      "failed": 0,
+      "samples": 3,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "delayed-preview",
+    "name": "publication_to_decode_delivery_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 3.2239590000000002,
+        "n": 3,
+        "p50_ms": 0.70975,
+        "p95_ms": 3.2239590000000002,
+        "p99_ms": 3.2239590000000002
+      },
+      "failed": 0,
+      "samples": 3,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "delayed-preview",
+    "name": "request_to_picture_submission_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 5.73125,
+        "n": 3,
+        "p50_ms": 3.492208,
+        "p95_ms": 5.73125,
+        "p99_ms": 5.73125
+      },
+      "failed": 0,
+      "samples": 3,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "delayed-preview",
+    "name": "request_to_picture_complete_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 7.578833,
+        "n": 3,
+        "p50_ms": 4.1010409999999995,
+        "p95_ms": 7.578833,
+        "p99_ms": 7.578833
+      },
+      "failed": 0,
+      "samples": 3,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "delayed-preview",
+    "name": "input_to_picture_complete_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 72.261291,
+        "n": 3,
+        "p50_ms": 4.10725,
+        "p95_ms": 72.261291,
+        "p99_ms": 72.261291
+      },
+      "failed": 0,
+      "samples": 3,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "delayed-preview",
+    "name": "Original initialized and displayed",
+    "summary": {
+      "completed": {
+        "max_ms": 71.80229200000001,
+        "n": 1,
+        "p50_ms": 71.80229200000001,
+        "p95_ms": 71.80229200000001,
+        "p99_ms": 71.80229200000001
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "delayed-preview",
+    "name": "Project and picture settled",
+    "summary": {
+      "completed": {
+        "max_ms": 0.786166,
+        "n": 3,
+        "p50_ms": 0.594375,
+        "p95_ms": 0.786166,
+        "p99_ms": 0.786166
+      },
+      "failed": 0,
+      "samples": 3,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "delayed-preview",
+    "name": "Real decoder result retained at controlled boundary",
+    "summary": {
+      "completed": {
+        "max_ms": 0.852917,
+        "n": 1,
+        "p50_ms": 0.852917,
+        "p95_ms": 0.852917,
+        "p99_ms": 0.852917
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "delayed-preview",
+    "name": "Decoder failure is visible",
+    "summary": {
+      "completed": {
+        "max_ms": 0.6745829999999999,
+        "n": 1,
+        "p50_ms": 0.6745829999999999,
+        "p95_ms": 0.6745829999999999,
+        "p99_ms": 0.6745829999999999
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "rapid-input",
+    "name": "ui_frame_cpu_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 3.072083,
+        "n": 871,
+        "p50_ms": 0.138834,
+        "p95_ms": 0.244167,
+        "p99_ms": 0.559625
+      },
+      "failed": 0,
+      "samples": 871,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "rapid-input",
+    "name": "ui_composition_submit_cpu_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.241917,
+        "n": 871,
+        "p50_ms": 0.087167,
+        "p95_ms": 0.106958,
+        "p99_ms": 0.12025
+      },
+      "failed": 0,
+      "samples": 871,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "rapid-input",
+    "name": "ui_composition_complete_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 8.336292,
+        "n": 871,
+        "p50_ms": 0.2875,
+        "p95_ms": 0.46599999999999997,
+        "p99_ms": 0.7925420000000001
+      },
+      "failed": 0,
+      "samples": 871,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "rapid-input",
+    "name": "input_to_state_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.6887920000000001,
+        "n": 193,
+        "p50_ms": 0.144959,
+        "p95_ms": 0.268416,
+        "p99_ms": 0.684583
+      },
+      "failed": 0,
+      "samples": 193,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "rapid-input",
+    "name": "input_to_commit_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 70.73899999999999,
+        "n": 14,
+        "p50_ms": 9.663875,
+        "p95_ms": 70.73899999999999,
+        "p99_ms": 70.73899999999999
+      },
+      "failed": 0,
+      "samples": 14,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "rapid-input",
+    "name": "request_to_decode_delivery_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 5.368708,
+        "n": 194,
+        "p50_ms": 0.5915,
+        "p95_ms": 0.956875,
+        "p99_ms": 1.750417
+      },
+      "failed": 0,
+      "samples": 194,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "rapid-input",
+    "name": "request_to_worker_start_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.008583,
+        "n": 194,
+        "p50_ms": 0.006583,
+        "p95_ms": 0.007084,
+        "p99_ms": 0.008124999999999999
+      },
+      "failed": 0,
+      "samples": 194,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "rapid-input",
+    "name": "worker_execution_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 4.848208,
+        "n": 194,
+        "p50_ms": 0.092333,
+        "p95_ms": 0.560292,
+        "p99_ms": 0.616458
+      },
+      "failed": 0,
+      "samples": 194,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "rapid-input",
+    "name": "worker_publication_delay_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.000167,
+        "n": 194,
+        "p50_ms": 4.2e-05,
+        "p95_ms": 0.000125,
+        "p99_ms": 0.000167
+      },
+      "failed": 0,
+      "samples": 194,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "rapid-input",
+    "name": "publication_to_decode_delivery_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 1.675125,
+        "n": 194,
+        "p50_ms": 0.352042,
+        "p95_ms": 0.6659590000000001,
+        "p99_ms": 1.083375
+      },
+      "failed": 0,
+      "samples": 194,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "rapid-input",
+    "name": "request_to_picture_submission_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 5.686625,
+        "n": 165,
+        "p50_ms": 0.736583,
+        "p95_ms": 1.178708,
+        "p99_ms": 1.9763340000000003
+      },
+      "failed": 0,
+      "samples": 165,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "rapid-input",
+    "name": "request_to_picture_complete_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 7.425083,
+        "n": 165,
+        "p50_ms": 1.178708,
+        "p95_ms": 1.637209,
+        "p99_ms": 2.7338750000000003
+      },
+      "failed": 0,
+      "samples": 165,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "rapid-input",
+    "name": "input_to_picture_complete_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 78.16666699999999,
+        "n": 152,
+        "p50_ms": 1.277917,
+        "p95_ms": 11.47175,
+        "p99_ms": 35.93125
+      },
+      "failed": 0,
+      "samples": 152,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "rapid-input",
+    "name": "Original initialized and displayed",
+    "summary": {
+      "completed": {
+        "max_ms": 77.790625,
+        "n": 1,
+        "p50_ms": 77.790625,
+        "p95_ms": 77.790625,
+        "p99_ms": 77.790625
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "rapid-input",
+    "name": "Project and picture settled",
+    "summary": {
+      "completed": {
+        "max_ms": 29.019833,
+        "n": 156,
+        "p50_ms": 0.6056250000000001,
+        "p95_ms": 1.123333,
+        "p99_ms": 4.462666
+      },
+      "failed": 0,
+      "samples": 156,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "rapid-input",
+    "name": "Committed revision changed",
+    "summary": {
+      "completed": {
+        "max_ms": 5.599,
+        "n": 18,
+        "p50_ms": 3.807875,
+        "p95_ms": 5.599,
+        "p99_ms": 5.599
+      },
+      "failed": 0,
+      "samples": 18,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "rapid-input",
+    "name": "Writer finished while its UI completion is held",
+    "summary": {
+      "completed": {
+        "max_ms": 2.933417,
+        "n": 1,
+        "p50_ms": 2.933417,
+        "p95_ms": 2.933417,
+        "p99_ms": 2.933417
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "rapid-input",
+    "name": "Writer completion awaits pointer context decision",
+    "summary": {
+      "completed": {
+        "max_ms": 3.832542,
+        "n": 1,
+        "p50_ms": 3.832542,
+        "p95_ms": 3.832542,
+        "p99_ms": 3.832542
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "rapid-input",
+    "name": "Overflow writer finishes before its completion is delivered",
+    "summary": {
+      "completed": {
+        "max_ms": 2.9653750000000003,
+        "n": 1,
+        "p50_ms": 2.9653750000000003,
+        "p95_ms": 2.9653750000000003,
+        "p99_ms": 2.9653750000000003
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "rapid-input",
+    "name": "warm_navigation_input_cpu_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.154167,
+        "n": 120,
+        "p50_ms": 0.143667,
+        "p95_ms": 0.149208,
+        "p99_ms": 0.152458
+      },
+      "failed": 0,
+      "samples": 120,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "rapid-input",
+    "name": "warm_navigation_input_to_picture_complete_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 1.681208,
+        "n": 120,
+        "p50_ms": 1.131708,
+        "p95_ms": 1.502292,
+        "p99_ms": 1.650291
+      },
+      "failed": 0,
+      "samples": 120,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "playback-feedback",
+    "name": "ui_frame_cpu_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 3.041167,
+        "n": 99,
+        "p50_ms": 0.064709,
+        "p95_ms": 0.642333,
+        "p99_ms": 3.041167
+      },
+      "failed": 0,
+      "samples": 99,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "playback-feedback",
+    "name": "ui_composition_submit_cpu_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.250667,
+        "n": 99,
+        "p50_ms": 0.061333000000000006,
+        "p95_ms": 0.12787500000000002,
+        "p99_ms": 0.250667
+      },
+      "failed": 0,
+      "samples": 99,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "playback-feedback",
+    "name": "ui_composition_complete_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 8.40025,
+        "n": 99,
+        "p50_ms": 0.36125,
+        "p95_ms": 1.1084999999999998,
+        "p99_ms": 8.40025
+      },
+      "failed": 0,
+      "samples": 99,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "playback-feedback",
+    "name": "input_to_state_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.742416,
+        "n": 14,
+        "p50_ms": 0.16,
+        "p95_ms": 0.742416,
+        "p99_ms": 0.742416
+      },
+      "failed": 0,
+      "samples": 14,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "playback-feedback",
+    "name": "input_to_commit_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 68.633542,
+        "n": 1,
+        "p50_ms": 68.633542,
+        "p95_ms": 68.633542,
+        "p99_ms": 68.633542
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "playback-feedback",
+    "name": "request_to_decode_delivery_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 5.170042,
+        "n": 4,
+        "p50_ms": 0.538208,
+        "p95_ms": 5.170042,
+        "p99_ms": 5.170042
+      },
+      "failed": 0,
+      "samples": 4,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "playback-feedback",
+    "name": "request_to_worker_start_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.008709000000000001,
+        "n": 4,
+        "p50_ms": 0.006875,
+        "p95_ms": 0.008709000000000001,
+        "p99_ms": 0.008709000000000001
+      },
+      "failed": 0,
+      "samples": 4,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "playback-feedback",
+    "name": "worker_execution_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 4.765292,
+        "n": 4,
+        "p50_ms": 0.071584,
+        "p95_ms": 4.765292,
+        "p99_ms": 4.765292
+      },
+      "failed": 0,
+      "samples": 4,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "playback-feedback",
+    "name": "worker_publication_delay_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 8.3e-05,
+        "n": 4,
+        "p50_ms": 4.2e-05,
+        "p95_ms": 8.3e-05,
+        "p99_ms": 8.3e-05
+      },
+      "failed": 0,
+      "samples": 4,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "playback-feedback",
+    "name": "publication_to_decode_delivery_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.6401669999999999,
+        "n": 4,
+        "p50_ms": 0.397167,
+        "p95_ms": 0.6401669999999999,
+        "p99_ms": 0.6401669999999999
+      },
+      "failed": 0,
+      "samples": 4,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "playback-feedback",
+    "name": "request_to_picture_submission_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 5.522208,
+        "n": 4,
+        "p50_ms": 0.72125,
+        "p95_ms": 5.522208,
+        "p99_ms": 5.522208
+      },
+      "failed": 0,
+      "samples": 4,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "playback-feedback",
+    "name": "request_to_picture_complete_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 6.88825,
+        "n": 4,
+        "p50_ms": 1.404542,
+        "p95_ms": 6.88825,
+        "p99_ms": 6.88825
+      },
+      "failed": 0,
+      "samples": 4,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "playback-feedback",
+    "name": "input_to_picture_complete_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 75.524417,
+        "n": 2,
+        "p50_ms": 1.333125,
+        "p95_ms": 75.524417,
+        "p99_ms": 75.524417
+      },
+      "failed": 0,
+      "samples": 2,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "playback-feedback",
+    "name": "Original initialized and displayed",
+    "summary": {
+      "completed": {
+        "max_ms": 74.629,
+        "n": 1,
+        "p50_ms": 74.629,
+        "p95_ms": 74.629,
+        "p99_ms": 74.629
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "playback-feedback",
+    "name": "Project and picture settled",
+    "summary": {
+      "completed": {
+        "max_ms": 0.696875,
+        "n": 2,
+        "p50_ms": 4.2e-05,
+        "p95_ms": 0.696875,
+        "p99_ms": 0.696875
+      },
+      "failed": 0,
+      "samples": 2,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "playback-feedback",
+    "name": "Playback picture catches up",
+    "summary": {
+      "completed": {
+        "max_ms": 1.696042,
+        "n": 1,
+        "p50_ms": 1.696042,
+        "p95_ms": 1.696042,
+        "p99_ms": 1.696042
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "large-project",
+    "name": "ui_frame_cpu_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 3.088458,
+        "n": 602,
+        "p50_ms": 0.137542,
+        "p95_ms": 0.353333,
+        "p99_ms": 0.763667
+      },
+      "failed": 0,
+      "samples": 602,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "large-project",
+    "name": "ui_composition_submit_cpu_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.253375,
+        "n": 602,
+        "p50_ms": 0.089333,
+        "p95_ms": 0.107584,
+        "p99_ms": 0.131125
+      },
+      "failed": 0,
+      "samples": 602,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "large-project",
+    "name": "ui_composition_complete_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 8.5205,
+        "n": 602,
+        "p50_ms": 0.419459,
+        "p95_ms": 0.952125,
+        "p99_ms": 1.313875
+      },
+      "failed": 0,
+      "samples": 602,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "large-project",
+    "name": "input_to_state_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.995,
+        "n": 175,
+        "p50_ms": 0.341583,
+        "p95_ms": 0.36616699999999996,
+        "p99_ms": 0.8602920000000001
+      },
+      "failed": 0,
+      "samples": 175,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "large-project",
+    "name": "input_to_commit_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 79.990875,
+        "n": 1,
+        "p50_ms": 79.990875,
+        "p95_ms": 79.990875,
+        "p99_ms": 79.990875
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "large-project",
+    "name": "request_to_decode_delivery_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 5.161207999999999,
+        "n": 166,
+        "p50_ms": 0.685958,
+        "p95_ms": 1.063,
+        "p99_ms": 1.514666
+      },
+      "failed": 0,
+      "samples": 166,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "large-project",
+    "name": "request_to_worker_start_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.008875000000000001,
+        "n": 166,
+        "p50_ms": 0.0067079999999999996,
+        "p95_ms": 0.007125,
+        "p99_ms": 0.008083
+      },
+      "failed": 0,
+      "samples": 166,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "large-project",
+    "name": "worker_execution_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 4.8783330000000005,
+        "n": 166,
+        "p50_ms": 0.00075,
+        "p95_ms": 0.001083,
+        "p99_ms": 0.003292
+      },
+      "failed": 0,
+      "samples": 166,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "large-project",
+    "name": "worker_publication_delay_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.000125,
+        "n": 166,
+        "p50_ms": 4.2e-05,
+        "p95_ms": 4.2e-05,
+        "p99_ms": 0.000125
+      },
+      "failed": 0,
+      "samples": 166,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "large-project",
+    "name": "publication_to_decode_delivery_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 1.507041,
+        "n": 166,
+        "p50_ms": 0.6783750000000001,
+        "p95_ms": 1.014,
+        "p99_ms": 1.385917
+      },
+      "failed": 0,
+      "samples": 166,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "large-project",
+    "name": "request_to_picture_submission_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 5.497625,
+        "n": 6,
+        "p50_ms": 1.496208,
+        "p95_ms": 5.497625,
+        "p99_ms": 5.497625
+      },
+      "failed": 0,
+      "samples": 6,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "large-project",
+    "name": "request_to_picture_complete_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 6.322875000000001,
+        "n": 6,
+        "p50_ms": 1.9794999999999998,
+        "p95_ms": 6.322875000000001,
+        "p99_ms": 6.322875000000001
+      },
+      "failed": 0,
+      "samples": 6,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "large-project",
+    "name": "input_to_picture_complete_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 86.318084,
+        "n": 6,
+        "p50_ms": 2.04425,
+        "p95_ms": 86.318084,
+        "p99_ms": 86.318084
+      },
+      "failed": 0,
+      "samples": 6,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "large-project",
+    "name": "Original initialized and displayed",
+    "summary": {
+      "completed": {
+        "max_ms": 85.81820900000001,
+        "n": 1,
+        "p50_ms": 85.81820900000001,
+        "p95_ms": 85.81820900000001,
+        "p99_ms": 85.81820900000001
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "large-project",
+    "name": "Project and picture settled",
+    "summary": {
+      "completed": {
+        "max_ms": 1.307834,
+        "n": 6,
+        "p50_ms": 0.66925,
+        "p95_ms": 1.307834,
+        "p99_ms": 1.307834
+      },
+      "failed": 0,
+      "samples": 6,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "large-project",
+    "name": "large_project_fixture_preparation_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 205.66220800000002,
+        "n": 1,
+        "p50_ms": 205.66220800000002,
+        "p95_ms": 205.66220800000002,
+        "p99_ms": 205.66220800000002
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "large-project",
+    "name": "Open 10,000 root beats through the project service",
+    "summary": {
+      "completed": {
+        "max_ms": 206.500708,
+        "n": 1,
+        "p50_ms": 206.500708,
+        "p95_ms": 206.500708,
+        "p99_ms": 206.500708
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "large-project",
+    "name": "large_project_navigation_cpu_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.564541,
+        "n": 160,
+        "p50_ms": 0.341833,
+        "p95_ms": 0.357916,
+        "p99_ms": 0.530708
+      },
+      "failed": 0,
+      "samples": 160,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "edit-latency",
+    "name": "ui_frame_cpu_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 2.983958,
+        "n": 2104,
+        "p50_ms": 0.132708,
+        "p95_ms": 0.28475,
+        "p99_ms": 0.527792
+      },
+      "failed": 0,
+      "samples": 2104,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "edit-latency",
+    "name": "ui_composition_submit_cpu_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.249083,
+        "n": 2104,
+        "p50_ms": 0.085084,
+        "p95_ms": 0.10562500000000001,
+        "p99_ms": 0.117958
+      },
+      "failed": 0,
+      "samples": 2104,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "edit-latency",
+    "name": "ui_composition_complete_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 8.639166,
+        "n": 2104,
+        "p50_ms": 0.28075,
+        "p95_ms": 0.446459,
+        "p99_ms": 0.6020409999999999
+      },
+      "failed": 0,
+      "samples": 2104,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "edit-latency",
+    "name": "input_to_state_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.712584,
+        "n": 271,
+        "p50_ms": 0.16441599999999998,
+        "p95_ms": 0.53125,
+        "p99_ms": 0.641042
+      },
+      "failed": 0,
+      "samples": 271,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "edit-latency",
+    "name": "input_to_commit_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 71.447541,
+        "n": 89,
+        "p50_ms": 4.019375,
+        "p95_ms": 4.6239159999999995,
+        "p99_ms": 71.447541
+      },
+      "failed": 0,
+      "samples": 89,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "edit-latency",
+    "name": "request_to_decode_delivery_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 5.011958000000001,
+        "n": 178,
+        "p50_ms": 0.5378750000000001,
+        "p95_ms": 0.648041,
+        "p99_ms": 1.2949579999999998
+      },
+      "failed": 0,
+      "samples": 178,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "edit-latency",
+    "name": "request_to_worker_start_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.007208,
+        "n": 178,
+        "p50_ms": 0.0036669999999999997,
+        "p95_ms": 0.0048330000000000005,
+        "p99_ms": 0.007125
+      },
+      "failed": 0,
+      "samples": 178,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "edit-latency",
+    "name": "worker_execution_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 4.700374999999999,
+        "n": 178,
+        "p50_ms": 0.067792,
+        "p95_ms": 0.07004200000000001,
+        "p99_ms": 0.080084
+      },
+      "failed": 0,
+      "samples": 178,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "edit-latency",
+    "name": "worker_publication_delay_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.000125,
+        "n": 178,
+        "p50_ms": 4.2e-05,
+        "p95_ms": 8.4e-05,
+        "p99_ms": 0.000125
+      },
+      "failed": 0,
+      "samples": 178,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "edit-latency",
+    "name": "publication_to_decode_delivery_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 1.2225409999999999,
+        "n": 178,
+        "p50_ms": 0.465333,
+        "p95_ms": 0.566042,
+        "p99_ms": 1.213708
+      },
+      "failed": 0,
+      "samples": 178,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "edit-latency",
+    "name": "request_to_picture_submission_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 5.363333,
+        "n": 178,
+        "p50_ms": 0.697917,
+        "p95_ms": 0.811917,
+        "p99_ms": 1.473458
+      },
+      "failed": 0,
+      "samples": 178,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "edit-latency",
+    "name": "request_to_picture_complete_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 7.047124999999999,
+        "n": 178,
+        "p50_ms": 1.126209,
+        "p95_ms": 1.323334,
+        "p99_ms": 2.09425
+      },
+      "failed": 0,
+      "samples": 178,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "edit-latency",
+    "name": "input_to_picture_complete_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 78.497125,
+        "n": 90,
+        "p50_ms": 5.203125,
+        "p95_ms": 5.953749999999999,
+        "p99_ms": 78.497125
+      },
+      "failed": 0,
+      "samples": 90,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "edit-latency",
+    "name": "Original initialized and displayed",
+    "summary": {
+      "completed": {
+        "max_ms": 77.68133300000001,
+        "n": 1,
+        "p50_ms": 77.68133300000001,
+        "p95_ms": 77.68133300000001,
+        "p99_ms": 77.68133300000001
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "edit-latency",
+    "name": "Project and picture settled",
+    "summary": {
+      "completed": {
+        "max_ms": 0.920625,
+        "n": 178,
+        "p50_ms": 0.6067079999999999,
+        "p95_ms": 0.7513329999999999,
+        "p99_ms": 0.839375
+      },
+      "failed": 0,
+      "samples": 178,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "edit-latency",
+    "name": "Committed revision changed",
+    "summary": {
+      "completed": {
+        "max_ms": 8.877625,
+        "n": 176,
+        "p50_ms": 3.922667,
+        "p95_ms": 4.617958,
+        "p99_ms": 8.071958
+      },
+      "failed": 0,
+      "samples": 176,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "edit-latency",
+    "name": "cached_repeat_input_to_picture_complete_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 5.953749999999999,
+        "n": 40,
+        "p50_ms": 4.944583,
+        "p95_ms": 5.698042,
+        "p99_ms": 5.953749999999999
+      },
+      "failed": 0,
+      "samples": 40,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "edit-latency",
+    "name": "cached_repeat_input_to_commit_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 4.648125,
+        "n": 40,
+        "p50_ms": 3.783791,
+        "p95_ms": 4.5865,
+        "p99_ms": 4.648125
+      },
+      "failed": 0,
+      "samples": 40,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "edit-latency",
+    "name": "hold_fallback_input_to_picture_complete_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 9.056,
+        "n": 40,
+        "p50_ms": 5.231625,
+        "p95_ms": 5.607416,
+        "p99_ms": 9.056
+      },
+      "failed": 0,
+      "samples": 40,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "edit-latency",
+    "name": "hold_input_to_commit_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 7.846792,
+        "n": 40,
+        "p50_ms": 4.07025,
+        "p95_ms": 4.377667,
+        "p99_ms": 7.846792
+      },
+      "failed": 0,
+      "samples": 40,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "nested-pause",
+    "name": "ui_frame_cpu_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 2.986041,
+        "n": 298,
+        "p50_ms": 0.13933399999999999,
+        "p95_ms": 0.552875,
+        "p99_ms": 1.117417
+      },
+      "failed": 0,
+      "samples": 298,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "nested-pause",
+    "name": "ui_composition_submit_cpu_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.250417,
+        "n": 298,
+        "p50_ms": 0.08574999999999999,
+        "p95_ms": 0.116166,
+        "p99_ms": 0.133833
+      },
+      "failed": 0,
+      "samples": 298,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "nested-pause",
+    "name": "ui_composition_complete_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 7.757375000000001,
+        "n": 298,
+        "p50_ms": 0.329167,
+        "p95_ms": 0.781083,
+        "p99_ms": 1.37925
+      },
+      "failed": 0,
+      "samples": 298,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "nested-pause",
+    "name": "input_to_state_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 1.1265839999999998,
+        "n": 49,
+        "p50_ms": 0.270083,
+        "p95_ms": 0.721042,
+        "p99_ms": 1.1265839999999998
+      },
+      "failed": 0,
+      "samples": 49,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "nested-pause",
+    "name": "input_to_commit_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 84.330542,
+        "n": 4,
+        "p50_ms": 4.3905,
+        "p95_ms": 84.330542,
+        "p99_ms": 84.330542
+      },
+      "failed": 0,
+      "samples": 4,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "nested-pause",
+    "name": "request_to_decode_delivery_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 5.524083,
+        "n": 25,
+        "p50_ms": 0.700333,
+        "p95_ms": 5.237417000000001,
+        "p99_ms": 5.524083
+      },
+      "failed": 0,
+      "samples": 25,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "nested-pause",
+    "name": "request_to_worker_start_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.077083,
+        "n": 25,
+        "p50_ms": 0.0065,
+        "p95_ms": 0.007583,
+        "p99_ms": 0.077083
+      },
+      "failed": 0,
+      "samples": 25,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "nested-pause",
+    "name": "worker_execution_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 4.687583,
+        "n": 25,
+        "p50_ms": 0.06933399999999999,
+        "p95_ms": 4.668125000000001,
+        "p99_ms": 4.687583
+      },
+      "failed": 0,
+      "samples": 25,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "nested-pause",
+    "name": "worker_publication_delay_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.000125,
+        "n": 25,
+        "p50_ms": 4.2e-05,
+        "p95_ms": 8.4e-05,
+        "p99_ms": 0.000125
+      },
+      "failed": 0,
+      "samples": 25,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "nested-pause",
+    "name": "publication_to_decode_delivery_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 1.4332500000000001,
+        "n": 25,
+        "p50_ms": 0.603542,
+        "p95_ms": 1.323,
+        "p99_ms": 1.4332500000000001
+      },
+      "failed": 0,
+      "samples": 25,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "nested-pause",
+    "name": "request_to_picture_submission_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 5.873457999999999,
+        "n": 23,
+        "p50_ms": 0.875542,
+        "p95_ms": 5.454375,
+        "p99_ms": 5.873457999999999
+      },
+      "failed": 0,
+      "samples": 23,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "nested-pause",
+    "name": "request_to_picture_complete_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 6.786291,
+        "n": 23,
+        "p50_ms": 1.30625,
+        "p95_ms": 6.120708,
+        "p99_ms": 6.786291
+      },
+      "failed": 0,
+      "samples": 23,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "nested-pause",
+    "name": "input_to_picture_complete_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 91.11975,
+        "n": 19,
+        "p50_ms": 1.443083,
+        "p95_ms": 91.11975,
+        "p99_ms": 91.11975
+      },
+      "failed": 0,
+      "samples": 19,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "nested-pause",
+    "name": "Original initialized and displayed",
+    "summary": {
+      "completed": {
+        "max_ms": 90.339833,
+        "n": 1,
+        "p50_ms": 90.339833,
+        "p95_ms": 90.339833,
+        "p99_ms": 90.339833
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "nested-pause",
+    "name": "Project and picture settled",
+    "summary": {
+      "completed": {
+        "max_ms": 5.524625,
+        "n": 28,
+        "p50_ms": 0.5815,
+        "p95_ms": 1.661,
+        "p99_ms": 5.524625
+      },
+      "failed": 0,
+      "samples": 28,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "nested-pause",
+    "name": "Initial project writer closes",
+    "summary": {
+      "completed": {
+        "max_ms": 8.946958,
+        "n": 1,
+        "p50_ms": 8.946958,
+        "p95_ms": 8.946958,
+        "p99_ms": 8.946958
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "nested-pause",
+    "name": "Reopen nested live-group project",
+    "summary": {
+      "completed": {
+        "max_ms": 5.382208,
+        "n": 1,
+        "p50_ms": 5.382208,
+        "p95_ms": 5.382208,
+        "p99_ms": 5.382208
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "nested-pause",
+    "name": "Committed revision changed",
+    "summary": {
+      "completed": {
+        "max_ms": 9.712708000000001,
+        "n": 7,
+        "p50_ms": 4.743375,
+        "p95_ms": 9.712708000000001,
+        "p99_ms": 9.712708000000001
+      },
+      "failed": 0,
+      "samples": 7,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "nested-pause",
+    "name": "Camera opens for the selected nested Hold",
+    "summary": {
+      "completed": {
+        "max_ms": 0.0,
+        "n": 1,
+        "p50_ms": 0.0,
+        "p95_ms": 0.0,
+        "p99_ms": 0.0
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "original-moment",
+    "name": "ui_frame_cpu_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 3.063958,
+        "n": 144,
+        "p50_ms": 0.13725,
+        "p95_ms": 0.6317090000000001,
+        "p99_ms": 0.991875
+      },
+      "failed": 0,
+      "samples": 144,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "original-moment",
+    "name": "ui_composition_submit_cpu_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.29058300000000004,
+        "n": 144,
+        "p50_ms": 0.08529199999999999,
+        "p95_ms": 0.12108300000000001,
+        "p99_ms": 0.175
+      },
+      "failed": 0,
+      "samples": 144,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "original-moment",
+    "name": "ui_composition_complete_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 6.992375,
+        "n": 144,
+        "p50_ms": 0.34495800000000004,
+        "p95_ms": 0.869375,
+        "p99_ms": 1.463792
+      },
+      "failed": 0,
+      "samples": 144,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "original-moment",
+    "name": "input_to_state_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.840375,
+        "n": 33,
+        "p50_ms": 0.256875,
+        "p95_ms": 0.732083,
+        "p99_ms": 0.840375
+      },
+      "failed": 0,
+      "samples": 33,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "original-moment",
+    "name": "input_to_commit_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 68.660709,
+        "n": 4,
+        "p50_ms": 4.114333,
+        "p95_ms": 68.660709,
+        "p99_ms": 68.660709
+      },
+      "failed": 0,
+      "samples": 4,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "original-moment",
+    "name": "request_to_decode_delivery_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 6.134416,
+        "n": 13,
+        "p50_ms": 0.8240409999999999,
+        "p95_ms": 6.134416,
+        "p99_ms": 6.134416
+      },
+      "failed": 0,
+      "samples": 13,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "original-moment",
+    "name": "request_to_worker_start_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.007791,
+        "n": 13,
+        "p50_ms": 0.003916,
+        "p95_ms": 0.007791,
+        "p99_ms": 0.007791
+      },
+      "failed": 0,
+      "samples": 13,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "original-moment",
+    "name": "worker_execution_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 4.7056249999999995,
+        "n": 13,
+        "p50_ms": 0.4545,
+        "p95_ms": 4.7056249999999995,
+        "p99_ms": 4.7056249999999995
+      },
+      "failed": 0,
+      "samples": 13,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "original-moment",
+    "name": "worker_publication_delay_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.000125,
+        "n": 13,
+        "p50_ms": 8.3e-05,
+        "p95_ms": 0.000125,
+        "p99_ms": 0.000125
+      },
+      "failed": 0,
+      "samples": 13,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "original-moment",
+    "name": "publication_to_decode_delivery_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 1.528125,
+        "n": 13,
+        "p50_ms": 0.48725,
+        "p95_ms": 1.528125,
+        "p99_ms": 1.528125
+      },
+      "failed": 0,
+      "samples": 13,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "original-moment",
+    "name": "request_to_picture_submission_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 6.479457999999999,
+        "n": 13,
+        "p50_ms": 1.007291,
+        "p95_ms": 6.479457999999999,
+        "p99_ms": 6.479457999999999
+      },
+      "failed": 0,
+      "samples": 13,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "original-moment",
+    "name": "request_to_picture_complete_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 7.1638329999999995,
+        "n": 13,
+        "p50_ms": 1.491709,
+        "p95_ms": 7.1638329999999995,
+        "p99_ms": 7.1638329999999995
+      },
+      "failed": 0,
+      "samples": 13,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "original-moment",
+    "name": "input_to_picture_complete_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 75.827167,
+        "n": 12,
+        "p50_ms": 1.7435829999999999,
+        "p95_ms": 75.827167,
+        "p99_ms": 75.827167
+      },
+      "failed": 0,
+      "samples": 12,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "original-moment",
+    "name": "Original initialized and displayed",
+    "summary": {
+      "completed": {
+        "max_ms": 74.96908300000001,
+        "n": 1,
+        "p50_ms": 74.96908300000001,
+        "p95_ms": 74.96908300000001,
+        "p99_ms": 74.96908300000001
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "original-moment",
+    "name": "Project and picture settled",
+    "summary": {
+      "completed": {
+        "max_ms": 1.324875,
+        "n": 6,
+        "p50_ms": 0.607375,
+        "p95_ms": 1.324875,
+        "p99_ms": 1.324875
+      },
+      "failed": 0,
+      "samples": 6,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "original-moment",
+    "name": "Committed revision changed",
+    "summary": {
+      "completed": {
+        "max_ms": 5.357208,
+        "n": 4,
+        "p50_ms": 4.021249999999999,
+        "p95_ms": 5.357208,
+        "p99_ms": 5.357208
+      },
+      "failed": 0,
+      "samples": 4,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "original-playback",
+    "name": "ui_frame_cpu_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 3.014958,
+        "n": 138,
+        "p50_ms": 0.096542,
+        "p95_ms": 0.583542,
+        "p99_ms": 0.932042
+      },
+      "failed": 0,
+      "samples": 138,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "original-playback",
+    "name": "ui_composition_submit_cpu_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.256125,
+        "n": 138,
+        "p50_ms": 0.07179100000000001,
+        "p95_ms": 0.103959,
+        "p99_ms": 0.174666
+      },
+      "failed": 0,
+      "samples": 138,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "original-playback",
+    "name": "ui_composition_complete_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 6.660166,
+        "n": 138,
+        "p50_ms": 0.35362499999999997,
+        "p95_ms": 0.913333,
+        "p99_ms": 1.414417
+      },
+      "failed": 0,
+      "samples": 138,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "original-playback",
+    "name": "input_to_state_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.932042,
+        "n": 42,
+        "p50_ms": 0.17512499999999998,
+        "p95_ms": 0.7345,
+        "p99_ms": 0.932042
+      },
+      "failed": 0,
+      "samples": 42,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "original-playback",
+    "name": "input_to_commit_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 72.332333,
+        "n": 1,
+        "p50_ms": 72.332333,
+        "p95_ms": 72.332333,
+        "p99_ms": 72.332333
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "original-playback",
+    "name": "request_to_decode_delivery_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 4.899749999999999,
+        "n": 19,
+        "p50_ms": 0.545667,
+        "p95_ms": 4.899749999999999,
+        "p99_ms": 4.899749999999999
+      },
+      "failed": 0,
+      "samples": 19,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "original-playback",
+    "name": "request_to_worker_start_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.01225,
+        "n": 19,
+        "p50_ms": 0.006416,
+        "p95_ms": 0.01225,
+        "p99_ms": 0.01225
+      },
+      "failed": 0,
+      "samples": 19,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "original-playback",
+    "name": "worker_execution_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 4.610625,
+        "n": 19,
+        "p50_ms": 0.181958,
+        "p95_ms": 4.610625,
+        "p99_ms": 4.610625
+      },
+      "failed": 0,
+      "samples": 19,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "original-playback",
+    "name": "worker_publication_delay_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.000166,
+        "n": 19,
+        "p50_ms": 4.2e-05,
+        "p95_ms": 0.000166,
+        "p99_ms": 0.000166
+      },
+      "failed": 0,
+      "samples": 19,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "original-playback",
+    "name": "publication_to_decode_delivery_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 1.074334,
+        "n": 19,
+        "p50_ms": 0.376666,
+        "p95_ms": 1.074334,
+        "p99_ms": 1.074334
+      },
+      "failed": 0,
+      "samples": 19,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "original-playback",
+    "name": "request_to_picture_submission_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 5.2438329999999995,
+        "n": 15,
+        "p50_ms": 0.678916,
+        "p95_ms": 5.2438329999999995,
+        "p99_ms": 5.2438329999999995
+      },
+      "failed": 0,
+      "samples": 15,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "original-playback",
+    "name": "request_to_picture_complete_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 5.894082999999999,
+        "n": 14,
+        "p50_ms": 1.0525,
+        "p95_ms": 5.894082999999999,
+        "p99_ms": 5.894082999999999
+      },
+      "failed": 0,
+      "samples": 14,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "original-playback",
+    "name": "input_to_picture_complete_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 78.229208,
+        "n": 10,
+        "p50_ms": 1.133666,
+        "p95_ms": 78.229208,
+        "p99_ms": 78.229208
+      },
+      "failed": 0,
+      "samples": 10,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "original-playback",
+    "name": "Original initialized and displayed",
+    "summary": {
+      "completed": {
+        "max_ms": 77.432333,
+        "n": 1,
+        "p50_ms": 77.432333,
+        "p95_ms": 77.432333,
+        "p99_ms": 77.432333
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "original-playback",
+    "name": "Project and picture settled",
+    "summary": {
+      "completed": {
+        "max_ms": 1.3996659999999999,
+        "n": 3,
+        "p50_ms": 0.584917,
+        "p95_ms": 1.3996659999999999,
+        "p99_ms": 1.3996659999999999
+      },
+      "failed": 0,
+      "samples": 3,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "sound-playback",
+    "name": "ui_frame_cpu_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 3.002958,
+        "n": 156,
+        "p50_ms": 0.146,
+        "p95_ms": 0.5499580000000001,
+        "p99_ms": 1.04075
+      },
+      "failed": 0,
+      "samples": 156,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "sound-playback",
+    "name": "ui_composition_submit_cpu_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.269541,
+        "n": 156,
+        "p50_ms": 0.083083,
+        "p95_ms": 0.13549999999999998,
+        "p99_ms": 0.20375
+      },
+      "failed": 0,
+      "samples": 156,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "sound-playback",
+    "name": "ui_composition_complete_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 6.113291,
+        "n": 156,
+        "p50_ms": 0.45620900000000003,
+        "p95_ms": 1.093458,
+        "p99_ms": 1.62825
+      },
+      "failed": 0,
+      "samples": 156,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "sound-playback",
+    "name": "input_to_state_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 1.04075,
+        "n": 40,
+        "p50_ms": 0.195708,
+        "p95_ms": 0.665334,
+        "p99_ms": 1.04075
+      },
+      "failed": 0,
+      "samples": 40,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "sound-playback",
+    "name": "input_to_commit_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 73.220708,
+        "n": 1,
+        "p50_ms": 73.220708,
+        "p95_ms": 73.220708,
+        "p99_ms": 73.220708
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "sound-playback",
+    "name": "request_to_decode_delivery_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 4.7645409999999995,
+        "n": 4,
+        "p50_ms": 1.162333,
+        "p95_ms": 4.7645409999999995,
+        "p99_ms": 4.7645409999999995
+      },
+      "failed": 0,
+      "samples": 4,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "sound-playback",
+    "name": "request_to_worker_start_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.00725,
+        "n": 4,
+        "p50_ms": 0.004958,
+        "p95_ms": 0.00725,
+        "p99_ms": 0.00725
+      },
+      "failed": 0,
+      "samples": 4,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "sound-playback",
+    "name": "worker_execution_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 4.659125,
+        "n": 4,
+        "p50_ms": 0.08354199999999999,
+        "p95_ms": 4.659125,
+        "p99_ms": 4.659125
+      },
+      "failed": 0,
+      "samples": 4,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "sound-playback",
+    "name": "worker_publication_delay_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.000167,
+        "n": 4,
+        "p50_ms": 8.3e-05,
+        "p95_ms": 0.000167,
+        "p99_ms": 0.000167
+      },
+      "failed": 0,
+      "samples": 4,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "sound-playback",
+    "name": "publication_to_decode_delivery_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 1.394875,
+        "n": 4,
+        "p50_ms": 0.778,
+        "p95_ms": 1.394875,
+        "p99_ms": 1.394875
+      },
+      "failed": 0,
+      "samples": 4,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "sound-playback",
+    "name": "request_to_picture_submission_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 5.0951249999999995,
+        "n": 4,
+        "p50_ms": 1.413666,
+        "p95_ms": 5.0951249999999995,
+        "p99_ms": 5.0951249999999995
+      },
+      "failed": 0,
+      "samples": 4,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "sound-playback",
+    "name": "request_to_picture_complete_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 6.057416000000001,
+        "n": 4,
+        "p50_ms": 2.076375,
+        "p95_ms": 6.057416000000001,
+        "p99_ms": 6.057416000000001
+      },
+      "failed": 0,
+      "samples": 4,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "sound-playback",
+    "name": "input_to_picture_complete_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 79.280833,
+        "n": 2,
+        "p50_ms": 1.739666,
+        "p95_ms": 79.280833,
+        "p99_ms": 79.280833
+      },
+      "failed": 0,
+      "samples": 2,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "sound-playback",
+    "name": "Original initialized and displayed",
+    "summary": {
+      "completed": {
+        "max_ms": 78.138667,
+        "n": 1,
+        "p50_ms": 78.138667,
+        "p95_ms": 78.138667,
+        "p99_ms": 78.138667
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "sound-playback",
+    "name": "Project and picture settled",
+    "summary": {
+      "completed": {
+        "max_ms": 0.935083,
+        "n": 4,
+        "p50_ms": 0.8174589999999999,
+        "p95_ms": 0.935083,
+        "p99_ms": 0.935083
+      },
+      "failed": 0,
+      "samples": 4,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "sound-playback",
+    "name": "Sound registration commits a qualified catalog descriptor",
+    "summary": {
+      "completed": {
+        "max_ms": 41.388,
+        "n": 2,
+        "p50_ms": 40.347083999999995,
+        "p95_ms": 41.388,
+        "p99_ms": 41.388
+      },
+      "failed": 0,
+      "samples": 2,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "sound-placement",
+    "name": "ui_frame_cpu_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 2.991167,
+        "n": 843,
+        "p50_ms": 0.133583,
+        "p95_ms": 0.48620800000000003,
+        "p99_ms": 0.696708
+      },
+      "failed": 0,
+      "samples": 843,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "sound-placement",
+    "name": "ui_composition_submit_cpu_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.25179100000000004,
+        "n": 843,
+        "p50_ms": 0.08791700000000001,
+        "p95_ms": 0.118791,
+        "p99_ms": 0.13224999999999998
+      },
+      "failed": 0,
+      "samples": 843,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "sound-placement",
+    "name": "ui_composition_complete_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 5.90325,
+        "n": 843,
+        "p50_ms": 0.291875,
+        "p95_ms": 0.569292,
+        "p99_ms": 0.912083
+      },
+      "failed": 0,
+      "samples": 843,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "sound-placement",
+    "name": "input_to_state_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.896625,
+        "n": 252,
+        "p50_ms": 0.314875,
+        "p95_ms": 0.582334,
+        "p99_ms": 0.820916
+      },
+      "failed": 0,
+      "samples": 252,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "sound-placement",
+    "name": "input_to_commit_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 70.66075,
+        "n": 33,
+        "p50_ms": 4.445666,
+        "p95_ms": 9.654917000000001,
+        "p99_ms": 70.66075
+      },
+      "failed": 0,
+      "samples": 33,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "sound-placement",
+    "name": "request_to_decode_delivery_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 4.859375,
+        "n": 94,
+        "p50_ms": 0.6099159999999999,
+        "p95_ms": 1.322625,
+        "p99_ms": 4.859375
+      },
+      "failed": 0,
+      "samples": 94,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "sound-placement",
+    "name": "request_to_worker_start_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.009708999999999999,
+        "n": 94,
+        "p50_ms": 0.0065,
+        "p95_ms": 0.007833,
+        "p99_ms": 0.009708999999999999
+      },
+      "failed": 0,
+      "samples": 94,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "sound-placement",
+    "name": "worker_execution_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 4.498417,
+        "n": 94,
+        "p50_ms": 0.069583,
+        "p95_ms": 0.29066600000000004,
+        "p99_ms": 4.498417
+      },
+      "failed": 0,
+      "samples": 94,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "sound-placement",
+    "name": "worker_publication_delay_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.000167,
+        "n": 94,
+        "p50_ms": 4.2e-05,
+        "p95_ms": 8.4e-05,
+        "p99_ms": 0.000167
+      },
+      "failed": 0,
+      "samples": 94,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "sound-placement",
+    "name": "publication_to_decode_delivery_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 1.404375,
+        "n": 94,
+        "p50_ms": 0.477291,
+        "p95_ms": 1.0724580000000001,
+        "p99_ms": 1.404375
+      },
+      "failed": 0,
+      "samples": 94,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "sound-placement",
+    "name": "request_to_picture_submission_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 5.189875,
+        "n": 91,
+        "p50_ms": 0.818375,
+        "p95_ms": 1.5815,
+        "p99_ms": 5.189875
+      },
+      "failed": 0,
+      "samples": 91,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "sound-placement",
+    "name": "request_to_picture_complete_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 6.799791,
+        "n": 91,
+        "p50_ms": 1.220792,
+        "p95_ms": 2.1840829999999998,
+        "p99_ms": 6.799791
+      },
+      "failed": 0,
+      "samples": 91,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "sound-placement",
+    "name": "input_to_picture_complete_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 77.46354099999999,
+        "n": 84,
+        "p50_ms": 1.7582909999999998,
+        "p95_ms": 7.204584,
+        "p99_ms": 77.46354099999999
+      },
+      "failed": 0,
+      "samples": 84,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "sound-placement",
+    "name": "Original initialized and displayed",
+    "summary": {
+      "completed": {
+        "max_ms": 76.74508300000001,
+        "n": 1,
+        "p50_ms": 76.74508300000001,
+        "p95_ms": 76.74508300000001,
+        "p99_ms": 76.74508300000001
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "sound-placement",
+    "name": "Project and picture settled",
+    "summary": {
+      "completed": {
+        "max_ms": 0.9840420000000001,
+        "n": 58,
+        "p50_ms": 0.568292,
+        "p95_ms": 0.798084,
+        "p99_ms": 0.9840420000000001
+      },
+      "failed": 0,
+      "samples": 58,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "sound-placement",
+    "name": "Sound is qualified in the real catalog",
+    "summary": {
+      "completed": {
+        "max_ms": 40.425083,
+        "n": 1,
+        "p50_ms": 40.425083,
+        "p95_ms": 40.425083,
+        "p99_ms": 40.425083
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "sound-placement",
+    "name": "Picture renderer is idle before compact pane entry",
+    "summary": {
+      "completed": {
+        "max_ms": 0.00020800000000000001,
+        "n": 1,
+        "p50_ms": 0.00020800000000000001,
+        "p95_ms": 0.00020800000000000001,
+        "p99_ms": 0.00020800000000000001
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "sound-placement",
+    "name": "Picture renderer is idle before viewer tab entry",
+    "summary": {
+      "completed": {
+        "max_ms": 0.00033299999999999996,
+        "n": 2,
+        "p50_ms": 0.000209,
+        "p95_ms": 0.00033299999999999996,
+        "p99_ms": 0.00033299999999999996
+      },
+      "failed": 0,
+      "samples": 2,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "sound-placement",
+    "name": "Picture renderer is idle before command and resize",
+    "summary": {
+      "completed": {
+        "max_ms": 0.000209,
+        "n": 1,
+        "p50_ms": 0.000209,
+        "p95_ms": 0.000209,
+        "p99_ms": 0.000209
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "sound-placement",
+    "name": "Committed revision changed",
+    "summary": {
+      "completed": {
+        "max_ms": 5.737375,
+        "n": 37,
+        "p50_ms": 4.1555,
+        "p95_ms": 5.609791,
+        "p99_ms": 5.737375
+      },
+      "failed": 0,
+      "samples": 37,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "sound-placement",
+    "name": "Unchanged sound position entry finishes without work",
+    "summary": {
+      "completed": {
+        "max_ms": 4.2e-05,
+        "n": 1,
+        "p50_ms": 4.2e-05,
+        "p95_ms": 4.2e-05,
+        "p99_ms": 4.2e-05
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "sound-placement",
+    "name": "Rejected sound edit reports its failure",
+    "summary": {
+      "completed": {
+        "max_ms": 0.6365000000000001,
+        "n": 4,
+        "p50_ms": 4.2e-05,
+        "p95_ms": 0.6365000000000001,
+        "p99_ms": 0.6365000000000001
+      },
+      "failed": 0,
+      "samples": 4,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "sound-placement",
+    "name": "Sound writer finishes while its UI completion is held",
+    "summary": {
+      "completed": {
+        "max_ms": 3.845208,
+        "n": 3,
+        "p50_ms": 3.555417,
+        "p95_ms": 3.845208,
+        "p99_ms": 3.845208
+      },
+      "failed": 0,
+      "samples": 3,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "sound-placement",
+    "name": "Changed or absent sound command target rejects explicitly",
+    "summary": {
+      "completed": {
+        "max_ms": 4.2e-05,
+        "n": 3,
+        "p50_ms": 4.1e-05,
+        "p95_ms": 4.2e-05,
+        "p99_ms": 4.2e-05
+      },
+      "failed": 0,
+      "samples": 3,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "sound-placement",
+    "name": "Pause command's earlier writer mutation finishes",
+    "summary": {
+      "completed": {
+        "max_ms": 3.898834,
+        "n": 2,
+        "p50_ms": 3.29525,
+        "p95_ms": 3.898834,
+        "p99_ms": 3.898834
+      },
+      "failed": 0,
+      "samples": 2,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "sound-placement",
+    "name": "Stale pause command reports rejection",
+    "summary": {
+      "completed": {
+        "max_ms": 4.2e-05,
+        "n": 2,
+        "p50_ms": 0.0,
+        "p95_ms": 4.2e-05,
+        "p99_ms": 4.2e-05
+      },
+      "failed": 0,
+      "samples": 2,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "room-tone",
+    "name": "ui_frame_cpu_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 5.322459,
+        "n": 384,
+        "p50_ms": 0.15829200000000002,
+        "p95_ms": 0.644125,
+        "p99_ms": 1.0414160000000001
+      },
+      "failed": 0,
+      "samples": 384,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "room-tone",
+    "name": "ui_composition_submit_cpu_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.256542,
+        "n": 384,
+        "p50_ms": 0.08858300000000001,
+        "p95_ms": 0.121834,
+        "p99_ms": 0.133875
+      },
+      "failed": 0,
+      "samples": 384,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "room-tone",
+    "name": "ui_composition_complete_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 5.51025,
+        "n": 384,
+        "p50_ms": 0.322625,
+        "p95_ms": 0.679708,
+        "p99_ms": 1.234
+      },
+      "failed": 0,
+      "samples": 384,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "room-tone",
+    "name": "input_to_state_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 1.0414160000000001,
+        "n": 130,
+        "p50_ms": 0.218916,
+        "p95_ms": 0.7274999999999999,
+        "p99_ms": 0.9668329999999999
+      },
+      "failed": 0,
+      "samples": 130,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "room-tone",
+    "name": "input_to_commit_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 67.692125,
+        "n": 5,
+        "p50_ms": 5.422124999999999,
+        "p95_ms": 67.692125,
+        "p99_ms": 67.692125
+      },
+      "failed": 0,
+      "samples": 5,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "room-tone",
+    "name": "request_to_decode_delivery_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 5.001875,
+        "n": 24,
+        "p50_ms": 0.634334,
+        "p95_ms": 1.6184999999999998,
+        "p99_ms": 5.001875
+      },
+      "failed": 0,
+      "samples": 24,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "room-tone",
+    "name": "request_to_worker_start_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.009458,
+        "n": 24,
+        "p50_ms": 0.006167000000000001,
+        "p95_ms": 0.007666999999999999,
+        "p99_ms": 0.009458
+      },
+      "failed": 0,
+      "samples": 24,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "room-tone",
+    "name": "worker_execution_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 4.840917,
+        "n": 24,
+        "p50_ms": 0.07129100000000001,
+        "p95_ms": 0.5193329999999999,
+        "p99_ms": 4.840917
+      },
+      "failed": 0,
+      "samples": 24,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "room-tone",
+    "name": "worker_publication_delay_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.000125,
+        "n": 24,
+        "p50_ms": 4.2e-05,
+        "p95_ms": 8.4e-05,
+        "p99_ms": 0.000125
+      },
+      "failed": 0,
+      "samples": 24,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "room-tone",
+    "name": "publication_to_decode_delivery_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 1.413459,
+        "n": 24,
+        "p50_ms": 0.502625,
+        "p95_ms": 1.102125,
+        "p99_ms": 1.413459
+      },
+      "failed": 0,
+      "samples": 24,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "room-tone",
+    "name": "request_to_picture_submission_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 5.325083,
+        "n": 22,
+        "p50_ms": 0.878167,
+        "p95_ms": 1.81725,
+        "p99_ms": 5.325083
+      },
+      "failed": 0,
+      "samples": 22,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "room-tone",
+    "name": "request_to_picture_complete_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 5.948125,
+        "n": 22,
+        "p50_ms": 1.342625,
+        "p95_ms": 2.288583,
+        "p99_ms": 5.948125
+      },
+      "failed": 0,
+      "samples": 22,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "room-tone",
+    "name": "input_to_picture_complete_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 73.643292,
+        "n": 18,
+        "p50_ms": 1.669375,
+        "p95_ms": 73.643292,
+        "p99_ms": 73.643292
+      },
+      "failed": 0,
+      "samples": 18,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "room-tone",
+    "name": "Original initialized and displayed",
+    "summary": {
+      "completed": {
+        "max_ms": 72.50637499999999,
+        "n": 1,
+        "p50_ms": 72.50637499999999,
+        "p95_ms": 72.50637499999999,
+        "p99_ms": 72.50637499999999
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "room-tone",
+    "name": "Project and picture settled",
+    "summary": {
+      "completed": {
+        "max_ms": 0.7525000000000001,
+        "n": 20,
+        "p50_ms": 0.000167,
+        "p95_ms": 0.691167,
+        "p99_ms": 0.7525000000000001
+      },
+      "failed": 0,
+      "samples": 20,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "room-tone",
+    "name": "Committed revision changed",
+    "summary": {
+      "completed": {
+        "max_ms": 5.863250000000001,
+        "n": 8,
+        "p50_ms": 4.617915999999999,
+        "p95_ms": 5.863250000000001,
+        "p99_ms": 5.863250000000001
+      },
+      "failed": 0,
+      "samples": 8,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "room-tone",
+    "name": "Missing copied source reports a bounded error",
+    "summary": {
+      "completed": {
+        "max_ms": 0.0,
+        "n": 1,
+        "p50_ms": 0.0,
+        "p95_ms": 0.0,
+        "p99_ms": 0.0
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "room-tone",
+    "name": "Captured room-tone source range is prepared",
+    "summary": {
+      "completed": {
+        "max_ms": 0.756084,
+        "n": 10,
+        "p50_ms": 0.561708,
+        "p95_ms": 0.756084,
+        "p99_ms": 0.756084
+      },
+      "failed": 0,
+      "samples": 10,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "room-tone",
+    "name": "Captured Hold opens its full gain keyboard editor",
+    "summary": {
+      "completed": {
+        "max_ms": 0.475041,
+        "n": 2,
+        "p50_ms": 0.44016599999999995,
+        "p95_ms": 0.475041,
+        "p99_ms": 0.475041
+      },
+      "failed": 0,
+      "samples": 2,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "room-tone",
+    "name": "First range preparation completes while delivery is held",
+    "summary": {
+      "completed": {
+        "max_ms": 0.0,
+        "n": 1,
+        "p50_ms": 0.0,
+        "p95_ms": 0.0,
+        "p99_ms": 0.0
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "room-tone",
+    "name": "Cancelled draft's range preparation finishes off the UI",
+    "summary": {
+      "completed": {
+        "max_ms": 4.2e-05,
+        "n": 1,
+        "p50_ms": 4.2e-05,
+        "p95_ms": 4.2e-05,
+        "p99_ms": 4.2e-05
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "room-tone",
+    "name": "Hold edit completes before its UI delivery",
+    "summary": {
+      "completed": {
+        "max_ms": 3.920917,
+        "n": 1,
+        "p50_ms": 3.920917,
+        "p95_ms": 3.920917,
+        "p99_ms": 3.920917
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "room-tone",
+    "name": "Stale Hold draft closes without applying",
+    "summary": {
+      "completed": {
+        "max_ms": 0.0,
+        "n": 1,
+        "p50_ms": 0.0,
+        "p95_ms": 0.0,
+        "p99_ms": 0.0
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "room-tone",
+    "name": "Second Hold edit completes before command entry",
+    "summary": {
+      "completed": {
+        "max_ms": 3.198792,
+        "n": 1,
+        "p50_ms": 3.198792,
+        "p95_ms": 3.198792,
+        "p99_ms": 3.198792
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "room-tone",
+    "name": "Absent room-tone command target rejects after late completion",
+    "summary": {
+      "completed": {
+        "max_ms": 0.0,
+        "n": 1,
+        "p50_ms": 0.0,
+        "p95_ms": 0.0,
+        "p99_ms": 0.0
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "gain",
+    "name": "ui_frame_cpu_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 3.0161659999999997,
+        "n": 4075,
+        "p50_ms": 0.194417,
+        "p95_ms": 0.365167,
+        "p99_ms": 0.38995799999999997
+      },
+      "failed": 0,
+      "samples": 4075,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "gain",
+    "name": "ui_composition_submit_cpu_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.292958,
+        "n": 4075,
+        "p50_ms": 0.08558299999999999,
+        "p95_ms": 0.16170900000000002,
+        "p99_ms": 0.183375
+      },
+      "failed": 0,
+      "samples": 4075,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "gain",
+    "name": "ui_composition_complete_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 5.501875,
+        "n": 4075,
+        "p50_ms": 0.287459,
+        "p95_ms": 0.470083,
+        "p99_ms": 0.686792
+      },
+      "failed": 0,
+      "samples": 4075,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "gain",
+    "name": "input_to_state_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 1.174666,
+        "n": 521,
+        "p50_ms": 0.19908299999999998,
+        "p95_ms": 0.37083299999999997,
+        "p99_ms": 0.728375
+      },
+      "failed": 0,
+      "samples": 521,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "gain",
+    "name": "input_to_commit_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 65.084208,
+        "n": 6,
+        "p50_ms": 4.155083,
+        "p95_ms": 65.084208,
+        "p99_ms": 65.084208
+      },
+      "failed": 0,
+      "samples": 6,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "gain",
+    "name": "request_to_decode_delivery_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 5.108375,
+        "n": 21,
+        "p50_ms": 0.631,
+        "p95_ms": 1.13825,
+        "p99_ms": 5.108375
+      },
+      "failed": 0,
+      "samples": 21,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "gain",
+    "name": "request_to_worker_start_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.008291999999999999,
+        "n": 21,
+        "p50_ms": 0.0067079999999999996,
+        "p95_ms": 0.007500000000000001,
+        "p99_ms": 0.008291999999999999
+      },
+      "failed": 0,
+      "samples": 21,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "gain",
+    "name": "worker_execution_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 4.6752080000000005,
+        "n": 21,
+        "p50_ms": 0.06970900000000001,
+        "p95_ms": 0.489083,
+        "p99_ms": 4.6752080000000005
+      },
+      "failed": 0,
+      "samples": 21,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "gain",
+    "name": "worker_publication_delay_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.000167,
+        "n": 21,
+        "p50_ms": 8.3e-05,
+        "p95_ms": 0.000167,
+        "p99_ms": 0.000167
+      },
+      "failed": 0,
+      "samples": 21,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "gain",
+    "name": "publication_to_decode_delivery_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 1.063,
+        "n": 21,
+        "p50_ms": 0.46175,
+        "p95_ms": 1.0465,
+        "p99_ms": 1.063
+      },
+      "failed": 0,
+      "samples": 21,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "gain",
+    "name": "request_to_picture_submission_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 5.436125,
+        "n": 21,
+        "p50_ms": 0.8253750000000001,
+        "p95_ms": 1.3984159999999999,
+        "p99_ms": 5.436125
+      },
+      "failed": 0,
+      "samples": 21,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "gain",
+    "name": "request_to_picture_complete_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 6.207167,
+        "n": 21,
+        "p50_ms": 1.30725,
+        "p95_ms": 1.896041,
+        "p99_ms": 6.207167
+      },
+      "failed": 0,
+      "samples": 21,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "gain",
+    "name": "input_to_picture_complete_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 71.294083,
+        "n": 13,
+        "p50_ms": 1.9577499999999999,
+        "p95_ms": 71.294083,
+        "p99_ms": 71.294083
+      },
+      "failed": 0,
+      "samples": 13,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "gain",
+    "name": "Original initialized and displayed",
+    "summary": {
+      "completed": {
+        "max_ms": 70.737708,
+        "n": 1,
+        "p50_ms": 70.737708,
+        "p95_ms": 70.737708,
+        "p99_ms": 70.737708
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "gain",
+    "name": "Project and picture settled",
+    "summary": {
+      "completed": {
+        "max_ms": 0.981083,
+        "n": 16,
+        "p50_ms": 0.578292,
+        "p95_ms": 0.981083,
+        "p99_ms": 0.981083
+      },
+      "failed": 0,
+      "samples": 16,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "gain",
+    "name": "Committed revision changed",
+    "summary": {
+      "completed": {
+        "max_ms": 6.270167,
+        "n": 10,
+        "p50_ms": 3.7963329999999997,
+        "p95_ms": 6.270167,
+        "p99_ms": 6.270167
+      },
+      "failed": 0,
+      "samples": 10,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "gain",
+    "name": "Latest captured gain proposal is prepared",
+    "summary": {
+      "completed": {
+        "max_ms": 1.011416,
+        "n": 13,
+        "p50_ms": 0.519625,
+        "p95_ms": 1.011416,
+        "p99_ms": 1.011416
+      },
+      "failed": 0,
+      "samples": 13,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "gain",
+    "name": "Measure canonical selected-beat PCM on the preparation worker",
+    "summary": {
+      "completed": {
+        "max_ms": 14.196125,
+        "n": 2,
+        "p50_ms": 12.695,
+        "p95_ms": 14.196125,
+        "p99_ms": 14.196125
+      },
+      "failed": 0,
+      "samples": 2,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "gain",
+    "name": "First gain preparation completes while its reply is held",
+    "summary": {
+      "completed": {
+        "max_ms": 4.2e-05,
+        "n": 1,
+        "p50_ms": 4.2e-05,
+        "p95_ms": 4.2e-05,
+        "p99_ms": 4.2e-05
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "retime",
+    "name": "ui_frame_cpu_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 3.0572500000000002,
+        "n": 166,
+        "p50_ms": 0.123292,
+        "p95_ms": 0.6549159999999999,
+        "p99_ms": 0.920041
+      },
+      "failed": 0,
+      "samples": 166,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "retime",
+    "name": "ui_composition_submit_cpu_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.272125,
+        "n": 166,
+        "p50_ms": 0.077209,
+        "p95_ms": 0.110291,
+        "p99_ms": 0.201959
+      },
+      "failed": 0,
+      "samples": 166,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "retime",
+    "name": "ui_composition_complete_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 8.007958,
+        "n": 166,
+        "p50_ms": 0.28204199999999996,
+        "p95_ms": 0.779917,
+        "p99_ms": 1.446791
+      },
+      "failed": 0,
+      "samples": 166,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "retime",
+    "name": "input_to_state_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.841583,
+        "n": 23,
+        "p50_ms": 0.376833,
+        "p95_ms": 0.727,
+        "p99_ms": 0.841583
+      },
+      "failed": 0,
+      "samples": 23,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "retime",
+    "name": "input_to_commit_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 71.28804099999999,
+        "n": 4,
+        "p50_ms": 4.422167,
+        "p95_ms": 71.28804099999999,
+        "p99_ms": 71.28804099999999
+      },
+      "failed": 0,
+      "samples": 4,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "retime",
+    "name": "request_to_decode_delivery_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 4.788834,
+        "n": 8,
+        "p50_ms": 0.6894170000000001,
+        "p95_ms": 4.788834,
+        "p99_ms": 4.788834
+      },
+      "failed": 0,
+      "samples": 8,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "retime",
+    "name": "request_to_worker_start_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.007834,
+        "n": 8,
+        "p50_ms": 0.0035,
+        "p95_ms": 0.007834,
+        "p99_ms": 0.007834
+      },
+      "failed": 0,
+      "samples": 8,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "retime",
+    "name": "worker_execution_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 4.467208,
+        "n": 8,
+        "p50_ms": 0.066708,
+        "p95_ms": 4.467208,
+        "p99_ms": 4.467208
+      },
+      "failed": 0,
+      "samples": 8,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "retime",
+    "name": "worker_publication_delay_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 8.3e-05,
+        "n": 8,
+        "p50_ms": 4.2e-05,
+        "p95_ms": 8.3e-05,
+        "p99_ms": 8.3e-05
+      },
+      "failed": 0,
+      "samples": 8,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "retime",
+    "name": "publication_to_decode_delivery_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 1.299625,
+        "n": 8,
+        "p50_ms": 0.5367500000000001,
+        "p95_ms": 1.299625,
+        "p99_ms": 1.299625
+      },
+      "failed": 0,
+      "samples": 8,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "retime",
+    "name": "request_to_picture_submission_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 5.133834,
+        "n": 8,
+        "p50_ms": 0.849542,
+        "p95_ms": 5.133834,
+        "p99_ms": 5.133834
+      },
+      "failed": 0,
+      "samples": 8,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "retime",
+    "name": "request_to_picture_complete_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 6.0948340000000005,
+        "n": 8,
+        "p50_ms": 1.1806670000000001,
+        "p95_ms": 6.0948340000000005,
+        "p99_ms": 6.0948340000000005
+      },
+      "failed": 0,
+      "samples": 8,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "retime",
+    "name": "input_to_picture_complete_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 77.386,
+        "n": 5,
+        "p50_ms": 6.035457999999999,
+        "p95_ms": 77.386,
+        "p99_ms": 77.386
+      },
+      "failed": 0,
+      "samples": 5,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "retime",
+    "name": "Original initialized and displayed",
+    "summary": {
+      "completed": {
+        "max_ms": 76.59175,
+        "n": 1,
+        "p50_ms": 76.59175,
+        "p95_ms": 76.59175,
+        "p99_ms": 76.59175
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "retime",
+    "name": "Project and picture settled",
+    "summary": {
+      "completed": {
+        "max_ms": 0.7194579999999999,
+        "n": 7,
+        "p50_ms": 0.58825,
+        "p95_ms": 0.7194579999999999,
+        "p99_ms": 0.7194579999999999
+      },
+      "failed": 0,
+      "samples": 7,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "retime",
+    "name": "Committed revision changed",
+    "summary": {
+      "completed": {
+        "max_ms": 4.751875,
+        "n": 6,
+        "p50_ms": 3.819875,
+        "p95_ms": 4.751875,
+        "p99_ms": 4.751875
+      },
+      "failed": 0,
+      "samples": 6,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "render",
+    "name": "ui_frame_cpu_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 3.044958,
+        "n": 373,
+        "p50_ms": 0.157667,
+        "p95_ms": 0.5910000000000001,
+        "p99_ms": 1.090125
+      },
+      "failed": 0,
+      "samples": 373,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "render",
+    "name": "ui_composition_submit_cpu_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.27745800000000004,
+        "n": 373,
+        "p50_ms": 0.09112500000000001,
+        "p95_ms": 0.160333,
+        "p99_ms": 0.23016599999999998
+      },
+      "failed": 0,
+      "samples": 373,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "render",
+    "name": "ui_composition_complete_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 6.077958,
+        "n": 373,
+        "p50_ms": 0.369167,
+        "p95_ms": 0.9853329999999999,
+        "p99_ms": 1.4051669999999998
+      },
+      "failed": 0,
+      "samples": 373,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "render",
+    "name": "input_to_state_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 1.047166,
+        "n": 112,
+        "p50_ms": 0.161541,
+        "p95_ms": 0.705583,
+        "p99_ms": 0.958625
+      },
+      "failed": 0,
+      "samples": 112,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "render",
+    "name": "input_to_commit_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 68.924708,
+        "n": 3,
+        "p50_ms": 14.346084,
+        "p95_ms": 68.924708,
+        "p99_ms": 68.924708
+      },
+      "failed": 0,
+      "samples": 3,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "render",
+    "name": "request_to_decode_delivery_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 5.28425,
+        "n": 14,
+        "p50_ms": 0.9131659999999999,
+        "p95_ms": 5.28425,
+        "p99_ms": 5.28425
+      },
+      "failed": 0,
+      "samples": 14,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "render",
+    "name": "request_to_worker_start_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 0.007375,
+        "n": 14,
+        "p50_ms": 0.005833,
+        "p95_ms": 0.007375,
+        "p99_ms": 0.007375
+      },
+      "failed": 0,
+      "samples": 14,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "render",
+    "name": "worker_execution_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 4.4916670000000005,
+        "n": 14,
+        "p50_ms": 0.11204199999999999,
+        "p95_ms": 4.4916670000000005,
+        "p99_ms": 4.4916670000000005
+      },
+      "failed": 0,
+      "samples": 14,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "render",
+    "name": "worker_publication_delay_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 8.4e-05,
+        "n": 14,
+        "p50_ms": 4.2e-05,
+        "p95_ms": 8.4e-05,
+        "p99_ms": 8.4e-05
+      },
+      "failed": 0,
+      "samples": 14,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "render",
+    "name": "publication_to_decode_delivery_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 1.4462920000000001,
+        "n": 14,
+        "p50_ms": 0.785125,
+        "p95_ms": 1.4462920000000001,
+        "p99_ms": 1.4462920000000001
+      },
+      "failed": 0,
+      "samples": 14,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "render",
+    "name": "request_to_picture_submission_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 5.655417,
+        "n": 14,
+        "p50_ms": 1.075791,
+        "p95_ms": 5.655417,
+        "p99_ms": 5.655417
+      },
+      "failed": 0,
+      "samples": 14,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "render",
+    "name": "request_to_picture_complete_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 6.5976669999999995,
+        "n": 14,
+        "p50_ms": 1.485291,
+        "p95_ms": 6.5976669999999995,
+        "p99_ms": 6.5976669999999995
+      },
+      "failed": 0,
+      "samples": 14,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "render",
+    "name": "input_to_picture_complete_ms",
+    "summary": {
+      "completed": {
+        "max_ms": 75.52537500000001,
+        "n": 11,
+        "p50_ms": 2.048375,
+        "p95_ms": 75.52537500000001,
+        "p99_ms": 75.52537500000001
+      },
+      "failed": 0,
+      "samples": 11,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "render",
+    "name": "Original initialized and displayed",
+    "summary": {
+      "completed": {
+        "max_ms": 74.72687499999999,
+        "n": 1,
+        "p50_ms": 74.72687499999999,
+        "p95_ms": 74.72687499999999,
+        "p99_ms": 74.72687499999999
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "render",
+    "name": "Project and picture settled",
+    "summary": {
+      "completed": {
+        "max_ms": 0.9030419999999999,
+        "n": 11,
+        "p50_ms": 0.000125,
+        "p95_ms": 0.9030419999999999,
+        "p99_ms": 0.9030419999999999
+      },
+      "failed": 0,
+      "samples": 11,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "render",
+    "name": "Render captures after this frame's native input",
+    "summary": {
+      "completed": {
+        "max_ms": 4.2e-05,
+        "n": 6,
+        "p50_ms": 0.0,
+        "p95_ms": 4.2e-05,
+        "p99_ms": 4.2e-05
+      },
+      "failed": 0,
+      "samples": 6,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "render",
+    "name": "Captured Render picker completes",
+    "summary": {
+      "completed": {
+        "max_ms": 5.663667,
+        "n": 5,
+        "p50_ms": 0.462459,
+        "p95_ms": 5.663667,
+        "p99_ms": 5.663667
+      },
+      "failed": 0,
+      "samples": 5,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "render",
+    "name": "Camera opens against the displayed picture",
+    "summary": {
+      "completed": {
+        "max_ms": 4.2e-05,
+        "n": 2,
+        "p50_ms": 0.0,
+        "p95_ms": 4.2e-05,
+        "p99_ms": 4.2e-05
+      },
+      "failed": 0,
+      "samples": 2,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "render",
+    "name": "Same-batch Camera text reaches the Render capture",
+    "summary": {
+      "completed": {
+        "max_ms": 4.1e-05,
+        "n": 1,
+        "p50_ms": 4.1e-05,
+        "p95_ms": 4.1e-05,
+        "p99_ms": 4.1e-05
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "render",
+    "name": "Initial Gain proposal is prepared",
+    "summary": {
+      "completed": {
+        "max_ms": 0.537333,
+        "n": 2,
+        "p50_ms": 0.44175,
+        "p95_ms": 0.537333,
+        "p99_ms": 0.537333
+      },
+      "failed": 0,
+      "samples": 2,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "render",
+    "name": "Exact Gain proposal is prepared",
+    "summary": {
+      "completed": {
+        "max_ms": 0.42908399999999997,
+        "n": 2,
+        "p50_ms": 0.42416600000000004,
+        "p95_ms": 0.42908399999999997,
+        "p99_ms": 0.42908399999999997
+      },
+      "failed": 0,
+      "samples": 2,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "render",
+    "name": "Committed revision changed",
+    "summary": {
+      "completed": {
+        "max_ms": 6.767874999999999,
+        "n": 3,
+        "p50_ms": 4.588208,
+        "p95_ms": 6.767874999999999,
+        "p99_ms": 6.767874999999999
+      },
+      "failed": 0,
+      "samples": 3,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "render",
+    "name": "Room tone prepares the captured Original samples",
+    "summary": {
+      "completed": {
+        "max_ms": 0.7264170000000001,
+        "n": 1,
+        "p50_ms": 0.7264170000000001,
+        "p95_ms": 0.7264170000000001,
+        "p99_ms": 0.7264170000000001
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "render",
+    "name": "Concurrent typed command commits while Render decision is open",
+    "summary": {
+      "completed": {
+        "max_ms": 5.5381670000000005,
+        "n": 1,
+        "p50_ms": 5.5381670000000005,
+        "p95_ms": 5.5381670000000005,
+        "p99_ms": 5.5381670000000005
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  {
+    "scenario": "render",
+    "name": "Real automatic UI Render wall time",
+    "summary": {
+      "completed": {
+        "max_ms": 1656.248291,
+        "n": 1,
+        "p50_ms": 1656.248291,
+        "p95_ms": 1656.248291,
+        "p99_ms": 1656.248291
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  }
+]

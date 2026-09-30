@@ -2,6 +2,33 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
+## Native and public Render, 2026-09-30
+
+Native Render (`Cmd-E`, `:render`, or the visible control) and the public
+closed-project headless commands now use the shared automatic SDR workflow.
+Camera, Gain and Room tone drafts offer explicit commit/discard/keep choices.
+Input is captured after native text processing; picker cancellation preserves the
+draft. A typed `CommitAndStart` uses the exact durable preview commit receipt,
+including when later refresh or render admission fails. Status and cancellation
+remain separate from editor feedback. See [the contract](../RENDER_JOBS.md#native-and-public-render)
+and [CLI commands](../HEADLESS.md#automatic-render).
+
+The production `render` replay passed 71 checks, including actual publication,
+later Undo during rendering, stale preview rejection and minimum/default layouts.
+The public workflow passed start, stored status, checkpoint retry, reconciliation,
+stale rejection, destination collision, SIGINT cancellation and JSON re-encoding.
+[Qualification](../qualification/public-render-2026-09-30.md) retains 2,463
+passing workspace tests, 318 optional UI-feature tests, strict Clippy, formatting,
+native startup/shutdown, eight inspected final captures and 2,418 release replay
+checks. Independent readers pass all 768 picture planes and complete authored
+audio in both public exports. The accepted-generated-picture replay requires its
+separate fixture and is explicitly skipped in this ordinary release run.
+
+Next implement authenticated host routing for an already open native project and
+native persisted-job recovery. Do not treat `ProjectLocked` or the documented
+`RenderOwnerUnavailable` response as implementing Section 20.5. Full mastering,
+HDR, expanded output qualification and the complete product scope remain open.
+
 ## Durable automatic encoding, 2026-09-30
 
 Database 42 adds a strict automatic job policy and immutable decisions owned by
@@ -26,9 +53,9 @@ tests plus 310 optional UI-harness app tests. Strict Clippy, formatting and nati
 smoke pass. The original full-run migration-expectation failure and a native
 example's f32 JSON-comparison failure remain retained, with scoped corrections.
 
-Next expose automatic Render through native controls and the public headless
-API. Capture preview commit/discard decisions and the owning project session.
-Keep full mastering/effects, HDR, scheduling and release qualification open.
+The entrypoints above now expose automatic Render with captured preview decisions
+and owning-session validation. Keep full mastering/effects, HDR, scheduling and
+release qualification open.
 
 ## Encoder runtime binding, 2026-09-30
 

@@ -1,0 +1,31 @@
+import json
+import os
+from pathlib import Path
+import subprocess
+import sys
+
+root = Path('/tmp/deadpan-public-render-20260930')
+repo = Path('/Users/michael/Code/deadpan')
+runner = 'tools/media-qualification/evidence/2026-09-29-generated-pictures/run-native.py'
+prior = json.loads((root / 'workspace-tests.json').read_text())
+if prior.get('exit_code') != 0:
+    raise SystemExit('Workspace test gate must finish successfully before remaining checks.')
+commands = [
+    ('ui-tests', ['cargo', 'test', '--locked', '-p', 'deadpan-app', '--features', 'ui-harness']),
+    ('ui-clippy', ['cargo', 'clippy', '--locked', '-p', 'deadpan-app', '--features', 'ui-harness', '--all-targets', '--', '-D', 'warnings']),
+    ('ui-build-verified', ['cargo', 'build', '--locked', '-p', 'deadpan-app', '--features', 'ui-harness']),
+    ('ui-render-final', ['target/debug/deadpan-app', '--ui-check', '--scenario', 'render', '--retain-projects', '--kestrel-source', '/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift', '--output', str(root / 'ui-render-final')]),
+    ('native-smoke', ['target/debug/deadpan-app', '--smoke-test']),
+    ('ui-release-build', ['cargo', 'build', '--release', '--locked', '-p', 'deadpan-app', '--features', 'ui-harness']),
+    ('ui-render-performance', ['target/release/deadpan-app', '--ui-check', '--mode', 'performance', '--kestrel-source', '/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift', '--output', str(root / 'ui-render-performance')]),
+    ('format-final', ['cargo', 'fmt', '--all', '--', '--check']),
+]
+environment = dict(os.environ, DEADPAN_CHECK_OUTPUT=str(root))
+for name, command in commands:
+    if (root / (name + '.json')).exists():
+        raise SystemExit(f'Preserve existing journal: {name}')
+    print(f'Starting {name}', flush=True)
+    result = subprocess.run(['python3', runner, name, *command], cwd=repo, env=environment, check=False)
+    if result.returncode:
+        sys.exit(result.returncode)
+print('All remaining checks passed.', flush=True)

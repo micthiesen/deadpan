@@ -25,6 +25,7 @@ requires an explicit pinned FFmpeg developer prefix; see [Development](DEVELOPME
 | rusqlite | 0.40.2 | MIT | Authoritative SQLite package/history, backup API, and SQLite limits. |
 | SQLite via libsqlite3-sys | 3.53.2 via 0.38.2 | Public domain; binding MIT | Bundled with rusqlite; WAL, FULL synchronization, foreign keys, immutable revision/history writes. |
 | tempfile | 3.27.0 | MIT OR Apache-2.0 | Atomic checkpoint files and isolated integration fixtures. |
+| signal-hook | 0.3.18 | MIT OR Apache-2.0 | Safe SIGINT/SIGTERM cancellation flags for the headless Render owner. Signal callbacks only set an atomic flag; the owner pumps cancellation, journals and checked worker cleanup before releasing its writer. |
 | thiserror | 2.0.20 | MIT OR Apache-2.0 | Typed storage and CLI errors. |
 | uuid | 1.26.1 | MIT OR Apache-2.0 | Host-generated v4 project/node/revision identities; no randomness in core. |
 | rustix | 1.1.5 | Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT | Safe process-group signalling, unreaped exit observation, and nonblocking worker pipes on macOS/Linux. Already locked transitively; now pinned directly with `process` and `fs`. |

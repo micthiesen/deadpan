@@ -143,22 +143,33 @@ pub struct ProjectRenderLimits {
     pub media: deadpan_store::render_media::RenderMediaLimits,
 }
 
-#[cfg_attr(
-    not(test),
-    expect(
-        dead_code,
-        reason = "engineering service API awaits automatic Render policy"
-    )
-)]
 pub enum ProjectRenderOperation {
     Start {
         request: deadpan_cli::encoded_render::workflow::StartRender,
         limits: ProjectRenderLimits,
     },
+    /// Commit the captured Camera, Gain or Hold audio preview, then render its
+    /// exact receipt before another command can run. request.revision names the
+    /// pre-edit revision; only a successful edit receipt may replace it.
+    CommitAndStart {
+        edit: Box<ProjectEdit>,
+        cursor: ProjectFrame,
+        scope: SequenceScope,
+        request: deadpan_cli::encoded_render::workflow::StartRender,
+        limits: ProjectRenderLimits,
+    },
+    #[cfg_attr(
+        not(test),
+        expect(dead_code, reason = "checkpoint recovery UI remains open")
+    )]
     Retry {
         request: deadpan_cli::encoded_render::workflow::RetryRender,
         limits: ProjectRenderLimits,
     },
+    #[cfg_attr(
+        not(test),
+        expect(dead_code, reason = "publication recovery UI remains open")
+    )]
     Reconcile {
         request: deadpan_cli::encoded_render::workflow::ReconcileRender,
         limits: ProjectRenderLimits,
@@ -180,49 +191,17 @@ pub struct ProjectRenderError {
 
 #[derive(Clone, Debug)]
 pub struct ProjectRenderCommandOutcome {
-    #[cfg_attr(
-        not(test),
-        expect(
-            dead_code,
-            reason = "Render command feedback awaits automatic Render policy"
-        )
-    )]
     pub ticket: u64,
-    #[cfg_attr(
-        not(test),
-        expect(
-            dead_code,
-            reason = "Render command feedback awaits automatic Render policy"
-        )
-    )]
     pub context: ProjectRenderContext,
-    #[cfg_attr(
-        not(test),
-        expect(
-            dead_code,
-            reason = "Render command feedback awaits automatic Render policy"
-        )
-    )]
+    /// Exact durable preview commit, even if refresh or render admission failed.
+    /// None means this command did not acknowledge an authored commit.
+    pub committed_revision: Option<RevisionId>,
     pub result: Result<deadpan_cli::encoded_render::workflow::WorkflowIdentity, ProjectRenderError>,
 }
 
 #[derive(Clone, Debug)]
 pub struct ProjectRenderStatus {
-    #[cfg_attr(
-        not(test),
-        expect(
-            dead_code,
-            reason = "Render status identity awaits automatic Render policy"
-        )
-    )]
     pub context: ProjectRenderContext,
-    #[cfg_attr(
-        not(test),
-        expect(
-            dead_code,
-            reason = "Render status identity awaits automatic Render policy"
-        )
-    )]
     pub revision: RevisionId,
     pub status: Arc<deadpan_cli::encoded_render::workflow::WorkflowStatus>,
 }
@@ -378,13 +357,6 @@ pub struct MomentPaste {
 }
 
 pub enum ProjectRequest {
-    #[cfg_attr(
-        not(test),
-        expect(
-            dead_code,
-            reason = "engineering service API awaits automatic Render policy"
-        )
-    )]
     Render(ProjectRenderRequest),
     /// Source first: native projects are always allocated in Documents/Deadpan.
     CreateFromSource {
@@ -461,6 +433,8 @@ struct Shared {
     shutdown_complete: AtomicBool,
     #[cfg(test)]
     render_poll_paused: AtomicBool,
+    #[cfg(test)]
+    render_commit_refresh_failure: AtomicBool,
     update: Mutex<Option<ProjectUpdate>>,
     wake: Arc<dyn Fn() + Send + Sync>,
 }
@@ -485,6 +459,8 @@ impl ProjectService {
             shutdown_complete: AtomicBool::new(false),
             #[cfg(test)]
             render_poll_paused: AtomicBool::new(false),
+            #[cfg(test)]
+            render_commit_refresh_failure: AtomicBool::new(false),
             update: Mutex::new(None),
             wake,
         });

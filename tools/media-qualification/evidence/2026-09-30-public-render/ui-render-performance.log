@@ -1,0 +1,19 @@
+workspace: PASS
+editing: PASS
+camera: PASS
+menus: PASS
+delayed-preview: PASS
+rapid-input: PASS
+playback-feedback: PASS
+large-project: PASS
+edit-latency: PASS
+nested-pause: PASS
+original-moment: PASS
+original-playback: PASS
+sound-playback: PASS
+sound-placement: PASS
+room-tone: PASS
+gain: PASS
+retime: PASS
+render: PASS
+UI feedback: /tmp/deadpan-public-render-20260930/ui-render-performance/report.html

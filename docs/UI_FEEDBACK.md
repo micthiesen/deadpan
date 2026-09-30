@@ -11,13 +11,24 @@ The [specification](spec/DEADPAN_SPEC.md), [design targets](design/README.md) an
 
 ## Current status
 
+The [native/public Render increment](qualification/public-render-2026-09-30.md)
+adds the visible Render action and exact preview decisions. Its dedicated replay
+uses real encoding, verification and publication; only the destination picker is
+scripted. Native CUA separately exercises the macOS sheet and preview decision.
+The final visual run passes 71 Render checks and its eight named captures were
+inspected. The full release replay passes 2,418 checks with no findings or failed
+timing samples; warm navigation/Repeat/Hold picture completion p95 is
+1.502/5.698/5.607 ms. The separate accepted-generated-picture scenario remains
+explicitly skipped without its fixture. See that qualification record for source
+identities and remaining coverage.
+
 The [render workflow increment](qualification/render-workflow-2026-09-30.md)
 changes native service ownership and shutdown notification. Its normal workspace
 and optional app checks pass, including 309 app/harness tests; native Metal
 startup and shutdown pass. Release replay passes all 2,348 checks with no findings
 or failed timing samples. Warm navigation, Repeat and Hold picture completion
-p95 values are 1.489, 5.712 and 5.816 ms. Public Render controls remain open;
-this adds no new visual baseline or concurrent-render UI performance claim.
+p95 values are 1.489, 5.712 and 5.816 ms. That earlier increment adds no visual
+baseline or concurrent-render UI performance claim.
 
 The [Generated picture qualification](qualification/generated-pictures-2026-09-29.md)
 adds a separate replay of a real accepted, relocated canonical bundle. It also
@@ -367,9 +378,10 @@ the real app. The initial viewport is 1280×820 points at 1×. The code lives in
 | `retime` | Opens/cancels speed entry by pointer, checks the resolved-duration preview, creates a Preserve Retime by command, adjusts the same stage to tape pitch through ordinary text editing, explicitly nests another stage, undoes all three edits and confirms Original context stays unchanged. Uses real project history and picture preparation; it does not measure acoustic quality. |
 | `generated-picture` | Requires an explicit `--project /absolute/accepted.deadpan` exported by the real bundle integration test. Opens through the production project service and checks all 30 sampled frames, exact RGBA/PTS, retained framing, keyboard navigation, both viewport sizes, visible provider/duration and unobscured mode/focus. Release performance separately measures cold admission and 120 warm navigation inputs. The synthetic 4×2 compatibility fixture does not qualify full-size performance, app inference/acceptance, audio or export. Ordinary replay reports this scenario as skipped without the explicit fixture. |
 | `nested-pause` | Seeds two framed Sequence groups with typed store commands, reopens the actual project, navigates to frame 17 with keys, inserts `:hold 11f`, and checks the nested Hold, exact freeze, retained child crop, live ancestor scopes and cursor. Undo/redo compares nodes and audio bindings. Enter drills through breadcrumbs to the Hold; Inspector Enter changes its duration, history preserves scope, Camera commits only its framing, Backspace selects exited groups, and a group-edge pause fails without mutation. Minimum-size checks cover empty Sounds focus, strict parent-action text/hit clips and pointer/keyboard navigation preserving revision, scope, selection and both cursors. The final compact run passes 73 checks plus the audit on `78395620`. |
+| `render` | Opens Render by Cmd-E, command and pointer; checks Camera/Gain/Room tone decisions at both window sizes, latest native text capture, picker cancellation and stale revision refusal. Commits a real Gain preview, then undoes in the editor while the immutable revision renders. Checks the published file receipt and retained automatic job. Only the OS picker is scripted; media, encoder qualification, verification and publication are real. |
 
 The trace is bounded to 6,000 frames per scenario, with 15-second waits for real
-work and a 5-second GPU completion wait. Visual waits discount screenshot work
+work, a 240-second Render completion bound and a 5-second GPU completion wait. Visual waits discount screenshot work
 from the wait deadline; performance waits use elapsed wall time unchanged. The
 report retains actual wall time separately from simulated replay time.
 

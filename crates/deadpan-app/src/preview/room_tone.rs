@@ -96,6 +96,45 @@ impl Draft {
 }
 
 impl DeadpanApp {
+    pub(super) fn room_tone_render_edit(
+        &self,
+    ) -> Result<Option<super::render::PreviewEdit>, String> {
+        let draft = self
+            .room_tone
+            .as_ref()
+            .ok_or("Room tone preview is no longer open.")?;
+        self.check_hold_target(&draft.target)?;
+        if !draft.ready() {
+            return Err(draft
+                .error
+                .clone()
+                .unwrap_or_else(|| "Prepare the room tone range before committing it.".into()));
+        }
+        let audio = HoldAudio::RoomTone {
+            source: draft.prepared.as_ref().expect("ready draft").source.clone(),
+        };
+        if self
+            .workspace
+            .as_ref()
+            .and_then(|workspace| workspace.document.nodes().get(&draft.target.node))
+            .is_some_and(
+                |node| matches!(&node.kind, NodeKind::Hold { recipe } if recipe.audio == audio),
+            )
+        {
+            return Ok(None);
+        }
+        Ok(Some(super::render::PreviewEdit {
+            session: draft.target.session,
+            revision: draft.target.revision.clone(),
+            cursor: draft.target.cursor,
+            scope: draft.target.scope.clone(),
+            edit: ProjectEdit::HoldAudio {
+                node: draft.target.node.clone(),
+                audio,
+            },
+        }))
+    }
+
     pub(super) fn capture_hold_command(&self) -> CommandTarget {
         let target = (|| {
             if self.view != View::Sequence || self.event_focused() || self.sound_focused() {
@@ -277,7 +316,7 @@ impl DeadpanApp {
         }
     }
 
-    fn close_room_tone(&mut self, context: &egui::Context) {
+    pub(super) fn close_room_tone(&mut self, context: &egui::Context) {
         self.stop_playback();
         self.room_tone = None;
         self.bindings.clear();
@@ -341,6 +380,13 @@ impl DeadpanApp {
                 continue;
             };
             use navigation::room_tone::RoomToneKey;
+            if Bindings::default().key(key, modifiers, field, false) == Some(Action::Render) {
+                self.render.requested = true;
+                context.input_mut(|input| {
+                    input.consume_key(modifiers, key);
+                });
+                break;
+            }
             let action =
                 navigation::room_tone::route_key(key, modifiers, field, background, false, false)
                     .map(|key| match key {

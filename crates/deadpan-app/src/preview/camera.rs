@@ -305,6 +305,41 @@ impl CameraSession {
 }
 
 impl DeadpanApp {
+    pub(super) fn camera_render_edit(&self) -> Result<Option<super::render::PreviewEdit>, String> {
+        let camera = self
+            .camera
+            .as_ref()
+            .ok_or("Camera preview is no longer open.")?;
+        if camera.committing || !camera.fields.is_valid() || camera.field_error.is_some() {
+            return Err(camera
+                .field_error
+                .clone()
+                .or_else(|| camera.fields.error_message().map(str::to_owned))
+                .unwrap_or_else(|| "Finish the Camera edit before rendering.".into()));
+        }
+        let mut draft = camera.draft.clone();
+        let framing = match draft.input(CameraKey::Commit, Some(camera.steps)) {
+            CameraEffect::Unchanged => return Ok(None),
+            CameraEffect::Commit { pose, reset } => camera.framing(pose, reset)?,
+            _ => return Err("Finish choosing a Camera target before rendering.".into()),
+        };
+        if framing == camera.entry {
+            return Ok(None);
+        }
+        Ok(Some(super::render::PreviewEdit {
+            session: camera.session,
+            revision: camera.revision.clone(),
+            cursor: ProjectFrame(
+                i64::try_from(camera.cursor).map_err(|_| "Camera cursor is out of range.")?,
+            ),
+            scope: camera.navigation_scope.clone(),
+            edit: ProjectEdit::SetFraming {
+                node: camera.scope.node.clone(),
+                framing,
+            },
+        }))
+    }
+
     pub(super) fn framing_action(&mut self, action: FramingAction, context: &egui::Context) {
         if self.view != View::Sequence {
             self.error = Some("Camera edits Your edit. The Original stays intact.".into());

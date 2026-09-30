@@ -1,0 +1,3 @@
+render: FAIL
+UI feedback: /tmp/deadpan-public-render-20260930/ui-render-first/report.html
+Error: "UI feedback checks failed; inspect report.json and report.html"
