@@ -1,0 +1,34 @@
+"""Bind retained evidence and require the final production sources to match checks."""
+import hashlib
+import json
+from pathlib import Path
+import shutil
+import subprocess
+
+root = Path(__file__).resolve().parent
+destination = Path('tools/media-qualification/evidence/2026-09-29-render-publication')
+shutil.copyfile(root / 'finalize-evidence.py', destination / 'finalize-evidence.py.txt')
+paths = subprocess.check_output([
+    'git', '-c', 'core.fsmonitor=false', 'ls-files', '--cached', '--others',
+    '--exclude-standard', '-z']).decode().split('\0')
+sources = {name: hashlib.sha256(Path(name).read_bytes()).hexdigest()
+           for name in sorted(set(paths)) if name and Path(name).is_file()
+           and (Path(name).suffix in ('.rs', '.toml', '.lock', '.cpp', '.h', '.hpp', '.c', '.m', '.py')
+                or name.startswith(('.cargo/', 'crates/', 'native/')))}
+wire = json.dumps(sources, sort_keys=True, indent=2) + '\n'
+summary = json.loads((destination / 'summary.json').read_text())
+assert hashlib.sha256(wire.encode()).hexdigest() == summary['final_source_manifest']
+manifest = []
+for path in sorted(destination.rglob('*')):
+    if path.is_file() and path.name != 'file-manifest.json':
+        with path.open('rb') as stream:
+            checksum = hashlib.file_digest(stream, 'sha256').hexdigest()
+        manifest.append({'path': path.relative_to(destination).as_posix(),
+                         'bytes': path.stat().st_size, 'sha256': checksum})
+(destination / 'file-manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
+for row in manifest:
+    path = destination / row['path']
+    assert path.stat().st_size == row['bytes']
+    with path.open('rb') as stream:
+        assert hashlib.file_digest(stream, 'sha256').hexdigest() == row['sha256']
+print(json.dumps({'evidence_files': len(manifest), 'source_inventory_unchanged': True}))

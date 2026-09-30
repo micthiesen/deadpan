@@ -1,0 +1,9 @@
+{
+  "metal-publication": [],
+  "native-build": [],
+  "project-decode": [],
+  "publication-audit-check": [],
+  "publication-integrity": [],
+  "workspace-clippy": [],
+  "workspace-tests": []
+}

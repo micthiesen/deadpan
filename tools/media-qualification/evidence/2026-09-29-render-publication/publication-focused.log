@@ -1,0 +1,22 @@
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+error[E0521]: borrowed data escapes outside of function
+   --> crates/deadpan-cli/src/encoded_render/publication/mod.rs:345:16
+    |
+344 |   fn io_error(fallback: &str, error: io::Error) -> PublicationDiagnostic {
+    |               --------  - let's call the lifetime of this reference `'1`
+    |               |
+    |               `fallback` is a reference that is only valid in the function body
+345 |       let code = error
+    |  ________________^
+346 | |         .get_ref()
+347 | |         .and_then(|source| source.downcast_ref::<filesystem::FsError>())
+348 | |         .map_or(fallback, filesystem::FsError::code);
+    | |                                                    ^
+    | |                                                    |
+    | |____________________________________________________`fallback` escapes the function body here
+    |                                                      argument requires that `'1` must outlive `'static`
+
+For more information about this error, try `rustc --explain E0521`.
+error: could not compile `deadpan-cli` (lib) due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `deadpan-cli` (lib test) due to 1 previous error

@@ -1,0 +1,26 @@
+[
+  {
+    "method": "SQLite backup API",
+    "sha256": "e9c3bea8081ab721647f3f061d458b8600a00aaa2cab9bb63b5ecf067c11b6e7",
+    "snapshot": "/private/tmp/deadpan-publication-oywt_6il/project-inputs/picture.deadpan/project.sqlite",
+    "source": "/private/tmp/deadpan-publication-oywt_6il/metal-publication-files/picture.deadpan/project.sqlite"
+  },
+  {
+    "method": "SQLite backup API",
+    "sha256": "aca0c818055fdfcbbe2449eaaad2d4e6941f275549c66b228c844ec0a0708ff6",
+    "snapshot": "/private/tmp/deadpan-publication-oywt_6il/project-inputs/odd-canvas.deadpan/project.sqlite",
+    "source": "/private/tmp/deadpan-publication-oywt_6il/metal-publication-files/odd-canvas.deadpan/project.sqlite"
+  },
+  {
+    "method": "SQLite backup API",
+    "sha256": "7c9b1d156f17569b2418fa3cd33f9b0baa2b08d6940ca3cc2a6a1bcd5e257e78",
+    "snapshot": "/private/tmp/deadpan-publication-oywt_6il/project-inputs/marker.deadpan/project.sqlite",
+    "source": "/private/tmp/deadpan-publication-oywt_6il/metal-publication-files/marker.deadpan/project.sqlite"
+  },
+  {
+    "method": "SQLite backup API",
+    "sha256": "7b258e374b8f46b800658b2f123007895205866d499cd14918a4bcce74c4a394",
+    "snapshot": "/private/tmp/deadpan-publication-oywt_6il/project-inputs/accepted.deadpan/project.sqlite",
+    "source": "/tmp/deadpan-generated-pictures-smyys035/fixture/accepted.deadpan/project.sqlite"
+  }
+]

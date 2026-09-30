@@ -13,6 +13,7 @@ use deadpan_cli::audio::OfflineAudioSession;
 use deadpan_cli::encoded_render::{
     EncodedProgress, EncodedRenderError, EncodedWorkerLimits, encode,
     protocol::EncoderChoice,
+    publication::{PublicationOutcome, publish},
     verification::{VerificationLimits, VerificationRequest, verify},
 };
 use deadpan_cli::picture::ProjectPictureSession;
@@ -93,8 +94,8 @@ pub(super) fn qualify(
         environment,
     };
     report["encoded"] = json!({"status": "running", "checks": [], "cases": [],
-        "scope": "real isolated committed picture and canonical PCM encoding; private candidate only",
-        "limitations": ["platform and content qualification follows in Python", "no publication",
+        "scope": "real isolated committed picture and canonical PCM encoding, verification and explicit destination publication",
+        "limitations": ["platform and content qualification follows in Python",
             "no durable render jobs, native Render, full audio effects, HDR or release qualification"]});
     let report = &mut report["encoded"];
     let hardware = EncoderChoice {
@@ -266,7 +267,7 @@ pub(super) fn qualify(
         |_| {},
     )?;
     report["status"] = json!(
-        "passed candidate preparation and production SDR verification; content qualification required"
+        "passed candidate preparation, production SDR verification and destination publication; content qualification required"
     );
     check_deadline(gpu.deadline)?;
     Ok(())
@@ -442,6 +443,41 @@ fn run_case(
         "verification_status": "passed",
         "elapsed_seconds": started.elapsed().as_secs_f64(), "independent_decode": "pending",
     });
+    let mut publication_progress = Vec::new();
+    report["cases"][case_index]["publication_status"] = json!("pending");
+    let published = publish(
+        candidate,
+        case.package,
+        &directory.join(format!("published-{}.mp4", case.name)),
+        &cancelled,
+        gpu.deadline,
+        |stage| publication_progress.push(stage),
+    );
+    report["cases"][case_index]["publication_progress"] = json!(publication_progress);
+    match published {
+        Ok(PublicationOutcome::Published(receipt)) => {
+            report["cases"][case_index]["publication_status"] = json!("published");
+            report["cases"][case_index]["encoded_candidate_path"] = json!(path);
+            // The independent content reader must inspect the published bytes.
+            report["cases"][case_index]["path"] = json!(receipt.movie);
+            report["cases"][case_index]["publication"] = json!(receipt);
+        }
+        Ok(PublicationOutcome::PublishedUnconfirmed {
+            receipt,
+            diagnostic,
+        }) => {
+            report["cases"][case_index]["publication_status"] = json!("published_unconfirmed");
+            report["cases"][case_index]["publication"] = json!(receipt);
+            report["cases"][case_index]["publication_failure"] = json!(diagnostic);
+            return Err(diagnostic.into());
+        }
+        Err(failure) => {
+            report["cases"][case_index]["publication_status"] = json!("failed_before_movie_rename");
+            report["cases"][case_index]["publication_failure"] = json!(failure.error);
+            report["cases"][case_index]["publication_retained"] = json!(failure.retained);
+            return Err(failure.into());
+        }
+    }
     Ok(())
 }
 

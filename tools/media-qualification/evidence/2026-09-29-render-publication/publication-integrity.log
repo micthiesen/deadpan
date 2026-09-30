@@ -1,0 +1,106 @@
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 43.49s
+     Running unittests src/lib.rs (target/debug/deps/deadpan_cli-7e3b93d343074012)
+
+running 22 tests
+test encoded_render::publication::provenance::tests::full_artifact_identity_controls_coalescing_and_blank_seams_remain_separate ... ok
+test encoded_render::publication::provenance::tests::generated_intervals_follow_retime_sparse_plays_and_effective_gap_branches ... ok
+test encoded_render::publication::filesystem::tests::bounded_write_and_failed_exact_length_keep_partial_bytes ... ok
+test encoded_render::publication::filesystem::tests::invalid_names_limits_and_existing_entries_never_change_destinations ... ok
+test encoded_render::publication::provenance::tests::huge_compact_repeat_rejects_full_scan_but_admits_a_small_selected_suffix ... ok
+test encoded_render::publication::tests::destination_readback_requires_the_exact_extent_and_unmodified_bytes ... ok
+test encoded_render::publication::filesystem::tests::replaced_partial_entry_never_writes_or_deletes_foreign_target ... ok
+test encoded_render::publication::filesystem::tests::control_errors_retain_typed_sources_through_read_and_write_traits ... ok
+test encoded_render::publication::filesystem::tests::final_name_race_is_no_replace_and_keeps_complete_partial ... ok
+test encoded_render::publication::filesystem::tests::initial_directory_alias_is_allowed_but_later_retargeting_is_rejected ... ok
+test encoded_render::publication::filesystem::tests::published_hash_admission_rejects_same_length_mutation_with_restored_mtime ... ok
+test encoded_render::publication::filesystem::tests::bounded_copy_readback_and_no_replace_commit_preserve_owner_writable_mode ... ok
+test encoded_render::publication::filesystem::tests::extra_hard_link_and_same_inode_mutation_reject_readback_and_commit ... ok
+test encoded_render::publication::filesystem::tests::cancellation_and_deadline_before_commit_leave_complete_partial ... ok
+test encoded_render::publication::filesystem::tests::cancellation_before_rename_retains_partial_but_after_rename_does_not_undo_success ... ok
+test encoded_render::publication::filesystem::tests::final_name_replacement_and_later_report_mutation_are_observed_without_unlink ... ok
+test encoded_render::publication::filesystem::tests::replaced_parent_or_ancestor_fails_even_if_final_directory_inode_survives ... ok
+test encoded_render::publication::filesystem::tests::sibling_destinations_share_the_same_directory_pin ... ok
+test encoded_render::publication::filesystem::tests::every_sync_failure_reports_the_correct_side_of_the_commit_point ... ok
+test encoded_render::publication::provenance::tests::historical_capture_ignores_live_edits_and_omits_private_catalog_labels ... ok
+test encoded_render::publication::provenance::tests::bounded_serialization_preserves_control_failures_and_stable_codes ... ok
+test encoded_render::publication::tests::provenance_serialization_has_a_hard_byte_ceiling ... ok
+
+test result: ok. 22 passed; 0 failed; 0 ignored; 0 measured; 84 filtered out; finished in 0.44s
+
+     Running unittests src/main.rs (target/debug/deps/deadpan_cli-e738862d3ddd8087)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/audio_context.rs (target/debug/deps/audio_context-b6060d714812c220)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+
+     Running tests/audio_inspection.rs (target/debug/deps/audio_inspection-4e41ad01b234f782)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 18 filtered out; finished in 0.00s
+
+     Running tests/boundary_location.rs (target/debug/deps/boundary_location-fcc36e861e57ca25)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+     Running tests/doctor.rs (target/debug/deps/doctor-42930d0d4984e7df)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.00s
+
+     Running tests/encoded_render.rs (target/debug/deps/encoded_render-1d13f8938e7cb3c8)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.00s
+
+     Running tests/encoded_verification.rs (target/debug/deps/encoded_verification-243d20298b1c3667)
+
+running 4 tests
+test publication::publishes_identical_movie_after_durable_bound_report_without_editing_project ... ok
+test publication::cancellation_before_movie_rename_never_publishes_movie_and_retains_complete_candidate ... ok
+test publication::destination_or_report_mutation_cannot_publish_a_successful_movie ... ok
+test publication::existing_and_competing_destinations_are_preserved_with_retryable_candidate ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.39s
+
+     Running tests/offline_audio.rs (target/debug/deps/offline_audio-cd58a9a607ef266e)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.00s
+
+     Running tests/original_commands.rs (target/debug/deps/original_commands-fa327d5401805954)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.00s
+
+     Running tests/project_commands.rs (target/debug/deps/project_commands-29bf985627b78bcc)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 17 filtered out; finished in 0.00s
+
+     Running tests/render_worker.rs (target/debug/deps/render_worker-13b39c4b72248228)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+     Running tests/source_registration.rs (target/debug/deps/source_registration-9e13f5ec5e23bdef)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.00s
+

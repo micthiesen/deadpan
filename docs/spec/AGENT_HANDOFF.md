@@ -2,6 +2,38 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
+## Verified destination publication, 2026-09-29
+
+The library [publication host](../RENDER_PUBLICATION.md) now takes a private
+verified candidate and an explicit MP4 destination. It pins the destination
+parent, stages exclusive sibling partials, checks exact destination bytes and
+publishes the local report before atomically renaming the movie without replacing
+an existing entry. Before that rename, failure preserves the verified candidate
+and diagnostic recovery paths. After it, bounded integrity and durability checks
+finish despite late cancellation; a failure returns `PublishedUnconfirmed`.
+The report and movie are separate commits, so an orphan report can remain.
+
+Provenance binds the captured historical revision and full document hash. Source
+receipts supply original object identities and SHA-256; the catalog is explicitly
+a committed superset. Effective Generated intervals follow the indexed picture
+resolver through sparse plays, gaps and retiming, carrying complete artifact and
+immutable provenance identities. Source labels, URLs and linked paths are omitted.
+Capacity limits fail explicitly and do not truncate the report.
+
+[Qualification](../qualification/render-publication-2026-09-29.md) passes seven
+fresh project publications and independent final-file decode: 304 pictures,
+390,695 authored sample frames, 912 complete planes and 18 exact audio markers.
+A separate audit checks report/movie hashes, historical SQLite document hashes,
+Original receipt/byte identities and the exact `[0, 30)` Generated interval.
+All 2,248 locked workspace tests pass, with zero failed or ignored, as do strict
+workspace Clippy and formatting. Independent review corrected cancellation-code
+loss and a post-rename content-check gap; both corrections have passing tests.
+The evidence retains actual bytes, SQLite backups and exact source/binary identities.
+
+Durable render jobs/recovery, native Render, public headless render commands,
+automatic platform policy, complete mastering/effects, HDR and release
+qualification remain open. No DP requirement or Gate A through G is complete.
+
 ## Isolated finished-file verification, 2026-09-29
 
 The [finished-file verifier](../FINISHED_FILE_VERIFICATION.md) now inspects a
@@ -27,8 +59,8 @@ encoder's capacity and fails explicitly. Structural/decode admission does not
 replace content, event-sync or hardware/runtime qualification. See the linked
 contract for the supported SDR interpretation and remaining limits.
 
-Next add durable render jobs/recovery, destination `.partial` handling with
-verification before atomic publication, and native Render. Complete mastering,
+The library publication boundary is described above. Next add durable render
+jobs/recovery, native Render and public headless render commands. Complete mastering,
 remaining audio/picture effects, HDR, release-runtime coverage and the full
 specification remain required. DP-17 stays open; every DP requirement and Gate A
 through G remains open or partial. No native export workflow is complete.
@@ -59,8 +91,9 @@ No app UI changed.
 
 The [isolated verifier](../FINISHED_FILE_VERIFICATION.md) now reuses the
 descriptor-only source decoders and bounded MP4/packet observations. Its source
-capacity and content/runtime qualification limits remain explicit. Next add
-durable jobs/recovery, verified atomic destination publication and native Render.
+capacity and content/runtime qualification limits remain explicit. Library
+publication now exists. Next add durable jobs/recovery, native Render and public
+headless render commands.
 Full audio/effects, HDR and every DP requirement and Gate A through G remain in
 scope and incomplete.
 
@@ -89,8 +122,9 @@ rejected attempts and partial outputs. No app UI changed in this milestone.
 
 The integration above now feeds committed pictures and canonical PCM directly
 into this encoder inside the supervised child, followed by the separate
-[finished-file verifier](../FINISHED_FILE_VERIFICATION.md). Add durable render
-jobs/recovery, verified atomic destination publication and native Render.
+[finished-file verifier](../FINISHED_FILE_VERIFICATION.md). Library publication now
+exists. Add durable render jobs/recovery, native Render and public headless render
+commands.
 Do not promote a synthetic adapter fixture into product export evidence. Full
 audio/effects, HDR, release hardware/OS coverage and all DP-01 through DP-24 and
 Gates A through G remain open or partial.
@@ -125,9 +159,10 @@ qualification range. The existing conversion worker still owns whole-file FFV1
 conversion; it is not the H.264/AAC encoder.
 
 The [encoded-file verifier](../FINISHED_FILE_VERIFICATION.md) now provides the
-bounded structural/decode checks described above. Durable render jobs/recovery,
-full audio/effects, atomic publication, native Render, HDR and all remaining
-product requirements stay open. No DP requirement or Gate A through G is complete.
+bounded structural/decode checks described above. Library publication is also
+described above. Durable render jobs/recovery, full audio/effects, native Render,
+HDR and all remaining product requirements stay open. No DP requirement or
+Gate A through G is complete.
 
 ## Committed encoder pictures, 2026-09-29
 
@@ -155,10 +190,10 @@ left running. Keep these results unless a later code change affects them.
 The later [encoded worker](../ENCODED_RENDER.md) now isolates this real producer
 and canonical PCM behind separate render messages and checked supervision. The
 [finished-file verifier](../FINISHED_FILE_VERIFICATION.md) adds independent
-structural/decode admission. Complete the shared audio/effects graphs, durable
-render jobs/recovery, verified atomic publication and native Render. This picture
-boundary alone produces no encoded file or export control. All DP requirements
-and Gates A through G remain in scope and incomplete.
+structural/decode admission. Library publication is described above. Complete the
+shared audio/effects graphs, durable render jobs/recovery and native Render. This
+picture boundary alone produces no encoded file or export control. All DP
+requirements and Gates A through G remain in scope and incomplete.
 
 ## Accepted Generated Hold pictures, 2026-09-29
 

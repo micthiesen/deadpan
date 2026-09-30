@@ -1,0 +1,328 @@
+{
+  "base_commit": "2e381b36a0aefe7278545fc9406a585fc6e57c51",
+  "evidence_archive": {
+    "archive_bytes": 10095978,
+    "archive_sha256": "0b9557e4a2006b54e1ea46fc44f5a76c3aa608892db929c00982b7ea2a00cf29",
+    "files": 354,
+    "method": "Reopened archive; checked size and SHA-256 of every regular member.",
+    "passed": true,
+    "uncompressed_bytes": 637656718
+  },
+  "final_source_manifest": "8332c9d07a73d66364e6ff1468399a369355cefedcb7b68de5d91db4231c790d",
+  "fresh_content": {
+    "cases": 7,
+    "codes": 116984106,
+    "exact_event_observations": 18,
+    "frames": 304,
+    "gops": 21,
+    "maximum_event_error_samples": 0,
+    "maximum_pcm_error": 0.10570040345191956,
+    "maximum_pcm_rms": 0.0009801035075605537,
+    "maximum_plane_error": 43,
+    "maximum_plane_mae": 0.8234201388888889,
+    "planes": 912,
+    "samples": 390695
+  },
+  "journals": {
+    "format-final": {
+      "base_commit": "2e381b36a0aefe7278545fc9406a585fc6e57c51",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "diff_sha256": "d0125462fee5cc9805fff241daf0a8ebb4282c9f384cfd26ebf2e7c8d60d6c97",
+      "exit_code": 0,
+      "pid": 54802,
+      "seconds": 1.1544936667196453,
+      "source_manifest_sha256": "8332c9d07a73d66364e6ff1468399a369355cefedcb7b68de5d91db4231c790d",
+      "started": "2026-09-30T05:34:14.814235+00:00"
+    },
+    "metal-publication": {
+      "base_commit": "2e381b36a0aefe7278545fc9406a585fc6e57c51",
+      "command": [
+        "python3",
+        "/tmp/deadpan-publication-oywt_6il/run-metal.py",
+        "metal-publication",
+        "native-build"
+      ],
+      "diff_sha256": "25b13dfb4b9aad237653e364e835c4a71ca8b41f00ab70d510daba2c6eaeaf6b",
+      "exit_code": 0,
+      "pid": 50795,
+      "seconds": 429.0041087497957,
+      "source_manifest_sha256": "8332c9d07a73d66364e6ff1468399a369355cefedcb7b68de5d91db4231c790d",
+      "started": "2026-09-30T05:17:35.033600+00:00"
+    },
+    "native-build": {
+      "base_commit": "2e381b36a0aefe7278545fc9406a585fc6e57c51",
+      "command": [
+        "cargo",
+        "build",
+        "--locked",
+        "-p",
+        "deadpan-cli",
+        "--example",
+        "qualify_project_picture",
+        "--bin",
+        "deadpan-cli",
+        "--message-format=json"
+      ],
+      "diff_sha256": "25b13dfb4b9aad237653e364e835c4a71ca8b41f00ab70d510daba2c6eaeaf6b",
+      "exit_code": 0,
+      "pid": 50586,
+      "seconds": 9.33762558316812,
+      "source_manifest_sha256": "8332c9d07a73d66364e6ff1468399a369355cefedcb7b68de5d91db4231c790d",
+      "started": "2026-09-30T05:17:10.574715+00:00"
+    },
+    "project-decode": {
+      "base_commit": "2e381b36a0aefe7278545fc9406a585fc6e57c51",
+      "command": [
+        "python3",
+        "tools/media-qualification/compatible/qualify_project_encode.py",
+        "--work",
+        "/tmp/deadpan-publication-oywt_6il/decoded-current",
+        "--build-report",
+        "/tmp/deadpan-ui-ffmpeg-build.json",
+        "--worker",
+        "/tmp/deadpan-publication-oywt_6il/metal-publication-bin/deadpan-cli",
+        "--picture-report",
+        "/tmp/deadpan-publication-oywt_6il/metal-publication-report.json"
+      ],
+      "diff_sha256": "4acfe30ae3c344367ebd21fa53076651794bb485590fcf5ea1068ea50f5d6b30",
+      "exit_code": 0,
+      "pid": 52700,
+      "seconds": 8.388646834064275,
+      "source_manifest_sha256": "8332c9d07a73d66364e6ff1468399a369355cefedcb7b68de5d91db4231c790d",
+      "started": "2026-09-30T05:25:02.624348+00:00"
+    },
+    "publication-audit-check": {
+      "base_commit": "2e381b36a0aefe7278545fc9406a585fc6e57c51",
+      "command": [
+        "python3",
+        "/tmp/deadpan-publication-oywt_6il/audit-publication.py"
+      ],
+      "diff_sha256": "4acfe30ae3c344367ebd21fa53076651794bb485590fcf5ea1068ea50f5d6b30",
+      "exit_code": 0,
+      "pid": 52765,
+      "seconds": 0.07850341638550162,
+      "source_manifest_sha256": "8332c9d07a73d66364e6ff1468399a369355cefedcb7b68de5d91db4231c790d",
+      "started": "2026-09-30T05:25:03.789873+00:00"
+    },
+    "publication-focused": {
+      "base_commit": "2e381b36a0aefe7278545fc9406a585fc6e57c51",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-cli",
+        "publication",
+        "--",
+        "--nocapture"
+      ],
+      "diff_sha256": "70a4a00cba698fb764f837baf45d7a0b9d2f1418ede26c93fc420ca98abb24f3",
+      "exit_code": 101,
+      "pid": 49032,
+      "seconds": 10.5757006672211,
+      "source_manifest_sha256": "0c0b1ecdbb1cfb0871fb28b935a808b4c2d1b386bba03c3892c3fd8509e3217b",
+      "started": "2026-09-30T05:04:41.832201+00:00"
+    },
+    "publication-focused-fixed": {
+      "base_commit": "2e381b36a0aefe7278545fc9406a585fc6e57c51",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-cli",
+        "publication",
+        "--",
+        "--nocapture"
+      ],
+      "diff_sha256": "70a4a00cba698fb764f837baf45d7a0b9d2f1418ede26c93fc420ca98abb24f3",
+      "exit_code": 0,
+      "pid": 49376,
+      "seconds": 45.5057229581289,
+      "source_manifest_sha256": "f745b5cbeffded1bbf60466015f357123b588aa7cf12dc2e20f6b33b0c47d889",
+      "started": "2026-09-30T05:05:44.846199+00:00"
+    },
+    "publication-integrity": {
+      "base_commit": "2e381b36a0aefe7278545fc9406a585fc6e57c51",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-cli",
+        "publication",
+        "--",
+        "--nocapture"
+      ],
+      "diff_sha256": "25b13dfb4b9aad237653e364e835c4a71ca8b41f00ab70d510daba2c6eaeaf6b",
+      "exit_code": 0,
+      "pid": 50319,
+      "seconds": 44.4241177495569,
+      "source_manifest_sha256": "8332c9d07a73d66364e6ff1468399a369355cefedcb7b68de5d91db4231c790d",
+      "started": "2026-09-30T05:13:36.884653+00:00"
+    },
+    "workspace-clippy": {
+      "base_commit": "2e381b36a0aefe7278545fc9406a585fc6e57c51",
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "diff_sha256": "4acfe30ae3c344367ebd21fa53076651794bb485590fcf5ea1068ea50f5d6b30",
+      "exit_code": 0,
+      "pid": 52861,
+      "seconds": 68.08029258297756,
+      "source_manifest_sha256": "8332c9d07a73d66364e6ff1468399a369355cefedcb7b68de5d91db4231c790d",
+      "started": "2026-09-30T05:25:18.738791+00:00"
+    },
+    "workspace-tests": {
+      "base_commit": "2e381b36a0aefe7278545fc9406a585fc6e57c51",
+      "command": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked"
+      ],
+      "diff_sha256": "4acfe30ae3c344367ebd21fa53076651794bb485590fcf5ea1068ea50f5d6b30",
+      "exit_code": 0,
+      "pid": 53039,
+      "seconds": 445.1057159160264,
+      "source_manifest_sha256": "8332c9d07a73d66364e6ff1468399a369355cefedcb7b68de5d91db4231c790d",
+      "started": "2026-09-30T05:26:33.660910+00:00"
+    }
+  },
+  "publication_audit": {
+    "cases": [
+      {
+        "case": "structural",
+        "generated_intervals": [],
+        "movie": "/private/tmp/deadpan-publication-oywt_6il/metal-publication-files/published-structural.mp4",
+        "movie_bytes": 97359,
+        "movie_sha256": "e23fd96a1789afe8c8bc35ed2e66cddff2656c21b0c979694bc212070fc7aac7",
+        "qualified_catalog_entries": 1,
+        "report": "/private/tmp/deadpan-publication-oywt_6il/metal-publication-files/deadpan-render-626a122a-487a-4351-a597-e11bd0006d9e.json",
+        "report_bytes": 5751,
+        "report_sha256": "be640815f84c368b4ddcf47bf7efd138812469b1a06a1d54856b062ba6d2a3c3",
+        "revision": "background"
+      },
+      {
+        "case": "nonzero",
+        "generated_intervals": [],
+        "movie": "/private/tmp/deadpan-publication-oywt_6il/metal-publication-files/published-nonzero.mp4",
+        "movie_bytes": 2959,
+        "movie_sha256": "5e2c43a3c0b1f0c9733e96321db389e0cdcc3be07ffe5241d7ea8c5d365e3198",
+        "qualified_catalog_entries": 1,
+        "report": "/private/tmp/deadpan-publication-oywt_6il/metal-publication-files/deadpan-render-bc61bc33-f967-4181-9e86-fc71ed9796ee.json",
+        "report_bytes": 5696,
+        "report_sha256": "bf6f7a900938f7122f4f2529e41839dbbfb5660fa280fa03d617701542d1d29c",
+        "revision": "background"
+      },
+      {
+        "case": "software-two",
+        "generated_intervals": [],
+        "movie": "/private/tmp/deadpan-publication-oywt_6il/metal-publication-files/published-software-two.mp4",
+        "movie_bytes": 33144,
+        "movie_sha256": "b1e886e6b946936cbe23a24b9eb0a0e18f26b339dd9f202ec0dc5c7bebf9a72e",
+        "qualified_catalog_entries": 1,
+        "report": "/private/tmp/deadpan-publication-oywt_6il/metal-publication-files/deadpan-render-cf626b50-dfc1-4691-af0e-012aba2464a5.json",
+        "report_bytes": 5749,
+        "report_sha256": "d65b26a47be9dea47c59a996c16c0f3aa7fcfc71cfc410144ccc43e59968aadc",
+        "revision": "background"
+      },
+      {
+        "case": "odd",
+        "generated_intervals": [],
+        "movie": "/private/tmp/deadpan-publication-oywt_6il/metal-publication-files/published-odd.mp4",
+        "movie_bytes": 2861,
+        "movie_sha256": "1bb3f288dfd788bec324a5ccb84116d69ddfdbd3e22346a1512ea2ddd78aa5c1",
+        "qualified_catalog_entries": 1,
+        "report": "/private/tmp/deadpan-publication-oywt_6il/metal-publication-files/deadpan-render-e8409ba8-3d29-4e1b-8eff-d2181da12d65.json",
+        "report_bytes": 5724,
+        "report_sha256": "f337b44f807abb2606c8615d3d6fb5691239fedc28ca310934886893698ac10d",
+        "revision": "background"
+      },
+      {
+        "case": "marker",
+        "generated_intervals": [],
+        "movie": "/private/tmp/deadpan-publication-oywt_6il/metal-publication-files/published-marker.mp4",
+        "movie_bytes": 28768,
+        "movie_sha256": "6e1041d1a0d32d8e3f8c8c05836167a9f2349d4c58e67c47a37b5c1340daeed6",
+        "qualified_catalog_entries": 1,
+        "report": "/private/tmp/deadpan-publication-oywt_6il/metal-publication-files/deadpan-render-f08b7f36-01e6-43a6-824c-f967971e6c2b.json",
+        "report_bytes": 5699,
+        "report_sha256": "b3b2debcf7a56997a7cc0366c3ee62162c10abd7b3ffc3168505515b7b7f06b9",
+        "revision": "marker-registered"
+      },
+      {
+        "case": "generated",
+        "generated_intervals": [
+          {
+            "artifact_index": 0,
+            "output_range": [
+              0,
+              30
+            ],
+            "project_range": {
+              "end": 30,
+              "start": 0
+            }
+          }
+        ],
+        "movie": "/private/tmp/deadpan-publication-oywt_6il/metal-publication-files/published-generated.mp4",
+        "movie_bytes": 227109,
+        "movie_sha256": "774d48735767c80a2ff79a945005ed00c3b35540f4b9a9743889b38e76ef8dba",
+        "qualified_catalog_entries": 0,
+        "report": "/private/tmp/deadpan-publication-oywt_6il/metal-publication-files/deadpan-render-90ca6b60-403c-4e01-b7f9-2a1f60950784.json",
+        "report_bytes": 6748,
+        "report_sha256": "47a60b946cf6bf64e8c03ed76caffc0f833432f15be49af25d7c968a1a5ca0a0",
+        "revision": "ui-generated-ready"
+      },
+      {
+        "case": "after-cancel",
+        "generated_intervals": [],
+        "movie": "/private/tmp/deadpan-publication-oywt_6il/metal-publication-files/published-after-cancel.mp4",
+        "movie_bytes": 2925,
+        "movie_sha256": "9fff1a53239ab56f1f445b4fa8afb66768cc7b546a3d0cb13188a8f912a73546",
+        "qualified_catalog_entries": 1,
+        "report": "/private/tmp/deadpan-publication-oywt_6il/metal-publication-files/deadpan-render-efff7141-2345-4d3e-bafc-d477d969f9b2.json",
+        "report_bytes": 5711,
+        "report_sha256": "ee8835edc0c5025ccd6f5800085022de2300849ccd22c033d52415e07d64fcf5",
+        "revision": "background"
+      }
+    ],
+    "passed": true,
+    "scope": "Final files read independently; exact movie/report hashes, private singleton metadata, provenance bindings and effective generated intervals."
+  },
+  "publication_tests": {
+    "failed": 0,
+    "ignored": 0,
+    "passed": 26
+  },
+  "sanitizer_scope": "Not rerun for this Rust publication boundary; unchanged C encoder/source adapters were instrumented at the preceding verifier checkpoint.",
+  "scope": "Verified SDR destination publication and local provenance; no durable render jobs or native Render workflow.",
+  "source_changes_since_check": {
+    "metal-publication": [],
+    "native-build": [],
+    "project-decode": [],
+    "publication-audit-check": [],
+    "publication-integrity": [],
+    "workspace-clippy": [],
+    "workspace-tests": []
+  },
+  "workspace_tests": {
+    "failed": 0,
+    "ignored": 0,
+    "passed": 2248
+  }
+}

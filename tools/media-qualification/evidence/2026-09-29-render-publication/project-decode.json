@@ -1,0 +1,21 @@
+{
+  "command": [
+    "python3",
+    "tools/media-qualification/compatible/qualify_project_encode.py",
+    "--work",
+    "/tmp/deadpan-publication-oywt_6il/decoded-current",
+    "--build-report",
+    "/tmp/deadpan-ui-ffmpeg-build.json",
+    "--worker",
+    "/tmp/deadpan-publication-oywt_6il/metal-publication-bin/deadpan-cli",
+    "--picture-report",
+    "/tmp/deadpan-publication-oywt_6il/metal-publication-report.json"
+  ],
+  "started": "2026-09-30T05:25:02.624348+00:00",
+  "base_commit": "2e381b36a0aefe7278545fc9406a585fc6e57c51",
+  "diff_sha256": "4acfe30ae3c344367ebd21fa53076651794bb485590fcf5ea1068ea50f5d6b30",
+  "source_manifest_sha256": "8332c9d07a73d66364e6ff1468399a369355cefedcb7b68de5d91db4231c790d",
+  "pid": 52700,
+  "exit_code": 0,
+  "seconds": 8.388646834064275
+}

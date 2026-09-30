@@ -9,6 +9,7 @@ use std::time::Instant;
 
 mod host;
 pub mod protocol;
+pub mod publication;
 pub mod verification;
 pub(crate) mod worker;
 

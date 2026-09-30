@@ -1,0 +1,168 @@
+"""Retain actual published files, source snapshots and verification journals."""
+import gzip
+import hashlib
+import json
+from pathlib import Path
+import re
+import shutil
+import sqlite3
+import stat
+import tarfile
+
+ROOT = Path(__file__).resolve().parent
+DEST = Path('tools/media-qualification/evidence/2026-09-29-render-publication')
+DEST.mkdir(exist_ok=False)
+
+
+def digest(path):
+    with path.open('rb') as stream:
+        return hashlib.file_digest(stream, 'sha256').hexdigest()
+
+
+def write_json(path, value):
+    path.write_text(json.dumps(value, indent=2, sort_keys=True) + '\n')
+
+
+def compressed_copy(source, target):
+    with source.open('rb') as reader, gzip.open(target, 'wb') as writer:
+        shutil.copyfileobj(reader, writer)
+
+
+inputs = ROOT / 'project-inputs'
+inputs.mkdir()
+backup_records = []
+packages = list((ROOT / 'metal-publication-files').glob('*.deadpan')) + [
+    Path('/tmp/deadpan-generated-pictures-smyys035/fixture/accepted.deadpan')]
+for package in packages:
+    target = inputs / package.name
+    target.mkdir()
+    for source in sorted(package.rglob('*')):
+        relative = source.relative_to(package)
+        if source.name.startswith('project.sqlite') or source.name == '.writer.lock':
+            continue
+        if source.is_dir():
+            (target / relative).mkdir(exist_ok=True)
+        else:
+            assert stat.S_ISREG(source.lstat().st_mode), source
+            shutil.copyfile(source, target / relative)
+    database = package / 'project.sqlite'
+    with sqlite3.connect(database.as_uri() + '?mode=ro', uri=True) as original:
+        with sqlite3.connect(target / 'project.sqlite') as backup:
+            original.backup(backup)
+            assert backup.execute('PRAGMA integrity_check').fetchall() == [('ok',)]
+    backup_records.append({'source': str(database), 'snapshot': str(target / 'project.sqlite'),
+                           'method': 'SQLite backup API', 'sha256': digest(target / 'project.sqlite')})
+manifest = Path('/tmp/deadpan-generated-pictures-smyys035/fixture/generated-picture-fixture.json')
+shutil.copyfile(manifest, inputs / manifest.name)
+write_json(ROOT / 'sqlite-backups.json', backup_records)
+
+members = []
+archive = DEST / 'native-artifacts.tar.gz'
+with tarfile.open(archive, 'w:gz') as output:
+    for directory in ['metal-publication-files', 'decoded-current', 'project-inputs']:
+        for source in sorted((ROOT / directory).rglob('*')):
+            if source.is_dir():
+                continue
+            assert stat.S_ISREG(source.lstat().st_mode), source
+            if directory == 'metal-publication-files' and (source.name.startswith('project.sqlite') or source.name == '.writer.lock'):
+                continue
+            name = source.relative_to(ROOT).as_posix()
+            before = source.stat()
+            checksum = digest(source)
+            output.add(source, arcname=name, recursive=False)
+            after = source.stat()
+            assert (before.st_size, before.st_mtime_ns) == (after.st_size, after.st_mtime_ns), source
+            members.append({'path': name, 'bytes': before.st_size, 'sha256': checksum})
+write_json(DEST / 'archive-members.json', members)
+observed = []
+with tarfile.open(archive, 'r:gz') as retained:
+    for member in retained:
+        assert member.isfile(), member.name
+        with retained.extractfile(member) as stream:
+            checksum = hashlib.file_digest(stream, 'sha256').hexdigest()
+        observed.append({'path': member.name, 'bytes': member.size, 'sha256': checksum})
+assert observed == members
+write_json(DEST / 'archive-audit.json', {
+    'passed': True, 'files': len(members), 'uncompressed_bytes': sum(row['bytes'] for row in members),
+    'archive_bytes': archive.stat().st_size, 'archive_sha256': digest(archive),
+    'method': 'Reopened archive; checked size and SHA-256 of every regular member.'})
+
+for source in sorted(ROOT.iterdir()):
+    if source.name == 'next-boundary.md':
+        continue
+    if source.is_file() and source.suffix in ('.json', '.log', '.md', '.xml', '.txt'):
+        if source.stat().st_size > 131072:
+            compressed_copy(source, DEST / (source.name + '.gz'))
+        else:
+            shutil.copyfile(source, DEST / source.name)
+for name in ['run-metal.py', 'audit-publication.py', 'package-evidence.py']:
+    shutil.copyfile(ROOT / name, DEST / (name + '.txt'))
+compressed_copy(ROOT / 'decoded-current/report.json', DEST / 'decoded-current-report.json.gz')
+
+
+def inventory(journal):
+    value = json.loads((ROOT / (journal + '.json')).read_text())
+    return json.loads((ROOT / ('source-' + value['source_manifest_sha256'] + '.json')).read_text())
+
+
+final_sources = inventory('format-final')
+bindings = {}
+for name in ['publication-integrity', 'native-build', 'metal-publication',
+             'publication-audit-check', 'workspace-tests', 'workspace-clippy', 'project-decode']:
+    observed = inventory(name)
+    bindings[name] = [path for path in sorted(set(final_sources) | set(observed))
+                      if final_sources.get(path) != observed.get(path)]
+write_json(DEST / 'source-changes-since-check.json', bindings)
+
+
+def counts(path):
+    rows = re.findall(r'test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored;', path.read_text())
+    return {key: sum(int(row[index]) for row in rows)
+            for index, key in enumerate(['passed', 'failed', 'ignored'])}
+
+
+decoded = json.loads((ROOT / 'decoded-current/report.json').read_text())
+assert len(decoded['cases']) == 7 and all(case['passed'] for case in decoded['cases'])
+assert not decoded['process_faults']
+planes = [p for c in decoded['cases'] for p in c['complete_planes']]
+pcm = [p for c in decoded['cases'] for p in c['pcm_comparisons'].values()]
+marker = next(c for c in decoded['cases'] if c['name'] == 'marker')['marker_events']
+events = [row['details'] for mode in ['manual', 'ordinary', 'avfoundation']
+          for row in marker[mode]['checks'] if row['label'].endswith(' exact')]
+assert len(events) == 18 and all(event['error_samples'] == 0 for event in events)
+fresh = json.loads((ROOT / 'metal-publication-report.json').read_text())['encoded']
+assert fresh['status'] == 'passed candidate preparation, production SDR verification and destination publication; content qualification required'
+assert len(fresh['cases']) == 7
+assert all(c['publication_status'] == 'published' for c in fresh['cases'])
+publication = json.loads((ROOT / 'publication-audit.json').read_text())
+assert publication['passed'] and len(publication['cases']) == 7
+journals = {}
+for path in sorted(ROOT.glob('*.json')):
+    value = json.loads(path.read_text())
+    if isinstance(value, dict) and 'command' in value and 'started' in value:
+        assert 'exit_code' in value, path
+        journals[path.stem] = value
+summary = {
+    'scope': 'Verified SDR destination publication and local provenance; no durable render jobs or native Render workflow.',
+    'base_commit': '2e381b36a0aefe7278545fc9406a585fc6e57c51',
+    'workspace_tests': counts(ROOT / 'workspace-tests.log'),
+    'publication_tests': counts(ROOT / 'publication-integrity.log'),
+    'publication_audit': publication,
+    'fresh_content': {'cases': 7,
+        'frames': sum(c['verification']['video_frames'] for c in fresh['cases']),
+        'samples': sum(c['verification']['audio_samples'] for c in fresh['cases']),
+        'gops': sum(c['verification']['gops'] for c in fresh['cases']),
+        'planes': len(planes), 'codes': sum(p['codes'] for p in planes),
+        'maximum_plane_error': max(p['maximum_error'] for p in planes),
+        'maximum_plane_mae': max(p['mean_absolute_error'] for p in planes),
+        'maximum_pcm_error': max(p['maximum_error'] for p in pcm),
+        'maximum_pcm_rms': max(p['rms_error'] for p in pcm),
+        'exact_event_observations': len(events), 'maximum_event_error_samples': 0},
+    'journals': journals,
+    'final_source_manifest': json.loads((ROOT / 'format-final.json').read_text())['source_manifest_sha256'],
+    'source_changes_since_check': bindings,
+    'sanitizer_scope': 'Not rerun for this Rust publication boundary; unchanged C encoder/source adapters were instrumented at the preceding verifier checkpoint.',
+    'evidence_archive': json.loads((DEST / 'archive-audit.json').read_text()),
+}
+write_json(DEST / 'summary.json', summary)
+print(json.dumps({key: summary[key] for key in ['evidence_archive', 'workspace_tests', 'publication_tests', 'fresh_content', 'source_changes_since_check']}, indent=2))

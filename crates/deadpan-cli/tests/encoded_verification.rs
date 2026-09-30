@@ -28,6 +28,9 @@ use sha2::{Digest, Sha256};
 static NOT_CANCELLED: AtomicBool = AtomicBool::new(false);
 const PROCESS_LIMIT: Duration = Duration::from_secs(60);
 
+#[path = "encoded_verification/publication.rs"]
+mod publication;
+
 fn deadline() -> Instant {
     Instant::now() + PROCESS_LIMIT
 }

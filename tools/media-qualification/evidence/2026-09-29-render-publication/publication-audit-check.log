@@ -1,0 +1,102 @@
+{
+  "passed": true,
+  "cases": [
+    {
+      "case": "structural",
+      "movie": "/private/tmp/deadpan-publication-oywt_6il/metal-publication-files/published-structural.mp4",
+      "report": "/private/tmp/deadpan-publication-oywt_6il/metal-publication-files/deadpan-render-626a122a-487a-4351-a597-e11bd0006d9e.json",
+      "movie_sha256": "e23fd96a1789afe8c8bc35ed2e66cddff2656c21b0c979694bc212070fc7aac7",
+      "report_sha256": "be640815f84c368b4ddcf47bf7efd138812469b1a06a1d54856b062ba6d2a3c3",
+      "movie_bytes": 97359,
+      "report_bytes": 5751,
+      "revision": "background",
+      "qualified_catalog_entries": 1,
+      "generated_intervals": []
+    },
+    {
+      "case": "nonzero",
+      "movie": "/private/tmp/deadpan-publication-oywt_6il/metal-publication-files/published-nonzero.mp4",
+      "report": "/private/tmp/deadpan-publication-oywt_6il/metal-publication-files/deadpan-render-bc61bc33-f967-4181-9e86-fc71ed9796ee.json",
+      "movie_sha256": "5e2c43a3c0b1f0c9733e96321db389e0cdcc3be07ffe5241d7ea8c5d365e3198",
+      "report_sha256": "bf6f7a900938f7122f4f2529e41839dbbfb5660fa280fa03d617701542d1d29c",
+      "movie_bytes": 2959,
+      "report_bytes": 5696,
+      "revision": "background",
+      "qualified_catalog_entries": 1,
+      "generated_intervals": []
+    },
+    {
+      "case": "software-two",
+      "movie": "/private/tmp/deadpan-publication-oywt_6il/metal-publication-files/published-software-two.mp4",
+      "report": "/private/tmp/deadpan-publication-oywt_6il/metal-publication-files/deadpan-render-cf626b50-dfc1-4691-af0e-012aba2464a5.json",
+      "movie_sha256": "b1e886e6b946936cbe23a24b9eb0a0e18f26b339dd9f202ec0dc5c7bebf9a72e",
+      "report_sha256": "d65b26a47be9dea47c59a996c16c0f3aa7fcfc71cfc410144ccc43e59968aadc",
+      "movie_bytes": 33144,
+      "report_bytes": 5749,
+      "revision": "background",
+      "qualified_catalog_entries": 1,
+      "generated_intervals": []
+    },
+    {
+      "case": "odd",
+      "movie": "/private/tmp/deadpan-publication-oywt_6il/metal-publication-files/published-odd.mp4",
+      "report": "/private/tmp/deadpan-publication-oywt_6il/metal-publication-files/deadpan-render-e8409ba8-3d29-4e1b-8eff-d2181da12d65.json",
+      "movie_sha256": "1bb3f288dfd788bec324a5ccb84116d69ddfdbd3e22346a1512ea2ddd78aa5c1",
+      "report_sha256": "f337b44f807abb2606c8615d3d6fb5691239fedc28ca310934886893698ac10d",
+      "movie_bytes": 2861,
+      "report_bytes": 5724,
+      "revision": "background",
+      "qualified_catalog_entries": 1,
+      "generated_intervals": []
+    },
+    {
+      "case": "marker",
+      "movie": "/private/tmp/deadpan-publication-oywt_6il/metal-publication-files/published-marker.mp4",
+      "report": "/private/tmp/deadpan-publication-oywt_6il/metal-publication-files/deadpan-render-f08b7f36-01e6-43a6-824c-f967971e6c2b.json",
+      "movie_sha256": "6e1041d1a0d32d8e3f8c8c05836167a9f2349d4c58e67c47a37b5c1340daeed6",
+      "report_sha256": "b3b2debcf7a56997a7cc0366c3ee62162c10abd7b3ffc3168505515b7b7f06b9",
+      "movie_bytes": 28768,
+      "report_bytes": 5699,
+      "revision": "marker-registered",
+      "qualified_catalog_entries": 1,
+      "generated_intervals": []
+    },
+    {
+      "case": "generated",
+      "movie": "/private/tmp/deadpan-publication-oywt_6il/metal-publication-files/published-generated.mp4",
+      "report": "/private/tmp/deadpan-publication-oywt_6il/metal-publication-files/deadpan-render-90ca6b60-403c-4e01-b7f9-2a1f60950784.json",
+      "movie_sha256": "774d48735767c80a2ff79a945005ed00c3b35540f4b9a9743889b38e76ef8dba",
+      "report_sha256": "47a60b946cf6bf64e8c03ed76caffc0f833432f15be49af25d7c968a1a5ca0a0",
+      "movie_bytes": 227109,
+      "report_bytes": 6748,
+      "revision": "ui-generated-ready",
+      "qualified_catalog_entries": 0,
+      "generated_intervals": [
+        {
+          "artifact_index": 0,
+          "project_range": {
+            "start": 0,
+            "end": 30
+          },
+          "output_range": [
+            0,
+            30
+          ]
+        }
+      ]
+    },
+    {
+      "case": "after-cancel",
+      "movie": "/private/tmp/deadpan-publication-oywt_6il/metal-publication-files/published-after-cancel.mp4",
+      "report": "/private/tmp/deadpan-publication-oywt_6il/metal-publication-files/deadpan-render-efff7141-2345-4d3e-bafc-d477d969f9b2.json",
+      "movie_sha256": "9fff1a53239ab56f1f445b4fa8afb66768cc7b546a3d0cb13188a8f912a73546",
+      "report_sha256": "ee8835edc0c5025ccd6f5800085022de2300849ccd22c033d52415e07d64fcf5",
+      "movie_bytes": 2925,
+      "report_bytes": 5711,
+      "revision": "background",
+      "qualified_catalog_entries": 1,
+      "generated_intervals": []
+    }
+  ],
+  "scope": "Final files read independently; exact movie/report hashes, private singleton metadata, provenance bindings and effective generated intervals."
+}

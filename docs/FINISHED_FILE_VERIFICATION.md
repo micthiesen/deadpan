@@ -77,6 +77,9 @@ This boundary establishes structural and decode validity for the captured SDR
 contract. It does not compare arbitrary lossy output against every original
 rendered picture or sound. Fixture content, absolute event synchronization,
 AVFoundation compatibility and platform/runtime behavior have separate actual
-qualification. Automatic platform policy, durable render jobs/recovery,
-destination-side partial-file verification and atomic publication, native Render,
-complete mastering/effects, HDR and release coverage remain required.
+qualification. The library [publication host](RENDER_PUBLICATION.md) checks
+destination byte identity against the verified candidate, writes the historical
+local report and atomically commits the movie without replacing an existing
+entry. Automatic platform policy, durable render jobs/recovery, native Render,
+public headless render commands, complete mastering/effects, HDR and release
+coverage remain required.

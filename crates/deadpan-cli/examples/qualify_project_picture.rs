@@ -93,6 +93,17 @@ fn main() -> Result<()> {
             "external_timeout_required": true, "native_calls_are_not_preempted": true},
         "limitations": ["synthetic SDR fixtures", "no encoded export or rendered audio", "no durable render jobs or native Render workflow",
             "no legacy Accepted/Still provider", "no HDR, physical display or performance qualification"]});
+    if arguments.len() == 6 {
+        report["scope"] = json!(
+            "committed SDR pictures and canonical audio through actual Metal, isolated encoding, verification and explicit destination publication"
+        );
+        report["limitations"] = json!([
+            "synthetic SDR fixtures; independent decoded-content qualification follows separately",
+            "no durable render jobs, automatic platform policy or native Render workflow",
+            "no legacy Accepted/Still provider, complete mastering/effects, HDR or release qualification",
+            "no physical display or sustained performance qualification"
+        ]);
+    }
     let started = Instant::now();
     // Retain a valid running report even if an outer deadline terminates a
     // native call before ordinary Rust error handling can finish.
