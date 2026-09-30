@@ -567,6 +567,22 @@ Support keyboard-only onboarding, file dialogs, target picking, model installati
 
 Provide a textual accessibility representation of the selected beat, duration, source, attachments, and available operations. Do not require color discrimination to distinguish pending, accepted, failed, or muted states. Respect native text composition and non-US keyboard layouts; bindings are logical keys by default, with optional physical-key bindings.
 
+## 9.7 Visual slice placement
+
+Reusing part of the video elsewhere must be an elegant keyboard workflow in which the user can see both what they selected and where it will land. A **slice** is a selected time range from the Original or Your edit. It remains an editable structure with exact timing and owned attachments. Copying a slice gives the copy fresh authored identities while sharing immutable media.
+
+The complete workflow is:
+
+1. Select a range with `v` and the existing frame, beat, word, shot or boundary motions, then `y` to copy it. Show the selected strip, its first and last included pictures, separately labelled In and exclusive Out boundaries, duration and picture/audio scope. The viewer follows the endpoint being adjusted. Frame selection works before transcript or shot analysis is ready.
+2. Navigate to the destination in Your edit and open **Place slice** through the searchable palette or `:splice`. Retain the source selection while showing the destination cursor, group and occurrence. Display a compact source strip beside the destination context without obscuring the main picture. Keep Original and Edit clocks labelled separately.
+3. Show the proposed edit before applying it: a clearly marked insertion boundary and provisional slice in the timeline, with the surrounding material visible. Existing frame and boundary motions adjust the destination. Keyboard-accessible In and Out controls refine the copied range locally, with exact values and visible key hints. A linked insert occurs before the frame at the destination boundary and shifts later content by exactly the slice duration. Picture-only and audio-only placement follow the existing cutaway, attachment and explicit overflow policies, with the affected host interval visible. An explicit **Replace selection** choice previews the removed interval and resulting duration change. The current operation and linked/picture/audio scope stay visible.
+4. `Space` plays or pauses the proposed result; `Shift-Space` loops the slice with context around both joins. Show which picture and sound belong to the inserted slice and which belong to the destination. The user can inspect either join frame by frame and compare Before with Proposed over the same destination context. Preview uses the shared picture and audio semantics, including exact boundaries, framing and attachments.
+5. `Enter` commits the entire placement as one undoable transaction and selects the inserted result. `Escape` restores the entry view and leaves the committed edit and copied slice unchanged. The proposal is visibly unsaved throughout. A changed project revision invalidates the captured destination and requires a refreshed proposal; late preparation cannot silently move the insertion to another beat or occurrence.
+
+The fast `p`/`P` paste actions retain their defined semantics. Place slice supplies the explicit preview workflow for precise placement. Its contextual keys must remain visible, respect native text entry and pass the production shortcut compatibility audit before implementation. Selecting, refining, placing, auditioning, cancelling, committing and undoing must all work without a mouse. At the minimum window size, source endpoints, destination and current action must remain legible; a text-only range label is insufficient visual feedback.
+
+Nested groups, repeats and retimed occurrences must show the actual destination scope and affect only the selected occurrence unless the user explicitly chooses broader scope. An explicit move from Your edit additionally removes the captured source occurrence's selected interval in the same atomic edit, with a preview of the removal and insertion joins. Selection from Original always copies and leaves its immutable bytes intact. Moving a slice into its own removed interior must fail clearly. This workflow is required product behavior; existing moment copy/paste alone does not establish completion.
+
 # 10. Audio model and signal flow
 
 ## 10.1 Independent but linked sound
@@ -1346,6 +1362,7 @@ For AI and face tracking, use rights-cleared real-person footage with documented
 | Nested repeat with gaps and one override | Exact play count, gap count, envelopes, and occurrence identity. |
 | Mid-word silent insertion | Exactly N new frames; original speech resumes at its original source position. |
 | Picture-only cutaway | Host audio unchanged and attachment follows host edits. |
+| Keyboard visual slice placement | Visible source endpoints and destination; proposed joins match the committed picture/audio; cancel changes nothing; insert, replace and move each commit once and undo exactly. |
 | Random seek into delay/stretch | Same state-aware output as linear playback within defined tolerances. |
 | AI finishes after hold changes | Candidate is stale; current revision is not overwritten. |
 | Undo during AI generation | Timeline restores; orphaned completion cannot reinsert content. |
@@ -1371,7 +1388,7 @@ Test every shipped binding, including slow prefix input, counts, Visual selectio
 
 Run a keyboard-only end-to-end acceptance session on a clean user account. Include model-pack acceptance/install, target selection, failed-job retry, project relink, and render destination entry. Use accessibility inspection to ensure the user can identify the selected beat and active mode without relying on color alone.
 
-Include one-source onboarding into Documents/Deadpan from different launch directories, the automatically populated full-source timeline, undo to the protected baseline, same-original moment reuse, external audio-only effect placement, and rejection of a second video. Test interrupted initial preparation, recovery/retry and legacy multi-video compatibility without data loss. Review visible shortcut teaching and distinguish focused pane, selected content, Original position and edited position in both the image and accessibility representation.
+Include one-source onboarding into Documents/Deadpan from different launch directories, the automatically populated full-source timeline, undo to the protected baseline, same-original moment reuse, external audio-only effect placement, and rejection of a second video. Test the complete visual slice placement workflow in Section 9.7 using only the keyboard, including minimum-size layout, VFR source endpoints, nested occurrence scope, both audition joins and a stale destination revision. Test interrupted initial preparation, recovery/retry and legacy multi-video compatibility without data loss. Review visible shortcut teaching and distinguish focused pane, selected content, Original position and edited position in both the image and accessibility representation.
 
 ## 26.6 Clean-machine release test
 
@@ -1440,7 +1457,7 @@ The implementation tracker must map every requirement to code, tests, and a demo
 | DP-02 | Exact frame/sample/source-time model including VFR. | Property tests and encoded sync fixtures. |
 | DP-03 | Structural Source/Sequence/Hold/Repeat/Retime primitives. | Golden render-plan and duration tests. |
 | DP-04 | Stable anchors, attachments, nested occurrences, single-play overrides. | Structural edit property tests. |
-| DP-05 | Complete normal/visual/operator/command/camera/trim keyboard flow. | Binding matrix and keyboard-only session. |
+| DP-05 | Complete normal/visual/operator/command/camera/trim keyboard flow, including visual slice selection, placement and audition. | Binding matrix and keyboard-only session, including Section 9.7. |
 | DP-06 | Registers, macros, semantic dot-repeat, configurable bindings. | Parser/transaction/replay tests. |
 | DP-07 | All time/delivery operations in Section 8. | Recipe fixture renders and editable inspector demos. |
 | DP-08 | All framing/picture operations and keyboard target selection. | Tracking/geometry/interaction tests. |
@@ -1455,7 +1472,7 @@ The implementation tracker must map every requirement to code, tests, and a demo
 | DP-17 | One-action automatic SDR/HDR YouTube-oriented output. | Encoded-file metadata/pixel/sync verification. |
 | DP-18 | Nonblocking worker lifecycle, cancellation, stale result handling. | Worker chaos and concurrency tests. |
 | DP-19 | Cache integrity and accepted-media portability. | Eviction/reference/offline-project tests. |
-| DP-20 | Focused single-Original native UI with visible keyboard teaching and accessibility. | Design-target comparison, accessibility inspection and keyboard acceptance. |
+| DP-20 | Focused single-Original native UI with visible keyboard teaching, visual slice placement and accessibility. | Design-target comparison, source/destination preview inspection, accessibility inspection and keyboard acceptance. |
 | DP-21 | CLI/JSON API with revision checks and dry-run. | Headless/GUI parity and conflict tests. |
 | DP-22 | Signed/notarized zero-manual-setup distribution. | Clean-machine online and offline acceptance. |
 | DP-23 | License/SBOM/privacy/security requirements. | Release audit and malicious-input tests. |

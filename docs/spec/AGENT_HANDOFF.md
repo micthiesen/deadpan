@@ -2,6 +2,18 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
+## Visual slice placement requirement, 2026-09-30
+
+The user requested an elegant keyboard workflow for putting selected parts of
+the video elsewhere while seeing the edit. [Section 9.7](DEADPAN_SPEC.md#97-visual-slice-placement)
+now requires visible source endpoints, a provisional destination placement,
+frame-accurate adjustment, audition around both joins and one-step commit/undo.
+Insert, replacement and move retain exact timing, occurrence scope and owned
+attachments. Enter commits; Escape cancels the unsaved proposal. Existing moment
+copy/paste does not fulfill this requirement. DP-05/DP-20 acceptance must include
+the complete keyboard flow and minimum-size visual inspection. Temporal slices
+are the current interpretation; clarification about spatial overlays is pending.
+
 ## Durable encoded checkpoints, 2026-09-29
 
 The [render job boundary](../RENDER_JOBS.md) persists immutable render intent,

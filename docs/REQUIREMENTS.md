@@ -2,6 +2,13 @@
 
 All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_SPEC.md#29-requirements-traceability) remain in scope. Their detailed sections are normative. This tracker records the current implementation and measured evidence, not a reduced release scope.
 
+[Visual slice placement](spec/DEADPAN_SPEC.md#97-visual-slice-placement) is an
+explicit DP-05/DP-20 requirement: select and refine a time range, see its source
+endpoints and destination, audition both proposed joins, then commit or cancel
+with the keyboard. Insert, replace and move require exact reversible semantics,
+visible occurrence scope and stale-revision rejection. Existing Original moment
+copy/paste is partial groundwork; the complete preview workflow remains open.
+
 The [durable render boundary](RENDER_JOBS.md) captures one historical revision,
 retains complete encoded movie/manifest objects, and records attempts with exact
 transition identities. Writer reopen interrupts unfinished attempts while keeping
