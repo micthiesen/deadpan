@@ -273,6 +273,142 @@ fn factors(query: &AudioSoundGateQuery) -> Vec<ExactRatio> {
 }
 
 #[test]
+fn equal_ntsc_replacement_retains_last_suffix_sample_without_intermediate_clipping() {
+    let rate = FrameRate::new(30_000, 1001).unwrap();
+    let replacement = RootSoundEdit {
+        grid: RootSoundGrid::root(rate),
+        operation: RootSoundOperation::Replace {
+            range: FrameRange::new(ProjectFrame(1), ProjectFrame(2)).unwrap(),
+            duration: duration(1),
+        },
+        cuts: Default::default(),
+    };
+    let direct = RenderPlan::compile(&document(
+        &[(3, false)],
+        rate,
+        3,
+        Some(vec![replacement]),
+        None,
+    ))
+    .unwrap();
+    let sound = direct.root_sound(&id()).unwrap();
+    for sample in 0..4805 {
+        assert_eq!(
+            sound.selects_sample(AudioSample(sample)).unwrap(),
+            !(1602..3203).contains(&sample)
+        );
+    }
+    let sampled = sound
+        .routed_input()
+        .unwrap()
+        .route()
+        .query(
+            AudioSample(4804)..AudioSample(4805),
+            AudioQueryLimits::default(),
+        )
+        .unwrap();
+    assert_eq!(
+        sampled.spans[0]
+            .sampling
+            .unwrap()
+            .local_at(AudioSample(4804))
+            .unwrap()
+            .checked_div(
+                sound
+                    .routed_input()
+                    .unwrap()
+                    .route()
+                    .recipe_grid()
+                    .frames_per_sample()
+            )
+            .unwrap(),
+        ExactRatio::integer(4804)
+    );
+    let all = factors(&gates(&direct, 0..4805));
+    assert!(all[4804].compare_integer(0).is_gt());
+    assert!(all[1601].compare_integer(1).is_lt());
+    assert!(all[3203].compare_integer(1).is_lt());
+    assert!(
+        all[1602..3203]
+            .iter()
+            .all(|factor| *factor == ExactRatio::ZERO)
+    );
+    // The forbidden Delete+Insert composition loses sample 4804: deletion
+    // clips its translated label at the shorter intermediate endpoint 3203.
+    let intermediate = RenderPlan::compile(&document(
+        &[(3, false)],
+        rate,
+        3,
+        Some(vec![delete(1, 2, rate), insert(1, 1, rate)]),
+        None,
+    ))
+    .unwrap();
+    assert!(
+        !intermediate
+            .root_sound(&id())
+            .unwrap()
+            .selects_sample(AudioSample(4804))
+            .unwrap()
+    );
+}
+
+#[test]
+fn replacement_uses_final_boundaries_for_shorter_and_longer_sound_islands() {
+    let rate = FrameRate::new(30_000, 1001).unwrap();
+    for inserted in [1, 3, 5] {
+        let edit = RootSoundEdit {
+            grid: RootSoundGrid::root(rate),
+            operation: RootSoundOperation::Replace {
+                range: FrameRange::new(ProjectFrame(1), ProjectFrame(4)).unwrap(),
+                duration: duration(inserted),
+            },
+            cuts: RootSoundCutEdges {
+                before: AudioEdgePolicy::Hard,
+                after: AudioEdgePolicy::Hard,
+            },
+        };
+        let plan = RenderPlan::compile(&document(
+            &[(3 + inserted, false)],
+            rate,
+            6,
+            Some(vec![edit]),
+            None,
+        ))
+        .unwrap();
+        let sound = plan.root_sound(&id()).unwrap();
+        let old = rate.audio_boundary(ProjectFrame(4)).unwrap();
+        let start = rate.audio_boundary(ProjectFrame(1 + inserted)).unwrap();
+        let sampled = sound
+            .routed_input()
+            .unwrap()
+            .route()
+            .query(start..AudioSample(start.0 + 1), AudioQueryLimits::default())
+            .unwrap();
+        assert_eq!(
+            sampled.spans[0]
+                .sampling
+                .unwrap()
+                .local_at(start)
+                .unwrap()
+                .checked_div(
+                    sound
+                        .routed_input()
+                        .unwrap()
+                        .route()
+                        .recipe_grid()
+                        .frames_per_sample()
+                )
+                .unwrap(),
+            ExactRatio::integer(old.0)
+        );
+        assert_eq!(
+            factors(&gates(&plan, start.0..start.0 + 1)),
+            vec![ExactRatio::ONE]
+        );
+    }
+}
+
+#[test]
 fn identity_route_matches_unrouted_tiny_hold_islands_and_shuffled_queries() {
     let rate = FrameRate::new(48_000, 1).unwrap();
     let parts = [

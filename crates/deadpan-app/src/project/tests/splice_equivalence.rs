@@ -120,15 +120,27 @@ fn decode(worker: &PreviewWorker, serial: u64, work: Work) -> Picture {
 
 #[test]
 fn service_proposal_and_commit_match_decoded_pictures_and_canonical_pcm_at_both_joins() {
-    verify_equivalence(false);
+    verify_equivalence(Placement::Seam);
 }
 
 #[test]
 fn interior_proposal_and_commit_match_both_joins_and_preserve_original_suffix_pcm() {
-    verify_equivalence(true);
+    verify_equivalence(Placement::Interior);
 }
 
-fn verify_equivalence(interior: bool) {
+#[test]
+fn replacement_proposal_matches_saved_picture_pcm_and_retained_suffix_at_both_joins() {
+    verify_equivalence(Placement::Replace);
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Placement {
+    Seam,
+    Interior,
+    Replace,
+}
+
+fn verify_equivalence(placement: Placement) {
     let scratch = tempfile::tempdir().unwrap();
     let harness = Harness::with_library(Some(
         ProjectLibrary::from_documents(scratch.path().join("Documents")).unwrap(),
@@ -140,7 +152,7 @@ fn verify_equivalence(interior: bool) {
         .next()
         .unwrap()
         .clone();
-    let before = if interior {
+    let before = if placement != Placement::Seam {
         initial
     } else {
         edited(
@@ -159,15 +171,19 @@ fn verify_equivalence(interior: bool) {
     // At 30000/1001 fps, frame 30 begins at sample 48048, beside its 48000
     // impulse. Reusing 0..30 puts the opening impulse (sample 100) after the
     // entry join and the second impulse before both joins, with its decoded
-    // AAC tail present after the exit join. All four sides carry real PCM.
+    // AAC tail present after the insertion exit join. Replacement resumes at
+    // frame 60, where this fixture is silent; its retained final impulse is
+    // checked separately against the saved baseline below.
     request.ordinals = 0..30;
-    request.destination = if interior {
-        Destination::Interior {
+    request.destination = match placement {
+        Placement::Interior => Destination::Interior {
             target: original,
             at: FrameDuration::new(30).unwrap(),
-        }
-    } else {
-        Destination::Slot(1)
+        },
+        Placement::Seam => Destination::Slot(1),
+        Placement::Replace => Destination::Replace {
+            range: deadpan_core::FrameRange::new(ProjectFrame(30), ProjectFrame(60)).unwrap(),
+        },
     };
     let reply = command(
         &harness.service,
@@ -176,6 +192,10 @@ fn verify_equivalence(interior: bool) {
     let proposed = prepared(&reply, &request.id);
     assert_eq!(proposed.range.start(), ProjectFrame(30));
     assert_eq!(proposed.range.end(), ProjectFrame(60));
+    if placement == Placement::Replace {
+        assert_eq!(proposed.removed, Some(proposed.range));
+        assert_eq!(proposed.plan.duration(), before.plan.duration());
+    }
     unchanged(&before);
     assert!(
         ProjectStore::open(&before.path, AccessMode::ReadOnly)
@@ -216,6 +236,10 @@ fn verify_equivalence(interior: bool) {
         pictures[2].id, pictures[3].id,
         "exit join resumes the destination source"
     );
+    if placement == Placement::Replace {
+        assert_eq!(pictures[0].id, SourceFrameId(29));
+        assert_eq!(pictures[3].id, SourceFrameId(60));
+    }
 
     let cancelled = AtomicBool::new(false);
     let rate = proposed.snapshot.document.presentation_basis().frame_rate;
@@ -242,7 +266,9 @@ fn verify_equivalence(interior: bool) {
                 .iter()
                 .flatten()
                 .fold(0.0_f32, |peak, sample| peak.max(sample.abs()));
-            if window < 2 {
+            if placement == Placement::Replace && window == 1 && side_index == 1 {
+                assert_eq!(peak, 0.0, "the fixture is silent at retained frame 60");
+            } else if window < 2 {
                 assert!(
                     peak > 1.0e-7,
                     "join block at {start:?}, side {side_index} has decoded fixture audio; peak={peak}"

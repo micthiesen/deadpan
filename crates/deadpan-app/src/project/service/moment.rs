@@ -1,12 +1,12 @@
 //! A copied Original range is admitted against its captured identity and target.
 
-use deadpan_core::{AudioTimingId, ProjectFrame, SourceQualificationId};
-use deadpan_store::source_registration::SourceMomentInsertionRequest;
+use deadpan_core::{ProjectFrame, SourceQualificationId};
 
+use super::splice::Request;
 use super::*;
 
 pub(super) struct PendingMoment {
-    request: SourceMomentInsertionRequest,
+    request: Request,
     qualification: SourceQualificationId,
     cursor: ProjectFrame,
 }
@@ -21,12 +21,12 @@ impl Service {
             ordinals,
             scope,
             parent,
-            index,
+            destination,
         } = request;
         self.check_context(session, &expected_revision)?;
         let workspace = self.workspace.as_ref().ok_or("Open a project first")?;
         let view = scope.resolve(workspace)?;
-        if view.owner != &parent || index > view.children.len() {
+        if view.owner != &parent {
             return Err("Paste target is outside the captured Sequence scope".into());
         }
         let source = workspace
@@ -37,42 +37,27 @@ impl Service {
         if source.receipt.id() != &qualification {
             return Err("Copied Original qualification has changed; select and copy again".into());
         }
-        let cursor = workspace
-            .document
-            .source_splice_boundary(&parent, index)
-            .map_err(display)?;
-        let new_revision = revision();
+        let (request, cursor) = Request::capture(
+            workspace,
+            &parent,
+            &destination,
+            &asset,
+            ordinals,
+            &source.label,
+        )?;
         let moment = PendingMoment {
-            request: SourceMomentInsertionRequest {
-                expected_revision,
-                new_revision: new_revision.clone(),
-                asset: asset.clone(),
-                parent,
-                index,
-                node: node(),
-                label: format!("{} [{}..{})", source.label, ordinals.start, ordinals.end),
-                timing: AudioTimingId {
-                    allocation: new_revision,
-                    ordinal: 0,
-                },
-                ordinals,
-            },
+            request,
             qualification,
             cursor,
         };
         if let Some((cached_asset, token)) = self.cached.take() {
             if cached_asset == asset {
                 let cancelled = AtomicBool::new(false);
-                let outcome = self.writer()?.commit_prepared_source_moment(
-                    &moment.request,
-                    &token,
-                    None,
-                    &cancelled,
-                );
+                let outcome = moment.request.commit(self.writer()?, &token, &cancelled);
                 match outcome {
                     Ok(commit) => {
                         self.cached = Some((cached_asset, token));
-                        self.complete_moment(&moment, scope, commit.revision_id)?;
+                        self.complete_moment(&moment, scope, commit.revision_id);
                         return Ok(());
                     }
                     Err(StoreError::OriginalMedia(_) | StoreError::Io(_)) => {}
@@ -128,15 +113,15 @@ impl Service {
         if prepared.receipt().id() != &moment.qualification {
             return Err("Fresh source qualification differs from the copied Original".into());
         }
-        let commit = self
-            .writer()?
-            .commit_prepared_source_moment(&moment.request, &prepared, None, &active.cancelled)
+        let commit = moment
+            .request
+            .commit(self.writer()?, &prepared, &active.cancelled)
             .map_err(display)?;
-        self.cached = Some((moment.request.asset.clone(), prepared));
-        self.complete_moment(&moment, active.scope, commit.revision_id)?;
+        self.cached = Some((moment.request.asset().clone(), prepared));
+        self.complete_moment(&moment, active.scope, commit.revision_id);
         if let Some(status) = &mut self.import {
             status.stage = ImportStage::Complete;
-            status.asset = Some(moment.request.asset.clone());
+            status.asset = Some(moment.request.asset().clone());
         }
         Ok(())
     }
@@ -146,17 +131,30 @@ impl Service {
         moment: &PendingMoment,
         scope: SequenceScope,
         revision: RevisionId,
-    ) -> Result<()> {
-        self.refresh()?;
+    ) {
+        // SQLite already committed. Preserve its receipt even if rebuilding
+        // the workspace fails, and never label a saved cold paste as a failed
+        // import or invite an implicit second edit.
         self.committed = Some(CommittedEdit {
             revision,
-            selected_node: Some(moment.request.node.clone()),
+            selected_node: Some(moment.request.node().clone()),
             preserve_cursor: false,
             cursor: Some(moment.cursor),
             scope,
             sound: None,
         });
-        self.message = Some("Original moment pasted and saved. Undo with u.".into());
-        Ok(())
+        #[cfg(test)]
+        {
+            self.render_preview_refresh_failure = self
+                .shared
+                .splice_commit_refresh_failure
+                .swap(false, Ordering::AcqRel);
+        }
+        self.message = Some(match self.refresh() {
+            Ok(()) => "Original moment pasted and saved. Undo with u.".into(),
+            Err(error) => {
+                format!("Original moment saved, but the preview could not refresh: {error}")
+            }
+        });
     }
 }

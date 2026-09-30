@@ -35,11 +35,12 @@ fn success(arguments: &[&str]) -> Result<Value> {
 #[test]
 fn doctor_reports_hold_audio_document_and_migration_schemas() -> Result {
     let report = success(&["doctor"])?;
-    assert_eq!(report["document_schema"], 33);
-    assert_eq!(report["database_schema"], 42);
+    assert_eq!(report["document_schema"], 34);
+    assert_eq!(report["database_schema"], 43);
     let partial = report["partial"].as_array().unwrap();
     for capability in [
-        "schema-1-through-40-migration",
+        "schema-1-through-38-migration",
+        "schema-39-through-42-development-format-refusal",
         "hold-audio-policy-commands",
         "native-original-audition",
         "selection-loop-audition",

@@ -4,6 +4,12 @@ use eframe::egui;
 
 use super::{BeatRow, NodeId, paint_cursor, style};
 
+#[derive(Default)]
+pub(super) struct Markers {
+    pub cursor: Option<(usize, f32)>,
+    pub range: Option<std::ops::Range<u64>>,
+}
+
 pub(super) fn original(
     ui: &mut egui::Ui,
     label: &str,
@@ -58,7 +64,7 @@ pub(super) fn strip(
     layout: style::Layout,
     beats: &[BeatRow],
     selected: Option<&NodeId>,
-    marker: Option<(usize, f32)>,
+    markers: Markers,
     cursor: u64,
     reveal: bool,
 ) -> Option<usize> {
@@ -95,7 +101,35 @@ pub(super) fn strip(
                 egui::vec2(layout.card_width - 8.0, layout.card_height),
             );
             let response = beat_card(ui, rect, beat, index, selected == Some(&beat.id));
-            if let Some((marker_index, fraction)) = marker
+            if let Some(range) = &markers.range
+                && beat.frames > 0
+            {
+                let start = range.start.max(beat.start);
+                let end = range.end.min(beat.start + beat.frames);
+                if start < end {
+                    let x = |at: u64| {
+                        rect.left() + rect.width() * (at - beat.start) as f32 / beat.frames as f32
+                    };
+                    let highlight = egui::Rect::from_min_max(
+                        egui::pos2(x(start), rect.bottom() - 6.0),
+                        egui::pos2(x(end), rect.bottom()),
+                    );
+                    ui.painter().rect_filled(highlight, 1.0, style::LAVENDER);
+                    ui.interact(
+                        highlight,
+                        ui.make_persistent_id(("edit-range", &beat.id)),
+                        egui::Sense::hover(),
+                    )
+                    .widget_info(|| {
+                        egui::WidgetInfo::labeled(
+                            egui::WidgetType::Label,
+                            true,
+                            format!("Selected Edit range [{}..{}) in {}", start, end, beat.label),
+                        )
+                    });
+                }
+            }
+            if let Some((marker_index, fraction)) = markers.cursor
                 && marker_index == index
             {
                 paint_cursor(ui, rect, fraction, cursor);
@@ -248,7 +282,15 @@ mod tests {
                 },
                 |ui| {
                     egui::CentralPanel::default().show(ui, |ui| {
-                        strip(ui, layout, &beats, Some(&beats[30].id), None, 360, reveal);
+                        strip(
+                            ui,
+                            layout,
+                            &beats,
+                            Some(&beats[30].id),
+                            Markers::default(),
+                            360,
+                            reveal,
+                        );
                     });
                 },
             );
@@ -326,7 +368,10 @@ mod tests {
                         layout,
                         &beats,
                         Some(&selected),
-                        Some((marker, 0.0)),
+                        Markers {
+                            cursor: Some((marker, 0.0)),
+                            range: None,
+                        },
                         beats[marker].start,
                         true,
                     );
@@ -501,7 +546,7 @@ mod tests {
                                 layout,
                                 &beats,
                                 Some(&beats.last().unwrap().id),
-                                None,
+                                Markers::default(),
                                 0,
                                 true,
                             );
@@ -602,7 +647,10 @@ mod tests {
                                             layout,
                                             &beats,
                                             Some(&beats[count - 1].id),
-                                            Some((count - 1, 0.0)),
+                                            Markers {
+                                                cursor: Some((count - 1, 0.0)),
+                                                range: None,
+                                            },
                                             beats[count - 1].start,
                                             reveal,
                                         );

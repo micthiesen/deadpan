@@ -1,0 +1,142 @@
+{
+  "authored_document_restored_except_revision": true,
+  "old_revision": "abea648a-5298-4935-aa33-6dda94a04ec8",
+  "new_revision": "664942da-8ffb-4a53-a626-95dc4ef74257",
+  "revisions": [
+    [
+      "7529a28a-5782-4b16-b54f-71c82cd13e5e",
+      "abea648a-5298-4935-aa33-6dda94a04ec8",
+      "edit"
+    ],
+    [
+      "664942da-8ffb-4a53-a626-95dc4ef74257",
+      "7529a28a-5782-4b16-b54f-71c82cd13e5e",
+      "undo"
+    ]
+  ],
+  "new_command": {
+    "command": "replace_source",
+    "parent": "4ec20b9d-9e7a-4e2c-9b3b-e561985064d8",
+    "range": {
+      "start": 30,
+      "end": 60
+    },
+    "source": {
+      "duration": 14,
+      "video": {
+        "type": "stream",
+        "asset": "97d58a57-6af4-4312-a98f-bee8ae8e5e93",
+        "span": {
+          "start": {
+            "ticks": 10010,
+            "time_base": {
+              "numerator": 1,
+              "denominator": 30000
+            }
+          },
+          "end": {
+            "ticks": 24024,
+            "time_base": {
+              "numerator": 1,
+              "denominator": 30000
+            }
+          }
+        }
+      },
+      "video_mapping": {
+        "type": "placement",
+        "start": {
+          "numerator": "0",
+          "denominator": "1"
+        },
+        "frames": {
+          "numerator": "14",
+          "denominator": "1"
+        },
+        "endpoints": "hold_adjacent"
+      },
+      "audio": {
+        "asset": "97d58a57-6af4-4312-a98f-bee8ae8e5e93",
+        "span": {
+          "start": {
+            "ticks": 0,
+            "time_base": {
+              "numerator": 1,
+              "denominator": 48000
+            }
+          },
+          "end": {
+            "ticks": 192192,
+            "time_base": {
+              "numerator": 1,
+              "denominator": 48000
+            }
+          }
+        }
+      },
+      "audio_mapping": {
+        "type": "selected_placement",
+        "start": {
+          "numerator": "-10",
+          "denominator": "1"
+        },
+        "frames": {
+          "numerator": "120",
+          "denominator": "1"
+        },
+        "selection": {
+          "start": {
+            "numerator": "0",
+            "denominator": "1"
+          },
+          "end": {
+            "numerator": "14",
+            "denominator": "1"
+          }
+        }
+      },
+      "link": "linked",
+      "audio_offset": 0
+    },
+    "id": "7928a5ac-2c63-4d23-874c-ed3634799408",
+    "label": "cfr-bframes.mp4 [10..24)",
+    "identities": {
+      "nodes": [
+        "0d0545bb-c6af-46d0-a484-577efd755b27",
+        "3eaaa2e9-d46d-475b-85dd-1745acf4cd40",
+        "a2d82332-114f-4646-bd7a-46288f895260",
+        "1ae7c4b3-13da-4d10-8be4-682163220f32",
+        "342de897-5515-46a7-911d-55d4d89f30c8"
+      ]
+    },
+    "timing": {
+      "allocation": "7529a28a-5782-4b16-b54f-71c82cd13e5e",
+      "ordinal": 0
+    }
+  },
+  "changed_tables": [
+    "history",
+    "redo",
+    "revisions",
+    "state"
+  ],
+  "unchanged_tables": [
+    "generation_attempt_heads",
+    "generation_attempts",
+    "generation_bundle_receipts",
+    "generation_candidate_receipts",
+    "generation_requests",
+    "hold_request_clocks",
+    "original_media",
+    "render_attempts",
+    "render_candidate_checkpoints",
+    "render_encoding_decisions",
+    "render_job_heads",
+    "render_jobs",
+    "render_publication_operations",
+    "render_publications",
+    "single_source",
+    "source_qualifications"
+  ],
+  "writer_lock_released": true
+}

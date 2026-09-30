@@ -23,6 +23,7 @@ use crate::worker::{PreviewWorker, ProjectView, SourceSummary, Ticket, Work};
 mod camera;
 mod camera_fields;
 mod cards;
+mod edit_range;
 mod gain;
 #[cfg(feature = "ui-harness")]
 pub(crate) mod harness;
@@ -137,6 +138,8 @@ pub struct DeadpanApp {
     pane: Pane,
     source_cursor: u64,
     moment: moment::Selection,
+    edit_range: edit_range::Selection,
+    placement_command_target: Option<Result<moment::PlacementTarget, String>>,
     sequence_cursor: u64,
     source_search: String,
     command: String,
@@ -247,6 +250,8 @@ impl DeadpanApp {
             pane: Pane::Viewer,
             source_cursor: 0,
             moment: moment::Selection::default(),
+            edit_range: edit_range::Selection::default(),
+            placement_command_target: None,
             sequence_cursor: 0,
             source_search: String::new(),
             command: String::new(),
@@ -387,6 +392,7 @@ impl DeadpanApp {
 
     fn request_picture(&mut self, clear: bool) {
         self.reconcile_moment();
+        self.reconcile_edit_range();
         // Pointer navigation also reaches this boundary. Revoke the draft in
         // this frame, before a later inspector widget could apply its old scope.
         self.cancel_camera();
@@ -672,6 +678,7 @@ impl DeadpanApp {
             self.sequence_cursor = self.sequence_cursor.min(self.sequence_length());
             self.source_cursor = self.source_cursor.min(self.source_length());
             self.reconcile_moment();
+            self.reconcile_edit_range();
             self.reconcile_events();
             if self.view == View::Sequence && !committed_selection {
                 self.reconcile_beat_selection();
@@ -1039,6 +1046,7 @@ impl DeadpanApp {
     }
 
     fn open_command(&mut self, command: String, context: &egui::Context) {
+        self.placement_command_target = Some(self.capture_placement_target());
         self.gain_command_target = Some(self.capture_gain_target());
         self.hold_command_target = Some(self.capture_hold_command());
         self.sound_command_target = self.capture_sound_command(&command);
@@ -1267,7 +1275,13 @@ impl DeadpanApp {
             }
             Action::EnterGroup => self.enter_group(context),
             Action::LeaveGroup => self.leave_group(context),
-            Action::VisualMoment => self.visual_moment(),
+            Action::VisualMoment => {
+                if self.view == View::Sequence {
+                    self.visual_edit_range();
+                } else {
+                    self.visual_moment();
+                }
+            }
             Action::CopyMoment => self.copy_moment(),
             Action::PasteMoment { before } => self.paste_moment(before),
             Action::Edit(edit) => self.edit(edit),
@@ -1315,6 +1329,7 @@ impl DeadpanApp {
                     }
                 }
                 if self.view == View::Sequence {
+                    self.edit_range.move_to(self.sequence_cursor);
                     self.select_at_cursor();
                 }
                 self.request_picture(false);
@@ -1335,6 +1350,7 @@ impl DeadpanApp {
                     }
                 }
                 if self.view == View::Sequence {
+                    self.edit_range.move_to(self.sequence_cursor);
                     self.select_at_cursor();
                 }
                 self.request_picture(false);
@@ -1392,6 +1408,7 @@ impl DeadpanApp {
                         self.selected_beat = Some(beats[next].id.clone());
                         self.sequence_cursor = beats[next].start;
                         self.view.set(View::Sequence, &mut self.message);
+                        self.edit_range.move_to(self.sequence_cursor);
                         self.reveal_beat = true;
                         self.request_picture(true);
                     }
@@ -1430,6 +1447,7 @@ impl DeadpanApp {
             Action::Escape => {
                 if !self.sound_focused() {
                     self.moment.cancel();
+                    self.edit_range.clear();
                 }
                 self.pause_playback();
                 self.command_open = false;
@@ -1648,6 +1666,7 @@ impl DeadpanApp {
         let hold_target = self.hold_command_target.take();
         let sound_target = self.sound_command_target.take();
         let gain_target = self.gain_command_target.take();
+        let placement_target = self.placement_command_target.take();
         self.bindings.clear();
         self.command_open = false;
         self.command_focus_pending = false;
@@ -1700,6 +1719,14 @@ impl DeadpanApp {
             Ok(navigation::command::Entry::GainMute) => self.gain_mute(gain_target),
             Ok(navigation::command::Entry::RoomTone) => self.open_room_tone(hold_target, context),
             Ok(navigation::command::Entry::HoldSilence) => self.silence_hold(hold_target),
+            Ok(navigation::command::Entry::Action(Action::PasteMoment { before })) => {
+                self.paste_captured_moment(
+                    before,
+                    placement_target.unwrap_or_else(|| {
+                        Err("Open the paste command again to capture its destination.".into())
+                    }),
+                );
+            }
             Ok(navigation::command::Entry::Action(action)) => self.action(action, context),
             Ok(navigation::command::Entry::Source) => {
                 self.stop_playback();
@@ -1736,7 +1763,12 @@ impl DeadpanApp {
             }
             Ok(navigation::command::Entry::Help) => self.help_open = true,
             Ok(navigation::command::Entry::Renders) => self.render.history.requested = true,
-            Ok(navigation::command::Entry::Splice) => self.open_splice(context),
+            Ok(navigation::command::Entry::Splice) => self.open_captured_splice(
+                context,
+                placement_target.unwrap_or_else(|| {
+                    Err("Open Place slice again to capture its destination.".into())
+                }),
+            ),
             Ok(navigation::command::Entry::Monitor(tenths)) => {
                 self.pause_playback();
                 self.monitor_gain = f32::from(tenths) / 1000.0;
@@ -1934,7 +1966,7 @@ impl DeadpanApp {
                 return;
             }
             let pending = self.bindings.pending();
-            let mode = if self.command_open { "COMMAND" } else if text_input_active(ui.ctx(), false) { "TEXT" } else if self.moment.active && self.view == View::Source { "VISUAL" } else if pending.is_empty() { "NORMAL" } else { "PENDING" };
+            let mode = if self.command_open { "COMMAND" } else if text_input_active(ui.ctx(), false) { "TEXT" } else if (self.moment.active && self.view == View::Source) || (self.edit_range.active && self.view == View::Sequence) { "VISUAL" } else if pending.is_empty() { "NORMAL" } else { "PENDING" };
             ui.horizontal_wrapped(|ui| {
                 ui.label(egui::RichText::new(mode).monospace().strong());
                 ui.separator();
@@ -1948,7 +1980,9 @@ impl DeadpanApp {
                         ui.label(format!("Sound: {}", event.label));
                     }
                 } else if self.view == View::Sequence {
-                    if let Some(beat) = self.beat_rows.iter().find(|beat| Some(&beat.id) == self.selected_beat.as_ref()) {
+                    if let Some(label) = self.edit_range_label() {
+                        ui.colored_label(style::LAVENDER, label);
+                    } else if let Some(beat) = self.beat_rows.iter().find(|beat| Some(&beat.id) == self.selected_beat.as_ref()) {
                         ui.add(egui::Label::new(format!("{} · {}", beat.label, self.beat_scope_label())).truncate()).on_hover_text(format!("{} · {} · {} frames · {}", beat.label, beat.kind, beat.frames, self.beat_scope_label()));
                     } else { ui.weak("No beat selected"); }
                 } else { ui.weak("Unchanged source"); }
@@ -2000,6 +2034,7 @@ impl DeadpanApp {
                     } else if self.view == View::Sequence {
                         style::key_hint(ui, "h l", "frame");
                         style::key_hint(ui, "j k", "beat");
+                        style::key_hint(ui, "v", if self.edit_range.active { "finish range" } else { "select range" });
                         if self.selected_group() { style::key_hint(ui, "Enter", "open group"); }
                         if !self.sequence_scope.groups().is_empty() { style::key_hint(ui, "Backspace", "parent"); }
                         style::key_hint(ui, "s", "split");
@@ -2008,7 +2043,7 @@ impl DeadpanApp {
                         style::key_hint(ui, ",f", "camera");
                         style::key_hint(ui, "rr", "repeat");
                         style::key_hint(ui, "dd", "cut beat");
-                        if self.moment.copied.is_some() { style::key_hint(ui, "p / P", "paste after / before"); }
+                        if self.moment.copied.is_some() { style::key_hint(ui, "p / P", if self.selected_edit_range().is_some() { "replace range" } else { "paste after / before" }); }
                         style::key_hint(ui, "u", "undo");
                     } else {
                         style::key_hint(ui, "h l", "frame");
@@ -2307,7 +2342,7 @@ impl DeadpanApp {
                 layout,
                 &beats,
                 selected.as_ref(),
-                marker,
+                cards::Markers { cursor: marker, range: self.selected_edit_range().map(|range| range.start().0 as u64..range.end().0 as u64) },
                 self.sequence_cursor,
                 std::mem::take(&mut self.reveal_beat),
             ) {
@@ -2317,6 +2352,7 @@ impl DeadpanApp {
                 self.selected_event = None;
                 self.sequence_cursor = beat.start;
                 self.view.set(View::Sequence, &mut self.message);
+                self.edit_range.move_to(self.sequence_cursor);
                 self.pane = Pane::Sequence;
                 self.request_picture(true);
                 ui.memory_mut(|m| m.request_focus(pane_id(Pane::Sequence)));
@@ -2815,7 +2851,7 @@ impl DeadpanApp {
                     for (key, description) in [
                         ("⌘N / ⌘O", "Choose one Original / open a project. New projects live in Documents/Deadpan."),
                         ("Space", "Play / pause the focused sound, Original, or Your edit. During preparation, Space cancels. Pause retains the exact heard sample; navigation stops playback."),
-                        ("Shift+Space", "Loop the complete selected sound. In Original or Your edit, loop the selected moment or beat with 500ms before and 750ms after, bounded by that domain. Space pauses and resumes the loop."),
+                        ("Shift+Space", "Loop the complete selected sound. In Original or Your edit, loop the selected moment, Edit range or beat with 500ms before and 750ms after, bounded by that domain. Space pauses and resumes the loop."),
                         (":audition-context lead=500ms follow=750ms", "Set loop lead-in and follow-through. Use 0ms for an exact selection. Seconds, milliseconds and project frames are accepted."),
                         (":monitor 25%", "Set monitor volume without changing the project or export gain. 0 mutes; 12.5% restores the initial level."),
                         ("h l · Left Right", "Move one frame in the current clock. Prefix a count: 12l."),
@@ -2856,9 +2892,9 @@ impl DeadpanApp {
                         ("Camera r · Enter · Esc", "Reset the draft, apply once, or restore entry framing. Normal adjustments preserve an existing curve."),
                         (",z / ,c", "One undoable 1.35× punch / whole-beat smoothstep creep to 1.35×. These replace an existing framing curve."),
                         (":hold-duration 11f", "Set a selected Hold to exactly 11 project frames."),
-                        ("v / :select · y / :yank", "In Original, start or finish a half-open time selection. Move with h/l or counted motions. y copies the range; Esc cancels selection. The Out frame is excluded. Copy is session-local; named and persistent registers are not available yet."),
-                        ("p / P · :paste / :paste-before", "In Your edit, paste the copied Original moment after / before the selected beat in the displayed group. An empty group accepts a paste at its start. Each paste is one undoable transaction; later audio keeps its sampling phase."),
-                        (":splice", "Preview a copied Original slice at the Edit cursor. i/o selects In/exclusive Out; d selects destination; h/l adjusts frames with counts; j/k chooses a Sequence seam; f inspects the picture. b compares Before/Proposed, Space auditions, Shift+Space loops both joins, Enter places once and Escape cancels. Linked inserts work at ordinary Sequence seams and inside direct Source/Hold beats and supported fragments. Enter a group to place inside it. Other placement modes remain open."),
+                        ("v / :select · y / :yank", "Start or finish a half-open time selection in Original or Your edit. h/l, counted motions and gg/G extend it; Edit j/k also extends to beat boundaries. A finished range stays fixed. In Original, y copies the range. In Your edit, a selected range is the explicit replacement target. Esc clears selection. Source and Edit ranges stay independent. Changing the Edit revision or group discards its range."),
+                        ("p / P · :paste / :paste-before", "In Your edit, a selected nonempty Edit range is replaced by the copied Original slice in one undoable transaction. Without an Edit range, p/P pastes after/before the selected beat in the displayed group. An empty group accepts a paste at its start. Command entry captures the exact range, including its absence; stale destinations fail."),
+                        (":splice", "Preview a copied Original slice at the Edit cursor. Insert is the default. With a captured Edit range, r explicitly toggles Replace selection; the removed interval stays fixed and r restores the retained Insert destination. i/o refines Original endpoints; f then h/l inspects either join. Insert d selects destination and j/k chooses seams. b compares corresponding Before/Proposed context, Space auditions, Shift+Space loops joins, Enter commits once and Escape restores entry selection and cursors. Source/Hold/fragment endpoints and whole intervening beats work in ordinary Sequence scopes. Enter a group to place inside it."),
                         (",i / :insert", "Reuse the full Original after the selected beat in the current group, or append to an empty group. Legacy projects insert their selected source."),
                         ("u / Ctrl R", "Undo / redo. Native ⌘Z / ⌘Shift Z also work."),
                         ("⌘E / :render", "Render the saved full edit with automatic SDR output settings. For an unsaved Camera, Gain or Room tone preview, choose Commit preview and render, Discard preview and render, or Keep editing."),
@@ -2872,7 +2908,7 @@ impl DeadpanApp {
                     ] { help_binding(ui, key, description); }
                     ui.separator();
                     ui.weak("Original browsing never changes it. Your edit commands affect the selected beat in the displayed group and its linked picture and sound. Counts precede operators, such as 3rr; the visible PENDING badge waits without a timer.");
-                    ui.weak("Space auditions the focused catalog sound, Original, or full edit. In the catalog, j/k selects a sound and Shift+Space loops its complete measured audio. Catalog audition keeps the picture and both editor cursors in place. Leaving the catalog or choosing another sound stops it. Elsewhere Shift+Space loops the selected Original moment or edited beat with context. Playback has edge fades and a safety limiter; pause before changing Monitor volume. Range cuts/replacement, named registers, Repeat/Retime descendant navigation and insertion, moving routed sounds, voice effects, the full mix, and AI generation in the app remain unavailable. Render supports the current SDR picture and audio path; unsupported content fails explicitly. Headless commands can use this open project. Use :renders for saved renders and recovery. HDR output and full mastering remain unavailable.");
+                    ui.weak("Space auditions the focused catalog sound, Original, or full edit. In the catalog, j/k selects a sound and Shift+Space loops its complete measured audio. Catalog audition keeps the picture and both editor cursors in place. Leaving the catalog or choosing another sound stops it. Elsewhere Shift+Space loops the selected Original moment, Edit range or edited beat with context. Playback has edge fades and a safety limiter; pause before changing Monitor volume. Range cuts, edited-slice copy/move, named registers, Repeat/Retime descendant navigation and insertion, moving routed sounds, voice effects, the full mix, and AI generation in the app remain unavailable. Render supports the current SDR picture and audio path; unsupported content fails explicitly. Headless commands can use this open project. Use :renders for saved renders and recovery. HDR output and full mastering remain unavailable.");
             });
     }
 }

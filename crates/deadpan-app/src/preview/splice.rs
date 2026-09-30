@@ -1,6 +1,6 @@
 //! A local placement draft never changes the copied register or committed view.
 
-use deadpan_core::{AudioSample, FrameDuration};
+use deadpan_core::{AudioSample, FrameDuration, FrameRange};
 use deadpan_playback::{Snapshot, Window};
 
 use super::*;
@@ -39,6 +39,8 @@ pub(super) struct Draft {
     children: Vec<NodeId>,
     slot: Option<usize>,
     destination: u64,
+    replacement: Option<FrameRange>,
+    replacing: bool,
     pub(super) cursor: u64,
     focus: Focus,
     before: bool,
@@ -52,6 +54,7 @@ pub(super) struct Draft {
     entry_cursor: u64,
     entry_source: u64,
     entry_pane: Pane,
+    entry_selection: edit_range::Selection,
     focus_pending: bool,
     keys: Vec<SpliceKey>,
     scope_label: String,
@@ -108,6 +111,51 @@ impl Draft {
         }
     }
 
+    fn comparison_ranges(&self) -> Option<((i64, i64), (i64, i64))> {
+        let prepared = self.prepared.as_ref()?;
+        let proposed = (prepared.range.start().0, prepared.range.end().0);
+        let saved = prepared.removed.map_or((proposed.0, proposed.0), |range| {
+            (range.start().0, range.end().0)
+        });
+        Some((saved, proposed))
+    }
+
+    fn compare(&mut self) -> Result<(), String> {
+        let (saved, proposed) = self
+            .comparison_ranges()
+            .ok_or("Wait for the current slice proposal.")?;
+        let (from, to) = if self.before {
+            (saved, proposed)
+        } else {
+            (proposed, saved)
+        };
+        self.cursor = u64::try_from(map_comparison(self.cursor as i64, from, to)?)
+            .map_err(|_| "Negative comparison frame")?;
+        if let Some(position) = self.position {
+            // Map absolute origin-based sample boundaries. The difference of
+            // rounded durations can disagree at NTSC rates.
+            let rate = self.base.document.presentation_basis().frame_rate;
+            let samples = |range: (i64, i64)| -> Result<_, String> {
+                Ok((
+                    rate.audio_boundary(ProjectFrame(range.0))
+                        .map_err(|error| error.to_string())?
+                        .0,
+                    rate.audio_boundary(ProjectFrame(range.1))
+                        .map_err(|error| error.to_string())?
+                        .0,
+                ))
+            };
+            self.position = Some(AudioSample(map_comparison(
+                position.0,
+                samples(from)?,
+                samples(to)?,
+            )?));
+        }
+        self.before = !self.before;
+        self.cursor = self.cursor.min(self.frames().saturating_sub(1));
+        Ok(())
+    }
+
     fn endpoint_identity(&self) -> EndpointIdentity {
         EndpointIdentity {
             session: self.proposal.id.session,
@@ -139,10 +187,40 @@ impl Draft {
         self.error = None;
         self.position = None;
         self.dirty = true;
-        self.proposal.destination =
-            placement_at(&self.seams, &self.children, self.slot, self.destination)?;
+        self.proposal.destination = if self.replacing {
+            Destination::Replace {
+                range: self.replacement.ok_or("No captured Edit selection")?,
+            }
+        } else {
+            placement_at(&self.seams, &self.children, self.slot, self.destination)?
+        };
         Ok(())
     }
+}
+
+/// Shared prefixes keep their coordinate; suffixes retain their offset from
+/// the appropriate join. Removed interiors clamp to the surviving interval.
+fn map_comparison(value: i64, from: (i64, i64), to: (i64, i64)) -> Result<i64, String> {
+    if from.0 != to.0 || from.0 > from.1 || to.0 > to.1 {
+        return Err("Comparison intervals do not share a valid Edit boundary".into());
+    }
+    if value <= from.0 {
+        return Ok(value);
+    }
+    if value >= from.1 {
+        return value
+            .checked_sub(from.1)
+            .and_then(|offset| to.1.checked_add(offset))
+            .ok_or_else(|| "Comparison coordinate overflow".into());
+    }
+    let offset = value
+        .checked_sub(from.0)
+        .ok_or("Comparison offset overflow")?;
+    let retained =
+        to.1.checked_sub(to.0)
+            .ok_or("Comparison duration overflow")?;
+    to.0.checked_add(offset.min(retained.saturating_sub(1).max(0)))
+        .ok_or_else(|| "Comparison coordinate overflow".into())
 }
 
 fn placement_at(
@@ -173,10 +251,18 @@ fn placement_at(
 impl DeadpanApp {
     pub(super) fn open_splice(&mut self, context: &egui::Context) {
         self.reconcile_moment();
+        let target = self.capture_placement_target();
+        self.open_captured_splice(context, target);
+    }
+
+    pub(super) fn open_captured_splice(
+        &mut self,
+        context: &egui::Context,
+        target: Result<moment::PlacementTarget, String>,
+    ) {
         let captured = (|| {
-            if self.view != View::Sequence {
-                return Err("Return to Your edit (:sequence) before placing a slice.".to_owned());
-            }
+            let target = target?;
+            self.check_placement_target(&target)?;
             if self.splice.is_some()
                 || self.splice_abandon.is_some()
                 || self.camera.is_some()
@@ -191,13 +277,12 @@ impl DeadpanApp {
                     "Finish the current preview or preparation before placing a slice.".to_owned(),
                 );
             }
-            let base = self.workspace.clone().ok_or("Open a project first.")?;
-            let copied = self
-                .moment
+            let base = target.base.clone();
+            let copied = target
                 .copied
                 .as_ref()
                 .ok_or("Copy an Original range first: :source, v, h/l, y.")?;
-            let view = self.sequence_scope.resolve(&base)?;
+            let view = target.scope.resolve(&base)?;
             let mut seams = Vec::with_capacity(view.children.len() + 1);
             let mut at = view.start;
             seams.push(at);
@@ -221,9 +306,17 @@ impl DeadpanApp {
                 .ok_or("The copied Original has no qualified pictures.")?
                 .frames()
                 .len() as u64;
-            Ok((base, copied.clone(), parent, seams, children, source_frames))
+            Ok((
+                base,
+                copied.clone(),
+                parent,
+                seams,
+                children,
+                source_frames,
+                target,
+            ))
         })();
-        let (base, copied, parent, seams, children, source_frames) = match captured {
+        let (base, copied, parent, seams, children, source_frames, target) = match captured {
             Ok(value) => value,
             Err(error) => {
                 self.error = Some(error);
@@ -233,8 +326,8 @@ impl DeadpanApp {
         let Some(token) = self.next_serial() else {
             return;
         };
-        let slot = seams.iter().position(|at| *at == self.sequence_cursor);
-        let destination = match placement_at(&seams, &children, slot, self.sequence_cursor) {
+        let slot = seams.iter().position(|at| *at == target.cursor);
+        let destination = match placement_at(&seams, &children, slot, target.cursor) {
             Ok(destination) => destination,
             Err(error) => {
                 self.error = Some(error);
@@ -252,7 +345,7 @@ impl DeadpanApp {
             asset: copied.identity.asset,
             qualification: copied.identity.qualification,
             ordinals: copied.ordinals,
-            scope: self.sequence_scope.clone(),
+            scope: target.scope,
             parent,
             destination,
         };
@@ -274,8 +367,10 @@ impl DeadpanApp {
             seams,
             children,
             slot,
-            destination: self.sequence_cursor,
-            cursor: self.sequence_cursor,
+            destination: target.cursor,
+            replacement: target.range,
+            replacing: false,
+            cursor: target.cursor,
             focus: Focus::Destination,
             before: false,
             looping: false,
@@ -285,9 +380,10 @@ impl DeadpanApp {
             endpoint_change: 1,
             endpoints_pending: true,
             endpoints: pictures::Display::new(self.render_state.clone()),
-            entry_cursor: self.sequence_cursor,
-            entry_source: self.source_cursor,
-            entry_pane: self.pane,
+            entry_cursor: target.cursor,
+            entry_source: target.source_cursor,
+            entry_pane: target.pane,
+            entry_selection: target.selection,
             focus_pending: true,
             keys: Vec::new(),
             scope_label: if self.scope_labels.is_empty() {
@@ -318,6 +414,7 @@ impl DeadpanApp {
             match commit.result {
                 Ok(_) => {
                     self.stop_playback();
+                    self.edit_range.clear();
                     self.splice = None;
                     self.endpoint_worker.clear();
                     self.bindings.clear();
@@ -351,6 +448,11 @@ impl DeadpanApp {
                                 duration.frames()
                                     != prepared.range.end().0 - prepared.range.start().0
                             })
+                        || prepared.removed
+                            != match draft.proposal.destination {
+                                Destination::Replace { range } => Some(range),
+                                _ => None,
+                            }
                     {
                         return Err(
                             "Slice preparation returned a different captured destination.".into(),
@@ -504,6 +606,7 @@ impl DeadpanApp {
                 self.sequence_cursor = draft.entry_cursor;
                 self.source_cursor = draft.entry_source;
                 self.pane = draft.entry_pane;
+                self.edit_range = draft.entry_selection;
             }
         }
         self.endpoint_worker.clear();
@@ -580,6 +683,27 @@ impl DeadpanApp {
         let mut changed = false;
         let mut endpoints = false;
         match action {
+            SpliceKey::Replace => {
+                if draft.replacement.is_none() {
+                    draft.error = Some(
+                        "Select an Edit range with v before opening Place slice to replace it."
+                            .into(),
+                    );
+                    return;
+                }
+                draft.replacing = !draft.replacing;
+                draft.focus = if draft.replacing {
+                    Focus::Picture
+                } else {
+                    Focus::Destination
+                };
+                draft.cursor = if draft.replacing {
+                    draft.replacement.expect("checked range").start().0 as u64
+                } else {
+                    draft.destination
+                };
+                changed = true;
+            }
             SpliceKey::In => {
                 draft.focus = Focus::In;
             }
@@ -587,6 +711,10 @@ impl DeadpanApp {
                 draft.focus = Focus::Out;
             }
             SpliceKey::Destination => {
+                if draft.replacing {
+                    draft.error = Some("Replace keeps the captured Edit range fixed. f inspects; r returns to Insert.".into());
+                    return;
+                }
                 draft.focus = Focus::Destination;
                 draft.cursor = draft.destination;
             }
@@ -642,6 +770,10 @@ impl DeadpanApp {
                 }
             }
             SpliceKey::Boundary(forward) => {
+                if draft.replacing {
+                    draft.error = Some("Replace keeps the captured Edit range fixed. f and h/l inspect either join; r returns to Insert.".into());
+                    return;
+                }
                 let slot = if let Some(slot) = draft.slot {
                     if forward {
                         slot.saturating_add(count as usize)
@@ -697,8 +829,11 @@ impl DeadpanApp {
         if let Some(heard) = heard {
             draft.position = Some(heard);
         }
-        if action == SpliceKey::Compare {
-            draft.before = !draft.before;
+        if action == SpliceKey::Compare
+            && let Err(error) = draft.compare()
+        {
+            draft.error = Some(error);
+            return;
         }
         if action == SpliceKey::Loop {
             draft.looping = true;
@@ -718,17 +853,21 @@ impl DeadpanApp {
                     .map_err(|_| "Slice preview duration overflow")?,
             };
             let end = domain.end()?;
+            let interval = if draft.before {
+                prepared.removed.map_or(
+                    (prepared.range.start().0, prepared.range.start().0),
+                    |range| (range.start().0, range.end().0),
+                )
+            } else {
+                (prepared.range.start().0, prepared.range.end().0)
+            };
             let start = domain
-                .sample_at_boundary(prepared.range.start().0 as u64)?
+                .sample_at_boundary(interval.0 as u64)?
                 .0
                 .saturating_sub(context.lead.0)
                 .max(0);
-            let proposed_end = Domain::Sequence {
-                rate: snapshot.document.presentation_basis().frame_rate,
-                frames: prepared.plan.duration().frames(),
-            }
-            .sample_at_boundary(prepared.range.end().0 as u64)?;
-            let finish = proposed_end.0.saturating_add(context.follow.0).min(end.0);
+            let interval_end = domain.sample_at_boundary(interval.1 as u64)?;
+            let finish = interval_end.0.saturating_add(context.follow.0).min(end.0);
             let looping = draft.looping;
             let window = Window::new(AudioSample(start.min(end.0)), AudioSample(finish), looping)
                 .map_err(|error| error.to_string())?;
@@ -768,5 +907,43 @@ impl DeadpanApp {
         if self.transport.is_none() {
             self.request_picture_for_transport_at(false, None, None);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use deadpan_core::FrameRate;
+
+    #[test]
+    fn comparison_retains_prefix_suffix_and_clamps_only_replaced_interiors() {
+        assert_eq!(map_comparison(29, (30, 44), (30, 60)), Ok(29));
+        assert_eq!(map_comparison(30, (30, 44), (30, 60)), Ok(30));
+        assert_eq!(map_comparison(43, (30, 44), (30, 60)), Ok(43));
+        assert_eq!(map_comparison(44, (30, 44), (30, 60)), Ok(60));
+        assert_eq!(map_comparison(49, (30, 44), (30, 60)), Ok(65));
+        assert_eq!(map_comparison(59, (30, 60), (30, 44)), Ok(43));
+        assert_eq!(map_comparison(44, (30, 44), (30, 30)), Ok(30));
+        assert_eq!(map_comparison(31, (30, 30), (30, 44)), Ok(45));
+        assert!(map_comparison(i64::MAX, (0, 1), (0, 3)).is_err());
+    }
+
+    #[test]
+    fn ntsc_comparison_uses_absolute_sample_boundaries_and_round_trips_suffix() {
+        let rate = FrameRate::new(30_000, 1_001).unwrap();
+        let boundary = |frame| rate.audio_boundary(ProjectFrame(frame)).unwrap().0;
+        let mut non_additive = false;
+        for start in 1..20 {
+            for removed in 1..20 {
+                let from = (boundary(start), boundary(start + 7));
+                let to = (boundary(start), boundary(start + removed));
+                let heard = from.1 + 137;
+                let compared = map_comparison(heard, from, to).unwrap();
+                assert_eq!(compared, to.1 + 137);
+                assert_eq!(map_comparison(compared, to, from).unwrap(), heard);
+                non_additive |= to.1 - from.1 != boundary(removed) - boundary(7);
+            }
+        }
+        assert!(non_additive, "fixture must expose rounded-duration drift");
     }
 }

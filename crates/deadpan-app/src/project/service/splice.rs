@@ -1,31 +1,14 @@
 //! Retain one exact uncommitted placement on the project owner.
 
-use deadpan_core::{AudioTimingId, EditTransaction, FrameRange, ProjectFrame, SplitIdentities};
-use deadpan_store::source_registration::{
-    SourceMomentInsertionRequest, SourceMomentInteriorInsertionRequest,
-};
+use deadpan_core::{EditTransaction, FrameRange, ProjectFrame};
 
 use super::*;
 use crate::project::splice::{
-    Destination, Prepared as PreparedSplice, Proposal, ProposalId, ProposalUpdate,
-    SpliceCommitUpdate,
+    Prepared as PreparedSplice, Proposal, ProposalId, ProposalUpdate, SpliceCommitUpdate,
 };
 
-/// Retain the exact allocation and destination through preview and commit.
-/// An interior placement never publishes a preliminary Split.
-enum Request {
-    Slot(SourceMomentInsertionRequest),
-    Interior(SourceMomentInteriorInsertionRequest),
-}
-
-impl Request {
-    fn node(&self) -> &NodeId {
-        match self {
-            Self::Slot(request) => &request.node,
-            Self::Interior(request) => &request.node,
-        }
-    }
-}
+mod request;
+pub(super) use request::Request;
 
 pub(super) struct Draft {
     proposal: Proposal,
@@ -121,62 +104,14 @@ impl Service {
         if source.receipt.id() != &proposal.qualification || source.video_index.is_none() {
             return Err("Copied Original qualification has changed; select and copy again".into());
         }
-        let (cursor, split_ids) = match &proposal.destination {
-            Destination::Slot(index) => (
-                workspace
-                    .document
-                    .source_splice_boundary(&proposal.parent, *index)
-                    .map_err(display)?,
-                0,
-            ),
-            Destination::Interior { target, at } => {
-                let interior = workspace
-                    .document
-                    .source_splice_interior(&proposal.parent, target, *at)
-                    .map_err(display)?;
-                (interior.boundary, interior.required_ids)
-            }
-        };
-        let new_revision = revision();
-        let inserted = node();
-        let label = format!(
-            "{} [{}..{})",
-            source.label, proposal.ordinals.start, proposal.ordinals.end
-        );
-        let timing = AudioTimingId {
-            allocation: new_revision.clone(),
-            ordinal: 0,
-        };
-        let request = match &proposal.destination {
-            Destination::Slot(index) => Request::Slot(SourceMomentInsertionRequest {
-                expected_revision: proposal.id.base_revision.clone(),
-                new_revision,
-                asset: proposal.asset.clone(),
-                parent: proposal.parent.clone(),
-                index: *index,
-                node: inserted,
-                label,
-                timing,
-                ordinals: proposal.ordinals.clone(),
-            }),
-            Destination::Interior { target, at } => {
-                Request::Interior(SourceMomentInteriorInsertionRequest {
-                    expected_revision: proposal.id.base_revision.clone(),
-                    new_revision,
-                    asset: proposal.asset.clone(),
-                    parent: proposal.parent.clone(),
-                    target: target.clone(),
-                    at: *at,
-                    node: inserted,
-                    label,
-                    identities: SplitIdentities {
-                        nodes: (0..split_ids).map(|_| node()).collect(),
-                    },
-                    timing,
-                    ordinals: proposal.ordinals.clone(),
-                })
-            }
-        };
+        let (request, cursor) = Request::capture(
+            workspace,
+            &proposal.parent,
+            &proposal.destination,
+            &proposal.asset,
+            proposal.ordinals.clone(),
+            &source.label,
+        )?;
         let id = proposal.id.clone();
         let asset = proposal.asset.clone();
         let scope = proposal.scope.clone();
@@ -254,14 +189,7 @@ impl Service {
         }
         let store = self.store.as_ref().ok_or("Open a project first")?;
         let cancelled = AtomicBool::new(false);
-        let edit = match &draft.request {
-            Request::Slot(request) => {
-                store.preview_prepared_source_moment(request, &source, &cancelled)
-            }
-            Request::Interior(request) => {
-                store.preview_prepared_source_moment_interior(request, &source, &cancelled)
-            }
-        };
+        let edit = draft.request.preview(store, &source, &cancelled);
         let edit = match edit {
             Ok(edit) => edit,
             Err(StoreError::OriginalMedia(_) | StoreError::Io(_)) => return Ok(false),
@@ -313,6 +241,7 @@ impl Service {
             plan,
             node: draft.request.node().clone(),
             range,
+            removed: draft.request.removed(),
         }))
     }
 
@@ -415,14 +344,7 @@ impl Service {
             .ok_or("Slice source is no longer prepared")?;
         let store = self.writer()?;
         let cancelled = AtomicBool::new(false);
-        let outcome = match &draft.request {
-            Request::Slot(request) => {
-                store.commit_prepared_source_moment(request, &source, None, &cancelled)
-            }
-            Request::Interior(request) => {
-                store.commit_prepared_source_moment_interior(request, &source, None, &cancelled)
-            }
-        };
+        let outcome = draft.request.commit(store, &source, &cancelled);
         self.cache_splice_source(&draft.proposal.asset, Some(source));
         let commit = outcome.map_err(display)?;
         Ok(CommittedEdit {

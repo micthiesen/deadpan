@@ -103,17 +103,22 @@ its pointer snaps to measured presentation boundaries. The inspector shows both
 ordinal boundaries and measured elapsed seconds. Original selection and copying
 create no document revision.
 
-Return to Your edit with `:sequence`, select a beat and use `p` after or `P`
-before. An empty current group accepts either at its start. The explicit
+Return to Your edit with `:sequence`. Select time with `v`, motion and `v` to
+make `p/P` replace that range atomically. Without an Edit range, select a beat
+and use `p` after or `P` before. An empty current group accepts either at its start. The explicit
 Sequence owner and child slot keep a paste inside the intended group even at
 its first or last boundary. A copied moment is session-local and binds its
 asset to the exact source qualification. Session or receipt changes invalidate
-it; ordinary edits and undo preserve it. Named/persistent registers, the general
-Normal-mode yank operator, multiple-node registers and Visual replacement are
+it; ordinary edits and undo preserve it. The independent Edit range is bound to
+its revision and ordinary Sequence scope. `:splice` previews an explicit
+Replace selection choice with fixed removed bounds and locally refined Original
+endpoints. See [visual placement](SLICE_PLACEMENT.md). Named/persistent registers,
+the general Normal-mode yank operator, multiple-node registers and replacement
+inside Repeat/Retime occurrences are
 still required.
 
 The native service captures session, revision, qualification, ordinal range,
-Sequence scope and insertion slot before preparation. Cached preparation can
+Sequence scope and insertion slot or replacement range before preparation. Cached preparation can
 admit a paste while another import works; an uncached paste retains its captured
 intent and rejects stale revisions. `commit_prepared_source_moment` verifies the
 existing receipt and live prepared Original token, derives exact Source timing

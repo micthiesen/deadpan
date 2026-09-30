@@ -62,7 +62,7 @@ fn every_frozen_document_patch_and_command_rejects_new_vocabulary() {
         .as_mut()
         .unwrap()
         .audio_treatments = unity();
-    let new_commands = [
+    let mut new_commands = vec![
         Command::SetAudioTreatments {
             node: id("hold"),
             treatments: unity(),
@@ -99,6 +99,27 @@ fn every_frozen_document_patch_and_command_rejects_new_vocabulary() {
             },
         },
     ];
+    let Command::SpliceSourceAt {
+        parent,
+        source,
+        id: inserted,
+        label,
+        identities,
+        timing,
+        ..
+    } = new_commands[2].clone()
+    else {
+        panic!()
+    };
+    new_commands.push(Command::ReplaceSource {
+        parent,
+        range: FrameRange::new(ProjectFrame(0), ProjectFrame(1)).unwrap(),
+        source,
+        id: inserted,
+        label,
+        identities,
+        timing,
+    });
     macro_rules! check {
         ($version:literal, $adapter:ident) => {{
             let wire = old_document($version, &before);

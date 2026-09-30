@@ -1,0 +1,10 @@
+{
+  "bundle": "/tmp/deadpan-slice-replacement-20260930/Deadpan Replacement QA.app",
+  "bundle_id": "dev.thiesen.deadpan.replacement-qa",
+  "binary_sha256": "3d0096e69db0f302fda492c01299cfc268caa21b573adc979a1b6c3c12193a08",
+  "icon_file": "Deadpan.icns",
+  "icon_name": "Deadpan",
+  "project": "/tmp/deadpan-slice-replacement-20260930/replay-first/projects/place-slice/Documents/Deadpan/cfr-bframes.deadpan",
+  "source_manifest_sha256": "d4b6d9a3ac5465384ccaf03ed548efa811a829c8eaf020c4150916b7ef955afb",
+  "build": "cargo release; development wrapper requires external pinned libraries"
+}

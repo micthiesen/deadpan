@@ -78,16 +78,21 @@ impl DeadpanApp {
             let keys = std::mem::take(&mut draft.keys);
             let mut action = None;
             let heading = ui.horizontal(|ui| {
-                ui.heading("Place slice");
-                ui.colored_label(style::LAVENDER, "UNSAVED · Insert · Linked picture + sound");
-                if let Some(count) = draft.count { ui.monospace(format!("COUNT {count}")); }
-            }).response;
-            let focus = ui.interact(heading.rect, egui::Id::new(FOCUS), egui::Sense::click());
+                let title = ui.heading("Place slice");
+                let operation = ui.colored_label(style::LAVENDER, if draft.replacing { "UNSAVED · Replace · Linked picture + sound" } else { "UNSAVED · Insert · Linked picture + sound" });
+                let mut rect = title.rect.union(operation.rect);
+                if let Some(count) = draft.count { rect = rect.union(ui.monospace(format!("COUNT {count}")).rect); }
+                if draft.replacement.is_some() && ui.add_enabled(!draft.invalidated && !draft.applying, egui::Button::new(if draft.replacing { "Insert instead · r" } else { "Replace selection · r" }).selected(draft.replacing)).clicked() { action = Some(SpliceKey::Replace); }
+                rect
+            }).inner;
+            // The heading teaches and focuses keyboard control. Its click
+            // region must exclude the adjacent native operation button.
+            let focus = ui.interact(heading, egui::Id::new(FOCUS), egui::Sense::click());
             focus.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, true, "Place slice keyboard controls"));
             if draft.focus_pending {
                 focus.request_focus(); draft.focus_pending = false;
             }
-            if focus.has_focus() { ui.painter().rect_stroke(heading.rect, 2.0, egui::Stroke::new(1.0, style::LAVENDER), egui::StrokeKind::Inside); }
+            if focus.has_focus() { ui.painter().rect_stroke(heading, 2.0, egui::Stroke::new(1.0, style::LAVENDER), egui::StrokeKind::Inside); }
             let enabled = !draft.invalidated && !draft.applying;
             ui.horizontal_wrapped(|ui| {
                 for (label, selected, key) in [
@@ -96,10 +101,15 @@ impl DeadpanApp {
                     (format!("Destination Edit {} · d", draft.destination), draft.focus == Focus::Destination, SpliceKey::Destination),
                     ("Inspect picture · f".into(), draft.focus == Focus::Picture, SpliceKey::Picture),
                 ] {
+                    if draft.replacing && key == SpliceKey::Destination { continue; }
                     if ui.add_enabled(enabled, egui::Button::new(label).selected(selected)).clicked() { action = Some(key); }
                 }
-                if ui.add_enabled(enabled, egui::Button::new("Previous seam · k")).clicked() { action = Some(SpliceKey::Boundary(false)); }
-                if ui.add_enabled(enabled, egui::Button::new("Next seam · j")).clicked() { action = Some(SpliceKey::Boundary(true)); }
+                if !draft.replacing {
+                    if ui.add_enabled(enabled, egui::Button::new("Previous seam · k")).clicked() { action = Some(SpliceKey::Boundary(false)); }
+                    if ui.add_enabled(enabled, egui::Button::new("Next seam · j")).clicked() { action = Some(SpliceKey::Boundary(true)); }
+                } else if let Some(range) = draft.replacement {
+                    ui.label(format!("Fixed Edit [{}..{})", range.start().0, range.end().0));
+                }
             });
             ui.horizontal_wrapped(|ui| {
                 if ui.add_enabled(enabled, egui::Button::new("−1 · h")).on_hover_text("Previous frame in the selected control").clicked() { action = Some(SpliceKey::Step(false)); }
@@ -116,7 +126,7 @@ impl DeadpanApp {
                 ui.ctx().request_discard("Place slice controls changed before picture submission");
             }
             ui.separator();
-            let height = (ui.available_height() - 114.0).max(200.0);
+            let height = (ui.available_height() - if draft.replacing { 136.0 } else { 114.0 }).max(160.0);
             let left_width = 220.0_f32.min(ui.available_width() * 0.29);
             let picture_width = (ui.available_width() - left_width - ui.spacing().item_spacing.x).max(100.0);
             let endpoints = draft.endpoint_identity();
@@ -148,14 +158,21 @@ impl DeadpanApp {
             ui.horizontal_wrapped(|ui| {
                 let destination = format!("Destination: {}", draft.scope_label);
                 ui.add_sized(egui::vec2(ui.available_width().min(320.0), 20.0), egui::Label::new(&destination).truncate()).on_hover_text(&destination);
-                ui.label(format!("Edit boundary {}", draft.destination));
-                if let Some(slot) = draft.slot { ui.weak(format!("Sequence slot {} of {}", slot + 1, draft.seams.len())); }
+                if !draft.replacing {
+                    ui.label(format!("Edit boundary {}", draft.destination));
+                    if let Some(slot) = draft.slot { ui.weak(format!("Sequence slot {} of {}", slot + 1, draft.seams.len())); }
+                }
                 if let Destination::Interior { target, at } = &draft.proposal.destination {
                     let label = draft.base.document.nodes().get(target).map_or("Destination beat", |node| node.label.as_str());
                     let location = format!("Inside {label} · local boundary {}", at.frames());
                     ui.add_sized(egui::vec2(ui.available_width().min(280.0), 20.0), egui::Label::new(&location).truncate()).on_hover_text(location);
                 }
-                if let Some(prepared) = &draft.prepared { ui.colored_label(style::LAVENDER, format!("+{} project frames", prepared.range.end().0 - prepared.range.start().0)); }
+                if let Some(prepared) = &draft.prepared {
+                    let inserted = prepared.range.end().0 - prepared.range.start().0;
+                    if let Some(removed) = prepared.removed {
+                        ui.colored_label(style::LAVENDER, format!("Remove [{}..{}) · Insert [{}..{}) · {:+} f", removed.start().0, removed.end().0, prepared.range.start().0, prepared.range.end().0, inserted - (removed.end().0 - removed.start().0)));
+                    } else { ui.colored_label(style::LAVENDER, format!("+{inserted} project frames")); }
+                }
             });
             timeline(ui, &draft);
             if draft.dirty || draft.pending.is_some() { ui.weak("Preparing proposed picture and sound…"); }
@@ -176,16 +193,51 @@ fn timeline(ui: &mut egui::Ui, draft: &Draft) {
         return;
     };
     let range = prepared.range;
-    let duration = range.end().0 - range.start().0;
+    let longest_end = prepared
+        .removed
+        .map_or(range.end().0, |removed| removed.end().0.max(range.end().0));
+    let duration = longest_end - range.start().0;
     let radius = duration.clamp(1, 120);
     let start = range.start().0.saturating_sub(radius).max(0);
-    let end = range
-        .end()
-        .0
-        .saturating_add(radius)
-        .min(prepared.plan.duration().frames());
-    let (rect, response) =
-        ui.allocate_exact_size(egui::vec2(ui.available_width(), 40.0), egui::Sense::hover());
+    let end = longest_end.saturating_add(radius).min(
+        prepared
+            .plan
+            .duration()
+            .frames()
+            .max(draft.base.plan.duration().frames()),
+    );
+    // Both rows use the same project-frame scale, so unequal durations are
+    // visible geometrically as well as in their exact numeric labels.
+    if let Some(removed) = prepared.removed {
+        timeline_interval(
+            ui,
+            removed,
+            draft.base.plan.duration().frames(),
+            (start, end),
+            true,
+        );
+    }
+    timeline_interval(
+        ui,
+        range,
+        prepared.plan.duration().frames(),
+        (start, end),
+        false,
+    );
+}
+
+fn timeline_interval(
+    ui: &mut egui::Ui,
+    range: FrameRange,
+    total: i64,
+    context: (i64, i64),
+    removed: bool,
+) {
+    let (start, end) = context;
+    let (rect, response) = ui.allocate_exact_size(
+        egui::vec2(ui.available_width(), if removed { 18.0 } else { 40.0 }),
+        egui::Sense::hover(),
+    );
     let x =
         |at: i64| rect.left() + rect.width() * (at - start) as f32 / (end - start).max(1) as f32;
     for (from, to, label, color) in [
@@ -193,10 +245,23 @@ fn timeline(ui: &mut egui::Ui, draft: &Draft) {
         (
             range.start().0,
             range.end().0,
-            "PROVISIONAL SLICE",
-            style::SELECTED,
+            if removed {
+                "REMOVED FROM SAVED EDIT"
+            } else {
+                "PROVISIONAL SLICE"
+            },
+            if removed {
+                style::LAVENDER.gamma_multiply(0.3)
+            } else {
+                style::SELECTED
+            },
         ),
-        (range.end().0, end, "Following material", style::PANEL),
+        (
+            range.end().0,
+            end.min(total),
+            "Following material",
+            style::PANEL,
+        ),
     ] {
         if from >= to {
             continue;
@@ -228,7 +293,12 @@ fn timeline(ui: &mut egui::Ui, draft: &Draft) {
             egui::WidgetType::Label,
             true,
             format!(
-                "Provisional insertion at Edit {}, slice through exclusive {}, context {} to {}",
+                "{} at Edit {}, through exclusive {}, context {} to {}",
+                if removed {
+                    "Removed selection"
+                } else {
+                    "Provisional insertion"
+                },
                 range.start().0,
                 range.end().0,
                 start,

@@ -1,0 +1,20 @@
+Status: done
+
+Target app: /tmp/deadpan-slice-replacement-20260930/Deadpan Replacement QA.app (dev.thiesen.deadpan.replacement-qa), opened with the supplied project at /tmp/deadpan-slice-replacement-20260930/replay-first/projects/place-slice/Documents/Deadpan/cfr-bframes.deadpan. The separate dev.thiesen.deadpan.cursor-qa app was not selected or interacted with.
+
+Workflow and observed evidence:
+- Opened the specified project; Original pane identified cfr-bframes.mp4 with 120 decoded frames; Your edit showed 3 beats / 120 f.
+- Used :source, gg, 10l, v, 14l, y. The source selection showed In 10, Out 24 excluded, 14 Original frames, measured duration 0.467 s, and "Copied [10..24)".
+- Returned to Your edit, selected [30..60) with v navigation, then opened :splice.
+- Splice default was Insert. Pointer activation switched to Replace; preview identified fixed Edit [30..60), removal [30..60), insertion [30..44), and -16 f. Source endpoints were Original frame 11 (first included) and Original frame 24 (last included).
+- Proposal picture checks: Edit frame 30 displayed slate 029 and caption "Requested Edit picture 30 · destination context"; frame 31 displayed slate 010 and caption "inside inserted slice"; frame 44 displayed slate 023 and caption "inside inserted slice"; frame 45 displayed slate 060 and caption "destination context". Pictures were allowed to settle before each observation. Controls exposed Inspect picture f, Previous/Next seam k/j, h/l adjustment with counts, Proposed b, Audition Space, Loop both joins Shift+Space, Place slice Enter, Cancel Esc. No audio or loop-wrap claim was made.
+- Committed exactly once with Enter. UI reported "Slice placed and saved", Edit duration 104 f (-16 f), 5 beats, selected Source cfr-bframes.mp4 [10..24) with 14 f at 30–44.
+- Undid exactly once with u. UI reported "Undo saved", restored 120 f and 3 beats, with the 120 f Original Source beat at [0..120).
+- Quit only the isolated QA app after undo.
+
+Native control/evidence notes: AX tree exposed accessible toggles/buttons for replacement mode, seam navigation, picture inspection, Proposed, audition, loop and commit. The Replace control was operable by pointer. Keyboard selection, count movement, preview inspection, Enter commit, and u undo all worked. The UI viewport appeared wider than the captured window region, clipping content at the right edge; controls used in the task remained visible. No screenshot files were saved; screenshots were inspected in the CUA session only.
+
+No repository, Cargo, or project-format edits were made by this QA operation. The parent retained its requested pre-task SQLite backup and should perform its planned post-shutdown database comparison.
+
+Follow-up native bounds check:
+- Reopened only the isolated Replacement QA app. It started with "No project"; no project was opened and no authored state was changed. Its current native screenshot shows the app content cut off exactly at the right boundary of the returned CUA image; part of the footer key hint also ends at that boundary. The capture has a large white region to the right of that boundary. CUA exposes no native window frame coordinates or full-screen inventory here, so I cannot distinguish whether the app window extends off the captured display region or the CUA screenshot itself crops a wider window. I cannot substantiate that app controls are inaccessible outside the window; only the screenshot is visibly clipped. AX still exposes controls not visible in the cropped screenshot. No screenshot file export path is supported by the CUA screenshot API, so this follow-up screenshot is visible in the CUA transcript only. The QA app was quit again; Cursor QA and other apps were not touched.

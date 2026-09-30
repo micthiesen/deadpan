@@ -6,6 +6,9 @@ use deadpan_store::source_registration::SourceMomentInsertionRequest;
 #[path = "moment/interior.rs"]
 mod interior;
 
+#[path = "moment/replacement.rs"]
+mod replacement;
+
 fn ready(parent: &Path) -> Result<(PathBuf, ProjectStore, PreparedSourceRegistration)> {
     let (path, mut store) = project(parent)?;
     let original = retain(&mut store, "offset-bframes.mp4")?;

@@ -30,25 +30,49 @@ pub(super) fn apply_at(
             "pause insertion exceeds the document node limit",
         ));
     }
-    let affected = shifted_owners(document, parent, slot)?;
-    let captured = crate::audio_binding_lifecycle::capture_for_composite_insertion(
+    let working = prepare_suffix(
         document,
-        insertion.timing.clone(),
+        parent,
+        slot,
+        insertion.at,
+        insertion.total,
+        insertion.timing,
     )?;
+    super::insert_leaf_at(
+        &working,
+        parent,
+        slot,
+        insertion.id,
+        insertion.node,
+        insertion.allocation,
+    )
+}
+
+/// Capture each retained suffix owner's old entry before changing the tree.
+/// Replacement uses this on the split, undeleted tree so there is no shorter
+/// intermediate clock that could discard the suffix's last rounded sample.
+pub(super) fn prepare_suffix(
+    document: &ProjectDocument,
+    parent: &NodeId,
+    slot: usize,
+    at: ProjectFrame,
+    total: i64,
+    timing: &AudioTimingId,
+) -> Result<ProjectDocument, EditError> {
+    let affected = shifted_owners(document, parent, slot)?;
+    let captured =
+        crate::audio_binding_lifecycle::capture_for_composite_insertion(document, timing.clone())?;
     let mut working = document.clone();
     working.audio_bindings = captured.state;
     if let Some(layout) = captured.phase_only_layout {
         working
             .audio_bindings
             .timings
-            .insert(insertion.timing.clone(), layout);
+            .insert(timing.clone(), layout);
     }
     // A terminal zero-duration Sequence has no physical output to reanchor.
-    if insertion.at.0 < insertion.total {
-        let window = ExactFrameRange::new(
-            ExactRatio::integer(insertion.at.0),
-            ExactRatio::integer(insertion.total),
-        )?;
+    if at.0 < total {
+        let window = ExactFrameRange::new(ExactRatio::integer(at.0), ExactRatio::integer(total))?;
         let mut entries = 0usize;
         for (_, _, binding) in working.audio_bindings.owners() {
             for placement in binding.placements() {
@@ -75,14 +99,7 @@ pub(super) fn apply_at(
     }
     crate::audio_binding_lifecycle::prune(&mut working);
     working.audio_bindings.validate_for(&working)?;
-    super::insert_leaf_at(
-        &working,
-        parent,
-        slot,
-        insertion.id,
-        insertion.node,
-        insertion.allocation,
-    )
+    Ok(working)
 }
 
 fn shifted_owners(

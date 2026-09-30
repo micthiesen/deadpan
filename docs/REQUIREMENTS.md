@@ -141,8 +141,8 @@ boundary, retains the split's original audio clocks and commits the split and
 insertion as one command. The initial seam replay passed 215 checks including minimum
 layout, complete Tab circuits, synthetic IME, cancellation, stale captures and
 exact commit/undo. Actual decoded pictures and canonical nonzero PCM around both
-joins match the committed result. Edited ranges/moves,
-replacement, picture/audio-only policies and Repeat/Retime occurrence targets
+joins match the committed result. Edited-slice copy/move,
+picture/audio-only policies and Repeat/Retime occurrence targets
 remain required; this does not complete DP-05 or DP-20.
 [Qualification](qualification/slice-placement-2026-09-30.md) records native release
 looping and pause/resume, unchanged SQLite rows after cancellation, all automated
@@ -154,6 +154,20 @@ batches and clamped motions across empty-group slots are covered by reproduced
 failures and passing regressions. All 2,609 workspace and 362 UI-feature app
 tests pass, with strict lint and formatting. Native release commit/Undo restores
 all authored fields; the database records exactly one placement and one Undo.
+
+[Visual replacement](qualification/slice-replacement-2026-09-30.md) adds an
+independent Edit range, explicit Replace selection preview and fast `p/P`
+replacement. The removed range stays fixed while source endpoints change.
+One command preserves endpoint contexts and routes sounds directly from old to
+final sample boundaries; one Undo restores the entire authored document. Core
+34/database 43 use the approved development format break for databases 39–42.
+The locked workspace passes 2,641 tests, the production replay passes 401 checks
+and the UI-feature app passes 372 tests,
+including pointer/keyboard switching, stale targets, exact comparison windows
+and saved receipts surviving preview-refresh failure. Native release QA verifies
+all four join pictures, one 14-frame replacement of `[30..60)` and one Undo.
+SQLite backups confirm complete authored restoration and unchanged unrelated
+tables. This remains partial DP-05/DP-20 work.
 
 The [shared render workflow](RENDER_JOBS.md#shared-workflow-and-native-ownership)
 connects capture, encoding, retained checkpoints, fresh verification, publication

@@ -1107,7 +1107,10 @@ pub fn validate_request_context(
     document: &ProjectDocument,
     request: &CommandRequest,
 ) -> Result<(), EditError> {
-    if matches!(&request.command, Command::SpliceSourceAt { .. }) {
+    if matches!(
+        &request.command,
+        Command::SpliceSourceAt { .. } | Command::ReplaceSource { .. }
+    ) {
         return Err(EditError::new(
             EditErrorCode::InvalidCommand,
             "schema 29 does not admit interior source splicing",
@@ -1195,6 +1198,7 @@ fn preserves_sound_clocks(command: &Command) -> bool {
         | Command::InsertTime { .. }
         | Command::SpliceSource { .. }
         | Command::SpliceSourceAt { .. }
+        | Command::ReplaceSource { .. }
         | Command::Split { .. }
         | Command::Insert { .. }
         | Command::Delete { .. }

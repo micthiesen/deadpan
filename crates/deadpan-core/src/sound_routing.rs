@@ -57,6 +57,11 @@ pub enum RootSoundOperation {
     Delete {
         range: FrameRange,
     },
+    /// One direct old-to-final map, with no rounded intermediate deletion.
+    Replace {
+        range: FrameRange,
+        duration: FrameDuration,
+    },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -153,6 +158,18 @@ impl RootSoundOperation {
                 }
                 Ok(input_frames - range.duration().frames())
             }
+            Self::Replace { range, duration } => {
+                if range.start().0 < 0
+                    || range.end().0 > input_frames
+                    || range.duration() == FrameDuration::ZERO
+                    || duration == FrameDuration::ZERO
+                {
+                    return Err(invalid("sound replacement is outside its previous clock"));
+                }
+                (input_frames - range.duration().frames())
+                    .checked_add(duration.frames())
+                    .ok_or(TimeError::Overflow.into())
+            }
         }
     }
 
@@ -189,6 +206,20 @@ impl RootSoundOperation {
             Self::Delete { range } => {
                 keep(0, range.start().0);
                 keep(range.end().0, extent);
+            }
+            Self::Replace { range, duration } => {
+                keep(0, range.start().0);
+                nodes.push(SoundRippleNode::Gap {
+                    duration: ExactRatio::integer(duration.frames()),
+                });
+                if range.end().0 < extent {
+                    nodes.push(SoundRippleNode::Keep {
+                        range: ExactFrameRange {
+                            start: ExactRatio::integer(range.end().0),
+                            end: ExactRatio::integer(extent),
+                        },
+                    });
+                }
             }
         }
         if nodes.len() > 1 {
@@ -272,6 +303,13 @@ fn retains_selection(event: &SoundEvent, journal: &RootSoundRoute) -> Result<boo
                 (0..range.start().0, 0..range.start().0),
                 (range.end().0..extent, range.start().0..new_extent),
             ],
+            RootSoundOperation::Replace { range, duration } => [
+                (0..range.start().0, 0..range.start().0),
+                (
+                    range.end().0..extent,
+                    range.start().0 + duration.frames()..new_extent,
+                ),
+            ],
         };
         let mut next = Vec::with_capacity(support.len() + 1);
         for (old, destination) in keeps {
@@ -350,10 +388,15 @@ fn retains_logical_selection(
                         });
                     }
                 }
-                RootSoundOperation::Delete { range } => {
+                RootSoundOperation::Delete { range }
+                | RootSoundOperation::Replace { range, .. } => {
                     let start = ExactRatio::integer(range.start().0);
                     let end = ExactRatio::integer(range.end().0);
-                    let shift = ExactRatio::integer(range.duration().frames());
+                    let inserted = match edit.operation {
+                        RootSoundOperation::Replace { duration, .. } => duration.frames(),
+                        _ => 0,
+                    };
+                    let shift = ExactRatio::integer(range.duration().frames() - inserted);
                     if interval
                         .start
                         .checked_sub(start)?
@@ -462,6 +505,18 @@ impl RootSoundEditCapture {
                         ),
                     )
                     .map_err(DocumentError::from)?,
+                }
+            }
+            Command::ReplaceSource {
+                parent,
+                range,
+                source,
+                ..
+            } => {
+                document.source_replacement(parent, *range)?;
+                RootSoundOperation::Replace {
+                    range: *range,
+                    duration: source.duration,
                 }
             }
             _ => return Ok(None),

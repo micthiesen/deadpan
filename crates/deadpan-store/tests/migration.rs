@@ -26,6 +26,8 @@ mod audio_reanchors;
 mod automatic_render;
 #[path = "migration/composite_insert.rs"]
 mod composite_insert;
+#[path = "migration/development_break.rs"]
+mod development_break;
 #[path = "migration/framing.rs"]
 mod framing;
 #[path = "migration/gain.rs"]

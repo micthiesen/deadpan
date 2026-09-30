@@ -191,7 +191,7 @@ pub struct Document {
     sounds: BTreeMap<SoundId, SoundEvent>,
     #[serde(
         default,
-        deserialize_with = "unique_map",
+        deserialize_with = "crate::legacy_sound_routes::routes",
         skip_serializing_if = "BTreeMap::is_empty"
     )]
     sound_routes: BTreeMap<SoundId, RootSoundRoute>,
@@ -263,6 +263,13 @@ impl Document {
     }
 
     pub fn matches(&self, document: &ProjectDocument) -> bool {
+        if document
+            .sound_routes
+            .values()
+            .any(|route| !crate::legacy_sound_routes::admitted(route))
+        {
+            return false;
+        }
         let Some(marks) = project_marks(&document.marks) else {
             return false;
         };
@@ -1040,7 +1047,7 @@ struct Patch {
     marks: BTreeMap<MarkId, ValueChange<LegacyMark>>,
     #[serde(default, deserialize_with = "unique_map")]
     sounds: BTreeMap<SoundId, ValueChange<SoundEvent>>,
-    #[serde(default, deserialize_with = "unique_map")]
+    #[serde(default, deserialize_with = "crate::legacy_sound_routes::changes")]
     sound_routes: BTreeMap<SoundId, ValueChange<RootSoundRoute>>,
     #[serde(default, deserialize_with = "unique_map")]
     sound_allowances: BTreeMap<SoundId, ValueChange<SoundHoldAllowances>>,
@@ -1056,6 +1063,14 @@ struct Patch {
 
 impl Patch {
     fn project(patch: &DocumentPatch) -> Option<Self> {
+        if patch
+            .sound_routes
+            .values()
+            .flat_map(|change| change.before.iter().chain(change.after.iter()))
+            .any(|route| !crate::legacy_sound_routes::admitted(route))
+        {
+            return None;
+        }
         Some(Self {
             project_id: patch.project_id.clone(),
             from_revision: patch.from_revision.clone(),
@@ -1142,7 +1157,10 @@ pub fn validate_request_context(
     request: &CommandRequest,
 ) -> Result<(), EditError> {
     let command = &request.command;
-    if matches!(command, Command::SpliceSourceAt { .. }) {
+    if matches!(
+        command,
+        Command::SpliceSourceAt { .. } | Command::ReplaceSource { .. }
+    ) {
         return Err(EditError::new(
             EditErrorCode::InvalidCommand,
             "schema 31 does not admit interior source splicing",
@@ -1237,6 +1255,7 @@ fn preserves_sound_clocks(command: &Command) -> bool {
         | Command::InsertTime { .. }
         | Command::SpliceSource { .. }
         | Command::SpliceSourceAt { .. }
+        | Command::ReplaceSource { .. }
         | Command::Split { .. }
         | Command::Insert { .. }
         | Command::Delete { .. }

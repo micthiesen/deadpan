@@ -31,14 +31,39 @@ fn audit_reads(connection: &Connection) -> Result<(usize, usize)> {
 
 #[test]
 fn render_audit_reuses_engineering_jobs_across_historical_checkpoint_retries() -> Result {
-    let connection = Connection::open_in_memory()?;
-    // Authentic schema-41 jobs include encoding owners and later checkpoint
-    // retries. DB42 adds no decisions to these engineering records.
-    connection.pragma_update(None, "foreign_keys", false)?;
-    connection.execute_batch(include_str!(
-        "../../tests/fixtures/v41-automatic-render.sql"
-    ))?;
-    create_decision_table(&connection)?;
+    let (_root, mut store) = test_fixture::store()?;
+    // Exercise real checkpoint ownership and retry allocation through the
+    // current store API. The opaque bytes and observations are synthetic.
+    // Two jobs share the baseline; the third captures a later stored revision.
+    for (name, attempt_count) in [
+        ("engineering-a", 8),
+        ("engineering-b", 9),
+        ("engineering-c", 9),
+    ] {
+        if name == "engineering-c" {
+            let before = store.snapshot()?;
+            store.commit(&CommandRequest {
+                project_id: before.project_id().clone(),
+                expected_revision: before.revision_id().clone(),
+                new_revision: RevisionId::new("audit-later")?,
+                command: Command::Rename {
+                    node: before.root().clone(),
+                    label: "later synthetic render revision".into(),
+                },
+            })?;
+        }
+        let owner = test_fixture::verified(&mut store, name)?;
+        for ordinal in 2..=attempt_count {
+            let retry =
+                test_fixture::verify_again(&mut store, &owner, &format!("{name}-retry-{ordinal}"))?;
+            assert_eq!(
+                retry.checkpoint_attempt_id.as_ref(),
+                Some(&owner.attempt_id)
+            );
+        }
+    }
+    store.validate()?;
+    let connection = &store.connection;
     let jobs: i64 =
         connection.query_row("SELECT COUNT(*) FROM render_jobs", [], |row| row.get(0))?;
     let revisions: i64 = connection.query_row(
@@ -50,10 +75,11 @@ fn render_audit_reuses_engineering_jobs_across_historical_checkpoint_retries() -
         connection.query_row("SELECT COUNT(*) FROM render_attempts", [], |row| row.get(0))?;
     let retries: i64 = connection.query_row("SELECT COUNT(*) FROM render_attempts WHERE json_extract(body,'$.checkpoint_attempt_id')!=attempt_id", [], |row| row.get(0))?;
     assert_eq!(jobs, 3);
+    assert_eq!(revisions, 2);
     assert_eq!(attempts, 26);
-    assert!(retries > jobs);
+    assert_eq!(retries, attempts - jobs);
     assert_eq!(
-        audit_reads(&connection)?,
+        audit_reads(connection)?,
         (usize::try_from(jobs)?, usize::try_from(revisions)?)
     );
     Ok(())

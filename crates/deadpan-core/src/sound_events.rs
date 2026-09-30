@@ -130,6 +130,7 @@ pub(crate) fn validate_command(
             Command::InsertTime { .. }
                 | Command::SpliceSource { .. }
                 | Command::SpliceSourceAt { .. }
+                | Command::ReplaceSource { .. }
                 | Command::Delete { .. }
         )
         || matches!(command, Command::Split { node, .. } if node != document.root())
@@ -200,6 +201,7 @@ fn preserves_sound_clocks(command: &Command) -> bool {
         Command::InsertTime { .. }
         | Command::SpliceSource { .. }
         | Command::SpliceSourceAt { .. }
+        | Command::ReplaceSource { .. }
         | Command::Split { .. }
         | Command::Insert { .. }
         | Command::Delete { .. }

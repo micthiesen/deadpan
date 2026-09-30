@@ -15,7 +15,7 @@ fn request(workspace: &Workspace, scope: SequenceScope, index: usize) -> Project
         ordinals: 10..24,
         scope,
         parent,
-        index,
+        destination: crate::project::splice::Destination::Slot(index),
     })
 }
 

@@ -1,27 +1,9 @@
 use super::*;
-use crate::{AccessMode, publication_durability::Step};
+use crate::{AccessMode, publication_durability::Step, render_jobs::test_fixture};
 type Result<T = ()> = std::result::Result<T, Box<dyn std::error::Error>>;
 fn fixture() -> Result<(tempfile::TempDir, ProjectStore)> {
-    let root = tempfile::tempdir()?;
-    let package = root.path().join("fixture.deadpan");
-    std::fs::create_dir(&package)?;
-    for name in [
-        "Snapshots",
-        "Media/Originals",
-        "Media/Generated",
-        "Media/RenderCandidates",
-    ] {
-        std::fs::create_dir_all(package.join(name))?;
-    }
-    let db = Connection::open(package.join("project.sqlite"))?;
-    // The authentic SQLite dump is in table-name order, not foreign-key order.
-    db.pragma_update(None, "foreign_keys", false)?;
-    db.execute_batch(include_str!(
-        "../../tests/fixtures/v40-publication-render.sql"
-    ))?;
-    drop(db);
-    ProjectStore::migrate(&package)?;
-    let store = ProjectStore::open(&package, AccessMode::ReadWrite)?;
+    let (root, mut store) = test_fixture::store()?;
+    test_fixture::verified(&mut store, "synthetic-publication")?;
     Ok((root, store))
 }
 fn begin(store: &mut ProjectStore) -> Result<PublicationPermit> {
@@ -29,8 +11,8 @@ fn begin(store: &mut ProjectStore) -> Result<PublicationPermit> {
         PublicationIntent {
             schema_version: 1,
             publication_id: RequestId::new("publication")?,
-            job_id: RequestId::new("durable-structural")?,
-            verified_attempt_id: AttemptId::new("structural-verify-2")?,
+            job_id: RequestId::new("synthetic-publication")?,
+            verified_attempt_id: AttemptId::new("synthetic-publication-encode")?,
             destination: "/tmp/journal-fixture.mp4".into(),
         },
         AttemptId::new("publication-op")?,

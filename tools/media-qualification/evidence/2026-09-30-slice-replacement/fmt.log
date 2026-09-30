@@ -1,0 +1,17 @@
+Diff in /Users/michael/Code/deadpan/crates/deadpan-app/src/project/splice.rs:34:
+ #[derive(Clone, Debug, PartialEq, Eq)]
+ pub enum Destination {
+     Slot(usize),
+[31m-    Interior { target: NodeId, at: FrameDuration },
+(B[m[32m+    Interior {
+(B[m[32m+        target: NodeId,
+(B[m[32m+        at: FrameDuration,
+(B[m[32m+    },
+(B[m     /// Captured global Edit interval within the explicitly named Sequence.
+[31m-    Replace { range: FrameRange },
+(B[m[32m+    Replace {
+(B[m[32m+        range: FrameRange,
+(B[m[32m+    },
+(B[m }
+ 
+ #[derive(Clone)]

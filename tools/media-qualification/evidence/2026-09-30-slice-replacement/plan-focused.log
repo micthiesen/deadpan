@@ -1,0 +1,21 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+   Compiling deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 40.24s
+     Running tests/root_sound_routes.rs (target/debug/deps/root_sound_routes-7731429ed96ff2f9)
+
+running 12 tests
+test two_ntsc_insertions_preserve_each_old_physical_clock ... ok
+test deleting_onset_cuts_envelope_but_keeps_complete_recipe_and_source_phase ... ok
+test extreme_destination_clips_support_before_narrowing_retained_labels ... ok
+test current_hold_owns_exact_coincident_boundary_after_odd_sample_translation ... ok
+test allowing_current_holds_never_restores_samples_deleted_from_the_route ... ok
+test selected_range_finds_subframe_support_without_filling_routed_gaps ... ok
+test identity_route_matches_unrouted_tiny_hold_islands_and_shuffled_queries ... ok
+test current_hold_masks_physical_drift_even_when_semantic_onset_is_later ... ok
+test replacement_uses_final_boundaries_for_shorter_and_longer_sound_islands ... ok
+test equal_ntsc_replacement_retains_last_suffix_sample_without_intermediate_clipping ... ok
+test forty_chronological_cuts_are_not_a_nested_map_depth_limit ... ok
+test hundreds_of_fragmented_cuts_have_indexed_cold_envelope_queries ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s
+

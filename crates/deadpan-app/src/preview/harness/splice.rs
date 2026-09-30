@@ -7,13 +7,14 @@ use deadpan_playback::{ContentIdentity, Phase, Update};
 use egui::{Key, Modifiers};
 
 mod input;
+mod replacement;
 
 const APPLY: &str = "Place slice · Enter";
 const CANCEL: &str = "Cancel · Esc";
 const HEADING: &str = "Place slice keyboard controls";
 
 pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
-    d.report.skipped.push("Place slice covers linked Original copies at ordinary Sequence seams and Source/Hold interiors. Edited-slice move/copy, replacement, separate picture/audio placement and Repeat/Retime occurrence targeting remain outside this increment.".into());
+    d.report.skipped.push("Place slice covers linked Original insertions and explicit replacement in ordinary Sequence scopes. Edited-slice move/copy, separate picture/audio placement and Repeat/Retime occurrence targeting remain outside this increment.".into());
     d.report.skipped.push("The replay uses genuine source qualification, endpoint decoding, SDR GPU pictures, proposed documents and durable commands. Audio delivery and a concurrent service Undo are explicitly injected. It does not open an audio device or establish acoustic quality.".into());
     let full_original = document(d)?.nodes().clone();
     let baseline = d.revision();
@@ -215,6 +216,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     interior_commit(d)?;
     stale_revision(d, &full_original)?;
     input::run(d)?;
+    replacement::run(d)?;
     Ok(())
 }
 
@@ -557,13 +559,20 @@ fn audition(
         .transport
         .as_ref()
         .ok_or("Before comparison did not restart")?;
+    let before_end = rate
+        .audio_boundary(proposed.range.start())
+        .map_err(|error| error.to_string())?
+        .0
+        + d.app().audition_context.follow.0;
     d.check(
-        "Running Before comparison keeps the same destination context and heard position",
+        "Running Before comparison uses the saved insertion boundary and retains prefix heard position",
         before.content == ContentIdentity::Committed
             && before.sample == heard
-            && before.window() == &window
+            && before.window().start() == window.start()
+            && before.window().end() == AudioSample(before_end)
+            && before.window().looping()
             && editor(d) == *entry,
-        json!({"content":"Committed","sample":heard.0,"window":[window.start().0,window.end().0]}),
+        json!({"content":"Committed","sample":heard.0,"window":[window.start().0,before_end]}),
         d.snapshot(),
     )?;
     let mut stale = proposed_update;

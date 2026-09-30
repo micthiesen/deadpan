@@ -45,7 +45,9 @@ impl ProjectStore {
                 backup: None,
             });
         }
-        if !matches!(version, 1..=41) {
+        // Schemas 39..=42 have no frozen core-33 adapter. Reject the unused
+        // development format before acquiring a writer or creating a backup.
+        if !matches!(version, 1..=38) {
             return Err(StoreError::UnsupportedSchema(version));
         }
         let lock = acquire_lock(&package)?;
@@ -264,13 +266,7 @@ fn migrate_candidate(
     // Schemas before 15 gain an explicit basis; schema 15 retains its policy.
     // Pre-16 audio edges gain Automatic without changing allocated time;
     // schemas 16 and 17 retain their authored edge choices.
-    // Schema 39 already stores current core schema 33. Operational schemas 40/41
-    // validates its chronology without rewriting document/request/patch JSON.
-    if source_version >= 39 {
-        validation::validate_history(&transaction)?;
-    } else {
-        validation::migrate_history(&transaction, source_version)?;
-    }
+    validation::migrate_history(&transaction, source_version)?;
     crate::generation::validate_store(&transaction)?;
     transaction.pragma_update(None, "user_version", schema::VERSION)?;
     validation::validate_history(&transaction)?;

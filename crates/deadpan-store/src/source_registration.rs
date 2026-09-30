@@ -11,9 +11,9 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 use deadpan_core::{
     AssetId, AssetRecord, AudioTimingId, Command, CommandRequest, EditTransaction, FrameDuration,
-    FrameRate, FrameRateOrigin, GeometryOrigin, NodeId, PrimarySourceImport, ProjectDocument,
-    RevisionId, SourceFrameIndex, SourceInsertion, SourceNode, SourceQualificationId,
-    SplitIdentities,
+    FrameRange, FrameRate, FrameRateOrigin, GeometryOrigin, NodeId, PrimarySourceImport,
+    ProjectDocument, RevisionId, SourceFrameIndex, SourceInsertion, SourceNode,
+    SourceQualificationId, SplitIdentities,
 };
 use deadpan_media::source_import_timing::derive_source_moment;
 use deadpan_media::source_qualification::{
@@ -103,6 +103,23 @@ pub struct SourceMomentInteriorInsertionRequest {
     pub parent: NodeId,
     pub target: NodeId,
     pub at: FrameDuration,
+    pub node: NodeId,
+    pub label: String,
+    pub identities: SplitIdentities,
+    pub timing: AudioTimingId,
+    pub ordinals: Range<u64>,
+}
+
+/// Replace one captured Edit interval with a freshly admitted Original moment.
+/// Both endpoint splits, removal and insertion share one revision and history entry.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SourceMomentReplacementRequest {
+    pub expected_revision: RevisionId,
+    pub new_revision: RevisionId,
+    pub asset: AssetId,
+    pub parent: NodeId,
+    pub range: FrameRange,
     pub node: NodeId,
     pub label: String,
     pub identities: SplitIdentities,
@@ -294,6 +311,42 @@ impl ProjectStore {
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
         let plan = prepare_source_moment_interior(&transaction, input, source)?;
+        let outcome = crate::write_command_plan(&transaction, plan, relevance)?;
+        source.original.recheck(cancelled)?;
+        transaction.commit()?;
+        Ok(outcome)
+    }
+
+    /// Preview the complete replacement without writing preliminary splits or
+    /// a shortened document. Commit reuses the exact request and identities.
+    pub fn preview_prepared_source_replacement(
+        &self,
+        input: &SourceMomentReplacementRequest,
+        source: &PreparedSourceRegistration,
+        cancelled: &AtomicBool,
+    ) -> Result<EditTransaction, StoreError> {
+        source.original.validate_for(self, cancelled)?;
+        let transaction = self.connection.unchecked_transaction()?;
+        let plan = prepare_source_replacement(&transaction, input, source)?;
+        source.original.recheck(cancelled)?;
+        Ok(plan.edit)
+    }
+
+    /// Commit the captured removal and qualified insertion atomically after
+    /// fresh source and revision checks.
+    pub fn commit_prepared_source_replacement(
+        &mut self,
+        input: &SourceMomentReplacementRequest,
+        source: &PreparedSourceRegistration,
+        relevance: Option<&RelevancePlan>,
+        cancelled: &AtomicBool,
+    ) -> Result<CommitOutcome, StoreError> {
+        self.require_writer()?;
+        source.original.validate_for(self, cancelled)?;
+        let transaction = self
+            .connection
+            .transaction_with_behavior(TransactionBehavior::Immediate)?;
+        let plan = prepare_source_replacement(&transaction, input, source)?;
         let outcome = crate::write_command_plan(&transaction, plan, relevance)?;
         source.original.recheck(cancelled)?;
         transaction.commit()?;
@@ -552,6 +605,37 @@ fn prepare_source_moment_interior(
         },
     };
     crate::prepare_command(connection, &request)
+}
+
+fn prepare_source_replacement(
+    connection: &Connection,
+    input: &SourceMomentReplacementRequest,
+    source: &PreparedSourceRegistration,
+) -> Result<CommandPlan, StoreError> {
+    let (current, moment) = prepared_moment_source(
+        connection,
+        &input.expected_revision,
+        &input.asset,
+        &input.ordinals,
+        source,
+    )?;
+    crate::prepare_command(
+        connection,
+        &CommandRequest {
+            project_id: current.project_id().clone(),
+            expected_revision: input.expected_revision.clone(),
+            new_revision: input.new_revision.clone(),
+            command: Command::ReplaceSource {
+                parent: input.parent.clone(),
+                range: input.range,
+                source: moment,
+                id: input.node.clone(),
+                label: input.label.clone(),
+                identities: input.identities.clone(),
+                timing: input.timing.clone(),
+            },
+        },
+    )
 }
 
 fn prepared_moment_source(

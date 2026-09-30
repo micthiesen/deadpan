@@ -159,6 +159,14 @@ exact logical support so unrelated edits preserve its accepted intent. Removing
 all selected support deletes the event. Internal helper Splits do not apply the
 transformation twice. Non-root Split retains the root bus unchanged.
 
+Core 34/database 43 add one direct `Replace { range, duration }` operation.
+`ReplaceSource` maps the old prefix and suffix directly to the final document,
+with sound-free inserted time between them. It does not persist Delete followed
+by Insert: a temporarily shortened sample extent can drop a rounded terminal
+sample that the final replacement should retain. Whole-range replacement also
+avoids an empty intermediate map. Logical support, rounded sample support and
+cut edges all use the same direct map.
+
 `SetSound` changes label, gain or endpoint policy without discarding the journal.
 Changing a routed recipe, mapping, owner or offset requires `ReplaceSound`, which
 explicitly clears the previous route in the same reversible transaction. Stored

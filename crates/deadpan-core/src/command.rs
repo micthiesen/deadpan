@@ -96,6 +96,17 @@ pub enum Command {
         identities: crate::SplitIdentities,
         timing: crate::AudioTimingId,
     },
+    /// Replace a nonempty global range in an explicitly named ordinary
+    /// Sequence with one linked Source, retaining both endpoint contexts.
+    ReplaceSource {
+        parent: NodeId,
+        range: crate::FrameRange,
+        source: SourceNode,
+        id: NodeId,
+        label: String,
+        identities: crate::SplitIdentities,
+        timing: crate::AudioTimingId,
+    },
     /// Split an interior local output boundary without changing rendered time.
     Split {
         node: NodeId,
@@ -614,6 +625,34 @@ pub fn apply(
             },
             context,
         )?,
+        Command::ReplaceSource {
+            parent,
+            range,
+            source,
+            id,
+            label,
+            identities,
+            timing,
+        } => crate::insert_time::replace_source(
+            input,
+            parent,
+            *range,
+            crate::insert_time::SourceSpliceInsertion {
+                node: BeatNode {
+                    audio_treatments: Default::default(),
+                    label: label.clone(),
+                    framing: None,
+                    audio_edges: Default::default(),
+                    kind: NodeKind::Source {
+                        source: source.clone(),
+                    },
+                },
+                id,
+                identities,
+                timing,
+            },
+            context,
+        )?,
         Command::Split {
             node,
             at,
@@ -880,6 +919,7 @@ pub(crate) fn reduce(
         }
         Command::InsertTime { .. }
         | Command::SpliceSource { .. }
+        | Command::ReplaceSource { .. }
         | Command::SpliceSourceAt { .. } => {
             return Err(EditError::new(
                 EditErrorCode::InvalidCommand,
@@ -1525,7 +1565,10 @@ fn install_subtree(document: &mut ProjectDocument, subtree: Subtree) {
     document.overrides.extend(subtree.overrides);
     document.gap_overrides.extend(subtree.gap_overrides);
 }
-fn remove_subtree(document: &mut ProjectDocument, root: &NodeId) -> Result<(), EditError> {
+pub(crate) fn remove_subtree(
+    document: &mut ProjectDocument,
+    root: &NodeId,
+) -> Result<(), EditError> {
     let mut pending = vec![root.clone()];
     while let Some(id) = pending.pop() {
         pending.extend(document.children(&id).cloned());
@@ -1882,6 +1925,7 @@ fn description(command: &Command) -> &'static str {
         Command::InsertTime { .. } => "Insert pause",
         Command::SpliceSource { .. } => "Paste source moment",
         Command::SpliceSourceAt { .. } => "Splice source moment inside beat",
+        Command::ReplaceSource { .. } => "Replace selection with source moment",
         Command::Split { .. } => "Split beat",
         Command::Insert { .. } => "Insert beats",
         Command::Delete { .. } => "Delete beat",

@@ -1,0 +1,24 @@
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+error[E0277]: the trait bound `Array<u8, UInt<UInt<UInt<UInt<..., ...>, ...>, ...>, ...>>: LowerHex` is not satisfied
+   --> crates/deadpan-store/src/render_jobs/test_fixture.rs:107:44
+    |
+107 |     let hash = Sha256::new(format!("{:x}", DigestSha256::digest(movie)))?;
+    |                                     ----   ^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `LowerHex` is not implemented for `Array<u8, UInt<UInt<UInt<UInt<UInt<..., ...>, ...>, ...>, ...>, ...>>`
+    |                                     |
+    |                                     required by this formatting parameter
+    |
+    = help: the following other types implement trait `LowerHex`:
+              &T
+              &mut T
+              Access
+              AtFlags
+              Braced
+              CloneFlags
+              CopyfileFlags
+              DupFlags
+            and 52 others
+    = note: the full name for the type has been written to '/Users/michael/Code/deadpan/target/debug/deps/deadpan_store-3e9e9d195f16720b.long-type-10233546822386679628.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+
+For more information about this error, try `rustc --explain E0277`.
+error: could not compile `deadpan-store` (lib test) due to 1 previous error

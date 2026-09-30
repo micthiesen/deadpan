@@ -10,6 +10,42 @@ migrations when that simplifies implementation. Prefer this permission over
 historical compatibility requirements; it does not require deleting working
 adapters or reduce eventual runtime/recovery requirements.
 
+## Visual slice replacement, 2026-09-30
+
+Your edit now has an independent half-open selection (`v`, motion, `v`).
+`:splice` captures it and explicitly toggles **Replace selection · r**, retaining
+the fixed removed interval while refining the Original slice. Before/Proposed
+uses exact absolute sample boundaries. Fast `p/P` uses the same atomic command.
+One `ReplaceSource` transaction splits endpoints, removes the selected time,
+inserts the qualified Source and transforms placed sounds once; one Undo
+restores all authored state. Ordinary Sequence scopes support Source/Hold/
+fragment endpoints and complete intervening composites.
+
+Core 34 persists a direct sound replacement map and database 43 stores it.
+Development databases 39–42 are refused without writes or backup creation;
+existing frozen migration adapters for 1–38 remain. Use a new project for
+current native testing. Do not reopen or alter the user's separately positioned
+Cursor QA window as part of this work.
+
+[Qualification](../qualification/slice-replacement-2026-09-30.md) records the
+production replay, actual decoded media, failure corrections and review.
+Native release QA verifies all four join pictures, one replacement and one
+Undo. SQLite backups confirm exact authored restoration except the fresh
+revision, exactly two new revisions and unchanged rows in all 16 unrelated
+tables. The isolated QA app released its writer lock; the user's window stayed
+untouched. Automated verification passes 2,641 locked workspace tests, 372
+UI-feature tests, 401 slice replay checks, strict Clippy and formatting.
+Edited-slice copy/move, role-only placement and Repeat/Retime occurrence targets
+remain open. Ordinary Delete still needs its own retained suffix-phase work;
+replacement's direct map does not fix that separate operation.
+The next small Delete witness is a 1-frame silent prefix followed by a 4-frame
+44.1 kHz Source at 30000/1001 fps. Removing the prefix should retain the original
+6,406-sample suffix (`B(1)=1,602`, `B(5)=8,008`); arithmetic predicts the current
+unbound path resets a 147/400-source-sample phase. This witness has not yet run
+through Rust PCM. Prefer a new explicit command with a timing identity so old
+Delete history keeps its replay semantics; reuse suffix preparation before
+detaching the beat. Repeat/Retime ancestors need separate admission work.
+
 ## Native identity, 2026-09-30
 
 The user requested a complete ImageGen icon/logo set and app integration.

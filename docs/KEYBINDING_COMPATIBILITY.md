@@ -44,12 +44,20 @@ Escape cancellation without changing the saved project.
 
 ## Place slice
 
-**`:splice`** opens a local linked Original insertion draft in Your edit.
+**`:splice`** opens a local linked Original placement draft in Your edit.
 `i/o` selects included In/exclusive Out, `d` selects the destination, and `f`
 inspects its picture. `h/l` or Left/Right adjusts frames with counts; `j/k`
 chooses a Sequence slot. `b` compares Before/Proposed, Space auditions or pauses,
 and Shift+Space loops both joins. Enter commits once; Escape cancels. The draft
 keeps the copied range and saved editor cursors intact until commit.
+
+In Your edit, `v` starts a temporal range and a second `v` finishes it; Escape
+clears it. The range stays independent of the copied Original. In Place slice,
+`r` explicitly toggles **Replace selection** for the captured range. In/Out
+refinement changes the inserted source; the removed range stays fixed. `d/j/k`
+therefore leave replacement's destination unchanged. Fast `p/P` replaces a
+selected Edit range in one command. Text fields, IME and focused native buttons
+retain ownership of `r` as they do the other draft keys.
 
 These keys add no modified global shortcut. The production router preserves
 composition and focused native buttons. The `place-slice` replay checks exact

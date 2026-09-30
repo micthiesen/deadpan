@@ -1,0 +1,22 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "-p",
+    "deadpan-core",
+    "--test",
+    "insert_time",
+    "--test",
+    "sound_routing",
+    "--test",
+    "node_gain"
+  ],
+  "started": "2026-09-30T20:41:30.126373+00:00",
+  "base_commit": "193b185b8aa96c7dd18b9eecb3d51811bf098410",
+  "diff_sha256": "66924b9272c0d71458f8d1a515cad3ddf99a9853d9bb639b8c0a829033717d4f",
+  "source_manifest_sha256": "32e761decf4ffd1fe95f96bef5e9aff6add1f36050d75873fd427ab7e0afe66f",
+  "pid": 89006,
+  "exit_code": 101,
+  "seconds": 42.46536324964836
+}

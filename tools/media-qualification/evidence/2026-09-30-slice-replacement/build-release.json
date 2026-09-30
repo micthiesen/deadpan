@@ -1,0 +1,17 @@
+{
+  "command": [
+    "cargo",
+    "build",
+    "--locked",
+    "--release",
+    "-p",
+    "deadpan-app"
+  ],
+  "started": "2026-09-30T21:40:07.780396+00:00",
+  "base_commit": "193b185b8aa96c7dd18b9eecb3d51811bf098410",
+  "diff_sha256": "f047479c3eae411876fdd852edacc1853ad0b04406451ae67a9df29c1146a813",
+  "source_manifest_sha256": "d4b6d9a3ac5465384ccaf03ed548efa811a829c8eaf020c4150916b7ef955afb",
+  "pid": 1526,
+  "exit_code": 0,
+  "seconds": 217.35258358391002
+}

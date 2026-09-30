@@ -373,6 +373,42 @@ fn interior_source_splice_copies_hold_allowances_once_and_ripples_placed_sound_o
 }
 
 #[test]
+fn replacement_splits_allowances_twice_then_prunes_only_the_removed_middle() {
+    let original = allow(&fixture(false), address("hold", vec![]));
+    let replacement = Command::ReplaceSource {
+        parent: node("root"),
+        range: FrameRange::new(ProjectFrame(5), ProjectFrame(15)).unwrap(),
+        source: SourceNode {
+            duration: frames(3),
+            video: SourceVideo::Blank,
+            audio: Some(original.sounds()[&sound()].source.clone()),
+            video_mapping: SourceVideoMapping::FitBeat,
+            audio_mapping: original.sounds()[&sound()].mapping,
+            audio_offset: AudioSample(0),
+            link: LinkRelation::Independent,
+        },
+        id: node("replacement"),
+        label: "Replacement".into(),
+        identities: split_ids("replacement"),
+        timing: AudioTimingId {
+            allocation: request(&original, Command::DeleteSound { id: sound() }).new_revision,
+            ordinal: 0,
+        },
+    };
+    let (after, transaction) = edit(&original, replacement);
+    assert_eq!(transaction.duration_delta, -7);
+    assert_eq!(after.sounds(), original.sounds());
+    assert_eq!(after.sound_routes()[&sound()].edits.len(), 1);
+    let ids = allowance_ids(&after);
+    assert_eq!(ids, vec![node("hold"), node("replacement-4")]);
+    assert!(!after.nodes().contains_key(&node("replacement-2")));
+    for issuer in after.sound_allowances()[&sound()].iter() {
+        issuer.validate(&after).unwrap();
+    }
+    assert!(!after.sound_allowances()[&sound()].contains(&address("replacement", vec![])));
+}
+
+#[test]
 fn splice_retains_policy_and_deleting_the_issuer_prunes_it_without_removing_surviving_sound() {
     let original = allow(&fixture(false), address("hold", vec![]));
     let source = SourceNode {

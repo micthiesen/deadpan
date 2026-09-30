@@ -1,5 +1,5 @@
-//! Authentic pre-automatic state, including retained render and publication
-//! history. No fixture is relabeled from the new schema.
+//! Retain unsupported development fixtures byte-for-byte at the cell level,
+//! including render and publication history. No fixture is relabeled.
 use super::*;
 
 const SCHEMA41: &str = include_str!("../fixtures/v41-automatic-render.sql");
@@ -21,43 +21,22 @@ fn fixture(root: &Path, sql: &str) -> Result<PathBuf> {
     Ok(package)
 }
 
-fn old_cells(database: &Connection) -> Result<Vec<String>> {
-    let tables = database.prepare("SELECT name FROM sqlite_schema WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name!='render_encoding_decisions' ORDER BY name")?
-        .query_map([], |row| row.get::<_, String>(0))?
-        .collect::<std::result::Result<Vec<_>, _>>()?;
-    let mut cells = Vec::new();
-    for table in tables {
-        assert!(
-            table
-                .bytes()
-                .all(|value| value.is_ascii_alphanumeric() || value == b'_')
-        );
-        cells.push(table.clone());
-        let mut statement = database.prepare(&format!("SELECT * FROM {table} ORDER BY rowid"))?;
-        let count = statement.column_count();
-        cells.extend(
-            statement
-                .query_map([], |row| {
-                    (0..count)
-                        .map(|index| row.get_ref(index).map(|value| format!("{value:?}")))
-                        .collect::<std::result::Result<Vec<_>, _>>()
-                        .map(|row| row.join("|"))
-                })?
-                .collect::<std::result::Result<Vec<_>, _>>()?,
-        );
-    }
-    Ok(cells)
-}
-
 fn failed_without_promotion(package: &Path, version: u32) -> Result<StoreError> {
+    if (39..=42).contains(&version) {
+        development_break::assert_refused(package, version)?;
+        return Ok(StoreError::UnsupportedSchema(version));
+    }
     let database = Connection::open(package.join("project.sqlite"))?;
-    let before = old_cells(&database)?;
+    let before = development_break::cells(&database)?;
     let error = ProjectStore::migrate(package).unwrap_err();
     let StoreError::MigrationFailed { backup, source } = error else {
         panic!("expected a backed-up migration rejection: {error}");
     };
-    assert_eq!(old_cells(&database)?, before);
-    assert_eq!(old_cells(&Connection::open(backup)?)?, before);
+    assert_eq!(development_break::cells(&database)?, before);
+    assert_eq!(
+        development_break::cells(&Connection::open(backup)?)?,
+        before
+    );
     assert_eq!(
         database.pragma_query_value(None, "user_version", |row| row.get::<_, u32>(0))?,
         version
@@ -66,13 +45,12 @@ fn failed_without_promotion(package: &Path, version: u32) -> Result<StoreError> 
 }
 
 #[test]
-fn authentic_schema41_adds_empty_decisions_and_preserves_every_old_cell_with_wal_reader() -> Result
-{
+fn authentic_schema41_refusal_preserves_every_cell_with_wal_reader() -> Result {
     let scratch = tempfile::tempdir()?;
     let package = fixture(scratch.path(), SCHEMA41)?;
     let database = Connection::open(package.join("project.sqlite"))?;
     database.pragma_update(None, "journal_mode", "WAL")?;
-    let before = old_cells(&database)?;
+    let before = development_break::cells(&database)?;
     for (table, count) in [
         ("render_jobs", 3),
         ("render_attempts", 26),
@@ -86,50 +64,12 @@ fn authentic_schema41_adds_empty_decisions_and_preserves_every_old_cell_with_wal
             count
         );
     }
-    assert!(matches!(
-        ProjectStore::open(&package, AccessMode::ReadOnly),
-        Err(StoreError::MigrationRequired(41))
-    ));
     database.execute_batch("BEGIN")?;
-    assert_eq!(old_cells(&database)?, before);
-    let outcome = ProjectStore::migrate(&package)?;
-    assert_eq!((outcome.from_schema, outcome.to_schema), (41, 42));
-    // The established reader keeps its complete old snapshot across promotion.
-    assert_eq!(
-        database.pragma_query_value(None, "user_version", |row| row.get::<_, u32>(0))?,
-        41
-    );
-    assert_eq!(old_cells(&database)?, before);
+    assert_eq!(development_break::cells(&database)?, before);
+    development_break::assert_refused(&package, 41)?;
+    assert_eq!(development_break::cells(&database)?, before);
     database.execute_batch("COMMIT")?;
-    assert_eq!(old_cells(&database)?, before);
-    let backup = Connection::open(outcome.backup.unwrap())?;
-    assert_eq!(old_cells(&backup)?, before);
-    assert_eq!(
-        backup.pragma_query_value(None, "user_version", |row| row.get::<_, u32>(0))?,
-        41
-    );
-    assert_eq!(
-        database.query_row(
-            "SELECT COUNT(*) FROM render_encoding_decisions",
-            [],
-            |row| row.get::<_, i64>(0)
-        )?,
-        0
-    );
-    let store = ProjectStore::open(&package, AccessMode::ReadOnly)?;
-    store.validate()?;
-    for job in store.render_jobs(None, 256)? {
-        assert!(!job.policy.is_automatic());
-        for attempt in store.render_attempts(&job.job_id, 0, 256)? {
-            assert!(
-                store
-                    .render_encoding_decision(&job.job_id, &attempt.attempt_id)?
-                    .is_none()
-            );
-        }
-    }
-    assert_eq!(store.render_publications(None, 256)?.len(), 12);
-    assert_eq!(old_cells(&database)?, before);
+    assert_eq!(development_break::cells(&database)?, before);
     Ok(())
 }
 
@@ -169,7 +109,7 @@ fn automatic_policy() -> serde_json::Value {
 }
 
 #[test]
-fn schema40_and41_reject_current_automatic_intent_even_without_attempts() -> Result {
+fn schema40_and41_refuse_automatic_intent_before_parsing_it() -> Result {
     for (version, sql) in [
         (40, include_str!("../fixtures/v40-publication-render.sql")),
         (41, SCHEMA41),
@@ -186,8 +126,8 @@ fn schema40_and41_reject_current_automatic_intent_even_without_attempts() -> Res
         value["schema_version"] = 2.into();
         value["job_id"] = "future-automatic-job".into();
         value["policy"] = automatic_policy();
-        // This is valid current intent. Only its presence in an older database
-        // is forbidden; no absent encoding decision is needed to reject it.
+        // Even valid current operational intent cannot override the rejected
+        // database format or authorize a rewrite of its authored history.
         let current: deadpan_jobs::render::RenderIntent = serde_json::from_value(value.clone())?;
         current.validate()?;
         database.execute(
@@ -196,14 +136,14 @@ fn schema40_and41_reject_current_automatic_intent_even_without_attempts() -> Res
         )?;
         assert!(matches!(
             failed_without_promotion(&package, version)?,
-            StoreError::RenderJob(_)
+            StoreError::UnsupportedSchema(found) if found == version
         ));
     }
     Ok(())
 }
 
 #[test]
-fn schema41_nested_publication_intent_uses_frozen_engineering_grammar() -> Result {
+fn schema41_refusal_preserves_nested_publication_intent() -> Result {
     let scratch = tempfile::tempdir()?;
     let package = fixture(scratch.path(), SCHEMA41)?;
     let database = Connection::open(package.join("project.sqlite"))?;
@@ -219,10 +159,9 @@ fn schema41_nested_publication_intent_uses_frozen_engineering_grammar() -> Resul
         "UPDATE render_publications SET body=?1 WHERE publication_id=?2",
         rusqlite::params![value.to_string(), id],
     )?;
-    // The nested serde guard fails before current publication binding checks.
     assert!(matches!(
         failed_without_promotion(&package, 41)?,
-        StoreError::Json(_)
+        StoreError::UnsupportedSchema(41)
     ));
     Ok(())
 }

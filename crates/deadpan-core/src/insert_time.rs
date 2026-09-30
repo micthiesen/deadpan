@@ -12,8 +12,11 @@ use crate::{
 };
 
 mod composite;
+mod source_replace;
 mod source_splice;
 mod target;
+pub use source_replace::SourceReplacement;
+pub(crate) use source_replace::apply as replace_source;
 pub use source_splice::SourceSpliceInterior;
 pub(crate) use source_splice::{
     InteriorInsertion as SourceSpliceInsertion, apply as splice_source,

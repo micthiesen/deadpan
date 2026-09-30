@@ -34,7 +34,14 @@ pub struct Proposal {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Destination {
     Slot(usize),
-    Interior { target: NodeId, at: FrameDuration },
+    Interior {
+        target: NodeId,
+        at: FrameDuration,
+    },
+    /// Captured global Edit interval within the explicitly named Sequence.
+    Replace {
+        range: FrameRange,
+    },
 }
 
 #[derive(Clone)]
@@ -47,6 +54,8 @@ pub struct Prepared {
     pub node: NodeId,
     /// Exact proposed Edit interval occupied by the linked insertion.
     pub range: FrameRange,
+    /// The exact interval removed from the committed base, if replacing.
+    pub removed: Option<FrameRange>,
 }
 
 #[derive(Clone)]

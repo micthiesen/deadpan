@@ -7,6 +7,9 @@ pub(crate) use admission::create_decision_table;
 #[cfg(test)]
 #[path = "render_jobs/audit_tests.rs"]
 mod audit_tests;
+#[cfg(test)]
+#[path = "render_jobs/test_fixture.rs"]
+pub(crate) mod test_fixture;
 
 use crate::{
     ProjectStore, StoreError,

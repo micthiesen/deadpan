@@ -7,6 +7,9 @@ mod equivalence;
 #[path = "splice/interior.rs"]
 mod interior;
 
+#[path = "splice/replacement.rs"]
+mod replacement;
+
 fn initialize(harness: &Harness) -> Arc<Workspace> {
     command(
         &harness.service,

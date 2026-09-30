@@ -201,14 +201,17 @@ pub(super) fn run() -> Result {
         let before = authored(&inputs.package)?;
         save_new(&inputs.output.join("authored-before.json"), &before)?;
         let migration = ProjectStore::migrate(&inputs.package)?;
-        if migration.from_schema != 40 || migration.to_schema != 41 || migration.backup.is_none() {
+        if migration.from_schema != deadpan_store::DATABASE_SCHEMA_VERSION
+            || migration.to_schema != deadpan_store::DATABASE_SCHEMA_VERSION
+            || migration.backup.is_some()
+        {
             return Err(
-                "qualification requires an actual backed-up schema 40 to 41 migration".into(),
+                "publication recovery qualification requires a current-format project".into(),
             );
         }
         report["migration"] = json!(migration);
         if authored(&inputs.package)? != before {
-            return Err("migration changed authored or history cells".into());
+            return Err("current-format validation changed authored or history cells".into());
         }
         let initial = ProjectStore::open(&inputs.package, AccessMode::ReadOnly)?;
         let intent = initial.render_job(&inputs.job)?;

@@ -153,6 +153,111 @@ fn insert(doc: &ProjectDocument, at: i64, name: &str) -> Command {
     }
 }
 
+fn replace_source(
+    doc: &ProjectDocument,
+    parent: &str,
+    start: i64,
+    end: i64,
+    inserted: i64,
+) -> Command {
+    Command::ReplaceSource {
+        parent: node(parent),
+        range: FrameRange::new(ProjectFrame(start), ProjectFrame(end)).unwrap(),
+        source: SourceNode {
+            duration: frames(inserted),
+            video: SourceVideo::Blank,
+            audio: Some(doc.sounds()[&sound()].source.clone()),
+            video_mapping: SourceVideoMapping::FitBeat,
+            audio_mapping: SourceAudioMapping::natural_rate(
+                doc.sounds()[&sound()].source.span,
+                doc.presentation_basis().frame_rate,
+            )
+            .unwrap(),
+            link: LinkRelation::Independent,
+            audio_offset: AudioSample(0),
+        },
+        id: node("replacement"),
+        label: "Replacement".into(),
+        identities: SplitIdentities {
+            nodes: (0..12).map(|i| node(&format!("replacement-{i}"))).collect(),
+        },
+        timing: AudioTimingId {
+            allocation: request(doc, Command::DeleteSound { id: sound() }).new_revision,
+            ordinal: 0,
+        },
+    }
+}
+
+#[test]
+fn replacement_transforms_root_bus_once_and_whole_project_removes_all_old_support() {
+    let original = fixture();
+    let event = original.sounds()[&sound()].clone();
+    let (after, transaction) = edit(&original, replace_source(&original, "group", 5, 35, 12));
+    assert_eq!(transaction.duration_delta, -18);
+    assert_eq!(after.sounds()[&sound()], event);
+    let journal = &after.sound_routes()[&sound()];
+    assert_eq!(journal.edits.len(), 1);
+    assert_eq!(
+        journal.edits[0].operation,
+        RootSoundOperation::Replace {
+            range: FrameRange::new(ProjectFrame(5), ProjectFrame(35)).unwrap(),
+            duration: frames(12),
+        }
+    );
+    let (whole, _) = edit(&original, replace_source(&original, "root", 0, 100, 3));
+    assert_eq!(whole.duration().unwrap(), frames(3));
+    assert!(whole.sounds().is_empty());
+    assert!(whole.sound_routes().is_empty());
+    assert!(whole.sound_allowances().is_empty());
+}
+
+#[test]
+fn equal_replacement_preserves_single_rounded_suffix_sample_4804() {
+    let mut wire = json!(fixture());
+    wire["nodes"] = json!({"root":BeatNode::sequence("Root",vec![node("whole")]),"whole":BeatNode::hold("Whole",pause(3))});
+    // One old sample, immediately before B(3)=4805.
+    wire["sounds"]["sound"]["mapping"]["selection"] = json!(ExactFrameRange {
+        start: ExactRatio::new(4804 * 5, 8008).unwrap(),
+        end: ExactRatio::integer(3),
+    });
+    let original = ProjectDocument::from_json(&wire.to_string()).unwrap();
+    let (after, _) = edit(&original, replace_source(&original, "root", 1, 2, 1));
+    assert!(after.sounds().contains_key(&sound()));
+    assert_eq!(after.sound_routes()[&sound()].edits.len(), 1);
+}
+
+#[test]
+fn sampleless_selection_survives_unrelated_replacement_and_disappears_when_replaced() {
+    let original = sample_clock_fixture(ExactFrameRange {
+        start: ExactRatio::new(21, 10).unwrap(),
+        end: ExactRatio::new(11, 5).unwrap(),
+    });
+    let (retained, _) = edit(&original, replace_source(&original, "group", 0, 1, 2));
+    assert_eq!(retained.sounds()[&sound()], original.sounds()[&sound()]);
+    let (removed, _) = edit(&original, replace_source(&original, "group", 2, 3, 1));
+    assert!(removed.sounds().is_empty());
+}
+
+#[test]
+fn frozen_sound_route_schemas_reject_replacement_documents_and_patches() {
+    let original = fixture();
+    let (after, transaction) = edit(&original, replace_source(&original, "group", 5, 35, 12));
+    macro_rules! check {
+        ($version:literal,$adapter:ident) => {{
+            let mut wire = json!(&after);
+            wire["schema_version"] = json!($version);
+            assert!($adapter::Document::from_json(&wire.to_string()).is_err());
+            assert!(
+                $adapter::matches_edit(&serde_json::to_string(&transaction).unwrap(), &transaction)
+                    .is_err()
+            );
+        }};
+    }
+    check!(30, legacy_v30);
+    check!(31, legacy_v31);
+    check!(32, legacy_v32);
+}
+
 #[test]
 fn nested_pause_captures_once_and_more_than_twenty_one_edits_keep_the_recipe() {
     let original = fixture();

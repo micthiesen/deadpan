@@ -998,6 +998,20 @@ fn compile_islands(
                     None,
                 ),
             ],
+            RootSoundOperation::Replace { range, duration } => [
+                (
+                    0..range.start().0,
+                    0..range.start().0,
+                    None,
+                    Some(edit.cuts.before),
+                ),
+                (
+                    range.end().0..extent,
+                    range.start().0 + duration.frames()..new_extent,
+                    Some(edit.cuts.after),
+                    None,
+                ),
+            ],
         };
         let mut next = Vec::new();
         for (old, destination, start_cut, end_cut) in keeps {

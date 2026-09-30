@@ -357,7 +357,7 @@ pub struct MomentPaste {
     pub ordinals: std::ops::Range<u64>,
     pub scope: SequenceScope,
     pub parent: NodeId,
-    pub index: usize,
+    pub destination: splice::Destination,
 }
 
 pub enum ProjectRequest {

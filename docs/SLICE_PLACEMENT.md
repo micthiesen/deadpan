@@ -1,8 +1,10 @@
 # Visual slice placement
 
-`:splice` opens an unsaved linked Original insertion at the retained Edit
+`:splice` opens an unsaved linked Original placement at the retained Edit
 cursor. Copy a half-open Original range with `v`, motion and `y`, then return
-to Your edit. Fast `p/P` paste keeps its existing behavior.
+to Your edit. To replace time, select an Edit range with `v`, motion and `v`,
+open `:splice`, then choose **Replace selection · r**. Fast `p/P` replaces a
+selected Edit range immediately; without one it inserts at a Sequence slot.
 
 The current implementation accepts child seams and strict interiors of direct
 Source, ordinary Hold and supported transparent-fragment children in ordinary
@@ -10,14 +12,21 @@ Sequence groups. The captured group remains the insertion owner. Enter a child
 group to place inside it; a proposal never silently descends into that group or
 rounds the insertion to a neighboring beat.
 
+Replacement removes a captured half-open Edit range. Its endpoints can be
+Sequence seams or supported Source/Hold/fragment interiors. Complete composites
+between those endpoints are removed as subtrees. The range stays fixed while
+the source In/Out changes. Zero-duration children exactly at either endpoint
+survive in order; strictly interior ones are removed.
+
 ## Keyboard and visible state
 
 | Input | Action |
 | --- | --- |
 | `i`, `o` | Select included In or exclusive Out for local refinement. |
-| `d` | Select the destination boundary. |
+| `r` | Switch between Insert and Replace selection when a captured range exists. |
+| `d` | Select the insertion boundary; replacement keeps its removal range fixed. |
 | `h/l`, Left/Right | Adjust the selected control by a frame; counts work. |
-| `j/k` | Next/previous Sequence slot, including distinct zero-length slots. |
+| `j/k` | In Insert, next/previous Sequence slot, including distinct zero-length slots. |
 | `f` | Inspect the destination picture without changing placement. |
 | `b` | Compare Before and Proposed in the captured destination context. |
 | Space | Play/pause; resume at the retained heard sample. |
@@ -31,7 +40,8 @@ zero-based, half-open values; displayed pictures use one-based frame labels.
 The destination keeps a larger picture, a named group and Sequence slot or
 interior beat/local boundary, an insertion marker, and a provisional timeline
 interval. Original and Edit clocks, linked picture/sound scope, and the unsaved
-state remain visible.
+state remain visible. Replace shows the removed and proposed intervals at the
+same scale, both exact frame counts and the signed change in duration.
 Pending or unavailable pictures cannot acquire successful display labels.
 Text composition and reserved macOS/Kestrel chords retain input ownership.
 
@@ -39,8 +49,9 @@ Text composition and reserved macOS/Kestrel chords retain input ownership.
 
 The native UI owns only a local range and destination draft. It sends a
 session/project/base-revision/draft/change identity to the project service.
-The service retains one exact `SourceMomentInsertionRequest` or
-`SourceMomentInteriorInsertionRequest`, qualified media, proposed document and
+The service retains one exact `SourceMomentInsertionRequest`,
+`SourceMomentInteriorInsertionRequest` or `SourceMomentReplacementRequest`,
+qualified media, proposed document and
 compiled plan. Preparation creates no authored revision
 or undo entry. It does not emit an asset-import completion or change selection.
 
@@ -63,8 +74,16 @@ boundary. The core captures original sampling clocks before splitting, retains
 both fragments' framing and audio context, then inserts the Source and moves the
 suffix. Placed sounds transform once. A failed transaction saves neither the
 split nor the insertion; one Undo removes both. This adds no document or table
-fields, so core schema 33 and database schema 42 remain unchanged. Frozen legacy
-command adapters reject the new command.
+fields. Frozen legacy command adapters reject this command.
+
+Replacement uses one `ReplaceSource` command, with identities allocated once
+for both endpoint splits and the inserted Source. Sampling clocks are captured
+before splitting; marks transform only after the final structure exists.
+Placed sounds use one direct replacement map, preserving suffix samples that
+separate Delete/Insert rounding could lose. Core schema 34 persists this map;
+database schema 43 stores it. Under the approved development-format policy,
+databases 39–42 are refused without writes or backups. Existing adapters for
+schemas 1–38 remain available. Create a new project for current native testing.
 
 Local refinements never modify the copied register. Cancellation revokes the
 last **issued** identity, including when a newer local refinement was not yet
@@ -74,9 +93,17 @@ audition and revokes pending picture work. Opening a new draft captures fresh
 authority. Audition advances the draft cursor without moving saved editor
 cursors or beat selection.
 
+Edit selection has its own project/session/revision/group identity, independent
+of the Original register. `v` starts and finishes selection; Escape clears it.
+Finished ranges remain while the cursor moves, and playback never extends an
+active range. Command entry captures the range, including its absence, so a
+later completion cannot supply a new target. Before audition covers the removed
+range; Proposed covers the inserted range. Comparison translates the retained
+suffix using exact absolute frame-to-sample boundaries.
+
 ## Remaining specification work
 
 This is partial [§9.7](spec/DEADPAN_SPEC.md#97-visual-slice-placement).
-Edited-slice selection and atomic move, replacement, picture-only and audio-only
-policies, and Repeat/Retime occurrence destinations
+Copying and moving edited slices, picture-only and audio-only policies,
+and Repeat/Retime occurrence destinations
 remain required. These controls do not establish completion of DP-05 or DP-20.

@@ -1,0 +1,26 @@
+import hashlib
+import json
+from pathlib import Path
+import sqlite3
+import sys
+
+package = Path(sys.argv[1]).resolve()
+output = Path(sys.argv[2]).resolve()
+name = sys.argv[3]
+output.mkdir(parents=True, exist_ok=True)
+source = sqlite3.connect((package / 'project.sqlite').as_uri() + '?mode=ro', uri=True)
+snapshot = sqlite3.connect(output / (name + '.sqlite'))
+source.backup(snapshot)
+source.close()
+report = {}
+for (table,) in snapshot.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"):
+    identifier = '"' + table.replace('"', '""') + '"'
+    rows = snapshot.execute('SELECT * FROM ' + identifier).fetchall()
+    encoded = sorted(json.dumps(row, separators=(',', ':'), default=lambda value: {'bytes': value.hex()}) for row in rows)
+    report[table] = {'rows': len(rows), 'sha256': hashlib.sha256('\n'.join(encoded).encode()).hexdigest()}
+head = snapshot.execute('SELECT head_revision FROM state').fetchone()[0]
+document = json.loads(snapshot.execute('SELECT document FROM revisions WHERE id=?', (head,)).fetchone()[0])
+snapshot.close()
+(output / (name + '.json')).write_text(json.dumps(report, indent=2) + '\n')
+(output / (name + '-document.json')).write_text(json.dumps(document, indent=2) + '\n')
+print(json.dumps({'snapshot': name, 'tables': len(report), 'revision': head}))

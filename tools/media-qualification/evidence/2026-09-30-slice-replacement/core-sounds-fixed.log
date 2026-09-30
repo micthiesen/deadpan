@@ -1,0 +1,40 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 11.49s
+     Running tests/sound_allowances.rs (target/debug/deps/sound_allowances-733f7e83d07c64be)
+
+running 12 tests
+test invalid_scope_and_gap_addresses_fail_without_changing_history ... ok
+test allowance_is_reversible_guarded_and_independent_of_recipe_parameters ... ok
+test splitting_a_repeat_remaps_its_gap_owner_and_all_enclosing_play_identities ... ok
+test audio_setter_retires_only_its_hold_permissions_and_undo_restores_them ... ok
+test nested_occurrence_isolation_moves_selected_addresses_and_preserves_other_plays ... ok
+test occurrence_audio_setter_retires_only_the_isolated_hold_permission ... ok
+test replacement_splits_allowances_twice_then_prunes_only_the_removed_middle ... ok
+test splice_retains_policy_and_deleting_the_issuer_prunes_it_without_removing_surviving_sound ... ok
+test split_and_internal_insertion_split_copy_only_existing_hold_issuers_once ... ok
+test interior_source_splice_copies_hold_allowances_once_and_ripples_placed_sound_once ... ok
+test wire_is_closed_canonical_and_bounded_before_document_traversal ... ok
+test document_aggregate_limit_is_shared_by_individually_valid_event_sets ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s
+
+     Running tests/sound_routing.rs (target/debug/deps/sound_routing-477310b2d537a94e)
+
+running 14 tests
+test translated_support_clips_before_narrowing_extreme_sample_labels ... ok
+test delete_onset_keeps_recipe_suffix_and_whole_deletion_removes_bus ... ok
+test equal_replacement_preserves_single_rounded_suffix_sample_4804 ... ok
+test nested_interior_source_splice_routes_the_absolute_boundary_once ... ok
+test initially_sampleless_selection_keeps_intent_until_logically_deleted ... ok
+test sampleless_selection_survives_unrelated_replacement_and_disappears_when_replaced ... ok
+test splice_and_nonroot_split_preserve_routing_while_root_split_stays_closed ... ok
+test replacement_transforms_root_bus_once_and_whole_project_removes_all_old_support ... ok
+test deep_history_and_large_repeat_queries_use_bounded_iterative_work ... ok
+test parameters_preserve_history_replacement_is_explicit_and_route_patches_are_guarded ... ok
+test frozen_sound_route_schemas_reject_replacement_documents_and_patches ... ok
+test routed_wire_admission_checks_clocks_ownership_capacity_and_frozen_context ... ok
+test deletion_keeps_a_physical_sample_outside_its_transported_exact_selection ... ok
+test nested_pause_captures_once_and_more_than_twenty_one_edits_keep_the_recipe ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.48s
+

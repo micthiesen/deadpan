@@ -1,6 +1,6 @@
 use super::*;
 
-fn prepare(harness: &Harness, request: &Proposal) -> Arc<Prepared> {
+pub(super) fn prepare(harness: &Harness, request: &Proposal) -> Arc<Prepared> {
     let update = command(
         &harness.service,
         ProjectRequest::PrepareSplice(request.clone()),
@@ -19,7 +19,7 @@ fn prepare(harness: &Harness, request: &Proposal) -> Arc<Prepared> {
     prepared(&update, &request.id)
 }
 
-fn nested(harness: &Harness) -> Arc<Workspace> {
+pub(super) fn nested(harness: &Harness) -> Arc<Workspace> {
     let initial = initialize(harness);
     command(&harness.service, ProjectRequest::Close);
     {

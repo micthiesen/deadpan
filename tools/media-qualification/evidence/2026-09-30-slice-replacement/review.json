@@ -1,0 +1,56 @@
+{
+  "independent_reviews": [
+    {
+      "scope": "Core replacement, audio route, frozen adapters and schema refusal",
+      "reviewer": "replace_ui",
+      "findings": []
+    },
+    {
+      "scope": "UI selection, capture, exact comparison and input ownership",
+      "reviewer": "replace_core",
+      "finding": "Heading click overlay intercepted operation button.",
+      "correction": "Heading focus hit region excludes operation button.",
+      "verification": "Production pointer replay passes both Replace and Insert actions plus return to heading focus."
+    },
+    {
+      "scope": "Prepared store request, actor authority, rollback and fast paste",
+      "reviewer": "range_ui",
+      "finding": "Fast paste could lose committed receipt if workspace refresh failed.",
+      "correction": "Retain receipt before refresh and explicitly report saved edit when preview cannot refresh; cold import completes.",
+      "verification": "Cached and cold fault-injection tests pass; each retains exactly one edit and one Undo restores all authored state."
+    },
+    {
+      "scope": "Current-format publication and render audit test fixtures",
+      "reviewer": "replace_ui",
+      "findings": [],
+      "notes": "Production read-count and durability/reopen assertions retained. Distinct verifier/encoding owner coverage remains in checkpoint_retries_and_publication_keep_original_encoding_decision. Synthetic bytes and observations explicitly labelled."
+    }
+  ],
+  "visual_review": {
+    "source": "replay-first",
+    "captures": [
+      "place-slice-127.png",
+      "place-slice-128.png"
+    ],
+    "sizes": [
+      [
+        960,
+        640
+      ],
+      [
+        1280,
+        820
+      ]
+    ],
+    "observed": "Both endpoint pictures, large destination picture, unsaved operation, fixed removed bounds, inserted bounds, signed duration change and proportionate timeline intervals are visible.",
+    "limits": "Offscreen captures do not establish physical IME, display color, VoiceOver or device audio. Intermediate capture allowance reached; named checkpoints retained capacity."
+  },
+  "verification_corrections": [
+    "Test-local id binding shadowed fixture helper; renamed binding.",
+    "New sound fixtures incorrectly used a Source without media; used qualified event audio.",
+    "Actual-media replacement test incorrectly expected nonzero PCM at silent Original frame 60; retained exact equality and independent nonzero final-suffix comparison.",
+    "Six store unit tests loaded now-unsupported schema 40/41 archived fixtures; replaced setup with current typed APIs and explicitly synthetic media, preserving publication assertions and the audit of 3 jobs, 26 attempts, 23 retries and 2 revisions.",
+    "Current sha2 digest lacks LowerHex; test helper formats each digest byte explicitly.",
+    "Workspace formatting expanded Destination enum variants. Comparing the verified source manifest confirmed this was the only source change after both strict Clippy passes; it changed formatting only."
+  ]
+}

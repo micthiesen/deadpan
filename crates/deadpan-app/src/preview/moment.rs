@@ -19,6 +19,22 @@ pub(super) struct Copied {
     pub ordinals: Range<u64>,
 }
 
+/// Commands retain absence as well as presence of a range and register. A late
+/// service reply cannot supply a different paste or placement destination.
+#[derive(Clone)]
+pub(super) struct PlacementTarget {
+    pub base: Arc<Workspace>,
+    pub scope: SequenceScope,
+    pub parent: NodeId,
+    pub cursor: u64,
+    pub source_cursor: u64,
+    pub pane: Pane,
+    pub selected_beat: Option<NodeId>,
+    pub copied: Option<Copied>,
+    pub selection: edit_range::Selection,
+    pub range: Option<deadpan_core::FrameRange>,
+}
+
 #[derive(Default)]
 pub(super) struct Selection {
     identity: Option<Identity>,
@@ -122,6 +138,58 @@ fn nearest_boundary(index: &deadpan_core::SourceFrameIndex, fraction: f64) -> u6
 }
 
 impl DeadpanApp {
+    pub(super) fn capture_placement_target(&self) -> Result<PlacementTarget, String> {
+        if self.view != View::Sequence
+            || self.sound_focused()
+            || self.pane == Pane::Sounds
+            || self.event_focused()
+        {
+            return Err("Return to Your edit (:sequence) before placing a slice.".into());
+        }
+        let base = self.workspace.clone().ok_or("Open a project first.")?;
+        let parent = self.sequence_scope.resolve(&base)?.owner.clone();
+        Ok(PlacementTarget {
+            base,
+            scope: self.sequence_scope.clone(),
+            parent,
+            cursor: self.sequence_cursor,
+            source_cursor: self.source_cursor,
+            pane: self.pane,
+            selected_beat: self.selected_beat.clone(),
+            copied: self.moment.copied.clone(),
+            selection: self.edit_range.clone(),
+            range: self.selected_edit_range(),
+        })
+    }
+
+    pub(super) fn check_placement_target(&self, target: &PlacementTarget) -> Result<(), String> {
+        let workspace = self
+            .workspace
+            .as_ref()
+            .ok_or("The captured edit is closed.")?;
+        if workspace.session != target.base.session
+            || workspace.document.project_id() != target.base.document.project_id()
+            || workspace.document.revision_id() != target.base.document.revision_id()
+            || self.sequence_scope != target.scope
+            || target.scope.resolve(workspace)?.owner != &target.parent
+        {
+            return Err(
+                "The captured Edit destination changed. Enter the command again; no edit was made."
+                    .into(),
+            );
+        }
+        if let Some(copied) = &target.copied
+            && (copied.identity.session != workspace.session
+                || workspace
+                    .sources
+                    .get(&copied.identity.asset)
+                    .is_none_or(|source| source.receipt.id() != &copied.identity.qualification))
+        {
+            return Err("The captured Original slice is no longer available.".into());
+        }
+        Ok(())
+    }
+
     pub(super) fn moment_identity(&self) -> Option<Identity> {
         if self.raw_source.is_some() {
             return None;
@@ -189,7 +257,7 @@ impl DeadpanApp {
         match self.moment.copy() {
             Ok(()) => {
                 self.error = None;
-                self.message = Some("Moment copied. Return to Your edit (:sequence): :splice previews placement; p/P pastes beside a beat.".into());
+                self.message = Some("Moment copied. Return to Your edit (:sequence): :splice previews placement; p/P replaces an Edit selection or pastes beside a beat.".into());
             }
             Err(error) => self.error = Some(error),
         }
@@ -198,29 +266,40 @@ impl DeadpanApp {
     pub(super) fn paste_moment(&mut self, before: bool) {
         self.bindings.clear();
         self.reconcile_moment();
-        if self.view != View::Sequence {
-            self.message =
-                Some("Return to Your edit (:sequence) to paste beside the selected beat.".into());
-            return;
-        }
+        let target = self.capture_placement_target();
+        self.paste_captured_moment(before, target);
+    }
+
+    pub(super) fn paste_captured_moment(
+        &mut self,
+        before: bool,
+        target: Result<PlacementTarget, String>,
+    ) {
         let result = (|| {
-            let copied = self
-                .moment
+            let target = target?;
+            self.check_placement_target(&target)?;
+            let copied = target
                 .copied
                 .as_ref()
                 .ok_or("Copy an Original range first: :source, v, h/l, y")?;
-            let workspace = self.workspace.as_ref().ok_or("Open a project first")?;
-            let scope = self.sequence_scope.resolve(workspace)?;
-            let index = paste_slot(&self.beat_rows, self.selected_beat.as_ref(), before)?;
+            let destination = if let Some(range) = target.range {
+                crate::project::splice::Destination::Replace { range }
+            } else {
+                crate::project::splice::Destination::Slot(paste_slot(
+                    &self.beat_rows,
+                    target.selected_beat.as_ref(),
+                    before,
+                )?)
+            };
             Ok::<_, String>(ProjectRequest::PasteMoment(crate::project::MomentPaste {
-                expected_session: workspace.session,
-                expected_revision: workspace.document.revision_id().clone(),
+                expected_session: target.base.session,
+                expected_revision: target.base.document.revision_id().clone(),
                 asset: copied.identity.asset.clone(),
                 qualification: copied.identity.qualification.clone(),
                 ordinals: copied.ordinals.clone(),
-                scope: self.sequence_scope.clone(),
-                parent: scope.owner.clone(),
-                index,
+                scope: target.scope,
+                parent: target.parent,
+                destination,
             }))
         })();
         match result {
@@ -303,6 +382,7 @@ impl DeadpanApp {
         } else if self.view == View::Sequence
             && let Some(copied) = &self.moment.copied
         {
+            let replacing = self.selected_edit_range().is_some();
             let label = format!(
                 "Copied Original [{}..{})",
                 copied.ordinals.start, copied.ordinals.end
@@ -319,7 +399,14 @@ impl DeadpanApp {
                     self.open_splice(ui.ctx());
                 }
                 if ui
-                    .add_enabled(!self.service.is_busy(), egui::Button::new("Paste after  p"))
+                    .add_enabled(
+                        !self.service.is_busy(),
+                        egui::Button::new(if replacing {
+                            "Replace range  p"
+                        } else {
+                            "Paste after  p"
+                        }),
+                    )
                     .clicked()
                 {
                     self.pane = Pane::Viewer;
@@ -328,7 +415,11 @@ impl DeadpanApp {
                 if ui
                     .add_enabled(
                         !self.service.is_busy(),
-                        egui::Button::new("Paste before  P"),
+                        egui::Button::new(if replacing {
+                            "Replace range  P"
+                        } else {
+                            "Paste before  P"
+                        }),
                     )
                     .clicked()
                 {

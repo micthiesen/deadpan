@@ -1,0 +1,11 @@
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 29.14s
+     Running tests/composite_insert.rs (target/debug/deps/composite_insert-83f2643f39d161d3)
+
+running 2 tests
+test source_replace::replacement_before_repeated_and_preserved_suffix_retains_their_entries ... ok
+test source_replace::ntsc_replacement_retains_source_roomtone_and_outer_suffix_samples_in_one_shift ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 16 filtered out; finished in 1.53s
+

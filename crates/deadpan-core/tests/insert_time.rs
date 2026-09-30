@@ -7,6 +7,8 @@ use serde_json::json;
 mod interior;
 #[path = "insert_time/nested_sequence.rs"]
 mod nested_sequence;
+#[path = "insert_time/source_replace.rs"]
+mod source_replace;
 #[path = "insert_time/source_splice.rs"]
 mod source_splice;
 #[path = "insert_time/source_splice_interior.rs"]

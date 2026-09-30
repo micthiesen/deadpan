@@ -67,7 +67,7 @@ never-reused revision rule as commit. A stale expected
 revision fails with `RevisionConflict` and the current revision, without writing.
 
 Supported commands are `insert`, `insert_time`, `split`, `delete`, `move`, `group`,
-`ungroup`, `splice_source`, `splice_source_at`, `wrap_repeat`, `set_repeat`, `wrap_retime`, `set_retime`, `insert_plays`, `move_plays`, `set_hold_duration`, `set_hold_provider`, `set_hold_picture_context`, `set_source_audio_mapping`, `set_source_video_mapping`,
+`ungroup`, `splice_source`, `splice_source_at`, `replace_source`, `wrap_repeat`, `set_repeat`, `wrap_retime`, `set_retime`, `insert_plays`, `move_plays`, `set_hold_duration`, `set_hold_provider`, `set_hold_picture_context`, `set_source_audio_mapping`, `set_source_video_mapping`,
 `rename`, `set_audio_edge`, `set_audio_treatments`, `set_hold_audio`, `set_framing`, `set_sound`, `replace_sound`, `delete_sound`, `set_sound_allowance`, `add_asset`, `set_canvas`, `set_mark`, `delete_mark`, `set_play_override`, `clear_play_override`, `set_gap_override`, `clear_gap_override`, `isolate_gap`, and `edit_occurrence`. Their exact typed parameters are defined in
 [`Command`](../crates/deadpan-core/src/command.rs). `set_repeat` changes an existing
 Repeat; `wrap_repeat` deliberately adds nesting. A three-play repeat includes
@@ -81,7 +81,7 @@ and `pitch`, retaining the ordinary Retime's child/input range. Both also have
 occurrence forms. The native `:retime` speed grammar resolves to these same
 commands. See [speed editing](RETIME_EDITING.md) for output-binding lifecycle.
 
-Documents use schema 33 in database schema 42. `set_sound` and `replace_sound`
+Documents use schema 34 in database schema 43. `set_sound` and `replace_sound`
 take an `id` and complete `event`; `delete_sound` takes its `id`.
 Events require a qualified source, root owner,
 natural-rate mapping, contained selection plus sample offset, explicit gain,
@@ -221,6 +221,16 @@ once. `timing.ordinal` and its checked successor cover pre-Split sampling and
 post-Split placement. It never descends a child group or resolves a Repeat/Retime
 occurrence. Native [Place slice](SLICE_PLACEMENT.md) previews the complete command
 through exact prepared Original evidence before committing.
+
+`replace_source` takes `parent`, a nonempty global Edit `range`, `source`, `id`,
+`label`, pooled Split `identities` and `timing`. It replaces the complete range
+in one reversible command. Endpoint interiors use the same physical admission
+as `splice_source_at`; whole intervening children may be composite structures.
+Zero-duration children at either endpoint survive; those strictly inside the
+range are removed. Both retained fragments keep their context. Suffix audio
+maps directly from its old entry to its final placement, and root sounds gain
+one Replace operation without a shorter intermediate clock. Native preview
+and fast Visual paste derive the Source from qualified Original evidence.
 
 Optional per-node [framing](FRAMING.md) retains a static
 pose or whole-owner envelope; `set_framing` sets it, and `framing: null` removes it.
@@ -998,7 +1008,7 @@ the compact receipt with `host_reply_detail_omitted: true`.
 
 ## Schema migration
 
-Database schemas 1 through 41 return `MigrationRequired` when opened. Upgrade explicitly:
+Database schemas 1 through 38 return `MigrationRequired` when opened. Upgrade explicitly:
 
 ```sh
 cargo run --locked -p deadpan-cli -- project migrate /tmp/example.deadpan
@@ -1011,18 +1021,20 @@ migration writer-lock conflict uses the IPC fallback, whose admitted native
 store can report its current schema. Closed legacy packages keep the migration
 behavior below; an open endpoint does not perform legacy migration.
 
+Schemas 39 through 42 are unsupported development formats. The user authorized
+a format break for the unused project, so this build does not migrate them.
+Open and migration reject them before writer recovery, backups or database
+changes. Create a new project for this build; the old package stays intact.
+
 Migration holds the project writer lock, keeps a consistent SQLite backup under
-`Snapshots/before-schema-42-*.sqlite`, named for the destination schema, and upgrades a separate candidate. It
+`Snapshots/before-schema-43-*.sqlite`, named for the destination schema, and upgrades a separate candidate. It
 replays all commands, undo/redo revisions, and abandoned branches with their
 original revision IDs. Every snapshot and forward/inverse transaction is checked
 against its strict original schema meaning. Migration goes directly to database
-schema 42 and core document schema 33. Database schemas 39 through 41 validate
-existing core-33 history without rewriting authored JSON or patches. Schema 39
-gains empty [render job tables](RENDER_JOBS.md); schemas below 41 gain publication
-tables. Schema 42 adds immutable automatic encoding decisions while preserving
-old attempts, checkpoints, publication records and engineering-only intent
-grammar. Migration invents no historical decisions. Earlier schemas retain
-strict replay.
+schema 43 and core document schema 34. Supported older schemas gain empty
+[render job tables](RENDER_JOBS.md), publication tables and automatic encoding
+decision tables. Migration invents no historical decisions. Existing frozen
+adapters retain strict replay.
 Database-38 replays frozen core 32,
 including direct/occurrence Hold audio setters, while rejecting modern node
 treatments and gain setters. Database-37 replays frozen core 31,

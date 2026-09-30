@@ -202,10 +202,14 @@ impl DeadpanApp {
         match self.view {
             View::Source => self.moment.range(),
             View::Sequence => self
-                .beat_rows
-                .iter()
-                .find(|row| Some(&row.id) == self.selected_beat.as_ref())
-                .and_then(|row| row.start.checked_add(row.frames).map(|end| row.start..end)),
+                .selected_edit_range()
+                .map(|range| range.start().0 as u64..range.end().0 as u64)
+                .or_else(|| {
+                    self.beat_rows
+                        .iter()
+                        .find(|row| Some(&row.id) == self.selected_beat.as_ref())
+                        .and_then(|row| row.start.checked_add(row.frames).map(|end| row.start..end))
+                }),
         }
     }
 
@@ -506,7 +510,7 @@ impl DeadpanApp {
             if ui.add_enabled(enabled, egui::Button::new(label).fill(style::SELECTED)).clicked() { self.toggle_playback(); }
             let looping = self.transport.as_ref().is_some_and(|run| run.window().looping());
             let label = if looping { "Pause loop  ·  Shift+Space" } else if self.sound_focused() { "Loop sound  ·  Shift+Space" } else { "Loop selection  ·  Shift+Space" };
-            if ui.add_enabled(enabled && (looping || self.selected_playback_range().is_some()), egui::Button::new(label)).on_hover_text(format!("Loop the selected Original moment or edited beat with {} lead-in and {} follow-through. Space pauses and resumes the exact heard position. Change context with :audition-context.", self.audition_context.lead_label(), self.audition_context.follow_label())).clicked() { self.audition_selection(); }
+            if ui.add_enabled(enabled && (looping || self.selected_playback_range().is_some()), egui::Button::new(label)).on_hover_text(format!("Loop the selected Original moment, Edit range or edited beat with {} lead-in and {} follow-through. Space pauses and resumes the exact heard position. Change context with :audition-context.", self.audition_context.lead_label(), self.audition_context.follow_label())).clicked() { self.audition_selection(); }
             if let Some(run) = &self.transport {
                 let sample = run.content_sample().unwrap_or(run.sample).0;
                 let millis = sample / 48;

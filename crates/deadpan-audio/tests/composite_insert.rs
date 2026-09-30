@@ -24,6 +24,8 @@ const TIMEOUT: Duration = Duration::from_secs(10);
 
 #[path = "composite_insert/nested_sequence.rs"]
 mod nested_sequence;
+#[path = "composite_insert/source_replace.rs"]
+mod source_replace;
 #[path = "composite_insert/source_splice.rs"]
 mod source_splice;
 

@@ -1,0 +1,106 @@
+{
+  "core-fixed": {
+    "passed": 67,
+    "failed": 1,
+    "ignored": 0
+  },
+  "core-sounds-fixed": {
+    "passed": 26,
+    "failed": 0,
+    "ignored": 0
+  },
+  "plan-focused": {
+    "passed": 12,
+    "failed": 0,
+    "ignored": 0
+  },
+  "audio-focused": {
+    "passed": 2,
+    "failed": 0,
+    "ignored": 0
+  },
+  "store-focused": {
+    "passed": 153,
+    "failed": 0,
+    "ignored": 0
+  },
+  "app-first": {
+    "passed": 366,
+    "failed": 1,
+    "ignored": 0
+  },
+  "app-fixed": {
+    "passed": 372,
+    "failed": 0,
+    "ignored": 0
+  },
+  "workspace": {
+    "passed": 2311,
+    "failed": 6,
+    "ignored": 0
+  },
+  "store-lib-hash-fixed": {
+    "passed": 56,
+    "failed": 0,
+    "ignored": 0
+  },
+  "workspace-fixed": {
+    "passed": 2641,
+    "failed": 0,
+    "ignored": 0
+  },
+  "replay": [
+    {
+      "name": "kestrel-shortcuts",
+      "checks": 1,
+      "failed": false,
+      "skipped": [],
+      "findings": []
+    },
+    {
+      "name": "place-slice",
+      "checks": 401,
+      "failed": false,
+      "skipped": [
+        "Place slice covers linked Original insertions and explicit replacement in ordinary Sequence scopes. Edited-slice move/copy, separate picture/audio placement and Repeat/Retime occurrence targeting remain outside this increment.",
+        "The replay uses genuine source qualification, endpoint decoding, SDR GPU pictures, proposed documents and durable commands. Audio delivery and a concurrent service Undo are explicitly injected. It does not open an audio device or establish acoustic quality.",
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ],
+      "findings": [
+        {
+          "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+          "severity": "warning"
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "binary_sha256": "50e72580f4fa0ac4f0414c8a7dfa0f1b512cbed8abc3d18e685802bb25065226",
+    "build_profile": "debug",
+    "cache_state": "first import/index cold, subsequent operations warm; OS file cache uncontrolled",
+    "cargo_lock_sha256_at_run": "20fa405e01ff2846901034071a1171ae92a3c02b7703da8a2d2df9530a3076c4",
+    "fixture": "cfr-bframes.mp4",
+    "fixture_identity_file": "/Users/michael/Code/deadpan/native/deadpan-source/tests/fixtures/cfr-bframes.mp4",
+    "fixture_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+    "git_revision": "193b185b8aa96c7dd18b9eecb3d51811bf098410",
+    "git_status": "M AGENTS.md\n M crates/deadpan-app/src/navigation/splice.rs\n M crates/deadpan-app/src/preview.rs\n M crates/deadpan-app/src/preview/cards.rs\n M crates/deadpan-app/src/preview/harness/splice.rs\n M crates/deadpan-app/src/preview/moment.rs\n M crates/deadpan-app/src/preview/playback.rs\n M crates/deadpan-app/src/preview/splice.rs\n M crates/deadpan-app/src/preview/splice/controls.rs\n M crates/deadpan-app/src/project.rs\n M crates/deadpan-app/src/project/service/moment.rs\n M crates/deadpan-app/src/project/service/splice.rs\n M crates/deadpan-app/src/project/splice.rs\n M crates/deadpan-app/src/project/tests/moment.rs\n M crates/deadpan-app/src/project/tests/splice.rs\n M crates/deadpan-app/src/project/tests/splice/interior.rs\n M crates/deadpan-app/src/project/tests/splice_equivalence.rs\n M crates/deadpan-audio/tests/composite_insert.rs\n M crates/deadpan-cli/examples/qualify_publication_recovery/harness.rs\n M crates/deadpan-cli/src/doctor.rs\n M crates/deadpan-cli/tests/project_commands.rs\n M crates/deadpan-core/src/command.rs\n M crates/deadpan-core/src/document.rs\n M crates/deadpan-core/src/insert_time.rs\n M crates/deadpan-core/src/insert_time/composite.rs\n M crates/deadpan-core/src/legacy_v29.rs\n M crates/deadpan-core/src/legacy_v30.rs\n M crates/deadpan-core/src/legacy_v31.rs\n M crates/deadpan-core/src/legacy_v32.rs\n M crates/deadpan-core/src/lib.rs\n M crates/deadpan-core/src/sound_events.rs\n M crates/deadpan-core/src/sound_routing.rs\n M crates/deadpan-core/tests/insert_time.rs\n M crates/deadpan-core/tests/node_gain.rs\n M crates/deadpan-core/tests/node_gain/legacy.rs\n M crates/deadpan-core/tests/sound_allowances.rs\n M crates/deadpan-core/tests/sound_routing.rs\n M crates/deadpan-plan/src/audio_sound_event.rs\n M crates/deadpan-plan/tests/root_sound_routes.rs\n M crates/deadpan-store/src/migration.rs\n M crates/deadpan-store/src/schema.rs\n M crates/deadpan-store/src/source_registration.rs\n M crates/deadpan-store/tests/migration.rs\n M crates/deadpan-store/tests/migration/automatic_render.rs\n M crates/deadpan-store/tests/migration/publication.rs\n M crates/deadpan-store/tests/migration/render_jobs.rs\n M crates/deadpan-store/tests/prepared_source_registration/moment.rs\n M docs/HEADLESS.md\n M docs/KEYBINDING_COMPATIBILITY.md\n M docs/SLICE_PLACEMENT.md\n M docs/SOUND_EVENTS.md\n?? crates/deadpan-app/src/preview/edit_range.rs\n?? crates/deadpan-app/src/preview/harness/splice/replacement.rs\n?? crates/deadpan-app/src/project/service/splice/\n?? crates/deadpan-app/src/project/tests/splice/replacement.rs\n?? crates/deadpan-audio/tests/composite_insert/source_replace.rs\n?? crates/deadpan-core/src/insert_time/source_replace.rs\n?? crates/deadpan-core/src/legacy_sound_routes.rs\n?? crates/deadpan-core/tests/insert_time/source_replace.rs\n?? crates/deadpan-store/tests/migration/development_break.rs\n?? crates/deadpan-store/tests/prepared_source_registration/moment/replacement.rs",
+    "gpu_readback_in_timing_run": false,
+    "hardware": "Apple M5 Max",
+    "os": "26.5.2",
+    "physical_display_measured": false,
+    "picture_worker_timing": "request_start_finish_publication_receipt_v1",
+    "power_thermal_state": "uncontrolled; compare on the same idle machine and power mode",
+    "replay_hz": 60,
+    "replay_wall_ms": 16947.722958,
+    "rust": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+    "source_identity_note": "Git metadata describes the checkout at replay start; binary_sha256 identifies the executed build even during concurrent edits.",
+    "started_unix_ms": 1790801660496,
+    "tracked_diff_sha256_at_run": "1d4144fff2495aa376006efb14b1155bd0cfdc205bcddd980a4f89732091cc75",
+    "viewport_points": [
+      1280,
+      820
+    ],
+    "wait_strategy": "egui_repaint_callback_v1"
+  }
+}
