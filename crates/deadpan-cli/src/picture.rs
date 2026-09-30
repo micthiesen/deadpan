@@ -1,6 +1,6 @@
 //! Fixed-revision picture preparation for sequential rendering workers.
 //!
-//! This host boundary opens a read-only store and verified original snapshots.
+//! This host boundary opens a read-only store and verified media snapshots.
 //! It creates no GPU, thread, process, encoder or output file. Call it off the UI
 //! and audio threads. Final export still needs isolated worker supervision,
 //! audio/mux qualification, verification and atomic publication.
@@ -11,8 +11,9 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
 use deadpan_core::{
-    AssetId, CapturedFraming, ColorPolicy, FrameRange, FrameRate, IndexedSourceFrame, IterationId,
-    ProjectDocument, ProjectFrame, ProjectId, RevisionId, SourceFrameId, SourceQualificationId,
+    AssetId, CapturedFraming, ColorPolicy, FrameRange, FrameRate, GeneratedArtifact,
+    IndexedSourceFrame, IterationId, ProjectDocument, ProjectFrame, ProjectId, RevisionId,
+    SourceFrameId, SourceQualificationId,
 };
 use deadpan_media::source_session::{SourceSession, SourceSessionError, SourceSessionLimits};
 use deadpan_plan::{Picture, PictureFraming, PlanError, RenderPlan};
@@ -22,6 +23,8 @@ use deadpan_store::{AccessMode, ProjectStore, StoreError};
 
 mod shared;
 pub use shared::{render_layers, same_index_mapping, source_to_render_frame};
+mod generated;
+pub use generated::open_generated_picture;
 #[cfg(test)]
 mod tests;
 
@@ -42,8 +45,18 @@ pub enum ProjectPictureError {
     HdrUnsupported,
     #[error("still-image picture preparation is not qualified for asset {0}")]
     StillUnsupported(AssetId),
-    #[error("accepted generated picture preparation is not qualified for asset {0}")]
+    #[error("legacy accepted picture lacks qualified generated evidence for asset {0}")]
     AcceptedUnsupported(AssetId),
+    #[error("accepted picture evidence disagrees: {0}")]
+    GeneratedEvidence(&'static str),
+    #[error("Picture preparation exceeded its deadline.")]
+    Deadline,
+    #[error(transparent)]
+    GeneratedObject(#[from] deadpan_store::generated_media::GeneratedMediaError),
+    #[error(transparent)]
+    Provenance(#[from] deadpan_models::QualificationError),
+    #[error(transparent)]
+    Io(#[from] std::io::Error),
     #[error("source {asset} evidence disagrees with the captured revision: {reason}")]
     SourceEvidence {
         asset: AssetId,
@@ -77,6 +90,11 @@ pub enum PreparedPicture {
         id: SourceFrameId,
         frame: Rgba8Frame,
     },
+    Generated {
+        artifact: Arc<GeneratedArtifact>,
+        id: SourceFrameId,
+        frame: Rgba8Frame,
+    },
     Background,
 }
 
@@ -106,8 +124,14 @@ impl PreparedProjectPicture {
 
 struct RetainedSource {
     asset: AssetId,
-    qualification: SourceQualificationId,
+    origin: RetainedOrigin,
     source: SourceSession,
+}
+
+#[derive(PartialEq, Eq)]
+enum RetainedOrigin {
+    Original(SourceQualificationId),
+    Generated(Arc<GeneratedArtifact>),
 }
 
 /// One committed revision and one retained decoder/index/private input. Changing
@@ -121,6 +145,7 @@ pub struct ProjectPictureSession {
     document: ProjectDocument,
     plan: RenderPlan,
     range: FrameRange,
+    generated: deadpan_store::generated_media::GeneratedReadHandle,
     retained: Option<RetainedSource>,
 }
 
@@ -155,11 +180,13 @@ impl ProjectPictureSession {
             return Err(ProjectPictureError::Range);
         }
         check_cancel(cancelled)?;
+        let generated = store.generated_read_handle();
         Ok(Self {
             store,
             document,
             plan,
             range,
+            generated,
             retained: None,
         })
     }
@@ -202,7 +229,10 @@ impl ProjectPictureSession {
                 let frame = source_to_render_frame(decoded, retained.source.info())?;
                 PreparedPicture::Frame {
                     asset: asset.clone(),
-                    qualification: retained.qualification.clone(),
+                    qualification: match &retained.origin {
+                        RetainedOrigin::Original(qualification) => qualification.clone(),
+                        RetainedOrigin::Generated(_) => unreachable!("Original receipt admitted"),
+                    },
                     id,
                     frame,
                 }
@@ -211,7 +241,55 @@ impl ProjectPictureSession {
             Picture::Still { asset } => {
                 return Err(ProjectPictureError::StillUnsupported(asset.clone()));
             }
-            Picture::Accepted { asset, .. } => {
+            Picture::Accepted {
+                asset,
+                generated: Some(artifact),
+                ..
+            } => {
+                self.generated.check_live(cancelled)?;
+                if asset != &artifact.sampled_asset {
+                    return Err(ProjectPictureError::GeneratedEvidence(
+                        "plan asset differs from its artifact",
+                    ));
+                }
+                let origin = RetainedOrigin::Generated(artifact.clone());
+                if self
+                    .retained
+                    .as_ref()
+                    .is_none_or(|retained| retained.asset != *asset || retained.origin != origin)
+                {
+                    self.retained = None;
+                    let source = open_generated_picture(
+                        &self.generated,
+                        &self.document,
+                        artifact,
+                        cancelled,
+                    )?;
+                    self.retained = Some(RetainedSource {
+                        asset: asset.clone(),
+                        origin,
+                        source,
+                    });
+                }
+                let retained = self.retained.as_mut().expect("generated source admitted");
+                let id = sample
+                    .picture
+                    .select_source_frame(retained.source.index().index())?
+                    .identity;
+                let decoded = retained.source.frame(id, FRAME_TIMEOUT, cancelled)?;
+                let frame = source_to_render_frame(decoded, retained.source.info())?;
+                self.generated.check_live(cancelled)?;
+                PreparedPicture::Generated {
+                    artifact: artifact.clone(),
+                    id,
+                    frame,
+                }
+            }
+            Picture::Accepted {
+                asset,
+                generated: None,
+                ..
+            } => {
                 return Err(ProjectPictureError::AcceptedUnsupported(asset.clone()));
             }
         };
@@ -254,11 +332,9 @@ impl ProjectPictureSession {
             .as_ref()
             .is_some_and(|cached| &cached.asset == asset)
         {
-            if self
-                .retained
-                .as_ref()
-                .is_none_or(|cached| &cached.qualification != qualification)
-            {
+            if self.retained.as_ref().is_none_or(|cached| {
+                cached.origin != RetainedOrigin::Original(qualification.clone())
+            }) {
                 return Err(evidence("retained decoder qualification differs"));
             }
             return Ok(self.retained.as_mut().expect("matching retained source"));
@@ -329,7 +405,7 @@ impl ProjectPictureSession {
         check_cancel(cancelled)?;
         self.retained = Some(RetainedSource {
             asset: asset.clone(),
-            qualification: qualification.clone(),
+            origin: RetainedOrigin::Original(qualification.clone()),
             source,
         });
         Ok(self.retained.as_mut().expect("source admitted"))

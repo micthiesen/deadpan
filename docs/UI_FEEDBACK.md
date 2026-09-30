@@ -11,6 +11,13 @@ The [specification](spec/DEADPAN_SPEC.md), [design targets](design/README.md) an
 
 ## Current status
 
+The [Generated picture qualification](qualification/generated-pictures-2026-09-29.md)
+adds a separate replay of a real accepted, relocated canonical bundle. It also
+catches footer text covered by later panes despite valid paint clips. Inactive
+zero-height panels retain their widget IDs without frame margins or separators;
+the visibility helper now checks later opaque rectangle interiors. This is a
+bounded occlusion check, so image inspection remains required.
+
 The [measured gain waveform](qualification/gain-waveform-2026-09-28.md) adds
 real qualified PCM extrema to the gain replay. The signed stereo reference
 retains the committed owner across gain edits and Before/Draft audition.
@@ -350,6 +357,7 @@ the real app. The initial viewport is 1280×820 points at 1×. The code lives in
 | `room-tone` | Copies an Original range with v/motions/y, opens the captured Hold's source-range sheet, edits exact native samples, prepares and auditions without history, then explicitly applies or cancels. Checks silence/undo, missing and stale targets, superseded range preparation, native text/IME and minimum-size paint clips. AccessKit Focus reveals saved Hold gain controls; :gain/Tab/Escape preserve room tone and history. Compact assertions cover ≥140-point picture, complete control hits, stable overlay background, native scale/ID transitions and exact paused-sample resume. The final compact run passes 221 checks plus the audit on `78395620`. Source delivery is explicitly injected; no device or listening claim. |
 | `gain` | Counted/absolute beat gain and true mute, captured exact trim/envelope/key/mute fields, coalesced proposals, Before/Draft at retained samples, stale/faulted updates, Apply/undo, Cancel picture continuity and native text/IME. Real canonical PCM supplies the signed stereo overview; edits keep that measurement, explicit Retry re-admits sources, and stale errors cannot replace it. Full Tab/Shift+Tab circuits check paint/hit clips at both sizes; wide exact fields stay beside their curve. The final waveform run passes 291 checks and its captures were reviewed. Comparison delivery and a labelled failure are injected; no device or listening claim. |
 | `retime` | Opens/cancels speed entry by pointer, checks the resolved-duration preview, creates a Preserve Retime by command, adjusts the same stage to tape pitch through ordinary text editing, explicitly nests another stage, undoes all three edits and confirms Original context stays unchanged. Uses real project history and picture preparation; it does not measure acoustic quality. |
+| `generated-picture` | Requires an explicit `--project /absolute/accepted.deadpan` exported by the real bundle integration test. Opens through the production project service and checks all 30 sampled frames, exact RGBA/PTS, retained framing, keyboard navigation, both viewport sizes, visible provider/duration and unobscured mode/focus. Release performance separately measures cold admission and 120 warm navigation inputs. The synthetic 4×2 compatibility fixture does not qualify full-size performance, app inference/acceptance, audio or export. Ordinary replay reports this scenario as skipped without the explicit fixture. |
 | `nested-pause` | Seeds two framed Sequence groups with typed store commands, reopens the actual project, navigates to frame 17 with keys, inserts `:hold 11f`, and checks the nested Hold, exact freeze, retained child crop, live ancestor scopes and cursor. Undo/redo compares nodes and audio bindings. Enter drills through breadcrumbs to the Hold; Inspector Enter changes its duration, history preserves scope, Camera commits only its framing, Backspace selects exited groups, and a group-edge pause fails without mutation. Minimum-size checks cover empty Sounds focus, strict parent-action text/hit clips and pointer/keyboard navigation preserving revision, scope, selection and both cursors. The final compact run passes 73 checks plus the audit on `78395620`. |
 
 The trace is bounded to 6,000 frames per scenario, with 15-second waits for real

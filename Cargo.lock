@@ -866,6 +866,7 @@ dependencies = [
  "deadpan-audio",
  "deadpan-core",
  "deadpan-media",
+ "deadpan-models",
  "deadpan-plan",
  "deadpan-render",
  "deadpan-source",
@@ -944,6 +945,7 @@ version = "0.1.0"
 dependencies = [
  "blake3",
  "cc",
+ "deadpan-cli",
  "deadpan-core",
  "deadpan-jobs",
  "deadpan-media",

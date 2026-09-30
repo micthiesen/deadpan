@@ -548,7 +548,13 @@ impl DeadpanApp {
             .show_separator_line(true)
             .frame(style::panel());
         let Some(mut draft) = self.gain.take() else {
-            panel.exact_size(0.0).show(ui, |_| {});
+            // Keep its widget ID without letting frame margins move the
+            // remaining workspace over the footer when no draft is open.
+            panel
+                .exact_size(0.0)
+                .frame(egui::Frame::NONE)
+                .show_separator_line(false)
+                .show(ui, |_| {});
             return;
         };
         let mut action = draft.key.take();

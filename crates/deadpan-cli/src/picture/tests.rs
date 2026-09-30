@@ -192,6 +192,7 @@ fn decoded(picture: &PreparedProjectPicture) -> (&SourceFrameId, &Rgba8Frame) {
             (id, frame)
         }
         PreparedPicture::Background => panic!("expected decoded picture"),
+        PreparedPicture::Generated { .. } => panic!("expected Original picture"),
     }
 }
 

@@ -1,0 +1,26 @@
+{
+  "command": [
+    "cargo",
+    "run",
+    "-p",
+    "deadpan-app",
+    "--features",
+    "ui-harness",
+    "--locked",
+    "--",
+    "--ui-check",
+    "--scenario",
+    "room-tone",
+    "--output",
+    "/tmp/deadpan-generated-pictures-smyys035/visual-room-tone-final",
+    "--mode",
+    "visual"
+  ],
+  "started": "2026-09-30T00:47:38.709799+00:00",
+  "base_commit": "32e0d4efa574117bf57940b54646cf03952b79ba",
+  "diff_sha256": "9112a02831ee48556d302c9e97e086ec780158dcfc75880104fdb1dae419f0a2",
+  "source_manifest_sha256": "c959e799c27a41ce8a51a07db3c7b15021d606602a8718f04e7f52f003f92b33",
+  "pid": 88212,
+  "exit_code": 1,
+  "seconds": 21.34111445909366
+}

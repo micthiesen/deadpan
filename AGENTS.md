@@ -107,7 +107,10 @@ wrapped layout. See [footer qualification](docs/qualification/footer-layout-2026
 Measure changing bottom-panel text before its first paint, including wrapping
 after resize; reuse that text geometry when drawing it. Keep empty structural
 panels in the UI tree when omitting them would shift automatic widget IDs.
-Visibility checks must inspect actual paint clips as well as accessible controls.
+Zero-height inactive panels use no frame margins or separator; decoration can
+expand the remaining parent space and let later panes overpaint the footer.
+Visibility checks inspect actual paint clips and later opaque backgrounds as
+well as accessible controls.
 
 Audition uses the device's reported content intervals, never producer
 progress as the heard clock. Retain past and future delivery reports; a terminal
@@ -186,8 +189,17 @@ revalidate it. Keep project frame/rate separate from original ordinal/PTS,
 preserve odd committed canvases and carry provider-to-root/captured framing
 unchanged through the shared native preview adapters. Authored Background/Blank
 clears both renderer targets to opaque black; never use it for missing media.
-Accepted generated media, Still and HDR currently fail explicitly. Preparation
-is off the UI/audio threads and does not provide final-render isolation,
+Schema-3 Generated Holds use the shared cold reader and revocable generated
+handle. Verify all six retained objects, strict durable provenance and both
+asset records; freshly decode the sampled master against its complete canonical
+interpretation, per-frame PTS and observed terminal duration. Carry the effective
+artifact through Repeat gaps and overrides instead of looking up a current
+candidate. Current request relevance, selection and allocation revision cannot
+invalidate an accepted historical picture. Native cache identity includes the
+session, artifact, both asset records and color policy; revision/framing changes
+alone preserve it. Check handle liveness around warm and cold preparation.
+Legacy Accepted providers without this evidence, Still and HDR fail explicitly.
+Preparation is off the UI/audio threads and does not provide final-render isolation,
 encoder geometry normalization, complete muxing or verified publication.
 
 Every persisted edit, undo, and redo gets a never-reused revision ID. Core inverse patches can restore exact fixture identity; the store rebases them onto fresh revisions to prevent stale commands becoming valid after undo. Store writes use one transaction for the revision, history, and cursor. Keep `.writer.lock` held for the writable store lifetime; read-only inspection and dry runs may coexist. Take live database snapshots through SQLite's backup API, never copy only an open main database file.

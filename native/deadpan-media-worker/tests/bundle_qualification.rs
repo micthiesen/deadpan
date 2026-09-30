@@ -1,13 +1,18 @@
 use std::collections::BTreeMap;
 use std::fs;
 use std::io::Read;
+use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
 
+use deadpan_cli::picture::{
+    PreparedPicture, PreparedProjectPicture, ProjectPictureError, ProjectPictureSession,
+};
 use deadpan_core::{
-    AssetId, BeatNode, ColorPolicy, Command, CommandRequest, FrameDuration, FrameRate, HoldAudio,
-    HoldRecipe, HoldVideo, NodeId, NodeKind, PresentationBasis, ProjectDocument, ProjectId,
-    RevisionId, Subtree,
+    AssetId, BeatNode, CapturedCanvas, CapturedFit, CapturedFraming, ColorPolicy, Command,
+    CommandRequest, ExactRatio, FrameDuration, FrameRate, FramingPose, GeneratedArtifact,
+    GeneratedObjectRef, HoldAudio, HoldRecipe, HoldVideo, NodeId, NodeKind, PresentationBasis,
+    ProjectDocument, ProjectFrame, ProjectId, RevisionId, SourceFrameId, SourceTimeBase, Subtree,
 };
 use deadpan_jobs::artifact::ArtifactWorkspace;
 use deadpan_jobs::{
@@ -24,7 +29,7 @@ use deadpan_models::{
     QualificationLimits, RetainedConditioning, SelectedBridgeProvider, capture_bridge_conditioning,
     qualify_bridge,
 };
-use deadpan_store::generated_media::GeneratedMediaLimits;
+use deadpan_store::generated_media::{GeneratedMediaError, GeneratedMediaLimits};
 use deadpan_store::generation::{
     ContextObservation, GenerationRequestInput, RelevanceObservation, RelevancePlan,
 };
@@ -502,6 +507,232 @@ fn host_selected_capability_rejects_mismatched_or_non_nearest_plans_before_io() 
     }
 }
 
+fn generated_picture_context() -> CapturedFraming {
+    CapturedFraming::new(vec![CapturedCanvas {
+        width: 960,
+        height: 540,
+        fit: CapturedFit::Fill,
+        layers: vec![
+            Some(FramingPose {
+                scale: ExactRatio::integer(2),
+                ..Default::default()
+            }),
+            None,
+        ],
+    }])
+    .unwrap()
+}
+
+fn expected_generated_rgba(ordinal: u32) -> [u8; 32] {
+    assert!(ordinal < 30);
+    // The retained fixture has 25 native frames. Its 30 sampled interior
+    // positions are (ordinal + 1) * 24 / 31. Compute the documented RGB
+    // fixture pattern and encoded-RGB half-up interpolation independently of
+    // the production sampling map, converter and picture decoder.
+    let position = (ordinal + 1) * 24;
+    let lower = position / 31;
+    let remainder = position % 31;
+    let mut expected = [0; 32];
+    for y in 0..2_u32 {
+        for x in 0..4_u32 {
+            let native_pixel = |frame| {
+                [
+                    (17 * frame + 31 * x + 7 * y + 3) % 256,
+                    (29 * frame + 5 * x + 47 * y + 11) % 256,
+                    (43 * frame + 13 * x + 19 * y + 23) % 256,
+                ]
+            };
+            let left = native_pixel(lower);
+            let right = native_pixel(lower + 1);
+            let offset = usize::try_from((y * 4 + x) * 4).unwrap();
+            for channel in 0..3 {
+                let weighted = left[channel] * (31 - remainder) + right[channel] * remainder;
+                expected[offset + channel] = u8::try_from((weighted + 15) / 31).unwrap();
+            }
+            expected[offset + 3] = 255;
+        }
+    }
+    expected
+}
+
+fn assert_generated_picture(
+    picture: &PreparedProjectPicture,
+    revision: &RevisionId,
+    expected_artifact: &GeneratedArtifact,
+    ordinal: u32,
+) {
+    assert_eq!(picture.project_id, ProjectId::new("project").unwrap());
+    assert_eq!(&picture.revision_id, revision);
+    assert_eq!(picture.project_frame, ProjectFrame(i64::from(ordinal)));
+    assert_eq!(picture.canvas, [1920, 1080]);
+    assert_eq!(picture.frame_rate, FrameRate::new(30_000, 1_001).unwrap());
+    assert_eq!(
+        picture.picture_context.as_deref(),
+        Some(&generated_picture_context())
+    );
+    let PreparedPicture::Generated {
+        artifact,
+        id,
+        frame,
+    } = &picture.picture
+    else {
+        panic!("accepted Generated Hold must prepare its sampled master")
+    };
+    assert_eq!(artifact.as_ref(), expected_artifact);
+    assert_eq!(*id, SourceFrameId(u64::from(ordinal)));
+    assert_eq!((frame.metadata().width, frame.metadata().height), (4, 2));
+    assert_eq!(frame.metadata().row_stride_bytes, 16);
+    assert_eq!(
+        frame.metadata().pts.time_base,
+        SourceTimeBase::new(1, 1000).unwrap()
+    );
+    assert_eq!(
+        frame.metadata().pts.ticks,
+        (i64::from(ordinal) * 1_001_000 + 15_000) / 30_000
+    );
+    assert_eq!(frame.bytes(), expected_generated_rgba(ordinal));
+}
+
+fn prepare_generated_picture(
+    session: &mut ProjectPictureSession,
+    artifact: &GeneratedArtifact,
+    ordinal: u32,
+) -> PreparedProjectPicture {
+    let picture = session
+        .prepare(ProjectFrame(i64::from(ordinal)), &AtomicBool::new(false))
+        .unwrap();
+    assert_generated_picture(&picture, session.revision(), artifact, ordinal);
+    picture
+}
+
+fn open_pictures(package: &Path, revision: &RevisionId) -> ProjectPictureSession {
+    ProjectPictureSession::open_revision(package, revision, None, &AtomicBool::new(false)).unwrap()
+}
+
+fn retain_generated_picture_fixture(
+    package: &Path,
+    reverted_revision: &RevisionId,
+    artifact: &GeneratedArtifact,
+) {
+    let Some(destination) = std::env::var_os("DEADPAN_GENERATED_PICTURE_FIXTURE_ROOT") else {
+        return;
+    };
+    let destination = PathBuf::from(destination);
+    assert!(
+        destination.is_absolute(),
+        "fixture scratch destination must be absolute"
+    );
+    let parent = destination.parent().unwrap().canonicalize().unwrap();
+    let temporary = std::env::temp_dir().canonicalize().unwrap();
+    let system_temporary = Path::new("/tmp").canonicalize().unwrap();
+    assert!(
+        parent.starts_with(&temporary) || parent.starts_with(&system_temporary),
+        "fixture retention is restricted to temporary scratch directories"
+    );
+    let destination = parent.join(destination.file_name().unwrap());
+    fs::create_dir(&destination).expect("fixture scratch destination must be new");
+
+    // Restore through durable history. Never fabricate an accepted document or
+    // copy a live SQLite main file without its WAL. All other sessions have
+    // closed before this helper; close these final readers before relocation.
+    let mut store = ProjectStore::open(package, AccessMode::ReadWrite).unwrap();
+    let revision = RevisionId::new("ui-generated-ready").unwrap();
+    let relevance = fixture_relevance(&store, reverted_revision, &revision);
+    store
+        .undo_reconciled(reverted_revision, revision.clone(), &relevance)
+        .unwrap();
+    let document = store.snapshot().unwrap();
+    let mut pictures = open_pictures(package, &revision);
+    assert_eq!(pictures.range().end(), ProjectFrame(30));
+    for ordinal in 0..30 {
+        prepare_generated_picture(&mut pictures, artifact, ordinal);
+    }
+    drop(pictures);
+    drop(store);
+
+    let retained_package = destination.join("accepted.deadpan");
+    fs::rename(package, &retained_package).expect("move the closed qualified fixture package");
+    let expectations = json!({
+        "schema_version": 1,
+        "fixture": "rgb25_24 sampled to 30 frames at 30000/1001",
+        "project_id": document.project_id(),
+        "revision_id": revision,
+        "artifact": artifact,
+        "picture_context": generated_picture_context(),
+        "frames": (0..30_u32).map(|ordinal| json!({
+            "ordinal": ordinal,
+            "pts": (i64::from(ordinal) * 1_001_000 + 15_000) / 30_000,
+            "rgba": expected_generated_rgba(ordinal),
+        })).collect::<Vec<_>>(),
+    });
+    fs::write(
+        destination.join("generated-picture-fixture.json"),
+        serde_json::to_vec_pretty(&expectations).unwrap(),
+    )
+    .unwrap();
+    println!(
+        "Retained accepted Generated picture fixture: {}",
+        retained_package.display()
+    );
+}
+
+fn assert_cold_generated_dependencies(
+    package: &Path,
+    revision: &RevisionId,
+    artifact: &GeneratedArtifact,
+    retained: &mut ProjectPictureSession,
+    objects: &[GeneratedObjectRef],
+) {
+    let scratch = tempfile::tempdir().unwrap();
+    for (index, object) in objects.iter().enumerate() {
+        let path = package
+            .join("Media/Generated")
+            .join(format!("blake3-{}", object.content().digest()));
+        let original_bytes = fs::read(&path).unwrap();
+        let saved = scratch.path().join(format!("dependency-{index}"));
+        fs::rename(&path, &saved).unwrap();
+        let mut cold = open_pictures(package, revision);
+        let error = cold
+            .prepare(ProjectFrame(0), &AtomicBool::new(false))
+            .expect_err("cold admission must require every retained object");
+        assert!(
+            matches!(
+                &error,
+                ProjectPictureError::GeneratedObject(GeneratedMediaError::MissingObject(content))
+                    if content == object.content()
+            ),
+            "missing dependency {index}: {error:?}"
+        );
+        prepare_generated_picture(retained, artifact, 29);
+        drop(cold);
+        fs::rename(&saved, &path).unwrap();
+
+        let mut corrupted = original_bytes.clone();
+        corrupted[0] ^= 1;
+        fs::set_permissions(&path, fs::Permissions::from_mode(0o600)).unwrap();
+        fs::write(&path, corrupted).unwrap();
+        fs::set_permissions(&path, fs::Permissions::from_mode(0o444)).unwrap();
+        let mut cold = open_pictures(package, revision);
+        let error = cold
+            .prepare(ProjectFrame(0), &AtomicBool::new(false))
+            .expect_err("cold admission must rehash every retained object");
+        assert!(
+            matches!(
+                &error,
+                ProjectPictureError::GeneratedObject(GeneratedMediaError::HashMismatch {
+                    expected, ..
+                }) if expected == object.content()
+            ),
+            "corrupt dependency {index}: {error:?}"
+        );
+        prepare_generated_picture(retained, artifact, 0);
+        drop(cold);
+        fs::set_permissions(&path, fs::Permissions::from_mode(0o600)).unwrap();
+        fs::write(&path, original_bytes).unwrap();
+        fs::set_permissions(&path, fs::Permissions::from_mode(0o444)).unwrap();
+    }
+}
+
 fn hold_document() -> ProjectDocument {
     let document = ProjectDocument::new(
         ProjectId::new("project").unwrap(),
@@ -533,7 +764,7 @@ fn hold_document() -> ProjectDocument {
                             "Pause",
                             HoldRecipe {
                                 duration: FrameDuration::new(30).unwrap(),
-                                picture_context: None,
+                                picture_context: Some(generated_picture_context()),
                                 video: HoldVideo::Background,
                                 audio: HoldAudio::Silence,
                             },
@@ -736,6 +967,7 @@ fn real_bundle_acceptance_is_explicit_durable_and_reversible_after_relocation() 
     assert_eq!(generation.artifact.sampled_object, sampled_ref);
     assert_eq!(generation.artifact.native_object, native_ref);
     assert_eq!(generation.artifact.provenance, provenance_ref);
+    let artifact = generation.artifact.clone();
     assert_eq!(
         accepted.assets()[&accept.native_asset].video,
         Some(native_span)
@@ -744,12 +976,26 @@ fn real_bundle_acceptance_is_explicit_durable_and_reversible_after_relocation() 
         accepted.assets()[&accept.sampled_asset].video,
         Some(sampled_span)
     );
+    // Drop the converter's private masters before reading through the project.
+    // Accepted playback must depend only on the retained package and recipe.
+    drop((native, sampled, provenance));
+    let mut pictures = open_pictures(&package, accepted.revision_id());
+    let captured = prepare_generated_picture(&mut pictures, &artifact, 7);
+    for ordinal in 0..30 {
+        prepare_generated_picture(&mut pictures, &artifact, ordinal);
+    }
+    assert!(matches!(
+        pictures.prepare(ProjectFrame(30), &AtomicBool::new(false)),
+        Err(ProjectPictureError::FrameOutOfRange { .. })
+    ));
+    drop(pictures);
     drop(store);
     let relocated = tempfile::tempdir().unwrap();
     let relocated_package = relocated.path().join("retained.deadpan");
     fs::rename(&package, &relocated_package).unwrap();
     fs::remove_dir_all(fixture.directory.path().join("inputs")).unwrap();
     fs::remove_dir_all(fixture.directory.path().join("outputs")).unwrap();
+    drop(fixture);
     let mut reopened = ProjectStore::open(&relocated_package, AccessMode::ReadWrite).unwrap();
     let selected = reopened
         .selected_generation_bundle(&binding.identity.request_id)
@@ -758,26 +1004,94 @@ fn real_bundle_acceptance_is_explicit_durable_and_reversible_after_relocation() 
     assert_eq!(selected.identity, binding.identity);
     assert_eq!(selected.receipt, receipt);
     assert_eq!(reopened.snapshot().unwrap(), accepted);
+    let mut historical = open_pictures(&relocated_package, accepted.revision_id());
+    for ordinal in [0, 7, 29] {
+        prepare_generated_picture(&mut historical, &artifact, ordinal);
+    }
     let undo_revision = RevisionId::new("undo-accept").unwrap();
     let relevance = fixture_relevance(&reopened, accepted.revision_id(), &undo_revision);
     reopened
         .undo_reconciled(accepted.revision_id(), undo_revision.clone(), &relevance)
         .unwrap();
     assert!(reopened.snapshot().unwrap().assets().is_empty());
+    let mut undone = open_pictures(&relocated_package, &undo_revision);
+    assert!(matches!(
+        undone
+            .prepare(ProjectFrame(7), &AtomicBool::new(false))
+            .unwrap()
+            .picture,
+        PreparedPicture::Background
+    ));
+    drop(undone);
+    prepare_generated_picture(&mut historical, &artifact, 7);
     let redo_revision = RevisionId::new("redo-accept").unwrap();
     let relevance = fixture_relevance(&reopened, &undo_revision, &redo_revision);
     reopened
         .redo_reconciled(&undo_revision, redo_revision.clone(), &relevance)
         .unwrap();
     assert_eq!(reopened.snapshot().unwrap().assets(), accepted.assets());
-    let reverted_revision = RevisionId::new("reverted").unwrap();
-    let relevance = fixture_relevance(&reopened, &redo_revision, &reverted_revision);
+    let mut redone = open_pictures(&relocated_package, &redo_revision);
+    prepare_generated_picture(&mut redone, &artifact, 29);
+    drop(redone);
+
+    let shorter_revision = RevisionId::new("shorter-accepted-prefix").unwrap();
+    let relevance = fixture_relevance(&reopened, &redo_revision, &shorter_revision);
     reopened
         .commit_reconciled(
             &CommandRequest {
                 project_id: binding.project_id.clone(),
                 expected_revision: redo_revision,
-                new_revision: reverted_revision,
+                new_revision: shorter_revision.clone(),
+                command: Command::SetHoldDuration {
+                    node: binding.target.hold_id.clone(),
+                    duration: FrameDuration::new(12).unwrap(),
+                },
+            },
+            &relevance,
+        )
+        .unwrap();
+    assert!(reopened.current_generation_requests().unwrap().is_empty());
+    let mut shortened = open_pictures(&relocated_package, &shorter_revision);
+    assert_eq!(shortened.range().end(), ProjectFrame(12));
+    for ordinal in 0..12 {
+        prepare_generated_picture(&mut shortened, &artifact, ordinal);
+    }
+    assert!(matches!(
+        shortened.prepare(ProjectFrame(12), &AtomicBool::new(false)),
+        Err(ProjectPictureError::FrameOutOfRange { .. })
+    ));
+    drop(shortened);
+    prepare_generated_picture(&mut historical, &artifact, 29);
+
+    let extended_revision = RevisionId::new("restored-accepted-prefix").unwrap();
+    let relevance = fixture_relevance(&reopened, &shorter_revision, &extended_revision);
+    reopened
+        .commit_reconciled(
+            &CommandRequest {
+                project_id: binding.project_id.clone(),
+                expected_revision: shorter_revision,
+                new_revision: extended_revision.clone(),
+                command: Command::SetHoldDuration {
+                    node: binding.target.hold_id.clone(),
+                    duration: FrameDuration::new(30).unwrap(),
+                },
+            },
+            &relevance,
+        )
+        .unwrap();
+    let mut extended = open_pictures(&relocated_package, &extended_revision);
+    for ordinal in [0, 11, 12, 29] {
+        prepare_generated_picture(&mut extended, &artifact, ordinal);
+    }
+    drop(extended);
+    let reverted_revision = RevisionId::new("reverted").unwrap();
+    let relevance = fixture_relevance(&reopened, &extended_revision, &reverted_revision);
+    reopened
+        .commit_reconciled(
+            &CommandRequest {
+                project_id: binding.project_id.clone(),
+                expected_revision: extended_revision,
+                new_revision: reverted_revision.clone(),
                 command: Command::RevertGeneratedHold {
                     node: binding.target.hold_id.clone(),
                 },
@@ -790,6 +1104,26 @@ fn real_bundle_acceptance_is_explicit_durable_and_reversible_after_relocation() 
         unreachable!()
     };
     assert_eq!(recipe.video, HoldVideo::Background);
+    let mut fallback = open_pictures(&relocated_package, &reverted_revision);
+    let fallback_picture = fallback
+        .prepare(ProjectFrame(7), &AtomicBool::new(false))
+        .unwrap();
+    assert!(matches!(
+        &fallback_picture.picture,
+        PreparedPicture::Background
+    ));
+    assert_eq!(
+        fallback_picture.picture_context.as_deref(),
+        Some(&generated_picture_context())
+    );
+    drop(fallback);
+    prepare_generated_picture(&mut historical, &artifact, 7);
+    assert_generated_picture(&captured, accepted.revision_id(), &artifact, 7);
+    // Cold historical admission also succeeds after the request became stale
+    // and the current Hold returned to its deterministic fallback.
+    let mut cold_history = open_pictures(&relocated_package, accepted.revision_id());
+    prepare_generated_picture(&mut cold_history, &artifact, 29);
+    drop(cold_history);
     for object in [&native_ref, &sampled_ref, &provenance_ref]
         .into_iter()
         .chain(retained_refs.iter())
@@ -805,6 +1139,26 @@ fn real_bundle_acceptance_is_explicit_durable_and_reversible_after_relocation() 
             object.content().digest()
         );
     }
+    let objects = [native_ref, sampled_ref, provenance_ref]
+        .into_iter()
+        .chain(retained_refs)
+        .collect::<Vec<_>>();
+    assert_eq!(objects.len(), 6);
+    assert_cold_generated_dependencies(
+        &relocated_package,
+        accepted.revision_id(),
+        &artifact,
+        &mut historical,
+        &objects,
+    );
+    let mut restored_cold = open_pictures(&relocated_package, accepted.revision_id());
+    prepare_generated_picture(&mut restored_cold, &artifact, 29);
+    drop(restored_cold);
+    drop(reopened);
+    prepare_generated_picture(&mut historical, &artifact, 29);
+    drop(historical);
+    assert_generated_picture(&captured, accepted.revision_id(), &artifact, 7);
+    retain_generated_picture_fixture(&relocated_package, &reverted_revision, &artifact);
 }
 
 fn fixture_relevance(store: &ProjectStore, from: &RevisionId, to: &RevisionId) -> RelevancePlan {

@@ -4,6 +4,7 @@ mod comparison;
 pub(crate) mod gpu;
 pub(crate) mod report;
 
+use std::io::Read;
 use std::path::{Path, PathBuf};
 
 use report::{Check, Report, RunMode, ScenarioReport};
@@ -27,6 +28,7 @@ pub(crate) const SCENARIOS: &[&str] = &[
     "room-tone",
     "gain",
     "retime",
+    "generated-picture",
 ];
 
 pub(crate) struct Options {
@@ -37,6 +39,7 @@ pub(crate) struct Options {
     pub hz: u32,
     pub baseline: Option<PathBuf>,
     pub retain_projects: bool,
+    pub project: Option<PathBuf>,
 }
 
 impl Options {
@@ -48,6 +51,7 @@ impl Options {
         let mut hz = 60;
         let mut baseline = None;
         let mut retain_projects = false;
+        let mut project = None;
         let mut args = arguments.iter();
         while let Some(flag) = args.next() {
             if flag == "--retain-projects" {
@@ -74,6 +78,7 @@ impl Options {
                 }
                 "--kestrel-source" => kestrel_source = Some(PathBuf::from(value)),
                 "--baseline" => baseline = Some(PathBuf::from(value)),
+                "--project" if project.is_none() => project = Some(PathBuf::from(value)),
                 "--hz" => {
                     hz = value
                         .parse()
@@ -87,6 +92,25 @@ impl Options {
         if baseline.is_some() && mode != RunMode::Visual {
             return Err("Baseline comparison requires visual mode".into());
         }
+        if project.is_some() && scenario.as_deref() != Some("generated-picture") {
+            return Err("--project is reserved for --scenario generated-picture".into());
+        }
+        if scenario.as_deref() == Some("generated-picture") && project.is_none() {
+            return Err("Generated picture replay requires an explicit --project fixture".into());
+        }
+        if project.as_ref().is_some_and(|path| {
+            !path.is_absolute()
+                || path
+                    .extension()
+                    .is_none_or(|extension| extension != "deadpan")
+        }) {
+            return Err("--project must name an absolute .deadpan fixture package".into());
+        }
+        if project.is_some() && retain_projects {
+            return Err(
+                "The explicit --project fixture is already retained; omit --retain-projects".into(),
+            );
+        }
         Ok(Self {
             output: output.ok_or("Specify a new --output directory")?,
             mode,
@@ -95,6 +119,7 @@ impl Options {
             hz,
             baseline,
             retain_projects,
+            project,
         })
     }
 
@@ -147,7 +172,7 @@ fn binary_sha256() -> Option<String> {
 pub(crate) fn entry(arguments: &[String]) -> Result<(), String> {
     if arguments == ["--help"] {
         println!(
-            "Usage: deadpan-app --ui-check --output NEW_DIRECTORY [--mode visual|performance] [--scenario NAME] [--hz 60|120] [--kestrel-source Shortcuts.swift] [--baseline PRIOR_DIRECTORY] [--retain-projects]\n\nScenarios: {}\nVisual mode writes report.json, report.html and actual offscreen PNG frames.\nPerformance mode submits full UI + picture GPU work without screenshot readback.\nUse --release for performance. Projects use private temporary storage by default.\n--retain-projects keeps each scenario's Documents root under output/projects/NAME for native QA after replay exits.\nNative pickers are scripted; audio output and the desktop are not opened.",
+            "Usage: deadpan-app --ui-check --output NEW_DIRECTORY [--mode visual|performance] [--scenario NAME] [--hz 60|120] [--kestrel-source Shortcuts.swift] [--baseline PRIOR_DIRECTORY] [--retain-projects]\n\nScenarios: {}\nVisual mode writes report.json, report.html and actual offscreen PNG frames.\nPerformance mode submits full UI + picture GPU work without screenshot readback.\nUse --release for performance. Projects use private temporary storage by default.\n--retain-projects keeps each scenario's Documents root under output/projects/NAME for native QA after replay exits.\nGenerated picture replay requires --scenario generated-picture --project /absolute/accepted.deadpan, exported by the real bundle qualification test with DEADPAN_GENERATED_PICTURE_FIXTURE_ROOT. It opens the generic compatibility fixture without editing it.\nNative pickers are scripted; audio output and the desktop are not opened.",
             SCENARIOS.join(", ")
         );
         return Ok(());
@@ -164,13 +189,39 @@ pub(crate) fn entry(arguments: &[String]) -> Result<(), String> {
             options.output.display()
         )
     })?;
-    let fixture = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../native/deadpan-source/tests/fixtures/cfr-bframes.mp4")
+    let fixture = options
+        .project
+        .clone()
+        .unwrap_or_else(|| {
+            Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("../../native/deadpan-source/tests/fixtures/cfr-bframes.mp4")
+        })
         .canonicalize()
         .map_err(|error| format!("Resolve replay fixture: {error}"))?;
-    let fixture_hash = std::fs::read(&fixture)
-        .map(|bytes| sha256(&bytes))
-        .map_err(|error| error.to_string())?;
+    let fixture_identity = if options.project.is_some() {
+        fixture
+            .parent()
+            .ok_or("Fixture package has no parent")?
+            .join("generated-picture-fixture.json")
+    } else {
+        fixture.clone()
+    };
+    let fixture_hash = if options.project.is_some() {
+        let mut bytes = Vec::new();
+        std::fs::File::open(&fixture_identity)
+            .map_err(|error| error.to_string())?
+            .take(128 * 1024 + 1)
+            .read_to_end(&mut bytes)
+            .map_err(|error| error.to_string())?;
+        if bytes.len() > 128 * 1024 {
+            return Err("Generated fixture expectations exceed 128 KiB".into());
+        }
+        sha256(&bytes)
+    } else {
+        std::fs::read(&fixture_identity)
+            .map(|bytes| sha256(&bytes))
+            .map_err(|error| error.to_string())?
+    };
     let mut report = Report::new(
         options.mode,
         json!({
@@ -185,12 +236,14 @@ pub(crate) fn entry(arguments: &[String]) -> Result<(), String> {
             "hardware": command_output("sysctl", &["-n", "machdep.cpu.brand_string"]),
             "os": command_output("sw_vers", &["-productVersion"]),
             "rust": command_output("rustc", &["--version"]),
-            "fixture": "cfr-bframes.mp4", "fixture_sha256": fixture_hash,
+            "fixture": if options.project.is_some() { "accepted Generated compatibility project" } else { "cfr-bframes.mp4" },
+            "fixture_identity_file": fixture_identity,
+            "fixture_sha256": fixture_hash,
             "replay_hz": options.hz, "viewport_points": [1280,820],
             "physical_display_measured": false, "gpu_readback_in_timing_run": false,
             "wait_strategy": "egui_repaint_callback_v1",
             "picture_worker_timing": "request_start_finish_publication_receipt_v1",
-            "cache_state": "first import/index cold, subsequent operations warm; OS file cache uncontrolled",
+            "cache_state": if options.project.is_some() { "first six-object generated admission/index cold, subsequent navigation warm; OS file cache uncontrolled" } else { "first import/index cold, subsequent operations warm; OS file cache uncontrolled" },
             "power_thermal_state": "uncontrolled; compare on the same idle machine and power mode",
         }),
     );
@@ -218,6 +271,12 @@ pub(crate) fn entry(arguments: &[String]) -> Result<(), String> {
             .as_deref()
             .is_none_or(|selected| selected == **name)
     }) {
+        if *name == "generated-picture" && options.project.is_none() {
+            let mut skipped = ScenarioReport::new(*name);
+            skipped.skipped.push("Requires explicit --scenario generated-picture --project and the real bundle qualification fixture; ordinary replay does not fabricate accepted evidence.".into());
+            report.scenarios.push(skipped);
+            continue;
+        }
         let scenario = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             crate::preview::harness::run(name, &options, &fixture)
         }))
@@ -273,6 +332,67 @@ pub(crate) fn entry(arguments: &[String]) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn generated_picture_requires_a_dedicated_explicit_project() {
+        let arguments = |tail: &[&str]| {
+            ["--output", "/tmp/example"]
+                .into_iter()
+                .chain(tail.iter().copied())
+                .map(str::to_owned)
+                .collect::<Vec<_>>()
+        };
+        let valid = Options::parse(&arguments(&[
+            "--scenario",
+            "generated-picture",
+            "--project",
+            "/tmp/fixture/accepted.deadpan",
+        ]))
+        .unwrap();
+        assert_eq!(
+            valid.project,
+            Some(PathBuf::from("/tmp/fixture/accepted.deadpan"))
+        );
+        for invalid in [
+            vec!["--scenario", "generated-picture"],
+            vec!["--project", "/tmp/fixture/accepted.deadpan"],
+            vec![
+                "--scenario",
+                "workspace",
+                "--project",
+                "/tmp/fixture/accepted.deadpan",
+            ],
+            vec![
+                "--scenario",
+                "generated-picture",
+                "--project",
+                "relative.deadpan",
+            ],
+            vec![
+                "--scenario",
+                "generated-picture",
+                "--project",
+                "/tmp/fixture",
+            ],
+            vec![
+                "--scenario",
+                "generated-picture",
+                "--project",
+                "/tmp/fixture/accepted.deadpan",
+                "--retain-projects",
+            ],
+            vec![
+                "--scenario",
+                "generated-picture",
+                "--project",
+                "/tmp/fixture/accepted.deadpan",
+                "--project",
+                "/tmp/another.deadpan",
+            ],
+        ] {
+            assert!(Options::parse(&arguments(&invalid)).is_err(), "{invalid:?}");
+        }
+    }
+
     #[test]
     fn invalid_runs_fail_before_creating_artifacts() {
         for args in [

@@ -1,13 +1,13 @@
 use deadpan_core::{
     AssetId, CapturedFraming, EndpointPolicy, ExactRatio, FrameDuration, FramingPose,
-    IndexedSourceFrame, InstancePath, IterationId, ProjectFrame, ProjectId, RevisionId,
-    SourceFrameId, SourceFrameIndex, SourcePoint, SourceSpan, SourceTimeBase,
+    GeneratedArtifact, IndexedSourceFrame, InstancePath, IterationId, ProjectFrame, ProjectId,
+    RevisionId, SourceFrameId, SourceFrameIndex, SourcePoint, SourceSpan, SourceTimeBase,
 };
 use serde::{Serialize, Serializer};
 use std::sync::Arc;
 
-fn serialize_picture_context<S>(
-    context: &Option<Arc<CapturedFraming>>,
+fn serialize_shared<T: Serialize, S>(
+    context: &Option<Arc<T>>,
     serializer: S,
 ) -> Result<S::Ok, S::Error>
 where
@@ -40,6 +40,13 @@ pub enum Picture {
     },
     Accepted {
         asset: AssetId,
+        /// Durable identity from this exact effective Hold/gap recipe. Legacy
+        /// Accepted providers have no such authority. Kept shared across seeks.
+        #[serde(
+            skip_serializing_if = "Option::is_none",
+            serialize_with = "serialize_shared"
+        )]
+        generated: Option<Arc<GeneratedArtifact>>,
         time_base: SourceTimeBase,
         /// Exact original presentation-frame coordinate, after all retimes.
         position: ExactRatio,
@@ -125,7 +132,7 @@ pub struct PictureSample {
     pub picture: Picture,
     /// Geometry retained by an inserted Hold, independent of its provider.
     /// Arc keeps per-frame sampling from copying bounded authored context.
-    #[serde(serialize_with = "serialize_picture_context")]
+    #[serde(serialize_with = "serialize_shared")]
     pub picture_context: Option<Arc<CapturedFraming>>,
     /// Provider to root, including scopes without authored framing. A Repeat
     /// default gap has no provider node scope; consumers first apply an identity

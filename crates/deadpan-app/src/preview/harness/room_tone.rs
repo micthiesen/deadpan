@@ -504,11 +504,19 @@ fn saved_layout(d: &mut Driver<'_>, source: &SourceAudio) -> Result<(), String> 
             .ok_or("Missing root viewport")?
             .inner_rect = Some(rect);
         d.step("Paint saved room-tone inspector after resize", true)?;
-        // Real pointer scrolling is permitted if the saved source facts are
-        // below the fold; retained accessibility nodes alone prove no paint.
+        let labels = [
+            samples.as_str(),
+            "Crossfades stay inside this pause.",
+            "Room tone…  ·  :room-tone",
+            "Use silence  ·  :hold-silence",
+        ];
+        // Reveal the whole fact/action group, not just its first line.
+        // Retained accessibility nodes alone prove no paint.
         for attempt in 0..6 {
-            let paint = scenarios::text_paint_visibility(d, &samples);
-            if !paint.is_empty() && paint.iter().all(|item| item["fully_visible"] == true) {
+            if labels.iter().all(|label| {
+                let paint = scenarios::text_paint_visibility(d, label);
+                !paint.is_empty() && paint.iter().all(|item| item["fully_visible"] == true)
+            }) {
                 break;
             }
             let point = d.rect("Selected beat inspector pane")?.center() + egui::vec2(0.0, 100.0);
@@ -528,12 +536,7 @@ fn saved_layout(d: &mut Driver<'_>, source: &SourceAudio) -> Result<(), String> 
                 d.step("Saved Hold inspector scroll settles", false)?;
             }
         }
-        for label in [
-            samples.as_str(),
-            "Crossfades stay inside this pause.",
-            "Room tone…  ·  :room-tone",
-            "Use silence  ·  :hold-silence",
-        ] {
+        for label in labels {
             let paint = scenarios::text_paint_visibility(d, label);
             d.check(
                 "Saved Hold inspector paints exact source samples and room-tone actions",

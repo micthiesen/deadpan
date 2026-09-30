@@ -387,6 +387,9 @@ impl Gpu {
                 )?;
                 json!({"asset": asset, "qualification": qualification, "frame": id.0, "pts": frame.metadata().pts})
             }
+            PreparedPicture::Generated { .. } => {
+                return Err("fixture must retain Original media".into());
+            }
             PreparedPicture::Background => {
                 self.renderer.render_background(&self.target)?;
                 Value::Null

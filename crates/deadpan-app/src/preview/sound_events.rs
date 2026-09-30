@@ -344,6 +344,7 @@ impl DeadpanApp {
             // the empty Sounds pane retains a visible focus target in Beats.
             egui::Panel::bottom("workspace-placed-sounds")
                 .resizable(false)
+                .show_separator_line(false)
                 .exact_size(0.0)
                 .frame(egui::Frame::NONE)
                 .show(ui, |_| {});

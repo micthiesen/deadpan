@@ -12,6 +12,7 @@ use crate::ui_harness::{Options, gpu::Offscreen, report::*};
 
 mod edit_latency;
 mod gain;
+mod generated_picture;
 mod moment;
 mod nested_pause;
 mod original_playback;
@@ -143,6 +144,9 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
     let mut report = ScenarioReport::new(name);
     let result =
         std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| -> Result<(), String> {
+            if name == "generated-picture" {
+                generated_picture::preflight(fixture)?;
+            }
             let retained = options.retained_project_root(name)?;
             let scratch = if retained.is_none() {
                 Some(tempfile::Builder::new().prefix("deadpan-ui-").tempdir().map_err(|error| error.to_string())?)
@@ -205,7 +209,7 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                         )
                         .map_err(|e| e.to_string())?;
                         app.dialogs = Dialogs::scripted(vec![(
-                            DialogKind::CreateProject,
+                            if options.project.is_some() { DialogKind::OpenProject } else { DialogKind::CreateProject },
                             Some(fixture.to_owned()),
                         )]);
                         app.feedback.simulate_playback = true;
@@ -253,6 +257,13 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
             };
             let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                 driver.step("Initial workspace", true)?;
+                if name == "generated-picture" {
+                    driver.click("Open project  ⌘O")?;
+                    driver.wait_for("Accepted compatibility fixture opened", |app| {
+                        app.workspace.is_some() && !app.service.is_busy()
+                    })?;
+                    return generated_picture::run(&mut driver);
+                }
                 driver.click("New project  ⌘N")?;
                 driver.wait_for("Original initialized and displayed", |app| {
                     app.workspace.as_ref().is_some_and(|w| {

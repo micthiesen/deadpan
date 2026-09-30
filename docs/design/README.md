@@ -303,6 +303,15 @@ old multi-video creation flow.
 
 ## Implementation and review
 
+The [Generated picture qualification](../qualification/generated-pictures-2026-09-29.md)
+places Hold Picture/Sound policy beside Duration and keeps its duration action
+above secondary treatments. Image review exposed a footer row covered by later
+panes despite valid text clips. Inactive panels now reserve no decoration;
+the compact read-only clock row preserves a 141-point copied-Original picture.
+The accepted-media compatibility fixture still has a small minimum-size picture
+and an empty source catalog; it does not establish the final single-Original AI
+workflow. Full paint reports, failed cases and corrected captures are retained.
+
 The compact empty-Sounds increment passes scoped correctness and visual checks.
 Final source `78395620` passes 217 sound-placement, 221 room-tone and 73
 nested-pause checks, each plus the Kestrel audit. Workspace's 81 checks and

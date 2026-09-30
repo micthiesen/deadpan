@@ -2,37 +2,49 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current project-picture work, 2026-09-29
+## Accepted Generated Hold pictures, 2026-09-29
 
-The user resumed the goal. The [committed-picture boundary](../PROJECT_PICTURES.md)
-captures one revision, admits historical qualified originals and prepares exact
-Source/Freeze or opaque black frames with unchanged geometry. Native preview
-shares its pure decoded-frame, index and framing adapters. One retained source
-cache owns private verified bytes independently of a live linked path.
-Accepted/Still readers, final-render isolation, geometry normalization,
-audio/mux/publication and full native export remain open.
+The [shared picture reader](../PROJECT_PICTURES.md) now admits schema-3 Generated
+Holds from retained project media in native preview and captured-revision
+preparation. It checks all six objects, strict provenance, both asset records,
+canonical decoding, every sampled PTS and measured terminal duration. Its
+revocable package handle and one private decoder preserve accepted historical
+pictures through request staleness, relocation and prefix resizing. It needs no
+model, current candidate selection or worker path. Legacy Accepted without this
+evidence, Still and HDR remain explicit failures.
 
-The [qualification](../qualification/project-pictures-2026-09-29.md) retains
-31 passing Metal checks over 18 complete frames. The full 2,078-test workspace
-run finished with two new fixture failures; the final eight-test picture
-continuation corrects those, with only test source changed. Other completed
-targets and doctests remain valid. The optional app harness passes 302 tests;
-both strict Clippy configurations and final formatting pass. Initial compile,
-launcher and fixture failures remain in the evidence. No test process remains
-running. Do not restart unchanged passing suites.
+The [qualification](../qualification/generated-pictures-2026-09-29.md) retains
+real FFV1 conversion/acceptance, all 30 exact RGBA frames, damaged-object cases,
+undo/redo/revert and independent review. The full locked workspace passes 2,094
+tests; after app-only layout changes, base app passes 268 and optional harness
+304. Strict Clippy and formatting pass. Generated visual replay passes 108 checks
+plus audit; the ordinary visual run's room-tone failure is corrected by a
+220-check scoped continuation. Final release replays pass all 2,348 ordinary
+checks and 367 Generated checks plus its audit. Full source inventories bind
+each continuation. No compiler/test/replay process remains running.
 
-Next, implement model-independent accepted Generated Hold picture admission
-for both native preview and the captured-revision consumer. The current plan
-already maps these to sampled-master ordinals. They have no Original receipt;
-use the captured `GeneratedArtifact`, verified generated snapshots and bounded
-schema-3 host provenance in `deadpan-models`. Add a revoked, package-anchored
-generated read capability in the store, following `OriginalImportHandle`.
-Do not use current request relevance, candidate selection or mutable receipt
-availability to authorize historical pictures. Preserve original allocation
-revision, measured terminal duration and accepted prefix semantics. Keep legacy
-Accepted/Still failures explicit until qualified. Extend the real relocated
-bundle acceptance test through actual decoded pixels after undo/revert and
-worker-file removal. This does not authorize inference or product export claims.
+The Hold inspector now exposes Picture, Sound and duration action first. A
+stronger paint-order check and image review caught hidden mode/focus text:
+inactive Gain/Sounds panels retained decoration that let later panes cover the
+footer. Empty panels now retain their IDs without decoration. The read-only
+clock row uses compact height where needed; the copied-Original minimum picture
+is 141 points. Room-tone scroll checks reveal the complete fact/action group.
+Failed captures and checks remain in the evidence. The generic Generated
+fixture's minimum picture remains small; full editor visual acceptance is open.
+
+Keep the already passing backend gate. Only app layout and harness sources
+changed afterward, with scoped tests and release replay covering them. The
+retained command runner records terminal status and source inventories. Inspect
+live PIDs and journals after interruptions before starting another Cargo process;
+quiet compilation does not justify a restart.
+
+Next, connect the captured committed-picture boundary to exact output timestamps
+and legal encoder geometry, preserving the committed presentation basis and all
+captured framing. Then add final-render process isolation and integrate the full
+shared audio/picture graphs, approved AAC timing metadata, emitted-file checks
+and atomic publication. App model management, real candidate audition/acceptance,
+analysis, remaining editing/effects, recovery and signed distribution remain
+required. No DP requirement or gate is complete.
 
 ## Earlier completed evidence
 
@@ -58,8 +70,8 @@ The synthetic video-only encoder experiment does not qualify AAC timing under
 the approved mux policy; neither boundary supplies a project export worker.
 Its [qualification](../qualification/sdr-encoder-pixels-2026-09-28.md) retains
 the full workspace pass, 22 actual Metal checks and normal/sanitized H.264
-pixel comparisons. Qualified accepted-media/Still readers and final-render
-isolation remain open beyond the current project-picture preparation work.
+pixel comparisons. Legacy Accepted/Still readers and final-render isolation
+remain open beyond the current Generated picture preparation work.
 
 ## Product in one paragraph
 

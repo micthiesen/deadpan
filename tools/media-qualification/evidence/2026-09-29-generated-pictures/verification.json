@@ -1,0 +1,847 @@
+[
+  {
+    "name": "format",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all"
+    ],
+    "started": "2026-09-29T23:45:00.804112+00:00",
+    "base_commit": "32e0d4efa574117bf57940b54646cf03952b79ba",
+    "diff_sha256": "13a4def99fda7d0efe8a325eb6e3a08b2ad4af9594506f982cb96dc16159aaac",
+    "source_manifest_sha256": "10f68c2852b3fda709de9fa51e6fffd5dc9ce76eec1dc102364d4bbe5a3f5816",
+    "pid": 66411,
+    "exit_code": 0,
+    "seconds": 1.067702999804169,
+    "test_result_records": 0,
+    "test_totals": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "clippy-workspace",
+    "command": [
+      "cargo",
+      "clippy",
+      "--workspace",
+      "--all-targets",
+      "--locked",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "started": "2026-09-29T23:45:19.461783+00:00",
+    "base_commit": "32e0d4efa574117bf57940b54646cf03952b79ba",
+    "diff_sha256": "c2844ddebb3d8ea3b849a256532d93d6350262b1a1024a228f6b5729df2ed60b",
+    "source_manifest_sha256": "c2f84aec4d378f8cc40123b38efbb1dd6f6c80169543a3b0a9b50e352a88b44e",
+    "pid": 66602,
+    "exit_code": 101,
+    "seconds": 84.1734287077561,
+    "test_result_records": 0,
+    "test_totals": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "clippy-workspace-2",
+    "command": [
+      "cargo",
+      "clippy",
+      "--workspace",
+      "--all-targets",
+      "--locked",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "started": "2026-09-29T23:47:12.902839+00:00",
+    "base_commit": "32e0d4efa574117bf57940b54646cf03952b79ba",
+    "diff_sha256": "91ee62118ca50e9f1935f41d876b0b1d0dd9ead89abe45dc6db43ca0126ac754",
+    "source_manifest_sha256": "9bc3e7a0a40692d4c81820478f3e0964f1fa30adced73433f9390057fe7fb6c6",
+    "pid": 67502,
+    "exit_code": 101,
+    "seconds": 74.40613620821387,
+    "test_result_records": 0,
+    "test_totals": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "clippy-workspace-3",
+    "command": [
+      "cargo",
+      "clippy",
+      "--workspace",
+      "--all-targets",
+      "--locked",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "started": "2026-09-29T23:49:03.910559+00:00",
+    "base_commit": "32e0d4efa574117bf57940b54646cf03952b79ba",
+    "diff_sha256": "91ee62118ca50e9f1935f41d876b0b1d0dd9ead89abe45dc6db43ca0126ac754",
+    "source_manifest_sha256": "97a8c03384d560925bc95ae3bbd4c5a258803fc9cee5168f72fccb8092e0c586",
+    "pid": 68088,
+    "exit_code": 0,
+    "seconds": 76.24441120913252,
+    "test_result_records": 0,
+    "test_totals": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "test-workspace",
+    "command": [
+      "env",
+      "DEADPAN_GENERATED_PICTURE_FIXTURE_ROOT=/tmp/deadpan-generated-pictures-smyys035/fixture",
+      "cargo",
+      "test",
+      "--workspace",
+      "--locked",
+      "--no-fail-fast"
+    ],
+    "started": "2026-09-29T23:50:30.712448+00:00",
+    "base_commit": "32e0d4efa574117bf57940b54646cf03952b79ba",
+    "diff_sha256": "91ee62118ca50e9f1935f41d876b0b1d0dd9ead89abe45dc6db43ca0126ac754",
+    "source_manifest_sha256": "97a8c03384d560925bc95ae3bbd4c5a258803fc9cee5168f72fccb8092e0c586",
+    "pid": 68489,
+    "exit_code": 0,
+    "seconds": 605.7830592910759,
+    "test_result_records": 156,
+    "test_totals": [
+      2094,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "clippy-ui",
+    "command": [
+      "cargo",
+      "clippy",
+      "-p",
+      "deadpan-app",
+      "--features",
+      "ui-harness",
+      "--all-targets",
+      "--locked",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "started": "2026-09-30T00:01:02.840133+00:00",
+    "base_commit": "32e0d4efa574117bf57940b54646cf03952b79ba",
+    "diff_sha256": "bbbfc80f3e6bd0a36646751c9c05362eadd0aba0e147830d1272ab8a78475ee7",
+    "source_manifest_sha256": "97a8c03384d560925bc95ae3bbd4c5a258803fc9cee5168f72fccb8092e0c586",
+    "pid": 71698,
+    "exit_code": 0,
+    "seconds": 44.618457958102226,
+    "test_result_records": 0,
+    "test_totals": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "test-ui",
+    "command": [
+      "cargo",
+      "test",
+      "-p",
+      "deadpan-app",
+      "--features",
+      "ui-harness",
+      "--locked"
+    ],
+    "started": "2026-09-30T00:02:30.598901+00:00",
+    "base_commit": "32e0d4efa574117bf57940b54646cf03952b79ba",
+    "diff_sha256": "bbbfc80f3e6bd0a36646751c9c05362eadd0aba0e147830d1272ab8a78475ee7",
+    "source_manifest_sha256": "97a8c03384d560925bc95ae3bbd4c5a258803fc9cee5168f72fccb8092e0c586",
+    "pid": 71864,
+    "exit_code": 0,
+    "seconds": 50.233912125229836,
+    "test_result_records": 2,
+    "test_totals": [
+      304,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "visual-generated",
+    "command": [
+      "cargo",
+      "run",
+      "--release",
+      "-p",
+      "deadpan-app",
+      "--features",
+      "ui-harness",
+      "--locked",
+      "--",
+      "--ui-check",
+      "--scenario",
+      "generated-picture",
+      "--project",
+      "/tmp/deadpan-generated-pictures-smyys035/fixture/accepted.deadpan",
+      "--output",
+      "/tmp/deadpan-generated-pictures-smyys035/visual",
+      "--mode",
+      "visual"
+    ],
+    "started": "2026-09-30T00:03:57.712959+00:00",
+    "base_commit": "32e0d4efa574117bf57940b54646cf03952b79ba",
+    "diff_sha256": "bbbfc80f3e6bd0a36646751c9c05362eadd0aba0e147830d1272ab8a78475ee7",
+    "source_manifest_sha256": "97a8c03384d560925bc95ae3bbd4c5a258803fc9cee5168f72fccb8092e0c586",
+    "pid": 71984,
+    "exit_code": 0,
+    "seconds": 110.77906291605905,
+    "test_result_records": 0,
+    "test_totals": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "performance-generated",
+    "command": [
+      "cargo",
+      "run",
+      "--release",
+      "-p",
+      "deadpan-app",
+      "--features",
+      "ui-harness",
+      "--locked",
+      "--",
+      "--ui-check",
+      "--scenario",
+      "generated-picture",
+      "--project",
+      "/tmp/deadpan-generated-pictures-smyys035/fixture/accepted.deadpan",
+      "--output",
+      "/tmp/deadpan-generated-pictures-smyys035/performance",
+      "--mode",
+      "performance"
+    ],
+    "started": "2026-09-30T00:06:29.818282+00:00",
+    "base_commit": "32e0d4efa574117bf57940b54646cf03952b79ba",
+    "diff_sha256": "bbbfc80f3e6bd0a36646751c9c05362eadd0aba0e147830d1272ab8a78475ee7",
+    "source_manifest_sha256": "97a8c03384d560925bc95ae3bbd4c5a258803fc9cee5168f72fccb8092e0c586",
+    "pid": 72218,
+    "exit_code": 0,
+    "seconds": 0.4878258751705289,
+    "test_result_records": 0,
+    "test_totals": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "test-layout-app",
+    "command": [
+      "cargo",
+      "test",
+      "-p",
+      "deadpan-app",
+      "--locked"
+    ],
+    "started": "2026-09-30T00:10:22.852358+00:00",
+    "base_commit": "32e0d4efa574117bf57940b54646cf03952b79ba",
+    "diff_sha256": "84020e2b7086fe7531423c4402a470e6752b728d17da535cbacbb55155e10f1e",
+    "source_manifest_sha256": "0b74b5336907a1fab5e918dc47289ad543984af131f415f06fc54d9e5705fc3c",
+    "pid": 72598,
+    "exit_code": 0,
+    "seconds": 12.095297791995108,
+    "test_result_records": 2,
+    "test_totals": [
+      268,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "clippy-layout",
+    "command": [
+      "cargo",
+      "clippy",
+      "--workspace",
+      "--all-targets",
+      "--locked",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "started": "2026-09-30T00:09:51.275049+00:00",
+    "base_commit": "32e0d4efa574117bf57940b54646cf03952b79ba",
+    "diff_sha256": "84020e2b7086fe7531423c4402a470e6752b728d17da535cbacbb55155e10f1e",
+    "source_manifest_sha256": "0b74b5336907a1fab5e918dc47289ad543984af131f415f06fc54d9e5705fc3c",
+    "pid": 72554,
+    "exit_code": 0,
+    "seconds": 9.809935292229056,
+    "test_result_records": 0,
+    "test_totals": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "clippy-layout-ui",
+    "command": [
+      "cargo",
+      "clippy",
+      "-p",
+      "deadpan-app",
+      "--features",
+      "ui-harness",
+      "--all-targets",
+      "--locked",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "started": "2026-09-30T00:10:55.227302+00:00",
+    "base_commit": "32e0d4efa574117bf57940b54646cf03952b79ba",
+    "diff_sha256": "84020e2b7086fe7531423c4402a470e6752b728d17da535cbacbb55155e10f1e",
+    "source_manifest_sha256": "0b74b5336907a1fab5e918dc47289ad543984af131f415f06fc54d9e5705fc3c",
+    "pid": 72674,
+    "exit_code": 0,
+    "seconds": 10.12580387480557,
+    "test_result_records": 0,
+    "test_totals": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "visual-final",
+    "command": [
+      "cargo",
+      "run",
+      "--release",
+      "-p",
+      "deadpan-app",
+      "--features",
+      "ui-harness",
+      "--locked",
+      "--",
+      "--ui-check",
+      "--scenario",
+      "generated-picture",
+      "--project",
+      "/tmp/deadpan-generated-pictures-smyys035/fixture/accepted.deadpan",
+      "--output",
+      "/tmp/deadpan-generated-pictures-smyys035/visual-final",
+      "--mode",
+      "visual"
+    ],
+    "started": "2026-09-30T00:27:12.964734+00:00",
+    "base_commit": "32e0d4efa574117bf57940b54646cf03952b79ba",
+    "diff_sha256": "84020e2b7086fe7531423c4402a470e6752b728d17da535cbacbb55155e10f1e",
+    "source_manifest_sha256": "0b74b5336907a1fab5e918dc47289ad543984af131f415f06fc54d9e5705fc3c",
+    "pid": 76411,
+    "exit_code": 0,
+    "seconds": 435.4817033750005,
+    "test_result_records": 0,
+    "test_totals": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "performance-final",
+    "command": [
+      "cargo",
+      "run",
+      "--release",
+      "-p",
+      "deadpan-app",
+      "--features",
+      "ui-harness",
+      "--locked",
+      "--",
+      "--ui-check",
+      "--scenario",
+      "generated-picture",
+      "--project",
+      "/tmp/deadpan-generated-pictures-smyys035/fixture/accepted.deadpan",
+      "--output",
+      "/tmp/deadpan-generated-pictures-smyys035/performance-final",
+      "--mode",
+      "performance"
+    ],
+    "started": "2026-09-30T00:35:13.829537+00:00",
+    "base_commit": "32e0d4efa574117bf57940b54646cf03952b79ba",
+    "diff_sha256": "36b0501b3c7869e9a433a9e4dfbd9d1f4a138d2c51ca3a8eb73c698df442706a",
+    "source_manifest_sha256": "0b74b5336907a1fab5e918dc47289ad543984af131f415f06fc54d9e5705fc3c",
+    "pid": 82760,
+    "exit_code": 0,
+    "seconds": 0.5051950830966234,
+    "test_result_records": 0,
+    "test_totals": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "test-ui-final",
+    "command": [
+      "cargo",
+      "test",
+      "-p",
+      "deadpan-app",
+      "--features",
+      "ui-harness",
+      "--locked"
+    ],
+    "started": "2026-09-30T00:35:31.410035+00:00",
+    "base_commit": "32e0d4efa574117bf57940b54646cf03952b79ba",
+    "diff_sha256": "36b0501b3c7869e9a433a9e4dfbd9d1f4a138d2c51ca3a8eb73c698df442706a",
+    "source_manifest_sha256": "0b74b5336907a1fab5e918dc47289ad543984af131f415f06fc54d9e5705fc3c",
+    "pid": 83020,
+    "exit_code": 0,
+    "seconds": 13.014483917038888,
+    "test_result_records": 2,
+    "test_totals": [
+      304,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "format-final",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all",
+      "--",
+      "--check"
+    ],
+    "started": "2026-09-30T00:46:57.960227+00:00",
+    "base_commit": "32e0d4efa574117bf57940b54646cf03952b79ba",
+    "diff_sha256": "9112a02831ee48556d302c9e97e086ec780158dcfc75880104fdb1dae419f0a2",
+    "source_manifest_sha256": "c959e799c27a41ce8a51a07db3c7b15021d606602a8718f04e7f52f003f92b33",
+    "pid": 87832,
+    "exit_code": 0,
+    "seconds": 1.0567743750289083,
+    "test_result_records": 0,
+    "test_totals": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "visual-status-failure",
+    "command": [
+      "cargo",
+      "run",
+      "-p",
+      "deadpan-app",
+      "--features",
+      "ui-harness",
+      "--locked",
+      "--",
+      "--ui-check",
+      "--scenario",
+      "generated-picture",
+      "--project",
+      "/tmp/deadpan-generated-pictures-smyys035/fixture/accepted.deadpan",
+      "--output",
+      "/tmp/deadpan-generated-pictures-smyys035/visual-status-failure",
+      "--mode",
+      "visual"
+    ],
+    "started": "2026-09-30T00:36:36.660560+00:00",
+    "base_commit": "32e0d4efa574117bf57940b54646cf03952b79ba",
+    "diff_sha256": "36b0501b3c7869e9a433a9e4dfbd9d1f4a138d2c51ca3a8eb73c698df442706a",
+    "source_manifest_sha256": "96f73005ebcea96300ce3fe6fb49b2fec8b1af406698a8d38fdf2166d3045a45",
+    "pid": 83688,
+    "exit_code": 0,
+    "seconds": 18.35920870816335,
+    "test_result_records": 0,
+    "test_totals": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "visual-status-occlusion",
+    "command": [
+      "cargo",
+      "run",
+      "-p",
+      "deadpan-app",
+      "--features",
+      "ui-harness",
+      "--locked",
+      "--",
+      "--ui-check",
+      "--scenario",
+      "generated-picture",
+      "--project",
+      "/tmp/deadpan-generated-pictures-smyys035/fixture/accepted.deadpan",
+      "--output",
+      "/tmp/deadpan-generated-pictures-smyys035/visual-status-occlusion",
+      "--mode",
+      "visual"
+    ],
+    "started": "2026-09-30T00:39:13.117433+00:00",
+    "base_commit": "32e0d4efa574117bf57940b54646cf03952b79ba",
+    "diff_sha256": "8c47e8ddb707ebedf2718b1c480905a75cbbcf1d5011b73f6b27dd40c2dd41d2",
+    "source_manifest_sha256": "ca7a0044d24b1509c9fbf522081b73952e55a847784788eb44628acfdac59fb2",
+    "pid": 85069,
+    "exit_code": 1,
+    "seconds": 11.539549709297717,
+    "test_result_records": 0,
+    "test_totals": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "visual-status-fixed",
+    "command": [
+      "cargo",
+      "run",
+      "-p",
+      "deadpan-app",
+      "--features",
+      "ui-harness",
+      "--locked",
+      "--",
+      "--ui-check",
+      "--scenario",
+      "generated-picture",
+      "--project",
+      "/tmp/deadpan-generated-pictures-smyys035/fixture/accepted.deadpan",
+      "--output",
+      "/tmp/deadpan-generated-pictures-smyys035/visual-status-fixed",
+      "--mode",
+      "visual"
+    ],
+    "started": "2026-09-30T00:40:01.784792+00:00",
+    "base_commit": "32e0d4efa574117bf57940b54646cf03952b79ba",
+    "diff_sha256": "8cacd95cb80787fe34eae3ed1c9718e9109f557ad13d9eb7c1093e8769cf6de2",
+    "source_manifest_sha256": "c434a299cd98203760705cc68d567a438f777bb022800b4bef68dfdedb08f5a3",
+    "pid": 85402,
+    "exit_code": 0,
+    "seconds": 18.128441832959652,
+    "test_result_records": 0,
+    "test_totals": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "visual-all-status-fixed",
+    "command": [
+      "cargo",
+      "run",
+      "-p",
+      "deadpan-app",
+      "--features",
+      "ui-harness",
+      "--locked",
+      "--",
+      "--ui-check",
+      "--output",
+      "/tmp/deadpan-generated-pictures-smyys035/visual-all-status-fixed",
+      "--mode",
+      "visual"
+    ],
+    "started": "2026-09-30T00:40:40.611362+00:00",
+    "base_commit": "32e0d4efa574117bf57940b54646cf03952b79ba",
+    "diff_sha256": "8cacd95cb80787fe34eae3ed1c9718e9109f557ad13d9eb7c1093e8769cf6de2",
+    "source_manifest_sha256": "c434a299cd98203760705cc68d567a438f777bb022800b4bef68dfdedb08f5a3",
+    "pid": 85656,
+    "exit_code": 1,
+    "seconds": 210.85379987489432,
+    "test_result_records": 0,
+    "test_totals": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "visual-room-tone-final",
+    "command": [
+      "cargo",
+      "run",
+      "-p",
+      "deadpan-app",
+      "--features",
+      "ui-harness",
+      "--locked",
+      "--",
+      "--ui-check",
+      "--scenario",
+      "room-tone",
+      "--output",
+      "/tmp/deadpan-generated-pictures-smyys035/visual-room-tone-final",
+      "--mode",
+      "visual"
+    ],
+    "started": "2026-09-30T00:47:38.709799+00:00",
+    "base_commit": "32e0d4efa574117bf57940b54646cf03952b79ba",
+    "diff_sha256": "9112a02831ee48556d302c9e97e086ec780158dcfc75880104fdb1dae419f0a2",
+    "source_manifest_sha256": "c959e799c27a41ce8a51a07db3c7b15021d606602a8718f04e7f52f003f92b33",
+    "pid": 88212,
+    "exit_code": 1,
+    "seconds": 21.34111445909366,
+    "test_result_records": 0,
+    "test_totals": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "visual-room-tone-compact",
+    "command": [
+      "cargo",
+      "run",
+      "-p",
+      "deadpan-app",
+      "--features",
+      "ui-harness",
+      "--locked",
+      "--",
+      "--ui-check",
+      "--scenario",
+      "room-tone",
+      "--output",
+      "/tmp/deadpan-generated-pictures-smyys035/visual-room-tone-compact",
+      "--mode",
+      "visual"
+    ],
+    "started": "2026-09-30T00:49:56.862760+00:00",
+    "base_commit": "32e0d4efa574117bf57940b54646cf03952b79ba",
+    "diff_sha256": "6ab8052247d1852526e46bb0315683467beda086e4020ca57187bcdd9ea8f689",
+    "source_manifest_sha256": "1803fb62c0e1c0217318f148495129da7e068d40f69586d65afd5195c117393b",
+    "pid": 88862,
+    "exit_code": 0,
+    "seconds": 25.405404000077397,
+    "test_result_records": 0,
+    "test_totals": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "format-complete",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all",
+      "--",
+      "--check"
+    ],
+    "started": "2026-09-30T00:50:45.607243+00:00",
+    "base_commit": "32e0d4efa574117bf57940b54646cf03952b79ba",
+    "diff_sha256": "6ab8052247d1852526e46bb0315683467beda086e4020ca57187bcdd9ea8f689",
+    "source_manifest_sha256": "1803fb62c0e1c0217318f148495129da7e068d40f69586d65afd5195c117393b",
+    "pid": 89169,
+    "exit_code": 0,
+    "seconds": 1.0700310841202736,
+    "test_result_records": 0,
+    "test_totals": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "clippy-app-status-fixed",
+    "command": [
+      "cargo",
+      "clippy",
+      "-p",
+      "deadpan-app",
+      "--all-targets",
+      "--locked",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "started": "2026-09-30T00:50:46.844477+00:00",
+    "base_commit": "32e0d4efa574117bf57940b54646cf03952b79ba",
+    "diff_sha256": "6ab8052247d1852526e46bb0315683467beda086e4020ca57187bcdd9ea8f689",
+    "source_manifest_sha256": "1803fb62c0e1c0217318f148495129da7e068d40f69586d65afd5195c117393b",
+    "pid": 89176,
+    "exit_code": 0,
+    "seconds": 9.938685124740005,
+    "test_result_records": 0,
+    "test_totals": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "clippy-ui-status-fixed",
+    "command": [
+      "cargo",
+      "clippy",
+      "-p",
+      "deadpan-app",
+      "--features",
+      "ui-harness",
+      "--all-targets",
+      "--locked",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "started": "2026-09-30T00:50:56.898689+00:00",
+    "base_commit": "32e0d4efa574117bf57940b54646cf03952b79ba",
+    "diff_sha256": "6ab8052247d1852526e46bb0315683467beda086e4020ca57187bcdd9ea8f689",
+    "source_manifest_sha256": "1803fb62c0e1c0217318f148495129da7e068d40f69586d65afd5195c117393b",
+    "pid": 89207,
+    "exit_code": 0,
+    "seconds": 10.276093582622707,
+    "test_result_records": 0,
+    "test_totals": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "test-app-status-fixed",
+    "command": [
+      "cargo",
+      "test",
+      "-p",
+      "deadpan-app",
+      "--locked"
+    ],
+    "started": "2026-09-30T00:51:07.347896+00:00",
+    "base_commit": "32e0d4efa574117bf57940b54646cf03952b79ba",
+    "diff_sha256": "6ab8052247d1852526e46bb0315683467beda086e4020ca57187bcdd9ea8f689",
+    "source_manifest_sha256": "1803fb62c0e1c0217318f148495129da7e068d40f69586d65afd5195c117393b",
+    "pid": 89238,
+    "exit_code": 0,
+    "seconds": 12.482211374677718,
+    "test_result_records": 2,
+    "test_totals": [
+      268,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "test-ui-status-fixed",
+    "command": [
+      "cargo",
+      "test",
+      "-p",
+      "deadpan-app",
+      "--features",
+      "ui-harness",
+      "--locked"
+    ],
+    "started": "2026-09-30T00:51:20.017202+00:00",
+    "base_commit": "32e0d4efa574117bf57940b54646cf03952b79ba",
+    "diff_sha256": "6ab8052247d1852526e46bb0315683467beda086e4020ca57187bcdd9ea8f689",
+    "source_manifest_sha256": "1803fb62c0e1c0217318f148495129da7e068d40f69586d65afd5195c117393b",
+    "pid": 89259,
+    "exit_code": 0,
+    "seconds": 10.9481670409441,
+    "test_result_records": 2,
+    "test_totals": [
+      304,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "performance-status-fixed",
+    "command": [
+      "cargo",
+      "run",
+      "--release",
+      "-p",
+      "deadpan-app",
+      "--features",
+      "ui-harness",
+      "--locked",
+      "--",
+      "--ui-check",
+      "--scenario",
+      "generated-picture",
+      "--project",
+      "/tmp/deadpan-generated-pictures-smyys035/fixture/accepted.deadpan",
+      "--output",
+      "/tmp/deadpan-generated-pictures-smyys035/performance-status-fixed",
+      "--mode",
+      "performance"
+    ],
+    "started": "2026-09-30T00:51:31.143666+00:00",
+    "base_commit": "32e0d4efa574117bf57940b54646cf03952b79ba",
+    "diff_sha256": "6ab8052247d1852526e46bb0315683467beda086e4020ca57187bcdd9ea8f689",
+    "source_manifest_sha256": "1803fb62c0e1c0217318f148495129da7e068d40f69586d65afd5195c117393b",
+    "pid": 89272,
+    "exit_code": 0,
+    "seconds": 93.52920516580343,
+    "test_result_records": 0,
+    "test_totals": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "performance-all-status-fixed",
+    "command": [
+      "cargo",
+      "run",
+      "--release",
+      "-p",
+      "deadpan-app",
+      "--features",
+      "ui-harness",
+      "--locked",
+      "--",
+      "--ui-check",
+      "--output",
+      "/tmp/deadpan-generated-pictures-smyys035/performance-all-status-fixed",
+      "--mode",
+      "performance"
+    ],
+    "started": "2026-09-30T00:53:04.849332+00:00",
+    "base_commit": "32e0d4efa574117bf57940b54646cf03952b79ba",
+    "diff_sha256": "6ab8052247d1852526e46bb0315683467beda086e4020ca57187bcdd9ea8f689",
+    "source_manifest_sha256": "1803fb62c0e1c0217318f148495129da7e068d40f69586d65afd5195c117393b",
+    "pid": 89857,
+    "exit_code": 0,
+    "seconds": 6.712074124719948,
+    "test_result_records": 0,
+    "test_totals": [
+      0,
+      0,
+      0
+    ]
+  }
+]

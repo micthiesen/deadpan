@@ -203,6 +203,7 @@ enum CompiledHold {
     },
     Accepted {
         asset: AssetId,
+        generated: Option<Arc<deadpan_core::GeneratedArtifact>>,
         time_base: SourceTimeBase,
         frames: FrameRange,
     },
@@ -221,6 +222,7 @@ impl CompiledHold {
             },
             HoldVideo::Accepted { asset, frames } => Self::Accepted {
                 asset: asset.clone(),
+                generated: None,
                 time_base: document
                     .assets()
                     .get(asset)
@@ -234,6 +236,7 @@ impl CompiledHold {
             },
             HoldVideo::Generated { accepted } => Self::Accepted {
                 asset: accepted.artifact.sampled_asset.clone(),
+                generated: Some(Arc::new(accepted.artifact.clone())),
                 time_base: document
                     .assets()
                     .get(&accepted.artifact.sampled_asset)
@@ -259,6 +262,7 @@ impl CompiledHold {
             },
             Self::Accepted {
                 asset,
+                generated,
                 time_base,
                 frames,
             } => {
@@ -272,6 +276,7 @@ impl CompiledHold {
                 }
                 Picture::Accepted {
                     asset: asset.clone(),
+                    generated: generated.clone(),
                     time_base: *time_base,
                     position,
                     frame: SourceFrameId(

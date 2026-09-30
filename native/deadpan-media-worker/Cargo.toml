@@ -22,6 +22,7 @@ cc.workspace = true
 
 [dev-dependencies]
 blake3.workspace = true
+deadpan-cli = { path = "../../crates/deadpan-cli" }
 deadpan-core.workspace = true
 deadpan-jobs.workspace = true
 deadpan-models.workspace = true

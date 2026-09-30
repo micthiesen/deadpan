@@ -48,6 +48,7 @@ pub struct Workspace {
     pub plan: Arc<RenderPlan>,
     pub sources: BTreeMap<AssetId, Arc<RegisteredSource>>,
     pub originals: OriginalImportHandle,
+    pub generated: deadpan_store::generated_media::GeneratedReadHandle,
     pub can_undo: bool,
     pub can_redo: bool,
     /// None identifies a preserved generic/legacy project.

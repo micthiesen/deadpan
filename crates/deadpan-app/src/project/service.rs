@@ -1321,6 +1321,7 @@ fn snapshot(
         plan: Arc::new(plan),
         sources,
         originals: store.original_import_handle().map_err(display)?,
+        generated: store.generated_read_handle(),
         can_undo,
         can_redo,
         single_source,

@@ -2382,7 +2382,11 @@ impl DeadpanApp {
                         let ready = !self.service.is_busy() && !self.dialogs.is_open();
                         inspector_value(ui, "Duration", &data.duration);
                         if data.kind == "Hold" {
-                            self.hold_audio_controls(ui, ready);
+                            for (label, value) in &data.fields {
+                                if matches!(*label, "Picture" | "Sound") {
+                                    inspector_value(ui, label, value);
+                                }
+                            }
                         }
                         if self.selected_group()
                             && ui.add_sized([ui.available_width(), 30.0], egui::Button::new("Enter group  ·  Enter").fill(style::SELECTED)).clicked()
@@ -2397,6 +2401,9 @@ impl DeadpanApp {
                         {
                             self.pane = Pane::Inspector;
                             self.open_command(command.clone(), ui.ctx());
+                        }
+                        if data.kind == "Hold" {
+                            self.hold_audio_controls(ui, ready);
                         }
                         self.gain_inspector(ui, ready);
                         if data.kind != "Retime"
@@ -2424,7 +2431,9 @@ impl DeadpanApp {
                             }
                         });
                         for (label, value) in &data.fields {
-                            inspector_value(ui, label, value);
+                            if data.kind != "Hold" || !matches!(*label, "Picture" | "Sound") {
+                                inspector_value(ui, label, value);
+                            }
                         }
                         ui.add_space(8.0);
                         ui.separator();
@@ -2517,7 +2526,7 @@ impl DeadpanApp {
             if self.camera.is_some() {
                 ui.label(egui::RichText::new("CAMERA · Draft preview").color(style::LAVENDER));
             }
-            let controls_height = if self.gain.is_some() { 54.0 } else if self.camera.is_some() { 76.0 } else if self.view == View::Sequence { if self.moment.copied.is_some() { 156.0 } else if self.compact_sound_layout(ui.ctx()) && self.transport.is_none() { 86.0 } else { 118.0 } } else { 174.0 };
+            let controls_height = if self.gain.is_some() { 54.0 } else if self.camera.is_some() { 76.0 } else if self.view == View::Sequence { if self.moment.copied.is_some() { if compact_empty_sounds { 132.0 } else { 156.0 } } else if self.compact_sound_layout(ui.ctx()) && self.transport.is_none() { 86.0 } else { 118.0 } } else { 174.0 };
             let available = egui::vec2(ui.available_width().max(1.0), (ui.available_height() - controls_height).max(50.0));
             let (_, rect) = ui.allocate_space(available);
             let response = pane_focus(ui, Pane::Viewer, rect, "Picture viewer pane");
@@ -2548,7 +2557,10 @@ impl DeadpanApp {
                 if let Some(source_frame) = self.presentation.displayed_source_frame() { response.on_hover_text(format!("Original source frame {}", u128::from(source_frame.0) + 1)); }
             } else { ui.label(egui::RichText::new("Stopped-frame inspection").size(11.5).color(style::MUTED)); }
             if let Some(workspace) = &self.workspace && let Some(original) = workspace.original_duration {
-                ui.horizontal_wrapped(|ui| {
+                // These clocks are read-only. At minimum height, reserve text
+                // height instead of the ordinary 28-point button row.
+                let clock_height = if compact_empty_sounds { 14.0 } else { ui.spacing().interact_size.y };
+                ui.allocate_ui_with_layout(egui::vec2(ui.available_width(), clock_height), egui::Layout::left_to_right(egui::Align::Center).with_main_wrap(true), |ui| {
                     let edit = workspace.plan.duration();
                     ui.label(egui::RichText::new(format!("Original {} f", original.frames())).monospace()).widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Label, true, format!("Full Original duration: {} project frames", original.frames())));
                     ui.separator();

@@ -64,11 +64,21 @@ anonymous temporary file. The returned `VerifiedGeneratedObject` implements
 `Read` and `Seek`; subsequent mutation or replacement of the project file cannot
 change its bytes. Reopening a changed project file requires fresh verification.
 
-These are blocking host I/O operations. Keep them away from the UI and audio
-callback. They bound copying by the caller's maximum byte count, not elapsed
-time; scheduling and cancellation remain host responsibilities. The future app
-host must also keep ordinary command commits from waiting behind media copying;
-this synchronous API does not establish interactive responsiveness.
+For background readers, `ProjectStore::generated_read_handle` returns a
+connection-free capability pinned to that store's package. Clones retain neither
+SQLite nor the writer lock. Writable and read-only stores independently revoke
+their handles before closing; reopening a writer never revives an old handle.
+`GeneratedReadLimits` supplies a positive byte budget and cooperative timeout up
+to one hour. Copies check cancellation, elapsed time and session closure between
+bounded reads and immediately before returning. Call `check_live` before and
+after using an admitted decoder. Already returned private snapshots remain
+readable after revocation, but the old session admits no further preparation.
+
+These remain blocking host I/O operations, performed away from the project
+writer, UI and audio callback. The older `snapshot_generated_object` API bounds
+bytes only; use the handle for session-scoped workers. Neither API preempts an
+individual filesystem operation. Shared [generated picture admission](PROJECT_PICTURES.md)
+uses the handle for native preview and captured-revision preparation.
 
 ## Integration status
 
@@ -80,7 +90,7 @@ now composes media conversion, provenance and verified Ready publication. The
 dedicated [acceptance API](GENERATION_ACCEPTANCE.md) rechecks all six dependencies
 and commits derived assets and the selected provider in one reversible transaction.
 History reference tracking, qualified application acceptance, cache cleanup,
-portable project copying, and application rendering remain open.
+portable project copying and complete offline playback/export remain open.
 
 The integration tests cover writer ownership, read-only coexistence, retained
 worker snapshots, deduplication, relocation, immutable readback, corruption,

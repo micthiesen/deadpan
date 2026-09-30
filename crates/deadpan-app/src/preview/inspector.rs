@@ -26,9 +26,8 @@ impl Inspector {
                     match &recipe.video {
                         HoldVideo::Background => "Background",
                         HoldVideo::Freeze { .. } => "Freeze",
-                        HoldVideo::Accepted { .. } | HoldVideo::Generated { .. } => {
-                            "Accepted media"
-                        }
+                        HoldVideo::Accepted { .. } => "Accepted media",
+                        HoldVideo::Generated { .. } => "Accepted AI",
                     }
                     .into(),
                 ));

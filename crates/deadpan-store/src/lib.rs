@@ -57,7 +57,9 @@ pub struct ProjectStore {
     package: PathBuf,
     mode: AccessMode,
     #[cfg(any(target_os = "macos", target_os = "linux"))]
-    generated_storage: generated_media::GeneratedStorage,
+    generated_storage: Arc<generated_media::GeneratedStorage>,
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    generated_read_closed: Arc<AtomicBool>,
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     original_storage: Arc<object_storage::ObjectStorage>,
     #[cfg(any(target_os = "macos", target_os = "linux"))]
@@ -71,6 +73,8 @@ impl Drop for ProjectStore {
     fn drop(&mut self) {
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         self.import_closed.store(true, Ordering::Release);
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        self.generated_read_closed.store(true, Ordering::Release);
         if let Some(lock) = &self._writer_lock {
             // File::drop still closes the handle if explicit unlock fails.
             let _ = lock.unlock();
@@ -170,7 +174,9 @@ impl ProjectStore {
             package,
             mode: AccessMode::ReadWrite,
             #[cfg(any(target_os = "macos", target_os = "linux"))]
-            generated_storage,
+            generated_storage: Arc::new(generated_storage),
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            generated_read_closed: Arc::new(AtomicBool::new(false)),
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             original_storage: Arc::new(original_storage),
             #[cfg(any(target_os = "macos", target_os = "linux"))]
@@ -223,7 +229,9 @@ impl ProjectStore {
             package,
             mode,
             #[cfg(any(target_os = "macos", target_os = "linux"))]
-            generated_storage,
+            generated_storage: Arc::new(generated_storage),
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            generated_read_closed: Arc::new(AtomicBool::new(false)),
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             original_storage: Arc::new(original_storage),
             #[cfg(any(target_os = "macos", target_os = "linux"))]
@@ -356,6 +364,17 @@ impl ProjectStore {
         limits: generated_media::GeneratedMediaLimits,
     ) -> Result<generated_media::VerifiedGeneratedObject, StoreError> {
         Ok(self.generated_storage.snapshot(expected, limits)?)
+    }
+
+    /// Gives an I/O worker revocable, connection-free generated-object access.
+    /// Available from both writable and read-only stores. The capability pins
+    /// the package namespace and is revoked before this store releases its lock.
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    pub fn generated_read_handle(&self) -> generated_media::GeneratedReadHandle {
+        generated_media::GeneratedReadHandle::new(
+            Arc::clone(&self.generated_storage),
+            Arc::clone(&self.generated_read_closed),
+        )
     }
 
     fn require_writer(&self) -> Result<(), StoreError> {

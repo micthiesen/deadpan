@@ -1,0 +1,172 @@
+[
+  {
+    "file": "captures/visual-generated-picture-009.png",
+    "label": "Accepted Generated frame 0 with retained captured framing",
+    "viewport_points": [
+      1280.0,
+      820.0
+    ],
+    "source": "visual",
+    "frame": 9
+  },
+  {
+    "file": "captures/visual-generated-picture-071.png",
+    "label": "Generated frame 29 settled at minimum size",
+    "viewport_points": [
+      960.0,
+      640.0
+    ],
+    "source": "visual",
+    "frame": 71
+  },
+  {
+    "file": "captures/visual-final-generated-picture-011.png",
+    "label": "Accepted Generated frame 0 with retained captured framing",
+    "viewport_points": [
+      1280.0,
+      820.0
+    ],
+    "source": "visual-final",
+    "frame": 11
+  },
+  {
+    "file": "captures/visual-final-generated-picture-073.png",
+    "label": "Generated frame 29 settled at minimum size",
+    "viewport_points": [
+      960.0,
+      640.0
+    ],
+    "source": "visual-final",
+    "frame": 73
+  },
+  {
+    "file": "captures/visual-status-failure-generated-picture-011.png",
+    "label": "Accepted Generated frame 0 with retained captured framing",
+    "viewport_points": [
+      1280.0,
+      820.0
+    ],
+    "source": "visual-status-failure",
+    "frame": 11
+  },
+  {
+    "file": "captures/visual-status-failure-generated-picture-073.png",
+    "label": "Generated frame 29 settled at minimum size",
+    "viewport_points": [
+      960.0,
+      640.0
+    ],
+    "source": "visual-status-failure",
+    "frame": 73
+  },
+  {
+    "file": "captures/visual-status-occlusion-generated-picture-011.png",
+    "label": "Failure state",
+    "viewport_points": [
+      1280.0,
+      820.0
+    ],
+    "source": "visual-status-occlusion",
+    "frame": 11
+  },
+  {
+    "file": "captures/visual-status-fixed-generated-picture-011.png",
+    "label": "Accepted Generated frame 0 with retained captured framing",
+    "viewport_points": [
+      1280.0,
+      820.0
+    ],
+    "source": "visual-status-fixed",
+    "frame": 11
+  },
+  {
+    "file": "captures/visual-status-fixed-generated-picture-073.png",
+    "label": "Generated frame 29 settled at minimum size",
+    "viewport_points": [
+      960.0,
+      640.0
+    ],
+    "source": "visual-status-fixed",
+    "frame": 73
+  },
+  {
+    "file": "captures/visual-all-status-fixed-workspace-048.png",
+    "label": "Original viewer at the minimum window size",
+    "viewport_points": [
+      960.0,
+      640.0
+    ],
+    "source": "visual-all-status-fixed",
+    "frame": 48
+  },
+  {
+    "file": "captures/visual-all-status-fixed-room-tone-089.png",
+    "label": "Paint saved room-tone inspector after resize",
+    "viewport_points": [
+      960.0,
+      640.0
+    ],
+    "source": "visual-all-status-fixed",
+    "frame": 89
+  },
+  {
+    "file": "captures/visual-all-status-fixed-gain-061.png",
+    "label": "Resize the measured gain waveform viewport",
+    "viewport_points": [
+      1280.0,
+      820.0
+    ],
+    "source": "visual-all-status-fixed",
+    "frame": 61
+  },
+  {
+    "file": "captures/visual-all-status-fixed-gain-066.png",
+    "label": "Resize the measured gain waveform viewport",
+    "viewport_points": [
+      960.0,
+      640.0
+    ],
+    "source": "visual-all-status-fixed",
+    "frame": 90
+  },
+  {
+    "file": "captures/visual-all-status-fixed-gain-085.png",
+    "label": "Resize the measured gain waveform viewport",
+    "viewport_points": [
+      1280.0,
+      820.0
+    ],
+    "source": "visual-all-status-fixed",
+    "frame": 218
+  },
+  {
+    "file": "captures/visual-room-tone-final-room-tone-091.png",
+    "label": "Saved room tone in Hold inspector at 960x640",
+    "viewport_points": [
+      960.0,
+      640.0
+    ],
+    "source": "visual-room-tone-final",
+    "frame": 99
+  },
+  {
+    "file": "captures/visual-room-tone-compact-room-tone-091.png",
+    "label": "Saved room tone in Hold inspector at 960x640",
+    "viewport_points": [
+      960.0,
+      640.0
+    ],
+    "source": "visual-room-tone-compact",
+    "frame": 99
+  },
+  {
+    "file": "captures/visual-room-tone-compact-room-tone-103.png",
+    "label": "Saved room tone in Hold inspector at 1280x820",
+    "viewport_points": [
+      1280.0,
+      820.0
+    ],
+    "source": "visual-room-tone-compact",
+    "frame": 131
+  }
+]

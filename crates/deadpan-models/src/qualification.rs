@@ -422,3 +422,7 @@ fn snapshot_error(error: ArtifactError) -> QualificationError {
         other => QualificationError::Artifact(other),
     }
 }
+
+#[cfg(test)]
+#[path = "stored_bridge_tests.rs"]
+mod stored_bridge_tests;

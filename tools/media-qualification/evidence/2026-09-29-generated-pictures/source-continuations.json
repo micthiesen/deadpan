@@ -1,0 +1,34 @@
+{
+  "workspace": "97a8c03384d560925bc95ae3bbd4c5a258803fc9cee5168f72fccb8092e0c586",
+  "final_app": "1803fb62c0e1c0217318f148495129da7e068d40f69586d65afd5195c117393b",
+  "changed_files": {
+    "crates/deadpan-app/src/preview.rs": {
+      "workspace": "07f2b707165c30a05667e7dc85eedc8ee0b433a717992b3f4b3367b274875ea9",
+      "final_app": "2ff881a3cad89cce640b6b35a6de41bd563009743c03fc0f2cccdc1616b72973"
+    },
+    "crates/deadpan-app/src/preview/gain.rs": {
+      "workspace": "85f56e004393ae3cdea38b6bfcbea164e1a8f3da135b7d82e7f1419eabecd7ea",
+      "final_app": "e30b8ccf824bb33e8c2fb9f952d05765a01dca2944c97fa47f7b5e8b62dea376"
+    },
+    "crates/deadpan-app/src/preview/harness/generated_picture.rs": {
+      "workspace": "f383fd579e9aadcb216c84c66a37d5987dd878e360d97177f4c8f15340eb5af4",
+      "final_app": "4eb579ba44d2de44ac02633b87a3c7fa4b6cf135bd3f17d1fb41fc3489835cf2"
+    },
+    "crates/deadpan-app/src/preview/harness/room_tone.rs": {
+      "workspace": "42991de7435212b7348e03522980451dc615ee6d9dee305b09d579ef4ac3a46e",
+      "final_app": "a2f2a13eb6a3e5bd869142b3641ca9d031318eba882fbb3db14504ae0b2270db"
+    },
+    "crates/deadpan-app/src/preview/harness/scenarios.rs": {
+      "workspace": "f3ab845b2f9d7d27dded1394c03869afc705b93c35e08053d777d5fa01a07ae6",
+      "final_app": "efbb2d0dd1bc287dd559e6484ac3f9babef6a5cbfeef2c48c271ad39524993dd"
+    },
+    "crates/deadpan-app/src/preview/inspector.rs": {
+      "workspace": "a09bb240eef1833b7b2ee8271365d0c09643454ef463475f8ab16cee1fed7e9f",
+      "final_app": "2d7c5e7d3771d41c61883aa2621b4e1670dfa0f189906d3d37cd96a4b9e6dda3"
+    },
+    "crates/deadpan-app/src/preview/sound_events.rs": {
+      "workspace": "f46634db47acd8b5b1fce5df8f7e46364696ce6e4ceb075a0fe87d326d358054",
+      "final_app": "c05c3775a801038ccf87d64085649efbd2e22cbe1a4bd7bc48f2295f6e2d5bf8"
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "command": [
+    "cargo",
+    "run",
+    "--release",
+    "-p",
+    "deadpan-app",
+    "--features",
+    "ui-harness",
+    "--locked",
+    "--",
+    "--ui-check",
+    "--scenario",
+    "generated-picture",
+    "--project",
+    "/tmp/deadpan-generated-pictures-smyys035/fixture/accepted.deadpan",
+    "--output",
+    "/tmp/deadpan-generated-pictures-smyys035/performance-final",
+    "--mode",
+    "performance"
+  ],
+  "started": "2026-09-30T00:35:13.829537+00:00",
+  "base_commit": "32e0d4efa574117bf57940b54646cf03952b79ba",
+  "diff_sha256": "36b0501b3c7869e9a433a9e4dfbd9d1f4a138d2c51ca3a8eb73c698df442706a",
+  "source_manifest_sha256": "0b74b5336907a1fab5e918dc47289ad543984af131f415f06fc54d9e5705fc3c",
+  "pid": 82760,
+  "exit_code": 0,
+  "seconds": 0.5051950830966234
+}

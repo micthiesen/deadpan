@@ -1012,15 +1012,27 @@ fn completed_samples(d: &Driver<'_>, name: &str) -> Vec<f64> {
 
 pub(super) fn text_paint_visibility(d: &Driver<'_>, needle: &str) -> Vec<Value> {
     let viewport = d.harness.ctx.content_rect();
-    d.harness.output().shapes.iter().filter_map(|clipped| {
+    let shapes = &d.harness.output().shapes;
+    shapes.iter().enumerate().filter_map(|(index, clipped)| {
         let egui::Shape::Text(text) = &clipped.shape else { return None; };
         if !text.galley.text().contains(needle) { return None; }
         let bounds = text.visual_bounding_rect();
         let rect = |rect: egui::Rect| [rect.min.x,rect.min.y,rect.max.x,rect.max.y];
+        // A later pane can cover correctly clipped text. Inspect the solid
+        // interior of later opaque rectangles in final paint order as well.
+        let occluders = shapes[index + 1..].iter().filter_map(|later| {
+            let egui::Shape::Rect(painted) = &later.shape else { return None; };
+            if !painted.fill.is_opaque() || painted.brush.is_some() || painted.blur_width > 0.0 { return None; }
+            let radius = painted.corner_radius;
+            let inset = f32::from(radius.nw.max(radius.ne).max(radius.sw).max(radius.se));
+            let covered = painted.rect.shrink(inset).intersect(later.clip_rect).intersect(bounds);
+            (covered.is_positive()).then(|| rect(covered))
+        }).collect::<Vec<_>>();
         Some(json!({
             "text":text.galley.text(),"bounds":rect(bounds),
             "clip":rect(clipped.clip_rect),"viewport":rect(viewport),
-            "fully_visible":clipped.clip_rect.contains_rect(bounds) && viewport.contains_rect(bounds),
+            "fully_visible":clipped.clip_rect.contains_rect(bounds) && viewport.contains_rect(bounds) && occluders.is_empty(),
+            "opaque_rect_occluders":occluders,
         }))
     }).collect()
 }

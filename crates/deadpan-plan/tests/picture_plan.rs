@@ -940,12 +940,10 @@ fn source_index_checks_asset_clock_and_measured_coverage() {
     ));
 }
 
-#[test]
-fn generated_hold_resize_reuses_materialized_frames_and_preserves_following_source() {
-    let initial = document(
-        &["hold", "source"],
-        vec![("hold", hold(30)), ("source", source(10, 10_000, 20_010))],
-    );
+fn generated_fixture(
+    prefix: &str,
+    digits: [char; 3],
+) -> (GeneratedArtifact, BTreeMap<AssetId, AssetRecord>) {
     let object = |digit: char| {
         GeneratedObjectRef::new(
             GeneratedContentId::new(digit.to_string().repeat(64)).unwrap(),
@@ -954,11 +952,11 @@ fn generated_hold_resize_reuses_materialized_frames_and_preserves_following_sour
         .unwrap()
     };
     let artifact = GeneratedArtifact {
-        sampled_asset: asset_id("sampled"),
-        sampled_object: object('c'),
-        native_asset: asset_id("native"),
-        native_object: object('d'),
-        provenance: object('e'),
+        sampled_asset: asset_id(&format!("{prefix}sampled")),
+        sampled_object: object(digits[0]),
+        native_asset: asset_id(&format!("{prefix}native")),
+        native_object: object(digits[1]),
+        provenance: object(digits[2]),
         sampling: BridgeSamplingMap::new(
             FrameRate::new(30_000, 1001).unwrap(),
             FrameRate::new(24, 1).unwrap(),
@@ -987,6 +985,16 @@ fn generated_hold_resize_reuses_materialized_frames_and_preserves_following_sour
             record(&artifact.native_object, 25),
         ),
     ]);
+    (artifact, assets)
+}
+
+#[test]
+fn generated_hold_resize_reuses_materialized_frames_and_preserves_following_source() {
+    let initial = document(
+        &["hold", "source"],
+        vec![("hold", hold(30)), ("source", source(10, 10_000, 20_010))],
+    );
+    let (artifact, assets) = generated_fixture("", ['c', 'd', 'e']);
     let edit = |before: &ProjectDocument, next: &str, command| {
         let transaction = deadpan_core::apply(
             before,
@@ -1005,11 +1013,24 @@ fn generated_hold_resize_reuses_materialized_frames_and_preserves_following_sour
         "accepted",
         Command::AcceptGeneratedHold {
             node: id("hold"),
-            artifact,
+            artifact: artifact.clone(),
             assets,
         },
     );
     let full_plan = RenderPlan::compile(&accepted).unwrap();
+    let full_first = full_plan.picture(ProjectFrame(0)).unwrap();
+    let Picture::Accepted {
+        generated: Some(full_artifact),
+        ..
+    } = &full_first.picture
+    else {
+        panic!("expected generated artifact")
+    };
+    assert_eq!(full_artifact.as_ref(), &artifact);
+    assert_eq!(
+        serde_json::to_value(&full_first.picture).unwrap()["generated"],
+        serde_json::to_value(&artifact).unwrap()
+    );
     let following = full_plan.picture(ProjectFrame(30)).unwrap().picture;
     let shorter = edit(
         &accepted,
@@ -1020,16 +1041,42 @@ fn generated_hold_resize_reuses_materialized_frames_and_preserves_following_sour
         },
     );
     let shorter_plan = RenderPlan::compile(&shorter).unwrap();
+    let shorter_first = shorter_plan.picture(ProjectFrame(0)).unwrap();
+    let Picture::Accepted {
+        generated: Some(shorter_artifact),
+        ..
+    } = &shorter_first.picture
+    else {
+        panic!("expected shortened generated artifact")
+    };
     for frame in 0..12 {
         let picture = shorter_plan.picture(ProjectFrame(frame)).unwrap().picture;
         assert_eq!(
             picture,
             full_plan.picture(ProjectFrame(frame)).unwrap().picture
         );
-        assert!(
-            matches!(picture, Picture::Accepted { asset, frame: SourceFrameId(number), .. }
-            if asset == asset_id("sampled") && number == u64::try_from(frame).unwrap())
-        );
+        let Picture::Accepted {
+            asset,
+            frame: SourceFrameId(number),
+            generated: Some(selected),
+            ..
+        } = picture
+        else {
+            panic!("expected generated prefix")
+        };
+        assert_eq!(asset, artifact.sampled_asset);
+        assert_eq!(number, u64::try_from(frame).unwrap());
+        assert_eq!(selected.as_ref(), &artifact);
+        assert!(std::sync::Arc::ptr_eq(&selected, shorter_artifact));
+        let original = full_plan.picture(ProjectFrame(frame)).unwrap();
+        let Picture::Accepted {
+            generated: Some(selected),
+            ..
+        } = &original.picture
+        else {
+            panic!("expected original generated artifact")
+        };
+        assert!(std::sync::Arc::ptr_eq(selected, full_artifact));
     }
     assert_eq!(
         shorter_plan.picture(ProjectFrame(12)).unwrap().picture,
@@ -1044,11 +1091,32 @@ fn generated_hold_resize_reuses_materialized_frames_and_preserves_following_sour
         },
     );
     let reused_plan = RenderPlan::compile(&reused).unwrap();
+    let reused_first = reused_plan.picture(ProjectFrame(0)).unwrap();
+    let Picture::Accepted {
+        generated: Some(reused_artifact),
+        ..
+    } = &reused_first.picture
+    else {
+        panic!("expected re-extended generated artifact")
+    };
+    assert_eq!(reused_artifact.as_ref(), &artifact);
     for frame in 0..40 {
+        let reused_picture = reused_plan.picture(ProjectFrame(frame)).unwrap().picture;
         assert_eq!(
-            reused_plan.picture(ProjectFrame(frame)).unwrap().picture,
+            reused_picture,
             full_plan.picture(ProjectFrame(frame)).unwrap().picture
         );
+        if frame < 30 {
+            let Picture::Accepted {
+                generated: Some(selected),
+                ..
+            } = reused_picture
+            else {
+                panic!("expected re-extended generated prefix")
+            };
+            assert_eq!(selected.as_ref(), &artifact);
+            assert!(std::sync::Arc::ptr_eq(&selected, reused_artifact));
+        }
     }
     let extended = edit(
         &reused,
@@ -1076,6 +1144,147 @@ fn generated_hold_resize_reuses_materialized_frames_and_preserves_following_sour
         full_plan.picture(ProjectFrame(29)).unwrap().picture,
         Picture::Accepted { .. }
     ));
+}
+
+#[test]
+fn generated_repeat_gaps_and_sparse_play_override_keep_distinct_artifacts() {
+    let initial = document(
+        &["repeat"],
+        vec![
+            ("child", hold(30)),
+            ("repeat", repeat("child", 3, 30, "plays")),
+        ],
+    );
+    let (gap_artifact, gap_assets) = generated_fixture("gap-", ['1', '2', '3']);
+    let mut wire = serde_json::to_value(&initial).unwrap();
+    wire["nodes"]["repeat"]["kind"]["gap"]["video"] = serde_json::to_value(HoldVideo::Generated {
+        accepted: Box::new(AcceptedGeneration {
+            artifact: gap_artifact.clone(),
+            fallback: HoldFallback::Background,
+        }),
+    })
+    .unwrap();
+    let assets = wire["assets"].as_object_mut().unwrap();
+    for (asset, record) in gap_assets {
+        assets.insert(asset.as_str().into(), serde_json::to_value(record).unwrap());
+    }
+    let repeated = ProjectDocument::from_json(&wire.to_string()).unwrap();
+    let before = RenderPlan::compile(&repeated).unwrap();
+    let NodeKind::Repeat { iterations, .. } = &repeated.nodes()[&id("repeat")].kind else {
+        panic!("expected Repeat")
+    };
+    let selected = iterations.at(1).unwrap();
+    let (play_artifact, play_assets) = generated_fixture("play-", ['4', '5', '6']);
+    let transaction = apply(
+        &repeated,
+        &CommandRequest {
+            project_id: repeated.project_id().clone(),
+            expected_revision: repeated.revision_id().clone(),
+            new_revision: revision("isolated-generated"),
+            command: Command::EditOccurrence {
+                instance: InstancePath {
+                    node: id("child"),
+                    repeats: vec![RepeatInstance {
+                        node: id("repeat"),
+                        iteration: selected.clone(),
+                    }],
+                },
+                edit: OccurrenceEdit::AcceptGeneratedHold {
+                    artifact: play_artifact.clone(),
+                    assets: play_assets,
+                },
+                identities: OccurrenceIdentities {
+                    nodes: vec![id("isolated-child")],
+                    marks: vec![],
+                },
+            },
+        },
+    )
+    .unwrap();
+    let isolated = transaction.forward.apply(&repeated).unwrap();
+    assert_eq!(transaction.inverse.apply(&isolated).unwrap(), repeated);
+    assert_eq!(
+        isolated.overrides()[&id("repeat")].get(&selected),
+        Some(&id("isolated-child"))
+    );
+    let plan = RenderPlan::compile(&isolated).unwrap();
+    assert_eq!(plan.duration(), duration(150));
+    let first_gap = plan.picture(ProjectFrame(30)).unwrap();
+    let Picture::Accepted {
+        generated: Some(gap_identity),
+        ..
+    } = &first_gap.picture
+    else {
+        panic!("expected generated default gap")
+    };
+    let first_play = plan.picture(ProjectFrame(60)).unwrap();
+    let Picture::Accepted {
+        generated: Some(play_identity),
+        ..
+    } = &first_play.picture
+    else {
+        panic!("expected generated play override")
+    };
+    assert!(!std::sync::Arc::ptr_eq(gap_identity, play_identity));
+    // Seek between the two gaps and the overridden play, including both ends.
+    for frame in [149, 30, 89, 90, 60, 59, 119, 0, 120, 75, 45, 105, 29] {
+        let sample = plan.picture(ProjectFrame(frame)).unwrap();
+        sample.instance.validate(&isolated).unwrap();
+        match frame {
+            30..60 | 90..120 => {
+                assert_eq!(sample.instance.node, id("repeat"));
+                assert!(sample.instance.repeats.is_empty());
+                assert_eq!(
+                    sample.gap_after.as_ref().unwrap(),
+                    &iterations.at(if frame < 60 { 0 } else { 1 }).unwrap()
+                );
+                let Picture::Accepted {
+                    asset,
+                    frame: original,
+                    generated: Some(identity),
+                    ..
+                } = sample.picture
+                else {
+                    panic!("expected default gap artifact")
+                };
+                assert_eq!(asset, gap_artifact.sampled_asset);
+                assert_eq!(original, SourceFrameId(u64::try_from(frame % 30).unwrap()));
+                assert_eq!(identity.as_ref(), &gap_artifact);
+                assert!(std::sync::Arc::ptr_eq(&identity, gap_identity));
+            }
+            60..90 => {
+                assert_eq!(sample.instance.node, id("isolated-child"));
+                assert_eq!(sample.instance.repeats[0].iteration, selected);
+                assert!(sample.gap_after.is_none());
+                let Picture::Accepted {
+                    asset,
+                    frame: original,
+                    generated: Some(identity),
+                    ..
+                } = sample.picture
+                else {
+                    panic!("expected sparse play artifact")
+                };
+                assert_eq!(asset, play_artifact.sampled_asset);
+                assert_eq!(original, SourceFrameId(u64::try_from(frame - 60).unwrap()));
+                assert_eq!(identity.as_ref(), &play_artifact);
+                assert!(std::sync::Arc::ptr_eq(&identity, play_identity));
+                assert_eq!(
+                    before.picture(ProjectFrame(frame)).unwrap().picture,
+                    Picture::Background
+                );
+            }
+            _ => {
+                assert_eq!(sample.instance.node, id("child"));
+                assert!(sample.gap_after.is_none());
+                assert_eq!(sample.picture, Picture::Background);
+            }
+        }
+    }
+    assert!(
+        plan.picture(ProjectFrame(150)).is_err(),
+        "there is no trailing gap"
+    );
 }
 
 #[test]
@@ -1194,6 +1403,7 @@ fn accepted_frames_floor_only_after_composed_retimes_and_validate_index() {
         let Picture::Accepted {
             position,
             frame: source_frame,
+            generated: None,
             ..
         } = sample.picture
         else {
@@ -1214,6 +1424,12 @@ fn accepted_frames_floor_only_after_composed_retimes_and_validate_index() {
         );
     }
     let last = plan.picture(ProjectFrame(5)).unwrap().picture;
+    assert!(
+        serde_json::to_value(&last)
+            .unwrap()
+            .get("generated")
+            .is_none()
+    );
     assert!(matches!(
         last.select_source_frame(&index("video", clock(), &[0], 1000)),
         Err(PlanError::MissingSourceFrame {
@@ -1555,6 +1771,7 @@ fn accepted_repeat_gap_maps_exact_fractional_positions_without_a_trailing_gap() 
         let Picture::Accepted {
             position,
             frame: original,
+            generated: None,
             ..
         } = sample.picture
         else {

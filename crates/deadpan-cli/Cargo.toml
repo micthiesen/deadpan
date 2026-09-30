@@ -22,6 +22,7 @@ deadpan-media.workspace = true
 deadpan-audio.workspace = true
 deadpan-render.workspace = true
 deadpan-source.workspace = true
+deadpan-models.workspace = true
 
 [dev-dependencies]
 tempfile.workspace = true

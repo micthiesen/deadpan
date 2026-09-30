@@ -288,20 +288,35 @@ impl ConversionReport {
 
     pub fn validate_worker(&self, request: &WorkerRequest) -> Result<(), ContractError> {
         request.validate()?;
+        self.validate_canonical(&request.output_video()?)?;
+        if self.output_bytes > request.limits().max_output_bytes {
+            return Err(ContractError("output size is empty or exceeds budget"));
+        }
+        if matches!(request, WorkerRequest::Convert(_))
+            && self.input_rgb_sha256 != self.output_rgb_sha256
+        {
+            return Err(ContractError(
+                "decoded pixel identities differ or are invalid",
+            ));
+        }
+        Ok(())
+    }
+
+    /// Validate durable canonical-media evidence without inventing the original
+    /// helper's launch budgets. Callers separately bind object lengths and the
+    /// input/output pixel identities required by their conversion operation.
+    pub fn validate_canonical(&self, video: &VideoContract) -> Result<(), ContractError> {
+        video.validate()?;
         if self.protocol != REPORT_PROTOCOL_VERSION {
             return Err(ContractError("unsupported report protocol version"));
         }
-        if self.video != request.output_video()? {
+        if &self.video != video {
             return Err(ContractError("worker changed the requested video contract"));
         }
-        if self.output_bytes == 0 || self.output_bytes > request.limits().max_output_bytes {
+        if self.output_bytes == 0 || self.output_bytes > MAX_FILE_BYTES {
             return Err(ContractError("output size is empty or exceeds budget"));
         }
-        if !is_sha256(&self.input_rgb_sha256)
-            || !is_sha256(&self.output_rgb_sha256)
-            || (matches!(request, WorkerRequest::Convert(_))
-                && self.input_rgb_sha256 != self.output_rgb_sha256)
-        {
+        if !is_sha256(&self.input_rgb_sha256) || !is_sha256(&self.output_rgb_sha256) {
             return Err(ContractError(
                 "decoded pixel identities differ or are invalid",
             ));
@@ -603,5 +618,26 @@ mod tests {
             .unwrap()
             .remove("last_output_duration");
         assert!(serde_json::from_value::<ConversionReport>(missing).is_err());
+    }
+
+    #[test]
+    fn durable_report_validation_preserves_checks_without_launch_budgets() {
+        let video = video();
+        let mut measured = report(video);
+        measured.output_bytes = 2048;
+        measured.output_rgb_sha256 = "b".repeat(64);
+        measured.validate_canonical(&video).unwrap();
+        // Live conversion also applies its budget and identity-preserving
+        // operation. Durable bridge callers check cross-report identities.
+        assert!(measured.validate(&conversion(video)).is_err());
+        measured.output_bytes = 1024;
+        assert!(measured.validate(&conversion(video)).is_err());
+        measured.output_rgb_sha256 = measured.input_rgb_sha256.clone();
+        measured.validate(&conversion(video)).unwrap();
+        measured.slice_crc = false;
+        assert!(measured.validate_canonical(&video).is_err());
+        measured.slice_crc = true;
+        measured.output_bytes = MAX_FILE_BYTES + 1;
+        assert!(measured.validate_canonical(&video).is_err());
     }
 }

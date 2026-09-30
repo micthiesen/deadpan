@@ -306,6 +306,41 @@ enum SessionKey {
         asset: AssetId,
         receipt: SourceQualificationId,
     },
+    Generated {
+        session: u64,
+        media: Arc<GeneratedMediaKey>,
+    },
+}
+
+/// Decoder reuse follows immutable media interpretation, independently of
+/// revision/framing changes. A changed asset record must be admitted again.
+#[derive(Debug, PartialEq, Eq)]
+struct GeneratedMediaKey {
+    artifact: Arc<deadpan_core::GeneratedArtifact>,
+    native: deadpan_core::AssetRecord,
+    sampled: deadpan_core::AssetRecord,
+    color: deadpan_core::ColorPolicy,
+}
+
+impl GeneratedMediaKey {
+    fn new(
+        document: &deadpan_core::ProjectDocument,
+        artifact: &Arc<deadpan_core::GeneratedArtifact>,
+    ) -> Result<Self, String> {
+        let record = |id| {
+            document
+                .assets()
+                .get(id)
+                .cloned()
+                .ok_or_else(|| "Accepted picture asset is absent.".to_owned())
+        };
+        Ok(Self {
+            artifact: artifact.clone(),
+            native: record(&artifact.native_asset)?,
+            sampled: record(&artifact.sampled_asset)?,
+            color: document.presentation_basis().color_policy,
+        })
+    }
 }
 
 struct RetainedSession {
@@ -388,8 +423,35 @@ fn project_picture(
                 deadpan_plan::Picture::Still { .. } => {
                     return Err("Still-image preview is not yet qualified.".into());
                 }
-                deadpan_plan::Picture::Accepted { .. } => {
-                    return Err("Accepted generated-media preview is not yet qualified.".into());
+                deadpan_plan::Picture::Accepted {
+                    asset,
+                    generated: Some(artifact),
+                    ..
+                } => {
+                    if asset != &artifact.sampled_asset {
+                        return Err(
+                            "Generated picture asset disagrees with its accepted artifact.".into(),
+                        );
+                    }
+                    let mut picture = generated_picture(
+                        workspace,
+                        &sample.picture,
+                        artifact,
+                        canvas,
+                        cancelled,
+                        retained,
+                    )?;
+                    picture.framing = sample.framing;
+                    picture.framing_gap = sample.gap_after.is_some();
+                    picture.picture_context = sample.picture_context;
+                    return Ok(picture);
+                }
+                deadpan_plan::Picture::Accepted {
+                    generated: None, ..
+                } => {
+                    return Err(
+                        "Legacy accepted-media preview has no qualified generated evidence.".into(),
+                    );
                 }
             };
             let registered = registered_source(workspace, asset)?;
@@ -424,6 +486,64 @@ fn background_picture(canvas: Option<(u32, u32)>) -> Picture {
         framing_gap: false,
         picture_context: None,
     }
+}
+
+fn generated_picture(
+    workspace: &Workspace,
+    picture: &deadpan_plan::Picture,
+    artifact: &Arc<deadpan_core::GeneratedArtifact>,
+    canvas: Option<(u32, u32)>,
+    cancelled: &AtomicBool,
+    retained: &mut Option<RetainedSession>,
+) -> Result<Picture, String> {
+    workspace
+        .generated
+        .check_live(cancelled)
+        .map_err(|error| error.to_string())?;
+    let key = SessionKey::Generated {
+        session: workspace.session,
+        media: Arc::new(GeneratedMediaKey::new(&workspace.document, artifact)?),
+    };
+    if retained.as_ref().is_none_or(|session| session.key != key) {
+        *retained = None;
+        let source = deadpan_cli::picture::open_generated_picture(
+            &workspace.generated,
+            &workspace.document,
+            artifact,
+            cancelled,
+        )
+        .map_err(|error| error.to_string())?;
+        *retained = Some(RetainedSession {
+            key,
+            source,
+            catalog: None,
+        });
+    }
+    let session = retained
+        .as_mut()
+        .ok_or("The generated picture session could not be retained.")?;
+    let id = picture
+        .select_source_frame(session.source.index().index())
+        .map_err(|error| error.to_string())?
+        .identity;
+    let decoded = session
+        .source
+        .frame(id, FRAME_TIMEOUT, cancelled)
+        .map_err(|error| error.to_string())?;
+    let frame = render_frame(decoded, session.source.info())?;
+    workspace
+        .generated
+        .check_live(cancelled)
+        .map_err(|error| error.to_string())?;
+    Ok(Picture {
+        summary: Some(source_summary(&session.source)),
+        id,
+        frame: Some(frame),
+        canvas,
+        framing: Vec::new(),
+        framing_gap: false,
+        picture_context: None,
+    })
 }
 
 fn registered_source<'a>(

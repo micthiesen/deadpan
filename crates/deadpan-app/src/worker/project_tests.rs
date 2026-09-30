@@ -18,6 +18,101 @@ use deadpan_store::source_registration::{
 use super::*;
 
 #[test]
+fn generated_decoder_identity_preserves_edits_but_rechecks_media_interpretation() {
+    use deadpan_core::{
+        AssetRecord, BridgeInterpolation, BridgeSamplingMap, GeneratedArtifact, GeneratedContentId,
+        GeneratedObjectRef, SourceSpan, SourceTimeBase,
+    };
+
+    let object = |digit: char| {
+        GeneratedObjectRef::new(
+            GeneratedContentId::new(digit.to_string().repeat(64)).unwrap(),
+            1024,
+        )
+        .unwrap()
+    };
+    let artifact = Arc::new(GeneratedArtifact {
+        native_asset: AssetId::new("native").unwrap(),
+        native_object: object('a'),
+        sampled_asset: AssetId::new("sampled").unwrap(),
+        sampled_object: object('b'),
+        provenance: object('c'),
+        sampling: BridgeSamplingMap::new(
+            deadpan_core::FrameRate::new(30, 1).unwrap(),
+            deadpan_core::FrameRate::new(24, 1).unwrap(),
+            FrameDuration::new(25).unwrap(),
+            FrameDuration::new(30).unwrap(),
+            BridgeInterpolation::EncodedSrgbRgb8LinearHalfUp,
+        )
+        .unwrap(),
+    });
+    let initial = ProjectDocument::new(
+        ProjectId::new("generated-key").unwrap(),
+        revision("before"),
+        deadpan_core::PresentationBasis {
+            width: 1920,
+            height: 1080,
+            frame_rate: deadpan_core::FrameRate::new(30, 1).unwrap(),
+            color_policy: deadpan_core::ColorPolicy::SdrRec709,
+        },
+        node("root"),
+    )
+    .unwrap();
+    let mut wire = serde_json::to_value(&initial).unwrap();
+    let clock = SourceTimeBase::new(1, 1000).unwrap();
+    for (asset, object, count, end) in [
+        (&artifact.native_asset, &artifact.native_object, 25, 1041),
+        (&artifact.sampled_asset, &artifact.sampled_object, 30, 1000),
+    ] {
+        wire["assets"][asset.as_str()] = serde_json::to_value(AssetRecord {
+            label: "Generated".into(),
+            content_hash: object.content().to_string(),
+            video: Some(
+                SourceSpan::new(
+                    SourceTimestamp {
+                        ticks: 0,
+                        time_base: clock,
+                    },
+                    SourceTimestamp {
+                        ticks: end,
+                        time_base: clock,
+                    },
+                )
+                .unwrap(),
+            ),
+            audio: None,
+            still_image: false,
+            frame_count: Some(FrameDuration::new(count).unwrap()),
+            source_qualification: None,
+        })
+        .unwrap();
+    }
+    let key = |wire: &serde_json::Value| {
+        GeneratedMediaKey::new(
+            &ProjectDocument::from_json(&wire.to_string()).unwrap(),
+            &artifact,
+        )
+        .unwrap()
+    };
+    let before = key(&wire);
+    wire["revision_id"] = serde_json::json!("after");
+    wire["nodes"]["root"]["label"] = serde_json::json!("Revised group");
+    wire["presentation_basis"]["width"] = serde_json::json!(1280);
+    assert_eq!(
+        before,
+        key(&wire),
+        "editorial revision/canvas changes reuse media"
+    );
+    for asset in [&artifact.native_asset, &artifact.sampled_asset] {
+        let mut changed = wire.clone();
+        changed["assets"][asset.as_str()]["frame_count"] = serde_json::json!(31);
+        assert_ne!(before, key(&changed), "changed {asset} must be readmitted");
+    }
+    wire["presentation_basis"]["color_policy"] = serde_json::json!("hdr_rec2020_pq");
+    assert_ne!(before, key(&wire), "HDR cannot reuse an SDR admission");
+}
+
+#[test]
 fn index_validation_observes_cancellation_between_bounded_chunks() {
     let make = |last_keyframe| {
         SourceFrameIndex::new(
@@ -186,6 +281,7 @@ impl Fixture {
             document,
             sources,
             originals: self.store.original_import_handle().unwrap(),
+            generated: self.store.generated_read_handle(),
             can_undo: false,
             can_redo: false,
             single_source: None,
