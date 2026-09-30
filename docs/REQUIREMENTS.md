@@ -2,6 +2,14 @@
 
 All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_SPEC.md#29-requirements-traceability) remain in scope. Their detailed sections are normative. This tracker records the current implementation and measured evidence, not a reduced release scope.
 
+[Typed encoder failures](qualification/encoded-failures-2026-09-30.md) preserve
+exact native failure kinds through supervision and invalidate them after later
+protocol, timeout or cleanup faults. Real media reproduces the hardware B-frame
+rejection and separately verifies a no-B encode without authored changes. The
+native matrix passes 872 pictures and 180 exact audio event coordinates. All
+2,359 workspace tests, strict Clippy, formatting and native startup/shutdown pass.
+This is DP-17/DP-18 groundwork; automatic selection and public Render remain open.
+
 [Visual slice placement](spec/DEADPAN_SPEC.md#97-visual-slice-placement) is an
 explicit DP-05/DP-20 requirement: select and refine a time range, see its source
 endpoints and destination, audition both proposed joins, then commit or cancel

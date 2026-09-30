@@ -139,17 +139,19 @@ fn hashing_checks_exact_extent_and_interrupts_between_bounded_reads() {
         calls: 0,
     };
     let expected = u64::try_from(HASH_CHUNK_BYTES + 1).unwrap();
-    assert!(
+    assert_eq!(
         hash_exact(&mut reader, expected, &cancelled, deadline())
             .unwrap_err()
-            .contains("cancelled")
+            .kind,
+        EncodedFailureKind::Control
     );
     assert_eq!(reader.calls, 1);
     cancelled.store(false, Ordering::Release);
-    assert!(
+    assert_eq!(
         hash_exact(&mut reader, expected, &cancelled, Instant::now())
             .unwrap_err()
-            .contains("deadline")
+            .kind,
+        EncodedFailureKind::Control
     );
     assert_eq!(reader.calls, 1);
 }
@@ -188,4 +190,160 @@ fn fractional_range_rebases_absolute_audio_without_rounding_or_padding() {
         assert!(PlanarInput::new(&[[sample, 0.]], 1).is_err());
         assert!(PlanarInput::new(&[[0., sample]], 1).is_err());
     }
+}
+
+#[test]
+fn native_failure_kinds_survive_worker_mapping_without_reading_prose() {
+    use deadpan_encode::EncodeFailureKind;
+    for (error, expected) in [
+        (
+            EncodeError::Native {
+                code: "video_encoder_unavailable".into(),
+                message: "opaque".into(),
+            },
+            EncodeFailureKind::EncoderUnavailable,
+        ),
+        (
+            EncodeError::Native {
+                code: "video_timestamp_order".into(),
+                message: "opaque".into(),
+            },
+            EncodeFailureKind::VideoTimestampOrder,
+        ),
+        (
+            EncodeError::Native {
+                code: "codec_open".into(),
+                message: "video_encoder_unavailable video_timestamp_order".into(),
+            },
+            EncodeFailureKind::Native,
+        ),
+        (
+            EncodeError::Io(io::Error::other("video_encoder_unavailable")),
+            EncodeFailureKind::Io,
+        ),
+        (
+            EncodeError::Input("video_timestamp_order"),
+            EncodeFailureKind::Input,
+        ),
+        (
+            EncodeError::Configuration("video_encoder_unavailable"),
+            EncodeFailureKind::Configuration,
+        ),
+        (
+            EncodeError::Evidence("video_encoder_unavailable"),
+            EncodeFailureKind::Evidence,
+        ),
+    ] {
+        let text = error.to_string();
+        let failure = encoder_failure(error);
+        assert_eq!(failure.kind, EncodedFailureKind::Encoder(expected));
+        assert_eq!(failure.diagnostic.as_str(), text);
+    }
+}
+
+#[test]
+fn misleading_output_io_diagnostics_cannot_claim_encoder_capability() {
+    struct FailingReader;
+    impl Read for FailingReader {
+        fn read(&mut self, _: &mut [u8]) -> io::Result<usize> {
+            Err(io::Error::other(
+                "native encoder video_encoder_unavailable: video_timestamp_order",
+            ))
+        }
+    }
+    let error = hash_exact(&mut FailingReader, 1, &AtomicBool::new(false), deadline()).unwrap_err();
+    assert_eq!(error.kind, EncodedFailureKind::Output);
+    assert!(
+        error
+            .diagnostic
+            .as_str()
+            .contains("video_encoder_unavailable")
+    );
+    for kind in [
+        EncodedFailureKind::Control,
+        EncodedFailureKind::Contract,
+        EncodedFailureKind::Source,
+        EncodedFailureKind::Picture,
+        EncodedFailureKind::Audio,
+    ] {
+        assert_eq!(
+            failure(kind, "video_encoder_unavailable video_timestamp_order").kind,
+            kind
+        );
+    }
+    assert_eq!(
+        document_failure(crate::render_worker::RenderWorkerError::Worker(
+            "video_encoder_unavailable".into()
+        ))
+        .kind,
+        EncodedFailureKind::Contract
+    );
+    assert_eq!(
+        document_failure(crate::render_worker::RenderWorkerError::Deadline).kind,
+        EncodedFailureKind::Control
+    );
+}
+
+#[test]
+fn contract_and_source_admission_failures_are_typed_before_output_allocation() {
+    use super::super::protocol::EncoderChoice;
+    use crate::render_worker::protocol::{RenderContract, RenderTimeBase};
+    use deadpan_core::{
+        ColorPolicy, ExactRatio, FrameRange, FrameRate, ProjectFrame, ProjectId, RevisionId,
+    };
+    use deadpan_encode::{BFramePolicy, EncoderMode};
+
+    let scratch = tempfile::tempdir().unwrap();
+    let missing = scratch.path().join("video_encoder_unavailable.deadpan");
+    let mut request = Request {
+        identity: identity(),
+        contract: EncodedRenderContract {
+            picture: RenderContract {
+                project_id: ProjectId::new("project").unwrap(),
+                revision_id: RevisionId::new("committed").unwrap(),
+                range: FrameRange::new(ProjectFrame(0), ProjectFrame(1)).unwrap(),
+                canvas: [64, 48],
+                raster: [64, 48],
+                frame_rate: FrameRate::new(30, 1).unwrap(),
+                color_policy: ColorPolicy::SdrRec709,
+                time_base: RenderTimeBase {
+                    numerator: 1,
+                    denominator: 30,
+                },
+                frame_count: 1,
+                terminal_pts: 1,
+                project_audio_start: AudioSample(0),
+                project_audio_end: AudioSample(1600),
+                relative_aspect_error: ExactRatio::new(0, 1).unwrap(),
+            },
+            choice: EncoderChoice {
+                mode: EncoderMode::Hardware,
+                b_frames: BFramePolicy::None,
+            },
+        },
+        document_sha256: Sha256::new("a".repeat(64)).unwrap(),
+        limits: EncodeLimits::default(),
+    };
+    let mut output = Vec::new();
+    let error = prepare(
+        &missing,
+        &request,
+        &AtomicBool::new(false),
+        deadline(),
+        &mut output,
+    )
+    .unwrap_err();
+    assert_eq!(error.kind, EncodedFailureKind::Source);
+    request.contract.picture.frame_count = 0;
+    let error = prepare(
+        &missing,
+        &request,
+        &AtomicBool::new(false),
+        deadline(),
+        &mut output,
+    )
+    .unwrap_err();
+    assert_eq!(error.kind, EncodedFailureKind::Contract);
+    assert!(output.is_empty());
+    assert!(!missing.exists());
 }

@@ -1,0 +1,13 @@
+import os
+import subprocess
+
+env = dict(os.environ, DEADPAN_CHECK_OUTPUT='/tmp/deadpan-automatic-render-H6fzEQ')
+runner = 'tools/media-qualification/evidence/2026-09-29-generated-pictures/run-native.py'
+checks = [
+    ('format-check', ['cargo', 'fmt', '--all', '--', '--check']),
+    ('workspace-clippy', ['cargo', 'clippy', '--workspace', '--all-targets', '--locked', '--', '-D', 'warnings']),
+    ('workspace-tests', ['cargo', 'test', '--workspace', '--locked', '--no-fail-fast']),
+    ('native-smoke', ['cargo', 'run', '--locked', '-p', 'deadpan-app', '--', '--smoke-test']),
+]
+for name, args in checks:
+    subprocess.run(['python3', runner, name, *args], env=env, check=True)

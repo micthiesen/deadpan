@@ -305,6 +305,8 @@ fn failure(error: EncodedRenderError) -> StageReply {
         EncodedRenderError::Cancelled => "cancelled",
         EncodedRenderError::Deadline => "deadline_exceeded",
         _ if !error.cleanup_confirmed() => "cleanup_unconfirmed",
+        EncodedRenderError::WorkerFailure(failure) => failure.kind.code(),
+        EncodedRenderError::WorkerFault { .. } => "render_worker_fault",
         _ => "render_stage_failed",
     };
     StageReply::Failed {
@@ -324,5 +326,46 @@ fn publication_failure(
         // the host returns every observed movie rename as PublicationOutcome.
         cleanup_confirmed: true,
         retained,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::encoded_render::protocol::{EncodedFailure, EncodedFailureKind};
+    use deadpan_encode::EncodeFailureKind;
+    use deadpan_jobs::Diagnostic;
+
+    #[test]
+    fn durable_diagnostic_retains_the_typed_failure_boundary() {
+        for (kind, expected) in [
+            (
+                EncodedFailureKind::Encoder(EncodeFailureKind::VideoTimestampOrder),
+                "video_timestamp_order",
+            ),
+            (
+                EncodedFailureKind::Encoder(EncodeFailureKind::EncoderUnavailable),
+                "video_encoder_unavailable",
+            ),
+            (EncodedFailureKind::Source, "render_source_failed"),
+            (EncodedFailureKind::Output, "render_output_failed"),
+        ] {
+            let error = EncodedRenderError::WorkerFailure(EncodedFailure {
+                kind,
+                diagnostic: Diagnostic::new("retained detail").unwrap(),
+            });
+            let StageReply::Failed {
+                diagnostic,
+                cleanup_confirmed,
+                ..
+            } = failure(error)
+            else {
+                panic!("failure must remain a failed stage")
+            };
+            assert_eq!(diagnostic.code, expected);
+            assert!(diagnostic.detail.contains("retained detail"));
+            assert!(cleanup_confirmed);
+            diagnostic.validate().unwrap();
+        }
     }
 }

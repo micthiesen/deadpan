@@ -8,7 +8,8 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
 use deadpan_cli::encoded_render::{
-    EncodedRenderError, EncodedWorkerLimits, encode, protocol::EncoderChoice,
+    EncodedRenderError, EncodedWorkerLimits, encode,
+    protocol::{EncodedFailureKind, EncoderChoice},
 };
 use deadpan_cli::render_worker::{
     RenderPictureRequest, RenderWorkerRuntime, protocol::RenderIdentity,
@@ -169,8 +170,9 @@ fn host_preserves_the_first_worker_diagnostic_and_never_snapshots_failed_complet
     fixture(&package);
     let error = failure(&package, "failed_exit");
     assert!(
-        matches!(error, EncodedRenderError::Worker(ref message)
-            if message == "fixture encoder rejected captured input"),
+        matches!(error, EncodedRenderError::WorkerFailure(ref failure)
+            if failure.kind == EncodedFailureKind::Encoder(deadpan_encode::EncodeFailureKind::Input)
+                && failure.diagnostic.as_str() == "fixture encoder rejected captured input"),
         "{error:?}"
     );
     for mode in [
@@ -202,6 +204,58 @@ fn host_preserves_the_first_worker_diagnostic_and_never_snapshots_failed_complet
             "{mode}: {error:?}"
         );
     }
+}
+
+#[test]
+fn typed_failure_crosses_supervision_without_trusting_prose_or_legacy_workers() {
+    use deadpan_encode::EncodeFailureKind;
+    let scratch = tempfile::tempdir().unwrap();
+    let package = scratch.path().join("typed-failure.deadpan");
+    let original = fixture(&package);
+    for (name, expected) in [
+        (
+            "encoder_unavailable",
+            EncodedFailureKind::Encoder(EncodeFailureKind::EncoderUnavailable),
+        ),
+        (
+            "video_timestamp_order",
+            EncodedFailureKind::Encoder(EncodeFailureKind::VideoTimestampOrder),
+        ),
+        (
+            "capacity",
+            EncodedFailureKind::Encoder(EncodeFailureKind::Capacity),
+        ),
+        ("io", EncodedFailureKind::Encoder(EncodeFailureKind::Io)),
+        ("source", EncodedFailureKind::Source),
+    ] {
+        let error = failure(&package, &format!("failure:{name}"));
+        assert!(error.cleanup_confirmed(), "{name}: {error:?}");
+        let EncodedRenderError::WorkerFailure(reported) = error else {
+            panic!("{name}: typed worker failure lost: {error:?}");
+        };
+        assert_eq!(reported.kind, expected);
+    }
+    for name in ["legacy", "stale", "unknown_field", "future_kind"] {
+        let mode = format!("failure:{name}");
+        assert_rejected_claim(failure(&package, &mode), &mode);
+    }
+    for name in [
+        "then_malformed",
+        "then_duplicate",
+        "then_crash",
+        "then_exit2",
+        "then_hang",
+    ] {
+        let error = failure(&package, &format!("failure:{name}"));
+        assert!(error.cleanup_confirmed());
+        let EncodedRenderError::WorkerFault { primary, fault } = error else {
+            panic!("{name}: supervision fault must invalidate the typed report: {error:?}");
+        };
+        assert!(matches!(*primary, EncodedRenderError::WorkerFailure(_)));
+        assert!(!fault.is_empty());
+    }
+    let store = ProjectStore::open(&package, AccessMode::ReadOnly).unwrap();
+    assert_eq!(store.snapshot().unwrap(), original);
 }
 
 #[test]

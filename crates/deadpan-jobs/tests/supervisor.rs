@@ -740,6 +740,11 @@ mod independent_protocol {
                 vec![Response::Finished { render: 3 }],
                 "unsuccessfully",
             ),
+            (
+                "exit-failure",
+                vec![Response::Rejected { render: 3 }],
+                "unsuccessfully",
+            ),
         ] {
             let workspace = tempfile::tempdir().unwrap();
             responses(workspace.path(), &messages);

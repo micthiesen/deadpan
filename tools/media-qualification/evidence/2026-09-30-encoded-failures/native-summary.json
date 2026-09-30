@@ -1,0 +1,12 @@
+{
+  "completed_encodes": 10,
+  "video_frames": 872,
+  "gop_boundaries": 40,
+  "fresh_gop_frames": 2432,
+  "audio_marker_coordinates": 180,
+  "maximum_audio_marker_error_samples": 0,
+  "rejected_hardware_b_attempts": 3,
+  "fault_cases": 6,
+  "final_file_admissions": 162,
+  "process_faults": []
+}

@@ -1,0 +1,43 @@
+import hashlib
+import json
+from pathlib import Path
+import re
+import shutil
+
+root = Path('/tmp/deadpan-automatic-render-H6fzEQ')
+target = Path('tools/media-qualification/evidence/2026-09-30-encoded-failures')
+checks = ['format-check', 'workspace-clippy', 'workspace-tests', 'native-smoke',
+          'native-build-fixed', 'native-worker', 'native-matrix', 'python-native-oracles']
+for name in checks:
+    row = json.loads((root / (name + '.json')).read_text())
+    assert row['exit_code'] == 0, (name, row)
+rows = re.findall(r'test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored;',
+                  (root / 'workspace-tests.log').read_text())
+assert rows and not any(int(f) or int(i) for _, f, i in rows)
+counts = {'passed': sum(int(p) for p, _, _ in rows), 'failed': 0, 'ignored': 0, 'result_groups': len(rows)}
+(root / 'workspace-test-counts.json').write_text(json.dumps(counts, indent=2) + '\n')
+source_ids = {json.loads((root / (name + '.json')).read_text())['source_manifest_sha256']
+              for name in checks if name != 'python-native-oracles'}
+assert len(source_ids) == 1, source_ids
+target.mkdir(parents=True, exist_ok=False)
+for path in root.iterdir():
+    if path.is_file() and (path.suffix in ('.json', '.log') or path.name in ('failure-review.md', 'native-files.tar.gz')):
+        shutil.copy2(path, target / path.name)
+for name in ['run-native-checks.py', 'run-gate.py', 'retain-native.py', 'collect-evidence.py']:
+    shutil.copy2(root / name, target / (name + '.txt'))
+summary = {'checks': checks, 'workspace': counts, 'qualified_source_inventory': next(iter(source_ids)),
+           'native': json.loads((root / 'native-summary.json').read_text()),
+           'archive': json.loads((root / 'native-files.json').read_text())['summary'],
+           'initial_failures': ['focused-failures: expected exit1 invalidated typed failure',
+                                'native-build: private capture method and SHA256 LowerHex compile errors'],
+           'unrun': ['sanitizers', 'GUI painted/physical interaction', 'optional ui-harness', 'GUI performance replay'],
+           'remaining': ['automatic admission and encoder decision provenance', 'public native/headless Render',
+                         'full mastering/effects', 'HDR', 'release hardware/OS qualification']}
+(target / 'summary.json').write_text(json.dumps(summary, indent=2) + '\n')
+manifest = {str(p.relative_to(target)): {'bytes': p.stat().st_size,
+            'sha256': hashlib.sha256(p.read_bytes()).hexdigest()} for p in sorted(target.iterdir()) if p.is_file()}
+(target / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
+for name, entry in manifest.items():
+    data = (target / name).read_bytes()
+    assert len(data) == entry['bytes'] and hashlib.sha256(data).hexdigest() == entry['sha256']
+print(json.dumps({'workspace': counts, 'evidence_files': len(manifest), 'source_ids': sorted(source_ids)}))

@@ -45,7 +45,7 @@ if sys.argv[1] == "owned-wait":
     assert request["op"] in ["prepare", "inspect"]
     if request["op"] == "prepare":
         picture = request["contract"]["picture"]
-        emit({"event": "progress", "protocol": 1, "identity": request["identity"],
+        emit({"event": "progress", "protocol": 2, "identity": request["identity"],
               "completed_frames": 0, "total_frames": picture["frame_count"],
               "completed_audio_samples": 0,
               "total_audio_samples": picture["project_audio_end"] - picture["project_audio_start"]})
@@ -58,13 +58,14 @@ if sys.argv[1] == "owned-wait":
     assert cancel["op"] == "cancel" and cancel["identity"] == request["identity"]
     assert cancel["cancellation_token"] == request["cancellation_token"]
     Path(sys.argv[2]).write_text("host cancelled revoked owner\n")
-    emit({"event": "cancelled", "protocol": 1, "identity": request["identity"]})
+    emit({"event": "cancelled", "protocol": request["protocol"], "identity": request["identity"]})
     raise SystemExit(0)
 
 if sys.argv[1] == "encode":
     assert sys.argv[4] == "--render-encode-worker"
     assert Path(sys.argv[5]).is_absolute()
     assert request["op"] == "prepare"
+    assert request["protocol"] == 2
     manifest = json.loads(Path(sys.argv[2]).read_text())
     assert manifest["contract"] == request["contract"], "captured contract changed"
     assert manifest["report"]["info"]["maximum_moov_bytes"] == (
@@ -76,7 +77,7 @@ if sys.argv[1] == "encode":
     manifest["movie"]["sha256"] = hashlib.sha256(payload).hexdigest()
     manifest["movie"]["byte_length"] = len(payload)
     manifest["report"]["output_bytes"] = len(payload)
-    emit({"event": "completed", "protocol": 1, "identity": request["identity"],
+    emit({"event": "completed", "protocol": 2, "identity": request["identity"],
           "manifest": manifest})
     raise SystemExit(0)
 

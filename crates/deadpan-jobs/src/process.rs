@@ -46,6 +46,9 @@ pub enum ResponseKind {
     Progress,
     /// Failure or cancellation acknowledgement, delivered immediately.
     Terminal,
+    /// Validated failure, delivered immediately. Exit code 1 is expected after
+    /// this terminal; signals, other failing codes and protocol faults are not.
+    Failed,
     /// Successful result, withheld until clean process and pipe teardown.
     Completed,
 }
@@ -316,6 +319,7 @@ pub struct SupervisedProcess<P: WorkerProtocol> {
     started: Instant,
     cancel_started: Option<Instant>,
     terminal_received: Option<Instant>,
+    failure_exit_expected: bool,
     completed: Option<Box<P::Response>>,
     group_stopped: bool,
     reap_attempted: bool,
@@ -385,6 +389,7 @@ impl<P: WorkerProtocol> SupervisedProcess<P> {
             started: Instant::now(),
             cancel_started: None,
             terminal_received: None,
+            failure_exit_expected: false,
             completed: None,
             group_stopped: false,
             reap_attempted: false,
@@ -736,7 +741,9 @@ impl<P: WorkerProtocol> SupervisedProcess<P> {
                 Some(Err(mpsc::TryRecvError::Empty | mpsc::TryRecvError::Disconnected)) | None => {
                     if let Some(status) = self.exit {
                         if !self.faulted && self.cancel_started.is_none() {
-                            if !status.success() {
+                            if !status.success()
+                                && !(self.failure_exit_expected && status.code() == Some(1))
+                            {
                                 self.fail(
                                     format!("worker exited unsuccessfully: {status}"),
                                     &mut output,
@@ -798,6 +805,7 @@ impl<P: WorkerProtocol> SupervisedProcess<P> {
                 } else {
                     if kind != ResponseKind::Progress {
                         self.terminal_received = Some(now);
+                        self.failure_exit_expected = kind == ResponseKind::Failed;
                         self.control = None;
                     }
                     if kind == ResponseKind::Completed {

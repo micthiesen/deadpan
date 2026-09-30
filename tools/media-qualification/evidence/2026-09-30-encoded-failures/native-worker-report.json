@@ -1,0 +1,435 @@
+{
+  "authoring_after": {
+    "bytes": 201376,
+    "sha256": "8e4948e599810fa3f56fc4274f095ee14756d45d96c1b3955333ad33e1b8f19a",
+    "table_rows": [
+      24,
+      11,
+      1,
+      1
+    ]
+  },
+  "authoring_before": {
+    "bytes": 201376,
+    "sha256": "8e4948e599810fa3f56fc4274f095ee14756d45d96c1b3955333ad33e1b8f19a",
+    "table_rows": [
+      24,
+      11,
+      1,
+      1
+    ]
+  },
+  "authoring_unchanged": true,
+  "basis": {
+    "color_policy": "sdr_rec709",
+    "frame_rate": {
+      "denominator": 1001,
+      "numerator": 30000
+    },
+    "height": 180,
+    "width": 320
+  },
+  "document_sha256": "564af137ff203f7a10344a9e50db7a4167cee0e1dfbbecf44ed3b39a3c6ef638",
+  "hardware_none": {
+    "manifest": {
+      "contract": {
+        "choice": {
+          "b_frames": "none",
+          "mode": "hardware"
+        },
+        "picture": {
+          "canvas": [
+            320,
+            180
+          ],
+          "color_policy": "sdr_rec709",
+          "frame_count": 90,
+          "frame_rate": {
+            "denominator": 1001,
+            "numerator": 30000
+          },
+          "project_audio_end": 144144,
+          "project_audio_start": 0,
+          "project_id": "project-picture-qualification",
+          "range": {
+            "end": 90,
+            "start": 0
+          },
+          "raster": [
+            320,
+            180
+          ],
+          "relative_aspect_error": {
+            "denominator": "1",
+            "numerator": "0"
+          },
+          "revision_id": "workflow-live-restored",
+          "terminal_pts": 90090,
+          "time_base": {
+            "denominator": 30000,
+            "numerator": 1
+          }
+        }
+      },
+      "document_sha256": "564af137ff203f7a10344a9e50db7a4167cee0e1dfbbecf44ed3b39a3c6ef638",
+      "movie": {
+        "byte_length": 23642,
+        "reference": "output/movie.mp4",
+        "sha256": "61de3229d914407c79b1cee91932a390133d97e96139b85cdc800006dbfa4fa2"
+      },
+      "report": {
+        "audio_eof": true,
+        "audio_packets": 142,
+        "audio_samples": 144144,
+        "faststart_read_closes": 1,
+        "faststart_read_opens": 1,
+        "info": {
+          "abi_version": 1,
+          "audio_bitrate": 384000,
+          "audio_frame_size": 1024,
+          "audio_initial_padding": 1024,
+          "audio_profile": 1,
+          "audio_time_base_den": 48000,
+          "audio_time_base_num": 1,
+          "audio_trailing_padding": 0,
+          "avcodec_version": 4066151,
+          "avformat_version": 4064103,
+          "avutil_version": 3934311,
+          "maximum_moov_bytes": 257048576,
+          "movie_timescale": 240000,
+          "requested_mode": "hardware",
+          "video_bitrate": 1500000,
+          "video_gop_size": 15,
+          "video_has_b_frames": 0,
+          "video_max_b_frames": 0,
+          "video_profile": 100,
+          "video_time_base_den": 30000,
+          "video_time_base_num": 1
+        },
+        "output_bytes": 23642,
+        "packet_bytes": 19647,
+        "video_duration_from_contract_packets": 90,
+        "video_eof": true,
+        "video_frames": 90,
+        "video_packets": 90
+      }
+    },
+    "movie": {
+      "bytes": 23642,
+      "path": "/private/tmp/deadpan-automatic-render-H6fzEQ/native-worker-report.verified-hardware-none.mp4",
+      "sha256": "61de3229d914407c79b1cee91932a390133d97e96139b85cdc800006dbfa4fa2"
+    },
+    "passed": true,
+    "progress": [
+      {
+        "frames": 1,
+        "samples": 0,
+        "total_frames": 90,
+        "total_samples": 144144
+      },
+      {
+        "frames": 3,
+        "samples": 5120,
+        "total_frames": 90,
+        "total_samples": 144144
+      },
+      {
+        "frames": 6,
+        "samples": 10240,
+        "total_frames": 90,
+        "total_samples": 144144
+      },
+      {
+        "frames": 9,
+        "samples": 15360,
+        "total_frames": 90,
+        "total_samples": 144144
+      },
+      {
+        "frames": 13,
+        "samples": 19456,
+        "total_frames": 90,
+        "total_samples": 144144
+      },
+      {
+        "frames": 16,
+        "samples": 24576,
+        "total_frames": 90,
+        "total_samples": 144144
+      },
+      {
+        "frames": 19,
+        "samples": 29696,
+        "total_frames": 90,
+        "total_samples": 144144
+      },
+      {
+        "frames": 22,
+        "samples": 34816,
+        "total_frames": 90,
+        "total_samples": 144144
+      },
+      {
+        "frames": 25,
+        "samples": 39936,
+        "total_frames": 90,
+        "total_samples": 144144
+      },
+      {
+        "frames": 28,
+        "samples": 45056,
+        "total_frames": 90,
+        "total_samples": 144144
+      },
+      {
+        "frames": 31,
+        "samples": 50176,
+        "total_frames": 90,
+        "total_samples": 144144
+      },
+      {
+        "frames": 34,
+        "samples": 55296,
+        "total_frames": 90,
+        "total_samples": 144144
+      },
+      {
+        "frames": 38,
+        "samples": 59392,
+        "total_frames": 90,
+        "total_samples": 144144
+      },
+      {
+        "frames": 41,
+        "samples": 64512,
+        "total_frames": 90,
+        "total_samples": 144144
+      },
+      {
+        "frames": 44,
+        "samples": 69632,
+        "total_frames": 90,
+        "total_samples": 144144
+      },
+      {
+        "frames": 47,
+        "samples": 74752,
+        "total_frames": 90,
+        "total_samples": 144144
+      },
+      {
+        "frames": 50,
+        "samples": 79872,
+        "total_frames": 90,
+        "total_samples": 144144
+      },
+      {
+        "frames": 53,
+        "samples": 84992,
+        "total_frames": 90,
+        "total_samples": 144144
+      },
+      {
+        "frames": 56,
+        "samples": 90112,
+        "total_frames": 90,
+        "total_samples": 144144
+      },
+      {
+        "frames": 59,
+        "samples": 95232,
+        "total_frames": 90,
+        "total_samples": 144144
+      },
+      {
+        "frames": 63,
+        "samples": 99328,
+        "total_frames": 90,
+        "total_samples": 144144
+      },
+      {
+        "frames": 66,
+        "samples": 104448,
+        "total_frames": 90,
+        "total_samples": 144144
+      },
+      {
+        "frames": 69,
+        "samples": 109568,
+        "total_frames": 90,
+        "total_samples": 144144
+      },
+      {
+        "frames": 72,
+        "samples": 114688,
+        "total_frames": 90,
+        "total_samples": 144144
+      },
+      {
+        "frames": 75,
+        "samples": 119808,
+        "total_frames": 90,
+        "total_samples": 144144
+      },
+      {
+        "frames": 78,
+        "samples": 124928,
+        "total_frames": 90,
+        "total_samples": 144144
+      },
+      {
+        "frames": 81,
+        "samples": 130048,
+        "total_frames": 90,
+        "total_samples": 144144
+      },
+      {
+        "frames": 84,
+        "samples": 135168,
+        "total_frames": 90,
+        "total_samples": 144144
+      },
+      {
+        "frames": 87,
+        "samples": 140288,
+        "total_frames": 90,
+        "total_samples": 144144
+      },
+      {
+        "frames": 90,
+        "samples": 144144,
+        "total_frames": 90,
+        "total_samples": 144144
+      }
+    ],
+    "progress_overflow": false,
+    "requested_choice": {
+      "b_frames": "none",
+      "mode": "hardware"
+    },
+    "verification": {
+      "audio_edit_media_time": 1024,
+      "audio_packets": 142,
+      "audio_samples": 144144,
+      "contract": {
+        "choice": {
+          "b_frames": "none",
+          "mode": "hardware"
+        },
+        "picture": {
+          "canvas": [
+            320,
+            180
+          ],
+          "color_policy": "sdr_rec709",
+          "frame_count": 90,
+          "frame_rate": {
+            "denominator": 1001,
+            "numerator": 30000
+          },
+          "project_audio_end": 144144,
+          "project_audio_start": 0,
+          "project_id": "project-picture-qualification",
+          "range": {
+            "end": 90,
+            "start": 0
+          },
+          "raster": [
+            320,
+            180
+          ],
+          "relative_aspect_error": {
+            "denominator": "1",
+            "numerator": "0"
+          },
+          "revision_id": "workflow-live-restored",
+          "terminal_pts": 90090,
+          "time_base": {
+            "denominator": 30000,
+            "numerator": 1
+          }
+        }
+      },
+      "document_sha256": "564af137ff203f7a10344a9e50db7a4167cee0e1dfbbecf44ed3b39a3c6ef638",
+      "fresh_gop_frames": 90,
+      "gops": 6,
+      "manual_first_sample": -1024,
+      "manual_physical_samples": 145408,
+      "maximum_b_run": 0,
+      "movie_bytes": 23642,
+      "movie_sha256": "61de3229d914407c79b1cee91932a390133d97e96139b85cdc800006dbfa4fa2",
+      "movie_timescale": 240000,
+      "ordinary_first_sample": 0,
+      "ordinary_physical_samples": 144384,
+      "policy_version": 1,
+      "runtime_versions": [
+        4066151,
+        4064103,
+        3934311
+      ],
+      "video_edit_media_time": 0,
+      "video_frames": 90,
+      "video_packets": 90
+    }
+  },
+  "hardware_two": {
+    "candidate_returned": false,
+    "cleanup_confirmed": true,
+    "diagnostic": "encoded render worker failed: video_timestamp_order: native encoder video_timestamp_order: H264 packet PTS (1001) precedes DTS (2002)",
+    "passed": true,
+    "progress": [
+      {
+        "frames": 1,
+        "samples": 0,
+        "total_frames": 90,
+        "total_samples": 144144
+      },
+      {
+        "frames": 3,
+        "samples": 5120,
+        "total_frames": 90,
+        "total_samples": 144144
+      },
+      {
+        "frames": 6,
+        "samples": 10240,
+        "total_frames": 90,
+        "total_samples": 144144
+      }
+    ],
+    "progress_overflow": false,
+    "requested_choice": {
+      "b_frames": "target_two",
+      "mode": "hardware"
+    },
+    "typed_failure": {
+      "diagnostic": "native encoder video_timestamp_order: H264 packet PTS (1001) precedes DTS (2002)",
+      "kind": {
+        "kind": "video_timestamp_order",
+        "stage": "encoder"
+      }
+    }
+  },
+  "limitations": [
+    "explicit engineering attempts only; no automatic selection or fallback",
+    "expects the previously measured hardware-B failure on this host",
+    "independent content/AVFoundation qualification is a separate parent check",
+    "no destination publication or authored changes"
+  ],
+  "minimum_probe_frames": 30,
+  "package": "/private/tmp/deadpan-render-workflow-EtO3Qu1W/native-inputs/source.deadpan",
+  "project_id": "project-picture-qualification",
+  "range": {
+    "end": 90,
+    "start": 0
+  },
+  "revision": "workflow-live-restored",
+  "schema_version": 1,
+  "scope": "real typed hardware/B rejection followed by a separately requested hardware/no-B encode and independent verification",
+  "status": "passed",
+  "worker": {
+    "bytes": 171241200,
+    "path": "/Users/michael/Code/deadpan/target/debug/deadpan-cli",
+    "sha256": "80ffa329608272bea100ccf831de2d649b4d8041fbd92f352e72938e63b0f4fc"
+  }
+}

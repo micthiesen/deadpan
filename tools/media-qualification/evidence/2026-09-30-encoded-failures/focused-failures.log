@@ -1,0 +1,981 @@
+   Compiling deadpan-encode v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-encode)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+   Compiling deadpan-media-worker v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-media-worker)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 25s
+     Running unittests src/main.rs (target/debug/deps/deadpan_app-daf1939f3bb6f0e6)
+
+running 10 tests
+test presentation::tests::current_decode_failure_removes_the_old_picture_and_label ... ok
+test presentation::tests::clearing_rejects_old_success_and_failure_even_after_reopening ... ok
+test presentation::tests::successful_decode_clears_an_older_gpu_failure_while_waiting ... ok
+test presentation::tests::render_failure_preserves_the_last_displayed_identity_until_a_new_request ... ok
+test preview::room_tone::tests::delayed_failures_cannot_consume_a_newer_range_ticket_or_context ... ok
+test library::tests::a_library_failure_does_not_create_a_project_elsewhere ... ok
+test preview::repeat_queue::tests::service_failure_cancels_pending_work_even_if_the_revision_or_commit_looks_valid ... ok
+test project::tests::lost_import_worker_reports_failure_without_closing_project ... ok
+test project::tests::gain::gain_proposal_failures_retain_identity_and_cannot_retarget_scope_recipe_or_session ... ok
+test project::tests::room_tone::native_room_tone_failures_keep_request_identity_and_generic_errors_stay_separate ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 261 filtered out; finished in 0.21s
+
+     Running tests/headless.rs (target/debug/deps/headless-8825c1a3cb1b1b5b)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/deadpan_audio-650769edc03772c9)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 64 filtered out; finished in 0.00s
+
+     Running tests/audio_context.rs (target/debug/deps/audio_context-5667c1db79d16315)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.00s
+
+     Running tests/audio_definition.rs (target/debug/deps/audio_definition-01e58c9a33cc49d2)
+
+running 3 tests
+test waveform::waveform_later_source_failure_keeps_a_truthful_measured_prefix ... ok
+test projection::projected_root_admission_precedes_source_reads_and_failures_recover ... ok
+test waveform::waveform_foreign_resource_cancel_deadline_and_cached_admission_failures_are_explicit ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 46 filtered out; finished in 0.02s
+
+     Running tests/audio_domain.rs (target/debug/deps/audio_domain-be928cb41bc270b8)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 12 filtered out; finished in 0.00s
+
+     Running tests/composite_insert.rs (target/debug/deps/composite_insert-422581ee2079daa9)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 14 filtered out; finished in 0.00s
+
+     Running tests/gap_bindings.rs (target/debug/deps/gap_bindings-342be7b5555555e1)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 10 filtered out; finished in 0.00s
+
+     Running tests/gap_definition.rs (target/debug/deps/gap_definition-301057538617b742)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s
+
+     Running tests/limiter.rs (target/debug/deps/limiter-c5a6d2facb856b88)
+
+running 1 test
+test exact_retained_failure_inputs_are_not_replaced_with_approximations ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 2.05s
+
+     Running tests/loudness.rs (target/debug/deps/loudness-e15bb58af72b303f)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.00s
+
+     Running tests/reanchors.rs (target/debug/deps/reanchors-44e191f91f17053e)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s
+
+     Running tests/reference_policy.rs (target/debug/deps/reference_policy-aab2bb1d8bb55a89)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.00s
+
+     Running tests/resample.rs (target/debug/deps/resample-c5abff6c52c81469)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.00s
+
+     Running tests/sequence.rs (target/debug/deps/sequence-43c3e15c4129c9f2)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 12 filtered out; finished in 0.00s
+
+     Running tests/session.rs (target/debug/deps/session-9e7115f7e6878bc7)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.00s
+
+     Running tests/signal_transfer.rs (target/debug/deps/signal_transfer-24db6eadf8125dca)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.00s
+
+     Running tests/sound_events.rs (target/debug/deps/sound_events-de92e75232e19f0f)
+
+running 1 test
+test resident_budget_rejection_and_provider_failure_release_bus_reservations ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.00s
+
+     Running tests/stages.rs (target/debug/deps/stages-ac19ce5a8c9455cb)
+
+running 1 test
+test stage_budget_failures_and_initial_cancellation_do_not_decode_or_publish_cache_entries ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 70 filtered out; finished in 0.02s
+
+     Running tests/true_peak.rs (target/debug/deps/true_peak-6c759d162c5dd168)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/deadpan_cli-3416c9148fef887c)
+
+running 8 tests
+test export_picture::contract::tests::output_terminal_and_audio_boundary_overflow_are_separate_admission_failures ... ok
+test encoded_render::worker::tests::native_failure_kinds_survive_worker_mapping_without_reading_prose ... ok
+test encoded_render::workflow::worker::tests::durable_diagnostic_retains_the_typed_failure_boundary ... ok
+test encoded_render::worker::tests::contract_and_source_admission_failures_are_typed_before_output_allocation ... ok
+test encoded_render::protocol::tests::failures_require_a_strict_typed_boundary_independent_of_diagnostic_text ... ok
+test encoded_render::publication::filesystem::tests::every_sync_failure_reports_the_correct_side_of_the_commit_point ... ok
+test encoded_render::workflow::owner::tests::observed_movie_commit_survives_terminal_journal_failure ... ok
+test encoded_render::publication::provenance::tests::bounded_serialization_preserves_control_failures_and_stable_codes ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 128 filtered out; finished in 0.31s
+
+     Running unittests src/main.rs (target/debug/deps/deadpan_cli-e286d1b7f705ea24)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/audio_context.rs (target/debug/deps/audio_context-2ef148584e647a03)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+
+     Running tests/audio_inspection.rs (target/debug/deps/audio_inspection-3969bf0843833336)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 18 filtered out; finished in 0.00s
+
+     Running tests/boundary_location.rs (target/debug/deps/boundary_location-07e02226d95e2d5a)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+     Running tests/doctor.rs (target/debug/deps/doctor-50dffea3ba1da932)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.00s
+
+     Running tests/encoded_render.rs (target/debug/deps/encoded_render-28aa5f95ecd1e15d)
+
+running 1 test
+test typed_failure_crosses_supervision_without_trusting_prose_or_legacy_workers ... FAILED
+
+failures:
+
+---- typed_failure_crosses_supervision_without_trusting_prose_or_legacy_workers stdout ----
+
+thread 'typed_failure_crosses_supervision_without_trusting_prose_or_legacy_workers' (57069939) panicked at crates/deadpan-cli/tests/encoded_render.rs:234:13:
+encoder_unavailable: typed worker failure lost: WorkerFault { primary: WorkerFailure(EncodedFailure { kind: Encoder(EncoderUnavailable), diagnostic: Diagnostic("fixture typed encoder rejection") }), fault: "worker exited unsuccessfully: exit status: 1" }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    typed_failure_crosses_supervision_without_trusting_prose_or_legacy_workers
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.09s
+
+error: test failed, to rerun pass `-p deadpan-cli --test encoded_render`
+     Running tests/encoded_verification.rs (target/debug/deps/encoded_verification-d487e4e82b4b2116)
+
+running 1 test
+test preflight_failures_and_missing_runtime_preserve_completed_bytes_for_retry ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 20 filtered out; finished in 0.13s
+
+     Running tests/offline_audio.rs (target/debug/deps/offline_audio-8e3a24d3d5e5b511)
+
+running 1 test
+test offline_capture_and_reads_reject_control_failures_and_out_of_range_blocks ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 1.11s
+
+     Running tests/original_commands.rs (target/debug/deps/original_commands-b1719d31f0ccaa9b)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.00s
+
+     Running tests/project_commands.rs (target/debug/deps/project_commands-00a05d536e306a5a)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 17 filtered out; finished in 0.00s
+
+     Running tests/render_worker.rs (target/debug/deps/render_worker-7bd6c8f0ce3662e4)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+     Running tests/source_registration.rs (target/debug/deps/source_registration-02507e09f9d983de)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/deadpan_core-2dcf12ea8aa341da)
+
+running 1 test
+test framing::numeric::tests::wide_carries_borrows_and_failures ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 88 filtered out; finished in 0.00s
+
+     Running tests/allocation_projection.rs (target/debug/deps/allocation_projection-a0e5716cca9f8bf9)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.00s
+
+     Running tests/anchors.rs (target/debug/deps/anchors-1bef0f6e2d04720a)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 35 filtered out; finished in 0.00s
+
+     Running tests/audio_binding_capture.rs (target/debug/deps/audio_binding_capture-e7662ae95bb78ad5)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s
+
+     Running tests/audio_bindings.rs (target/debug/deps/audio_bindings-e1f8150e2aa240b2)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 36 filtered out; finished in 0.00s
+
+     Running tests/audio_context.rs (target/debug/deps/audio_context-c3827a1dacbe14ca)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 12 filtered out; finished in 0.00s
+
+     Running tests/audio_edges.rs (target/debug/deps/audio_edges-612e050ce3e2bda0)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+     Running tests/audio_gain.rs (target/debug/deps/audio_gain-ecc6fb7a26b54003)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 14 filtered out; finished in 0.00s
+
+     Running tests/audio_lineage.rs (target/debug/deps/audio_lineage-bd768f9565d8151e)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 10 filtered out; finished in 0.00s
+
+     Running tests/audio_reference.rs (target/debug/deps/audio_reference-1e73c65a58bbcf9b)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.00s
+
+     Running tests/document.rs (target/debug/deps/document-503c920598dd87ab)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 17 filtered out; finished in 0.00s
+
+     Running tests/framing.rs (target/debug/deps/framing-ddc8848927340544)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 13 filtered out; finished in 0.00s
+
+     Running tests/gap_overrides.rs (target/debug/deps/gap_overrides-4d8ca4adca377b42)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.00s
+
+     Running tests/gap_projection.rs (target/debug/deps/gap_projection-d241dad51438b0eb)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.00s
+
+     Running tests/generated_holds.rs (target/debug/deps/generated_holds-b9ea8d0c9d3b5ca3)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s
+
+     Running tests/hold_audio.rs (target/debug/deps/hold_audio-0c99334134755425)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+     Running tests/insert_time.rs (target/debug/deps/insert_time-131b9ef526bbda1f)
+
+running 1 test
+test nested_sequence::nested_insertion_failures_do_not_publish_intermediate_copies_or_clocks ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 28 filtered out; finished in 0.00s
+
+     Running tests/legacy_audio_lineage.rs (target/debug/deps/legacy_audio_lineage-5456b3ba084e3f90)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.00s
+
+     Running tests/legacy_audio_selection.rs (target/debug/deps/legacy_audio_selection-1770bf24763bceb4)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 21 filtered out; finished in 0.00s
+
+     Running tests/legacy_marks.rs (target/debug/deps/legacy_marks-f25e5986c6fa3e18)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+     Running tests/legacy_split.rs (target/debug/deps/legacy_split-d9903d7549a15431)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.00s
+
+     Running tests/mark_fragments.rs (target/debug/deps/mark_fragments-eba131cdadd6f5e1)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.00s
+
+     Running tests/mark_resolution.rs (target/debug/deps/mark_resolution-aa270e7c6483bdd3)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.00s
+
+     Running tests/marks.rs (target/debug/deps/marks-0225a1e5731a663e)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 18 filtered out; finished in 0.00s
+
+     Running tests/node_gain.rs (target/debug/deps/node_gain-b0a487b863f31181)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 11 filtered out; finished in 0.00s
+
+     Running tests/occurrence_edits.rs (target/debug/deps/occurrence_edits-443e51a8f16bdcd8)
+
+running 1 test
+test failures_after_partial_isolation_leave_original_and_history_patch_unmodified ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.00s
+
+     Running tests/partitions.rs (target/debug/deps/partitions-1d46d4d6c139b632)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+     Running tests/picture_context.rs (target/debug/deps/picture_context-480b2d32e21a0d0f)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 20 filtered out; finished in 0.00s
+
+     Running tests/play_overrides.rs (target/debug/deps/play_overrides-1cc415136f76b8c0)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.00s
+
+     Running tests/presentation_basis.rs (target/debug/deps/presentation_basis-b7e54173f6ed70da)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.00s
+
+     Running tests/repeat_gap_layout.rs (target/debug/deps/repeat_gap_layout-0c24edcdab1375d9)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s
+
+     Running tests/retime_edits.rs (target/debug/deps/retime_edits-62401688f73b8613)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s
+
+     Running tests/sound_allowances.rs (target/debug/deps/sound_allowances-d651847447b7ea0d)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 10 filtered out; finished in 0.00s
+
+     Running tests/sound_events.rs (target/debug/deps/sound_events-cb508a21f90233af)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.00s
+
+     Running tests/sound_routes.rs (target/debug/deps/sound_routes-cd42f229d84afc25)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 19 filtered out; finished in 0.00s
+
+     Running tests/sound_routing.rs (target/debug/deps/sound_routing-7031bd22dc2138ee)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.00s
+
+     Running tests/source_import.rs (target/debug/deps/source_import-c531864a56638cff)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.00s
+
+     Running tests/source_view.rs (target/debug/deps/source_view-e0660fa2bd67c9e4)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.00s
+
+     Running tests/split.rs (target/debug/deps/split-61781d9f1baaf089)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 18 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/deadpan_dsp-e20d9a32cd90d551)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/canonical.rs (target/debug/deps/canonical-09f4240a9e3764a6)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 11 filtered out; finished in 0.00s
+
+     Running tests/finite_peak.rs (target/debug/deps/finite_peak-979a6959e98b0411)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/deadpan_encode-d68dce82b4ba628d)
+
+running 1 test
+test progress::tests::native_or_control_failure_never_advances_counters_or_allows_finish ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.00s
+
+     Running tests/failures.rs (target/debug/deps/failures-9edad2a1a025bfc0)
+
+running 3 tests
+test capacity_io_input_and_control_failures_keep_distinct_noncapability_kinds ... ok
+test diagnostic_prose_never_promotes_an_ordinary_failure_to_capability_evidence ... ok
+test serialized_failure_kind_has_a_closed_vocabulary ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.00s
+
+     Running tests/policy.rs (target/debug/deps/policy-d736d9ba89d05376)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/deadpan_fileclone-6887af3b803d82c1)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/deadpan_filesystem-c5b1170f65357fbf)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/deadpan_jobs-8c5e8cb738bd2693)
+
+running 3 tests
+test process::tests::setup_failure_keeps_primary_and_unconfirmed_group_cleanup ... ok
+test process::tests::setup_failures_report_cleanup_for_every_partial_initialization ... ok
+test process::tests::unresolved_held_pump_does_not_block_failure_delivery_during_drop ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 14 filtered out; finished in 0.51s
+
+     Running tests/artifact.rs (target/debug/deps/artifact-e7cdfb3273c79ea0)
+
+running 1 test
+test hash_length_and_budget_failures_are_distinct ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.01s
+
+     Running tests/generation_plan.rs (target/debug/deps/generation_plan-a47965ffdf25d94f)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 10 filtered out; finished in 0.00s
+
+     Running tests/lifecycle.rs (target/debug/deps/lifecycle-a2527113838c1e42)
+
+running 2 tests
+test host_can_finalize_killed_worker_or_record_process_failure ... ok
+test host_failure_and_cancellation_remain_available_during_validation ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 13 filtered out; finished in 0.00s
+
+     Running tests/protocol.rs (target/debug/deps/protocol-65df475a3ed62f2c)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 11 filtered out; finished in 0.00s
+
+     Running tests/supervisor.rs (target/debug/deps/supervisor-3628ae54e589865c)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 17 filtered out; finished in 0.00s
+
+     Running unittests examples/qualify_model_worker.rs (target/debug/examples/qualify_model_worker-5b2adf81611ceb0f)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/deadpan_media-5e8acdc419339752)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 20 filtered out; finished in 0.00s
+
+     Running tests/audio_session.rs (target/debug/deps/audio_session-f5c659a4e34cc9e2)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s
+
+     Running tests/host_boundary.rs (target/debug/deps/host_boundary-d1069244e8b9321b)
+
+running 1 test
+test failure_diagnostic_and_output_budget_are_preserved ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.02s
+
+     Running tests/source_import_timing.rs (target/debug/deps/source_import_timing-861a4dff36a3b95d)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 21 filtered out; finished in 0.00s
+
+     Running tests/source_qualification.rs (target/debug/deps/source_qualification-421db5460c7fb827)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 10 filtered out; finished in 0.00s
+
+     Running tests/source_session.rs (target/debug/deps/source_session-7df736d68c4c2dbf)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/deadpan_media_worker-d4e504e0b66a31a6)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+
+     Running tests/bridge_real_media.rs (target/debug/deps/bridge_real_media-50e1ba68d9e37330)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+
+     Running tests/bundle_qualification.rs (target/debug/deps/bundle_qualification-00ea6056754c9ccb)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+     Running tests/canonicalize_real_media.rs (target/debug/deps/canonicalize_real_media-765795d926c756f3)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/deadpan_models-612b66ccfc076c4f)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/deadpan_native_process-d817522d2b6bad24)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.00s
+
+     Running tests/linux_ownership.rs (target/debug/deps/linux_ownership-616f400d2ee0974c)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/deadpan_output-25eb398392130426)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 12 filtered out; finished in 0.00s
+
+     Running tests/clock.rs (target/debug/deps/clock-dc82177f40f776cd)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 10 filtered out; finished in 0.00s
+
+     Running tests/no_alloc.rs (target/debug/deps/no_alloc-a6c1c744f7b19463)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.00s
+
+     Running tests/queue.rs (target/debug/deps/queue-f0d1a729147f7884)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/deadpan_plan-a06386990af331e9)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 26 filtered out; finished in 0.00s
+
+     Running tests/audio_bindings.rs (target/debug/deps/audio_bindings-4a8b28bdf7398416)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.00s
+
+     Running tests/audio_context.rs (target/debug/deps/audio_context-ae965e1cf43719fa)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.00s
+
+     Running tests/audio_definition.rs (target/debug/deps/audio_definition-e8f7b45468606cfa)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 28 filtered out; finished in 0.00s
+
+     Running tests/audio_domain.rs (target/debug/deps/audio_domain-dbecb46d17818587)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.00s
+
+     Running tests/audio_fades.rs (target/debug/deps/audio_fades-292bba000ca88367)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.00s
+
+     Running tests/audio_plan.rs (target/debug/deps/audio_plan-f302fc4dabb112e6)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 22 filtered out; finished in 0.00s
+
+     Running tests/audio_policy.rs (target/debug/deps/audio_policy-342a2c0a2faffba3)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.00s
+
+     Running tests/audio_reference.rs (target/debug/deps/audio_reference-79ed650376f0456d)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.00s
+
+     Running tests/audio_signal.rs (target/debug/deps/audio_signal-44997b4d205e5da0)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 17 filtered out; finished in 0.00s
+
+     Running tests/audio_tape.rs (target/debug/deps/audio_tape-c65e6122bd727dc9)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 12 filtered out; finished in 0.00s
+
+     Running tests/gap_bindings.rs (target/debug/deps/gap_bindings-6f14599b4b6e207f)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+
+     Running tests/gap_branches.rs (target/debug/deps/gap_branches-55e8d83922ebe9c0)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.00s
+
+     Running tests/hold_policy.rs (target/debug/deps/hold_policy-f9b3dee2383443ef)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 10 filtered out; finished in 0.00s
+
+     Running tests/occurrence_edits.rs (target/debug/deps/occurrence_edits-6db2b4527fdab725)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.00s
+
+     Running tests/picture_plan.rs (target/debug/deps/picture_plan-fc4c76bb7dd1e4da)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 31 filtered out; finished in 0.00s
+
+     Running tests/play_overrides.rs (target/debug/deps/play_overrides-a32ea016b8be08fb)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+     Running tests/root_sound_routes.rs (target/debug/deps/root_sound_routes-2cfe72f500f74c4f)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 10 filtered out; finished in 0.00s
+
+     Running tests/routed_voice.rs (target/debug/deps/routed_voice-ef374ea265de780f)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.00s
+
+     Running tests/sound_event_fades.rs (target/debug/deps/sound_event_fades-82d922f64403cedc)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.00s
+
+     Running tests/sound_events.rs (target/debug/deps/sound_events-3426a4003fa05b45)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.00s
+
+     Running tests/sound_route_sampling.rs (target/debug/deps/sound_route_sampling-c2eea4e688e99b09)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 14 filtered out; finished in 0.00s
+
+     Running tests/source_voice.rs (target/debug/deps/source_voice-9d841d3f1dc037c9)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.00s
+
+     Running tests/source_voice_policy.rs (target/debug/deps/source_voice_policy-bce42b0835958b62)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/deadpan_playback-e4a6c13c0209ba22)
+
+running 4 tests
+test tests::waveform::device_open_failure_releases_queued_analysis_but_worker_panic_revokes_it ... ok
+test tests::stop_restart_and_failure_never_publish_an_old_session ... ok
+test tests::proposed::proposed_source_failure_is_tagged_and_cannot_poison_later_before_playback ... ok
+test tests::waveform::replacement_coalesces_pending_work_and_drops_stale_success_and_failure ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 52 filtered out; finished in 3.64s
+
+     Running unittests src/lib.rs (target/debug/deps/deadpan_render-30a02f48618fa1b4)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 31 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/deadpan_source-941ea3114cb89212)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 49 filtered out; finished in 0.00s
+
+     Running tests/audio_decode.rs (target/debug/deps/audio_decode-ae4aeb4fc465bb8f)
+
+running 1 test
+test both_modes_preserve_pcm_and_preflight_failure_semantics ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 12 filtered out; finished in 0.01s
+
+     Running tests/export_decode.rs (target/debug/deps/export_decode-ac7659207e46547d)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+     Running tests/persistent_decode.rs (target/debug/deps/persistent_decode-3890e12726b4b4ae)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 14 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/deadpan_store-c57a20d94556e2b7)
+
+running 6 tests
+test object_storage::tests::clone_validation_failure_removes_only_its_observed_pending_entry ... ok
+test object_storage::tests::retry_after_post_publish_failure_finishes_existing_object_durability ... ok
+test object_storage::tests::publication_durability_failure_is_not_hidden_by_close_or_cancel ... ok
+test render_media::tests::manifest_failure_preserves_movie_already_published ... ok
+test publication_durability::tests::barrier_failure_at_every_step_denies_acknowledgement ... ok
+test publication::tests::post_commit_barrier_failures_keep_rows_but_revoke_permits_and_require_reopen ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 45 filtered out; finished in 0.93s
+
+     Running tests/generated_admission.rs (target/debug/deps/generated_admission-bc4afe4d931ab99c)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.00s
+
+     Running tests/generated_media.rs (target/debug/deps/generated_media-9832455b8e2d6b77)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.00s
+
+     Running tests/generated_read_handle.rs (target/debug/deps/generated_read_handle-749ff0d929dddd64)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+     Running tests/generation.rs (target/debug/deps/generation-8811eaa22b3c0657)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 11 filtered out; finished in 0.00s
+
+     Running tests/generation_attempts.rs (target/debug/deps/generation_attempts-60c4065e3a96cecc)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.00s
+
+     Running tests/generation_bundles.rs (target/debug/deps/generation_bundles-8dec24ee5e39000f)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.00s
+
+     Running tests/migration.rs (target/debug/deps/migration-8f7c953f697572ac)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 124 filtered out; finished in 0.00s
+
+     Running tests/occurrence_edits.rs (target/debug/deps/occurrence_edits-379e2bd49df4d6b8)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+
+     Running tests/original_media.rs (target/debug/deps/original_media-451f0f796693e152)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s
+
+     Running tests/original_preparation.rs (target/debug/deps/original_preparation-c3862a027145cf4b)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.00s
+
+     Running tests/persistence.rs (target/debug/deps/persistence-279507fd54f91da7)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 19 filtered out; finished in 0.00s
+
+     Running tests/prepared_source_registration.rs (target/debug/deps/prepared_source_registration-303a1439c39a2cb3)
+
+running 2 tests
+test prepared_insertion_rolls_back_on_history_failure_and_retries_same_token ... ok
+test prepared_insertion_reconciles_generation_atomically_and_retries_after_cursor_failure ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 16 filtered out; finished in 0.16s
+
+     Running tests/presentation_basis.rs (target/debug/deps/presentation_basis-a0ea310056200a3e)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s
+
+     Running tests/render_jobs.rs (target/debug/deps/render_jobs-cfc33558d22d73c3)
+
+running 1 test
+test cancelling_failure_retains_cancellation_request_and_candidate ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 19 filtered out; finished in 0.09s
+
+     Running tests/single_source.rs (target/debug/deps/single_source-c5a0de2e13742817)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.00s
+
+     Running tests/source_registration.rs (target/debug/deps/source_registration-006cade22357c9ca)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 13 filtered out; finished in 0.00s
+
+error: 1 target failed:
+    `-p deadpan-cli --test encoded_render`

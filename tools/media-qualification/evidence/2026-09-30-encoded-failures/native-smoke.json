@@ -1,0 +1,18 @@
+{
+  "command": [
+    "cargo",
+    "run",
+    "--locked",
+    "-p",
+    "deadpan-app",
+    "--",
+    "--smoke-test"
+  ],
+  "started": "2026-09-30T09:29:16.830686+00:00",
+  "base_commit": "800955cc27a10eee67d9b5be32cd355336b4adfe",
+  "diff_sha256": "cd5ff7d0cc5890868ef66d379184e7e2c4b42071e5bc5869eeaa2a1fd315bdd4",
+  "source_manifest_sha256": "50c41c44faff1d2cc9419aa59ae56fdf38f52e787ee393b1602591bf13b9bb30",
+  "pid": 7619,
+  "exit_code": 0,
+  "seconds": 0.4703046246431768
+}

@@ -44,6 +44,62 @@ pub enum EncodeError {
     Io(#[from] std::io::Error),
 }
 
+/// Stable failure facts for the supervising host. A kind is not permission to
+/// retry, select another encoder or treat process cleanup as complete.
+/// Unknown native failures remain Native; diagnostic prose is never parsed.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case", deny_unknown_fields)]
+pub enum EncodeFailureKind {
+    Configuration,
+    Input,
+    Poisoned,
+    Cancelled,
+    Deadline,
+    /// The named video encoder is conclusively absent. Generic codec-open
+    /// failures, missing AAC and unsupported output do not establish this.
+    EncoderUnavailable,
+    /// An actual video packet had PTS before DTS and was rejected before muxing.
+    VideoTimestampOrder,
+    Capacity,
+    Io,
+    Evidence,
+    Native,
+}
+
+impl EncodeError {
+    pub fn kind(&self) -> EncodeFailureKind {
+        match self {
+            Self::Configuration(_) => EncodeFailureKind::Configuration,
+            Self::Input(_) => EncodeFailureKind::Input,
+            Self::Poisoned => EncodeFailureKind::Poisoned,
+            Self::Cancelled => EncodeFailureKind::Cancelled,
+            Self::Deadline => EncodeFailureKind::Deadline,
+            Self::Evidence(_) => EncodeFailureKind::Evidence,
+            Self::Io(_) => EncodeFailureKind::Io,
+            Self::Native { code, .. } => match code.as_str() {
+                "video_encoder_unavailable" => EncodeFailureKind::EncoderUnavailable,
+                "video_timestamp_order" => EncodeFailureKind::VideoTimestampOrder,
+                "cancelled" => EncodeFailureKind::Cancelled,
+                "deadline_exceeded" => EncodeFailureKind::Deadline,
+                "invalid_config" | "invalid_control" | "invalid_descriptor" => {
+                    EncodeFailureKind::Configuration
+                }
+                "incomplete_input" | "input_order" | "invalid_pcm" | "invalid_pixels" => {
+                    EncodeFailureKind::Input
+                }
+                "allocation_failure" | "output_too_large" | "packet_limit" => {
+                    EncodeFailureKind::Capacity
+                }
+                "output_io" | "output_seek" => EncodeFailureKind::Io,
+                "encoder_unsupported" | "incomplete_output" | "invalid_packet" => {
+                    EncodeFailureKind::Evidence
+                }
+                _ => EncodeFailureKind::Native,
+            },
+        }
+    }
+}
+
 /// Queried codec/mux properties. These do not establish actual B frames, GOP
 /// independence, color interpretation, decoder delay or finished-file quality.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

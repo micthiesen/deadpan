@@ -1,12 +1,28 @@
 import copy
+import json
 from pathlib import Path
 import tempfile
 import unittest
+from subprocess import CompletedProcess
 
-from qualify_native_encode import RangeCaseSpec, inspect_gops, inspect_native_case
+from qualify_native_encode import RangeCaseSpec, encoded_failure, inspect_gops, inspect_native_case
 from encoder_oracle import PcmSpan, inspect_pcm_events, movie_timescale
 from mp4_boxes import inspect_mp4
 from test_mp4_boxes import box, edit_list, timing
+
+
+class TypedFailureTests(unittest.TestCase):
+    def test_failure_kind_requires_a_complete_failed_envelope(self):
+        value = {"status": "failed", "kind": "video_timestamp_order", "diagnostic": "measured rejection"}
+        result = CompletedProcess([], 1, json.dumps(value), "")
+        self.assertEqual(encoded_failure(result), value)
+        for code, body in [(0, value), (2, value), (1, dict(value, status="passed")),
+                           (1, dict(value, kind=None)), (1, dict(value, fallback=True)),
+                           (1, dict(value, diagnostic=""))]:
+            self.assertIsNone(encoded_failure(CompletedProcess([], code, json.dumps(body), "")))
+        self.assertIsNone(encoded_failure(CompletedProcess([], 1, "", "video_timestamp_order")))
+        misleading = dict(value, kind="io", diagnostic="video_timestamp_order")
+        self.assertEqual(encoded_failure(CompletedProcess([], 1, json.dumps(misleading), ""))["kind"], "io")
 
 
 def boundary_fixture(spec=None):

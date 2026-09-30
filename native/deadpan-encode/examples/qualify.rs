@@ -296,6 +296,14 @@ fn run() -> Result<(), Box<dyn Error>> {
 
 fn main() {
     if let Err(error) = run() {
+        println!(
+            "{}",
+            json!({
+                "status": "failed",
+                "kind": error.downcast_ref::<deadpan_encode::EncodeError>().map(|error| error.kind()),
+                "diagnostic": error.to_string(),
+            })
+        );
         eprintln!("{error}");
         std::process::exit(1);
     }

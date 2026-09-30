@@ -21,6 +21,22 @@ from qualify_encoder import EncoderHarness, read_pcm
 ROOT = Path(__file__).resolve().parent
 
 
+def encoded_failure(result):
+    """Read a typed rejection; diagnostic wording never selects a capability."""
+    if result.returncode != 1 or len(result.stdout) > 8192:
+        return None
+    try:
+        value = json.loads(result.stdout)
+    except (ValueError, TypeError):
+        return None
+    if (not isinstance(value, dict) or set(value) != {"status", "kind", "diagnostic"}
+            or value["status"] != "failed" or not isinstance(value["kind"], str)
+            or not isinstance(value["diagnostic"], str) or not value["diagnostic"]
+            or len(value["diagnostic"]) > 4096):
+        return None
+    return value
+
+
 @dataclass(frozen=True)
 class RangeCaseSpec(CaseSpec):
     project_start: int = 0
@@ -254,11 +270,12 @@ class NativeEncodeHarness(EncoderHarness):
             case["encode_exit_code"] = encoded.returncode
             if encoded.returncode:
                 case["failure"] = "requested encoder configuration failed; no completed output admitted"
+                case["encoded_failure"] = encoded_failure(encoded)
                 # Retain the measured M5 Max/VT rejection as a failed capability,
                 # never reinterpret it as a successfully encoded path.
                 case["expected_capability_rejection"] = (mode == "hardware" and b_policy == "two"
-                    and encoded.returncode == 1 and not encoded.stdout.strip()
-                    and " < dts (" in encoded.stderr and "mux encoded packet: Invalid argument" in encoded.stderr)
+                    and case["encoded_failure"] is not None
+                    and case["encoded_failure"]["kind"] == "video_timestamp_order")
                 return
             case["encoded"] = json.loads(encoded.stdout)
             case["boxes"] = inspect_mp4(path)
@@ -312,9 +329,13 @@ class NativeEncodeHarness(EncoderHarness):
             "nonfinite": ("audio input contains a nonfinite sample",),
             "incomplete": ("finish requires every captured picture and audio sample",),
         }[fault]
+        typed = encoded_failure(result)
+        expected_kind = {"byte-limit": "capacity", "cancel": "cancelled", "ordinal": "input",
+                         "audio-hole": "input", "nonfinite": "input", "incomplete": "input"}[fault]
         case = {"name": f"fault-{fault}", "exit_code": result.returncode,
-                "passed": (result.returncode == 1 and not result.stdout.strip()
+                "passed": (typed is not None and typed["kind"] == expected_kind
                            and any(text in result.stderr for text in expected)),
+                "encoded_failure": typed, "expected_kind": expected_kind,
                 "diagnostic": result.stderr, "expected_diagnostic": expected}
         if path.exists():
             case["retained_partial"] = self.artifact(path)

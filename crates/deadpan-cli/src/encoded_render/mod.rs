@@ -28,6 +28,14 @@ pub enum EncodedRenderError {
     Protocol(String),
     #[error("encoded render worker failed: {0}")]
     Worker(String),
+    #[error("encoded render worker failed: {0}")]
+    WorkerFailure(#[from] protocol::EncodedFailure),
+    #[error("{primary}; worker failure report is untrusted after supervision fault: {fault}")]
+    WorkerFault {
+        #[source]
+        primary: Box<EncodedRenderError>,
+        fault: String,
+    },
     #[error("encoded rendering was cancelled")]
     Cancelled,
     #[error("encoded rendering exceeded its shared monotonic deadline")]
@@ -67,6 +75,7 @@ impl EncodedRenderError {
     pub fn cleanup_confirmed(&self) -> bool {
         match self {
             Self::CleanupUnconfirmed { .. } => false,
+            Self::WorkerFault { primary, .. } => primary.cleanup_confirmed(),
             Self::Supervisor(error) => error.cleanup_confirmed(),
             _ => true,
         }

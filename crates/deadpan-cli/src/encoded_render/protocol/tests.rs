@@ -356,7 +356,8 @@ fn request_limits_versions_and_bounded_scalars_are_admitted_before_allocation() 
     let request = serde_json::to_value(request()).unwrap();
     for (path, value) in [
         ("/protocol", json!(0)),
-        ("/protocol", json!(2)),
+        ("/protocol", json!(1)),
+        ("/protocol", json!(PROTOCOL_VERSION + 1)),
         ("/identity/request_id", json!("")),
         ("/identity/attempt_id", json!("a".repeat(129))),
         ("/cancellation_token", json!("../cancel")),
@@ -406,8 +407,9 @@ fn wire_rejects_truncation_oversize_and_unbounded_diagnostics() {
     assert!(read_host_message(&mut Cursor::new(oversize)).is_err());
     assert!(EncodedProtocol::read_response(&mut Cursor::new(oversize)).is_err());
     assert!(read_host_message(&mut Cursor::new([0_u8; 4])).is_err());
-    let failed = json!({"event":"failed", "protocol":1, "identity":identity(),
-        "diagnostic":"x".repeat(deadpan_jobs::MAX_DIAGNOSTIC_BYTES + 1)});
+    let failed = json!({"event":"failed", "protocol":PROTOCOL_VERSION, "identity":identity(),
+        "failure": {"kind": {"stage": "output"},
+        "diagnostic":"x".repeat(deadpan_jobs::MAX_DIAGNOSTIC_BYTES + 1)}});
     assert!(EncodedProtocol::read_response(&mut Cursor::new(wire(&failed))).is_err());
 }
 
@@ -427,7 +429,7 @@ fn progress_and_terminals_bind_both_counts_and_exact_attempt() {
         (0, 1, 0, MAX_AUDIO_SAMPLES + 1, false),
     ] {
         let progress = EncodedWorkerMessage::Progress {
-            protocol: 1,
+            protocol: PROTOCOL_VERSION,
             identity: identity(),
             completed_frames: frames,
             total_frames,
@@ -448,7 +450,7 @@ fn progress_and_terminals_bind_both_counts_and_exact_attempt() {
     ] {
         for response in [
             EncodedWorkerMessage::Progress {
-                protocol: 1,
+                protocol: PROTOCOL_VERSION,
                 identity: altered.clone(),
                 completed_frames: 0,
                 total_frames: 1,
@@ -456,17 +458,20 @@ fn progress_and_terminals_bind_both_counts_and_exact_attempt() {
                 total_audio_samples: 1601,
             },
             EncodedWorkerMessage::Completed {
-                protocol: 1,
+                protocol: PROTOCOL_VERSION,
                 identity: altered.clone(),
                 manifest: Box::new(manifest()),
             },
             EncodedWorkerMessage::Failed {
-                protocol: 1,
+                protocol: PROTOCOL_VERSION,
                 identity: altered.clone(),
-                diagnostic: Diagnostic::new("failed").unwrap(),
+                failure: EncodedFailure {
+                    kind: EncodedFailureKind::Contract,
+                    diagnostic: Diagnostic::new("failed").unwrap(),
+                },
             },
             EncodedWorkerMessage::Cancelled {
-                protocol: 1,
+                protocol: PROTOCOL_VERSION,
                 identity: altered.clone(),
             },
         ] {
@@ -476,7 +481,7 @@ fn progress_and_terminals_bind_both_counts_and_exact_attempt() {
     assert!(
         protocol
             .classify(&EncodedWorkerMessage::Cancelled {
-                protocol: 2,
+                protocol: 1,
                 identity: identity()
             })
             .is_err()
@@ -484,7 +489,7 @@ fn progress_and_terminals_bind_both_counts_and_exact_attempt() {
     assert_eq!(
         protocol
             .classify(&EncodedWorkerMessage::Cancelled {
-                protocol: 1,
+                protocol: PROTOCOL_VERSION,
                 identity: identity()
             })
             .unwrap(),
@@ -494,6 +499,68 @@ fn progress_and_terminals_bind_both_counts_and_exact_attempt() {
         protocol.classify(&completed(manifest())).unwrap(),
         ResponseKind::Completed
     );
+}
+
+#[test]
+fn failures_require_a_strict_typed_boundary_independent_of_diagnostic_text() {
+    let response = EncodedWorkerMessage::Failed {
+        protocol: PROTOCOL_VERSION,
+        identity: identity(),
+        failure: EncodedFailure {
+            kind: EncodedFailureKind::Encoder(
+                deadpan_encode::EncodeFailureKind::VideoTimestampOrder,
+            ),
+            diagnostic: Diagnostic::new("actual native rejection").unwrap(),
+        },
+    };
+    let protocol = EncodedProtocol::from_request(&request()).unwrap();
+    assert_eq!(protocol.classify(&response).unwrap(), ResponseKind::Failed);
+    let original = serde_json::to_value(&response).unwrap();
+    for path in ["", "/failure", "/failure/kind"] {
+        let mut changed = original.clone();
+        changed
+            .pointer_mut(path)
+            .unwrap()
+            .as_object_mut()
+            .unwrap()
+            .insert("fallback".into(), json!(true));
+        assert!(
+            EncodedProtocol::read_response(&mut Cursor::new(wire(&changed))).is_err(),
+            "{path}"
+        );
+    }
+    for (path, value) in [
+        ("/failure/kind/stage", json!("future_stage")),
+        ("/failure/kind/kind", json!("future_encoder_kind")),
+        (
+            "/failure/kind",
+            json!({"stage": "source", "kind": "encoder_unavailable"}),
+        ),
+        ("/failure/kind", json!({"stage": "encoder"})),
+        ("/failure/diagnostic", json!("\0")),
+    ] {
+        let mut changed = original.clone();
+        *changed.pointer_mut(path).unwrap() = value;
+        assert!(
+            EncodedProtocol::read_response(&mut Cursor::new(wire(&changed))).is_err(),
+            "{path}"
+        );
+    }
+    for missing in ["kind", "diagnostic"] {
+        let mut changed = original.clone();
+        changed["failure"].as_object_mut().unwrap().remove(missing);
+        assert!(EncodedProtocol::read_response(&mut Cursor::new(wire(&changed))).is_err());
+    }
+    let mut source = original;
+    source["failure"]["kind"] = json!({"stage": "source"});
+    source["failure"]["diagnostic"] = json!("video_encoder_unavailable: misleading source text");
+    let Some(EncodedWorkerMessage::Failed { failure, .. }) =
+        EncodedProtocol::read_response(&mut Cursor::new(wire(&source))).unwrap()
+    else {
+        panic!("failure response lost")
+    };
+    assert_eq!(failure.kind, EncodedFailureKind::Source);
+    assert_eq!(failure.kind.code(), "render_source_failed");
 }
 
 #[test]

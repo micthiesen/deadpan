@@ -1,0 +1,56 @@
+{
+  "checks": [
+    "format-check",
+    "workspace-clippy",
+    "workspace-tests",
+    "native-smoke",
+    "native-build-fixed",
+    "native-worker",
+    "native-matrix",
+    "python-native-oracles"
+  ],
+  "workspace": {
+    "passed": 2359,
+    "failed": 0,
+    "ignored": 0,
+    "result_groups": 168
+  },
+  "qualified_source_inventory": "50c41c44faff1d2cc9419aa59ae56fdf38f52e787ee393b1602591bf13b9bb30",
+  "native": {
+    "completed_encodes": 10,
+    "video_frames": 872,
+    "gop_boundaries": 40,
+    "fresh_gop_frames": 2432,
+    "audio_marker_coordinates": 180,
+    "maximum_audio_marker_error_samples": 0,
+    "rejected_hardware_b_attempts": 3,
+    "fault_cases": 6,
+    "final_file_admissions": 162,
+    "process_faults": []
+  },
+  "archive": {
+    "files": 308,
+    "uncompressed_bytes": 36604739,
+    "archive_bytes": 2154377,
+    "archive_sha256": "82652b7462b5bceae31de4d4d7d3ff095718fbc0a92d01583082c64cc799cebd",
+    "archived_objects_rehashed": true,
+    "database_snapshot_method": "SQLite backup API"
+  },
+  "initial_failures": [
+    "focused-failures: expected exit1 invalidated typed failure",
+    "native-build: private capture method and SHA256 LowerHex compile errors"
+  ],
+  "unrun": [
+    "sanitizers",
+    "GUI painted/physical interaction",
+    "optional ui-harness",
+    "GUI performance replay"
+  ],
+  "remaining": [
+    "automatic admission and encoder decision provenance",
+    "public native/headless Render",
+    "full mastering/effects",
+    "HDR",
+    "release hardware/OS qualification"
+  ]
+}

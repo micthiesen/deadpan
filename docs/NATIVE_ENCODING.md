@@ -38,6 +38,14 @@ conflicting nonzero durations, and records the assignment count. It retains
 encoder PTS/DTS, including negative priming/reordering coordinates. It never
 shifts PCM or drops packets to conceal encoder delay.
 
+`EncodeError::kind()` classifies exact native error codes separately from their
+diagnostics. A missing named video encoder is distinct from missing AAC and
+generic codec-open failures. A video packet with PTS before DTS fails with
+`video_timestamp_order` before packet admission or muxing, retaining both actual
+timestamps. Capacity, I/O, invalid input and control failures cannot become
+capability evidence through their message text. These kinds do not authorize
+automatic fallback; a future host policy must separately qualify its choice.
+
 ## File, work and cancellation limits
 
 Output must be an empty regular file owned by the current user, with one link,

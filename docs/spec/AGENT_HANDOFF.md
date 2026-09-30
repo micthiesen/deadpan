@@ -2,6 +2,32 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
+## Typed encoder failures, 2026-09-30
+
+[Encode protocol 2](../ENCODED_RENDER.md) preserves the failed boundary and exact
+native kind separately from diagnostic text. Missing video encoders and actual
+PTS-before-DTS packets have specific kinds. Source, DSP, I/O, capacity, control
+and generic driver failures cannot become capability evidence through prose.
+Later supervision faults invalidate a typed report; a validated failure terminal
+permits exit 1, while other failing exits and malformed tails remain faults.
+No automatic fallback is implemented and no stored policy/schema is upgraded.
+
+[Native qualification](../qualification/encoded-failures-2026-09-30.md) reproduces
+the real typed hardware-B rejection, then separately verifies a no-B project
+encode without authored changes. The synthetic matrix preserves all ten working
+paths and three rejected hardware-B attempts, with six deliberate fault cases.
+All 2,359 locked workspace tests, strict Clippy, formatting and native smoke pass.
+
+Next, implement bounded automatic admission using deterministic moving pictures
+and audio at the actual output raster/rate for at least two GOPs. Arbitrary short
+or frequently cut project content cannot establish B-frame support. Bind the
+result to the current runtime and record rejected probes. Preserve strict legacy
+engineering intents; automatic policy belongs to the job, while the selected
+encoder and qualification evidence belong to each new encoding attempt.
+Checkpoint verification/reconciliation must retain the original encoding decision.
+Then expose the same policy through native Render and the public headless API,
+with preview commit/discard decisions and requests bound to the owning session.
+
 ## Visual slice placement requirement, 2026-09-30
 
 The user requested an elegant keyboard workflow for putting selected parts of
@@ -12,7 +38,7 @@ Insert, replacement and move retain exact timing, occurrence scope and owned
 attachments. Enter commits; Escape cancels the unsaved proposal. Existing moment
 copy/paste does not fulfill this requirement. DP-05/DP-20 acceptance must include
 the complete keyboard flow and minimum-size visual inspection. Temporal slices
-are the current interpretation; clarification about spatial overlays is pending.
+are the current interpretation.
 
 ## Durable destination reconciliation, 2026-09-30
 

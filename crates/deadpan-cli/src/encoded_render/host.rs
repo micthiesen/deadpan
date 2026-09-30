@@ -332,28 +332,31 @@ pub(super) fn encode_guarded(
             {
                 failure = Some(error);
                 if let Err(error) = process.request_cancel(now) {
-                    return Err(failure.unwrap_or_else(|| error.into()));
+                    return Err(invalidate_report(failure, error.into()));
                 }
             }
             if cancelled.load(Ordering::Acquire) && !was_cancelled && failure.is_none() {
                 was_cancelled = true;
                 if let Err(error) = process.request_cancel(now) {
-                    return Err(failure.unwrap_or_else(|| error.into()));
+                    return Err(invalidate_report(failure, error.into()));
                 }
             }
             if now >= deadline {
                 if let Err(error) = process.request_cancel(now) {
-                    return Err(failure.unwrap_or_else(|| error.into()));
+                    return Err(invalidate_report(failure, error.into()));
                 }
-                return Err(failure.unwrap_or(if was_cancelled {
-                    EncodedRenderError::Cancelled
-                } else {
-                    EncodedRenderError::Deadline
-                }));
+                return Err(invalidate_report(
+                    failure,
+                    if was_cancelled {
+                        EncodedRenderError::Cancelled
+                    } else {
+                        EncodedRenderError::Deadline
+                    },
+                ));
             }
             let events = match process.poll(now) {
                 Ok(events) => events,
-                Err(error) => return Err(failure.unwrap_or_else(|| error.into())),
+                Err(error) => return Err(invalidate_report(failure, error.into())),
             };
             let mut latest_progress = None;
             for event in events {
@@ -375,7 +378,7 @@ pub(super) fn encode_guarded(
                                     )
                                 });
                                 if let Err(error) = process.request_cancel(now) {
-                                    return Err(failure.unwrap_or_else(|| error.into()));
+                                    return Err(invalidate_report(failure, error.into()));
                                 }
                             }
                             last_progress = (completed_frames, completed_audio_samples);
@@ -389,15 +392,15 @@ pub(super) fn encode_guarded(
                         EncodedWorkerMessage::Completed { manifest, .. } => {
                             completion = Some(*manifest)
                         }
-                        EncodedWorkerMessage::Failed { diagnostic, .. } => {
-                            failure.get_or_insert_with(|| {
-                                EncodedRenderError::Worker(diagnostic.as_str().to_owned())
-                            });
+                        EncodedWorkerMessage::Failed {
+                            failure: reported, ..
+                        } => {
+                            failure.get_or_insert(EncodedRenderError::WorkerFailure(reported));
                         }
                         EncodedWorkerMessage::Cancelled { .. } => was_cancelled = true,
                     },
                     ProcessEvent::Fault(reason) => {
-                        failure.get_or_insert(EncodedRenderError::Worker(reason));
+                        failure = Some(supervision_fault(failure.take(), reason));
                     }
                     ProcessEvent::Exited {
                         status,
@@ -425,7 +428,10 @@ pub(super) fn encode_guarded(
             }
         }
         if let Some(error) = failure {
-            return Err(error);
+            return Err(match check_control(cancelled, deadline) {
+                Ok(()) => error,
+                Err(control) => invalidate_report(Some(error), control),
+            });
         }
         if was_cancelled {
             return Err(EncodedRenderError::Cancelled);
@@ -491,9 +497,10 @@ pub(super) fn finish_owned_result<T, P: WorkerProtocol>(
         .finish_owned_work(Instant::now() + Duration::from_secs(2))
         .and_then(|stopped| stopped.require_membership());
     match cleanup {
-        Ok(stopped) if stopped.pump_panicked() => Err(result.err().unwrap_or_else(|| {
-            EncodedRenderError::Worker("worker I/O pump panicked before finalization".into())
-        })),
+        Ok(stopped) if stopped.pump_panicked() => Err(supervision_fault(
+            result.err(),
+            "worker I/O pump panicked before finalization".into(),
+        )),
         Ok(_) => result,
         Err(cleanup) => Err(EncodedRenderError::CleanupUnconfirmed {
             primary: Box::new(result.err().unwrap_or_else(|| {
@@ -501,6 +508,24 @@ pub(super) fn finish_owned_result<T, P: WorkerProtocol>(
             })),
             cleanup,
         }),
+    }
+}
+
+fn supervision_fault(primary: Option<EncodedRenderError>, fault: String) -> EncodedRenderError {
+    invalidate_report(primary, EncodedRenderError::Worker(fault))
+}
+
+fn invalidate_report(
+    primary: Option<EncodedRenderError>,
+    fault: EncodedRenderError,
+) -> EncodedRenderError {
+    match primary {
+        Some(primary @ EncodedRenderError::WorkerFailure(_)) => EncodedRenderError::WorkerFault {
+            primary: Box::new(primary),
+            fault: fault.to_string(),
+        },
+        Some(other) => other,
+        None => fault,
     }
 }
 

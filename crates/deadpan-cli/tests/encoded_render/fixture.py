@@ -42,6 +42,8 @@ assert sys.argv[2] == "--render-encode-worker"
 assert Path(sys.argv[3]).is_absolute()
 request = read_message()
 assert request["op"] == "prepare"
+assert request["protocol"] == 2
+protocol = request["protocol"]
 picture = request["contract"]["picture"]
 assert picture["raster"] == [2, 2]
 identity = request["identity"]
@@ -52,7 +54,7 @@ digest = hashlib.sha256(payload).hexdigest()
 
 
 def progress(frames, samples):
-    emit({"event": "progress", "protocol": 1, "identity": identity,
+    emit({"event": "progress", "protocol": protocol, "identity": identity,
           "completed_frames": frames, "total_frames": video_frames,
           "completed_audio_samples": samples, "total_audio_samples": audio_samples})
 
@@ -78,8 +80,43 @@ else:
     os.mkfifo(movie)
 
 if mode == "failed_exit":
-    emit({"event": "failed", "protocol": 1, "identity": identity,
-          "diagnostic": "fixture encoder rejected captured input"})
+    emit({"event": "failed", "protocol": protocol, "identity": identity,
+          "failure": {"kind": {"stage": "encoder", "kind": "input"},
+                      "diagnostic": "fixture encoder rejected captured input"}})
+    raise SystemExit(1)
+if mode.startswith("failure:"):
+    kind = mode.split(":", 1)[1]
+    failure = {"kind": {"stage": "encoder", "kind": kind},
+               "diagnostic": "fixture typed encoder rejection"}
+    if kind == "source":
+        failure = {"kind": {"stage": "source"},
+                   "diagnostic": "video_encoder_unavailable: misleading source error"}
+    message = {"event": "failed", "protocol": protocol, "identity": identity,
+               "failure": failure}
+    if kind == "legacy":
+        message = {"event": "failed", "protocol": 1, "identity": identity,
+                   "diagnostic": "old worker has no failure kind"}
+    elif kind == "stale":
+        message["identity"] = dict(identity, attempt_id="previous-attempt")
+        failure["kind"]["kind"] = "encoder_unavailable"
+    elif kind == "unknown_field":
+        failure["kind"]["kind"] = "encoder_unavailable"
+        failure["fallback"] = True
+    elif kind in {"then_malformed", "then_duplicate", "then_crash", "then_exit2", "then_hang"}:
+        failure["kind"]["kind"] = "encoder_unavailable"
+    emit(message)
+    if kind == "then_malformed":
+        emit_bytes(b"{malformed after failure}")
+    elif kind == "then_duplicate":
+        emit(message)
+    elif kind == "then_crash":
+        import signal
+        os.kill(os.getpid(), signal.SIGKILL)
+    elif kind == "then_exit2":
+        raise SystemExit(2)
+    elif kind == "then_hang":
+        while True:
+            time.sleep(10)
     raise SystemExit(1)
 if mode == "partial_header":
     sys.stdout.buffer.write(b"\x00\x00")
@@ -105,7 +142,7 @@ if mode in {"cancel", "ignore_cancel"}:
     assert cancel["op"] == "cancel"
     assert cancel["identity"] == identity
     assert cancel["cancellation_token"] == request["cancellation_token"]
-    emit({"event": "cancelled", "protocol": 1, "identity": identity})
+    emit({"event": "cancelled", "protocol": protocol, "identity": identity})
     raise SystemExit(0)
 if mode in {"video_regression", "audio_regression"}:
     progress(1, 512)
@@ -114,7 +151,7 @@ if mode in {"video_regression", "audio_regression"}:
     # Continue to a valid completion. Without the progress rejection, the host
     # reaches the FIFO below, so a missing-terminal error cannot mask the bug.
 if mode in {"wrong_video_total", "wrong_audio_total", "over_video", "over_audio"}:
-    message = {"event": "progress", "protocol": 1, "identity": identity,
+    message = {"event": "progress", "protocol": protocol, "identity": identity,
                "completed_frames": 1, "total_frames": video_frames,
                "completed_audio_samples": 512, "total_audio_samples": audio_samples}
     key = {"wrong_video_total": "total_frames", "wrong_audio_total": "total_audio_samples",
@@ -207,11 +244,11 @@ if mode == "stale_attempt":
     identity = dict(identity, attempt_id="previous-attempt")
 elif mode == "wrong_request":
     identity = dict(identity, request_id="other-request")
-emit({"event": "completed", "protocol": 2 if mode == "wrong_version" else 1,
+emit({"event": "completed", "protocol": 1 if mode == "wrong_version" else protocol,
       "identity": identity, "manifest": manifest})
 if mode == "completed_exit_failure":
     raise SystemExit(1)
 if mode == "after_terminal":
     progress(video_frames, audio_samples)
 if mode == "duplicate_terminal":
-    emit({"event": "completed", "protocol": 1, "identity": identity, "manifest": manifest})
+    emit({"event": "completed", "protocol": protocol, "identity": identity, "manifest": manifest})

@@ -1,0 +1,45 @@
+import hashlib
+import json
+from pathlib import Path
+import shutil
+import sqlite3
+import tarfile
+
+root = Path('/tmp/deadpan-automatic-render-H6fzEQ')
+source = Path('/tmp/deadpan-render-workflow-EtO3Qu1W/native-inputs/source.deadpan')
+copy = root / 'worker-input' / 'source.deadpan'
+
+def ignore(directory, names):
+    if Path(directory) == source:
+        return [name for name in names if name.startswith('project.sqlite') or name == '.writer.lock']
+    return []
+
+shutil.copytree(source, copy, ignore=ignore)
+with sqlite3.connect(f'file:{source / "project.sqlite"}?mode=ro', uri=True) as src:
+    with sqlite3.connect(copy / 'project.sqlite') as dst:
+        src.backup(dst)
+report = json.loads((root / 'native-worker-report.json').read_text())
+assert report['status'] == 'passed' and report['authoring_unchanged']
+movie = root / 'native-worker-report.verified-hardware-none.mp4'
+assert hashlib.sha256(movie.read_bytes()).hexdigest() == report['hardware_none']['movie']['sha256']
+paths = sorted(p for directory in [root / 'native-matrix', root / 'worker-input']
+               for p in directory.rglob('*') if p.is_file())
+paths += [root / 'native-worker-report.json', movie]
+inventory = {str(p.relative_to(root)): {'bytes': p.stat().st_size,
+             'sha256': hashlib.sha256(p.read_bytes()).hexdigest()} for p in paths}
+archive = root / 'native-files.tar.gz'
+with tarfile.open(archive, 'w:gz') as output:
+    for path in paths:
+        output.add(path, arcname=str(path.relative_to(root)), recursive=False)
+with tarfile.open(archive, 'r:gz') as archived:
+    members = archived.getmembers()
+    assert len(members) == len(inventory)
+    for member in members:
+        data = archived.extractfile(member).read()
+        assert len(data) == inventory[member.name]['bytes']
+        assert hashlib.sha256(data).hexdigest() == inventory[member.name]['sha256']
+summary = {'files': len(inventory), 'uncompressed_bytes': sum(p['bytes'] for p in inventory.values()),
+           'archive_bytes': archive.stat().st_size, 'archive_sha256': hashlib.sha256(archive.read_bytes()).hexdigest(),
+           'archived_objects_rehashed': True, 'database_snapshot_method': 'SQLite backup API'}
+(root / 'native-files.json').write_text(json.dumps({'summary': summary, 'files': inventory}, indent=2) + '\n')
+print(json.dumps(summary))

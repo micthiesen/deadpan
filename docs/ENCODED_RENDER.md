@@ -42,6 +42,16 @@ contract, explicit encoder choice, budgets and timeout. Progress counts accepted
 picture and audio inputs. Complete input progress is not codec drain, verified
 media or published output.
 
+Protocol 2 carries a strict typed failure boundary separately from its bounded
+diagnostic: control, contract, source, picture, audio, output or native encoder.
+Native encoder failures retain specific kinds for missing video encoders and
+observed invalid packet timing, distinct from input, resource, I/O and generic
+driver failures. Protocol-1 messages are rejected; existing retained manifests
+and database rows are unchanged. The host keeps typed failures through process
+supervision and records their stable diagnostic codes in the workflow journal.
+No diagnostic text selects a fallback. A failure kind grants neither fallback
+permission nor cleanup evidence; unconfirmed teardown still takes precedence.
+
 The raw worker retains its 512 MiB/100,000-frame qualification limits. Encoded
 requests reconstruct the native contract and enforce native frame, sample,
 packet, geometry, duration and byte limits. Serializing/deserializing an encoder
@@ -79,7 +89,8 @@ MP4 tables, every decoded picture, fresh GOPs and manual/ordinary AAC presentati
 before returning a private verified candidate. The [publication host](RENDER_PUBLICATION.md)
 then checks an exact destination copy and publishes the local report and MP4 under
 exclusive names, with explicit outcomes for failures after the movie rename.
-Durable publication recovery, native Render and public headless render commands
+The [durable journal](RENDER_PUBLICATION.md#durable-publication-journal) supports
+explicit recovery after restart. Native Render and public headless render commands
 remain required. Full audio/effects, HDR, automatic platform policy, performance
 and release hardware/OS coverage also remain open. Fixture content and platform
 qualification remain separate from per-file structural/decode admission.

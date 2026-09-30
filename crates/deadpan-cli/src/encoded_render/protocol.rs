@@ -21,7 +21,7 @@ use serde::{Deserialize, Serialize};
 use crate::export_picture::ExportPictureContract;
 pub use crate::render_worker::protocol::{RenderContract, RenderIdentity};
 
-pub const PROTOCOL_VERSION: u32 = 1;
+pub const PROTOCOL_VERSION: u32 = 2;
 pub const MAX_TIMEOUT_MILLIS: u64 = 24 * 60 * 60 * 1_000;
 pub const OUTPUT_SCOPE: &str = "output";
 pub const MOVIE_REF: &str = "output/movie.mp4";
@@ -260,6 +260,66 @@ fn moov_bound(packets: u64) -> Result<u64, String> {
         .ok_or_else(|| "encoded MP4 metadata bound overflow".to_owned())
 }
 
+/// The failed boundary, carried separately from human diagnostic text. These
+/// observations never authorize a fallback or establish process cleanup.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(
+    tag = "stage",
+    content = "kind",
+    rename_all = "snake_case",
+    deny_unknown_fields
+)]
+pub enum EncodedFailureKind {
+    Control,
+    Contract,
+    Source,
+    Picture,
+    Audio,
+    Output,
+    Encoder(deadpan_encode::EncodeFailureKind),
+}
+
+impl EncodedFailureKind {
+    /// Stable operational diagnostic code, independent of arbitrary messages.
+    pub const fn code(self) -> &'static str {
+        match self {
+            Self::Control => "render_control_failed",
+            Self::Contract => "render_contract_failed",
+            Self::Source => "render_source_failed",
+            Self::Picture => "render_picture_failed",
+            Self::Audio => "render_audio_failed",
+            Self::Output => "render_output_failed",
+            Self::Encoder(deadpan_encode::EncodeFailureKind::EncoderUnavailable) => {
+                "video_encoder_unavailable"
+            }
+            Self::Encoder(deadpan_encode::EncodeFailureKind::VideoTimestampOrder) => {
+                "video_timestamp_order"
+            }
+            Self::Encoder(_) => "render_encoder_failed",
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct EncodedFailure {
+    pub kind: EncodedFailureKind,
+    pub diagnostic: Diagnostic,
+}
+
+impl std::fmt::Display for EncodedFailure {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            formatter,
+            "{}: {}",
+            self.kind.code(),
+            self.diagnostic.as_str()
+        )
+    }
+}
+
+impl std::error::Error for EncodedFailure {}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "event", rename_all = "snake_case", deny_unknown_fields)]
 pub enum EncodedWorkerMessage {
@@ -279,7 +339,7 @@ pub enum EncodedWorkerMessage {
     Failed {
         protocol: u32,
         identity: RenderIdentity,
-        diagnostic: Diagnostic,
+        failure: EncodedFailure,
     },
     Cancelled {
         protocol: u32,
@@ -434,9 +494,8 @@ impl WorkerProtocol for EncodedProtocol {
                 manifest.validate_for(self.limits)?;
                 Ok(ResponseKind::Completed)
             }
-            EncodedWorkerMessage::Failed { .. } | EncodedWorkerMessage::Cancelled { .. } => {
-                Ok(ResponseKind::Terminal)
-            }
+            EncodedWorkerMessage::Failed { .. } => Ok(ResponseKind::Failed),
+            EncodedWorkerMessage::Cancelled { .. } => Ok(ResponseKind::Terminal),
         }
     }
 }

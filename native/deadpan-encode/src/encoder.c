@@ -377,7 +377,8 @@ static int dict_number(dp_encode_session *s, AVDictionary **options, const char 
 static int open_codec(dp_encode_session *s, int audio) {
     const AVCodec *implementation = avcodec_find_encoder_by_name(audio ? "aac" : "h264_videotoolbox");
     if (implementation == NULL)
-        return fail(s, "encoder_unavailable", "required %s encoder is unavailable", audio ? "native AAC" : "VideoToolbox H264");
+        return fail(s, audio ? "audio_encoder_unavailable" : "video_encoder_unavailable",
+            "required %s encoder is unavailable", audio ? "native AAC" : "VideoToolbox H264");
     AVCodecContext *codec = avcodec_alloc_context3(implementation);
     if (codec == NULL) return fail(s, "allocation_failure", "allocate encoder context");
     if (audio) s->audio = codec; else s->video = codec;
@@ -421,7 +422,17 @@ static int open_codec(dp_encode_session *s, int audio) {
     }
     if (!check_control(s)) goto done;
     int error = avcodec_open2(codec, implementation, &options);
-    if (error < 0) { ff_failure(s, "open selected encoder", error); goto done; }
+    if (error < 0) {
+        /* Only this exact error establishes that the selected video encoder is
+         * absent. EINVAL, ENOSYS, external/driver and generic open failures must
+         * retain their ordinary failure category; their prose is not policy. */
+        if (!audio && error == AVERROR_ENCODER_NOT_FOUND)
+            fail(s, "video_encoder_unavailable",
+                "open selected VideoToolbox H264 encoder: encoder not found (FFmpeg %d)", error);
+        else
+            ff_failure(s, "open selected encoder", error);
+        goto done;
+    }
     if (!check_control(s)) goto done;
     if (av_dict_count(options) != 0) { fail(s, "encoder_unsupported", "encoder did not consume all requested options"); goto done; }
     if (codec->extradata_size < 0 || codec->extradata_size > MAX_EXTRADATA_BYTES) {
@@ -582,6 +593,12 @@ static int packet_valid(dp_encode_session *s, int audio) {
         return fail(s, "invalid_packet", "encoder packet timing exceeds bounded delay or interval");
     if (!audio && (p->pts < 0 || p->pts % s->config.fps_den != 0 || p->duration != s->config.fps_den))
         return fail(s, "invalid_packet", "H264 packet changed the authored frame clock");
+    /* Retain the actual rejected encoder timestamps. This is an observation
+     * about the selected path, not permission to rewrite timing or switch it.
+     * Check before admitting this packet or handing it to the MP4 muxer. */
+    if (!audio && p->pts < p->dts)
+        return fail(s, "video_timestamp_order",
+            "H264 packet PTS (%" PRId64 ") precedes DTS (%" PRId64 ")", p->pts, p->dts);
     if (!audio) {
         uint64_t ordinal = (uint64_t)p->pts / s->config.fps_den;
         uint8_t bit = (uint8_t)(1U << (ordinal % 8));

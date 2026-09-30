@@ -1,0 +1,31 @@
+import json
+import os
+from pathlib import Path
+import subprocess
+
+root = Path('/tmp/deadpan-automatic-render-H6fzEQ')
+env = dict(os.environ, DEADPAN_CHECK_OUTPUT=str(root))
+runner = 'tools/media-qualification/evidence/2026-09-29-generated-pictures/run-native.py'
+
+def run(name, args):
+    subprocess.run(['python3', runner, name, *args], env=env, check=True)
+
+run('native-build-fixed', ['cargo', 'build', '--locked', '-p', 'deadpan-cli', '--bin', 'deadpan-cli',
+                     '--example', 'qualify_encoder_failure', '-p', 'deadpan-encode',
+                     '--example', 'qualify', '--message-format=json'])
+records = [json.loads(line) for line in (root / 'native-build-fixed.log').read_text().splitlines()
+           if line.startswith('{')]
+assert any(row.get('reason') == 'build-finished' and row['success'] for row in records)
+
+def executable(name):
+    values = [row['executable'] for row in records if row.get('reason') == 'compiler-artifact'
+              and row['target']['name'] == name and row.get('executable')]
+    assert len(values) == 1, (name, values)
+    return values[0]
+
+run('native-worker', [executable('qualify_encoder_failure'),
+    '/tmp/deadpan-render-workflow-EtO3Qu1W/native-inputs/source.deadpan',
+    executable('deadpan-cli'), str(root / 'native-worker-report.json')])
+run('native-matrix', ['python3', 'tools/media-qualification/compatible/qualify_native_encode.py',
+    '--work', str(root / 'native-matrix'), '--build-report', '/private/tmp/deadpan-ui-ffmpeg-build.json',
+    '--encoder', executable('qualify')])
