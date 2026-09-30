@@ -1,0 +1,552 @@
+{
+  "status": "passed",
+  "workspace": {
+    "passed": 2318,
+    "failed": 0,
+    "ignored": 0,
+    "target_results": 167,
+    "invocation": {
+      "command": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked",
+        "--no-fail-fast",
+        "--jobs",
+        "4"
+      ],
+      "started": "2026-09-30T07:42:00.058426+00:00",
+      "base_commit": "064533133e106cc9e80381267d68a69acab2da9d",
+      "diff_sha256": "9b87af8aaa7137638bce3cb24ad28579f18ab2c4f2ca9988c655922a62b274c2",
+      "source_manifest_sha256": "f4fadcc068b38ebb6c206f869a0635135e41177088b5c8676eb1b8c9f8c0fddf",
+      "pid": 83718,
+      "exit_code": 0,
+      "seconds": 726.498192708008
+    }
+  },
+  "strict_clippy": {
+    "command": [
+      "cargo",
+      "clippy",
+      "--workspace",
+      "--all-targets",
+      "--locked",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "started": "2026-09-30T07:32:52.892260+00:00",
+    "base_commit": "064533133e106cc9e80381267d68a69acab2da9d",
+    "diff_sha256": "7b3d37830002d5c79731f07349381675ac6bbe5e2bad303e3a00bcd70033e8dd",
+    "source_manifest_sha256": "f4fadcc068b38ebb6c206f869a0635135e41177088b5c8676eb1b8c9f8c0fddf",
+    "pid": 81545,
+    "exit_code": 0,
+    "seconds": 519.148889709264
+  },
+  "formatting": {
+    "command": [
+      "cargo",
+      "fmt",
+      "--all",
+      "--",
+      "--check"
+    ],
+    "started": "2026-09-30T07:32:25.983016+00:00",
+    "base_commit": "064533133e106cc9e80381267d68a69acab2da9d",
+    "diff_sha256": "7b3d37830002d5c79731f07349381675ac6bbe5e2bad303e3a00bcd70033e8dd",
+    "source_manifest_sha256": "f4fadcc068b38ebb6c206f869a0635135e41177088b5c8676eb1b8c9f8c0fddf",
+    "pid": 81458,
+    "exit_code": 0,
+    "seconds": 1.1787386247888207
+  },
+  "native_source_inventory": "f4fadcc068b38ebb6c206f869a0635135e41177088b5c8676eb1b8c9f8c0fddf",
+  "final_source_inventory": "f4fadcc068b38ebb6c206f869a0635135e41177088b5c8676eb1b8c9f8c0fddf",
+  "source_changes_after_native": false,
+  "native_audit": {
+    "status": "passed",
+    "scope": "final coherent SQLite backups, operational record/attempt/report agreement, historical document hashes, exact artifact SHA256/lengths/modes, independent final-file media comparison",
+    "process_crashes": 20,
+    "fresh_verifications": 40,
+    "new_encodes": 0,
+    "independently_decoded_movies": 2,
+    "pictures": 138,
+    "compared_planes": 414,
+    "compared_codes": 102643200,
+    "cases": [
+      {
+        "name": "structural",
+        "database": {
+          "path": "/private/tmp/deadpan-publication-recovery-ams9kpds/verified-databases/structural.sqlite",
+          "bytes": 573440,
+          "sha256": "8507851248a5843d324ea2b5d669c00acb539e24d782273af2a621bebbf2203c",
+          "mode": "0o644"
+        },
+        "historical_document_sha256": "af8e5672cee86b4d64827ef4e86b8af5ad9b9ca11d5c8b46e18e0f4d7d5663ff",
+        "retained": {
+          "movie": {
+            "path": "/private/tmp/deadpan-publication-recovery-ams9kpds/native-inputs/source.deadpan/Media/RenderCandidates/blake3-cc76ef2ee8f1401489c1618096352c3ceb86bac6fa1b46f0e8bcaa3fe84d192b",
+            "bytes": 97359,
+            "sha256": "12a48645584a9b83100b996c69e7fd93c2df29f576499afa0b3b27344fa03a79",
+            "mode": "0o444"
+          },
+          "manifest": {
+            "path": "/private/tmp/deadpan-publication-recovery-ams9kpds/native-inputs/source.deadpan/Media/RenderCandidates/blake3-ac7fa9502a8e8c58e6a0979139948693e4fad5965238b7d50c6daeaa8284a75d",
+            "bytes": 1931,
+            "sha256": "b9616711cc6a4fa2eff0a1fdd39901866bab0aa4151cd9854ac20f7cee856f8c",
+            "mode": "0o444"
+          }
+        },
+        "cases": [
+          {
+            "name": "intent",
+            "classification": "not_published",
+            "phase": "intent",
+            "outcome": "failed",
+            "observed_movie_commit": false,
+            "artifacts": {}
+          },
+          {
+            "name": "prepared",
+            "classification": "not_published",
+            "phase": "prepared",
+            "outcome": "failed",
+            "observed_movie_commit": false,
+            "artifacts": {
+              ".deadpan-crash-prepared.movie.partial": {
+                "path": "/private/tmp/deadpan-publication-recovery-ams9kpds/native-structural/prepared/.deadpan-crash-prepared.movie.partial",
+                "bytes": 97359,
+                "sha256": "12a48645584a9b83100b996c69e7fd93c2df29f576499afa0b3b27344fa03a79",
+                "mode": "0o600"
+              },
+              ".deadpan-crash-prepared.report.partial": {
+                "path": "/private/tmp/deadpan-publication-recovery-ams9kpds/native-structural/prepared/.deadpan-crash-prepared.report.partial",
+                "bytes": 5692,
+                "sha256": "afbc59500c7bd419d3ebc1cc4f6d8edd01065f2f814ce59c9539e24ad4d93dcb",
+                "mode": "0o600"
+              }
+            }
+          },
+          {
+            "name": "report-authorized",
+            "classification": "not_published",
+            "phase": "report_committing",
+            "outcome": "failed",
+            "observed_movie_commit": false,
+            "artifacts": {
+              ".deadpan-crash-report-authorized.movie.partial": {
+                "path": "/private/tmp/deadpan-publication-recovery-ams9kpds/native-structural/report-authorized/.deadpan-crash-report-authorized.movie.partial",
+                "bytes": 97359,
+                "sha256": "12a48645584a9b83100b996c69e7fd93c2df29f576499afa0b3b27344fa03a79",
+                "mode": "0o600"
+              },
+              ".deadpan-crash-report-authorized.report.partial": {
+                "path": "/private/tmp/deadpan-publication-recovery-ams9kpds/native-structural/report-authorized/.deadpan-crash-report-authorized.report.partial",
+                "bytes": 5710,
+                "sha256": "def7d9c97ef614d404aad5342ba4f8a263115f007779b7ad3b5ab2c68af75258",
+                "mode": "0o600"
+              }
+            }
+          },
+          {
+            "name": "report-renamed",
+            "classification": "not_published",
+            "phase": "report_committing",
+            "outcome": "failed",
+            "observed_movie_commit": false,
+            "artifacts": {
+              ".deadpan-crash-report-renamed.movie.partial": {
+                "path": "/private/tmp/deadpan-publication-recovery-ams9kpds/native-structural/report-renamed/.deadpan-crash-report-renamed.movie.partial",
+                "bytes": 97359,
+                "sha256": "12a48645584a9b83100b996c69e7fd93c2df29f576499afa0b3b27344fa03a79",
+                "mode": "0o600"
+              },
+              "deadpan-render-crash-report-renamed.json": {
+                "path": "/private/tmp/deadpan-publication-recovery-ams9kpds/native-structural/report-renamed/deadpan-render-crash-report-renamed.json",
+                "bytes": 5704,
+                "sha256": "ead95d3d99f8cbb7cdfc7466a0bd68aab1c6aef3d451bd605e0faaa38b61c15e",
+                "mode": "0o600"
+              }
+            }
+          },
+          {
+            "name": "report-recorded",
+            "classification": "not_published",
+            "phase": "report_committed",
+            "outcome": "failed",
+            "observed_movie_commit": false,
+            "artifacts": {
+              ".deadpan-crash-report-recorded.movie.partial": {
+                "path": "/private/tmp/deadpan-publication-recovery-ams9kpds/native-structural/report-recorded/.deadpan-crash-report-recorded.movie.partial",
+                "bytes": 97359,
+                "sha256": "12a48645584a9b83100b996c69e7fd93c2df29f576499afa0b3b27344fa03a79",
+                "mode": "0o600"
+              },
+              "deadpan-render-crash-report-recorded.json": {
+                "path": "/private/tmp/deadpan-publication-recovery-ams9kpds/native-structural/report-recorded/deadpan-render-crash-report-recorded.json",
+                "bytes": 5706,
+                "sha256": "e58a915bbf51b43344c4cac1252468ffe18115d0a6116c75667ac8d0af2e8733",
+                "mode": "0o600"
+              }
+            }
+          },
+          {
+            "name": "movie-authorized",
+            "classification": "unresolved",
+            "phase": "movie_committing",
+            "outcome": "unresolved",
+            "observed_movie_commit": false,
+            "artifacts": {
+              ".deadpan-crash-movie-authorized.movie.partial": {
+                "path": "/private/tmp/deadpan-publication-recovery-ams9kpds/native-structural/movie-authorized/.deadpan-crash-movie-authorized.movie.partial",
+                "bytes": 97359,
+                "sha256": "12a48645584a9b83100b996c69e7fd93c2df29f576499afa0b3b27344fa03a79",
+                "mode": "0o600"
+              },
+              "deadpan-render-crash-movie-authorized.json": {
+                "path": "/private/tmp/deadpan-publication-recovery-ams9kpds/native-structural/movie-authorized/deadpan-render-crash-movie-authorized.json",
+                "bytes": 5708,
+                "sha256": "766c1b3c7bf6d24ffe85556bf341ff9a26fee56b5d54146b2b4cafbdc9332ce0",
+                "mode": "0o600"
+              }
+            }
+          },
+          {
+            "name": "movie-renamed",
+            "classification": "published",
+            "phase": "movie_committing",
+            "outcome": "published",
+            "observed_movie_commit": true,
+            "artifacts": {
+              "deadpan-render-crash-movie-renamed.json": {
+                "path": "/private/tmp/deadpan-publication-recovery-ams9kpds/native-structural/movie-renamed/deadpan-render-crash-movie-renamed.json",
+                "bytes": 5702,
+                "sha256": "7f22c7adb49714ed143e661655459e5f2729309ce41402ac7feed6d484a7f72b",
+                "mode": "0o600"
+              },
+              "movie.mp4": {
+                "path": "/private/tmp/deadpan-publication-recovery-ams9kpds/native-structural/movie-renamed/movie.mp4",
+                "bytes": 97359,
+                "sha256": "12a48645584a9b83100b996c69e7fd93c2df29f576499afa0b3b27344fa03a79",
+                "mode": "0o600"
+              }
+            }
+          },
+          {
+            "name": "terminal",
+            "classification": "published",
+            "phase": "movie_committing",
+            "outcome": "published",
+            "observed_movie_commit": true,
+            "artifacts": {
+              "deadpan-render-crash-terminal.json": {
+                "path": "/private/tmp/deadpan-publication-recovery-ams9kpds/native-structural/terminal/deadpan-render-crash-terminal.json",
+                "bytes": 5692,
+                "sha256": "7048e600c811df2bcddd53cb7b17ff657a568726b3153eff08ebb6b7d47131a6",
+                "mode": "0o600"
+              },
+              "movie.mp4": {
+                "path": "/private/tmp/deadpan-publication-recovery-ams9kpds/native-structural/terminal/movie.mp4",
+                "bytes": 97359,
+                "sha256": "12a48645584a9b83100b996c69e7fd93c2df29f576499afa0b3b27344fa03a79",
+                "mode": "0o600"
+              }
+            }
+          },
+          {
+            "name": "missing-report",
+            "classification": "published_unconfirmed",
+            "phase": "movie_committing",
+            "outcome": "published_unconfirmed",
+            "observed_movie_commit": true,
+            "artifacts": {
+              "displaced-report.json": {
+                "path": "/private/tmp/deadpan-publication-recovery-ams9kpds/native-structural/missing-report/displaced-report.json",
+                "bytes": 5704,
+                "sha256": "8490ce2af3a19935a8c50bf025f81b66bc9efa1487160d3599fe79d840a71854",
+                "mode": "0o600"
+              },
+              "movie.mp4": {
+                "path": "/private/tmp/deadpan-publication-recovery-ams9kpds/native-structural/missing-report/movie.mp4",
+                "bytes": 97359,
+                "sha256": "12a48645584a9b83100b996c69e7fd93c2df29f576499afa0b3b27344fa03a79",
+                "mode": "0o600"
+              }
+            }
+          },
+          {
+            "name": "identical-replacement",
+            "classification": "unresolved",
+            "phase": "movie_committing",
+            "outcome": "unresolved",
+            "observed_movie_commit": false,
+            "artifacts": {
+              "deadpan-render-crash-identical-replacement.json": {
+                "path": "/private/tmp/deadpan-publication-recovery-ams9kpds/native-structural/identical-replacement/deadpan-render-crash-identical-replacement.json",
+                "bytes": 5718,
+                "sha256": "70ba7e460fc57313bf2f58124d48bc9bc6d2dbd96cd62f32d522d9d1936a536e",
+                "mode": "0o600"
+              },
+              "movie.mp4": {
+                "path": "/private/tmp/deadpan-publication-recovery-ams9kpds/native-structural/identical-replacement/movie.mp4",
+                "bytes": 97359,
+                "sha256": "12a48645584a9b83100b996c69e7fd93c2df29f576499afa0b3b27344fa03a79",
+                "mode": "0o600"
+              },
+              "original-movie.mp4": {
+                "path": "/private/tmp/deadpan-publication-recovery-ams9kpds/native-structural/identical-replacement/original-movie.mp4",
+                "bytes": 97359,
+                "sha256": "12a48645584a9b83100b996c69e7fd93c2df29f576499afa0b3b27344fa03a79",
+                "mode": "0o600"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "name": "generated",
+        "database": {
+          "path": "/private/tmp/deadpan-publication-recovery-ams9kpds/verified-databases/generated.sqlite",
+          "bytes": 409600,
+          "sha256": "d28651e79152aa5a03fd601a9910058b2932c8e41c4222e1b4bf29ab199bdc68",
+          "mode": "0o644"
+        },
+        "historical_document_sha256": "2e7fca9f6df4f0282bf5b0e547ea15b7eaf4d89f46cbd48640b26a49789d94c7",
+        "retained": {
+          "movie": {
+            "path": "/private/tmp/deadpan-publication-recovery-ams9kpds/native-inputs/generated.deadpan/Media/RenderCandidates/blake3-c83b18ff46d13e4691cb6a5d573a731f04d31263efa8a0105ba49229754d2b95",
+            "bytes": 227109,
+            "sha256": "d1104ed7265440be7e947e46a31d010d7af8341a93d3e583e6aabb20659b214a",
+            "mode": "0o444"
+          },
+          "manifest": {
+            "path": "/private/tmp/deadpan-publication-recovery-ams9kpds/native-inputs/generated.deadpan/Media/RenderCandidates/blake3-5f5b2bf8d8aabddd9d8918ef724f6e6bb075656b47a21942508a31cca24f4e88",
+            "bytes": 1892,
+            "sha256": "07e5482991accf5cdc605c6629a40cfc96a1162450562a4c18e3251ffb56ed2f",
+            "mode": "0o444"
+          }
+        },
+        "cases": [
+          {
+            "name": "intent",
+            "classification": "not_published",
+            "phase": "intent",
+            "outcome": "failed",
+            "observed_movie_commit": false,
+            "artifacts": {}
+          },
+          {
+            "name": "prepared",
+            "classification": "not_published",
+            "phase": "prepared",
+            "outcome": "failed",
+            "observed_movie_commit": false,
+            "artifacts": {
+              ".deadpan-crash-prepared.movie.partial": {
+                "path": "/private/tmp/deadpan-publication-recovery-ams9kpds/native-generated/prepared/.deadpan-crash-prepared.movie.partial",
+                "bytes": 227109,
+                "sha256": "d1104ed7265440be7e947e46a31d010d7af8341a93d3e583e6aabb20659b214a",
+                "mode": "0o600"
+              },
+              ".deadpan-crash-prepared.report.partial": {
+                "path": "/private/tmp/deadpan-publication-recovery-ams9kpds/native-generated/prepared/.deadpan-crash-prepared.report.partial",
+                "bytes": 6690,
+                "sha256": "cb6c2dd0e2caed8bbe6eed381e85535169add734b24875acc66c36bd79bdf393",
+                "mode": "0o600"
+              }
+            }
+          },
+          {
+            "name": "report-authorized",
+            "classification": "not_published",
+            "phase": "report_committing",
+            "outcome": "failed",
+            "observed_movie_commit": false,
+            "artifacts": {
+              ".deadpan-crash-report-authorized.movie.partial": {
+                "path": "/private/tmp/deadpan-publication-recovery-ams9kpds/native-generated/report-authorized/.deadpan-crash-report-authorized.movie.partial",
+                "bytes": 227109,
+                "sha256": "d1104ed7265440be7e947e46a31d010d7af8341a93d3e583e6aabb20659b214a",
+                "mode": "0o600"
+              },
+              ".deadpan-crash-report-authorized.report.partial": {
+                "path": "/private/tmp/deadpan-publication-recovery-ams9kpds/native-generated/report-authorized/.deadpan-crash-report-authorized.report.partial",
+                "bytes": 6708,
+                "sha256": "3e68b1c4dd4e201b71578d68a38c2f792390c612ee7a80711a7ba3c570f5e1ed",
+                "mode": "0o600"
+              }
+            }
+          },
+          {
+            "name": "report-renamed",
+            "classification": "not_published",
+            "phase": "report_committing",
+            "outcome": "failed",
+            "observed_movie_commit": false,
+            "artifacts": {
+              ".deadpan-crash-report-renamed.movie.partial": {
+                "path": "/private/tmp/deadpan-publication-recovery-ams9kpds/native-generated/report-renamed/.deadpan-crash-report-renamed.movie.partial",
+                "bytes": 227109,
+                "sha256": "d1104ed7265440be7e947e46a31d010d7af8341a93d3e583e6aabb20659b214a",
+                "mode": "0o600"
+              },
+              "deadpan-render-crash-report-renamed.json": {
+                "path": "/private/tmp/deadpan-publication-recovery-ams9kpds/native-generated/report-renamed/deadpan-render-crash-report-renamed.json",
+                "bytes": 6702,
+                "sha256": "0efb31e23c7f09cfa057658f523e7b7216d5a4ffcb1d23db433e38e3d000121b",
+                "mode": "0o600"
+              }
+            }
+          },
+          {
+            "name": "report-recorded",
+            "classification": "not_published",
+            "phase": "report_committed",
+            "outcome": "failed",
+            "observed_movie_commit": false,
+            "artifacts": {
+              ".deadpan-crash-report-recorded.movie.partial": {
+                "path": "/private/tmp/deadpan-publication-recovery-ams9kpds/native-generated/report-recorded/.deadpan-crash-report-recorded.movie.partial",
+                "bytes": 227109,
+                "sha256": "d1104ed7265440be7e947e46a31d010d7af8341a93d3e583e6aabb20659b214a",
+                "mode": "0o600"
+              },
+              "deadpan-render-crash-report-recorded.json": {
+                "path": "/private/tmp/deadpan-publication-recovery-ams9kpds/native-generated/report-recorded/deadpan-render-crash-report-recorded.json",
+                "bytes": 6704,
+                "sha256": "f5df5ba3ab062c588ec6c629ebd5ef2d1c935e5f27e5809ae43e438f31e9bf8b",
+                "mode": "0o600"
+              }
+            }
+          },
+          {
+            "name": "movie-authorized",
+            "classification": "unresolved",
+            "phase": "movie_committing",
+            "outcome": "unresolved",
+            "observed_movie_commit": false,
+            "artifacts": {
+              ".deadpan-crash-movie-authorized.movie.partial": {
+                "path": "/private/tmp/deadpan-publication-recovery-ams9kpds/native-generated/movie-authorized/.deadpan-crash-movie-authorized.movie.partial",
+                "bytes": 227109,
+                "sha256": "d1104ed7265440be7e947e46a31d010d7af8341a93d3e583e6aabb20659b214a",
+                "mode": "0o600"
+              },
+              "deadpan-render-crash-movie-authorized.json": {
+                "path": "/private/tmp/deadpan-publication-recovery-ams9kpds/native-generated/movie-authorized/deadpan-render-crash-movie-authorized.json",
+                "bytes": 6706,
+                "sha256": "76dd78bd7ce5d850033d307fa77209a8da1ef8397ed036981317524e9c71920f",
+                "mode": "0o600"
+              }
+            }
+          },
+          {
+            "name": "movie-renamed",
+            "classification": "published",
+            "phase": "movie_committing",
+            "outcome": "published",
+            "observed_movie_commit": true,
+            "artifacts": {
+              "deadpan-render-crash-movie-renamed.json": {
+                "path": "/private/tmp/deadpan-publication-recovery-ams9kpds/native-generated/movie-renamed/deadpan-render-crash-movie-renamed.json",
+                "bytes": 6700,
+                "sha256": "4a506cecce57c59b838a327ab7b589715a68e0fa734710038d9016744c055eac",
+                "mode": "0o600"
+              },
+              "movie.mp4": {
+                "path": "/private/tmp/deadpan-publication-recovery-ams9kpds/native-generated/movie-renamed/movie.mp4",
+                "bytes": 227109,
+                "sha256": "d1104ed7265440be7e947e46a31d010d7af8341a93d3e583e6aabb20659b214a",
+                "mode": "0o600"
+              }
+            }
+          },
+          {
+            "name": "terminal",
+            "classification": "published",
+            "phase": "movie_committing",
+            "outcome": "published",
+            "observed_movie_commit": true,
+            "artifacts": {
+              "deadpan-render-crash-terminal.json": {
+                "path": "/private/tmp/deadpan-publication-recovery-ams9kpds/native-generated/terminal/deadpan-render-crash-terminal.json",
+                "bytes": 6690,
+                "sha256": "b16c883fcb90f055b0cd16aa32abf682a111e73fe9bb96fae98be431245aee15",
+                "mode": "0o600"
+              },
+              "movie.mp4": {
+                "path": "/private/tmp/deadpan-publication-recovery-ams9kpds/native-generated/terminal/movie.mp4",
+                "bytes": 227109,
+                "sha256": "d1104ed7265440be7e947e46a31d010d7af8341a93d3e583e6aabb20659b214a",
+                "mode": "0o600"
+              }
+            }
+          },
+          {
+            "name": "missing-report",
+            "classification": "published_unconfirmed",
+            "phase": "movie_committing",
+            "outcome": "published_unconfirmed",
+            "observed_movie_commit": true,
+            "artifacts": {
+              "displaced-report.json": {
+                "path": "/private/tmp/deadpan-publication-recovery-ams9kpds/native-generated/missing-report/displaced-report.json",
+                "bytes": 6702,
+                "sha256": "85427c322d6e4087abc26fc666f862cab387b0f58ebccba3fff8906f37301907",
+                "mode": "0o600"
+              },
+              "movie.mp4": {
+                "path": "/private/tmp/deadpan-publication-recovery-ams9kpds/native-generated/missing-report/movie.mp4",
+                "bytes": 227109,
+                "sha256": "d1104ed7265440be7e947e46a31d010d7af8341a93d3e583e6aabb20659b214a",
+                "mode": "0o600"
+              }
+            }
+          },
+          {
+            "name": "identical-replacement",
+            "classification": "unresolved",
+            "phase": "movie_committing",
+            "outcome": "unresolved",
+            "observed_movie_commit": false,
+            "artifacts": {
+              "deadpan-render-crash-identical-replacement.json": {
+                "path": "/private/tmp/deadpan-publication-recovery-ams9kpds/native-generated/identical-replacement/deadpan-render-crash-identical-replacement.json",
+                "bytes": 6716,
+                "sha256": "3d274d36ae96fe765dc96b40d080eefb560c93630919e9bd83cf439cd2e1db17",
+                "mode": "0o600"
+              },
+              "movie.mp4": {
+                "path": "/private/tmp/deadpan-publication-recovery-ams9kpds/native-generated/identical-replacement/movie.mp4",
+                "bytes": 227109,
+                "sha256": "d1104ed7265440be7e947e46a31d010d7af8341a93d3e583e6aabb20659b214a",
+                "mode": "0o600"
+              },
+              "original-movie.mp4": {
+                "path": "/private/tmp/deadpan-publication-recovery-ams9kpds/native-generated/identical-replacement/original-movie.mp4",
+                "bytes": 227109,
+                "sha256": "d1104ed7265440be7e947e46a31d010d7af8341a93d3e583e6aabb20659b214a",
+                "mode": "0o600"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "review": "independent-durability-review.md",
+  "archive_audit": {
+    "status": "passed",
+    "members": 277,
+    "uncompressed_bytes": 228229708,
+    "archive_bytes": 7078539,
+    "archive_sha256": "3a72a4304bdf0ad2349ba562e930e77b081c05b73e7ba02b7643d1cb488d8748",
+    "verification": "every regular member read and rehashed"
+  },
+  "limitations": [
+    "process kills between completed host calls, not power loss or inside syscalls",
+    "APFS-only durable destination recovery",
+    "cooperative replacement checks, not malicious same-user authentication",
+    "no new encoding, sanitizer or GUI qualification",
+    "all full product requirements remain open or partial"
+  ]
+}

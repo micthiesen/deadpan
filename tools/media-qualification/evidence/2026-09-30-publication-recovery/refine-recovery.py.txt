@@ -1,0 +1,59 @@
+from pathlib import Path
+p=Path('crates/deadpan-cli/src/encoded_render/publication/filesystem/recovery.rs')
+s=p.read_text()
+# The wire parser caps component allocation before accepting another element.
+start=s.index('struct DirectoryEvidenceWire {')
+end=s.index('\n}\n',start)
+chunk=s[start:end]
+chunk=chunk.replace('    selected_entries: Vec<SelectedEntry>,','    #[serde(deserialize_with = "deserialize_components")]\n    selected_entries: Vec<SelectedEntry>,').replace('    canonical_entries: Vec<DurableIdentity>,','    #[serde(deserialize_with = "deserialize_components")]\n    canonical_entries: Vec<DurableIdentity>,')
+s=s[:start]+chunk+s[end:]
+s=s.replace('Err(rustix::io::Errno::NOENT) => return Ok(None),','Err(rustix::io::Errno::NOENT) => { self.confirm()?; return Ok(None); },')
+s=s.replace('if count == 0 { return Ok(0); }','if count == 0 { self.file.confirm().map_err(error)?; return Ok(0); }')
+a='mod path_bytes {'
+assert s.count(a)==1
+s=s.replace(a,'''fn deserialize_components<'de, D, T>(deserializer: D) -> std::result::Result<Vec<T>, D::Error>
+where D: serde::Deserializer<'de>, T: Deserialize<'de> {
+    struct Components<T>(std::marker::PhantomData<T>);
+    impl<'de, T: Deserialize<'de>> serde::de::Visitor<'de> for Components<T> {
+        type Value = Vec<T>;
+        fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            formatter.write_str("at most 256 filesystem components")
+        }
+        fn visit_seq<A: serde::de::SeqAccess<'de>>(self, mut sequence: A) -> std::result::Result<Vec<T>, A::Error> {
+            let mut values = Vec::new();
+            while let Some(value) = sequence.next_element()? {
+                if values.len() == MAX_COMPONENTS {
+                    return Err(serde::de::Error::custom("filesystem component bound exceeded"));
+                }
+                values.push(value);
+            }
+            Ok(values)
+        }
+    }
+    deserializer.deserialize_seq(Components(std::marker::PhantomData))
+}
+
+'''+a)
+p.write_text(s)
+p=Path('crates/deadpan-cli/src/encoded_render/publication/filesystem/recovery/tests.rs')
+s=p.read_text().replace('serde_json::json!([0; 16])','serde_json::json!(vec![0; 16])')
+p.write_text(s)
+p=Path('crates/deadpan-cli/src/encoded_render/publication/filesystem.rs')
+s=p.read_text()
+s=s.replace('''        && left.st_gid == right.st_gid''','''        && same_platform_state(left, right)
+        && left.st_gid == right.st_gid''')
+a='fn validate_name(name: &OsStr) -> Result<()> {'
+assert s.count(a)==1
+s=s.replace(a,'''#[cfg(target_os = "macos")]
+fn same_platform_state(left: &Stat, right: &Stat) -> bool {
+    left.st_birthtime == right.st_birthtime
+        && left.st_birthtime_nsec == right.st_birthtime_nsec
+        && left.st_gen == right.st_gen
+        && left.st_flags == right.st_flags
+}
+
+#[cfg(not(target_os = "macos"))]
+fn same_platform_state(_left: &Stat, _right: &Stat) -> bool { true }
+
+'''+a)
+p.write_text(s)

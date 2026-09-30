@@ -1,0 +1,24 @@
+from pathlib import Path
+import hashlib,json,sqlite3,subprocess
+ROOT=Path('/tmp/deadpan-publication-recovery-ams9kpds')
+source=Path('/tmp/deadpan-render-jobs-95xpekq5/verified-databases/structural.sqlite')
+backup=ROOT/'authentic-schema40.sqlite'
+assert not backup.exists()
+original=sqlite3.connect(source.as_uri()+'?mode=ro',uri=True)
+assert original.execute('PRAGMA user_version').fetchone()[0]==40
+copy=sqlite3.connect(backup);original.backup(copy);copy.close();original.close()
+copy=sqlite3.connect(backup.as_uri()+'?mode=ro',uri=True)
+assert copy.execute('PRAGMA integrity_check').fetchone()==('ok',)
+text='\n'.join(copy.iterdump())+'\n'
+text+='PRAGMA application_id = 1146113585;\nPRAGMA user_version = 40;\n'
+assert copy.execute('PRAGMA application_id').fetchone()[0]==1146113585
+fixture=Path('crates/deadpan-store/tests/fixtures/v40-publication-render.sql')
+assert not fixture.exists();fixture.write_text(text)
+counts={name:copy.execute('SELECT COUNT(*) FROM '+name).fetchone()[0] for name in ['revisions','history','render_jobs','render_attempts','render_candidate_checkpoints']}
+assert counts['render_jobs']==1 and counts['render_attempts']==2 and counts['render_candidate_checkpoints']==1
+attempts=copy.execute('SELECT state FROM render_attempts ORDER BY ordinal').fetchall()
+assert attempts==[('interrupted',),('verified',)]
+copy.close()
+report={'base_commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'source_backup':str(source),'source_sha256':hashlib.sha256(source.read_bytes()).hexdigest(),'backup':str(backup),'backup_sha256':hashlib.sha256(backup.read_bytes()).hexdigest(),'fixture':str(fixture),'fixture_sha256':hashlib.sha256(fixture.read_bytes()).hexdigest(),'schema':40,'counts':counts,'attempt_states':attempts,'method':'SQLite backup from retained verified schema40 database; unmodified iterdump with explicit original application/user pragmas'}
+(ROOT/'authentic-schema40.json').write_text(json.dumps(report,indent=2)+'\n')
+print(json.dumps(report))

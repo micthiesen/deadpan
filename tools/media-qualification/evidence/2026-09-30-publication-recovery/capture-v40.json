@@ -1,0 +1,13 @@
+{
+  "command": [
+    "python3",
+    "/tmp/deadpan-publication-recovery-ams9kpds/capture-v40.py"
+  ],
+  "started": "2026-09-30T06:51:30.433264+00:00",
+  "base_commit": "6a0d82e7cdae060eba4db3d900072d705a035e71",
+  "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "source_manifest_sha256": "306a884f2d4618700019f240e01fc007fb8d6c3127954b38f7e341e584959482",
+  "pid": 73563,
+  "exit_code": 0,
+  "seconds": 0.0818026252090931
+}

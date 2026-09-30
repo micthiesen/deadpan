@@ -1,0 +1,46 @@
+   Compiling deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 19.38s
+     Running unittests src/lib.rs (target/debug/deps/deadpan_store-fa92d2615b3c6731)
+
+running 11 tests
+test object_storage::tests::controlled_publication_cancels_and_cleans_its_pending_object ... ok
+test publication::tests::writers_request_full_sqlite_durability ... FAILED
+test object_storage::tests::publication_rejects_namespace_replacement_during_durability ... ok
+test publication::tests::last_sequence_is_reserved_for_a_terminal_result ... FAILED
+test publication::tests::changed_package_database_revokes_all_previously_issued_permits ... FAILED
+test publication::tests::altered_unrelated_history_is_found_by_full_audit_without_loading_it_for_selected_reads ... FAILED
+test publication::tests::post_commit_barrier_failures_keep_rows_but_revoke_permits_and_require_reopen ... FAILED
+test object_storage::tests::publication_durability_failure_is_not_hidden_by_close_or_cancel ... ok
+test object_storage::tests::publication_finishes_durability_before_close_or_cancel_stops_verification ... ok
+test publication_durability::tests::replacement_database_wal_and_package_fail_closed ... ok
+test publication_durability::tests::barrier_failure_at_every_step_denies_acknowledgement ... ok
+
+failures:
+
+---- publication::tests::writers_request_full_sqlite_durability stdout ----
+Error: SqliteFailure(Error { code: Unknown, extended_code: 1 }, Some("no such table: main.revisions"))
+
+---- publication::tests::last_sequence_is_reserved_for_a_terminal_result stdout ----
+Error: SqliteFailure(Error { code: Unknown, extended_code: 1 }, Some("no such table: main.revisions"))
+
+---- publication::tests::changed_package_database_revokes_all_previously_issued_permits stdout ----
+Error: SqliteFailure(Error { code: Unknown, extended_code: 1 }, Some("no such table: main.revisions"))
+
+---- publication::tests::altered_unrelated_history_is_found_by_full_audit_without_loading_it_for_selected_reads stdout ----
+Error: SqliteFailure(Error { code: Unknown, extended_code: 1 }, Some("no such table: main.revisions"))
+
+---- publication::tests::post_commit_barrier_failures_keep_rows_but_revoke_permits_and_require_reopen stdout ----
+Error: SqliteFailure(Error { code: Unknown, extended_code: 1 }, Some("no such table: main.revisions"))
+
+
+failures:
+    publication::tests::altered_unrelated_history_is_found_by_full_audit_without_loading_it_for_selected_reads
+    publication::tests::changed_package_database_revokes_all_previously_issued_permits
+    publication::tests::last_sequence_is_reserved_for_a_terminal_result
+    publication::tests::post_commit_barrier_failures_keep_rows_but_revoke_permits_and_require_reopen
+    publication::tests::writers_request_full_sqlite_durability
+
+test result: FAILED. 6 passed; 5 failed; 0 ignored; 0 measured; 40 filtered out; finished in 0.10s
+
+error: test failed, to rerun pass `-p deadpan-store --lib`

@@ -11,7 +11,7 @@ use deadpan_store::{
     render_media::{PreparedRenderRetention, RenderMediaLimits},
 };
 
-fn limits() -> RenderMediaLimits {
+pub(super) fn limits() -> RenderMediaLimits {
     RenderMediaLimits::new(
         16 * 1024 * 1024,
         256 * 1024,
@@ -22,7 +22,7 @@ fn limits() -> RenderMediaLimits {
     .unwrap()
 }
 
-fn begin(fixture: &Fixture) -> (ProjectStore, RenderStageRequest) {
+pub(super) fn begin(fixture: &Fixture) -> (ProjectStore, RenderStageRequest) {
     let choice = fixture.manifest.contract.choice;
     let intent = jobs::capture_intent(
         CaptureRenderIntent {
@@ -72,7 +72,7 @@ fn begin(fixture: &Fixture) -> (ProjectStore, RenderStageRequest) {
     )
 }
 
-fn retain(
+pub(super) fn retain(
     fixture: &Fixture,
     store: &ProjectStore,
     request: &RenderStageRequest,
@@ -93,7 +93,7 @@ fn retain(
     .unwrap()
 }
 
-fn commit_retention(
+pub(super) fn commit_retention(
     store: &mut ProjectStore,
     request: &mut RenderStageRequest,
     prepared: &PreparedRenderRetention,
@@ -111,7 +111,7 @@ fn commit_retention(
         .unwrap()
 }
 
-fn verifying(store: &mut ProjectStore, request: &mut RenderStageRequest) {
+pub(super) fn verifying(store: &mut ProjectStore, request: &mut RenderStageRequest) {
     request.attempt = store
         .transition_render_attempt(
             &request.attempt.identity(),

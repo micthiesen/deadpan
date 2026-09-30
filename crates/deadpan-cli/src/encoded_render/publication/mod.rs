@@ -17,7 +17,9 @@ use sha2::{Digest, Sha256 as Hasher};
 use super::{EncodedRenderError, check_control, verification::VerifiedCandidate};
 
 mod filesystem;
+pub mod journal;
 mod provenance;
+mod staging;
 
 const MAX_REPORT_BYTES: usize = 16 * 1024 * 1024;
 const BUFFER_BYTES: usize = 64 * 1024;
@@ -176,170 +178,42 @@ fn prepare_and_publish(
     mut progress: impl FnMut(PublicationStage),
     retained: &mut RetainedPublicationArtifacts,
 ) -> Result<PublicationOutcome, PublicationDiagnostic> {
-    control(cancelled, deadline)?;
-    let name = destination.file_name().ok_or_else(|| {
-        PublicationDiagnostic::new("invalid_destination", "destination has no filename")
-    })?;
-    let movie_filename = name.to_str().ok_or_else(|| {
-        PublicationDiagnostic::new("invalid_destination", "destination filename must be UTF-8")
-    })?;
-    if !destination
-        .extension()
-        .is_some_and(|extension| extension.eq_ignore_ascii_case("mp4"))
-    {
-        return Err(PublicationDiagnostic::new(
-            "invalid_destination",
-            "destination filename must end in .mp4",
-        ));
-    }
-    let parent = destination
-        .parent()
-        .filter(|parent| !parent.as_os_str().is_empty())
-        .unwrap_or_else(|| Path::new("."));
-    let movie_destination = filesystem::Destination::pin(parent, name).map_err(fs_error)?;
-    progress(PublicationStage::CapturingProvenance);
-    control(cancelled, deadline)?;
-    let provenance = provenance::capture(package, candidate, cancelled, deadline)
-        .map_err(|error| PublicationDiagnostic::new(error.code(), error))?;
-    let contains_generated_pictures = provenance.has_generated();
-    control(cancelled, deadline)?;
     let publication_id = uuid::Uuid::new_v4().to_string();
-    let report_filename = format!("deadpan-render-{publication_id}.json");
-    let report_destination = movie_destination
-        .for_name(report_filename.as_ref())
-        .map_err(fs_error)?;
-    let movie_bytes = candidate.report().movie_bytes;
-    let movie_sha256 = candidate.report().movie_sha256.clone();
-    let mut partial = movie_destination
-        .create_partial(movie_bytes)
-        .map_err(|error| {
-            retained.partial_movie = error.partial_path().map(Path::to_path_buf);
-            fs_error(error)
-        })?;
-    retained.partial_movie = Some(partial.path());
-    progress(PublicationStage::CopyingDestination);
-    let copied = candidate
-        .copy_to(
-            &mut partial.writer(cancelled, deadline).map_err(fs_error)?,
-            cancelled,
-            deadline,
-        )
-        .map_err(encoded_error)?;
-    if copied != movie_bytes {
-        return Err(PublicationDiagnostic::new(
-            "destination_length_mismatch",
-            "copied byte count differs from the verified movie",
-        ));
-    }
-    partial
-        .seal(movie_bytes, cancelled, deadline)
-        .map_err(fs_error)?;
-    progress(PublicationStage::CheckingDestination);
-    let actual_hash = hash_reader(
-        partial.reader(cancelled, deadline).map_err(fs_error)?,
-        movie_bytes,
-        cancelled,
-        deadline,
-    )?;
-    if actual_hash != movie_sha256 {
-        return Err(PublicationDiagnostic::new(
-            "destination_hash_mismatch",
-            "destination readback differs from the verified private movie",
-        ));
-    }
-    let report = LocalReport {
-        schema_version: 1,
-        application_version: env!("CARGO_PKG_VERSION"),
-        publication_id: publication_id.clone(),
-        movie_filename: movie_filename.into(),
-        report_filename,
-        scope: "verified_candidate_prepared_for_atomic_publication",
-        destination_readback: ByteIdentity {
-            bytes: movie_bytes,
-            sha256: actual_hash,
-        },
-        provenance,
-    };
-    let report_wire = serialize_report(&report)?;
-    control(cancelled, deadline)?;
-    let report_bytes = u64::try_from(report_wire.len()).expect("bounded report length");
-    let report_sha256 = digest(&report_wire);
-    let mut report_partial = report_destination
-        .create_partial(report_bytes)
-        .map_err(|error| {
-            retained.partial_report = error.partial_path().map(Path::to_path_buf);
-            fs_error(error)
-        })?;
-    retained.partial_report = Some(report_partial.path());
-    progress(PublicationStage::WritingReport);
-    report_partial
-        .writer(cancelled, deadline)
-        .map_err(fs_error)?
-        .write_all(&report_wire)
-        .map_err(|error| io_error("report_write_failed", error))?;
-    report_partial
-        .seal(report_bytes, cancelled, deadline)
-        .map_err(fs_error)?;
-    if hash_reader(
-        report_partial
-            .reader(cancelled, deadline)
-            .map_err(fs_error)?,
-        report_bytes,
-        cancelled,
-        deadline,
-    )? != report_sha256
-    {
-        return Err(PublicationDiagnostic::new(
-            "report_hash_mismatch",
-            "destination report readback differs from the captured provenance",
-        ));
-    }
-    let report_result = report_partial.commit(cancelled, deadline);
-    if report_partial.is_published() {
-        retained.partial_report = None;
-        retained.published_report = Some(report_destination.path());
-    }
-    report_result.map_err(fs_error)?;
-    confirm_published_bytes(
-        &report_partial,
-        &report_sha256,
-        report_bytes,
-        cancelled,
-        deadline,
-    )?;
-    progress(PublicationStage::ReadyToPublish);
-    control(cancelled, deadline)?;
-    report_partial.confirm_published().map_err(fs_error)?;
-    let receipt = PublicationReceipt {
+    let names = staging::Names {
+        report: format!("deadpan-render-{publication_id}.json"),
+        movie_partial: format!(".deadpan-{}.partial", uuid::Uuid::new_v4()),
+        report_partial: format!(".deadpan-{}.partial", uuid::Uuid::new_v4()),
         publication_id,
-        movie: movie_destination.path(),
-        report: report_destination.path(),
-        movie_sha256,
-        movie_bytes,
-        report_sha256,
-        report_bytes,
-        contains_generated_pictures,
     };
-    let finish_deadline = Instant::now() + POST_COMMIT_READBACK_BUDGET;
-    match partial.commit(cancelled, deadline) {
-        Ok(()) => match finish_committed(&partial, &report_partial, &receipt, finish_deadline) {
-            Ok(()) => Ok(PublicationOutcome::Published(receipt)),
-            Err(diagnostic) => Ok(PublicationOutcome::PublishedUnconfirmed {
-                receipt,
-                diagnostic,
-            }),
+    let controls = staging::StageControl {
+        cancelled,
+        deadline,
+        live: &|| Ok(()),
+    };
+    let mut files = staging::PreparedFiles::prepare(
+        candidate,
+        staging::Preparation {
+            package,
+            destination,
+            names,
+            recoverable: false,
         },
-        Err(error) if error.published() => Ok(PublicationOutcome::PublishedUnconfirmed {
-            receipt,
-            diagnostic: fs_error(error),
-        }),
-        Err(error) => Err(fs_error(error)),
-    }
+        &controls,
+        &mut progress,
+        retained,
+    )?;
+    let report_result = files.commit_report(&controls);
+    *retained = files.retained();
+    report_result?;
+    progress(PublicationStage::ReadyToPublish);
+    let outcome = files.commit_movie(&controls);
+    *retained = files.retained();
+    outcome
 }
 
 fn finish_committed(
-    movie: &filesystem::PartialFile<'_>,
-    report: &filesystem::PartialFile<'_>,
+    movie: &filesystem::PartialFile,
+    report: &filesystem::PartialFile,
     receipt: &PublicationReceipt,
     deadline: Instant,
 ) -> Result<(), PublicationDiagnostic> {
@@ -365,7 +239,7 @@ fn finish_committed(
 }
 
 fn confirm_published_bytes(
-    partial: &filesystem::PartialFile<'_>,
+    partial: &filesystem::PartialFile,
     expected: &Sha256,
     bytes: u64,
     cancelled: &AtomicBool,
@@ -405,6 +279,12 @@ fn fs_error(error: filesystem::FsError) -> PublicationDiagnostic {
 }
 
 fn io_error(fallback: &'static str, error: io::Error) -> PublicationDiagnostic {
+    if let Some(diagnostic) = error
+        .get_ref()
+        .and_then(|source| source.downcast_ref::<PublicationDiagnostic>())
+    {
+        return diagnostic.clone();
+    }
     let code = error
         .get_ref()
         .and_then(|source| source.downcast_ref::<filesystem::FsError>())

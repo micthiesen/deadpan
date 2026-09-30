@@ -1,0 +1,10 @@
+{
+  "/Users/michael/Code/deadpan/target/debug/deadpan-cli": {
+    "bytes": 171176416,
+    "sha256": "ec0413d04e19b170f24ebfd69ca015f17fc92b0d40dacf5ea62701000e65bcca"
+  },
+  "/Users/michael/Code/deadpan/target/debug/examples/qualify_publication_recovery": {
+    "bytes": 137633072,
+    "sha256": "8055c1b1d26b30837d333f0bb2f08c5a61f8f662fa0201d307bf42a77593312c"
+  }
+}

@@ -1,0 +1,29 @@
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 20.69s
+     Running tests/encoded_verification.rs (target/debug/deps/encoded_verification-7381b9b01fd4483e)
+
+running 6 tests
+test journal::closing_the_writer_revokes_both_report_and_movie_rename_authority ... ok
+test journal::durable_report_precedes_movie_and_completed_publication_survives_reopen ... ok
+test journal::each_rename_requires_its_exact_current_durable_permit ... FAILED
+test journal::identical_reports_do_not_substitute_a_different_live_verification_attempt ... ok
+test journal::interruption_before_movie_authorization_never_adopts_or_touches_foreign_files ... ok
+test journal::restart_reconciliation_requires_the_original_final_objects_and_fresh_verification ... ok
+
+failures:
+
+---- journal::each_rename_requires_its_exact_current_durable_permit stdout ----
+
+thread 'journal::each_rename_requires_its_exact_current_durable_permit' (56889301) panicked at crates/deadpan-cli/tests/encoded_verification/journal.rs:216:5:
+assertion `left == right` failed
+  left: Some("/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpeguW3k/exports/deadpan-render-stages.json")
+ right: Some("/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpeguW3k/exports/deadpan-render-stages.json")
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    journal::each_rename_requires_its_exact_current_durable_permit
+
+test result: FAILED. 5 passed; 1 failed; 0 ignored; 0 measured; 15 filtered out; finished in 3.10s
+
+error: test failed, to rerun pass `-p deadpan-cli --test encoded_verification`

@@ -1,0 +1,132 @@
+from pathlib import Path
+p=Path('crates/deadpan-cli/src/encoded_render/publication/filesystem.rs')
+s=p.read_text()
+def replace(a,b):
+ global s
+ assert s.count(a)==1,(a,s.count(a))
+ s=s.replace(a,b)
+replace('    fn invalid(code:', '    pub(super) fn invalid(code:')
+replace('pub(super) struct Destination {', '#[derive(Clone)]\npub(super) struct Destination {')
+start=s.index('    pub(super) fn create_partial(')
+end=s.index('\n}\n\nimpl Directory',start)
+s=s[:start]+'''    pub(super) fn create_partial(&self, maximum_bytes: u64) -> Result<PartialFile> {
+        for _ in 0..CREATE_ATTEMPTS {
+            let name = OsString::from(format!(".deadpan-{}.partial", uuid::Uuid::new_v4()));
+            match self.create_partial_named(&name, maximum_bytes) {
+                Err(error) if error.code() == "partial_exists" => continue,
+                result => return result,
+            }
+        }
+        Err(FsError::invalid("destination_io", "exclusive partial names exhausted"))
+    }
+
+    /// Create exactly the basename already recorded by the operational journal.
+    /// Existing entries are never opened, modified, or removed.
+    pub(super) fn create_partial_named(
+        &self,
+        name: &OsStr,
+        maximum_bytes: u64,
+    ) -> Result<PartialFile> {
+        validate_name(name)?;
+        if name == self.final_name {
+            return Err(FsError::invalid("invalid_destination", "partial and final names must differ"));
+        }
+        if !(1..=MAX_BYTES).contains(&maximum_bytes) {
+            return Err(FsError::invalid("partial_limit", "partial byte bound must be within 1..=64 GiB"));
+        }
+        self.directory.confirm()?;
+        self.require_absent()?;
+        let descriptor = openat(
+            &self.directory.file,
+            name,
+            OFlags::RDWR | OFlags::CREATE | OFlags::EXCL | OFlags::NOFOLLOW
+                | OFlags::NONBLOCK | OFlags::CLOEXEC,
+            Mode::RUSR | Mode::WUSR,
+        ).map_err(|e| FsError::new(
+            if e == rustix::io::Errno::EXIST { "partial_exists" } else { "destination_io" },
+            "create exclusive partial", e,
+        ))?;
+        let file = File::from(descriptor);
+        let path = self.directory.canonical.join(name);
+        lock_file(&file).map_err(|e| e.with_partial(path.clone()))?;
+        fchmod(&file, Mode::RUSR | Mode::WUSR).map_err(|e| {
+            FsError::new("destination_io", "set partial owner permissions", e)
+                .with_partial(path.clone())
+        })?;
+        let state = inspect(&file).map_err(|e| e.with_partial(path.clone()))?;
+        validate_file(&state, &self.directory, maximum_bytes)
+            .map_err(|e| e.with_partial(path.clone()))?;
+        if state.st_size != 0 {
+            return Err(FsError::invalid("destination_changed", "new partial is not empty")
+                .with_partial(path));
+        }
+        let partial = PartialFile {
+            destination: self.clone(), name: name.to_owned(), file, state,
+            written: 0, maximum_bytes, sealed: false, poisoned: false, published: false,
+        };
+        partial.confirm().map_err(|e| e.with_partial(path.clone()))?;
+        self.directory.confirm().map_err(|e| e.with_partial(path))?;
+        Ok(partial)
+    }
+''' +s[end:]
+s=s.replace("PartialFile<'a>","PartialFile").replace("&'a Destination",'Destination')
+s=s.replace("impl<'d> PartialFile<'d>","impl PartialFile")
+s=s.replace("PartialWriter<'a, 'd>","PartialWriter<'a>")
+s=s.replace("PartialReader<'a, 'd>","PartialReader<'a>")
+s=s.replace("PartialWriter<'_, '_>","PartialWriter<'_>")
+s=s.replace("PartialReader<'_, '_>","PartialReader<'_>")
+s=s.replace("PartialFile<'d>","PartialFile")
+replace('''        let result = self.commit_inner(cancelled, deadline, &mut sync);''','''        self.commit_with_guard(cancelled, deadline, &mut sync, &mut || Ok(()))
+    }
+
+    fn commit_with_guard(
+        &mut self,
+        cancelled: &AtomicBool,
+        deadline: Instant,
+        sync: &mut impl FnMut(SyncPhase, &File) -> io::Result<()>,
+        guard: &mut impl FnMut() -> Result<()>,
+    ) -> Result<()> {
+        let result = self.commit_inner(cancelled, deadline, sync, guard);''')
+replace('''        sync: &mut impl FnMut(SyncPhase, &File) -> io::Result<()>,
+    ) -> Result<()> {
+        check_control(cancelled, deadline)?;''','''        sync: &mut impl FnMut(SyncPhase, &File) -> io::Result<()>,
+        guard: &mut impl FnMut() -> Result<()>,
+    ) -> Result<()> {
+        check_control(cancelled, deadline)?;''')
+replace('''        check_control(cancelled, deadline)?;
+        renameat_with(''','''        check_control(cancelled, deadline)?;
+        guard()?;
+        renameat_with(''')
+replace('''    pub(super) fn confirm_published(&self) -> Result<()> {''','''    /// The live permit is checked at the last pre-rename point. Once rename
+    /// succeeds, cancellation and a revoked permit cannot abandon durability.
+    pub(super) fn commit_guarded(
+        &mut self,
+        cancelled: &AtomicBool,
+        deadline: Instant,
+        mut guard: impl FnMut() -> Result<()>,
+    ) -> Result<()> {
+        self.commit_with_guard(cancelled, deadline, &mut |phase, file| match phase {
+            SyncPhase::PublishedDirectory => fsync(file).map_err(Into::into),
+            _ => full_sync(file),
+        }, &mut guard)
+    }
+
+    pub(super) fn confirm_published(&self) -> Result<()> {''')
+replace('''fn inspect(file: &File) -> Result<Stat> {''','''fn lock_file(file: &File) -> Result<()> {
+    file.try_lock().map_err(|error| match error {
+        std::fs::TryLockError::WouldBlock => FsError::invalid("publication_locked", "publication file is in use"),
+        std::fs::TryLockError::Error(error) => FsError::new("destination_io", "lock publication file", error),
+    })
+}
+
+fn inspect(file: &File) -> Result<Stat> {''')
+replace('''#[cfg(test)]
+mod tests;''','''mod recovery;
+pub(super) use recovery::{DirectoryEvidence, FileEvidence, RecoveredDirectory};
+
+#[cfg(test)]
+mod tests;''')
+p.write_text(s)
+p=Path('crates/deadpan-cli/src/encoded_render/publication/filesystem/tests.rs')
+s=p.read_text().replace("fn sealed<'a>(destination: &'a Destination, bytes: &[u8]) -> PartialFile<'a>","fn sealed(destination: &Destination, bytes: &[u8]) -> PartialFile")
+p.write_text(s)

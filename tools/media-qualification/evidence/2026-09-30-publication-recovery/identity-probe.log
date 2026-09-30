@@ -1,0 +1,1 @@
+{"rename_inode_stable": true, "copy_inode_differs": true, "stat_fields": ["st_atime", "st_atime_ns", "st_birthtime", "st_blksize", "st_blocks", "st_ctime", "st_ctime_ns", "st_dev", "st_flags", "st_gen", "st_gid", "st_ino", "st_mode", "st_mtime", "st_mtime_ns", "st_nlink", "st_rdev", "st_size", "st_uid"]}

@@ -1,0 +1,63 @@
+from pathlib import Path
+p=Path('crates/deadpan-cli/examples/qualify_publication_recovery/harness.rs')
+s=p.read_text()
+s=s.replace('OwnedChild { child: deadpan_native_process::spawn(&mut command)?, reap_attempted: false }','OwnedChild { child: deadpan_native_process::spawn(&mut command)?, cleanup_attempted: false, reap_attempted: false }')
+s=s.replace('''            std::io::copy(&mut source, &mut replacement)?;''','''            let copied = std::io::copy(&mut Read::by_ref(&mut source).take(record.movie_bytes.checked_add(1).ok_or("replacement byte bound overflow")?), &mut replacement)?;
+            if copied != record.movie_bytes { return Err("replacement source extent differs from the retained movie".into()); }''')
+a='''struct OwnedChild { child: Child, reap_attempted: bool }
+impl OwnedChild {
+    fn kill_and_reap(&mut self) -> Result<ExitStatus> {
+        if self.reap_attempted { return Err("child reaping was already attempted".into()); }
+        let group = deadpan_native_process::terminate_owned_group(&self.child, Instant::now() + Duration::from_secs(5));
+        let leader = if group.is_err() { deadpan_native_process::terminate_owned_leader(&self.child, Instant::now() + Duration::from_secs(5)) } else { Ok(()) };
+        // Reaping is attempted at most once even if wait itself reports an error.
+        self.reap_attempted = true;
+        let status = self.child.wait();
+        group?; leader?;
+        Ok(status?)
+    }
+}
+impl Drop for OwnedChild {
+    fn drop(&mut self) {
+        if !self.reap_attempted { let _ = self.kill_and_reap(); }
+    }
+}'''
+b='''struct OwnedChild { child: Child, cleanup_attempted: bool, reap_attempted: bool }
+impl OwnedChild {
+    fn kill_and_reap(&mut self) -> Result<ExitStatus> {
+        if self.cleanup_attempted || self.reap_attempted { return Err("child cleanup or reaping was already attempted".into()); }
+        self.cleanup_attempted = true;
+        let group = deadpan_native_process::terminate_owned_group(&self.child, Instant::now() + Duration::from_secs(5));
+        if let Err(group_error) = &group {
+            // Never wait indefinitely for a leader whose exit was not proved.
+            // A failed checked fallback remains a qualification failure; Drop
+            // cannot retry a numeric PID or claim descendant cleanup succeeded.
+            if let Err(leader_error) = deadpan_native_process::terminate_owned_leader(&self.child, Instant::now() + Duration::from_secs(5)) {
+                return Err(format!("owned child cleanup failed: group={group_error}; leader={leader_error}").into());
+            }
+        }
+        // A successful group cleanup or checked leader fallback proved exit.
+        // Mark the sole reap attempt before wait, including its error path.
+        self.reap_attempted = true;
+        let status = self.child.wait();
+        group?;
+        Ok(status?)
+    }
+}
+impl Drop for OwnedChild {
+    fn drop(&mut self) {
+        if !self.cleanup_attempted && !self.reap_attempted { let _ = self.kill_and_reap(); }
+    }
+}'''
+assert s.count(a)==1
+s=s.replace(a,b)
+a='''    ready?;
+    let status = exit?;'''
+b='''    if let Err(error) = &exit { report["cleanup_error"] = json!(error.to_string()); }
+    if let Err(error) = &ready { report["pause_error"] = json!(error.to_string()); }
+    // Record both failures even if the pause observation failed first.
+    ready?;
+    let status = exit?;'''
+assert s.count(a)==1
+s=s.replace(a,b)
+p.write_text(s)

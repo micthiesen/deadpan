@@ -1,0 +1,38 @@
+from pathlib import Path
+p=Path('crates/deadpan-store/src/render_jobs.rs');s=p.read_text()
+for name in ['read_job','read_attempt','read_checkpoint']:
+ a=f'fn {name}(';assert s.count(a)==1;s=s.replace(a,f'pub(crate) fn {name}(')
+p.write_text(s)
+p=Path('crates/deadpan-store/src/publication.rs');s=p.read_text();s=s.replace('const MAX_OPERATION: usize = 8192;','const MAX_OPERATION: usize = 8192;\nconst ACTIVE_INDEX: &str = "CREATE UNIQUE INDEX one_active_publication_operation ON render_publication_operations(publication_id) WHERE active=1";')
+s=s.replace('    CREATE UNIQUE INDEX one_active_publication_operation ON render_publication_operations(publication_id) WHERE active=1;\")?;', '    \")?;\n    connection.execute_batch(ACTIVE_INDEX)?;')
+s=s.replace('    Ok(record)\n}\nfn read_operation', '    validate_binding(connection,&record)?;\n    Ok(record)\n}\nfn read_operation',1)
+a='fn read_record(connection:&Connection,id:&RequestId)->Result<StoredPublication,StoreError> {\n';s=s.replace(a,a+'    capacity(connection)?;\n',1)
+s=s.replace('SELECT job_id,sequence,CASE WHEN','SELECT CASE WHEN length(CAST(job_id AS BLOB)) BETWEEN 1 AND 128 THEN job_id END,sequence,CASE WHEN',1)
+s=s.replace('SELECT publication_id,ordinal,cancellation_token,active,CASE WHEN','SELECT CASE WHEN length(CAST(publication_id AS BLOB)) BETWEEN 1 AND 128 THEN publication_id END,ordinal,CASE WHEN length(CAST(cancellation_token AS BLOB)) BETWEEN 1 AND 128 THEN cancellation_token END,active,CASE WHEN',1)
+s=s.replace('SELECT publication_id FROM render_publications WHERE','SELECT CASE WHEN length(CAST(publication_id AS BLOB)) BETWEEN 1 AND 128 THEN publication_id END FROM render_publications WHERE',1)
+s=s.replace('SELECT operation_id FROM render_publication_operations WHERE publication_id=?1 AND ordinal>?2','SELECT CASE WHEN length(CAST(operation_id AS BLOB)) BETWEEN 1 AND 128 THEN operation_id END FROM render_publication_operations WHERE publication_id=?1 AND ordinal>?2',1)
+a='fn capacity(connection:&Connection)->Result<(),StoreError> {\n';s=s.replace(a,a+'''    let index: Option<String> = connection.query_row("SELECT sql FROM sqlite_schema WHERE type='index' AND name='one_active_publication_operation'",[],|row|row.get(0)).optional()?;
+    if index.as_deref()!=Some(ACTIVE_INDEX) { return Err(invalid("publication active-operation index missing or altered")); }
+''',1)
+a='fn read_operation(connection:&Connection,id:&AttemptId)';b='''fn validate_binding(connection:&Connection,record:&StoredPublication)->Result<(),StoreError> {
+    let job=crate::render_jobs::read_job(connection,&record.intent.job_id)?;
+    if job!=record.render_intent { return Err(invalid("publication render intent changed")); }
+    let checkpoint=crate::render_jobs::read_checkpoint(connection,&record.intent.job_id,&record.encoding_attempt_id)?;
+    if checkpoint.media.movie_sha256()!=&record.movie_sha256 || checkpoint.media.movie().byte_length()!=record.movie_bytes { return Err(invalid("publication retained movie changed")); }
+    for id in [&record.intent.verified_attempt_id,&record.operation.verified_attempt_id] {
+        let attempt=crate::render_jobs::read_attempt(connection,&record.intent.job_id,id)?;
+        if attempt.state!=RenderAttemptState::Verified || attempt.checkpoint_attempt_id.as_ref()!=Some(&record.encoding_attempt_id) { return Err(invalid("publication verification binding changed")); }
+    }
+    Ok(())
+}
+'''+a;assert s.count(a)==1;s=s.replace(a,b)
+a='    if let Some(diagnostic)=&operation.diagnostic { diagnostic.validate().map_err(pure)?; }';b=a+'''
+    if matches!(operation.outcome,PublicationOutcome::Failed|PublicationOutcome::Interrupted|PublicationOutcome::Unresolved|PublicationOutcome::PublishedUnconfirmed)!=operation.diagnostic.is_some() { return Err(invalid("publication operation diagnostic disagrees")); }''';s=s.replace(a,b,1)
+a='        let mut last=None;';s=s.replace(a,a+'\n        let mut prior_outcome=None;\n        let mut observed=false;',1)
+a='            previous_verified=attempt.ordinal; last=Some(operation);';b='''            if prior_outcome.is_some_and(|prior| matches!(prior,PublicationOutcome::Failed|PublicationOutcome::Cancelled|PublicationOutcome::InProgress)) { return Err(invalid("publication reconciliation follows a definite unpublished or live operation")); }
+            observed |= matches!(operation.outcome,PublicationOutcome::Published|PublicationOutcome::PublishedUnconfirmed);
+            if observed && !record.observed_movie_commit { return Err(invalid("publication lost observed commit knowledge")); }
+            prior_outcome=Some(operation.outcome);
+            previous_verified=attempt.ordinal; last=Some(operation);''';assert s.count(a)==1;s=s.replace(a,b)
+p.write_text(s)
+p=Path('/tmp/deadpan-publication-recovery-ams9kpds/store-api-implementation.md');s=p.read_text().replace('Report name `.deadpan-<publication_id>.report.json`','Report name `deadpan-render-<publication_id>.json`').replace('PublicationReconciliation::{Confirmed,Unresolved(RenderDiagnostic)}','PublicationReconciliation::{Confirmed,CommittedUnconfirmed(RenderDiagnostic),NotPublished(RenderDiagnostic),Unresolved(RenderDiagnostic)}').replace('Reconciliation requires a newer terminal Verified render attempt, same checkpoint/movie, prepared evidence and prior MovieCommitting phase; definite-unpublished completion cannot be adopted.','Reconciliation requires a newer terminal Verified render attempt and same checkpoint/movie. Confirmed and CommittedUnconfirmed require prepared evidence and prior MovieCommitting phase. NotPublished permits pre-movie phases only. Definite-unpublished completion cannot be adopted.');p.write_text(s)

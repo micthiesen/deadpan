@@ -1,0 +1,16 @@
+from pathlib import Path
+import json,os,tempfile
+ROOT=Path('/tmp/deadpan-publication-recovery-ams9kpds')
+directory=Path(tempfile.mkdtemp(prefix='identity-probe-',dir=ROOT))
+def stat(path,follow=True):
+ s=path.stat() if follow else path.lstat()
+ return {name:getattr(s,name) for name in dir(s) if name.startswith('st_') and isinstance(getattr(s,name),(int,float))}
+a=directory/'a.partial';a.write_bytes(b'checkpoint');initial=stat(a)
+a.rename(directory/'movie.mp4');renamed=stat(directory/'movie.mp4')
+replacement=directory/'replacement';replacement.write_bytes(b'checkpoint');other=stat(replacement)
+os.utime(replacement,ns=(initial['st_atime_ns'],initial['st_mtime_ns']))
+replacement.rename(directory/'movie.mp4');replaced=stat(directory/'movie.mp4')
+report={'directory':str(directory),'initial':initial,'renamed':renamed,'other':other,'replaced_identical_bytes_and_mtime':replaced,'ancestors':{str(path):stat(path,False) for path in [Path('/'),Path('/tmp'),Path('/private'),Path('/private/tmp'),directory]}}
+(ROOT/'python-identity-probe.json').write_text(json.dumps(report,indent=2)+'\n')
+assert initial['st_ino']==renamed['st_ino'] and initial['st_ino']!=replaced['st_ino']
+print(json.dumps({'rename_inode_stable':True,'copy_inode_differs':True,'stat_fields':list(initial)}))

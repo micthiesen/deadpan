@@ -5,7 +5,7 @@ fn deadline() -> Instant {
     Instant::now() + Duration::from_secs(20)
 }
 
-fn sealed<'a>(destination: &'a Destination, bytes: &[u8]) -> PartialFile<'a> {
+fn sealed(destination: &Destination, bytes: &[u8]) -> PartialFile {
     let cancelled = AtomicBool::new(false);
     let mut partial = destination.create_partial(bytes.len() as u64).unwrap();
     partial
@@ -493,4 +493,76 @@ fn published_hash_admission_rejects_same_length_mutation_with_restored_mtime() {
     assert_eq!(error.code, "published_hash_mismatch");
     assert!(partial.is_published());
     assert_eq!(fs::read(destination.path()).unwrap(), changed);
+}
+
+#[test]
+fn recorded_partial_names_are_exclusive_and_owned_after_destination_drop() {
+    let folder = tempfile::tempdir().unwrap();
+    let destination = Destination::pin(folder.path(), OsStr::new("movie.mp4")).unwrap();
+    let mut partial = destination
+        .create_partial_named(OsStr::new(".recorded.partial"), 4)
+        .unwrap();
+    assert_eq!(
+        destination
+            .create_partial_named(OsStr::new(".recorded.partial"), 4)
+            .err()
+            .unwrap()
+            .code(),
+        "partial_exists"
+    );
+    assert_eq!(
+        destination
+            .create_partial_named(OsStr::new("movie.mp4"), 4)
+            .err()
+            .unwrap()
+            .code(),
+        "invalid_destination"
+    );
+    let independently_opened = File::open(partial.path()).unwrap();
+    assert!(matches!(
+        independently_opened.try_lock(),
+        Err(std::fs::TryLockError::WouldBlock)
+    ));
+    drop(destination);
+    let cancelled = AtomicBool::new(false);
+    partial
+        .writer(&cancelled, deadline())
+        .unwrap()
+        .write_all(b"kept")
+        .unwrap();
+    partial.seal(4, &cancelled, deadline()).unwrap();
+    partial
+        .commit_guarded(&cancelled, deadline(), || Ok(()))
+        .unwrap();
+    assert_eq!(fs::read(folder.path().join("movie.mp4")).unwrap(), b"kept");
+}
+
+#[test]
+fn revoked_guard_is_checked_after_last_sync_and_before_rename() {
+    let folder = tempfile::tempdir().unwrap();
+    let destination = Destination::pin(folder.path(), OsStr::new("movie.mp4")).unwrap();
+    let mut partial = sealed(&destination, b"our movie");
+    let before_rename_synced = std::cell::Cell::new(false);
+    let error = partial
+        .commit_with_guard(
+            &AtomicBool::new(false),
+            deadline(),
+            &mut |phase, _| {
+                assert_eq!(phase, SyncPhase::BeforeRename);
+                before_rename_synced.set(true);
+                Ok(())
+            },
+            &mut || {
+                assert!(before_rename_synced.get());
+                Err(FsError::invalid(
+                    "publication_revoked",
+                    "injected permit revocation",
+                ))
+            },
+        )
+        .unwrap_err();
+    assert_eq!(error.code(), "publication_revoked");
+    assert!(!error.published());
+    assert_eq!(fs::read(partial.path()).unwrap(), b"our movie");
+    assert!(!destination.path().exists());
 }

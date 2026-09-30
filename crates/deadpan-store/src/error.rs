@@ -2,6 +2,8 @@ use std::path::PathBuf;
 
 #[derive(Debug, thiserror::Error)]
 pub enum StoreError {
+    #[error("Publication journal is invalid: {0}")]
+    Publication(String),
     #[error("Render job metadata is invalid: {0}")]
     RenderJob(String),
     #[cfg(any(target_os = "macos", target_os = "linux"))]
@@ -106,6 +108,7 @@ impl StoreError {
     /// Stable protocol codes shared by GUI and headless callers.
     pub fn code(&self) -> &'static str {
         match self {
+            Self::Publication(_) => "PublicationInvalid",
             Self::RenderJob(_) => "RenderJobInvalid",
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             Self::RenderMedia(error) => error.code(),

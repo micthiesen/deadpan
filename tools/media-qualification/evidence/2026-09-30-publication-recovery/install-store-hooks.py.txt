@@ -1,0 +1,44 @@
+from pathlib import Path
+p=Path('crates/deadpan-store/src/lib.rs');s=p.read_text();s=s.replace('mod schema;','#[cfg(any(target_os = "macos", target_os = "linux"))]\npub mod publication;\n#[cfg(any(target_os = "macos", target_os = "linux"))]\nmod publication_durability;\nmod schema;',1)
+a='    // Explicitly unlocked on drop';b='''    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    publication_durability: Option<publication_durability::PublicationDurability>,
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    publication_epochs: std::collections::BTreeMap<String, Arc<std::sync::atomic::AtomicU64>>,
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    publication_barrier_failed: bool,
+''';assert s.count(a)==1;s=s.replace(a,b+a)
+a='        Ok(Self {\n            connection,';b='''        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        let publication_durability = Some(publication_durability::PublicationDurability::open(&package)?);
+        Ok(Self {
+            connection,''';assert s.count(a)==1;s=s.replace(a,b)
+a='        let connection = Connection::open_with_flags(&database, flags)?;';b='''        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        let publication_durability = if mode == AccessMode::ReadWrite {
+            Some(publication_durability::PublicationDurability::open(&package)?)
+        } else { None };
+'''+a;assert s.count(a)==1;s=s.replace(a,b)
+a='            _writer_lock:';b='''            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            publication_durability,
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            publication_epochs: std::collections::BTreeMap::new(),
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            publication_barrier_failed: false,
+'''+a;assert s.count(a)==2;s=s.replace(a,b)
+a='            render_jobs::recover_nonterminal(&mut store.connection)?;';b=a+'\n            #[cfg(any(target_os = "macos", target_os = "linux"))]\n            publication::recover_nonterminal(&mut store.connection)?;';assert s.count(a)==1;s=s.replace(a,b)
+a='        render_jobs::check_stored_sizes(&transaction)?;';b=a+'\n        #[cfg(any(target_os = "macos", target_os = "linux"))]\n        publication::check_stored_sizes(&transaction)?;';assert s.count(a)==1;s=s.replace(a,b)
+a='        render_jobs::validate_store(&transaction)?;';b=a+'\n        #[cfg(any(target_os = "macos", target_os = "linux"))]\n        publication::validate_store(&transaction)?;';assert s.count(a)==1;s=s.replace(a,b);p.write_text(s)
+p=Path('crates/deadpan-store/src/error.rs');s=p.read_text().replace('pub enum StoreError {','pub enum StoreError {\n    #[error("Publication journal is invalid: {0}")]\n    Publication(String),',1).replace('            Self::RenderJob(_) =>','            Self::Publication(_) => "PublicationInvalid",\n            Self::RenderJob(_) =>',1);p.write_text(s)
+p=Path('crates/deadpan-store/src/schema.rs');s=p.read_text().replace('VERSION: u32 = 40','VERSION: u32 = 41').replace('1..=39','1..=40').replace('    connection.pragma_update(None, "trusted_schema", false)?;','    connection.pragma_update(None, "trusted_schema", false)?;\n    connection.pragma_update(None, "fullfsync", true)?;');s=s.replace('    crate::render_jobs::create_tables(&transaction)?;','    crate::render_jobs::create_tables(&transaction)?;\n    #[cfg(any(target_os = "macos", target_os = "linux"))]\n    crate::publication::create_tables(&transaction)?;');p.write_text(s)
+p=Path('crates/deadpan-store/src/migration.rs');s=p.read_text().replace('1..=39','1..=40').replace('    crate::render_jobs::create_tables(&transaction)?;','    if source_version < 40 { crate::render_jobs::create_tables(&transaction)?; }\n    #[cfg(any(target_os = "macos", target_os = "linux"))]\n    crate::publication::create_tables(&transaction)?;').replace('    if source_version == 39 {','    if source_version >= 39 {').replace('    crate::render_jobs::check_stored_sizes(&transaction)?;','    crate::render_jobs::check_stored_sizes(&transaction)?;\n    #[cfg(any(target_os = "macos", target_os = "linux"))]\n    crate::publication::check_stored_sizes(&transaction)?;').replace('    crate::render_jobs::validate_store(&transaction)?;','    crate::render_jobs::validate_store(&transaction)?;\n    #[cfg(any(target_os = "macos", target_os = "linux"))]\n    crate::publication::validate_store(&transaction)?;');p.write_text(s)
+p=Path('crates/deadpan-store/src/publication.rs');s=p.read_text().replace('fn publication_writer(&self)','fn publication_writer(&mut self)').replace('        Ok(())\n    }\n    /// Caller','        self.publication_durability.as_mut().ok_or_else(||invalid("publication writer has no pinned database"))?.capture_wal()?;\n        Ok(())\n    }\n    /// Caller',1).replace('fn publication_bound(&self,','fn publication_bound(&mut self,').replace('self.publication_durability.barrier()','self.publication_durability.as_mut().ok_or_else(||invalid("publication writer has no pinned database"))?.barrier()');p.write_text(s)
+p=Path('crates/deadpan-store/src/publication_durability.rs');s=p.read_text();s=s.replace('    pub(crate) fn barrier(&mut self)', '''    pub(crate) fn capture_wal(&mut self) -> Result<(), StoreError> {
+        self.check_chain()?;
+        let wal = openat(&self.package, "project.sqlite-wal", FILE, Mode::empty()).map_err(io)?;
+        let current = fstat(&wal).map_err(io)?;
+        validate_file(&current, &fstat(&self.package).map_err(io)?)?;
+        if self.wal.as_ref().is_some_and(|expected| !same(expected, &current)) { return Err(invalid("publication WAL identity changed")); }
+        let db = statat(&self.package, "project.sqlite", AtFlags::SYMLINK_NOFOLLOW).map_err(io)?;
+        if !same(&self.database, &db) { return Err(invalid("publication database identity changed")); }
+        self.wal = Some(current);
+        Ok(())
+    }
+    pub(crate) fn barrier(&mut self)''',1);s=s.replace('        step(Step::AfterIdentity)?;','        full_sync(&db)?;\n        full_sync(&wal)?;\n        step(Step::AfterIdentity)?;');p.write_text(s)

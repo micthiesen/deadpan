@@ -1,0 +1,12 @@
+from pathlib import Path
+import hashlib,json,platform,subprocess
+root=Path('/tmp/deadpan-publication-recovery-ams9kpds')
+records={}
+for path in [Path('target/debug/deadpan-cli'),Path('target/debug/examples/qualify_publication_recovery')]:
+    with path.open('rb') as f: sha=hashlib.file_digest(f,'sha256').hexdigest()
+    records[str(path.resolve())]={'bytes':path.stat().st_size,'sha256':sha}
+(root/'native-binaries.json').write_text(json.dumps(records,indent=2)+'\n')
+profile=json.loads(subprocess.check_output(['system_profiler','SPHardwareDataType','-json'],text=True))['SPHardwareDataType'][0]
+hardware={k:v for k,v in profile.items() if k in ['machine_model','machine_name','chip_type','physical_memory','number_processors','number_cores','processor_name','processor_speed','boot_rom_version','os_loader_version']}
+(root/'host.json').write_text(json.dumps({'platform':platform.platform(),'machine':platform.machine(),'hardware':hardware},indent=2)+'\n')
+print(json.dumps(records))

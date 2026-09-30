@@ -1,0 +1,18 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--workspace",
+    "--locked",
+    "--no-fail-fast",
+    "--jobs",
+    "4"
+  ],
+  "started": "2026-09-30T07:42:00.058426+00:00",
+  "base_commit": "064533133e106cc9e80381267d68a69acab2da9d",
+  "diff_sha256": "9b87af8aaa7137638bce3cb24ad28579f18ab2c4f2ca9988c655922a62b274c2",
+  "source_manifest_sha256": "f4fadcc068b38ebb6c206f869a0635135e41177088b5c8676eb1b8c9f8c0fddf",
+  "pid": 83718,
+  "exit_code": 0,
+  "seconds": 726.498192708008
+}

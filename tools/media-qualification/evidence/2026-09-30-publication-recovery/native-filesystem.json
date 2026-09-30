@@ -1,0 +1,16 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--offline",
+    "-p",
+    "deadpan-filesystem"
+  ],
+  "started": "2026-09-30T07:16:30.741003+00:00",
+  "base_commit": "6a0d82e7cdae060eba4db3d900072d705a035e71",
+  "diff_sha256": "45d5f4ba0f81bb0f326f5c06bb63f54ecf445ca0d8887b61bcf7e025ceda9441",
+  "source_manifest_sha256": "e85285cb9069ab034d45161b5b2a6cac778a7d062d1028e19ec6f8b9daadc2c4",
+  "pid": 77082,
+  "exit_code": 0,
+  "seconds": 17.871004957705736
+}

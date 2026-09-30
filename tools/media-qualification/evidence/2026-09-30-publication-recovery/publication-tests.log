@@ -1,0 +1,57 @@
+   Compiling deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 30.65s
+     Running unittests src/lib.rs (target/debug/deps/deadpan_cli-22ef3236b91eec14)
+
+running 31 tests
+test encoded_render::publication::filesystem::recovery::tests::strict_file_evidence_rejects_missing_identity_and_invalid_extents ... ok
+test encoded_render::publication::filesystem::recovery::tests::directory_evidence_has_strict_paths_components_and_non_utf8_round_trip ... ok
+test encoded_render::publication::filesystem::tests::bounded_write_and_failed_exact_length_keep_partial_bytes ... ok
+test encoded_render::publication::filesystem::tests::invalid_names_limits_and_existing_entries_never_change_destinations ... ok
+test encoded_render::publication::filesystem::recovery::tests::recovery_reads_are_bounded_controlled_and_detect_same_inode_mutation ... ok
+test encoded_render::publication::filesystem::tests::initial_directory_alias_is_allowed_but_later_retargeting_is_rejected ... ok
+test encoded_render::publication::filesystem::tests::control_errors_retain_typed_sources_through_read_and_write_traits ... ok
+test encoded_render::publication::filesystem::tests::final_name_race_is_no_replace_and_keeps_complete_partial ... ok
+test encoded_render::publication::filesystem::recovery::tests::byte_identical_replacement_is_rejected_even_with_restored_mtime ... ok
+test encoded_render::publication::provenance::tests::full_artifact_identity_controls_coalescing_and_blank_seams_remain_separate ... ok
+test encoded_render::publication::provenance::tests::generated_intervals_follow_retime_sparse_plays_and_effective_gap_branches ... ok
+test encoded_render::publication::filesystem::tests::bounded_copy_readback_and_no_replace_commit_preserve_owner_writable_mode ... ok
+test encoded_render::publication::filesystem::tests::published_hash_admission_rejects_same_length_mutation_with_restored_mtime ... ok
+test encoded_render::publication::provenance::tests::huge_compact_repeat_rejects_full_scan_but_admits_a_small_selected_suffix ... ok
+test encoded_render::publication::filesystem::tests::recorded_partial_names_are_exclusive_and_owned_after_destination_drop ... ok
+test encoded_render::publication::filesystem::recovery::tests::selected_symlink_replacement_and_canonical_ancestor_replacement_fail ... ok
+test encoded_render::publication::tests::destination_readback_requires_the_exact_extent_and_unmodified_bytes ... ok
+test encoded_render::publication::filesystem::tests::revoked_guard_is_checked_after_last_sync_and_before_rename ... ok
+test encoded_render::publication::filesystem::tests::cancellation_and_deadline_before_commit_leave_complete_partial ... ok
+test encoded_render::publication::filesystem::tests::extra_hard_link_and_same_inode_mutation_reject_readback_and_commit ... ok
+test encoded_render::publication::filesystem::tests::replaced_partial_entry_never_writes_or_deletes_foreign_target ... ok
+test encoded_render::publication::filesystem::tests::final_name_replacement_and_later_report_mutation_are_observed_without_unlink ... ok
+test encoded_render::publication::filesystem::tests::cancellation_before_rename_retains_partial_but_after_rename_does_not_undo_success ... ok
+test encoded_render::publication::filesystem::recovery::tests::unchanged_partial_and_renamed_file_reopen_with_original_evidence ... ok
+test encoded_render::publication::filesystem::recovery::tests::foreign_links_symlinks_modes_and_types_are_never_read_or_modified ... FAILED
+test encoded_render::publication::filesystem::tests::every_sync_failure_reports_the_correct_side_of_the_commit_point ... ok
+test encoded_render::publication::filesystem::tests::sibling_destinations_share_the_same_directory_pin ... ok
+test encoded_render::publication::filesystem::tests::replaced_parent_or_ancestor_fails_even_if_final_directory_inode_survives ... ok
+test encoded_render::publication::provenance::tests::historical_capture_ignores_live_edits_and_omits_private_catalog_labels ... ok
+test encoded_render::publication::provenance::tests::bounded_serialization_preserves_control_failures_and_stable_codes ... ok
+test encoded_render::publication::tests::provenance_serialization_has_a_hard_byte_ceiling ... ok
+
+failures:
+
+---- encoded_render::publication::filesystem::recovery::tests::foreign_links_symlinks_modes_and_types_are_never_read_or_modified stdout ----
+
+thread 'encoded_render::publication::filesystem::recovery::tests::foreign_links_symlinks_modes_and_types_are_never_read_or_modified' (56881461) panicked at crates/deadpan-cli/src/encoded_render/publication/filesystem/recovery/tests.rs:155:9:
+assertion `left == right` failed: mode
+  left: "invalid_recovery_evidence"
+ right: "destination_changed"
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    encoded_render::publication::filesystem::recovery::tests::foreign_links_symlinks_modes_and_types_are_never_read_or_modified
+
+test result: FAILED. 30 passed; 1 failed; 0 ignored; 0 measured; 84 filtered out; finished in 0.53s
+
+error: test failed, to rerun pass `-p deadpan-cli --lib`

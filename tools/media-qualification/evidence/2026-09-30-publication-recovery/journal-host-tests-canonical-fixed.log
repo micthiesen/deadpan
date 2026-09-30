@@ -1,0 +1,14 @@
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 8.65s
+     Running tests/encoded_verification.rs (target/debug/deps/encoded_verification-7381b9b01fd4483e)
+
+running 6 tests
+test journal::closing_the_writer_revokes_both_report_and_movie_rename_authority ... ok
+test journal::durable_report_precedes_movie_and_completed_publication_survives_reopen ... ok
+test journal::each_rename_requires_its_exact_current_durable_permit ... ok
+test journal::identical_reports_do_not_substitute_a_different_live_verification_attempt ... ok
+test journal::interruption_before_movie_authorization_never_adopts_or_touches_foreign_files ... ok
+test journal::restart_reconciliation_requires_the_original_final_objects_and_fresh_verification ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 3.16s
+

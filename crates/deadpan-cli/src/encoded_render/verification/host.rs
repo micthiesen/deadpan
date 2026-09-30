@@ -29,6 +29,7 @@ pub fn verify(
     deadline: Instant,
     progress: impl FnMut(VerificationProgress),
 ) -> Result<VerifiedCandidate, Box<VerificationFailure>> {
+    let verification_identity = request.identity.clone();
     match inspect(
         runtime,
         &mut candidate,
@@ -37,7 +38,11 @@ pub fn verify(
         deadline,
         progress,
     ) {
-        Ok(report) => Ok(VerifiedCandidate { candidate, report }),
+        Ok(report) => Ok(VerifiedCandidate {
+            candidate,
+            report,
+            verification_identity,
+        }),
         Err(error) => Err(Box::new(VerificationFailure { error, candidate })),
     }
 }

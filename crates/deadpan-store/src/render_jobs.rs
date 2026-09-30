@@ -427,7 +427,10 @@ fn validate_intent_document(
     }
     Ok(())
 }
-fn read_job(connection: &Connection, id: &RequestId) -> Result<RenderIntent, StoreError> {
+pub(crate) fn read_job(
+    connection: &Connection,
+    id: &RequestId,
+) -> Result<RenderIntent, StoreError> {
     let row: Option<(Option<String>, Option<String>)> = connection
         .query_row(
             "SELECT CASE WHEN typeof(revision_id)='text' AND length(CAST(revision_id AS BLOB)) BETWEEN 1 AND 128 THEN revision_id END,
@@ -483,7 +486,7 @@ fn validate_job_head(connection: &Connection, job: &RequestId) -> Result<(), Sto
     Ok(())
 }
 
-fn read_attempt(
+pub(crate) fn read_attempt(
     connection: &Connection,
     job: &RequestId,
     id: &AttemptId,
@@ -524,7 +527,7 @@ fn read_attempt_body(
     }
     Ok(attempt)
 }
-fn read_checkpoint(
+pub(crate) fn read_checkpoint(
     connection: &Connection,
     job: &RequestId,
     id: &AttemptId,

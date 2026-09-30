@@ -1,0 +1,83 @@
+"""Check local documentation links and inventory every final evidence file."""
+import hashlib
+import json
+import re
+import subprocess
+from pathlib import Path
+from urllib.parse import unquote
+
+REPO = Path('/Users/michael/Code/deadpan')
+EVIDENCE = REPO / 'tools/media-qualification/evidence/2026-09-30-publication-recovery'
+DOCS = [
+    'AGENTS.md',
+    'docs/ARCHITECTURE.md',
+    'docs/RENDER_JOBS.md',
+    'docs/RENDER_PUBLICATION.md',
+    'docs/REQUIREMENTS.md',
+    'docs/spec/DEADPAN_SPEC.md',
+    'docs/spec/AGENT_HANDOFF.md',
+    'docs/qualification/publication-recovery-2026-09-30.md',
+    str((EVIDENCE / 'README.md').relative_to(REPO)),
+]
+def check_links():
+    checked = 0
+    missing = []
+    for name in DOCS:
+        source = REPO / name
+        for match in re.finditer(r'\[[^\]]*\]\(\s*<?([^\s)>]+)>?', source.read_text()):
+            target = unquote(match.group(1).split('#', 1)[0])
+            if not target or re.match(r'^[a-zA-Z][a-zA-Z0-9+.-]*:', target):
+                continue
+            checked += 1
+            if not (source.parent / target).exists():
+                missing.append({'source': name, 'target': target})
+    assert not missing, missing
+    return checked
+
+def sha(path):
+    with path.open('rb') as stream:
+        return hashlib.file_digest(stream, 'sha256').hexdigest()
+
+paths = subprocess.check_output(
+    ['git', '-c', 'core.fsmonitor=false', 'ls-files', '--cached', '--others',
+     '--exclude-standard', '-z'], cwd=REPO,
+).decode().split('\0')
+sources = {
+    name: sha(REPO / name) for name in sorted(set(paths))
+    if name and (REPO / name).is_file()
+    and (Path(name).suffix in ('.rs', '.toml', '.lock', '.cpp', '.h', '.hpp', '.c', '.m', '.py')
+         or name.startswith(('.cargo/', 'crates/', 'native/')))
+}
+source_wire = json.dumps(sources, sort_keys=True, indent=2) + '\n'
+source_inventory = hashlib.sha256(source_wire.encode()).hexdigest()
+summary = json.loads((EVIDENCE / 'summary.json').read_bytes())
+assert source_inventory == summary['final_source_inventory']
+assert source_inventory == summary['native_source_inventory']
+
+manifest = EVIDENCE / 'file-manifest.json'
+records = []
+for path in sorted(EVIDENCE.rglob('*')):
+    assert not path.is_symlink(), path
+    if path.is_file() and path != manifest:
+        records.append({
+            'path': str(path.relative_to(EVIDENCE)),
+            'bytes': path.stat().st_size,
+            'sha256': sha(path),
+        })
+manifest.write_text(json.dumps(records, indent=2) + '\n')
+for row in json.loads(manifest.read_bytes()):
+    path = EVIDENCE / row['path']
+    assert path.stat().st_size == row['bytes']
+    assert sha(path) == row['sha256']
+assert {row['path'] for row in records} == {
+    str(path.relative_to(EVIDENCE)) for path in EVIDENCE.rglob('*')
+    if path.is_file() and path != manifest
+}
+print(json.dumps({
+    'status': 'passed',
+    'local_document_links': check_links(),
+    'evidence_files_rehashed': len(records),
+    'evidence_bytes': sum(row['bytes'] for row in records),
+    'file_manifest_sha256': sha(manifest),
+    'source_inventory': source_inventory,
+}))

@@ -1,10 +1,11 @@
 # Durable render attempts
 
-Database schema 40 stores an immutable engineering render intent and operational
+Database schema 41 stores an immutable engineering render intent and operational
 attempt history. Core document schema remains 33. These library APIs support
 retaining a completed encode and retrying verification after restart. Native
-Render, public headless render commands, automatic encoder selection, scheduling
-and durable destination publication recovery remain separate work.
+Render, public headless render commands, automatic encoder selection and scheduling
+remain separate work. The [publication journal](RENDER_PUBLICATION.md#durable-publication-journal)
+uses these checkpoints for explicit destination reconciliation.
 
 ## Captured intent and attempts
 
@@ -102,16 +103,17 @@ recovery verifier.
 
 ## Migration and remaining work
 
-Schema 39 already contains core 33. Its migration validates existing history
+Schemas 39 and 40 already contain core 33. Their migration validates existing history
 without replaying or rewriting authored JSON or patches, then adds empty render
-tables. Earlier schemas retain their strict replay adapters and also gain empty
-render tables. Migration keeps a consistent pre-upgrade SQLite backup. Authentic
+tables where absent. Schema 40 keeps every existing render job, attempt and
+checkpoint cell and gains empty publication tables. Earlier schemas retain their
+strict replay adapters and gain both operational boundaries. Migration keeps a
+consistent pre-upgrade SQLite backup. Authentic
 schema-39 fixtures cover a qualified single-Original baseline with pending redo,
 an edited Source project and an accepted Generated project.
 
-This boundary does not journal destination publication. A crash around the
-report/movie rename still needs durable publication intent, reconciliation and
-an explicit uncertain outcome. The library publisher's `PublishedUnconfirmed`
-result remains meaningful only to its running caller until that next boundary
-exists. Product controls, full mastering/effects, HDR and release qualification
+Destination publication has a separate durable journal and explicit reconciliation
+protocol. It requires a new live verifier result; a stored Verified row alone
+never authorizes adoption of destination bytes. Product controls, full
+mastering/effects, HDR and release qualification
 remain required; no DP requirement or delivery gate is completed here.

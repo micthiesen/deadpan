@@ -1,0 +1,18 @@
+[
+  {
+    "source": "/tmp/deadpan-render-jobs-95xpekq5/native-inputs/source.deadpan",
+    "source_backup": "/tmp/deadpan-render-jobs-95xpekq5/verified-databases/structural.sqlite",
+    "source_backup_sha256": "38793e05fd2d52cf41cf56b19b5c10a628350d4bdd60c71a13b62da61b1757ad",
+    "target": "/tmp/deadpan-publication-recovery-ams9kpds/native-inputs/source.deadpan",
+    "method": "immutable package objects copied, coherent source backup copied through SQLite backup API",
+    "schema": 40
+  },
+  {
+    "source": "/tmp/deadpan-render-jobs-95xpekq5/native-inputs/generated.deadpan",
+    "source_backup": "/tmp/deadpan-render-jobs-95xpekq5/verified-databases/generated.sqlite",
+    "source_backup_sha256": "b53a7a0aed9b31f5e67ed860702f90751ac97c76d0573a5fd171ce7f2191b212",
+    "target": "/tmp/deadpan-publication-recovery-ams9kpds/native-inputs/generated.deadpan",
+    "method": "immutable package objects copied, coherent source backup copied through SQLite backup API",
+    "schema": 40
+  }
+]

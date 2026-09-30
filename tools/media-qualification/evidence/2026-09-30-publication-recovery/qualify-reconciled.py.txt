@@ -1,0 +1,60 @@
+"""Independently decode confirmed crash-reconciled exports against retained inputs."""
+import copy, gzip, hashlib, json, sys, traceback
+from pathlib import Path
+ROOT=Path(__file__).resolve().parent
+REPO=Path('/Users/michael/Code/deadpan')
+sys.path.insert(0,str(REPO/'tools/media-qualification/compatible'))
+from qualify_project_encode import ProjectEncodeHarness
+prior=REPO/'tools/media-qualification/evidence/2026-09-29-render-publication'
+capture_path=prior/'metal-publication-report.json.gz'
+decode_path=prior/'decoded-current-report.json.gz'
+capture=json.loads(gzip.decompress(capture_path.read_bytes()))
+decoded=json.loads(gzip.decompress(decode_path.read_bytes()))
+assert capture['status']=='passed' and decoded['result']=='passed scoped project encoding'
+assert all(row['passed'] for row in decoded['final_file_admission'])
+admitted={str(Path(row['path']).resolve()):row['expected'] for row in decoded['final_file_admission'] if 'path' in row}
+work=ROOT/'decoded-reconciled'; work.mkdir()
+harness=ProjectEncodeHarness(work,False,Path('/tmp/deadpan-ui-ffmpeg-build.json'),REPO/'target/debug/deadpan-cli')
+harness.report['scope']='two final movies confirmed after real SIGKILL and fresh verification; full planes and exact canonical PCM compared with hash-bound prior immutable inputs; no new encoding'
+try:
+    harness.prepare()
+    for path in [capture_path,decode_path]:
+        harness.admitted_files[str(path.resolve())]=harness.artifact(path)['sha256']
+    cases=[]
+    for name in ['structural','generated']:
+        current_path=ROOT/('native-'+name)/'report.json'
+        current=json.loads(current_path.read_bytes())
+        assert current['status']=='passed' and current['exact_authoring_preserved']
+        assert current['process_crashes']==10 and current['fresh_verifications']==20
+        harness.admitted_files[str(current_path.resolve())]=harness.artifact(current_path)['sha256']
+        recovered=next(c for c in current['cases'] if c['name']=='movie-renamed')
+        assert recovered['status']=='passed' and recovered['classification']=='published'
+        assert recovered['child_exit']['signal']==9 and all(c['passed'] for c in recovered['checks'])
+        old=next(c for c in capture['encoded']['cases'] if c['name']==name)
+        manifest=recovered['manifest']; contract=manifest['contract']['picture']
+        assert old['contract']==contract
+        assert old['manifest']['document_sha256']==current['render_intent']['document_sha256']==manifest['document_sha256']
+        assert old['manifest']['contract']['choice']==manifest['contract']['choice']
+        case={'name':name,'contract':contract,'manifest':manifest,'path':recovered['recovered_receipt']['movie']}
+        references={}
+        for key in ['picture_reference','audio_reference']:
+            path=Path(old[key]).resolve()
+            with path.open('rb') as file: actual=hashlib.file_digest(file,'sha256').hexdigest()
+            assert actual==admitted[str(path)]
+            case[key]=str(path); references[key]={'path':str(path),'sha256':actual,'extent':path.stat().st_size}
+        case['reference_binding']={'prior_capture':str(capture_path),'prior_decode':str(decode_path),'current_report':str(current_path),'same_document_hash':True,'same_complete_contract':True,'references':references}
+        cases.append(case)
+        try: harness.capture_project(case)
+        except Exception as error:
+            harness.report['cases'][-1]['failure']=str(error)
+            harness.report['cases'][-1]['traceback']=traceback.format_exc()
+    (ROOT/'reconciled-reference-binding.json').write_text(json.dumps(cases,indent=2)+'\n')
+    harness.report['result']='passed reconciled publications' if len(harness.report['cases'])==2 and all(c['passed'] for c in harness.report['cases']) else 'failed reconciled publications'
+except Exception as error:
+    harness.report['failure']=str(error); harness.report['traceback']=traceback.format_exc()
+finally:
+    harness.finish_admission()
+    if harness.process_faults: harness.report['result']='failed: process or sanitizer fault'
+    (work/'report.json').write_text(json.dumps(harness.report,indent=2)+'\n')
+    print(json.dumps({'result':harness.report['result'],'cases':[{'name':c['name'],'passed':c['passed'],'failure':c.get('failure')} for c in harness.report['cases']]}))
+raise SystemExit(0 if harness.report['result']=='passed reconciled publications' else 1)

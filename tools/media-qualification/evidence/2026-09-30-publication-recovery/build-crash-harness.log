@@ -1,0 +1,3 @@
+error: no bin target named `deadpan` in `deadpan-cli` package
+help: available bin targets:
+    deadpan-cli

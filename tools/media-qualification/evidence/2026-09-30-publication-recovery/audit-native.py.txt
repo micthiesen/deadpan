@@ -1,0 +1,57 @@
+import hashlib,json,sqlite3,stat
+from pathlib import Path
+ROOT=Path(__file__).resolve().parent
+
+def identity(path):
+    st=path.stat(); assert stat.S_ISREG(st.st_mode) and st.st_nlink==1
+    with path.open('rb') as f: sha=hashlib.file_digest(f,'sha256').hexdigest()
+    return {'path':str(path),'bytes':st.st_size,'sha256':sha,'mode':oct(stat.S_IMODE(st.st_mode))}
+
+rows=[]
+for name in ['structural','generated']:
+    report=json.loads((ROOT/('native-'+name)/'report.json').read_bytes())
+    assert report['status']=='passed' and report['exact_authoring_preserved']
+    package=Path(report['package']); target=ROOT/'verified-databases'/(name+'.sqlite')
+    target.parent.mkdir(exist_ok=True); assert not target.exists()
+    with sqlite3.connect((package/'project.sqlite').as_uri()+'?mode=ro',uri=True) as source:
+        with sqlite3.connect(target) as db:
+            source.backup(db)
+            assert db.execute('PRAGMA integrity_check').fetchall()==[('ok',)]
+            assert db.execute('PRAGMA foreign_key_check').fetchall()==[]
+            assert db.execute('PRAGMA user_version').fetchone()==(41,)
+            assert db.execute('SELECT COUNT(*) FROM render_attempts').fetchone()==(22,)
+            assert db.execute('SELECT COUNT(*) FROM render_publications').fetchone()==(10,)
+            assert db.execute('SELECT COUNT(*) FROM render_publication_operations').fetchone()==(20,)
+            intent=json.loads(db.execute('SELECT intent FROM render_jobs').fetchone()[0])
+            assert intent==report['render_intent']
+            document=json.loads(db.execute('SELECT document FROM revisions WHERE id=?',(intent['revision_id'],)).fetchone()[0])
+            assert hashlib.sha256(json.dumps(document,separators=(',',':'),ensure_ascii=False).encode()).hexdigest()==intent['document_sha256']
+            media=json.loads(db.execute('SELECT media FROM render_candidate_checkpoints').fetchone()[0])
+            assert media==report['retained_checkpoint']['media']
+            cases=[]
+            for case in report['cases']:
+                assert case['status']=='passed' and case['child_exit']['signal']==9
+                assert all(c['passed'] for c in case['checks'])
+                record=json.loads(db.execute('SELECT body FROM render_publications WHERE publication_id=?',(case['terminal']['intent']['publication_id'],)).fetchone()[0])
+                assert record==case['terminal'] and not record['operation']['active']
+                attempts=[json.loads(r[0]) for r in db.execute('SELECT body FROM render_attempts WHERE attempt_id IN (?,?) ORDER BY ordinal',(case['child']['verification_attempt']['attempt_id'],case['verification_attempt']['attempt_id']))]
+                assert len(attempts)==2 and all(a['state']=='verified' for a in attempts)
+                assert attempts[0]['verification']['report']==case['child']['verification']
+                assert attempts[1]['verification']['report']==case['verification']
+                artifacts={}
+                for filename, saved in case['artifacts_after_reconcile'].items():
+                    actual=identity(Path(saved['path']))
+                    assert actual['sha256']==saved['sha256'] and actual['bytes']==saved['bytes']
+                    artifacts[filename]=actual
+                cases.append({'name':case['name'],'classification':case['classification'],'phase':record['phase'],'outcome':record['outcome'],'observed_movie_commit':record['observed_movie_commit'],'artifacts':artifacts})
+    retained={}
+    for kind in ['movie','manifest']:
+        ref=media[kind]; assert ref['content']['algorithm']=='blake3'
+        actual=identity(package/'Media/RenderCandidates'/('blake3-'+ref['content']['digest']))
+        assert actual['bytes']==ref['byte_length'] and actual['sha256']==media[kind+'_sha256'] and actual['mode']=='0o444'
+        retained[kind]=actual
+    rows.append({'name':name,'database':identity(target),'historical_document_sha256':intent['document_sha256'],'retained':retained,'cases':cases})
+decode=json.loads((ROOT/'decoded-reconciled/report.json').read_bytes()); assert decode['result']=='passed reconciled publications'
+result={'status':'passed','scope':'final coherent SQLite backups, operational record/attempt/report agreement, historical document hashes, exact artifact SHA256/lengths/modes, independent final-file media comparison','process_crashes':20,'fresh_verifications':40,'new_encodes':0,'independently_decoded_movies':2,'pictures':sum(c['captured']['contract']['frame_count'] for c in decode['cases']),'compared_planes':sum(len(c['complete_planes']) for c in decode['cases']),'compared_codes':sum(p['codes'] for c in decode['cases'] for p in c['complete_planes']),'cases':rows}
+(ROOT/'native-audit.json').write_text(json.dumps(result,indent=2)+'\n')
+print(json.dumps({k:v for k,v in result.items() if k!='cases'}))

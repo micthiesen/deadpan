@@ -1,0 +1,13 @@
+{
+  "command": [
+    "python3",
+    "/tmp/deadpan-publication-recovery-ams9kpds/probe-identities.py"
+  ],
+  "started": "2026-09-30T06:53:48.906072+00:00",
+  "base_commit": "6a0d82e7cdae060eba4db3d900072d705a035e71",
+  "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "source_manifest_sha256": "00f2ef44c52044b52942efd4d5556e2f33daa8233864e5a10b9488520b34bfbc",
+  "pid": 73829,
+  "exit_code": 0,
+  "seconds": 0.022684709168970585
+}

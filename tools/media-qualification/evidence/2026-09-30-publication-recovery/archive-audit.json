@@ -1,0 +1,8 @@
+{
+  "status": "passed",
+  "members": 277,
+  "uncompressed_bytes": 228229708,
+  "archive_bytes": 7078539,
+  "archive_sha256": "3a72a4304bdf0ad2349ba562e930e77b081c05b73e7ba02b7643d1cb488d8748",
+  "verification": "every regular member read and rehashed"
+}

@@ -45,7 +45,7 @@ impl ProjectStore {
                 backup: None,
             });
         }
-        if !matches!(version, 1..=39) {
+        if !matches!(version, 1..=40) {
             return Err(StoreError::UnsupportedSchema(version));
         }
         let lock = acquire_lock(&package)?;
@@ -157,9 +157,15 @@ fn migrate_candidate(
         crate::single_source::create_tables(&transaction)?;
     }
     #[cfg(any(target_os = "macos", target_os = "linux"))]
-    crate::render_jobs::create_tables(&transaction)?;
+    if source_version < 40 {
+        crate::render_jobs::create_tables(&transaction)?;
+    }
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    crate::publication::create_tables(&transaction)?;
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     crate::render_jobs::check_stored_sizes(&transaction)?;
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    crate::publication::check_stored_sizes(&transaction)?;
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     crate::source_registration::check_stored_sizes(&transaction)?;
     validation::check_stored_sizes(&transaction, schema::MAX_DOCUMENT_BYTES)?;
@@ -249,7 +255,7 @@ fn migrate_candidate(
     // schemas 16 and 17 retain their authored edge choices.
     // Schema 39 already stores current core schema 33. Operational schema 40
     // validates its chronology without rewriting document/request/patch JSON.
-    if source_version == 39 {
+    if source_version >= 39 {
         validation::validate_history(&transaction)?;
     } else {
         validation::migrate_history(&transaction, source_version)?;
@@ -261,6 +267,8 @@ fn migrate_candidate(
     crate::generation_attempts::validate_store(&transaction)?;
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     crate::render_jobs::validate_store(&transaction)?;
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    crate::publication::validate_store(&transaction)?;
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     crate::original_media::validate_store(&transaction)?;
     #[cfg(any(target_os = "macos", target_os = "linux"))]

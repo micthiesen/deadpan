@@ -63,7 +63,7 @@ impl FsError {
         }
     }
 
-    fn invalid(code: &'static str, message: &'static str) -> Self {
+    pub(super) fn invalid(code: &'static str, message: &'static str) -> Self {
         Self::new(code, message, io::Error::other(message))
     }
 
@@ -125,6 +125,7 @@ struct Directory {
 
 /// Reusable pin for sibling report/movie destinations. Neither directory
 /// ownership nor device is inferred from the project or its source media.
+#[derive(Clone)]
 pub(super) struct Destination {
     directory: Arc<Directory>,
     final_name: OsString,
@@ -133,30 +134,7 @@ pub(super) struct Destination {
 impl Destination {
     pub(super) fn pin(parent: &Path, final_name: &OsStr) -> Result<Self> {
         validate_name(final_name)?;
-        let selected = std::path::absolute(parent)
-            .map_err(|e| FsError::new("invalid_destination", "resolve destination path", e))?;
-        validate_path(&selected)?;
-        let selected_entries = path_entries(&selected)?;
-        let canonical = std::fs::canonicalize(&selected).map_err(|e| {
-            FsError::new(
-                "invalid_destination",
-                "canonicalize destination directory",
-                e,
-            )
-        })?;
-        validate_path(&canonical)?;
-        let (file, canonical_entries) = open_directory_chain(&canonical)?;
-        let metadata = inspect(&file)?;
-        let directory = Arc::new(Directory {
-            file,
-            selected,
-            canonical,
-            selected_entries,
-            canonical_entries,
-            identity: Identity::stat(&metadata),
-            owner: rustix::process::geteuid().as_raw(),
-        });
-        directory.confirm()?;
+        let directory = Directory::open(parent)?;
         let result = Self {
             directory,
             final_name: final_name.to_os_string(),
@@ -199,7 +177,34 @@ impl Destination {
         }
     }
 
-    pub(super) fn create_partial(&self, maximum_bytes: u64) -> Result<PartialFile<'_>> {
+    pub(super) fn create_partial(&self, maximum_bytes: u64) -> Result<PartialFile> {
+        for _ in 0..CREATE_ATTEMPTS {
+            let name = OsString::from(format!(".deadpan-{}.partial", uuid::Uuid::new_v4()));
+            match self.create_partial_named(&name, maximum_bytes) {
+                Err(error) if error.code() == "partial_exists" => continue,
+                result => return result,
+            }
+        }
+        Err(FsError::invalid(
+            "destination_io",
+            "exclusive partial names exhausted",
+        ))
+    }
+
+    /// Create exactly the basename already recorded by the operational journal.
+    /// Existing entries are never opened, modified, or removed.
+    pub(super) fn create_partial_named(
+        &self,
+        name: &OsStr,
+        maximum_bytes: u64,
+    ) -> Result<PartialFile> {
+        validate_name(name)?;
+        if name == self.final_name {
+            return Err(FsError::invalid(
+                "invalid_destination",
+                "partial and final names must differ",
+            ));
+        }
         if !(1..=MAX_BYTES).contains(&maximum_bytes) {
             return Err(FsError::invalid(
                 "partial_limit",
@@ -208,69 +213,92 @@ impl Destination {
         }
         self.directory.confirm()?;
         self.require_absent()?;
-        for _ in 0..CREATE_ATTEMPTS {
-            let name = OsString::from(format!(".deadpan-{}.partial", uuid::Uuid::new_v4()));
-            let descriptor = match openat(
-                &self.directory.file,
-                &name,
-                OFlags::RDWR
-                    | OFlags::CREATE
-                    | OFlags::EXCL
-                    | OFlags::NOFOLLOW
-                    | OFlags::NONBLOCK
-                    | OFlags::CLOEXEC,
-                Mode::RUSR | Mode::WUSR,
-            ) {
-                Ok(descriptor) => descriptor,
-                Err(rustix::io::Errno::EXIST) => continue,
-                Err(e) => {
-                    return Err(FsError::new(
-                        "destination_io",
-                        "create exclusive partial",
-                        e,
-                    ));
-                }
-            };
-            let file = File::from(descriptor);
-            let path = self.directory.canonical.join(&name);
-            fchmod(&file, Mode::RUSR | Mode::WUSR).map_err(|e| {
-                FsError::new("destination_io", "set partial owner permissions", e)
-                    .with_partial(path.clone())
-            })?;
-            let state = inspect(&file).map_err(|e| e.with_partial(path.clone()))?;
-            validate_file(&state, &self.directory, maximum_bytes)
-                .map_err(|e| e.with_partial(path.clone()))?;
-            if state.st_size != 0 {
-                return Err(
-                    FsError::invalid("destination_changed", "new partial is not empty")
-                        .with_partial(path),
-                );
-            }
-            let partial = PartialFile {
-                destination: self,
-                name,
-                file,
-                state,
-                written: 0,
-                maximum_bytes,
-                sealed: false,
-                poisoned: false,
-                published: false,
-            };
-            partial
-                .confirm()
-                .map_err(|e| e.with_partial(path.clone()))?;
-            self.directory.confirm().map_err(|e| e.with_partial(path))?;
-            return Ok(partial);
+        let descriptor = openat(
+            &self.directory.file,
+            name,
+            OFlags::RDWR
+                | OFlags::CREATE
+                | OFlags::EXCL
+                | OFlags::NOFOLLOW
+                | OFlags::NONBLOCK
+                | OFlags::CLOEXEC,
+            Mode::RUSR | Mode::WUSR,
+        )
+        .map_err(|e| {
+            FsError::new(
+                if e == rustix::io::Errno::EXIST {
+                    "partial_exists"
+                } else {
+                    "destination_io"
+                },
+                "create exclusive partial",
+                e,
+            )
+        })?;
+        let file = File::from(descriptor);
+        let path = self.directory.canonical.join(name);
+        lock_file(&file).map_err(|e| e.with_partial(path.clone()))?;
+        fchmod(&file, Mode::RUSR | Mode::WUSR).map_err(|e| {
+            FsError::new("destination_io", "set partial owner permissions", e)
+                .with_partial(path.clone())
+        })?;
+        let state = inspect(&file).map_err(|e| e.with_partial(path.clone()))?;
+        validate_file(&state, &self.directory, maximum_bytes)
+            .map_err(|e| e.with_partial(path.clone()))?;
+        if state.st_size != 0 {
+            return Err(
+                FsError::invalid("destination_changed", "new partial is not empty")
+                    .with_partial(path),
+            );
         }
-        Err(FsError::invalid(
-            "destination_io",
-            "exclusive partial names exhausted",
-        ))
+        let partial = PartialFile {
+            destination: self.clone(),
+            name: name.to_owned(),
+            file,
+            state,
+            written: 0,
+            maximum_bytes,
+            sealed: false,
+            poisoned: false,
+            published: false,
+        };
+        partial
+            .confirm()
+            .map_err(|e| e.with_partial(path.clone()))?;
+        self.directory.confirm().map_err(|e| e.with_partial(path))?;
+        Ok(partial)
     }
 }
 
 impl Directory {
+    fn open(parent: &Path) -> Result<Arc<Self>> {
+        let selected = std::path::absolute(parent)
+            .map_err(|e| FsError::new("invalid_destination", "resolve destination path", e))?;
+        validate_path(&selected)?;
+        let selected_entries = path_entries(&selected)?;
+        let canonical = std::fs::canonicalize(&selected).map_err(|e| {
+            FsError::new(
+                "invalid_destination",
+                "canonicalize destination directory",
+                e,
+            )
+        })?;
+        validate_path(&canonical)?;
+        let (file, canonical_entries) = open_directory_chain(&canonical)?;
+        let metadata = inspect(&file)?;
+        let directory = Arc::new(Directory {
+            file,
+            selected,
+            canonical,
+            selected_entries,
+            canonical_entries,
+            identity: Identity::stat(&metadata),
+            owner: rustix::process::geteuid().as_raw(),
+        });
+        directory.confirm()?;
+        Ok(directory)
+    }
+
     fn confirm(&self) -> Result<()> {
         if path_entries(&self.selected)? != self.selected_entries {
             return Err(FsError::invalid(
@@ -308,8 +336,8 @@ impl Directory {
 /// The only writable capability. No descriptor escapes, writes are bounded,
 /// and sealing permanently revokes this API's writer access. No Drop cleanup
 /// unlinks names: a failure may leave useful bytes or a foreign replacement.
-pub(super) struct PartialFile<'a> {
-    destination: &'a Destination,
+pub(super) struct PartialFile {
+    destination: Destination,
     name: OsString,
     file: File,
     state: Stat,
@@ -320,7 +348,7 @@ pub(super) struct PartialFile<'a> {
     published: bool,
 }
 
-impl<'d> PartialFile<'d> {
+impl PartialFile {
     /// The original partial name, including after successful rename.
     pub(super) fn path(&self) -> PathBuf {
         self.destination.directory.canonical.join(&self.name)
@@ -333,7 +361,7 @@ impl<'d> PartialFile<'d> {
         &'a mut self,
         cancelled: &'a AtomicBool,
         deadline: Instant,
-    ) -> Result<PartialWriter<'a, 'd>> {
+    ) -> Result<PartialWriter<'a>> {
         check_control(cancelled, deadline)?;
         if self.sealed || self.published || self.poisoned {
             return Err(FsError::invalid(
@@ -395,7 +423,7 @@ impl<'d> PartialFile<'d> {
         &'a self,
         cancelled: &'a AtomicBool,
         deadline: Instant,
-    ) -> Result<PartialReader<'a, 'd>> {
+    ) -> Result<PartialReader<'a>> {
         check_control(cancelled, deadline)?;
         if !self.sealed || self.published || self.poisoned {
             return Err(FsError::invalid(
@@ -420,7 +448,7 @@ impl<'d> PartialFile<'d> {
         &'a self,
         cancelled: &'a AtomicBool,
         deadline: Instant,
-    ) -> Result<PartialReader<'a, 'd>> {
+    ) -> Result<PartialReader<'a>> {
         if !self.sealed || !self.published || self.poisoned {
             let error = FsError::invalid("partial_state", "file is not published for readback");
             return Err(if self.published {
@@ -439,11 +467,31 @@ impl<'d> PartialFile<'d> {
         })
     }
 
+    #[cfg(test)]
     pub(super) fn commit(&mut self, cancelled: &AtomicBool, deadline: Instant) -> Result<()> {
         self.commit_with_sync(cancelled, deadline, |phase, file| match phase {
             SyncPhase::PublishedDirectory => fsync(file).map_err(Into::into),
             _ => full_sync(file),
         })
+    }
+
+    /// The live permit is checked at the last pre-rename point. Once rename
+    /// succeeds, cancellation and a revoked permit cannot abandon durability.
+    pub(super) fn commit_guarded(
+        &mut self,
+        cancelled: &AtomicBool,
+        deadline: Instant,
+        mut guard: impl FnMut() -> Result<()>,
+    ) -> Result<()> {
+        self.commit_with_guard(
+            cancelled,
+            deadline,
+            &mut |phase, file| match phase {
+                SyncPhase::PublishedDirectory => fsync(file).map_err(Into::into),
+                _ => full_sync(file),
+            },
+            &mut guard,
+        )
     }
 
     pub(super) fn confirm_published(&self) -> Result<()> {
@@ -465,13 +513,24 @@ impl<'d> PartialFile<'d> {
         })
     }
 
+    #[cfg(test)]
     fn commit_with_sync(
         &mut self,
         cancelled: &AtomicBool,
         deadline: Instant,
         mut sync: impl FnMut(SyncPhase, &File) -> io::Result<()>,
     ) -> Result<()> {
-        let result = self.commit_inner(cancelled, deadline, &mut sync);
+        self.commit_with_guard(cancelled, deadline, &mut sync, &mut || Ok(()))
+    }
+
+    fn commit_with_guard(
+        &mut self,
+        cancelled: &AtomicBool,
+        deadline: Instant,
+        sync: &mut impl FnMut(SyncPhase, &File) -> io::Result<()>,
+        guard: &mut impl FnMut() -> Result<()>,
+    ) -> Result<()> {
+        let result = self.commit_inner(cancelled, deadline, sync, guard);
         result.map_err(|error| {
             let error = error.with_partial(self.path());
             if self.published {
@@ -487,6 +546,7 @@ impl<'d> PartialFile<'d> {
         cancelled: &AtomicBool,
         deadline: Instant,
         sync: &mut impl FnMut(SyncPhase, &File) -> io::Result<()>,
+        guard: &mut impl FnMut() -> Result<()>,
     ) -> Result<()> {
         check_control(cancelled, deadline)?;
         if !self.sealed || self.poisoned || self.published {
@@ -503,6 +563,7 @@ impl<'d> PartialFile<'d> {
         self.destination.directory.confirm()?;
         self.confirm()?;
         check_control(cancelled, deadline)?;
+        guard()?;
         renameat_with(
             &self.destination.directory.file,
             &self.name,
@@ -594,13 +655,13 @@ enum SyncPhase {
     AfterDirectory,
 }
 
-pub(super) struct PartialWriter<'a, 'd> {
-    partial: &'a mut PartialFile<'d>,
+pub(super) struct PartialWriter<'a> {
+    partial: &'a mut PartialFile,
     cancelled: &'a AtomicBool,
     deadline: Instant,
 }
 
-impl Write for PartialWriter<'_, '_> {
+impl Write for PartialWriter<'_> {
     fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
         check_control(self.cancelled, self.deadline).map_err(io::Error::other)?;
         if self.partial.poisoned {
@@ -670,14 +731,14 @@ impl Write for PartialWriter<'_, '_> {
     }
 }
 
-pub(super) struct PartialReader<'a, 'd> {
-    partial: &'a PartialFile<'d>,
+pub(super) struct PartialReader<'a> {
+    partial: &'a PartialFile,
     offset: u64,
     cancelled: &'a AtomicBool,
     deadline: Instant,
 }
 
-impl Read for PartialReader<'_, '_> {
+impl Read for PartialReader<'_> {
     fn read(&mut self, bytes: &mut [u8]) -> io::Result<usize> {
         let published = self.partial.published;
         let io_error = |error: FsError| {
@@ -734,6 +795,17 @@ fn check_control(cancelled: &AtomicBool, deadline: Instant) -> Result<()> {
     Ok(())
 }
 
+fn lock_file(file: &File) -> Result<()> {
+    file.try_lock().map_err(|error| match error {
+        std::fs::TryLockError::WouldBlock => {
+            FsError::invalid("publication_locked", "publication file is in use")
+        }
+        std::fs::TryLockError::Error(error) => {
+            FsError::new("destination_io", "lock publication file", error)
+        }
+    })
+}
+
 fn inspect(file: &File) -> Result<Stat> {
     fstat(file).map_err(|e| FsError::new("destination_io", "inspect retained descriptor", e))
 }
@@ -758,12 +830,27 @@ fn validate_file(value: &Stat, directory: &Directory, maximum: u64) -> Result<()
 
 fn same_state(left: &Stat, right: &Stat, include_ctime: bool) -> bool {
     Identity::stat(left) == Identity::stat(right)
+        && same_platform_state(left, right)
+        && left.st_gid == right.st_gid
         && left.st_size == right.st_size
         && left.st_nlink == right.st_nlink
         && left.st_mtime == right.st_mtime
         && left.st_mtime_nsec == right.st_mtime_nsec
         && (!include_ctime
             || (left.st_ctime == right.st_ctime && left.st_ctime_nsec == right.st_ctime_nsec))
+}
+
+#[cfg(target_os = "macos")]
+fn same_platform_state(left: &Stat, right: &Stat) -> bool {
+    left.st_birthtime == right.st_birthtime
+        && left.st_birthtime_nsec == right.st_birthtime_nsec
+        && left.st_gen == right.st_gen
+        && left.st_flags == right.st_flags
+}
+
+#[cfg(not(target_os = "macos"))]
+fn same_platform_state(_left: &Stat, _right: &Stat) -> bool {
+    true
 }
 
 fn validate_name(name: &OsStr) -> Result<()> {
@@ -850,6 +937,9 @@ fn full_sync(file: &File) -> io::Result<()> {
 fn full_sync(file: &File) -> io::Result<()> {
     fsync(file).map_err(Into::into)
 }
+
+mod recovery;
+pub(super) use recovery::{DirectoryEvidence, FileEvidence, RecoveredDirectory, RecoveredFile};
 
 #[cfg(test)]
 mod tests;

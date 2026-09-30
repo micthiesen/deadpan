@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/deadpan-core", "crates/deadpan-store", "crates/deadpan-plan", "crates/deadpan-jobs", "crates/deadpan-media", "crates/deadpan-audio", "crates/deadpan-models", "crates/deadpan-render", "crates/deadpan-playback", "crates/deadpan-app", "crates/deadpan-cli", "native/deadpan-process", "native/deadpan-media-worker", "native/deadpan-source", "native/deadpan-fileclone", "native/deadpan-dsp", "native/deadpan-output", "native/deadpan-encode"]
+members = ["crates/deadpan-core", "crates/deadpan-store", "crates/deadpan-plan", "crates/deadpan-jobs", "crates/deadpan-media", "crates/deadpan-audio", "crates/deadpan-models", "crates/deadpan-render", "crates/deadpan-playback", "crates/deadpan-app", "crates/deadpan-cli", "native/deadpan-process", "native/deadpan-media-worker", "native/deadpan-source", "native/deadpan-fileclone", "native/deadpan-filesystem", "native/deadpan-dsp", "native/deadpan-output", "native/deadpan-encode"]
 default-members = ["crates/deadpan-app"]
 
 [workspace.package]
@@ -26,6 +26,7 @@ deadpan-render = { path = "crates/deadpan-render" }
 deadpan-playback = { path = "crates/deadpan-playback" }
 deadpan-source = { path = "native/deadpan-source" }
 deadpan-fileclone = { path = "native/deadpan-fileclone" }
+deadpan-filesystem = { path = "native/deadpan-filesystem" }
 deadpan-native-process = { path = "native/deadpan-process" }
 cc = "=1.4.7"
 cpal = { version = "=0.18.2", default-features = false }

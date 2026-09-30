@@ -14,6 +14,39 @@ copy/paste does not fulfill this requirement. DP-05/DP-20 acceptance must includ
 the complete keyboard flow and minimum-size visual inspection. Temporal slices
 are the current interpretation; clarification about spatial overlays is pending.
 
+## Durable destination reconciliation, 2026-09-30
+
+The [publication journal](../RENDER_PUBLICATION.md#durable-publication-journal)
+records Intent, Prepared, report authorization/commit and movie authorization.
+Opaque exact-stage permits require a direct checked DB/WAL full-sync and namespace
+barrier after COMMIT. Barrier failure leaves the row visible, revokes permits and
+requires reopen. Media work and full hashing remain off the writer.
+
+Reopen interrupts active operations and never changes destination entries.
+Explicit reconciliation requires a newer same-checkpoint verification attempt,
+its live candidate, APFS volume/birth/inode/path identities and full byte hashes.
+A matching final movie with a missing/damaged report remains committed but
+unconfirmed; a replacement with identical bytes stays unresolved. Keep recovered
+file locks through the final journal transaction. Schema 41 preserves all prior
+schema-40 cells and core 33; earlier migration adapters remain intact.
+
+[Native qualification](../qualification/publication-recovery-2026-09-30.md)
+passes 20 SIGKILL cases, 40 fresh verifications and exact authored/history
+preservation. Independent FFmpeg and AVFoundation readers pass 138 pictures,
+221,021 authored sample frames and 414 image planes. The full workspace passes
+2,318 tests, strict all-target Clippy and formatting on the native-qualified source.
+Kills occur between completed host calls; physical power loss is not qualified.
+Native Render, public headless
+rendering, automatic policy, scheduling, full audio/effects and HDR remain open.
+
+Next add a shared `encoded_render` workflow coordinator for start, cancellation,
+checkpoint retry and publication reconciliation. Keep heavy stages on a bounded
+worker and writer transactions on the owning project service. Before recording
+terminal failure, establish checked worker teardown on error paths; destructor
+cleanup cannot return that evidence. Native close/switch must drain postcommit
+results before dropping the writer. Public Render also needs real automatic policy
+admission; current encoder choices and provenance remain explicitly engineering-only.
+
 ## Durable encoded checkpoints, 2026-09-29
 
 The [render job boundary](../RENDER_JOBS.md) persists immutable render intent,
@@ -36,13 +69,12 @@ authored sample frames and 414 complete planes. The workspace has 2,284 passing
 tests after correcting and rerunning three failed targets; all other full-run
 results are retained. Strict workspace Clippy and formatting pass. Evidence
 includes authentic schema-39 databases, final schema-40 backups, actual movies,
-readers, source differences and independent reviews. Orderly writer restart was
-qualified; process-death and power-loss injection remain open.
+readers, source differences and independent reviews. That checkpoint qualified
+orderly writer restart; subsequent process-death coverage is described above.
+Physical power-loss injection remains open.
 
-Next implement durable publication intent/reconciliation around the report/movie
-commit. Qualify destination identity across restart and SQLite-to-filesystem
-durability ordering before using a journal to authorize rename or reconciliation.
-Then implement the complete native Render and public headless workflow. Scheduling,
+The subsequent publication journal is described above. Next implement the complete
+native Render and public headless workflow, using the qualified staged APIs. Scheduling,
 automatic platform policy, full mastering/effects, HDR and all release gates
 remain required. See the contract for ownership, limits and API sequencing.
 
@@ -74,7 +106,7 @@ workspace Clippy and formatting. Independent review corrected cancellation-code
 loss and a post-rename content-check gap; both corrections have passing tests.
 The evidence retains actual bytes, SQLite backups and exact source/binary identities.
 
-Durable publication recovery, native Render, public headless render commands,
+Native Render, public headless render commands,
 automatic platform policy, complete mastering/effects, HDR and release
 qualification remain open. No DP requirement or Gate A through G is complete.
 

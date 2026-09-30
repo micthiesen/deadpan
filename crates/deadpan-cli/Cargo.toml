@@ -25,6 +25,7 @@ deadpan-source.workspace = true
 deadpan-models.workspace = true
 deadpan-jobs.workspace = true
 deadpan-encode.workspace = true
+deadpan-filesystem.workspace = true
 wgpu.workspace = true
 pollster.workspace = true
 sha2.workspace = true
@@ -34,6 +35,7 @@ tempfile.workspace = true
 [dev-dependencies]
 tempfile.workspace = true
 rusqlite.workspace = true
+deadpan-native-process.workspace = true
 
 [lints]
 workspace = true

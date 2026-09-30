@@ -34,6 +34,10 @@ mod publication;
 #[path = "encoded_verification/jobs.rs"]
 mod jobs;
 
+#[cfg(target_os = "macos")]
+#[path = "encoded_verification/journal.rs"]
+mod journal;
+
 fn deadline() -> Instant {
     Instant::now() + PROCESS_LIMIT
 }

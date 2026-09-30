@@ -866,9 +866,11 @@ dependencies = [
  "deadpan-audio",
  "deadpan-core",
  "deadpan-encode",
+ "deadpan-filesystem",
  "deadpan-jobs",
  "deadpan-media",
  "deadpan-models",
+ "deadpan-native-process",
  "deadpan-plan",
  "deadpan-render",
  "deadpan-source",
@@ -917,6 +919,14 @@ dependencies = [
 
 [[package]]
 name = "deadpan-fileclone"
+version = "0.1.0"
+dependencies = [
+ "libc",
+ "tempfile",
+]
+
+[[package]]
+name = "deadpan-filesystem"
 version = "0.1.0"
 dependencies = [
  "libc",

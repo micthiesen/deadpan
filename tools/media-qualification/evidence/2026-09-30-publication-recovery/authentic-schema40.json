@@ -1,0 +1,26 @@
+{
+  "base_commit": "6a0d82e7cdae060eba4db3d900072d705a035e71",
+  "source_backup": "/tmp/deadpan-render-jobs-95xpekq5/verified-databases/structural.sqlite",
+  "source_sha256": "38793e05fd2d52cf41cf56b19b5c10a628350d4bdd60c71a13b62da61b1757ad",
+  "backup": "/tmp/deadpan-publication-recovery-ams9kpds/authentic-schema40.sqlite",
+  "backup_sha256": "38793e05fd2d52cf41cf56b19b5c10a628350d4bdd60c71a13b62da61b1757ad",
+  "fixture": "crates/deadpan-store/tests/fixtures/v40-publication-render.sql",
+  "fixture_sha256": "654e7e8a5c8948fa09b19e89e1eab7e6d50161c0b0b23e72413e1a47acc475f2",
+  "schema": 40,
+  "counts": {
+    "revisions": 20,
+    "history": 10,
+    "render_jobs": 1,
+    "render_attempts": 2,
+    "render_candidate_checkpoints": 1
+  },
+  "attempt_states": [
+    [
+      "interrupted"
+    ],
+    [
+      "verified"
+    ]
+  ],
+  "method": "SQLite backup from retained verified schema40 database; unmodified iterdump with explicit original application/user pragmas"
+}

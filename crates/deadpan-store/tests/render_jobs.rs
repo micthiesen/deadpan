@@ -706,3 +706,6 @@ fn targeted_json_bounds_reject_before_deserializing_the_row() -> Result {
     assert!(store.validate().is_err());
     Ok(())
 }
+
+#[path = "render_jobs/publication.rs"]
+mod publication;

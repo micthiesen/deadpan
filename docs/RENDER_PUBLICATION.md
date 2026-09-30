@@ -3,10 +3,11 @@
 `deadpan_cli::encoded_render::publication::publish` accepts a private
 `VerifiedCandidate`, its project package and an explicitly selected MP4 path.
 It runs off UI/audio threads, reads the captured historical revision and leaves
-project state unchanged. This library boundary leaves native Render, public
-headless render commands and durable publication recovery as separate work.
+authored state unchanged. This library boundary leaves native Render and public
+headless render commands as separate work.
 The [render job boundary](RENDER_JOBS.md) retains completed candidates for a fresh
-verification attempt after restart; it does not journal the publication commit.
+verification attempt after restart. `publication::journal` adds staged publication
+and explicit restart reconciliation under durable store permits.
 
 ## Destination transaction
 
@@ -51,10 +52,83 @@ the receipt and an actionable diagnostic. It never reports an unpublished
 attempt or deletes the final file. The durable report is checked again before
 claiming full success.
 
-Crash recovery must independently admit retained bytes before trusting them.
-Neither a serialized verification report nor a publication receipt can construct
-a `VerifiedCandidate`. Retained checkpoints use the separate render job boundary;
-durable destination publication records and reconciliation remain open.
+Crash recovery independently admits retained bytes before trusting them. Neither
+a serialized verification report nor a publication receipt can construct a
+`VerifiedCandidate`. The journal binds the live candidate to the exact completed
+verification attempt as well as its movie hash, extent and historical contract.
+
+## Durable publication journal
+
+Database 41 adds operational publication records without changing core schema 33.
+The store derives the retained movie identity and encoding attempt from a terminal
+Verified render attempt. The caller supplies a fresh publication ID, operation ID,
+cancellation token and absolute MP4 destination. Each transition requires the
+exact operation, token and sequence. Prepared filesystem evidence is bounded to
+128 KiB; the store does not open the destination or hash movies.
+
+The host and writer alternate these stages:
+
+1. `begin_render_publication` durably records Intent and returns an opaque permit.
+2. `journal::prepare` checks the exact live verifier and stages, synchronizes and
+   hashes both files. It retains their descriptors and exclusive advisory locks.
+3. `record_prepared_publication` stores their immutable identity evidence and
+   hashes. `advance_publication(ReportCommitting)` authorizes `commit_report`.
+4. After report publication and readback, record ReportCommitted, then durably
+   record MovieCommitting. Only that permit authorizes `commit_movie`.
+5. Record the returned Published or PublishedUnconfirmed outcome. A precommit
+   failure can be recorded as Failed or Cancelled only after owned work stops.
+
+Every committed transition revokes the previous permit. Closing the writer or
+requesting cancellation also revokes rename authority. The host checks authority
+through preparation and immediately before rename. Once the movie rename
+succeeds, the ordinary bounded postcommit checks finish despite late cancellation.
+The prepared object cannot use a permit for a different operation or destination.
+
+SQLite uses WAL, synchronous FULL and fullfsync. Because SQLite's native VFS can
+fall back from a failed full sync to ordinary fsync, pragma settings alone do not
+authorize rename. After COMMIT, the store directly checks full synchronization of
+the pinned database and current WAL, synchronizes the package directory, performs
+final full file syncs and rechecks the namespace. No fallback is accepted. A failed
+barrier leaves the committed row observable, revokes all session publication
+permits and denies further publication writes until reopen. This is a checked OS
+durability contract; it does not prove hardware behavior during physical power loss.
+
+## Restart reconciliation
+
+Read-only open preserves publication state. Writer reopen interrupts active
+operations without touching destination files. A previously observed movie commit
+remains PublishedUnconfirmed. Nothing automatically renames, removes or resumes
+an interrupted partial. Reconciliation requires a newer completed verification
+attempt of the same checkpoint and its fresh live `VerifiedCandidate`.
+
+Durable destination evidence currently requires macOS APFS. A narrow native
+adapter reads the nonzero volume UUID from an owned descriptor. Evidence retains
+device, inode, exact birth time, nonzero generation when available, owner, group,
+mode and flags. File evidence also retains exact extent, single-link status and
+mtime. The selected path's symlink identities and targets, and every canonical
+directory component, are checked again. Rename may change ctime; fresh reads
+instead require stable current metadata including ctime. This detects cooperative
+replacement and mutation; it is not authentication against a malicious same-user
+process. The standalone publisher retains its existing platform support.
+
+`journal::reconcile` has three outcomes:
+
+- Before MovieCommitting, the journal proves that no movie rename was authorized.
+  Return NotPublished without opening or adopting any destination entry.
+- At MovieCommitting, absent or mismatched final movie identity or bytes leave
+  the outcome unresolved. An existing partial alone cannot prove that the final
+  movie was never renamed and subsequently removed.
+- Matching final movie identity and full SHA-256 establish an observed commit.
+  Matching report identity and bytes plus successful synchronization confirm
+  Published. Missing, replaced or damaged reports, or later check failures,
+  produce PublishedUnconfirmed and retain the observed movie commit.
+
+Recovered handles provide only checked reads and synchronization. They acquire
+movie then report locks, retain exact file extents, and never grant rename or
+deletion authority. Keep `RecoveryInspection` alive through the final store
+transaction so admitted file locks remain held. Conflicting final or partial
+entries are preserved. Routine selected reads stay bounded; store open and
+explicit validation audit the complete operation history.
 
 ## Report evidence and bounds
 
@@ -66,7 +140,7 @@ is not inferred from a successful attempt.
 
 The sibling report is named `deadpan-render-<publication_id>.json`. It records
 evidence prepared for publication, since it is committed before the movie.
-Only the returned outcome distinguishes `Published` from `PublishedUnconfirmed`;
+Only the returned and recorded outcome distinguishes Published from PublishedUnconfirmed;
 the report alone does not prove the movie rename or final durability succeeded.
 
 Historical source receipts supply Original BLAKE3 references and source SHA-256.
@@ -88,7 +162,7 @@ artifacts, 65,536 generated intervals and a 16 MiB report. Exceeding a bound fai
 without truncation. Original media is not reopened: the completed movie and
 historical receipts supply the relevant byte identities.
 
-This boundary does not implement native Render, automatic hardware policy,
-durable publication reconciliation, complete mastering/effects, HDR or release qualification.
+This boundary does not implement native Render, public headless render commands,
+automatic hardware policy, complete mastering/effects, HDR or release qualification.
 The generated-picture receipt flag is available for a future nonblocking upload
 disclosure reminder; it does not set any upload-service metadata.

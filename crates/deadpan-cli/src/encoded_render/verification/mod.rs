@@ -157,6 +157,7 @@ impl VerificationReport {
 pub struct VerifiedCandidate {
     candidate: EncodedCandidate,
     report: VerificationReport,
+    verification_identity: RenderIdentity,
 }
 
 /// Failed inspection retains the completed encode so the caller can retry
@@ -188,6 +189,11 @@ impl std::error::Error for VerificationFailure {
 }
 
 impl VerifiedCandidate {
+    /// The live verifier invocation that admitted these bytes. Stored reports
+    /// cannot reconstruct this value or substitute a different retry identity.
+    pub fn verification_identity(&self) -> &RenderIdentity {
+        &self.verification_identity
+    }
     pub fn report(&self) -> &VerificationReport {
         &self.report
     }

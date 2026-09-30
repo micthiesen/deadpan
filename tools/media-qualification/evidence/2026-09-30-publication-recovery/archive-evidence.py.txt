@@ -1,0 +1,51 @@
+"""Archive immutable qualification evidence, then rehash every member."""
+import gzip,hashlib,json,shutil,tarfile
+from pathlib import Path
+ROOT=Path(__file__).resolve().parent
+REPO=Path('/Users/michael/Code/deadpan')
+DEST=REPO/'tools/media-qualification/evidence/2026-09-30-publication-recovery'
+DEST.mkdir(parents=True,exist_ok=True)
+def sha(path):
+    with path.open('rb') as f:return hashlib.file_digest(f,'sha256').hexdigest()
+files={}
+def add(path,name):
+    assert path.is_file() and not path.is_symlink(),path
+    assert name not in files and not name.startswith('/') and '..' not in Path(name).parts
+    files[name]=path
+def tree(root,prefix,skip=()):
+    for path in sorted(root.rglob('*')):
+        if path.is_file() and path.name not in skip and not path.name.startswith('project.sqlite-'):
+            add(path,str(Path(prefix)/path.relative_to(root)))
+for name in ['structural','generated']:
+    tree(ROOT/('native-'+name),'crash-cases/'+name)
+tree(ROOT/'decoded-reconciled','independent-readers')
+for name,case in [('source','structural'),('generated','generated')]:
+    package=ROOT/'native-inputs'/(name+'.deadpan')
+    tree(package,'schema41/'+package.name,('project.sqlite','.writer.lock','.render-candidates.lock'))
+    add(ROOT/'verified-databases'/(case+'.sqlite'),'schema41/'+package.name+'/project.sqlite')
+add(ROOT/'authentic-schema40.sqlite','schema40/structural.sqlite')
+for case in json.loads((ROOT/'reconciled-reference-binding.json').read_bytes()):
+    for key in ['picture_reference','audio_reference']:
+        path=Path(case[key]);add(path,'retained-input-references/'+path.name)
+archive=DEST/'native-artifacts.tar.gz';assert not archive.exists()
+members=[]
+with archive.open('wb') as out:
+    with gzip.GzipFile(fileobj=out,mode='wb',mtime=0) as compressed:
+        with tarfile.open(fileobj=compressed,mode='w|') as tar:
+            for name,path in sorted(files.items()):
+                before=sha(path);info=tar.gettarinfo(str(path),arcname=name)
+                info.uid=info.gid=0;info.uname=info.gname='';info.mtime=0
+                with path.open('rb') as f:tar.addfile(info,f)
+                assert sha(path)==before
+                members.append({'path':name,'source':str(path),'bytes':info.size,'sha256':before,'mode':oct(info.mode)})
+expected={r['path']:r for r in members}
+with tarfile.open(archive,'r:gz') as tar:
+    seen=tar.getmembers();assert len(seen)==len(expected)
+    for member in seen:
+        assert member.isfile() and member.name in expected
+        row=expected[member.name];assert member.size==row['bytes']
+        with tar.extractfile(member) as f:assert hashlib.file_digest(f,'sha256').hexdigest()==row['sha256']
+(DEST/'archive-members.json').write_text(json.dumps(members,indent=2)+'\n')
+audit={'status':'passed','members':len(members),'uncompressed_bytes':sum(r['bytes'] for r in members),'archive_bytes':archive.stat().st_size,'archive_sha256':sha(archive),'verification':'every regular member read and rehashed'}
+(DEST/'archive-audit.json').write_text(json.dumps(audit,indent=2)+'\n')
+print(json.dumps(audit))

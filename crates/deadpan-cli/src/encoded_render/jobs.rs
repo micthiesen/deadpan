@@ -335,7 +335,7 @@ fn render_identity(attempt: &StoredRenderAttempt) -> RenderIdentity {
     }
 }
 
-fn encoder_choice(policy: &RenderEngineeringPolicy) -> EncoderChoice {
+pub(super) fn encoder_choice(policy: &RenderEngineeringPolicy) -> EncoderChoice {
     EncoderChoice {
         mode: match policy.encoder {
             RenderEncoder::Hardware => EncoderMode::Hardware,

@@ -52,6 +52,7 @@ Current crates:
 - `crates/deadpan-playback`: immutable-revision Original/edit/sound audition and bounded selection loops. Separate preparation and control workers own canonical PCM and monotonic device delivery. The UI never opens source media or owns the device; full mastering and acoustic/performance qualification remain open. See [audition contract](docs/PLAYBACK.md).
 - `crates/deadpan-audio`: exact-phase source resampling, explicit speaker matrices, qualified PCM access, continuous Preserve preparation, informational meters and bounded finite oversampled limiting of the current edge-faded bus. Preparation/analysis is worker work; the playback crate owns device integration. Full voice graph, group mix and encoded master qualification remain open.
 - `native/deadpan-fileclone`: bounded safe descriptor-clone interface around the macOS system call. The store owns copying, checksums, publication and durability.
+- `native/deadpan-filesystem`: narrow descriptor-based APFS volume UUID adapter for publication recovery. The host owns path identities, file locks, hashing and publication; unsupported filesystems fail explicitly.
 - `crates/deadpan-render`: bounded shared SDR picture pipeline, linear Rec.2020 working textures, explicit sRGB display transform, ordered framing/clipping, aspect and rotation. No decoding, document mutation or encoding.
 - `native/deadpan-media-worker`: process-isolated FFmpeg conversion and independent decode verification through bounded descriptor-only AVIO. Only the documented FFI call permits unsafe Rust. Requires the explicitly selected pinned LGPL FFmpeg development prefix.
 - `native/deadpan-encode`: bounded descriptor-only H.264/AAC MP4 encoder over composed I420 and canonical stereo PCM. Exact clocks, explicit hardware/software attempts, one shared deadline and restricted fast-start readback; no project, decoding, verification or publication ownership.
@@ -248,11 +249,24 @@ movies on the writer. Reopen interrupts unfinished attempts and preserves
 checkpoints. Explicit retries freshly hash retained objects and reconstruct the
 historical contract before isolated verification. A saved Verified report grants
 no live media or publication authority. Recheck handle liveness after verification.
-Keep full integrity audits separate from bounded routine operations. Durable
-publication reconciliation and the native Render workflow remain open.
+Keep full integrity audits separate from bounded routine operations.
 See [render jobs](docs/RENDER_JOBS.md).
 
-Database schema 40 stores core schema 33 and retains operational generation requests,
+Destination publication uses a separate operational journal and exact-stage
+permits. Commit the phase, revoke the old permit, and require a checked direct
+DB/WAL full-sync and namespace barrier before authorizing a rename. A failed
+barrier revokes session publication permits and requires reopen. Stage and hash
+files off the writer, publish the report before the movie, and preserve committed
+movie knowledge through cancellation and later failures. Reopen never changes
+destination files. Explicit reconciliation requires a fresh exact verification
+attempt and APFS volume/birth/inode/path evidence plus complete byte hashes.
+Never adopt a replacement merely because its bytes match. Keep recovered file
+locks through the terminal journal write; missing or changed reports leave a
+verified final movie PublishedUnconfirmed. Process-crash tests do not establish
+physical power-loss behavior. See [publication](docs/RENDER_PUBLICATION.md).
+The native Render and public headless workflow remain open.
+
+Database schema 41 stores core schema 33 and retains operational generation requests,
 plus an optional validated single-Original workflow profile. Use the dedicated
 `create_single_source` / `initialize_prepared_source` path to bind the full measured
 Original, basis and protected baseline atomically. Undo never crosses that baseline;
@@ -336,7 +350,7 @@ Ready bundles alone do not authorize an edit. See [acceptance](docs/GENERATION_A
 See [generated Hold semantics](docs/GENERATED_HOLDS.md).
 
 Original byte ownership is operational and separate from stream readiness.
-Database schema 40 retains content-keyed original records with monotonic location
+Database schema 41 retains content-keyed original records with monotonic location
 versions introduced in schema 10; earlier schemas gain an empty inventory. Use the
 shared descriptor-relative object engine for `Media/Originals` and
 `Media/Generated`. Managed originals try APFS clone, then verified copy; retain
@@ -661,7 +675,7 @@ Database-18 history uses frozen core 12; all earlier mark wires reject fragments
 including empty arrays and null. Database 19 uses frozen core 13, including its
 multi-binding mark vocabulary but excluding Split. Database 20 uses frozen core 14
 including closed direct/occurrence Split identity pools. Database 21 uses frozen
-core 15. Database 22 uses frozen core 16, including closed binding vocabulary but excluding InsertTime. Database 23 uses frozen core 17, excluding framing. Database 24 uses frozen core 18, excluding captured Hold geometry and its setter. Database 25 uses frozen core 19, excluding selected audio placements. Database 26 uses frozen core 20, excluding chronological reanchor steps. Database 27 uses frozen core 21, excluding gap binding maps and nested gap clock/placement vocabulary. Database 28 uses frozen core 22, excluding sparse gap branches and detached gap-clock references. Database 29 uses frozen core 23. Database 30 uses frozen core 24, retaining composite root-seam InsertTime admission but rejecting interiors before composite suffixes. Earlier replays check the stricter physical-suffix admission before modern apply. Database 31 uses frozen core 25, retaining root physical interiors but refusing nested Sequence insertion. Database 32 uses frozen core 26, retaining nested Sequence pause admission while rejecting SpliceSource. Database 33 uses frozen core 27, retaining SpliceSource while rejecting new Retime edits. Database 34 uses frozen core 28, retaining Retime commands but rejecting sound state and commands. Database 35 uses frozen core 29, retaining sound recipes while rejecting routed state, ReplaceSound and formerly forbidden sound-bearing temporal commands. Database 36 uses frozen core 30, retaining sound routes and ReplaceSound with their original contextual admission while rejecting allowance state and commands. Database 37 uses frozen core 31, preserving exact allowances but rejecting direct and occurrence Hold audio setters. Database 38 uses frozen core 32, retaining Hold audio setters while rejecting node audio treatments and their commands. Database 39 stores core 33; migration validates its history without authored JSON or patch rewrites. Current schema 40 adds operational render jobs and also stores core 33. Legacy initial snapshots gain empty audio lineage; replayed copies may
+core 15. Database 22 uses frozen core 16, including closed binding vocabulary but excluding InsertTime. Database 23 uses frozen core 17, excluding framing. Database 24 uses frozen core 18, excluding captured Hold geometry and its setter. Database 25 uses frozen core 19, excluding selected audio placements. Database 26 uses frozen core 20, excluding chronological reanchor steps. Database 27 uses frozen core 21, excluding gap binding maps and nested gap clock/placement vocabulary. Database 28 uses frozen core 22, excluding sparse gap branches and detached gap-clock references. Database 29 uses frozen core 23. Database 30 uses frozen core 24, retaining composite root-seam InsertTime admission but rejecting interiors before composite suffixes. Earlier replays check the stricter physical-suffix admission before modern apply. Database 31 uses frozen core 25, retaining root physical interiors but refusing nested Sequence insertion. Database 32 uses frozen core 26, retaining nested Sequence pause admission while rejecting SpliceSource. Database 33 uses frozen core 27, retaining SpliceSource while rejecting new Retime edits. Database 34 uses frozen core 28, retaining Retime commands but rejecting sound state and commands. Database 35 uses frozen core 29, retaining sound recipes while rejecting routed state, ReplaceSound and formerly forbidden sound-bearing temporal commands. Database 36 uses frozen core 30, retaining sound routes and ReplaceSound with their original contextual admission while rejecting allowance state and commands. Database 37 uses frozen core 31, preserving exact allowances but rejecting direct and occurrence Hold audio setters. Database 38 uses frozen core 32, retaining Hold audio setters while rejecting node audio treatments and their commands. Database 39 stores core 33; migration validates its history without authored JSON or patch rewrites. Schema 40 adds operational render jobs. Current schema 41 adds publication records, preserves every schema-40 operational cell and also stores core 33. Legacy initial snapshots gain empty audio lineage; replayed copies may
 establish it. Compare every old projected patch and changed-ID summary exactly
 while retaining complete modern transactions for historical undo/redo.
 

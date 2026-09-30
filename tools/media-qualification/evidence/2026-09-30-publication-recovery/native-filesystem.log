@@ -1,0 +1,17 @@
+   Compiling deadpan-filesystem v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-filesystem)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 9.85s
+     Running unittests src/lib.rs (target/debug/deps/deadpan_filesystem-ef8cd3976a6ddfd5)
+
+running 3 tests
+test tests::zero_and_malformed_native_results_are_not_identities ... ok
+test tests::unsupported_descriptor_returns_error_without_consuming_it ... ok
+test tests::apfs_file_and_parent_share_uuid_and_descriptor_remains_usable ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests deadpan_filesystem
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

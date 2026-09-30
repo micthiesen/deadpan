@@ -1,0 +1,13 @@
+from pathlib import Path
+p=Path('crates/deadpan-cli/src/encoded_render/publication/filesystem.rs')
+s=p.read_text()
+a=s.index('        let selected = std::path::absolute(parent)')
+b=s.index('        let result = Self {',a)
+body=s[a:b]
+s=s[:a]+'        let directory = Directory::open(parent)?;\n'+s[b:]
+old='impl Directory {\n    fn confirm(&self) -> Result<()> {'
+assert s.count(old)==1
+s=s.replace(old,'impl Directory {\n    fn open(parent: &Path) -> Result<Arc<Self>> {\n'+body+'        Ok(directory)\n    }\n\n    fn confirm(&self) -> Result<()> {')
+s=s.replace('''        && left.st_size == right.st_size''','''        && left.st_gid == right.st_gid
+        && left.st_size == right.st_size''')
+p.write_text(s)

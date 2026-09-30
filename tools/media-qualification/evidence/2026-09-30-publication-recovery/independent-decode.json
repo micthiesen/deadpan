@@ -1,0 +1,13 @@
+{
+  "command": [
+    "python3",
+    "/tmp/deadpan-publication-recovery-ams9kpds/qualify-reconciled.py"
+  ],
+  "started": "2026-09-30T07:30:18.613864+00:00",
+  "base_commit": "064533133e106cc9e80381267d68a69acab2da9d",
+  "diff_sha256": "7b3d37830002d5c79731f07349381675ac6bbe5e2bad303e3a00bcd70033e8dd",
+  "source_manifest_sha256": "f4fadcc068b38ebb6c206f869a0635135e41177088b5c8676eb1b8c9f8c0fddf",
+  "pid": 81195,
+  "exit_code": 0,
+  "seconds": 6.865209167357534
+}

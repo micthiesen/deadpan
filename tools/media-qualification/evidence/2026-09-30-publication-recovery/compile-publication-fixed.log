@@ -1,0 +1,33 @@
+    Checking deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+    Checking deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+warning: constant `CREATE_ATTEMPTS` is never used
+  --> crates/deadpan-cli/src/encoded_render/publication/filesystem.rs:32:7
+   |
+32 | const CREATE_ATTEMPTS: usize = 16;
+   |       ^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: method `create_partial` is never used
+   --> crates/deadpan-cli/src/encoded_render/publication/filesystem.rs:180:19
+    |
+134 | impl Destination {
+    | ---------------- method in this implementation
+...
+180 |     pub(super) fn create_partial(&self, maximum_bytes: u64) -> Result<PartialFile> {
+    |                   ^^^^^^^^^^^^^^
+
+warning: methods `commit` and `commit_with_sync` are never used
+   --> crates/deadpan-cli/src/encoded_render/publication/filesystem.rs:439:19
+    |
+320 | impl PartialFile {
+    | ---------------- methods in this implementation
+...
+439 |     pub(super) fn commit(&mut self, cancelled: &AtomicBool, deadline: Instant) -> Result<()> {
+    |                   ^^^^^^
+...
+479 |     fn commit_with_sync(
+    |        ^^^^^^^^^^^^^^^^
+
+warning: `deadpan-cli` (lib) generated 3 warnings
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 17.36s

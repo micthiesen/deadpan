@@ -40,6 +40,8 @@ mod interior_insert;
 mod moment_splice;
 #[path = "migration/picture_context.rs"]
 mod picture_context;
+#[path = "migration/publication.rs"]
+mod publication;
 #[path = "migration/render_jobs.rs"]
 mod render_jobs;
 #[path = "migration/retime.rs"]
@@ -61,6 +63,8 @@ mod source_selection;
 /// are never transformed through this helper.
 fn remove_empty_render_tables(connection: &Connection) -> Result {
     for table in [
+        "render_publication_operations",
+        "render_publications",
         "render_candidate_checkpoints",
         "render_job_heads",
         "render_attempts",

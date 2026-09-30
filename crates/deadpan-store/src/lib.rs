@@ -17,6 +17,10 @@ mod object_storage;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod original_media;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+pub mod publication;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+mod publication_durability;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod render_jobs;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod render_media;
@@ -72,6 +76,12 @@ pub struct ProjectStore {
     render_storage: Arc<object_storage::ObjectStorage>,
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     render_closed: Arc<AtomicBool>,
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    publication_durability: Option<publication_durability::PublicationDurability>,
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    publication_epochs: std::collections::BTreeMap<String, Arc<std::sync::atomic::AtomicU64>>,
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    publication_barrier_failed: bool,
     // Explicitly unlocked on drop so a briefly inherited descriptor in a spawned
     // child cannot extend this writer's ownership beyond the store lifetime.
     _writer_lock: Option<File>,
@@ -186,6 +196,10 @@ impl ProjectStore {
             object_storage::StorageNamespace::RenderCandidates,
         )
         .map_err(render_media::RenderMediaError::from)?;
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        let publication_durability = Some(publication_durability::PublicationDurability::open(
+            &package,
+        )?);
         Ok(Self {
             connection,
             package,
@@ -202,6 +216,12 @@ impl ProjectStore {
             render_storage: Arc::new(render_storage),
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             render_closed: Arc::new(AtomicBool::new(false)),
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            publication_durability,
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            publication_epochs: std::collections::BTreeMap::new(),
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            publication_barrier_failed: false,
             _writer_lock: Some(lock),
         })
     }
@@ -227,6 +247,14 @@ impl ProjectStore {
                 | OpenFlags::SQLITE_OPEN_NOFOLLOW
         } else {
             read_flags()
+        };
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        let publication_durability = if mode == AccessMode::ReadWrite {
+            Some(publication_durability::PublicationDurability::open(
+                &package,
+            )?)
+        } else {
+            None
         };
         let connection = Connection::open_with_flags(&database, flags)?;
         schema::configure(&connection)?;
@@ -267,6 +295,12 @@ impl ProjectStore {
             render_storage: Arc::new(render_storage),
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             render_closed: Arc::new(AtomicBool::new(false)),
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            publication_durability,
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            publication_epochs: std::collections::BTreeMap::new(),
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            publication_barrier_failed: false,
             _writer_lock: lock,
         };
         store.validate()?;
@@ -274,6 +308,8 @@ impl ProjectStore {
             generation_attempts::recover_nonterminal(&mut store.connection)?;
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             render_jobs::recover_nonterminal(&mut store.connection)?;
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            publication::recover_nonterminal(&mut store.connection)?;
         }
         Ok(store)
     }
@@ -295,6 +331,8 @@ impl ProjectStore {
         generation_attempts::check_stored_sizes(&transaction)?;
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         render_jobs::check_stored_sizes(&transaction)?;
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        publication::check_stored_sizes(&transaction)?;
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         original_media::check_stored_sizes(&transaction)?;
         #[cfg(any(target_os = "macos", target_os = "linux"))]
@@ -318,6 +356,8 @@ impl ProjectStore {
         generation_attempts::validate_store(&transaction)?;
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         render_jobs::validate_store(&transaction)?;
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        publication::validate_store(&transaction)?;
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         original_media::validate_store(&transaction)?;
         #[cfg(any(target_os = "macos", target_os = "linux"))]

@@ -1,0 +1,34 @@
+"""Collect complete check journals and bind final source and archive identities."""
+import difflib,gzip,hashlib,json,re,shutil,subprocess
+from pathlib import Path
+ROOT=Path(__file__).resolve().parent
+REPO=Path('/Users/michael/Code/deadpan')
+DEST=REPO/'tools/media-qualification/evidence/2026-09-30-publication-recovery'
+report=json.loads((ROOT/'workspace-tests.json').read_bytes())
+assert report['exit_code']==0,'retain any failures and use an explicit scoped continuation summary instead'
+log=(ROOT/'workspace-tests.log').read_text()
+results=[tuple(map(int,m)) for m in re.findall(r'test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored;',log)]
+assert results and all(failed==ignored==0 for passed,failed,ignored in results)
+clippy=json.loads((ROOT/'workspace-clippy.json').read_bytes());assert clippy['exit_code']==0
+fmt=json.loads((ROOT/'workspace-fmt.json').read_bytes());assert fmt['exit_code']==0
+native=json.loads((ROOT/'native-structural.json').read_bytes())
+assert native['source_manifest_sha256']==json.loads((ROOT/'native-generated.json').read_bytes())['source_manifest_sha256']
+assert report['source_manifest_sha256']==clippy['source_manifest_sha256']==fmt['source_manifest_sha256']==native['source_manifest_sha256']
+old=json.loads(gzip.decompress((ROOT/'native-source-text.json.gz').read_bytes()))
+patch=''.join(''.join(difflib.unified_diff(content.splitlines(True),Path(name).read_text().splitlines(True),fromfile='native/'+name,tofile='final/'+name)) for name,content in old.items())
+assert not patch,'source changed after native qualification'
+(ROOT/'source-change-after-native.patch.txt').write_text('No source changes after native qualification.\n')
+summary={'status':'passed','workspace':{'passed':sum(r[0] for r in results),'failed':0,'ignored':0,'target_results':len(results),'invocation':report},'strict_clippy':clippy,'formatting':fmt,'native_source_inventory':native['source_manifest_sha256'],'final_source_inventory':report['source_manifest_sha256'],'source_changes_after_native':False,'native_audit':json.loads((ROOT/'native-audit.json').read_bytes()),'review':'independent-durability-review.md','archive_audit':json.loads((DEST/'archive-audit.json').read_bytes()),'limitations':['process kills between completed host calls, not power loss or inside syscalls','APFS-only durable destination recovery','cooperative replacement checks, not malicious same-user authentication','no new encoding, sanitizer or GUI qualification','all full product requirements remain open or partial']}
+(ROOT/'summary.json').write_text(json.dumps(summary,indent=2)+'\n')
+for path in sorted(ROOT.iterdir()):
+    if not path.is_file() or path.name in ['next-render-proposal.md','workspace-metadata.json']:continue
+    if path.suffix=='.py':shutil.copyfile(path,DEST/(path.name+'.txt'))
+    elif path.name.endswith('.json.gz'):shutil.copyfile(path,DEST/path.name)
+    elif path.suffix in ['.json','.log','.md','.txt']:
+        if path.stat().st_size>128*1024:
+            (DEST/(path.name+'.gz')).write_bytes(gzip.compress(path.read_bytes(),mtime=0))
+        else:shutil.copyfile(path,DEST/path.name)
+(DEST/'decoded-reconciled-report.json.gz').write_bytes(gzip.compress((ROOT/'decoded-reconciled/report.json').read_bytes(),mtime=0))
+for name in ['structural','generated']:
+    (DEST/('native-'+name+'-report.json.gz')).write_bytes(gzip.compress((ROOT/('native-'+name)/'report.json').read_bytes(),mtime=0))
+print(json.dumps({'workspace':summary['workspace'],'source_inventory':summary['final_source_inventory'],'archive':summary['archive_audit']}))

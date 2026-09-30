@@ -1,6 +1,8 @@
 //! Durable render declarations. Stored outcomes are historical evidence, never
 //! a decoded-media capability or permission to publish a movie.
 
+pub mod publication;
+
 use crate::{AttemptId, CancellationToken, RequestId, Sha256};
 use deadpan_core::{FrameRange, ProjectDocument, ProjectId, RevisionId};
 use serde::{Deserialize, Serialize};
