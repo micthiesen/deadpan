@@ -16,7 +16,7 @@ use super::super::protocol::{RenderHostMessage, RenderIdentity, read_host_messag
 
 const POLL_INTERVAL: Duration = Duration::from_millis(2);
 
-pub(super) struct ControlReader {
+pub(crate) struct ControlReader {
     file: File,
     stopped: Arc<AtomicBool>,
     deadline: Instant,
@@ -25,7 +25,7 @@ pub(super) struct ControlReader {
 }
 
 impl ControlReader {
-    pub(super) fn new(file: File, stopped: Arc<AtomicBool>, deadline: Instant) -> io::Result<Self> {
+    pub(crate) fn new(file: File, stopped: Arc<AtomicBool>, deadline: Instant) -> io::Result<Self> {
         let flags = fcntl_getfl(&file)?;
         fcntl_setfl(&file, flags | OFlags::NONBLOCK)?;
         Ok(Self {
@@ -79,12 +79,12 @@ impl Read for ControlReader {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub(super) enum ControlEnd {
+pub(crate) enum ControlEnd {
     Stopped,
     Cancelled,
 }
 
-pub(super) struct ControlPump {
+pub(crate) struct ControlPump {
     stopped: Arc<AtomicBool>,
     cancelled: Arc<AtomicBool>,
     thread: Option<JoinHandle<Result<ControlEnd, String>>>,
@@ -92,10 +92,39 @@ pub(super) struct ControlPump {
 
 impl ControlPump {
     pub(super) fn start(
-        mut reader: ControlReader,
+        reader: ControlReader,
         identity: RenderIdentity,
         token: CancellationToken,
         deadline: Instant,
+    ) -> io::Result<Self> {
+        Self::start_with(reader, deadline, move |reader| {
+            match read_host_message(reader) {
+                Ok(Some(RenderHostMessage::Cancel {
+                    identity: received,
+                    cancellation_token,
+                    ..
+                })) if received == identity && cancellation_token == token => {
+                    Ok(ControlEnd::Cancelled)
+                }
+                Ok(Some(RenderHostMessage::Cancel { .. })) => {
+                    Err("render cancellation identity or token does not match".to_owned())
+                }
+                Ok(Some(RenderHostMessage::Prepare { .. })) => {
+                    Err("render worker received a second Prepare message".to_owned())
+                }
+                Ok(None) => Err("render host closed its control stream".to_owned()),
+                Err(error) => Err(format!("invalid render control: {error}")),
+            }
+        })
+    }
+
+    /// Share the nonblocking lifetime and shutdown drain with a strictly
+    /// validated protocol-specific reader. The closure consumes one bounded
+    /// message and never retains this reader or the host's input bytes.
+    pub(crate) fn start_with(
+        mut reader: ControlReader,
+        deadline: Instant,
+        receive: impl FnOnce(&mut ControlReader) -> Result<ControlEnd, String> + Send + 'static,
     ) -> io::Result<Self> {
         reader.set_deadline(deadline);
         let stopped = Arc::clone(&reader.stopped);
@@ -104,7 +133,7 @@ impl ControlPump {
         let thread = thread::Builder::new()
             .name("deadpan-render-control".to_owned())
             .spawn(move || {
-                let result = read_host_message(&mut reader);
+                let result = receive(&mut reader);
                 if reader.interrupted_for_shutdown {
                     if reader.bytes_read != 0 {
                         thread_cancelled.store(true, Ordering::Release);
@@ -112,25 +141,8 @@ impl ControlPump {
                     }
                     return Ok(ControlEnd::Stopped);
                 }
-                let end = match result {
-                    Ok(Some(RenderHostMessage::Cancel {
-                        identity: received,
-                        cancellation_token,
-                        ..
-                    })) if received == identity && cancellation_token == token => {
-                        Ok(ControlEnd::Cancelled)
-                    }
-                    Ok(Some(RenderHostMessage::Cancel { .. })) => {
-                        Err("render cancellation identity or token does not match".to_owned())
-                    }
-                    Ok(Some(RenderHostMessage::Prepare { .. })) => {
-                        Err("render worker received a second Prepare message".to_owned())
-                    }
-                    Ok(None) => Err("render host closed its control stream".to_owned()),
-                    Err(error) => Err(format!("invalid render control: {error}")),
-                };
                 thread_cancelled.store(true, Ordering::Release);
-                end
+                result
             })?;
         Ok(Self {
             stopped,
@@ -139,11 +151,11 @@ impl ControlPump {
         })
     }
 
-    pub(super) fn cancelled(&self) -> &AtomicBool {
+    pub(crate) fn cancelled(&self) -> &AtomicBool {
         &self.cancelled
     }
 
-    pub(super) fn finish(&mut self) -> Result<ControlEnd, String> {
+    pub(crate) fn finish(&mut self) -> Result<ControlEnd, String> {
         self.stopped.store(true, Ordering::Release);
         let Some(thread) = self.thread.take() else {
             return Ok(ControlEnd::Stopped);

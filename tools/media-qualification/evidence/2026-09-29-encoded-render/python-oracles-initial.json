@@ -1,0 +1,19 @@
+{
+  "command": [
+    "python3",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "tools/media-qualification/compatible",
+    "-p",
+    "test_*oracle.py"
+  ],
+  "started": "2026-09-30T03:18:54.133702+00:00",
+  "base_commit": "4db5e58a30448c70af50c5b07d2234fd1758f15c",
+  "diff_sha256": "f6416fe916fe9d672a6cfa4d80a1c5833eb434eab1e8d5253be9d12a2402532f",
+  "source_manifest_sha256": "af0a7b155268c622929efc00634b78704153520c7da95639aa8c63b17070d7e9",
+  "pid": 24467,
+  "exit_code": 0,
+  "seconds": 1.1817344170995057
+}

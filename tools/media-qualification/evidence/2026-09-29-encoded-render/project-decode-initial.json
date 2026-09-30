@@ -1,0 +1,21 @@
+{
+  "command": [
+    "python3",
+    "tools/media-qualification/compatible/qualify_project_encode.py",
+    "--work",
+    "/tmp/deadpan-encoded-render-_0zk9gnz/decoded-initial",
+    "--build-report",
+    "/tmp/deadpan-ui-ffmpeg-build.json",
+    "--worker",
+    "/tmp/deadpan-encoded-render-_0zk9gnz/retained-deadpan-cli",
+    "--picture-report",
+    "/tmp/deadpan-encoded-render-_0zk9gnz/metal-initial-report.json"
+  ],
+  "started": "2026-09-30T03:29:40.611664+00:00",
+  "base_commit": "4db5e58a30448c70af50c5b07d2234fd1758f15c",
+  "diff_sha256": "b14ce83c45e737f2c47e3822fa3cd8f9041b2c9ceb31331530b6172177a82446",
+  "source_manifest_sha256": "b7560c6e6e71ea421d168d714601e1bf6a68bfdbdff39d9e4f20967ece62aac9",
+  "pid": 27100,
+  "exit_code": 1,
+  "seconds": 3.033499958924949
+}

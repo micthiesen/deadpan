@@ -1,5 +1,5 @@
 //! Real Metal preparation from one committed project while its writer edits.
-//! Usage: qualify_project_picture REPORT.json NEW_WORK_DIRECTORY [ACCEPTED.deadpan [WORKER_EXECUTABLE]]
+//! Usage: qualify_project_picture REPORT.json NEW_WORK_DIRECTORY [ACCEPTED.deadpan [WORKER_EXECUTABLE [--encoded MARKER_SOURCE]]]
 //! The optional package must retain the adjacent generated-picture-fixture.json
 //! exported by the Generated picture fixture. Omitting it reports that skip.
 use std::{
@@ -50,6 +50,9 @@ mod reference;
 #[path = "qualify_project_picture/worker.rs"]
 mod worker;
 
+#[path = "qualify_project_picture/encoded.rs"]
+mod encoded;
+
 type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
 fn node(value: &str) -> NodeId {
@@ -64,9 +67,10 @@ fn asset() -> AssetId {
 
 fn main() -> Result<()> {
     let arguments: Vec<_> = std::env::args_os().skip(1).collect();
-    if !(2..=4).contains(&arguments.len()) {
+    if !(2..=4).contains(&arguments.len()) && !(arguments.len() == 6 && arguments[4] == "--encoded")
+    {
         return Err(
-            "usage: qualify_project_picture REPORT.json NEW_WORK_DIRECTORY [ACCEPTED.deadpan [WORKER_EXECUTABLE]]"
+            "usage: qualify_project_picture REPORT.json NEW_WORK_DIRECTORY [ACCEPTED.deadpan [WORKER_EXECUTABLE [--encoded MARKER_SOURCE]]]"
                 .into(),
         );
     }
@@ -74,7 +78,9 @@ fn main() -> Result<()> {
         .write(true)
         .create_new(true)
         .open(&arguments[0])?;
-    let seconds = if arguments.len() == 4 {
+    let seconds = if arguments.len() == 6 {
+        600
+    } else if arguments.len() == 4 {
         300
     } else if arguments.len() == 3 {
         180
@@ -96,6 +102,7 @@ fn main() -> Result<()> {
         Path::new(&arguments[1]),
         arguments.get(2).map(Path::new),
         arguments.get(3).map(Path::new),
+        arguments.get(5).map(Path::new),
         &mut report,
         deadline,
     )
@@ -421,11 +428,11 @@ impl Gpu {
             || timing.output_frame() != OutputFrameOrdinal(ordinal)
             || timing.pts()
                 != i64::try_from(ordinal)?
-                    .checked_mul(1001)
+                    .checked_mul(i64::from(contract.frame_rate().denominator()))
                     .ok_or("PTS overflow")?
-            || timing.duration() != 1001
+            || timing.duration() != i64::from(contract.frame_rate().denominator())
             || contract.time_base().numerator() != 1
-            || contract.time_base().denominator() != 30000
+            || contract.time_base().denominator() != contract.frame_rate().numerator()
         {
             return Err("output frame lost immutable identity or exact rational timing".into());
         }
@@ -486,6 +493,7 @@ fn qualify(
     directory: &Path,
     generated: Option<&Path>,
     executable: Option<&Path>,
+    marker_source: Option<&Path>,
     report: &mut Value,
     deadline: Instant,
 ) -> Result<()> {
@@ -762,6 +770,16 @@ fn qualify(
     }
     if let Some(executable) = executable {
         worker::qualify(&gpu, executable, &directory, generated, report)?;
+        if let Some(marker_source) = marker_source {
+            encoded::qualify(
+                &gpu,
+                executable,
+                &directory,
+                generated,
+                marker_source,
+                report,
+            )?;
+        }
     } else {
         report["worker"] = json!({"status": "skipped",
             "reason": "Pass the freshly built deadpan-cli executable as the fourth argument to exercise process isolation."});

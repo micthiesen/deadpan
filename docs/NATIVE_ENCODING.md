@@ -5,10 +5,10 @@
 read/write file descriptor. It has no project, source decoder, GPU, audio device,
 destination path or publication authority.
 
-This is an implemented library boundary. The supervised render child still
-produces raw picture ranges. Connecting real committed pictures and canonical
-audio, independently verifying the encoded candidate, and publishing the final
-file remain required. The complete audio/effects graph and HDR also remain open.
+The [encoded render child](ENCODED_RENDER.md) now streams real committed pictures
+and canonical audio directly into this library. Independent production verification
+of the encoded candidate and publication remain required. The complete
+audio/effects graph and HDR also remain open.
 
 ## Exact input and policy
 
@@ -92,8 +92,8 @@ precedes DTS. Retain that rejected capability. Hardware without B-frames and
 explicit OS software attempts require their own file evidence. An encoder
 success is never permission to publish a file without independent verification.
 
-Next integration must feed one retained committed picture and one canonical AAC
-input block directly inside the supervised child. It must not spool an entire
-uncompressed movie through the 512 MiB raw qualification format. The host then
-needs isolated emitted-file verification, durable job/recovery state, checked
+The supervised child feeds one retained committed picture and one canonical AAC
+input block directly, without spooling an uncompressed movie through the 512 MiB
+raw qualification format. The host still needs isolated emitted-file verification,
+durable job/recovery state, checked
 destination-side partial-file publication and the native Render workflow.

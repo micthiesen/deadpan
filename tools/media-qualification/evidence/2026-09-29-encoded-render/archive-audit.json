@@ -1,0 +1,8 @@
+{
+  "archive_bytes": 13554099,
+  "archive_sha256": "227523d3d969646c528b289299cb00f74d6263062edf40bfdc72deafa5db9037",
+  "files": 663,
+  "method": "Reopened archive; read and checked size and SHA-256 of every regular member.",
+  "passed": true,
+  "uncompressed_bytes": 889881304
+}

@@ -192,8 +192,17 @@ binds a full document hash and reconstructed output contract before child GPU
 work. Admit its bounded raw output only after clean process/group/pipe teardown
 and independent contained hash, geometry and code-range checks. Keep generation
 and render wire messages separate over the shared process supervisor. Durable
-render jobs, complete audio/effects, encoder integration, emitted-file verification and
+render jobs, complete audio/effects, emitted-file verification and
 publication remain required.
+
+The [encoded render worker](docs/ENCODED_RENDER.md) binds separate picture and
+audio readers to that same complete document hash before GPU/output allocation.
+Feed one picture and one AAC input block directly under the native chronological
+contract; never reuse the raw spool budget as a movie limit. Preserve the exact
+absolute audio interval while rebasing only encoder PTS. Completion requires
+native drain, same-descriptor hashing and clean supervised teardown, then a
+contained host snapshot. A hash-admitted candidate is not verified media and
+does not authorize publication. Keep encoded and raw wire contracts separate.
 
 The [native encoder](docs/NATIVE_ENCODING.md) consumes consecutive authored
 picture/sample clocks in exact chronological order and poisons every failed

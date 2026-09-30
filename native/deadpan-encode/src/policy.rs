@@ -1,4 +1,4 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use crate::EncodeError;
 
@@ -14,16 +14,16 @@ pub const MAX_PACKET_BYTES: u64 = 32 * 1_024 * 1_024;
 const MAX_CODEC_INTEGER: u32 = 2_147_483_647;
 
 /// A separately admitted attempt. Neither mode permits an automatic fallback.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "snake_case")]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case", deny_unknown_fields)]
 pub enum EncoderMode {
     Hardware,
     Software,
 }
 
 /// Requested policy, not evidence that the emitted stream obeyed it.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "snake_case")]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case", deny_unknown_fields)]
 pub enum BFramePolicy {
     TargetTwo,
     /// An explicit diagnostic or independently qualified fallback attempt.
@@ -187,7 +187,8 @@ impl EncodeContract {
 
 /// Independent hard limits for file extent, encoded packet count and one packet.
 /// A low bound is useful for deliberate failure qualification, not a quality setting.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct EncodeLimits {
     pub maximum_output_bytes: u64,
     pub maximum_packets: u64,

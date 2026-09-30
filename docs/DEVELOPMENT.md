@@ -232,6 +232,24 @@ from the current build. Omitting the executable records an explicit worker skip.
 
 ## Native encoding checks
 
+For the [encoded project worker](ENCODED_RENDER.md), build the current
+`deadpan-cli` binary and `qualify_project_picture` example with Cargo's JSON
+artifact output. The picture example accepts two additional arguments after the
+worker executable: `--encoded MARKER_SOURCE`. Use the retained 120-frame 60 fps
+`hardware-none-60.mp4` impulse fixture from native-encoding qualification as the
+marker Original. Keep the accepted Generated package and its adjacent manifest
+available. The example retains actual MP4 candidates and direct I420/PCM inputs.
+Its cooperative deadline is 600 seconds; use a longer bounded outer timeout.
+
+Run `compatible/qualify_project_encode.py` under `tools/media-qualification`
+with `--work`, `--build-report`, `--worker` and `--picture-report` to independently
+decode every complete picture plane and all authored PCM. It also checks native
+audio, exact edit lists, visible markers and fresh-decoder GOP suffixes. Its
+fixed fixture bounds and quality tolerances do not establish release performance
+or a production verifier. `--sanitizers` instruments the independent C/Objective-C
+readers; instrument the supplied worker's native dependencies separately when
+qualifying the child itself under sanitizers.
+
 The [native encoding boundary](NATIVE_ENCODING.md) has a separate bounded
 synthetic fixture. Build `cargo build -p deadpan-encode --example qualify --locked
 --message-format=json` and select the executable from that build's Cargo output.

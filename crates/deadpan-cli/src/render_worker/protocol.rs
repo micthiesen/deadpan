@@ -88,17 +88,28 @@ impl RenderContract {
 
     /// Check all derivable claims before any source, GPU or artifact allocation.
     pub fn validate(&self) -> Result<(), String> {
+        self.validate_for_encoding()?;
+        if self.frame_count > MAX_PICTURE_FRAMES {
+            return Err("render raw range exceeds 100000 project frames".into());
+        }
+        if self.total_bytes()? > MAX_PICTURE_BYTES {
+            return Err("render raw picture artifact exceeds 512 MiB".into());
+        }
+        Ok(())
+    }
+
+    /// Shared geometry and clock admission without the diagnostic raw sink's
+    /// total-byte/frame caps. Encoders separately enforce their own job bounds.
+    pub fn validate_for_encoding(&self) -> Result<(), String> {
         if self.color_policy != ColorPolicy::SdrRec709 {
             return Err("render pictures require the qualified SDR Rec.709 policy".into());
         }
         let frames =
             u64::try_from(self.range.duration().frames()).map_err(|error| error.to_string())?;
-        if self.range.start().0 < 0
-            || frames == 0
-            || frames != self.frame_count
-            || frames > MAX_PICTURE_FRAMES
-        {
-            return Err("render range must contain 1-100000 nonnegative project frames".into());
+        if self.range.start().0 < 0 || frames == 0 || frames != self.frame_count {
+            return Err(
+                "render range must contain a nonempty exact nonnegative frame interval".into(),
+            );
         }
         validate_working_readback_dimensions(self.canvas[0], self.canvas[1])
             .map_err(|error| error.to_string())?;
@@ -147,9 +158,7 @@ impl RenderContract {
         {
             return Err("render timestamps do not match the exact project origin".into());
         }
-        if self.total_bytes()? > MAX_PICTURE_BYTES {
-            return Err("render raw picture artifact exceeds 512 MiB".into());
-        }
+        self.frame_bytes()?;
         Ok(())
     }
 

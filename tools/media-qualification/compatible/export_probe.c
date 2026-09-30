@@ -393,6 +393,15 @@ static void manual_decoder_options(AVCodecContext *codec, AVStream *stream) {
     codec->flags2 |= AV_CODEC_FLAG2_SKIP_MANUAL;
 }
 
+static void project_decoder_options(AVCodecContext *codec, AVStream *stream) {
+    require(codec->codec_type == AVMEDIA_TYPE_VIDEO && codec->codec_id == AV_CODEC_ID_H264 &&
+            codec->width >= 2 && codec->width <= 1920 && codec->height >= 2 && codec->height <= 1080 &&
+            !(codec->width & 1) && !(codec->height & 1), "bounded project fixture H264 geometry");
+    require(stream->time_base.num > 0 && stream->time_base.den > 0, "positive project stream clock");
+    codec->pkt_timebase = stream->time_base;
+    codec->max_pixels = 1920 * 1080;
+}
+
 static void stream_header(const char *kind, const AVStream *stream) {
     printf("{\"schema_version\":1,\"kind\":"); json_string(kind);
     printf(",\"stream_index\":%d,\"time_base\":[%d,%d],\"stream_start_pts\":",
@@ -495,9 +504,10 @@ static void export_audio(const char *path, const char *pcm_path, const char *mod
 /* Each key boundary gets a newly allocated decoder with no decoded history.
  * The host compares every resulting suffix PTS/hash to a separate linear pass.
  * Packet key flags alone do not count as independent GOP evidence. */
-static void export_gops(const char *path) {
+static void export_gops(const char *path, int project) {
     admit_fixture(path);
-    Decoder linear = configured_decoder(path, AVMEDIA_TYPE_VIDEO, decoder_options);
+    Decoder linear = configured_decoder(path, AVMEDIA_TYPE_VIDEO,
+                                        project ? project_decoder_options : decoder_options);
     int64_t keys[EXPORT_FRAME_LIMIT];
     unsigned key_count = 0, linear_count = 0;
     uint32_t budget = EXPORT_PACKET_LIMIT;
@@ -514,7 +524,8 @@ static void export_gops(const char *path) {
     printf("{\"schema_version\":1,\"kind\":\"fresh_gops\",\"time_base\":[%d,%d],\"boundaries\":[",
            time_base.num, time_base.den);
     for (unsigned key = 0; key < key_count; key++) {
-        Decoder fresh = configured_decoder(path, AVMEDIA_TYPE_VIDEO, decoder_options);
+        Decoder fresh = configured_decoder(path, AVMEDIA_TYPE_VIDEO,
+                                           project ? project_decoder_options : decoder_options);
         require(av_cmp_q(time_base, fresh.format->streams[fresh.stream_index]->time_base) == 0,
                 "fresh GOP uses same stream clock");
         check(av_seek_frame(fresh.format, fresh.stream_index, keys[key], AVSEEK_FLAG_BACKWARD), "seek fresh GOP boundary");
@@ -715,6 +726,54 @@ static void decode_plane(const char *path, const char *raw_path) {
     close_decoder(&decoder);
 }
 
+static void project_video(const char *path, const char *raw_path) {
+    require(strcmp(path, raw_path) != 0, "distinct project input and raw output");
+    admit_fixture(path);
+    Decoder decoder = configured_decoder(path, AVMEDIA_TYPE_VIDEO, project_decoder_options);
+    require(decoder.format->nb_streams == 2, "project fixture has exactly video and audio");
+    FILE *raw = fopen(raw_path, "wx");
+    require(raw != NULL, "create project decoded planes exclusively");
+    AVStream *stream = decoder.format->streams[decoder.stream_index];
+    stream_header("project_video", stream);
+    printf(",\"stream_sample_aspect_ratio\":[%d,%d],\"codec_parameters_sample_aspect_ratio\":[%d,%d],\"profile\":",
+           stream->sample_aspect_ratio.num, stream->sample_aspect_ratio.den,
+           stream->codecpar->sample_aspect_ratio.num, stream->codecpar->sample_aspect_ratio.den);
+    named(stdout, avcodec_profile_name(stream->codecpar->codec_id, stream->codecpar->profile));
+    fputs(",\"frames\":[", stdout);
+    unsigned count = 0; uint32_t budget = EXPORT_PACKET_LIMIT; uint64_t bytes = 0;
+    while (next_frame_bounded(&decoder, &budget)) {
+        require(count < EXPORT_FRAME_LIMIT, "bounded project frame count");
+        AVFrame *frame = decoder.frame;
+        require(frame->format == AV_PIX_FMT_YUV420P && frame->width == stream->codecpar->width &&
+                frame->height == stream->codecpar->height, "project decoded geometry and I420 format");
+        uint64_t frame_bytes = (uint64_t)frame->width * frame->height * 3 / 2;
+        require(frame_bytes <= EXPORT_INPUT_BYTES - bytes, "bounded project decoded bytes");
+        unsigned char hash[16]; frame_hash(frame, hash);
+        printf("%s{\"pts\":", count ? "," : ""); timestamp(stdout, frame->pts);
+        fputs(",\"best_effort_pts\":", stdout); timestamp(stdout, frame->best_effort_timestamp);
+        printf(",\"duration\":%"PRId64",\"width\":%d,\"height\":%d,\"keyframe\":%s,\"type\":\"%c\",\"md5\":\"",
+               frame->duration, frame->width, frame->height,
+               frame->flags & AV_FRAME_FLAG_KEY ? "true" : "false", av_get_picture_type_char(frame->pict_type));
+        for (int i = 0; i < 16; i++) printf("%02x", hash[i]);
+        printf("\",\"decode_error_flags\":%d,\"flags\":%d,", frame->decode_error_flags, frame->flags);
+        color_json(frame); putchar('}');
+        for (int plane = 0; plane < 3; plane++) {
+            int width = frame->width >> (plane != 0), height = frame->height >> (plane != 0);
+            require(frame->data[plane] != NULL && frame->linesize[plane] >= width, "project plane row storage");
+            for (int row = 0; row < height; row++) {
+                require(fwrite(frame->data[plane] + (size_t)row * frame->linesize[plane], 1, (size_t)width, raw) == (size_t)width,
+                        "write complete project plane row");
+            }
+        }
+        bytes += frame_bytes;
+        count++;
+        av_frame_unref(frame);
+    }
+    require(count > 0 && fclose(raw) == 0, "project video reaches EOF and closes output");
+    printf("],\"frame_count\":%u,\"decoded_bytes\":%"PRIu64",\"decoder_drained\":true}\n", count, bytes);
+    close_decoder(&decoder);
+}
+
 int main(int argc, char **argv) {
     av_log_set_level(AV_LOG_WARNING);
     if (argc == 2 && strcmp(argv[1], "inventory") == 0) inventory();
@@ -722,7 +781,9 @@ int main(int argc, char **argv) {
     else if (argc == 3 && strcmp(argv[1], "video") == 0) export_video(argv[2]);
     else if (argc == 5 && strcmp(argv[1], "audio") == 0) export_audio(argv[2], argv[3], argv[4]);
     else if (argc == 3 && strcmp(argv[1], "packets") == 0) export_packets(argv[2]);
-    else if (argc == 3 && strcmp(argv[1], "gops") == 0) export_gops(argv[2]);
+    else if (argc == 3 && strcmp(argv[1], "gops") == 0) export_gops(argv[2], 0);
+    else if (argc == 3 && strcmp(argv[1], "project-gops") == 0) export_gops(argv[2], 1);
+    else if (argc == 4 && strcmp(argv[1], "project-video") == 0) project_video(argv[2], argv[3]);
     else if (argc == 7 && strcmp(argv[1], "encode-plane") == 0) encode_plane(argv);
     else if (argc == 4 && strcmp(argv[1], "decode-plane") == 0) decode_plane(argv[2], argv[3]);
     else {

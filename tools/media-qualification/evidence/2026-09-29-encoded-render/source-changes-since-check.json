@@ -1,0 +1,33 @@
+{
+  "encoded-integration-final": [],
+  "format-final": [],
+  "integrated-build-initial": [
+    "crates/deadpan-cli/src/encoded_render/protocol/tests.rs",
+    "crates/deadpan-cli/tests/encoded_render/fixture.py",
+    "tools/media-qualification/compatible/project_encode_oracle.py",
+    "tools/media-qualification/compatible/qualify_project_encode.py",
+    "tools/media-qualification/compatible/test_project_encode.py",
+    "tools/media-qualification/compatible/test_project_encode_oracle.py"
+  ],
+  "project-decode-fixed": [
+    "crates/deadpan-cli/tests/encoded_render/fixture.py"
+  ],
+  "project-decode-sanitized": [
+    "crates/deadpan-cli/tests/encoded_render/fixture.py"
+  ],
+  "python-oracles-final": [
+    "crates/deadpan-cli/tests/encoded_render/fixture.py"
+  ],
+  "workspace-clippy": [
+    "crates/deadpan-cli/tests/encoded_render/fixture.py",
+    "tools/media-qualification/compatible/project_encode_oracle.py",
+    "tools/media-qualification/compatible/qualify_project_encode.py",
+    "tools/media-qualification/compatible/test_project_encode_oracle.py"
+  ],
+  "workspace-tests": [
+    "crates/deadpan-cli/tests/encoded_render/fixture.py",
+    "tools/media-qualification/compatible/project_encode_oracle.py",
+    "tools/media-qualification/compatible/qualify_project_encode.py",
+    "tools/media-qualification/compatible/test_project_encode_oracle.py"
+  ]
+}

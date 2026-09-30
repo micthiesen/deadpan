@@ -147,6 +147,7 @@ fn contract_evidence_matches_every_field_of_a_real_captured_revision() {
     assert_eq!(evidence, contract());
     assert!(evidence.matches(&captured));
     evidence.validate().unwrap();
+    evidence.validate_for_encoding().unwrap();
     let encoded = serde_json::to_value(&evidence).unwrap();
     assert_eq!(encoded, serde_json::to_value(&captured).unwrap());
     assert_eq!(
@@ -353,6 +354,10 @@ fn contract_rejects_forged_clock_geometry_and_unsupported_color() {
         let mut invalid = contract();
         change(&mut invalid);
         assert!(invalid.validate().is_err(), "accepted {invalid:?}");
+        assert!(
+            invalid.validate_for_encoding().is_err(),
+            "accepted encoded {invalid:?}"
+        );
     }
     for canvas in [
         [8_193, 2],
@@ -433,10 +438,12 @@ fn checked_picture_lengths_and_request_budgets_bound_the_raw_sink() {
         large.project_audio_start = AudioSample(0);
         large.project_audio_end = large.frame_rate.audio_boundary(large.range.end()).unwrap();
         assert!(large.validate().is_err());
+        large.validate_for_encoding().unwrap();
         large.canvas = [2, 2];
         large.raster = [2, 2];
         large.relative_aspect_error = ExactRatio::ZERO;
         assert_eq!(large.validate().is_ok(), frames == 100_000);
+        large.validate_for_encoding().unwrap();
     }
 }
 

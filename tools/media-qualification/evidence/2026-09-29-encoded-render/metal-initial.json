@@ -1,0 +1,15 @@
+{
+  "command": [
+    "python3",
+    "/tmp/deadpan-encoded-render-_0zk9gnz/run-metal.py",
+    "metal-initial",
+    "integrated-build-initial"
+  ],
+  "started": "2026-09-30T03:21:32.839610+00:00",
+  "base_commit": "4db5e58a30448c70af50c5b07d2234fd1758f15c",
+  "diff_sha256": "a5699e4b261b521d7e152bb0829eba0c9e98928f53e67d4c6c75c24c7d1d89f4",
+  "source_manifest_sha256": "46661392153ee6e4d406d1e1f79694985996d273056b1af785d87e0b99a6da99",
+  "pid": 25223,
+  "exit_code": 0,
+  "seconds": 436.9820320829749
+}

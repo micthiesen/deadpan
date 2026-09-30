@@ -1,0 +1,24 @@
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 9.44s
+     Running unittests src/lib.rs (target/debug/deps/deadpan_cli-7e3b93d343074012)
+
+running 16 tests
+test encoded_render::host::tests::snapshot_interruption_retains_the_public_cancellation_and_deadline_outcomes ... ok
+test encoded_render::host::tests::artifact_admission_can_retain_the_native_maximum_without_the_raw_picture_spool_limit ... ok
+test encoded_render::worker::tests::fractional_range_rebases_absolute_audio_without_rounding_or_padding ... ok
+test encoded_render::worker::tests::hashing_checks_exact_extent_and_interrupts_between_bounded_reads ... ok
+test encoded_render::protocol::tests::native_reconstruction_rejects_clock_geometry_and_encoding_bounds ... ok
+test encoded_render::protocol::tests::encoded_contract_keeps_absolute_audio_phase_and_exceeds_only_raw_sink_limits ... ok
+test encoded_render::protocol::tests::explicit_software_b_frame_attempt_keeps_requested_and_observed_counts_distinct ... ok
+test encoded_render::protocol::tests::progress_and_terminals_bind_both_counts_and_exact_attempt ... ok
+test encoded_render::protocol::tests::completed_manifest_binds_identity_contract_artifact_and_all_host_budgets ... ok
+test encoded_render::worker::tests::queued_encoded_cancellation_and_invalid_controls_are_drained_before_terminal ... ok
+test encoded_render::protocol::tests::wire_rejects_truncation_oversize_and_unbounded_diagnostics ... ok
+test encoded_render::protocol::tests::round_trip_handles_fragmented_frames_and_preserves_exact_cancellation ... ok
+test encoded_render::protocol::tests::unknown_fields_and_unrecognized_encoder_choices_fail_closed ... ok
+test encoded_render::protocol::tests::request_limits_versions_and_bounded_scalars_are_admitted_before_allocation ... ok
+test encoded_render::protocol::tests::completion_rejects_forged_native_counts_clocks_policy_and_drain_claims ... ok
+test encoded_render::worker::tests::encoded_output_is_private_exclusive_contained_and_hashed_through_its_descriptor ... ok
+
+test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 52 filtered out; finished in 0.02s
+

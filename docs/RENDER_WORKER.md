@@ -63,10 +63,11 @@ the captured exact output clock and require a correctly sized frame buffer.
 
 ## Remaining product work
 
-Durable render jobs and restart recovery, priority scheduling, full picture and
-audio graphs, qualified native H.264/AAC encoding and the approved timing
-metadata, emitted-file verification, atomic publication, native Render controls,
-HDR and complete preview/export equivalence remain required. Raw I420 admission
+The separate [encoded worker](ENCODED_RENDER.md) now streams these pictures and
+canonical audio into the native H.264/AAC encoder. Durable render jobs and restart
+recovery, priority scheduling, full picture/audio graphs, production emitted-file
+verification, atomic publication, native Render controls, HDR and complete
+preview/export equivalence remain required. Raw I420 admission
 does not establish an encoded file or a usable export workflow.
 
 [Qualification](qualification/render-worker-2026-09-29.md) records the real CLI,

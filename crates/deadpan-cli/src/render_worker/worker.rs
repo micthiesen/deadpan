@@ -27,7 +27,7 @@ use super::protocol::{
     write_worker_message,
 };
 
-mod control;
+pub(crate) mod control;
 use control::{ControlEnd, ControlPump, ControlReader};
 
 type Result<T> = std::result::Result<T, String>;
@@ -171,7 +171,7 @@ fn prepare(
     let mut session = ExportPictureSession::new(pictures, renderer, cancelled, deadline)
         .map_err(|error| error.to_string())?;
     check_control(cancelled, deadline)?;
-    let mut output = open_output(Path::new("."))?;
+    let mut output = open_output(Path::new("."), WorkerOutput::Pictures)?;
     let frame_bytes = request.contract.frame_bytes()?;
     let mut byte_length = 0_u64;
     let mut hasher = Sha256Hasher::new();
@@ -248,7 +248,7 @@ fn prepare(
 }
 
 #[cfg(target_os = "macos")]
-fn metal_renderer(cancelled: &AtomicBool, deadline: Instant) -> Result<PictureRenderer> {
+pub(crate) fn metal_renderer(cancelled: &AtomicBool, deadline: Instant) -> Result<PictureRenderer> {
     check_control(cancelled, deadline)?;
     let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
         backends: wgpu::Backends::METAL,
@@ -275,11 +275,19 @@ fn metal_renderer(cancelled: &AtomicBool, deadline: Instant) -> Result<PictureRe
 }
 
 #[cfg(not(target_os = "macos"))]
-fn metal_renderer(_cancelled: &AtomicBool, _deadline: Instant) -> Result<PictureRenderer> {
+pub(crate) fn metal_renderer(
+    _cancelled: &AtomicBool,
+    _deadline: Instant,
+) -> Result<PictureRenderer> {
     Err("isolated render pictures require the qualified macOS Metal backend".to_owned())
 }
 
-fn open_output(workspace: &Path) -> Result<File> {
+pub(crate) enum WorkerOutput {
+    Pictures,
+    Movie,
+}
+
+pub(crate) fn open_output(workspace: &Path, kind: WorkerOutput) -> Result<File> {
     let root = openat(
         CWD,
         workspace,
@@ -302,10 +310,14 @@ fn open_output(workspace: &Path) -> Result<File> {
     {
         return Err("render output directory changed filesystem or owner".to_owned());
     }
+    let (name, access) = match kind {
+        WorkerOutput::Pictures => ("pictures.i420", OFlags::WRONLY),
+        WorkerOutput::Movie => ("movie.mp4", OFlags::RDWR),
+    };
     let file = openat(
         &directory,
-        "pictures.i420",
-        OFlags::WRONLY
+        name,
+        access
             | OFlags::CREATE
             | OFlags::EXCL
             | OFlags::NOFOLLOW
@@ -341,27 +353,27 @@ fn write_chunks(
     Ok(())
 }
 
-fn check_control(cancelled: &AtomicBool, deadline: Instant) -> Result<()> {
+pub(crate) fn check_control(cancelled: &AtomicBool, deadline: Instant) -> Result<()> {
     if cancelled.load(Ordering::Acquire) {
-        return Err("render picture preparation was cancelled".to_owned());
+        return Err("render preparation was cancelled".to_owned());
     }
     if Instant::now() >= deadline {
-        return Err("render picture preparation exceeded its monotonic deadline".to_owned());
+        return Err("render preparation exceeded its monotonic deadline".to_owned());
     }
     Ok(())
 }
 
-fn progress_due(completed: u64, total: u64) -> bool {
+pub(crate) fn progress_due(completed: u64, total: u64) -> bool {
     completed == 1 || completed == total || completed.is_multiple_of(total.div_ceil(32))
 }
 
-fn diagnostic(error: &str) -> Diagnostic {
+pub(crate) fn diagnostic(error: &str) -> Diagnostic {
     let mut end = error.len().min(MAX_DIAGNOSTIC_BYTES);
     while !error.is_char_boundary(end) {
         end -= 1;
     }
     let message = if end == 0 {
-        "render picture preparation failed".to_owned()
+        "render preparation failed".to_owned()
     } else {
         error[..end].replace('\0', "?")
     };
@@ -379,7 +391,7 @@ mod tests {
         let workspace = tempfile::tempdir().expect("workspace");
         let outside = tempfile::tempdir().expect("outside");
         symlink(outside.path(), workspace.path().join("output")).expect("directory symlink");
-        assert!(open_output(workspace.path()).is_err());
+        assert!(open_output(workspace.path(), WorkerOutput::Pictures).is_err());
         assert!(!outside.path().join("pictures.i420").exists());
         std::fs::remove_file(workspace.path().join("output")).expect("remove symlink");
         std::fs::create_dir(workspace.path().join("output")).expect("output directory");
@@ -387,15 +399,16 @@ mod tests {
         std::fs::write(&original, b"preserve").expect("original");
         let path = workspace.path().join("output/pictures.i420");
         symlink(&original, &path).expect("file symlink");
-        assert!(open_output(workspace.path()).is_err());
+        assert!(open_output(workspace.path(), WorkerOutput::Pictures).is_err());
         assert_eq!(
             std::fs::read(&original).expect("retained original"),
             b"preserve"
         );
         std::fs::remove_file(&path).expect("remove file symlink");
-        let mut output = open_output(workspace.path()).expect("new contained output");
+        let mut output =
+            open_output(workspace.path(), WorkerOutput::Pictures).expect("new contained output");
         output.write_all(b"first").expect("first write");
-        assert!(open_output(workspace.path()).is_err());
+        assert!(open_output(workspace.path(), WorkerOutput::Pictures).is_err());
         assert_eq!(
             std::fs::read(&path).expect("retained first output"),
             b"first"

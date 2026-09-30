@@ -74,10 +74,12 @@ actual MP4/PCM files and reader observations. Its summary and archive audit bind
 every retained file to its bytes. The native archive contains 836 files totaling
 97,928,126 uncompressed bytes; every archived size and SHA-256 was checked.
 
-Remaining work includes real project pictures plus canonical audio inside the
-supervised child, an isolated production file verifier, durable jobs/recovery,
+The [subsequent integration](encoded-render-2026-09-29.md) now exercises real
+project pictures and canonical audio inside the supervised child, including
+bounded complete-plane and PCM comparisons. Remaining work includes an isolated
+production file verifier, durable jobs/recovery,
 atomic publication, native Render and full mastering/HDR. Full-plane lossy
-project comparisons, opening/terminal edge-content fidelity, physical listening,
+project comparisons across arbitrary content, opening/terminal edge-content fidelity, physical listening,
 mid-native drain/fast-start cancellation, disk-full/short-write fault injection,
 4K/8K performance and the release Apple Silicon/OS matrix remain unqualified.
 No GUI changes were made, so no live GUI replay or screenshots were needed.

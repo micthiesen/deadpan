@@ -1,0 +1,23 @@
+ripwire situational-awareness — 16 changed file(s), 341 symbols in them
+  [1] blast radius: 102 symbols across 33 files transitively depend on these changes (showing 8 of 33 files; --pr-context's own per-file blast-radius list is also capped, at 20)
+        ./crates/deadpan-cli/src/encoded_render/protocol.rs  (13 dependent symbols)
+        ./crates/deadpan-cli/src/encoded_render/protocol/tests.rs  (11 dependent symbols)
+        ./native/deadpan-encode/src/progress.rs  (11 dependent symbols)
+        ./crates/deadpan-cli/tests/encoded_render.rs  (9 dependent symbols)
+        ./native/deadpan-encode/src/ffi.rs  (9 dependent symbols)
+        ./crates/deadpan-cli/src/encoded_render/worker.rs  (4 dependent symbols)
+        ./crates/deadpan-cli/src/encoded_render/worker/tests.rs  (4 dependent symbols)
+        ./native/deadpan-encode/tests/policy.rs  (4 dependent symbols)
+  [2] tests to run (2):
+        ./crates/deadpan-cli/tests/encoded_render.rs
+        ./native/deadpan-encode/tests/policy.rs
+        (0 test/*.sh gates are NOT modelled: script-to-binary edges are not call edges, so they never appear here — a path count, not every one invokes the binary)
+  [3] co-change — usually edited with these but NOT in your diff (33) (showing 8 of 33 files):
+        ./README.md  (co-edited in 100% of commits)
+        ./docs/HEADLESS.md  (co-edited in 100% of commits)
+        ./docs/REQUIREMENTS.md  (co-edited in 100% of commits)
+        ./crates/deadpan-cli/src/audio.rs  (co-edited in 67% of commits)
+        ./crates/deadpan-cli/tests/audio_inspection.rs  (co-edited in 67% of commits)
+        ./crates/deadpan-plan/src/audio.rs  (co-edited in 67% of commits)
+        ./crates/deadpan-audio/src/lib.rs  (co-edited in 50% of commits)
+        ./crates/deadpan-audio/src/stages.rs  (co-edited in 50% of commits)

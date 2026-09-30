@@ -1,0 +1,444 @@
+//! Private encoded candidate producer. Publication and independent emitted-file
+//! verification belong to later host boundaries, after this process is reaped.
+
+use std::fs::File;
+use std::io::{self, Read, Seek, SeekFrom, Write};
+use std::path::Path;
+use std::process::ExitCode;
+use std::sync::{Arc, atomic::AtomicBool};
+use std::time::{Duration, Instant};
+
+use deadpan_core::AudioSample;
+use deadpan_encode::{AUDIO_FRAME_SAMPLES, EncodeLimits, EncoderSession, NextInput};
+use deadpan_jobs::{CancellationToken, Sha256, WorkspaceArtifact, WorkspaceRef};
+use deadpan_render::Yuv420Policy;
+use sha2::{Digest, Sha256 as Sha256Hasher};
+
+use crate::audio::OfflineAudioSession;
+use crate::export_picture::{ExportPictureContract, ExportPictureSession, OutputFrameOrdinal};
+use crate::picture::ProjectPictureSession;
+use crate::render_worker::protocol::RenderIdentity;
+use crate::render_worker::worker::control::{ControlEnd, ControlPump, ControlReader};
+use crate::render_worker::worker::{
+    WorkerOutput, check_control, diagnostic, metal_renderer, open_output, progress_due,
+};
+
+use super::protocol::{
+    EncodedHostMessage, EncodedManifest, EncodedRenderContract, EncodedWorkerMessage, MOVIE_REF,
+    PROTOCOL_VERSION, read_host_message, write_worker_message,
+};
+
+type Result<T> = std::result::Result<T, String>;
+const HANDSHAKE_TIMEOUT: Duration = Duration::from_secs(5);
+const HASH_CHUNK_BYTES: usize = 64 * 1024;
+const AUDIO_BLOCK: usize = 1024;
+
+struct Request {
+    identity: RenderIdentity,
+    contract: EncodedRenderContract,
+    document_sha256: Sha256,
+    limits: EncodeLimits,
+}
+
+pub(crate) fn entry(package: &Path) -> ExitCode {
+    match run_entry(package) {
+        Ok(true) => ExitCode::SUCCESS,
+        Ok(false) => ExitCode::FAILURE,
+        Err(error) => {
+            eprintln!("render encode worker: {}", diagnostic(&error).as_str());
+            ExitCode::FAILURE
+        }
+    }
+}
+
+fn run_entry(package: &Path) -> Result<bool> {
+    if !package.is_absolute() {
+        return Err("encoded render worker requires an absolute project package path".to_owned());
+    }
+    let handshake_deadline = Instant::now()
+        .checked_add(HANDSHAKE_TIMEOUT)
+        .ok_or("encoded render handshake deadline overflow")?;
+    let stdin = File::from(rustix::io::dup(io::stdin()).map_err(|error| error.to_string())?);
+    let mut reader =
+        ControlReader::new(stdin, Arc::new(AtomicBool::new(false)), handshake_deadline)
+            .map_err(|error| error.to_string())?;
+    let Some(EncodedHostMessage::Prepare {
+        identity,
+        cancellation_token,
+        contract,
+        document_sha256,
+        limits,
+        timeout_millis,
+        ..
+    }) = read_host_message(&mut reader)?
+    else {
+        return Err("encoded render worker expected one Prepare message".to_owned());
+    };
+    let deadline = Instant::now()
+        .checked_add(Duration::from_millis(timeout_millis))
+        .ok_or("encoded render request deadline overflow")?;
+    let request = Request {
+        identity,
+        contract: *contract,
+        document_sha256,
+        limits,
+    };
+    let control_identity = request.identity.clone();
+    let mut control = ControlPump::start_with(reader, deadline, move |reader| {
+        receive_control(reader, &control_identity, &cancellation_token)
+    })
+    .map_err(|error| error.to_string())?;
+    let mut stdout = io::stdout().lock();
+    let prepared = prepare(
+        package,
+        &request,
+        control.cancelled(),
+        deadline,
+        &mut stdout,
+    );
+    // The nonblocking reader drains available bytes and joins before any
+    // terminal claim. A queued cancellation overrides a just-finished movie.
+    let terminal = match control.finish() {
+        Ok(ControlEnd::Cancelled) => EncodedWorkerMessage::Cancelled {
+            protocol: PROTOCOL_VERSION,
+            identity: request.identity,
+        },
+        Err(error) => EncodedWorkerMessage::Failed {
+            protocol: PROTOCOL_VERSION,
+            identity: request.identity,
+            diagnostic: diagnostic(&error),
+        },
+        Ok(ControlEnd::Stopped) => match prepared {
+            Ok(manifest) => EncodedWorkerMessage::Completed {
+                protocol: PROTOCOL_VERSION,
+                identity: request.identity,
+                manifest: Box::new(manifest),
+            },
+            Err(error) => EncodedWorkerMessage::Failed {
+                protocol: PROTOCOL_VERSION,
+                identity: request.identity,
+                diagnostic: diagnostic(&error),
+            },
+        },
+    };
+    let success = !matches!(terminal, EncodedWorkerMessage::Failed { .. });
+    write_worker_message(&mut stdout, &terminal)?;
+    stdout.flush().map_err(|error| error.to_string())?;
+    Ok(success)
+}
+
+fn receive_control(
+    reader: &mut impl Read,
+    identity: &RenderIdentity,
+    token: &CancellationToken,
+) -> Result<ControlEnd> {
+    match read_host_message(reader) {
+        Ok(Some(EncodedHostMessage::Cancel {
+            identity: received,
+            cancellation_token,
+            ..
+        })) if &received == identity && &cancellation_token == token => Ok(ControlEnd::Cancelled),
+        Ok(Some(EncodedHostMessage::Cancel { .. })) => {
+            Err("encoded render cancellation identity or token does not match".to_owned())
+        }
+        Ok(Some(EncodedHostMessage::Prepare { .. })) => {
+            Err("encoded render worker received a second Prepare message".to_owned())
+        }
+        Ok(None) => Err("encoded render host closed its control stream".to_owned()),
+        Err(error) => Err(format!("invalid encoded render control: {error}")),
+    }
+}
+
+fn prepare(
+    package: &Path,
+    request: &Request,
+    cancelled: &AtomicBool,
+    deadline: Instant,
+    stdout: &mut impl Write,
+) -> Result<EncodedManifest> {
+    check_control(cancelled, deadline)?;
+    request.contract.validate()?;
+    let native_contract = request.contract.native_contract()?;
+    request
+        .limits
+        .validate_for(&native_contract)
+        .map_err(|error| error.to_string())?;
+    let picture = &request.contract.picture;
+    let pictures = ProjectPictureSession::open_revision(
+        package,
+        &picture.revision_id,
+        Some(picture.range),
+        cancelled,
+    )
+    .map_err(|error| error.to_string())?;
+    check_control(cancelled, deadline)?;
+    let captured = ExportPictureContract::capture(&pictures).map_err(|error| error.to_string())?;
+    if !picture.matches(&captured) {
+        return Err("committed pictures differ from the encoded render contract".to_owned());
+    }
+    let mut audio = OfflineAudioSession::open_revision(
+        package,
+        &picture.revision_id,
+        picture.range,
+        cancelled,
+        deadline,
+    )
+    .map_err(|error| error.to_string())?;
+    if audio.project_id() != &picture.project_id
+        || audio.revision() != &picture.revision_id
+        || audio.range() != picture.range
+        || audio.frame_rate() != picture.frame_rate
+        || audio.sample_range() != (picture.project_audio_start..picture.project_audio_end)
+        || audio.sample_count() != native_contract.audio_samples()
+    {
+        return Err("committed audio differs from the encoded render interval".to_owned());
+    }
+    for document in [pictures.document(), audio.document()] {
+        let actual = crate::render_worker::document_hash(document, cancelled, deadline)
+            .map_err(|error| error.to_string())?;
+        if actual != request.document_sha256 {
+            return Err("committed document differs from the requested SHA-256".to_owned());
+        }
+    }
+    check_control(cancelled, deadline)?;
+    // No GPU or output allocation precedes both immutable snapshot bindings.
+    let renderer = metal_renderer(cancelled, deadline)?;
+    let mut pictures = ExportPictureSession::new(pictures, renderer, cancelled, deadline)
+        .map_err(|error| error.to_string())?;
+    check_control(cancelled, deadline)?;
+    let output = open_output(Path::new("."), WorkerOutput::Movie)?;
+    let mut encoder =
+        EncoderSession::open(output, native_contract, request.limits, cancelled, deadline)
+            .map_err(|error| error.to_string())?;
+    let audio_total = encoder.contract().audio_samples();
+    let total_inputs = captured
+        .frame_count()
+        .checked_add(audio_total.div_ceil(u64::from(AUDIO_FRAME_SAMPLES)))
+        .ok_or("encoded render input count overflow")?;
+    let mut completed_inputs = 0_u64;
+    loop {
+        check_control(cancelled, deadline)?;
+        match encoder.next_input().map_err(|error| error.to_string())? {
+            NextInput::Picture {
+                ordinal,
+                pts,
+                duration,
+            } => {
+                let output_ordinal = OutputFrameOrdinal(ordinal);
+                let frame = pictures
+                    .prepare(output_ordinal, cancelled, deadline)
+                    .map_err(|error| error.to_string())?;
+                let timing = captured
+                    .timing(output_ordinal)
+                    .map_err(|error| error.to_string())?;
+                let pixels = frame.pixels();
+                if frame.contract() != &captured
+                    || frame.timing() != timing
+                    || timing.pts() != pts
+                    || timing.duration() != duration
+                    || [pixels.width(), pixels.height()] != captured.raster()
+                    || pixels.policy() != Yuv420Policy::Rec709LimitedLeft
+                    || u64::try_from(pixels.bytes().len()).ok() != Some(picture.frame_bytes()?)
+                {
+                    return Err("prepared encoder picture changed its captured contract".to_owned());
+                }
+                encoder
+                    .push_picture(ordinal, pts, duration, pixels.bytes())
+                    .map_err(|error| error.to_string())?;
+                drop(frame);
+            }
+            NextInput::Audio {
+                first_sample,
+                samples,
+            } => {
+                let start = audio_start(
+                    picture.project_audio_start,
+                    picture.project_audio_end,
+                    first_sample,
+                    samples,
+                )?;
+                let block = audio
+                    .read(start, samples, cancelled)
+                    .map_err(|error| error.to_string())?;
+                if block.project_id != picture.project_id
+                    || block.revision_id != picture.revision_id
+                    || block.start != start
+                {
+                    return Err("prepared audio changed its captured project identity".to_owned());
+                }
+                let planar = PlanarInput::new(&block.samples, samples)?;
+                encoder
+                    .push_audio(
+                        first_sample,
+                        &planar.left[..planar.count],
+                        &planar.right[..planar.count],
+                    )
+                    .map_err(|error| error.to_string())?;
+            }
+            NextInput::Finish => break,
+        }
+        completed_inputs = completed_inputs
+            .checked_add(1)
+            .filter(|count| *count <= total_inputs)
+            .ok_or("encoded render input count differs")?;
+        if progress_due(completed_inputs, total_inputs) {
+            write_worker_message(
+                stdout,
+                &EncodedWorkerMessage::Progress {
+                    protocol: PROTOCOL_VERSION,
+                    identity: request.identity.clone(),
+                    completed_frames: encoder.accepted_pictures(),
+                    total_frames: captured.frame_count(),
+                    completed_audio_samples: encoder.accepted_audio_samples(),
+                    total_audio_samples: audio_total,
+                },
+            )?;
+            stdout.flush().map_err(|error| error.to_string())?;
+        }
+    }
+    if completed_inputs != total_inputs {
+        return Err("encoded render ended before every captured input".to_owned());
+    }
+    let (mut output, report) = encoder
+        .finish()
+        .map_err(|error| error.to_string())?
+        .into_parts();
+    check_control(cancelled, deadline)?;
+    let hash = hash_movie(
+        &mut output,
+        report.output_bytes,
+        request.limits.maximum_output_bytes,
+        cancelled,
+        deadline,
+    )?;
+    let movie = WorkspaceArtifact::new(
+        WorkspaceRef::new(MOVIE_REF).map_err(|error| error.to_string())?,
+        hash,
+        report.output_bytes,
+    )
+    .map_err(|error| error.to_string())?;
+    let manifest = EncodedManifest {
+        contract: request.contract.clone(),
+        document_sha256: request.document_sha256.clone(),
+        movie,
+        report,
+    };
+    manifest.validate_for(request.limits)?;
+    check_control(cancelled, deadline)?;
+    Ok(manifest)
+}
+
+fn audio_start(
+    start: AudioSample,
+    end: AudioSample,
+    first: u64,
+    count: u32,
+) -> Result<AudioSample> {
+    if count == 0 || count > AUDIO_FRAME_SAMPLES {
+        return Err("encoded audio block exceeds the native input bound".to_owned());
+    }
+    let first = i64::try_from(first).map_err(|_| "encoded audio coordinate overflow")?;
+    let absolute = start
+        .0
+        .checked_add(first)
+        .ok_or("encoded audio coordinate overflow")?;
+    if start.0 < 0
+        || absolute < start.0
+        || absolute
+            .checked_add(i64::from(count))
+            .is_none_or(|value| value > end.0)
+    {
+        return Err("encoded audio block leaves the captured sample interval".to_owned());
+    }
+    Ok(AudioSample(absolute))
+}
+
+struct PlanarInput {
+    left: [f32; AUDIO_BLOCK],
+    right: [f32; AUDIO_BLOCK],
+    count: usize,
+}
+
+impl PlanarInput {
+    fn new(samples: &[[f32; 2]], count: u32) -> Result<Self> {
+        let count = usize::try_from(count).map_err(|_| "audio block exceeds address space")?;
+        if count == 0 || count > AUDIO_BLOCK || samples.len() != count {
+            return Err("prepared audio length differs from the next encoder block".to_owned());
+        }
+        let mut planar = Self {
+            left: [0.; AUDIO_BLOCK],
+            right: [0.; AUDIO_BLOCK],
+            count,
+        };
+        for (index, [left, right]) in samples.iter().copied().enumerate() {
+            if !left.is_finite() || !right.is_finite() {
+                return Err("prepared audio contains a nonfinite sample".to_owned());
+            }
+            planar.left[index] = left;
+            planar.right[index] = right;
+        }
+        Ok(planar)
+    }
+}
+
+fn hash_movie(
+    file: &mut File,
+    expected: u64,
+    maximum: u64,
+    cancelled: &AtomicBool,
+    deadline: Instant,
+) -> Result<Sha256> {
+    check_control(cancelled, deadline)?;
+    let metadata = file.metadata().map_err(|error| error.to_string())?;
+    if !metadata.is_file() || metadata.len() != expected || expected == 0 || expected > maximum {
+        return Err("encoded movie descriptor length differs from its bounded report".to_owned());
+    }
+    file.seek(SeekFrom::Start(0))
+        .map_err(|error| error.to_string())?;
+    let hash = hash_exact(file, expected, cancelled, deadline)?;
+    if file.metadata().map_err(|error| error.to_string())?.len() != expected {
+        return Err("encoded movie changed length while hashing".to_owned());
+    }
+    check_control(cancelled, deadline)?;
+    Ok(hash)
+}
+
+fn hash_exact(
+    reader: &mut impl Read,
+    expected: u64,
+    cancelled: &AtomicBool,
+    deadline: Instant,
+) -> Result<Sha256> {
+    let mut buffer = [0_u8; HASH_CHUNK_BYTES];
+    let mut length = 0_u64;
+    let mut hasher = Sha256Hasher::new();
+    loop {
+        check_control(cancelled, deadline)?;
+        let count = match reader.read(&mut buffer) {
+            Ok(count) => count,
+            Err(error) if error.kind() == io::ErrorKind::Interrupted => continue,
+            Err(error) => return Err(error.to_string()),
+        };
+        check_control(cancelled, deadline)?;
+        if count == 0 {
+            break;
+        }
+        length = length
+            .checked_add(u64::try_from(count).map_err(|_| "movie hash count overflow")?)
+            .filter(|length| *length <= expected)
+            .ok_or("encoded movie exceeds its declared length")?;
+        hasher.update(&buffer[..count]);
+    }
+    if length != expected {
+        return Err("encoded movie ended before its declared length".to_owned());
+    }
+    let hex: String = hasher
+        .finalize()
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect();
+    Sha256::new(hex).map_err(|error| error.to_string())
+}
+
+#[cfg(test)]
+mod tests;

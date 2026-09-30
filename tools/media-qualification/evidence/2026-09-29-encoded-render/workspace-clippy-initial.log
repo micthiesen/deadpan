@@ -1,0 +1,26 @@
+    Checking deadpan-encode v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-encode)
+    Checking deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+error: creating a new box
+   --> crates/deadpan-cli/src/encoded_render/protocol/tests.rs:175:9
+    |
+175 |         *contract = Box::new(large);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: replace existing content with inner value instead: `**contract = large`
+    |
+    = note: this creates a needless allocation
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#replace_box
+    = note: `-D clippy::replace-box` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::replace_box)]`
+
+error: creating a new box
+   --> crates/deadpan-cli/src/encoded_render/protocol/tests.rs:237:9
+    |
+237 |         *contract = Box::new(value.contract.clone());
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: replace existing content with inner value instead: `**contract = value.contract.clone()`
+    |
+    = note: this creates a needless allocation
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#replace_box
+
+    Checking deadpan-media-worker v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-media-worker)
+    Checking deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+error: could not compile `deadpan-cli` (lib test) due to 2 previous errors
+warning: build failed, waiting for other jobs to finish...

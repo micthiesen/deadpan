@@ -4,6 +4,8 @@
 pub mod audio;
 mod doctor;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+pub mod encoded_render;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod export_picture;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 mod originals;
@@ -278,6 +280,12 @@ pub fn entry(arguments: impl IntoIterator<Item = String>) -> ExitCode {
         && operation == render_worker::PRIVATE_WORKER_ARGUMENT
     {
         return render_worker::worker::entry(Path::new(package));
+    }
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    if let [operation, package] = arguments.as_slice()
+        && operation == encoded_render::PRIVATE_WORKER_ARGUMENT
+    {
+        return encoded_render::worker::entry(Path::new(package));
     }
     match run(&arguments) {
         Ok(()) => ExitCode::SUCCESS,

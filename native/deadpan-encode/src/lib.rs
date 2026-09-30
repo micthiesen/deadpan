@@ -12,7 +12,7 @@ use std::io::{Seek, SeekFrom};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 mod policy;
 mod progress;
@@ -46,7 +46,8 @@ pub enum EncodeError {
 
 /// Queried codec/mux properties. These do not establish actual B frames, GOP
 /// independence, color interpretation, decoder delay or finished-file quality.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct EncoderInfo {
     pub abi_version: u32,
     pub avcodec_version: u32,
@@ -71,7 +72,8 @@ pub struct EncoderInfo {
     pub maximum_moov_bytes: u64,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct EncodeReport {
     pub info: EncoderInfo,
     pub video_frames: u64,

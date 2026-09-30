@@ -2,6 +2,38 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
+## Isolated committed SDR encoding, 2026-09-29
+
+The [encoded render child](../ENCODED_RENDER.md) now streams one committed
+revision's real pictures and canonical PCM directly into the native encoder.
+Both readers bind the complete document hash and exact range before native
+allocation. Strict separate messages, the shared process supervisor and contained
+snapshot admission return private MP4 candidates after clean teardown.
+
+[Qualification](../qualification/encoded-render-2026-09-29.md) retains seven
+actual candidates, 304 pictures and 390,695 authored sample frames. Normal and
+sanitized independent readers pass complete picture/PCM comparisons, exact
+clocks/edit lists, 21 fresh GOP boundaries and all marker events. Real live
+edit/undo/redo, cancellation after progress, byte exhaustion and retry pass.
+Sanitizers cover the independent readers here; the native encoder has its
+separate preceding qualification. Production media verification remains open.
+
+The locked workspace passes 2,182 tests, zero failed/ignored; strict all-target
+workspace Clippy, formatting and 123 Python tests pass. Independent review fixed
+qualification bounds/SAR checks and strengthened progress-fault fixtures, whose
+seven integration tests pass separately. Evidence retains the initial failures,
+actual bytes, SQLite backups, source/binary bindings and review dispositions.
+No app UI changed.
+
+Next implement independent isolated verification of the finished candidate.
+Reuse descriptor-only source decoders with focused MP4/packet/video observations;
+the existing FFV1 conversion worker discards audio and is unsuitable. Resolve
+source-header/packet limits against encoder bounds, exact arbitrary-range edit
+durations, bounded fresh-GOP checks and content/sync evidence. The evidence folder
+retains a detailed source-only boundary review. Then add durable jobs/recovery,
+destination publication and native Render. Full audio/effects, HDR and every
+DP requirement and Gate A through G remain in scope and incomplete.
+
 ## Native SDR encoder and offline audio, 2026-09-29
 
 The [native encoding boundary](../NATIVE_ENCODING.md) now writes bounded
@@ -25,8 +57,8 @@ Strict workspace/all-target Clippy, formatting and 114 Python oracle tests pass.
 The evidence archive retains and verifies all 836 native result files, including
 rejected attempts and partial outputs. No app UI changed in this milestone.
 
-Next, feed committed pictures and canonical PCM directly into this encoder inside
-the supervised child. Add independent isolated finished-file verification,
+The integration above now feeds committed pictures and canonical PCM directly
+into this encoder inside the supervised child. Add independent isolated finished-file verification,
 durable render jobs/recovery, atomic destination publication and native Render.
 Do not promote a synthetic adapter fixture into product export evidence. Full
 audio/effects, HDR, release hardware/OS coverage and all DP-01 through DP-24 and
@@ -56,7 +88,7 @@ binary hashes and every synthetic actual/direct/reference plane. No app UI or
 native interaction changed. No compiler, test or native probe is left running.
 
 The native encoder and bounded offline audio reader now exist as separate
-boundaries described above. Their connection to this child remains required.
+boundaries described above. The separate encoded child now connects them.
 Do not spool a full uncompressed product movie through the current 512 MiB raw
 qualification range. The existing conversion worker still owns whole-file FFV1
 conversion; it is not the H.264/AAC encoder.

@@ -865,6 +865,7 @@ version = "0.1.0"
 dependencies = [
  "deadpan-audio",
  "deadpan-core",
+ "deadpan-encode",
  "deadpan-jobs",
  "deadpan-media",
  "deadpan-models",

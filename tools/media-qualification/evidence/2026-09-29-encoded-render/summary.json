@@ -1,0 +1,387 @@
+{
+  "base_commit": "4db5e58a30448c70af50c5b07d2234fd1758f15c",
+  "encoded_integration_tests": 7,
+  "evidence_archive": {
+    "archive_bytes": 13554099,
+    "archive_sha256": "227523d3d969646c528b289299cb00f74d6263062edf40bfdc72deafa5db9037",
+    "files": 663,
+    "method": "Reopened archive; read and checked size and SHA-256 of every regular member.",
+    "passed": true,
+    "uncompressed_bytes": 889881304
+  },
+  "executed_artifacts_match_final_build": true,
+  "final_source_manifest": "7d916729dedd5606aefb905b8767b338798b8636cffb92cb9b23e87953ed8c96",
+  "journals": {
+    "encoded-integration-final": {
+      "base_commit": "4db5e58a30448c70af50c5b07d2234fd1758f15c",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "deadpan-cli",
+        "--test",
+        "encoded_render",
+        "--locked"
+      ],
+      "diff_sha256": "b14ce83c45e737f2c47e3822fa3cd8f9041b2c9ceb31331530b6172177a82446",
+      "exit_code": 0,
+      "pid": 29807,
+      "seconds": 10.935074250213802,
+      "source_manifest_sha256": "7d916729dedd5606aefb905b8767b338798b8636cffb92cb9b23e87953ed8c96",
+      "started": "2026-09-30T03:37:43.323831+00:00"
+    },
+    "encoded-unit-tests": {
+      "base_commit": "4db5e58a30448c70af50c5b07d2234fd1758f15c",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "deadpan-cli",
+        "--lib",
+        "--locked",
+        "encoded_render"
+      ],
+      "diff_sha256": "b14ce83c45e737f2c47e3822fa3cd8f9041b2c9ceb31331530b6172177a82446",
+      "exit_code": 0,
+      "pid": 26287,
+      "seconds": 9.504175999667495,
+      "source_manifest_sha256": "bf3c8cd0b147853e8a7efcba5ab1ea55c14b3dba56e67efe211580e6560c3e27",
+      "started": "2026-09-30T03:26:49.168746+00:00"
+    },
+    "format-final": {
+      "base_commit": "4db5e58a30448c70af50c5b07d2234fd1758f15c",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--check"
+      ],
+      "diff_sha256": "0588e8c67a27c7dd0ea8778f9fd7adeb2f297cc53e2b308973f2ada43ef1f73c",
+      "exit_code": 0,
+      "pid": 30251,
+      "seconds": 1.109919040929526,
+      "source_manifest_sha256": "7d916729dedd5606aefb905b8767b338798b8636cffb92cb9b23e87953ed8c96",
+      "started": "2026-09-30T03:39:30.556862+00:00"
+    },
+    "format-initial": {
+      "base_commit": "4db5e58a30448c70af50c5b07d2234fd1758f15c",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all"
+      ],
+      "diff_sha256": "1a36ad1e5e5ea535226e73219111683d310de5484614123bd64729eb3cb3a59a",
+      "exit_code": 0,
+      "pid": 24776,
+      "seconds": 1.0879329168237746,
+      "source_manifest_sha256": "7b5f995e21eb545c51a6f77fdf5ee5f7c937a6b1b75a3eee57b5f23ddd793e79",
+      "started": "2026-09-30T03:20:18.407403+00:00"
+    },
+    "integrated-build-final": {
+      "base_commit": "4db5e58a30448c70af50c5b07d2234fd1758f15c",
+      "command": [
+        "cargo",
+        "build",
+        "-p",
+        "deadpan-cli",
+        "--bin",
+        "deadpan-cli",
+        "--example",
+        "qualify_project_picture",
+        "--locked",
+        "--message-format=json"
+      ],
+      "diff_sha256": "0588e8c67a27c7dd0ea8778f9fd7adeb2f297cc53e2b308973f2ada43ef1f73c",
+      "exit_code": 0,
+      "pid": 30335,
+      "seconds": 0.09432220924645662,
+      "source_manifest_sha256": "7d916729dedd5606aefb905b8767b338798b8636cffb92cb9b23e87953ed8c96",
+      "started": "2026-09-30T03:39:58.501305+00:00"
+    },
+    "integrated-build-initial": {
+      "base_commit": "4db5e58a30448c70af50c5b07d2234fd1758f15c",
+      "command": [
+        "cargo",
+        "build",
+        "-p",
+        "deadpan-cli",
+        "--bin",
+        "deadpan-cli",
+        "--example",
+        "qualify_project_picture",
+        "--locked",
+        "--message-format=json"
+      ],
+      "diff_sha256": "a5699e4b261b521d7e152bb0829eba0c9e98928f53e67d4c6c75c24c7d1d89f4",
+      "exit_code": 0,
+      "pid": 24871,
+      "seconds": 29.23956950008869,
+      "source_manifest_sha256": "02acf8543dfed7b506df32b1aabf1ae908742f82eef5089da5a94b4f90d67c03",
+      "started": "2026-09-30T03:20:27.721048+00:00"
+    },
+    "metal-initial": {
+      "base_commit": "4db5e58a30448c70af50c5b07d2234fd1758f15c",
+      "command": [
+        "python3",
+        "/tmp/deadpan-encoded-render-_0zk9gnz/run-metal.py",
+        "metal-initial",
+        "integrated-build-initial"
+      ],
+      "diff_sha256": "a5699e4b261b521d7e152bb0829eba0c9e98928f53e67d4c6c75c24c7d1d89f4",
+      "exit_code": 0,
+      "pid": 25223,
+      "seconds": 436.9820320829749,
+      "source_manifest_sha256": "46661392153ee6e4d406d1e1f79694985996d273056b1af785d87e0b99a6da99",
+      "started": "2026-09-30T03:21:32.839610+00:00"
+    },
+    "project-decode-fixed": {
+      "base_commit": "4db5e58a30448c70af50c5b07d2234fd1758f15c",
+      "command": [
+        "python3",
+        "tools/media-qualification/compatible/qualify_project_encode.py",
+        "--work",
+        "/tmp/deadpan-encoded-render-_0zk9gnz/decoded-fixed",
+        "--build-report",
+        "/tmp/deadpan-ui-ffmpeg-build.json",
+        "--worker",
+        "/tmp/deadpan-encoded-render-_0zk9gnz/retained-deadpan-cli",
+        "--picture-report",
+        "/tmp/deadpan-encoded-render-_0zk9gnz/metal-initial-report.json"
+      ],
+      "diff_sha256": "b14ce83c45e737f2c47e3822fa3cd8f9041b2c9ceb31331530b6172177a82446",
+      "exit_code": 0,
+      "pid": 27458,
+      "seconds": 10.203364874701947,
+      "source_manifest_sha256": "17fdf13b7afb9efd6c2d13f6ccecd74a3d8cb73a7d76105d62dbe483900dcb38",
+      "started": "2026-09-30T03:30:47.978557+00:00"
+    },
+    "project-decode-initial": {
+      "base_commit": "4db5e58a30448c70af50c5b07d2234fd1758f15c",
+      "command": [
+        "python3",
+        "tools/media-qualification/compatible/qualify_project_encode.py",
+        "--work",
+        "/tmp/deadpan-encoded-render-_0zk9gnz/decoded-initial",
+        "--build-report",
+        "/tmp/deadpan-ui-ffmpeg-build.json",
+        "--worker",
+        "/tmp/deadpan-encoded-render-_0zk9gnz/retained-deadpan-cli",
+        "--picture-report",
+        "/tmp/deadpan-encoded-render-_0zk9gnz/metal-initial-report.json"
+      ],
+      "diff_sha256": "b14ce83c45e737f2c47e3822fa3cd8f9041b2c9ceb31331530b6172177a82446",
+      "exit_code": 1,
+      "pid": 27100,
+      "seconds": 3.033499958924949,
+      "source_manifest_sha256": "b7560c6e6e71ea421d168d714601e1bf6a68bfdbdff39d9e4f20967ece62aac9",
+      "started": "2026-09-30T03:29:40.611664+00:00"
+    },
+    "project-decode-sanitized": {
+      "base_commit": "4db5e58a30448c70af50c5b07d2234fd1758f15c",
+      "command": [
+        "python3",
+        "tools/media-qualification/compatible/qualify_project_encode.py",
+        "--work",
+        "/tmp/deadpan-encoded-render-_0zk9gnz/decoded-sanitized",
+        "--build-report",
+        "/tmp/deadpan-ui-ffmpeg-build.json",
+        "--worker",
+        "/tmp/deadpan-encoded-render-_0zk9gnz/retained-deadpan-cli",
+        "--picture-report",
+        "/tmp/deadpan-encoded-render-_0zk9gnz/metal-initial-report.json",
+        "--sanitizers"
+      ],
+      "diff_sha256": "b14ce83c45e737f2c47e3822fa3cd8f9041b2c9ceb31331530b6172177a82446",
+      "exit_code": 0,
+      "pid": 28718,
+      "seconds": 18.304732750169933,
+      "source_manifest_sha256": "17fdf13b7afb9efd6c2d13f6ccecd74a3d8cb73a7d76105d62dbe483900dcb38",
+      "started": "2026-09-30T03:33:59.020329+00:00"
+    },
+    "python-oracles-bounded": {
+      "base_commit": "4db5e58a30448c70af50c5b07d2234fd1758f15c",
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools/media-qualification/compatible",
+        "-p",
+        "test_*.py"
+      ],
+      "diff_sha256": "a5699e4b261b521d7e152bb0829eba0c9e98928f53e67d4c6c75c24c7d1d89f4",
+      "exit_code": 0,
+      "pid": 25173,
+      "seconds": 1.5065053747966886,
+      "source_manifest_sha256": "46661392153ee6e4d406d1e1f79694985996d273056b1af785d87e0b99a6da99",
+      "started": "2026-09-30T03:21:20.527705+00:00"
+    },
+    "python-oracles-final": {
+      "base_commit": "4db5e58a30448c70af50c5b07d2234fd1758f15c",
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools/media-qualification/compatible",
+        "-p",
+        "test_*.py"
+      ],
+      "diff_sha256": "b14ce83c45e737f2c47e3822fa3cd8f9041b2c9ceb31331530b6172177a82446",
+      "exit_code": 0,
+      "pid": 28717,
+      "seconds": 2.647426042240113,
+      "source_manifest_sha256": "17fdf13b7afb9efd6c2d13f6ccecd74a3d8cb73a7d76105d62dbe483900dcb38",
+      "started": "2026-09-30T03:33:59.020274+00:00"
+    },
+    "python-oracles-initial": {
+      "base_commit": "4db5e58a30448c70af50c5b07d2234fd1758f15c",
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools/media-qualification/compatible",
+        "-p",
+        "test_*oracle.py"
+      ],
+      "diff_sha256": "f6416fe916fe9d672a6cfa4d80a1c5833eb434eab1e8d5253be9d12a2402532f",
+      "exit_code": 0,
+      "pid": 24467,
+      "seconds": 1.1817344170995057,
+      "source_manifest_sha256": "af0a7b155268c622929efc00634b78704153520c7da95639aa8c63b17070d7e9",
+      "started": "2026-09-30T03:18:54.133702+00:00"
+    },
+    "workspace-clippy": {
+      "base_commit": "4db5e58a30448c70af50c5b07d2234fd1758f15c",
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "diff_sha256": "b250abd247a32b6f3fddc5c2f97af2972d67c0df68487593cfe0ce270befcc79",
+      "exit_code": 0,
+      "pid": 26103,
+      "seconds": 16.385034082923084,
+      "source_manifest_sha256": "bf3c8cd0b147853e8a7efcba5ab1ea55c14b3dba56e67efe211580e6560c3e27",
+      "started": "2026-09-30T03:25:30.846151+00:00"
+    },
+    "workspace-clippy-initial": {
+      "base_commit": "4db5e58a30448c70af50c5b07d2234fd1758f15c",
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "diff_sha256": "a5699e4b261b521d7e152bb0829eba0c9e98928f53e67d4c6c75c24c7d1d89f4",
+      "exit_code": 101,
+      "pid": 25738,
+      "seconds": 64.74408912518993,
+      "source_manifest_sha256": "b66e82b1719fdefed84a67d66a04813a09e41cec2e73d47a21c3a07e93e77a9c",
+      "started": "2026-09-30T03:23:48.841348+00:00"
+    },
+    "workspace-tests": {
+      "base_commit": "4db5e58a30448c70af50c5b07d2234fd1758f15c",
+      "command": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked"
+      ],
+      "diff_sha256": "b14ce83c45e737f2c47e3822fa3cd8f9041b2c9ceb31331530b6172177a82446",
+      "exit_code": 0,
+      "pid": 27099,
+      "seconds": 446.3629947085865,
+      "source_manifest_sha256": "b7560c6e6e71ea421d168d714601e1bf6a68bfdbdff39d9e4f20967ece62aac9",
+      "started": "2026-09-30T03:29:40.610909+00:00"
+    }
+  },
+  "python_tests": 123,
+  "reader_matrices": [
+    {
+      "cases": 7,
+      "compared_codes": 116984106,
+      "complete_planes": 912,
+      "frames": 304,
+      "fresh_suffix_frames": 855,
+      "gop_boundaries": 21,
+      "maximum_pcm_error": 0.10570040345191956,
+      "maximum_pcm_rms": 0.0009801035075605537,
+      "maximum_plane_error": 43,
+      "maximum_plane_mae": 0.8234201388888889,
+      "maximum_plane_mse": 1.0700868055555555,
+      "result": "passed scoped project encoding",
+      "samples": 390695,
+      "sanitizers": false
+    },
+    {
+      "cases": 7,
+      "compared_codes": 116984106,
+      "complete_planes": 912,
+      "frames": 304,
+      "fresh_suffix_frames": 855,
+      "gop_boundaries": 21,
+      "maximum_pcm_error": 0.10570040345191956,
+      "maximum_pcm_rms": 0.0009801035075605537,
+      "maximum_plane_error": 43,
+      "maximum_plane_mae": 0.8234201388888889,
+      "maximum_plane_mse": 1.0700868055555555,
+      "result": "passed scoped project encoding",
+      "samples": 390695,
+      "sanitizers": true
+    }
+  ],
+  "sanitizer_scope": "Independent C/Objective-C readers only; leak detection disabled. Rust, this worker and FFmpeg libraries are not instrumented. Encoder C unchanged from separately qualified native-encoding checkpoint.",
+  "scope": "Committed SDR project encoding; development finished-file observations, no product verifier/publication.",
+  "source_changes_since_check": {
+    "encoded-integration-final": [],
+    "format-final": [],
+    "integrated-build-initial": [
+      "crates/deadpan-cli/src/encoded_render/protocol/tests.rs",
+      "crates/deadpan-cli/tests/encoded_render/fixture.py",
+      "tools/media-qualification/compatible/project_encode_oracle.py",
+      "tools/media-qualification/compatible/qualify_project_encode.py",
+      "tools/media-qualification/compatible/test_project_encode.py",
+      "tools/media-qualification/compatible/test_project_encode_oracle.py"
+    ],
+    "project-decode-fixed": [
+      "crates/deadpan-cli/tests/encoded_render/fixture.py"
+    ],
+    "project-decode-sanitized": [
+      "crates/deadpan-cli/tests/encoded_render/fixture.py"
+    ],
+    "python-oracles-final": [
+      "crates/deadpan-cli/tests/encoded_render/fixture.py"
+    ],
+    "workspace-clippy": [
+      "crates/deadpan-cli/tests/encoded_render/fixture.py",
+      "tools/media-qualification/compatible/project_encode_oracle.py",
+      "tools/media-qualification/compatible/qualify_project_encode.py",
+      "tools/media-qualification/compatible/test_project_encode_oracle.py"
+    ],
+    "workspace-tests": [
+      "crates/deadpan-cli/tests/encoded_render/fixture.py",
+      "tools/media-qualification/compatible/project_encode_oracle.py",
+      "tools/media-qualification/compatible/qualify_project_encode.py",
+      "tools/media-qualification/compatible/test_project_encode_oracle.py"
+    ]
+  },
+  "workspace_tests": {
+    "failed": 0,
+    "ignored": 0,
+    "passed": 2182
+  }
+}

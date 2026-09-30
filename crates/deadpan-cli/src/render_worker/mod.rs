@@ -71,6 +71,15 @@ pub(super) fn document_sha256(
     cancelled: &AtomicBool,
     deadline: Instant,
 ) -> Result<Sha256, RenderWorkerError> {
+    document_hash(pictures.document(), cancelled, deadline)
+}
+
+/// Shared immutable document binding for separate picture and audio readers.
+pub(crate) fn document_hash(
+    document: &deadpan_core::ProjectDocument,
+    cancelled: &AtomicBool,
+    deadline: Instant,
+) -> Result<Sha256, RenderWorkerError> {
     struct DocumentHash<'a> {
         hasher: Sha256Hasher,
         bytes: usize,
@@ -102,7 +111,7 @@ pub(super) fn document_sha256(
         cancelled,
         deadline,
     };
-    let serialized = serde_json::to_writer(&mut writer, pictures.document());
+    let serialized = serde_json::to_writer(&mut writer, document);
     check_control(cancelled, deadline)?;
     serialized?;
     let hex: String = writer

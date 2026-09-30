@@ -1,0 +1,78 @@
+[
+  {
+    "name": "deadpan-cli",
+    "cargo_artifact": {
+      "reason": "compiler-artifact",
+      "package_id": "path+file:///Users/michael/Code/deadpan/crates/deadpan-cli#0.1.0",
+      "manifest_path": "/Users/michael/Code/deadpan/crates/deadpan-cli/Cargo.toml",
+      "target": {
+        "kind": [
+          "bin"
+        ],
+        "crate_types": [
+          "bin"
+        ],
+        "name": "deadpan-cli",
+        "src_path": "/Users/michael/Code/deadpan/crates/deadpan-cli/src/main.rs",
+        "edition": "2024",
+        "doc": true,
+        "doctest": false,
+        "test": true
+      },
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 2,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": false
+      },
+      "features": [],
+      "filenames": [
+        "/Users/michael/Code/deadpan/target/debug/deadpan-cli"
+      ],
+      "executable": "/Users/michael/Code/deadpan/target/debug/deadpan-cli",
+      "fresh": true
+    },
+    "sha256": "a3a17a7ef81099a29f9b4292de5d696f7cd7c39bf965766f8cc4c1f7628b1e30",
+    "executed_sha256": "a3a17a7ef81099a29f9b4292de5d696f7cd7c39bf965766f8cc4c1f7628b1e30",
+    "same_executed_bytes": true
+  },
+  {
+    "name": "qualify_project_picture",
+    "cargo_artifact": {
+      "reason": "compiler-artifact",
+      "package_id": "path+file:///Users/michael/Code/deadpan/crates/deadpan-cli#0.1.0",
+      "manifest_path": "/Users/michael/Code/deadpan/crates/deadpan-cli/Cargo.toml",
+      "target": {
+        "kind": [
+          "example"
+        ],
+        "crate_types": [
+          "bin"
+        ],
+        "name": "qualify_project_picture",
+        "src_path": "/Users/michael/Code/deadpan/crates/deadpan-cli/examples/qualify_project_picture.rs",
+        "edition": "2024",
+        "doc": false,
+        "doctest": false,
+        "test": false
+      },
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 2,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": false
+      },
+      "features": [],
+      "filenames": [
+        "/Users/michael/Code/deadpan/target/debug/examples/qualify_project_picture"
+      ],
+      "executable": "/Users/michael/Code/deadpan/target/debug/examples/qualify_project_picture",
+      "fresh": true
+    },
+    "sha256": "71fcc6177c5551550649da04f6ebb0ea371989483c414b5ad297e3e4cf0627f5",
+    "executed_sha256": "71fcc6177c5551550649da04f6ebb0ea371989483c414b5ad297e3e4cf0627f5",
+    "same_executed_bytes": true
+  }
+]
